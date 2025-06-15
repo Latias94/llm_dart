@@ -160,7 +160,8 @@ Future<void> _processStreamingToolUse(
             ChatMessage.toolResult(results: toolResults),
           ]);
 
-          print('\n   🔄 Sending tool results back to LLM for final response...');
+          print(
+              '\n   🔄 Sending tool results back to LLM for final response...');
           print('   🤖 LLM Final Response:');
           stdout.write('      '); // Initial indentation for streaming text
 
@@ -304,7 +305,9 @@ Future<String> _executeMcpTool(
   try {
     // Parse arguments from JSON string
     Map<String, dynamic> arguments = {};
-    if (argumentsJson.isNotEmpty && argumentsJson != '{}' && argumentsJson.trim().isNotEmpty) {
+    if (argumentsJson.isNotEmpty &&
+        argumentsJson != '{}' &&
+        argumentsJson.trim().isNotEmpty) {
       try {
         arguments = jsonDecode(argumentsJson) as Map<String, dynamic>;
       } catch (e) {
