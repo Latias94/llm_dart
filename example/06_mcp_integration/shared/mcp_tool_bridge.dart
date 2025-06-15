@@ -58,20 +58,31 @@ class McpToolBridge {
   /// Execute MCP tool and return result
   Future<String> executeMcpTool(String toolName, dynamic arguments) async {
     try {
-      print('🔧 Executing MCP tool: $toolName');
-      print('   Arguments: ${jsonEncode(arguments)}');
+      print('      🔧 MCP: Executing tool "$toolName"');
+      print('         📥 MCP Args: ${jsonEncode(arguments)}');
 
       // In a real implementation:
       // final result = await _mcpClient.callTool(toolName, arguments);
       // return _formatMcpResult(result);
 
+      // Parse arguments if they are a JSON string
+      Map<String, dynamic> parsedArguments;
+      if (arguments is String) {
+        parsedArguments = jsonDecode(arguments) as Map<String, dynamic>;
+      } else if (arguments is Map<String, dynamic>) {
+        parsedArguments = arguments;
+      } else {
+        throw ArgumentError(
+            'Arguments must be either a JSON string or Map<String, dynamic>');
+      }
+
       // For demo purposes, simulate tool execution
-      final result = _simulateToolExecution(toolName, arguments);
-      print('   Result: $result');
+      final result = _simulateToolExecution(toolName, parsedArguments);
+      print('         📤 MCP Result: $result');
       return result;
     } catch (e) {
       final errorMsg = 'MCP tool execution failed: $e';
-      print('   ❌ $errorMsg');
+      print('         ❌ MCP Error: $errorMsg');
       return errorMsg;
     }
   }
@@ -249,6 +260,13 @@ class McpToolBridge {
   String _simpleCalculate(String expression) {
     try {
       expression = expression.replaceAll(' ', '');
+
+      // Handle multiplication first (higher precedence)
+      if (expression.contains('*')) {
+        // For complex expressions like "18*24+6", we need to handle order of operations
+        return _evaluateExpression(expression).toString();
+      }
+
       if (expression.contains('+')) {
         final parts = expression.split('+');
         final result = parts.map(double.parse).reduce((a, b) => a + b);
@@ -257,11 +275,6 @@ class McpToolBridge {
       if (expression.contains('-')) {
         final parts = expression.split('-');
         final result = parts.map(double.parse).reduce((a, b) => a - b);
-        return result.toString();
-      }
-      if (expression.contains('*')) {
-        final parts = expression.split('*');
-        final result = parts.map(double.parse).reduce((a, b) => a * b);
         return result.toString();
       }
       if (expression.contains('/')) {
@@ -273,6 +286,45 @@ class McpToolBridge {
     } catch (e) {
       return 'Error: $e';
     }
+  }
+
+  /// Evaluate mathematical expression with proper order of operations
+  double _evaluateExpression(String expression) {
+    // Simple expression evaluator for demo purposes
+    // Handle multiplication and addition with proper precedence
+
+    // First handle multiplication
+    while (expression.contains('*')) {
+      final regex = RegExp(r'(\d+(?:\.\d+)?)\s*\*\s*(\d+(?:\.\d+)?)');
+      final match = regex.firstMatch(expression);
+      if (match != null) {
+        final a = double.parse(match.group(1)!);
+        final b = double.parse(match.group(2)!);
+        final result = a * b;
+        expression =
+            expression.replaceFirst(match.group(0)!, result.toString());
+      } else {
+        break;
+      }
+    }
+
+    // Then handle addition and subtraction from left to right
+    while (expression.contains('+') || expression.contains('-')) {
+      final regex = RegExp(r'(\d+(?:\.\d+)?)\s*([+\-])\s*(\d+(?:\.\d+)?)');
+      final match = regex.firstMatch(expression);
+      if (match != null) {
+        final a = double.parse(match.group(1)!);
+        final operator = match.group(2)!;
+        final b = double.parse(match.group(3)!);
+        final result = operator == '+' ? a + b : a - b;
+        expression =
+            expression.replaceFirst(match.group(0)!, result.toString());
+      } else {
+        break;
+      }
+    }
+
+    return double.parse(expression);
   }
 
   /// Close MCP client connection
