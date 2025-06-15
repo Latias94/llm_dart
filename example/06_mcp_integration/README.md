@@ -13,11 +13,11 @@ dart run example/06_mcp_integration/mcp_concept_demo.dart
 
 # Test stdio integration
 dart run example/06_mcp_integration/stdio_examples/server.dart  # Terminal 1
-dart run example/06_mcp_integration/stdio_examples/llm_integration.dart  # Terminal 2
+dart run example/06_mcp_integration/stdio_examples/llm_client.dart  # Terminal 2
 
 # Test HTTP integration
 dart run example/06_mcp_integration/http_examples/server.dart  # Terminal 1
-dart run example/06_mcp_integration/http_examples/llm_integration.dart  # Terminal 2
+dart run example/06_mcp_integration/http_examples/llm_client.dart  # Terminal 2
 ```
 
 ## Examples
@@ -26,9 +26,9 @@ dart run example/06_mcp_integration/http_examples/llm_integration.dart  # Termin
 |------|-------------|------------------|
 | `mcp_concept_demo.dart` | Core MCP concepts | ❌ |
 | `stdio_examples/server.dart` | stdio MCP server | ❌ |
-| `stdio_examples/llm_integration.dart` | LLM + stdio MCP | ⚠️ Optional |
+| `stdio_examples/llm_client.dart` | LLM + stdio MCP | ⚠️ Optional |
 | `http_examples/server.dart` | HTTP MCP server | ❌ |
-| `http_examples/llm_integration.dart` | LLM + HTTP MCP | ⚠️ Optional |
+| `http_examples/llm_client.dart` | LLM + HTTP MCP | ⚠️ Optional |
 | `test_all_examples.dart` | Automated tests | ❌ |
 
 ## API Key Setup (Optional)

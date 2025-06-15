@@ -1,23 +1,24 @@
 // ignore_for_file: avoid_print
+import 'dart:convert';
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:mcp_dart/mcp_dart.dart' hide Tool;
-import '../shared/mcp_tool_bridge.dart';
 
-/// HTTP LLM Integration - AI Agents with HTTP MCP Tools
+/// HTTP LLM Integration - Real AI Agents with HTTP MCP Tools
 ///
 /// This example demonstrates how to integrate LLMs with MCP servers
 /// using HTTP transport with streaming capabilities. The LLM can discover
-/// and use tools from the HTTP MCP server through the MCP bridge.
+/// and use tools from the HTTP MCP server through real MCP protocol.
 ///
 /// Architecture:
-/// LLM (OpenAI/etc) ↔ llm_dart ↔ MCP Bridge ↔ HTTP MCP Server ↔ Tools
+/// LLM (OpenAI/etc) ↔ llm_dart ↔ Real MCP Client ↔ HTTP MCP Server ↔ Tools
 ///
 /// Before running:
-/// export OPENAI_API_KEY="your-key-here"
-/// dart run example/06_mcp_integration/http_examples/llm_integration.dart
+/// 1. Start the server: dart run http_examples/server.dart
+/// 2. Set API key: export OPENAI_API_KEY="your-key-here"
+/// 3. Run this: dart run example/06_mcp_integration/http_examples/llm_client.dart
 void main() async {
-  print('🌐 HTTP LLM Integration - AI Agents with HTTP MCP Tools\n');
+  print('🌐 HTTP LLM Integration - Real AI Agents with HTTP MCP Tools\n');
 
   // Get API key
   final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
@@ -32,11 +33,17 @@ void main() async {
 
   print('\n✅ HTTP LLM integration examples completed!');
   print('🚀 You can now build web-based AI agents that use HTTP MCP tools!');
+
+  // Ensure the program exits cleanly
+  exit(0);
 }
 
 /// Demonstrate basic HTTP MCP + LLM integration
 Future<void> demonstrateBasicHttpIntegration(String apiKey) async {
   print('🔗 Basic HTTP MCP + LLM Integration:\n');
+
+  Client? mcpClient;
+  StreamableHttpClientTransport? transport;
 
   try {
     // Create LLM provider
@@ -47,19 +54,18 @@ Future<void> demonstrateBasicHttpIntegration(String apiKey) async {
         .temperature(0.7)
         .build();
 
-    // Create MCP bridge for HTTP server
-    final mcpBridge = await _createHttpMcpBridge();
+    // Create MCP client for HTTP server
+    final mcpConnection = await _createHttpMcpClient();
+    mcpClient = mcpConnection.client;
+    transport = mcpConnection.transport;
 
-    // Get MCP tools as llm_dart tools
-    final mcpTools = mcpBridge.convertToLlmDartTools();
+    // Get MCP tools and convert to llm_dart tools
+    final mcpTools = await _getMcpToolsAsLlmDartTools(mcpClient);
 
     print('   🔧 Available HTTP MCP Tools:');
     for (final tool in mcpTools) {
       print('      • ${tool.function.name}: ${tool.function.description}');
     }
-
-    // Create enhanced tools that bridge to MCP
-    final enhancedTools = _createEnhancedTools(mcpBridge, mcpTools);
 
     // Test with a greeting and calculation request
     final messages = [
@@ -72,7 +78,7 @@ Future<void> demonstrateBasicHttpIntegration(String apiKey) async {
     print('      "${messages.last.content}"');
     print('   🤖 LLM: Processing request with HTTP MCP tools...');
 
-    final response = await llmProvider.chatWithTools(messages, enhancedTools);
+    final response = await llmProvider.chatWithTools(messages, mcpTools);
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
       print('   🤖 LLM: Requested ${response.toolCalls!.length} tool call(s):');
@@ -87,7 +93,8 @@ Future<void> demonstrateBasicHttpIntegration(String apiKey) async {
         print('         🆔 Call ID: ${toolCall.id}');
 
         // Execute the MCP tool via HTTP
-        final mcpResult = await mcpBridge.executeMcpTool(
+        final mcpResult = await _executeMcpTool(
+          mcpClient,
           toolCall.function.name,
           toolCall.function.arguments,
         );
@@ -117,16 +124,26 @@ Future<void> demonstrateBasicHttpIntegration(String apiKey) async {
       print('   📝 LLM Response: ${response.text}');
     }
     print('   ✅ Basic HTTP integration successful\n');
-
-    await mcpBridge.close();
   } catch (e) {
     print('   ❌ Basic HTTP integration failed: $e\n');
+  } finally {
+    // Clean up
+    if (transport != null) {
+      try {
+        await transport.close();
+      } catch (e) {
+        print('   ⚠️ Error closing transport: $e');
+      }
+    }
   }
 }
 
 /// Demonstrate HTTP streaming workflow
 Future<void> demonstrateHttpStreamingWorkflow(String apiKey) async {
   print('🌊 HTTP Streaming Workflow:\n');
+
+  Client? mcpClient;
+  StreamableHttpClientTransport? transport;
 
   try {
     final provider = await ai()
@@ -136,9 +153,28 @@ Future<void> demonstrateHttpStreamingWorkflow(String apiKey) async {
         .temperature(0.3)
         .build();
 
-    final mcpBridge = await _createHttpMcpBridge();
-    final mcpTools = mcpBridge.convertToLlmDartTools();
-    final enhancedTools = _createEnhancedTools(mcpBridge, mcpTools);
+    // Create MCP client for HTTP server
+    final mcpConnection = await _createHttpMcpClient();
+    mcpClient = mcpConnection.client;
+    transport = mcpConnection.transport;
+
+    // Get MCP tools and convert to llm_dart tools
+    final mcpTools = await _getMcpToolsAsLlmDartTools(mcpClient);
+
+    // Set up notification handler to capture streaming notifications
+    int notificationCount = 0;
+    mcpClient.setNotificationHandler("notifications/message",
+        (notification) async {
+      notificationCount++;
+      final params = notification.logParams;
+      print(
+          '   📡 Streaming Notification #$notificationCount: ${params.level} - ${params.data}');
+      return Future.value();
+    },
+        (params, meta) => JsonRpcLoggingMessageNotification.fromJson({
+              'params': params,
+              if (meta != null) '_meta': meta,
+            }));
 
     // Streaming workflow request
     final messages = [
@@ -154,7 +190,7 @@ Future<void> demonstrateHttpStreamingWorkflow(String apiKey) async {
     print('      "${messages.last.content}"');
     print('   🤖 LLM: Initiating HTTP streaming workflow...');
 
-    final response = await provider.chatWithTools(messages, enhancedTools);
+    final response = await provider.chatWithTools(messages, mcpTools);
 
     print('   📋 HTTP streaming execution:');
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
@@ -167,7 +203,8 @@ Future<void> demonstrateHttpStreamingWorkflow(String apiKey) async {
         print('         📋 Arguments: ${toolCall.function.arguments}');
         print('         🆔 Call ID: ${toolCall.id}');
 
-        final mcpResult = await mcpBridge.executeMcpTool(
+        final mcpResult = await _executeMcpTool(
+          mcpClient,
           toolCall.function.name,
           toolCall.function.arguments,
         );
@@ -199,17 +236,28 @@ Future<void> demonstrateHttpStreamingWorkflow(String apiKey) async {
     } else {
       print('   📝 Final Response: ${response.text}');
     }
-    print('   ✅ HTTP streaming workflow successful\n');
-
-    await mcpBridge.close();
+    print(
+        '   ✅ HTTP streaming workflow successful with $notificationCount notifications\n');
   } catch (e) {
     print('   ❌ HTTP streaming workflow failed: $e\n');
+  } finally {
+    // Clean up
+    if (transport != null) {
+      try {
+        await transport.close();
+      } catch (e) {
+        print('   ⚠️ Error closing transport: $e');
+      }
+    }
   }
 }
 
 /// Demonstrate HTTP session management
 Future<void> demonstrateHttpSessionManagement(String apiKey) async {
   print('🆔 HTTP Session Management:\n');
+
+  Client? mcpClient;
+  StreamableHttpClientTransport? transport;
 
   try {
     final provider = await ai()
@@ -219,9 +267,13 @@ Future<void> demonstrateHttpSessionManagement(String apiKey) async {
         .temperature(0.2)
         .build();
 
-    final mcpBridge = await _createHttpMcpBridge();
-    final mcpTools = mcpBridge.convertToLlmDartTools();
-    final enhancedTools = _createEnhancedTools(mcpBridge, mcpTools);
+    // Create MCP client for HTTP server
+    final mcpConnection = await _createHttpMcpClient();
+    mcpClient = mcpConnection.client;
+    transport = mcpConnection.transport;
+
+    // Get MCP tools and convert to llm_dart tools
+    final mcpTools = await _getMcpToolsAsLlmDartTools(mcpClient);
 
     // Session-based workflow request
     final messages = [
@@ -236,8 +288,9 @@ Future<void> demonstrateHttpSessionManagement(String apiKey) async {
     print('   💬 User Message:');
     print('      "${messages.last.content}"');
     print('   🤖 LLM: Processing request with HTTP MCP tools...');
+    print('   🆔 Session ID: ${transport.sessionId}');
 
-    final response = await provider.chatWithTools(messages, enhancedTools);
+    final response = await provider.chatWithTools(messages, mcpTools);
 
     print('   📋 Session-managed workflow via HTTP:');
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
@@ -249,9 +302,10 @@ Future<void> demonstrateHttpSessionManagement(String apiKey) async {
         print('         📞 Function: ${toolCall.function.name}');
         print('         📋 Arguments: ${toolCall.function.arguments}');
         print('         🆔 Call ID: ${toolCall.id}');
-        print('         🌐 Session: HTTP session with unique ID');
+        print('         🌐 Session: HTTP session ${transport.sessionId}');
 
-        final mcpResult = await mcpBridge.executeMcpTool(
+        final mcpResult = await _executeMcpTool(
+          mcpClient,
           toolCall.function.name,
           toolCall.function.arguments,
         );
@@ -282,39 +336,152 @@ Future<void> demonstrateHttpSessionManagement(String apiKey) async {
       print('   📝 Final Response: ${response.text}');
     }
     print('   ✅ HTTP session management successful\n');
-
-    await mcpBridge.close();
   } catch (e) {
     print('   ❌ HTTP session management failed: $e\n');
+  } finally {
+    // Clean up
+    if (transport != null) {
+      try {
+        await transport.close();
+      } catch (e) {
+        print('   ⚠️ Error closing transport: $e');
+      }
+    }
   }
 }
 
-/// Create enhanced tools that bridge to HTTP MCP
-List<Tool> _createEnhancedTools(McpToolBridge bridge, List<Tool> mcpTools) {
-  // For demo purposes, we'll return the MCP tools as-is
-  // In a real implementation, you might enhance them with additional metadata
-  return mcpTools;
+/// Connection result for MCP client
+class McpConnection {
+  final Client client;
+  final StreamableHttpClientTransport transport;
+
+  McpConnection(this.client, this.transport);
 }
 
-/// Create an HTTP MCP bridge for demonstration
-Future<McpToolBridge> _createHttpMcpBridge() async {
-  print('   🌐 Creating HTTP MCP bridge...');
+/// Create an HTTP MCP client connection
+Future<McpConnection> _createHttpMcpClient() async {
+  print('   🌐 Creating HTTP MCP client connection...');
 
-  // In a real implementation, you would:
-  // 1. Create StreamableHttpClientTransport with server URL
-  // 2. Connect the client to the transport
-  // 3. Handle session management and SSE connections
-
-  // For demo purposes, create a mock bridge
   final client = Client(
-    Implementation(name: "http-demo-client", version: "1.0.0"),
+    Implementation(name: "http-llm-client", version: "1.0.0"),
   );
 
-  final bridge = McpToolBridge(client);
-  await bridge.initialize();
+  // Set up error handler
+  client.onerror = (error) {
+    print('   ❌ MCP Client error: $error');
+  };
 
-  print('   ✅ HTTP MCP bridge created');
-  return bridge;
+  // Create HTTP transport
+  final transport = StreamableHttpClientTransport(
+    Uri.parse('http://localhost:3000/mcp'),
+    opts: StreamableHttpClientTransportOptions(),
+  );
+
+  // Connect the client to the transport
+  await client.connect(transport);
+  print('   ✅ HTTP MCP client connected with session: ${transport.sessionId}');
+
+  return McpConnection(client, transport);
+}
+
+/// Get MCP tools and convert them to llm_dart tools
+Future<List<Tool>> _getMcpToolsAsLlmDartTools(Client mcpClient) async {
+  try {
+    final toolsResult = await mcpClient.listTools();
+    final llmDartTools = <Tool>[];
+
+    for (final mcpTool in toolsResult.tools) {
+      // Convert MCP tool schema to ParametersSchema
+      final parametersSchema =
+          _convertMcpSchemaToParametersSchema(mcpTool.inputSchema.toJson());
+
+      // Convert MCP tool to llm_dart tool
+      final llmDartTool = Tool.function(
+        name: mcpTool.name,
+        description: mcpTool.description ?? 'MCP tool: ${mcpTool.name}',
+        parameters: parametersSchema,
+      );
+      llmDartTools.add(llmDartTool);
+    }
+
+    return llmDartTools;
+  } catch (error) {
+    print('   ❌ Error getting MCP tools: $error');
+    return [];
+  }
+}
+
+/// Convert MCP input schema to llm_dart ParametersSchema
+ParametersSchema _convertMcpSchemaToParametersSchema(
+    Map<String, dynamic>? mcpSchema) {
+  if (mcpSchema == null || mcpSchema.isEmpty) {
+    return ParametersSchema(
+      schemaType: 'object',
+      properties: {},
+      required: [],
+    );
+  }
+
+  final properties = <String, ParameterProperty>{};
+  final mcpProperties = mcpSchema['properties'] as Map<String, dynamic>? ?? {};
+
+  for (final entry in mcpProperties.entries) {
+    final propName = entry.key;
+    final propDef = entry.value as Map<String, dynamic>;
+
+    properties[propName] = ParameterProperty(
+      propertyType: propDef['type'] as String? ?? 'string',
+      description: propDef['description'] as String? ?? '',
+    );
+  }
+
+  return ParametersSchema(
+    schemaType: mcpSchema['type'] as String? ?? 'object',
+    properties: properties,
+    required: (mcpSchema['required'] as List<dynamic>?)?.cast<String>() ?? [],
+  );
+}
+
+/// Execute an MCP tool and return the result as a string
+Future<String> _executeMcpTool(
+  Client mcpClient,
+  String toolName,
+  String argumentsJson,
+) async {
+  try {
+    // Parse arguments from JSON string
+    Map<String, dynamic> arguments = {};
+    if (argumentsJson.isNotEmpty && argumentsJson != '{}') {
+      try {
+        // Use proper JSON parsing
+        arguments = jsonDecode(argumentsJson) as Map<String, dynamic>;
+      } catch (e) {
+        print('   ⚠️ Error parsing JSON arguments: $e, using empty args');
+        print('   📋 Raw arguments: $argumentsJson');
+      }
+    }
+
+    print('         📡 Executing MCP tool: $toolName with args: $arguments');
+
+    final result = await mcpClient.callTool(
+      CallToolRequestParams(
+        name: toolName,
+        arguments: arguments,
+      ),
+    );
+
+    // Convert result to string
+    final resultText = result.content
+        .whereType<TextContent>()
+        .map((item) => item.text)
+        .join('\n');
+
+    print('         ✅ MCP tool result: $resultText');
+    return resultText;
+  } catch (error) {
+    print('         ❌ Error executing MCP tool $toolName: $error');
+    return 'Error: $error';
+  }
 }
 
 /// 🎯 Key HTTP Integration Concepts:

@@ -4,9 +4,9 @@ This directory contains examples of MCP integration using stdio transport. stdio
 
 ## Files in this directory
 
-- **`server.dart`** - MCP server implementation using stdio transport
-- **`rest_client.dart`** - REST client that tests server tools directly via stdio
-- **`llm_integration.dart`** - Integration example showing how LLMs can use MCP tools via stdio
+- **`server.dart`** - Real MCP server implementation using stdio transport
+- **`client.dart`** - Real REST client that tests server tools directly via stdio (no LLM)
+- **`llm_client.dart`** - Real LLM integration example showing how LLMs can use MCP tools via stdio
 
 ## What is stdio Transport?
 
@@ -25,25 +25,27 @@ dart run example/06_mcp_integration/stdio_examples/server.dart
 
 The server will start and wait for JSON-RPC messages on stdin.
 
-### 2. Test with REST Client
+### 2. Test with Real REST Client
 
 In another terminal:
 
 ```bash
-dart run example/06_mcp_integration/stdio_examples/rest_client.dart
+dart run example/06_mcp_integration/stdio_examples/client.dart
 ```
 
-This will connect to the server and test all available tools.
+This will spawn a real MCP client, connect to the server process, and test all available tools directly.
 
-### 3. Test LLM Integration
+### 3. Test Real LLM Integration
 
 ```bash
 # Set your API key first
 export OPENAI_API_KEY="your-key-here"
 
-# Run the LLM integration example
-dart run example/06_mcp_integration/stdio_examples/llm_integration.dart
+# Run the real LLM integration example
+dart run example/06_mcp_integration/stdio_examples/llm_client.dart
 ```
+
+This will create a real MCP client, connect to the server, discover tools, and use them with LLM tool calling.
 
 ## Available Tools
 
@@ -58,10 +60,13 @@ The stdio server provides these tools:
 
 ## Architecture
 
-```
+### Real stdio MCP Integration
+
+```text
 ┌─────────────────┐    stdin/stdout    ┌─────────────────┐
-│   MCP Client    │◄─────────────────►│   MCP Server    │
-│ (rest_client)   │                    │   (server.dart) │
+│   Real MCP      │◄─────────────────►│   Real MCP      │
+│   Client        │                    │   Server        │
+│ (client.dart)   │                    │ (server.dart)   │
 └─────────────────┘                    └─────────────────┘
                                               │
                                               ▼
@@ -69,6 +74,12 @@ The stdio server provides these tools:
                                        │  Common Tools   │
                                        │ (shared/common) │
                                        └─────────────────┘
+
+┌─────────────────┐    Tool Calls      ┌─────────────────┐    stdin/stdout    ┌─────────────────┐
+│      LLM        │◄─────────────────►│   Real MCP      │◄─────────────────►│   Real MCP      │
+│   (OpenAI)      │                    │   Client        │                    │   Server        │
+│                 │                    │(llm_client.dart)│                    │ (server.dart)   │
+└─────────────────┘                    └─────────────────┘                    └─────────────────┘
 ```
 
 ## Use Cases

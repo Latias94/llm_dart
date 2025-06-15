@@ -291,7 +291,7 @@ class CommonMcpTools {
     registerSystemTools(server);
   }
 
-  /// Simple math expression evaluator
+  /// Simple math expression evaluator with proper operator precedence
   static double _evaluateMathExpression(String expression) {
     // Remove spaces
     expression = expression.replaceAll(' ', '');
@@ -299,47 +299,84 @@ class CommonMcpTools {
     // Handle special functions
     if (expression.startsWith('sqrt(') && expression.endsWith(')')) {
       final inner = expression.substring(5, expression.length - 1);
-      return sqrt(double.parse(inner));
+      return sqrt(_evaluateMathExpression(inner));
     }
 
     if (expression.startsWith('sin(') && expression.endsWith(')')) {
       final inner = expression.substring(4, expression.length - 1);
-      return sin(double.parse(inner) * pi / 180); // Convert degrees to radians
+      return sin(_evaluateMathExpression(inner) *
+          pi /
+          180); // Convert degrees to radians
     }
 
     if (expression.startsWith('cos(') && expression.endsWith(')')) {
       final inner = expression.substring(4, expression.length - 1);
-      return cos(double.parse(inner) * pi / 180);
+      return cos(_evaluateMathExpression(inner) * pi / 180);
     }
 
     if (expression.startsWith('tan(') && expression.endsWith(')')) {
       final inner = expression.substring(4, expression.length - 1);
-      return tan(double.parse(inner) * pi / 180);
+      return tan(_evaluateMathExpression(inner) * pi / 180);
     }
 
-    // Handle basic arithmetic (very simplified)
-    if (expression.contains('+')) {
-      final parts = expression.split('+');
-      return parts.map(double.parse).reduce((a, b) => a + b);
+    // Handle parentheses
+    while (expression.contains('(')) {
+      final start = expression.lastIndexOf('(');
+      final end = expression.indexOf(')', start);
+      if (end == -1) throw FormatException('Mismatched parentheses');
+
+      final inner = expression.substring(start + 1, end);
+      final result = _evaluateMathExpression(inner);
+      expression = expression.substring(0, start) +
+          result.toString() +
+          expression.substring(end + 1);
     }
 
-    if (expression.contains('-') && !expression.startsWith('-')) {
-      final parts = expression.split('-');
-      return parts.map(double.parse).reduce((a, b) => a - b);
-    }
+    // Simple approach: handle operator precedence manually
+    // First handle multiplication and division
+    expression = _handleMultiplicationDivision(expression);
 
-    if (expression.contains('*')) {
-      final parts = expression.split('*');
-      return parts.map(double.parse).reduce((a, b) => a * b);
-    }
-
-    if (expression.contains('/')) {
-      final parts = expression.split('/');
-      return parts.map(double.parse).reduce((a, b) => a / b);
-    }
+    // Then handle addition and subtraction
+    expression = _handleAdditionSubtraction(expression);
 
     // Single number
     return double.parse(expression);
+  }
+
+  /// Handle multiplication and division operations
+  static String _handleMultiplicationDivision(String expression) {
+    // Find multiplication or division operations
+    final regex = RegExp(r'(\d+(?:\.\d+)?)\s*([*/])\s*(\d+(?:\.\d+)?)');
+
+    while (regex.hasMatch(expression)) {
+      final match = regex.firstMatch(expression)!;
+      final left = double.parse(match.group(1)!);
+      final operator = match.group(2)!;
+      final right = double.parse(match.group(3)!);
+
+      final result = operator == '*' ? left * right : left / right;
+      expression = expression.replaceFirst(match.group(0)!, result.toString());
+    }
+
+    return expression;
+  }
+
+  /// Handle addition and subtraction operations
+  static String _handleAdditionSubtraction(String expression) {
+    // Find addition or subtraction operations (but not negative numbers)
+    final regex = RegExp(r'(\d+(?:\.\d+)?)\s*([+\-])\s*(\d+(?:\.\d+)?)');
+
+    while (regex.hasMatch(expression)) {
+      final match = regex.firstMatch(expression)!;
+      final left = double.parse(match.group(1)!);
+      final operator = match.group(2)!;
+      final right = double.parse(match.group(3)!);
+
+      final result = operator == '+' ? left + right : left - right;
+      expression = expression.replaceFirst(match.group(0)!, result.toString());
+    }
+
+    return expression;
   }
 
   /// Generate a simple UUID (not cryptographically secure)

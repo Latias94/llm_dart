@@ -1,12 +1,12 @@
-# HTTP MCP Examples
+# HTTP MCP Examples - Real Implementation
 
-This directory contains examples of MCP integration using HTTP transport with streaming capabilities. HTTP transport provides a modern, web-compatible way of communicating with MCP servers.
+This directory contains **real** MCP integration examples using HTTP transport with streaming capabilities. These examples use the actual MCP protocol implementation from `mcp_dart` library, not simulated versions.
 
 ## Files in this directory
 
-- **`server.dart`** - MCP server implementation using HTTP transport with streaming
-- **`rest_client.dart`** - REST client that tests server tools directly via HTTP
-- **`llm_integration.dart`** - Integration example showing how LLMs can use MCP tools via HTTP
+- **`server.dart`** - **Real** MCP server using `StreamableHTTPServerTransport`
+- **`client.dart`** - **Real** MCP client using `StreamableHttpClientTransport` for direct tool testing
+- **`llm_client.dart`** - **Real** LLM integration showing how AI agents can use MCP tools via HTTP
 
 ## What is HTTP Transport?
 
@@ -15,26 +15,27 @@ HTTP transport uses standard HTTP requests and Server-Sent Events (SSE) for comm
 - **GET /mcp** - Client establishes SSE connection for notifications
 - **DELETE /mcp** - Client terminates session
 
-## Key Features
+## Key Features - Real MCP Implementation
 
-### Comparison with stdio Version
+### Real vs Simulated Implementation
 
-| Feature | stdio Version | HTTP Version |
-|---------|---------------|--------------|
-| Transport | stdin/stdout | HTTP + Server-Sent Events |
-| Session Management | None | ✅ Session ID support |
-| Resumability | None | ✅ Reconnection support |
-| Concurrent Connections | Single | ✅ Multi-client support |
-| Real-time Notifications | None | ✅ SSE streaming |
-| Web Compatibility | None | ✅ Web application ready |
+| Aspect | Previous (Simulated) | Current (Real) |
+|--------|---------------------|----------------|
+| MCP Protocol | ❌ Mock responses | ✅ Real `mcp_dart` implementation |
+| Transport | ❌ Fake HTTP calls | ✅ `StreamableHTTPServerTransport` |
+| Client | ❌ Simulated connection | ✅ `StreamableHttpClientTransport` |
+| Tool Execution | ❌ Hardcoded results | ✅ Real MCP tool calls |
+| Session Management | ❌ Demo session IDs | ✅ Real session management |
+| Streaming | ❌ Fake SSE messages | ✅ Real SSE notifications |
 
 ### Core Capabilities
 
-1. **Session Management** - Each client connection gets a unique session ID
-2. **Event Storage** - Supports message replay and reconnection recovery
-3. **Streaming Notifications** - Real-time push notifications via SSE
-4. **RESTful API** - Standard HTTP endpoint design
-5. **Concurrent Support** - Handle multiple clients simultaneously
+1. **Real MCP Protocol** - Uses actual `mcp_dart` library implementation
+2. **Session Management** - Each client connection gets a unique session ID
+3. **Event Storage** - Supports message replay and reconnection recovery
+4. **Streaming Notifications** - Real-time push notifications via SSE
+5. **RESTful API** - Standard HTTP endpoint design
+6. **Concurrent Support** - Handle multiple clients simultaneously
 
 ## Quick Start
 
@@ -51,7 +52,7 @@ The server will start at `http://localhost:3000/mcp`.
 In another terminal:
 
 ```bash
-dart run example/06_mcp_integration/http_examples/rest_client.dart
+dart run example/06_mcp_integration/http_examples/client.dart
 ```
 
 This will connect to the server via HTTP and test all available tools.
@@ -63,7 +64,7 @@ This will connect to the server via HTTP and test all available tools.
 export OPENAI_API_KEY="your-key-here"
 
 # Run the LLM integration example
-dart run example/06_mcp_integration/http_examples/llm_integration.dart
+dart run example/06_mcp_integration/http_examples/llm_client.dart
 ```
 
 ## Available Tools
@@ -79,19 +80,26 @@ The HTTP server provides these tools:
 7. **greet** - Simple greeting tool (HTTP-specific)
 8. **multi-greet** - Multiple greetings with notifications (streaming demo)
 
-## Architecture
+## Real MCP Architecture
 
-```
-┌─────────────────┐    HTTP/SSE    ┌─────────────────┐
-│   MCP Client    │◄──────────────►│   HTTP Server   │
-│ (rest_client)   │                │   (server.dart) │
-└─────────────────┘                └─────────────────┘
-                                          │
-                                          ▼
-                                   ┌─────────────────┐
-                                   │  Common Tools   │
-                                   │ (shared/common) │
-                                   └─────────────────┘
+```text
+┌─────────────────────┐    Real HTTP/SSE    ┌─────────────────────┐
+│   Real MCP Client   │◄──────────────────►│   Real MCP Server   │
+│ StreamableHttpClient│                    │StreamableHTTPServer │
+│   Transport         │                    │   Transport         │
+└─────────────────────┘                    └─────────────────────┘
+         │                                            │
+         ▼                                            ▼
+┌─────────────────────┐                    ┌─────────────────────┐
+│   llm_dart Tools    │                    │   Real MCP Tools    │
+│   Integration       │                    │  (shared/common)    │
+└─────────────────────┘                    └─────────────────────┘
+         │
+         ▼
+┌─────────────────────┐
+│   OpenAI/LLM        │
+│   Provider          │
+└─────────────────────┘
 ```
 
 ## API Endpoints

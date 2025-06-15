@@ -18,7 +18,9 @@ import '../shared/common_tools.dart';
 /// To run this server:
 /// dart run example/06_mcp_integration/stdio_examples/server.dart
 void main() async {
-  print('🛠️ stdio MCP Server - Starting MCP server with stdio transport\n');
+  // Use stderr for all logging since stdout is reserved for JSON-RPC communication
+  stderr.writeln(
+      '🛠️ stdio MCP Server - Starting MCP server with stdio transport\n');
 
   // Create MCP server with capabilities
   final server = McpServer(
@@ -33,28 +35,28 @@ void main() async {
   );
 
   // Register all common tools using shared implementations
-  print('📋 Registering tools...');
+  stderr.writeln('📋 Registering tools...');
   CommonMcpTools.registerAllCommonTools(server);
 
-  print('📋 Registered Tools:');
-  print('   • calculate - Perform mathematical calculations');
-  print('   • random_number - Generate random numbers');
-  print('   • current_time - Get current date and time');
-  print('   • file_info - Get file information');
-  print('   • system_info - Get system information');
-  print('   • uuid_generate - Generate UUID');
+  stderr.writeln('📋 Registered Tools:');
+  stderr.writeln('   • calculate - Perform mathematical calculations');
+  stderr.writeln('   • random_number - Generate random numbers');
+  stderr.writeln('   • current_time - Get current date and time');
+  stderr.writeln('   • file_info - Get file information');
+  stderr.writeln('   • system_info - Get system information');
+  stderr.writeln('   • uuid_generate - Generate UUID');
 
-  print('\n🚀 Starting MCP server on stdio...');
-  print('💡 Connect with: dart run stdio_examples/rest_client.dart');
-  print(
-      '🔗 Or integrate with LLM: dart run stdio_examples/llm_integration.dart');
-  print('⏹️  Press Ctrl+C to stop\n');
+  stderr.writeln('\n🚀 Starting MCP server on stdio...');
+  stderr.writeln('💡 Connect with: dart run stdio_examples/client.dart');
+  stderr.writeln(
+      '🔗 Or integrate with LLM: dart run stdio_examples/llm_client.dart');
+  stderr.writeln('⏹️  Press Ctrl+C to stop\n');
 
   try {
     // Connect using stdio transport
     await server.connect(StdioServerTransport());
   } catch (e) {
-    print('❌ Server error: $e');
+    stderr.writeln('❌ Server error: $e');
     exit(1);
   }
 }
