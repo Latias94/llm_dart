@@ -26,10 +26,19 @@ class ReasoningUtils {
     required bool hasReasoningContent,
     required String lastChunk,
   }) {
+    // 如果有reasoning_content或reasoning或thinking，说明是在思考中
+    bool updatedHasReasoningContent = hasReasoningContent;
+    if (delta != null &&
+        (delta['reasoning_content'] != null ||
+            delta['reasoning'] != null ||
+            delta['thinking'] != null)) {
+      updatedHasReasoningContent = true;
+    }
+
     if (delta == null || delta['content'] == null) {
       return ReasoningDetectionResult(
         isReasoningJustDone: false,
-        hasReasoningContent: hasReasoningContent,
+        hasReasoningContent: updatedHasReasoningContent,
         updatedLastChunk: lastChunk,
       );
     }
@@ -47,14 +56,6 @@ class ReasoningUtils {
         hasReasoningContent: hasReasoningContent,
         updatedLastChunk: updatedLastChunk,
       );
-    }
-
-    // 如果有reasoning_content或reasoning或thinking，说明是在思考中
-    bool updatedHasReasoningContent = hasReasoningContent;
-    if (delta['reasoning_content'] != null ||
-        delta['reasoning'] != null ||
-        delta['thinking'] != null) {
-      updatedHasReasoningContent = true;
     }
 
     // 如果之前有reasoning_content或reasoning，现在有普通content，说明思考结束

@@ -11,6 +11,11 @@ import 'core/capability_test.dart' as capability_tests;
 import 'core/config_test.dart' as config_tests;
 import 'core/error_test.dart' as error_tests;
 import 'core/registry_test.dart' as registry_tests;
+import 'core/tool_validator_test.dart' as tool_validator_tests;
+import 'core/tool_execution_test.dart' as tool_execution_tests;
+import 'core/tool_parameter_validation_test.dart'
+    as tool_parameter_validation_tests;
+import 'core/tool_streaming_test.dart' as tool_streaming_tests;
 
 // Model tests
 import 'models/chat_models_test.dart' as chat_models_tests;
@@ -58,6 +63,7 @@ import 'providers/deepseek/deepseek_factory_test.dart'
 
 // Existing tests
 import 'providers/openai/openai_advanced_test.dart' as openai_advanced_tests;
+import 'providers/openai/builtin_tools_test.dart' as openai_builtin_tools_tests;
 
 // OpenAI Responses API tests
 import 'providers/openai/responses_test.dart' as openai_responses_tests;
@@ -77,6 +83,10 @@ void main() {
       config_tests.main();
       error_tests.main();
       registry_tests.main();
+      tool_validator_tests.main();
+      tool_execution_tests.main();
+      tool_parameter_validation_tests.main();
+      tool_streaming_tests.main();
     });
 
     group('Model Tests', () {
@@ -112,6 +122,7 @@ void main() {
     group('Provider Tests', () {
       factory_tests.main();
       openai_advanced_tests.main();
+      openai_builtin_tools_tests.main();
 
       // OpenAI Responses API tests
       openai_responses_tests.main();
