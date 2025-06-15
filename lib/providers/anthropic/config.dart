@@ -196,6 +196,36 @@ class AnthropicConfig {
         model.contains('claude-sonnet-4');
   }
 
+  /// Check if this model supports prompt caching
+  ///
+  /// **Reference:** https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching
+  ///
+  /// Prompt caching is supported on:
+  /// - Claude Opus 4
+  /// - Claude Sonnet 4
+  /// - Claude Sonnet 3.7
+  /// - Claude Sonnet 3.5
+  /// - Claude Haiku 3.5
+  /// - Claude Haiku 3
+  /// - Claude Opus 3
+  bool get supportsPromptCaching {
+    return model == 'claude-opus-4-20250514' ||
+        model == 'claude-sonnet-4-20250514' ||
+        model == 'claude-3-7-sonnet-20250219' ||
+        model == 'claude-3-5-sonnet-20241022' ||
+        model == 'claude-3-5-sonnet-20240620' ||
+        model == 'claude-3-5-haiku-20241022' ||
+        model == 'claude-3-haiku-20240307' ||
+        model == 'claude-3-opus-20240229' ||
+        model.contains('claude-opus-4') ||
+        model.contains('claude-sonnet-4') ||
+        model.contains('claude-3-7-sonnet') ||
+        model.contains('claude-3-5-sonnet') ||
+        model.contains('claude-3-5-haiku') ||
+        model.contains('claude-3-haiku') ||
+        model.contains('claude-3-opus');
+  }
+
   /// Get the maximum thinking budget tokens for this model
   int get maxThinkingBudgetTokens {
     // Based on official documentation, thinking budget can be quite large

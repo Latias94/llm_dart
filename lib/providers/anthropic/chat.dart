@@ -134,6 +134,15 @@ class AnthropicChat implements ChatCapability {
       }
     }
 
+    // Check if prompt caching is enabled and add cache control to last message content
+    final promptCacheEnabled =
+        config.getExtension<bool>('promptCache') ?? false;
+    if (promptCacheEnabled &&
+        config.supportsPromptCaching &&
+        anthropicMessages.isNotEmpty) {
+      _addCacheControlToLastMessage(anthropicMessages);
+    }
+
     final body = <String, dynamic>{
       'model': config.model,
       'messages': anthropicMessages,
@@ -147,13 +156,53 @@ class AnthropicChat implements ChatCapability {
     allSystemPrompts.addAll(systemMessages);
 
     if (allSystemPrompts.isNotEmpty) {
-      body['system'] = allSystemPrompts.join('\n\n');
+      // Check if prompt caching is enabled and supported
+      final promptCacheEnabled =
+          config.getExtension<bool>('promptCache') ?? false;
+
+      // Use array format for system
+      final systemBlocks = <Map<String, dynamic>>[];
+
+      // Add each system prompt
+      for (final systemPrompt in allSystemPrompts) {
+        final block = <String, dynamic>{
+          'type': 'text',
+          'text': systemPrompt,
+        };
+
+        // Add cache control if enabled and supported
+        if (promptCacheEnabled && config.supportsPromptCaching) {
+          block['cache_control'] = {'type': 'ephemeral'};
+        }
+
+        systemBlocks.add(block);
+      }
+
+      body['system'] = systemBlocks;
     }
 
     // Add tools if provided
     final effectiveTools = tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
-      body['tools'] = effectiveTools.map((t) => _convertTool(t)).toList();
+      // Check if prompt caching is enabled and supported
+      final promptCacheEnabled =
+          config.getExtension<bool>('promptCache') ?? false;
+
+      if (promptCacheEnabled && config.supportsPromptCaching) {
+        // Convert tools and add cache control to the last one
+        final convertedTools =
+            effectiveTools.map((t) => _convertTool(t)).toList();
+
+        // Add cache control to the last tool
+        if (convertedTools.isNotEmpty) {
+          convertedTools.last['cache_control'] = {'type': 'ephemeral'};
+        }
+
+        body['tools'] = convertedTools;
+      } else {
+        // Convert tools without cache control
+        body['tools'] = effectiveTools.map((t) => _convertTool(t)).toList();
+      }
     }
 
     // Add thinking configuration if enabled
@@ -421,6 +470,15 @@ class AnthropicChat implements ChatCapability {
     // Ensure messages alternate between user and assistant (Anthropic requirement)
     _validateMessageSequence(anthropicMessages);
 
+    // Check if prompt caching is enabled and add cache control to last message content
+    final promptCacheEnabled =
+        config.getExtension<bool>('promptCache') ?? false;
+    if (promptCacheEnabled &&
+        config.supportsPromptCaching &&
+        anthropicMessages.isNotEmpty) {
+      _addCacheControlToLastMessage(anthropicMessages);
+    }
+
     final body = <String, dynamic>{
       'model': config.model,
       'messages': anthropicMessages,
@@ -436,7 +494,29 @@ class AnthropicChat implements ChatCapability {
     allSystemPrompts.addAll(systemMessages);
 
     if (allSystemPrompts.isNotEmpty) {
-      body['system'] = allSystemPrompts.join('\n\n');
+      // Check if prompt caching is enabled and supported
+      final promptCacheEnabled =
+          config.getExtension<bool>('promptCache') ?? false;
+
+      // Use array format for system
+      final systemBlocks = <Map<String, dynamic>>[];
+
+      // Add each system prompt
+      for (final systemPrompt in allSystemPrompts) {
+        final block = <String, dynamic>{
+          'type': 'text',
+          'text': systemPrompt,
+        };
+
+        // Add cache control if enabled and supported
+        if (promptCacheEnabled && config.supportsPromptCaching) {
+          block['cache_control'] = {'type': 'ephemeral'};
+        }
+
+        systemBlocks.add(block);
+      }
+
+      body['system'] = systemBlocks;
     }
 
     // Add optional parameters with validation
@@ -471,7 +551,25 @@ class AnthropicChat implements ChatCapability {
             .warning('Model ${config.model} may not support tool calling');
       }
 
-      body['tools'] = effectiveTools.map((t) => _convertTool(t)).toList();
+      // Check if prompt caching is enabled and supported
+      final promptCacheEnabled =
+          config.getExtension<bool>('promptCache') ?? false;
+
+      if (promptCacheEnabled && config.supportsPromptCaching) {
+        // Convert tools and add cache control to the last one
+        final convertedTools =
+            effectiveTools.map((t) => _convertTool(t)).toList();
+
+        // Add cache control to the last tool
+        if (convertedTools.isNotEmpty) {
+          convertedTools.last['cache_control'] = {'type': 'ephemeral'};
+        }
+
+        body['tools'] = convertedTools;
+      } else {
+        // Convert tools without cache control
+        body['tools'] = effectiveTools.map((t) => _convertTool(t)).toList();
+      }
 
       // Add tool_choice if specified
       final effectiveToolChoice = config.toolChoice;
@@ -583,6 +681,20 @@ class AnthropicChat implements ChatCapability {
       if (content is String && content.trim().isEmpty) {
         throw const InvalidRequestError('Message content cannot be empty');
       }
+    }
+  }
+
+  /// Add cache control to the last content block of the last message
+  void _addCacheControlToLastMessage(List<Map<String, dynamic>> messages) {
+    if (messages.isEmpty) return;
+
+    final lastMessage = messages.last;
+    final content = lastMessage['content'];
+
+    if (content is List<dynamic> && content.isNotEmpty) {
+      // Add cache control to the last content block
+      final lastContentBlock = content.last as Map<String, dynamic>;
+      lastContentBlock['cache_control'] = {'type': 'ephemeral'};
     }
   }
 
@@ -938,6 +1050,30 @@ class AnthropicChatResponse implements ChatResponse {
       // Thinking content is handled separately through content blocks
       reasoningTokens: null,
     );
+  }
+
+  /// Get cache usage information from the response
+  ///
+  /// Returns a map with cache-related token counts if prompt caching was used:
+  /// - `cache_creation_input_tokens`: Tokens written to cache when creating a new entry
+  /// - `cache_read_input_tokens`: Tokens retrieved from cache for this request
+  Map<String, int>? get cacheUsage {
+    final usageData = _rawResponse['usage'] as Map<String, dynamic>?;
+    if (usageData == null) return null;
+
+    final cacheCreationTokens =
+        usageData['cache_creation_input_tokens'] as int?;
+    final cacheReadTokens = usageData['cache_read_input_tokens'] as int?;
+
+    if (cacheCreationTokens == null && cacheReadTokens == null) {
+      return null;
+    }
+
+    return {
+      if (cacheCreationTokens != null)
+        'cache_creation_input_tokens': cacheCreationTokens,
+      if (cacheReadTokens != null) 'cache_read_input_tokens': cacheReadTokens,
+    };
   }
 
   @override
