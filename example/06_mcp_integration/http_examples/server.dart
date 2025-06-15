@@ -32,8 +32,7 @@ void main() async {
   print('🌐 HTTP MCP Server listening on port 3000');
   print('🔗 Connect to: http://localhost:3000/mcp');
   print('💡 Test with: dart run http_examples/client.dart');
-  print(
-      '🤖 Or integrate with LLM: dart run http_examples/llm_client.dart');
+  print('🤖 Or integrate with LLM: dart run http_examples/llm_client.dart');
   print('⏹️  Press Ctrl+C to stop\n');
 
   // Handle HTTP requests
