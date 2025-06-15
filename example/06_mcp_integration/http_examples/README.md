@@ -7,6 +7,7 @@ This directory contains **real** MCP integration examples using HTTP transport w
 - **`server.dart`** - **Real** MCP server using `StreamableHTTPServerTransport`
 - **`client.dart`** - **Real** MCP client using `StreamableHttpClientTransport` for direct tool testing
 - **`llm_client.dart`** - **Real** LLM integration showing how AI agents can use MCP tools via HTTP
+- **`simple_stream_client.dart`** - **Simple** streaming example focusing on basic streaming + tools
 
 ## What is HTTP Transport?
 
@@ -17,17 +18,6 @@ HTTP transport uses standard HTTP requests and Server-Sent Events (SSE) for comm
 
 ## Key Features - Real MCP Implementation
 
-### Real vs Simulated Implementation
-
-| Aspect | Previous (Simulated) | Current (Real) |
-|--------|---------------------|----------------|
-| MCP Protocol | ❌ Mock responses | ✅ Real `mcp_dart` implementation |
-| Transport | ❌ Fake HTTP calls | ✅ `StreamableHTTPServerTransport` |
-| Client | ❌ Simulated connection | ✅ `StreamableHttpClientTransport` |
-| Tool Execution | ❌ Hardcoded results | ✅ Real MCP tool calls |
-| Session Management | ❌ Demo session IDs | ✅ Real session management |
-| Streaming | ❌ Fake SSE messages | ✅ Real SSE notifications |
-
 ### Core Capabilities
 
 1. **Real MCP Protocol** - Uses actual `mcp_dart` library implementation
@@ -36,6 +26,7 @@ HTTP transport uses standard HTTP requests and Server-Sent Events (SSE) for comm
 4. **Streaming Notifications** - Real-time push notifications via SSE
 5. **RESTful API** - Standard HTTP endpoint design
 6. **Concurrent Support** - Handle multiple clients simultaneously
+7. **Streaming Integration** - Real-time LLM responses with tool execution
 
 ## Quick Start
 
@@ -65,6 +56,15 @@ export OPENAI_API_KEY="your-key-here"
 
 # Run the LLM integration example
 dart run example/06_mcp_integration/http_examples/llm_client.dart
+```
+
+### 4. Test Streaming LLM Integration
+
+```bash
+# Set your API key first
+export OPENAI_API_KEY="your-key-here"
+
+dart run example/06_mcp_integration/http_examples/simple_stream_client.dart
 ```
 
 ## Available Tools
@@ -130,6 +130,8 @@ HTTP transport is ideal for:
 - **Cloud deployment** - Scalable server infrastructure
 - **Real-time applications** - SSE streaming notifications
 - **Multi-client scenarios** - Concurrent user support
+- **Streaming AI chat** - Real-time LLM responses with tool execution
+- **Interactive AI assistants** - Progressive tool chain execution
 
 ## Troubleshooting
 
