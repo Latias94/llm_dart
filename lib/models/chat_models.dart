@@ -325,12 +325,28 @@ class ChatMessage {
   /// Optional name for the participant (useful for system messages)
   final String? name;
 
+  /// Provider-specific extensions
+  final Map<String, dynamic> extensions;
+
   const ChatMessage({
     required this.role,
     required this.messageType,
     required this.content,
     this.name,
+    this.extensions = const {},
   });
+
+  // Extension helpers
+  T? getExtension<T>(String key) => extensions[key] as T?;
+  bool hasExtension(String key) => extensions.containsKey(key);
+
+  ChatMessage withExtension(String key, dynamic value) => ChatMessage(
+        role: role,
+        messageType: messageType,
+        content: content,
+        name: name,
+        extensions: {...extensions, key: value},
+      );
 
   /// Create a user message
   factory ChatMessage.user(String content) => ChatMessage(
@@ -430,6 +446,93 @@ class ChatMessage {
         messageType: ToolResultMessage(results),
         content: content,
       );
+}
+
+/// Simple interface for provider-specific blocks
+abstract class ContentBlock {
+  String get displayText;
+  String get providerId;
+  Map<String, dynamic> toJson();
+}
+
+/// Universal text block that works with all providers
+class UniversalTextBlock implements ContentBlock {
+  final String text;
+
+  UniversalTextBlock(this.text);
+
+  @override
+  String get displayText => text;
+
+  @override
+  String get providerId => 'universal';
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'text',
+        'text': text,
+      };
+}
+
+/// Message builder for creating messages with provider-specific extensions
+class MessageBuilder {
+  final ChatRole _role;
+  final List<ContentBlock> _blocks = [];
+  String? _name;
+
+  MessageBuilder._(this._role);
+
+  // Factory methods
+  static MessageBuilder system() => MessageBuilder._(ChatRole.system);
+  static MessageBuilder user() => MessageBuilder._(ChatRole.user);
+  static MessageBuilder assistant() => MessageBuilder._(ChatRole.assistant);
+
+  // Universal methods
+  MessageBuilder text(String text) {
+    _blocks.add(UniversalTextBlock(text));
+    return this;
+  }
+
+  MessageBuilder name(String name) {
+    _name = name;
+    return this;
+  }
+
+  // Method for providers to add blocks
+  void addBlock(ContentBlock block) {
+    _blocks.add(block);
+  }
+
+  // Build ChatMessage with extensions
+  ChatMessage build() {
+    // Create universal text content
+    final content = _blocks.map((block) => block.displayText).join('\n');
+
+    // Group blocks by provider
+    final extensions = <String, dynamic>{};
+
+    final providerGroups = <String, List<ContentBlock>>{};
+    for (final block in _blocks) {
+      if (block.providerId == 'universal') continue;
+
+      providerGroups.putIfAbsent(block.providerId, () => []).add(block);
+    }
+
+    // Create extensions for each provider
+    for (final entry in providerGroups.entries) {
+      extensions[entry.key] = {
+        'contentBlocks': entry.value.map((block) => block.toJson()).toList(),
+      };
+    }
+
+    return ChatMessage(
+      role: _role,
+      messageType: const TextMessage(),
+      content: content,
+      name: _name,
+      extensions: extensions,
+    );
+  }
 }
 
 /// Reasoning effort levels for models that support reasoning

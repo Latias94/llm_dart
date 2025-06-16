@@ -3,6 +3,122 @@ import '../../models/chat_models.dart';
 import 'client.dart';
 import 'config.dart';
 
+/// Anthropic cache control
+class AnthropicCacheControl {
+  final String type;
+  final String? ttl;
+
+  const AnthropicCacheControl.ephemeral({this.ttl}) : type = 'ephemeral';
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{'type': type};
+    if (ttl != null) {
+      json['ttl'] = ttl;
+    }
+    return json;
+  }
+}
+
+/// Cache TTL options for Anthropic
+enum AnthropicCacheTtl {
+  fiveMinutes(300),
+  oneHour(3600);
+
+  const AnthropicCacheTtl(this.seconds);
+  final int seconds;
+}
+
+/// Anthropic-specific text block with caching support
+class AnthropicTextBlock implements ContentBlock {
+  final String text;
+  final AnthropicCacheControl? cacheControl;
+
+  AnthropicTextBlock(this.text, {this.cacheControl});
+
+  @override
+  String get displayText => text;
+
+  @override
+  String get providerId => 'anthropic';
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'text',
+        'text': text,
+        if (cacheControl != null) 'cache_control': cacheControl!.toJson(),
+      };
+}
+
+/// Anthropic message builder for provider-specific features
+class AnthropicMessageBuilder {
+  final MessageBuilder _builder;
+
+  const AnthropicMessageBuilder._(this._builder);
+
+  /// Cached text with TTL
+  AnthropicMessageBuilder cachedText(String text, {AnthropicCacheTtl? ttl}) {
+    String? ttlString;
+    if (ttl != null) {
+      switch (ttl) {
+        case AnthropicCacheTtl.fiveMinutes:
+          ttlString = '5m';
+          break;
+        case AnthropicCacheTtl.oneHour:
+          ttlString = '1h';
+          break;
+      }
+    }
+
+    final cacheControl = AnthropicCacheControl.ephemeral(
+      ttl: ttlString,
+    );
+
+    _builder.addBlock(AnthropicTextBlock(text, cacheControl: cacheControl));
+    return this;
+  }
+
+  /// Direct content block
+  AnthropicMessageBuilder contentBlock(Map<String, dynamic> blockData) {
+    final type = blockData['type'] as String;
+
+    switch (type) {
+      case 'text':
+        final text = blockData['text'] as String;
+        final cacheData = blockData['cache_control'] as Map<String, dynamic>?;
+
+        if (cacheData != null && cacheData['type'] == 'ephemeral') {
+          return cachedText(text);
+        } else {
+          _builder.text(text);
+          return this;
+        }
+
+      default:
+        _builder.text(blockData['text']?.toString() ?? '');
+        return this;
+    }
+  }
+
+  /// Multiple content blocks
+  AnthropicMessageBuilder contentBlocks(List<Map<String, dynamic>> blocks) {
+    for (final block in blocks) {
+      contentBlock(block);
+    }
+    return this;
+  }
+}
+
+/// Extension to add Anthropic-specific functionality to MessageBuilder
+extension AnthropicMessageBuilderExtension on MessageBuilder {
+  /// Configure Anthropic-specific features
+  MessageBuilder anthropicConfig(
+      void Function(AnthropicMessageBuilder) configure) {
+    final anthropicBuilder = AnthropicMessageBuilder._(this);
+    configure(anthropicBuilder);
+    return this;
+  }
+}
+
 /// Anthropic Models capability implementation
 ///
 /// This module handles model listing functionality for Anthropic providers.

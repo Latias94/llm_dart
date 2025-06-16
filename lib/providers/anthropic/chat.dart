@@ -401,12 +401,32 @@ class AnthropicChat implements ChatCapability {
     bool stream,
   ) {
     final anthropicMessages = <Map<String, dynamic>>[];
+    final systemContentBlocks = <Map<String, dynamic>>[];
     final systemMessages = <String>[];
 
     // Extract system messages and convert other messages to Anthropic format
     for (final message in messages) {
       if (message.role == ChatRole.system) {
-        systemMessages.add(message.content);
+        // Check if system message has cached content
+        final anthropicData =
+            message.getExtension<Map<String, dynamic>>('anthropic');
+        if (anthropicData != null) {
+          final contentBlocks =
+              anthropicData['contentBlocks'] as List<dynamic>?;
+          if (contentBlocks != null) {
+            // Add cached content blocks to system
+            for (final block in contentBlocks) {
+              if (block is Map<String, dynamic>) {
+                systemContentBlocks.add(block);
+              }
+            }
+          }
+        }
+
+        // Also add the regular content if it's not empty
+        if (message.content.isNotEmpty) {
+          systemMessages.add(message.content);
+        }
       } else {
         anthropicMessages.add(_convertMessage(message));
       }
@@ -428,15 +448,31 @@ class AnthropicChat implements ChatCapability {
       'stream': stream,
     };
 
-    // Add system prompt - combine config system prompt with message system prompts
-    final allSystemPrompts = <String>[];
-    if (config.systemPrompt != null && config.systemPrompt!.isNotEmpty) {
-      allSystemPrompts.add(config.systemPrompt!);
-    }
-    allSystemPrompts.addAll(systemMessages);
+    // Add system prompt - handle both content blocks and plain text
+    final allSystemContent = <Map<String, dynamic>>[];
 
-    if (allSystemPrompts.isNotEmpty) {
-      body['system'] = allSystemPrompts.join('\n\n');
+    // Add config system prompt as a text block if present
+    if (config.systemPrompt != null && config.systemPrompt!.isNotEmpty) {
+      allSystemContent.add({
+        'type': 'text',
+        'text': config.systemPrompt!,
+      });
+    }
+
+    // Add cached content blocks from MessageBuilder
+    allSystemContent.addAll(systemContentBlocks);
+
+    // Add regular system messages as text blocks
+    for (final systemMessage in systemMessages) {
+      allSystemContent.add({
+        'type': 'text',
+        'text': systemMessage,
+      });
+    }
+
+    if (allSystemContent.isNotEmpty) {
+      // Use content blocks format for system prompt to support caching
+      body['system'] = allSystemContent;
     }
 
     // Add optional parameters with validation
@@ -591,123 +627,140 @@ class AnthropicChat implements ChatCapability {
   Map<String, dynamic> _convertMessage(ChatMessage message) {
     final content = <Map<String, dynamic>>[];
 
-    switch (message.messageType) {
-      case TextMessage():
-        content.add({'type': 'text', 'text': message.content});
-        break;
-      case ImageMessage(mime: final mime, data: final data):
-        // Validate image format for Anthropic
-        final supportedFormats = [
-          'image/jpeg',
-          'image/png',
-          'image/gif',
-          'image/webp'
-        ];
-        if (!supportedFormats.contains(mime.mimeType)) {
-          content.add({
-            'type': 'text',
-            'text':
-                '[Unsupported image format: ${mime.mimeType}. Supported formats: ${supportedFormats.join(', ')}]',
-          });
-        } else {
-          content.add({
-            'type': 'image',
-            'source': {
-              'type': 'base64',
-              'media_type': mime.mimeType,
-              'data': base64Encode(data),
-            },
-          });
+    // Check for Anthropic-specific extensions first
+    final anthropicData =
+        message.getExtension<Map<String, dynamic>>('anthropic');
+
+    if (anthropicData != null) {
+      // Use rich content blocks from extensions
+      final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+      if (contentBlocks != null) {
+        for (final block in contentBlocks) {
+          if (block is Map<String, dynamic>) {
+            content.add(block);
+          }
         }
-        break;
-      case FileMessage(mime: final mime, data: final data):
-        // Handle different file types
-        if (mime.mimeType == 'application/pdf') {
-          // Anthropic supports PDF documents as a special content type
-          if (!config.supportsPDF) {
+      }
+    } else {
+      // Fallback to standard message type handling
+      switch (message.messageType) {
+        case TextMessage():
+          content.add({'type': 'text', 'text': message.content});
+          break;
+        case ImageMessage(mime: final mime, data: final data):
+          // Validate image format for Anthropic
+          final supportedFormats = [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp'
+          ];
+          if (!supportedFormats.contains(mime.mimeType)) {
             content.add({
               'type': 'text',
               'text':
-                  '[PDF documents are not supported by model ${config.model}]',
+                  '[Unsupported image format: ${mime.mimeType}. Supported formats: ${supportedFormats.join(', ')}]',
             });
           } else {
             content.add({
-              'type': 'document',
+              'type': 'image',
               'source': {
                 'type': 'base64',
-                'media_type': 'application/pdf',
+                'media_type': mime.mimeType,
                 'data': base64Encode(data),
               },
             });
           }
-        } else {
-          // Other file types are not supported by Anthropic
-          content.add({
-            'type': 'text',
-            'text':
-                '[File type ${mime.description} (${mime.mimeType}) is not supported by Anthropic. Only PDF documents are supported.]',
-          });
-        }
-        break;
-      case ImageUrlMessage(url: final url):
-        // Note: Anthropic doesn't support image URLs directly like OpenAI
-        content.add({
-          'type': 'text',
-          'text':
-              '[Image URL not supported by Anthropic. Please upload the image directly: $url]',
-        });
-        break;
-      case ToolUseMessage(toolCalls: final toolCalls):
-        for (final toolCall in toolCalls) {
-          try {
-            final input = jsonDecode(toolCall.function.arguments);
-            content.add({
-              'type': 'tool_use',
-              'id': toolCall.id,
-              'name': toolCall.function.name,
-              'input': input,
-            });
-          } catch (e) {
-            client.logger.warning(
-                'Failed to parse tool call arguments: ${toolCall.function.arguments}, error: $e');
+          break;
+        case FileMessage(mime: final mime, data: final data):
+          // Handle different file types
+          if (mime.mimeType == 'application/pdf') {
+            // Anthropic supports PDF documents as a special content type
+            if (!config.supportsPDF) {
+              content.add({
+                'type': 'text',
+                'text':
+                    '[PDF documents are not supported by model ${config.model}]',
+              });
+            } else {
+              content.add({
+                'type': 'document',
+                'source': {
+                  'type': 'base64',
+                  'media_type': 'application/pdf',
+                  'data': base64Encode(data),
+                },
+              });
+            }
+          } else {
+            // Other file types are not supported by Anthropic
             content.add({
               'type': 'text',
               'text':
-                  '[Error: Invalid tool call arguments for ${toolCall.function.name}]',
+                  '[File type ${mime.description} (${mime.mimeType}) is not supported by Anthropic. Only PDF documents are supported.]',
             });
           }
-        }
-        break;
-      case ToolResultMessage(results: final results):
-        for (final result in results) {
-          // Parse the result content to determine if it's an error
-          bool isError = false;
-          String resultContent = result.function.arguments;
-
-          // Try to parse as JSON to check for error indicators
-          try {
-            final parsed = jsonDecode(resultContent);
-            if (parsed is Map<String, dynamic>) {
-              isError = parsed['error'] != null ||
-                  parsed['is_error'] == true ||
-                  parsed['success'] == false;
-            }
-          } catch (e) {
-            // If not valid JSON, check for common error patterns
-            final lowerContent = resultContent.toLowerCase();
-            isError = lowerContent.contains('error') ||
-                lowerContent.contains('failed') ||
-                lowerContent.contains('exception');
-          }
-
+          break;
+        case ImageUrlMessage(url: final url):
+          // Note: Anthropic doesn't support image URLs directly like OpenAI
           content.add({
-            'type': 'tool_result',
-            'tool_use_id': result.id,
-            'content': resultContent,
-            'is_error': isError,
+            'type': 'text',
+            'text':
+                '[Image URL not supported by Anthropic. Please upload the image directly: $url]',
           });
-        }
-        break;
+          break;
+        case ToolUseMessage(toolCalls: final toolCalls):
+          for (final toolCall in toolCalls) {
+            try {
+              final input = jsonDecode(toolCall.function.arguments);
+              content.add({
+                'type': 'tool_use',
+                'id': toolCall.id,
+                'name': toolCall.function.name,
+                'input': input,
+              });
+            } catch (e) {
+              client.logger.warning(
+                  'Failed to parse tool call arguments: ${toolCall.function.arguments}, error: $e');
+              content.add({
+                'type': 'text',
+                'text':
+                    '[Error: Invalid tool call arguments for ${toolCall.function.name}]',
+              });
+            }
+          }
+          break;
+        case ToolResultMessage(results: final results):
+          for (final result in results) {
+            // Parse the result content to determine if it's an error
+            bool isError = false;
+            String resultContent = result.function.arguments;
+
+            // Try to parse as JSON to check for error indicators
+            try {
+              final parsed = jsonDecode(resultContent);
+              if (parsed is Map<String, dynamic>) {
+                isError = parsed['error'] != null ||
+                    parsed['is_error'] == true ||
+                    parsed['success'] == false;
+              }
+            } catch (e) {
+              // If not valid JSON, check for common error patterns
+              final lowerContent = resultContent.toLowerCase();
+              isError = lowerContent.contains('error') ||
+                  lowerContent.contains('failed') ||
+                  lowerContent.contains('exception');
+            }
+
+            content.add({
+              'type': 'tool_result',
+              'tool_use_id': result.id,
+              'content': resultContent,
+              'is_error': isError,
+            });
+          }
+          break;
+      }
     }
 
     return {'role': message.role.name, 'content': content};
