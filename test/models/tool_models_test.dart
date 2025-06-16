@@ -281,6 +281,109 @@ void main() {
         expect(json['type'], equals('function'));
         expect(json['function'], isA<Map>());
       });
+
+      test('should deserialize from JSON correctly', () {
+        final json = {
+          'id': 'call_456',
+          'type': 'function',
+          'function': {
+            'name': 'calculate',
+            'arguments': '{"expression": "2+2"}',
+          },
+        };
+
+        final toolCall = ToolCall.fromJson(json);
+        expect(toolCall.id, equals('call_456'));
+        expect(toolCall.callType, equals('function'));
+        expect(toolCall.function.name, equals('calculate'));
+        expect(toolCall.function.arguments, equals('{"expression": "2+2"}'));
+      });
+
+      test('should handle toString correctly', () {
+        final toolCall = ToolCall(
+          id: 'call_789',
+          callType: 'function',
+          function: FunctionCall(
+            name: 'test_func',
+            arguments: '{"param": "value"}',
+          ),
+        );
+
+        final stringRepresentation = toolCall.toString();
+        expect(stringRepresentation, contains('call_789'));
+        expect(stringRepresentation, contains('test_func'));
+      });
+    });
+
+    group('ToolResult', () {
+      test('should create successful result', () {
+        final result = ToolResult.success(
+          toolCallId: 'call_123',
+          content: 'Operation completed successfully',
+          metadata: {'duration': 150},
+        );
+
+        expect(result.toolCallId, equals('call_123'));
+        expect(result.content, equals('Operation completed successfully'));
+        expect(result.isError, isFalse);
+        expect(result.metadata?['duration'], equals(150));
+      });
+
+      test('should create error result', () {
+        final result = ToolResult.error(
+          toolCallId: 'call_456',
+          errorMessage: 'Tool execution failed',
+          metadata: {'error_code': 500},
+        );
+
+        expect(result.toolCallId, equals('call_456'));
+        expect(result.content, equals('Tool execution failed'));
+        expect(result.isError, isTrue);
+        expect(result.metadata?['error_code'], equals(500));
+      });
+
+      test('should serialize to JSON correctly', () {
+        final result = ToolResult(
+          toolCallId: 'call_789',
+          content: 'Test result',
+          isError: false,
+          metadata: {'key': 'value'},
+        );
+
+        final json = result.toJson();
+        expect(json['tool_call_id'], equals('call_789'));
+        expect(json['content'], equals('Test result'));
+        expect(json['is_error'], isFalse);
+        expect(json['metadata']['key'], equals('value'));
+      });
+
+      test('should deserialize from JSON correctly', () {
+        final json = {
+          'tool_call_id': 'call_999',
+          'content': 'Deserialized result',
+          'is_error': true,
+          'metadata': {'source': 'test'},
+        };
+
+        final result = ToolResult.fromJson(json);
+        expect(result.toolCallId, equals('call_999'));
+        expect(result.content, equals('Deserialized result'));
+        expect(result.isError, isTrue);
+        expect(result.metadata?['source'], equals('test'));
+      });
+
+      test('should handle missing optional fields in JSON', () {
+        final json = {
+          'tool_call_id': 'call_minimal',
+          'content': 'Minimal result',
+        };
+
+        final result = ToolResult.fromJson(json);
+        expect(result.toolCallId, equals('call_minimal'));
+        expect(result.content, equals('Minimal result'));
+        expect(result.isError, isFalse); // Default value
+        expect(result.metadata, isNull);
+      });
     });
   });
 }

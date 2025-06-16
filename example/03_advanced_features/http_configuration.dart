@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:logging/logging.dart';
 
 /// HTTP Configuration Example
 ///
@@ -10,64 +11,38 @@ import 'package:llm_dart/llm_dart.dart';
 /// available on IO platforms (Desktop/Mobile/Server). On Web platforms, these
 /// features are managed by the browser.
 ///
-/// Before running, set API keys for the providers you want to test:
+/// Before running, set your OpenAI API key:
 /// export OPENAI_API_KEY="your-openai-key"
-/// export ANTHROPIC_API_KEY="your-anthropic-key"
-/// export GROQ_API_KEY="your-groq-key"
-/// export DEEPSEEK_API_KEY="your-deepseek-key"
-/// export XAI_API_KEY="your-xai-key"
 Future<void> main() async {
+  // Configure logging to see HTTP request/response logs
+  Logger.root.level = Level.ALL;
+  Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.message}');
+  });
+
   print('🌐 HTTP Configuration Demo\n');
 
-  // Get API keys from environment
-  final apiKeys = {
-    'openai': Platform.environment['OPENAI_API_KEY'],
-    'anthropic': Platform.environment['ANTHROPIC_API_KEY'],
-    'groq': Platform.environment['GROQ_API_KEY'],
-    'deepseek': Platform.environment['DEEPSEEK_API_KEY'],
-    'xai': Platform.environment['XAI_API_KEY'],
-  };
+  // Get OpenAI API key from environment
+  final openaiApiKey = Platform.environment['OPENAI_API_KEY'];
 
-  // Check if we have at least one API key
-  final availableKeys = apiKeys.entries.where((e) => e.value != null).toList();
-  if (availableKeys.isEmpty) {
-    print('❌ Please set at least one API key:');
-    print('   OPENAI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY,');
-    print('   DEEPSEEK_API_KEY, or XAI_API_KEY');
+  if (openaiApiKey == null) {
+    print('❌ Please set your OpenAI API key:');
+    print('   export OPENAI_API_KEY="your-openai-key"');
     return;
   }
 
-  print('📋 Available providers:');
-  for (final entry in availableKeys) {
-    print('   ✅ ${entry.key.toUpperCase()}');
-  }
+  print('📋 Using OpenAI provider for all demonstrations\n');
 
-  print('');
+  // Run all demonstrations with OpenAI
+  await demonstrateBasicHttpConfig(openaiApiKey);
+  await demonstrateProxyConfiguration(openaiApiKey);
+  await demonstrateSSLConfiguration(openaiApiKey);
+  await demonstrateCustomHeaders(openaiApiKey);
+  await demonstrateTimeoutConfiguration(openaiApiKey);
+  await demonstrateLoggingConfiguration(openaiApiKey);
+  await demonstrateComprehensiveConfig(openaiApiKey);
 
-  // Run demonstrations with available keys
-  if (apiKeys['openai'] != null) {
-    await demonstrateBasicHttpConfig(apiKeys['openai']!);
-    await demonstrateProxyConfiguration(apiKeys['openai']!);
-    await demonstrateSSLConfiguration(apiKeys['openai']!);
-  }
-
-  if (apiKeys['anthropic'] != null) {
-    await demonstrateCustomHeaders(apiKeys['anthropic']!);
-  }
-
-  if (apiKeys['groq'] != null) {
-    await demonstrateTimeoutConfiguration(apiKeys['groq']!);
-  }
-
-  if (apiKeys['deepseek'] != null) {
-    await demonstrateLoggingConfiguration(apiKeys['deepseek']!);
-  }
-
-  if (apiKeys['xai'] != null) {
-    await demonstrateComprehensiveConfig(apiKeys['xai']!);
-  }
-
-  await demonstrateConfigValidation();
+  // await demonstrateConfigValidation();
 
   print('✅ HTTP configuration demonstration completed!');
 }
@@ -121,14 +96,14 @@ Future<void> demonstrateProxyConfiguration(String apiKey) async {
 }
 
 /// Demonstrate custom headers configuration
-Future<void> demonstrateCustomHeaders(String anthropicApiKey) async {
-  print('📋 Custom Headers Configuration (Anthropic):\n');
+Future<void> demonstrateCustomHeaders(String openaiApiKey) async {
+  print('📋 Custom Headers Configuration (OpenAI):\n');
 
   try {
     final provider = await ai()
-        .anthropic()
-        .apiKey(anthropicApiKey)
-        .model('claude-sonnet-4-20250514')
+        .openai()
+        .apiKey(openaiApiKey)
+        .model('gpt-4o-mini')
         .http((http) => http.headers({
               'X-Request-ID': 'demo-request-123',
               'X-Client-Version': '1.0.0',
@@ -148,16 +123,17 @@ Future<void> demonstrateCustomHeaders(String anthropicApiKey) async {
 }
 
 /// Demonstrate SSL configuration
-Future<void> demonstrateSSLConfiguration(String apiKey) async {
+Future<void> demonstrateSSLConfiguration(String openaiApiKey) async {
   print('🔒 SSL Configuration:\n');
   print('   ℹ️  Note: SSL configuration is only supported on IO platforms');
   print('   📝 On Web platforms, SSL/TLS is managed by the browser\n');
 
   try {
-    // Example for local development with self-signed certificates
+    // Example with SSL verification bypass (for development only)
     await ai()
-        .ollama()
-        .baseUrl('https://localhost:11434/')
+        .openai()
+        .apiKey(openaiApiKey)
+        .model('gpt-4o-mini')
         .http((http) =>
             http.bypassSSLVerification(true)) // ⚠️ Only for development!
         .build();
@@ -165,14 +141,15 @@ Future<void> demonstrateSSLConfiguration(String apiKey) async {
     print('   ⚠️  SSL verification bypass enabled (development only)');
     print('   📝 Note: This should only be used for local development\n');
   } catch (e) {
-    print('   ⚠️  SSL configuration example: $e\n');
+    print('   ⚠️  SSL verification bypass example: $e\n');
   }
 
   try {
     // Example with custom SSL certificate
     await ai()
         .openai()
-        .apiKey(apiKey)
+        .apiKey(openaiApiKey)
+        .model('gpt-4o-mini')
         .http((http) => http.sslCertificate('/path/to/custom/certificate.pem'))
         .build();
 
@@ -184,16 +161,16 @@ Future<void> demonstrateSSLConfiguration(String apiKey) async {
 }
 
 /// Demonstrate timeout configuration with priority hierarchy
-Future<void> demonstrateTimeoutConfiguration(String groqApiKey) async {
-  print('⏱️  Timeout Configuration (Groq - Priority Hierarchy):\n');
+Future<void> demonstrateTimeoutConfiguration(String openaiApiKey) async {
+  print('⏱️  Timeout Configuration (OpenAI - Priority Hierarchy):\n');
 
   try {
     // Example 1: Global timeout only
     print('   📝 Example 1: Global timeout only');
     final provider1 = await ai()
-        .groq()
-        .apiKey(groqApiKey)
-        .model('llama-3.1-8b-instant')
+        .openai()
+        .apiKey(openaiApiKey)
+        .model('gpt-4o-mini')
         .timeout(Duration(minutes: 1)) // Global timeout for all operations
         .build();
 
@@ -206,9 +183,9 @@ Future<void> demonstrateTimeoutConfiguration(String groqApiKey) async {
     // Example 2: Mixed configuration (global + HTTP overrides)
     print('   📝 Example 2: Mixed configuration (global + HTTP overrides)');
     final provider2 = await ai()
-        .groq()
-        .apiKey(groqApiKey)
-        .model('llama-3.1-8b-instant')
+        .openai()
+        .apiKey(openaiApiKey)
+        .model('gpt-4o-mini')
         .timeout(Duration(minutes: 2)) // Global default: 2 minutes
         .http((http) => http
             .connectionTimeout(
@@ -229,14 +206,14 @@ Future<void> demonstrateTimeoutConfiguration(String groqApiKey) async {
 }
 
 /// Demonstrate logging configuration
-Future<void> demonstrateLoggingConfiguration(String deepseekApiKey) async {
-  print('📊 HTTP Logging Configuration (DeepSeek):\n');
+Future<void> demonstrateLoggingConfiguration(String openaiApiKey) async {
+  print('📊 HTTP Logging Configuration (OpenAI):\n');
 
   try {
     final provider = await ai()
-        .deepseek()
-        .apiKey(deepseekApiKey)
-        .model('deepseek-chat')
+        .openai()
+        .apiKey(openaiApiKey)
+        .model('gpt-4o-mini')
         .http((http) => http.enableLogging(true))
         .build();
 
@@ -256,14 +233,14 @@ Future<void> demonstrateLoggingConfiguration(String deepseekApiKey) async {
 }
 
 /// Demonstrate comprehensive HTTP configuration
-Future<void> demonstrateComprehensiveConfig(String xaiApiKey) async {
-  print('🎯 Comprehensive HTTP Configuration (xAI Grok):\n');
+Future<void> demonstrateComprehensiveConfig(String openaiApiKey) async {
+  print('🎯 Comprehensive HTTP Configuration (OpenAI):\n');
 
   try {
     final provider = await ai()
-        .xai()
-        .apiKey(xaiApiKey)
-        .model('grok-3')
+        .openai()
+        .apiKey(openaiApiKey)
+        .model('gpt-4o-mini')
         // HTTP configuration using the new layered approach
         .http((http) => http
             .headers({
