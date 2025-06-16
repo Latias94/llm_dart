@@ -325,12 +325,41 @@ class ChatMessage {
   /// Optional name for the participant (useful for system messages)
   final String? name;
 
+  /// Provider-specific extensions for custom data
+  final Map<String, dynamic> extensions;
+
   const ChatMessage({
     required this.role,
     required this.messageType,
     required this.content,
     this.name,
+    this.extensions = const {},
   });
+
+  /// Get a provider-specific extension value
+  T? getExtension<T>(String key) => extensions[key] as T?;
+
+  /// Check if an extension exists
+  bool hasExtension(String key) => extensions.containsKey(key);
+
+  /// Create a new message with an additional extension
+  ChatMessage withExtension(String key, dynamic value) => ChatMessage(
+        role: role,
+        messageType: messageType,
+        content: content,
+        name: name,
+        extensions: {...extensions, key: value},
+      );
+
+  /// Create a new message with multiple extensions
+  ChatMessage withExtensions(Map<String, dynamic> newExtensions) =>
+      ChatMessage(
+        role: role,
+        messageType: messageType,
+        content: content,
+        name: name,
+        extensions: {...extensions, ...newExtensions},
+      );
 
   /// Create a user message
   factory ChatMessage.user(String content) => ChatMessage(

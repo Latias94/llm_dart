@@ -591,10 +591,23 @@ class AnthropicChat implements ChatCapability {
   Map<String, dynamic> _convertMessage(ChatMessage message) {
     final content = <Map<String, dynamic>>[];
 
-    switch (message.messageType) {
-      case TextMessage():
+    // Check for Anthropic-specific extensions first
+    final anthropicData = message.getExtension<Map<String, dynamic>>('anthropic');
+    if (anthropicData != null) {
+      final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+      if (contentBlocks != null) {
+        // Use provider-specific content blocks
+        content.addAll(contentBlocks.cast<Map<String, dynamic>>());
+      } else {
+        // Fallback to universal content
         content.add({'type': 'text', 'text': message.content});
-        break;
+      }
+    } else {
+      // Standard message type handling
+      switch (message.messageType) {
+        case TextMessage():
+          content.add({'type': 'text', 'text': message.content});
+          break;
       case ImageMessage(mime: final mime, data: final data):
         // Validate image format for Anthropic
         final supportedFormats = [
@@ -708,6 +721,7 @@ class AnthropicChat implements ChatCapability {
           });
         }
         break;
+      }
     }
 
     return {'role': message.role.name, 'content': content};

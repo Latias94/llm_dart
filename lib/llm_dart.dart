@@ -17,6 +17,8 @@ export 'core/web_search.dart';
 
 // Model exports
 export 'models/chat_models.dart';
+export 'models/content_block.dart';
+export 'models/message_builder.dart';
 export 'models/tool_models.dart';
 export 'models/audio_models.dart';
 export 'models/image_models.dart';

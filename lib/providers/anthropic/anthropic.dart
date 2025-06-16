@@ -39,6 +39,9 @@ export 'files.dart';
 // MCP models
 export 'mcp_models.dart';
 
+// Message builder
+export 'message_builder.dart';
+
 /// Create an Anthropic provider with default configuration
 AnthropicProvider createAnthropicProvider({
   required String apiKey,

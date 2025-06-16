@@ -167,10 +167,23 @@ class OpenAIClient {
       result['name'] = message.name;
     }
 
-    switch (message.messageType) {
-      case TextMessage():
+    // Check for OpenAI-specific extensions first
+    final openaiData = message.getExtension<Map<String, dynamic>>('openai');
+    if (openaiData != null) {
+      final contentBlocks = openaiData['contentBlocks'] as List<dynamic>?;
+      if (contentBlocks != null) {
+        // Use provider-specific content blocks
+        result['content'] = contentBlocks;
+      } else {
+        // Fallback to universal content
         result['content'] = message.content;
-        break;
+      }
+    } else {
+      // Standard message type handling
+      switch (message.messageType) {
+        case TextMessage():
+          result['content'] = message.content;
+          break;
       case ImageMessage(mime: final mime, data: final data):
         // Handle base64 encoded images
         final base64Data = base64Encode(data);
@@ -202,6 +215,7 @@ class OpenAIClient {
         break;
       default:
         result['content'] = message.content;
+      }
     }
 
     return result;

@@ -47,6 +47,9 @@ export 'completion.dart';
 export 'responses.dart';
 export 'builtin_tools.dart';
 
+// Message builder
+export 'message_builder.dart';
+
 /// Create an OpenAI provider with default settings
 OpenAIProvider createOpenAIProvider({
   required String apiKey,
