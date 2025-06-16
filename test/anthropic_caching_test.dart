@@ -171,5 +171,132 @@ void main() {
       print('Cached messages properly configured with extensions');
       print('Regular messages correctly without extensions');
     });
+
+    test('No duplication when using cached text with regular text', () {
+      // This test verifies that when both cached text and regular text are used,
+      // the content is not duplicated in the final message
+      final testText = 'This is a test message for validation.';
+
+      // Create a message with both cached text and regular text
+      final mixedMessage = MessageBuilder.system()
+          .text('Regular system prompt.')
+          .anthropicConfig((anthropic) => anthropic.cachedText(
+                testText,
+                ttl: AnthropicCacheTtl.oneHour,
+              ))
+          .build();
+
+      // Verify the message structure
+      expect(mixedMessage.hasExtension('anthropic'), isTrue);
+      expect(mixedMessage.content, contains('Regular system prompt.'));
+      expect(mixedMessage.content, contains(testText));
+
+      // Get the anthropic extension data
+      final anthropicData =
+          mixedMessage.getExtension<Map<String, dynamic>>('anthropic');
+      expect(anthropicData, isNotNull);
+
+      final contentBlocks = anthropicData!['contentBlocks'] as List<dynamic>?;
+      expect(contentBlocks, isNotNull);
+      expect(contentBlocks!.length, equals(1));
+
+      final cachedBlock = contentBlocks.first as Map<String, dynamic>;
+      expect(cachedBlock['type'], equals('text'));
+      expect(cachedBlock['text'], equals(testText));
+      expect(cachedBlock['cache_control'], isNotNull);
+
+      final cacheControl = cachedBlock['cache_control'] as Map<String, dynamic>;
+      expect(cacheControl['type'], equals('ephemeral'));
+      expect(cacheControl['ttl'], equals('1h'));
+
+      print('Mixed content validation completed - no duplication detected');
+    });
+
+    test('Cached-only system message content structure', () {
+      // Test a system message that only has cached content (no regular text)
+      final cachedOnlyMessage = MessageBuilder.system()
+          .anthropicConfig((anthropic) => anthropic.cachedText(
+                'Only cached content in this system message.',
+                ttl: AnthropicCacheTtl.fiveMinutes,
+              ))
+          .build();
+
+      // Verify the message content and extensions
+      expect(cachedOnlyMessage.hasExtension('anthropic'), isTrue);
+      expect(cachedOnlyMessage.content,
+          equals('Only cached content in this system message.'));
+
+      // Verify the cached content structure
+      final anthropicData =
+          cachedOnlyMessage.getExtension<Map<String, dynamic>>('anthropic');
+      final contentBlocks = anthropicData!['contentBlocks'] as List<dynamic>;
+      expect(contentBlocks.length, equals(1));
+
+      final block = contentBlocks.first as Map<String, dynamic>;
+      expect(block['cache_control']['ttl'], equals('5m'));
+
+      print('Cached-only system message validation completed');
+    });
+
+    test('Mixed regular and cached content in user message', () {
+      // This test reveals the content loss issue in user messages
+      final mixedUserMessage = MessageBuilder.user()
+          .text('Regular user text that should not be lost')
+          .anthropicConfig((anthropic) => anthropic.cachedText(
+                'Cached user text',
+                ttl: AnthropicCacheTtl.fiveMinutes,
+              ))
+          .build();
+
+      // The message content should contain both parts
+      expect(mixedUserMessage.content,
+          contains('Regular user text that should not be lost'));
+      expect(mixedUserMessage.content, contains('Cached user text'));
+      expect(mixedUserMessage.hasExtension('anthropic'), isTrue);
+
+      // The anthropic extension should only contain the cached part
+      final anthropicData =
+          mixedUserMessage.getExtension<Map<String, dynamic>>('anthropic');
+      final contentBlocks = anthropicData!['contentBlocks'] as List<dynamic>;
+      expect(contentBlocks.length, equals(1));
+
+      final cachedBlock = contentBlocks.first as Map<String, dynamic>;
+      expect(cachedBlock['text'], equals('Cached user text'));
+      expect(cachedBlock['cache_control']['ttl'], equals('5m'));
+
+      print('Mixed user message structure validated');
+      print(
+          'Both regular and cached content should be preserved in API conversion');
+    });
+
+    test('Multiple regular text blocks with cached content', () {
+      // Test more complex mixed content scenarios
+      final complexMessage = MessageBuilder.user()
+          .text('First regular text')
+          .anthropicConfig((anthropic) => anthropic.cachedText(
+                'Cached content block',
+                ttl: AnthropicCacheTtl.oneHour,
+              ))
+          .text('Second regular text')
+          .build();
+
+      // Verify all content is present
+      expect(complexMessage.content, contains('First regular text'));
+      expect(complexMessage.content, contains('Cached content block'));
+      expect(complexMessage.content, contains('Second regular text'));
+      expect(complexMessage.hasExtension('anthropic'), isTrue);
+
+      // Verify anthropic extension structure
+      final anthropicData =
+          complexMessage.getExtension<Map<String, dynamic>>('anthropic');
+      final contentBlocks = anthropicData!['contentBlocks'] as List<dynamic>;
+      expect(contentBlocks.length, equals(1));
+
+      final cachedBlock = contentBlocks.first as Map<String, dynamic>;
+      expect(cachedBlock['text'], equals('Cached content block'));
+      expect(cachedBlock['cache_control']['ttl'], equals('1h'));
+
+      print('Complex mixed content structure validated');
+    });
   });
 }

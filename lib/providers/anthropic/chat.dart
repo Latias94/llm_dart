@@ -410,10 +410,13 @@ class AnthropicChat implements ChatCapability {
         // Check if system message has cached content
         final anthropicData =
             message.getExtension<Map<String, dynamic>>('anthropic');
+        bool hasAnthropicContent = false;
+
         if (anthropicData != null) {
           final contentBlocks =
               anthropicData['contentBlocks'] as List<dynamic>?;
-          if (contentBlocks != null) {
+          if (contentBlocks != null && contentBlocks.isNotEmpty) {
+            hasAnthropicContent = true;
             // Add cached content blocks to system
             for (final block in contentBlocks) {
               if (block is Map<String, dynamic>) {
@@ -423,8 +426,9 @@ class AnthropicChat implements ChatCapability {
           }
         }
 
-        // Also add the regular content if it's not empty
-        if (message.content.isNotEmpty) {
+        // Only add regular content if there are no cached content blocks for this message
+        // This prevents duplication since cached content is already included in the content blocks
+        if (message.content.isNotEmpty && !hasAnthropicContent) {
           systemMessages.add(message.content);
         }
       } else {
@@ -639,6 +643,38 @@ class AnthropicChat implements ChatCapability {
           if (block is Map<String, dynamic>) {
             content.add(block);
           }
+        }
+      }
+
+      // Also check if there's non-cached content that needs to be included
+      // This happens when mixing regular text() calls with cachedText() calls
+      if (message.content.isNotEmpty) {
+        // Extract cached text from content blocks to avoid duplication
+        final cachedTexts = <String>[];
+        if (contentBlocks != null) {
+          for (final block in contentBlocks) {
+            if (block is Map<String, dynamic> && block['type'] == 'text') {
+              final blockText = block['text'] as String?;
+              if (blockText != null) {
+                cachedTexts.add(blockText);
+              }
+            }
+          }
+        }
+
+        // Find non-cached content by removing cached text from message content
+        String nonCachedContent = message.content;
+        for (final cachedText in cachedTexts) {
+          nonCachedContent = nonCachedContent.replaceAll(cachedText, '').trim();
+        }
+
+        // Clean up extra newlines and whitespace
+        nonCachedContent =
+            nonCachedContent.replaceAll(RegExp(r'\n+'), '\n').trim();
+
+        // Add non-cached content as a regular text block if it's not empty
+        if (nonCachedContent.isNotEmpty) {
+          content.add({'type': 'text', 'text': nonCachedContent});
         }
       }
     } else {
