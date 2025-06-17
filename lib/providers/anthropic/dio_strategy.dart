@@ -80,10 +80,9 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
       betaFeatures.add('mcp-client-2025-04-04');
     }
 
-    // Add extended-cache-ttl beta if request contains 1-hour TTL
-    if (_hasOneHourCaching(requestData)) {
-      betaFeatures.add('extended-cache-ttl-2025-04-11');
-    }
+    // Always add extended-cache-ttl beta header for caching support
+    // This ensures API calls work even if 1h cache detection fails
+    betaFeatures.add('extended-cache-ttl-2025-04-11');
 
     // Add beta header if any features are enabled
     if (betaFeatures.isNotEmpty) {
@@ -91,47 +90,5 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
     }
 
     return headers;
-  }
-
-  /// Check if request data contains 1-hour cache TTL
-  bool _hasOneHourCaching(dynamic requestData) {
-    if (requestData is! Map<String, dynamic>) return false;
-
-    // Check system messages for 1h TTL
-    final system = requestData['system'] as List<dynamic>?;
-    if (system != null) {
-      for (final systemBlock in system) {
-        if (systemBlock is Map<String, dynamic>) {
-          final cacheControl =
-              systemBlock['cache_control'] as Map<String, dynamic>?;
-          if (cacheControl != null && cacheControl['ttl'] == '1h') {
-            return true;
-          }
-        }
-      }
-    }
-
-    // Check messages for 1h TTL
-    final messages = requestData['messages'] as List<dynamic>?;
-    if (messages != null) {
-      for (final message in messages) {
-        if (message is! Map<String, dynamic>) continue;
-
-        final content = message['content'];
-        if (content is List) {
-          for (final block in content) {
-            if (block is Map<String, dynamic>) {
-              final cacheControl =
-                  block['cache_control'] as Map<String, dynamic>?;
-              if (cacheControl != null && cacheControl['ttl'] == '1h') {
-                return true;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return false;
   }
 }
