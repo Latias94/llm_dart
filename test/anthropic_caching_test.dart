@@ -10,16 +10,14 @@ void main() {
       // Create a system message with cached content
       // This should set up cache_control: {"type": "ephemeral", "ttl": "1h"}
       final systemMessage = MessageBuilder.system()
-          .anthropicConfig((anthropic) => anthropic.cachedText(
-                'You are a highly specialized AI assistant with extensive knowledge in software development, '
-                        'data science, and machine learning. Your responses should be detailed, accurate, and helpful. '
-                        'Always provide code examples when relevant and explain complex concepts clearly. '
-                        'When debugging issues, provide step-by-step solutions and consider edge cases. '
-                        'Your expertise covers Python, JavaScript, Dart, Flutter, React, Node.js, and various frameworks. '
-                        'You should maintain a professional yet friendly tone throughout all interactions.' *
-                    50,
-                ttl: AnthropicCacheTtl.oneHour,
-              ))
+          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+          .text('You are a highly specialized AI assistant with extensive knowledge in software development, '
+                'data science, and machine learning. Your responses should be detailed, accurate, and helpful. '
+                'Always provide code examples when relevant and explain complex concepts clearly. '
+                'When debugging issues, provide step-by-step solutions and consider edge cases. '
+                'Your expertise covers Python, JavaScript, Dart, Flutter, React, Node.js, and various frameworks. '
+                'You should maintain a professional yet friendly tone throughout all interactions.' *
+                50)
           .build();
 
       // Verify the system message has proper caching configuration
@@ -46,10 +44,8 @@ void main() {
           100;
 
       final userMessage = MessageBuilder.user()
-          .anthropicConfig((anthropic) => anthropic.cachedText(
-                longUserContext,
-                ttl: AnthropicCacheTtl.fiveMinutes,
-              ))
+          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+          .text(longUserContext)
           .build();
 
       // Verify the user message has proper caching configuration
@@ -66,30 +62,26 @@ void main() {
     test('Multiple messages with different TTL configurations', () {
       // System message with 1-hour caching
       final systemMessage = MessageBuilder.system()
-          .anthropicConfig((anthropic) => anthropic.cachedText(
-                'You are an expert code reviewer and software architect. '
-                        'When reviewing code, focus on: performance, security, maintainability, '
-                        'readability, and adherence to best practices. Provide specific suggestions '
-                        'for improvement and explain the reasoning behind your recommendations.' *
-                    100,
-                ttl: AnthropicCacheTtl.oneHour,
-              ))
+          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+          .text('You are an expert code reviewer and software architect. '
+                'When reviewing code, focus on: performance, security, maintainability, '
+                'readability, and adherence to best practices. Provide specific suggestions '
+                'for improvement and explain the reasoning behind your recommendations.' *
+                100)
           .build();
 
       // User message with 5-minute caching
       final userMessage = MessageBuilder.user()
-          .anthropicConfig((anthropic) => anthropic.cachedText(
-                'Please review this Flutter widget code for potential improvements:\n\n'
-                        'class CustomButton extends StatelessWidget {\n'
-                        '  final String text;\n'
-                        '  final VoidCallback onPressed;\n'
-                        '  final Color backgroundColor;\n'
-                        '  final double borderRadius;\n'
-                        '  // ... more properties and implementation details would go here\n'
-                        '  // This is a simplified version for testing purposes\n' *
-                    50,
-                ttl: AnthropicCacheTtl.fiveMinutes,
-              ))
+          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+          .text('Please review this Flutter widget code for potential improvements:\n\n'
+                'class CustomButton extends StatelessWidget {\n'
+                '  final String text;\n'
+                '  final VoidCallback onPressed;\n'
+                '  final Color backgroundColor;\n'
+                '  final double borderRadius;\n'
+                '  // ... more properties and implementation details would go here\n'
+                '  // This is a simplified version for testing purposes\n' *
+                50)
           .build();
 
       // Verify both messages have proper caching configuration
@@ -108,17 +100,13 @@ void main() {
     test('Cache control structure format validation', () {
       // Test that cache control structure is properly formatted for different TTL values
       final oneHourMessage = MessageBuilder.user()
-          .anthropicConfig((anthropic) => anthropic.cachedText(
-                'Content with 1-hour TTL for cache control validation.',
-                ttl: AnthropicCacheTtl.oneHour,
-              ))
+          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+          .text('Content with 1-hour TTL for cache control validation.')
           .build();
 
       final fiveMinuteMessage = MessageBuilder.user()
-          .anthropicConfig((anthropic) => anthropic.cachedText(
-                'Content with 5-minute TTL for cache control validation.',
-                ttl: AnthropicCacheTtl.fiveMinutes,
-              ))
+          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+          .text('Content with 5-minute TTL for cache control validation.')
           .build();
 
       // Verify both messages have the anthropic extension
@@ -149,10 +137,8 @@ void main() {
     test('Message builder creates proper anthropic extensions', () {
       // Verify that the MessageBuilder correctly sets up anthropic extensions
       final cachedMessage = MessageBuilder.system()
-          .anthropicConfig((anthropic) => anthropic.cachedText(
-                'System prompt with caching enabled for structure validation.',
-                ttl: AnthropicCacheTtl.oneHour,
-              ))
+          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+          .text('System prompt with caching enabled for structure validation.')
           .build();
 
       final regularMessage = MessageBuilder.system()
@@ -180,10 +166,8 @@ void main() {
       // Create a message with both cached text and regular text
       final mixedMessage = MessageBuilder.system()
           .text('Regular system prompt.')
-          .anthropicConfig((anthropic) => anthropic.cachedText(
-                testText,
-                ttl: AnthropicCacheTtl.oneHour,
-              ))
+          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+          .text(testText)
           .build();
 
       // Verify the message structure
@@ -215,10 +199,8 @@ void main() {
     test('Cached-only system message content structure', () {
       // Test a system message that only has cached content (no regular text)
       final cachedOnlyMessage = MessageBuilder.system()
-          .anthropicConfig((anthropic) => anthropic.cachedText(
-                'Only cached content in this system message.',
-                ttl: AnthropicCacheTtl.fiveMinutes,
-              ))
+          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+          .text('Only cached content in this system message.')
           .build();
 
       // Verify the message content and extensions
@@ -242,10 +224,8 @@ void main() {
       // This test reveals the content loss issue in user messages
       final mixedUserMessage = MessageBuilder.user()
           .text('Regular user text that should not be lost')
-          .anthropicConfig((anthropic) => anthropic.cachedText(
-                'Cached user text',
-                ttl: AnthropicCacheTtl.fiveMinutes,
-              ))
+          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+          .text('Cached user text')
           .build();
 
       // The message content should contain both parts
@@ -273,10 +253,8 @@ void main() {
       // Test more complex mixed content scenarios
       final complexMessage = MessageBuilder.user()
           .text('First regular text')
-          .anthropicConfig((anthropic) => anthropic.cachedText(
-                'Cached content block',
-                ttl: AnthropicCacheTtl.oneHour,
-              ))
+          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+          .text('Cached content block')
           .text('Second regular text')
           .build();
 

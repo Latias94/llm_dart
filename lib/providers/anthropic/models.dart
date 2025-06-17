@@ -44,13 +44,18 @@ enum AnthropicCacheTtl {
 
 /// Anthropic-specific text block with caching support
 class AnthropicTextBlock implements ContentBlock {
-  final String text;
   final AnthropicCacheControl? cacheControl;
+  String? _text;
 
-  AnthropicTextBlock(this.text, {this.cacheControl});
+  AnthropicTextBlock({this.cacheControl});
+
+  /// Set the text content for this block
+  void setText(String text) {
+    _text = text;
+  }
 
   @override
-  String get displayText => text;
+  String get displayText => _text ?? '';
 
   @override
   String get providerId => 'anthropic';
@@ -58,7 +63,7 @@ class AnthropicTextBlock implements ContentBlock {
   @override
   Map<String, dynamic> toJson() => {
         'type': 'text',
-        'text': text,
+        'text': _text ?? '',
         if (cacheControl != null) 'cache_control': cacheControl!.toJson(),
       };
 }
@@ -69,15 +74,18 @@ class AnthropicMessageBuilder {
 
   const AnthropicMessageBuilder._(this._builder);
 
-  /// Cached text with TTL
-  AnthropicMessageBuilder cachedText(String text, {AnthropicCacheTtl? ttl}) {
+  /// Apply caching to the next text content
+  AnthropicMessageBuilder cache({AnthropicCacheTtl? ttl}) {
     final cacheControl = AnthropicCacheControl.ephemeral(
       ttl: ttl?.value,
     );
 
-    _builder.addBlock(AnthropicTextBlock(text, cacheControl: cacheControl));
+    final cacheBlock = AnthropicTextBlock(cacheControl: cacheControl);
+    _builder.setPendingProviderBlock('anthropic', cacheBlock);
     return this;
   }
+
+
 
   /// Direct content block
   AnthropicMessageBuilder contentBlock(Map<String, dynamic> blockData) {
@@ -91,7 +99,10 @@ class AnthropicMessageBuilder {
         if (cacheData != null && cacheData['type'] == 'ephemeral') {
           final ttlString = cacheData['ttl'] as String?;
           final ttl = AnthropicCacheTtl.fromString(ttlString);
-          return cachedText(text, ttl: ttl);
+          // Use the new cache + text pattern
+          cache(ttl: ttl);
+          _builder.text(text);
+          return this;
         } else {
           _builder.text(text);
           return this;
@@ -115,17 +126,18 @@ class AnthropicMessageBuilder {
 /// Extension to add Anthropic-specific functionality to MessageBuilder
 /// 
 /// **Content Handling:**
-/// When using `.anthropicConfig().cachedText()` along with `.text()`, content is handled as follows:
-/// - Both regular and cached content are preserved as separate content blocks
-/// - Regular content (`.text()`) appears in message.content for universal compatibility
-/// - Cached content (`.cachedText()`) appears in message.extensions['anthropic'] for provider-specific processing
-/// - During API conversion, both are sent as separate text blocks with appropriate cache_control
+/// When using `.anthropicConfig().cache()` followed by `.text()`, content is handled as follows:
+/// - The `.cache()` method prepares caching for the next `.text()` call
+/// - The following `.text()` call applies the text content to the cached block
+/// - Cached content appears in message.extensions['anthropic'] for provider-specific processing
+/// - During API conversion, cached text blocks are sent with appropriate cache_control
 /// 
 /// **Example:**
 /// ```dart
 /// final message = MessageBuilder.system()
-///     .text('System instructions')  // Regular content
-///     .anthropicConfig((anthropic) => anthropic.cachedText('Large context', ttl: AnthropicCacheTtl.oneHour))  // Cached content
+///     .text('Regular system instructions')  // Regular content
+///     .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+///     .text('Large context that should be cached')  // Cached content
 ///     .build();
 /// // Results in two separate text blocks in the API request
 /// ```

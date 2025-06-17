@@ -9,8 +9,10 @@ import 'package:llm_dart/llm_dart.dart';
 /// like system prompts or large documents, which can significantly reduce
 /// token costs for repetitive conversations.
 /// 
-/// **IMPORTANT - Content Duplication Behavior:**
-/// When using both `.text()` and `.cachedText()` in the same message:
+/// **IMPORTANT - New Cache API:**
+/// The new caching API uses `.cache()` followed by `.text()`:
+/// - Call `.anthropicConfig((config) => config.cache())` to prepare caching
+/// - The next `.text()` call will apply the content to the cached block
 /// - Content appears in BOTH message.content AND extensions
 /// - This is intentional for universal provider compatibility
 /// - Each creates separate content blocks in the API request
@@ -19,8 +21,8 @@ import 'package:llm_dart/llm_dart.dart';
 /// 
 /// **Best Practices:**
 /// - Use `.text()` for content that doesn't need caching
-/// - Use `.cachedText()` for content that should be cached
-/// - Avoid putting identical content in both methods
+/// - Use `.cache()` followed by `.text()` for content that should be cached
+/// - Each `.cache()` call applies to the next `.text()` call only
 /// 
 /// To run this example:
 /// ```bash
@@ -42,13 +44,10 @@ void main() async {
   // Example 2: System message with cached content
   final systemMessage = MessageBuilder.system()
       .text('You are a helpful AI assistant.')
-      .anthropicConfig((anthropic) => anthropic
-          .cachedText(
-            'Here is a large document about quantum computing that you should reference:\n'
-            '[LARGE DOCUMENT CONTENT - This would be cached for 1 hour]\n'
-            'Quantum computing is a type of computation that harnesses the phenomena of quantum mechanics...',
-            ttl: AnthropicCacheTtl.oneHour,
-          ))
+      .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+      .text('Here is a large document about quantum computing that you should reference:\n'
+           '[LARGE DOCUMENT CONTENT - This would be cached for 1 hour]\n'
+           'Quantum computing is a type of computation that harnesses the phenomena of quantum mechanics...')
       .build();
 
   print('2. System message with cached content:');
@@ -64,11 +63,8 @@ void main() async {
   // 3. "What are the main advantages of quantum computers?" (regular text)
   final mixedMessage = MessageBuilder.user()
       .text('Based on the document provided, please answer:')
-      .anthropicConfig((anthropic) => anthropic
-          .cachedText(
-            'Current context: This is a follow-up question in our conversation about quantum computing.',
-            ttl: AnthropicCacheTtl.fiveMinutes,
-          ))
+      .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+      .text('Current context: This is a follow-up question in our conversation about quantum computing.')
       .text('What are the main advantages of quantum computers?')
       .build();
 
@@ -103,21 +99,15 @@ void main() async {
   final conversation = [
     // System message with long-term cached instructions
     MessageBuilder.system()
-        .anthropicConfig((anthropic) => anthropic
-            .cachedText(
-              'You are an expert quantum computing researcher. Use the provided research papers and documentation to answer questions accurately.',
-              ttl: AnthropicCacheTtl.oneHour,
-            ))
+        .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+        .text('You are an expert quantum computing researcher. Use the provided research papers and documentation to answer questions accurately.')
         .build(),
 
     // User message with context that might be reused
     MessageBuilder.user()
         .text('I need help understanding quantum algorithms.')
-        .anthropicConfig((anthropic) => anthropic
-            .cachedText(
-              'Context: I am a computer science student with basic knowledge of linear algebra and probability.',
-              ttl: AnthropicCacheTtl.fiveMinutes,
-            ))
+        .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+        .text('Context: I am a computer science student with basic knowledge of linear algebra and probability.')
         .build(),
   ];
 
@@ -133,5 +123,6 @@ void main() async {
   print('- Use oneHour TTL for: System prompts, large documents, static context');
   print('- Use fiveMinutes TTL for: Session context, temporary user state');
   print('- Regular text() calls are never cached');
+  print('- Use .cache() followed by .text() for cached content');
   print('- Cached content appears in both content and extensions');
 }

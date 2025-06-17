@@ -425,11 +425,11 @@ class AnthropicChat implements ChatCapability {
         }
 
         // Always add regular content as a separate text block if present
-        // This allows both .text() and .cachedText() to coexist in the same message
+        // This allows both .text() and .cache() + .text() to coexist in the same message
         // 
         // IMPORTANT: This creates separate content blocks for regular and cached content:
         // - Regular content (from .text()) becomes a standard text block
-        // - Cached content (from .cachedText()) becomes a text block with cache_control
+        // - Cached content (from .cache() + .text()) becomes a text block with cache_control
         // - Both appear in the final API request as separate blocks
         // - This prevents duplication while maintaining proper caching semantics
         if (message.content.isNotEmpty) {
@@ -651,7 +651,7 @@ class AnthropicChat implements ChatCapability {
       }
 
       // Always add regular content as a separate text block if present
-      // This allows both .text() and .cachedText() to coexist as separate content blocks
+      // This allows both .text() and .cache() + .text() to coexist as separate content blocks
       if (message.content.isNotEmpty) {
         content.add({'type': 'text', 'text': message.content});
       }
