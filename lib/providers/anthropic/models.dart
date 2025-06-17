@@ -47,7 +47,7 @@ class AnthropicTextBlock implements ContentBlock {
   final AnthropicCacheControl? cacheControl;
   String? _text;
 
-  AnthropicTextBlock({this.cacheControl});
+  AnthropicTextBlock({this.cacheControl, String? text}) : _text = text;
 
   /// Set the text content for this block
   void setText(String text) {
@@ -71,21 +71,17 @@ class AnthropicTextBlock implements ContentBlock {
 /// Anthropic message builder for provider-specific features
 class AnthropicMessageBuilder {
   final MessageBuilder _builder;
+  bool _cacheEnabled = false;
+  AnthropicCacheTtl? _cacheTtl;
 
-  const AnthropicMessageBuilder._(this._builder);
+  AnthropicMessageBuilder._(this._builder);
 
-  /// Apply caching to the next text content
+  /// Enable caching for ALL text content in this message
   AnthropicMessageBuilder cache({AnthropicCacheTtl? ttl}) {
-    final cacheControl = AnthropicCacheControl.ephemeral(
-      ttl: ttl?.value,
-    );
-
-    final cacheBlock = AnthropicTextBlock(cacheControl: cacheControl);
-    _builder.setPendingProviderBlock('anthropic', cacheBlock);
+    _cacheEnabled = true;
+    _cacheTtl = ttl;
     return this;
   }
-
-
 
   /// Direct content block
   AnthropicMessageBuilder contentBlock(Map<String, dynamic> blockData) {
@@ -124,29 +120,42 @@ class AnthropicMessageBuilder {
 }
 
 /// Extension to add Anthropic-specific functionality to MessageBuilder
-/// 
+///
 /// **Content Handling:**
 /// When using `.anthropicConfig().cache()` followed by `.text()`, content is handled as follows:
 /// - The `.cache()` method prepares caching for the next `.text()` call
 /// - The following `.text()` call applies the text content to the cached block
 /// - Cached content appears in message.extensions['anthropic'] for provider-specific processing
 /// - During API conversion, cached text blocks are sent with appropriate cache_control
-/// 
+///
 /// **Example:**
 /// ```dart
 /// final message = MessageBuilder.system()
-///     .text('Regular system instructions')  // Regular content
+///     .text('System instructions')
 ///     .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
-///     .text('Large context that should be cached')  // Cached content
+///     .text('More content')
 ///     .build();
-/// // Results in two separate text blocks in the API request
+/// // All text content gets cache_control applied in _buildRequestBody
 /// ```
+
 extension AnthropicMessageBuilderExtension on MessageBuilder {
   /// Configure Anthropic-specific features
   MessageBuilder anthropicConfig(
       void Function(AnthropicMessageBuilder) configure) {
     final anthropicBuilder = AnthropicMessageBuilder._(this);
     configure(anthropicBuilder);
+
+    // Store cache flag in extensions if enabled.
+    if (anthropicBuilder._cacheEnabled) {
+      // Add cache control to the message.
+      final cacheMarker = AnthropicTextBlock(
+        text: '', // Empty text
+        cacheControl: AnthropicCacheControl.ephemeral(
+          ttl: anthropicBuilder._cacheTtl?.value,
+        ),
+      );
+      addBlock(cacheMarker);
+    }
     return this;
   }
 }

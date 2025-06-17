@@ -411,29 +411,35 @@ class AnthropicChat implements ChatCapability {
         final anthropicData =
             message.getExtension<Map<String, dynamic>>('anthropic');
 
+        Map<String, dynamic>? systemCacheControl;
         if (anthropicData != null) {
           final contentBlocks =
               anthropicData['contentBlocks'] as List<dynamic>?;
           if (contentBlocks != null && contentBlocks.isNotEmpty) {
-            // Add cached content blocks to system
             for (final block in contentBlocks) {
               if (block is Map<String, dynamic>) {
+                // Check for cache control in system message
+                if (block['cache_control'] != null && block['text'] == '') {
+                  systemCacheControl = block['cache_control'];
+                  continue; // Skip cache marker
+                }
                 systemContentBlocks.add(block);
               }
             }
           }
         }
 
-        // Always add regular content as a separate text block if present
-        // This allows both .text() and .cache() + .text() to coexist in the same message
-        // 
-        // IMPORTANT: This creates separate content blocks for regular and cached content:
-        // - Regular content (from .text()) becomes a standard text block
-        // - Cached content (from .cache() + .text()) becomes a text block with cache_control
-        // - Both appear in the final API request as separate blocks
-        // - This prevents duplication while maintaining proper caching semantics
         if (message.content.isNotEmpty) {
-          systemMessages.add(message.content);
+          // Apply cache control to system content if present
+          if (systemCacheControl != null) {
+            systemContentBlocks.add({
+              'type': 'text',
+              'text': message.content,
+              'cache_control': systemCacheControl,
+            });
+          } else {
+            systemMessages.add(message.content);
+          }
         }
       } else {
         anthropicMessages.add(_convertMessage(message));
@@ -639,21 +645,33 @@ class AnthropicChat implements ChatCapability {
     final anthropicData =
         message.getExtension<Map<String, dynamic>>('anthropic');
 
+    // SIMPLE CACHE CHECK - Look for cache flag in extensions
+    Map<String, dynamic>? cacheControl;
     if (anthropicData != null) {
-      // Use rich content blocks from extensions
       final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
       if (contentBlocks != null) {
         for (final block in contentBlocks) {
           if (block is Map<String, dynamic>) {
+            // Check for cache control - SIMPLE!
+            if (block['cache_control'] != null && block['text'] == '') {
+              cacheControl = block['cache_control'];
+              continue; // Skip adding empty cache marker
+            }
             content.add(block);
           }
         }
       }
 
-      // Always add regular content as a separate text block if present
-      // This allows both .text() and .cache() + .text() to coexist as separate content blocks
+      // Add regular content with cache if flag is set - SIMPLE!
       if (message.content.isNotEmpty) {
-        content.add({'type': 'text', 'text': message.content});
+        final textBlock = <String, dynamic>{
+          'type': 'text',
+          'text': message.content
+        };
+        if (cacheControl != null) {
+          textBlock['cache_control'] = cacheControl;
+        }
+        content.add(textBlock);
       }
     } else {
       // Fallback to standard message type handling

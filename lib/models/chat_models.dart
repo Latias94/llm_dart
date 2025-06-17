@@ -475,39 +475,21 @@ class UniversalTextBlock implements ContentBlock {
 }
 
 /// Message builder for creating messages with provider-specific extensions
-/// 
-/// **Provider-Specific Caching:**
-/// When using provider-specific methods (like `.anthropicConfig().cache()`), 
-/// the next `.text()` call will apply the content to the provider-specific block instead
-/// of creating a universal text block.
-/// 
-/// **Example - Anthropic Caching:**
-/// ```dart
-/// final message = MessageBuilder.system()
-///     .text('Regular system prompt')  // Universal text block
-///     .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
-///     .text('Cached content')  // Anthropic cached text block
-///     .build();
-/// 
-/// // Results in:
-/// // message.content = "Regular system prompt\nCached content"  // Combined for universal access
-/// // message.extensions['anthropic'] = { contentBlocks: [...] }  // Provider-specific cached blocks
-/// ```
-/// 
+///
+/// **Provider-Specific Content:**
+/// Providers can add specialized content blocks through their extensions.
+/// These blocks are stored alongside universal text blocks and processed
+/// by each provider according to their specific requirements.
+///
 /// **API Conversion:**
-/// - Universal content goes to regular message content
-/// - Provider-specific content goes to provider extensions
-/// - Both are processed separately during API calls to maintain caching semantics
-/// 
-/// **Best Practices:**
-/// - Use `.text()` for regular content that doesn't need special handling
-/// - Use provider methods (`.anthropicConfig().cache()`) followed by `.text()` for cached content
-/// - Each call to `.text()` creates a separate content block
+/// - Universal content blocks are processed by all providers
+/// - Provider-specific content blocks are processed only by their respective providers
+/// - Each provider's _buildRequestBody handles mixed content appropriately
+///
 class MessageBuilder {
   final ChatRole _role;
   final List<ContentBlock> _blocks = [];
   String? _name;
-  final Map<String, dynamic> _pendingProviderBlocks = {};
 
   MessageBuilder._(this._role);
 
@@ -518,30 +500,7 @@ class MessageBuilder {
 
   // Universal methods
   MessageBuilder text(String text) {
-    // Check for pending provider-specific blocks
-    bool hasProviderBlock = false;
-    
-    // Handle Anthropic pending cache blocks
-    if (_pendingProviderBlocks.containsKey('anthropic')) {
-      final anthropicBlock = _pendingProviderBlocks.remove('anthropic');
-      if (anthropicBlock != null && anthropicBlock is ContentBlock) {
-        // Use dynamic call - the block should have a setText method
-        try {
-          (anthropicBlock as dynamic).setText(text);
-          _blocks.add(anthropicBlock);
-          hasProviderBlock = true;
-        } catch (e) {
-          // Fallback: if setText fails, create a universal text block
-          _blocks.add(UniversalTextBlock(text));
-        }
-      }
-    }
-    
-    // If no provider-specific block was used, add universal text block
-    if (!hasProviderBlock) {
-      _blocks.add(UniversalTextBlock(text));
-    }
-    
+    _blocks.add(UniversalTextBlock(text));
     return this;
   }
 
@@ -555,20 +514,8 @@ class MessageBuilder {
     _blocks.add(block);
   }
 
-  // Method for providers to set pending blocks
-  void setPendingProviderBlock(String providerId, dynamic block) {
-    _pendingProviderBlocks[providerId] = block;
-  }
-
   // Build ChatMessage with extensions
   ChatMessage build() {
-    // Check for unused pending provider blocks and warn about them
-    if (_pendingProviderBlocks.isNotEmpty) {
-      // Log warning about unused cache blocks (in a real app, you'd use a proper logger)
-      // For now, we'll silently ignore them as they represent incomplete usage
-      _pendingProviderBlocks.clear();
-    }
-    
     // Create universal text content
     final content = _blocks.map((block) => block.displayText).join('\n');
 
