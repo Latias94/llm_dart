@@ -21,11 +21,25 @@ class AnthropicCacheControl {
 
 /// Cache TTL options for Anthropic
 enum AnthropicCacheTtl {
-  fiveMinutes(300),
-  oneHour(3600);
+  fiveMinutes(300, '5m'),
+  oneHour(3600, '1h');
 
-  const AnthropicCacheTtl(this.seconds);
+  const AnthropicCacheTtl(this.seconds, this.value);
   final int seconds;
+  final String value;
+
+  /// Create from string value
+  static AnthropicCacheTtl? fromString(String? value) {
+    if (value == null) return null;
+    switch (value) {
+      case '5m':
+        return AnthropicCacheTtl.fiveMinutes;
+      case '1h':
+        return AnthropicCacheTtl.oneHour;
+      default:
+        return null;
+    }
+  }
 }
 
 /// Anthropic-specific text block with caching support
@@ -57,20 +71,8 @@ class AnthropicMessageBuilder {
 
   /// Cached text with TTL
   AnthropicMessageBuilder cachedText(String text, {AnthropicCacheTtl? ttl}) {
-    String? ttlString;
-    if (ttl != null) {
-      switch (ttl) {
-        case AnthropicCacheTtl.fiveMinutes:
-          ttlString = '5m';
-          break;
-        case AnthropicCacheTtl.oneHour:
-          ttlString = '1h';
-          break;
-      }
-    }
-
     final cacheControl = AnthropicCacheControl.ephemeral(
-      ttl: ttlString,
+      ttl: ttl?.value,
     );
 
     _builder.addBlock(AnthropicTextBlock(text, cacheControl: cacheControl));
@@ -87,7 +89,9 @@ class AnthropicMessageBuilder {
         final cacheData = blockData['cache_control'] as Map<String, dynamic>?;
 
         if (cacheData != null && cacheData['type'] == 'ephemeral') {
-          return cachedText(text);
+          final ttlString = cacheData['ttl'] as String?;
+          final ttl = AnthropicCacheTtl.fromString(ttlString);
+          return cachedText(text, ttl: ttl);
         } else {
           _builder.text(text);
           return this;
