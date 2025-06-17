@@ -475,6 +475,34 @@ class UniversalTextBlock implements ContentBlock {
 }
 
 /// Message builder for creating messages with provider-specific extensions
+/// 
+/// **Content Duplication Notice:**
+/// When using both `.text()` and provider-specific methods (like `.anthropicConfig().cachedText()`),
+/// content appears in BOTH the main `content` field AND provider extensions. This is intentional
+/// to maintain compatibility across providers.
+/// 
+/// **Example - Content Distribution:**
+/// ```dart
+/// final message = MessageBuilder.system()
+///     .text('Regular system prompt')
+///     .anthropicConfig((anthropic) => anthropic.cachedText('Cached content', ttl: AnthropicCacheTtl.oneHour))
+///     .build();
+/// 
+/// // Results in:
+/// // message.content = "Regular system prompt\nCached content"  // Combined for universal access
+/// // message.extensions['anthropic'] = { contentBlocks: [...] }  // Provider-specific cached blocks
+/// ```
+/// 
+/// **API Conversion:**
+/// - Universal content goes to regular message content
+/// - Provider-specific content goes to provider extensions
+/// - Both are processed separately during API calls to maintain caching semantics
+/// 
+/// **Best Practices:**
+/// - Use `.text()` for regular content that doesn't need caching
+/// - Use provider methods (`.anthropicConfig().cachedText()`) for content that should be cached
+/// - Avoid putting the same text in both `.text()` and `.cachedText()` to prevent duplication
+/// - Each call to `.text()` or `.cachedText()` creates a separate content block
 class MessageBuilder {
   final ChatRole _role;
   final List<ContentBlock> _blocks = [];

@@ -9,6 +9,19 @@ import 'package:llm_dart/llm_dart.dart';
 /// like system prompts or large documents, which can significantly reduce
 /// token costs for repetitive conversations.
 /// 
+/// **IMPORTANT - Content Duplication Behavior:**
+/// When using both `.text()` and `.cachedText()` in the same message:
+/// - Content appears in BOTH message.content AND extensions
+/// - This is intentional for universal provider compatibility
+/// - Each creates separate content blocks in the API request
+/// - Regular content becomes standard text blocks
+/// - Cached content becomes text blocks with cache_control
+/// 
+/// **Best Practices:**
+/// - Use `.text()` for content that doesn't need caching
+/// - Use `.cachedText()` for content that should be cached
+/// - Avoid putting identical content in both methods
+/// 
 /// To run this example:
 /// ```bash
 /// dart example/02_core_features/message_builder_cache.dart
@@ -45,6 +58,10 @@ void main() async {
   print('');
 
   // Example 3: Mixed content with different cache TTLs
+  // IMPORTANT: This creates 3 separate content blocks in the API request:
+  // 1. "Based on the document provided, please answer:" (regular text)
+  // 2. "Current context: ..." (cached text with 5m TTL)
+  // 3. "What are the main advantages of quantum computers?" (regular text)
   final mixedMessage = MessageBuilder.user()
       .text('Based on the document provided, please answer:')
       .anthropicConfig((anthropic) => anthropic
@@ -67,7 +84,7 @@ void main() async {
             {
               'type': 'text',
               'text': 'Long-term cached system prompt that rarely changes',
-              'cache_control': {'type': 'ephemeral', 'ttl': 3600}
+              'cache_control': {'type': 'ephemeral', 'ttl': '1h'}
             },
             {
               'type': 'text',

@@ -113,6 +113,22 @@ class AnthropicMessageBuilder {
 }
 
 /// Extension to add Anthropic-specific functionality to MessageBuilder
+/// 
+/// **Content Handling:**
+/// When using `.anthropicConfig().cachedText()` along with `.text()`, content is handled as follows:
+/// - Both regular and cached content are preserved as separate content blocks
+/// - Regular content (`.text()`) appears in message.content for universal compatibility
+/// - Cached content (`.cachedText()`) appears in message.extensions['anthropic'] for provider-specific processing
+/// - During API conversion, both are sent as separate text blocks with appropriate cache_control
+/// 
+/// **Example:**
+/// ```dart
+/// final message = MessageBuilder.system()
+///     .text('System instructions')  // Regular content
+///     .anthropicConfig((anthropic) => anthropic.cachedText('Large context', ttl: AnthropicCacheTtl.oneHour))  // Cached content
+///     .build();
+/// // Results in two separate text blocks in the API request
+/// ```
 extension AnthropicMessageBuilderExtension on MessageBuilder {
   /// Configure Anthropic-specific features
   MessageBuilder anthropicConfig(
