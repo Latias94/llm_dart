@@ -24,4 +24,3 @@ dev_dependencies:
   mockito: ^5.4.0
   mcp_dart: ^0.5.1
   lints: ^6.0.0
-  talker_dio_logger: ^4.8.4
