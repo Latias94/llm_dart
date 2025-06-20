@@ -959,9 +959,8 @@ class AnthropicChatResponse implements ChatResponse {
     final inputTokens = usageData['input_tokens'] as int? ?? 0;
     final outputTokens = usageData['output_tokens'] as int? ?? 0;
 
-    // Extract cache-related token information
-    final cacheCreationTokens = usageData['cache_creation_input_tokens'] as int?;
-    final cacheReadTokens = usageData['cache_read_input_tokens'] as int?;
+    // Note: Anthropic also provides cache_creation_input_tokens and cache_read_input_tokens
+    // These could be exposed in a future version of UsageInfo
 
     return UsageInfo(
       promptTokens: inputTokens,
@@ -970,9 +969,6 @@ class AnthropicChatResponse implements ChatResponse {
       // Anthropic doesn't provide separate thinking_tokens in usage
       // Thinking content is handled separately through content blocks
       reasoningTokens: null,
-      // Cache-related token information
-      cacheCreationInputTokens: cacheCreationTokens,
-      cacheReadInputTokens: cacheReadTokens,
     );
   }
 
