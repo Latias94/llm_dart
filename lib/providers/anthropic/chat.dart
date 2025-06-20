@@ -222,8 +222,18 @@ class AnthropicChat implements ChatCapability {
         // Message started - initialize response tracking
         final message = json['message'] as Map<String, dynamic>?;
         if (message != null) {
-          final usage = message['usage'] as Map<String, dynamic>?;
-          if (usage != null) {
+          final rawUsage = message['usage'];
+          if (rawUsage != null) {
+            // Safely convert Map<dynamic, dynamic> to Map<String, dynamic>
+            final Map<String, dynamic> usage;
+            if (rawUsage is Map<String, dynamic>) {
+              usage = rawUsage;
+            } else if (rawUsage is Map) {
+              usage = Map<String, dynamic>.from(rawUsage);
+            } else {
+              usage = <String, dynamic>{};
+            }
+
             final response = AnthropicChatResponse({
               'content': [],
               'usage': usage,
@@ -323,7 +333,19 @@ class AnthropicChat implements ChatCapability {
         if (delta != null) {
           final stopReason = delta['stop_reason'] as String?;
           if (stopReason != null) {
-            final usage = json['usage'] as Map<String, dynamic>?;
+            final rawUsage = json['usage'];
+            // Safely convert Map<dynamic, dynamic> to Map<String, dynamic>
+            final Map<String, dynamic>? usage;
+            if (rawUsage == null) {
+              usage = null;
+            } else if (rawUsage is Map<String, dynamic>) {
+              usage = rawUsage;
+            } else if (rawUsage is Map) {
+              usage = Map<String, dynamic>.from(rawUsage);
+            } else {
+              usage = <String, dynamic>{};
+            }
+
             final response = AnthropicChatResponse({
               'content': [],
               'usage': usage,
@@ -921,14 +943,25 @@ class AnthropicChatResponse implements ChatResponse {
 
   @override
   UsageInfo? get usage {
-    final usageData = _rawResponse['usage'] as Map<String, dynamic>?;
-    if (usageData == null) return null;
+    final rawUsage = _rawResponse['usage'];
+    if (rawUsage == null) return null;
+
+    // Safely convert Map<dynamic, dynamic> to Map<String, dynamic>
+    final Map<String, dynamic> usageData;
+    if (rawUsage is Map<String, dynamic>) {
+      usageData = rawUsage;
+    } else if (rawUsage is Map) {
+      usageData = Map<String, dynamic>.from(rawUsage);
+    } else {
+      return null;
+    }
 
     final inputTokens = usageData['input_tokens'] as int? ?? 0;
     final outputTokens = usageData['output_tokens'] as int? ?? 0;
 
-    // Note: Anthropic also provides cache_creation_input_tokens and cache_read_input_tokens
-    // These could be exposed in a future version of UsageInfo
+    // Extract cache-related token information
+    final cacheCreationTokens = usageData['cache_creation_input_tokens'] as int?;
+    final cacheReadTokens = usageData['cache_read_input_tokens'] as int?;
 
     return UsageInfo(
       promptTokens: inputTokens,
@@ -937,6 +970,9 @@ class AnthropicChatResponse implements ChatResponse {
       // Anthropic doesn't provide separate thinking_tokens in usage
       // Thinking content is handled separately through content blocks
       reasoningTokens: null,
+      // Cache-related token information
+      cacheCreationInputTokens: cacheCreationTokens,
+      cacheReadInputTokens: cacheReadTokens,
     );
   }
 

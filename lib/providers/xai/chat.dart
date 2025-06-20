@@ -301,8 +301,18 @@ class XAIChatResponse implements ChatResponse {
 
   @override
   UsageInfo? get usage {
-    final usageData = _rawResponse['usage'] as Map<String, dynamic>?;
-    if (usageData == null) return null;
+    final rawUsage = _rawResponse['usage'];
+    if (rawUsage == null) return null;
+
+    // Safely convert Map<dynamic, dynamic> to Map<String, dynamic>
+    final Map<String, dynamic> usageData;
+    if (rawUsage is Map<String, dynamic>) {
+      usageData = rawUsage;
+    } else if (rawUsage is Map) {
+      usageData = Map<String, dynamic>.from(rawUsage);
+    } else {
+      return null;
+    }
 
     return UsageInfo.fromJson(usageData);
   }

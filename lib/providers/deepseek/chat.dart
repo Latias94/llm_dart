@@ -237,7 +237,19 @@ class DeepSeekChat implements ChatCapability {
     // Check for finish reason
     final finishReason = choice['finish_reason'] as String?;
     if (finishReason != null) {
-      final usage = json['usage'] as Map<String, dynamic>?;
+      final rawUsage = json['usage'];
+      // Safely convert Map<dynamic, dynamic> to Map<String, dynamic>
+      final Map<String, dynamic>? usage;
+      if (rawUsage == null) {
+        usage = null;
+      } else if (rawUsage is Map<String, dynamic>) {
+        usage = rawUsage;
+      } else if (rawUsage is Map) {
+        usage = Map<String, dynamic>.from(rawUsage);
+      } else {
+        usage = null;
+      }
+
       final thinkingContent =
           thinkingBuffer.isNotEmpty ? thinkingBuffer.toString() : null;
 
@@ -431,8 +443,18 @@ class DeepSeekChatResponse implements ChatResponse {
 
   @override
   UsageInfo? get usage {
-    final usageData = _rawResponse['usage'] as Map<String, dynamic>?;
-    if (usageData == null) return null;
+    final rawUsage = _rawResponse['usage'];
+    if (rawUsage == null) return null;
+
+    // Safely convert Map<dynamic, dynamic> to Map<String, dynamic>
+    final Map<String, dynamic> usageData;
+    if (rawUsage is Map<String, dynamic>) {
+      usageData = rawUsage;
+    } else if (rawUsage is Map) {
+      usageData = Map<String, dynamic>.from(rawUsage);
+    } else {
+      return null;
+    }
 
     return UsageInfo.fromJson(usageData);
   }

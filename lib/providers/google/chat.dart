@@ -807,9 +807,18 @@ class GoogleChatResponse implements ChatResponse {
 
   @override
   UsageInfo? get usage {
-    final usageMetadata =
-        _rawResponse['usageMetadata'] as Map<String, dynamic>?;
-    if (usageMetadata == null) return null;
+    final rawUsageMetadata = _rawResponse['usageMetadata'];
+    if (rawUsageMetadata == null) return null;
+
+    // Safely convert Map<dynamic, dynamic> to Map<String, dynamic>
+    final Map<String, dynamic> usageMetadata;
+    if (rawUsageMetadata is Map<String, dynamic>) {
+      usageMetadata = rawUsageMetadata;
+    } else if (rawUsageMetadata is Map) {
+      usageMetadata = Map<String, dynamic>.from(rawUsageMetadata);
+    } else {
+      return null;
+    }
 
     return UsageInfo(
       promptTokens: usageMetadata['promptTokenCount'] as int?,

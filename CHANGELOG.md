@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.8.0] - 2025-6-20
 
 ### Added
 
@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Usage Data Type Conversion**: Fixed critical type casting issue in streaming responses ([#12](https://github.com/Latias94/llm_dart/issues/12))
 - **Web Platform Compatibility**: Resolved `dart:io` compatibility issues to support Web platforms.
 
 ## [0.7.2] - 2025-6-13
