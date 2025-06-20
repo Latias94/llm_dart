@@ -1,0 +1,128 @@
+import 'package:llm_dart/llm_dart.dart';
+
+/// Example demonstrating MessageBuilder with Anthropic caching
+/// 
+/// This example shows how to use the MessageBuilder to create messages
+/// with Anthropic-specific caching to reduce costs for repeated content.
+/// 
+/// Anthropic's caching feature allows you to cache frequently used content
+/// like system prompts or large documents, which can significantly reduce
+/// token costs for repetitive conversations.
+/// 
+/// **IMPORTANT - New Cache API:**
+/// The new caching API uses `.cache()` followed by `.text()`:
+/// - Call `.anthropicConfig((config) => config.cache())` to prepare caching
+/// - The next `.text()` call will apply the content to the cached block
+/// - Content appears in BOTH message.content AND extensions
+/// - This is intentional for universal provider compatibility
+/// - Each creates separate content blocks in the API request
+/// - Regular content becomes standard text blocks
+/// - Cached content becomes text blocks with cache_control
+/// 
+/// **Best Practices:**
+/// - Use `.text()` for content that doesn't need caching
+/// - Use `.cache()` followed by `.text()` for content that should be cached
+/// - Each `.cache()` call applies to the next `.text()` call only
+/// 
+/// To run this example:
+/// ```bash
+/// dart example/02_core_features/message_builder_cache.dart
+/// ```
+void main() async {
+  print('=== MessageBuilder with Anthropic Caching Example ===\n');
+
+  // Example 1: Basic message without caching
+  final basicMessage = MessageBuilder.user()
+      .text('What is quantum computing?')
+      .build();
+
+  print('1. Basic message:');
+  print('   Content: ${basicMessage.content}');
+  print('   Has extensions: ${basicMessage.extensions.isNotEmpty}');
+  print('');
+
+  // Example 2: System message with cached content
+  final systemMessage = MessageBuilder.system()
+      .text('You are a helpful AI assistant.')
+      .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+      .text('Here is a large document about quantum computing that you should reference:\n'
+           '[LARGE DOCUMENT CONTENT - This would be cached for 1 hour]\n'
+           'Quantum computing is a type of computation that harnesses the phenomena of quantum mechanics...')
+      .build();
+
+  print('2. System message with cached content:');
+  print('   Content preview: ${systemMessage.content.substring(0, 50)}...');
+  print('   Has Anthropic extension: ${systemMessage.hasExtension('anthropic')}');
+  print('   Extension data: ${systemMessage.getExtension('anthropic')}');
+  print('');
+
+  // Example 3: Mixed content with different cache TTLs
+  // IMPORTANT: This creates 3 separate content blocks in the API request:
+  // 1. "Based on the document provided, please answer:" (regular text)
+  // 2. "Current context: ..." (cached text with 5m TTL)
+  // 3. "What are the main advantages of quantum computers?" (regular text)
+  final mixedMessage = MessageBuilder.user()
+      .text('Based on the document provided, please answer:')
+      .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+      .text('Current context: This is a follow-up question in our conversation about quantum computing.')
+      .text('What are the main advantages of quantum computers?')
+      .build();
+
+  print('3. Mixed message with short-term cache:');
+  print('   Content: ${mixedMessage.content}');
+  print('   Extensions: ${mixedMessage.extensions}');
+  print('');
+
+  // Example 4: Multiple content blocks via contentBlocks method
+  final complexMessage = MessageBuilder.user()
+      .anthropicConfig((anthropic) => anthropic
+          .contentBlocks([
+            {
+              'type': 'text',
+              'text': 'Long-term cached system prompt that rarely changes',
+              'cache_control': {'type': 'ephemeral', 'ttl': '1h'}
+            },
+            {
+              'type': 'text',
+              'text': 'Dynamic content that changes frequently'
+            }
+          ]))
+      .text('What should I know about this topic?')
+      .build();
+
+  print('4. Complex message with multiple content blocks:');
+  print('   Content: ${complexMessage.content}');
+  print('   Anthropic blocks: ${complexMessage.getExtension<Map>('anthropic')?['contentBlocks']}');
+  print('');
+
+  // Example 5: Building a conversation with caching
+  final conversation = [
+    // System message with long-term cached instructions
+    MessageBuilder.system()
+        .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+        .text('You are an expert quantum computing researcher. Use the provided research papers and documentation to answer questions accurately.')
+        .build(),
+
+    // User message with context that might be reused
+    MessageBuilder.user()
+        .text('I need help understanding quantum algorithms.')
+        .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+        .text('Context: I am a computer science student with basic knowledge of linear algebra and probability.')
+        .build(),
+  ];
+
+  print('5. Conversation with strategic caching:');
+  for (int i = 0; i < conversation.length; i++) {
+    final message = conversation[i];
+    print('   Message ${i + 1} (${message.role}):');
+    print('     Content: ${message.content.replaceAll('\n', ' ').substring(0, 60)}...');
+    print('     Cached: ${message.hasExtension('anthropic')}');
+  }
+
+  print('\n=== Caching Strategy Tips ===');
+  print('- Use oneHour TTL for: System prompts, large documents, static context');
+  print('- Use fiveMinutes TTL for: Session context, temporary user state');
+  print('- Regular text() calls are never cached');
+  print('- Use .cache() followed by .text() for cached content');
+  print('- Cached content appears in both content and extensions');
+}
