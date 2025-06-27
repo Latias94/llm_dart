@@ -740,8 +740,14 @@ class GoogleChatResponse implements ChatResponse {
     final parts = content['parts'] as List?;
     if (parts == null || parts.isEmpty) return null;
 
+    // According to Google API docs, only return non-thinking content
+    // Thinking content has thought: true flag, regular content has thought: false or no thought field
     final textParts = parts
-        .where((part) => part['text'] != null)
+        .where((part) {
+          final isThought = part['thought'] as bool? ?? false;
+          final text = part['text'] as String?;
+          return !isThought && text != null && text.isNotEmpty;
+        })
         .map((part) => part['text'] as String)
         .toList();
 

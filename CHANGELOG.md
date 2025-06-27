@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Anthropic Prompt Caching Support**: Added unified MessageBuilder API with Anthropic prompt caching for tools and messages (by @okandemirofficial in [#11](https://github.com/Latias94/llm_dart/pull/11))
 
+### Fixed
+
+- **Google Thinking Content Separation**: Fixed GoogleChatResponse.text to correctly exclude thinking content according to Google API specification
+
 ## [0.8.0] - 2025-6-20
 
 ### Added

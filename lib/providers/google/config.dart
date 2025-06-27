@@ -159,8 +159,9 @@ class GoogleConfig {
 
   /// Check if this model supports reasoning/thinking
   bool get supportsReasoning {
-    // Gemini 2.0 Flash Thinking models support reasoning
+    // According to Google API docs, Gemini 2.5 series models support thinking
     return model.contains('thinking') ||
+        model.contains('gemini-2.5') ||
         model.contains('gemini-2.0') ||
         model.contains('gemini-exp');
   }
