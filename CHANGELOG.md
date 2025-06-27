@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Anthropic Prompt Caching Support**: Added unified MessageBuilder API with Anthropic prompt caching for tools and messages (by @okandemirofficial in [#11](https://github.com/Latias94/llm_dart/pull/11))
+
 ## [0.8.0] - 2025-6-20
 
 ### Added

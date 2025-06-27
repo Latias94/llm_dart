@@ -122,6 +122,25 @@ final embeddings = await provider.embed([
 ]);
 ```
 
+### Anthropic Prompt Caching
+**⚠️ ANTHROPIC ONLY**: Caching features are currently only supported by Anthropic providers.
+
+```dart
+// Message-level caching
+final systemMessage = MessageBuilder.system()
+    .text('You are a helpful AI assistant.')
+    .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+    .text('Here is a large document that will be cached...')
+    .build();
+
+// Tool-level caching (unified approach)
+final message = MessageBuilder.system()
+    .tools([tool1, tool2, tool3])
+    .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+    .text('Use these tools to help users.')
+    .build();
+```
+
 ## Best Practices
 
 ### Type Safety

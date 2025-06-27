@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'tool_models.dart';
 
 /// Role of a participant in a chat conversation.
 enum ChatRole {
@@ -474,6 +475,26 @@ class UniversalTextBlock implements ContentBlock {
       };
 }
 
+/// Tools block for storing tools in messages
+/// This allows tools to be cached and processed by providers
+class ToolsBlock implements ContentBlock {
+  final List<Tool> tools;
+
+  ToolsBlock(this.tools);
+
+  @override
+  String get displayText => '[${tools.length} tools defined]';
+
+  @override
+  String get providerId => 'universal';
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'tools',
+        'tools': tools.map((tool) => tool.toJson()).toList(),
+      };
+}
+
 /// Message builder for creating messages with provider-specific extensions
 ///
 /// **Provider-Specific Content:**
@@ -506,6 +527,24 @@ class MessageBuilder {
 
   MessageBuilder name(String name) {
     _name = name;
+    return this;
+  }
+
+  /// Add tools to this message
+  ///
+  /// This allows tools to be associated with specific messages,
+  /// enabling provider-specific caching and processing.
+  ///
+  /// Example:
+  /// ```dart
+  /// MessageBuilder.system()
+  ///     .tools([tool1, tool2, tool3])
+  ///     .anthropicConfig((anthropic) => anthropic.cache())  // Cache the tools
+  ///     .build();
+  /// ```
+  MessageBuilder tools(List<Tool> tools) {
+    // Add a special block to store tools for provider processing
+    addBlock(ToolsBlock(tools));
     return this;
   }
 
