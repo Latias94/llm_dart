@@ -3,6 +3,7 @@ import 'package:logging/logging.dart';
 
 import '../../core/llm_error.dart';
 import '../../utils/dio_client_factory.dart';
+import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -34,13 +35,13 @@ class GroqClient {
     String endpoint,
     Map<String, dynamic> data,
   ) async {
-    try {
-      final response = await dio.post(endpoint, data: data);
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      logger.severe('HTTP request failed: ${e.message}');
-      throw DioErrorHandler.handleDioError(e, 'Groq');
-    }
+    return HttpResponseHandler.postJson(
+      dio,
+      endpoint,
+      data,
+      providerName: 'Groq',
+      logger: logger,
+    );
   }
 
   /// Make a POST request and return raw stream for SSE

@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
 import '../../core/llm_error.dart';
 import '../../utils/dio_client_factory.dart';
+import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -36,22 +36,13 @@ class XAIClient {
     Map<String, dynamic> data,
   ) async {
     try {
-      // Debug logging for request payload
-      logger.finest('xAI request payload: ${jsonEncode(data)}');
-
-      final response = await dio.post(endpoint, data: data);
-
-      logger.fine('xAI HTTP status: ${response.statusCode}');
-
-      if (response.statusCode != 200) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          message: 'xAI API returned status ${response.statusCode}',
-        );
-      }
-
-      return response.data as Map<String, dynamic>;
+      return await HttpResponseHandler.postJson(
+        dio,
+        endpoint,
+        data,
+        providerName: 'xAI',
+        logger: logger,
+      );
     } on DioException catch (e) {
       logger.severe('HTTP request failed: ${e.message}');
       throw DioErrorHandler.handleDioError(e, 'xAI');

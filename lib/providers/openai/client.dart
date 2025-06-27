@@ -5,6 +5,7 @@ import 'package:logging/logging.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import '../../utils/dio_client_factory.dart';
+import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -262,7 +263,11 @@ class OpenAIClient {
         _handleErrorResponse(response, endpoint);
       }
 
-      return response.data as Map<String, dynamic>;
+      // Use unified response parsing while keeping OpenAI's error handling
+      return HttpResponseHandler.parseJsonResponse(
+        response.data,
+        providerName: 'OpenAI',
+      );
     } on DioException catch (e) {
       throw handleDioError(e);
     } catch (e) {

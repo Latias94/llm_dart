@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
 import '../../utils/dio_client_factory.dart';
+import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -61,8 +62,13 @@ class GoogleClient {
     String endpoint,
     Map<String, dynamic> data,
   ) async {
-    final response = await post(endpoint, data: data);
-    return response.data as Map<String, dynamic>;
+    return HttpResponseHandler.postJson(
+      dio,
+      _getEndpointWithAuth(endpoint),
+      data,
+      providerName: 'Google',
+      logger: logger,
+    );
   }
 
   /// Make a POST request and return stream response

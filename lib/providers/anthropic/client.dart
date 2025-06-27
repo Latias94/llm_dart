@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
 import '../../utils/dio_client_factory.dart';
+import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -39,13 +40,13 @@ class AnthropicClient {
     String endpoint,
     Map<String, dynamic> data,
   ) async {
-    try {
-      final response = await dio.post(endpoint, data: data);
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      logger.severe('HTTP request failed: ${e.message}');
-      rethrow;
-    }
+    return HttpResponseHandler.postJson(
+      dio,
+      endpoint,
+      data,
+      providerName: 'Anthropic',
+      logger: logger,
+    );
   }
 
   /// Make a GET request and return JSON response
