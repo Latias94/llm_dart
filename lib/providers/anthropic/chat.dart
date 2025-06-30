@@ -536,14 +536,73 @@ class AnthropicChat implements ChatCapability {
     }
 
     // Add tools if provided and model supports them
+    // Check for tool caching configuration from system messages
+    Map<String, dynamic>? toolCacheControl;
+    final messageTools = <Tool>[];
+
+    // Extract tool caching configuration from all messages
+    for (final message in messages) {
+      final anthropicData =
+          message.getExtension<Map<String, dynamic>>('anthropic');
+      if (anthropicData != null) {
+        final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+        if (contentBlocks != null) {
+          for (final block in contentBlocks) {
+            if (block is Map<String, dynamic>) {
+              // Check for cache control marker
+              if (block['cache_control'] != null && block['text'] == '') {
+                toolCacheControl = block['cache_control'];
+              } else if (block['type'] == 'tools') {
+                // Extract tools from ToolsBlock
+                final toolsList = block['tools'] as List<dynamic>?;
+                if (toolsList != null) {
+                  for (final toolData in toolsList) {
+                    if (toolData is Map<String, dynamic>) {
+                      // Convert back to Tool object
+                      final function =
+                          toolData['function'] as Map<String, dynamic>;
+                      messageTools.add(Tool(
+                        toolType: toolData['type'] as String? ?? 'function',
+                        function: FunctionTool(
+                          name: function['name'] as String,
+                          description: function['description'] as String,
+                          parameters: ParametersSchema.fromJson(
+                              function['parameters'] as Map<String, dynamic>),
+                        ),
+                      ));
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Combine tools from different sources
+    final allTools = <Tool>[];
+    allTools.addAll(messageTools); // Tools from MessageBuilder first
+
     final effectiveTools = tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
+      allTools.addAll(effectiveTools);
+    }
+
+    if (allTools.isNotEmpty) {
       if (!config.supportsToolCalling) {
         client.logger
             .warning('Model ${config.model} may not support tool calling');
       }
 
-      body['tools'] = effectiveTools.map((t) => _convertTool(t)).toList();
+      final convertedTools = allTools.map((t) => _convertTool(t)).toList();
+
+      // Apply cache control to the last tool if we have tool caching enabled
+      if (toolCacheControl != null && convertedTools.isNotEmpty) {
+        convertedTools.last['cache_control'] = toolCacheControl;
+      }
+
+      body['tools'] = convertedTools;
 
       // Add tool_choice if specified
       final effectiveToolChoice = config.toolChoice;

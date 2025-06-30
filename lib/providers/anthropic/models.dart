@@ -1,5 +1,6 @@
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
+import '../../models/tool_models.dart';
 import 'client.dart';
 import 'config.dart';
 
@@ -68,6 +69,25 @@ class AnthropicTextBlock implements ContentBlock {
       };
 }
 
+/// Anthropic-specific tools block that can be cached
+class AnthropicToolsBlock implements ContentBlock {
+  final List<Tool> tools;
+
+  AnthropicToolsBlock(this.tools);
+
+  @override
+  String get displayText => '[${tools.length} tools defined]';
+
+  @override
+  String get providerId => 'anthropic';
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'tools',
+        'tools': tools.map((tool) => tool.toJson()).toList(),
+      };
+}
+
 /// Anthropic message builder for provider-specific features
 class AnthropicMessageBuilder {
   final MessageBuilder _builder;
@@ -101,6 +121,39 @@ class AnthropicMessageBuilder {
           return this;
         } else {
           _builder.text(text);
+          return this;
+        }
+
+      case 'tools':
+        final toolsData = blockData['tools'] as List<dynamic>;
+        final cacheData = blockData['cache_control'] as Map<String, dynamic>?;
+
+        // Convert tool data back to Tool objects
+        final tools = <Tool>[];
+        for (final toolData in toolsData) {
+          if (toolData is Map<String, dynamic>) {
+            final function = toolData['function'] as Map<String, dynamic>;
+            tools.add(Tool(
+              toolType: toolData['type'] as String? ?? 'function',
+              function: FunctionTool(
+                name: function['name'] as String,
+                description: function['description'] as String,
+                parameters: ParametersSchema.fromJson(
+                    function['parameters'] as Map<String, dynamic>),
+              ),
+            ));
+          }
+        }
+
+        if (cacheData != null && cacheData['type'] == 'ephemeral') {
+          final ttlString = cacheData['ttl'] as String?;
+          final ttl = AnthropicCacheTtl.fromString(ttlString);
+          // Use cache + tools pattern
+          cache(ttl: ttl);
+          _builder.tools(tools);
+          return this;
+        } else {
+          _builder.tools(tools);
           return this;
         }
 

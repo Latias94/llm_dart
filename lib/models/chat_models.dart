@@ -555,17 +555,49 @@ class MessageBuilder {
 
   // Build ChatMessage with extensions
   ChatMessage build() {
-    // Create universal text content
-    final content = _blocks.map((block) => block.displayText).join('\n');
+    // Create universal text content, excluding tools blocks and empty text blocks
+    final textBlocks = _blocks.where(
+        (block) => block is! ToolsBlock && block.displayText.trim().isNotEmpty);
+    final content = textBlocks.map((block) => block.displayText).join('\n');
 
     // Group blocks by provider
     final extensions = <String, dynamic>{};
 
     final providerGroups = <String, List<ContentBlock>>{};
+    final universalTools = <ToolsBlock>[];
+
     for (final block in _blocks) {
-      if (block.providerId == 'universal') continue;
+      if (block.providerId == 'universal') {
+        // Special handling for ToolsBlock - they might need to be moved to anthropic extension
+        if (block is ToolsBlock) {
+          universalTools.add(block);
+        }
+        continue;
+      }
 
       providerGroups.putIfAbsent(block.providerId, () => []).add(block);
+    }
+
+    // Check if we have Anthropic cache markers and tools that need to be combined
+    if (providerGroups.containsKey('anthropic') && universalTools.isNotEmpty) {
+      final anthropicBlocks = providerGroups['anthropic']!;
+
+      // Check if there's a cache marker (empty text block with cache_control)
+      final hasCacheMarker = anthropicBlocks.any((block) {
+        final json = block.toJson();
+        return json['cache_control'] != null && json['text'] == '';
+      });
+
+      if (hasCacheMarker) {
+        // Move tools to anthropic extension for caching
+        // Create AnthropicToolsBlock from universal ToolsBlock
+        for (final toolsBlock in universalTools) {
+          // Create a new block that will be treated as anthropic-specific
+          final anthropicToolsBlock =
+              _AnthropicToolsBlockWrapper(toolsBlock.tools);
+          anthropicBlocks.add(anthropicToolsBlock);
+        }
+      }
     }
 
     // Create extensions for each provider
@@ -682,4 +714,23 @@ class RequestMetadata {
   @override
   String toString() =>
       'RequestMetadata(userId: $userId, customData: $customData)';
+}
+
+/// Internal wrapper to make ToolsBlock appear as anthropic-specific
+class _AnthropicToolsBlockWrapper implements ContentBlock {
+  final List<Tool> tools;
+
+  _AnthropicToolsBlockWrapper(this.tools);
+
+  @override
+  String get displayText => '[${tools.length} tools defined]';
+
+  @override
+  String get providerId => 'anthropic';
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': 'tools',
+        'tools': tools.map((tool) => tool.toJson()).toList(),
+      };
 }

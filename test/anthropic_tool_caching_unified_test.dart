@@ -48,8 +48,13 @@ void main() {
           .text('Use the provided tools to help users.')
           .build();
 
-      // Should have tools in content but no caching extensions
-      expect(message.content, contains('[2 tools defined]'));
+      // Should have text content but no tools text (tools are in extensions)
+      expect(message.content, contains('You are a helpful assistant'));
+      expect(message.content, contains('Use the provided tools'));
+      expect(
+          message.content,
+          isNot(contains(
+              '[2 tools defined]'))); // Tools text should NOT be in content
       expect(message.hasExtension('anthropic'), isFalse);
 
       print('Message with tools (no caching) validated');
@@ -65,8 +70,13 @@ void main() {
           .text('Use the provided tools to help users.')
           .build();
 
-      // Should have tools in content AND caching extensions
-      expect(message.content, contains('[2 tools defined]'));
+      // Should have text content but tools should be in extensions, not content
+      expect(message.content, contains('You are a helpful assistant'));
+      expect(message.content, contains('Use the provided tools'));
+      expect(
+          message.content,
+          isNot(contains(
+              '[2 tools defined]'))); // Tools text should NOT be in content
       expect(message.hasExtension('anthropic'), isTrue);
 
       // Verify cache configuration
@@ -76,15 +86,27 @@ void main() {
 
       final contentBlocks = anthropicData!['contentBlocks'] as List<dynamic>?;
       expect(contentBlocks, isNotNull);
-      expect(contentBlocks!.length, equals(1)); // Cache marker
+      expect(contentBlocks!.length, equals(2)); // Cache marker + tools block
 
-      final cacheMarker = contentBlocks.first as Map<String, dynamic>;
+      // Find cache marker (empty text block with cache_control)
+      final cacheMarker = contentBlocks.firstWhere((block) =>
+          block is Map<String, dynamic> &&
+          block['cache_control'] != null &&
+          block['text'] == '') as Map<String, dynamic>;
       expect(cacheMarker['text'], equals('')); // Empty cache marker
       expect(cacheMarker['cache_control'], isNotNull);
 
       final cacheControl = cacheMarker['cache_control'] as Map<String, dynamic>;
       expect(cacheControl['type'], equals('ephemeral'));
       expect(cacheControl['ttl'], equals('1h'));
+
+      // Find tools block
+      final toolsBlock = contentBlocks.firstWhere((block) =>
+              block is Map<String, dynamic> && block['type'] == 'tools')
+          as Map<String, dynamic>;
+      expect(toolsBlock['type'], equals('tools'));
+      expect(toolsBlock['tools'], isA<List>());
+      expect((toolsBlock['tools'] as List).length, equals(2));
 
       print('Message with cached tools (correct order) validated');
     });
@@ -99,9 +121,13 @@ void main() {
           .text('This text will be cached, not the tools.')
           .build();
 
-      // Should have tools in content AND caching extensions (but cache applies to text)
-      expect(message.content, contains('[2 tools defined]'));
+      // Should have text content but tools should not appear in content
+      expect(message.content, contains('You are a helpful assistant'));
       expect(message.content, contains('This text will be cached'));
+      expect(
+          message.content,
+          isNot(contains(
+              '[2 tools defined]'))); // Tools text should NOT be in content
       expect(message.hasExtension('anthropic'), isTrue);
 
       print('Message with tools then cache (wrong order) validated');
@@ -119,14 +145,21 @@ void main() {
           .text('This text cached with 5m TTL')
           .build();
 
-      expect(message.content, contains('[2 tools defined]'));
+      expect(message.content, contains('System instructions'));
+      expect(message.content, contains('Intermediate text'));
+      expect(message.content, contains('This text cached with 5m TTL'));
+      expect(
+          message.content,
+          isNot(contains(
+              '[2 tools defined]'))); // Tools text should NOT be in content
       expect(message.hasExtension('anthropic'), isTrue);
 
-      // Should have multiple cache markers
+      // Should have multiple cache markers + tools block
       final anthropicData =
           message.getExtension<Map<String, dynamic>>('anthropic');
       final contentBlocks = anthropicData!['contentBlocks'] as List<dynamic>;
-      expect(contentBlocks.length, equals(2)); // Two cache markers
+      expect(
+          contentBlocks.length, equals(3)); // Two cache markers + tools block
 
       // First cache marker (1h TTL for tools)
       final firstCache = contentBlocks[0] as Map<String, dynamic>;
@@ -201,7 +234,10 @@ void main() {
 
       // Verify content structure
       expect(message.content, contains('You are an AI assistant'));
-      expect(message.content, contains('[2 tools defined]'));
+      expect(
+          message.content,
+          isNot(contains(
+              '[2 tools defined]'))); // Tools text should NOT be in content
       expect(message.content, contains('Instructions: Use these tools'));
       expect(message.content, contains('Session context'));
       expect(message.content, contains('How can I help you today?'));
@@ -212,7 +248,8 @@ void main() {
       final anthropicData =
           message.getExtension<Map<String, dynamic>>('anthropic');
       final contentBlocks = anthropicData!['contentBlocks'] as List<dynamic>;
-      expect(contentBlocks.length, equals(2)); // Two cache configurations
+      expect(contentBlocks.length,
+          equals(3)); // Two cache configurations + tools block
 
       print('Complex message with mixed caching validated');
     });
