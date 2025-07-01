@@ -1,11 +1,12 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 
-/// Test suite for unified MessageBuilder tool caching functionality
-/// Tests that tools can be cached using the unified anthropicConfig approach
+/// Test suite for MessageBuilder tool caching functionality
+/// Tests that tools are cached at MessageBuilder level with all other content
+/// When .cache() is used, ALL tools and text in the MessageBuilder are cached together
 /// NO API CALLS - only validates message structure
 void main() {
-  group('Anthropic Unified Tool Caching Tests', () {
+  group('Anthropic MessageBuilder Tool Caching Tests', () {
     late List<Tool> testTools;
 
     setUp(() {
@@ -48,35 +49,31 @@ void main() {
           .text('Use the provided tools to help users.')
           .build();
 
-      // Should have text content but no tools text (tools are in extensions)
-      expect(message.content, contains('You are a helpful assistant'));
-      expect(message.content, contains('Use the provided tools'));
-      expect(
-          message.content,
-          isNot(contains(
-              '[2 tools defined]'))); // Tools text should NOT be in content
+      // Text should be merged with newlines
+      final expectedContent = 'You are a helpful assistant.\n'
+          'Use the provided tools to help users.';
+      expect(message.content, equals(expectedContent));
+
+      // No caching, so no anthropic extensions
       expect(message.hasExtension('anthropic'), isFalse);
 
       print('Message with tools (no caching) validated');
     });
 
-    test('MessageBuilder with cached tools (correct order)', () {
-      // Cache configuration BEFORE tools - this should cache the tools
+    test('MessageBuilder with cached tools caches everything together', () {
+      // When .cache() is used, ALL content in MessageBuilder should be cached
       final message = MessageBuilder.system()
           .text('You are a helpful assistant.')
+          .tools(testTools) // Tools added
+          .text('Use the provided tools to help users.')
           .anthropicConfig(
               (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
-          .tools(testTools) // These tools should be cached
-          .text('Use the provided tools to help users.')
           .build();
 
-      // Should have text content but tools should be in extensions, not content
-      expect(message.content, contains('You are a helpful assistant'));
-      expect(message.content, contains('Use the provided tools'));
-      expect(
-          message.content,
-          isNot(contains(
-              '[2 tools defined]'))); // Tools text should NOT be in content
+      // Text should be merged with newlines
+      final expectedContent = 'You are a helpful assistant.\n'
+          'Use the provided tools to help users.';
+      expect(message.content, equals(expectedContent));
       expect(message.hasExtension('anthropic'), isTrue);
 
       // Verify cache configuration
@@ -108,7 +105,7 @@ void main() {
       expect(toolsBlock['tools'], isA<List>());
       expect((toolsBlock['tools'] as List).length, equals(2));
 
-      print('Message with cached tools (correct order) validated');
+      print('MessageBuilder with cached tools caches everything together - validated');
     });
 
     test('MessageBuilder with tools then cache (wrong order)', () {

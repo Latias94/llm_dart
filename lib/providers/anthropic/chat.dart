@@ -7,6 +7,7 @@ import '../../models/tool_models.dart';
 import 'client.dart';
 import 'config.dart';
 import 'mcp_models.dart';
+import 'request_builder.dart';
 
 /// Anthropic Chat capability implementation
 ///
@@ -22,8 +23,11 @@ import 'mcp_models.dart';
 class AnthropicChat implements ChatCapability {
   final AnthropicClient client;
   final AnthropicConfig config;
+  late final AnthropicRequestBuilder _requestBuilder;
 
-  AnthropicChat(this.client, this.config);
+  AnthropicChat(this.client, this.config) {
+    _requestBuilder = AnthropicRequestBuilder(config);
+  }
 
   String get chatEndpoint => 'messages';
 
@@ -38,7 +42,7 @@ class AnthropicChat implements ChatCapability {
     List<ChatMessage> messages,
     List<Tool>? tools,
   ) async {
-    final requestBody = _buildRequestBody(messages, tools, false);
+    final requestBody = _requestBuilder.buildRequestBody(messages, tools, false);
     // Headers including interleaved thinking beta are automatically handled by AnthropicClient
     final responseData = await client.postJson(chatEndpoint, requestBody);
     return _parseResponse(responseData);
@@ -57,7 +61,7 @@ class AnthropicChat implements ChatCapability {
     List<Tool>? tools,
   }) async* {
     final effectiveTools = tools ?? config.tools;
-    final requestBody = _buildRequestBody(messages, effectiveTools, true);
+    final requestBody = _requestBuilder.buildRequestBody(messages, effectiveTools, true);
 
     // Create SSE stream - headers are automatically handled by AnthropicClient
     // including interleaved thinking beta header if enabled
@@ -416,306 +420,10 @@ class AnthropicChat implements ChatCapability {
     return null;
   }
 
-  /// Build request body for Anthropic API
-  Map<String, dynamic> _buildRequestBody(
-    List<ChatMessage> messages,
-    List<Tool>? tools,
-    bool stream,
-  ) {
-    final anthropicMessages = <Map<String, dynamic>>[];
-    final systemContentBlocks = <Map<String, dynamic>>[];
-    final systemMessages = <String>[];
 
-    // Extract system messages and convert other messages to Anthropic format
-    for (final message in messages) {
-      if (message.role == ChatRole.system) {
-        // Check if system message has cached content
-        final anthropicData =
-            message.getExtension<Map<String, dynamic>>('anthropic');
 
-        Map<String, dynamic>? systemCacheControl;
-        if (anthropicData != null) {
-          final contentBlocks =
-              anthropicData['contentBlocks'] as List<dynamic>?;
-          if (contentBlocks != null && contentBlocks.isNotEmpty) {
-            for (final block in contentBlocks) {
-              if (block is Map<String, dynamic>) {
-                // Check for cache control in system message
-                if (block['cache_control'] != null && block['text'] == '') {
-                  systemCacheControl = block['cache_control'];
-                  continue; // Skip cache marker
-                }
-                systemContentBlocks.add(block);
-              }
-            }
-          }
-        }
 
-        if (message.content.isNotEmpty) {
-          // Apply cache control to system content if present
-          if (systemCacheControl != null) {
-            systemContentBlocks.add({
-              'type': 'text',
-              'text': message.content,
-              'cache_control': systemCacheControl,
-            });
-          } else {
-            systemMessages.add(message.content);
-          }
-        }
-      } else {
-        anthropicMessages.add(_convertMessage(message));
-      }
-    }
 
-    // Validate that we have at least one non-system message
-    if (anthropicMessages.isEmpty) {
-      throw const InvalidRequestError(
-          'At least one non-system message is required');
-    }
-
-    // Ensure messages alternate between user and assistant (Anthropic requirement)
-    _validateMessageSequence(anthropicMessages);
-
-    final body = <String, dynamic>{
-      'model': config.model,
-      'messages': anthropicMessages,
-      'max_tokens': config.maxTokens ?? 1024,
-      'stream': stream,
-    };
-
-    // Add system prompt - handle both content blocks and plain text
-    final allSystemContent = <Map<String, dynamic>>[];
-
-    // Add config system prompt as a text block if present
-    if (config.systemPrompt != null && config.systemPrompt!.isNotEmpty) {
-      allSystemContent.add({
-        'type': 'text',
-        'text': config.systemPrompt!,
-      });
-    }
-
-    // Add cached content blocks from MessageBuilder
-    allSystemContent.addAll(systemContentBlocks);
-
-    // Add regular system messages as text blocks
-    for (final systemMessage in systemMessages) {
-      allSystemContent.add({
-        'type': 'text',
-        'text': systemMessage,
-      });
-    }
-
-    if (allSystemContent.isNotEmpty) {
-      // Use content blocks format for system prompt to support caching
-      body['system'] = allSystemContent;
-    }
-
-    // Add optional parameters with validation
-    if (config.temperature != null) {
-      if (config.temperature! < 0.0 || config.temperature! > 1.0) {
-        client.logger.warning(
-            'Temperature ${config.temperature} is outside valid range [0.0, 1.0]');
-      }
-      body['temperature'] = config.temperature;
-    }
-
-    if (config.topP != null) {
-      if (config.topP! < 0.0 || config.topP! > 1.0) {
-        client.logger
-            .warning('TopP ${config.topP} is outside valid range [0.0, 1.0]');
-      }
-      body['top_p'] = config.topP;
-    }
-
-    if (config.topK != null) {
-      if (config.topK! < 1) {
-        client.logger.warning('TopK ${config.topK} should be >= 1');
-      }
-      body['top_k'] = config.topK;
-    }
-
-    // Add tools if provided and model supports them
-    // Check for tool caching configuration from system messages
-    Map<String, dynamic>? toolCacheControl;
-    final messageTools = <Tool>[];
-
-    // Extract tool caching configuration from all messages
-    for (final message in messages) {
-      final anthropicData =
-          message.getExtension<Map<String, dynamic>>('anthropic');
-      if (anthropicData != null) {
-        final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
-        if (contentBlocks != null) {
-          for (final block in contentBlocks) {
-            if (block is Map<String, dynamic>) {
-              // Check for cache control marker
-              if (block['cache_control'] != null && block['text'] == '') {
-                toolCacheControl = block['cache_control'];
-              } else if (block['type'] == 'tools') {
-                // Extract tools from ToolsBlock
-                final toolsList = block['tools'] as List<dynamic>?;
-                if (toolsList != null) {
-                  for (final toolData in toolsList) {
-                    if (toolData is Map<String, dynamic>) {
-                      // Convert back to Tool object
-                      final function =
-                          toolData['function'] as Map<String, dynamic>;
-                      messageTools.add(Tool(
-                        toolType: toolData['type'] as String? ?? 'function',
-                        function: FunctionTool(
-                          name: function['name'] as String,
-                          description: function['description'] as String,
-                          parameters: ParametersSchema.fromJson(
-                              function['parameters'] as Map<String, dynamic>),
-                        ),
-                      ));
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Combine tools from different sources
-    final allTools = <Tool>[];
-    allTools.addAll(messageTools); // Tools from MessageBuilder first
-
-    final effectiveTools = tools ?? config.tools;
-    if (effectiveTools != null && effectiveTools.isNotEmpty) {
-      allTools.addAll(effectiveTools);
-    }
-
-    if (allTools.isNotEmpty) {
-      if (!config.supportsToolCalling) {
-        client.logger
-            .warning('Model ${config.model} may not support tool calling');
-      }
-
-      final convertedTools = allTools.map((t) => _convertTool(t)).toList();
-
-      // Apply cache control to the last tool if we have tool caching enabled
-      if (toolCacheControl != null && convertedTools.isNotEmpty) {
-        convertedTools.last['cache_control'] = toolCacheControl;
-      }
-
-      body['tools'] = convertedTools;
-
-      // Add tool_choice if specified
-      final effectiveToolChoice = config.toolChoice;
-      if (effectiveToolChoice != null) {
-        // Validate tool choice compatibility with thinking
-        if (config.reasoning &&
-            effectiveToolChoice is! AutoToolChoice &&
-            effectiveToolChoice is! NoneToolChoice) {
-          client.logger.warning(
-              'Extended thinking only supports tool_choice "auto" or "none". Other tool choices may cause errors.');
-        }
-        body['tool_choice'] = _convertToolChoice(effectiveToolChoice);
-      }
-    }
-
-    // Add thinking configuration if reasoning is enabled
-    if (config.reasoning) {
-      if (!config.supportsReasoning) {
-        client.logger.warning(
-            'Model ${config.model} may not support reasoning/thinking');
-      }
-
-      final thinkingConfig = <String, dynamic>{
-        'type': 'enabled',
-      };
-
-      // Add budget tokens if specified
-      if (config.thinkingBudgetTokens != null) {
-        if (config.thinkingBudgetTokens! < 1024) {
-          client.logger.warning(
-              'Thinking budget tokens ${config.thinkingBudgetTokens} is quite low, consider using at least 1024');
-        }
-        thinkingConfig['budget_tokens'] = config.thinkingBudgetTokens;
-      }
-
-      body['thinking'] = thinkingConfig;
-    }
-
-    // Add stop sequences if provided
-    if (config.stopSequences != null && config.stopSequences!.isNotEmpty) {
-      body['stop_sequences'] = config.stopSequences;
-    }
-
-    // Add service tier if specified
-    if (config.serviceTier != null) {
-      body['service_tier'] = config.serviceTier!.value;
-    }
-
-    // Add metadata if user is specified or extensions contain metadata
-    final metadata = <String, dynamic>{};
-    if (config.user != null) {
-      metadata['user_id'] = config.user;
-    }
-
-    // Add custom metadata from extensions
-    final customMetadata =
-        config.getExtension<Map<String, dynamic>>('metadata');
-    if (customMetadata != null) {
-      metadata.addAll(customMetadata);
-    }
-
-    if (metadata.isNotEmpty) {
-      body['metadata'] = metadata;
-    }
-
-    // Add container identifier from extensions
-    final container = config.getExtension<String>('container');
-    if (container != null) {
-      body['container'] = container;
-    }
-
-    // Add MCP servers from extensions
-    final mcpServers =
-        config.getExtension<List<AnthropicMCPServer>>('mcpServers');
-    if (mcpServers != null && mcpServers.isNotEmpty) {
-      body['mcp_servers'] =
-          mcpServers.map((server) => server.toJson()).toList();
-    }
-
-    return body;
-  }
-
-  /// Validate that messages follow Anthropic's requirements
-  void _validateMessageSequence(List<Map<String, dynamic>> messages) {
-    if (messages.isEmpty) return;
-
-    // First message should be from user (Anthropic requirement)
-    if (messages.first['role'] != 'user') {
-      client.logger.warning(
-          'First message should be from user for optimal results with Anthropic API');
-    }
-
-    // Check for consecutive messages from the same role
-    // Anthropic allows consecutive messages but they will be combined
-    for (int i = 1; i < messages.length; i++) {
-      if (messages[i]['role'] == messages[i - 1]['role']) {
-        client.logger.info(
-            'Found consecutive ${messages[i]['role']} messages - Anthropic will combine them into a single turn');
-        break; // Only warn once
-      }
-    }
-
-    // Validate message content is not empty
-    for (int i = 0; i < messages.length; i++) {
-      final content = messages[i]['content'];
-      if (content is List && content.isEmpty) {
-        throw const InvalidRequestError('Message content cannot be empty');
-      }
-      if (content is String && content.trim().isEmpty) {
-        throw const InvalidRequestError('Message content cannot be empty');
-      }
-    }
-  }
 
   /// Convert ChatMessage to Anthropic format
   /// Note: Anthropic API does not support the 'name' field, so it will be ignored
@@ -940,33 +648,7 @@ class AnthropicChat implements ChatCapability {
     }
   }
 
-  /// Convert ToolChoice to Anthropic format
-  dynamic _convertToolChoice(ToolChoice toolChoice) {
-    switch (toolChoice) {
-      case AutoToolChoice(disableParallelToolUse: final disableParallel):
-        if (disableParallel == true) {
-          return {'type': 'auto', 'disable_parallel_tool_use': true};
-        }
-        return {'type': 'auto'};
-      case AnyToolChoice(disableParallelToolUse: final disableParallel):
-        if (disableParallel == true) {
-          return {'type': 'any', 'disable_parallel_tool_use': true};
-        }
-        return {'type': 'any'};
-      case SpecificToolChoice(
-          toolName: final toolName,
-          disableParallelToolUse: final disableParallel
-        ):
-        final result = <String, dynamic>{'type': 'tool', 'name': toolName};
-        if (disableParallel == true) {
-          result['disable_parallel_tool_use'] = true;
-        }
-        return result;
-      case NoneToolChoice():
-        // For Anthropic, 'none' is a string, not an object
-        return 'none';
-    }
-  }
+
 }
 
 /// Anthropic chat response implementation

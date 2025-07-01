@@ -1,9 +1,9 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 
-/// Test suite for Anthropic GLOBAL caching structure validation
-/// Tests that .cache() applies to ALL content in the message
-/// NO API CALLS - only validates message structure
+/// Test suite for Anthropic prompt caching structure validation
+/// Tests comprehensive caching functionality according to official documentation
+/// NO API CALLS - only validates message structure and API request building
 void main() {
   group('Anthropic Global Cache Tests', () {
     test('System message with global 1-hour cache', () {
