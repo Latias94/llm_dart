@@ -159,7 +159,8 @@ class AnthropicChat implements ChatCapability {
     // Add tools if provided
     final effectiveTools = tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
-      body['tools'] = effectiveTools.map((t) => _convertTool(t)).toList();
+      body['tools'] =
+          effectiveTools.map((t) => _requestBuilder.convertTool(t)).toList();
     }
 
     // Add thinking configuration if enabled
@@ -582,67 +583,6 @@ class AnthropicChat implements ChatCapability {
     }
 
     return {'role': message.role.name, 'content': content};
-  }
-
-  /// Convert Tool to Anthropic format
-  Map<String, dynamic> _convertTool(Tool tool) {
-    try {
-      final schema = tool.function.parameters.toJson();
-
-      // Validate that the schema is valid for Anthropic (must be object type)
-      if (schema['type'] != 'object') {
-        client.logger.warning(
-            'Tool ${tool.function.name} has invalid schema type: ${schema['type']}. Anthropic requires object type. Converting to object.');
-
-        // Convert to valid object schema
-        return {
-          'name': tool.function.name,
-          'description': tool.function.description.isNotEmpty
-              ? tool.function.description
-              : 'No description provided',
-          'input_schema': {
-            'type': 'object',
-            'properties': {
-              'input': {
-                'type': 'string',
-                'description': 'Input for ${tool.function.name}',
-              }
-            },
-            'required': ['input'],
-          },
-        };
-      }
-
-      // Ensure required fields are present
-      final inputSchema = Map<String, dynamic>.from(schema);
-      inputSchema['type'] = 'object'; // Ensure type is object
-
-      // Add properties if missing
-      if (!inputSchema.containsKey('properties')) {
-        inputSchema['properties'] = <String, dynamic>{};
-      }
-
-      return {
-        'name': tool.function.name,
-        'description': tool.function.description.isNotEmpty
-            ? tool.function.description
-            : 'No description provided',
-        'input_schema': inputSchema,
-      };
-    } catch (e) {
-      client.logger.warning('Failed to convert tool ${tool.function.name}: $e');
-      // Return a minimal valid tool definition
-      return {
-        'name': tool.function.name,
-        'description': tool.function.description.isNotEmpty
-            ? tool.function.description
-            : 'Tool with invalid schema',
-        'input_schema': {
-          'type': 'object',
-          'properties': {},
-        },
-      };
-    }
   }
 }
 

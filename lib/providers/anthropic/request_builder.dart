@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
@@ -233,7 +235,7 @@ class AnthropicRequestBuilder {
   void _addTools(Map<String, dynamic> body, ProcessedTools processedTools) {
     if (processedTools.tools.isNotEmpty) {
       final convertedTools =
-          processedTools.tools.map((t) => _convertTool(t)).toList();
+          processedTools.tools.map((t) => convertTool(t)).toList();
 
       // Apply cache control to last tool
       if (processedTools.cacheControl != null && convertedTools.isNotEmpty) {
@@ -376,20 +378,51 @@ class AnthropicRequestBuilder {
           break;
         case ToolUseMessage(toolCalls: final toolCalls):
           for (final toolCall in toolCalls) {
-            content.add({
-              'type': 'tool_use',
-              'id': toolCall.id,
-              'name': toolCall.function.name,
-              'input': toolCall.function.arguments,
-            });
+            try {
+              final input = jsonDecode(toolCall.function.arguments);
+              content.add({
+                'type': 'tool_use',
+                'id': toolCall.id,
+                'name': toolCall.function.name,
+                'input': input,
+              });
+            } catch (e) {
+              // If JSON parsing fails, add an error message instead
+              content.add({
+                'type': 'text',
+                'text':
+                    '[Error: Invalid tool call arguments for ${toolCall.function.name}]',
+              });
+            }
           }
           break;
         case ToolResultMessage(results: final results):
           for (final result in results) {
+            // Parse the result content to determine if it's an error
+            bool isError = false;
+            String resultContent = result.function.arguments;
+
+            // Try to parse as JSON to check for error indicators
+            try {
+              final parsed = jsonDecode(resultContent);
+              if (parsed is Map<String, dynamic>) {
+                isError = parsed['error'] != null ||
+                    parsed['is_error'] == true ||
+                    parsed['success'] == false;
+              }
+            } catch (e) {
+              // If not valid JSON, check for common error patterns
+              final lowerContent = resultContent.toLowerCase();
+              isError = lowerContent.contains('error') ||
+                  lowerContent.contains('failed') ||
+                  lowerContent.contains('exception');
+            }
+
             content.add({
               'type': 'tool_result',
               'tool_use_id': result.id,
-              'content': result.function.arguments,
+              'content': resultContent,
+              'is_error': isError,
             });
           }
           break;
@@ -408,17 +441,24 @@ class AnthropicRequestBuilder {
   }
 
   /// Convert a Tool to Anthropic API format
-  Map<String, dynamic> _convertTool(Tool tool) {
+  Map<String, dynamic> convertTool(Tool tool) {
     try {
       final schema = tool.function.parameters.toJson();
 
       // Anthropic requires input_schema to be a valid JSON Schema object
       // According to official docs, it should be type "object"
       if (schema['type'] != 'object') {
+        // Provide helpful error message with suggestion
         throw ArgumentError(
             'Anthropic tools require input_schema to be of type "object". '
             'Tool "${tool.function.name}" has type "${schema['type']}". '
-            'Please update your tool definition to use an object schema.');
+            '\n\nTo fix this, update your tool definition:\n'
+            'ParametersSchema(\n'
+            '  schemaType: "object",  // <- Change this to "object"\n'
+            '  properties: {...},\n'
+            '  required: [...],\n'
+            ')\n\n'
+            'See: https://docs.anthropic.com/en/api/messages#tools');
       }
 
       // Ensure required fields are present
