@@ -82,8 +82,9 @@ class AnthropicRequestBuilder {
     final plainMessages = <String>[];
     Map<String, dynamic>? cacheControl;
 
-    final anthropicData = message.getExtension<Map<String, dynamic>>('anthropic');
-    
+    final anthropicData =
+        message.getExtension<Map<String, dynamic>>('anthropic');
+
     if (anthropicData != null) {
       final blocks = anthropicData['contentBlocks'] as List<dynamic>?;
       if (blocks != null) {
@@ -123,7 +124,8 @@ class AnthropicRequestBuilder {
   }
 
   /// Process tools from messages and config
-  ProcessedTools _processTools(List<ChatMessage> messages, List<Tool>? configTools) {
+  ProcessedTools _processTools(
+      List<ChatMessage> messages, List<Tool>? configTools) {
     final messageTools = <Tool>[];
     Map<String, dynamic>? toolCacheControl;
 
@@ -137,7 +139,7 @@ class AnthropicRequestBuilder {
     // Combine with config tools
     final allTools = <Tool>[];
     allTools.addAll(messageTools);
-    
+
     final effectiveTools = configTools ?? config.tools;
     if (effectiveTools != null) {
       allTools.addAll(effectiveTools);
@@ -154,7 +156,8 @@ class AnthropicRequestBuilder {
     final tools = <Tool>[];
     Map<String, dynamic>? cacheControl;
 
-    final anthropicData = message.getExtension<Map<String, dynamic>>('anthropic');
+    final anthropicData =
+        message.getExtension<Map<String, dynamic>>('anthropic');
     if (anthropicData != null) {
       final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
       if (contentBlocks != null) {
@@ -177,7 +180,7 @@ class AnthropicRequestBuilder {
   List<Tool> _convertToolsFromBlock(Map<String, dynamic> toolsBlock) {
     final tools = <Tool>[];
     final toolsList = toolsBlock['tools'] as List<dynamic>?;
-    
+
     if (toolsList != null) {
       for (final toolData in toolsList) {
         if (toolData is Map<String, dynamic>) {
@@ -194,7 +197,7 @@ class AnthropicRequestBuilder {
         }
       }
     }
-    
+
     return tools;
   }
 
@@ -229,7 +232,8 @@ class AnthropicRequestBuilder {
   /// Add tools to request body
   void _addTools(Map<String, dynamic> body, ProcessedTools processedTools) {
     if (processedTools.tools.isNotEmpty) {
-      final convertedTools = processedTools.tools.map((t) => _convertTool(t)).toList();
+      final convertedTools =
+          processedTools.tools.map((t) => _convertTool(t)).toList();
 
       // Apply cache control to last tool
       if (processedTools.cacheControl != null && convertedTools.isNotEmpty) {
@@ -293,7 +297,8 @@ class AnthropicRequestBuilder {
     }
 
     // Add custom metadata from extensions
-    final customMetadata = config.getExtension<Map<String, dynamic>>('metadata');
+    final customMetadata =
+        config.getExtension<Map<String, dynamic>>('metadata');
     if (customMetadata != null) {
       metadata.addAll(customMetadata);
     }
@@ -309,9 +314,11 @@ class AnthropicRequestBuilder {
     }
 
     // Add MCP servers from extensions
-    final mcpServers = config.getExtension<List<AnthropicMCPServer>>('mcpServers');
+    final mcpServers =
+        config.getExtension<List<AnthropicMCPServer>>('mcpServers');
     if (mcpServers != null && mcpServers.isNotEmpty) {
-      body['mcp_servers'] = mcpServers.map((server) => server.toJson()).toList();
+      body['mcp_servers'] =
+          mcpServers.map((server) => server.toJson()).toList();
     }
   }
 
@@ -320,7 +327,8 @@ class AnthropicRequestBuilder {
     final content = <Map<String, dynamic>>[];
 
     // Check for Anthropic-specific extensions first
-    final anthropicData = message.getExtension<Map<String, dynamic>>('anthropic');
+    final anthropicData =
+        message.getExtension<Map<String, dynamic>>('anthropic');
 
     // Handle cache control from extensions
     Map<String, dynamic>? cacheControl;

@@ -28,27 +28,29 @@ void main() {
       // Create a message with tools and cache
       final message = MessageBuilder.system()
           .text('System instructions')
-          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+          .anthropicConfig(
+              (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
           .text('More instructions')
-          .tools([testTool])
-          .build();
+          .tools([testTool]).build();
 
       final messages = [message];
-      
+
       // Simulate the _buildRequestBody method logic (after fix)
       final anthropicMessages = <Map<String, dynamic>>[];
       final systemContentBlocks = <Map<String, dynamic>>[];
       final systemMessages = <String>[];
-      
+
       // Process system messages (with fix applied)
       for (final msg in messages) {
         if (msg.role == ChatRole.system) {
-          final anthropicData = msg.getExtension<Map<String, dynamic>>('anthropic');
+          final anthropicData =
+              msg.getExtension<Map<String, dynamic>>('anthropic');
           if (anthropicData != null) {
-            final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+            final contentBlocks =
+                anthropicData['contentBlocks'] as List<dynamic>?;
             if (contentBlocks != null && contentBlocks.isNotEmpty) {
               Map<String, dynamic>? systemCacheControl;
-              
+
               for (final block in contentBlocks) {
                 if (block is Map<String, dynamic>) {
                   if (block['cache_control'] != null && block['text'] == '') {
@@ -62,7 +64,7 @@ void main() {
                   systemContentBlocks.add(block);
                 }
               }
-              
+
               // Apply cache control to system content
               if (msg.content.isNotEmpty && systemCacheControl != null) {
                 systemContentBlocks.add({
@@ -83,9 +85,11 @@ void main() {
       final messageTools = <Tool>[];
 
       for (final msg in messages) {
-        final anthropicData = msg.getExtension<Map<String, dynamic>>('anthropic');
+        final anthropicData =
+            msg.getExtension<Map<String, dynamic>>('anthropic');
         if (anthropicData != null) {
-          final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+          final contentBlocks =
+              anthropicData['contentBlocks'] as List<dynamic>?;
           if (contentBlocks != null) {
             for (final block in contentBlocks) {
               if (block is Map<String, dynamic>) {
@@ -96,7 +100,8 @@ void main() {
                   if (toolsList != null) {
                     for (final toolData in toolsList) {
                       if (toolData is Map<String, dynamic>) {
-                        final function = toolData['function'] as Map<String, dynamic>;
+                        final function =
+                            toolData['function'] as Map<String, dynamic>;
                         messageTools.add(Tool(
                           toolType: toolData['type'] as String? ?? 'function',
                           function: FunctionTool(
@@ -117,10 +122,12 @@ void main() {
       }
 
       // Convert tools to API format
-      final convertedTools = messageTools.map((t) => {
-        'type': t.toolType,
-        'function': t.function.toJson(),
-      }).toList();
+      final convertedTools = messageTools
+          .map((t) => {
+                'type': t.toolType,
+                'function': t.function.toJson(),
+              })
+          .toList();
 
       // Apply cache control to last tool
       if (toolCacheControl != null && convertedTools.isNotEmpty) {
@@ -151,37 +158,37 @@ void main() {
       print('Tools: ${requestBody['tools']}');
 
       // VERIFY THE FIX
-      
+
       // 1. Tools should exist in tools array
       expect(requestBody.containsKey('tools'), isTrue);
       expect(requestBody['tools'], isA<List>());
       expect((requestBody['tools'] as List).length, equals(1));
-      
+
       // 2. System array should NOT contain tools blocks
       if (requestBody['system'] is List) {
         final systemBlocks = requestBody['system'] as List;
         final hasToolsInSystem = systemBlocks.any((block) =>
             block is Map<String, dynamic> && block['type'] == 'tools');
-        expect(hasToolsInSystem, isFalse, 
+        expect(hasToolsInSystem, isFalse,
             reason: 'System array should NOT contain tools blocks after fix');
       }
-      
+
       // 3. System array should only contain text blocks
       if (requestBody['system'] is List) {
         final systemBlocks = requestBody['system'] as List;
         for (final block in systemBlocks) {
           if (block is Map<String, dynamic>) {
-            expect(block['type'], equals('text'), 
+            expect(block['type'], equals('text'),
                 reason: 'System array should only contain text blocks');
           }
         }
       }
-      
+
       // 4. Tool should have cache_control
       final toolsList = requestBody['tools'] as List;
       final firstTool = toolsList.first as Map<String, dynamic>;
       expect(firstTool.containsKey('cache_control'), isTrue);
-      
+
       final cacheControl = firstTool['cache_control'] as Map<String, dynamic>;
       expect(cacheControl['type'], equals('ephemeral'));
       expect(cacheControl['ttl'], equals('1h'));
@@ -196,19 +203,19 @@ void main() {
 
     test('Compare before and after fix behavior', () {
       print('\n=== BEFORE vs AFTER FIX COMPARISON ===');
-      
+
       print('BEFORE FIX (incorrect):');
       print('- Tools appeared in BOTH system and tools arrays');
       print('- system: [{"type": "tools", ...}, {"type": "text", ...}]');
       print('- tools: [{"type": "function", "cache_control": {...}}]');
       print('- This was incorrect and violated Anthropic API spec');
-      
+
       print('\nAFTER FIX (correct):');
       print('- Tools appear ONLY in tools array');
       print('- system: [{"type": "text", "cache_control": {...}}]');
       print('- tools: [{"type": "function", "cache_control": {...}}]');
       print('- This follows Anthropic API specification correctly');
-      
+
       print('\nBENEFITS OF THE FIX:');
       print('1. Eliminates redundant tool definitions');
       print('2. Follows official Anthropic API structure');
@@ -221,7 +228,8 @@ void main() {
       // Test case where system message has only tools, no text content
       final message = MessageBuilder.system()
           .tools([testTool])
-          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+          .anthropicConfig((anthropic) =>
+              anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
           .build();
 
       // Message content should be empty since only tools were added
@@ -230,8 +238,9 @@ void main() {
 
       // Simulate processing
       final systemContentBlocks = <Map<String, dynamic>>[];
-      final anthropicData = message.getExtension<Map<String, dynamic>>('anthropic');
-      
+      final anthropicData =
+          message.getExtension<Map<String, dynamic>>('anthropic');
+
       if (anthropicData != null) {
         final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
         if (contentBlocks != null) {
@@ -252,7 +261,7 @@ void main() {
 
       // System content blocks should be empty (no text, tools skipped)
       expect(systemContentBlocks, isEmpty);
-      
+
       print('\n=== EDGE CASE: Tools-only system message ===');
       print('✅ System content blocks are empty (tools correctly skipped)');
       print('✅ Tools will only appear in tools array');
@@ -278,7 +287,8 @@ void main() {
           .text('You are a helpful assistant.')
           .tools([testTool, tool2])
           .text('Use the provided tools when needed.')
-          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+          .anthropicConfig(
+              (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
           .build();
 
       // Verify message structure
@@ -287,14 +297,17 @@ void main() {
       expect(message.hasExtension('anthropic'), isTrue);
 
       // Extract tools count from anthropic data
-      final anthropicData = message.getExtension<Map<String, dynamic>>('anthropic')!;
+      final anthropicData =
+          message.getExtension<Map<String, dynamic>>('anthropic')!;
       final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>;
-      
-      final toolsBlocks = contentBlocks.where((block) =>
-          block is Map<String, dynamic> && block['type'] == 'tools').toList();
-      
+
+      final toolsBlocks = contentBlocks
+          .where((block) =>
+              block is Map<String, dynamic> && block['type'] == 'tools')
+          .toList();
+
       expect(toolsBlocks.length, equals(1)); // Should have one tools block
-      
+
       final toolsBlock = toolsBlocks.first as Map<String, dynamic>;
       final toolsList = toolsBlock['tools'] as List<dynamic>;
       expect(toolsList.length, equals(2)); // Should contain both tools

@@ -30,30 +30,32 @@ void main() {
       // .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
       // .text('Cached text')
       // .tools([tool])
-      
+
       final message = MessageBuilder.system()
           .text('Regular text')
-          .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+          .anthropicConfig(
+              (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
           .text('Cached text')
-          .tools([testTool])
-          .build();
+          .tools([testTool]).build();
 
       final messages = [message];
-      
+
       // Simulate the _buildRequestBody method logic
       final anthropicMessages = <Map<String, dynamic>>[];
       final systemContentBlocks = <Map<String, dynamic>>[];
       final systemMessages = <String>[];
-      
+
       // Process system messages
       for (final msg in messages) {
         if (msg.role == ChatRole.system) {
-          final anthropicData = msg.getExtension<Map<String, dynamic>>('anthropic');
+          final anthropicData =
+              msg.getExtension<Map<String, dynamic>>('anthropic');
           if (anthropicData != null) {
-            final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+            final contentBlocks =
+                anthropicData['contentBlocks'] as List<dynamic>?;
             if (contentBlocks != null && contentBlocks.isNotEmpty) {
               Map<String, dynamic>? systemCacheControl;
-              
+
               for (final block in contentBlocks) {
                 if (block is Map<String, dynamic>) {
                   if (block['cache_control'] != null && block['text'] == '') {
@@ -67,7 +69,7 @@ void main() {
                   systemContentBlocks.add(block);
                 }
               }
-              
+
               // Apply cache control to system content
               if (msg.content.isNotEmpty && systemCacheControl != null) {
                 systemContentBlocks.add({
@@ -88,9 +90,11 @@ void main() {
       final messageTools = <Tool>[];
 
       for (final msg in messages) {
-        final anthropicData = msg.getExtension<Map<String, dynamic>>('anthropic');
+        final anthropicData =
+            msg.getExtension<Map<String, dynamic>>('anthropic');
         if (anthropicData != null) {
-          final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+          final contentBlocks =
+              anthropicData['contentBlocks'] as List<dynamic>?;
           if (contentBlocks != null) {
             for (final block in contentBlocks) {
               if (block is Map<String, dynamic>) {
@@ -101,7 +105,8 @@ void main() {
                   if (toolsList != null) {
                     for (final toolData in toolsList) {
                       if (toolData is Map<String, dynamic>) {
-                        final function = toolData['function'] as Map<String, dynamic>;
+                        final function =
+                            toolData['function'] as Map<String, dynamic>;
                         messageTools.add(Tool(
                           toolType: toolData['type'] as String? ?? 'function',
                           function: FunctionTool(
@@ -122,10 +127,12 @@ void main() {
       }
 
       // Convert tools to API format
-      final convertedTools = messageTools.map((t) => {
-        'type': t.toolType,
-        'function': t.function.toJson(),
-      }).toList();
+      final convertedTools = messageTools
+          .map((t) => {
+                'type': t.toolType,
+                'function': t.function.toJson(),
+              })
+          .toList();
 
       // Apply cache control to last tool
       if (toolCacheControl != null && convertedTools.isNotEmpty) {
@@ -158,19 +165,19 @@ void main() {
       print('Request Body Structure:');
       print('- model: ${requestBody['model']}');
       print('- max_tokens: ${requestBody['max_tokens']}');
-      
+
       if (requestBody.containsKey('system')) {
         print('- system: ${requestBody['system']}');
       }
-      
+
       if (requestBody.containsKey('tools')) {
         print('- tools: ${requestBody['tools']}');
       }
-      
+
       print('- messages: ${requestBody['messages']}');
-      
+
       print('\n=== DETAILED ANALYSIS ===');
-      
+
       // Analyze system content
       if (requestBody['system'] is List) {
         final systemBlocks = requestBody['system'] as List;
@@ -180,7 +187,7 @@ void main() {
           print('  Block $i: $block');
         }
       }
-      
+
       // Analyze tools
       if (requestBody['tools'] is List) {
         final tools = requestBody['tools'] as List;
@@ -196,12 +203,12 @@ void main() {
       expect(requestBody.containsKey('tools'), isTrue);
       expect(requestBody['tools'], isA<List>());
       expect((requestBody['tools'] as List).length, equals(1));
-      
+
       // Check if tool has cache_control
       final toolsList = requestBody['tools'] as List;
       final firstTool = toolsList.first as Map<String, dynamic>;
       expect(firstTool.containsKey('cache_control'), isTrue);
-      
+
       final cacheControl = firstTool['cache_control'] as Map<String, dynamic>;
       expect(cacheControl['type'], equals('ephemeral'));
       expect(cacheControl['ttl'], equals('1h'));
@@ -216,45 +223,12 @@ void main() {
     test('Compare with official API structure', () {
       // What the official API structure would look like for the same scenario
       print('\n=== OFFICIAL API STRUCTURE COMPARISON ===');
-      
-      final officialStructure = {
-        'model': 'claude-3-5-sonnet-20241022',
-        'max_tokens': 1024,
-        'tools': [
-          {
-            'type': 'function',
-            'function': {
-              'name': 'get_weather',
-              'description': 'Get current weather',
-              'parameters': {
-                'type': 'object',
-                'properties': {
-                  'location': {
-                    'type': 'string',
-                    'description': 'City name'
-                  }
-                },
-                'required': ['location']
-              }
-            },
-            'cache_control': {'type': 'ephemeral', 'ttl': '1h'}
-          }
-        ],
-        'system': [
-          {
-            'type': 'text',
-            'text': 'Regular text\nCached text',
-            'cache_control': {'type': 'ephemeral', 'ttl': '1h'}
-          }
-        ],
-        'messages': []
-      };
-      
+
       print('Official structure would be:');
       print('- Tools: Tool has cache_control on last tool');
       print('- System: Text content has cache_control');
       print('- Both tools and system content are cached');
-      
+
       print('\n=== KEY INSIGHT ===');
       print('Current llm_dart implementation produces a structure that:');
       print('1. Applies cache_control to the last tool');
@@ -267,12 +241,11 @@ void main() {
       final messageWithoutCache = MessageBuilder.system()
           .text('Regular text')
           .text('More text')
-          .tools([testTool])
-          .build();
+          .tools([testTool]).build();
 
       // This should NOT have cache_control anywhere
       expect(messageWithoutCache.hasExtension('anthropic'), isFalse);
-      
+
       print('\n=== WITHOUT CACHE ===');
       print('Message without cache:');
       print('- No anthropic extensions');

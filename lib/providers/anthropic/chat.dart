@@ -42,7 +42,8 @@ class AnthropicChat implements ChatCapability {
     List<ChatMessage> messages,
     List<Tool>? tools,
   ) async {
-    final requestBody = _requestBuilder.buildRequestBody(messages, tools, false);
+    final requestBody =
+        _requestBuilder.buildRequestBody(messages, tools, false);
     // Headers including interleaved thinking beta are automatically handled by AnthropicClient
     final responseData = await client.postJson(chatEndpoint, requestBody);
     return _parseResponse(responseData);
@@ -61,7 +62,8 @@ class AnthropicChat implements ChatCapability {
     List<Tool>? tools,
   }) async* {
     final effectiveTools = tools ?? config.tools;
-    final requestBody = _requestBuilder.buildRequestBody(messages, effectiveTools, true);
+    final requestBody =
+        _requestBuilder.buildRequestBody(messages, effectiveTools, true);
 
     // Create SSE stream - headers are automatically handled by AnthropicClient
     // including interleaved thinking beta header if enabled
@@ -420,11 +422,6 @@ class AnthropicChat implements ChatCapability {
     return null;
   }
 
-
-
-
-
-
   /// Convert ChatMessage to Anthropic format
   /// Note: Anthropic API does not support the 'name' field, so it will be ignored
   Map<String, dynamic> _convertMessage(ChatMessage message) {
@@ -647,8 +644,6 @@ class AnthropicChat implements ChatCapability {
       };
     }
   }
-
-
 }
 
 /// Anthropic chat response implementation

@@ -105,7 +105,8 @@ void main() {
       expect(toolsBlock['tools'], isA<List>());
       expect((toolsBlock['tools'] as List).length, equals(2));
 
-      print('MessageBuilder with cached tools caches everything together - validated');
+      print(
+          'MessageBuilder with cached tools caches everything together - validated');
     });
 
     test('MessageBuilder with tools then cache (wrong order)', () {

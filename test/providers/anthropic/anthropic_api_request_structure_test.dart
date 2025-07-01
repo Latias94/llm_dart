@@ -45,42 +45,47 @@ void main() {
     group('Tools Caching API Structure', () {
       test('Tools with cache_control should apply to last tool', () {
         final message = MessageBuilder.system()
-            .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+            .anthropicConfig(
+                (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
             .tools(testTools)
             .build();
 
         final messages = [message];
-        
+
         // Simulate _buildRequestBody logic for tools processing
         Map<String, dynamic>? toolCacheControl;
         final messageTools = <Tool>[];
 
         // Extract tools and cache control from messages
         for (final msg in messages) {
-          final anthropicData = msg.getExtension<Map<String, dynamic>>('anthropic');
+          final anthropicData =
+              msg.getExtension<Map<String, dynamic>>('anthropic');
           if (anthropicData != null) {
-            final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+            final contentBlocks =
+                anthropicData['contentBlocks'] as List<dynamic>?;
             if (contentBlocks != null) {
               for (final block in contentBlocks) {
                 if (block is Map<String, dynamic>) {
                   // Extract cache control marker
                   if (block['cache_control'] != null && block['text'] == '') {
                     toolCacheControl = block['cache_control'];
-                  } 
+                  }
                   // Extract tools from tools block
                   else if (block['type'] == 'tools') {
                     final toolsList = block['tools'] as List<dynamic>?;
                     if (toolsList != null) {
                       for (final toolData in toolsList) {
                         if (toolData is Map<String, dynamic>) {
-                          final function = toolData['function'] as Map<String, dynamic>;
+                          final function =
+                              toolData['function'] as Map<String, dynamic>;
                           messageTools.add(Tool(
                             toolType: toolData['type'] as String? ?? 'function',
                             function: FunctionTool(
                               name: function['name'] as String,
                               description: function['description'] as String,
                               parameters: ParametersSchema.fromJson(
-                                  function['parameters'] as Map<String, dynamic>),
+                                  function['parameters']
+                                      as Map<String, dynamic>),
                             ),
                           ));
                         }
@@ -94,10 +99,12 @@ void main() {
         }
 
         // Convert tools to API format
-        final convertedTools = messageTools.map((t) => {
-          'type': t.toolType,
-          'function': t.function.toJson(),
-        }).toList();
+        final convertedTools = messageTools
+            .map((t) => {
+                  'type': t.toolType,
+                  'function': t.function.toJson(),
+                })
+            .toList();
 
         // Apply cache control to last tool (as per current implementation)
         if (toolCacheControl != null && convertedTools.isNotEmpty) {
@@ -107,8 +114,9 @@ void main() {
         // Verify API structure
         expect(convertedTools.length, equals(2));
         expect(convertedTools.last.containsKey('cache_control'), isTrue);
-        
-        final cacheControl = convertedTools.last['cache_control'] as Map<String, dynamic>;
+
+        final cacheControl =
+            convertedTools.last['cache_control'] as Map<String, dynamic>;
         expect(cacheControl['type'], equals('ephemeral'));
         expect(cacheControl['ttl'], equals('1h'));
 
@@ -125,25 +133,29 @@ void main() {
 
       test('Multiple tools with different cache configurations', () {
         final message1 = MessageBuilder.system()
-            .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+            .anthropicConfig(
+                (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
             .tools([testTools[0]]) // First tool with 1h cache
             .build();
 
         final message2 = MessageBuilder.user()
-            .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+            .anthropicConfig((anthropic) =>
+                anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
             .tools([testTools[1]]) // Second tool with 5m cache
             .build();
 
         final messages = [message1, message2];
-        
+
         // Simulate tools extraction with cache control
         Map<String, dynamic>? lastCacheControl;
         final allTools = <Tool>[];
 
         for (final msg in messages) {
-          final anthropicData = msg.getExtension<Map<String, dynamic>>('anthropic');
+          final anthropicData =
+              msg.getExtension<Map<String, dynamic>>('anthropic');
           if (anthropicData != null) {
-            final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+            final contentBlocks =
+                anthropicData['contentBlocks'] as List<dynamic>?;
             if (contentBlocks != null) {
               for (final block in contentBlocks) {
                 if (block is Map<String, dynamic>) {
@@ -154,14 +166,16 @@ void main() {
                     if (toolsList != null) {
                       for (final toolData in toolsList) {
                         if (toolData is Map<String, dynamic>) {
-                          final function = toolData['function'] as Map<String, dynamic>;
+                          final function =
+                              toolData['function'] as Map<String, dynamic>;
                           allTools.add(Tool(
                             toolType: toolData['type'] as String? ?? 'function',
                             function: FunctionTool(
                               name: function['name'] as String,
                               description: function['description'] as String,
                               parameters: ParametersSchema.fromJson(
-                                  function['parameters'] as Map<String, dynamic>),
+                                  function['parameters']
+                                      as Map<String, dynamic>),
                             ),
                           ));
                         }
@@ -174,10 +188,12 @@ void main() {
           }
         }
 
-        final convertedTools = allTools.map((t) => {
-          'type': t.toolType,
-          'function': t.function.toJson(),
-        }).toList();
+        final convertedTools = allTools
+            .map((t) => {
+                  'type': t.toolType,
+                  'function': t.function.toJson(),
+                })
+            .toList();
 
         if (lastCacheControl != null && convertedTools.isNotEmpty) {
           convertedTools.last['cache_control'] = lastCacheControl;
@@ -186,8 +202,9 @@ void main() {
         // Last cache control should be 5m (from user message)
         expect(convertedTools.length, equals(2));
         expect(convertedTools.last.containsKey('cache_control'), isTrue);
-        
-        final cacheControl = convertedTools.last['cache_control'] as Map<String, dynamic>;
+
+        final cacheControl =
+            convertedTools.last['cache_control'] as Map<String, dynamic>;
         expect(cacheControl['ttl'], equals('5m')); // Last one wins
 
         print('Multiple tools with different cache configurations validated');
@@ -195,20 +212,24 @@ void main() {
     });
 
     group('System Message Caching API Structure', () {
-      test('System message with cache_control should be structured correctly', () {
+      test('System message with cache_control should be structured correctly',
+          () {
         final message = MessageBuilder.system()
             .text('You are a helpful assistant.')
-            .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+            .anthropicConfig((anthropic) =>
+                anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
             .text('Additional context that should be cached.')
             .build();
 
         // Simulate system message processing in _buildRequestBody
         final systemContentBlocks = <Map<String, dynamic>>[];
-        final anthropicData = message.getExtension<Map<String, dynamic>>('anthropic');
+        final anthropicData =
+            message.getExtension<Map<String, dynamic>>('anthropic');
 
         Map<String, dynamic>? systemCacheControl;
         if (anthropicData != null) {
-          final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+          final contentBlocks =
+              anthropicData['contentBlocks'] as List<dynamic>?;
           if (contentBlocks != null && contentBlocks.isNotEmpty) {
             for (final block in contentBlocks) {
               if (block is Map<String, dynamic>) {
@@ -235,11 +256,14 @@ void main() {
         // Verify API structure
         expect(systemContentBlocks.length, equals(1));
         expect(systemContentBlocks.first['type'], equals('text'));
-        expect(systemContentBlocks.first['text'], contains('You are a helpful assistant'));
-        expect(systemContentBlocks.first['text'], contains('Additional context'));
+        expect(systemContentBlocks.first['text'],
+            contains('You are a helpful assistant'));
+        expect(
+            systemContentBlocks.first['text'], contains('Additional context'));
         expect(systemContentBlocks.first.containsKey('cache_control'), isTrue);
-        
-        final cacheControl = systemContentBlocks.first['cache_control'] as Map<String, dynamic>;
+
+        final cacheControl =
+            systemContentBlocks.first['cache_control'] as Map<String, dynamic>;
         expect(cacheControl['type'], equals('ephemeral'));
         expect(cacheControl['ttl'], equals('5m'));
 
@@ -253,35 +277,41 @@ void main() {
 
         // Should not have anthropic extensions
         expect(message.hasExtension('anthropic'), isFalse);
-        
+
         // Simulate system message processing
         final systemMessages = <String>[];
-        if (message.role == ChatRole.system && !message.hasExtension('anthropic')) {
+        if (message.role == ChatRole.system &&
+            !message.hasExtension('anthropic')) {
           systemMessages.add(message.content);
         }
 
         expect(systemMessages.length, equals(1));
-        expect(systemMessages.first, equals('Regular system message without caching'));
+        expect(systemMessages.first,
+            equals('Regular system message without caching'));
 
         print('System message without cache validated');
       });
     });
 
     group('Message Content Caching API Structure', () {
-      test('User message with cache_control should be structured correctly', () {
+      test('User message with cache_control should be structured correctly',
+          () {
         final message = MessageBuilder.user()
             .text('User question')
-            .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
+            .anthropicConfig(
+                (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
             .text('Additional user context')
             .build();
 
         // Simulate _convertMessage logic
         final content = <Map<String, dynamic>>[];
-        final anthropicData = message.getExtension<Map<String, dynamic>>('anthropic');
+        final anthropicData =
+            message.getExtension<Map<String, dynamic>>('anthropic');
 
         Map<String, dynamic>? cacheControl;
         if (anthropicData != null) {
-          final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+          final contentBlocks =
+              anthropicData['contentBlocks'] as List<dynamic>?;
           if (contentBlocks != null) {
             for (final block in contentBlocks) {
               if (block is Map<String, dynamic>) {
@@ -314,28 +344,34 @@ void main() {
         expect(content.first['text'], contains('User question'));
         expect(content.first['text'], contains('Additional user context'));
         expect(content.first.containsKey('cache_control'), isTrue);
-        
-        final messageCacheControl = content.first['cache_control'] as Map<String, dynamic>;
+
+        final messageCacheControl =
+            content.first['cache_control'] as Map<String, dynamic>;
         expect(messageCacheControl['type'], equals('ephemeral'));
         expect(messageCacheControl['ttl'], equals('1h'));
 
         print('User message caching API structure validated');
       });
 
-      test('Assistant message with cache_control should be structured correctly', () {
+      test(
+          'Assistant message with cache_control should be structured correctly',
+          () {
         final message = MessageBuilder.assistant()
             .text('Assistant response')
-            .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
+            .anthropicConfig((anthropic) =>
+                anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
             .text('Additional assistant context')
             .build();
 
         // Same logic as user message
         final content = <Map<String, dynamic>>[];
-        final anthropicData = message.getExtension<Map<String, dynamic>>('anthropic');
+        final anthropicData =
+            message.getExtension<Map<String, dynamic>>('anthropic');
 
         Map<String, dynamic>? cacheControl;
         if (anthropicData != null) {
-          final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+          final contentBlocks =
+              anthropicData['contentBlocks'] as List<dynamic>?;
           if (contentBlocks != null) {
             for (final block in contentBlocks) {
               if (block is Map<String, dynamic>) {
