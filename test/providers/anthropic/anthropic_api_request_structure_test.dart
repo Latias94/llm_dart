@@ -98,11 +98,12 @@ void main() {
           }
         }
 
-        // Convert tools to API format
+        // Convert tools to API format (Anthropic uses flat format)
         final convertedTools = messageTools
             .map((t) => {
-                  'type': t.toolType,
-                  'function': t.function.toJson(),
+                  'name': t.function.name,
+                  'description': t.function.description,
+                  'input_schema': t.function.parameters.toJson(),
                 })
             .toList();
 
@@ -120,13 +121,13 @@ void main() {
         expect(cacheControl['type'], equals('ephemeral'));
         expect(cacheControl['ttl'], equals('1h'));
 
-        // Verify tool structure
-        expect(convertedTools[0]['type'], equals('function'));
-        final func0 = (convertedTools[0]['function'] as Map<String, dynamic>);
-        expect(func0['name'], equals('search_documents'));
-        expect(convertedTools[1]['type'], equals('function'));
-        final func1 = (convertedTools[1]['function'] as Map<String, dynamic>);
-        expect(func1['name'], equals('get_weather'));
+        // Verify tool structure (Anthropic flat format)
+        expect(convertedTools[0]['name'], equals('search_documents'));
+        expect(convertedTools[0]['description'], isNotNull);
+        expect(convertedTools[0]['input_schema'], isNotNull);
+        expect(convertedTools[1]['name'], equals('get_weather'));
+        expect(convertedTools[1]['description'], isNotNull);
+        expect(convertedTools[1]['input_schema'], isNotNull);
 
         print('Tools caching API structure validated');
       });
@@ -190,8 +191,9 @@ void main() {
 
         final convertedTools = allTools
             .map((t) => {
-                  'type': t.toolType,
-                  'function': t.function.toJson(),
+                  'name': t.function.name,
+                  'description': t.function.description,
+                  'input_schema': t.function.parameters.toJson(),
                 })
             .toList();
 

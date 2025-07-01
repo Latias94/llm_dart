@@ -117,11 +117,12 @@ void main() {
         }
       }
 
-      // Convert tools to API format
+      // Convert tools to API format (Anthropic uses flat format)
       final convertedTools = messageTools
           .map((t) => {
-                'type': t.toolType,
-                'function': t.function.toJson(),
+                'name': t.function.name,
+                'description': t.function.description,
+                'input_schema': t.function.parameters.toJson(),
               })
           .toList();
 

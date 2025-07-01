@@ -112,11 +112,12 @@ void main() {
           }
         }
 
-        // Convert tools to API format
+        // Convert tools to API format (Anthropic uses flat format)
         final convertedTools = messageTools
             .map((t) => {
-                  'type': t.toolType,
-                  'function': t.function.toJson(),
+                  'name': t.function.name,
+                  'description': t.function.description,
+                  'input_schema': t.function.parameters.toJson(),
                 })
             .toList();
 
@@ -134,16 +135,10 @@ void main() {
         expect(cacheControl['type'], equals('ephemeral'));
         expect(cacheControl['ttl'], equals('1h'));
 
-        // Verify tool structure
-        final tool0Function =
-            (convertedTools[0]['function'] as Map<String, dynamic>);
-        final tool1Function =
-            (convertedTools[1]['function'] as Map<String, dynamic>);
-        final tool2Function =
-            (convertedTools[2]['function'] as Map<String, dynamic>);
-        expect(tool0Function['name'], equals('search_documents'));
-        expect(tool1Function['name'], equals('get_weather'));
-        expect(tool2Function['name'], equals('calculate'));
+        // Verify tool structure (Anthropic flat format)
+        expect(convertedTools[0]['name'], equals('search_documents'));
+        expect(convertedTools[1]['name'], equals('get_weather'));
+        expect(convertedTools[2]['name'], equals('calculate'));
 
         // Only last tool should have cache_control
         expect(convertedTools[0].containsKey('cache_control'), isFalse);
@@ -257,8 +252,9 @@ void main() {
 
         final convertedTools = allTools
             .map((t) => {
-                  'type': t.toolType,
-                  'function': t.function.toJson(),
+                  'name': t.function.name,
+                  'description': t.function.description,
+                  'input_schema': t.function.parameters.toJson(),
                 })
             .toList();
 
@@ -276,12 +272,10 @@ void main() {
         expect(cacheControl['ttl'], equals('5m')); // Last one wins
 
         // Verify tool names
-        final func0 = (convertedTools[0]['function'] as Map<String, dynamic>);
-        final func1 = (convertedTools[1]['function'] as Map<String, dynamic>);
-        final func2 = (convertedTools[2]['function'] as Map<String, dynamic>);
-        expect(func0['name'], equals('search_documents'));
-        expect(func1['name'], equals('get_weather'));
-        expect(func2['name'], equals('calculate'));
+        // Verify tool structure (Anthropic flat format)
+        expect(convertedTools[0]['name'], equals('search_documents'));
+        expect(convertedTools[1]['name'], equals('get_weather'));
+        expect(convertedTools[2]['name'], equals('calculate'));
 
         print(
             'Multiple MessageBuilders with different tool caching - last cache wins');

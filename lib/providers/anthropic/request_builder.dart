@@ -409,10 +409,38 @@ class AnthropicRequestBuilder {
 
   /// Convert a Tool to Anthropic API format
   Map<String, dynamic> _convertTool(Tool tool) {
-    return {
-      'type': tool.toolType,
-      'function': tool.function.toJson(),
-    };
+    try {
+      final schema = tool.function.parameters.toJson();
+
+      // Anthropic requires input_schema to be a valid JSON Schema object
+      // According to official docs, it should be type "object"
+      if (schema['type'] != 'object') {
+        throw ArgumentError(
+            'Anthropic tools require input_schema to be of type "object". '
+            'Tool "${tool.function.name}" has type "${schema['type']}". '
+            'Please update your tool definition to use an object schema.');
+      }
+
+      // Ensure required fields are present
+      final inputSchema = Map<String, dynamic>.from(schema);
+
+      // Add properties if missing (empty object is valid)
+      if (!inputSchema.containsKey('properties')) {
+        inputSchema['properties'] = <String, dynamic>{};
+      }
+
+      return {
+        'name': tool.function.name,
+        'description': tool.function.description.isNotEmpty
+            ? tool.function.description
+            : 'No description provided',
+        'input_schema': inputSchema,
+      };
+    } catch (e) {
+      // Re-throw with more context
+      throw ArgumentError(
+          'Failed to convert tool "${tool.function.name}" to Anthropic format: $e');
+    }
   }
 
   /// Convert ToolChoice to Anthropic API format
