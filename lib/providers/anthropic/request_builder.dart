@@ -356,6 +356,10 @@ class AnthropicRequestBuilder {
               cacheControl = block['cache_control'];
               continue; // Skip adding empty cache marker
             }
+            // Skip tools blocks - they are handled separately in _processTools
+            if (block['type'] == 'tools') {
+              continue;
+            }
             content.add(block);
           }
         }
