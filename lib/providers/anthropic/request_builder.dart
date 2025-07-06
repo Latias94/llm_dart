@@ -186,16 +186,28 @@ class AnthropicRequestBuilder {
     if (toolsList != null) {
       for (final toolData in toolsList) {
         if (toolData is Map<String, dynamic>) {
-          final function = toolData['function'] as Map<String, dynamic>;
-          tools.add(Tool(
-            toolType: toolData['type'] as String? ?? 'function',
-            function: FunctionTool(
-              name: function['name'] as String,
-              description: function['description'] as String,
-              parameters: ParametersSchema.fromJson(
-                  function['parameters'] as Map<String, dynamic>),
-            ),
-          ));
+          // Check if this is already a Tool.toJson() format (with 'type' and 'function' fields)
+          if (toolData.containsKey('function') && toolData.containsKey('type')) {
+            final function = toolData['function'] as Map<String, dynamic>;
+            tools.add(Tool(
+              toolType: toolData['type'] as String? ?? 'function',
+              function: FunctionTool(
+                name: function['name'] as String,
+                description: function['description'] as String,
+                parameters: ParametersSchema.fromJson(
+                    function['parameters'] as Map<String, dynamic>),
+              ),
+            ));
+          } else {
+            // This might be a direct tool definition, try to parse it as Tool.fromJson
+            try {
+              tools.add(Tool.fromJson(toolData));
+            } catch (e) {
+              // If parsing fails, skip this tool and log a warning
+              // This prevents the entire request from failing
+              continue;
+            }
+          }
         }
       }
     }
@@ -490,12 +502,12 @@ class AnthropicRequestBuilder {
         if (disableParallel == true) {
           return {'type': 'auto', 'disable_parallel_tool_use': true};
         }
-        return {'type': 'auto'};
+        return 'auto';  // Return string for simple auto choice
       case AnyToolChoice(disableParallelToolUse: final disableParallel):
         if (disableParallel == true) {
           return {'type': 'any', 'disable_parallel_tool_use': true};
         }
-        return {'type': 'any'};
+        return 'any';   // Return string for simple any choice
       case SpecificToolChoice(
           toolName: final toolName,
           disableParallelToolUse: final disableParallel
