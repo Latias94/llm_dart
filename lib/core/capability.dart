@@ -365,8 +365,9 @@ class CompletionRequest {
 class CompletionResponse {
   final String text;
   final UsageInfo? usage;
+  final String? thinking;
 
-  const CompletionResponse({required this.text, this.usage});
+  const CompletionResponse({required this.text, this.usage, this.thinking});
 
   @override
   String toString() => text;

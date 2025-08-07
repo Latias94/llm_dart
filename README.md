@@ -30,7 +30,7 @@ A modular Dart library for AI provider interactions. This library provides a uni
 
 - **Multi-provider support**: OpenAI, Anthropic, Google, DeepSeek, Groq, Ollama, xAI, ElevenLabs
 - **OpenAI Responses API**: Stateful conversations with built-in tools (web search, file search, computer use)
-- **Thinking process access**: Model reasoning for Claude, DeepSeek, Gemini
+- **Thinking process access**: Model reasoning for Claude, DeepSeek, Gemini, Ollama
 - **Unified capabilities**: Chat, streaming, tools, audio, images, files, web search, embeddings
 - **MCP integration**: Model Context Protocol for external tool access
 - **Content moderation**: Built-in safety and content filtering
@@ -47,7 +47,7 @@ A modular Dart library for AI provider interactions. This library provides a uni
 | Google | ✅ | ✅ | ✅ | 🧠 | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | Gemini models with reasoning |
 | DeepSeek | ✅ | ✅ | ✅ | 🧠 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | DeepSeek reasoning models |
 | Groq | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | Ultra-fast inference |
-| Ollama | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | Local models, privacy-focused |
+| Ollama | ✅ | ✅ | ✅ | 🧠 | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | Local models, privacy-focused |
 | xAI | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | Grok models with web search |
 | ElevenLabs | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | Advanced voice synthesis |
 
@@ -392,14 +392,25 @@ if (response.thinking != null) {
 }
 ```
 
-### Ollama
+### Ollama (with Thinking Process)
 
 ```dart
-final provider = ollama(
-  baseUrl: 'http://localhost:11434',
-  model: 'llama3.2',
-  // No API key needed for local Ollama
-);
+// Ollama with thinking enabled
+final provider = await ai()
+    .ollama()
+    .baseUrl('http://localhost:11434')
+    .model('gpt-oss:latest') // Reasoning model
+    .reasoning(true)         // Enable reasoning process
+    .build();
+
+final response = await provider.chat([
+  ChatMessage.user('Solve this math problem step by step: 15 * 23 + 7')
+]);
+
+// Access Ollama's thinking process
+if (response.thinking != null) {
+  print('Ollama\'s reasoning: ${response.thinking}');
+}
 ```
 
 ### xAI (with Web Search)

@@ -69,6 +69,7 @@ OllamaProvider createOllamaProvider({
   int? numBatch,
   String? keepAlive,
   bool? raw,
+  bool? reasoning,
 }) {
   final config = OllamaConfig(
     baseUrl: baseUrl ?? 'http://localhost:11434',
@@ -89,6 +90,7 @@ OllamaProvider createOllamaProvider({
     numBatch: numBatch,
     keepAlive: keepAlive,
     raw: raw,
+    reasoning: reasoning,
   );
 
   return OllamaProvider(config);
@@ -168,5 +170,20 @@ OllamaProvider createOllamaCompletionProvider({
     model: model,
     temperature: temperature,
     maxTokens: maxTokens,
+  );
+}
+
+/// Create an Ollama provider for reasoning tasks
+OllamaProvider createOllamaReasoningProvider({
+  String baseUrl = 'http://localhost:11434',
+  String model = 'gpt-oss:latest',
+  String? systemPrompt,
+  bool reasoning = true,
+}) {
+  return createOllamaProvider(
+    baseUrl: baseUrl,
+    model: model,
+    systemPrompt: systemPrompt,
+    reasoning: reasoning,
   );
 }

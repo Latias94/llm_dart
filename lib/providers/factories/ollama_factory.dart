@@ -40,20 +40,6 @@ class OllamaProviderFactory extends LocalProviderFactory<ChatCapability> {
 
   /// Transform unified config to Ollama-specific config
   OllamaConfig _transformConfig(LLMConfig config) {
-    return OllamaConfig(
-      baseUrl: config.baseUrl,
-      apiKey: config.apiKey, // Optional for Ollama
-      model: config.model,
-      maxTokens: config.maxTokens,
-      temperature: config.temperature,
-      systemPrompt: config.systemPrompt,
-      timeout: config.timeout,
-      topP: config.topP,
-      topK: config.topK,
-      tools: config.tools,
-      // Ollama-specific extensions using safe access
-      jsonSchema: getExtension(config, 'jsonSchema'),
-      originalConfig: config,
-    );
+    return OllamaConfig.fromLLMConfig(config);
   }
 }

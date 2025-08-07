@@ -124,6 +124,12 @@ class OllamaChat implements ChatCapability {
   ChatStreamEvent? _parseStreamEvent(Map<String, dynamic> json) {
     final message = json['message'] as Map<String, dynamic>?;
     if (message != null) {
+      // Check for thinking content in stream
+      final thinking = message['thinking'] as String?;
+      if (thinking != null && thinking.isNotEmpty) {
+        return ThinkingDeltaEvent(thinking);
+      }
+
       final content = message['content'] as String?;
       if (content != null && content.isNotEmpty) {
         return TextDeltaEvent(content);
@@ -199,6 +205,11 @@ class OllamaChat implements ChatCapability {
     final effectiveTools = tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = effectiveTools.map((t) => _convertTool(t)).toList();
+    }
+
+    // Add thinking parameter, if not passed, it will depend on the model's default behavior
+    if (config.reasoning != null) {
+      body['think'] = config.reasoning;
     }
 
     return body;
@@ -328,22 +339,43 @@ class OllamaChatResponse implements ChatResponse {
   UsageInfo? get usage => null; // Ollama doesn't provide usage info
 
   @override
-  String? get thinking =>
-      null; // Ollama doesn't support thinking/reasoning content
+  String? get thinking {
+    final message = _rawResponse['message'] as Map<String, dynamic>?;
+    if (message != null) {
+      final thinkingContent = message['thinking'] as String?;
+      if (thinkingContent != null && thinkingContent.isNotEmpty) {
+        return thinkingContent;
+      }
+    }
+
+    final directThinking = _rawResponse['thinking'] as String?;
+    if (directThinking != null && directThinking.isNotEmpty) {
+      return directThinking;
+    }
+
+    return null;
+  }
 
   @override
   String toString() {
     final textContent = text;
     final calls = toolCalls;
+    final thinkingContent = thinking;
 
-    if (textContent != null && calls != null) {
-      return '${calls.map((c) => c.toString()).join('\n')}\n$textContent';
-    } else if (textContent != null) {
-      return textContent;
-    } else if (calls != null) {
-      return calls.map((c) => c.toString()).join('\n');
-    } else {
-      return '';
+    final parts = <String>[];
+
+    if (thinkingContent != null) {
+      parts.add('Thinking: $thinkingContent');
     }
+
+    if (calls != null) {
+      parts.add(calls.map((c) => c.toString()).join('\n'));
+    }
+
+    if (textContent != null) {
+      parts.add(textContent);
+    }
+
+    return parts.join('\n');
   }
 }
