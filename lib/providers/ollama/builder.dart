@@ -180,6 +180,18 @@ class OllamaBuilder {
         .numa(true); // Enable NUMA optimization
   }
 
+  /// Enables thinking for reasoning models
+  ///
+  /// When enabled, the model will think before responding.
+  /// Only works with models that support reasoning/thinking.
+  ///
+  /// - true: Enable reasoning mode
+  /// - false: Disable reasoning mode (default)
+  OllamaBuilder reasoning(bool enabled) {
+    _baseBuilder.extension('reasoning', enabled);
+    return this;
+  }
+
   /// Configure for CPU-only inference
   ///
   /// Optimized for systems without GPU or when GPU usage

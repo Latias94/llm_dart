@@ -7,6 +7,9 @@ Local AI model deployment for privacy and offline capabilities.
 ### [advanced_features.dart](advanced_features.dart)
 Local model deployment, performance optimization, and custom configurations.
 
+### [thinking_example.dart](thinking_example.dart)
+Reasoning and thinking capabilities with local models.
+
 ## Setup
 
 ```bash
@@ -21,6 +24,7 @@ ollama serve
 
 # Run Ollama example
 dart run advanced_features.dart
+dart run thinking_example.dart
 ```
 
 ## Unique Capabilities
@@ -34,6 +38,11 @@ dart run advanced_features.dart
 - **Hardware Optimization**: GPU acceleration and CPU tuning
 - **Custom Models**: Import and fine-tune your own models
 - **Resource Management**: Control memory and processing allocation
+
+### Reasoning Models
+- **Local Thinking**: Run reasoning models completely offline
+- **Privacy-First**: No thinking process sent to external servers
+- **Cost-Free Reasoning**: No API charges for complex reasoning tasks
 
 ## Usage Examples
 
@@ -66,6 +75,23 @@ final provider = await ai().ollama()
 final response = await provider.chat([
   ChatMessage.user('Analyze this sensitive document'),
 ]);
+```
+
+### Reasoning Models
+```dart
+// Local reasoning with thinking process
+final provider = await ai().ollama()
+    .baseUrl('http://localhost:11434')
+    .model('gpt-oss:latest') // Reasoning model
+    .reasoning(true)         // Enable reasoning process
+    .build();
+
+final response = await provider.chat([
+  ChatMessage.user('Solve this step by step: What is 15 * 23 + 7 * 11?'),
+]);
+
+print('Thinking: ${response.thinking}');
+print('Answer: ${response.text}');
 ```
 
 ## Next Steps
