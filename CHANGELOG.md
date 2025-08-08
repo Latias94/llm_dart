@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Anthropic Prompt Caching Support**: Added unified MessageBuilder API with Anthropic prompt caching for tools and messages (by [@okandemirofficial](https://github.com/okandemirofficial) in #11)
 - **Ollama Thinking/Reasoning Support**: Added full thinking support for Ollama reasoning models (by [@gabber235](https://github.com/gabber235) in #16)
+- **GPT-5 Support**: Added support for GPT-5 specific features
+  - Added `Verbosity` enum with `low`, `medium`, `high` levels for controlling output detail
+  - Added `verbosity()` method to `OpenAIBuilder` for GPT-5 models
+  - Added `minimal` option to `ReasoningEffort` enum for faster responses
 
 ### Fixed
 

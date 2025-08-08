@@ -19,6 +19,9 @@ OpenAI's new Responses API with built-in tools like web search, file search, and
 ### [build_openai_responses_demo.dart](build_openai_responses_demo.dart)
 Type-safe `buildOpenAIResponses()` convenience method for automatic Responses API configuration.
 
+### [gpt5_features.dart](gpt5_features.dart)
+GPT-5 specific features including verbosity control, minimal reasoning, and model variants.
+
 ## Setup
 
 ```bash
@@ -30,6 +33,7 @@ dart run audio_capabilities.dart
 dart run advanced_features.dart
 dart run responses_api.dart
 dart run build_openai_responses_demo.dart
+dart run gpt5_features.dart
 ```
 
 ## Unique Capabilities
@@ -56,6 +60,12 @@ dart run build_openai_responses_demo.dart
 - **Unified interface**: Combines Chat Completions and Assistants API
 - **Multi-turn workflows**: Single API call with multiple tool uses
 - **Response chaining**: Link responses for complex workflows
+
+### GPT-5 Features
+
+- **Verbosity Control**: Adjust output detail with `low`, `medium`, `high` settings
+- **Minimal Reasoning**: Use `ReasoningEffort.minimal` for faster responses
+- **Model Variants**: Support for `gpt-5`, `gpt-5-mini`, `gpt-5-nano`
 
 ## Usage Examples
 
@@ -94,6 +104,23 @@ final assistant = await assistantProvider.createAssistant(
     tools: [CodeInterpreterTool()],
   ),
 );
+```
+
+### GPT-5 Features
+```dart
+// Verbosity control
+final provider = await ai()
+    .openai((openai) => openai.verbosity(Verbosity.high))
+    .apiKey('your-key')
+    .model('gpt-5')
+    .build();
+
+// Minimal reasoning for faster responses
+final fastProvider = await ai()
+    .apiKey('your-key')
+    .model('gpt-5')
+    .reasoningEffort(ReasoningEffort.minimal)
+    .build();
 ```
 
 ### Responses API

@@ -619,6 +619,7 @@ class MessageBuilder {
 
 /// Reasoning effort levels for models that support reasoning
 enum ReasoningEffort {
+  minimal,
   low,
   medium,
   high;
@@ -626,6 +627,8 @@ enum ReasoningEffort {
   /// Convert to string value for API requests
   String get value {
     switch (this) {
+      case ReasoningEffort.minimal:
+        return 'minimal';
       case ReasoningEffort.low:
         return 'low';
       case ReasoningEffort.medium:
@@ -639,12 +642,48 @@ enum ReasoningEffort {
   static ReasoningEffort? fromString(String? value) {
     if (value == null) return null;
     switch (value.toLowerCase()) {
+      case 'minimal':
+        return ReasoningEffort.minimal;
       case 'low':
         return ReasoningEffort.low;
       case 'medium':
         return ReasoningEffort.medium;
       case 'high':
         return ReasoningEffort.high;
+      default:
+        return null;
+    }
+  }
+}
+
+/// Verbosity levels for controlling output detail (GPT-5 feature)
+enum Verbosity {
+  low,
+  medium,
+  high;
+
+  /// Convert to string value for API requests
+  String get value {
+    switch (this) {
+      case Verbosity.low:
+        return 'low';
+      case Verbosity.medium:
+        return 'medium';
+      case Verbosity.high:
+        return 'high';
+    }
+  }
+
+  /// Create from string value
+  static Verbosity? fromString(String? value) {
+    if (value == null) return null;
+    switch (value.toLowerCase()) {
+      case 'low':
+        return Verbosity.low;
+      case 'medium':
+        return Verbosity.medium;
+      case 'high':
+        return Verbosity.high;
       default:
         return null;
     }

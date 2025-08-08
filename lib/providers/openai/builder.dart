@@ -1,6 +1,7 @@
 import '../../builder/llm_builder.dart';
 import '../../core/capability.dart';
 import '../../core/web_search.dart';
+import '../../models/chat_models.dart';
 import 'builtin_tools.dart';
 import 'provider.dart';
 
@@ -103,6 +104,28 @@ class OpenAIBuilder {
   /// Range: 0-20
   OpenAIBuilder topLogprobs(int count) {
     _baseBuilder.extension('topLogprobs', count);
+    return this;
+  }
+
+  /// Sets verbosity level for GPT-5 models
+  ///
+  /// Controls how expansive the model's responses are:
+  /// - `Verbosity.low`: Terse, minimal prose
+  /// - `Verbosity.medium`: Balanced detail (default)
+  /// - `Verbosity.high`: Verbose, great for audits, teaching, or hand-offs
+  ///
+  /// This parameter is specific to GPT-5 series models and allows you to
+  /// control output length and detail without changing your prompts.
+  ///
+  /// Example:
+  /// ```dart
+  /// final provider = await ai()
+  ///     .openai((openai) => openai.verbosity(Verbosity.high))
+  ///     .model('gpt-5')
+  ///     .build();
+  /// ```
+  OpenAIBuilder verbosity(Verbosity level) {
+    _baseBuilder.extension('verbosity', level.value);
     return this;
   }
 

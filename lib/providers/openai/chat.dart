@@ -240,6 +240,11 @@ class OpenAIChat implements ChatCapability {
       body['top_logprobs'] = topLogprobs;
     }
 
+    final verbosity = config.getExtension<String>('verbosity');
+    if (verbosity != null) {
+      body['verbosity'] = verbosity;
+    }
+
     // Handle extra_body parameters (for OpenAI-compatible interfaces)
     // This merges provider-specific parameters from extra_body into the main request body
     final extraBody = body['extra_body'] as Map<String, dynamic>?;
