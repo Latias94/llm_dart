@@ -64,7 +64,7 @@ Add this to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  llm_dart: ^0.8.0
+  llm_dart: ^0.9.0
 ```
 
 Then run:
