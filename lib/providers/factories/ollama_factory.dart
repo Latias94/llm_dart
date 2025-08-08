@@ -22,6 +22,7 @@ class OllamaProviderFactory extends LocalProviderFactory<ChatCapability> {
         LLMCapability.streaming,
         LLMCapability.embedding,
         LLMCapability.modelListing,
+        LLMCapability.reasoning,
       };
 
   @override
