@@ -65,6 +65,11 @@ class OllamaCompletion implements CompletionCapability {
     // Add keep_alive parameter for model memory management
     body['keep_alive'] = config.keepAlive ?? '5m'; // Default 5 minutes
 
+    // Add thinking parameter, if not passed, it will depend on the model's default behavior
+    if (config.reasoning != null) {
+      body['think'] = config.reasoning;
+    }
+
     return body;
   }
 
@@ -77,6 +82,8 @@ class OllamaCompletion implements CompletionCapability {
       throw const ProviderError('No answer returned by Ollama');
     }
 
-    return CompletionResponse(text: text);
+    final thinking = responseData['thinking'] as String?;
+
+    return CompletionResponse(text: text, thinking: thinking);
   }
 }

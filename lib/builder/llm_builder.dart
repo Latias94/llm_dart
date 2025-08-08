@@ -254,7 +254,7 @@ class LLMBuilder {
     return this;
   }
 
-  /// Enables reasoning/thinking for supported providers (Anthropic, OpenAI o1)
+  /// Enables reasoning/thinking for supported providers (Anthropic, OpenAI o1, Ollama)
   LLMBuilder reasoning(bool enable) {
     _config = _config.withExtension('reasoning', enable);
     return this;

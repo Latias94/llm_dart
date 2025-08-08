@@ -28,6 +28,7 @@ class OllamaConfig {
   final int? numBatch; // Batch size
   final String? keepAlive; // How long to keep model in memory
   final bool? raw; // Raw mode (no templating)
+  final bool? reasoning; // Enable thinking for reasoning models
 
   /// Reference to original LLMConfig for accessing extensions
   final LLMConfig? _originalConfig;
@@ -52,6 +53,7 @@ class OllamaConfig {
     this.numBatch,
     this.keepAlive,
     this.raw,
+    this.reasoning,
     LLMConfig? originalConfig,
   }) : _originalConfig = originalConfig;
 
@@ -78,6 +80,7 @@ class OllamaConfig {
       numBatch: config.getExtension<int>('numBatch'),
       keepAlive: config.getExtension<String>('keepAlive'),
       raw: config.getExtension<bool>('raw'),
+      reasoning: config.getExtension<bool>('reasoning'),
       originalConfig: config,
     );
   }
@@ -93,7 +96,9 @@ class OllamaConfig {
     // Some Ollama models support reasoning, especially newer ones
     return model.contains('reasoning') ||
         model.contains('think') ||
-        model.contains('qwen2.5');
+        model.contains('qwen2.5') ||
+        model.contains('gpt-oss') ||
+        model.contains('deepseek-r1');
   }
 
   /// Check if this model supports vision
@@ -172,6 +177,7 @@ class OllamaConfig {
     int? numBatch,
     String? keepAlive,
     bool? raw,
+    bool? reasoning,
   }) =>
       OllamaConfig(
         baseUrl: baseUrl ?? this.baseUrl,
@@ -192,5 +198,6 @@ class OllamaConfig {
         numBatch: numBatch ?? this.numBatch,
         keepAlive: keepAlive ?? this.keepAlive,
         raw: raw ?? this.raw,
+        reasoning: reasoning ?? this.reasoning,
       );
 }
