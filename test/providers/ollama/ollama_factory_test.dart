@@ -31,6 +31,7 @@ void main() {
         expect(capabilities, contains(LLMCapability.streaming));
         expect(capabilities, contains(LLMCapability.embedding));
         expect(capabilities, contains(LLMCapability.modelListing));
+        expect(capabilities, contains(LLMCapability.reasoning));
       });
 
       test('should not support unsupported capabilities', () {
@@ -41,7 +42,7 @@ void main() {
         expect(capabilities, isNot(contains(LLMCapability.speechToText)));
         expect(capabilities, isNot(contains(LLMCapability.toolCalling)));
         expect(capabilities, isNot(contains(LLMCapability.vision)));
-        expect(capabilities, isNot(contains(LLMCapability.reasoning)));
+        // Note: reasoning is now supported by Ollama as of v0.9.0
       });
     });
 
