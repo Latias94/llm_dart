@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
+
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
@@ -40,12 +42,17 @@ class AnthropicChat implements ChatCapability {
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) async {
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) async {
     final requestBody =
         _requestBuilder.buildRequestBody(messages, tools, false);
     // Headers including interleaved thinking beta are automatically handled by AnthropicClient
-    final responseData = await client.postJson(chatEndpoint, requestBody);
+    final responseData = await client.postJson(
+      chatEndpoint,
+      requestBody,
+      cancelToken: cancelToken,
+    );
     return _parseResponse(responseData);
   }
 
@@ -60,6 +67,7 @@ class AnthropicChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   }) async* {
     final effectiveTools = tools ?? config.tools;
     final requestBody =
@@ -67,7 +75,11 @@ class AnthropicChat implements ChatCapability {
 
     // Create SSE stream - headers are automatically handled by AnthropicClient
     // including interleaved thinking beta header if enabled
-    final stream = client.postStreamRaw(chatEndpoint, requestBody);
+    final stream = client.postStreamRaw(
+      chatEndpoint,
+      requestBody,
+      cancelToken: cancelToken,
+    );
 
     await for (final chunk in stream) {
       final events = _parseStreamEvents(chunk);
@@ -78,8 +90,11 @@ class AnthropicChat implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
-    return chatWithTools(messages, null);
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
+    return chatWithTools(messages, null, cancelToken: cancelToken);
   }
 
   @override

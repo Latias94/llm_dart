@@ -60,14 +60,16 @@ class GoogleClient {
   /// Make a POST request and return JSON response
   Future<Map<String, dynamic>> postJson(
     String endpoint,
-    Map<String, dynamic> data,
-  ) async {
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
     return HttpResponseHandler.postJson(
       dio,
       _getEndpointWithAuth(endpoint),
       data,
       providerName: 'Google',
       logger: logger,
+      cancelToken: cancelToken,
     );
   }
 
@@ -97,13 +99,15 @@ class GoogleClient {
   /// Make a POST request and return raw stream for JSON array streaming
   Stream<String> postStreamRaw(
     String endpoint,
-    Map<String, dynamic> data,
-  ) async* {
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async* {
     try {
       final fullEndpoint = _getEndpointWithAuth(endpoint);
       final response = await dio.post(
         fullEndpoint,
         data: data,
+        cancelToken: cancelToken,
         options: Options(
           responseType: ResponseType.stream,
           headers: {'Accept': 'application/json'},

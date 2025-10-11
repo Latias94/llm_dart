@@ -21,7 +21,10 @@ class GoogleEmbeddings implements EmbeddingCapability {
       'models/${config.model}:batchEmbedContents';
 
   @override
-  Future<List<List<double>>> embed(List<String> input) async {
+  Future<List<List<double>>> embed(
+    List<String> input, {
+    CancelToken? cancelToken,
+  }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing Google API key');
     }
@@ -30,14 +33,20 @@ class GoogleEmbeddings implements EmbeddingCapability {
       // For single input or small batches, use single endpoint
       if (input.length == 1) {
         final requestBody = _buildSingleEmbeddingRequest(input.first);
-        final responseData =
-            await client.postJson(embeddingEndpoint, requestBody);
+        final responseData = await client.postJson(
+          embeddingEndpoint,
+          requestBody,
+          cancelToken: cancelToken,
+        );
         return [_parseSingleEmbeddingResponse(responseData)];
       } else {
         // For multiple inputs, use batch endpoint
         final requestBody = _buildBatchEmbeddingRequest(input);
-        final responseData =
-            await client.postJson(batchEmbeddingEndpoint, requestBody);
+        final responseData = await client.postJson(
+          batchEmbeddingEndpoint,
+          requestBody,
+          cancelToken: cancelToken,
+        );
         return _parseBatchEmbeddingResponse(responseData);
       }
     } on DioException catch (e) {

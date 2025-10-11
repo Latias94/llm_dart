@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
@@ -24,8 +26,9 @@ class PhindChat implements ChatCapability {
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) async {
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       // Note: Phind doesn't support tools yet
       final requestBody = _buildRequestBody(messages, tools, false);
@@ -34,7 +37,11 @@ class PhindChat implements ChatCapability {
         client.logger.fine('Phind request payload: ${jsonEncode(requestBody)}');
       }
 
-      final responseData = await client.postJson(chatEndpoint, requestBody);
+      final responseData = await client.postJson(
+        chatEndpoint,
+        requestBody,
+        cancelToken: cancelToken,
+      );
       return _parseResponse(responseData);
     } catch (e) {
       if (e is LLMError) {
@@ -49,6 +56,7 @@ class PhindChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   }) async* {
     try {
       final requestBody = _buildRequestBody(messages, tools, true);
@@ -59,7 +67,11 @@ class PhindChat implements ChatCapability {
       }
 
       // Create SSE stream
-      final stream = client.postStreamRaw(chatEndpoint, requestBody);
+      final stream = client.postStreamRaw(
+        chatEndpoint,
+        requestBody,
+        cancelToken: cancelToken,
+      );
 
       await for (final chunk in stream) {
         final events = _parseStreamEvents(chunk);
@@ -77,8 +89,11 @@ class PhindChat implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
-    return chatWithTools(messages, null);
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
+    return chatWithTools(messages, null, cancelToken: cancelToken);
   }
 
   @override

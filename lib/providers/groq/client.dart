@@ -33,26 +33,30 @@ class GroqClient {
   /// Make a POST request and return JSON response
   Future<Map<String, dynamic>> postJson(
     String endpoint,
-    Map<String, dynamic> data,
-  ) async {
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
     return HttpResponseHandler.postJson(
       dio,
       endpoint,
       data,
       providerName: 'Groq',
       logger: logger,
+      cancelToken: cancelToken,
     );
   }
 
   /// Make a POST request and return raw stream for SSE
   Stream<String> postStreamRaw(
     String endpoint,
-    Map<String, dynamic> data,
-  ) async* {
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async* {
     try {
       final response = await dio.post(
         endpoint,
         data: data,
+        cancelToken: cancelToken,
         options: Options(
           responseType: ResponseType.stream,
           headers: {'Accept': 'text/event-stream'},

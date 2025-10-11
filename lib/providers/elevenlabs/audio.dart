@@ -100,7 +100,10 @@ class ElevenLabsAudio extends BaseAudioCapability {
         // ElevenLabs doesn't support audio translation
       };
   @override
-  Future<TTSResponse> textToSpeech(TTSRequest request) async {
+  Future<TTSResponse> textToSpeech(
+    TTSRequest request, {
+    CancelToken? cancelToken,
+  }) async {
     final response = await _textToSpeechInternal(
       request.text,
       voiceId: request.voice,
@@ -114,6 +117,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
       textNormalization: request.textNormalization.name,
       enableLogging: request.enableLogging,
       optimizeStreamingLatency: request.optimizeStreamingLatency,
+      cancelToken: cancelToken,
     );
 
     return TTSResponse(
@@ -152,7 +156,10 @@ class ElevenLabsAudio extends BaseAudioCapability {
 
   // SpeechToTextCapability implementation
   @override
-  Future<STTResponse> speechToText(STTRequest request) async {
+  Future<STTResponse> speechToText(
+    STTRequest request, {
+    CancelToken? cancelToken,
+  }) async {
     late ElevenLabsSTTResponse response;
 
     if (request.audioData != null) {
@@ -166,6 +173,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
         diarize: request.diarize,
         fileFormat: request.format,
         enableLogging: request.enableLogging,
+        cancelToken: cancelToken,
       );
     } else if (request.filePath != null) {
       response = await _speechToTextFromFileInternal(
@@ -178,6 +186,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
         diarize: request.diarize,
         fileFormat: request.format,
         enableLogging: request.enableLogging,
+        cancelToken: cancelToken,
       );
     } else {
       throw const InvalidRequestError(
@@ -242,6 +251,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
     String? textNormalization,
     bool? enableLogging,
     int? optimizeStreamingLatency,
+    CancelToken? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing ElevenLabs API key');
@@ -293,6 +303,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
         'text-to-speech/$effectiveVoiceId',
         requestBody,
         queryParams: queryParams,
+        cancelToken: cancelToken,
       );
 
       return ElevenLabsTTSResponse(
@@ -316,6 +327,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
     bool? diarize,
     String? fileFormat,
     bool? enableLogging,
+    CancelToken? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing ElevenLabs API key');
@@ -362,6 +374,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
         'speech-to-text',
         formData,
         queryParams: queryParams.isNotEmpty ? queryParams : null,
+        cancelToken: cancelToken,
       );
 
       try {
@@ -403,6 +416,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
     bool? diarize,
     String? fileFormat,
     bool? enableLogging,
+    CancelToken? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing ElevenLabs API key');
@@ -437,8 +451,11 @@ class ElevenLabsAudio extends BaseAudioCapability {
 
       final formData = FormData.fromMap(formDataMap);
 
-      final responseData =
-          await client.postFormData('speech-to-text', formData);
+      final responseData = await client.postFormData(
+        'speech-to-text',
+        formData,
+        cancelToken: cancelToken,
+      );
 
       try {
         final sttResponse = ElevenLabsSTTResponse.fromJson(responseData);
@@ -479,7 +496,10 @@ class ElevenLabsAudio extends BaseAudioCapability {
   // Additional AudioCapability methods
 
   @override
-  Stream<AudioStreamEvent> textToSpeechStream(TTSRequest request) {
+  Stream<AudioStreamEvent> textToSpeechStream(
+    TTSRequest request, {
+    CancelToken? cancelToken,
+  }) {
     // ElevenLabs supports streaming TTS
     // This is a simplified implementation - in practice, you'd implement
     // the actual streaming API calls
@@ -487,7 +507,10 @@ class ElevenLabsAudio extends BaseAudioCapability {
   }
 
   @override
-  Future<STTResponse> translateAudio(AudioTranslationRequest request) {
+  Future<STTResponse> translateAudio(
+    AudioTranslationRequest request, {
+    CancelToken? cancelToken,
+  }) {
     // ElevenLabs doesn't support audio translation
     throw UnsupportedError('ElevenLabs does not support audio translation');
   }

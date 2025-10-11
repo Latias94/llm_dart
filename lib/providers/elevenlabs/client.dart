@@ -67,12 +67,14 @@ class ElevenLabsClient {
     String endpoint,
     Map<String, dynamic> data, {
     Map<String, String>? queryParams,
+    CancelToken? cancelToken,
   }) async {
     try {
       final response = await _dio.post(
         endpoint,
         data: data,
         queryParameters: queryParams,
+        cancelToken: cancelToken,
         options: Options(responseType: ResponseType.bytes),
       );
 
@@ -93,11 +95,13 @@ class ElevenLabsClient {
     String endpoint,
     FormData formData, {
     Map<String, String>? queryParams,
+    CancelToken? cancelToken,
   }) async {
     try {
       final response = await _dio.post(
         endpoint,
         data: formData,
+        cancelToken: cancelToken,
         queryParameters: queryParams,
         options: Options(headers: {'xi-api-key': config.apiKey}),
       );

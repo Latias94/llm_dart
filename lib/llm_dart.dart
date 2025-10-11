@@ -7,6 +7,7 @@ library;
 
 // Core exports
 export 'core/capability.dart';
+export 'core/cancellation.dart';
 export 'core/llm_error.dart';
 export 'core/config.dart';
 export 'core/registry.dart';

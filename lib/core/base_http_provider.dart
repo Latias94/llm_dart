@@ -61,8 +61,9 @@ abstract class BaseHttpProvider implements ChatCapability {
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) async {
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       final requestBody = buildRequestBody(messages, tools, false);
 
@@ -81,7 +82,11 @@ abstract class BaseHttpProvider implements ChatCapability {
         _logger.fine('$providerName request body: ${jsonEncode(requestBody)}');
       }
 
-      final response = await _dio.post(chatEndpoint, data: requestBody);
+      final response = await _dio.post(
+        chatEndpoint,
+        data: requestBody,
+        cancelToken: cancelToken,
+      );
 
       _logger.fine('$providerName HTTP status: ${response.statusCode}');
 
@@ -110,6 +115,7 @@ abstract class BaseHttpProvider implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   }) async* {
     try {
       final requestBody = buildRequestBody(messages, tools, true);
@@ -135,6 +141,7 @@ abstract class BaseHttpProvider implements ChatCapability {
         chatEndpoint,
         data: requestBody,
         options: Options(responseType: ResponseType.stream),
+        cancelToken: cancelToken,
       );
 
       _logger.fine('$providerName stream HTTP status: ${response.statusCode}');

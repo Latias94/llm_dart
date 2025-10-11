@@ -33,8 +33,9 @@ class DeepSeekClient {
   /// Make a POST request and return JSON response
   Future<Map<String, dynamic>> postJson(
     String endpoint,
-    Map<String, dynamic> data,
-  ) async {
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       return await HttpResponseHandler.postJson(
         dio,
@@ -42,6 +43,7 @@ class DeepSeekClient {
         data,
         providerName: 'DeepSeek',
         logger: logger,
+        cancelToken: cancelToken,
       );
     } on DioException catch (e) {
       logger.severe('HTTP request failed: ${e.message}');
@@ -52,12 +54,14 @@ class DeepSeekClient {
   /// Make a POST request and return raw stream for SSE
   Stream<String> postStreamRaw(
     String endpoint,
-    Map<String, dynamic> data,
-  ) async* {
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async* {
     try {
       final response = await dio.post(
         endpoint,
         data: data,
+        cancelToken: cancelToken,
         options: Options(
           responseType: ResponseType.stream,
           headers: {'Accept': 'text/event-stream'},

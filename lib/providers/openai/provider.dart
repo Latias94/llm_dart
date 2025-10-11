@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import '../../models/audio_models.dart';
@@ -117,25 +119,29 @@ class OpenAIProvider
   // ========== ChatCapability (delegated to chat module) ==========
 
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
     // Use Responses API if enabled, otherwise use Chat Completions API
     if (config.useResponsesAPI && _responses != null) {
-      return _responses.chat(messages);
+      return _responses.chat(messages, cancelToken: cancelToken);
     } else {
-      return _chat.chat(messages);
+      return _chat.chat(messages, cancelToken: cancelToken);
     }
   }
 
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) async {
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) async {
     // Use Responses API if enabled, otherwise use Chat Completions API
     if (config.useResponsesAPI && _responses != null) {
-      return _responses.chatWithTools(messages, tools);
+      return _responses.chatWithTools(messages, tools, cancelToken: cancelToken);
     } else {
-      return _chat.chatWithTools(messages, tools);
+      return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
     }
   }
 
@@ -143,12 +149,13 @@ class OpenAIProvider
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   }) {
     // Use Responses API if enabled, otherwise use Chat Completions API
     if (config.useResponsesAPI && _responses != null) {
-      return _responses.chatStream(messages, tools: tools);
+      return _responses.chatStream(messages, tools: tools, cancelToken: cancelToken);
     } else {
-      return _chat.chatStream(messages, tools: tools);
+      return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
     }
   }
 
@@ -175,8 +182,11 @@ class OpenAIProvider
   // ========== EmbeddingCapability (delegated to embeddings module) ==========
 
   @override
-  Future<List<List<double>>> embed(List<String> input) async {
-    return _embeddings.embed(input);
+  Future<List<List<double>>> embed(
+    List<String> input, {
+    CancelToken? cancelToken,
+  }) async {
+    return _embeddings.embed(input, cancelToken: cancelToken);
   }
 
   // ========== AudioCapability (delegated to audio module) ==========
@@ -185,13 +195,19 @@ class OpenAIProvider
   Set<AudioFeature> get supportedFeatures => _audio.supportedFeatures;
 
   @override
-  Future<TTSResponse> textToSpeech(TTSRequest request) async {
-    return _audio.textToSpeech(request);
+  Future<TTSResponse> textToSpeech(
+    TTSRequest request, {
+    CancelToken? cancelToken,
+  }) async {
+    return _audio.textToSpeech(request, cancelToken: cancelToken);
   }
 
   @override
-  Stream<AudioStreamEvent> textToSpeechStream(TTSRequest request) {
-    return _audio.textToSpeechStream(request);
+  Stream<AudioStreamEvent> textToSpeechStream(
+    TTSRequest request, {
+    CancelToken? cancelToken,
+  }) {
+    return _audio.textToSpeechStream(request, cancelToken: cancelToken);
   }
 
   @override
@@ -200,13 +216,19 @@ class OpenAIProvider
   }
 
   @override
-  Future<STTResponse> speechToText(STTRequest request) async {
-    return _audio.speechToText(request);
+  Future<STTResponse> speechToText(
+    STTRequest request, {
+    CancelToken? cancelToken,
+  }) async {
+    return _audio.speechToText(request, cancelToken: cancelToken);
   }
 
   @override
-  Future<STTResponse> translateAudio(AudioTranslationRequest request) async {
-    return _audio.translateAudio(request);
+  Future<STTResponse> translateAudio(
+    AudioTranslationRequest request, {
+    CancelToken? cancelToken,
+  }) async {
+    return _audio.translateAudio(request, cancelToken: cancelToken);
   }
 
   @override
@@ -227,8 +249,14 @@ class OpenAIProvider
 
   // AudioCapability convenience methods implementation
   @override
-  Future<List<int>> speech(String text) async {
-    final response = await textToSpeech(TTSRequest(text: text));
+  Future<List<int>> speech(
+    String text, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await textToSpeech(
+      TTSRequest(text: text),
+      cancelToken: cancelToken,
+    );
     return response.audioData;
   }
 
