@@ -22,6 +22,9 @@ Foundation of AI interactions - messages, context, and responses.
 ### [streaming_chat.dart](streaming_chat.dart)
 Real-time response streaming for better user experience.
 
+### [cancellation_demo.dart](cancellation_demo.dart)
+Request cancellation support for chat, streaming, and API operations.
+
 ### [tool_calling.dart](tool_calling.dart)
 Function calling - let AI execute custom functions.
 
