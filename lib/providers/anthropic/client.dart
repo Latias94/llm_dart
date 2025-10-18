@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
+import '../../core/llm_error.dart';
 import '../../utils/dio_client_factory.dart';
 import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
@@ -58,7 +59,7 @@ class AnthropicClient {
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       logger.severe('HTTP GET request failed: ${e.message}');
-      rethrow;
+      throw DioErrorHandler.handleDioError(e, 'Anthropic');
     }
   }
 
@@ -70,7 +71,7 @@ class AnthropicClient {
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       logger.severe('HTTP form request failed: ${e.message}');
-      rethrow;
+      throw DioErrorHandler.handleDioError(e, 'Anthropic');
     }
   }
 
@@ -80,7 +81,7 @@ class AnthropicClient {
       await dio.delete(endpoint);
     } on DioException catch (e) {
       logger.severe('HTTP DELETE request failed: ${e.message}');
-      rethrow;
+      throw DioErrorHandler.handleDioError(e, 'Anthropic');
     }
   }
 
@@ -94,7 +95,7 @@ class AnthropicClient {
       return response.data as List<int>;
     } on DioException catch (e) {
       logger.severe('HTTP raw request failed: ${e.message}');
-      rethrow;
+      throw DioErrorHandler.handleDioError(e, 'Anthropic');
     }
   }
 
@@ -145,7 +146,7 @@ class AnthropicClient {
       }
     } on DioException catch (e) {
       logger.severe('Stream request failed: ${e.message}');
-      rethrow;
+      throw DioErrorHandler.handleDioError(e, 'Anthropic');
     }
   }
 }

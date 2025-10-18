@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:llm_dart/core/cancellation.dart';
+import 'package:llm_dart/core/llm_error.dart';
 import 'package:test/test.dart';
 
 /// Tests for cancellation support
@@ -35,7 +36,12 @@ void main() {
   });
 
   group('CancellationHelper', () {
-    test('isCancelled detects cancellation errors', () {
+    test('isCancelled detects CancelledError', () {
+      final error = CancelledError('User cancelled');
+      expect(CancellationHelper.isCancelled(error), isTrue);
+    });
+
+    test('isCancelled detects DioException cancellation errors', () {
       final error = DioException(
         requestOptions: RequestOptions(path: '/test'),
         type: DioExceptionType.cancel,
@@ -56,7 +62,16 @@ void main() {
       expect(CancellationHelper.isCancelled(error), isFalse);
     });
 
-    test('getCancellationReason extracts reason from cancel error', () {
+    test('getCancellationReason extracts reason from CancelledError', () {
+      final error = CancelledError('User cancelled');
+      expect(
+        CancellationHelper.getCancellationReason(error),
+        equals('User cancelled'),
+      );
+    });
+
+    test('getCancellationReason extracts reason from DioException cancel error',
+        () {
       final error = DioException(
         requestOptions: RequestOptions(path: '/test'),
         type: DioExceptionType.cancel,
@@ -80,6 +95,33 @@ void main() {
     test('getCancellationReason returns null for non-DioException', () {
       final error = Exception('Some error');
       expect(CancellationHelper.getCancellationReason(error), isNull);
+    });
+  });
+
+  group('CancelledError', () {
+    test('can be created with default message', () {
+      final error = CancelledError();
+      expect(error, isA<LLMError>());
+      expect(error.message, equals('Request cancelled'));
+      expect(error.toString(), equals('Request cancelled: Request cancelled'));
+    });
+
+    test('can be created with custom message', () {
+      final error = CancelledError('User cancelled operation');
+      expect(error.message, equals('User cancelled operation'));
+      expect(
+        error.toString(),
+        equals('Request cancelled: User cancelled operation'),
+      );
+    });
+
+    test('is recognized by CancellationHelper', () {
+      final error = CancelledError('Test cancellation');
+      expect(CancellationHelper.isCancelled(error), isTrue);
+      expect(
+        CancellationHelper.getCancellationReason(error),
+        equals('Test cancellation'),
+      );
     });
   });
 

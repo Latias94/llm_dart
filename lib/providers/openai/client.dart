@@ -527,7 +527,7 @@ class OpenAIClient {
           );
         }
       case DioExceptionType.cancel:
-        return const GenericError('Request cancelled');
+        return CancelledError(e.message ?? 'Request cancelled');
       case DioExceptionType.connectionError:
         return const GenericError('Connection error');
       case DioExceptionType.badCertificate:

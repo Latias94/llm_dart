@@ -199,6 +199,17 @@ class ModelNotAvailableError extends LLMError {
   }
 }
 
+/// Request cancellation error
+///
+/// This error is thrown when a request is cancelled via CancelToken.
+/// Use [CancellationHelper.isCancelled] to detect cancellation errors.
+class CancelledError extends LLMError {
+  const CancelledError([super.message = 'Request cancelled']);
+
+  @override
+  String toString() => 'Request cancelled: $message';
+}
+
 /// Content filter error
 class ContentFilterError extends LLMError {
   final String? filterType; // 'safety', 'content_policy', etc.
@@ -306,7 +317,7 @@ class DioErrorHandler {
           return ProviderError('$providerName HTTP error: $data');
         }
       case DioExceptionType.cancel:
-        return GenericError('Request was cancelled');
+        return CancelledError(e.message ?? 'Request cancelled');
       case DioExceptionType.connectionError:
         return HttpError('Connection error: ${e.message}');
       case DioExceptionType.badCertificate:
