@@ -111,8 +111,8 @@ class AnthropicProvider
   }
 
   @override
-  Future<List<AIModel>> models() async {
-    return _models.models();
+  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+    return _models.models(cancelToken: cancelToken);
   }
 
   /// List available models from Anthropic API

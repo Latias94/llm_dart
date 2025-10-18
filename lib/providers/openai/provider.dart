@@ -385,8 +385,8 @@ class OpenAIProvider
   // ========== ModelListingCapability (delegated to models module) ==========
 
   @override
-  Future<List<AIModel>> models() async {
-    return _models.models();
+  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+    return _models.models(cancelToken: cancelToken);
   }
 
   // ========== ModerationCapability (delegated to moderation module) ==========

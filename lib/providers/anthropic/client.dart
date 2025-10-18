@@ -53,9 +53,15 @@ class AnthropicClient {
   }
 
   /// Make a GET request and return JSON response
-  Future<Map<String, dynamic>> getJson(String endpoint) async {
+  Future<Map<String, dynamic>> getJson(
+    String endpoint, {
+    CancelToken? cancelToken,
+  }) async {
     try {
-      final response = await dio.get(endpoint);
+      final response = await dio.get(
+        endpoint,
+        cancelToken: cancelToken,
+      );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       logger.severe('HTTP GET request failed: ${e.message}');
@@ -65,9 +71,16 @@ class AnthropicClient {
 
   /// Make a POST request with form data
   Future<Map<String, dynamic>> postForm(
-      String endpoint, FormData formData) async {
+    String endpoint,
+    FormData formData, {
+    CancelToken? cancelToken,
+  }) async {
     try {
-      final response = await dio.post(endpoint, data: formData);
+      final response = await dio.post(
+        endpoint,
+        data: formData,
+        cancelToken: cancelToken,
+      );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
       logger.severe('HTTP form request failed: ${e.message}');
@@ -76,9 +89,15 @@ class AnthropicClient {
   }
 
   /// Make a DELETE request
-  Future<void> delete(String endpoint) async {
+  Future<void> delete(
+    String endpoint, {
+    CancelToken? cancelToken,
+  }) async {
     try {
-      await dio.delete(endpoint);
+      await dio.delete(
+        endpoint,
+        cancelToken: cancelToken,
+      );
     } on DioException catch (e) {
       logger.severe('HTTP DELETE request failed: ${e.message}');
       throw DioErrorHandler.handleDioError(e, 'Anthropic');
@@ -86,11 +105,15 @@ class AnthropicClient {
   }
 
   /// Make a GET request and return raw bytes
-  Future<List<int>> getRaw(String endpoint) async {
+  Future<List<int>> getRaw(
+    String endpoint, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       final response = await dio.get(
         endpoint,
         options: Options(responseType: ResponseType.bytes),
+        cancelToken: cancelToken,
       );
       return response.data as List<int>;
     } on DioException catch (e) {

@@ -93,8 +93,8 @@ class OllamaProvider
 
   // Model listing capability methods
   @override
-  Future<List<AIModel>> models() async {
-    return _models.models();
+  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+    return _models.models(cancelToken: cancelToken);
   }
 
   /// Get provider name

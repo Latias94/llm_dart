@@ -42,6 +42,7 @@ class GoogleClient {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
   }) async {
     try {
       final fullEndpoint = _getEndpointWithAuth(endpoint);
@@ -50,6 +51,7 @@ class GoogleClient {
         data: data,
         queryParameters: queryParameters,
         options: options,
+        cancelToken: cancelToken,
       );
     } on DioException catch (e) {
       logger.severe('HTTP request failed: ${e.message}');

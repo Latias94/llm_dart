@@ -47,10 +47,16 @@ class OllamaClient {
   }
 
   /// Make a GET request and return JSON response
-  Future<Map<String, dynamic>> getJson(String endpoint) async {
+  Future<Map<String, dynamic>> getJson(
+    String endpoint, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       logger.fine('Ollama request: GET $endpoint');
-      final response = await dio.get(endpoint);
+      final response = await dio.get(
+        endpoint,
+        cancelToken: cancelToken,
+      );
 
       logger.fine('Ollama HTTP status: ${response.statusCode}');
 

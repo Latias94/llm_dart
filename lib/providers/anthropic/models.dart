@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
@@ -226,8 +228,8 @@ class AnthropicModels implements ModelListingCapability {
   String get modelsEndpoint => 'models';
 
   @override
-  Future<List<AIModel>> models() async {
-    return listModels();
+  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+    return listModels(cancelToken: cancelToken);
   }
 
   /// List available models from Anthropic API
@@ -240,6 +242,7 @@ class AnthropicModels implements ModelListingCapability {
     String? beforeId,
     String? afterId,
     int limit = 20,
+    CancelToken? cancelToken,
   }) async {
     try {
       final queryParams = <String, dynamic>{};
@@ -251,7 +254,10 @@ class AnthropicModels implements ModelListingCapability {
           ? modelsEndpoint
           : '$modelsEndpoint?${queryParams.entries.map((e) => '${e.key}=${e.value}').join('&')}';
 
-      final responseData = await client.getJson(endpoint);
+      final responseData = await client.getJson(
+        endpoint,
+        cancelToken: cancelToken,
+      );
       final data = responseData['data'] as List?;
 
       if (data == null) return [];

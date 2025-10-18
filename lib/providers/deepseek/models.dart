@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import 'client.dart';
@@ -16,9 +18,12 @@ class DeepSeekModels implements ModelListingCapability {
   String get modelsEndpoint => 'models';
 
   @override
-  Future<List<AIModel>> models() async {
+  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
     try {
-      final response = await client.dio.get(modelsEndpoint);
+      final response = await client.dio.get(
+        modelsEndpoint,
+        cancelToken: cancelToken,
+      );
       final responseData = response.data as Map<String, dynamic>;
 
       final data = responseData['data'] as List?;

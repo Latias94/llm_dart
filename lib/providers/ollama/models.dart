@@ -19,13 +19,16 @@ class OllamaModels implements ModelListingCapability {
   String get modelsEndpoint => '/api/tags';
 
   @override
-  Future<List<AIModel>> models() async {
+  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
     if (config.baseUrl.isEmpty) {
       throw const InvalidRequestError('Missing Ollama base URL');
     }
 
     try {
-      final responseData = await client.getJson(modelsEndpoint);
+      final responseData = await client.getJson(
+        modelsEndpoint,
+        cancelToken: cancelToken,
+      );
       return _parseResponse(responseData);
     } on DioException catch (e) {
       throw DioErrorHandler.handleDioError(e, 'Ollama');

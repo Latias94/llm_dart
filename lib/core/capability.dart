@@ -751,8 +751,10 @@ class RealtimeErrorEvent extends RealtimeAudioEvent {
 abstract class ModelListingCapability {
   /// Get available models from the provider
   ///
+  /// [cancelToken] - Optional token to cancel the request
+  ///
   /// Returns a list of available models or throws an LLMError
-  Future<List<AIModel>> models();
+  Future<List<AIModel>> models({CancelToken? cancelToken});
 }
 
 /// Google-specific TTS capability interface
