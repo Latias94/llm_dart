@@ -309,7 +309,8 @@ class LoggingChatProvider implements ChatCapability {
     print('   📝 [LOG] Starting chat request with ${messages.length} messages');
 
     try {
-      final response = await _baseProvider.chat(messages, cancelToken: cancelToken);
+      final response =
+          await _baseProvider.chat(messages, cancelToken: cancelToken);
       stopwatch.stop();
 
       print('   📝 [LOG] Chat completed in ${stopwatch.elapsedMilliseconds}ms');
@@ -334,8 +335,8 @@ class LoggingChatProvider implements ChatCapability {
   }) async* {
     print('   📝 [LOG] Starting streaming chat request');
 
-    await for (final event
-        in _baseProvider.chatStream(messages, tools: tools, cancelToken: cancelToken)) {
+    await for (final event in _baseProvider.chatStream(messages,
+        tools: tools, cancelToken: cancelToken)) {
       switch (event) {
         case TextDeltaEvent():
           print('   📝 [LOG] Text delta received');
@@ -361,7 +362,8 @@ class LoggingChatProvider implements ChatCapability {
     CancelToken? cancelToken,
   }) async {
     print('   📝 [LOG] Chat with ${tools?.length ?? 0} tools');
-    return _baseProvider.chatWithTools(messages, tools, cancelToken: cancelToken);
+    return _baseProvider.chatWithTools(messages, tools,
+        cancelToken: cancelToken);
   }
 
   @override
@@ -397,7 +399,8 @@ class CachingChatProvider implements ChatCapability {
     }
 
     print('   💾 [CACHE] Cache miss, calling base provider');
-    final response = await _baseProvider.chat(messages, cancelToken: cancelToken);
+    final response =
+        await _baseProvider.chat(messages, cancelToken: cancelToken);
     _cache[cacheKey] = response;
 
     return response;
@@ -410,7 +413,8 @@ class CachingChatProvider implements ChatCapability {
     CancelToken? cancelToken,
   }) {
     // For simplicity, streaming bypasses cache
-    return _baseProvider.chatStream(messages, tools: tools, cancelToken: cancelToken);
+    return _baseProvider.chatStream(messages,
+        tools: tools, cancelToken: cancelToken);
   }
 
   @override
@@ -420,7 +424,8 @@ class CachingChatProvider implements ChatCapability {
     CancelToken? cancelToken,
   }) {
     // Tools bypass cache for safety
-    return _baseProvider.chatWithTools(messages, tools, cancelToken: cancelToken);
+    return _baseProvider.chatWithTools(messages, tools,
+        cancelToken: cancelToken);
   }
 
   @override

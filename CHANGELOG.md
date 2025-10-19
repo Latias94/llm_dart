@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2025-10-19
+
+### Added
+
+- **Request Cancellation Support**: Added comprehensive cancellation support for all operations (by [@PeronGH](https://github.com/PeronGH) in #18)
+  - New `CancelToken` parameter for `chat()`, `chatStream()`, `embed()`, `models()`, and all audio operations
+  - New `CancelledError` for consistent cancellation error handling
+  - New `CancellationHelper` utilities with `isCancelled()` and `getCancellationReason()` methods
+  - True network-level cancellation using Dio's CancelToken
+  - Comprehensive examples in `example/02_core_features/cancellation_demo.dart`
+  - Full documentation in README
+
+### Changed
+
+- Updated `dio` dependency from ^5.8.0 to ^5.9.0
+- Updated `test` dependency from ^1.25.15 to ^1.26.3
+- Updated `mcp_dart` dependency from ^0.5.1 to ^0.6.3
+
 ## [0.9.0] - 2025-8-8
 
 ### Added

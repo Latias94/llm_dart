@@ -139,7 +139,8 @@ class OpenAIProvider
   }) async {
     // Use Responses API if enabled, otherwise use Chat Completions API
     if (config.useResponsesAPI && _responses != null) {
-      return _responses.chatWithTools(messages, tools, cancelToken: cancelToken);
+      return _responses.chatWithTools(messages, tools,
+          cancelToken: cancelToken);
     } else {
       return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
     }
@@ -153,7 +154,8 @@ class OpenAIProvider
   }) {
     // Use Responses API if enabled, otherwise use Chat Completions API
     if (config.useResponsesAPI && _responses != null) {
-      return _responses.chatStream(messages, tools: tools, cancelToken: cancelToken);
+      return _responses.chatStream(messages,
+          tools: tools, cancelToken: cancelToken);
     } else {
       return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
     }
