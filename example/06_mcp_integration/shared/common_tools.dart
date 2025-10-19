@@ -15,13 +15,15 @@ class CommonMcpTools {
       "calculate",
       description:
           'Perform mathematical calculations (supports +, -, *, /, ^, sqrt, sin, cos, tan)',
-      inputSchemaProperties: {
-        'expression': {
-          'type': 'string',
-          'description':
-              'Mathematical expression to evaluate (e.g., "2 + 3 * 4", "sqrt(16)", "sin(30)")',
+      toolInputSchema: ToolInputSchema(
+        properties: {
+          'expression': {
+            'type': 'string',
+            'description':
+                'Mathematical expression to evaluate (e.g., "2 + 3 * 4", "sqrt(16)", "sin(30)")',
+          },
         },
-      },
+      ),
       callback: ({args, extra}) async {
         try {
           final expression = args!['expression'] as String;
@@ -44,25 +46,27 @@ class CommonMcpTools {
     server.tool(
       "random_number",
       description: 'Generate random numbers within specified range',
-      inputSchemaProperties: {
-        'min': {
-          'type': 'number',
-          'description': 'Minimum value (inclusive)',
-          'default': 0,
+      toolInputSchema: ToolInputSchema(
+        properties: {
+          'min': {
+            'type': 'number',
+            'description': 'Minimum value (inclusive)',
+            'default': 0,
+          },
+          'max': {
+            'type': 'number',
+            'description': 'Maximum value (inclusive)',
+            'default': 100,
+          },
+          'count': {
+            'type': 'integer',
+            'description': 'Number of random numbers to generate',
+            'default': 1,
+            'minimum': 1,
+            'maximum': 10,
+          },
         },
-        'max': {
-          'type': 'number',
-          'description': 'Maximum value (inclusive)',
-          'default': 100,
-        },
-        'count': {
-          'type': 'integer',
-          'description': 'Number of random numbers to generate',
-          'default': 1,
-          'minimum': 1,
-          'maximum': 10,
-        },
-      },
+      ),
       callback: ({args, extra}) async {
         try {
           final min = (args!['min'] as num?)?.toInt() ?? 0;
@@ -99,19 +103,21 @@ class CommonMcpTools {
     server.tool(
       "current_time",
       description: 'Get current date and time in various formats',
-      inputSchemaProperties: {
-        'format': {
-          'type': 'string',
-          'description': 'Time format: iso, local, utc, timestamp',
-          'enum': ['iso', 'local', 'utc', 'timestamp'],
-          'default': 'local',
+      toolInputSchema: ToolInputSchema(
+        properties: {
+          'format': {
+            'type': 'string',
+            'description': 'Time format: iso, local, utc, timestamp',
+            'enum': ['iso', 'local', 'utc', 'timestamp'],
+            'default': 'local',
+          },
+          'timezone': {
+            'type': 'string',
+            'description': 'Timezone (only for local format)',
+            'default': 'system',
+          },
         },
-        'timezone': {
-          'type': 'string',
-          'description': 'Timezone (only for local format)',
-          'default': 'system',
-        },
-      },
+      ),
       callback: ({args, extra}) async {
         try {
           final format = args!['format'] as String? ?? 'local';
@@ -154,15 +160,17 @@ class CommonMcpTools {
     server.tool(
       "uuid_generate",
       description: 'Generate UUID (Universally Unique Identifier)',
-      inputSchemaProperties: {
-        'count': {
-          'type': 'integer',
-          'description': 'Number of UUIDs to generate',
-          'default': 1,
-          'minimum': 1,
-          'maximum': 5,
+      toolInputSchema: ToolInputSchema(
+        properties: {
+          'count': {
+            'type': 'integer',
+            'description': 'Number of UUIDs to generate',
+            'default': 1,
+            'minimum': 1,
+            'maximum': 5,
+          },
         },
-      },
+      ),
       callback: ({args, extra}) async {
         try {
           final count = (args!['count'] as num?)?.toInt() ?? 1;
@@ -192,12 +200,14 @@ class CommonMcpTools {
     server.tool(
       "file_info",
       description: 'Get information about a file or directory',
-      inputSchemaProperties: {
-        'path': {
-          'type': 'string',
-          'description': 'File or directory path',
+      toolInputSchema: ToolInputSchema(
+        properties: {
+          'path': {
+            'type': 'string',
+            'description': 'File or directory path',
+          },
         },
-      },
+      ),
       callback: ({args, extra}) async {
         try {
           final path = args!['path'] as String;
@@ -240,14 +250,16 @@ class CommonMcpTools {
     server.tool(
       "system_info",
       description: 'Get system information',
-      inputSchemaProperties: {
-        'type': {
-          'type': 'string',
-          'description': 'Type of system info: os, memory, environment',
-          'enum': ['os', 'memory', 'environment', 'all'],
-          'default': 'all',
+      toolInputSchema: ToolInputSchema(
+        properties: {
+          'type': {
+            'type': 'string',
+            'description': 'Type of system info: os, memory, environment',
+            'enum': ['os', 'memory', 'environment', 'all'],
+            'default': 'all',
+          },
         },
-      },
+      ),
       callback: ({args, extra}) async {
         try {
           final type = args!['type'] as String? ?? 'all';
