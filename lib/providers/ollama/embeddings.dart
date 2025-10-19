@@ -18,15 +18,21 @@ class OllamaEmbeddings implements EmbeddingCapability {
   String get embeddingEndpoint => '/api/embed';
 
   @override
-  Future<List<List<double>>> embed(List<String> input) async {
+  Future<List<List<double>>> embed(
+    List<String> input, {
+    CancelToken? cancelToken,
+  }) async {
     if (config.baseUrl.isEmpty) {
       throw const InvalidRequestError('Missing Ollama base URL');
     }
 
     try {
       final requestBody = _buildRequestBody(input);
-      final responseData =
-          await client.postJson(embeddingEndpoint, requestBody);
+      final responseData = await client.postJson(
+        embeddingEndpoint,
+        requestBody,
+        cancelToken: cancelToken,
+      );
       return _parseResponse(responseData);
     } on DioException catch (e) {
       throw DioErrorHandler.handleDioError(e, 'Ollama');

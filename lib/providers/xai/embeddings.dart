@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import 'client.dart';
@@ -16,13 +18,20 @@ class XAIEmbedding implements EmbeddingCapability {
   String get embeddingEndpoint => 'embeddings';
 
   @override
-  Future<List<List<double>>> embed(List<String> input) async {
+  Future<List<List<double>>> embed(
+    List<String> input, {
+    CancelToken? cancelToken,
+  }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing xAI API key');
     }
 
     final requestBody = _buildEmbeddingRequest(input);
-    final responseData = await client.postJson(embeddingEndpoint, requestBody);
+    final responseData = await client.postJson(
+      embeddingEndpoint,
+      requestBody,
+      cancelToken: cancelToken,
+    );
     return _parseEmbeddingResponse(responseData);
   }
 

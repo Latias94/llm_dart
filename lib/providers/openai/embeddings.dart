@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import 'client.dart';
@@ -13,7 +15,10 @@ class OpenAIEmbeddings implements EmbeddingCapability {
   OpenAIEmbeddings(this.client, this.config);
 
   @override
-  Future<List<List<double>>> embed(List<String> input) async {
+  Future<List<List<double>>> embed(
+    List<String> input, {
+    CancelToken? cancelToken,
+  }) async {
     final requestBody = {
       'model': config.model,
       'input': input,
@@ -22,7 +27,11 @@ class OpenAIEmbeddings implements EmbeddingCapability {
         'dimensions': config.embeddingDimensions,
     };
 
-    final responseData = await client.postJson('embeddings', requestBody);
+    final responseData = await client.postJson(
+      'embeddings',
+      requestBody,
+      cancelToken: cancelToken,
+    );
 
     final data = responseData['data'] as List?;
     if (data == null) {

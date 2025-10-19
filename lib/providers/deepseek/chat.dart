@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import 'dart:convert';
 
 import '../../core/capability.dart';
@@ -28,10 +30,15 @@ class DeepSeekChat implements ChatCapability {
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) async {
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) async {
     final requestBody = _buildRequestBody(messages, tools, false);
-    final responseData = await client.postJson(chatEndpoint, requestBody);
+    final responseData = await client.postJson(
+      chatEndpoint,
+      requestBody,
+      cancelToken: cancelToken,
+    );
     return _parseResponse(responseData);
   }
 
@@ -39,6 +46,7 @@ class DeepSeekChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   }) async* {
     final effectiveTools = tools ?? config.tools;
     final requestBody = _buildRequestBody(messages, effectiveTools, true);
@@ -47,7 +55,11 @@ class DeepSeekChat implements ChatCapability {
     _resetStreamState();
 
     // Create SSE stream
-    final stream = client.postStreamRaw(chatEndpoint, requestBody);
+    final stream = client.postStreamRaw(
+      chatEndpoint,
+      requestBody,
+      cancelToken: cancelToken,
+    );
 
     await for (final chunk in stream) {
       final events = _parseStreamEvents(chunk);
@@ -58,8 +70,11 @@ class DeepSeekChat implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
-    return chatWithTools(messages, null);
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
+    return chatWithTools(messages, null, cancelToken: cancelToken);
   }
 
   @override

@@ -31,14 +31,19 @@ class PhindClient {
   /// Make a POST request and return JSON response
   Future<Map<String, dynamic>> postJson(
     String endpoint,
-    Map<String, dynamic> data,
-  ) async {
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       if (_logger.isLoggable(Level.FINE)) {
         _logger.fine('Phind request payload: ${jsonEncode(data)}');
       }
 
-      final response = await _dio.post(endpoint, data: data);
+      final response = await _dio.post(
+        endpoint,
+        data: data,
+        cancelToken: cancelToken,
+      );
 
       _logger.info('Phind HTTP status: ${response.statusCode}');
 
@@ -72,8 +77,9 @@ class PhindClient {
   /// Make a POST request and return raw stream
   Stream<String> postStreamRaw(
     String endpoint,
-    Map<String, dynamic> data,
-  ) async* {
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async* {
     try {
       if (_logger.isLoggable(Level.FINE)) {
         _logger.fine('Phind stream request payload: ${jsonEncode(data)}');
@@ -82,6 +88,7 @@ class PhindClient {
       final response = await _dio.post(
         endpoint,
         data: data,
+        cancelToken: cancelToken,
         options: Options(responseType: ResponseType.stream),
       );
 

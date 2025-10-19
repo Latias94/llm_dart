@@ -33,22 +33,30 @@ class OllamaClient {
   /// Make a POST request and return JSON response
   Future<Map<String, dynamic>> postJson(
     String endpoint,
-    Map<String, dynamic> data,
-  ) async {
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
     return HttpResponseHandler.postJson(
       dio,
       endpoint,
       data,
       providerName: 'Ollama',
       logger: logger,
+      cancelToken: cancelToken,
     );
   }
 
   /// Make a GET request and return JSON response
-  Future<Map<String, dynamic>> getJson(String endpoint) async {
+  Future<Map<String, dynamic>> getJson(
+    String endpoint, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       logger.fine('Ollama request: GET $endpoint');
-      final response = await dio.get(endpoint);
+      final response = await dio.get(
+        endpoint,
+        cancelToken: cancelToken,
+      );
 
       logger.fine('Ollama HTTP status: ${response.statusCode}');
 
@@ -70,14 +78,16 @@ class OllamaClient {
   /// Make a POST request and return raw stream for JSON streaming
   Stream<String> postStreamRaw(
     String endpoint,
-    Map<String, dynamic> data,
-  ) async* {
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async* {
     try {
       logger.fine('Ollama streaming request payload: ${jsonEncode(data)}');
 
       final response = await dio.post(
         endpoint,
         data: data,
+        cancelToken: cancelToken,
         options: Options(responseType: ResponseType.stream),
       );
 

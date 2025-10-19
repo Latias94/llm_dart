@@ -10,6 +10,7 @@ Practical examples for the LLM Dart library, organized by learning path and use 
 | **Build a chatbot** | [chatbot.dart](05_use_cases/chatbot.dart) |
 | **Compare providers** | [provider_comparison.dart](01_getting_started/provider_comparison.dart) |
 | **Use streaming** | [streaming_chat.dart](02_core_features/streaming_chat.dart) |
+| **Cancel requests** | [cancellation_demo.dart](02_core_features/cancellation_demo.dart) |
 | **Call functions** | [tool_calling.dart](02_core_features/tool_calling.dart) |
 | **Handle audio** | [audio_processing.dart](02_core_features/audio_processing.dart) |
 | **Generate images** | [image_generation.dart](02_core_features/image_generation.dart) |
@@ -33,6 +34,7 @@ Practical examples for the LLM Dart library, organized by learning path and use 
 - [capability_factory_methods.dart](02_core_features/capability_factory_methods.dart) - Type-safe provider initialization
 - [chat_basics.dart](02_core_features/chat_basics.dart) - Basic chat
 - [streaming_chat.dart](02_core_features/streaming_chat.dart) - Real-time streaming
+- [cancellation_demo.dart](02_core_features/cancellation_demo.dart) - Request cancellation
 - [tool_calling.dart](02_core_features/tool_calling.dart) - Function calling
 - [enhanced_tool_calling.dart](02_core_features/enhanced_tool_calling.dart) - Advanced tool usage
 - [structured_output.dart](02_core_features/structured_output.dart) - JSON output

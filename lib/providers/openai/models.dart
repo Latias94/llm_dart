@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
@@ -15,8 +17,8 @@ class OpenAIModels implements ModelListingCapability {
   OpenAIModels(this.client, this.config);
 
   @override
-  Future<List<AIModel>> models() async {
-    final responseData = await client.get('models');
+  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+    final responseData = await client.get('models', cancelToken: cancelToken);
 
     // responseData is already Map<String, dynamic> from client.get()
 

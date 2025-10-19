@@ -96,6 +96,7 @@ class HttpResponseHandler {
     Logger? logger,
     Map<String, dynamic>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
   }) async {
     final provider = providerName ?? 'Unknown';
     final log = logger ?? _logger;
@@ -112,6 +113,7 @@ class HttpResponseHandler {
         data: data,
         queryParameters: queryParameters,
         options: options,
+        cancelToken: cancelToken,
       );
 
       if (log.isLoggable(Level.FINE)) {
@@ -132,7 +134,8 @@ class HttpResponseHandler {
       return parseJsonResponse(response.data, providerName: provider);
     } on DioException catch (e) {
       log.severe('$provider HTTP request failed: ${e.message}');
-      rethrow;
+      // Convert DioException to LLMError using centralized handler
+      throw DioErrorHandler.handleDioError(e, provider);
     } catch (e) {
       if (e is LLMError) {
         rethrow;
@@ -150,6 +153,7 @@ class HttpResponseHandler {
     Logger? logger,
     Map<String, dynamic>? queryParameters,
     Options? options,
+    CancelToken? cancelToken,
   }) async {
     final provider = providerName ?? 'Unknown';
     final log = logger ?? _logger;
@@ -163,6 +167,7 @@ class HttpResponseHandler {
         endpoint,
         queryParameters: queryParameters,
         options: options,
+        cancelToken: cancelToken,
       );
 
       if (log.isLoggable(Level.FINE)) {
@@ -181,7 +186,8 @@ class HttpResponseHandler {
       return parseJsonResponse(response.data, providerName: provider);
     } on DioException catch (e) {
       log.severe('$provider HTTP GET request failed: ${e.message}');
-      rethrow;
+      // Convert DioException to LLMError using centralized handler
+      throw DioErrorHandler.handleDioError(e, provider);
     } catch (e) {
       if (e is LLMError) {
         rethrow;

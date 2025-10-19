@@ -64,22 +64,27 @@ class MockBaseFactory extends BaseProviderFactory<ChatCapability> {
 // Mock provider implementation
 class MockProvider implements ChatCapability, ProviderCapabilities {
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
     return MockChatResponse(text: 'Mock response');
   }
 
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) async {
-    return chat(messages);
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) async {
+    return chat(messages, cancelToken: cancelToken);
   }
 
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   }) async* {
     yield TextDeltaEvent('Mock response');
     yield CompletionEvent(MockChatResponse(text: 'Mock response'));

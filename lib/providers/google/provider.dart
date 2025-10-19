@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
@@ -38,24 +40,29 @@ class GoogleProvider
   }
 
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
-    return _chat.chat(messages);
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
+    return _chat.chat(messages, cancelToken: cancelToken);
   }
 
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) async {
-    return _chat.chatWithTools(messages, tools);
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) async {
+    return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
   }
 
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   }) {
-    return _chat.chatStream(messages, tools: tools);
+    return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
   }
 
   @override
@@ -71,8 +78,11 @@ class GoogleProvider
   // ========== EmbeddingCapability ==========
 
   @override
-  Future<List<List<double>>> embed(List<String> input) async {
-    return _embeddings.embed(input);
+  Future<List<List<double>>> embed(
+    List<String> input, {
+    CancelToken? cancelToken,
+  }) async {
+    return _embeddings.embed(input, cancelToken: cancelToken);
   }
 
   // ========== ImageGenerationCapability (delegated to images module) ==========

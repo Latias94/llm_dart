@@ -24,15 +24,20 @@ class OllamaChat implements ChatCapability {
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) async {
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) async {
     if (config.baseUrl.isEmpty) {
       throw const InvalidRequestError('Missing Ollama base URL');
     }
 
     try {
       final requestBody = _buildRequestBody(messages, tools, false);
-      final responseData = await client.postJson(chatEndpoint, requestBody);
+      final responseData = await client.postJson(
+        chatEndpoint,
+        requestBody,
+        cancelToken: cancelToken,
+      );
       return _parseResponse(responseData);
     } on DioException catch (e) {
       throw DioErrorHandler.handleDioError(e, 'Ollama');
@@ -45,6 +50,7 @@ class OllamaChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   }) async* {
     if (config.baseUrl.isEmpty) {
       yield ErrorEvent(const InvalidRequestError('Missing Ollama base URL'));
@@ -56,7 +62,11 @@ class OllamaChat implements ChatCapability {
       final requestBody = _buildRequestBody(messages, effectiveTools, true);
 
       // Create JSON stream
-      final stream = client.postStreamRaw(chatEndpoint, requestBody);
+      final stream = client.postStreamRaw(
+        chatEndpoint,
+        requestBody,
+        cancelToken: cancelToken,
+      );
 
       await for (final chunk in stream) {
         final events = _parseStreamEvents(chunk);
@@ -70,8 +80,11 @@ class OllamaChat implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
-    return chatWithTools(messages, null);
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
+    return chatWithTools(messages, null, cancelToken: cancelToken);
   }
 
   @override

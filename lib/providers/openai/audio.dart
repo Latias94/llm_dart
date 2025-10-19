@@ -28,7 +28,10 @@ class OpenAIAudio extends BaseAudioCapability {
       };
 
   @override
-  Future<TTSResponse> textToSpeech(TTSRequest request) async {
+  Future<TTSResponse> textToSpeech(
+    TTSRequest request, {
+    CancelToken? cancelToken,
+  }) async {
     // Basic validation - let the provider handle specific limits
     if (request.text.isEmpty) {
       throw const InvalidRequestError('Text input cannot be empty');
@@ -42,7 +45,11 @@ class OpenAIAudio extends BaseAudioCapability {
       if (request.speed != null) 'speed': request.speed,
     };
 
-    final audioData = await client.postRaw('audio/speech', requestBody);
+    final audioData = await client.postRaw(
+      'audio/speech',
+      requestBody,
+      cancelToken: cancelToken,
+    );
 
     // Determine content type based on format
     String contentType = 'audio/mpeg'; // Default for mp3
@@ -114,7 +121,10 @@ class OpenAIAudio extends BaseAudioCapability {
   // SpeechToTextCapability implementation
 
   @override
-  Future<STTResponse> speechToText(STTRequest request) async {
+  Future<STTResponse> speechToText(
+    STTRequest request, {
+    CancelToken? cancelToken,
+  }) async {
     // Basic validation - let the provider handle specific limits
     if (request.audioData == null && request.filePath == null) {
       throw const InvalidRequestError(
@@ -173,8 +183,11 @@ class OpenAIAudio extends BaseAudioCapability {
       formData.fields.add(MapEntry('timestamp_granularities[]', granularity));
     }
 
-    final responseData =
-        await client.postForm('audio/transcriptions', formData);
+    final responseData = await client.postForm(
+      'audio/transcriptions',
+      formData,
+      cancelToken: cancelToken,
+    );
 
     // Parse word timing if available
     List<WordTiming>? words;
@@ -313,7 +326,10 @@ class OpenAIAudio extends BaseAudioCapability {
   // Audio translation implementation (OpenAI specific)
 
   @override
-  Future<STTResponse> translateAudio(AudioTranslationRequest request) async {
+  Future<STTResponse> translateAudio(
+    AudioTranslationRequest request, {
+    CancelToken? cancelToken,
+  }) async {
     // Basic validation
     if (request.audioData == null && request.filePath == null) {
       throw const InvalidRequestError(
@@ -353,7 +369,11 @@ class OpenAIAudio extends BaseAudioCapability {
       );
     }
 
-    final responseData = await client.postForm('audio/translations', formData);
+    final responseData = await client.postForm(
+      'audio/translations',
+      formData,
+      cancelToken: cancelToken,
+    );
 
     return STTResponse(
       text: responseData['text'] as String,
@@ -369,7 +389,10 @@ class OpenAIAudio extends BaseAudioCapability {
   // Unsupported features - throw UnsupportedError
 
   @override
-  Stream<AudioStreamEvent> textToSpeechStream(TTSRequest request) {
+  Stream<AudioStreamEvent> textToSpeechStream(
+    TTSRequest request, {
+    CancelToken? cancelToken,
+  }) {
     throw UnsupportedError('OpenAI does not support streaming text-to-speech');
   }
 

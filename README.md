@@ -17,6 +17,7 @@ A modular Dart library for AI provider interactions. This library provides a uni
 | **Build a chatbot** | [Chatbot example](example/05_use_cases/chatbot.dart) |
 | **Compare providers** | [Provider comparison](example/01_getting_started/provider_comparison.dart) |
 | **Use streaming** | [Streaming example](example/02_core_features/streaming_chat.dart) |
+| **Cancel requests** | [Cancellation demo](example/02_core_features/cancellation_demo.dart) |
 | **Call functions** | [Tool calling](example/02_core_features/tool_calling.dart) |
 | **Search the web** | [Web search](example/02_core_features/web_search.dart) |
 | **Generate embeddings** | [Embeddings](example/02_core_features/embeddings.dart) |
@@ -32,6 +33,7 @@ A modular Dart library for AI provider interactions. This library provides a uni
 - **OpenAI Responses API**: Stateful conversations with built-in tools (web search, file search, computer use)
 - **Thinking process access**: Model reasoning for Claude, DeepSeek, Gemini, Ollama
 - **Unified capabilities**: Chat, streaming, tools, audio, images, files, web search, embeddings
+- **Request cancellation**: Cancel in-flight requests for chat, streaming, and API operations
 - **MCP integration**: Model Context Protocol for external tool access
 - **Content moderation**: Built-in safety and content filtering
 - **Type-safe building**: Compile-time capability validation
@@ -497,12 +499,66 @@ final quickSpeech = await audioProvider.speech('Quick TTS');
 final quickTranscription = await audioProvider.transcribeFile('audio.mp3');
 ```
 
+## Request Cancellation
+
+Cancel in-flight requests for better resource management and user experience:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+// Create a cancel token
+final cancelToken = CancelToken();
+
+// Start a long-running request
+final responseFuture = provider.chat(
+  [ChatMessage.user('Write a very long essay...')],
+  cancelToken: cancelToken,
+);
+
+// Cancel it later (e.g., user navigates away)
+cancelToken.cancel('User cancelled');
+
+// Handle cancellation
+try {
+  await responseFuture;
+} on CancelledError catch (e) {
+  print('Request cancelled: ${e.message}');
+} catch (e) {
+  if (CancellationHelper.isCancelled(e)) {
+    print('Cancelled: ${CancellationHelper.getCancellationReason(e)}');
+  }
+}
+
+// Cancel streaming responses
+await for (final event in provider.chatStream(messages, cancelToken: cancelToken)) {
+  switch (event) {
+    case TextDeltaEvent(delta: final delta):
+      print(delta);
+      // Cancel after first token
+      cancelToken.cancel('Got enough data');
+      break;
+    case ErrorEvent(error: final error):
+      if (CancellationHelper.isCancelled(error)) {
+        print('Stream cancelled');
+      }
+      break;
+    // ... other events
+  }
+}
+```
+
+**Supported operations**: `chat()`, `chatStream()`, `models()`, and all other provider operations.
+
+See [cancellation_demo.dart](example/02_core_features/cancellation_demo.dart) for comprehensive examples.
+
 ## Error Handling
 
 ```dart
 try {
   final response = await provider.chatWithTools(messages, null);
   print(response.text);
+} on CancelledError catch (e) {
+  print('Request cancelled: $e');
 } on AuthError catch (e) {
   print('Authentication failed: $e');
 } on ProviderError catch (e) {
@@ -665,7 +721,7 @@ See the [example directory](example) for comprehensive examples:
 
 **Core Features**:
 
-- [chat_basics.dart](example/02_core_features/chat_basics.dart), [streaming_chat.dart](example/02_core_features/streaming_chat.dart)
+- [chat_basics.dart](example/02_core_features/chat_basics.dart), [streaming_chat.dart](example/02_core_features/streaming_chat.dart), [cancellation_demo.dart](example/02_core_features/cancellation_demo.dart)
 - [tool_calling.dart](example/02_core_features/tool_calling.dart), [enhanced_tool_calling.dart](example/02_core_features/enhanced_tool_calling.dart)
 - [web_search.dart](example/02_core_features/web_search.dart), [embeddings.dart](example/02_core_features/embeddings.dart)
 - [content_moderation.dart](example/02_core_features/content_moderation.dart), [audio_processing.dart](example/02_core_features/audio_processing.dart)

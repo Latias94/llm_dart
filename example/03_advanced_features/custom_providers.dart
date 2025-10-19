@@ -211,7 +211,10 @@ class MockChatProvider implements ChatCapability {
   final Random _random = Random();
 
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
     // Simulate API delay
     await Future.delayed(Duration(milliseconds: 100 + _random.nextInt(200)));
 
@@ -233,8 +236,11 @@ class MockChatProvider implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(List<ChatMessage> messages,
-      {List<Tool>? tools}) async* {
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async* {
     final userMessage = messages.lastWhere(
       (m) => m.role == ChatRole.user,
       orElse: () => ChatMessage.user(''),
@@ -260,8 +266,11 @@ class MockChatProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chatWithTools(
-      List<ChatMessage> messages, List<Tool>? tools) async {
-    return chat(messages); // Simple implementation
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) async {
+    return chat(messages, cancelToken: cancelToken); // Simple implementation
   }
 
   @override
@@ -291,13 +300,16 @@ class LoggingChatProvider implements ChatCapability {
   LoggingChatProvider(this._baseProvider);
 
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
     final stopwatch = Stopwatch()..start();
 
     print('   📝 [LOG] Starting chat request with ${messages.length} messages');
 
     try {
-      final response = await _baseProvider.chat(messages);
+      final response = await _baseProvider.chat(messages, cancelToken: cancelToken);
       stopwatch.stop();
 
       print('   📝 [LOG] Chat completed in ${stopwatch.elapsedMilliseconds}ms');
@@ -315,12 +327,15 @@ class LoggingChatProvider implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(List<ChatMessage> messages,
-      {List<Tool>? tools}) async* {
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async* {
     print('   📝 [LOG] Starting streaming chat request');
 
     await for (final event
-        in _baseProvider.chatStream(messages, tools: tools)) {
+        in _baseProvider.chatStream(messages, tools: tools, cancelToken: cancelToken)) {
       switch (event) {
         case TextDeltaEvent():
           print('   📝 [LOG] Text delta received');
@@ -341,9 +356,12 @@ class LoggingChatProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chatWithTools(
-      List<ChatMessage> messages, List<Tool>? tools) async {
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) async {
     print('   📝 [LOG] Chat with ${tools?.length ?? 0} tools');
-    return _baseProvider.chatWithTools(messages, tools);
+    return _baseProvider.chatWithTools(messages, tools, cancelToken: cancelToken);
   }
 
   @override
@@ -367,7 +385,10 @@ class CachingChatProvider implements ChatCapability {
   CachingChatProvider(this._baseProvider);
 
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
     final cacheKey = _generateCacheKey(messages);
 
     if (_cache.containsKey(cacheKey)) {
@@ -376,24 +397,30 @@ class CachingChatProvider implements ChatCapability {
     }
 
     print('   💾 [CACHE] Cache miss, calling base provider');
-    final response = await _baseProvider.chat(messages);
+    final response = await _baseProvider.chat(messages, cancelToken: cancelToken);
     _cache[cacheKey] = response;
 
     return response;
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(List<ChatMessage> messages,
-      {List<Tool>? tools}) {
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
     // For simplicity, streaming bypasses cache
-    return _baseProvider.chatStream(messages, tools: tools);
+    return _baseProvider.chatStream(messages, tools: tools, cancelToken: cancelToken);
   }
 
   @override
   Future<ChatResponse> chatWithTools(
-      List<ChatMessage> messages, List<Tool>? tools) {
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) {
     // Tools bypass cache for safety
-    return _baseProvider.chatWithTools(messages, tools);
+    return _baseProvider.chatWithTools(messages, tools, cancelToken: cancelToken);
   }
 
   @override
@@ -424,7 +451,10 @@ class CustomAPIProvider implements ChatCapability {
   });
 
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
     // Simulate custom API call
     await Future.delayed(Duration(milliseconds: 300));
 
@@ -435,17 +465,23 @@ class CustomAPIProvider implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(List<ChatMessage> messages,
-      {List<Tool>? tools}) async* {
-    final response = await chat(messages);
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async* {
+    final response = await chat(messages, cancelToken: cancelToken);
     yield TextDeltaEvent(response.text ?? '');
     yield CompletionEvent(response);
   }
 
   @override
   Future<ChatResponse> chatWithTools(
-      List<ChatMessage> messages, List<Tool>? tools) {
-    return chat(messages);
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) {
+    return chat(messages, cancelToken: cancelToken);
   }
 
   @override

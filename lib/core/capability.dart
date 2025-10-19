@@ -7,6 +7,7 @@ import '../models/moderation_models.dart';
 import '../models/assistant_models.dart';
 import '../providers/google/tts.dart';
 import 'llm_error.dart';
+import 'cancellation.dart';
 
 /// Enumeration of LLM capabilities that providers can support
 ///
@@ -244,32 +245,40 @@ abstract class ChatCapability {
   /// Sends a chat request to the provider with a sequence of messages.
   ///
   /// [messages] - The conversation history as a list of chat messages
+  /// [cancelToken] - Optional token to cancel the request
   ///
   /// Returns the provider's response or throws an LLMError
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
-    return chatWithTools(messages, null);
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
+    return chatWithTools(messages, null, cancelToken: cancelToken);
   }
 
   /// Sends a chat request to the provider with a sequence of messages and tools.
   ///
   /// [messages] - The conversation history as a list of chat messages
   /// [tools] - Optional list of tools to use in the chat
+  /// [cancelToken] - Optional token to cancel the request
   ///
   /// Returns the provider's response or throws an LLMError
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
-    List<Tool>? tools,
-  );
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  });
 
   /// Sends a streaming chat request to the provider
   ///
   /// [messages] - The conversation history as a list of chat messages
   /// [tools] - Optional list of tools to use in the chat
+  /// [cancelToken] - Optional token to cancel the stream
   ///
   /// Returns a stream of chat events
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   });
 
   /// Get current memory contents if provider supports memory
@@ -378,9 +387,13 @@ abstract class EmbeddingCapability {
   /// Generate embeddings for the given input texts
   ///
   /// [input] - List of strings to generate embeddings for
+  /// [cancelToken] - Optional token to cancel the request
   ///
   /// Returns a list of embedding vectors or throws an LLMError
-  Future<List<List<double>>> embed(List<String> input);
+  Future<List<List<double>>> embed(
+    List<String> input, {
+    CancelToken? cancelToken,
+  });
 }
 
 /// Unified audio processing capability interface
@@ -398,15 +411,27 @@ abstract class AudioCapability {
 
   /// Convert text to speech with full configuration support
   ///
+  /// [request] - The text-to-speech request
+  /// [cancelToken] - Optional token to cancel the request
+  ///
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
-  Future<TTSResponse> textToSpeech(TTSRequest request) {
+  Future<TTSResponse> textToSpeech(
+    TTSRequest request, {
+    CancelToken? cancelToken,
+  }) {
     throw UnsupportedError('Text-to-speech not supported by this provider');
   }
 
   /// Convert text to speech with streaming output
   ///
+  /// [request] - The text-to-speech request
+  /// [cancelToken] - Optional token to cancel the stream
+  ///
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
-  Stream<AudioStreamEvent> textToSpeechStream(TTSRequest request) {
+  Stream<AudioStreamEvent> textToSpeechStream(
+    TTSRequest request, {
+    CancelToken? cancelToken,
+  }) {
     throw UnsupportedError(
         'Streaming text-to-speech not supported by this provider');
   }
@@ -420,15 +445,27 @@ abstract class AudioCapability {
 
   /// Convert speech to text with full configuration support
   ///
+  /// [request] - The speech-to-text request
+  /// [cancelToken] - Optional token to cancel the request
+  ///
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
-  Future<STTResponse> speechToText(STTRequest request) {
+  Future<STTResponse> speechToText(
+    STTRequest request, {
+    CancelToken? cancelToken,
+  }) {
     throw UnsupportedError('Speech-to-text not supported by this provider');
   }
 
   /// Translate audio to English text
   ///
+  /// [request] - The audio translation request
+  /// [cancelToken] - Optional token to cancel the request
+  ///
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
-  Future<STTResponse> translateAudio(AudioTranslationRequest request) {
+  Future<STTResponse> translateAudio(
+    AudioTranslationRequest request, {
+    CancelToken? cancelToken,
+  }) {
     throw UnsupportedError('Audio translation not supported by this provider');
   }
 
@@ -458,8 +495,14 @@ abstract class AudioCapability {
   // === Convenience Methods ===
 
   /// Simple text-to-speech conversion (convenience method)
-  Future<List<int>> speech(String text) async {
-    final response = await textToSpeech(TTSRequest(text: text));
+  Future<List<int>> speech(
+    String text, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await textToSpeech(
+      TTSRequest(text: text),
+      cancelToken: cancelToken,
+    );
     return response.audioData;
   }
 
@@ -504,8 +547,14 @@ abstract class BaseAudioCapability implements AudioCapability {
   // Convenience methods with default implementations
 
   @override
-  Future<List<int>> speech(String text) async {
-    final response = await textToSpeech(TTSRequest(text: text));
+  Future<List<int>> speech(
+    String text, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await textToSpeech(
+      TTSRequest(text: text),
+      cancelToken: cancelToken,
+    );
     return response.audioData;
   }
 
@@ -702,8 +751,10 @@ class RealtimeErrorEvent extends RealtimeAudioEvent {
 abstract class ModelListingCapability {
   /// Get available models from the provider
   ///
+  /// [cancelToken] - Optional token to cancel the request
+  ///
   /// Returns a list of available models or throws an LLMError
-  Future<List<AIModel>> models();
+  Future<List<AIModel>> models({CancelToken? cancelToken});
 }
 
 /// Google-specific TTS capability interface

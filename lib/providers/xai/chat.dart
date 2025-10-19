@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import 'dart:convert';
 
 import '../../core/capability.dart';
@@ -22,14 +24,19 @@ class XAIChat implements ChatCapability {
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) async {
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing xAI API key');
     }
 
     final requestBody = _buildRequestBody(messages, tools, false);
-    final responseData = await client.postJson(chatEndpoint, requestBody);
+    final responseData = await client.postJson(
+      chatEndpoint,
+      requestBody,
+      cancelToken: cancelToken,
+    );
     return _parseResponse(responseData);
   }
 
@@ -37,6 +44,7 @@ class XAIChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   }) async* {
     if (config.apiKey.isEmpty) {
       yield ErrorEvent(const AuthError('Missing xAI API key'));
@@ -48,7 +56,11 @@ class XAIChat implements ChatCapability {
       final requestBody = _buildRequestBody(messages, effectiveTools, true);
 
       // Create SSE stream
-      final stream = client.postStreamRaw(chatEndpoint, requestBody);
+      final stream = client.postStreamRaw(
+        chatEndpoint,
+        requestBody,
+        cancelToken: cancelToken,
+      );
 
       await for (final chunk in stream) {
         final events = _parseStreamEvents(chunk);
@@ -62,8 +74,11 @@ class XAIChat implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chat(List<ChatMessage> messages) async {
-    return chatWithTools(messages, null);
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
+    return chatWithTools(messages, null, cancelToken: cancelToken);
   }
 
   @override
