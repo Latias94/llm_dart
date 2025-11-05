@@ -185,8 +185,8 @@ class OpenAIClient {
       case ImageUrlMessage(url: final url):
         result['content'] = [
           {
-            'type': 'image_url',
-            'image_url': {'url': url},
+            'type': 'input_image',
+            'image_url': url,
           },
         ];
         break;
