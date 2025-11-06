@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.1] - 2025-11-06
+
+### Fixed
+
+- **OpenAI Image and File Message Handling**: Fixed message format compatibility for both Chat Completions API and Responses API (by [@viumvi](https://github.com/viumvi) in [#19](https://github.com/Latias94/llm_dart/pull/19))
+  - Fixed image URL format to use correct structure based on `useResponsesAPI` flag
+  - Fixed Responses API `input` field to always send message array (was incorrectly sending content array for single messages)
+  - Fixed content type names for Responses API (`input_text`, `input_image`, `input_file`)
+  - Fixed missing text content when `ImageMessage` or `ImageUrlMessage` includes `content` field
+  - Now supports mixed content (text + image/file) in single messages
+
+### Added
+
+- **OpenAI Image and File Examples**: Added comprehensive example in `example/04_providers/openai/image_and_file_messages.dart`
+  - Demonstrates image URL messages, base64 encoded images, and file messages
+  - Shows mixed content usage (text + image/file)
+  - Covers both Chat Completions API and Responses API
+
 ## [0.10.0] - 2025-10-19
 
 ### Added

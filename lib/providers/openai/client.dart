@@ -175,41 +175,119 @@ class OpenAIClient {
       case ImageMessage(mime: final mime, data: final data):
         // Handle base64 encoded images
         final base64Data = base64Encode(data);
-        if (config.useResponsesAPI) {
-          result['content'] = [
-            {
-              'type': 'input_image',
-              'image_url': 'data:${mime.mimeType};base64,$base64Data',
-            },
-          ];
-          break;
-        } else {
-        result['content'] = [
-          {
-            'type': 'image_url',
-            'image_url': {'url': 'data:${mime.mimeType};base64,$base64Data'},
-          },
-        ];
-        break;
-        }
-      case ImageUrlMessage(url: final url):
-        if (config.useResponsesAPI) {
-          result['content'] = [
-            {
-              'type': 'input_image',
-              'image_url': url,
-            },
-          ];
-        } else {
-          result['content'] = [
-            {
-              'type': 'image_url',
-              'image_url': {'url': url},
-            },
-          ];
+        final imageDataUrl = 'data:${mime.mimeType};base64,$base64Data';
+
+        // Build content array with optional text + image
+        final contentArray = <Map<String, dynamic>>[];
+
+        // Add text content if present
+        if (message.content.isNotEmpty) {
+          if (config.useResponsesAPI) {
+            contentArray.add({
+              'type': 'input_text',
+              'text': message.content,
+            });
+          } else {
+            contentArray.add({
+              'type': 'text',
+              'text': message.content,
+            });
+          }
         }
 
+        // Add image content
+        if (config.useResponsesAPI) {
+          contentArray.add({
+            'type': 'input_image',
+            'image_url': imageDataUrl,
+          });
+        } else {
+          contentArray.add({
+            'type': 'image_url',
+            'image_url': {'url': imageDataUrl},
+          });
+        }
+
+        result['content'] = contentArray;
         break;
+
+      case ImageUrlMessage(url: final url):
+        // Build content array with optional text + image
+        final contentArray = <Map<String, dynamic>>[];
+
+        // Add text content if present
+        if (message.content.isNotEmpty) {
+          if (config.useResponsesAPI) {
+            contentArray.add({
+              'type': 'input_text',
+              'text': message.content,
+            });
+          } else {
+            contentArray.add({
+              'type': 'text',
+              'text': message.content,
+            });
+          }
+        }
+
+        // Add image content
+        if (config.useResponsesAPI) {
+          contentArray.add({
+            'type': 'input_image',
+            'image_url': url,
+          });
+        } else {
+          contentArray.add({
+            'type': 'image_url',
+            'image_url': {'url': url},
+          });
+        }
+
+        result['content'] = contentArray;
+        break;
+
+      case FileMessage(data: final data):
+        // Handle file messages (documents, audio, video, etc.)
+        final base64Data = base64Encode(data);
+
+        // Build content array with optional text + file
+        final contentArray = <Map<String, dynamic>>[];
+
+        // Add text content if present
+        if (message.content.isNotEmpty) {
+          if (config.useResponsesAPI) {
+            contentArray.add({
+              'type': 'input_text',
+              'text': message.content,
+            });
+          } else {
+            contentArray.add({
+              'type': 'text',
+              'text': message.content,
+            });
+          }
+        }
+
+        // Add file content
+        if (config.useResponsesAPI) {
+          // Responses API format: { type: 'input_file', file_data: '<base64>' }
+          contentArray.add({
+            'type': 'input_file',
+            'file_data': base64Data,
+          });
+        } else {
+          // Chat Completions API format: { type: 'file', file: { file_data: '<base64>' } }
+          contentArray.add({
+            'type': 'file',
+            'file': {
+              'file_data': base64Data,
+            },
+          });
+        }
+
+        result['content'] = contentArray;
+        break;
+
       case ToolUseMessage(toolCalls: final toolCalls):
         result['tool_calls'] = toolCalls.map((tc) => tc.toJson()).toList();
         break;
@@ -221,8 +299,6 @@ class OpenAIClient {
             message.content.isNotEmpty ? message.content : 'Tool result';
         result['tool_call_id'] = results.isNotEmpty ? results.first.id : null;
         break;
-      default:
-        result['content'] = message.content;
     }
 
     return result;

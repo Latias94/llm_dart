@@ -298,8 +298,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
 
     final body = <String, dynamic>{
       'model': config.model,
-      'input':
-          apiMessages.length == 1 ? apiMessages.first['content'] : apiMessages,
+      'input': apiMessages,
       'stream': stream,
       'background': background,
     };
