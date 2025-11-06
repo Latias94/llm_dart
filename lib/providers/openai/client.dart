@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
@@ -218,7 +217,8 @@ class OpenAIClient {
         // Tool results need to be converted to separate tool messages
         // This case should not happen in normal message conversion
         // as tool results are handled separately in buildRequestBody
-        result['content'] = message.content.isNotEmpty ? message.content : 'Tool result';
+        result['content'] =
+            message.content.isNotEmpty ? message.content : 'Tool result';
         result['tool_call_id'] = results.isNotEmpty ? results.first.id : null;
         break;
       default:
@@ -244,7 +244,9 @@ class OpenAIClient {
           apiMessages.add({
             'role': 'tool',
             'tool_call_id': result.id,
-            'content': result.function.arguments.isNotEmpty ? result.function.arguments : message.content,
+            'content': result.function.arguments.isNotEmpty
+                ? result.function.arguments
+                : message.content,
           });
         }
       } else {
@@ -508,7 +510,8 @@ class OpenAIClient {
       } else if (responseBody is ResponseBody) {
         stream = responseBody.stream;
       } else {
-        throw GenericError('Unexpected response type: ${responseBody.runtimeType}');
+        throw GenericError(
+            'Unexpected response type: ${responseBody.runtimeType}');
       }
 
       // Use UTF-8 stream decoder to handle incomplete byte sequences
@@ -546,10 +549,13 @@ class OpenAIClient {
 
         if (statusCode != null) {
           // Use HttpErrorMapper for consistent error handling
-          final errorMessage = _extractErrorMessage(responseData) ?? '$statusCode';
-          final responseMap = responseData is Map<String, dynamic> ? responseData : null;
+          final errorMessage =
+              _extractErrorMessage(responseData) ?? '$statusCode';
+          final responseMap =
+              responseData is Map<String, dynamic> ? responseData : null;
 
-          return HttpErrorMapper.mapStatusCode(statusCode, errorMessage, responseMap);
+          return HttpErrorMapper.mapStatusCode(
+              statusCode, errorMessage, responseMap);
         } else {
           return ResponseFormatError(
             'HTTP error without status code',
@@ -599,10 +605,12 @@ class OpenAIClient {
     final errorData = response.data;
 
     if (statusCode != null) {
-      final errorMessage = _extractErrorMessage(errorData) ?? 'OpenAI $endpoint API returned error status: $statusCode';
+      final errorMessage = _extractErrorMessage(errorData) ??
+          'OpenAI $endpoint API returned error status: $statusCode';
       final responseMap = errorData is Map<String, dynamic> ? errorData : null;
 
-      throw HttpErrorMapper.mapStatusCode(statusCode, errorMessage, responseMap);
+      throw HttpErrorMapper.mapStatusCode(
+          statusCode, errorMessage, responseMap);
     } else {
       throw ResponseFormatError(
         'OpenAI $endpoint API returned unknown error',
