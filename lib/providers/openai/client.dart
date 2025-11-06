@@ -175,6 +175,15 @@ class OpenAIClient {
       case ImageMessage(mime: final mime, data: final data):
         // Handle base64 encoded images
         final base64Data = base64Encode(data);
+        if (config.useResponsesAPI) {
+          result['content'] = [
+            {
+              'type': 'input_image',
+              'image_url': 'data:${mime.mimeType};base64,$base64Data',
+            },
+          ];
+          break;
+        } else {
         result['content'] = [
           {
             'type': 'image_url',
@@ -182,13 +191,24 @@ class OpenAIClient {
           },
         ];
         break;
+        }
       case ImageUrlMessage(url: final url):
-        result['content'] = [
-          {
-            'type': 'image_url',
-            'image_url': {'url': url},
-          },
-        ];
+        if (config.useResponsesAPI) {
+          result['content'] = [
+            {
+              'type': 'input_image',
+              'image_url': url,
+            },
+          ];
+        } else {
+          result['content'] = [
+            {
+              'type': 'image_url',
+              'image_url': {'url': url},
+            },
+          ];
+        }
+
         break;
       case ToolUseMessage(toolCalls: final toolCalls):
         result['tool_calls'] = toolCalls.map((tc) => tc.toJson()).toList();
