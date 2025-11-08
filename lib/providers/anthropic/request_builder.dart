@@ -486,6 +486,13 @@ class AnthropicRequestBuilder {
         inputSchema['properties'] = <String, dynamic>{};
       }
 
+      if (tool.function.name == 'web_search') {
+        return {
+          'name': tool.function.name,
+          'type': config.getExtension('webSearchConfig').mode ?? 'web_search_20250305'
+        };
+      }      
+
       return {
         'name': tool.function.name,
         'description': tool.function.description.isNotEmpty

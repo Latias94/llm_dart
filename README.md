@@ -225,6 +225,7 @@ final anthropicProvider = await ai()
     .anthropic()
     .apiKey('your-key')
     .webSearch(
+      mode: 'web_search_20250305', // specify Claude's web search type
       maxUses: 3,
       allowedDomains: ['wikipedia.org', 'arxiv.org'],
       location: WebSearchLocation.sanFrancisco(),
