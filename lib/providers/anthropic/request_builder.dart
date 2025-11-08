@@ -389,7 +389,16 @@ class AnthropicRequestBuilder {
             'source': {
               'type': 'base64',
               'media_type': mime.mimeType,
-              'data': data,
+              'data': base64Encode(data),
+            },
+          });
+          break;
+        case ImageUrlMessage(url: final url):
+          content.add({
+            'type': 'image',
+            'source': {
+              'type': 'url',
+              'url': url,
             },
           });
           break;
