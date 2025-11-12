@@ -119,12 +119,12 @@ class AnthropicConfig {
       parameters: ParametersSchema(
         schemaType: 'object',
         properties: {
-          'type': ParameterProperty(
+          'query': ParameterProperty(
             propertyType: 'string',
-            description: 'Search tool type for Anthropic',
+            description: 'The search query to execute',
           ),
         },
-        required: ['type'],
+        required: ['query'],
       ),
     );
 
