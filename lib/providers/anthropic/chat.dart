@@ -27,6 +27,17 @@ class AnthropicChat implements ChatCapability {
   final AnthropicConfig config;
   late final AnthropicRequestBuilder _requestBuilder;
 
+  // Tool call state tracking for streaming
+  // Anthropic splits tool call data across multiple SSE events:
+  // 1. content_block_start - contains tool name and id (includes index)
+  // 2. content_block_delta (multiple) - contains partial_json chunks (includes index)
+  // 3. content_block_stop - signals completion (includes index, no data)
+  // The index is provided by Anthropic in each event to track which content block
+  final Map<int, _ToolCallState> _activeToolCalls = {};
+
+  // SSE buffer for handling incomplete chunks
+  final StringBuffer _sseBuffer = StringBuffer();
+
   AnthropicChat(this.client, this.config) {
     _requestBuilder = AnthropicRequestBuilder(config);
   }
@@ -69,6 +80,9 @@ class AnthropicChat implements ChatCapability {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
+    // Reset tool call state for new stream
+    _resetStreamState();
+
     final effectiveTools = tools ?? config.tools;
     final requestBody =
         _requestBuilder.buildRequestBody(messages, effectiveTools, true);
@@ -197,14 +211,70 @@ class AnthropicChat implements ChatCapability {
     return AnthropicChatResponse(responseData);
   }
 
+  /// Reset stream state (call this when starting a new stream)
+  void _resetStreamState() {
+    _activeToolCalls.clear();
+    _sseBuffer.clear();
+  }
+
   /// Parse stream events from SSE chunks
+  ///
+  /// Anthropic uses SSE format with both event and data lines:
+  /// ```
+  /// event: message_start
+  /// data: {...}
+  ///
+  /// event: content_block_delta
+  /// data: {...}
+  /// ```
+  ///
+  /// This method handles incomplete chunks that can be split across network boundaries,
+  /// similar to OpenAI's parseSSEChunk implementation.
   List<ChatStreamEvent> _parseStreamEvents(String chunk) {
     final events = <ChatStreamEvent>[];
-    final lines = chunk.split('\n');
+
+    // Add new chunk to buffer
+    _sseBuffer.write(chunk);
+
+    // Get buffered content
+    final bufferContent = _sseBuffer.toString();
+
+    // Find complete lines (ending with \n)
+    final lastNewlineIndex = bufferContent.lastIndexOf('\n');
+
+    if (lastNewlineIndex == -1) {
+      // No complete lines yet, keep buffering
+      return events;
+    }
+
+    // Extract complete lines for processing
+    final completeContent = bufferContent.substring(0, lastNewlineIndex + 1);
+    final remainingContent = bufferContent.substring(lastNewlineIndex + 1);
+
+    // Update buffer with remaining incomplete content
+    _sseBuffer.clear();
+    if (remainingContent.isNotEmpty) {
+      _sseBuffer.write(remainingContent);
+    }
+
+    // Process complete lines
+    final lines = completeContent.split('\n');
 
     for (final line in lines) {
-      if (line.startsWith('data: ')) {
-        final data = line.substring(6).trim();
+      final trimmedLine = line.trim();
+
+      if (trimmedLine.isEmpty) continue;
+
+      // Anthropic uses event: lines (we can log but don't need to process)
+      if (trimmedLine.startsWith('event: ')) {
+        final eventType = trimmedLine.substring(7).trim();
+        client.logger.fine('Received event type: $eventType');
+        continue;
+      }
+
+      // Process data: lines
+      if (trimmedLine.startsWith('data: ')) {
+        final data = trimmedLine.substring(6).trim();
 
         // Handle end of stream
         if (data == '[DONE]' || data.isEmpty) {
@@ -222,13 +292,10 @@ class AnthropicChat implements ChatCapability {
           }
         } catch (e) {
           // Skip malformed JSON chunks but log for debugging
-          client.logger.fine('Failed to parse stream JSON: $data, error: $e');
+          client.logger.fine(
+              'Failed to parse stream JSON: ${data.substring(0, data.length > 50 ? 50 : data.length)}..., error: $e');
           continue;
         }
-      } else if (line.startsWith('event: ')) {
-        // Handle event type lines (though Anthropic typically uses data lines)
-        final eventType = line.substring(7).trim();
-        client.logger.fine('Received event type: $eventType');
       }
     }
 
@@ -266,25 +333,42 @@ class AnthropicChat implements ChatCapability {
         break;
 
       case 'content_block_start':
+        // Get block index from the event
+        final index = json['index'] as int?;
+
         final contentBlock = json['content_block'] as Map<String, dynamic>?;
         if (contentBlock != null) {
           final blockType = contentBlock['type'] as String?;
           if (blockType == 'tool_use') {
-            // Tool use started
+            // Tool use started - store tool info for accumulation
             final toolName = contentBlock['name'] as String?;
             final toolId = contentBlock['id'] as String?;
             client.logger.info('Tool use started: $toolName (ID: $toolId)');
+
+            // Initialize tool call state for this block
+            if (index != null) {
+              final state = _ToolCallState();
+              state.id = toolId;
+              state.name = toolName;
+              _activeToolCalls[index] = state;
+            } else {
+              client.logger.severe(
+                  'Received content_block_start without an index! toolName: $toolName (ID: $toolId)');
+            }
           } else if (blockType == 'thinking') {
             // Thinking block started
             client.logger.info('Thinking block started');
           } else if (blockType == 'redacted_thinking') {
             // Redacted thinking block started
-            client.logger.info('Redacted thinking block started');
+            client.logger.info('Redacted thinking block completed');
           }
         }
         break;
 
       case 'content_block_delta':
+        // Get block index from the event
+        final index = json['index'] as int?;
+
         final delta = json['delta'] as Map<String, dynamic>?;
         if (delta != null) {
           final deltaType = delta['type'] as String?;
@@ -311,42 +395,76 @@ class AnthropicChat implements ChatCapability {
                 .fine('Received signature delta for thinking verification');
           }
 
-          // Handle tool use input delta
+          // Handle tool use input delta - accumulate partial_json chunks
           final partialJson = delta['partial_json'] as String?;
-          if (partialJson != null) {
-            client.logger.fine('Tool input delta: $partialJson');
+          if (partialJson != null && index != null) {
+            final state = _activeToolCalls[index];
+            if (state != null) {
+              state.inputBuffer.write(partialJson);
+              client.logger.fine(
+                  'Accumulated tool input (${state.inputBuffer.length} chars): $partialJson');
+            }
+          } else {
+            client.logger.severe(
+                'Missing required parameter for content_block_delta: index=$index, partial_json=$partialJson');
           }
         }
         break;
 
       case 'content_block_stop':
-        final contentBlock = json['content_block'] as Map<String, dynamic>?;
-        if (contentBlock != null) {
-          final blockType = contentBlock['type'] as String?;
-          if (blockType == 'tool_use') {
-            // Tool use completed - emit a tool call delta event
-            final toolName = contentBlock['name'] as String?;
-            final toolId = contentBlock['id'] as String?;
-            final input = contentBlock['input'];
-            client.logger.info('Tool use completed: $toolName (ID: $toolId)');
+        // Get block index from the event
+        final index = json['index'] as int?;
 
-            // Create a tool call delta event for completed tool use
-            if (toolName != null && toolId != null && input != null) {
+        client.logger.info(
+            'content_block_stop: index=$index, has content_block=${json.containsKey('content_block')}');
+
+        // For tool use blocks, we don't need content_block field
+        // The index is sufficient to look up our accumulated state
+        if (index != null) {
+          final state = _activeToolCalls[index];
+
+          client.logger.info(
+              'Looking up state for index $index: found=${state != null}, isComplete=${state?.isComplete}');
+
+          if (state != null && state.isComplete) {
+            final accumulatedInput = state.inputBuffer.toString();
+            client.logger.info(
+                'Tool use completed: ${state.name} (ID: ${state.id}, ${accumulatedInput.length} chars)');
+
+            try {
+              // Parse the accumulated JSON input
+              final input = jsonDecode(accumulatedInput);
+
               final toolCall = ToolCall(
-                id: toolId,
+                id: state.id!,
                 callType: 'function',
                 function: FunctionCall(
-                  name: toolName,
+                  name: state.name!,
                   arguments: jsonEncode(input),
                 ),
               );
+
+              // Clean up the state for this block
+              _activeToolCalls.remove(index);
+
+              client.logger
+                  .info('✅ Emitting ToolCallDeltaEvent for ${state.name}');
+
               return ToolCallDeltaEvent(toolCall);
+            } catch (e) {
+              client.logger.warning(
+                  'Failed to parse accumulated tool input: $accumulatedInput, error: $e');
+              // Clean up even on error
+              _activeToolCalls.remove(index);
             }
-          } else if (blockType == 'thinking') {
-            client.logger.info('Thinking block completed');
-          } else if (blockType == 'redacted_thinking') {
-            client.logger.info('Redacted thinking block completed');
+          } else if (state != null) {
+            client.logger.warning(
+                'Tool use state incomplete for block $index: id=${state.id}, name=${state.name}');
+          } else {
+            client.logger.warning('No tool use state found for block $index');
           }
+        } else {
+          client.logger.severe('Received content_block_stop without an index!');
         }
         break;
 
@@ -770,4 +888,18 @@ class AnthropicChatResponse implements ChatResponse {
 
     return parts.join('\n');
   }
+}
+
+/// Helper class to track tool call state across multiple streaming events
+///
+/// Anthropic's streaming API splits tool call data across events:
+/// - content_block_start: provides id and name
+/// - content_block_delta: provides partial_json chunks (multiple events)
+/// - content_block_stop: signals completion (no data)
+class _ToolCallState {
+  String? id;
+  String? name;
+  final StringBuffer inputBuffer = StringBuffer();
+
+  bool get isComplete => id != null && name != null;
 }
