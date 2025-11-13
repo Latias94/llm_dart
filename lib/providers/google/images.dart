@@ -80,6 +80,10 @@ class GoogleImages implements ImageGenerationCapability {
     final model = request.model ?? _config.model;
     final endpoint = 'models/$model:generateContent';
 
+    var imageConfig = {
+        if (request.size != null) 'aspectRatio': request.size!,
+    };
+
     final requestData = {
       'contents': [
         {
@@ -90,6 +94,7 @@ class GoogleImages implements ImageGenerationCapability {
       ],
       'generationConfig': {
         'responseModalities': _config.responseModalities ?? ['TEXT', 'IMAGE'],
+        'imageConfig': imageConfig,
         if (request.count != null) 'candidateCount': request.count,
         if (_config.maxTokens != null) 'maxOutputTokens': _config.maxTokens,
         if (_config.temperature != null) 'temperature': _config.temperature,
