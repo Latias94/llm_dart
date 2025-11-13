@@ -1,8 +1,8 @@
-import '../../models/tool_models.dart';
-import '../../models/chat_models.dart';
 import '../../core/config.dart';
 import '../../core/provider_defaults.dart';
 import '../../core/web_search.dart';
+import '../../models/chat_models.dart';
+import '../../models/tool_models.dart';
 
 /// Anthropic provider configuration
 ///
@@ -65,16 +65,12 @@ class AnthropicConfig {
     // Handle web search configuration
     List<Tool>? tools = config.tools;
 
-    // Check for webSearchEnabled flag
-    final webSearchEnabled = config.getExtension<bool>('webSearchEnabled');
-    if (webSearchEnabled == true) {
-      tools = _addWebSearchTool(tools, null);
-    }
-
-    // Check for webSearchConfig and convert to web_search tool
+    // Add web search tool if enabled or configured
+    final webSearchEnabled =
+        config.getExtension<bool>('webSearchEnabled') == true;
     final webSearchConfig =
         config.getExtension<WebSearchConfig>('webSearchConfig');
-    if (webSearchConfig != null) {
+    if (webSearchEnabled || webSearchConfig != null) {
       tools = _addWebSearchTool(tools, webSearchConfig);
     }
 

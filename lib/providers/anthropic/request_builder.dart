@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../../core/llm_error.dart';
+import '../../core/web_search.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
 import 'config.dart';
@@ -389,7 +390,16 @@ class AnthropicRequestBuilder {
             'source': {
               'type': 'base64',
               'media_type': mime.mimeType,
-              'data': data,
+              'data': base64Encode(data),
+            },
+          });
+          break;
+        case ImageUrlMessage(url: final url):
+          content.add({
+            'type': 'image',
+            'source': {
+              'type': 'url',
+              'url': url,
             },
           });
           break;
@@ -460,6 +470,48 @@ class AnthropicRequestBuilder {
   /// Convert a Tool to Anthropic API format
   Map<String, dynamic> convertTool(Tool tool) {
     try {
+      // Special handling for web_search tool
+      // According to https://docs.claude.com/en/docs/agents-and-tools/tool-use/web-search-tool
+      // web_search is a server-side tool with a different format
+      if (tool.function.name == 'web_search') {
+        final webSearchConfig =
+            config.getExtension<WebSearchConfig>('webSearchConfig');
+
+        // Base definition
+        final toolDef = <String, dynamic>{
+          'type': webSearchConfig?.mode ?? 'web_search_20250305',
+          'name': 'web_search',
+        };
+
+        // Add optional parameters if webSearchConfig exists
+        if (webSearchConfig != null) {
+          if (webSearchConfig.maxUses != null) {
+            toolDef['max_uses'] = webSearchConfig.maxUses;
+          }
+          if (webSearchConfig.allowedDomains != null &&
+              webSearchConfig.allowedDomains!.isNotEmpty) {
+            toolDef['allowed_domains'] = webSearchConfig.allowedDomains;
+          }
+          if (webSearchConfig.blockedDomains != null &&
+              webSearchConfig.blockedDomains!.isNotEmpty) {
+            toolDef['blocked_domains'] = webSearchConfig.blockedDomains;
+          }
+          if (webSearchConfig.location != null) {
+            toolDef['user_location'] = {
+              'type': 'approximate',
+              'city': webSearchConfig.location!.city,
+              'region': webSearchConfig.location!.region,
+              'country': webSearchConfig.location!.country,
+              if (webSearchConfig.location!.timezone != null)
+                'timezone': webSearchConfig.location!.timezone,
+            };
+          }
+        }
+
+        return toolDef;
+      }
+
+      // Regular tool handling
       final schema = tool.function.parameters.toJson();
 
       // Anthropic requires input_schema to be a valid JSON Schema object
