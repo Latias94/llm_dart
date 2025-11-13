@@ -81,7 +81,7 @@ class GoogleImages implements ImageGenerationCapability {
     final endpoint = 'models/$model:generateContent';
 
     var imageConfig = {
-        if (request.size != null) 'aspectRatio': request.size!,
+      if (request.size != null) 'aspectRatio': request.size!,
     };
 
     final requestData = {
