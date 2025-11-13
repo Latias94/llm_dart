@@ -470,29 +470,29 @@ class AnthropicRequestBuilder {
   /// Convert a Tool to Anthropic API format
   Map<String, dynamic> convertTool(Tool tool) {
     try {
-
       // Special handling for web_search tool
       // According to https://docs.claude.com/en/docs/agents-and-tools/tool-use/web-search-tool
       // web_search is a server-side tool with a different format
       if (tool.function.name == 'web_search') {
-        final webSearchConfig = config.getExtension<WebSearchConfig>('webSearchConfig');
-        
+        final webSearchConfig =
+            config.getExtension<WebSearchConfig>('webSearchConfig');
+
         // Base definition
         final toolDef = <String, dynamic>{
           'type': webSearchConfig?.mode ?? 'web_search_20250305',
           'name': 'web_search',
         };
-        
+
         // Add optional parameters if webSearchConfig exists
         if (webSearchConfig != null) {
           if (webSearchConfig.maxUses != null) {
             toolDef['max_uses'] = webSearchConfig.maxUses;
           }
-          if (webSearchConfig.allowedDomains != null && 
+          if (webSearchConfig.allowedDomains != null &&
               webSearchConfig.allowedDomains!.isNotEmpty) {
             toolDef['allowed_domains'] = webSearchConfig.allowedDomains;
           }
-          if (webSearchConfig.blockedDomains != null && 
+          if (webSearchConfig.blockedDomains != null &&
               webSearchConfig.blockedDomains!.isNotEmpty) {
             toolDef['blocked_domains'] = webSearchConfig.blockedDomains;
           }
@@ -507,11 +507,11 @@ class AnthropicRequestBuilder {
             };
           }
         }
-        
+
         return toolDef;
       }
-      
-      // Regular tool handling      
+
+      // Regular tool handling
       final schema = tool.function.parameters.toJson();
 
       // Anthropic requires input_schema to be a valid JSON Schema object
@@ -537,13 +537,6 @@ class AnthropicRequestBuilder {
       if (!inputSchema.containsKey('properties')) {
         inputSchema['properties'] = <String, dynamic>{};
       }
-
-      if (tool.function.name == 'web_search') {
-        return {
-          'name': tool.function.name,
-          'type': config.getExtension('webSearchConfig').mode ?? 'web_search_20250305'
-        };
-      }      
 
       return {
         'name': tool.function.name,

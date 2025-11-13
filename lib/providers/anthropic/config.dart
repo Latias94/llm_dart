@@ -66,8 +66,10 @@ class AnthropicConfig {
     List<Tool>? tools = config.tools;
 
     // Add web search tool if enabled or configured
-    final webSearchEnabled = config.getExtension<bool>('webSearchEnabled') == true;
-    final webSearchConfig = config.getExtension<WebSearchConfig>('webSearchConfig');
+    final webSearchEnabled =
+        config.getExtension<bool>('webSearchEnabled') == true;
+    final webSearchConfig =
+        config.getExtension<WebSearchConfig>('webSearchConfig');
     if (webSearchEnabled || webSearchConfig != null) {
       tools = _addWebSearchTool(tools, webSearchConfig);
     }
