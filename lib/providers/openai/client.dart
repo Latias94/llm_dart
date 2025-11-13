@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
@@ -131,7 +132,7 @@ class OpenAIClient {
             if (error != null) {
               final message = error['message'] as String? ?? 'Unknown error';
               final type = error['type'] as String?;
-              final code = error['code'] as String?;
+              final code = error['code']?.toString();
 
               throw ResponseFormatError(
                 'SSE stream error: $message${type != null ? ' (type: $type)' : ''}${code != null ? ' (code: $code)' : ''}',
@@ -657,7 +658,7 @@ class OpenAIClient {
       if (error != null) {
         final message = error['message'] as String?;
         final type = error['type'] as String?;
-        final code = error['code'] as String?;
+        final code = error['code']?.toString();
 
         if (message != null) {
           final parts = <String>[message];
