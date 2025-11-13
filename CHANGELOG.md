@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.2] - 2025-11-13
+
+### Fixed
+
+- **Anthropic Streaming Tool Use**: Fixed tool call delta events not being emitted during streaming (by [@isegal](https://github.com/isegal) in [#21](https://github.com/Latias94/llm_dart/pull/21))
+  - Added local state tracking for tool calls across multiple streaming events
+  - Fixed `content_block_stop` event handling (Anthropic only provides index, not full content)
+  - Tool calls now properly detected in streaming mode
+
+- **Anthropic SSE Buffering**: Fixed SSE parsing to handle incomplete network chunks that split data mid-line
+  - Added line-level buffering similar to OpenAI's implementation
+  - Only process complete lines ending with `\n`
+  - Prevents data loss when network packets split SSE events (e.g., `data:` → `d` + `ata:`)
+
+- **Anthropic Web Search and Image Upload**: Fixed web search tool configuration and image handling (by [@viumvi](https://github.com/viumvi) in [#20](https://github.com/Latias94/llm_dart/pull/20))
+  - Fixed web search tool format to match official API spec (`web_search_20250305` type)
+  - Added `ImageUrlMessage` support for Anthropic image URLs
+  - Added base64 encoding for Anthropic image data as required by API
+  - Fixed web search configuration with proper parameter handling
+
+### Added
+
+- **Anthropic Streaming Tool Example**: Added comprehensive streaming tool calling example in `example/04_providers/anthropic/streaming_tool_calling.dart`
+
 ## [0.10.1] - 2025-11-06
 
 ### Fixed
