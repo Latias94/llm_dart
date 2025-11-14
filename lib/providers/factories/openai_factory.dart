@@ -4,7 +4,7 @@ import '../../core/provider_defaults.dart';
 import '../../core/web_search.dart';
 import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
-import '../openai/openai.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'base_factory.dart';
 
 /// Factory for creating OpenAI provider instances

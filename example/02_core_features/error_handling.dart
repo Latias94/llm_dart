@@ -591,6 +591,12 @@ class SimpleChatResponse implements ChatResponse {
 
   @override
   List<ToolCall>? get toolCalls => null;
+
+  @override
+  List<CallWarning> get warnings => const [];
+
+  @override
+  Map<String, dynamic>? get metadata => null;
 }
 
 /// 🎯 Key Error Handling Concepts Summary:

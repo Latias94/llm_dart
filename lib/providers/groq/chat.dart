@@ -290,6 +290,12 @@ class GroqChatResponse implements ChatResponse {
       null; // Groq doesn't support thinking/reasoning content
 
   @override
+  List<CallWarning> get warnings => const [];
+
+  @override
+  Map<String, dynamic>? get metadata => null;
+
+  @override
   String toString() {
     final textContent = text;
     final calls = toolCalls;

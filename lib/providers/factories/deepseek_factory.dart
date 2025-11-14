@@ -1,7 +1,7 @@
-import '../../core/capability.dart';
-import '../../core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
 import '../../core/provider_defaults.dart';
-import '../deepseek/deepseek.dart';
+
 import 'base_factory.dart';
 
 /// Factory for creating DeepSeek provider instances

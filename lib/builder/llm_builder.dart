@@ -1,13 +1,13 @@
 import '../core/capability.dart';
 import '../core/config.dart';
 import '../core/registry.dart';
-import '../core/llm_error.dart';
 import '../core/web_search.dart';
 import '../models/tool_models.dart';
 import '../models/chat_models.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAIProvider;
 import '../providers/google/builder.dart';
+import '../providers/google/tts.dart';
 import '../providers/openai/builder.dart';
-import '../providers/openai/provider.dart';
 import '../providers/anthropic/builder.dart';
 import '../providers/ollama/builder.dart';
 import '../providers/elevenlabs/builder.dart';

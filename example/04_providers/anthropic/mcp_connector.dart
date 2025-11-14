@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic_sub;
 
 /// Anthropic MCP Connector Example
 ///
@@ -34,7 +35,7 @@ Future<void> demonstrateBasicMcpConnector(String apiKey) async {
     // Configure Anthropic provider with MCP server
     final provider = await ai()
         .anthropic((anthropic) => anthropic.mcpServers([
-              AnthropicMCPServer.url(
+              const AnthropicMCPServer.url(
                 name: 'example-server',
                 url: 'https://example-server.modelcontextprotocol.io/sse',
               ),
@@ -55,7 +56,8 @@ Future<void> demonstrateBasicMcpConnector(String apiKey) async {
     print('   🤖 Claude: ${response.text}');
 
     // Check for MCP tool usage
-    final mcpToolUses = (response as AnthropicChatResponse).mcpToolUses;
+    final mcpToolUses =
+        (response as anthropic_sub.AnthropicChatResponse).mcpToolUses;
     if (mcpToolUses != null && mcpToolUses.isNotEmpty) {
       print('   🔧 MCP Tools Used:');
       for (final toolUse in mcpToolUses) {
@@ -80,7 +82,7 @@ Future<void> demonstrateMultipleMcpServers(String apiKey) async {
               databaseServerUrl: 'https://db-server.example.com/mcp',
               webServerUrl: 'https://web-server.example.com/mcp',
               customServers: [
-                AnthropicMCPServer.url(
+                const AnthropicMCPServer.url(
                   name: 'custom-analytics',
                   url: 'https://analytics.example.com/mcp',
                   toolConfiguration: AnthropicMCPToolConfiguration(
@@ -126,7 +128,7 @@ Future<void> demonstrateMcpWithAuthentication(String apiKey) async {
 
     final provider = await ai()
         .anthropic((anthropic) => anthropic.mcpServers([
-              AnthropicMCPServer.url(
+              const AnthropicMCPServer.url(
                 name: 'authenticated-server',
                 url: 'https://secure-server.example.com/mcp',
                 authorizationToken: mockAccessToken,
@@ -151,7 +153,8 @@ Future<void> demonstrateMcpWithAuthentication(String apiKey) async {
     print('   🤖 Claude: ${response.text}');
 
     // Check for MCP tool results
-    final mcpToolResults = (response as AnthropicChatResponse).mcpToolResults;
+    final mcpToolResults =
+        (response as anthropic_sub.AnthropicChatResponse).mcpToolResults;
     if (mcpToolResults != null && mcpToolResults.isNotEmpty) {
       print('   📊 MCP Tool Results:');
       for (final result in mcpToolResults) {

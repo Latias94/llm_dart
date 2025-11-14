@@ -1,23 +1,21 @@
 import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:logging/logging.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
-import '../core/config.dart';
-
-/// IO platform implementation for HTTP client adapter configuration
+/// IO platform implementation for HTTP client adapter configuration.
 class HttpClientAdapterConfig {
   static final Logger _logger = Logger('HttpClientAdapterConfig');
 
-  /// Configure HTTP client adapter with proxy and SSL settings
-  /// IO platform implementation using IOHttpClientAdapter
+  /// Configure HTTP client adapter with proxy and SSL settings.
   static void configureHttpClientAdapter(Dio dio, LLMConfig config) {
     final proxyUrl = config.getExtension<String>('httpProxy');
     final bypassSSL =
         config.getExtension<bool>('bypassSSLVerification') ?? false;
     final certificatePath = config.getExtension<String>('sslCertificate');
 
-    // Only configure adapter if any HTTP client settings are specified
     if ((proxyUrl != null && proxyUrl.isNotEmpty) ||
         bypassSSL ||
         (certificatePath != null && certificatePath.isNotEmpty)) {
@@ -31,19 +29,14 @@ class HttpClientAdapterConfig {
         _logger.info('Loading SSL certificate from: $certificatePath');
       }
 
-      // Set a new IOHttpClientAdapter with combined configuration
       dio.httpClientAdapter = IOHttpClientAdapter(
         createHttpClient: () {
           final client = HttpClient();
 
-          // Configure proxy if specified
           if (proxyUrl != null && proxyUrl.isNotEmpty) {
-            client.findProxy = (uri) {
-              return "PROXY $proxyUrl";
-            };
+            client.findProxy = (uri) => 'PROXY $proxyUrl';
           }
 
-          // Configure SSL settings if specified
           if (bypassSSL) {
             client.badCertificateCallback = (cert, host, port) => true;
           }
@@ -52,13 +45,11 @@ class HttpClientAdapterConfig {
             try {
               final certFile = File(certificatePath);
               if (certFile.existsSync()) {
-                // Note: This is a simplified example. In practice, you might need
-                // more sophisticated certificate handling depending on the format.
-                // For now, we just log that the certificate file exists
                 _logger.info('SSL certificate loaded successfully');
               } else {
                 _logger.warning(
-                    'SSL certificate file not found: $certificatePath');
+                  'SSL certificate file not found: $certificatePath',
+                );
               }
             } catch (e) {
               _logger.severe('Failed to load SSL certificate: $e');
@@ -71,6 +62,6 @@ class HttpClientAdapterConfig {
     }
   }
 
-  /// Check if advanced HTTP features are supported on this platform
+  /// Check if advanced HTTP features are supported on this platform.
   static bool get isAdvancedHttpSupported => true;
 }

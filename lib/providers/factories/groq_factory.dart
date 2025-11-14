@@ -1,8 +1,8 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../core/provider_defaults.dart';
-import '../groq/groq.dart';
 import 'base_factory.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
 
 /// Factory for creating Groq provider instances
 class GroqProviderFactory extends BaseProviderFactory<ChatCapability> {
@@ -38,6 +38,30 @@ class GroqProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   /// Transform unified config to Groq-specific config
   GroqConfig _transformConfig(LLMConfig config) {
-    return GroqConfig.fromLLMConfig(config);
+    return GroqConfig(
+      apiKey: config.apiKey!,
+      baseUrl: config.baseUrl.isNotEmpty
+          ? config.baseUrl
+          : ProviderDefaults.groqBaseUrl,
+      model: config.model.isNotEmpty
+          ? config.model
+          : ProviderDefaults.groqDefaultModel,
+      maxTokens: config.maxTokens,
+      temperature: config.temperature,
+      systemPrompt: config.systemPrompt,
+      timeout: config.timeout,
+      topP: config.topP,
+      topK: config.topK,
+      tools: config.tools,
+      toolChoice: config.toolChoice,
+      reasoningEffort: ReasoningEffort.fromString(
+        config.getExtension<String>('reasoningEffort'),
+      ),
+      jsonSchema: config.getExtension<StructuredOutputFormat>('jsonSchema'),
+      stopSequences: config.stopSequences,
+      user: config.user,
+      serviceTier: config.serviceTier,
+      originalConfig: config,
+    );
   }
 }

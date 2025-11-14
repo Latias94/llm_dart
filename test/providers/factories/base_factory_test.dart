@@ -29,6 +29,12 @@ class MockChatResponse implements ChatResponse {
 
   @override
   UsageInfo? get usage => _usage;
+
+  @override
+  List<CallWarning> get warnings => const [];
+
+  @override
+  Map<String, dynamic>? get metadata => null;
 }
 
 // Mock factory for testing base functionality

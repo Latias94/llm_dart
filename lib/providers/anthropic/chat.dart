@@ -867,6 +867,45 @@ class AnthropicChatResponse implements ChatResponse {
   }
 
   @override
+  List<CallWarning> get warnings => const [];
+
+  @override
+  Map<String, dynamic>? get metadata {
+    final model = _rawResponse['model'] as String?;
+    final id = _rawResponse['id'] as String?;
+    final stopReason = _rawResponse['stop_reason'] as String?;
+
+    final content = _rawResponse['content'] as List?;
+    bool hasThinkingBlocks = false;
+    bool hasMcpToolUse = false;
+    bool hasMcpToolResult = false;
+
+    if (content != null) {
+      for (final block in content) {
+        final type = block['type'] as String?;
+        if (type == null) continue;
+        if (type == 'thinking' || type == 'redacted_thinking') {
+          hasThinkingBlocks = true;
+        } else if (type == 'mcp_tool_use') {
+          hasMcpToolUse = true;
+        } else if (type == 'mcp_tool_result') {
+          hasMcpToolResult = true;
+        }
+      }
+    }
+
+    return {
+      'provider': 'anthropic',
+      if (id != null) 'id': id,
+      if (model != null) 'model': model,
+      if (stopReason != null) 'stopReason': stopReason,
+      'hasThinking': hasThinkingBlocks,
+      'hasMcpToolUse': hasMcpToolUse,
+      'hasMcpToolResult': hasMcpToolResult,
+    };
+  }
+
+  @override
   String toString() {
     final textContent = text;
     final calls = toolCalls;

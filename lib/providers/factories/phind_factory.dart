@@ -1,8 +1,8 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../core/provider_defaults.dart';
-import '../phind/phind.dart';
 import 'base_factory.dart';
+import 'package:llm_dart_phind/llm_dart_phind.dart';
 
 /// Factory for creating Phind provider instances using native Phind interface
 class PhindProviderFactory extends BaseProviderFactory<ChatCapability> {

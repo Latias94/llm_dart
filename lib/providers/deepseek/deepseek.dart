@@ -1,42 +1,14 @@
-/// Modular DeepSeek Provider
+/// DeepSeek Provider facade for the main `llm_dart` package.
 ///
-/// This library provides a modular implementation of the DeepSeek provider
-///
-/// **Key Benefits:**
-/// - Single Responsibility: Each module handles one capability
-/// - Easier Testing: Modules can be tested independently
-/// - Better Maintainability: Changes isolated to specific modules
-/// - Cleaner Code: Smaller, focused classes
-/// - Reusability: Modules can be reused across providers
-///
-/// **Usage:**
-/// ```dart
-/// import 'package:llm_dart/providers/deepseek/deepseek.dart';
-///
-/// final provider = DeepSeekProvider(DeepSeekConfig(
-///   apiKey: 'your-api-key',
-///   model: 'deepseek-chat',
-/// ));
-///
-/// // Use chat capability
-/// final response = await provider.chat(messages);
-/// ```
+/// This library now re-exports the DeepSeek provider implementation
+/// from the `llm_dart_deepseek` subpackage, while keeping the original
+/// import path stable for backwards compatibility.
 library;
 
-import 'config.dart';
-import 'provider.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
 
-// Core exports
-export 'config.dart';
-export 'client.dart';
-export 'provider.dart';
-
-// Capability modules
-export 'chat.dart';
-export 'models.dart';
-
-// Error handling
-export 'error_handler.dart';
+export 'package:llm_dart_deepseek/llm_dart_deepseek.dart'
+    show DeepSeekConfig, DeepSeekProvider;
 
 /// Create a DeepSeek provider with default configuration
 DeepSeekProvider createDeepSeekProvider({

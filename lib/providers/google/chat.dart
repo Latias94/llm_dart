@@ -848,6 +848,12 @@ class GoogleChatResponse implements ChatResponse {
   }
 
   @override
+  List<CallWarning> get warnings => const [];
+
+  @override
+  Map<String, dynamic>? get metadata => null;
+
+  @override
   String toString() {
     final textContent = text;
     final calls = toolCalls;

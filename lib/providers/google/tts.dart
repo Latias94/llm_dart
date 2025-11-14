@@ -6,6 +6,131 @@ import '../../core/llm_error.dart';
 import 'client.dart';
 import 'config.dart';
 
+// ========== Google TTS Capability Interface ==========
+
+/// Google-specific TTS capability interface
+///
+/// This interface provides Google Gemini's native text-to-speech capabilities
+/// which differ from traditional TTS APIs by using chat-like interactions
+/// with audio output modality.
+///
+/// **Key Features:**
+/// - Controllable speech style through natural language prompts
+/// - Single and multi-speaker support
+/// - Voice configuration with prebuilt voices
+/// - Streaming audio generation
+/// - Integration with chat models for audio output
+///
+/// **Usage Example:**
+/// ```dart
+/// final googleProvider = await ai()
+///     .google()
+///     .apiKey(apiKey)
+///     .model('gemini-2.5-flash-preview-tts')
+///     .build();
+///
+/// if (googleProvider is GoogleTTSCapability) {
+///   final response = await googleProvider.generateSpeech(
+///     GoogleTTSRequest(
+///       text: 'Say cheerfully: Have a wonderful day!',
+///       voiceConfig: GoogleVoiceConfig.prebuilt('Kore'),
+///     ),
+///   );
+///   // response.audioData contains the generated audio
+/// }
+/// ```
+abstract class GoogleTTSCapability {
+  /// Generate speech from text using Google's native TTS
+  ///
+  /// [request] - The TTS request configuration
+  ///
+  /// Returns audio data and metadata or throws an LLMError
+  Future<GoogleTTSResponse> generateSpeech(GoogleTTSRequest request);
+
+  /// Generate speech with streaming output
+  ///
+  /// [request] - The TTS request configuration
+  ///
+  /// Returns a stream of audio events
+  Stream<GoogleTTSStreamEvent> generateSpeechStream(GoogleTTSRequest request);
+
+  /// Get available voices for Google TTS
+  ///
+  /// Returns a list of supported voice configurations
+  Future<List<GoogleVoiceInfo>> getAvailableVoices();
+
+  /// Get supported languages for Google TTS
+  ///
+  /// Returns a list of supported language codes
+  Future<List<String>> getSupportedLanguages();
+
+  /// Get predefined Google TTS voices
+  ///
+  /// Returns a list of all 30 prebuilt voices available in Google TTS
+  static List<GoogleVoiceInfo> getPredefinedVoices() => [
+        const GoogleVoiceInfo(name: 'Zephyr', description: 'Bright'),
+        const GoogleVoiceInfo(name: 'Puck', description: 'Upbeat'),
+        const GoogleVoiceInfo(name: 'Charon', description: 'Informative'),
+        const GoogleVoiceInfo(name: 'Kore', description: 'Firm'),
+        const GoogleVoiceInfo(name: 'Fenrir', description: 'Excitable'),
+        const GoogleVoiceInfo(name: 'Leda', description: 'Youthful'),
+        const GoogleVoiceInfo(name: 'Orus', description: 'Firm'),
+        const GoogleVoiceInfo(name: 'Aoede', description: 'Breezy'),
+        const GoogleVoiceInfo(name: 'Callirrhoe', description: 'Easy-going'),
+        const GoogleVoiceInfo(name: 'Autonoe', description: 'Bright'),
+        const GoogleVoiceInfo(name: 'Enceladus', description: 'Breathy'),
+        const GoogleVoiceInfo(name: 'Iapetus', description: 'Clear'),
+        const GoogleVoiceInfo(name: 'Umbriel', description: 'Easy-going'),
+        const GoogleVoiceInfo(name: 'Algieba', description: 'Smooth'),
+        const GoogleVoiceInfo(name: 'Despina', description: 'Smooth'),
+        const GoogleVoiceInfo(name: 'Erinome', description: 'Clear'),
+        const GoogleVoiceInfo(name: 'Algenib', description: 'Gravelly'),
+        const GoogleVoiceInfo(name: 'Rasalgethi', description: 'Informative'),
+        const GoogleVoiceInfo(name: 'Laomedeia', description: 'Upbeat'),
+        const GoogleVoiceInfo(name: 'Achernar', description: 'Soft'),
+        const GoogleVoiceInfo(name: 'Alnilam', description: 'Firm'),
+        const GoogleVoiceInfo(name: 'Schedar', description: 'Even'),
+        const GoogleVoiceInfo(name: 'Gacrux', description: 'Mature'),
+        const GoogleVoiceInfo(name: 'Pulcherrima', description: 'Forward'),
+        const GoogleVoiceInfo(name: 'Achird', description: 'Friendly'),
+        const GoogleVoiceInfo(name: 'Zubenelgenubi', description: 'Casual'),
+        const GoogleVoiceInfo(name: 'Vindemiatrix', description: 'Gentle'),
+        const GoogleVoiceInfo(name: 'Sadachbia', description: 'Lively'),
+        const GoogleVoiceInfo(name: 'Sadaltager', description: 'Knowledgeable'),
+        const GoogleVoiceInfo(name: 'Sulafat', description: 'Warm'),
+      ];
+
+  /// Get supported languages for Google TTS
+  ///
+  /// Returns a list of all 24 supported language codes
+  static List<String> getSupportedLanguageCodes() => [
+        'ar-EG', // Arabic (Egyptian)
+        'de-DE', // German (Germany)
+        'en-US', // English (US)
+        'es-US', // Spanish (US)
+        'fr-FR', // French (France)
+        'hi-IN', // Hindi (India)
+        'id-ID', // Indonesian (Indonesia)
+        'it-IT', // Italian (Italy)
+        'ja-JP', // Japanese (Japan)
+        'ko-KR', // Korean (Korea)
+        'pt-BR', // Portuguese (Brazil)
+        'ru-RU', // Russian (Russia)
+        'nl-NL', // Dutch (Netherlands)
+        'pl-PL', // Polish (Poland)
+        'th-TH', // Thai (Thailand)
+        'tr-TR', // Turkish (Turkey)
+        'vi-VN', // Vietnamese (Vietnam)
+        'ro-RO', // Romanian (Romania)
+        'uk-UA', // Ukrainian (Ukraine)
+        'bn-BD', // Bengali (Bangladesh)
+        'en-IN', // English (India) & Hindi (India) bundle
+        'mr-IN', // Marathi (India)
+        'ta-IN', // Tamil (India)
+        'te-IN', // Telugu (India)
+      ];
+}
+
 // ========== Google TTS Models ==========
 
 /// Google TTS request configuration

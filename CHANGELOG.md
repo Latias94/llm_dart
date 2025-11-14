@@ -5,6 +5,94 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0-rc.1] - 2025-11-14
+
+> Release candidate for the 0.11.0 line. This version introduces a multi-package refactor, provider-level split, and core observability enhancements while keeping public APIs backwards compatible.
+
+### Changed
+
+- **Multi-package architecture (Vercel AI SDK style)**  
+  - Introduced dedicated sub-packages under `packages/` for clearer layering and reusability:
+    - `llm_dart_core` – capabilities, `LLMConfig`, errors, and all shared models/DTOs.
+    - `llm_dart_provider_utils` – Dio client factory, HTTP error / response handling, HTTP configuration helpers.
+    - Provider sub-packages:
+      - `llm_dart_openai` – OpenAI (chat, embeddings, audio, images, files, moderation, Responses API).
+      - `llm_dart_anthropic` – Anthropic Claude (chat, models, files, MCP, caching).
+      - `llm_dart_google` – Google Gemini (chat, embeddings, images, TTS).
+      - `llm_dart_deepseek` – DeepSeek (chat, reasoning models, model listing).
+      - `llm_dart_groq` – Groq, built on the OpenAI-compatible protocol.
+      - `llm_dart_ollama` – Ollama (local models, completion, embeddings, model listing).
+      - `llm_dart_xai` – xAI Grok (chat, embeddings, live search).
+      - `llm_dart_elevenlabs` – ElevenLabs (TTS/STT).
+      - `llm_dart_phind` – Phind (coding assistant).
+      - `llm_dart_openai_compatible` – OpenAI REST protocol for OpenAI-compatible providers.
+  - The main `llm_dart` package now acts as an aggregation layer:
+    - Keeps `ai()` / `LLMBuilder` / `LLMProviderRegistry` / unified models and capabilities.
+    - Re-exports provider facades and typedefs that point to the actual sub-package implementations.
+    - Existing imports such as `package:llm_dart/providers/openai/openai.dart` and `package:llm_dart/llm_dart.dart` remain valid.
+
+- **Provider split & typedef-based facades**
+  - OpenAI, Groq, DeepSeek, Google, Anthropic, Ollama, xAI, Phind, ElevenLabs providers have been split into their own sub-packages.
+  - Main package provider files (e.g., `lib/providers/openai/provider.dart`) now expose typedefs and thin facades:
+    - `typedef OpenAIProvider = openai.OpenAIProvider;`
+    - `typedef GroqProvider = groq.GroqProvider;`
+    - `typedef DeepSeekProvider = deepseek.DeepSeekProvider;`
+    - `typedef GoogleProvider = google.GoogleProvider;`, etc.
+  - Configuration types are also aliased to sub-package implementations:
+    - `OpenAIConfig`, `AnthropicConfig`, `GoogleConfig`, `DeepSeekConfig`, `GroqConfig`, `OllamaConfig`, `XAIConfig`, `ElevenLabsConfig`, `PhindConfig` now come from their respective sub-packages.
+  - Legacy helper functions like `createOpenAIProvider`, `createGroqProvider`, `createDeepSeekProvider`, etc., remain available and are wired to the new provider sub-packages.
+
+- **Configuration consolidation & fallbacks**
+  - All provider-specific defaulting logic for `baseUrl` / `model` has been centralized into `fromLLMConfig` or factory transforms:
+    - Example: `DeepSeekConfig.fromLLMConfig` now applies consistent fallbacks when `LLMConfig.baseUrl` / `model` are empty, using local defaults (`https://api.deepseek.com/v1/`, `deepseek-chat`).
+    - `GroqConfig.fromLLMConfig` mirrors the old `GroqConfig` behavior while building on top of `OpenAICompatibleConfig`.
+  - Provider configs now behave as “resolved config” objects:
+    - Values are determined once at factory time (from `LLMConfig` + extensions).
+    - Config classes expose provider-specific capabilities (e.g., `supportsReasoning`, `supportsVision`, `modelFamily`) as pure getters.
+  - HTTP timeout resolution is unified in `llm_dart_provider_utils`:
+    - `BaseProviderDioStrategy.getTimeout` now reads timeout from either the provider config or `originalConfig.timeout` (for OpenAI-compatible configs).
+
+- **HTTP configuration layering cleanup**
+  - Moved HTTP configuration utilities into `llm_dart_provider_utils` to avoid layering inversions:
+    - New files in provider-utils:
+      - `src/utils/http_client_adapter_stub.dart`
+      - `src/utils/http_client_adapter_io.dart`
+      - `src/utils/http_client_adapter_web.dart`
+      - `src/utils/http_config_utils.dart`
+    - `DioClientFactory` now depends on `HttpConfigUtils` from provider-utils instead of the main package.
+  - Main package now provides a backwards-compatible facade:
+    - `lib/utils/http_config_utils.dart` re-exports `HttpConfigUtils` from `llm_dart_provider_utils`.
+  - This ensures a clean dependency direction:
+    - `llm_dart_core` → `llm_dart_provider_utils` → provider sub-packages → main `llm_dart`.
+
+- **Core observability – call-level metadata & warnings**
+  - `ChatResponse` in `llm_dart_core` has been extended with:
+    - `List<CallWarning> get warnings`
+    - `Map<String, dynamic>? get metadata`
+  - Implementations updated to surface structured information:
+    - OpenAI Responses (both main and sub-package):
+      - `metadata` now includes `provider`, `id`, `model`, `status`, and `functionCallCount`.
+    - Anthropic:
+      - `metadata` includes `provider`, `id`, `model`, `stopReason`, `hasThinking`, `hasMcpToolUse`, `hasMcpToolResult`.
+    - DeepSeek:
+      - `metadata` includes provider/model/reasoning flags;
+      - `warnings` surfaces unsupported or no-op parameters for reasoning models (e.g., `logprobs`, `top_logprobs`, temperature/top_p on `deepseek-reasoner`).
+  - Existing code that does not use `warnings`/`metadata` remains fully compatible.
+
+- **Version alignment**
+  - All packages in the workspace have been aligned to the `0.11.0-rc.1` version:
+    - `llm_dart`, `llm_dart_core`, `llm_dart_provider_utils`, all provider sub-packages, and the OpenAI-compatible protocol package.
+
+### Migration Notes
+
+- For most users importing `package:llm_dart/llm_dart.dart`, no code changes are required:
+  - Provider types and helper functions remain available at their existing paths.
+  - The multi-package refactor is internal and should be transparent.
+- Advanced users who want to depend on specific provider sub-packages directly can now import:
+  - `package:llm_dart_core/llm_dart_core.dart`
+  - `package:llm_dart_provider_utils/llm_dart_provider_utils.dart`
+  - `package:llm_dart_openai/llm_dart_openai.dart`, etc.
+
 ## [0.10.2] - 2025-11-13
 
 ### Fixed

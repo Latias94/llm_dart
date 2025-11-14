@@ -23,19 +23,11 @@
 /// ```
 library;
 
+import 'package:llm_dart_google/llm_dart_google.dart';
 import '../../models/chat_models.dart';
-import 'config.dart';
-import 'provider.dart';
 
-// Core exports
-export 'config.dart';
-export 'client.dart';
-export 'provider.dart';
+export 'package:llm_dart_google/llm_dart_google.dart';
 export 'builder.dart';
-
-// Capability modules
-export 'chat.dart';
-export 'embeddings.dart';
 
 /// Create a Google provider with default configuration
 GoogleProvider createGoogleProvider({

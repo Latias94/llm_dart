@@ -1,7 +1,6 @@
-import '../../core/capability.dart';
-import '../../core/config.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import '../../core/provider_defaults.dart';
-import '../anthropic/anthropic.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Anthropic provider instances

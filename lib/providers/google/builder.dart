@@ -3,6 +3,7 @@ import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import 'config.dart';
+import 'tts.dart';
 
 /// Google-specific LLM builder with provider-specific configuration methods
 ///

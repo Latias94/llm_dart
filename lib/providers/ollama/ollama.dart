@@ -33,20 +33,10 @@
 /// ```
 library;
 
+import 'package:llm_dart_ollama/llm_dart_ollama.dart';
 import '../../models/tool_models.dart';
-import 'config.dart';
-import 'provider.dart';
 
-// Core exports
-export 'config.dart';
-export 'client.dart';
-export 'provider.dart';
-
-// Capability modules
-export 'chat.dart';
-export 'completion.dart';
-export 'embeddings.dart';
-export 'models.dart';
+export 'package:llm_dart_ollama/llm_dart_ollama.dart';
 
 /// Create an Ollama provider with default configuration
 OllamaProvider createOllamaProvider({

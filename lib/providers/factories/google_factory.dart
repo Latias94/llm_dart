@@ -1,7 +1,6 @@
-import '../../core/capability.dart';
-import '../../core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_google/llm_dart_google.dart';
 import '../../core/provider_defaults.dart';
-import '../google/google.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Google (Gemini) provider instances

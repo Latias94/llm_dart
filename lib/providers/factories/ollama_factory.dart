@@ -1,7 +1,6 @@
-import '../../core/capability.dart';
-import '../../core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_ollama/llm_dart_ollama.dart';
 import '../../core/provider_defaults.dart';
-import '../ollama/ollama.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Ollama provider instances

@@ -518,6 +518,12 @@ class MockChatResponse implements ChatResponse {
     this.thinking,
     this.toolCalls,
   });
+
+  @override
+  List<CallWarning> get warnings => const [];
+
+  @override
+  Map<String, dynamic>? get metadata => null;
 }
 
 class MockUsage extends UsageInfo {

@@ -23,20 +23,11 @@
 /// ```
 library;
 
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import '../../core/provider_defaults.dart';
-import 'config.dart';
-import 'provider.dart';
 
-// Core exports
-export 'config.dart';
-export 'client.dart';
-export 'provider.dart';
-
-// Capability modules
-export 'chat.dart';
-export 'files.dart';
-
-// MCP models
+export 'package:llm_dart_anthropic/llm_dart_anthropic.dart'
+    show AnthropicConfig, AnthropicProvider;
 export 'mcp_models.dart';
 
 /// Create an Anthropic provider with default configuration
