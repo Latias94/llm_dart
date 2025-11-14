@@ -1,29 +1,123 @@
-import 'capability.dart';
-import 'config.dart';
-import 'google_openai_transformers.dart';
-import 'provider_defaults.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
-/// Pre-configured OpenAI-compatible provider configurations
+/// Google-specific request body transformer for OpenAI-compatible interface.
 ///
-/// This file contains configurations for popular AI providers that offer
-/// OpenAI-compatible APIs, making it easy for users to switch between
-/// providers without manual configuration.
-class OpenAICompatibleConfigs {
-  /// DeepSeek configuration using OpenAI-compatible interface
+/// This transformer handles Google Gemini's specific thinking/reasoning
+/// parameters when using the OpenAI-compatible interface.
+class GoogleRequestBodyTransformer implements RequestBodyTransformer {
+  const GoogleRequestBodyTransformer();
+
+  @override
+  Map<String, dynamic> transform(
+    Map<String, dynamic> body,
+    LLMConfig config,
+    OpenAICompatibleProviderConfig providerConfig,
+  ) {
+    final transformedBody = Map<String, dynamic>.from(body);
+
+    _addThinkingConfig(transformedBody, config);
+    _addReasoningEffort(transformedBody, config);
+
+    return transformedBody;
+  }
+
+  void _addThinkingConfig(Map<String, dynamic> body, LLMConfig config) {
+    final reasoning = config.getExtension<bool>('reasoning') ?? false;
+    final includeThoughts = config.getExtension<bool>('includeThoughts');
+    final thinkingBudgetTokens =
+        config.getExtension<int>('thinkingBudgetTokens');
+
+    if (!reasoning &&
+        includeThoughts == null &&
+        thinkingBudgetTokens == null) {
+      return;
+    }
+
+    final extraBody = body['extra_body'] as Map<String, dynamic>? ?? {};
+    final configSection = extraBody['config'] as Map<String, dynamic>? ?? {};
+    final thinkingConfig = <String, dynamic>{};
+
+    if (includeThoughts != null) {
+      thinkingConfig['includeThoughts'] = includeThoughts;
+    } else if (reasoning) {
+      thinkingConfig['includeThoughts'] = true;
+    }
+
+    if (thinkingBudgetTokens != null) {
+      thinkingConfig['thinkingBudget'] = thinkingBudgetTokens;
+    }
+
+    if (thinkingConfig.isNotEmpty) {
+      configSection['thinkingConfig'] = thinkingConfig;
+      extraBody['config'] = configSection;
+      body['extra_body'] = extraBody;
+    }
+  }
+
+  void _addReasoningEffort(Map<String, dynamic> body, LLMConfig config) {
+    final reasoningEffortString =
+        config.getExtension<String>('reasoningEffort');
+    if (reasoningEffortString == null || reasoningEffortString.isEmpty) {
+      return;
+    }
+
+    final extraBody = body['extra_body'] as Map<String, dynamic>? ?? {};
+    extraBody['reasoning_effort'] = reasoningEffortString;
+    body['extra_body'] = extraBody;
+  }
+}
+
+/// Google-specific headers transformer for OpenAI-compatible interface.
+///
+/// This transformer handles Google Gemini's specific headers when using
+/// the OpenAI-compatible interface.
+class GoogleHeadersTransformer implements HeadersTransformer {
+  const GoogleHeadersTransformer();
+
+  @override
+  Map<String, String> transform(
+    Map<String, String> headers,
+    LLMConfig config,
+    OpenAICompatibleProviderConfig providerConfig,
+  ) {
+    final transformedHeaders = Map<String, String>.from(headers);
+
+    _addThinkingHeaders(transformedHeaders, config);
+
+    return transformedHeaders;
+  }
+
+  void _addThinkingHeaders(Map<String, String> headers, LLMConfig config) {
+    final reasoning = config.getExtension<bool>('reasoning') ?? false;
+    final includeThoughts = config.getExtension<bool>('includeThoughts');
+
+    if (reasoning || includeThoughts == true) {
+      headers['X-Goog-Include-Thoughts'] = 'true';
+    }
+  }
+}
+
+/// Pre-configured OpenAI-compatible provider configurations.
+///
+/// This class defines the provider-level capability profiles for
+/// common OpenAI-compatible vendors (DeepSeek, Gemini, xAI, Groq, etc.).
+/// It is used by the main `llm_dart` package to register provider
+/// factories without embedding provider metadata into the core package.
+class OpenAICompatibleProviderProfiles {
+  /// DeepSeek configuration using OpenAI-compatible interface.
   static const OpenAICompatibleProviderConfig deepseek =
       OpenAICompatibleProviderConfig(
     providerId: 'deepseek-openai',
     displayName: 'DeepSeek (OpenAI-compatible)',
     description: 'DeepSeek AI models using OpenAI-compatible interface',
-    defaultBaseUrl: ProviderDefaults.deepseekBaseUrl,
-    defaultModel: ProviderDefaults.deepseekDefaultModel,
+    defaultBaseUrl: 'https://api.deepseek.com/v1/',
+    defaultModel: 'deepseek-chat',
     supportedCapabilities: {
       LLMCapability.chat,
       LLMCapability.streaming,
       LLMCapability.toolCalling,
       LLMCapability.reasoning,
     },
-    // For unknown DeepSeek models, assume basic capabilities
     defaultCapabilities: {
       LLMCapability.chat,
       LLMCapability.streaming,
@@ -50,7 +144,7 @@ class OpenAICompatibleConfigs {
     },
   );
 
-  /// Google Gemini configuration using OpenAI-compatible interface
+  /// Google Gemini configuration using OpenAI-compatible interface.
   static final OpenAICompatibleProviderConfig gemini =
       OpenAICompatibleProviderConfig(
     providerId: 'google-openai',
@@ -68,11 +162,10 @@ class OpenAICompatibleConfigs {
     supportsReasoningEffort: true,
     supportsStructuredOutput: true,
     parameterMappings: {
-      'reasoning_effort': 'reasoning_effort', // low, medium, high
-      'include_thoughts': 'include_thoughts', // Google-specific thinking config
-      'thinking_budget': 'thinking_budget', // Google-specific thinking budget
+      'reasoning_effort': 'reasoning_effort',
+      'include_thoughts': 'include_thoughts',
+      'thinking_budget': 'thinking_budget',
     },
-    // Use Google-specific transformers for thinking support
     requestBodyTransformer: GoogleRequestBodyTransformer(),
     headersTransformer: GoogleHeadersTransformer(),
     modelConfigs: {
@@ -97,14 +190,14 @@ class OpenAICompatibleConfigs {
     },
   );
 
-  /// xAI Grok configuration using OpenAI-compatible interface
+  /// xAI Grok configuration using OpenAI-compatible interface.
   static const OpenAICompatibleProviderConfig xai =
       OpenAICompatibleProviderConfig(
     providerId: 'xai-openai',
     displayName: 'xAI Grok (OpenAI-compatible)',
     description: 'xAI Grok models using OpenAI-compatible interface',
-    defaultBaseUrl: ProviderDefaults.xaiBaseUrl,
-    defaultModel: ProviderDefaults.xaiDefaultModel,
+    defaultBaseUrl: 'https://api.x.ai/v1/',
+    defaultModel: 'grok-3',
     supportedCapabilities: {
       LLMCapability.chat,
       LLMCapability.streaming,
@@ -129,21 +222,20 @@ class OpenAICompatibleConfigs {
     },
   );
 
-  /// Groq configuration using OpenAI-compatible interface
+  /// Groq configuration using OpenAI-compatible interface.
   static const OpenAICompatibleProviderConfig groq =
       OpenAICompatibleProviderConfig(
     providerId: 'groq-openai',
     displayName: 'Groq (OpenAI-compatible)',
     description:
         'Groq AI models using OpenAI-compatible interface for ultra-fast inference',
-    defaultBaseUrl: ProviderDefaults.groqBaseUrl,
-    defaultModel: ProviderDefaults.groqDefaultModel,
+    defaultBaseUrl: 'https://api.groq.com/openai/v1/',
+    defaultModel: 'llama-3.3-70b-versatile',
     supportedCapabilities: {
       LLMCapability.chat,
       LLMCapability.streaming,
       LLMCapability.toolCalling,
     },
-    // Groq focuses on speed, so default capabilities are conservative
     defaultCapabilities: {
       LLMCapability.chat,
       LLMCapability.streaming,
@@ -167,14 +259,14 @@ class OpenAICompatibleConfigs {
     },
   );
 
-  /// Phind configuration using OpenAI-compatible interface
+  /// Phind configuration using OpenAI-compatible interface.
   static const OpenAICompatibleProviderConfig phind =
       OpenAICompatibleProviderConfig(
     providerId: 'phind-openai',
     displayName: 'Phind (OpenAI-compatible)',
     description: 'Phind AI models using OpenAI-compatible interface',
-    defaultBaseUrl: ProviderDefaults.phindBaseUrl,
-    defaultModel: ProviderDefaults.phindDefaultModel,
+    defaultBaseUrl: 'https://api.phind.com/v1/',
+    defaultModel: 'Phind-70B',
     supportedCapabilities: {
       LLMCapability.chat,
       LLMCapability.streaming,
@@ -192,14 +284,14 @@ class OpenAICompatibleConfigs {
     },
   );
 
-  /// OpenRouter configuration using OpenAI-compatible interface
+  /// OpenRouter configuration using OpenAI-compatible interface.
   static const OpenAICompatibleProviderConfig openRouter =
       OpenAICompatibleProviderConfig(
     providerId: 'openrouter',
     displayName: 'OpenRouter',
     description: 'OpenRouter unified API for multiple AI models',
-    defaultBaseUrl: ProviderDefaults.openRouterBaseUrl,
-    defaultModel: ProviderDefaults.openRouterDefaultModel,
+    defaultBaseUrl: 'https://openrouter.ai/api/v1/',
+    defaultModel: 'openai/gpt-4',
     supportedCapabilities: {
       LLMCapability.chat,
       LLMCapability.streaming,
@@ -209,7 +301,6 @@ class OpenAICompatibleConfigs {
     },
     supportsReasoningEffort: false,
     supportsStructuredOutput: true,
-    // OpenRouter supports web search through plugin system
     parameterMappings: {
       'search_prompt': 'search_prompt',
       'use_online_shortcut': 'use_online_shortcut',
@@ -230,7 +321,7 @@ class OpenAICompatibleConfigs {
     },
   );
 
-  /// Get all available OpenAI-compatible configurations
+  /// Get all available OpenAI-compatible provider configurations.
   static List<OpenAICompatibleProviderConfig> getAllConfigs() {
     return [
       deepseek,
@@ -242,7 +333,7 @@ class OpenAICompatibleConfigs {
     ];
   }
 
-  /// Get configuration by provider ID
+  /// Get configuration by provider ID.
   static OpenAICompatibleProviderConfig? getConfig(String providerId) {
     switch (providerId) {
       case 'deepseek-openai':
@@ -262,15 +353,18 @@ class OpenAICompatibleConfigs {
     }
   }
 
-  /// Check if a provider ID is OpenAI-compatible
+  /// Check if a provider ID is OpenAI-compatible.
   static bool isOpenAICompatible(String providerId) {
     return getConfig(providerId) != null;
   }
 
-  /// Get model capabilities for a specific provider and model
+  /// Get model capabilities for a specific provider and model.
   static ModelCapabilityConfig? getModelCapabilities(
-      String providerId, String model) {
+    String providerId,
+    String model,
+  ) {
     final config = getConfig(providerId);
     return config?.modelConfigs[model];
   }
 }
+

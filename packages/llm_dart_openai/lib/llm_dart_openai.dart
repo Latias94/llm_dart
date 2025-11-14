@@ -18,3 +18,6 @@ export 'src/moderation/openai_moderation.dart';
 export 'src/tools/openai_builtin_tools.dart';
 export 'src/responses/openai_responses_capability.dart';
 export 'src/responses/openai_responses.dart';
+export 'src/models/openai_models.dart';
+export 'src/http/openai_dio_strategy.dart';
+export 'src/assistants/openai_assistants.dart';

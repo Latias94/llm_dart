@@ -1,12 +1,13 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../core/registry.dart';
-import '../../core/openai_compatible_configs.dart';
 import '../../core/web_search.dart';
 import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
 import '../openai/openai.dart';
 import 'base_factory.dart';
+import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart'
+    show OpenAICompatibleProviderProfiles;
 
 /// Generic factory for creating OpenAI-compatible provider instances
 ///
@@ -123,14 +124,15 @@ class OpenAICompatibleProviderFactory
 
   /// Create factory instances for all pre-configured providers
   static List<OpenAICompatibleProviderFactory> createAllFactories() {
-    return OpenAICompatibleConfigs.getAllConfigs()
+    return OpenAICompatibleProviderProfiles.getAllConfigs()
         .map((config) => OpenAICompatibleProviderFactory(config))
         .toList();
   }
 
   /// Create a specific factory by provider ID
   static OpenAICompatibleProviderFactory? createFactory(String providerId) {
-    final config = OpenAICompatibleConfigs.getConfig(providerId);
+    final config =
+        OpenAICompatibleProviderProfiles.getConfig(providerId);
     if (config == null) return null;
 
     return OpenAICompatibleProviderFactory(config);
@@ -159,7 +161,7 @@ class OpenAICompatibleProviderRegistrar {
 
   /// Get list of available OpenAI-compatible provider IDs
   static List<String> getAvailableProviders() {
-    return OpenAICompatibleConfigs.getAllConfigs()
+    return OpenAICompatibleProviderProfiles.getAllConfigs()
         .map((config) => config.providerId)
         .toList();
   }

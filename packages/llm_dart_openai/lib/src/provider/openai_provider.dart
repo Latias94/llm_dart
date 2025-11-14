@@ -1,5 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import '../assistants/openai_assistants.dart';
 import '../audio/openai_audio.dart';
 import '../chat/openai_chat.dart';
 import '../client/openai_client.dart';
@@ -28,6 +29,7 @@ class OpenAIProvider
         ModelListingCapability,
         ModerationCapability,
         CompletionCapability,
+        AssistantCapability,
         ProviderCapabilities {
   final OpenAIClient _client;
   final OpenAIConfig config;
@@ -41,6 +43,7 @@ class OpenAIProvider
   late final OpenAIModels _models;
   late final OpenAIModeration _moderation;
   late final OpenAICompletion _completion;
+  late final OpenAIAssistants _assistants;
   late final OpenAIResponses? _responses;
 
   OpenAIProvider(this.config) : _client = OpenAIClient(config) {
@@ -52,6 +55,7 @@ class OpenAIProvider
     _models = OpenAIModels(_client, config);
     _moderation = OpenAIModeration(_client, config);
     _completion = OpenAICompletion(_client, config);
+    _assistants = OpenAIAssistants(_client, config);
 
     if (config.useResponsesAPI) {
       _responses = OpenAIResponses(_client, config);
@@ -73,6 +77,8 @@ class OpenAIProvider
         LLMCapability.modelListing,
         LLMCapability.moderation,
         LLMCapability.completion,
+        LLMCapability.assistants,
+        if (config.useResponsesAPI) LLMCapability.openaiResponses,
       };
 
   @override
@@ -519,6 +525,37 @@ class OpenAIProvider
   /// Get embedding dimensions for the configured model.
   Future<int> getEmbeddingDimensions() {
     return _embeddings.getEmbeddingDimensions();
+  }
+
+  // ===== AssistantCapability =====
+
+  @override
+  Future<Assistant> createAssistant(CreateAssistantRequest request) {
+    return _assistants.createAssistant(request);
+  }
+
+  @override
+  Future<ListAssistantsResponse> listAssistants(
+      [ListAssistantsQuery? query]) {
+    return _assistants.listAssistants(query);
+  }
+
+  @override
+  Future<Assistant> retrieveAssistant(String assistantId) {
+    return _assistants.retrieveAssistant(assistantId);
+  }
+
+  @override
+  Future<Assistant> modifyAssistant(
+    String assistantId,
+    ModifyAssistantRequest request,
+  ) {
+    return _assistants.modifyAssistant(assistantId, request);
+  }
+
+  @override
+  Future<DeleteAssistantResponse> deleteAssistant(String assistantId) {
+    return _assistants.deleteAssistant(assistantId);
   }
 
   @override

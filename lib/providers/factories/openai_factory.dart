@@ -32,6 +32,7 @@ class OpenAIProviderFactory
         LLMCapability.textToSpeech,
         LLMCapability.speechToText,
         LLMCapability.imageGeneration,
+        LLMCapability.assistants,
       };
 
   @override
