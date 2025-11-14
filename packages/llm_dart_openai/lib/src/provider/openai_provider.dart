@@ -76,6 +76,7 @@ class OpenAIProvider
         LLMCapability.imageGeneration,
         LLMCapability.modelListing,
         LLMCapability.moderation,
+        LLMCapability.fileManagement,
         LLMCapability.completion,
         LLMCapability.assistants,
         if (config.useResponsesAPI) LLMCapability.openaiResponses,

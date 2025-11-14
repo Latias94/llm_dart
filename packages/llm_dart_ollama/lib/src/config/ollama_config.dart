@@ -93,11 +93,26 @@ class OllamaConfig {
     return model.contains('vision') ||
         model.contains('llava') ||
         model.contains('llava-llama') ||
-        model.contains('moondream');
+        model.contains('moondream') ||
+        model.contains('minicpm');
   }
 
   bool get supportsToolCalling {
-    return tools != null && tools!.isNotEmpty;
+    // If explicit tools are configured, assume tool calling is supported.
+    if (tools != null && tools!.isNotEmpty) {
+      return true;
+    }
+
+    final lowerModel = model.toLowerCase();
+
+    // Heuristics based on common Ollama model families that support tools.
+    final isLlamaTools =
+        lowerModel.contains('llama3') || lowerModel.contains('llama-3');
+    final isMistral = lowerModel.contains('mistral');
+    final isQwen = lowerModel.contains('qwen');
+    final isPhi3 = lowerModel.contains('phi3');
+
+    return isLlamaTools || isMistral || isQwen || isPhi3;
   }
 
   bool get supportsEmbeddings {
