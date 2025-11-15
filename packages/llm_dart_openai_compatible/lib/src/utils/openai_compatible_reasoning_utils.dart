@@ -45,6 +45,7 @@ class OpenAICompatibleReasoningUtils {
   /// This supports:
   /// - Groq (no reasoning_effort)
   /// - OpenRouter (`reasoning.effort`)
+  /// - Google Gemini (handled via request body transformer)
   /// - Grok (`reasoning_effort`)
   /// - Claude 3.7 / Sonnet 4 / Opus 4 (`thinking` with budget tokens)
   /// - Default (`reasoning_effort`)
@@ -59,6 +60,12 @@ class OpenAICompatibleReasoningUtils {
 
     // Groq doesn't support reasoning effort in this format.
     if (providerId == 'groq') {
+      return const {};
+    }
+
+    // Google Gemini OpenAI-compatible reasoning effort is handled via
+    // the provider-specific request body transformer.
+    if (providerId == 'google-openai') {
       return const {};
     }
 

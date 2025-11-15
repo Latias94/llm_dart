@@ -1,5 +1,5 @@
-import '../../../utils/config_utils.dart';
-import '../../../utils/dio_client_factory.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
 import '../../../providers/deepseek/config.dart';
 
 /// DeepSeek-specific Dio strategy implementation (legacy).
@@ -18,6 +18,6 @@ class DeepSeekDioStrategy extends BaseProviderDioStrategy {
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final deepSeekConfig = config as DeepSeekConfig;
-    return ConfigUtils.buildOpenAIHeaders(deepSeekConfig.apiKey);
+    return HttpHeaderUtils.buildOpenAIHeaders(deepSeekConfig.apiKey);
   }
 }

@@ -4,10 +4,12 @@ import '../../core/registry.dart';
 import '../../core/web_search.dart';
 import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
-import '../openai/openai.dart';
 import 'base_factory.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart'
-    show OpenAICompatibleProviderProfiles;
+    show
+        OpenAICompatibleConfig,
+        OpenAICompatibleProvider,
+        OpenAICompatibleProviderProfiles;
 
 /// Generic factory for creating OpenAI-compatible provider instances
 ///
@@ -33,10 +35,10 @@ class OpenAICompatibleProviderFactory
 
   @override
   ChatCapability create(LLMConfig config) {
-    return createProviderSafely<OpenAIConfig>(
+    return createProviderSafely<OpenAICompatibleConfig>(
       config,
       () => _transformConfig(config),
-      (openaiConfig) => OpenAIProvider(openaiConfig),
+      (compatibleConfig) => OpenAICompatibleProvider(compatibleConfig),
     );
   }
 
@@ -49,7 +51,7 @@ class OpenAICompatibleProviderFactory
   }
 
   /// Transform unified config to OpenAI-compatible config
-  OpenAIConfig _transformConfig(LLMConfig config) {
+  OpenAICompatibleConfig _transformConfig(LLMConfig config) {
     // Handle web search configuration for OpenRouter
     String? model = config.model;
 
@@ -72,39 +74,27 @@ class OpenAICompatibleProviderFactory
       model = _addOnlineSuffix(model);
     }
 
-    return OpenAIConfig(
+    return OpenAICompatibleConfig(
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
-      model: model,
+      model: model ?? config.model,
+      providerId: _config.providerId,
+      systemPrompt: config.systemPrompt,
       maxTokens: config.maxTokens,
       temperature: config.temperature,
-      systemPrompt: config.systemPrompt,
-      timeout: config.timeout,
       topP: config.topP,
       topK: config.topK,
       tools: config.tools,
       toolChoice: config.toolChoice,
-      // Common parameters
+      reasoningEffort: ReasoningEffort.fromString(
+        config.getExtension<String>(LLMConfigKeys.reasoningEffort),
+      ),
+      jsonSchema: config.getExtension<StructuredOutputFormat>(
+        LLMConfigKeys.jsonSchema,
+      ),
       stopSequences: config.stopSequences,
       user: config.user,
       serviceTier: config.serviceTier,
-      // OpenAI-compatible extensions using safe access
-      reasoningEffort: ReasoningEffort.fromString(
-          config.getExtension<String>(LLMConfigKeys.reasoningEffort)),
-      jsonSchema:
-          config.getExtension<StructuredOutputFormat>(LLMConfigKeys.jsonSchema),
-      voice: config.getExtension<String>(LLMConfigKeys.voice),
-      embeddingEncodingFormat:
-          config.getExtension<String>(LLMConfigKeys.embeddingEncodingFormat),
-      embeddingDimensions:
-          config.getExtension<int>(LLMConfigKeys.embeddingDimensions),
-      // Responses API configuration (most OpenAI-compatible providers don't support this yet)
-      useResponsesAPI:
-          config.getExtension<bool>(LLMConfigKeys.useResponsesAPI) ?? false,
-      previousResponseId:
-          config.getExtension<String>(LLMConfigKeys.previousResponseId),
-      builtInTools: config
-          .getExtension<List<OpenAIBuiltInTool>>(LLMConfigKeys.builtInTools),
       originalConfig: config,
     );
   }

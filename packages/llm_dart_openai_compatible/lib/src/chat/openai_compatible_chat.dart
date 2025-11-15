@@ -4,6 +4,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../client/openai_compatible_client.dart';
 import '../config/openai_compatible_config.dart';
+import '../provider_profiles/openai_compatible_provider_profiles.dart';
 import '../utils/openai_compatible_reasoning_utils.dart';
 
 /// OpenAI-compatible Chat capability implementation
@@ -174,13 +175,49 @@ class OpenAICompatibleChat implements ChatCapability {
       body['service_tier'] = config.serviceTier!.value;
     }
 
-    final extraBody = body['extra_body'] as Map<String, dynamic>?;
+    // Apply provider-specific request body transformers (e.g. Google Gemini).
+    final transformedBody = _applyProviderRequestTransformers(body);
+
+    final extraBody = transformedBody['extra_body'] as Map<String, dynamic>?;
     if (extraBody != null) {
-      body.addAll(extraBody);
-      body.remove('extra_body');
+      transformedBody.addAll(extraBody);
+      transformedBody.remove('extra_body');
     }
 
-    return body;
+    return transformedBody;
+  }
+
+  /// Apply provider-specific request body transformations when configured.
+  ///
+  /// This uses [OpenAICompatibleProviderConfig.requestBodyTransformer] from
+  /// the provider profiles to adapt the OpenAI-compatible request body to
+  /// provider-specific formats (e.g. Google Gemini thinking config).
+  Map<String, dynamic> _applyProviderRequestTransformers(
+    Map<String, dynamic> body,
+  ) {
+    final originalConfig = config.originalConfig;
+    if (originalConfig == null) {
+      return body;
+    }
+
+    final providerConfig =
+        OpenAICompatibleProviderProfiles.getConfig(config.providerId);
+    final transformer = providerConfig?.requestBodyTransformer;
+
+    if (providerConfig == null || transformer == null) {
+      return body;
+    }
+
+    try {
+      return transformer.transform(
+        body,
+        originalConfig,
+        providerConfig,
+      );
+    } catch (_) {
+      // On any error, fall back to the unmodified body to avoid breaking calls.
+      return body;
+    }
   }
 
   ChatResponse _parseResponse(Map<String, dynamic> responseData) {

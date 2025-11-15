@@ -1,5 +1,5 @@
-import '../../utils/config_utils.dart';
-import '../../utils/dio_client_factory.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
 import 'config.dart';
 
 /// Groq-specific Dio strategy implementation
@@ -12,6 +12,6 @@ class GroqDioStrategy extends BaseProviderDioStrategy {
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final groqConfig = config as GroqConfig;
-    return ConfigUtils.buildOpenAIHeaders(groqConfig.apiKey);
+    return HttpHeaderUtils.buildOpenAIHeaders(groqConfig.apiKey);
   }
 }

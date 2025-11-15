@@ -12,3 +12,4 @@ export 'src/utils/http_response_handler.dart';
 export 'src/utils/http_config_utils.dart';
 export 'src/utils/utf8_stream_decoder.dart';
 export 'src/utils/http_error_handler.dart';
+export 'src/utils/http_header_utils.dart';

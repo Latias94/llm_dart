@@ -5,15 +5,19 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../config/openai_compatible_config.dart';
+import '../provider_profiles/openai_compatible_provider_profiles.dart';
 
 /// Generic OpenAI-compatible HTTP client shared across all compatible providers.
 class OpenAICompatibleClient {
   final OpenAICompatibleConfig config;
+  final OpenAICompatibleProviderConfig? _providerProfile;
   late final Dio dio;
 
   final StringBuffer _sseBuffer = StringBuffer();
 
-  OpenAICompatibleClient(this.config) {
+  OpenAICompatibleClient(this.config)
+      : _providerProfile =
+            OpenAICompatibleProviderProfiles.getConfig(config.providerId) {
     dio = DioClientFactory.create(
       strategy: _OpenAICompatibleDioStrategy(),
       config: config,
@@ -184,6 +188,7 @@ class OpenAICompatibleClient {
         endpoint,
         body,
         providerName: config.providerId,
+        options: Options(headers: _buildTransformedHeaders()),
         cancelToken: cancelToken,
       );
     } on LLMError {
@@ -211,7 +216,10 @@ class OpenAICompatibleClient {
         cancelToken: cancelToken,
         options: Options(
           responseType: ResponseType.stream,
-          headers: {'Accept': 'text/event-stream'},
+          headers: {
+            ..._buildTransformedHeaders(),
+            'Accept': 'text/event-stream',
+          },
         ),
       );
 
@@ -245,6 +253,42 @@ class OpenAICompatibleClient {
       throw DioErrorHandler.handleDioError(e, config.providerId);
     } catch (e) {
       throw GenericError('Unexpected error: $e');
+    }
+  }
+
+  /// Build headers for this request, applying provider-specific transformers
+  /// when available (e.g. Google Gemini OpenAI-compatible headers).
+  Map<String, String> _buildTransformedHeaders() {
+    final baseHeaders = <String, String>{};
+
+    dio.options.headers.forEach((key, value) {
+      if (value == null) return;
+      if (value is String) {
+        baseHeaders[key] = value;
+      } else {
+        baseHeaders[key] = value.toString();
+      }
+    });
+
+    final providerConfig = _providerProfile;
+    final transformer = providerConfig?.headersTransformer;
+    final originalConfig = config.originalConfig;
+
+    if (providerConfig == null ||
+        transformer == null ||
+        originalConfig == null) {
+      return baseHeaders;
+    }
+
+    try {
+      return transformer.transform(
+        baseHeaders,
+        originalConfig,
+        providerConfig,
+      );
+    } catch (_) {
+      // On any error, fall back to the base headers.
+      return baseHeaders;
     }
   }
 }
