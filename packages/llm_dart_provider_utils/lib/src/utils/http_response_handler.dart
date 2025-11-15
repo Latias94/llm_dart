@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'http_error_handler.dart';
 
 /// Unified HTTP response handler for all providers
 ///

@@ -3,6 +3,7 @@ import 'package:logging/logging.dart';
 
 import '../../core/llm_error.dart';
 import '../../utils/dio_client_factory.dart';
+import '../../utils/http_error_handler.dart';
 import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
 import 'config.dart';

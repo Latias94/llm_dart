@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../core/llm_error.dart';
+import '../../utils/http_error_handler.dart';
 
 /// DeepSeek-specific error handler
 ///
