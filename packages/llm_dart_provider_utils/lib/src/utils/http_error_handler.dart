@@ -201,4 +201,3 @@ class HttpErrorMapper {
     return null;
   }
 }
-

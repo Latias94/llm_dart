@@ -9,10 +9,16 @@ import '../../models/tool_models.dart';
 import 'client.dart';
 import 'config.dart';
 
-/// Groq Chat capability implementation
+/// Groq Chat capability implementation (legacy).
 ///
-/// This module handles all chat-related functionality for Groq providers,
-/// including streaming and tool calling. Groq is optimized for speed.
+/// This module previously handled all chat-related functionality for Groq
+/// providers. New code should prefer `GroqProvider` from the
+/// `llm_dart_groq` subpackage, which is built on top of the shared
+/// OpenAI-compatible protocol layer.
+@Deprecated(
+  'GroqChat is kept for backwards compatibility. '
+  'Use GroqProvider from the llm_dart_groq package instead.',
+)
 class GroqChat implements ChatCapability {
   final GroqClient client;
   final GroqConfig config;

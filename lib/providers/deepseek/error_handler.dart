@@ -3,11 +3,14 @@ import 'package:dio/dio.dart';
 import '../../core/llm_error.dart';
 import '../../utils/http_error_handler.dart';
 
-/// DeepSeek-specific error handler
+/// DeepSeek-specific error handler (legacy).
 ///
-/// This class provides specialized error handling for DeepSeek API responses,
-/// mapping DeepSeek error codes and messages to appropriate LLM error types.
-/// Reference: https://api-docs.deepseek.com/quick_start/error_codes
+/// The canonical DeepSeek error handling lives in the `llm_dart_deepseek`
+/// subpackage. This class is retained only for backwards compatibility.
+@Deprecated(
+  'DeepSeekErrorHandler in the main package is legacy. '
+  'Use the implementation from the llm_dart_deepseek package instead.',
+)
 class DeepSeekErrorHandler {
   /// Handle DeepSeek-specific errors from API responses
   static LLMError handleDeepSeekError(

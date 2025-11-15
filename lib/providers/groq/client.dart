@@ -9,15 +9,15 @@ import '../../utils/utf8_stream_decoder.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
 
-/// Core Groq HTTP client shared across all capability modules
+/// Core Groq HTTP client (legacy).
 ///
-/// This class provides the foundational HTTP functionality that all
-/// Groq capability implementations can use. It handles:
-/// - Authentication and headers (OpenAI-compatible)
-/// - Request/response processing
-/// - Error handling
-/// - SSE stream parsing
-/// - Provider-specific configurations
+/// New code should prefer the `GroqProvider` implementation from the
+/// `llm_dart_groq` subpackage, which uses the shared OpenAI-compatible
+/// client. This client is kept only for backwards compatibility and tests.
+@Deprecated(
+  'GroqClient is kept for backwards compatibility. '
+  'Use GroqProvider from the llm_dart_groq package instead.',
+)
 class GroqClient {
   final GroqConfig config;
   final Logger logger = Logger('GroqClient');

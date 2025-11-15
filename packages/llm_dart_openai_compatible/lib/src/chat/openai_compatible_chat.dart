@@ -218,7 +218,15 @@ class OpenAICompatibleChat implements ChatCapability {
       }
     }
 
-    return _OpenAICompatibleChatResponse(responseData, thinkingContent);
+    final warnings = _buildWarningsForCall();
+    final metadata = _buildMetadataForCall();
+
+    return _OpenAICompatibleChatResponse(
+      responseData,
+      thinkingContent,
+      warnings,
+      metadata,
+    );
   }
 
   List<ChatStreamEvent> _parseStreamEvents(String chunk) {
@@ -314,14 +322,22 @@ class OpenAICompatibleChat implements ChatCapability {
       final thinkingContent =
           thinkingBuffer.isNotEmpty ? thinkingBuffer.toString() : null;
 
-      final response = _OpenAICompatibleChatResponse({
-        'choices': [
-          {
-            'message': {'content': '', 'role': 'assistant'},
-          },
-        ],
-        if (usage != null) 'usage': usage,
-      }, thinkingContent);
+      final warnings = _buildWarningsForCall();
+      final metadata = _buildMetadataForCall();
+
+      final response = _OpenAICompatibleChatResponse(
+        {
+          'choices': [
+            {
+              'message': {'content': '', 'role': 'assistant'},
+            },
+          ],
+          if (usage != null) 'usage': usage,
+        },
+        thinkingContent,
+        warnings,
+        metadata,
+      );
 
       events.add(CompletionEvent(response));
       _resetStreamState();
@@ -329,13 +345,69 @@ class OpenAICompatibleChat implements ChatCapability {
 
     return events;
   }
+
+  /// Build non-fatal warnings for this call based on the current configuration.
+  ///
+  /// Today this focuses on reasoning models where certain parameters
+  /// (temperature, top_p) are accepted but have no effect.
+  List<CallWarning> _buildWarningsForCall() {
+    final warnings = <CallWarning>[];
+
+    if (config.temperature != null &&
+        ReasoningUtils.shouldDisableTemperature(config.model)) {
+      warnings.add(
+        CallWarning(
+          code: 'PARAMETER_NO_EFFECT',
+          message:
+              'temperature has no effect for reasoning model ${config.model}',
+          details: {
+            'parameter': 'temperature',
+            'model': config.model,
+            'providerId': config.providerId,
+          },
+        ),
+      );
+    }
+
+    if (config.topP != null && ReasoningUtils.shouldDisableTopP(config.model)) {
+      warnings.add(
+        CallWarning(
+          code: 'PARAMETER_NO_EFFECT',
+          message: 'top_p has no effect for reasoning model ${config.model}',
+          details: {
+            'parameter': 'top_p',
+            'model': config.model,
+            'providerId': config.providerId,
+          },
+        ),
+      );
+    }
+
+    return warnings;
+  }
+
+  /// Build provider-agnostic metadata for this call.
+  Map<String, dynamic>? _buildMetadataForCall() {
+    return {
+      'providerId': config.providerId,
+      'model': config.model,
+    };
+  }
 }
 
 class _OpenAICompatibleChatResponse implements ChatResponse {
   final Map<String, dynamic> _rawResponse;
   final String? _thinkingContent;
+  final List<CallWarning> _warnings;
+  final Map<String, dynamic>? _metadata;
 
-  _OpenAICompatibleChatResponse(this._rawResponse, [this._thinkingContent]);
+  _OpenAICompatibleChatResponse(
+    this._rawResponse, [
+    this._thinkingContent,
+    List<CallWarning> warnings = const [],
+    Map<String, dynamic>? metadata,
+  ])  : _warnings = warnings,
+        _metadata = metadata;
 
   @override
   String? get text {
@@ -380,10 +452,10 @@ class _OpenAICompatibleChatResponse implements ChatResponse {
   String? get thinking => _thinkingContent;
 
   @override
-  List<CallWarning> get warnings => const [];
+  List<CallWarning> get warnings => _warnings;
 
   @override
-  Map<String, dynamic>? get metadata => null;
+  Map<String, dynamic>? get metadata => _metadata;
 
   @override
   String toString() {

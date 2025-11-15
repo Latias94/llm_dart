@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 
 void main() {
   group('Provider Client Dio Configuration Tests', () {
@@ -129,7 +130,7 @@ void main() {
           'should use unified HTTP configuration when originalConfig is available',
           () {
         final config = GroqConfig.fromLLMConfig(baseConfig);
-        final client = GroqClient(config);
+        final client = OpenAICompatibleClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl, equals('https://api.example.com'));
@@ -146,7 +147,7 @@ void main() {
           baseUrl: 'https://api.groq.com/openai/v1/',
           model: 'llama-3.3-70b-versatile',
         );
-        final client = GroqClient(config);
+        final client = OpenAICompatibleClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl,

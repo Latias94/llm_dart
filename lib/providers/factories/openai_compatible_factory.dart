@@ -131,8 +131,7 @@ class OpenAICompatibleProviderFactory
 
   /// Create a specific factory by provider ID
   static OpenAICompatibleProviderFactory? createFactory(String providerId) {
-    final config =
-        OpenAICompatibleProviderProfiles.getConfig(providerId);
+    final config = OpenAICompatibleProviderProfiles.getConfig(providerId);
     if (config == null) return null;
 
     return OpenAICompatibleProviderFactory(config);

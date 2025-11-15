@@ -536,8 +536,7 @@ class OpenAIProvider
   }
 
   @override
-  Future<ListAssistantsResponse> listAssistants(
-      [ListAssistantsQuery? query]) {
+  Future<ListAssistantsResponse> listAssistants([ListAssistantsQuery? query]) {
     return _assistants.listAssistants(query);
   }
 

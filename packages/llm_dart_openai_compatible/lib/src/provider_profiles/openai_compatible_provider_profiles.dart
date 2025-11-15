@@ -27,9 +27,7 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
     final thinkingBudgetTokens =
         config.getExtension<int>('thinkingBudgetTokens');
 
-    if (!reasoning &&
-        includeThoughts == null &&
-        thinkingBudgetTokens == null) {
+    if (!reasoning && includeThoughts == null && thinkingBudgetTokens == null) {
       return;
     }
 
@@ -367,4 +365,3 @@ class OpenAICompatibleProviderProfiles {
     return config?.modelConfigs[model];
   }
 }
-
