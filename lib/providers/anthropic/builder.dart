@@ -36,7 +36,7 @@ class AnthropicBuilder {
   ///     .build();
   /// ```
   AnthropicBuilder metadata(Map<String, dynamic> data) {
-    _baseBuilder.extension('metadata', data);
+    _baseBuilder.extension(LLMConfigKeys.metadata, data);
     return this;
   }
 
@@ -54,7 +54,7 @@ class AnthropicBuilder {
   ///     .build();
   /// ```
   AnthropicBuilder container(String containerId) {
-    _baseBuilder.extension('container', containerId);
+    _baseBuilder.extension(LLMConfigKeys.container, containerId);
     return this;
   }
 
@@ -82,7 +82,7 @@ class AnthropicBuilder {
   ///     .build();
   /// ```
   AnthropicBuilder mcpServers(List<AnthropicMCPServer> servers) {
-    _baseBuilder.extension('mcpServers', servers);
+    _baseBuilder.extension(LLMConfigKeys.mcpServers, servers);
     return this;
   }
 

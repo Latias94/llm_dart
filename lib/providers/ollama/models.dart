@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 
 import '../../core/capability.dart';
-import '../../core/llm_error.dart';
 import '../../utils/http_error_handler.dart';
 import '../../models/chat_models.dart';
 import 'client.dart';

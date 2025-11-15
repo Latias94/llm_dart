@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../config/anthropic_config.dart';
@@ -60,7 +61,7 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
       betaFeatures.add('files-api-2025-04-14');
     }
 
-    final mcpServers = config.getExtension<List>('mcpServers');
+    final mcpServers = config.getExtension<List>(LLMConfigKeys.mcpServers);
     if (mcpServers != null && mcpServers.isNotEmpty) {
       betaFeatures.add('mcp-client-2025-04-04');
     }

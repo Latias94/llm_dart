@@ -46,11 +46,14 @@ class XAIConfig {
   }) : _originalConfig = originalConfig;
 
   factory XAIConfig.fromLLMConfig(LLMConfig config) {
-    SearchParameters? searchParams =
-        config.getExtension<SearchParameters>('searchParameters');
-    bool? liveSearchEnabled = config.getExtension<bool>('liveSearch');
+    SearchParameters? searchParams = config.getExtension<SearchParameters>(
+      LLMConfigKeys.searchParameters,
+    );
+    bool? liveSearchEnabled =
+        config.getExtension<bool>(LLMConfigKeys.liveSearch);
 
-    final webSearchEnabled = config.getExtension<bool>('webSearchEnabled');
+    final webSearchEnabled =
+        config.getExtension<bool>(LLMConfigKeys.webSearchEnabled);
     if (webSearchEnabled == true &&
         searchParams == null &&
         liveSearchEnabled != true) {
@@ -59,7 +62,7 @@ class XAIConfig {
     }
 
     final dynamic webSearchConfig =
-        config.getExtension<dynamic>('webSearchConfig');
+        config.getExtension<dynamic>(LLMConfigKeys.webSearchConfig);
     if (webSearchConfig != null && searchParams == null) {
       try {
         final sourceType =
@@ -98,10 +101,15 @@ class XAIConfig {
       topK: config.topK,
       tools: config.tools,
       toolChoice: config.toolChoice,
-      jsonSchema: config.getExtension<StructuredOutputFormat>('jsonSchema'),
-      embeddingEncodingFormat:
-          config.getExtension<String>('embeddingEncodingFormat'),
-      embeddingDimensions: config.getExtension<int>('embeddingDimensions'),
+      jsonSchema: config.getExtension<StructuredOutputFormat>(
+        LLMConfigKeys.jsonSchema,
+      ),
+      embeddingEncodingFormat: config.getExtension<String>(
+        LLMConfigKeys.embeddingEncodingFormat,
+      ),
+      embeddingDimensions: config.getExtension<int>(
+        LLMConfigKeys.embeddingDimensions,
+      ),
       searchParameters: searchParams,
       liveSearch: liveSearchEnabled,
       originalConfig: config,

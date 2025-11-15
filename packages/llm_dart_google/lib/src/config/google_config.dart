@@ -125,22 +125,28 @@ class GoogleConfig {
       tools: config.tools,
       toolChoice: config.toolChoice,
       reasoningEffort: ReasoningEffort.fromString(
-        config.getExtension<String>('reasoningEffort'),
+        config.getExtension<String>(LLMConfigKeys.reasoningEffort),
       ),
-      thinkingBudgetTokens: config.getExtension<int>('thinkingBudgetTokens'),
-      includeThoughts: config.getExtension<bool>('includeThoughts'),
-      enableImageGeneration: config.getExtension<bool>('enableImageGeneration'),
+      thinkingBudgetTokens:
+          config.getExtension<int>(LLMConfigKeys.thinkingBudgetTokens),
+      includeThoughts: config.getExtension<bool>(LLMConfigKeys.includeThoughts),
+      enableImageGeneration:
+          config.getExtension<bool>(LLMConfigKeys.enableImageGeneration),
       responseModalities:
-          config.getExtension<List<String>>('responseModalities'),
-      safetySettings:
-          config.getExtension<List<SafetySetting>>('safetySettings'),
+          config.getExtension<List<String>>(LLMConfigKeys.responseModalities),
+      safetySettings: config
+          .getExtension<List<SafetySetting>>(LLMConfigKeys.safetySettings),
       maxInlineDataSize:
-          config.getExtension<int>('maxInlineDataSize') ?? 20 * 1024 * 1024,
-      candidateCount: config.getExtension<int>('candidateCount'),
-      stopSequences: config.getExtension<List<String>>('stopSequences'),
-      embeddingTaskType: config.getExtension<String>('embeddingTaskType'),
-      embeddingTitle: config.getExtension<String>('embeddingTitle'),
-      embeddingDimensions: config.getExtension<int>('embeddingDimensions'),
+          config.getExtension<int>(LLMConfigKeys.maxInlineDataSize) ??
+              20 * 1024 * 1024,
+      candidateCount: config.getExtension<int>(LLMConfigKeys.candidateCount),
+      stopSequences:
+          config.getExtension<List<String>>(LLMConfigKeys.stopSequences),
+      embeddingTaskType:
+          config.getExtension<String>(LLMConfigKeys.embeddingTaskType),
+      embeddingTitle: config.getExtension<String>(LLMConfigKeys.embeddingTitle),
+      embeddingDimensions:
+          config.getExtension<int>(LLMConfigKeys.embeddingDimensions),
       originalConfig: config,
     );
   }

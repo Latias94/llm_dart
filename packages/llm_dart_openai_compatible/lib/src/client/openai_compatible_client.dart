@@ -5,7 +5,6 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../config/openai_compatible_config.dart';
-import '../utils/openai_compatible_utf8_stream_decoder.dart';
 
 /// Generic OpenAI-compatible HTTP client shared across all compatible providers.
 class OpenAICompatibleClient {

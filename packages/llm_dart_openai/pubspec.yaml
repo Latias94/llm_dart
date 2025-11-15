@@ -11,6 +11,7 @@ dependencies:
   logging: ^1.2.0
   llm_dart_core: ^0.11.0-rc.1
   llm_dart_provider_utils: ^0.11.0-rc.1
+  http_parser: ^4.1.2
 
 dev_dependencies:
   lints: ^6.0.0

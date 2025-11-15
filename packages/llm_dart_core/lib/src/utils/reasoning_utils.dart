@@ -139,6 +139,11 @@ class ReasoningUtils {
   }
 
   /// Get reasoning effort parameter for different providers
+  @Deprecated(
+    'Use provider-specific reasoning helpers instead '
+    '(e.g., OpenAIReasoningUtils or OpenAICompatibleReasoningUtils). '
+    'This method will be removed in a future major release.',
+  )
   static Map<String, dynamic> getReasoningEffortParams({
     required String providerId,
     required String model,
@@ -203,6 +208,11 @@ class ReasoningUtils {
   }
 
   /// Get appropriate max tokens parameter for reasoning models
+  @Deprecated(
+    'Use provider-specific reasoning helpers instead '
+    '(e.g., OpenAIReasoningUtils or OpenAICompatibleReasoningUtils). '
+    'This method will be removed in a future major release.',
+  )
   static Map<String, dynamic> getMaxTokensParams({
     required String model,
     int? maxTokens,
@@ -223,6 +233,11 @@ class ReasoningUtils {
   }
 
   /// Check if temperature should be disabled for reasoning models
+  @Deprecated(
+    'Use provider-specific reasoning helpers instead '
+    '(e.g., OpenAIReasoningUtils.shouldDisableTemperature). '
+    'This method will be removed in a future major release.',
+  )
   static bool shouldDisableTemperature(String model) {
     // OpenAI reasoning models don't support temperature
     if (isOpenAIReasoningModel(model)) {
@@ -235,6 +250,11 @@ class ReasoningUtils {
   }
 
   /// Check if top_p should be disabled for reasoning models
+  @Deprecated(
+    'Use provider-specific reasoning helpers instead '
+    '(e.g., OpenAIReasoningUtils.shouldDisableTopP). '
+    'This method will be removed in a future major release.',
+  )
   static bool shouldDisableTopP(String model) {
     // OpenAI reasoning models don't support top_p
     if (isOpenAIReasoningModel(model)) {

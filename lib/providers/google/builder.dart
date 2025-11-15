@@ -1,6 +1,5 @@
 import '../../builder/llm_builder.dart';
 import '../../core/capability.dart';
-import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import 'config.dart';
 import 'tts.dart';
@@ -32,7 +31,7 @@ class GoogleLLMBuilder {
   /// - 'FACT_VERIFICATION' - For fact checking
   /// - 'CODE_RETRIEVAL_QUERY' - For code search queries
   GoogleLLMBuilder embeddingTaskType(String taskType) {
-    _baseBuilder.extension('embeddingTaskType', taskType);
+    _baseBuilder.extension(LLMConfigKeys.embeddingTaskType, taskType);
     return this;
   }
 
@@ -40,7 +39,7 @@ class GoogleLLMBuilder {
   ///
   /// Providing a title can improve embedding quality for retrieval tasks.
   GoogleLLMBuilder embeddingTitle(String title) {
-    _baseBuilder.extension('embeddingTitle', title);
+    _baseBuilder.extension(LLMConfigKeys.embeddingTitle, title);
     return this;
   }
 
@@ -49,7 +48,7 @@ class GoogleLLMBuilder {
   /// If set, the output embedding will be truncated to this dimension.
   /// Only supported by newer models (not models/embedding-001).
   GoogleLLMBuilder embeddingDimensions(int dimensions) {
-    _baseBuilder.extension('embeddingDimensions', dimensions);
+    _baseBuilder.extension(LLMConfigKeys.embeddingDimensions, dimensions);
     return this;
   }
 
@@ -57,55 +56,55 @@ class GoogleLLMBuilder {
   ///
   /// Valid values: ReasoningEffort.low, ReasoningEffort.medium, ReasoningEffort.high
   GoogleLLMBuilder reasoningEffort(ReasoningEffort effort) {
-    _baseBuilder.extension('reasoningEffort', effort);
+    _baseBuilder.extension(LLMConfigKeys.reasoningEffort, effort);
     return this;
   }
 
   /// Sets thinking budget tokens for reasoning models
   GoogleLLMBuilder thinkingBudgetTokens(int tokens) {
-    _baseBuilder.extension('thinkingBudgetTokens', tokens);
+    _baseBuilder.extension(LLMConfigKeys.thinkingBudgetTokens, tokens);
     return this;
   }
 
   /// Enables or disables including thoughts in the response
   GoogleLLMBuilder includeThoughts(bool include) {
-    _baseBuilder.extension('includeThoughts', include);
+    _baseBuilder.extension(LLMConfigKeys.includeThoughts, include);
     return this;
   }
 
   /// Enables image generation capability
   GoogleLLMBuilder enableImageGeneration(bool enable) {
-    _baseBuilder.extension('enableImageGeneration', enable);
+    _baseBuilder.extension(LLMConfigKeys.enableImageGeneration, enable);
     return this;
   }
 
   /// Sets response modalities (e.g., ['TEXT', 'IMAGE'])
   GoogleLLMBuilder responseModalities(List<String> modalities) {
-    _baseBuilder.extension('responseModalities', modalities);
+    _baseBuilder.extension(LLMConfigKeys.responseModalities, modalities);
     return this;
   }
 
   /// Sets safety settings for content filtering
   GoogleLLMBuilder safetySettings(List<SafetySetting> settings) {
-    _baseBuilder.extension('safetySettings', settings);
+    _baseBuilder.extension(LLMConfigKeys.safetySettings, settings);
     return this;
   }
 
   /// Sets maximum inline data size (default: 20MB)
   GoogleLLMBuilder maxInlineDataSize(int size) {
-    _baseBuilder.extension('maxInlineDataSize', size);
+    _baseBuilder.extension(LLMConfigKeys.maxInlineDataSize, size);
     return this;
   }
 
   /// Sets candidate count for response generation
   GoogleLLMBuilder candidateCount(int count) {
-    _baseBuilder.extension('candidateCount', count);
+    _baseBuilder.extension(LLMConfigKeys.candidateCount, count);
     return this;
   }
 
   /// Sets stop sequences for response generation
   GoogleLLMBuilder stopSequences(List<String> sequences) {
-    _baseBuilder.extension('stopSequences', sequences);
+    _baseBuilder.extension(LLMConfigKeys.stopSequences, sequences);
     return this;
   }
 
@@ -230,7 +229,7 @@ class GoogleLLMBuilder {
     if (model != null) {
       ttsModel(model);
     }
-    _baseBuilder.extension('defaultVoiceName', voiceName);
+    _baseBuilder.extension(LLMConfigKeys.defaultVoiceName, voiceName);
     return this;
   }
 
@@ -243,7 +242,8 @@ class GoogleLLMBuilder {
       ttsModel(model);
     }
     if (defaultSpeakerVoices != null) {
-      _baseBuilder.extension('defaultSpeakerVoices', defaultSpeakerVoices);
+      _baseBuilder.extension(
+          LLMConfigKeys.defaultSpeakerVoices, defaultSpeakerVoices);
     }
     return this;
   }
@@ -256,7 +256,7 @@ class GoogleLLMBuilder {
 
   /// Configure TTS with specific voice
   GoogleLLMBuilder voice(String voiceName) {
-    _baseBuilder.extension('defaultVoiceName', voiceName);
+    _baseBuilder.extension(LLMConfigKeys.defaultVoiceName, voiceName);
     return this;
   }
 }

@@ -74,7 +74,7 @@ class DeepSeekConfig {
       tools: config.tools,
       toolChoice: config.toolChoice,
       // DeepSeek-specific parameters from extensions
-      logprobs: config.getExtension<bool>('logprobs'),
+      logprobs: config.getExtension<bool>(LLMConfigKeys.logprobs),
       topLogprobs: config.getExtension<int>('top_logprobs'),
       frequencyPenalty: config.getExtension<double>('frequency_penalty'),
       presencePenalty: config.getExtension<double>('presence_penalty'),

@@ -65,7 +65,7 @@ void main() {
           baseUrl: 'https://api.x.ai/v1/',
           model: 'grok-3',
           extensions: {
-            'liveSearch': true,
+            LLMConfigKeys.liveSearch: true,
           },
         );
 
@@ -89,9 +89,9 @@ void main() {
           tools: [],
           toolChoice: const AutoToolChoice(),
           extensions: {
-            'embeddingEncodingFormat': 'float',
-            'embeddingDimensions': 1536,
-            'liveSearch': true,
+            LLMConfigKeys.embeddingEncodingFormat: 'float',
+            LLMConfigKeys.embeddingDimensions: 1536,
+            LLMConfigKeys.liveSearch: true,
           },
         );
 

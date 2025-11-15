@@ -1,3 +1,5 @@
+import '../core/config.dart';
+
 /// Provider-specific configuration builder
 class ProviderConfig {
   final Map<String, dynamic> _config = {};
@@ -22,33 +24,41 @@ class ProviderConfig {
 
   // OpenAI-specific configuration methods
   ProviderConfig frequencyPenalty(double penalty) =>
-      extension('frequencyPenalty', penalty);
+      extension(LLMConfigKeys.frequencyPenalty, penalty);
   ProviderConfig presencePenalty(double penalty) =>
-      extension('presencePenalty', penalty);
+      extension(LLMConfigKeys.presencePenalty, penalty);
   ProviderConfig logitBias(Map<String, double> bias) =>
-      extension('logitBias', bias);
-  ProviderConfig seed(int seedValue) => extension('seed', seedValue);
+      extension(LLMConfigKeys.logitBias, bias);
+  ProviderConfig seed(int seedValue) =>
+      extension(LLMConfigKeys.seed, seedValue);
   ProviderConfig parallelToolCalls(bool enabled) =>
-      extension('parallelToolCalls', enabled);
-  ProviderConfig logprobs(bool enabled) => extension('logprobs', enabled);
-  ProviderConfig topLogprobs(int count) => extension('topLogprobs', count);
+      extension(LLMConfigKeys.parallelToolCalls, enabled);
+  ProviderConfig logprobs(bool enabled) =>
+      extension(LLMConfigKeys.logprobs, enabled);
+  ProviderConfig topLogprobs(int count) =>
+      extension(LLMConfigKeys.topLogprobs, count);
 
   // Anthropic-specific configuration methods
-  ProviderConfig reasoning(bool enable) => extension('reasoning', enable);
+  ProviderConfig reasoning(bool enable) =>
+      extension(LLMConfigKeys.reasoning, enable);
   ProviderConfig thinkingBudgetTokens(int tokens) =>
-      extension('thinkingBudgetTokens', tokens);
+      extension(LLMConfigKeys.thinkingBudgetTokens, tokens);
   ProviderConfig interleavedThinking(bool enable) =>
-      extension('interleavedThinking', enable);
+      extension(LLMConfigKeys.interleavedThinking, enable);
   ProviderConfig metadata(Map<String, dynamic> data) =>
-      extension('metadata', data);
+      extension(LLMConfigKeys.metadata, data);
 
   // Ollama-specific configuration methods
   ProviderConfig numCtx(int contextLength) =>
-      extension('numCtx', contextLength);
-  ProviderConfig numGpu(int gpuLayers) => extension('numGpu', gpuLayers);
-  ProviderConfig numThread(int threads) => extension('numThread', threads);
-  ProviderConfig numa(bool enabled) => extension('numa', enabled);
-  ProviderConfig numBatch(int batchSize) => extension('numBatch', batchSize);
-  ProviderConfig keepAlive(String duration) => extension('keepAlive', duration);
-  ProviderConfig raw(bool enabled) => extension('raw', enabled);
+      extension(LLMConfigKeys.numCtx, contextLength);
+  ProviderConfig numGpu(int gpuLayers) =>
+      extension(LLMConfigKeys.numGpu, gpuLayers);
+  ProviderConfig numThread(int threads) =>
+      extension(LLMConfigKeys.numThread, threads);
+  ProviderConfig numa(bool enabled) => extension(LLMConfigKeys.numa, enabled);
+  ProviderConfig numBatch(int batchSize) =>
+      extension(LLMConfigKeys.numBatch, batchSize);
+  ProviderConfig keepAlive(String duration) =>
+      extension(LLMConfigKeys.keepAlive, duration);
+  ProviderConfig raw(bool enabled) => extension(LLMConfigKeys.raw, enabled);
 }

@@ -238,37 +238,38 @@ class LLMBuilder {
   /// Sets the reasoning effort for models that support it (e.g., OpenAI o1, Gemini)
   /// Valid values: ReasoningEffort.low, ReasoningEffort.medium, ReasoningEffort.high, or null to disable
   LLMBuilder reasoningEffort(ReasoningEffort? effort) {
-    _config = _config.withExtension('reasoningEffort', effort?.value);
+    _config =
+        _config.withExtension(LLMConfigKeys.reasoningEffort, effort?.value);
     return this;
   }
 
   /// Sets structured output schema for JSON responses
   LLMBuilder jsonSchema(StructuredOutputFormat schema) {
-    _config = _config.withExtension('jsonSchema', schema);
+    _config = _config.withExtension(LLMConfigKeys.jsonSchema, schema);
     return this;
   }
 
   /// Sets voice for text-to-speech (OpenAI providers)
   LLMBuilder voice(String voiceName) {
-    _config = _config.withExtension('voice', voiceName);
+    _config = _config.withExtension(LLMConfigKeys.voice, voiceName);
     return this;
   }
 
   /// Enables reasoning/thinking for supported providers (Anthropic, OpenAI o1, Ollama)
   LLMBuilder reasoning(bool enable) {
-    _config = _config.withExtension('reasoning', enable);
+    _config = _config.withExtension(LLMConfigKeys.reasoning, enable);
     return this;
   }
 
   /// Sets thinking budget tokens for Anthropic extended thinking
   LLMBuilder thinkingBudgetTokens(int tokens) {
-    _config = _config.withExtension('thinkingBudgetTokens', tokens);
+    _config = _config.withExtension(LLMConfigKeys.thinkingBudgetTokens, tokens);
     return this;
   }
 
   /// Enables interleaved thinking for Anthropic (Claude 4 models only)
   LLMBuilder interleavedThinking(bool enable) {
-    _config = _config.withExtension('interleavedThinking', enable);
+    _config = _config.withExtension(LLMConfigKeys.interleavedThinking, enable);
     return this;
   }
 
@@ -313,9 +314,9 @@ class LLMBuilder {
 
   /// Convenience methods for common extensions
   LLMBuilder embeddingEncodingFormat(String format) =>
-      extension('embeddingEncodingFormat', format);
+      extension(LLMConfigKeys.embeddingEncodingFormat, format);
   LLMBuilder embeddingDimensions(int dimensions) =>
-      extension('embeddingDimensions', dimensions);
+      extension(LLMConfigKeys.embeddingDimensions, dimensions);
 
   /// Web Search configuration methods
   ///
@@ -339,7 +340,8 @@ class LLMBuilder {
   ///     .enableWebSearch()
   ///     .build();
   /// ```
-  LLMBuilder enableWebSearch() => extension('webSearchEnabled', true);
+  LLMBuilder enableWebSearch() =>
+      extension(LLMConfigKeys.webSearchEnabled, true);
 
   /// Configures web search with detailed options
   ///
@@ -434,7 +436,7 @@ class LLMBuilder {
       mode: 'auto',
       searchType: WebSearchType.news,
     );
-    return extension('webSearchConfig', config);
+    return extension(LLMConfigKeys.webSearchConfig, config);
   }
 
   /// Configures search location for localized results
@@ -452,7 +454,7 @@ class LLMBuilder {
   ///     .build();
   /// ```
   LLMBuilder searchLocation(WebSearchLocation location) {
-    return extension('webSearchLocation', location);
+    return extension(LLMConfigKeys.webSearchLocation, location);
   }
 
   /// Advanced web search configuration with full control
@@ -502,53 +504,61 @@ class LLMBuilder {
       toDate: toDate,
       searchType: searchType,
     );
-    return extension('webSearchConfig', config);
+    return extension(LLMConfigKeys.webSearchConfig, config);
   }
 
   /// Image generation configuration methods
-  LLMBuilder imageSize(String size) => extension('imageSize', size);
-  LLMBuilder batchSize(int size) => extension('batchSize', size);
-  LLMBuilder imageSeed(String seed) => extension('imageSeed', seed);
+  LLMBuilder imageSize(String size) => extension(LLMConfigKeys.imageSize, size);
+  LLMBuilder batchSize(int size) => extension(LLMConfigKeys.batchSize, size);
+  LLMBuilder imageSeed(String seed) => extension(LLMConfigKeys.imageSeed, seed);
   LLMBuilder numInferenceSteps(int steps) =>
-      extension('numInferenceSteps', steps);
-  LLMBuilder guidanceScale(double scale) => extension('guidanceScale', scale);
+      extension(LLMConfigKeys.numInferenceSteps, steps);
+  LLMBuilder guidanceScale(double scale) =>
+      extension(LLMConfigKeys.guidanceScale, scale);
   LLMBuilder promptEnhancement(bool enabled) =>
-      extension('promptEnhancement', enabled);
+      extension(LLMConfigKeys.promptEnhancement, enabled);
 
   /// Audio configuration methods
-  LLMBuilder audioFormat(String format) => extension('audioFormat', format);
-  LLMBuilder audioQuality(String quality) => extension('audioQuality', quality);
-  LLMBuilder sampleRate(int rate) => extension('sampleRate', rate);
-  LLMBuilder languageCode(String code) => extension('languageCode', code);
+  LLMBuilder audioFormat(String format) =>
+      extension(LLMConfigKeys.audioFormat, format);
+  LLMBuilder audioQuality(String quality) =>
+      extension(LLMConfigKeys.audioQuality, quality);
+  LLMBuilder sampleRate(int rate) => extension(LLMConfigKeys.sampleRate, rate);
+  LLMBuilder languageCode(String code) =>
+      extension(LLMConfigKeys.languageCode, code);
 
   /// Advanced audio configuration methods
   LLMBuilder audioProcessingMode(String mode) =>
-      extension('audioProcessingMode', mode);
+      extension(LLMConfigKeys.audioProcessingMode, mode);
   LLMBuilder includeTimestamps(bool enabled) =>
-      extension('includeTimestamps', enabled);
+      extension(LLMConfigKeys.includeTimestamps, enabled);
   LLMBuilder timestampGranularity(String granularity) =>
-      extension('timestampGranularity', granularity);
+      extension(LLMConfigKeys.timestampGranularity, granularity);
   LLMBuilder textNormalization(String mode) =>
-      extension('textNormalization', mode);
+      extension(LLMConfigKeys.textNormalization, mode);
   LLMBuilder instructions(String instructions) =>
-      extension('instructions', instructions);
-  LLMBuilder previousText(String text) => extension('previousText', text);
-  LLMBuilder nextText(String text) => extension('nextText', text);
-  LLMBuilder audioSeed(int seed) => extension('audioSeed', seed);
-  LLMBuilder enableLogging(bool enabled) => extension('enableLogging', enabled);
+      extension(LLMConfigKeys.instructions, instructions);
+  LLMBuilder previousText(String text) =>
+      extension(LLMConfigKeys.previousText, text);
+  LLMBuilder nextText(String text) => extension(LLMConfigKeys.nextText, text);
+  LLMBuilder audioSeed(int seed) => extension(LLMConfigKeys.audioSeed, seed);
+  LLMBuilder enableLogging(bool enabled) =>
+      extension(LLMConfigKeys.enableLogging, enabled);
   LLMBuilder optimizeStreamingLatency(int level) =>
-      extension('optimizeStreamingLatency', level);
+      extension(LLMConfigKeys.optimizeStreamingLatency, level);
 
   /// STT-specific configuration methods
-  LLMBuilder diarize(bool enabled) => extension('diarize', enabled);
-  LLMBuilder numSpeakers(int count) => extension('numSpeakers', count);
+  LLMBuilder diarize(bool enabled) => extension(LLMConfigKeys.diarize, enabled);
+  LLMBuilder numSpeakers(int count) =>
+      extension(LLMConfigKeys.numSpeakers, count);
   LLMBuilder tagAudioEvents(bool enabled) =>
-      extension('tagAudioEvents', enabled);
-  LLMBuilder webhook(bool enabled) => extension('webhook', enabled);
-  LLMBuilder prompt(String prompt) => extension('prompt', prompt);
+      extension(LLMConfigKeys.tagAudioEvents, enabled);
+  LLMBuilder webhook(bool enabled) => extension(LLMConfigKeys.webhook, enabled);
+  LLMBuilder prompt(String prompt) => extension(LLMConfigKeys.prompt, prompt);
   LLMBuilder responseFormat(String format) =>
-      extension('responseFormat', format);
-  LLMBuilder cloudStorageUrl(String url) => extension('cloudStorageUrl', url);
+      extension(LLMConfigKeys.responseFormat, format);
+  LLMBuilder cloudStorageUrl(String url) =>
+      extension(LLMConfigKeys.cloudStorageUrl, url);
 
   /// Builds and returns a configured LLM provider instance
   ///
@@ -812,9 +822,9 @@ class LLMBuilder {
 
     // Automatically enable Responses API if not already enabled
     final isResponsesAPIEnabled =
-        _config.getExtension<bool>('useResponsesAPI') ?? false;
+        _config.getExtension<bool>(LLMConfigKeys.useResponsesAPI) ?? false;
     if (!isResponsesAPIEnabled) {
-      extension('useResponsesAPI', true);
+      extension(LLMConfigKeys.useResponsesAPI, true);
     }
 
     final provider = await build();

@@ -54,11 +54,13 @@ class ElevenLabsProviderFactory extends BaseProviderFactory<ChatCapability> {
       model: config.model,
       timeout: config.timeout,
       // ElevenLabs-specific extensions using base class method
-      voiceId: getExtension<String>(config, 'voiceId'),
-      stability: getExtension<double>(config, 'stability'),
-      similarityBoost: getExtension<double>(config, 'similarityBoost'),
-      style: getExtension<double>(config, 'style'),
-      useSpeakerBoost: getExtension<bool>(config, 'useSpeakerBoost'),
+      voiceId: getExtension<String>(config, LLMConfigKeys.voiceId),
+      stability: getExtension<double>(config, LLMConfigKeys.stability),
+      similarityBoost:
+          getExtension<double>(config, LLMConfigKeys.similarityBoost),
+      style: getExtension<double>(config, LLMConfigKeys.style),
+      useSpeakerBoost:
+          getExtension<bool>(config, LLMConfigKeys.useSpeakerBoost),
       originalConfig: config,
     );
   }

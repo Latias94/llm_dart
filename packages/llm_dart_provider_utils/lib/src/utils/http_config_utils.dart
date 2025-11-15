@@ -41,7 +41,8 @@ class HttpConfigUtils {
     LLMConfig config,
     Duration? defaultTimeout,
   ) {
-    final customTimeout = config.getExtension<Duration>('connectionTimeout');
+    final customTimeout =
+        config.getExtension<Duration>(LLMConfigKeys.connectionTimeout);
     return customTimeout ??
         config.timeout ??
         defaultTimeout ??
@@ -52,7 +53,8 @@ class HttpConfigUtils {
     LLMConfig config,
     Duration? defaultTimeout,
   ) {
-    final customTimeout = config.getExtension<Duration>('receiveTimeout');
+    final customTimeout =
+        config.getExtension<Duration>(LLMConfigKeys.receiveTimeout);
     return customTimeout ??
         config.timeout ??
         defaultTimeout ??
@@ -63,7 +65,8 @@ class HttpConfigUtils {
     LLMConfig config,
     Duration? defaultTimeout,
   ) {
-    final customTimeout = config.getExtension<Duration>('sendTimeout');
+    final customTimeout =
+        config.getExtension<Duration>(LLMConfigKeys.sendTimeout);
     return customTimeout ??
         config.timeout ??
         defaultTimeout ??
@@ -75,7 +78,7 @@ class HttpConfigUtils {
     LLMConfig config,
   ) {
     final customHeaders =
-        config.getExtension<Map<String, String>>('customHeaders') ??
+        config.getExtension<Map<String, String>>(LLMConfigKeys.customHeaders) ??
             <String, String>{};
 
     return {
@@ -90,7 +93,7 @@ class HttpConfigUtils {
 
   static void _configureLogging(Dio dio, LLMConfig config) {
     final enableLogging =
-        config.getExtension<bool>('enableHttpLogging') ?? false;
+        config.getExtension<bool>(LLMConfigKeys.enableHttpLogging) ?? false;
 
     if (!enableLogging) return;
 
@@ -145,8 +148,9 @@ class HttpConfigUtils {
 
   static void validateHttpConfig(LLMConfig config) {
     final connectionTimeout =
-        config.getExtension<Duration>('connectionTimeout');
-    final receiveTimeout = config.getExtension<Duration>('receiveTimeout');
+        config.getExtension<Duration>(LLMConfigKeys.connectionTimeout);
+    final receiveTimeout =
+        config.getExtension<Duration>(LLMConfigKeys.receiveTimeout);
     final globalTimeout = config.timeout;
 
     if (connectionTimeout != null &&
@@ -162,7 +166,7 @@ class HttpConfigUtils {
     }
 
     final bypassSSL =
-        config.getExtension<bool>('bypassSSLVerification') ?? false;
+        config.getExtension<bool>(LLMConfigKeys.bypassSSLVerification) ?? false;
     if (bypassSSL) {
       if (isAdvancedHttpSupported) {
         _logger.warning(
@@ -175,7 +179,7 @@ class HttpConfigUtils {
       }
     }
 
-    final proxyUrl = config.getExtension<String>('httpProxy');
+    final proxyUrl = config.getExtension<String>(LLMConfigKeys.httpProxy);
     if (proxyUrl != null) {
       if (!isAdvancedHttpSupported) {
         _logger.warning(
@@ -188,7 +192,8 @@ class HttpConfigUtils {
       }
     }
 
-    final certificatePath = config.getExtension<String>('sslCertificate');
+    final certificatePath =
+        config.getExtension<String>(LLMConfigKeys.sslCertificate);
     if (certificatePath != null && !isAdvancedHttpSupported) {
       _logger.warning(
         '⚠️ Custom SSL certificate loading is not supported on this platform',

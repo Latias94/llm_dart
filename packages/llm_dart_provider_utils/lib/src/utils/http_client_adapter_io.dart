@@ -11,10 +11,11 @@ class HttpClientAdapterConfig {
 
   /// Configure HTTP client adapter with proxy and SSL settings.
   static void configureHttpClientAdapter(Dio dio, LLMConfig config) {
-    final proxyUrl = config.getExtension<String>('httpProxy');
+    final proxyUrl = config.getExtension<String>(LLMConfigKeys.httpProxy);
     final bypassSSL =
-        config.getExtension<bool>('bypassSSLVerification') ?? false;
-    final certificatePath = config.getExtension<String>('sslCertificate');
+        config.getExtension<bool>(LLMConfigKeys.bypassSSLVerification) ?? false;
+    final certificatePath =
+        config.getExtension<String>(LLMConfigKeys.sslCertificate);
 
     if ((proxyUrl != null && proxyUrl.isNotEmpty) ||
         bypassSSL ||

@@ -26,7 +26,7 @@ class OllamaBuilder {
   /// - Higher values: Better long-term memory, more GPU memory usage
   /// - Lower values: Less memory usage, shorter context retention
   OllamaBuilder numCtx(int contextLength) {
-    _baseBuilder.extension('numCtx', contextLength);
+    _baseBuilder.extension(LLMConfigKeys.numCtx, contextLength);
     return this;
   }
 
@@ -39,7 +39,7 @@ class OllamaBuilder {
   /// - -1: Load all layers on GPU (fastest, highest memory)
   /// - Positive number: Load specified number of layers on GPU
   OllamaBuilder numGpu(int gpuLayers) {
-    _baseBuilder.extension('numGpu', gpuLayers);
+    _baseBuilder.extension(LLMConfigKeys.numGpu, gpuLayers);
     return this;
   }
 
@@ -53,7 +53,7 @@ class OllamaBuilder {
   /// - Higher values: Better CPU utilization, more CPU usage
   /// - Lower values: Less CPU usage, potentially slower inference
   OllamaBuilder numThread(int threads) {
-    _baseBuilder.extension('numThread', threads);
+    _baseBuilder.extension(LLMConfigKeys.numThread, threads);
     return this;
   }
 
@@ -65,7 +65,7 @@ class OllamaBuilder {
   /// - true: Enable NUMA optimization (recommended for multi-socket systems)
   /// - false: Disable NUMA optimization (default)
   OllamaBuilder numa(bool enabled) {
-    _baseBuilder.extension('numa', enabled);
+    _baseBuilder.extension(LLMConfigKeys.numa, enabled);
     return this;
   }
 
@@ -79,7 +79,7 @@ class OllamaBuilder {
   /// - Higher values: Better throughput, more memory usage
   /// - Lower values: Less memory usage, potentially lower throughput
   OllamaBuilder numBatch(int batchSize) {
-    _baseBuilder.extension('numBatch', batchSize);
+    _baseBuilder.extension(LLMConfigKeys.numBatch, batchSize);
     return this;
   }
 
@@ -95,7 +95,7 @@ class OllamaBuilder {
   ///
   /// Examples: "30s", "5m", "1h", "24h"
   OllamaBuilder keepAlive(String duration) {
-    _baseBuilder.extension('keepAlive', duration);
+    _baseBuilder.extension(LLMConfigKeys.keepAlive, duration);
     return this;
   }
 
@@ -107,7 +107,7 @@ class OllamaBuilder {
   /// - true: Raw mode (no prompt formatting)
   /// - false: Normal mode with prompt templates (default)
   OllamaBuilder raw(bool enabled) {
-    _baseBuilder.extension('raw', enabled);
+    _baseBuilder.extension(LLMConfigKeys.raw, enabled);
     return this;
   }
 
@@ -188,7 +188,7 @@ class OllamaBuilder {
   /// - true: Enable reasoning mode
   /// - false: Disable reasoning mode (default)
   OllamaBuilder reasoning(bool enabled) {
-    _baseBuilder.extension('reasoning', enabled);
+    _baseBuilder.extension(LLMConfigKeys.reasoning, enabled);
     return this;
   }
 

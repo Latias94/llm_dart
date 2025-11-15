@@ -13,7 +13,8 @@ import 'package:llm_dart/providers/xai/dio_strategy.dart';
 import 'package:llm_dart/providers/groq/config.dart';
 import 'package:llm_dart/providers/groq/dio_strategy.dart';
 import 'package:llm_dart/providers/deepseek/config.dart';
-import 'package:llm_dart/providers/deepseek/dio_strategy.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart'
+    show DeepSeekDioStrategy;
 import 'package:llm_dart/providers/ollama/config.dart';
 import 'package:llm_dart/providers/ollama/dio_strategy.dart';
 import 'package:llm_dart/providers/phind/config.dart';

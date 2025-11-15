@@ -30,7 +30,7 @@ class ElevenLabsBuilder {
   ///     .build();
   /// ```
   ElevenLabsBuilder voiceId(String voiceId) {
-    _baseBuilder.extension('voiceId', voiceId);
+    _baseBuilder.extension(LLMConfigKeys.voiceId, voiceId);
     return this;
   }
 
@@ -44,7 +44,7 @@ class ElevenLabsBuilder {
   /// - 1.0: Maximum stability and consistency
   /// - Default: Usually around 0.75
   ElevenLabsBuilder stability(double stability) {
-    _baseBuilder.extension('stability', stability);
+    _baseBuilder.extension(LLMConfigKeys.stability, stability);
     return this;
   }
 
@@ -58,7 +58,7 @@ class ElevenLabsBuilder {
   /// - 1.0: Maximum similarity to original voice
   /// - Default: Usually around 0.75
   ElevenLabsBuilder similarityBoost(double similarityBoost) {
-    _baseBuilder.extension('similarityBoost', similarityBoost);
+    _baseBuilder.extension(LLMConfigKeys.similarityBoost, similarityBoost);
     return this;
   }
 
@@ -72,7 +72,7 @@ class ElevenLabsBuilder {
   /// - 1.0: Maximum style exaggeration
   /// - Default: Usually around 0.0
   ElevenLabsBuilder style(double style) {
-    _baseBuilder.extension('style', style);
+    _baseBuilder.extension(LLMConfigKeys.style, style);
     return this;
   }
 
@@ -85,7 +85,7 @@ class ElevenLabsBuilder {
   /// - false: Disable speaker boost
   /// - Default: true
   ElevenLabsBuilder useSpeakerBoost(bool enable) {
-    _baseBuilder.extension('useSpeakerBoost', enable);
+    _baseBuilder.extension(LLMConfigKeys.useSpeakerBoost, enable);
     return this;
   }
 

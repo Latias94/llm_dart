@@ -22,10 +22,12 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
   }
 
   void _addThinkingConfig(Map<String, dynamic> body, LLMConfig config) {
-    final reasoning = config.getExtension<bool>('reasoning') ?? false;
-    final includeThoughts = config.getExtension<bool>('includeThoughts');
+    final reasoning =
+        config.getExtension<bool>(LLMConfigKeys.reasoning) ?? false;
+    final includeThoughts =
+        config.getExtension<bool>(LLMConfigKeys.includeThoughts);
     final thinkingBudgetTokens =
-        config.getExtension<int>('thinkingBudgetTokens');
+        config.getExtension<int>(LLMConfigKeys.thinkingBudgetTokens);
 
     if (!reasoning && includeThoughts == null && thinkingBudgetTokens == null) {
       return;
@@ -54,7 +56,7 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
 
   void _addReasoningEffort(Map<String, dynamic> body, LLMConfig config) {
     final reasoningEffortString =
-        config.getExtension<String>('reasoningEffort');
+        config.getExtension<String>(LLMConfigKeys.reasoningEffort);
     if (reasoningEffortString == null || reasoningEffortString.isEmpty) {
       return;
     }
@@ -86,8 +88,10 @@ class GoogleHeadersTransformer implements HeadersTransformer {
   }
 
   void _addThinkingHeaders(Map<String, String> headers, LLMConfig config) {
-    final reasoning = config.getExtension<bool>('reasoning') ?? false;
-    final includeThoughts = config.getExtension<bool>('includeThoughts');
+    final reasoning =
+        config.getExtension<bool>(LLMConfigKeys.reasoning) ?? false;
+    final includeThoughts =
+        config.getExtension<bool>(LLMConfigKeys.includeThoughts);
 
     if (reasoning || includeThoughts == true) {
       headers['X-Goog-Include-Thoughts'] = 'true';

@@ -88,7 +88,16 @@ OpenAIProvider createOpenRouterProvider({
   return OpenAIProvider(config);
 }
 
-/// Create an OpenAI provider for Groq
+/// Create an OpenAI provider for Groq.
+///
+/// This legacy helper treats Groq as an OpenAI-compatible endpoint.
+/// New code should prefer the dedicated Groq provider from
+/// `package:llm_dart/providers/groq/groq.dart` or use
+/// `ai().groq()` / `GroqProviderFactory` instead.
+@Deprecated(
+  'Use GroqProvider from package:llm_dart/providers/groq/groq.dart '
+  'or ai().groq() instead of createGroqProvider on the OpenAI facade.',
+)
 OpenAIProvider createGroqProvider({
   required String apiKey,
   String model = ProviderDefaults.groqDefaultModel,
@@ -108,7 +117,16 @@ OpenAIProvider createGroqProvider({
   return OpenAIProvider(config);
 }
 
-/// Create an OpenAI provider for DeepSeek
+/// Create an OpenAI provider for DeepSeek.
+///
+/// This legacy helper treats DeepSeek as an OpenAI-compatible endpoint.
+/// New code should prefer the dedicated DeepSeek provider from
+/// `package:llm_dart/providers/deepseek/deepseek.dart` or use
+/// `ai().deepseek()` / `DeepSeekProviderFactory` instead.
+@Deprecated(
+  'Use DeepSeekProvider from package:llm_dart/providers/deepseek/deepseek.dart '
+  'or ai().deepseek() instead of createDeepSeekProvider on the OpenAI facade.',
+)
 OpenAIProvider createDeepSeekProvider({
   required String apiKey,
   String model = ProviderDefaults.deepseekDefaultModel,

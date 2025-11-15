@@ -55,9 +55,11 @@ class GroqProviderFactory extends BaseProviderFactory<ChatCapability> {
       tools: config.tools,
       toolChoice: config.toolChoice,
       reasoningEffort: ReasoningEffort.fromString(
-        config.getExtension<String>('reasoningEffort'),
+        config.getExtension<String>(LLMConfigKeys.reasoningEffort),
       ),
-      jsonSchema: config.getExtension<StructuredOutputFormat>('jsonSchema'),
+      jsonSchema: config.getExtension<StructuredOutputFormat>(
+        LLMConfigKeys.jsonSchema,
+      ),
       stopSequences: config.stopSequences,
       user: config.user,
       serviceTier: config.serviceTier,

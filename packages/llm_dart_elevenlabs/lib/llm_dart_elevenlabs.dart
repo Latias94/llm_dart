@@ -1,4 +1,4 @@
-library llm_dart_elevenlabs;
+library;
 
 export 'src/config/elevenlabs_config.dart';
 export 'src/http/elevenlabs_dio_strategy.dart';

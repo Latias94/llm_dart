@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../client/openai_client.dart';
 import '../config/openai_config.dart';
+import '../utils/openai_reasoning_utils.dart';
 import 'openai_responses_capability.dart';
 
 /// OpenAI Responses API capability implementation for the subpackage.
@@ -257,20 +257,15 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       body['previous_response_id'] = config.previousResponseId;
     }
 
-    body.addAll(
-      ReasoningUtils.getMaxTokensParams(
-        model: config.model,
-        maxTokens: config.maxTokens,
-      ),
-    );
+    body.addAll(OpenAIReasoningUtils.buildMaxTokensParams(config));
 
     if (config.temperature != null &&
-        !ReasoningUtils.shouldDisableTemperature(config.model)) {
+        !OpenAIReasoningUtils.shouldDisableTemperature(config)) {
       body['temperature'] = config.temperature;
     }
 
     if (config.topP != null &&
-        !ReasoningUtils.shouldDisableTopP(config.model)) {
+        !OpenAIReasoningUtils.shouldDisableTopP(config)) {
       body['top_p'] = config.topP;
     }
     if (config.topK != null) body['top_k'] = config.topK;

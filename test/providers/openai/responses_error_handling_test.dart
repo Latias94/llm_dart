@@ -6,7 +6,6 @@ library;
 
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/models/responses_models.dart';
 
 void main() {
   group('OpenAI Responses API Error Handling', () {

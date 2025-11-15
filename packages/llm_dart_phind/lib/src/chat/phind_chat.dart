@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 

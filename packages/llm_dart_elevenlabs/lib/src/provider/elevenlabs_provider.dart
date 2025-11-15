@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../audio/elevenlabs_audio.dart';

@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../client/openai_client.dart';
 import '../config/openai_config.dart';
+import '../utils/openai_reasoning_utils.dart';
 
 /// OpenAI Chat capability implementation
 ///
@@ -127,34 +127,27 @@ class OpenAIChat implements ChatCapability {
       'stream': stream,
     };
 
-    // Add optional parameters using reasoning utils
-    body.addAll(
-      ReasoningUtils.getMaxTokensParams(
-        model: config.model,
-        maxTokens: config.maxTokens,
-      ),
-    );
+    // Add optional parameters using OpenAI-specific reasoning utils
+    body.addAll(OpenAIReasoningUtils.buildMaxTokensParams(config));
 
     // Add temperature if not disabled for reasoning models
     if (config.temperature != null &&
-        !ReasoningUtils.shouldDisableTemperature(config.model)) {
+        !OpenAIReasoningUtils.shouldDisableTemperature(config)) {
       body['temperature'] = config.temperature;
     }
 
     // Add top_p if not disabled for reasoning models
     if (config.topP != null &&
-        !ReasoningUtils.shouldDisableTopP(config.model)) {
+        !OpenAIReasoningUtils.shouldDisableTopP(config)) {
       body['top_p'] = config.topP;
     }
     if (config.topK != null) body['top_k'] = config.topK;
 
     // Add reasoning effort parameters
     body.addAll(
-      ReasoningUtils.getReasoningEffortParams(
+      OpenAIReasoningUtils.buildReasoningEffortParams(
         providerId: client.providerId,
-        model: config.model,
-        reasoningEffort: config.reasoningEffort,
-        maxTokens: config.maxTokens,
+        config: config,
       ),
     );
 
@@ -214,42 +207,46 @@ class OpenAIChat implements ChatCapability {
     }
 
     // Add OpenAI-specific extension parameters
-    final frequencyPenalty = config.getExtension<double>('frequencyPenalty');
+    final frequencyPenalty =
+        config.getExtension<double>(LLMConfigKeys.frequencyPenalty);
     if (frequencyPenalty != null) {
       body['frequency_penalty'] = frequencyPenalty;
     }
 
-    final presencePenalty = config.getExtension<double>('presencePenalty');
+    final presencePenalty =
+        config.getExtension<double>(LLMConfigKeys.presencePenalty);
     if (presencePenalty != null) {
       body['presence_penalty'] = presencePenalty;
     }
 
-    final logitBias = config.getExtension<Map<String, double>>('logitBias');
+    final logitBias =
+        config.getExtension<Map<String, double>>(LLMConfigKeys.logitBias);
     if (logitBias != null && logitBias.isNotEmpty) {
       body['logit_bias'] = logitBias;
     }
 
-    final seed = config.getExtension<int>('seed');
+    final seed = config.getExtension<int>(LLMConfigKeys.seed);
     if (seed != null) {
       body['seed'] = seed;
     }
 
-    final parallelToolCalls = config.getExtension<bool>('parallelToolCalls');
+    final parallelToolCalls =
+        config.getExtension<bool>(LLMConfigKeys.parallelToolCalls);
     if (parallelToolCalls != null) {
       body['parallel_tool_calls'] = parallelToolCalls;
     }
 
-    final logprobs = config.getExtension<bool>('logprobs');
+    final logprobs = config.getExtension<bool>(LLMConfigKeys.logprobs);
     if (logprobs != null) {
       body['logprobs'] = logprobs;
     }
 
-    final topLogprobs = config.getExtension<int>('topLogprobs');
+    final topLogprobs = config.getExtension<int>(LLMConfigKeys.topLogprobs);
     if (topLogprobs != null) {
       body['top_logprobs'] = topLogprobs;
     }
 
-    final verbosity = config.getExtension<String>('verbosity');
+    final verbosity = config.getExtension<String>(LLMConfigKeys.verbosity);
     if (verbosity != null) {
       body['verbosity'] = verbosity;
     }

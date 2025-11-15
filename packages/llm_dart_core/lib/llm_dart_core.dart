@@ -11,6 +11,7 @@ export 'src/core/cancellation.dart';
 // Core capabilities and configuration
 export 'src/core/capability.dart';
 export 'src/core/config.dart';
+export 'src/core/config_extensions.dart';
 
 // Core models
 export 'src/models/chat_models.dart';

@@ -52,8 +52,9 @@ class AnthropicConfig {
     List<Tool>? tools = config.tools;
 
     final webSearchEnabled =
-        config.getExtension<bool>('webSearchEnabled') == true;
-    final webSearchConfig = config.getExtension<dynamic>('webSearchConfig');
+        config.getExtension<bool>(LLMConfigKeys.webSearchEnabled) == true;
+    final webSearchConfig =
+        config.getExtension<dynamic>(LLMConfigKeys.webSearchConfig);
     if (webSearchEnabled || webSearchConfig != null) {
       tools = _addWebSearchTool(tools, webSearchConfig);
     }
@@ -73,10 +74,13 @@ class AnthropicConfig {
       stopSequences: config.stopSequences,
       user: config.user,
       serviceTier: config.serviceTier,
-      reasoning: config.getExtension<bool>('reasoning') ?? false,
-      thinkingBudgetTokens: config.getExtension<int>('thinkingBudgetTokens'),
-      interleavedThinking:
-          config.getExtension<bool>('interleavedThinking') ?? false,
+      reasoning: config.getExtension<bool>(LLMConfigKeys.reasoning) ?? false,
+      thinkingBudgetTokens:
+          config.getExtension<int>(LLMConfigKeys.thinkingBudgetTokens),
+      interleavedThinking: config.getExtension<bool>(
+            LLMConfigKeys.interleavedThinking,
+          ) ??
+          false,
       originalConfig: config,
     );
   }

@@ -55,7 +55,8 @@ class OpenAIProviderFactory
     String? model = config.model;
 
     // Check for webSearchEnabled flag
-    final webSearchEnabled = getExtension<bool>(config, 'webSearchEnabled');
+    final webSearchEnabled =
+        getExtension<bool>(config, LLMConfigKeys.webSearchEnabled);
     if (webSearchEnabled == true && !_isSearchModel(model)) {
       // Switch to search-enabled model if not already using one
       model = _getSearchModel(model);
@@ -63,7 +64,7 @@ class OpenAIProviderFactory
 
     // Check for webSearchConfig
     final webSearchConfig =
-        getExtension<WebSearchConfig>(config, 'webSearchConfig');
+        getExtension<WebSearchConfig>(config, LLMConfigKeys.webSearchConfig);
     if (webSearchConfig != null && !_isSearchModel(model)) {
       model = _getSearchModel(model);
     }
@@ -86,17 +87,21 @@ class OpenAIProviderFactory
       serviceTier: config.serviceTier,
       // OpenAI-specific extensions using helper method
       reasoningEffort: ReasoningEffort.fromString(
-          getExtension<String>(config, 'reasoningEffort')),
-      jsonSchema: getExtension<StructuredOutputFormat>(config, 'jsonSchema'),
-      voice: getExtension<String>(config, 'voice'),
+          getExtension<String>(config, LLMConfigKeys.reasoningEffort)),
+      jsonSchema: getExtension<StructuredOutputFormat>(
+          config, LLMConfigKeys.jsonSchema),
+      voice: getExtension<String>(config, LLMConfigKeys.voice),
       embeddingEncodingFormat:
-          getExtension<String>(config, 'embeddingEncodingFormat'),
-      embeddingDimensions: getExtension<int>(config, 'embeddingDimensions'),
+          getExtension<String>(config, LLMConfigKeys.embeddingEncodingFormat),
+      embeddingDimensions:
+          getExtension<int>(config, LLMConfigKeys.embeddingDimensions),
       // Responses API configuration
-      useResponsesAPI: getExtension<bool>(config, 'useResponsesAPI') ?? false,
-      previousResponseId: getExtension<String>(config, 'previousResponseId'),
-      builtInTools:
-          getExtension<List<OpenAIBuiltInTool>>(config, 'builtInTools'),
+      useResponsesAPI:
+          getExtension<bool>(config, LLMConfigKeys.useResponsesAPI) ?? false,
+      previousResponseId:
+          getExtension<String>(config, LLMConfigKeys.previousResponseId),
+      builtInTools: getExtension<List<OpenAIBuiltInTool>>(
+          config, LLMConfigKeys.builtInTools),
       originalConfig: config,
     );
   }

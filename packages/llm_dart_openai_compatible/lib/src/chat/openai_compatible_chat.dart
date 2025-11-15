@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../client/openai_compatible_client.dart';
 import '../config/openai_compatible_config.dart';
+import '../utils/openai_compatible_reasoning_utils.dart';
 
 /// OpenAI-compatible Chat capability implementation
 ///
@@ -111,30 +111,22 @@ class OpenAICompatibleChat implements ChatCapability {
     };
 
     body.addAll(
-      ReasoningUtils.getMaxTokensParams(
-        model: config.model,
-        maxTokens: config.maxTokens,
-      ),
+      OpenAICompatibleReasoningUtils.buildMaxTokensParams(config),
     );
 
     if (config.temperature != null &&
-        !ReasoningUtils.shouldDisableTemperature(config.model)) {
+        !OpenAICompatibleReasoningUtils.shouldDisableTemperature(config)) {
       body['temperature'] = config.temperature;
     }
 
     if (config.topP != null &&
-        !ReasoningUtils.shouldDisableTopP(config.model)) {
+        !OpenAICompatibleReasoningUtils.shouldDisableTopP(config)) {
       body['top_p'] = config.topP;
     }
     if (config.topK != null) body['top_k'] = config.topK;
 
     body.addAll(
-      ReasoningUtils.getReasoningEffortParams(
-        providerId: config.providerId,
-        model: config.model,
-        reasoningEffort: config.reasoningEffort,
-        maxTokens: config.maxTokens,
-      ),
+      OpenAICompatibleReasoningUtils.buildReasoningEffortParams(config),
     );
 
     final effectiveTools = tools ?? config.tools;
@@ -354,7 +346,7 @@ class OpenAICompatibleChat implements ChatCapability {
     final warnings = <CallWarning>[];
 
     if (config.temperature != null &&
-        ReasoningUtils.shouldDisableTemperature(config.model)) {
+        OpenAICompatibleReasoningUtils.shouldDisableTemperature(config)) {
       warnings.add(
         CallWarning(
           code: 'PARAMETER_NO_EFFECT',
@@ -369,7 +361,8 @@ class OpenAICompatibleChat implements ChatCapability {
       );
     }
 
-    if (config.topP != null && ReasoningUtils.shouldDisableTopP(config.model)) {
+    if (config.topP != null &&
+        OpenAICompatibleReasoningUtils.shouldDisableTopP(config)) {
       warnings.add(
         CallWarning(
           code: 'PARAMETER_NO_EFFECT',

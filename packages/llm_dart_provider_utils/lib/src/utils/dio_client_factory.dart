@@ -69,7 +69,7 @@ class DioClientFactory {
   /// Extract custom Dio from config extensions
   static Dio? _extractCustomDio(dynamic config) {
     if (config.originalConfig != null) {
-      return config.originalConfig!.getExtension<Dio>('customDio');
+      return config.originalConfig!.getExtension<Dio>(LLMConfigKeys.customDio);
     }
     return null;
   }

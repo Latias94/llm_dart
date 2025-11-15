@@ -9,10 +9,11 @@ class HttpClientAdapterConfig {
   /// Configure HTTP client adapter with proxy and SSL settings.
   /// On web, these are managed by the browser so we only log warnings.
   static void configureHttpClientAdapter(Dio dio, LLMConfig config) {
-    final proxyUrl = config.getExtension<String>('httpProxy');
+    final proxyUrl = config.getExtension<String>(LLMConfigKeys.httpProxy);
     final bypassSSL =
-        config.getExtension<bool>('bypassSSLVerification') ?? false;
-    final certificatePath = config.getExtension<String>('sslCertificate');
+        config.getExtension<bool>(LLMConfigKeys.bypassSSLVerification) ?? false;
+    final certificatePath =
+        config.getExtension<String>(LLMConfigKeys.sslCertificate);
 
     if (proxyUrl != null && proxyUrl.isNotEmpty) {
       _logger.warning(

@@ -1,7 +1,6 @@
 import 'dart:convert';
 import '../models/tool_models.dart';
 import '../models/chat_models.dart';
-import 'llm_error.dart';
 
 /// Tool validation utility for ensuring tool calls and parameters are valid
 ///

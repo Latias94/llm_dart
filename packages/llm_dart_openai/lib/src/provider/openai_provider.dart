@@ -95,7 +95,7 @@ class OpenAIProvider
     CancelToken? cancelToken,
   }) {
     if (config.useResponsesAPI && _responses != null) {
-      return _responses!.chat(messages, cancelToken: cancelToken);
+      return _responses.chat(messages, cancelToken: cancelToken);
     }
     return _chat.chat(messages, cancelToken: cancelToken);
   }
@@ -107,7 +107,7 @@ class OpenAIProvider
     CancelToken? cancelToken,
   }) {
     if (config.useResponsesAPI && _responses != null) {
-      return _responses!.chatWithTools(
+      return _responses.chatWithTools(
         messages,
         tools,
         cancelToken: cancelToken,
@@ -123,7 +123,7 @@ class OpenAIProvider
     CancelToken? cancelToken,
   }) {
     if (config.useResponsesAPI && _responses != null) {
-      return _responses!.chatStream(
+      return _responses.chatStream(
         messages,
         tools: tools,
         cancelToken: cancelToken,
@@ -140,7 +140,7 @@ class OpenAIProvider
   @override
   Future<List<ChatMessage>?> memoryContents() {
     if (config.useResponsesAPI && _responses != null) {
-      return _responses!.memoryContents();
+      return _responses.memoryContents();
     }
     return _chat.memoryContents();
   }
@@ -148,7 +148,7 @@ class OpenAIProvider
   @override
   Future<String> summarizeHistory(List<ChatMessage> messages) {
     if (config.useResponsesAPI && _responses != null) {
-      return _responses!.summarizeHistory(messages);
+      return _responses.summarizeHistory(messages);
     }
     return _chat.summarizeHistory(messages);
   }

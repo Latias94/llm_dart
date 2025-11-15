@@ -1,6 +1,5 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
-import '../../core/llm_error.dart';
 import '../../core/registry.dart';
 
 /// Base factory class that provides common functionality for all provider factories
@@ -152,12 +151,14 @@ abstract class OpenAICompatibleBaseFactory<T extends ChatCapability>
 
     // Add OpenAI-specific extensions
     baseMap.addAll({
-      'reasoningEffort': getExtension<String>(config, 'reasoningEffort'),
-      'jsonSchema': getExtension(config, 'jsonSchema'),
-      'voice': getExtension<String>(config, 'voice'),
-      'embeddingEncodingFormat':
-          getExtension<String>(config, 'embeddingEncodingFormat'),
-      'embeddingDimensions': getExtension<int>(config, 'embeddingDimensions'),
+      LLMConfigKeys.reasoningEffort:
+          getExtension<String>(config, LLMConfigKeys.reasoningEffort),
+      LLMConfigKeys.jsonSchema: getExtension(config, LLMConfigKeys.jsonSchema),
+      LLMConfigKeys.voice: getExtension<String>(config, LLMConfigKeys.voice),
+      LLMConfigKeys.embeddingEncodingFormat:
+          getExtension<String>(config, LLMConfigKeys.embeddingEncodingFormat),
+      LLMConfigKeys.embeddingDimensions:
+          getExtension<int>(config, LLMConfigKeys.embeddingDimensions),
     });
 
     // Remove null values
@@ -193,11 +194,15 @@ abstract class AudioProviderFactory<T extends ChatCapability>
     final baseMap = getBaseConfigMap(config);
 
     baseMap.addAll({
-      'voiceId': getExtension<String>(config, 'voiceId'),
-      'stability': getExtension<double>(config, 'stability'),
-      'similarityBoost': getExtension<double>(config, 'similarityBoost'),
-      'style': getExtension<double>(config, 'style'),
-      'useSpeakerBoost': getExtension<bool>(config, 'useSpeakerBoost'),
+      LLMConfigKeys.voiceId:
+          getExtension<String>(config, LLMConfigKeys.voiceId),
+      LLMConfigKeys.stability:
+          getExtension<double>(config, LLMConfigKeys.stability),
+      LLMConfigKeys.similarityBoost:
+          getExtension<double>(config, LLMConfigKeys.similarityBoost),
+      LLMConfigKeys.style: getExtension<double>(config, LLMConfigKeys.style),
+      LLMConfigKeys.useSpeakerBoost:
+          getExtension<bool>(config, LLMConfigKeys.useSpeakerBoost),
     });
 
     baseMap.removeWhere((key, value) => value == null);

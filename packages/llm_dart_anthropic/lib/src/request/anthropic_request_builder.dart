@@ -274,7 +274,7 @@ class AnthropicRequestBuilder {
     }
 
     final customMetadata =
-        config.getExtension<Map<String, dynamic>>('metadata');
+        config.getExtension<Map<String, dynamic>>(LLMConfigKeys.metadata);
     if (customMetadata != null) {
       metadata.addAll(customMetadata);
     }
@@ -283,13 +283,14 @@ class AnthropicRequestBuilder {
       body['metadata'] = metadata;
     }
 
-    final container = config.getExtension<String>('container');
+    final container = config.getExtension<String>(LLMConfigKeys.container);
     if (container != null) {
       body['container'] = container;
     }
 
-    final mcpServers =
-        config.getExtension<List<AnthropicMCPServer>>('mcpServers');
+    final mcpServers = config.getExtension<List<AnthropicMCPServer>>(
+      LLMConfigKeys.mcpServers,
+    );
     if (mcpServers != null && mcpServers.isNotEmpty) {
       body['mcp_servers'] =
           mcpServers.map((server) => server.toJson()).toList();

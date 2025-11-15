@@ -1,12 +1,9 @@
 /// Legacy HTTP provider base class.
 ///
-/// NOTE: New provider implementations should prefer the HTTP utilities in the
-/// `llm_dart_provider_utils` package (`DioClientFactory` and
-/// `BaseProviderDioStrategy`, `HttpResponseHandler`, etc.) instead of
-/// extending this class. This type is kept only for backwards compatibility
-/// with older code and may be removed in a future major release.
-@Deprecated(
-  'Use DioClientFactory and BaseProviderDioStrategy in '
-  'llm_dart_provider_utils instead of BaseHttpProvider.',
-)
-abstract class BaseHttpProvider {}
+/// This file now re-exports the deprecated [BaseHttpProvider] definition
+/// from `lib/legacy/core/base_http_provider.dart` so that existing imports
+/// continue to work. New implementations should prefer the HTTP utilities
+/// from the `llm_dart_provider_utils` package instead.
+library;
+
+export '../legacy/core/base_http_provider.dart';
