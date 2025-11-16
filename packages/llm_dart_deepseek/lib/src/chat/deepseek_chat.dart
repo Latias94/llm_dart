@@ -108,6 +108,9 @@ class DeepSeekChat implements ChatCapability {
       }
     }
 
+    final hasThinking =
+        thinkingContent != null && thinkingContent.trim().isNotEmpty;
+
     return DeepSeekChatResponse(
       responseData,
       thinkingContent,
@@ -116,6 +119,7 @@ class DeepSeekChat implements ChatCapability {
         'provider': 'deepseek',
         'model': config.model,
         'reasonerModel': config.supportsReasoning,
+        'hasThinking': hasThinking,
       },
     );
   }
@@ -147,6 +151,7 @@ class DeepSeekChat implements ChatCapability {
                 'provider': 'deepseek',
                 'model': config.model,
                 'reasonerModel': config.supportsReasoning,
+                'hasThinking': true,
               },
             );
             events.add(CompletionEvent(response));
@@ -324,14 +329,17 @@ class DeepSeekChat implements ChatCapability {
     bool stream,
     List<CallWarning> warnings,
   ) {
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+
     final apiMessages = <Map<String, dynamic>>[];
 
-    if (config.systemPrompt != null) {
+    if (config.systemPrompt != null && config.systemPrompt!.isNotEmpty) {
       apiMessages.add({'role': 'system', 'content': config.systemPrompt});
     }
 
-    for (final message in messages) {
-      apiMessages.add(_convertMessage(message));
+    for (final message in promptMessages) {
+      apiMessages.add(_convertPromptMessage(message));
     }
 
     final body = <String, dynamic>{
@@ -345,103 +353,20 @@ class DeepSeekChat implements ChatCapability {
     if (config.topP != null) body['top_p'] = config.topP;
     if (config.topK != null) body['top_k'] = config.topK;
 
-    final isReasonerModel = config.supportsReasoning;
-
-    if (isReasonerModel) {
-      if (config.logprobs == true || config.topLogprobs != null) {
-        client.logger.warning(
-          'logprobs and top_logprobs are not supported by deepseek-reasoner model',
-        );
-        warnings.add(
-          CallWarning(
-            code: 'DEEPSEEK_UNSUPPORTED_PARAMETER',
-            message:
-                'logprobs and top_logprobs are not supported by deepseek-reasoner model',
-            details: {
-              'provider': 'deepseek',
-              'model': config.model,
-              'parameters': ['logprobs', 'top_logprobs'],
-            },
-          ),
-        );
-      }
-
-      if (config.temperature != null) {
-        client.logger.info(
-          'temperature parameter has no effect on deepseek-reasoner model',
-        );
-        warnings.add(
-          CallWarning(
-            code: 'DEEPSEEK_PARAMETER_NO_EFFECT',
-            message:
-                'temperature parameter has no effect on deepseek-reasoner model',
-            details: {
-              'provider': 'deepseek',
-              'model': config.model,
-              'parameter': 'temperature',
-            },
-          ),
-        );
-      }
-      if (config.topP != null) {
-        client.logger.info(
-          'top_p parameter has no effect on deepseek-reasoner model',
-        );
-        warnings.add(
-          CallWarning(
-            code: 'DEEPSEEK_PARAMETER_NO_EFFECT',
-            message: 'top_p parameter has no effect on deepseek-reasoner model',
-            details: {
-              'provider': 'deepseek',
-              'model': config.model,
-              'parameter': 'top_p',
-            },
-          ),
-        );
-      }
-      if (config.frequencyPenalty != null) {
-        client.logger.info(
-          'frequency_penalty parameter has no effect on deepseek-reasoner model',
-        );
-        warnings.add(
-          CallWarning(
-            code: 'DEEPSEEK_PARAMETER_NO_EFFECT',
-            message:
-                'frequency_penalty parameter has no effect on deepseek-reasoner model',
-            details: {
-              'provider': 'deepseek',
-              'model': config.model,
-              'parameter': 'frequency_penalty',
-            },
-          ),
-        );
-      }
-      if (config.presencePenalty != null) {
-        client.logger.info(
-          'presence_penalty parameter has no effect on deepseek-reasoner model',
-        );
-        warnings.add(
-          CallWarning(
-            code: 'DEEPSEEK_PARAMETER_NO_EFFECT',
-            message:
-                'presence_penalty parameter has no effect on deepseek-reasoner model',
-            details: {
-              'provider': 'deepseek',
-              'model': config.model,
-              'parameter': 'presence_penalty',
-            },
-          ),
-        );
-      }
-    } else {
-      if (config.logprobs != null) body['logprobs'] = config.logprobs;
-      if (config.topLogprobs != null) body['top_logprobs'] = config.topLogprobs;
-      if (config.frequencyPenalty != null) {
-        body['frequency_penalty'] = config.frequencyPenalty;
-      }
-      if (config.presencePenalty != null) {
-        body['presence_penalty'] = config.presencePenalty;
-      }
+    // Forward advanced sampling parameters directly regardless of whether the
+    // model is a reasoning variant. DeepSeek will surface any validation
+    // errors or ignore unsupported parameters.
+    if (config.logprobs != null) {
+      body['logprobs'] = config.logprobs;
+    }
+    if (config.topLogprobs != null) {
+      body['top_logprobs'] = config.topLogprobs;
+    }
+    if (config.frequencyPenalty != null) {
+      body['frequency_penalty'] = config.frequencyPenalty;
+    }
+    if (config.presencePenalty != null) {
+      body['presence_penalty'] = config.presencePenalty;
     }
 
     if (config.responseFormat != null) {
@@ -461,31 +386,49 @@ class DeepSeekChat implements ChatCapability {
     return body;
   }
 
-  Map<String, dynamic> _convertMessage(ChatMessage message) {
-    final result = <String, dynamic>{'role': message.role.name};
+  Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {
+    final role = switch (message.role) {
+      ChatRole.system => 'system',
+      ChatRole.user => 'user',
+      ChatRole.assistant => 'assistant',
+    };
 
-    if (message.name != null) {
-      result['name'] = message.name;
+    final result = <String, dynamic>{'role': role};
+
+    final buffer = StringBuffer();
+    final toolCalls = <Map<String, dynamic>>[];
+
+    for (final part in message.parts) {
+      if (part is TextContentPart) {
+        buffer.write(part.text);
+      } else if (part is ReasoningContentPart) {
+        buffer.write(part.text);
+      } else if (part is ToolCallContentPart &&
+          message.role == ChatRole.assistant) {
+        toolCalls.add({
+          'id': part.toolCallId ?? 'call_${toolCalls.length}',
+          'type': 'function',
+          'function': {
+            'name': part.toolName,
+            'arguments': part.argumentsJson,
+          },
+        });
+      }
     }
 
-    switch (message.messageType) {
-      case TextMessage():
-        result['content'] = message.content;
-        break;
-      case ToolUseMessage(toolCalls: final toolCalls):
-        result['tool_calls'] = toolCalls.map((tc) => tc.toJson()).toList();
-        break;
-      case ToolResultMessage():
-        result['content'] = message.content;
-        break;
-      default:
-        result['content'] = message.content;
+    result['content'] = buffer.toString();
+    if (toolCalls.isNotEmpty) {
+      result['tool_calls'] = toolCalls;
     }
 
+    // DeepSeek-specific: remove any reasoning_content field if present.
     result.remove('reasoning_content');
 
     return result;
   }
+
+  // Legacy ChatMessage-based conversion is now replaced by
+  // the ChatPromptMessage-based _convertPromptMessage implementation.
 }
 
 /// DeepSeek chat response implementation.

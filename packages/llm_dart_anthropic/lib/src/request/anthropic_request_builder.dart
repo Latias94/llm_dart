@@ -4,6 +4,8 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../config/anthropic_config.dart';
 import '../mcp/anthropic_mcp_models.dart';
+import '../models/anthropic_models.dart';
+import 'anthropic_cache_control_validator.dart';
 
 /// Helper class to build Anthropic API request bodies (sub-package).
 class AnthropicRequestBuilder {
@@ -16,96 +18,66 @@ class AnthropicRequestBuilder {
     List<Tool>? tools,
     bool stream,
   ) {
-    final processedData = _processMessages(messages);
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+
+    final processedData = _processMessagesFromPrompt(promptMessages);
     final processedTools = _processTools(messages, tools);
 
-    if (processedData.anthropicMessages.isEmpty) {
+    if (processedData.messages.isEmpty) {
       throw const InvalidRequestError(
         'At least one non-system message is required',
       );
     }
 
-    _validateMessageSequence(processedData.anthropicMessages);
+    _validateMessageSequence(processedData.messages);
 
     final body = <String, dynamic>{
       'model': config.model,
-      'messages': processedData.anthropicMessages,
+      'messages': processedData.messages,
       'max_tokens': config.maxTokens ?? 1024,
       'stream': stream,
     };
 
-    _addSystemContent(body, processedData);
+    _addSystemContentFromPrompt(body, processedData);
     _addTools(body, processedTools);
     _addOptionalParameters(body);
 
     return body;
   }
 
-  ProcessedMessages _processMessages(List<ChatMessage> messages) {
-    final anthropicMessages = <Map<String, dynamic>>[];
-    final systemContentBlocks = <Map<String, dynamic>>[];
-    final systemMessages = <String>[];
-    Map<String, dynamic>? systemCacheControl;
+  ProcessedPrompt _processMessagesFromPrompt(
+    List<ChatPromptMessage> promptMessages,
+  ) {
+    final validator = AnthropicCacheControlValidator();
 
-    for (final message in messages) {
-      if (message.role == ChatRole.system) {
-        final result = _processSystemMessage(message);
-        systemContentBlocks.addAll(result.contentBlocks);
-        systemMessages.addAll(result.plainMessages);
-        systemCacheControl ??= result.cacheControl;
-      } else {
-        anthropicMessages.add(_convertMessage(message));
+    final systemContent = <Map<String, dynamic>>[];
+    final messages = <Map<String, dynamic>>[];
+
+    for (final message in promptMessages) {
+      switch (message.role) {
+        case ChatRole.system:
+          _convertSystemMessageFromPrompt(
+            message,
+            systemContent,
+            validator,
+          );
+          break;
+        case ChatRole.user:
+        case ChatRole.assistant:
+          messages.add(
+            _convertNonSystemMessageFromPrompt(
+              message,
+              validator,
+            ),
+          );
+          break;
       }
     }
 
-    return ProcessedMessages(
-      anthropicMessages: anthropicMessages,
-      systemContentBlocks: systemContentBlocks,
-      systemMessages: systemMessages,
-      systemCacheControl: systemCacheControl,
-    );
-  }
-
-  SystemMessageResult _processSystemMessage(ChatMessage message) {
-    final contentBlocks = <Map<String, dynamic>>[];
-    final plainMessages = <String>[];
-    Map<String, dynamic>? cacheControl;
-
-    final anthropicData =
-        message.getExtension<Map<String, dynamic>>('anthropic');
-
-    if (anthropicData != null) {
-      final blocks = anthropicData['contentBlocks'] as List<dynamic>?;
-      if (blocks != null) {
-        for (final block in blocks) {
-          if (block is Map<String, dynamic>) {
-            if (block['cache_control'] != null && block['text'] == '') {
-              cacheControl = block['cache_control'];
-              continue;
-            }
-            if (block['type'] == 'tools') {
-              continue;
-            }
-            contentBlocks.add(block);
-          }
-        }
-      }
-
-      if (message.content.isNotEmpty && cacheControl != null) {
-        contentBlocks.add({
-          'type': 'text',
-          'text': message.content,
-          'cache_control': cacheControl,
-        });
-      }
-    } else {
-      plainMessages.add(message.content);
-    }
-
-    return SystemMessageResult(
-      contentBlocks: contentBlocks,
-      plainMessages: plainMessages,
-      cacheControl: cacheControl,
+    return ProcessedPrompt(
+      systemContent: systemContent,
+      messages: messages,
     );
   }
 
@@ -134,6 +106,238 @@ class AnthropicRequestBuilder {
       tools: allTools,
       cacheControl: toolCacheControl,
     );
+  }
+
+  void _convertSystemMessageFromPrompt(
+    ChatPromptMessage message,
+    List<Map<String, dynamic>> systemContent,
+    AnthropicCacheControlValidator validator,
+  ) {
+    if (message.parts.isEmpty && message.providerOptions.isEmpty) {
+      return;
+    }
+
+    for (var i = 0; i < message.parts.length; i++) {
+      final part = message.parts[i];
+      final isLastPart = i == message.parts.length - 1;
+
+      final partOptions =
+          part.providerOptions?['anthropic'] ?? part.providerOptions;
+      final messageOptions =
+          message.providerOptions['anthropic'] ?? message.providerOptions;
+
+      final cacheControl = validator.getCacheControl(
+            partOptions,
+            contextType: 'system message part',
+            canCache: true,
+          ) ??
+          (isLastPart
+              ? validator.getCacheControl(
+                  messageOptions,
+                  contextType: 'system message',
+                  canCache: true,
+                )
+              : null);
+
+      if (part is TextContentPart || part is ReasoningContentPart) {
+        final text =
+            part is TextContentPart ? part.text : (part as ReasoningContentPart).text;
+        systemContent.add({
+          'type': 'text',
+          'text': text,
+          'cache_control': cacheControl?.toJson(),
+        });
+      }
+    }
+  }
+
+  Map<String, dynamic> _convertNonSystemMessageFromPrompt(
+    ChatPromptMessage message,
+    AnthropicCacheControlValidator validator,
+  ) {
+    final content = <Map<String, dynamic>>[];
+    final role = message.role == ChatRole.user ? 'user' : 'assistant';
+
+    for (var i = 0; i < message.parts.length; i++) {
+      final part = message.parts[i];
+      final isLastPart = i == message.parts.length - 1;
+
+      final partOptions =
+          part.providerOptions?['anthropic'] ?? part.providerOptions;
+      final messageOptions =
+          message.providerOptions['anthropic'] ?? message.providerOptions;
+
+      final cacheControl = validator.getCacheControl(
+            partOptions,
+            contextType: '$role message part',
+            canCache: true,
+          ) ??
+          (isLastPart
+              ? validator.getCacheControl(
+                  messageOptions,
+                  contextType: '$role message',
+                  canCache: true,
+                )
+              : null);
+
+      if (part is TextContentPart || part is ReasoningContentPart) {
+        final text =
+            part is TextContentPart ? part.text : (part as ReasoningContentPart).text;
+        content.add({
+          'type': 'text',
+          'text': text,
+          'cache_control': cacheControl?.toJson(),
+        });
+      } else if (part is FileContentPart) {
+        _convertFilePartForPrompt(
+          part,
+          cacheControl,
+          content,
+        );
+      } else if (part is UrlFileContentPart) {
+        final text = '[Image URL not supported by Anthropic. '
+            'Please upload the image directly: ${part.url}]';
+        content.add({
+          'type': 'text',
+          'text': text,
+          'cache_control': cacheControl?.toJson(),
+        });
+      } else if (part is ToolCallContentPart && role == 'assistant') {
+        _convertToolCallPartForPrompt(
+          part,
+          cacheControl,
+          content,
+        );
+      } else if (part is ToolResultContentPart && role == 'user') {
+        _convertToolResultPartForPrompt(
+          part,
+          cacheControl,
+          content,
+        );
+      }
+    }
+
+    return {
+      'role': role,
+      'content': content,
+    };
+  }
+
+  void _convertFilePartForPrompt(
+    FileContentPart part,
+    AnthropicCacheControl? cacheControl,
+    List<Map<String, dynamic>> content,
+  ) {
+    final mimeType = part.mime.mimeType;
+
+    if (mimeType.startsWith('image/')) {
+      content.add({
+        'type': 'image',
+        'source': {
+          'type': 'base64',
+          'media_type': mimeType,
+          'data': base64Encode(part.data),
+        },
+        'cache_control': cacheControl?.toJson(),
+      });
+    } else if (mimeType == 'application/pdf') {
+      if (!config.supportsPDF) {
+        content.add({
+          'type': 'text',
+          'text':
+              '[PDF documents are not supported by model ${config.model}]',
+          'cache_control': cacheControl?.toJson(),
+        });
+      } else {
+        content.add({
+          'type': 'document',
+          'source': {
+            'type': 'base64',
+            'media_type': mimeType,
+            'data': base64Encode(part.data),
+          },
+          'cache_control': cacheControl?.toJson(),
+        });
+      }
+    } else if (mimeType == 'text/plain') {
+      content.add({
+        'type': 'document',
+        'source': {
+          'type': 'text',
+          'media_type': 'text/plain',
+          'data': utf8.decode(part.data),
+        },
+        'cache_control': cacheControl?.toJson(),
+      });
+    } else {
+      content.add({
+        'type': 'text',
+        'text':
+            '[File type ${part.mime.description} (${part.mime.mimeType}) is not supported by Anthropic. Only PDF documents and plain text are supported as documents.]',
+        'cache_control': cacheControl?.toJson(),
+      });
+    }
+  }
+
+  void _convertToolCallPartForPrompt(
+    ToolCallContentPart part,
+    AnthropicCacheControl? cacheControl,
+    List<Map<String, dynamic>> content,
+  ) {
+    dynamic input;
+    try {
+      input = jsonDecode(part.argumentsJson);
+    } catch (_) {
+      input = part.argumentsJson;
+    }
+
+    final id = part.toolCallId ?? 'tool_${content.length}';
+
+    content.add({
+      'type': 'tool_use',
+      'id': id,
+      'name': part.toolName,
+      'input': input,
+      'cache_control': cacheControl?.toJson(),
+    });
+  }
+
+  void _convertToolResultPartForPrompt(
+    ToolResultContentPart part,
+    AnthropicCacheControl? cacheControl,
+    List<Map<String, dynamic>> content,
+  ) {
+    dynamic toolContent;
+    bool? isError;
+
+    final payload = part.payload;
+    if (payload is ToolResultTextPayload) {
+      toolContent = payload.value;
+    } else if (payload is ToolResultJsonPayload) {
+      toolContent = jsonEncode(payload.value);
+    } else if (payload is ToolResultErrorPayload) {
+      toolContent = payload.message;
+      isError = true;
+    } else if (payload is ToolResultContentPayload) {
+      // For now, flatten nested parts into text segments.
+      final texts = <String>[];
+      for (final nested in payload.parts) {
+        if (nested is TextContentPart) {
+          texts.add(nested.text);
+        }
+      }
+      toolContent = texts.join('\n');
+    } else {
+      toolContent = '';
+    }
+
+    content.add({
+      'type': 'tool_result',
+      'tool_use_id': part.toolCallId,
+      'content': toolContent,
+      'is_error': isError,
+      'cache_control': cacheControl?.toJson(),
+    });
   }
 
   ToolExtractionResult _extractToolsFromMessage(ChatMessage message) {
@@ -194,7 +398,7 @@ class AnthropicRequestBuilder {
     return tools;
   }
 
-  void _addSystemContent(Map<String, dynamic> body, ProcessedMessages data) {
+  void _addSystemContentFromPrompt(Map<String, dynamic> body, ProcessedPrompt data) {
     final allSystemContent = <Map<String, dynamic>>[];
 
     if (config.systemPrompt != null && config.systemPrompt!.isNotEmpty) {
@@ -204,14 +408,7 @@ class AnthropicRequestBuilder {
       });
     }
 
-    allSystemContent.addAll(data.systemContentBlocks);
-
-    for (final message in data.systemMessages) {
-      allSystemContent.add({
-        'type': 'text',
-        'text': message,
-      });
-    }
+    allSystemContent.addAll(data.systemContent);
 
     if (allSystemContent.isNotEmpty) {
       body['system'] = allSystemContent;
@@ -297,153 +494,8 @@ class AnthropicRequestBuilder {
     }
   }
 
-  Map<String, dynamic> _convertMessage(ChatMessage message) {
-    final content = <Map<String, dynamic>>[];
-
-    final anthropicData =
-        message.getExtension<Map<String, dynamic>>('anthropic');
-
-    Map<String, dynamic>? cacheControl;
-    if (anthropicData != null) {
-      final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
-      if (contentBlocks != null) {
-        for (final block in contentBlocks) {
-          if (block is Map<String, dynamic>) {
-            if (block['cache_control'] != null && block['text'] == '') {
-              cacheControl = block['cache_control'];
-              continue;
-            }
-            if (block['type'] == 'tools') {
-              continue;
-            }
-            content.add(block);
-          }
-        }
-      }
-
-      if (message.content.isNotEmpty) {
-        final textBlock = <String, dynamic>{
-          'type': 'text',
-          'text': message.content
-        };
-        if (cacheControl != null) {
-          textBlock['cache_control'] = cacheControl;
-        }
-        content.add(textBlock);
-      }
-    } else {
-      switch (message.messageType) {
-        case TextMessage():
-          content.add({'type': 'text', 'text': message.content});
-          break;
-        case ImageMessage(mime: final mime, data: final data):
-          final supportedFormats = [
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'image/webp'
-          ];
-          if (!supportedFormats.contains(mime.mimeType)) {
-            content.add({
-              'type': 'text',
-              'text':
-                  '[Unsupported image format: ${mime.mimeType}. Supported formats: ${supportedFormats.join(', ')}]',
-            });
-          } else {
-            content.add({
-              'type': 'image',
-              'source': {
-                'type': 'base64',
-                'media_type': mime.mimeType,
-                'data': base64Encode(data),
-              },
-            });
-          }
-          break;
-        case FileMessage(mime: final mime, data: final data):
-          if (mime.mimeType == 'application/pdf') {
-            if (!config.supportsPDF) {
-              content.add({
-                'type': 'text',
-                'text':
-                    '[PDF documents are not supported by model ${config.model}]',
-              });
-            } else {
-              content.add({
-                'type': 'document',
-                'source': {
-                  'type': 'base64',
-                  'media_type': 'application/pdf',
-                  'data': base64Encode(data),
-                },
-              });
-            }
-          } else {
-            content.add({
-              'type': 'text',
-              'text':
-                  '[File type ${mime.description} (${mime.mimeType}) is not supported by Anthropic. Only PDF documents are supported.]',
-            });
-          }
-          break;
-        case ImageUrlMessage(url: final url):
-          content.add({
-            'type': 'text',
-            'text':
-                '[Image URL not supported by Anthropic. Please upload the image directly: $url]',
-          });
-          break;
-        case ToolUseMessage(toolCalls: final toolCalls):
-          for (final toolCall in toolCalls) {
-            try {
-              final input = jsonDecode(toolCall.function.arguments);
-              content.add({
-                'type': 'tool_use',
-                'id': toolCall.id,
-                'name': toolCall.function.name,
-                'input': input,
-              });
-            } catch (e) {
-              content.add({
-                'type': 'text',
-                'text':
-                    '[Error: Invalid tool call arguments for ${toolCall.function.name}]',
-              });
-            }
-          }
-          break;
-        case ToolResultMessage(results: final results):
-          for (final result in results) {
-            bool isError = false;
-            String resultContent = result.function.arguments;
-
-            try {
-              final parsed = jsonDecode(resultContent);
-              if (parsed is Map<String, dynamic>) {
-                isError = parsed['error'] != null ||
-                    parsed['is_error'] == true ||
-                    parsed['success'] == false;
-              }
-            } catch (_) {
-              final lowerContent = resultContent.toLowerCase();
-              isError = lowerContent.contains('error') ||
-                  lowerContent.contains('failed') ||
-                  lowerContent.contains('exception');
-            }
-
-            content.add({
-              'type': 'tool_result',
-              'tool_use_id': result.id,
-              'content': resultContent,
-              'is_error': isError,
-            });
-          }
-          break;
-      }
-    }
-
-    return {'role': message.role.name, 'content': content};
-  }
+  // Legacy ChatMessage-based conversion is now routed through the
+  // ChatPromptMessage-based implementation for non-system messages.
 
   Map<String, dynamic> convertTool(Tool tool) {
     try {
@@ -539,29 +591,13 @@ class AnthropicRequestBuilder {
   }
 }
 
-class ProcessedMessages {
-  final List<Map<String, dynamic>> anthropicMessages;
-  final List<Map<String, dynamic>> systemContentBlocks;
-  final List<String> systemMessages;
-  final Map<String, dynamic>? systemCacheControl;
+class ProcessedPrompt {
+  final List<Map<String, dynamic>> systemContent;
+  final List<Map<String, dynamic>> messages;
 
-  ProcessedMessages({
-    required this.anthropicMessages,
-    required this.systemContentBlocks,
-    required this.systemMessages,
-    this.systemCacheControl,
-  });
-}
-
-class SystemMessageResult {
-  final List<Map<String, dynamic>> contentBlocks;
-  final List<String> plainMessages;
-  final Map<String, dynamic>? cacheControl;
-
-  SystemMessageResult({
-    required this.contentBlocks,
-    required this.plainMessages,
-    this.cacheControl,
+  ProcessedPrompt({
+    required this.systemContent,
+    required this.messages,
   });
 }
 

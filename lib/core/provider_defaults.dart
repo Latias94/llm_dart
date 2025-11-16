@@ -312,7 +312,16 @@ class ProviderDefaults {
   }
 }
 
-/// OpenAI-compatible provider configurations
+/// OpenAI-compatible provider configurations.
+///
+/// This helper was the original place where OpenAI-compatible provider
+/// defaults were defined. New code should prefer the richer
+/// `OpenAICompatibleProviderProfiles` from the `llm_dart_openai_compatible`
+/// package, which includes model-level capability metadata.
+@Deprecated(
+  'Use OpenAICompatibleProviderProfiles in the '
+  'llm_dart_openai_compatible package instead.',
+)
 class OpenAICompatibleDefaults {
   /// DeepSeek using OpenAI-compatible API
   static const Map<String, dynamic> deepseek = {

@@ -5,7 +5,6 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import '../client/openai_compatible_client.dart';
 import '../config/openai_compatible_config.dart';
 import '../provider_profiles/openai_compatible_provider_profiles.dart';
-import '../utils/openai_compatible_reasoning_utils.dart';
 
 /// OpenAI-compatible Chat capability implementation
 ///
@@ -98,7 +97,10 @@ class OpenAICompatibleChat implements ChatCapability {
     List<Tool>? tools,
     bool stream,
   ) {
-    final apiMessages = client.buildApiMessages(messages);
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+
+    final apiMessages = client.buildApiMessagesFromPrompt(promptMessages);
 
     final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
     if (!hasSystemMessage && config.systemPrompt != null) {
@@ -111,24 +113,23 @@ class OpenAICompatibleChat implements ChatCapability {
       'stream': stream,
     };
 
-    body.addAll(
-      OpenAICompatibleReasoningUtils.buildMaxTokensParams(config),
-    );
-
-    if (config.temperature != null &&
-        !OpenAICompatibleReasoningUtils.shouldDisableTemperature(config)) {
+    // Reasoning-specific parameter restrictions are no longer enforced here.
+    // We always forward the configured parameters and let the underlying
+    // OpenAI-compatible provider decide how to handle them.
+    if (config.maxTokens != null) {
+      body['max_tokens'] = config.maxTokens;
+    }
+    if (config.temperature != null) {
       body['temperature'] = config.temperature;
     }
-
-    if (config.topP != null &&
-        !OpenAICompatibleReasoningUtils.shouldDisableTopP(config)) {
+    if (config.topP != null) {
       body['top_p'] = config.topP;
     }
     if (config.topK != null) body['top_k'] = config.topK;
 
-    body.addAll(
-      OpenAICompatibleReasoningUtils.buildReasoningEffortParams(config),
-    );
+    if (config.reasoningEffort != null) {
+      body['reasoning_effort'] = config.reasoningEffort!.value;
+    }
 
     final effectiveTools = tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
@@ -247,7 +248,7 @@ class OpenAICompatibleChat implements ChatCapability {
       }
     }
 
-    final warnings = _buildWarningsForCall();
+    final warnings = <CallWarning>[];
     final metadata = _buildMetadataForCall();
 
     return _OpenAICompatibleChatResponse(
@@ -350,8 +351,6 @@ class OpenAICompatibleChat implements ChatCapability {
       final usage = json['usage'] as Map<String, dynamic>?;
       final thinkingContent =
           thinkingBuffer.isNotEmpty ? thinkingBuffer.toString() : null;
-
-      final warnings = _buildWarningsForCall();
       final metadata = _buildMetadataForCall();
 
       final response = _OpenAICompatibleChatResponse(
@@ -364,7 +363,7 @@ class OpenAICompatibleChat implements ChatCapability {
           if (usage != null) 'usage': usage,
         },
         thinkingContent,
-        warnings,
+        const [],
         metadata,
       );
 
@@ -373,47 +372,6 @@ class OpenAICompatibleChat implements ChatCapability {
     }
 
     return events;
-  }
-
-  /// Build non-fatal warnings for this call based on the current configuration.
-  ///
-  /// Today this focuses on reasoning models where certain parameters
-  /// (temperature, top_p) are accepted but have no effect.
-  List<CallWarning> _buildWarningsForCall() {
-    final warnings = <CallWarning>[];
-
-    if (config.temperature != null &&
-        OpenAICompatibleReasoningUtils.shouldDisableTemperature(config)) {
-      warnings.add(
-        CallWarning(
-          code: 'PARAMETER_NO_EFFECT',
-          message:
-              'temperature has no effect for reasoning model ${config.model}',
-          details: {
-            'parameter': 'temperature',
-            'model': config.model,
-            'providerId': config.providerId,
-          },
-        ),
-      );
-    }
-
-    if (config.topP != null &&
-        OpenAICompatibleReasoningUtils.shouldDisableTopP(config)) {
-      warnings.add(
-        CallWarning(
-          code: 'PARAMETER_NO_EFFECT',
-          message: 'top_p has no effect for reasoning model ${config.model}',
-          details: {
-            'parameter': 'top_p',
-            'model': config.model,
-            'providerId': config.providerId,
-          },
-        ),
-      );
-    }
-
-    return warnings;
   }
 
   /// Build provider-agnostic metadata for this call.

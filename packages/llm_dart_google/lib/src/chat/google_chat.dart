@@ -47,11 +47,9 @@ class GoogleChat implements ChatCapability {
 
   GoogleChat(this.client, this.config);
 
-  String get chatEndpoint {
-    final endpoint = config.stream
-        ? 'models/${config.model}:streamGenerateContent'
-        : 'models/${config.model}:generateContent';
-    return endpoint;
+  String _buildEndpoint({required bool stream}) {
+    final suffix = stream ? ':streamGenerateContent' : ':generateContent';
+    return 'models/${config.model}$suffix';
   }
 
   @override
@@ -60,9 +58,10 @@ class GoogleChat implements ChatCapability {
     List<Tool>? tools, {
     CancelToken? cancelToken,
   }) async {
-    final requestBody = _buildRequestBody(messages, tools, false);
+    final effectiveTools = tools ?? config.tools;
+    final requestBody = _buildRequestBody(messages, effectiveTools, false);
     final responseData = await client.postJson(
-      chatEndpoint,
+      _buildEndpoint(stream: false),
       requestBody,
       cancelToken: cancelToken,
     );
@@ -81,7 +80,7 @@ class GoogleChat implements ChatCapability {
     final requestBody = _buildRequestBody(messages, effectiveTools, true);
 
     final stream = client.postStreamRaw(
-      chatEndpoint,
+      _buildEndpoint(stream: true),
       requestBody,
       cancelToken: cancelToken,
     );
@@ -356,15 +355,56 @@ class GoogleChat implements ChatCapability {
     List<Tool>? tools,
     bool stream,
   ) {
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+
+    return _buildRequestBodyFromPrompt(promptMessages, tools, stream);
+  }
+
+  Map<String, dynamic> _buildRequestBodyFromPrompt(
+    List<ChatPromptMessage> promptMessages,
+    List<Tool>? tools,
+    bool stream,
+  ) {
     final contents = <Map<String, dynamic>>[];
 
-    for (final message in messages) {
-      contents.add(_convertMessage(message));
+    final systemTexts = <String>[];
+
+    if (config.systemPrompt != null && config.systemPrompt!.isNotEmpty) {
+      systemTexts.add(config.systemPrompt!);
+    }
+
+    final remainingMessages = <ChatPromptMessage>[];
+    var isPrefix = true;
+    for (final message in promptMessages) {
+      if (isPrefix && message.role == ChatRole.system) {
+        for (final part in message.parts) {
+          if (part is TextContentPart && part.text.isNotEmpty) {
+            systemTexts.add(part.text);
+          } else if (part is ReasoningContentPart && part.text.isNotEmpty) {
+            // Treat reasoning content in system messages as plain text.
+            systemTexts.add(part.text);
+          }
+        }
+      } else {
+        isPrefix = false;
+        remainingMessages.add(message);
+      }
+    }
+
+    for (final message in remainingMessages) {
+      contents.add(_convertPromptMessage(message));
     }
 
     final body = <String, dynamic>{
       'contents': contents,
     };
+
+    if (systemTexts.isNotEmpty) {
+      body['systemInstruction'] = {
+        'parts': systemTexts.map((text) => {'text': text}).toList(),
+      };
+    }
 
     final generationConfig = <String, dynamic>{};
 
@@ -387,6 +427,16 @@ class GoogleChat implements ChatCapability {
       generationConfig['stopSequences'] = config.stopSequences;
     }
 
+    if (config.frequencyPenalty != null) {
+      generationConfig['frequencyPenalty'] = config.frequencyPenalty;
+    }
+    if (config.presencePenalty != null) {
+      generationConfig['presencePenalty'] = config.presencePenalty;
+    }
+    if (config.seed != null) {
+      generationConfig['seed'] = config.seed;
+    }
+
     if (config.reasoningEffort != null || config.includeThoughts == true) {
       final thinkingConfig = <String, dynamic>{};
 
@@ -405,7 +455,7 @@ class GoogleChat implements ChatCapability {
       if (thinkingConfig.isNotEmpty) {
         generationConfig['thinkingConfig'] = thinkingConfig;
       }
-    } else if (config.stream) {
+    } else if (stream) {
       generationConfig['thinkingConfig'] = {
         'includeThoughts': true,
       };
@@ -418,6 +468,12 @@ class GoogleChat implements ChatCapability {
         generationConfig['responseModalities'] = ['TEXT', 'IMAGE'];
       }
       generationConfig['responseMimeType'] = 'text/plain';
+    }
+
+    if (config.jsonSchema?.schema != null &&
+        config.enableImageGeneration != true) {
+      generationConfig['responseMimeType'] ??= 'application/json';
+      generationConfig['responseSchema'] = config.jsonSchema!.schema;
     }
 
     if (generationConfig.isNotEmpty) {
@@ -442,7 +498,7 @@ class GoogleChat implements ChatCapability {
 
       final effectiveToolChoice = config.toolChoice;
       if (effectiveToolChoice != null) {
-        body['tool_config'] =
+        body['toolConfig'] =
             _convertToolChoice(effectiveToolChoice, effectiveTools);
       }
     }
@@ -450,107 +506,149 @@ class GoogleChat implements ChatCapability {
     return body;
   }
 
-  Map<String, dynamic> _convertMessage(ChatMessage message) {
+  Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {
     final parts = <Map<String, dynamic>>[];
 
-    String role;
-    switch (message.messageType) {
-      case ToolResultMessage():
-        role = 'function';
-        break;
-      default:
-        role = message.role == ChatRole.user ? 'user' : 'model';
-    }
+    final role = message.role == ChatRole.user ? 'user' : 'model';
 
-    switch (message.messageType) {
-      case TextMessage():
-        parts.add({'text': message.content});
-        break;
-      case ImageMessage(mime: final mime, data: final data):
-        final supportedFormats = [
-          'image/jpeg',
-          'image/png',
-          'image/gif',
-          'image/webp'
-        ];
-        if (!supportedFormats.contains(mime.mimeType)) {
-          parts.add({
-            'text':
-                '[Unsupported image format: ${mime.mimeType}. Supported formats: ${supportedFormats.join(', ')}]',
-          });
-        } else {
-          parts.add({
-            'inlineData': {
-              'mimeType': mime.mimeType,
-              'data': base64Encode(data),
-            },
-          });
+    for (final part in message.parts) {
+      if (part is TextContentPart) {
+        if (part.text.isNotEmpty) {
+          parts.add({'text': part.text});
         }
-        break;
-      case FileMessage(mime: final mime, data: final data):
-        if (data.length > config.maxInlineDataSize) {
-          parts.add({
-            'text':
-                '[File too large: ${data.length} bytes. Maximum size: ${config.maxInlineDataSize} bytes]',
-          });
-        } else if (mime.isDocument || mime.isAudio || mime.isVideo) {
-          parts.add({
-            'inlineData': {
-              'mimeType': mime.mimeType,
-              'data': base64Encode(data),
-            },
-          });
-        } else {
-          parts.add({
-            'text':
-                '[File type ${mime.description} (${mime.mimeType}) may not be supported by Google AI]',
-          });
+      } else if (part is ReasoningContentPart) {
+        if (part.text.isNotEmpty) {
+          // For input, treat reasoning as regular text.
+          parts.add({'text': part.text});
         }
-        break;
-      case ImageUrlMessage(url: final url):
+      } else if (part is FileContentPart) {
+        _convertFilePart(part, parts);
+      } else if (part is UrlFileContentPart) {
         parts.add({
           'text':
-              '[Image URL not supported by Google. Please upload the image directly: $url]',
+              '[Image URL not supported by Google. Please upload the image directly: ${part.url}]',
         });
-        break;
-      case ToolUseMessage(toolCalls: final toolCalls):
-        for (final toolCall in toolCalls) {
-          try {
-            final args = jsonDecode(toolCall.function.arguments);
-            parts.add({
-              'functionCall': {
-                'name': toolCall.function.name,
-                'args': args,
-              },
-            });
-          } catch (e) {
-            parts.add({
-              'text':
-                  '[Error: Invalid tool call arguments for ${toolCall.function.name}]',
-            });
-          }
-        }
-        break;
-      case ToolResultMessage(results: final results):
-        for (final result in results) {
-          parts.add({
-            'functionResponse': {
-              'name': result.function.name,
-              'response': {
-                'name': result.function.name,
-                'content': [
-                  {
-                    'text': result.function.arguments,
-                  }
-                ],
-              },
-            },
-          });
-        }
-        break;
+      } else if (part is ToolCallContentPart &&
+          message.role == ChatRole.assistant) {
+        _convertToolCallPart(part, parts);
+      } else if (part is ToolResultContentPart &&
+          message.role == ChatRole.user) {
+        _convertToolResultPart(part, parts);
+      }
     }
 
     return {'role': role, 'parts': parts};
+  }
+
+  void _convertFilePart(
+    FileContentPart part,
+    List<Map<String, dynamic>> parts,
+  ) {
+    final mime = part.mime;
+    final data = part.data;
+
+    // Image handling
+    if (mime.mimeType.startsWith('image/')) {
+      const supportedFormats = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp'
+      ];
+      if (!supportedFormats.contains(mime.mimeType)) {
+        parts.add({
+          'text':
+              '[Unsupported image format: ${mime.mimeType}. Supported formats: ${supportedFormats.join(', ')}]',
+        });
+      } else {
+        parts.add({
+          'inlineData': {
+            'mimeType': mime.mimeType,
+            'data': base64Encode(data),
+          },
+        });
+      }
+      return;
+    }
+
+    // Generic file handling
+    if (data.length > config.maxInlineDataSize) {
+      parts.add({
+        'text':
+            '[File too large: ${data.length} bytes. Maximum size: ${config.maxInlineDataSize} bytes]',
+      });
+    } else if (mime.isDocument || mime.isAudio || mime.isVideo) {
+      parts.add({
+        'inlineData': {
+          'mimeType': mime.mimeType,
+          'data': base64Encode(data),
+        },
+      });
+    } else {
+      parts.add({
+        'text':
+            '[File type ${mime.description} (${mime.mimeType}) may not be supported by Google AI]',
+      });
+    }
+  }
+
+  void _convertToolCallPart(
+    ToolCallContentPart part,
+    List<Map<String, dynamic>> parts,
+  ) {
+    try {
+      final args = jsonDecode(part.argumentsJson);
+      parts.add({
+        'functionCall': {
+          'name': part.toolName,
+          'args': args,
+        },
+      });
+    } catch (_) {
+      parts.add({
+        'text': '[Error: Invalid tool call arguments for ${part.toolName}]',
+      });
+    }
+  }
+
+  void _convertToolResultPart(
+    ToolResultContentPart part,
+    List<Map<String, dynamic>> parts,
+  ) {
+    String responseText;
+
+    final payload = part.payload;
+    if (payload is ToolResultTextPayload) {
+      responseText = payload.value;
+    } else if (payload is ToolResultJsonPayload) {
+      responseText = jsonEncode(payload.value);
+    } else if (payload is ToolResultErrorPayload) {
+      responseText = payload.message;
+    } else if (payload is ToolResultContentPayload) {
+      final texts = <String>[];
+      for (final nested in payload.parts) {
+        if (nested is TextContentPart) {
+          texts.add(nested.text);
+        }
+      }
+      responseText = texts.join('\n');
+    } else {
+      responseText = '';
+    }
+
+    parts.add({
+      'functionResponse': {
+        'name': part.toolName,
+        'response': {
+          'name': part.toolName,
+          'content': [
+            {
+              'text': responseText,
+            }
+          ],
+        },
+      },
+    });
   }
 
   /// Convert Tool to Google format.
@@ -591,13 +689,13 @@ class GoogleChat implements ChatCapability {
     switch (toolChoice) {
       case AutoToolChoice():
         return {
-          'function_calling_config': {
+          'functionCallingConfig': {
             'mode': 'AUTO',
           },
         };
       case AnyToolChoice():
         return {
-          'function_calling_config': {
+          'functionCallingConfig': {
             'mode': 'ANY',
           },
         };
@@ -608,20 +706,20 @@ class GoogleChat implements ChatCapability {
             'Tool "$toolName" specified in SpecificToolChoice not found in available tools',
           );
           return {
-            'function_calling_config': {
+            'functionCallingConfig': {
               'mode': 'AUTO',
             },
           };
         }
         return {
-          'function_calling_config': {
+          'functionCallingConfig': {
             'mode': 'ANY',
-            'allowed_function_names': [toolName],
+            'allowedFunctionNames': [toolName],
           },
         };
       case NoneToolChoice():
         return {
-          'function_calling_config': {
+          'functionCallingConfig': {
             'mode': 'NONE',
           },
         };
@@ -634,6 +732,28 @@ class GoogleChatResponse implements ChatResponse {
   final Map<String, dynamic> _rawResponse;
 
   GoogleChatResponse(this._rawResponse);
+
+  /// Full raw response returned by the Google API.
+  Map<String, dynamic> get rawResponse => _rawResponse;
+
+  /// All candidates returned by the model (if any).
+  ///
+  /// This exposes the complete candidate list so callers can access
+  /// alternative generations when [GoogleConfig.candidateCount] > 1.
+  List<Map<String, dynamic>>? get candidates {
+    final rawCandidates = _rawResponse['candidates'] as List?;
+    if (rawCandidates == null || rawCandidates.isEmpty) return null;
+
+    return rawCandidates.map<Map<String, dynamic>>((candidate) {
+      if (candidate is Map<String, dynamic>) {
+        return candidate;
+      }
+      if (candidate is Map) {
+        return Map<String, dynamic>.from(candidate);
+      }
+      return <String, dynamic>{};
+    }).toList();
+  }
 
   @override
   String? get text {
@@ -740,7 +860,45 @@ class GoogleChatResponse implements ChatResponse {
   List<CallWarning> get warnings => const [];
 
   @override
-  Map<String, dynamic>? get metadata => null;
+  Map<String, dynamic>? get metadata {
+    final candidates = _rawResponse['candidates'] as List?;
+    final promptFeedback =
+        _rawResponse['promptFeedback'] as Map<String, dynamic>?;
+
+    bool hasThinkingBlocks = false;
+    bool hasSafetyRatings = false;
+
+    if (candidates != null && candidates.isNotEmpty) {
+      final content = candidates.first['content'] as Map<String, dynamic>?;
+      final parts = content?['parts'] as List?;
+      if (parts != null) {
+        for (final part in parts) {
+          final isThought = part['thought'] as bool? ?? false;
+          if (isThought) {
+            hasThinkingBlocks = true;
+            break;
+          }
+        }
+      }
+
+      final candidateSafety = candidates.first['safetyRatings'];
+      if (candidateSafety is List && candidateSafety.isNotEmpty) {
+        hasSafetyRatings = true;
+      }
+    }
+
+    final promptSafety = promptFeedback?['safetyRatings'];
+    if (!hasSafetyRatings && promptSafety is List && promptSafety.isNotEmpty) {
+      hasSafetyRatings = true;
+    }
+
+    return {
+      'provider': 'google',
+      if (candidates != null) 'candidateCount': candidates.length,
+      'hasThinking': hasThinkingBlocks,
+      'hasSafetyRatings': hasSafetyRatings,
+    };
+  }
 
   @override
   String toString() {

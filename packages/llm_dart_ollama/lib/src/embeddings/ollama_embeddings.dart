@@ -14,6 +14,9 @@ class OllamaEmbeddings implements EmbeddingCapability {
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
+    // TODO(ollama-native): this uses the OpenAI-compatible `/v1/embeddings`
+    // endpoint; consider migrating to the native `/api/embeddings` and
+    // adjusting the request/response mapping accordingly.
     final embeddings = <List<double>>[];
 
     for (final text in input) {

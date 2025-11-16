@@ -162,6 +162,15 @@ extension AnthropicMessageBuilderExtension on MessageBuilder {
     configure(anthropicBuilder);
 
     if (anthropicBuilder._cacheEnabled) {
+      // Attach Anthropic provider options for cacheControl so that
+      // the new ChatPromptMessage-based pipeline can read it directly.
+      final cacheControl = AnthropicCacheControl.ephemeral(
+        ttl: anthropicBuilder._cacheTtl?.value,
+      );
+      setProviderOptions('anthropic', {
+        'cacheControl': cacheControl.toJson(),
+      });
+
       final cacheMarker = AnthropicTextBlock(
         text: '',
         cacheControl: AnthropicCacheControl.ephemeral(

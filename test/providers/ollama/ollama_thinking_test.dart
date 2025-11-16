@@ -210,5 +210,38 @@ void main() {
 
       expect(stringOutput, equals(''));
     });
+
+    test('OllamaChatResponse should map usage and metadata from native fields',
+        () {
+      final mockResponse = <String, dynamic>{
+        'model': 'llama3.2',
+        'response': 'Answer',
+        'prompt_eval_count': 10,
+        'eval_count': 20,
+        'total_duration': 1000000000,
+        'load_duration': 1000000,
+        'context': [1, 2, 3],
+        'done_reason': 'stop',
+      };
+
+      final response = OllamaChatResponse(mockResponse);
+
+      final usage = response.usage;
+      expect(usage, isNotNull);
+      expect(usage!.promptTokens, equals(10));
+      expect(usage.completionTokens, equals(20));
+      expect(usage.totalTokens, equals(30));
+
+      final metadata = response.metadata;
+      expect(metadata, isNotNull);
+      expect(metadata!['provider'], equals('ollama'));
+      expect(metadata['model'], equals('llama3.2'));
+      expect(metadata['doneReason'], equals('stop'));
+      expect(metadata['hasContext'], isTrue);
+      expect(metadata['totalDuration'], equals(1000000000));
+      expect(metadata['loadDuration'], equals(1000000));
+      expect(metadata['promptEvalCount'], equals(10));
+      expect(metadata['evalCount'], equals(20));
+    });
   });
 }

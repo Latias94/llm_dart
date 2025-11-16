@@ -173,12 +173,38 @@ class PhindChat implements ChatCapability {
     List<Tool>? tools,
     bool stream,
   ) {
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+
     final messageHistory = <Map<String, dynamic>>[];
 
-    // Convert messages to Phind format
-    for (final message in messages) {
-      final roleStr = message.role == ChatRole.user ? 'user' : 'assistant';
-      messageHistory.add({'content': message.content, 'role': roleStr});
+    // Convert messages to Phind format using prompt model
+    for (final message in promptMessages) {
+      final roleStr = switch (message.role) {
+        ChatRole.user => 'user',
+        ChatRole.assistant => 'assistant',
+        ChatRole.system => 'system',
+      };
+
+      final buffer = StringBuffer();
+      for (final part in message.parts) {
+        if (part is TextContentPart) {
+          buffer.writeln(part.text);
+        } else if (part is ReasoningContentPart) {
+          buffer.writeln(part.text);
+        } else if (part is UrlFileContentPart) {
+          buffer.writeln('[url] ${part.url}');
+        } else if (part is FileContentPart) {
+          buffer.writeln('[file ${part.mime.mimeType}]');
+        } else if (part is ToolCallContentPart) {
+          buffer.writeln('[tool call ${part.toolName}]');
+        } else if (part is ToolResultContentPart) {
+          buffer.writeln('[tool result ${part.toolName}]');
+        }
+      }
+
+      messageHistory
+          .add({'content': buffer.toString().trim(), 'role': roleStr});
     }
 
     // Add system message if configured

@@ -1,5 +1,36 @@
-import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:test/test.dart';
+
+class FakeGoogleClient extends GoogleClient {
+  Map<String, dynamic>? lastRequestBody;
+  String? lastEndpoint;
+
+  FakeGoogleClient(GoogleConfig config) : super(config);
+
+  @override
+  Future<Map<String, dynamic>> postJson(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
+    lastEndpoint = endpoint;
+    lastRequestBody = data;
+
+    // Return a minimal valid response structure.
+    return {
+      'candidates': [
+        {
+          'content': {
+            'parts': [
+              {'text': 'ok'},
+            ],
+          },
+        },
+      ],
+    };
+  }
+}
 
 void main() {
   group('Google Tool Calling Tests', () {
@@ -247,6 +278,48 @@ void main() {
       });
     });
 
+    group('Request body structure', () {
+      test('GoogleChat uses toolConfig.functionCallingConfig for tool choice',
+          () async {
+        final config = GoogleConfig(
+          apiKey: 'test-key',
+          model: 'gemini-1.5-flash',
+          tools: testTools,
+          toolChoice: const SpecificToolChoice('get_weather'),
+        );
+
+        final client = FakeGoogleClient(config);
+        final chat = GoogleChat(client, config);
+
+        final messages = [ChatMessage.user('hello')];
+
+        await chat.chatWithTools(messages, testTools);
+
+        final body = client.lastRequestBody;
+        expect(body, isNotNull);
+
+        // Ensure toolConfig is present and old snake_case keys are not used.
+        expect(body!.containsKey('toolConfig'), isTrue);
+        expect(body.containsKey('tool_config'), isFalse);
+
+        final toolConfig = body['toolConfig'] as Map<String, dynamic>;
+        final functionCallingConfig =
+            toolConfig['functionCallingConfig'] as Map<String, dynamic>;
+
+        expect(functionCallingConfig['mode'], equals('ANY'));
+
+        // SpecificToolChoice should set allowedFunctionNames with the tool name.
+        final allowedNames =
+            functionCallingConfig['allowedFunctionNames'] as List<dynamic>?;
+        expect(allowedNames, isNotNull);
+        expect(allowedNames, contains('get_weather'));
+        expect(
+          functionCallingConfig.containsKey('allowed_function_names'),
+          isFalse,
+        );
+      });
+    });
+
     group('Tool Choice Behavior Scenarios', () {
       test('should handle multiple tools with SpecificToolChoice', () {
         final config = GoogleConfig(
@@ -342,6 +415,69 @@ void main() {
         expect(oldStyleConfig.toolChoice, isNull);
         expect(newStyleConfig.toolChoice, isNotNull);
         expect(newStyleConfig.toolChoice, isA<SpecificToolChoice>());
+      });
+    });
+
+    group('Structured output and sampling config', () {
+      test('GoogleConfig.fromLLMConfig should map structured output fields',
+          () {
+        final schema = StructuredOutputFormat(
+          name: 'TestObject',
+          description: 'A test object',
+          schema: {
+            'type': 'object',
+            'properties': {
+              'value': {'type': 'string'}
+            },
+          },
+        );
+
+        final llmConfig = LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
+          model: 'gemini-1.5-flash',
+          extensions: {
+            LLMConfigKeys.jsonSchema: schema,
+            LLMConfigKeys.frequencyPenalty: 0.5,
+            LLMConfigKeys.presencePenalty: 0.2,
+            LLMConfigKeys.seed: 42,
+          },
+        );
+
+        final googleConfig = GoogleConfig.fromLLMConfig(llmConfig);
+
+        expect(googleConfig.jsonSchema, isNotNull);
+        expect(googleConfig.jsonSchema!.name, equals('TestObject'));
+        expect(googleConfig.frequencyPenalty, equals(0.5));
+        expect(googleConfig.presencePenalty, equals(0.2));
+        expect(googleConfig.seed, equals(42));
+      });
+
+      test('GoogleConfig.copyWith should preserve structured output fields',
+          () {
+        final schema = StructuredOutputFormat(
+          name: 'Original',
+          schema: {'type': 'object'},
+        );
+
+        final originalConfig = GoogleConfig(
+          apiKey: 'test-key',
+          model: 'gemini-1.5-flash',
+          jsonSchema: schema,
+          frequencyPenalty: 0.3,
+          presencePenalty: 0.1,
+          seed: 7,
+        );
+
+        final copiedConfig = originalConfig.copyWith(
+          maxTokens: 256,
+        );
+
+        expect(copiedConfig.jsonSchema, same(schema));
+        expect(copiedConfig.frequencyPenalty, equals(0.3));
+        expect(copiedConfig.presencePenalty, equals(0.1));
+        expect(copiedConfig.seed, equals(7));
+        expect(copiedConfig.maxTokens, equals(256));
       });
     });
   });

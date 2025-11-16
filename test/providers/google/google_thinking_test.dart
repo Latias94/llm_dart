@@ -229,5 +229,39 @@ void main() {
       expect(stringRepresentation, isNot(contains('Thinking:')));
       expect(stringRepresentation, equals('Just regular content.'));
     });
+
+    test('GoogleChatResponse exposes all candidates and candidateCount', () {
+      final mockResponse = {
+        'candidates': [
+          {
+            'content': {
+              'parts': [
+                {
+                  'text': 'Candidate 1',
+                },
+              ],
+            },
+          },
+          {
+            'content': {
+              'parts': [
+                {
+                  'text': 'Candidate 2',
+                },
+              ],
+            },
+          },
+        ],
+      };
+
+      final response = GoogleChatResponse(mockResponse);
+
+      expect(response.candidates, isNotNull);
+      expect(response.candidates!.length, equals(2));
+
+      final metadata = response.metadata;
+      expect(metadata, isNotNull);
+      expect(metadata!['candidateCount'], equals(2));
+    });
   });
 }

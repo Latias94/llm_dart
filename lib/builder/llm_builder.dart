@@ -4,6 +4,11 @@ import '../core/registry.dart';
 import '../core/web_search.dart';
 import '../models/tool_models.dart';
 import '../models/chat_models.dart';
+import '../models/audio_models.dart';
+import '../models/image_models.dart';
+import '../models/file_models.dart';
+import '../models/moderation_models.dart';
+import '../models/assistant_models.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAIProvider;
 import '../providers/google/builder.dart';
 import '../providers/google/tts.dart';
@@ -29,6 +34,20 @@ class LLMBuilder {
     baseUrl: '',
     model: '',
   );
+
+  /// Registered chat middlewares for this builder.
+  ///
+  /// These middlewares are applied only when using middleware-aware
+  /// build methods (e.g. [buildWithMiddleware]) to keep the default
+  /// build behavior fully backwards compatible.
+  final List<ChatMiddleware> _middlewares = [];
+
+  /// Registered embedding middlewares for this builder.
+  ///
+  /// These middlewares are applied only when using embedding-aware
+  /// build methods (e.g. [buildEmbeddingWithMiddleware]) to keep the
+  /// default build behavior fully backwards compatible.
+  final List<EmbeddingMiddleware> _embeddingMiddlewares = [];
 
   /// Creates a new empty builder instance with default values
   LLMBuilder();
@@ -119,6 +138,52 @@ class LLMBuilder {
 
   LLMBuilder githubCopilot() => provider('github-copilot');
   LLMBuilder togetherAI() => provider('together-ai');
+
+  /// Replaces the current middleware list with the given middlewares.
+  ///
+  /// This is conceptually similar to the `middleware`/`middlewares`
+  /// option in the Vercel AI SDK: callers provide the complete
+  /// middleware configuration for this builder.
+  LLMBuilder middlewares(List<ChatMiddleware> middlewares) {
+    _middlewares
+      ..clear()
+      ..addAll(middlewares);
+    return this;
+  }
+
+  /// Adds a single middleware to the end of the middleware list.
+  ///
+  /// This is a convenience method for incremental configuration.
+  LLMBuilder addMiddleware(ChatMiddleware middleware) {
+    _middlewares.add(middleware);
+    return this;
+  }
+
+  /// Clears all configured middlewares.
+  LLMBuilder clearMiddlewares() {
+    _middlewares.clear();
+    return this;
+  }
+
+  /// Replaces the current embedding middleware list with the given middlewares.
+  LLMBuilder embeddingMiddlewares(List<EmbeddingMiddleware> middlewares) {
+    _embeddingMiddlewares
+      ..clear()
+      ..addAll(middlewares);
+    return this;
+  }
+
+  /// Adds a single embedding middleware to the end of the middleware list.
+  LLMBuilder addEmbeddingMiddleware(EmbeddingMiddleware middleware) {
+    _embeddingMiddlewares.add(middleware);
+    return this;
+  }
+
+  /// Clears all configured embedding middlewares.
+  LLMBuilder clearEmbeddingMiddlewares() {
+    _embeddingMiddlewares.clear();
+    return this;
+  }
 
   /// Sets the API key for authentication
   LLMBuilder apiKey(String key) {
@@ -582,6 +647,35 @@ class LLMBuilder {
     return LLMProviderRegistry.createProvider(_providerId!, _config);
   }
 
+  /// Builds a provider with chat middlewares applied.
+  ///
+  /// This method wraps the underlying provider in a lightweight
+  /// proxy that:
+  /// - Executes the registered [ChatMiddleware] chain for
+  ///   `chat` / `chatWithTools` calls.
+  /// - Delegates all other capabilities (audio, embeddings,
+  ///   images, etc.) directly to the underlying provider.
+  ///
+  /// The returned instance is suitable for applications that want
+  /// cross-cutting concerns around chat calls without changing
+  /// the default behavior of [build] or capability-specific
+  /// factory methods.
+  Future<ChatCapability> buildWithMiddleware() async {
+    final baseProvider = await build();
+
+    // If no middlewares are registered, return the underlying provider.
+    if (_middlewares.isEmpty) {
+      return baseProvider;
+    }
+
+    return _MiddlewareWrappedProvider(
+      baseProvider,
+      _providerId ?? 'unknown',
+      _config,
+      List<ChatMiddleware>.from(_middlewares),
+    );
+  }
+
   // ========== Capability Factory Methods ==========
   // These methods provide type-safe access to specific capabilities
   // at build time, eliminating the need for runtime type casting.
@@ -672,6 +766,39 @@ class LLMBuilder {
     return provider as EmbeddingCapability;
   }
 
+  /// Builds a provider with embedding middlewares applied.
+  ///
+  /// This method wraps the underlying provider in a lightweight
+  /// proxy that:
+  /// - Executes the registered [EmbeddingMiddleware] chain for
+  ///   `embed` calls.
+  /// - Delegates all other capabilities directly to the underlying provider.
+  ///
+  /// The returned instance is suitable for applications that want
+  /// cross-cutting concerns (logging, caching, policy enforcement)
+  /// around embedding calls without changing the default behavior
+  /// of [buildEmbedding].
+  Future<EmbeddingCapability> buildEmbeddingWithMiddleware() async {
+    final provider = await build();
+    if (provider is! EmbeddingCapability) {
+      throw UnsupportedCapabilityError(
+        'Provider "$_providerId" does not support embedding capabilities. '
+        'Supported providers: OpenAI, Google, DeepSeek',
+      );
+    }
+
+    if (_embeddingMiddlewares.isEmpty) {
+      return provider as EmbeddingCapability;
+    }
+
+    return _EmbeddingMiddlewareWrappedProvider(
+      provider as EmbeddingCapability,
+      _providerId ?? 'unknown',
+      _config,
+      List<EmbeddingMiddleware>.from(_embeddingMiddlewares),
+    );
+  }
+
   /// Builds a provider with FileManagementCapability
   ///
   /// Returns a provider that implements FileManagementCapability for
@@ -747,6 +874,22 @@ class LLMBuilder {
   /// ```
   Future<AssistantCapability> buildAssistant() async {
     final provider = await build();
+    if (provider is! AssistantCapability) {
+      throw UnsupportedCapabilityError(
+        'Provider "$_providerId" does not support assistant capabilities. '
+        'Supported providers: OpenAI',
+      );
+    }
+    return provider as AssistantCapability;
+  }
+
+  /// Builds a provider with chat middlewares applied and
+  /// AssistantCapability support.
+  ///
+  /// This is a convenience method for applications that want
+  /// to use assistants with middleware-wrapped chat calls.
+  Future<AssistantCapability> buildAssistantWithMiddleware() async {
+    final provider = await buildWithMiddleware();
     if (provider is! AssistantCapability) {
       throw UnsupportedCapabilityError(
         'Provider "$_providerId" does not support assistant capabilities. '
@@ -889,5 +1032,587 @@ class LLMBuilder {
     }
 
     return provider as GoogleTTSCapability;
+  }
+}
+
+/// Internal wrapper that applies chat middlewares while delegating
+/// all other capabilities to the underlying provider.
+class _MiddlewareWrappedProvider
+    extends BaseAudioCapability
+    implements
+        ChatCapability,
+        EmbeddingCapability,
+        ImageGenerationCapability,
+        ModelListingCapability,
+        FileManagementCapability,
+        ModerationCapability,
+        AssistantCapability,
+        ProviderCapabilities {
+  final ChatCapability _chat;
+  final dynamic _inner;
+  final String _providerId;
+  final LLMConfig _config;
+  final List<ChatMiddleware> _middlewares;
+
+  _MiddlewareWrappedProvider(
+    ChatCapability inner,
+    this._providerId,
+    this._config,
+    List<ChatMiddleware> middlewares,
+  )   : _chat = inner,
+        _inner = inner,
+        _middlewares = middlewares;
+  Future<ChatResponse> _executeChatWithMiddlewares(
+    ChatCallContext context,
+  ) async {
+    // Apply transform chain (if any)
+    var ctx = context;
+    for (final middleware in _middlewares) {
+      final transform = middleware.transform;
+      if (transform != null) {
+        ctx = await transform(ctx);
+      }
+    }
+
+    // Base chat function
+    var next = (ChatCallContext c) => _chat.chatWithTools(
+          c.messages,
+          c.tools,
+          cancelToken: c.cancelToken,
+        );
+
+    // Wrap chat in reverse order
+    for (final middleware in _middlewares.reversed) {
+      final wrap = middleware.wrapChat;
+      if (wrap != null) {
+        final currentNext = next;
+        next = (c) => wrap(currentNext, c);
+      }
+    }
+
+    return next(ctx);
+  }
+
+  Stream<ChatStreamEvent> _executeStreamWithMiddlewares(
+    ChatCallContext context,
+  ) async* {
+    // Apply transform chain (if any)
+    var ctx = context;
+    for (final middleware in _middlewares) {
+      final transform = middleware.transform;
+      if (transform != null) {
+        ctx = await transform(ctx);
+      }
+    }
+
+    // Base stream function
+    var next = (ChatCallContext c) => _chat.chatStream(
+        c.messages,
+        tools: c.tools,
+        cancelToken: c.cancelToken,
+      );
+
+    // Wrap stream in reverse order
+    for (final middleware in _middlewares.reversed) {
+      final wrap = middleware.wrapStream;
+      if (wrap != null) {
+        final currentNext = next;
+        next = (c) => wrap(currentNext, c);
+      }
+    }
+
+    yield* next(ctx);
+  }
+
+  @override
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) {
+    return chatWithTools(messages, null, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) {
+    final context = ChatCallContext(
+      providerId: _providerId,
+      model: _config.model,
+      config: _config,
+      messages: messages,
+      tools: tools,
+      cancelToken: cancelToken,
+      operationKind: ChatOperationKind.chat,
+    );
+    return _executeChatWithMiddlewares(context);
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    final context = ChatCallContext(
+      providerId: _providerId,
+      model: _config.model,
+      config: _config,
+      messages: messages,
+      tools: tools,
+      cancelToken: cancelToken,
+      operationKind: ChatOperationKind.stream,
+    );
+    return _executeStreamWithMiddlewares(context);
+  }
+
+  @override
+  Future<List<ChatMessage>?> memoryContents() => _chat.memoryContents();
+
+  @override
+  Future<String> summarizeHistory(List<ChatMessage> messages) =>
+      _chat.summarizeHistory(messages);
+
+  // === AudioCapability delegation ===
+
+  @override
+  Set<AudioFeature> get supportedFeatures {
+    final inner = _inner;
+    if (inner is AudioCapability) {
+      return inner.supportedFeatures;
+    }
+    return const <AudioFeature>{};
+  }
+
+  @override
+  Future<TTSResponse> textToSpeech(
+    TTSRequest request, {
+    CancelToken? cancelToken,
+  }) {
+    final inner = _inner;
+    if (inner is AudioCapability) {
+      return inner.textToSpeech(request, cancelToken: cancelToken);
+    }
+    throw UnsupportedError(
+      'Text-to-speech not supported by provider $_providerId',
+    );
+  }
+
+  @override
+  Stream<AudioStreamEvent> textToSpeechStream(
+    TTSRequest request, {
+    CancelToken? cancelToken,
+  }) {
+    final inner = _inner;
+    if (inner is AudioCapability) {
+      return inner.textToSpeechStream(request, cancelToken: cancelToken);
+    }
+    throw UnsupportedError(
+      'Streaming text-to-speech not supported by provider $_providerId',
+    );
+  }
+
+  @override
+  Future<List<VoiceInfo>> getVoices() {
+    final inner = _inner;
+    if (inner is AudioCapability) {
+      return inner.getVoices();
+    }
+    throw UnsupportedError('Voice listing not supported by provider $_providerId');
+  }
+
+  @override
+  Future<STTResponse> speechToText(
+    STTRequest request, {
+    CancelToken? cancelToken,
+  }) {
+    final inner = _inner;
+    if (inner is AudioCapability) {
+      return inner.speechToText(request, cancelToken: cancelToken);
+    }
+    throw UnsupportedError(
+      'Speech-to-text not supported by provider $_providerId',
+    );
+  }
+
+  @override
+  Future<STTResponse> translateAudio(
+    AudioTranslationRequest request, {
+    CancelToken? cancelToken,
+  }) {
+    final inner = _inner;
+    if (inner is AudioCapability) {
+      return inner.translateAudio(request, cancelToken: cancelToken);
+    }
+    throw UnsupportedError(
+      'Audio translation not supported by provider $_providerId',
+    );
+  }
+
+  @override
+  Future<List<LanguageInfo>> getSupportedLanguages() {
+    final inner = _inner;
+    if (inner is AudioCapability) {
+      return inner.getSupportedLanguages();
+    }
+    throw UnsupportedError(
+      'Language listing not supported by provider $_providerId',
+    );
+  }
+
+  @override
+  Future<RealtimeAudioSession> startRealtimeSession(
+    RealtimeAudioConfig config,
+  ) {
+    final inner = _inner;
+    if (inner is AudioCapability) {
+      return inner.startRealtimeSession(config);
+    }
+    throw UnsupportedError(
+      'Real-time audio not supported by provider $_providerId',
+    );
+  }
+
+  @override
+  List<String> getSupportedAudioFormats() {
+    final inner = _inner;
+    if (inner is AudioCapability) {
+      return inner.getSupportedAudioFormats();
+    }
+    return const ['mp3', 'wav', 'ogg'];
+  }
+
+  // === EmbeddingCapability delegation ===
+
+  @override
+  Future<List<List<double>>> embed(
+    List<String> input, {
+    CancelToken? cancelToken,
+  }) {
+    final inner = _inner;
+    if (inner is EmbeddingCapability) {
+      return inner.embed(input, cancelToken: cancelToken);
+    }
+    throw UnsupportedError('Embeddings not supported by provider $_providerId');
+  }
+
+  // === ImageGenerationCapability delegation ===
+
+  @override
+  Future<ImageGenerationResponse> generateImages(
+    ImageGenerationRequest request,
+  ) {
+    final inner = _inner;
+    if (inner is ImageGenerationCapability) {
+      return inner.generateImages(request);
+    }
+    throw UnsupportedError('Image generation not supported by provider $_providerId');
+  }
+
+  @override
+  Future<ImageGenerationResponse> editImage(ImageEditRequest request) {
+    final inner = _inner;
+    if (inner is ImageGenerationCapability) {
+      return inner.editImage(request);
+    }
+    throw UnsupportedError('Image editing not supported by provider $_providerId');
+  }
+
+  @override
+  Future<ImageGenerationResponse> createVariation(
+    ImageVariationRequest request,
+  ) {
+    final inner = _inner;
+    if (inner is ImageGenerationCapability) {
+      return inner.createVariation(request);
+    }
+    throw UnsupportedError(
+      'Image variation not supported by provider $_providerId',
+    );
+  }
+
+  @override
+  List<String> getSupportedSizes() {
+    final inner = _inner;
+    if (inner is ImageGenerationCapability) {
+      return inner.getSupportedSizes();
+    }
+    return const <String>[];
+  }
+
+  @override
+  List<String> getSupportedFormats() {
+    final inner = _inner;
+    if (inner is ImageGenerationCapability) {
+      return inner.getSupportedFormats();
+    }
+    return const <String>[];
+  }
+
+  @override
+  bool get supportsImageEditing {
+    final inner = _inner;
+    if (inner is ImageGenerationCapability) {
+      return inner.supportsImageEditing;
+    }
+    return false;
+  }
+
+  @override
+  bool get supportsImageVariations {
+    final inner = _inner;
+    if (inner is ImageGenerationCapability) {
+      return inner.supportsImageVariations;
+    }
+    return false;
+  }
+
+  @override
+  Future<List<String>> generateImage({
+    required String prompt,
+    String? model,
+    String? negativePrompt,
+    String? imageSize,
+    int? batchSize,
+    String? seed,
+    int? numInferenceSteps,
+    double? guidanceScale,
+    bool? promptEnhancement,
+  }) {
+    final inner = _inner;
+    if (inner is ImageGenerationCapability) {
+      return inner.generateImage(
+        prompt: prompt,
+        model: model,
+        negativePrompt: negativePrompt,
+        imageSize: imageSize,
+        batchSize: batchSize,
+        seed: seed,
+        numInferenceSteps: numInferenceSteps,
+        guidanceScale: guidanceScale,
+        promptEnhancement: promptEnhancement,
+      );
+    }
+    throw UnsupportedError('Image generation not supported by provider $_providerId');
+  }
+
+  // === ModelListingCapability delegation ===
+
+  @override
+  Future<List<AIModel>> models({CancelToken? cancelToken}) {
+    final inner = _inner;
+    if (inner is ModelListingCapability) {
+      return inner.models(cancelToken: cancelToken);
+    }
+    throw UnsupportedError('Model listing not supported by provider $_providerId');
+  }
+
+  // === FileManagementCapability delegation ===
+
+  @override
+  Future<FileObject> uploadFile(FileUploadRequest request) {
+    final inner = _inner;
+    if (inner is FileManagementCapability) {
+      return inner.uploadFile(request);
+    }
+    throw UnsupportedError('File management not supported by provider $_providerId');
+  }
+
+  @override
+  Future<FileListResponse> listFiles([FileListQuery? query]) {
+    final inner = _inner;
+    if (inner is FileManagementCapability) {
+      return inner.listFiles(query);
+    }
+    throw UnsupportedError('File management not supported by provider $_providerId');
+  }
+
+  @override
+  Future<FileObject> retrieveFile(String fileId) {
+    final inner = _inner;
+    if (inner is FileManagementCapability) {
+      return inner.retrieveFile(fileId);
+    }
+    throw UnsupportedError('File management not supported by provider $_providerId');
+  }
+
+  @override
+  Future<FileDeleteResponse> deleteFile(String fileId) {
+    final inner = _inner;
+    if (inner is FileManagementCapability) {
+      return inner.deleteFile(fileId);
+    }
+    throw UnsupportedError('File management not supported by provider $_providerId');
+  }
+
+  @override
+  Future<List<int>> getFileContent(String fileId) {
+    final inner = _inner;
+    if (inner is FileManagementCapability) {
+      return inner.getFileContent(fileId);
+    }
+    throw UnsupportedError('File management not supported by provider $_providerId');
+  }
+
+  // === ModerationCapability delegation ===
+
+  @override
+  Future<ModerationResponse> moderate(ModerationRequest request) {
+    final inner = _inner;
+    if (inner is ModerationCapability) {
+      return inner.moderate(request);
+    }
+    throw UnsupportedError('Moderation not supported by provider $_providerId');
+  }
+
+  // === AssistantCapability delegation ===
+
+  @override
+  Future<Assistant> createAssistant(CreateAssistantRequest request) {
+    final inner = _inner;
+    if (inner is AssistantCapability) {
+      return inner.createAssistant(request);
+    }
+    throw UnsupportedError('Assistants not supported by provider $_providerId');
+  }
+
+  @override
+  Future<Assistant> retrieveAssistant(String assistantId) {
+    final inner = _inner;
+    if (inner is AssistantCapability) {
+      return inner.retrieveAssistant(assistantId);
+    }
+    throw UnsupportedError('Assistants not supported by provider $_providerId');
+  }
+
+  @override
+  Future<Assistant> modifyAssistant(
+    String assistantId,
+    ModifyAssistantRequest request,
+  ) {
+    final inner = _inner;
+    if (inner is AssistantCapability) {
+      return inner.modifyAssistant(assistantId, request);
+    }
+    throw UnsupportedError('Assistants not supported by provider $_providerId');
+  }
+
+  @override
+  Future<ListAssistantsResponse> listAssistants(
+      [ListAssistantsQuery? query]) {
+    final inner = _inner;
+    if (inner is AssistantCapability) {
+      return inner.listAssistants(query);
+    }
+    throw UnsupportedError('Assistants not supported by provider $_providerId');
+  }
+
+  @override
+  Future<DeleteAssistantResponse> deleteAssistant(String assistantId) {
+    final inner = _inner;
+    if (inner is AssistantCapability) {
+      return inner.deleteAssistant(assistantId);
+    }
+    throw UnsupportedError('Assistants not supported by provider $_providerId');
+  }
+
+  // === ProviderCapabilities delegation ===
+
+  @override
+  Set<LLMCapability> get supportedCapabilities {
+    final inner = _inner;
+    if (inner is ProviderCapabilities) {
+      return inner.supportedCapabilities;
+    }
+    return const {LLMCapability.chat, LLMCapability.streaming};
+  }
+
+  @override
+  bool supports(LLMCapability capability) {
+    final inner = _inner;
+    if (inner is ProviderCapabilities) {
+      return inner.supports(capability);
+    }
+    return capability == LLMCapability.chat || capability == LLMCapability.streaming;
+  }
+}
+
+/// Internal wrapper that applies embedding middlewares while delegating
+/// all other capabilities to the underlying provider.
+class _EmbeddingMiddlewareWrappedProvider
+    implements EmbeddingCapability, ProviderCapabilities {
+  final EmbeddingCapability _embedding;
+  final dynamic _inner;
+  final String _providerId;
+  final LLMConfig _config;
+  final List<EmbeddingMiddleware> _middlewares;
+
+  _EmbeddingMiddlewareWrappedProvider(
+    EmbeddingCapability inner,
+    this._providerId,
+    this._config,
+    List<EmbeddingMiddleware> middlewares,
+  )   : _embedding = inner,
+        _inner = inner,
+        _middlewares = middlewares;
+
+  Future<List<List<double>>> _executeEmbedWithMiddlewares(
+    EmbeddingCallContext context,
+  ) async {
+    var ctx = context;
+    for (final middleware in _middlewares) {
+      final transform = middleware.transform;
+      if (transform != null) {
+        ctx = await transform(ctx);
+      }
+    }
+
+    var next = (EmbeddingCallContext c) =>
+        _embedding.embed(c.input, cancelToken: c.cancelToken);
+
+    for (final middleware in _middlewares.reversed) {
+      final wrap = middleware.wrapEmbed;
+      if (wrap != null) {
+        final currentNext = next;
+        next = (c) => wrap(currentNext, c);
+      }
+    }
+
+    return next(ctx);
+  }
+
+  @override
+  Future<List<List<double>>> embed(
+    List<String> input, {
+    CancelToken? cancelToken,
+  }) {
+    final context = EmbeddingCallContext(
+      providerId: _providerId,
+      model: _config.model,
+      config: _config,
+      input: input,
+      cancelToken: cancelToken,
+    );
+    return _executeEmbedWithMiddlewares(context);
+  }
+
+  @override
+  Set<LLMCapability> get supportedCapabilities {
+    final inner = _inner;
+    if (inner is ProviderCapabilities) {
+      return inner.supportedCapabilities;
+    }
+    return const {LLMCapability.embedding};
+  }
+
+  @override
+  bool supports(LLMCapability capability) {
+    final inner = _inner;
+    if (inner is ProviderCapabilities) {
+      return inner.supports(capability);
+    }
+    return capability == LLMCapability.embedding;
   }
 }

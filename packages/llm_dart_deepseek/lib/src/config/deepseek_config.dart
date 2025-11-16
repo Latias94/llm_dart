@@ -74,12 +74,23 @@ class DeepSeekConfig {
       tools: config.tools,
       toolChoice: config.toolChoice,
       // DeepSeek-specific parameters from extensions
-      logprobs: config.getExtension<bool>(LLMConfigKeys.logprobs),
-      topLogprobs: config.getExtension<int>('top_logprobs'),
-      frequencyPenalty: config.getExtension<double>('frequency_penalty'),
-      presencePenalty: config.getExtension<double>('presence_penalty'),
+      //
+      // Prefer well-known keys from LLMConfigKeys for new code, while
+      // still honoring the historical wire-style keys for backwards
+      // compatibility with existing callers and tests.
+      logprobs: config.getExtension<bool>(LLMConfigKeys.logprobs) ??
+          config.getExtension<bool>('logprobs'),
+      topLogprobs: config.getExtension<int>(LLMConfigKeys.topLogprobs) ??
+          config.getExtension<int>('top_logprobs'),
+      frequencyPenalty:
+          config.getExtension<double>(LLMConfigKeys.frequencyPenalty) ??
+              config.getExtension<double>('frequency_penalty'),
+      presencePenalty:
+          config.getExtension<double>(LLMConfigKeys.presencePenalty) ??
+              config.getExtension<double>('presence_penalty'),
       responseFormat:
-          config.getExtension<Map<String, dynamic>>('response_format'),
+          config.getExtension<Map<String, dynamic>>(LLMConfigKeys.responseFormat) ??
+              config.getExtension<Map<String, dynamic>>('response_format'),
       originalConfig: config,
     );
   }

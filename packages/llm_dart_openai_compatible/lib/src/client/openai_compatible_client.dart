@@ -87,6 +87,11 @@ class OpenAICompatibleClient {
     _sseBuffer.clear();
   }
 
+  /// Legacy message builder from ChatMessage.
+  ///
+  /// Retained for backward compatibility in callers that still use
+  /// ChatMessage directly. New code should prefer
+  /// [buildApiMessagesFromPrompt].
   List<Map<String, dynamic>> buildApiMessages(List<ChatMessage> messages) {
     final apiMessages = <Map<String, dynamic>>[];
 
@@ -104,6 +109,30 @@ class OpenAICompatibleClient {
         }
       } else {
         apiMessages.add(_convertMessage(message));
+      }
+    }
+
+    return apiMessages;
+  }
+
+  /// Build API messages from the structured ChatPromptMessage model.
+  ///
+  /// This mirrors the OpenAI client's behavior but keeps only the
+  /// subset of features that are meaningful for generic
+  /// OpenAI-compatible providers.
+  List<Map<String, dynamic>> buildApiMessagesFromPrompt(
+    List<ChatPromptMessage> promptMessages,
+  ) {
+    final apiMessages = <Map<String, dynamic>>[];
+
+    for (final message in promptMessages) {
+      final hasToolResult =
+          message.parts.any((part) => part is ToolResultContentPart);
+
+      if (hasToolResult) {
+        _appendToolResultMessagesFromPrompt(message, apiMessages);
+      } else {
+        apiMessages.add(_convertPromptMessage(message));
       }
     }
 
@@ -171,6 +200,179 @@ class OpenAICompatibleClient {
     }
 
     return result;
+  }
+
+  Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {
+    final role = switch (message.role) {
+      ChatRole.system => 'system',
+      ChatRole.user => 'user',
+      ChatRole.assistant => 'assistant',
+    };
+
+    // System: merge text + reasoning into one content string.
+    if (role == 'system') {
+      final buffer = StringBuffer();
+      for (final part in message.parts) {
+        if (part is TextContentPart) {
+          if (buffer.isNotEmpty) buffer.writeln();
+          buffer.write(part.text);
+        } else if (part is ReasoningContentPart) {
+          if (buffer.isNotEmpty) buffer.writeln();
+          buffer.write(part.text);
+        }
+      }
+
+      return {
+        'role': 'system',
+        'content': buffer.isNotEmpty ? buffer.toString() : '',
+      };
+    }
+
+    // Assistant with optional tool calls
+    if (role == 'assistant') {
+      final buffer = StringBuffer();
+      final toolCalls = <Map<String, dynamic>>[];
+
+      for (final part in message.parts) {
+        if (part is TextContentPart) {
+          buffer.write(part.text);
+        } else if (part is ReasoningContentPart) {
+          buffer.write(part.text);
+        } else if (part is ToolCallContentPart) {
+          toolCalls.add({
+            'id': part.toolCallId ?? 'call_${toolCalls.length}',
+            'type': 'function',
+            'function': {
+              'name': part.toolName,
+              'arguments': part.argumentsJson,
+            },
+          });
+        }
+      }
+
+      final result = <String, dynamic>{
+        'role': 'assistant',
+        'content': buffer.toString(),
+      };
+
+      if (toolCalls.isNotEmpty) {
+        result['tool_calls'] = toolCalls;
+      }
+
+      return result;
+    }
+
+    // User
+    if (role == 'user') {
+      final pureParts = message.parts
+          .where((part) => part is! ToolResultContentPart)
+          .toList();
+      final textParts =
+          pureParts.whereType<TextContentPart>().toList(growable: false);
+      final nonTextParts =
+          pureParts.where((p) => p is! TextContentPart).toList();
+
+      // Pure text
+      if (nonTextParts.isEmpty && textParts.length == 1) {
+        return {
+          'role': 'user',
+          'content': textParts.first.text,
+        };
+      }
+
+      // Multi-part / multi-modal
+      final contentArray = <Map<String, dynamic>>[];
+
+      for (final part in pureParts) {
+        if (part is TextContentPart) {
+          if (part.text.isEmpty) continue;
+          contentArray.add({'type': 'text', 'text': part.text});
+        } else if (part is ReasoningContentPart) {
+          if (part.text.isEmpty) continue;
+          contentArray.add({'type': 'text', 'text': part.text});
+        } else if (part is UrlFileContentPart) {
+          contentArray.add({
+            'type': 'image_url',
+            'image_url': {'url': part.url},
+          });
+        } else if (part is FileContentPart) {
+          _appendFilePartForPrompt(part, contentArray);
+        }
+      }
+
+      return {
+        'role': 'user',
+        'content': contentArray,
+      };
+    }
+
+    // Fallback
+    return {
+      'role': role,
+      'content': '',
+    };
+  }
+
+  void _appendFilePartForPrompt(
+    FileContentPart part,
+    List<Map<String, dynamic>> contentArray,
+  ) {
+    final mime = part.mime;
+    final data = part.data;
+    final base64Data = base64Encode(data);
+
+    if (mime.mimeType.startsWith('image/')) {
+      final imageDataUrl = 'data:${mime.mimeType};base64,$base64Data';
+      contentArray.add({
+        'type': 'image_url',
+        'image_url': {'url': imageDataUrl},
+      });
+    } else {
+      contentArray.add({
+        'type': 'file',
+        'file': {'file_data': base64Data},
+      });
+    }
+  }
+
+  void _appendToolResultMessagesFromPrompt(
+    ChatPromptMessage message,
+    List<Map<String, dynamic>> apiMessages,
+  ) {
+    final fallbackText = message.parts
+        .whereType<TextContentPart>()
+        .map((p) => p.text)
+        .join('\n');
+
+    for (final part in message.parts) {
+      if (part is! ToolResultContentPart) continue;
+
+      String content;
+      final payload = part.payload;
+      if (payload is ToolResultTextPayload) {
+        content = payload.value.isNotEmpty ? payload.value : fallbackText;
+      } else if (payload is ToolResultJsonPayload) {
+        content = jsonEncode(payload.value);
+      } else if (payload is ToolResultErrorPayload) {
+        content = payload.message;
+      } else if (payload is ToolResultContentPayload) {
+        final texts = <String>[];
+        for (final nested in payload.parts) {
+          if (nested is TextContentPart) {
+            texts.add(nested.text);
+          }
+        }
+        content = texts.join('\n');
+      } else {
+        content = fallbackText.isNotEmpty ? fallbackText : 'Tool result';
+      }
+
+      apiMessages.add({
+        'role': 'tool',
+        'tool_call_id': part.toolCallId,
+        'content': content,
+      });
+    }
   }
 
   Future<Map<String, dynamic>> postJson(

@@ -56,12 +56,14 @@ class GoogleConfig {
   final double? temperature;
   final String? systemPrompt;
   final Duration? timeout;
-  final bool stream;
   final double? topP;
   final int? topK;
   final List<Tool>? tools;
   final ToolChoice? toolChoice;
   final StructuredOutputFormat? jsonSchema;
+  final double? frequencyPenalty;
+  final double? presencePenalty;
+  final int? seed;
   final ReasoningEffort? reasoningEffort;
   final int? thinkingBudgetTokens;
   final bool? includeThoughts;
@@ -90,12 +92,14 @@ class GoogleConfig {
     this.temperature,
     this.systemPrompt,
     this.timeout,
-    this.stream = false,
     this.topP,
     this.topK,
     this.tools,
     this.toolChoice,
     this.jsonSchema,
+    this.frequencyPenalty,
+    this.presencePenalty,
+    this.seed,
     this.reasoningEffort,
     this.thinkingBudgetTokens,
     this.includeThoughts,
@@ -124,6 +128,13 @@ class GoogleConfig {
       topK: config.topK,
       tools: config.tools,
       toolChoice: config.toolChoice,
+      jsonSchema:
+          config.getExtension<StructuredOutputFormat>(LLMConfigKeys.jsonSchema),
+      frequencyPenalty:
+          config.getExtension<double>(LLMConfigKeys.frequencyPenalty),
+      presencePenalty:
+          config.getExtension<double>(LLMConfigKeys.presencePenalty),
+      seed: config.getExtension<int>(LLMConfigKeys.seed),
       reasoningEffort: ReasoningEffort.fromString(
         config.getExtension<String>(LLMConfigKeys.reasoningEffort),
       ),
@@ -211,12 +222,14 @@ class GoogleConfig {
     double? temperature,
     String? systemPrompt,
     Duration? timeout,
-    bool? stream,
     double? topP,
     int? topK,
     List<Tool>? tools,
     ToolChoice? toolChoice,
     StructuredOutputFormat? jsonSchema,
+    double? frequencyPenalty,
+    double? presencePenalty,
+    int? seed,
     ReasoningEffort? reasoningEffort,
     int? thinkingBudgetTokens,
     bool? includeThoughts,
@@ -238,12 +251,14 @@ class GoogleConfig {
       temperature: temperature ?? this.temperature,
       systemPrompt: systemPrompt ?? this.systemPrompt,
       timeout: timeout ?? this.timeout,
-      stream: stream ?? this.stream,
       topP: topP ?? this.topP,
       topK: topK ?? this.topK,
       tools: tools ?? this.tools,
       toolChoice: toolChoice ?? this.toolChoice,
       jsonSchema: jsonSchema ?? this.jsonSchema,
+      frequencyPenalty: frequencyPenalty ?? this.frequencyPenalty,
+      presencePenalty: presencePenalty ?? this.presencePenalty,
+      seed: seed ?? this.seed,
       reasoningEffort: reasoningEffort ?? this.reasoningEffort,
       thinkingBudgetTokens: thinkingBudgetTokens ?? this.thinkingBudgetTokens,
       includeThoughts: includeThoughts ?? this.includeThoughts,

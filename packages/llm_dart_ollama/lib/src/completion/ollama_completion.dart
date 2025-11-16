@@ -11,6 +11,9 @@ class OllamaCompletion implements CompletionCapability {
 
   @override
   Future<CompletionResponse> complete(CompletionRequest request) async {
+    // TODO(ollama-native): this uses the OpenAI-compatible `/v1/completions`
+    // endpoint; consider migrating to the native `/api/generate` endpoint and
+    // exposing Ollama-specific options (format/options/keep_alive) instead.
     final body = <String, dynamic>{
       'model': config.model,
       'prompt': request.prompt,

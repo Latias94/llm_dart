@@ -7,6 +7,7 @@ import '../models/moderation_models.dart';
 import '../models/assistant_models.dart';
 import 'llm_error.dart';
 import 'cancellation.dart';
+import 'config.dart';
 
 /// Enumeration of LLM capabilities that providers can support
 ///
@@ -353,6 +354,138 @@ abstract class ChatCapability {
   }
 }
 
+/// Kind of chat operation for middleware.
+///
+/// This distinguishes between non-streaming chat calls and streaming
+/// chat calls so that middleware can adapt behavior if needed.
+enum ChatOperationKind {
+  /// Standard non-streaming chat call that returns a [ChatResponse].
+  chat,
+
+  /// Streaming chat call that returns a [Stream] of [ChatStreamEvent]s.
+  stream,
+}
+
+/// Context information for a chat call executed through middleware.
+///
+/// This provides middlewares with a provider-agnostic view of the
+/// current chat invocation, including provider/model identifiers,
+/// configuration, and the messages/tools involved in the call.
+class ChatCallContext {
+  /// Provider identifier as registered in the LLMProviderRegistry.
+  final String providerId;
+
+  /// Model identifier for this call.
+  final String model;
+
+  /// Effective configuration used to create the provider.
+  ///
+  /// Note: Most providers read configuration at construction time,
+  /// so changing [config] inside middleware will typically not
+  /// affect the underlying provider for this call. It is exposed
+  /// primarily for observability and policy decisions.
+  final LLMConfig config;
+
+  /// Conversation history messages for this call.
+  final List<ChatMessage> messages;
+
+  /// Optional tools available for this call.
+  final List<Tool>? tools;
+
+  /// Optional cancellation token for this call.
+  final CancelToken? cancelToken;
+
+  /// Operation kind for this call (chat vs stream).
+  final ChatOperationKind operationKind;
+
+  const ChatCallContext({
+    required this.providerId,
+    required this.model,
+    required this.config,
+    required this.messages,
+    this.tools,
+    this.cancelToken,
+    this.operationKind = ChatOperationKind.chat,
+  });
+
+  /// Creates a copy of this context with the given fields replaced.
+  ChatCallContext copyWith({
+    String? providerId,
+    String? model,
+    LLMConfig? config,
+    List<ChatMessage>? messages,
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+    ChatOperationKind? operationKind,
+  }) {
+    return ChatCallContext(
+      providerId: providerId ?? this.providerId,
+      model: model ?? this.model,
+      config: config ?? this.config,
+      messages: messages ?? this.messages,
+      tools: tools ?? this.tools,
+      cancelToken: cancelToken ?? this.cancelToken,
+      operationKind: operationKind ?? this.operationKind,
+    );
+  }
+}
+
+/// Middleware specification for chat operations.
+///
+/// This design is intentionally symmetric for non-streaming and streaming
+/// chat operations and is conceptually aligned with the Vercel AI SDK
+/// middleware model:
+///
+/// - [transform] allows middlewares to adjust parameters before the call.
+/// - [wrapChat] wraps non-streaming chat calls.
+/// - [wrapStream] wraps streaming chat calls.
+///
+/// All fields are optional so that simple middlewares can implement only
+/// the hooks they need.
+class ChatMiddleware {
+  /// Middleware specification version for forward-compatibility.
+  ///
+  /// The current version is `v1`. Future versions may extend the
+  /// context shape or add additional hooks.
+  final String specificationVersion;
+
+  /// Transform the call context before it is passed to the provider.
+  ///
+  /// This hook is invoked before [wrapChat] / [wrapStream] and can be
+  /// used to adjust messages, tools, or other context fields.
+  final Future<ChatCallContext> Function(ChatCallContext context)? transform;
+
+  /// Wrap non-streaming chat calls.
+  ///
+  /// The [next] function executes the rest of the middleware chain and
+  /// eventually the underlying provider. Middlewares can:
+  /// - Inspect/modify the context before calling [next]
+  /// - Short-circuit the call by not invoking [next]
+  final Future<ChatResponse> Function(
+    Future<ChatResponse> Function(ChatCallContext) next,
+    ChatCallContext context,
+  )? wrapChat;
+
+  /// Wrap streaming chat calls.
+  ///
+  /// The [next] function executes the rest of the middleware chain and
+  /// eventually the underlying provider. Middlewares can:
+  /// - Inspect/modify the context before calling [next]
+  /// - Transform the output stream
+  /// - Short-circuit the call by not invoking [next]
+  final Stream<ChatStreamEvent> Function(
+    Stream<ChatStreamEvent> Function(ChatCallContext) next,
+    ChatCallContext context,
+  )? wrapStream;
+
+  const ChatMiddleware({
+    this.specificationVersion = 'v1',
+    this.transform,
+    this.wrapChat,
+    this.wrapStream,
+  });
+}
+
 /// Stream event for streaming chat responses
 sealed class ChatStreamEvent {
   const ChatStreamEvent();
@@ -444,6 +577,87 @@ abstract class EmbeddingCapability {
   Future<List<List<double>>> embed(
     List<String> input, {
     CancelToken? cancelToken,
+  });
+}
+
+/// Context information for an embedding call executed through middleware.
+class EmbeddingCallContext {
+  /// Provider identifier as registered in the LLMProviderRegistry.
+  final String providerId;
+
+  /// Model identifier for this call.
+  final String model;
+
+  /// Effective configuration used to create the provider.
+  final LLMConfig config;
+
+  /// Input texts for this embedding call.
+  final List<String> input;
+
+  /// Optional cancellation token for this call.
+  final CancelToken? cancelToken;
+
+  const EmbeddingCallContext({
+    required this.providerId,
+    required this.model,
+    required this.config,
+    required this.input,
+    this.cancelToken,
+  });
+
+  /// Creates a copy of this context with the given fields replaced.
+  EmbeddingCallContext copyWith({
+    String? providerId,
+    String? model,
+    LLMConfig? config,
+    List<String>? input,
+    CancelToken? cancelToken,
+  }) {
+    return EmbeddingCallContext(
+      providerId: providerId ?? this.providerId,
+      model: model ?? this.model,
+      config: config ?? this.config,
+      input: input ?? this.input,
+      cancelToken: cancelToken ?? this.cancelToken,
+    );
+  }
+}
+
+/// Middleware specification for embedding operations.
+///
+/// This design mirrors the shape of [ChatMiddleware] but is focused
+/// on embedding calls. Middlewares can:
+/// - Transform the call context via [transform]
+/// - Wrap the embed operation via [wrapEmbed]
+class EmbeddingMiddleware {
+  /// Middleware specification version for forward-compatibility.
+  ///
+  /// The current version is `v1`. Future versions may extend the
+  /// context shape or add additional hooks.
+  final String specificationVersion;
+
+  /// Transform the call context before it is passed to the provider.
+  ///
+  /// This hook is invoked before [wrapEmbed] and can be used to
+  /// adjust input texts or make policy decisions.
+  final Future<EmbeddingCallContext> Function(EmbeddingCallContext context)?
+      transform;
+
+  /// Wrap the embed operation.
+  ///
+  /// The [next] function executes the rest of the middleware chain and
+  /// eventually the underlying provider. Middlewares can:
+  /// - Inspect/modify the context before calling [next]
+  /// - Short-circuit the call by not invoking [next]
+  final Future<List<List<double>>> Function(
+    Future<List<List<double>>> Function(EmbeddingCallContext) next,
+    EmbeddingCallContext context,
+  )? wrapEmbed;
+
+  const EmbeddingMiddleware({
+    this.specificationVersion = 'v1',
+    this.transform,
+    this.wrapEmbed,
   });
 }
 

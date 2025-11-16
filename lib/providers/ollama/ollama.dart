@@ -61,6 +61,10 @@ OllamaProvider createOllamaProvider({
   bool? raw,
   bool? reasoning,
 }) {
+  // TODO(ollama-native): this helper currently targets an OpenAI-compatible
+  // surface (e.g. `/v1/chat/completions`). When we migrate the subpackage to
+  // the native Ollama API (`/api/chat`, `/api/generate`, `/api/embeddings`),
+  // review these parameters and their mapping to `options/format/think`.
   final config = OllamaConfig(
     baseUrl: baseUrl ?? 'http://localhost:11434',
     apiKey: apiKey,

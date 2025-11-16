@@ -4,7 +4,6 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../client/openai_client.dart';
 import '../config/openai_config.dart';
-import '../utils/openai_reasoning_utils.dart';
 
 /// OpenAI Chat capability implementation
 ///
@@ -111,7 +110,10 @@ class OpenAIChat implements ChatCapability {
     List<Tool>? tools,
     bool stream,
   ) {
-    final apiMessages = client.buildApiMessages(messages);
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+
+    var apiMessages = client.buildApiMessagesFromPrompt(promptMessages);
 
     // Handle system prompt: prefer explicit system messages over config
     final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
@@ -127,34 +129,24 @@ class OpenAIChat implements ChatCapability {
       'stream': stream,
     };
 
-    // Add optional parameters using OpenAI-specific reasoning utils
-    body.addAll(OpenAIReasoningUtils.buildMaxTokensParams(config));
-
-    // Add temperature if not disabled for reasoning models
-    if (config.temperature != null &&
-        !OpenAIReasoningUtils.shouldDisableTemperature(config)) {
+    // Reasoning-specific parameter restrictions are no longer enforced here.
+    // We always forward the configured parameters and let the provider
+    // surface any errors or warnings.
+    if (config.maxTokens != null) {
+      body['max_tokens'] = config.maxTokens;
+    }
+    if (config.temperature != null) {
       body['temperature'] = config.temperature;
     }
-
-    // Add top_p if not disabled for reasoning models
-    if (config.topP != null &&
-        !OpenAIReasoningUtils.shouldDisableTopP(config)) {
+    if (config.topP != null) {
       body['top_p'] = config.topP;
     }
     if (config.topK != null) body['top_k'] = config.topK;
 
-    // Add reasoning effort parameters
-    body.addAll(
-      OpenAIReasoningUtils.buildReasoningEffortParams(
-        providerId: client.providerId,
-        config: config,
-      ),
-    );
-
-    // Add provider-specific reasoning parameters
-    if (client.providerId == 'openrouter' &&
-        config.model.contains('deepseek-r1')) {
-      body['include_reasoning'] = true;
+    // Forward reasoning effort directly when configured, without
+    // provider-specific shaping.
+    if (config.reasoningEffort != null) {
+      body['reasoning_effort'] = config.reasoningEffort!.value;
     }
 
     // Add tools if provided
@@ -304,7 +296,17 @@ class OpenAIChat implements ChatCapability {
       }
     }
 
-    return OpenAIChatResponse(responseData, thinkingContent);
+    return OpenAIChatResponse(
+      responseData,
+      thinkingContent,
+      const [],
+      {
+        'provider': client.providerId,
+        'model': config.model,
+        'apiType': 'chat',
+        'hasThinking': thinkingContent != null && thinkingContent.isNotEmpty,
+      },
+    );
   }
 
   /// Parse streaming events
@@ -421,14 +423,25 @@ class OpenAIChat implements ChatCapability {
       final thinkingContent =
           thinkingBuffer.isNotEmpty ? thinkingBuffer.toString() : null;
 
-      final response = OpenAIChatResponse({
-        'choices': [
-          {
-            'message': {'content': '', 'role': 'assistant'},
-          },
-        ],
-        if (usage != null) 'usage': usage,
-      }, thinkingContent);
+      final response = OpenAIChatResponse(
+        {
+          'choices': [
+            {
+              'message': {'content': '', 'role': 'assistant'},
+            },
+          ],
+          if (usage != null) 'usage': usage,
+        },
+        thinkingContent,
+        const [],
+        {
+          'provider': client.providerId,
+          'model': config.model,
+          'apiType': 'chat',
+          'streaming': true,
+          'hasThinking': thinkingContent != null && thinkingContent.isNotEmpty,
+        },
+      );
 
       events.add(CompletionEvent(response));
 
@@ -445,7 +458,16 @@ class OpenAIChatResponse implements ChatResponse {
   final Map<String, dynamic> _rawResponse;
   final String? _thinkingContent;
 
-  OpenAIChatResponse(this._rawResponse, [this._thinkingContent]);
+  final List<CallWarning> _warnings;
+  final Map<String, dynamic>? _metadata;
+
+  OpenAIChatResponse(
+    this._rawResponse, [
+    this._thinkingContent,
+    List<CallWarning> warnings = const [],
+    Map<String, dynamic>? metadata,
+  ])  : _warnings = warnings,
+        _metadata = metadata;
 
   @override
   String? get text {
@@ -493,10 +515,10 @@ class OpenAIChatResponse implements ChatResponse {
   String? get thinking => _thinkingContent;
 
   @override
-  List<CallWarning> get warnings => const [];
+  List<CallWarning> get warnings => _warnings;
 
   @override
-  Map<String, dynamic>? get metadata => null;
+  Map<String, dynamic>? get metadata => _metadata;
 
   @override
   String toString() {
