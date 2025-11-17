@@ -548,6 +548,11 @@ class GoogleChat implements ChatCapability {
       }
     }
 
+    if (config.getExtension<bool>('webSearchEnabled') == true) {
+      body['tools'] ??= [];
+      body['tools'].add({"google_search": {}});
+    }
+
     return body;
   }
 
