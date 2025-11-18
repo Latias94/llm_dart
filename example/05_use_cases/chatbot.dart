@@ -78,7 +78,7 @@ class Chatbot {
   final ChatbotPersonality personality;
   final int maxContextLength;
 
-  late ChatCapability _ai;
+  late LLMBuilder _builder;
   final List<ChatMessage> _conversationHistory = [];
   int _messageCount = 0;
 
@@ -91,14 +91,16 @@ class Chatbot {
   /// Initialize the chatbot
   Future<void> initialize() async {
     try {
-      _ai = await ai()
+      _builder = ai()
           .groq()
           .apiKey(apiKey)
           .model('llama-3.1-8b-instant')
           .temperature(_getTemperatureForPersonality())
           .maxTokens(500)
-          .systemPrompt(_getSystemPromptForPersonality())
-          .build();
+          .systemPrompt(_getSystemPromptForPersonality());
+
+      // Build once to validate configuration and API key.
+      await _builder.build();
 
       print('✅ Chatbot initialized with ${personality.name} personality');
     } catch (e) {
@@ -115,7 +117,8 @@ class Chatbot {
       // Get AI response with streaming
       final responseBuffer = StringBuffer();
 
-      await for (final event in _ai.chatStream(_getContextMessages())) {
+      await for (final event
+          in _builder.streamText(messages: _getContextMessages())) {
         switch (event) {
           case TextDeltaEvent(delta: final delta):
             stdout.write(delta);
@@ -160,12 +163,12 @@ class Chatbot {
         ChatMessage.user(userInput),
       ];
 
-      final response = await _ai.chat(simpleMessages);
-      print(response.text ?? 'Sorry, I couldn\'t generate a response.');
+      final result = await _builder.generateText(messages: simpleMessages);
+      print(result.text ?? 'Sorry, I couldn\'t generate a response.');
 
       // Add to history if successful
       _addToHistory(ChatMessage.user(userInput));
-      _addToHistory(ChatMessage.assistant(response.text ?? ''));
+      _addToHistory(ChatMessage.assistant(result.text ?? ''));
     } catch (fallbackError) {
       // Fallback 2: Generic error response
       print(
@@ -263,8 +266,8 @@ class Chatbot {
         ..._conversationHistory.where((m) => m.role != ChatRole.system),
       ];
 
-      final response = await _ai.chat(summaryMessages);
-      return response.text ?? 'Unable to generate summary.';
+      final result = await _builder.generateText(messages: summaryMessages);
+      return result.text ?? 'Unable to generate summary.';
     } catch (e) {
       return 'Error generating summary: $e';
     }

@@ -744,6 +744,13 @@ class AnthropicChatResponse implements ChatResponse {
   }
 
   @override
+  CallMetadata? get callMetadata {
+    final data = metadata;
+    if (data == null) return null;
+    return CallMetadata.fromJson(data);
+  }
+
+  @override
   String toString() {
     final textContent = text;
     final calls = toolCalls;

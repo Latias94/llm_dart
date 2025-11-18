@@ -141,7 +141,7 @@ ChatMiddleware createChatLoggingMiddleware({
         if (options.logToolCalls && response.toolCalls != null) {
           log.finer(
             'chat toolCalls=${response.toolCalls}'
-                ' (count=${response.toolCalls!.length})',
+            ' (count=${response.toolCalls!.length})',
           );
         }
 
@@ -280,4 +280,3 @@ EmbeddingMiddleware createEmbeddingLoggingMiddleware({
     },
   );
 }
-

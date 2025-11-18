@@ -116,6 +116,15 @@ dart run 05_use_cases/batch_processor.dart --help
 dart run 05_use_cases/multimodal_app.dart --demo
 ```
 
+## Prompt Patterns in Examples
+
+- Simple text conversations use `ChatMessage.user/assistant/system(...)` directly.
+- Multi‑modal or complex prompts (especially in provider‑specific examples such as Gemini audio/video) use:
+  - `ChatPromptBuilder` to build a `ChatPromptMessage` with multiple parts.
+  - `ChatMessage.fromPromptMessage(prompt)` to send it through `chat(...)`.
+
+This mirrors the internal content model (`ChatPromptMessage` + `ChatContentPart`) and keeps advanced examples consistent across providers.
+
 ## Learning Path
 
 **Beginner**: Start with `quick_start.dart` → `provider_comparison.dart` → `chat_basics.dart`

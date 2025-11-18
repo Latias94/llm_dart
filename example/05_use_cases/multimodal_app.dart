@@ -28,7 +28,7 @@ void main(List<String> arguments) async {
 
 /// Comprehensive multimodal AI application
 class MultimodalApp {
-  late ChatCapability _chatProvider;
+  late LLMBuilder _chatBuilder;
   ImageGenerationCapability? _imageProvider;
   AudioCapability? _audioProvider;
 
@@ -112,15 +112,17 @@ EXAMPLES:
     print('🔧 Initializing multimodal AI providers...');
 
     try {
-      // Initialize chat provider (Groq for fast text processing)
+      // Initialize chat builder (Groq for fast text processing)
       final groqKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
-      _chatProvider = await ai()
+      _chatBuilder = ai()
           .groq()
           .apiKey(groqKey)
           .model('llama-3.1-8b-instant')
           .temperature(0.7)
-          .maxTokens(1000)
-          .build();
+          .maxTokens(1000);
+
+      // Validate configuration and API key
+      await _chatBuilder.build();
 
       if (_verbose) {
         print('✅ Chat provider initialized (Groq)');
@@ -381,20 +383,25 @@ EXAMPLES:
       ChatMessage.user(text),
     ];
 
-    final response = await _chatProvider.chat(messages);
-    return response.text ?? 'Analysis not available';
+    final result = await _chatBuilder.generateText(messages: messages);
+    return result.text ?? 'Analysis not available';
   }
 
   /// Generate content based on prompt
   Future<String> generateContent(String prompt) async {
-    final messages = [
-      ChatMessage.system(
-          'Generate engaging, creative content based on the given prompt. Make it informative and appealing.'),
-      ChatMessage.user(prompt),
-    ];
+    // Use ChatPromptBuilder to construct a structured user prompt with
+    // multiple text parts (instruction + user-provided scenario).
+    final structuredPrompt = ChatPromptBuilder.user()
+        .text(
+            'Generate engaging, creative content based on the following scenario. '
+            'Make it informative, appealing, and suitable for a social media post or short article.')
+        .text(prompt)
+        .build();
 
-    final response = await _chatProvider.chat(messages);
-    return response.text ?? 'Content generation failed';
+    final result = await _chatBuilder.generateText(
+      messages: [ChatMessage.fromPromptMessage(structuredPrompt)],
+    );
+    return result.text ?? 'Content generation failed';
   }
 
   /// Generate image from prompt
@@ -429,8 +436,8 @@ EXAMPLES:
       ChatMessage.user(textContent),
     ];
 
-    final response = await _chatProvider.chat(messages);
-    return response.text ?? 'A generic illustration';
+    final result = await _chatBuilder.generateText(messages: messages);
+    return result.text ?? 'A generic illustration';
   }
 
   /// Process audio text (simulated audio processing)
@@ -447,8 +454,8 @@ EXAMPLES:
       ChatMessage.user(text),
     ];
 
-    final response = await _chatProvider.chat(messages);
-    return response.text ?? 'Audio processing not available';
+    final result = await _chatBuilder.generateText(messages: messages);
+    return result.text ?? 'Audio processing not available';
   }
 
   /// Create audio script from text content
@@ -459,7 +466,7 @@ EXAMPLES:
       ChatMessage.user(textContent),
     ];
 
-    final response = await _chatProvider.chat(messages);
-    return response.text ?? 'Audio script generation failed';
+    final result = await _chatBuilder.generateText(messages: messages);
+    return result.text ?? 'Audio script generation failed';
   }
 }

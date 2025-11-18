@@ -62,8 +62,7 @@ ChatMiddleware createDefaultChatSettingsMiddleware(
 
       // Inject default system prompt when configured.
       if (settings.systemPrompt != null) {
-        final hasSystemMessage =
-            messages.any((m) => m.role == ChatRole.system);
+        final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
 
         if (!hasSystemMessage || !settings.onlyWhenNoSystemMessage) {
           messages = <ChatMessage>[
@@ -83,4 +82,3 @@ ChatMiddleware createDefaultChatSettingsMiddleware(
     },
   );
 }
-

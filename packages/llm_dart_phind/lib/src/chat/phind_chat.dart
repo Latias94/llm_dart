@@ -115,10 +115,16 @@ class PhindChat implements ChatCapability {
       final message = choices.first['message'] as Map<String, dynamic>?;
       final content = message?['content'] as String?;
       if (content != null) {
-        return PhindChatResponse.fromContent(content);
+        return PhindChatResponse.fromContent(
+          content,
+          model: config.model,
+        );
       }
     }
-    return PhindChatResponse.fromContent('');
+    return PhindChatResponse.fromContent(
+      '',
+      model: config.model,
+    );
   }
 
   /// Parse stream events from SSE chunks
@@ -234,7 +240,13 @@ class PhindChat implements ChatCapability {
 class PhindChatResponse implements ChatResponse {
   final String _content;
 
-  PhindChatResponse.fromContent(this._content);
+  /// Optional model identifier for this call.
+  final String? _model;
+
+  PhindChatResponse.fromContent(
+    this._content, {
+    String? model,
+  }) : _model = model;
 
   @override
   String? get text => _content;
@@ -258,7 +270,17 @@ class PhindChatResponse implements ChatResponse {
   List<CallWarning> get warnings => const [];
 
   @override
-  Map<String, dynamic>? get metadata => null;
+  Map<String, dynamic>? get metadata => {
+        'provider': 'phind',
+        if (_model != null) 'model': _model,
+      };
+
+  @override
+  CallMetadata? get callMetadata {
+    final data = metadata;
+    if (data == null) return null;
+    return CallMetadata.fromJson(data);
+  }
 
   @override
   String toString() => _content;

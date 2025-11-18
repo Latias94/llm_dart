@@ -23,10 +23,8 @@ class _DefaultSettingsChatProvider
   }) async {
     // Encode messages and tools into the response text so tests can
     // verify that the middleware modified them correctly.
-    final messagePart = messages
-        .map((m) => '${m.role.name}:${m.content}')
-        .toList()
-        .join('|');
+    final messagePart =
+        messages.map((m) => '${m.role.name}:${m.content}').toList().join('|');
     final toolPart = tools == null || tools.isEmpty
         ? 'tools:[]'
         : 'tools:[${tools.map((t) => t.function.name).join(',')}]';
@@ -120,8 +118,7 @@ void main() {
 
       final provider = await ai()
           .provider('test-default-settings-provider')
-          .middlewares([middleware])
-          .buildWithMiddleware();
+          .middlewares([middleware]).buildWithMiddleware();
 
       final response = await provider.chat([
         ChatMessage.user('Hello'),
@@ -142,8 +139,7 @@ void main() {
 
       final provider = await ai()
           .provider('test-default-settings-provider')
-          .middlewares([middleware])
-          .buildWithMiddleware();
+          .middlewares([middleware]).buildWithMiddleware();
 
       final response = await provider.chat([
         ChatMessage.system('Existing system'),
@@ -175,8 +171,7 @@ void main() {
 
       final provider = await ai()
           .provider('test-default-settings-provider')
-          .middlewares([middleware])
-          .buildWithMiddleware();
+          .middlewares([middleware]).buildWithMiddleware();
 
       final response = await provider.chat([
         ChatMessage.user('Hello'),
@@ -186,4 +181,3 @@ void main() {
     });
   });
 }
-

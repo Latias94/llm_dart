@@ -1,5 +1,7 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'google_file_search_config.dart';
+
 /// Google AI harm categories
 enum HarmCategory {
   harmCategoryUnspecified('HARM_CATEGORY_UNSPECIFIED'),
@@ -79,6 +81,13 @@ class GoogleConfig {
   final int? embeddingDimensions;
 
   final LLMConfig? _originalConfig;
+  // Stored as dynamic to avoid a hard dependency on the main
+  // package's WebSearchConfig type. We only care about presence.
+  final dynamic webSearchConfig;
+  final bool webSearchEnabled;
+  final GoogleFileSearchConfig? fileSearchConfig;
+  final bool codeExecutionEnabled;
+  final bool urlContextEnabled;
 
   static const String _defaultBaseUrl =
       'https://generativelanguage.googleapis.com/v1beta/';
@@ -112,10 +121,49 @@ class GoogleConfig {
     this.embeddingTaskType,
     this.embeddingTitle,
     this.embeddingDimensions,
+    this.webSearchConfig,
+    this.webSearchEnabled = false,
+    this.fileSearchConfig,
+    this.codeExecutionEnabled = false,
+    this.urlContextEnabled = false,
     LLMConfig? originalConfig,
   }) : _originalConfig = originalConfig;
 
   factory GoogleConfig.fromLLMConfig(LLMConfig config) {
+    final webSearchEnabled =
+        config.getExtension<bool>(LLMConfigKeys.webSearchEnabled) == true;
+    final dynamic webSearchConfig =
+        config.getExtension<dynamic>(LLMConfigKeys.webSearchConfig);
+    final dynamic rawFileSearchConfig =
+        config.getExtension<dynamic>(LLMConfigKeys.googleFileSearchConfig);
+
+    GoogleFileSearchConfig? fileSearchConfig;
+    if (rawFileSearchConfig is GoogleFileSearchConfig) {
+      fileSearchConfig = rawFileSearchConfig;
+    } else if (rawFileSearchConfig is Map) {
+      try {
+        final map = Map<String, dynamic>.from(rawFileSearchConfig);
+        final storeNames =
+            (map['fileSearchStoreNames'] as List?)?.cast<String>();
+        if (storeNames != null && storeNames.isNotEmpty) {
+          fileSearchConfig = GoogleFileSearchConfig(
+            fileSearchStoreNames: storeNames,
+            topK: map['topK'] as int?,
+            metadataFilter: map['metadataFilter'] as String?,
+          );
+        }
+      } catch (_) {
+        // If parsing fails, ignore and leave fileSearchConfig as null.
+      }
+    }
+
+    final codeExecutionEnabled =
+        config.getExtension<bool>(LLMConfigKeys.googleCodeExecutionEnabled) ==
+            true;
+    final urlContextEnabled =
+        config.getExtension<bool>(LLMConfigKeys.googleUrlContextEnabled) ==
+            true;
+
     return GoogleConfig(
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl.isNotEmpty ? config.baseUrl : _defaultBaseUrl,
@@ -158,6 +206,11 @@ class GoogleConfig {
       embeddingTitle: config.getExtension<String>(LLMConfigKeys.embeddingTitle),
       embeddingDimensions:
           config.getExtension<int>(LLMConfigKeys.embeddingDimensions),
+      webSearchConfig: webSearchConfig,
+      webSearchEnabled: webSearchEnabled || webSearchConfig != null,
+      fileSearchConfig: fileSearchConfig,
+      codeExecutionEnabled: codeExecutionEnabled,
+      urlContextEnabled: urlContextEnabled,
       originalConfig: config,
     );
   }
@@ -242,6 +295,11 @@ class GoogleConfig {
     String? embeddingTaskType,
     String? embeddingTitle,
     int? embeddingDimensions,
+    dynamic webSearchConfig,
+    bool? webSearchEnabled,
+    GoogleFileSearchConfig? fileSearchConfig,
+    bool? codeExecutionEnabled,
+    bool? urlContextEnabled,
   }) {
     return GoogleConfig(
       apiKey: apiKey ?? this.apiKey,
@@ -272,7 +330,12 @@ class GoogleConfig {
       embeddingTaskType: embeddingTaskType ?? this.embeddingTaskType,
       embeddingTitle: embeddingTitle ?? this.embeddingTitle,
       embeddingDimensions: embeddingDimensions ?? this.embeddingDimensions,
+      webSearchConfig: webSearchConfig ?? this.webSearchConfig,
+      webSearchEnabled: webSearchEnabled ?? this.webSearchEnabled,
+      fileSearchConfig: fileSearchConfig ?? this.fileSearchConfig,
       originalConfig: _originalConfig,
+      codeExecutionEnabled: codeExecutionEnabled ?? this.codeExecutionEnabled,
+      urlContextEnabled: urlContextEnabled ?? this.urlContextEnabled,
     );
   }
 }

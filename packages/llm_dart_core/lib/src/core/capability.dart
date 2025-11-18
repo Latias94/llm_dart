@@ -189,6 +189,119 @@ enum AudioFeature {
   multimodalAudio,
 }
 
+/// Structured metadata for a single model call.
+///
+/// This provides a typed view over the loosely-typed [ChatResponse.metadata]
+/// map so that callers can rely on common fields like [provider] and [model]
+/// while still allowing providers to attach arbitrary, provider-specific
+/// information via [providerMetadata].
+class CallMetadata {
+  /// Logical provider identifier (e.g. `openai`, `anthropic`, `deepseek`).
+  final String? provider;
+
+  /// Provider-specific model identifier (e.g. `gpt-4o`, `claude-3.7-sonnet`).
+  final String? model;
+
+  /// Additional provider-specific metadata.
+  ///
+  /// Examples:
+  /// - Reasoning flags (`hasThinking`, `reasonerModel`, ...)
+  /// - Safety or moderation summaries
+  /// - Provider-specific feature toggles
+  final Map<String, dynamic>? providerMetadata;
+
+  /// Optional request information for telemetry/debugging.
+  ///
+  /// This should contain only non-sensitive, redacted information such as
+  /// high-level request shape or size, never raw API keys or full payloads.
+  final Map<String, dynamic>? request;
+
+  /// Optional response information for telemetry/debugging.
+  ///
+  /// This can include high-level response characteristics such as HTTP
+  /// status code, selected headers, or a redacted body summary.
+  final Map<String, dynamic>? response;
+
+  const CallMetadata({
+    this.provider,
+    this.model,
+    this.providerMetadata,
+    this.request,
+    this.response,
+  });
+
+  /// Convert this metadata back to a JSON-serializable map.
+  ///
+  /// This is intentionally compatible with [ChatResponse.metadata] so that
+  /// existing call sites that rely on a loose map can continue to work.
+  Map<String, dynamic> toJson() {
+    final result = <String, dynamic>{};
+
+    if (provider != null) result['provider'] = provider;
+    if (model != null) result['model'] = model;
+    if (request != null) result['request'] = request;
+    if (response != null) result['response'] = response;
+
+    if (providerMetadata != null) {
+      result.addAll(providerMetadata!);
+    }
+
+    return result;
+  }
+
+  /// Build [CallMetadata] from a loosely-typed metadata map.
+  ///
+  /// The following keys are interpreted specially if present:
+  /// - `provider` → [provider]
+  /// - `model` → [model]
+  /// - `request` → [request] (must be a Map)
+  /// - `response` → [response] (must be a Map)
+  ///
+  /// All remaining top-level keys are treated as [providerMetadata].
+  factory CallMetadata.fromJson(Map<String, dynamic> json) {
+    final provider = json['provider'] as String?;
+    final model = json['model'] as String?;
+
+    final rawRequest = json['request'];
+    final rawResponse = json['response'];
+
+    Map<String, dynamic>? request;
+    if (rawRequest is Map<String, dynamic>) {
+      request = rawRequest;
+    } else if (rawRequest is Map) {
+      request = Map<String, dynamic>.from(rawRequest);
+    }
+
+    Map<String, dynamic>? response;
+    if (rawResponse is Map<String, dynamic>) {
+      response = rawResponse;
+    } else if (rawResponse is Map) {
+      response = Map<String, dynamic>.from(rawResponse);
+    }
+
+    final providerMetadata = <String, dynamic>{};
+    json.forEach((key, value) {
+      if (key == 'provider' ||
+          key == 'model' ||
+          key == 'request' ||
+          key == 'response') {
+        return;
+      }
+      providerMetadata[key] = value;
+    });
+
+    return CallMetadata(
+      provider: provider,
+      model: model,
+      providerMetadata: providerMetadata.isEmpty
+          ? null
+          : Map<String, dynamic>.from(providerMetadata),
+      request: request,
+      response: response,
+    );
+  }
+}
+
 /// Response from a chat provider
 abstract class ChatResponse {
   /// Get the text content of the response
@@ -222,6 +335,58 @@ abstract class ChatResponse {
   ///
   /// By default, responses do not expose metadata.
   Map<String, dynamic>? get metadata => null;
+
+  /// Strongly-typed view over [metadata] for observability use cases.
+  ///
+  /// Implementations that already populate [metadata] automatically get
+  /// a best-effort [CallMetadata] instance based on that map. Providers
+  /// that want more control can override this getter explicitly.
+  CallMetadata? get callMetadata {
+    final data = metadata;
+    if (data == null) return null;
+    return CallMetadata.fromJson(data);
+  }
+}
+
+/// High-level result for text generation helpers.
+///
+/// This provides a provider-agnostic view over a [ChatResponse] for
+/// typical text use cases while still exposing the full underlying
+/// response for advanced scenarios.
+class GenerateTextResult {
+  /// The main text content returned by the model, if any.
+  final String? text;
+
+  /// Optional reasoning/thinking content for providers that support it.
+  final String? thinking;
+
+  /// Tool calls requested by the model, if any.
+  final List<ToolCall>? toolCalls;
+
+  /// Usage information for this call (tokens, etc.), if available.
+  final UsageInfo? usage;
+
+  /// Non-fatal warnings attached to this call.
+  final List<CallWarning> warnings;
+
+  /// Structured metadata about the call for observability.
+  final CallMetadata? metadata;
+
+  /// The underlying raw [ChatResponse] returned by the provider.
+  final ChatResponse rawResponse;
+
+  const GenerateTextResult({
+    required this.rawResponse,
+    this.text,
+    this.thinking,
+    this.toolCalls,
+    this.usage,
+    this.warnings = const [],
+    this.metadata,
+  });
+
+  /// Convenience flag indicating whether reasoning content is present.
+  bool get hasThinking => thinking != null && thinking!.trim().isNotEmpty;
 }
 
 /// Usage information for API calls

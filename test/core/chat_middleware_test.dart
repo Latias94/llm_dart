@@ -15,14 +15,14 @@ class _TestChatResponse implements ChatResponse {
   @override
   UsageInfo? get usage => null;
 
-   @override
-   String? get thinking => null;
+  @override
+  String? get thinking => null;
 
-   @override
-   List<CallWarning> get warnings => const [];
+  @override
+  List<CallWarning> get warnings => const [];
 
-   @override
-   Map<String, dynamic>? get metadata => null;
+  @override
+  Map<String, dynamic>? get metadata => null;
 }
 
 class _TestChatProvider implements ChatCapability, ProviderCapabilities {
@@ -108,9 +108,8 @@ void main() {
     test('transform chain is applied in order for chat', () async {
       final transforms = <String>[];
 
-      final provider = await ai()
-          .provider('test-middleware-provider')
-          .middlewares([
+      final provider =
+          await ai().provider('test-middleware-provider').middlewares([
         ChatMiddleware(
           transform: (ctx) async {
             expect(ctx.operationKind, ChatOperationKind.chat);
@@ -143,9 +142,8 @@ void main() {
     });
 
     test('wrapChat middlewares wrap in correct order', () async {
-      final provider = await ai()
-          .provider('test-middleware-provider')
-          .middlewares([
+      final provider =
+          await ai().provider('test-middleware-provider').middlewares([
         ChatMiddleware(
           wrapChat: (next, ctx) async {
             final res = await next(ctx);
@@ -168,9 +166,8 @@ void main() {
     });
 
     test('wrapStream middlewares wrap in correct order', () async {
-      final provider = await ai()
-          .provider('test-middleware-provider')
-          .middlewares([
+      final provider =
+          await ai().provider('test-middleware-provider').middlewares([
         ChatMiddleware(
           wrapStream: (next, ctx) {
             final base = next(ctx);
@@ -207,9 +204,8 @@ void main() {
     test('transform receives correct operationKind for stream', () async {
       final kinds = <ChatOperationKind>[];
 
-      final provider = await ai()
-          .provider('test-middleware-provider')
-          .middlewares([
+      final provider =
+          await ai().provider('test-middleware-provider').middlewares([
         ChatMiddleware(
           transform: (ctx) async {
             kinds.add(ctx.operationKind);

@@ -54,13 +54,14 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
 
     print('   Analyzing image: Nature boardwalk');
 
-    // Create message with image
-    final messages = [
-      ChatMessage.imageUrl(
-        role: ChatRole.user,
-        url: imageUrl,
-        content: 'What do you see in this image? Describe it in detail.',
-      )
+    // Use ChatPromptBuilder to create a structured multi-modal message
+    final visionPrompt = ChatPromptBuilder.user()
+        .text('What do you see in this image? Describe it in detail.')
+        .imageUrl(imageUrl)
+        .build();
+
+    final messages = <ChatMessage>[
+      ChatMessage.fromPromptMessage(visionPrompt),
     ];
 
     final response = await provider.chat(messages);
@@ -447,22 +448,25 @@ Future<void> demonstrateMultiModalConversation(String apiKey) async {
         .build();
 
     // Start conversation with text
-    var messages = [
-      ChatMessage.user('I\'m planning a garden. Can you help me choose plants?')
+    var messages = <ChatMessage>[
+      ChatMessage.user(
+          'I\'m planning a garden. Can you help me choose plants?'),
     ];
 
     var response = await provider.chat(messages);
     print('   User: I\'m planning a garden. Can you help me choose plants?');
     print('   🤖 AI: ${response.text}\n');
 
-    // Add image to conversation
+    // Add image to conversation using ChatPromptBuilder for a multi-part message
     messages.add(ChatMessage.assistant(response.text ?? ''));
-    messages.add(ChatMessage.imageUrl(
-      role: ChatRole.user,
-      url: 'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',
-      content:
-          'Here\'s a photo of my backyard. What do you think would work well here?',
-    ));
+    final backyardPrompt = ChatPromptBuilder.user()
+        .text(
+            'Here\'s a photo of my backyard. What do you think would work well here?')
+        .imageUrl(
+          'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',
+        )
+        .build();
+    messages.add(ChatMessage.fromPromptMessage(backyardPrompt));
 
     response = await provider.chat(messages);
     print('   User: [Shares backyard photo] What would work well here?');

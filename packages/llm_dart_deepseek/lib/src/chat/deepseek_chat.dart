@@ -99,6 +99,7 @@ class DeepSeekChat implements ChatCapability {
     List<CallWarning> warnings,
   ) {
     String? thinkingContent;
+    bool hasThinking = false;
 
     final choices = responseData['choices'] as List?;
     if (choices != null && choices.isNotEmpty) {
@@ -108,8 +109,9 @@ class DeepSeekChat implements ChatCapability {
       }
     }
 
-    final hasThinking =
-        thinkingContent != null && thinkingContent.trim().isNotEmpty;
+    if (thinkingContent != null && thinkingContent.trim().isNotEmpty) {
+      hasThinking = true;
+    }
 
     return DeepSeekChatResponse(
       responseData,
@@ -289,6 +291,9 @@ class DeepSeekChat implements ChatCapability {
       final thinkingContent =
           thinkingBuffer.isNotEmpty ? thinkingBuffer.toString() : null;
 
+      final hasThinking =
+          thinkingContent != null && thinkingContent.trim().isNotEmpty;
+
       final response = DeepSeekChatResponse(
         {
           'choices': [
@@ -304,6 +309,8 @@ class DeepSeekChat implements ChatCapability {
           'provider': 'deepseek',
           'model': config.model,
           'reasonerModel': config.supportsReasoning,
+          'hasThinking': hasThinking,
+          'finishReason': finishReason,
         },
       );
 
@@ -494,6 +501,13 @@ class DeepSeekChatResponse implements ChatResponse {
 
   @override
   Map<String, dynamic>? get metadata => _metadata;
+
+  @override
+  CallMetadata? get callMetadata {
+    final data = metadata;
+    if (data == null) return null;
+    return CallMetadata.fromJson(data);
+  }
 
   @override
   String toString() {

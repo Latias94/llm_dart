@@ -369,11 +369,13 @@ class FileContentPart extends ChatContentPart {
   final FileMime mime;
   final List<int> data;
   final String? filename;
+  final String? uri;
 
   const FileContentPart(
     this.mime,
     this.data, {
     this.filename,
+    this.uri,
     super.providerOptions,
   });
 }
@@ -494,6 +496,14 @@ class ChatMessage {
   /// Provider-specific extensions
   final Map<String, dynamic> extensions;
 
+  /// Internal key used to store structured [ChatContentPart] lists
+  /// inside [extensions] when a [ChatMessage] is constructed from a
+  /// [ChatPromptMessage].
+  ///
+  /// This allows [ChatMessage.toPromptMessage] to recover the original
+  /// structured content parts and provider options.
+  static const String _promptPartsExtensionKey = '__llm_dart_prompt_parts';
+
   const ChatMessage({
     required this.role,
     required this.messageType,
@@ -512,6 +522,29 @@ class ChatMessage {
         content: content,
         name: name,
         extensions: {...extensions, key: value},
+      );
+
+  /// Create a [ChatMessage] from a structured [ChatPromptMessage].
+  ///
+  /// The resulting message will:
+  /// - Preserve the [role] from the prompt.
+  /// - Store the prompt's [ChatContentPart] list in [extensions] under
+  ///   an internal key so that [toPromptMessage] can recover it.
+  /// - Merge the prompt's [providerOptions] into [extensions] so that
+  ///   provider-specific configuration is preserved.
+  ///
+  /// The [messageType] and [content] fields are left in a minimal,
+  /// placeholder state because the actual rich content lives in the
+  /// structured parts.
+  factory ChatMessage.fromPromptMessage(ChatPromptMessage prompt) =>
+      ChatMessage(
+        role: prompt.role,
+        messageType: const TextMessage(),
+        content: '',
+        extensions: {
+          ...prompt.providerOptions,
+          _promptPartsExtensionKey: prompt.parts,
+        },
       );
 
   /// Create a user message
@@ -619,6 +652,20 @@ class ChatMessage {
   /// model to the new multi-part content model. Provider-specific extensions
   /// are preserved at the message level via [ChatPromptMessage.providerOptions].
   ChatPromptMessage toPromptMessage() {
+    // If this message was constructed from a ChatPromptMessage, recover
+    // the original structured content parts and provider options.
+    final storedParts =
+        getExtension<List<ChatContentPart>>(_promptPartsExtensionKey);
+    if (storedParts != null) {
+      final options = Map<String, dynamic>.from(extensions);
+      options.remove(_promptPartsExtensionKey);
+      return ChatPromptMessage(
+        role: role,
+        parts: storedParts,
+        providerOptions: options,
+      );
+    }
+
     final parts = <ChatContentPart>[];
 
     // Map primary messageType to one or more content parts.

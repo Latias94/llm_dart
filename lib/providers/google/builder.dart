@@ -108,6 +108,61 @@ class GoogleLLMBuilder {
     return this;
   }
 
+  /// Enables Gemini code execution tool (code_execution) for models that
+  /// support it (Gemini 2.x family).
+  GoogleLLMBuilder enableCodeExecution([bool enable = true]) {
+    _baseBuilder.extension(
+      LLMConfigKeys.googleCodeExecutionEnabled,
+      enable,
+    );
+    return this;
+  }
+
+  /// Enables Gemini URL context tool (url_context) for models that support it
+  /// (Gemini 2.x family).
+  GoogleLLMBuilder enableUrlContext([bool enable = true]) {
+    _baseBuilder.extension(
+      LLMConfigKeys.googleUrlContextEnabled,
+      enable,
+    );
+    return this;
+  }
+
+  /// Configures Gemini File Search tool for retrieval-augmented generation.
+  ///
+  /// This attaches a provider-specific file_search tool to the Google
+  /// provider. It is only supported on Gemini 2.5 models.
+  ///
+  /// Example:
+  /// ```dart
+  /// final provider = await ai()
+  ///   .google((google) => google.fileSearch(
+  ///     fileSearchStoreNames: [
+  ///       'fileSearchStores/my-store-123',
+  ///     ],
+  ///     topK: 8,
+  ///   ))
+  ///   .apiKey(apiKey)
+  ///   .model('gemini-2.5-flash')
+  ///   .build();
+  /// ```
+  GoogleLLMBuilder fileSearch({
+    required List<String> fileSearchStoreNames,
+    int? topK,
+    String? metadataFilter,
+  }) {
+    final config = <String, dynamic>{
+      'fileSearchStoreNames': fileSearchStoreNames,
+      if (topK != null) 'topK': topK,
+      if (metadataFilter != null) 'metadataFilter': metadataFilter,
+    };
+    _baseBuilder.extension(
+      LLMConfigKeys.googleFileSearchConfig,
+      config,
+    );
+    return this;
+  }
+
   // ========== Convenience methods for common embedding configurations ==========
 
   /// Configure for semantic similarity tasks

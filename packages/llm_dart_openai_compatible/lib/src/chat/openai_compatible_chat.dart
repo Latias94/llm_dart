@@ -377,7 +377,9 @@ class OpenAICompatibleChat implements ChatCapability {
   /// Build provider-agnostic metadata for this call.
   Map<String, dynamic>? _buildMetadataForCall() {
     return {
-      'providerId': config.providerId,
+      // Align with core CallMetadata expectations:
+      // use `provider` as the logical provider identifier.
+      'provider': config.providerId,
       'model': config.model,
     };
   }
@@ -444,6 +446,13 @@ class _OpenAICompatibleChatResponse implements ChatResponse {
 
   @override
   Map<String, dynamic>? get metadata => _metadata;
+
+  @override
+  CallMetadata? get callMetadata {
+    final data = metadata;
+    if (data == null) return null;
+    return CallMetadata.fromJson(data);
+  }
 
   @override
   String toString() {

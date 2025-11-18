@@ -19,6 +19,28 @@ import '../providers/elevenlabs/builder.dart';
 import '../providers/openai/compatible/openrouter/builder.dart';
 import 'http_config.dart';
 
+List<ChatMessage> _resolveMessagesForTextGeneration({
+  String? prompt,
+  List<ChatMessage>? messages,
+  ChatPromptMessage? structuredPrompt,
+}) {
+  if (structuredPrompt != null) {
+    return [ChatMessage.fromPromptMessage(structuredPrompt)];
+  }
+
+  if (messages != null && messages.isNotEmpty) {
+    return messages;
+  }
+
+  if (prompt != null && prompt.isNotEmpty) {
+    return [ChatMessage.user(prompt)];
+  }
+
+  throw ArgumentError(
+    'You must provide either prompt, messages, or structuredPrompt for text generation.',
+  );
+}
+
 /// Builder for configuring and instantiating LLM providers
 ///
 /// Provides a fluent interface for setting various configuration
@@ -625,6 +647,82 @@ class LLMBuilder {
   LLMBuilder cloudStorageUrl(String url) =>
       extension(LLMConfigKeys.cloudStorageUrl, url);
 
+  // =======================================================================
+  // High-level text generation helpers (generateText / streamText)
+  //
+  // These helpers provide a Vercel AI SDK-style experience on top of the
+  // core ChatCapability interface, while remaining fully provider-agnostic.
+  // =======================================================================
+
+  /// Generate a single text response using the current builder configuration.
+  ///
+  /// This is a convenience wrapper around [ChatCapability.chat] that:
+  /// - Resolves the input into a list of [ChatMessage] instances.
+  /// - Calls the provider's `chat(...)` method.
+  /// - Returns a [GenerateTextResult] with text, thinking, tool calls,
+  ///   usage, warnings, and call metadata.
+  ///
+  /// You must provide exactly one of:
+  /// - [prompt]: simple single-turn user message
+  /// - [messages]: full conversation history
+  /// - [structuredPrompt]: a structured [ChatPromptMessage] built via
+  ///   [ChatPromptBuilder].
+  Future<GenerateTextResult> generateText({
+    String? prompt,
+    List<ChatMessage>? messages,
+    ChatPromptMessage? structuredPrompt,
+    CancelToken? cancelToken,
+  }) async {
+    final provider = await build();
+    final resolvedMessages = _resolveMessagesForTextGeneration(
+      prompt: prompt,
+      messages: messages,
+      structuredPrompt: structuredPrompt,
+    );
+
+    final response = await provider.chat(
+      resolvedMessages,
+      cancelToken: cancelToken,
+    );
+
+    return GenerateTextResult(
+      rawResponse: response,
+      text: response.text,
+      thinking: response.thinking,
+      toolCalls: response.toolCalls,
+      usage: response.usage,
+      warnings: response.warnings,
+      metadata: response.callMetadata,
+    );
+  }
+
+  /// Stream a text response using the current builder configuration.
+  ///
+  /// This is a convenience wrapper around [ChatCapability.chatStream] that:
+  /// - Resolves the input into a list of [ChatMessage] instances.
+  /// - Builds the provider and forwards the stream of [ChatStreamEvent]
+  ///   objects (thinking deltas, text deltas, tool call deltas, completion).
+  ///
+  /// The input resolution rules are the same as [generateText].
+  Stream<ChatStreamEvent> streamText({
+    String? prompt,
+    List<ChatMessage>? messages,
+    ChatPromptMessage? structuredPrompt,
+    CancelToken? cancelToken,
+  }) async* {
+    final provider = await build();
+    final resolvedMessages = _resolveMessagesForTextGeneration(
+      prompt: prompt,
+      messages: messages,
+      structuredPrompt: structuredPrompt,
+    );
+
+    yield* provider.chatStream(
+      resolvedMessages,
+      cancelToken: cancelToken,
+    );
+  }
+
   /// Builds and returns a configured LLM provider instance
   ///
   /// Returns a unified ChatCapability interface that can be used consistently
@@ -1037,8 +1135,7 @@ class LLMBuilder {
 
 /// Internal wrapper that applies chat middlewares while delegating
 /// all other capabilities to the underlying provider.
-class _MiddlewareWrappedProvider
-    extends BaseAudioCapability
+class _MiddlewareWrappedProvider extends BaseAudioCapability
     implements
         ChatCapability,
         EmbeddingCapability,
@@ -1107,10 +1204,10 @@ class _MiddlewareWrappedProvider
 
     // Base stream function
     var next = (ChatCallContext c) => _chat.chatStream(
-        c.messages,
-        tools: c.tools,
-        cancelToken: c.cancelToken,
-      );
+          c.messages,
+          tools: c.tools,
+          cancelToken: c.cancelToken,
+        );
 
     // Wrap stream in reverse order
     for (final middleware in _middlewares.reversed) {
@@ -1220,7 +1317,8 @@ class _MiddlewareWrappedProvider
     if (inner is AudioCapability) {
       return inner.getVoices();
     }
-    throw UnsupportedError('Voice listing not supported by provider $_providerId');
+    throw UnsupportedError(
+        'Voice listing not supported by provider $_providerId');
   }
 
   @override
@@ -1308,7 +1406,8 @@ class _MiddlewareWrappedProvider
     if (inner is ImageGenerationCapability) {
       return inner.generateImages(request);
     }
-    throw UnsupportedError('Image generation not supported by provider $_providerId');
+    throw UnsupportedError(
+        'Image generation not supported by provider $_providerId');
   }
 
   @override
@@ -1317,7 +1416,8 @@ class _MiddlewareWrappedProvider
     if (inner is ImageGenerationCapability) {
       return inner.editImage(request);
     }
-    throw UnsupportedError('Image editing not supported by provider $_providerId');
+    throw UnsupportedError(
+        'Image editing not supported by provider $_providerId');
   }
 
   @override
@@ -1395,7 +1495,8 @@ class _MiddlewareWrappedProvider
         promptEnhancement: promptEnhancement,
       );
     }
-    throw UnsupportedError('Image generation not supported by provider $_providerId');
+    throw UnsupportedError(
+        'Image generation not supported by provider $_providerId');
   }
 
   // === ModelListingCapability delegation ===
@@ -1406,7 +1507,8 @@ class _MiddlewareWrappedProvider
     if (inner is ModelListingCapability) {
       return inner.models(cancelToken: cancelToken);
     }
-    throw UnsupportedError('Model listing not supported by provider $_providerId');
+    throw UnsupportedError(
+        'Model listing not supported by provider $_providerId');
   }
 
   // === FileManagementCapability delegation ===
@@ -1417,7 +1519,8 @@ class _MiddlewareWrappedProvider
     if (inner is FileManagementCapability) {
       return inner.uploadFile(request);
     }
-    throw UnsupportedError('File management not supported by provider $_providerId');
+    throw UnsupportedError(
+        'File management not supported by provider $_providerId');
   }
 
   @override
@@ -1426,7 +1529,8 @@ class _MiddlewareWrappedProvider
     if (inner is FileManagementCapability) {
       return inner.listFiles(query);
     }
-    throw UnsupportedError('File management not supported by provider $_providerId');
+    throw UnsupportedError(
+        'File management not supported by provider $_providerId');
   }
 
   @override
@@ -1435,7 +1539,8 @@ class _MiddlewareWrappedProvider
     if (inner is FileManagementCapability) {
       return inner.retrieveFile(fileId);
     }
-    throw UnsupportedError('File management not supported by provider $_providerId');
+    throw UnsupportedError(
+        'File management not supported by provider $_providerId');
   }
 
   @override
@@ -1444,7 +1549,8 @@ class _MiddlewareWrappedProvider
     if (inner is FileManagementCapability) {
       return inner.deleteFile(fileId);
     }
-    throw UnsupportedError('File management not supported by provider $_providerId');
+    throw UnsupportedError(
+        'File management not supported by provider $_providerId');
   }
 
   @override
@@ -1453,7 +1559,8 @@ class _MiddlewareWrappedProvider
     if (inner is FileManagementCapability) {
       return inner.getFileContent(fileId);
     }
-    throw UnsupportedError('File management not supported by provider $_providerId');
+    throw UnsupportedError(
+        'File management not supported by provider $_providerId');
   }
 
   // === ModerationCapability delegation ===
@@ -1500,8 +1607,7 @@ class _MiddlewareWrappedProvider
   }
 
   @override
-  Future<ListAssistantsResponse> listAssistants(
-      [ListAssistantsQuery? query]) {
+  Future<ListAssistantsResponse> listAssistants([ListAssistantsQuery? query]) {
     final inner = _inner;
     if (inner is AssistantCapability) {
       return inner.listAssistants(query);
@@ -1535,7 +1641,8 @@ class _MiddlewareWrappedProvider
     if (inner is ProviderCapabilities) {
       return inner.supports(capability);
     }
-    return capability == LLMCapability.chat || capability == LLMCapability.streaming;
+    return capability == LLMCapability.chat ||
+        capability == LLMCapability.streaming;
   }
 }
 

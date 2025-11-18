@@ -6,35 +6,7 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/google_client.dart';
 import '../config/google_config.dart';
-
-class GoogleFile {
-  final String name;
-  final String displayName;
-  final String mimeType;
-  final int sizeBytes;
-  final String state;
-  final String? uri;
-
-  const GoogleFile({
-    required this.name,
-    required this.displayName,
-    required this.mimeType,
-    required this.sizeBytes,
-    required this.state,
-    this.uri,
-  });
-
-  factory GoogleFile.fromJson(Map<String, dynamic> json) => GoogleFile(
-        name: json['name'] as String,
-        displayName: json['displayName'] as String,
-        mimeType: json['mimeType'] as String,
-        sizeBytes: int.parse(json['sizeBytes'] as String),
-        state: json['state'] as String,
-        uri: json['uri'] as String?,
-      );
-
-  bool get isActive => state == 'ACTIVE';
-}
+import '../files/google_files.dart';
 
 class GoogleChat implements ChatCapability {
   final GoogleClient client;
@@ -236,7 +208,7 @@ class GoogleChat implements ChatCapability {
       throw _handleGoogleApiError(responseData);
     }
 
-    return GoogleChatResponse(responseData);
+    return GoogleChatResponse(responseData, config.model);
   }
 
   List<ChatStreamEvent> _parseStreamEvents(String chunk) {
@@ -503,8 +475,92 @@ class GoogleChat implements ChatCapability {
       }
     }
 
+    // Collect non-function tools (google_search, file_search, etc.).
+    final extraTools = (body['tools'] as List?)?.cast<Map<String, dynamic>>() ??
+        <Map<String, dynamic>>[];
+
+    // Google Search grounding tool (google_search).
+    if (config.webSearchEnabled && _supportsGoogleSearchTool) {
+      extraTools.add({
+        'googleSearch': <String, dynamic>{},
+      });
+    }
+
+    // Gemini File Search tool (file_search).
+    final fileSearchConfig = config.fileSearchConfig;
+    if (fileSearchConfig != null && _supportsFileSearchTool) {
+      final fs = <String, dynamic>{
+        'fileSearchStoreNames': fileSearchConfig.fileSearchStoreNames,
+      };
+      if (fileSearchConfig.topK != null) {
+        fs['topK'] = fileSearchConfig.topK;
+      }
+      if (fileSearchConfig.metadataFilter != null) {
+        fs['metadataFilter'] = fileSearchConfig.metadataFilter;
+      }
+      extraTools.add({'fileSearch': fs});
+    } else if (fileSearchConfig != null && !_supportsFileSearchTool) {
+      client.logger.warning(
+        'Google File Search tool is only supported on Gemini 2.5 models. '
+        'Current model: ${config.model}',
+      );
+    }
+
+    // Gemini code execution tool (code_execution).
+    if (config.codeExecutionEnabled && _supportsCodeExecutionTool) {
+      extraTools.add({'codeExecution': <String, dynamic>{}});
+    } else if (config.codeExecutionEnabled && !_supportsCodeExecutionTool) {
+      client.logger.warning(
+        'Gemini code execution tool is only supported on Gemini 2.x models. '
+        'Current model: ${config.model}',
+      );
+    }
+
+    // Gemini URL context tool (url_context).
+    if (config.urlContextEnabled && _supportsUrlContextTool) {
+      extraTools.add({'urlContext': <String, dynamic>{}});
+    } else if (config.urlContextEnabled && !_supportsUrlContextTool) {
+      client.logger.warning(
+        'Gemini URL context tool is only supported on Gemini 2.x models. '
+        'Current model: ${config.model}',
+      );
+    }
+
+    if (extraTools.isNotEmpty) {
+      body['tools'] = extraTools;
+    }
+
     return body;
   }
+
+  /// Whether current model supports the Google Search grounding tool.
+  ///
+  /// The official docs recommend using `google_search` for Gemini 2.0+
+  /// models. We gate the tool on model id to avoid sending unsupported
+  /// parameters to older endpoints.
+  bool get _supportsGoogleSearchTool {
+    final model = config.model;
+    return model.contains('gemini-2.');
+  }
+
+  /// Whether current model supports the Gemini File Search tool.
+  ///
+  /// File Search is currently limited to Gemini 2.5 models.
+  bool get _supportsFileSearchTool {
+    final model = config.model;
+    return model.contains('gemini-2.5');
+  }
+
+  /// Whether current model supports Gemini code execution and URL context
+  /// provider-defined tools.
+  ///
+  /// These tools are currently limited to Gemini 2.x models.
+  bool get _supportsCodeExecutionTool {
+    final model = config.model;
+    return model.contains('gemini-2');
+  }
+
+  bool get _supportsUrlContextTool => _supportsCodeExecutionTool;
 
   Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {
     final parts = <Map<String, dynamic>>[];
@@ -525,8 +581,10 @@ class GoogleChat implements ChatCapability {
         _convertFilePart(part, parts);
       } else if (part is UrlFileContentPart) {
         parts.add({
-          'text':
-              '[Image URL not supported by Google. Please upload the image directly: ${part.url}]',
+          'fileData': {
+            'mimeType': _inferImageMimeTypeFromUrl(part.url),
+            'fileUri': part.url,
+          },
         });
       } else if (part is ToolCallContentPart &&
           message.role == ChatRole.assistant) {
@@ -540,12 +598,42 @@ class GoogleChat implements ChatCapability {
     return {'role': role, 'parts': parts};
   }
 
+  /// Infer image MIME type from URL path.
+  ///
+  /// This is a best-effort guess based on common file extensions.
+  String _inferImageMimeTypeFromUrl(String url) {
+    try {
+      final path = Uri.parse(url).path.toLowerCase();
+      if (path.endsWith('.png')) return 'image/png';
+      if (path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+        return 'image/jpeg';
+      }
+      if (path.endsWith('.gif')) return 'image/gif';
+      if (path.endsWith('.webp')) return 'image/webp';
+    } catch (_) {
+      // Fallback to generic JPEG if parsing fails.
+    }
+    return 'image/jpeg';
+  }
+
   void _convertFilePart(
     FileContentPart part,
     List<Map<String, dynamic>> parts,
   ) {
     final mime = part.mime;
     final data = part.data;
+
+    // If a URI is provided (e.g. Files API resource or remote URL),
+    // prefer fileData representation instead of inlining bytes.
+    if (part.uri != null && part.uri!.isNotEmpty) {
+      parts.add({
+        'fileData': {
+          'mimeType': mime.mimeType,
+          'fileUri': part.uri,
+        },
+      });
+      return;
+    }
 
     // Image handling
     if (mime.mimeType.startsWith('image/')) {
@@ -731,7 +819,14 @@ class GoogleChat implements ChatCapability {
 class GoogleChatResponse implements ChatResponse {
   final Map<String, dynamic> _rawResponse;
 
-  GoogleChatResponse(this._rawResponse);
+  /// Logical model identifier used for this call.
+  ///
+  /// The Google API may not always echo the model id back in the
+  /// response body, so we store the configured model explicitly
+  /// for observability and metadata purposes.
+  final String _modelId;
+
+  GoogleChatResponse(this._rawResponse, this._modelId);
 
   /// Full raw response returned by the Google API.
   Map<String, dynamic> get rawResponse => _rawResponse;
@@ -864,9 +959,14 @@ class GoogleChatResponse implements ChatResponse {
     final candidates = _rawResponse['candidates'] as List?;
     final promptFeedback =
         _rawResponse['promptFeedback'] as Map<String, dynamic>?;
+    final usageMetadata = _rawResponse['usageMetadata'];
 
     bool hasThinkingBlocks = false;
     bool hasSafetyRatings = false;
+
+    Map<String, dynamic>? groundingMetadata;
+    Map<String, dynamic>? urlContextMetadata;
+    dynamic candidateSafetyRatings;
 
     if (candidates != null && candidates.isNotEmpty) {
       final content = candidates.first['content'] as Map<String, dynamic>?;
@@ -881,9 +981,25 @@ class GoogleChatResponse implements ChatResponse {
         }
       }
 
-      final candidateSafety = candidates.first['safetyRatings'];
+      final candidate = candidates.first as Map<String, dynamic>?;
+      final candidateSafety = candidate?['safetyRatings'];
       if (candidateSafety is List && candidateSafety.isNotEmpty) {
         hasSafetyRatings = true;
+        candidateSafetyRatings = candidateSafety;
+      }
+
+      final gm = candidate?['groundingMetadata'];
+      if (gm is Map<String, dynamic>) {
+        groundingMetadata = gm;
+      } else if (gm is Map) {
+        groundingMetadata = Map<String, dynamic>.from(gm);
+      }
+
+      final ucm = candidate?['urlContextMetadata'];
+      if (ucm is Map<String, dynamic>) {
+        urlContextMetadata = ucm;
+      } else if (ucm is Map) {
+        urlContextMetadata = Map<String, dynamic>.from(ucm);
       }
     }
 
@@ -894,10 +1010,25 @@ class GoogleChatResponse implements ChatResponse {
 
     return {
       'provider': 'google',
+      'model': _modelId,
       if (candidates != null) 'candidateCount': candidates.length,
       'hasThinking': hasThinkingBlocks,
       'hasSafetyRatings': hasSafetyRatings,
+      // Expose raw safety and grounding data for observability.
+      if (candidateSafetyRatings != null)
+        'candidateSafetyRatings': candidateSafetyRatings,
+      if (promptFeedback != null) 'promptFeedback': promptFeedback,
+      if (groundingMetadata != null) 'groundingMetadata': groundingMetadata,
+      if (urlContextMetadata != null) 'urlContextMetadata': urlContextMetadata,
+      if (usageMetadata != null) 'usageMetadata': usageMetadata,
     };
+  }
+
+  @override
+  CallMetadata? get callMetadata {
+    final data = metadata;
+    if (data == null) return null;
+    return CallMetadata.fromJson(data);
   }
 
   @override

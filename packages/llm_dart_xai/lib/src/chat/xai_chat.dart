@@ -533,4 +533,11 @@ class XAIChatResponse implements ChatResponse {
       if (hasCitations) 'citations': citations,
     };
   }
+
+  @override
+  CallMetadata? get callMetadata {
+    final data = metadata;
+    if (data == null) return null;
+    return CallMetadata.fromJson(data);
+  }
 }

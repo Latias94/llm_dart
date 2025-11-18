@@ -25,8 +25,8 @@ class AnthropicCacheControlValidator {
   ) {
     if (providerOptions == null) return null;
 
-    final raw = providerOptions['cacheControl'] ??
-        providerOptions['cache_control'];
+    final raw =
+        providerOptions['cacheControl'] ?? providerOptions['cache_control'];
 
     if (raw is! Map<String, dynamic>) return null;
 

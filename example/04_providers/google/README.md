@@ -8,6 +8,11 @@ This directory contains specific usage examples for the Google (Gemini) provider
 - `image_generation.dart` - Google image generation functionality examples
 - `google_tts_example.dart` - Google native text-to-speech examples
 - `google_openai_compatible.dart` - Google Gemini via OpenAI-compatible interface (googleOpenAI)
+- `google_web_search.dart` - Gemini 2.x with Google Search grounding via unified web search config
+- `google_file_search.dart` - Gemini 2.5 File Search (RAG) via file_search tool
+- `google_code_execution.dart` - Gemini 2.x code execution via code_execution tool
+- `google_multimodal_audio_video.dart` - Gemini 2.5 multimodal audio & video understanding examples
+- `google_files_and_rag.dart` - Gemini 2.5 Files API upload + File Search RAG example
 
 ## 🔢 Embeddings
 
@@ -247,6 +252,11 @@ Try running the example:
 
 ```bash
 dart run example/04_providers/google/embeddings.dart
+dart run example/04_providers/google/google_web_search.dart
+dart run example/04_providers/google/google_file_search.dart
+dart run example/04_providers/google/google_code_execution.dart
+dart run example/04_providers/google/google_multimodal_audio_video.dart
+dart run example/04_providers/google/google_files_and_rag.dart
 ```
 
 ## 🎨 Image Generation

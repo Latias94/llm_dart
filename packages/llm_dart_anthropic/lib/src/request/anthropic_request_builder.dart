@@ -140,8 +140,9 @@ class AnthropicRequestBuilder {
               : null);
 
       if (part is TextContentPart || part is ReasoningContentPart) {
-        final text =
-            part is TextContentPart ? part.text : (part as ReasoningContentPart).text;
+        final text = part is TextContentPart
+            ? part.text
+            : (part as ReasoningContentPart).text;
         systemContent.add({
           'type': 'text',
           'text': text,
@@ -181,8 +182,9 @@ class AnthropicRequestBuilder {
               : null);
 
       if (part is TextContentPart || part is ReasoningContentPart) {
-        final text =
-            part is TextContentPart ? part.text : (part as ReasoningContentPart).text;
+        final text = part is TextContentPart
+            ? part.text
+            : (part as ReasoningContentPart).text;
         content.add({
           'type': 'text',
           'text': text,
@@ -244,8 +246,7 @@ class AnthropicRequestBuilder {
       if (!config.supportsPDF) {
         content.add({
           'type': 'text',
-          'text':
-              '[PDF documents are not supported by model ${config.model}]',
+          'text': '[PDF documents are not supported by model ${config.model}]',
           'cache_control': cacheControl?.toJson(),
         });
       } else {
@@ -398,7 +399,8 @@ class AnthropicRequestBuilder {
     return tools;
   }
 
-  void _addSystemContentFromPrompt(Map<String, dynamic> body, ProcessedPrompt data) {
+  void _addSystemContentFromPrompt(
+      Map<String, dynamic> body, ProcessedPrompt data) {
     final allSystemContent = <Map<String, dynamic>>[];
 
     if (config.systemPrompt != null && config.systemPrompt!.isNotEmpty) {

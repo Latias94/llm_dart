@@ -94,6 +94,43 @@ void main() {
       final payload = resultPart.payload as ToolResultTextPayload;
       expect(payload.value, '{"temperature": "20C"}');
     });
+
+    test('round-trips ChatPromptMessage via ChatMessage.fromPromptMessage', () {
+      final bytes = <int>[1, 2, 3, 4];
+
+      final prompt = ChatPromptMessage(
+        role: ChatRole.user,
+        parts: [
+          const TextContentPart('Hello with file'),
+          FileContentPart(
+            FileMime.pdf,
+            bytes,
+            filename: 'doc.pdf',
+          ),
+        ],
+        providerOptions: const {
+          'anthropic': {'foo': 'bar'},
+          'google': {'baz': 1},
+        },
+      );
+
+      final message = ChatMessage.fromPromptMessage(prompt);
+      final converted = message.toPromptMessage();
+
+      expect(converted.role, ChatRole.user);
+      expect(converted.providerOptions['anthropic'], {'foo': 'bar'});
+      expect(converted.providerOptions['google'], {'baz': 1});
+      expect(converted.parts.length, 2);
+      expect(converted.parts[0], isA<TextContentPart>());
+      expect(converted.parts[1], isA<FileContentPart>());
+
+      final textPart = converted.parts[0] as TextContentPart;
+      final filePart = converted.parts[1] as FileContentPart;
+
+      expect(textPart.text, 'Hello with file');
+      expect(filePart.mime, FileMime.pdf);
+      expect(filePart.data, bytes);
+      expect(filePart.filename, 'doc.pdf');
+    });
   });
 }
-

@@ -88,9 +88,9 @@ class DeepSeekConfig {
       presencePenalty:
           config.getExtension<double>(LLMConfigKeys.presencePenalty) ??
               config.getExtension<double>('presence_penalty'),
-      responseFormat:
-          config.getExtension<Map<String, dynamic>>(LLMConfigKeys.responseFormat) ??
-              config.getExtension<Map<String, dynamic>>('response_format'),
+      responseFormat: config.getExtension<Map<String, dynamic>>(
+              LLMConfigKeys.responseFormat) ??
+          config.getExtension<Map<String, dynamic>>('response_format'),
       originalConfig: config,
     );
   }

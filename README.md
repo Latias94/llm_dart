@@ -125,6 +125,41 @@ void main() async {
 }
 ```
 
+### Prompt Building Patterns
+
+For most use cases you can keep using simple `ChatMessage` helpers:
+
+```dart
+final messages = [
+  ChatMessage.system('You are a helpful assistant.'),
+  ChatMessage.user('Explain quantum computing in simple terms.'),
+];
+final response = await provider.chat(messages);
+print(response.text);
+```
+
+For advanced or multi‑modal prompts (text + images/files/audio/video), use the structured prompt model via `ChatPromptBuilder` and bridge it into `ChatMessage`:
+
+```dart
+// Build a structured, multi-part prompt
+final prompt = ChatPromptBuilder.user()
+    .text('Describe this image in detail.')
+    .imageUrl('https://example.com/cat.png')
+    .build();
+
+// Send it through the regular chat API
+final response = await provider.chat([
+  ChatMessage.fromPromptMessage(prompt),
+]);
+
+print(response.text);
+```
+
+Under the hood all providers convert `ChatMessage` → `ChatPromptMessage`, so:
+
+- Use `ChatMessage.user/assistant/system` for simple text‑only flows.
+- Use `ChatPromptBuilder + ChatMessage.fromPromptMessage` when you need multiple parts, multiple attachments, or rich multi‑modal prompts (for example, Gemini, GPT‑4o vision, Anthropic documents).
+
 ### Streaming with DeepSeek Reasoning
 
 ```dart

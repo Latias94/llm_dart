@@ -637,6 +637,13 @@ class OpenAIResponsesResponse implements ChatResponse {
     };
   }
 
+  @override
+  CallMetadata? get callMetadata {
+    final data = metadata;
+    if (data == null) return null;
+    return CallMetadata.fromJson(data);
+  }
+
   String? get responseId => _rawResponse['id'] as String?;
 
   @override

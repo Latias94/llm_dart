@@ -43,8 +43,7 @@ Future<void> main() async {
   final provider = await ai()
       .openai()
       .apiKey('YOUR_OPENAI_API_KEY')
-      .middlewares([loggingMiddleware])
-      .buildWithMiddleware();
+      .middlewares([loggingMiddleware]).buildWithMiddleware();
 
   // === Non-streaming chat example ===
   final response = await provider.chat([
@@ -76,4 +75,3 @@ Future<void> main() async {
   // ignore: avoid_print
   print(buffer.toString());
 }
-

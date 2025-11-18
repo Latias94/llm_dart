@@ -19,6 +19,9 @@ File upload, download, and management for AI workflows.
 ### [chat_basics.dart](chat_basics.dart)
 Foundation of AI interactions - messages, context, and responses.
 
+### [generate_text.dart](generate_text.dart)
+High-level text generation with `generateText` and `streamText`.
+
 ### [streaming_chat.dart](streaming_chat.dart)
 Real-time response streaming for better user experience.
 

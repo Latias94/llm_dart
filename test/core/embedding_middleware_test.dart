@@ -60,8 +60,7 @@ class _TestEmbeddingProvider
       supportedCapabilities.contains(capability);
 }
 
-class _TestEmbeddingProviderFactory
-    extends LLMProviderFactory<ChatCapability> {
+class _TestEmbeddingProviderFactory extends LLMProviderFactory<ChatCapability> {
   @override
   String get providerId => 'test-embedding-provider';
 
@@ -113,26 +112,24 @@ void main() {
 
       final builder = ai().provider('test-embedding-provider');
 
-      final embedProvider = await builder
-          .embeddingMiddlewares([
-            EmbeddingMiddleware(
-              transform: (ctx) async {
-                transforms.add('t1');
-                final updatedInput =
-                    ctx.input.map((s) => '$s:t1').toList(growable: false);
-                return ctx.copyWith(input: updatedInput);
-              },
-            ),
-            EmbeddingMiddleware(
-              transform: (ctx) async {
-                transforms.add('t2');
-                final updatedInput =
-                    ctx.input.map((s) => '$s:t2').toList(growable: false);
-                return ctx.copyWith(input: updatedInput);
-              },
-            ),
-          ])
-          .buildEmbeddingWithMiddleware();
+      final embedProvider = await builder.embeddingMiddlewares([
+        EmbeddingMiddleware(
+          transform: (ctx) async {
+            transforms.add('t1');
+            final updatedInput =
+                ctx.input.map((s) => '$s:t1').toList(growable: false);
+            return ctx.copyWith(input: updatedInput);
+          },
+        ),
+        EmbeddingMiddleware(
+          transform: (ctx) async {
+            transforms.add('t2');
+            final updatedInput =
+                ctx.input.map((s) => '$s:t2').toList(growable: false);
+            return ctx.copyWith(input: updatedInput);
+          },
+        ),
+      ]).buildEmbeddingWithMiddleware();
 
       // We can't downcast to the internal wrapper type, but we can
       // retrieve the underlying test provider via the global registry.
@@ -145,28 +142,22 @@ void main() {
     test('wrapEmbed middlewares wrap in correct order', () async {
       final builder = ai().provider('test-embedding-provider');
 
-      final embedProvider = await builder
-          .embeddingMiddlewares([
-            // Outer wrapper multiplies by 10
-            EmbeddingMiddleware(
-              wrapEmbed: (next, ctx) async {
-                final base = await next(ctx);
-                return base
-                    .map((v) => v.map((x) => x * 10).toList())
-                    .toList();
-              },
-            ),
-            // Inner wrapper adds 1
-            EmbeddingMiddleware(
-              wrapEmbed: (next, ctx) async {
-                final base = await next(ctx);
-                return base
-                    .map((v) => v.map((x) => x + 1).toList())
-                    .toList();
-              },
-            ),
-          ])
-          .buildEmbeddingWithMiddleware();
+      final embedProvider = await builder.embeddingMiddlewares([
+        // Outer wrapper multiplies by 10
+        EmbeddingMiddleware(
+          wrapEmbed: (next, ctx) async {
+            final base = await next(ctx);
+            return base.map((v) => v.map((x) => x * 10).toList()).toList();
+          },
+        ),
+        // Inner wrapper adds 1
+        EmbeddingMiddleware(
+          wrapEmbed: (next, ctx) async {
+            final base = await next(ctx);
+            return base.map((v) => v.map((x) => x + 1).toList()).toList();
+          },
+        ),
+      ]).buildEmbeddingWithMiddleware();
 
       final result = await embedProvider.embed(['x']);
 
@@ -176,21 +167,20 @@ void main() {
       expect(result.first.first, 20.0);
     });
 
-    test('EmbeddingCallContext contains providerId, model and config', () async {
+    test('EmbeddingCallContext contains providerId, model and config',
+        () async {
       EmbeddingCallContext? seenContext;
 
       final builder = ai().provider('test-embedding-provider').model('m-test');
 
-      final embedProvider = await builder
-          .embeddingMiddlewares([
-            EmbeddingMiddleware(
-              transform: (ctx) async {
-                seenContext = ctx;
-                return ctx;
-              },
-            ),
-          ])
-          .buildEmbeddingWithMiddleware();
+      final embedProvider = await builder.embeddingMiddlewares([
+        EmbeddingMiddleware(
+          transform: (ctx) async {
+            seenContext = ctx;
+            return ctx;
+          },
+        ),
+      ]).buildEmbeddingWithMiddleware();
 
       await embedProvider.embed(['hello']);
 

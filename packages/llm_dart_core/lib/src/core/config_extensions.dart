@@ -115,6 +115,9 @@ abstract final class LLMConfigKeys {
   static const String candidateCount = 'candidateCount';
   static const String defaultVoiceName = 'defaultVoiceName';
   static const String defaultSpeakerVoices = 'defaultSpeakerVoices';
+  static const String googleFileSearchConfig = 'googleFileSearchConfig';
+  static const String googleCodeExecutionEnabled = 'googleCodeExecutionEnabled';
+  static const String googleUrlContextEnabled = 'googleUrlContextEnabled';
 
   // xAI-specific extensions
   static const String searchParameters = 'searchParameters';
