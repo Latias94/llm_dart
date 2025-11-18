@@ -105,7 +105,7 @@ abstract class BaseHttpProvider implements ChatCapability {
 
       return parseResponse(responseData);
     } on DioException catch (e) {
-      throw handleDioError(e);
+      throw await handleDioError(e);
     } catch (e) {
       throw GenericError('Unexpected error: $e');
     }
@@ -175,7 +175,7 @@ abstract class BaseHttpProvider implements ChatCapability {
         }
       }
     } on DioException catch (e) {
-      yield ErrorEvent(handleDioError(e));
+      yield ErrorEvent(await handleDioError(e));
     } catch (e) {
       yield ErrorEvent(GenericError('Unexpected error: $e'));
     }
@@ -203,8 +203,8 @@ abstract class BaseHttpProvider implements ChatCapability {
   }
 
   /// Handle Dio exceptions with consistent error mapping
-  LLMError handleDioError(DioException e) {
-    final error = DioErrorHandler.handleDioError(e, providerName);
+  Future<LLMError> handleDioError(DioException e) async {
+    final error = await DioErrorHandler.handleDioError(e, providerName);
 
     // Log the error with provider context
     switch (e.type) {

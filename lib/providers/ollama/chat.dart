@@ -40,7 +40,7 @@ class OllamaChat implements ChatCapability {
       );
       return _parseResponse(responseData);
     } on DioException catch (e) {
-      throw DioErrorHandler.handleDioError(e, 'Ollama');
+      throw await DioErrorHandler.handleDioError(e, 'Ollama');
     } catch (e) {
       throw GenericError('Unexpected error: $e');
     }

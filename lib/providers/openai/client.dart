@@ -371,7 +371,7 @@ class OpenAIClient {
         providerName: 'OpenAI',
       );
     } on DioException catch (e) {
-      throw handleDioError(e);
+      throw await handleDioError(e);
     } catch (e) {
       throw GenericError('Unexpected error: $e');
     }
@@ -409,7 +409,7 @@ class OpenAIClient {
 
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw handleDioError(e);
+      throw await handleDioError(e);
     } catch (e) {
       throw GenericError('Unexpected error: $e');
     }
@@ -439,7 +439,7 @@ class OpenAIClient {
 
       return response.data as List<int>;
     } on DioException catch (e) {
-      throw handleDioError(e);
+      throw await handleDioError(e);
     } catch (e) {
       throw GenericError('Unexpected error: $e');
     }
@@ -475,7 +475,7 @@ class OpenAIClient {
 
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw handleDioError(e);
+      throw await handleDioError(e);
     } catch (e) {
       throw GenericError('Unexpected error: $e');
     }
@@ -503,7 +503,7 @@ class OpenAIClient {
 
       return response.data as List<int>;
     } on DioException catch (e) {
-      throw handleDioError(e);
+      throw await handleDioError(e);
     } catch (e) {
       throw GenericError('Unexpected error: $e');
     }
@@ -539,7 +539,7 @@ class OpenAIClient {
 
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw handleDioError(e);
+      throw await handleDioError(e);
     } catch (e) {
       throw GenericError('Unexpected error: $e');
     }
@@ -607,14 +607,14 @@ class OpenAIClient {
         yield remaining;
       }
     } on DioException catch (e) {
-      throw handleDioError(e);
+      throw await handleDioError(e);
     } catch (e) {
       throw GenericError('Unexpected error: $e');
     }
   }
 
   /// Handle Dio errors and convert them to appropriate LLM errors
-  LLMError handleDioError(DioException e) {
+  Future<LLMError> handleDioError(DioException e) async {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
@@ -627,7 +627,7 @@ class OpenAIClient {
         if (statusCode != null) {
           // Use HttpErrorMapper for consistent error handling
           final errorMessage =
-              _extractErrorMessage(responseData) ?? '$statusCode';
+              await _extractErrorMessage(responseData) ?? '$statusCode';
           final responseMap =
               responseData is Map<String, dynamic> ? responseData : null;
 
@@ -651,38 +651,65 @@ class OpenAIClient {
   }
 
   /// Extract error message from OpenAI API response
-  String? _extractErrorMessage(dynamic responseData) {
-    if (responseData is Map<String, dynamic>) {
-      // OpenAI error format: {"error": {"message": "...", "type": "...", "code": "..."}}
-      final error = responseData['error'] as Map<String, dynamic>?;
-      if (error != null) {
-        final message = error['message'] as String?;
-        final type = error['type'] as String?;
-        final code = error['code']?.toString();
+  Future<String?> _extractErrorMessage(dynamic responseData) async {
+    // Handle ResponseBody by reading the stream
+    if (responseData is ResponseBody) {
+      try {
+        final bytes = await responseData.stream.toList();
+        final concatenated = bytes.expand((x) => x).toList();
+        final content = utf8.decode(concatenated);
 
-        if (message != null) {
-          final parts = <String>[message];
-          if (type != null) parts.add('type: $type');
-          if (code != null) parts.add('code: $code');
-          return parts.join(', ');
+        // Try to parse as JSON
+        try {
+          final jsonData = jsonDecode(content) as Map<String, dynamic>;
+          return _extractErrorMessageFromMap(jsonData);
+        } catch (_) {
+          // Not JSON, return raw content
+          return content.isNotEmpty ? content : null;
         }
+      } catch (_) {
+        return null;
       }
+    }
 
-      // Fallback: look for direct message field
-      final directMessage = responseData['message'] as String?;
-      if (directMessage != null) return directMessage;
+    if (responseData is Map<String, dynamic>) {
+      return _extractErrorMessageFromMap(responseData);
     }
 
     return null;
   }
 
+  /// Extract error message from a parsed Map
+  String? _extractErrorMessageFromMap(Map<String, dynamic> responseData) {
+    // OpenAI error format: {"error": {"message": "...", "type": "...", "code": "..."}}
+    final error = responseData['error'] as Map<String, dynamic>?;
+    if (error != null) {
+      final message = error['message'] as String?;
+      final type = error['type'] as String?;
+      final code = error['code']?.toString();
+
+      if (message != null) {
+        final parts = <String>[message];
+        if (type != null) parts.add('type: $type');
+        if (code != null) parts.add('code: $code');
+        return parts.join(', ');
+      }
+    }
+
+    // Fallback: look for direct message field
+    final directMessage = responseData['message'] as String?;
+    if (directMessage != null) return directMessage;
+
+    return null;
+  }
+
   /// Handle error responses with specific error types
-  void _handleErrorResponse(Response response, String endpoint) {
+  Future<void> _handleErrorResponse(Response response, String endpoint) async {
     final statusCode = response.statusCode;
     final errorData = response.data;
 
     if (statusCode != null) {
-      final errorMessage = _extractErrorMessage(errorData) ??
+      final errorMessage = await _extractErrorMessage(errorData) ??
           'OpenAI $endpoint API returned error status: $statusCode';
       final responseMap = errorData is Map<String, dynamic> ? errorData : null;
 

@@ -93,7 +93,7 @@ class GroqClient {
       }
     } on DioException catch (e) {
       logger.severe('Stream request failed: ${e.message}');
-      throw DioErrorHandler.handleDioError(e, 'Groq');
+      throw await DioErrorHandler.handleDioError(e, 'Groq');
     }
   }
 }
