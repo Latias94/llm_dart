@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.4] - 2025-11-19
+
+### Fixed
+
+- **Error Message Propagation**: Fixed error responses showing "Instance of 'ResponseBody'" instead of actual API error messages (by [@isegal](https://github.com/isegal) in [#25](https://github.com/Latias94/llm_dart/pull/25))
+  - Made `handleDioError` async to properly read ResponseBody streams
+  - Added proper error message extraction from streamed error responses
+  - Applied fix across all provider clients for consistent error handling
+  - Error messages now display actual API error details for better debugging
+
 ## [0.10.3] - 2025-11-17
 
 ### Added
