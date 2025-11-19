@@ -135,7 +135,7 @@ class HttpResponseHandler {
     } on DioException catch (e) {
       log.severe('$provider HTTP request failed: ${e.message}');
       // Convert DioException to LLMError using centralized handler
-      throw DioErrorHandler.handleDioError(e, provider);
+      throw await DioErrorHandler.handleDioError(e, provider);
     } catch (e) {
       if (e is LLMError) {
         rethrow;
@@ -187,7 +187,7 @@ class HttpResponseHandler {
     } on DioException catch (e) {
       log.severe('$provider HTTP GET request failed: ${e.message}');
       // Convert DioException to LLMError using centralized handler
-      throw DioErrorHandler.handleDioError(e, provider);
+      throw await DioErrorHandler.handleDioError(e, provider);
     } catch (e) {
       if (e is LLMError) {
         rethrow;

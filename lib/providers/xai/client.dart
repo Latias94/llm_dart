@@ -47,7 +47,7 @@ class XAIClient {
       );
     } on DioException catch (e) {
       logger.severe('HTTP request failed: ${e.message}');
-      throw DioErrorHandler.handleDioError(e, 'xAI');
+      throw await DioErrorHandler.handleDioError(e, 'xAI');
     }
   }
 
@@ -103,7 +103,7 @@ class XAIClient {
       }
     } on DioException catch (e) {
       logger.severe('Stream request failed: ${e.message}');
-      throw DioErrorHandler.handleDioError(e, 'xAI');
+      throw await DioErrorHandler.handleDioError(e, 'xAI');
     }
   }
 }

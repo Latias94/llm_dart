@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 
 /// Error types that can occur when interacting with LLM providers.
@@ -288,7 +290,8 @@ class OpenAIResponsesError extends LLMError {
 /// Dio error handler utility for consistent error handling across providers
 class DioErrorHandler {
   /// Handle Dio errors and convert to appropriate LLM errors
-  static LLMError handleDioError(DioException e, String providerName) {
+  static Future<LLMError> handleDioError(
+      DioException e, String providerName) async {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
@@ -299,19 +302,53 @@ class DioErrorHandler {
         final data = e.response?.data;
         if (statusCode != null) {
           // Extract clean error message from response data
-          String errorMessage = data?.toString() ?? 'Unknown error';
+          String errorMessage = 'Unknown error';
+          Map<String, dynamic>? responseData;
+
           if (data is Map<String, dynamic>) {
+            responseData = data;
             final error = data['error'];
             if (error is Map<String, dynamic>) {
-              errorMessage = error['message']?.toString() ?? errorMessage;
+              errorMessage = error['message']?.toString() ?? data.toString();
             } else if (error is String) {
               errorMessage = error;
+            } else {
+              errorMessage = data.toString();
             }
+          } else if (data is ResponseBody) {
+            // Handle ResponseBody by reading the stream
+            try {
+              final bytes = await data.stream.toList();
+              final concatenated = bytes.expand((x) => x).toList();
+              final content = utf8.decode(concatenated);
+
+              // Try to parse as JSON
+              try {
+                final jsonData = jsonDecode(content) as Map<String, dynamic>;
+                responseData = jsonData;
+                final error = jsonData['error'];
+                if (error is Map<String, dynamic>) {
+                  errorMessage = error['message']?.toString() ?? content;
+                } else if (error is String) {
+                  errorMessage = error;
+                } else {
+                  errorMessage = content;
+                }
+              } catch (_) {
+                // Not JSON, use raw content
+                errorMessage = content;
+              }
+            } catch (streamError) {
+              errorMessage = 'Failed to read error response: $streamError';
+            }
+          } else if (data != null) {
+            errorMessage = data.toString();
           }
+
           return HttpErrorMapper.mapStatusCode(
             statusCode,
             errorMessage,
-            data is Map<String, dynamic> ? data : null,
+            responseData,
           );
         } else {
           return ProviderError('$providerName HTTP error: $data');

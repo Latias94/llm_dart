@@ -184,7 +184,7 @@ class GoogleChat implements ChatCapability {
 
       return uploadedFile;
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      throw await _handleDioError(e);
     } catch (e) {
       throw GenericError('File upload error: $e');
     }
@@ -218,7 +218,7 @@ class GoogleChat implements ChatCapability {
   }
 
   /// Handle Dio errors and convert to appropriate LLM errors
-  LLMError _handleDioError(DioException e) {
+  Future<LLMError> _handleDioError(DioException e) async {
     // Handle Google-specific error response format first
     if (e.response?.data is Map<String, dynamic>) {
       final errorData = e.response!.data as Map<String, dynamic>;
@@ -232,7 +232,7 @@ class GoogleChat implements ChatCapability {
     }
 
     // Fall back to standard error handling
-    return DioErrorHandler.handleDioError(e, 'Google');
+    return await DioErrorHandler.handleDioError(e, 'Google');
   }
 
   /// Handle Google API error response format
