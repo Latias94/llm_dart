@@ -69,6 +69,17 @@ OpenAIProvider createOpenAIProvider({
 }
 
 /// Create an OpenAI provider for OpenRouter
+///
+/// This legacy helper treats OpenRouter as an OpenAI-compatible endpoint.
+/// New code should prefer the dedicated OpenAI-compatible provider via
+/// `ai().openRouter()` / `OpenAICompatibleProviderFactory` or use the
+/// `OpenAICompatibleConfigs.openrouter(...)` helper from
+/// `package:llm_dart_openai_compatible`.
+@Deprecated(
+  'Use the OpenAI-compatible provider via ai().openRouter() '
+  'or OpenAICompatibleConfigs.openrouter(...) instead of '
+  'createOpenRouterProvider on the OpenAI facade.',
+)
 OpenAIProvider createOpenRouterProvider({
   required String apiKey,
   String model = ProviderDefaults.openRouterDefaultModel,
@@ -169,6 +180,15 @@ OpenAIProvider createAzureOpenAIProvider({
 }
 
 /// Create an OpenAI provider for GitHub Copilot
+///
+/// This helper treats GitHub Copilot as an OpenAI-compatible endpoint.
+/// New code should prefer a dedicated OpenAI-compatible configuration
+/// instead of reusing the OpenAI facade.
+@Deprecated(
+  'Use an OpenAI-compatible configuration for GitHub Copilot instead of '
+  'createCopilotProvider on the OpenAI facade. '
+  'This helper will be removed in a future release.',
+)
 OpenAIProvider createCopilotProvider({
   required String apiKey,
   String model = ProviderDefaults.githubCopilotDefaultModel,
@@ -189,6 +209,15 @@ OpenAIProvider createCopilotProvider({
 }
 
 /// Create an OpenAI provider for Together AI
+///
+/// This helper treats Together AI as an OpenAI-compatible endpoint.
+/// New code should prefer a dedicated OpenAI-compatible configuration
+/// instead of reusing the OpenAI facade.
+@Deprecated(
+  'Use an OpenAI-compatible configuration for Together AI instead of '
+  'createTogetherProvider on the OpenAI facade. '
+  'This helper will be removed in a future release.',
+)
 OpenAIProvider createTogetherProvider({
   required String apiKey,
   String model = ProviderDefaults.togetherAIDefaultModel,

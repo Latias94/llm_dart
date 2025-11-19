@@ -405,7 +405,7 @@ class XAIChat implements ChatCapability {
       if (name != null && name.isNotEmpty) {
         return ToolCallDeltaEvent(
           ToolCall(
-            id: toolCall['id'] as String? ?? 'call_${name}',
+            id: toolCall['id'] as String? ?? 'call_$name',
             callType: toolCall['type'] as String? ?? 'function',
             function: FunctionCall(
               name: name,
@@ -460,7 +460,7 @@ class XAIChatResponse implements ChatResponse {
     final result = <ToolCall>[];
     for (final raw in rawToolCalls) {
       if (raw is! Map) continue;
-      final map = Map<String, dynamic>.from(raw as Map);
+      final map = Map<String, dynamic>.from(raw);
       final function = map['function'] as Map<String, dynamic>? ?? {};
       final name = function['name'] as String?;
       final arguments = function['arguments'] as String? ?? '';
@@ -522,7 +522,7 @@ class XAIChatResponse implements ChatResponse {
 
     final hasThinkingContent = thinking != null;
     final hasCitations =
-        citations != null && citations is List && citations.isNotEmpty;
+        citations != null && citations.isNotEmpty;
 
     return {
       'provider': 'xai',

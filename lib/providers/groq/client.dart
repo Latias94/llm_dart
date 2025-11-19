@@ -1,6 +1,7 @@
-/// Backwards-compatible legacy Groq HTTP client.
+/// Legacy Groq client entrypoint.
 ///
-/// The actual implementation now lives under `lib/legacy/providers/groq`.
+/// This file is kept only so that existing imports from
+/// `providers/groq/client.dart` continue to compile. The modern Groq
+/// implementation lives in the `llm_dart_groq` subpackage and is
+/// exposed via `providers/groq/groq.dart`.
 library;
-
-export '../../legacy/providers/groq/client.dart';

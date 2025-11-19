@@ -261,6 +261,56 @@ class OpenAICompatibleProviderProfiles {
     },
   );
 
+  /// GitHub Copilot configuration using OpenAI-compatible interface.
+  static const OpenAICompatibleProviderConfig githubCopilot =
+      OpenAICompatibleProviderConfig(
+    providerId: 'github-copilot',
+    displayName: 'GitHub Copilot',
+    description: 'GitHub Copilot Chat API using OpenAI-compatible interface',
+    defaultBaseUrl: 'https://api.githubcopilot.com/v1/',
+    defaultModel: 'gpt-4',
+    supportedCapabilities: {
+      LLMCapability.chat,
+      LLMCapability.streaming,
+      LLMCapability.toolCalling,
+    },
+    supportsReasoningEffort: false,
+    supportsStructuredOutput: true,
+    modelConfigs: {
+      'gpt-4': ModelCapabilityConfig(
+        supportsReasoning: false,
+        supportsVision: false,
+        supportsToolCalling: true,
+        maxContextLength: 8192,
+      ),
+    },
+  );
+
+  /// Together AI configuration using OpenAI-compatible interface.
+  static const OpenAICompatibleProviderConfig togetherAI =
+      OpenAICompatibleProviderConfig(
+    providerId: 'together-ai',
+    displayName: 'Together AI',
+    description: 'Together AI platform using OpenAI-compatible interface',
+    defaultBaseUrl: 'https://api.together.xyz/v1/',
+    defaultModel: 'meta-llama/Llama-3-70b-chat-hf',
+    supportedCapabilities: {
+      LLMCapability.chat,
+      LLMCapability.streaming,
+      LLMCapability.toolCalling,
+    },
+    supportsReasoningEffort: false,
+    supportsStructuredOutput: true,
+    modelConfigs: {
+      'meta-llama/Llama-3-70b-chat-hf': ModelCapabilityConfig(
+        supportsReasoning: false,
+        supportsVision: false,
+        supportsToolCalling: true,
+        maxContextLength: 8192,
+      ),
+    },
+  );
+
   /// Phind configuration using OpenAI-compatible interface.
   static const OpenAICompatibleProviderConfig phind =
       OpenAICompatibleProviderConfig(
@@ -332,6 +382,8 @@ class OpenAICompatibleProviderProfiles {
       groq,
       phind,
       openRouter,
+      githubCopilot,
+      togetherAI,
     ];
   }
 
@@ -350,6 +402,10 @@ class OpenAICompatibleProviderProfiles {
         return phind;
       case 'openrouter':
         return openRouter;
+      case 'github-copilot':
+        return githubCopilot;
+      case 'together-ai':
+        return togetherAI;
       default:
         return null;
     }

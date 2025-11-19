@@ -16,10 +16,12 @@ class OpenAICompletion implements CompletionCapability {
   @override
   Future<CompletionResponse> complete(CompletionRequest request) async {
     final messages = [ChatMessage.user(request.prompt)];
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
 
     final requestBody = <String, dynamic>{
       'model': config.model,
-      'messages': client.buildApiMessages(messages),
+      'messages': client.buildApiMessagesFromPrompt(promptMessages),
       'stream': false,
       if (request.maxTokens != null) 'max_tokens': request.maxTokens,
       if (request.temperature != null) 'temperature': request.temperature,
@@ -48,10 +50,12 @@ class OpenAICompletion implements CompletionCapability {
 
   Stream<String> completeStream(CompletionRequest request) async* {
     final messages = [ChatMessage.user(request.prompt)];
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
 
     final requestBody = <String, dynamic>{
       'model': config.model,
-      'messages': client.buildApiMessages(messages),
+      'messages': client.buildApiMessagesFromPrompt(promptMessages),
       'stream': true,
       if (request.maxTokens != null) 'max_tokens': request.maxTokens,
       if (request.temperature != null) 'temperature': request.temperature,

@@ -4,7 +4,6 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../config/xai_config.dart';
 import '../http/xai_dio_strategy.dart';
-import '../utils/xai_utf8_stream_decoder.dart';
 
 class XAIClient {
   final XAIConfig config;
@@ -72,7 +71,7 @@ class XAIClient {
         );
       }
 
-      final decoder = XaiUtf8StreamDecoder();
+      final decoder = Utf8StreamDecoder();
 
       await for (final chunk in stream) {
         final decoded = decoder.decode(chunk);

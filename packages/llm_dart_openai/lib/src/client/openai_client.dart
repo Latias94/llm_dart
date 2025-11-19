@@ -241,29 +241,6 @@ class OpenAIClient {
     return result;
   }
 
-  List<Map<String, dynamic>> buildApiMessages(List<ChatMessage> messages) {
-    final apiMessages = <Map<String, dynamic>>[];
-
-    for (final message in messages) {
-      if (message.messageType is ToolResultMessage) {
-        final toolResults = (message.messageType as ToolResultMessage).results;
-        for (final result in toolResults) {
-          apiMessages.add({
-            'role': 'tool',
-            'tool_call_id': result.id,
-            'content': result.function.arguments.isNotEmpty
-                ? result.function.arguments
-                : message.content,
-          });
-        }
-      } else {
-        apiMessages.add(convertMessage(message));
-      }
-    }
-
-    return apiMessages;
-  }
-
   Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {
     final role = switch (message.role) {
       ChatRole.system => 'system',

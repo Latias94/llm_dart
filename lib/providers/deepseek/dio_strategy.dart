@@ -1,6 +1,9 @@
-/// Backwards-compatible legacy DeepSeek Dio strategy.
+/// Backwards-compatible alias for the DeepSeek Dio strategy.
 ///
-/// The actual implementation now lives under `lib/legacy/providers/deepseek`.
+/// The actual implementation now lives in the `llm_dart_deepseek`
+/// subpackage. This file is kept so that existing imports from
+/// `providers/deepseek/dio_strategy.dart` continue to work.
 library;
 
-export '../../legacy/providers/deepseek/dio_strategy.dart';
+export 'package:llm_dart_deepseek/llm_dart_deepseek.dart'
+    show DeepSeekDioStrategy;

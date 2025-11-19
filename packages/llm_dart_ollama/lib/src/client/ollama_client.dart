@@ -6,7 +6,6 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../config/ollama_config.dart';
 import '../http/ollama_dio_strategy.dart';
-import '../utils/ollama_utf8_stream_decoder.dart';
 
 /// Core Ollama HTTP client for the sub-package.
 class OllamaClient {
@@ -89,7 +88,7 @@ class OllamaClient {
         );
       }
 
-      final decoder = OllamaUtf8StreamDecoder();
+      final decoder = Utf8StreamDecoder();
 
       await for (final chunk in stream) {
         final decoded = decoder.decode(chunk);

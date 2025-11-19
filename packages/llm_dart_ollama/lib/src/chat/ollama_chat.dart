@@ -223,8 +223,10 @@ class OllamaChat implements ChatCapability {
       final buffer = StringBuffer();
 
       for (final part in message.parts) {
-        if (part is TextContentPart || part is ReasoningContentPart) {
-          buffer.write((part as dynamic).text as String);
+        if (part is TextContentPart) {
+          buffer.write(part.text);
+        } else if (part is ReasoningContentPart) {
+          buffer.write(part.text);
         }
       }
 
@@ -407,7 +409,7 @@ class OllamaChatResponse implements ChatResponse {
     // Prefer OpenAI-style usage block when present (for compatible gateways).
     final rawUsage = _raw['usage'];
     if (rawUsage is Map) {
-      final usageData = Map<String, dynamic>.from(rawUsage as Map);
+      final usageData = Map<String, dynamic>.from(rawUsage);
       return UsageInfo.fromJson(usageData);
     }
 
@@ -456,7 +458,29 @@ class OllamaChatResponse implements ChatResponse {
   }
 
   @override
-  List<CallWarning> get warnings => const [];
+  List<CallWarning> get warnings {
+    final warnings = <CallWarning>[];
+
+    // Surface a warning when the response was truncated by length/num_predict.
+    final doneReason = _raw['done_reason'] as String?;
+    if (doneReason == 'length') {
+      warnings.add(
+        CallWarning(
+          code: 'output_truncated',
+          message:
+              'Ollama response was truncated due to max token or length limit.',
+          details: {
+            'provider': 'ollama',
+            'doneReason': doneReason,
+            'numPredict': _raw['num_predict'],
+            'evalCount': _raw['eval_count'],
+          },
+        ),
+      );
+    }
+
+    return warnings;
+  }
 
   @override
   Map<String, dynamic>? get metadata {

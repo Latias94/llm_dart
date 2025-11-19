@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 /// HTTP header utilities shared across providers.
 ///
 /// This helper centralizes common header-building patterns such as

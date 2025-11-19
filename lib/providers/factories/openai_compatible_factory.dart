@@ -53,7 +53,7 @@ class OpenAICompatibleProviderFactory
   /// Transform unified config to OpenAI-compatible config
   OpenAICompatibleConfig _transformConfig(LLMConfig config) {
     // Handle web search configuration for OpenRouter
-    String? model = config.model;
+    var model = config.model;
 
     // Check for webSearchEnabled flag (for OpenRouter)
     final webSearchEnabled =
@@ -77,7 +77,7 @@ class OpenAICompatibleProviderFactory
     return OpenAICompatibleConfig(
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
-      model: model ?? config.model,
+      model: model,
       providerId: _config.providerId,
       systemPrompt: config.systemPrompt,
       maxTokens: config.maxTokens,

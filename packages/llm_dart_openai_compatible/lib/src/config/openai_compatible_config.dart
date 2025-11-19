@@ -126,6 +126,97 @@ class OpenAICompatibleConfig {
 /// These helpers fill in `baseUrl` and `providerId` for well-known vendors,
 /// so callers only need to provide API keys and models.
 class OpenAICompatibleConfigs {
+  /// DeepSeek preset using its OpenAI-compatible endpoint.
+  ///
+  /// Base URL: https://api.deepseek.com/v1/
+  static OpenAICompatibleConfig deepseekOpenAI({
+    required String apiKey,
+    String model = 'deepseek-chat',
+    String baseUrl = 'https://api.deepseek.com/v1/',
+    LLMConfig? originalConfig,
+  }) {
+    return OpenAICompatibleConfig(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      model: model,
+      providerId: 'deepseek-openai',
+      originalConfig: originalConfig,
+    );
+  }
+
+  /// Google Gemini preset using its OpenAI-compatible endpoint.
+  ///
+  /// Base URL: https://generativelanguage.googleapis.com/v1beta/openai/
+  static OpenAICompatibleConfig googleOpenAI({
+    required String apiKey,
+    String model = 'gemini-2.0-flash',
+    String baseUrl =
+        'https://generativelanguage.googleapis.com/v1beta/openai/',
+    LLMConfig? originalConfig,
+  }) {
+    return OpenAICompatibleConfig(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      model: model,
+      providerId: 'google-openai',
+      originalConfig: originalConfig,
+    );
+  }
+
+  /// xAI Grok preset using its OpenAI-compatible endpoint.
+  ///
+  /// Base URL: https://api.x.ai/v1/
+  static OpenAICompatibleConfig xaiOpenAI({
+    required String apiKey,
+    String model = 'grok-3',
+    String baseUrl = 'https://api.x.ai/v1/',
+    LLMConfig? originalConfig,
+  }) {
+    return OpenAICompatibleConfig(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      model: model,
+      providerId: 'xai-openai',
+      originalConfig: originalConfig,
+    );
+  }
+
+  /// Groq preset using its OpenAI-compatible endpoint.
+  ///
+  /// Base URL: https://api.groq.com/openai/v1/
+  static OpenAICompatibleConfig groqOpenAI({
+    required String apiKey,
+    String model = 'llama-3.3-70b-versatile',
+    String baseUrl = 'https://api.groq.com/openai/v1/',
+    LLMConfig? originalConfig,
+  }) {
+    return OpenAICompatibleConfig(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      model: model,
+      providerId: 'groq-openai',
+      originalConfig: originalConfig,
+    );
+  }
+
+  /// Phind preset using its OpenAI-compatible endpoint.
+  ///
+  /// Base URL: https://api.phind.com/v1/
+  static OpenAICompatibleConfig phindOpenAI({
+    required String apiKey,
+    String model = 'Phind-70B',
+    String baseUrl = 'https://api.phind.com/v1/',
+    LLMConfig? originalConfig,
+  }) {
+    return OpenAICompatibleConfig(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      model: model,
+      providerId: 'phind-openai',
+      originalConfig: originalConfig,
+    );
+  }
+
   /// DeepInfra preset using its OpenAI-compatible endpoint.
   ///
   /// Base URL: https://api.deepinfra.com/v1/openai/

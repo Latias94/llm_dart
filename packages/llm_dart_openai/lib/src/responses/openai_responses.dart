@@ -237,7 +237,9 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     bool stream,
     bool background,
   ) {
-    final apiMessages = client.buildApiMessages(messages);
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    final apiMessages = client.buildApiMessagesFromPrompt(promptMessages);
 
     final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
 

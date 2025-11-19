@@ -597,6 +597,9 @@ class SimpleChatResponse implements ChatResponse {
 
   @override
   Map<String, dynamic>? get metadata => null;
+
+  @override
+  CallMetadata? get callMetadata => null;
 }
 
 /// 🎯 Key Error Handling Concepts Summary:

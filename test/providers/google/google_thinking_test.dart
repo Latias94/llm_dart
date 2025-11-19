@@ -39,7 +39,7 @@ void main() {
         },
       };
 
-      final response = GoogleChatResponse(mockResponse);
+      final response = GoogleChatResponse(mockResponse, 'test-model');
 
       // Verify thinking content extraction
       expect(response.thinking, isNotNull);
@@ -78,7 +78,7 @@ void main() {
         ],
       };
 
-      final response = GoogleChatResponse(mockResponse);
+      final response = GoogleChatResponse(mockResponse, 'test-model');
 
       // Should have thinking content
       expect(response.thinking,
@@ -108,7 +108,7 @@ void main() {
         ],
       };
 
-      final response = GoogleChatResponse(mockResponse);
+      final response = GoogleChatResponse(mockResponse, 'test-model');
 
       // Should have no thinking content
       expect(response.thinking, isNull);
@@ -120,14 +120,13 @@ void main() {
 
     test('GoogleChatResponse handles empty or malformed responses', () {
       // Test empty response
-      final emptyResponse = GoogleChatResponse({});
+      final emptyResponse = GoogleChatResponse({}, 'test-model');
       expect(emptyResponse.thinking, isNull);
       expect(emptyResponse.text, isNull);
 
       // Test response with empty candidates
-      final emptyCandidatesResponse = GoogleChatResponse({
-        'candidates': [],
-      });
+      final emptyCandidatesResponse =
+          GoogleChatResponse({'candidates': []}, 'test-model');
       expect(emptyCandidatesResponse.thinking, isNull);
       expect(emptyCandidatesResponse.text, isNull);
 
@@ -140,7 +139,7 @@ void main() {
             },
           },
         ],
-      });
+      }, 'test-model');
       expect(emptyPartsResponse.thinking, isNull);
       expect(emptyPartsResponse.text, isNull);
     });
@@ -200,7 +199,8 @@ void main() {
         ],
       };
 
-      final response = GoogleChatResponse(mockResponseWithThinking);
+      final response =
+          GoogleChatResponse(mockResponseWithThinking, 'test-model');
       final stringRepresentation = response.toString();
 
       expect(stringRepresentation, contains('Thinking: Let me analyze this.'));
@@ -223,7 +223,8 @@ void main() {
         ],
       };
 
-      final response = GoogleChatResponse(mockResponseWithoutThinking);
+      final response =
+          GoogleChatResponse(mockResponseWithoutThinking, 'test-model');
       final stringRepresentation = response.toString();
 
       expect(stringRepresentation, isNot(contains('Thinking:')));
@@ -254,7 +255,7 @@ void main() {
         ],
       };
 
-      final response = GoogleChatResponse(mockResponse);
+      final response = GoogleChatResponse(mockResponse, 'test-model');
 
       expect(response.candidates, isNotNull);
       expect(response.candidates!.length, equals(2));

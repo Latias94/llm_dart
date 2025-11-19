@@ -87,34 +87,6 @@ class OpenAICompatibleClient {
     _sseBuffer.clear();
   }
 
-  /// Legacy message builder from ChatMessage.
-  ///
-  /// Retained for backward compatibility in callers that still use
-  /// ChatMessage directly. New code should prefer
-  /// [buildApiMessagesFromPrompt].
-  List<Map<String, dynamic>> buildApiMessages(List<ChatMessage> messages) {
-    final apiMessages = <Map<String, dynamic>>[];
-
-    for (final message in messages) {
-      if (message.messageType is ToolResultMessage) {
-        final toolResults = (message.messageType as ToolResultMessage).results;
-        for (final result in toolResults) {
-          apiMessages.add({
-            'role': 'tool',
-            'tool_call_id': result.id,
-            'content': result.function.arguments.isNotEmpty
-                ? result.function.arguments
-                : message.content,
-          });
-        }
-      } else {
-        apiMessages.add(_convertMessage(message));
-      }
-    }
-
-    return apiMessages;
-  }
-
   /// Build API messages from the structured ChatPromptMessage model.
   ///
   /// This mirrors the OpenAI client's behavior but keeps only the
@@ -137,69 +109,6 @@ class OpenAICompatibleClient {
     }
 
     return apiMessages;
-  }
-
-  Map<String, dynamic> _convertMessage(ChatMessage message) {
-    final result = <String, dynamic>{'role': message.role.name};
-
-    if (message.name != null) {
-      result['name'] = message.name;
-    }
-
-    switch (message.messageType) {
-      case TextMessage():
-        result['content'] = message.content;
-        break;
-      case ImageMessage(mime: final mime, data: final data):
-        final base64Data = base64Encode(data);
-        final imageDataUrl = 'data:${mime.mimeType};base64,$base64Data';
-        final contentArray = <Map<String, dynamic>>[];
-
-        if (message.content.isNotEmpty) {
-          contentArray.add({'type': 'text', 'text': message.content});
-        }
-
-        contentArray.add({
-          'type': 'image_url',
-          'image_url': {'url': imageDataUrl},
-        });
-
-        result['content'] = contentArray;
-        break;
-      case ImageUrlMessage(url: final url):
-        final contentArray = <Map<String, dynamic>>[];
-        if (message.content.isNotEmpty) {
-          contentArray.add({'type': 'text', 'text': message.content});
-        }
-        contentArray.add({
-          'type': 'image_url',
-          'image_url': {'url': url},
-        });
-        result['content'] = contentArray;
-        break;
-      case FileMessage(data: final data):
-        final base64Data = base64Encode(data);
-        final contentArray = <Map<String, dynamic>>[];
-        if (message.content.isNotEmpty) {
-          contentArray.add({'type': 'text', 'text': message.content});
-        }
-        contentArray.add({
-          'type': 'file',
-          'file': {'file_data': base64Data},
-        });
-        result['content'] = contentArray;
-        break;
-      case ToolUseMessage(toolCalls: final toolCalls):
-        result['tool_calls'] = toolCalls.map((tc) => tc.toJson()).toList();
-        break;
-      case ToolResultMessage(results: final results):
-        result['content'] =
-            message.content.isNotEmpty ? message.content : 'Tool result';
-        result['tool_call_id'] = results.isNotEmpty ? results.first.id : null;
-        break;
-    }
-
-    return result;
   }
 
   Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {

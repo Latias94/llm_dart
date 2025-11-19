@@ -337,6 +337,148 @@ if (response.toolCalls != null) {
 }
 ```
 
+## Advanced Usage: Structured Prompts (ChatPromptMessage + ChatContentPart)
+
+Under the hood all providers convert `ChatMessage` → `ChatPromptMessage`, so:
+
+- You can keep using `ChatMessage.user(...)` / `ChatMessage.image(...)` for simple text or single‑attachment prompts.
+- For **multi‑part / multi‑modal** prompts (text + multiple images/files/audio/video + tool results), use the structured prompt model:
+  - `ChatPromptMessage` as the provider‑agnostic prompt.
+  - `ChatContentPart` as building blocks (text, files, tool calls/results).
+  - `ChatPromptBuilder` as a fluent helper to construct them.
+
+### When to use the structured prompt model
+
+- You need multiple parts in a single logical message (e.g. “describe these three images together”).
+- You want to share the **same prompt** across different providers (OpenAI, Anthropic, Google, DeepSeek, Ollama, Phind) without rewriting payloads.
+- You are building advanced features like tool use + tool result chaining with rich context.
+
+### Building a multi‑modal prompt once, using it everywhere
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+
+Future<void> describeImageAcrossProviders(List<int> imageBytes) async {
+  // 1) Build a structured user prompt: text + inline image.
+  final prompt = ChatPromptBuilder.user()
+      .text('Describe this image in one paragraph.')
+      .imageBytes(
+        imageBytes,
+        mime: ImageMime.png,
+        filename: 'example.png',
+      )
+      .build();
+
+  // 2) Bridge into ChatMessage for the public ChatCapability API.
+  final messages = [ChatMessage.fromPromptMessage(prompt)];
+
+  // 3) Use the same prompt with different providers.
+  final openai = await ai()
+      .openai()
+      .apiKey('OPENAI_KEY')
+      .model('gpt-4o-mini')
+      .build();
+
+  final anthropic = await ai()
+      .anthropic()
+      .apiKey('ANTHROPIC_KEY')
+      .model('claude-3-5-sonnet-20241022')
+      .build();
+
+  final google = await ai()
+      .google()
+      .apiKey('GOOGLE_KEY')
+      .model('gemini-1.5-flash')
+      .build();
+
+  final openaiResponse = await openai.chat(messages);
+  final anthropicResponse = await anthropic.chat(messages);
+  final googleResponse = await google.chat(messages);
+
+  print('OpenAI: ${openaiResponse.text}');
+  print('Anthropic: ${anthropicResponse.text}');
+  print('Google: ${googleResponse.text}');
+}
+```
+
+Each provider maps the same `ChatPromptMessage` to its native format:
+
+- OpenAI / OpenAI‑compatible: `messages[].content` with `text` + `image_url` / `input_*` parts.
+- Anthropic: `messages[].content` blocks with `text` + `image`/`document` + tool use/result blocks.
+- Google Gemini: `contents[].parts` with `text` + `inlineData` or uploaded file references.
+
+### Tool calls and tool results with structured prompts
+
+You can also drive tool use round‑trips using `ToolCallContentPart` and `ToolResultContentPart`:
+
+```dart
+import 'dart:convert';
+import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+
+Future<void> toolRoundTrip(ChatCapability provider) async {
+  final tools = [
+    Tool.function(
+      name: 'get_weather',
+      description: 'Get the current weather for a city.',
+      parameters: ParametersSchema(
+        schemaType: 'object',
+        properties: {
+          'city': ParameterProperty(
+            propertyType: 'string',
+            description: 'City name, e.g. \"San Francisco\"',
+          ),
+        },
+        required: ['city'],
+      ),
+    ),
+  ];
+
+  // 1) Ask the model to call the tool.
+  final messages = [ChatMessage.user('What is the weather in Tokyo?')];
+  final response = await provider.chatWithTools(messages, tools);
+  final calls = response.toolCalls ?? [];
+  if (calls.isEmpty) return;
+
+  final toolCall = calls.first;
+  final args = jsonDecode(toolCall.function.arguments) as Map<String, dynamic>;
+
+  // 2) Execute the tool locally.
+  final weather = {
+    'city': args['city'],
+    'temperatureC': 20,
+    'condition': 'sunny',
+  };
+
+  // 3) Build a structured tool result and send back.
+  final toolResultPrompt = ChatPromptMessage(
+    role: ChatRole.user,
+    parts: [
+      ToolResultContentPart(
+        toolCallId: toolCall.id,
+        toolName: toolCall.function.name,
+        payload: ToolResultJsonPayload(weather),
+      ),
+    ],
+  );
+
+  final followupMessages = [
+    ...messages,
+    ChatMessage.fromPromptMessage(toolResultPrompt),
+  ];
+
+  final followupResponse =
+      await provider.chatWithTools(followupMessages, tools);
+  print('Final answer: ${followupResponse.text}');
+}
+```
+
+推荐实践：
+
+- 简单场景：继续用 `ChatMessage.user/assistant/system` 这些便捷构造方法。
+- 复杂场景（多模态 + 工具 + 多部分）：用 `ChatPromptBuilder` 构造 `ChatPromptMessage`，再用 `ChatMessage.fromPromptMessage` 与现有 API 对接。
+
 ## Provider Examples
 
 ### OpenAI

@@ -5,7 +5,6 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import '../config/deepseek_config.dart';
 import '../error/deepseek_error_handler.dart';
 import '../http/deepseek_dio_strategy.dart';
-import '../utils/deepseek_utf8_stream_decoder.dart';
 
 /// Core DeepSeek HTTP client shared across all capability modules.
 ///
@@ -74,7 +73,7 @@ class DeepSeekClient {
         );
       }
 
-      final decoder = DeepSeekUtf8StreamDecoder();
+      final decoder = Utf8StreamDecoder();
 
       await for (final chunk in stream) {
         final decoded = decoder.decode(chunk);

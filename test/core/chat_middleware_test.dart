@@ -23,6 +23,9 @@ class _TestChatResponse implements ChatResponse {
 
   @override
   Map<String, dynamic>? get metadata => null;
+
+  @override
+  CallMetadata? get callMetadata => null;
 }
 
 class _TestChatProvider implements ChatCapability, ProviderCapabilities {

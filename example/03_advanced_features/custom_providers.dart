@@ -524,6 +524,9 @@ class MockChatResponse implements ChatResponse {
 
   @override
   Map<String, dynamic>? get metadata => null;
+
+  @override
+  CallMetadata? get callMetadata => null;
 }
 
 class MockUsage extends UsageInfo {

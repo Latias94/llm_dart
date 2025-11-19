@@ -25,7 +25,24 @@ class PhindChat implements ChatCapability {
     CancelToken? cancelToken,
   }) async {
     try {
-      // Note: Phind does not support tools yet
+      // Note: Phind does not support tools yet.
+      // If tools are provided, we ignore them and surface a warning
+      // via the response metadata so that callers can detect this.
+      final warnings = <CallWarning>[];
+      if (tools != null && tools.isNotEmpty) {
+        warnings.add(
+          CallWarning(
+            code: 'tools_not_supported',
+            message:
+                'Phind does not support tool calls; tools were ignored for this call.',
+            details: {
+              'provider': 'phind',
+              'toolCount': tools.length,
+            },
+          ),
+        );
+      }
+
       final requestBody = _buildRequestBody(messages, tools, false);
 
       if (client.logger.isLoggable(Level.FINE)) {
@@ -37,7 +54,7 @@ class PhindChat implements ChatCapability {
         requestBody,
         cancelToken: cancelToken,
       );
-      return _parseResponse(responseData);
+      return _parseResponse(responseData, warnings);
     } catch (e) {
       if (e is LLMError) {
         rethrow;
@@ -108,7 +125,10 @@ class PhindChat implements ChatCapability {
   }
 
   /// Parse response from Phind API
-  PhindChatResponse _parseResponse(Map<String, dynamic> responseData) {
+  PhindChatResponse _parseResponse(
+    Map<String, dynamic> responseData,
+    List<CallWarning> warnings,
+  ) {
     // Extract content from the mock response structure created by client
     final choices = responseData['choices'] as List?;
     if (choices != null && choices.isNotEmpty) {
@@ -118,12 +138,14 @@ class PhindChat implements ChatCapability {
         return PhindChatResponse.fromContent(
           content,
           model: config.model,
+          warnings: warnings,
         );
       }
     }
     return PhindChatResponse.fromContent(
       '',
       model: config.model,
+      warnings: warnings,
     );
   }
 
@@ -240,13 +262,30 @@ class PhindChat implements ChatCapability {
 class PhindChatResponse implements ChatResponse {
   final String _content;
 
-  /// Optional model identifier for this call.
-  final String? _model;
+  final List<CallWarning> _warnings;
+  final Map<String, dynamic>? _metadata;
 
-  PhindChatResponse.fromContent(
+  PhindChatResponse(
     this._content, {
     String? model,
-  }) : _model = model;
+    List<CallWarning> warnings = const [],
+    Map<String, dynamic>? metadata,
+  })  : _warnings = warnings,
+        _metadata = metadata;
+
+  PhindChatResponse.fromContent(
+    String content, {
+    String? model,
+    List<CallWarning> warnings = const [],
+  }) : this(
+          content,
+          model: model,
+          warnings: warnings,
+          metadata: {
+            'provider': 'phind',
+            if (model != null) 'model': model,
+          },
+        );
 
   @override
   String? get text => _content;
@@ -267,17 +306,21 @@ class PhindChatResponse implements ChatResponse {
   String? get thinking => null;
 
   @override
-  List<CallWarning> get warnings => const [];
+  List<CallWarning> get warnings => _warnings;
 
   @override
-  Map<String, dynamic>? get metadata => {
-        'provider': 'phind',
-        if (_model != null) 'model': _model,
-      };
+  Map<String, dynamic>? get metadata {
+    // Ensure provider/model information is available even when
+    // metadata was not explicitly provided.
+    if (_metadata != null) return _metadata;
+    return {
+      'provider': 'phind',
+    };
+  }
 
   @override
   CallMetadata? get callMetadata {
-    final data = metadata;
+    final data = _metadata;
     if (data == null) return null;
     return CallMetadata.fromJson(data);
   }
