@@ -521,8 +521,7 @@ class XAIChatResponse implements ChatResponse {
     final citations = _rawResponse['citations'] as List?;
 
     final hasThinkingContent = thinking != null;
-    final hasCitations =
-        citations != null && citations.isNotEmpty;
+    final hasCitations = citations != null && citations.isNotEmpty;
 
     return {
       'provider': 'xai',

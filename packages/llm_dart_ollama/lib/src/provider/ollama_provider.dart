@@ -107,4 +107,69 @@ class OllamaProvider
 
   /// Check if embeddings are supported by current model.
   bool get supportsEmbeddings => config.supportsEmbeddings;
+
+  /// Show detailed information about a model.
+  Future<Map<String, dynamic>> showModel(
+    String model, {
+    CancelToken? cancelToken,
+  }) {
+    return _client.showModel(model, cancelToken: cancelToken);
+  }
+
+  /// Copy a model to a new name.
+  Future<void> copyModel(
+    String source,
+    String destination, {
+    CancelToken? cancelToken,
+  }) {
+    return _client.copyModel(source, destination, cancelToken: cancelToken);
+  }
+
+  /// Delete a model and its data.
+  Future<void> deleteModel(
+    String model, {
+    CancelToken? cancelToken,
+  }) {
+    return _client.deleteModel(model, cancelToken: cancelToken);
+  }
+
+  /// Pull a model from the Ollama library.
+  Future<Map<String, dynamic>> pullModel(
+    String model, {
+    bool insecure = false,
+    CancelToken? cancelToken,
+  }) {
+    return _client.pullModel(
+      model,
+      insecure: insecure,
+      cancelToken: cancelToken,
+    );
+  }
+
+  /// Push a model to a remote library.
+  Future<Map<String, dynamic>> pushModel(
+    String model, {
+    bool insecure = false,
+    CancelToken? cancelToken,
+  }) {
+    return _client.pushModel(
+      model,
+      insecure: insecure,
+      cancelToken: cancelToken,
+    );
+  }
+
+  /// List models currently loaded into memory.
+  Future<List<Map<String, dynamic>>> listRunningModels({
+    CancelToken? cancelToken,
+  }) {
+    return _client.listRunningModels(cancelToken: cancelToken);
+  }
+
+  /// Get Ollama server version information.
+  Future<Map<String, dynamic>> serverVersion({
+    CancelToken? cancelToken,
+  }) {
+    return _client.version(cancelToken: cancelToken);
+  }
 }

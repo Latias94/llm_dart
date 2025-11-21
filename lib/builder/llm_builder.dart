@@ -74,6 +74,33 @@ class LLMBuilder {
   /// Creates a new empty builder instance with default values
   LLMBuilder();
 
+  /// Configure provider and model using a single model identifier.
+  ///
+  /// The [modelId] should be in the form `"provider:model"`, for example:
+  /// - `"openai:gpt-4o"`
+  /// - `"deepseek:deepseek-reasoner"`
+  /// - `"ollama:llama3.2"`
+  ///
+  /// This mirrors the model-centric style of the Vercel AI SDK while
+  /// reusing the existing provider registry under the hood.
+  LLMBuilder use(String modelId) {
+    final separatorIndex = modelId.indexOf(':');
+    if (separatorIndex <= 0 || separatorIndex == modelId.length - 1) {
+      throw ArgumentError(
+        'Model identifier must be in the form "provider:model", e.g. "openai:gpt-4o". '
+        'Received: "$modelId".',
+      );
+    }
+
+    final providerId = modelId.substring(0, separatorIndex);
+    final model = modelId.substring(separatorIndex + 1);
+
+    provider(providerId);
+    this.model(model);
+
+    return this;
+  }
+
   /// Sets the provider to use (new registry-based approach)
   LLMBuilder provider(String providerId) {
     _providerId = providerId;
@@ -743,6 +770,29 @@ class LLMBuilder {
 
     // Use the registry to create the provider
     return LLMProviderRegistry.createProvider(_providerId!, _config);
+  }
+
+  /// Builds a high-level [LanguageModel] wrapper for this builder.
+  ///
+  /// This method adapts the underlying [ChatCapability] to the
+  /// provider-agnostic [LanguageModel] interface, which is conceptually
+  /// aligned with the Vercel AI SDK's language model abstraction.
+  ///
+  /// This is useful when you want to:
+  /// - Keep a stable reference to a configured model
+  /// - Pass the model into helper functions that operate on [LanguageModel]
+  /// - Decouple higher-level logic from concrete provider types
+  Future<LanguageModel> buildLanguageModel() async {
+    final provider = await build();
+    final providerId = _providerId ?? 'unknown';
+    final modelId = _config.model;
+
+    return DefaultLanguageModel(
+      providerId: providerId,
+      modelId: modelId,
+      config: _config,
+      chat: provider,
+    );
   }
 
   /// Builds a provider with chat middlewares applied.

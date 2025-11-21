@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_ollama/llm_dart_ollama.dart';
@@ -84,6 +86,7 @@ void main() {
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);
+      expect(client.lastEndpoint, equals('/api/chat'));
 
       final apiMessages = body!['messages'] as List<dynamic>;
       expect(apiMessages.length, equals(2));
@@ -94,7 +97,7 @@ void main() {
 
       final toolMessage = apiMessages[1] as Map<String, dynamic>;
       expect(toolMessage['role'], equals('tool'));
-      expect(toolMessage['tool_call_id'], equals('call_1'));
+      expect(toolMessage['tool_name'], equals('get_weather'));
       expect(
         toolMessage['content'],
         equals('{"location":"Tokyo"}'),
@@ -103,9 +106,54 @@ void main() {
       final toolsJson = body['tools'] as List<dynamic>;
       expect(toolsJson.length, equals(1));
 
-      final responseFormat = body['response_format'] as Map<String, dynamic>?;
-      expect(responseFormat, isNotNull);
-      expect(responseFormat!['type'], equals('json_schema'));
+      // Structured output should use native Ollama `format` parameter
+      // with the JSON schema.
+      final format = body['format'] as Map<String, dynamic>?;
+      expect(format, isNotNull);
+      expect(format!['type'], equals('object'));
+      expect(format['properties'], contains('temp'));
+    });
+  });
+
+  group('OllamaChat multimodal', () {
+    test('encodes inline image bytes into images array', () async {
+      final config = const OllamaConfig(
+        model: 'llava:latest',
+      );
+
+      final client = FakeOllamaClient(config);
+      final chat = OllamaChat(client, config);
+
+      final imageBytes = <int>[1, 2, 3, 4];
+
+      final messages = <ChatMessage>[
+        ChatMessage.image(
+          role: ChatRole.user,
+          mime: ImageMime.png,
+          data: imageBytes,
+          content: 'Describe this image',
+        ),
+      ];
+
+      await chat.chat(messages);
+
+      final body = client.lastRequestBody;
+      expect(body, isNotNull);
+      expect(client.lastEndpoint, equals('/api/chat'));
+
+      final apiMessages = body!['messages'] as List<dynamic>;
+      expect(apiMessages.length, equals(1));
+
+      final userMessage = apiMessages.first as Map<String, dynamic>;
+      expect(userMessage['role'], equals('user'));
+      expect(userMessage['content'], contains('Describe this image'));
+
+      final images = userMessage['images'] as List<dynamic>?;
+      expect(images, isNotNull);
+      expect(images!.length, equals(1));
+
+      final encoded = images.first as String;
+      expect(encoded, equals(base64Encode(imageBytes)));
     });
   });
 }

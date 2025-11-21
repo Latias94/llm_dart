@@ -21,6 +21,7 @@ class DeepSeekProviderFactory extends BaseProviderFactory<ChatCapability> {
         LLMCapability.chat,
         LLMCapability.streaming,
         LLMCapability.toolCalling,
+        LLMCapability.completion,
         LLMCapability.reasoning,
       };
 

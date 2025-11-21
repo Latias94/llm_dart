@@ -444,5 +444,18 @@ void main() {
         expect(builder, isNotNull);
       });
     });
+
+    test('use() should configure provider and model from identifier', () {
+      final builder = LLMBuilder().use('openai:gpt-4o');
+
+      expect(builder.currentConfig.model, equals('gpt-4o'));
+    });
+
+    test('use() should throw for invalid identifier format', () {
+      expect(
+        () => LLMBuilder().use('gpt-4o'),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
   });
 }

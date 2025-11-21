@@ -14,37 +14,62 @@ class OllamaEmbeddings implements EmbeddingCapability {
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
-    // TODO(ollama-native): this uses the OpenAI-compatible `/v1/embeddings`
-    // endpoint; consider migrating to the native `/api/embeddings` and
-    // adjusting the request/response mapping accordingly.
-    final embeddings = <List<double>>[];
+    // Native Ollama `/api/embed` embeddings endpoint.
+    final body = <String, dynamic>{
+      'model': config.model,
+      // Ollama accepts either a single string or a list of strings.
+      'input': input.length == 1 ? input.first : input,
+    };
 
-    for (final text in input) {
-      final body = <String, dynamic>{
-        'model': config.model,
-        'input': text,
-      };
-
-      final json = await client.postJson('/v1/embeddings', body,
-          cancelToken: cancelToken);
-      final data = json['data'] as List?;
-      if (data == null || data.isEmpty) {
-        throw const ResponseFormatError(
-          'Invalid embedding response format: missing data',
-          '',
-        );
-      }
-      final first = data.first as Map<String, dynamic>;
-      final values = first['embedding'] as List?;
-      if (values == null) {
-        throw const ResponseFormatError(
-          'Invalid embedding response format: missing embedding field',
-          '',
-        );
-      }
-      embeddings.add(values.cast<double>());
+    // Advanced parameters: keep_alive and options.
+    if (config.keepAlive != null) {
+      body['keep_alive'] = config.keepAlive;
     }
 
-    return embeddings;
+    final options = <String, dynamic>{};
+    if (config.temperature != null) {
+      options['temperature'] = config.temperature;
+    }
+    if (config.maxTokens != null) {
+      options['num_predict'] = config.maxTokens;
+    }
+    if (config.topP != null) {
+      options['top_p'] = config.topP;
+    }
+    if (config.topK != null) {
+      options['top_k'] = config.topK;
+    }
+    if (config.numCtx != null) {
+      options['num_ctx'] = config.numCtx;
+    }
+    if (config.numGpu != null) {
+      options['num_gpu'] = config.numGpu;
+    }
+    if (config.numThread != null) {
+      options['num_thread'] = config.numThread;
+    }
+    if (config.numBatch != null) {
+      options['num_batch'] = config.numBatch;
+    }
+    if (config.numa != null) {
+      options['numa'] = config.numa;
+    }
+
+    if (options.isNotEmpty) {
+      body['options'] = options;
+    }
+
+    final json =
+        await client.postJson('/api/embed', body, cancelToken: cancelToken);
+
+    final data = json['embeddings'] as List?;
+    if (data == null || data.isEmpty) {
+      throw const ResponseFormatError(
+        'Invalid embedding response format: missing embeddings',
+        '',
+      );
+    }
+
+    return data.map((e) => (e as List).cast<double>()).toList(growable: false);
   }
 }

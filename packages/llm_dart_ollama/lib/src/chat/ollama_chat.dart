@@ -25,12 +25,9 @@ class OllamaChat implements ChatCapability {
     List<Tool>? tools, {
     CancelToken? cancelToken,
   }) async {
-    // TODO(ollama-native): migrate to native `/api/chat` endpoint when we drop
-    // OpenAI-compatible gateways, and adjust the request/response format
-    // accordingly.
     final body = _buildRequestBody(messages, tools, false);
-    final response = await client.postJson('/v1/chat/completions', body,
-        cancelToken: cancelToken);
+    final response =
+        await client.postJson('/api/chat', body, cancelToken: cancelToken);
     return _parseResponse(response);
   }
 
@@ -41,18 +38,56 @@ class OllamaChat implements ChatCapability {
     CancelToken? cancelToken,
   }) async* {
     final body = _buildRequestBody(messages, tools, true);
-    final stream = client.postStreamRaw('/v1/chat/completions', body,
-        cancelToken: cancelToken);
+    final stream =
+        client.postStreamRaw('/api/chat', body, cancelToken: cancelToken);
+
+    // Ollama streams NDJSON (one JSON object per line). We need to
+    // buffer across chunks to avoid splitting JSON lines.
+    final buffer = StringBuffer();
 
     await for (final chunk in stream) {
-      final lines = LineSplitter.split(chunk);
-      for (final line in lines) {
-        if (line.trim().isEmpty) continue;
-        final json = jsonDecode(line) as Map<String, dynamic>;
-        final event = _parseStreamEvent(json);
-        if (event != null) {
+      buffer.write(chunk);
+      var content = buffer.toString();
+
+      while (true) {
+        final newlineIndex = content.indexOf('\n');
+        if (newlineIndex == -1) {
+          break;
+        }
+
+        final line = content.substring(0, newlineIndex).trim();
+        content = content.substring(newlineIndex + 1);
+
+        if (line.isEmpty) {
+          continue;
+        }
+
+        try {
+          final json = jsonDecode(line) as Map<String, dynamic>;
+          final events = _parseStreamEvents(json);
+          for (final event in events) {
+            yield event;
+          }
+        } catch (_) {
+          // Ignore malformed lines and continue streaming.
+        }
+      }
+
+      buffer
+        ..clear()
+        ..write(content);
+    }
+
+    final remaining = buffer.toString().trim();
+    if (remaining.isNotEmpty) {
+      try {
+        final json = jsonDecode(remaining) as Map<String, dynamic>;
+        final events = _parseStreamEvents(json);
+        for (final event in events) {
           yield event;
         }
+      } catch (_) {
+        // Ignore trailing partial JSON.
       }
     }
   }
@@ -73,8 +108,9 @@ class OllamaChat implements ChatCapability {
     List<Tool>? tools,
     bool stream,
   ) {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
+    final promptMessages = messages
+        .map((message) => message.toPromptMessage())
+        .toList(growable: false);
 
     final apiMessages = _buildOllamaMessagesFromPrompt(promptMessages);
 
@@ -83,23 +119,6 @@ class OllamaChat implements ChatCapability {
       'messages': apiMessages,
       'stream': stream,
     };
-
-    // TODO(ollama-native): these top-level OpenAI-compatible sampling fields
-    // are kept for backwards compatibility with chat/completions gateways.
-    // Once we fully migrate to the native `/api/chat` endpoint, we should rely
-    // on the `options` block instead and remove these.
-    if (config.temperature != null) {
-      body['temperature'] = config.temperature;
-    }
-    if (config.maxTokens != null) {
-      body['max_tokens'] = config.maxTokens;
-    }
-    if (config.topP != null) {
-      body['top_p'] = config.topP;
-    }
-    if (config.topK != null) {
-      body['top_k'] = config.topK;
-    }
 
     // Ollama-style options block for advanced parameters.
     final options = <String, dynamic>{};
@@ -131,14 +150,16 @@ class OllamaChat implements ChatCapability {
     if (config.numa != null) {
       options['numa'] = config.numa;
     }
-    if (config.keepAlive != null) {
-      options['keep_alive'] = config.keepAlive;
-    }
-    if (config.raw != null) {
-      options['raw'] = config.raw;
-    }
     if (options.isNotEmpty) {
       body['options'] = options;
+    }
+
+    // Top-level advanced parameters aligned with Ollama docs.
+    if (config.keepAlive != null) {
+      body['keep_alive'] = config.keepAlive;
+    }
+    if (config.raw != null) {
+      body['raw'] = config.raw;
     }
 
     // Thinking / reasoning flag for Ollama thinking models.
@@ -151,16 +172,10 @@ class OllamaChat implements ChatCapability {
       body['tools'] = effectiveTools.map(_convertTool).toList();
     }
 
-    // Structured output / JSON schema
+    // Structured output / JSON schema using native `format` parameter.
     if (config.jsonSchema != null) {
       final schema = config.jsonSchema!;
 
-      // TODO(ollama-native): response_format is OpenAI-style; keep while we
-      // support OpenAI-compatible gateways, and prefer native `format` for
-      // direct Ollama integrations.
-      body['response_format'] = schema.toOpenAIResponseFormat();
-
-      // Native Ollama-style format parameter for structured outputs.
       if (schema.schema != null) {
         body['format'] = schema.schema;
       } else {
@@ -177,11 +192,7 @@ class OllamaChat implements ChatCapability {
   ) {
     final apiMessages = <Map<String, dynamic>>[];
 
-    // System messages: Ollama has its own prompt field, but many servers
-    // accept system in messages too; we keep only non-system messages here
-    // and rely on config.systemPrompt for system behavior.
     for (final message in promptMessages) {
-      if (message.role == ChatRole.system) continue;
       final hasToolResult =
           message.parts.any((part) => part is ToolResultContentPart);
 
@@ -240,34 +251,41 @@ class OllamaChat implements ChatCapability {
     final pureParts =
         message.parts.where((part) => part is! ToolResultContentPart).toList();
 
-    final textParts =
-        pureParts.whereType<TextContentPart>().toList(growable: false);
-    final nonTextParts = pureParts.where((p) => p is! TextContentPart).toList();
-
-    if (nonTextParts.isEmpty && textParts.length == 1) {
-      return {
-        'role': 'user',
-        'content': textParts.first.text,
-      };
-    }
-
     final buffer = StringBuffer();
+    final images = <String>[];
+
     for (final part in pureParts) {
       if (part is TextContentPart) {
         buffer.writeln(part.text);
       } else if (part is ReasoningContentPart) {
         buffer.writeln(part.text);
       } else if (part is UrlFileContentPart) {
+        // For URL-based media we currently fall back to a textual
+        // placeholder. Native Ollama images require base64-encoded
+        // image data, which is available only for FileContentPart.
         buffer.writeln('[image] ${part.url}');
       } else if (part is FileContentPart) {
-        _appendFilePartForPrompt(part, buffer);
+        final mime = part.mime.mimeType;
+        if (mime.startsWith('image/')) {
+          // Encode inline image bytes for native Ollama multimodal support.
+          final base64Data = base64Encode(part.data);
+          images.add(base64Data);
+        } else {
+          _appendFilePartForPrompt(part, buffer);
+        }
       }
     }
 
-    return {
+    final result = <String, dynamic>{
       'role': 'user',
       'content': buffer.toString().trim(),
     };
+
+    if (images.isNotEmpty) {
+      result['images'] = images;
+    }
+
+    return result;
   }
 
   void _appendFilePartForPrompt(
@@ -338,19 +356,61 @@ class OllamaChat implements ChatCapability {
     };
   }
 
-  ChatStreamEvent? _parseStreamEvent(Map<String, dynamic> json) {
-    final choices = json['choices'] as List?;
-    if (choices == null || choices.isEmpty) return null;
+  /// Parse a single Ollama chat stream JSON object into zero or more
+  /// [ChatStreamEvent]s.
+  List<ChatStreamEvent> _parseStreamEvents(Map<String, dynamic> json) {
+    final events = <ChatStreamEvent>[];
 
-    final delta = choices.first['delta'] as Map<String, dynamic>?;
-    if (delta == null) return null;
+    final done = json['done'] as bool? ?? false;
+    final message = json['message'] as Map<String, dynamic>?;
 
-    final content = delta['content'] as String?;
-    if (content != null && content.isNotEmpty) {
-      return TextDeltaEvent(content);
+    if (message != null) {
+      // Thinking content for reasoning models.
+      final thinking = message['thinking'] as String?;
+      if (thinking != null && thinking.isNotEmpty) {
+        events.add(ThinkingDeltaEvent(thinking));
+      }
+
+      // Tool call deltas.
+      final toolCalls = message['tool_calls'] as List?;
+      if (toolCalls != null && toolCalls.isNotEmpty) {
+        for (final tc in toolCalls.whereType<Map<String, dynamic>>()) {
+          final function = tc['function'] as Map<String, dynamic>?;
+          if (function == null) continue;
+
+          final name = function['name'] as String?;
+          final arguments = function['arguments'];
+
+          if (name == null || arguments == null) continue;
+
+          events.add(
+            ToolCallDeltaEvent(
+              ToolCall(
+                id: 'call_$name',
+                callType: 'function',
+                function: FunctionCall(
+                  name: name,
+                  arguments: jsonEncode(arguments),
+                ),
+              ),
+            ),
+          );
+        }
+      }
+
+      // Text deltas.
+      final content = message['content'] as String?;
+      if (content != null && content.isNotEmpty) {
+        events.add(TextDeltaEvent(content));
+      }
     }
 
-    return null;
+    // Final completion event with usage/metadata.
+    if (done) {
+      events.add(CompletionEvent(OllamaChatResponse(json)));
+    }
+
+    return events;
   }
 
   ChatResponse _parseResponse(Map<String, dynamic> json) {

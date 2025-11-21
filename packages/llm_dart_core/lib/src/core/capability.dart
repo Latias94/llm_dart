@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../models/chat_models.dart';
 import '../models/tool_models.dart';
 import '../models/audio_models.dart';
@@ -389,6 +391,210 @@ class GenerateTextResult {
   bool get hasThinking => thinking != null && thinking!.trim().isNotEmpty;
 }
 
+/// High-level result for structured object generation helpers.
+///
+/// This combines a strongly-typed [object] parsed from the model's
+/// JSON output with the underlying [GenerateTextResult] used to
+/// produce it.
+class GenerateObjectResult<T> {
+  /// Parsed structured object produced by the model.
+  final T object;
+
+  /// Underlying text generation result used to produce [object].
+  final GenerateTextResult textResult;
+
+  const GenerateObjectResult({
+    required this.object,
+    required this.textResult,
+  });
+}
+
+/// Output specification combining JSON schema and a parser.
+///
+/// This abstraction mirrors the Vercel AI SDK's `output` concept:
+/// it provides both a JSON schema (via [format]) and a function
+/// to convert the decoded JSON map into a strongly-typed Dart
+/// object of type [T].
+class OutputSpec<T> {
+  /// Structured output format (JSON schema) for this output.
+  final StructuredOutputFormat format;
+
+  /// Function that converts the decoded JSON map into [T].
+  final T Function(Map<String, dynamic> json) fromJson;
+
+  const OutputSpec({
+    required this.format,
+    required this.fromJson,
+  });
+
+  /// Convenience factory for object-shaped outputs.
+  ///
+  /// This method builds an [OutputSpec] from a property map using
+  /// the existing [ParameterProperty] schema model. It is suitable
+  /// for simple object outputs where fields are known in advance.
+  factory OutputSpec.object({
+    required String name,
+    String? description,
+    required Map<String, ParameterProperty> properties,
+    required T Function(Map<String, dynamic> json) fromJson,
+    List<String>? required,
+    bool strict = true,
+  }) {
+    final schema = <String, dynamic>{
+      'type': 'object',
+      'properties':
+          properties.map((key, value) => MapEntry(key, value.toJson())),
+      'required': required ?? properties.keys.toList(),
+    };
+
+    final format = StructuredOutputFormat(
+      name: name,
+      description: description,
+      schema: schema,
+      strict: strict,
+    );
+
+    return OutputSpec<T>(
+      format: format,
+      fromJson: fromJson,
+    );
+  }
+
+  /// Convenience spec for `{"value": string}` outputs.
+  static OutputSpec<String> stringValue({
+    String name = 'StringValue',
+    String? description,
+    String fieldName = 'value',
+  }) {
+    final properties = {
+      fieldName: ParameterProperty(
+        propertyType: 'string',
+        description: 'String value',
+      ),
+    };
+
+    return OutputSpec<String>.object(
+      name: name,
+      description: description,
+      properties: properties,
+      fromJson: (json) => json[fieldName] as String,
+      required: [fieldName],
+    );
+  }
+
+  /// Convenience spec for `{"value": integer}` outputs.
+  static OutputSpec<int> intValue({
+    String name = 'IntValue',
+    String? description,
+    String fieldName = 'value',
+  }) {
+    final properties = {
+      fieldName: ParameterProperty(
+        propertyType: 'integer',
+        description: 'Integer value',
+      ),
+    };
+
+    return OutputSpec<int>.object(
+      name: name,
+      description: description,
+      properties: properties,
+      fromJson: (json) => json[fieldName] as int,
+      required: [fieldName],
+    );
+  }
+
+  /// Convenience spec for `{"value": number}` (double) outputs.
+  static OutputSpec<double> doubleValue({
+    String name = 'DoubleValue',
+    String? description,
+    String fieldName = 'value',
+  }) {
+    final properties = {
+      fieldName: ParameterProperty(
+        propertyType: 'number',
+        description: 'Double value',
+      ),
+    };
+
+    return OutputSpec<double>.object(
+      name: name,
+      description: description,
+      properties: properties,
+      fromJson: (json) => (json[fieldName] as num).toDouble(),
+      required: [fieldName],
+    );
+  }
+
+  /// Convenience spec for `{"value": boolean}` outputs.
+  static OutputSpec<bool> boolValue({
+    String name = 'BoolValue',
+    String? description,
+    String fieldName = 'value',
+  }) {
+    final properties = {
+      fieldName: ParameterProperty(
+        propertyType: 'boolean',
+        description: 'Boolean value',
+      ),
+    };
+
+    return OutputSpec<bool>.object(
+      name: name,
+      description: description,
+      properties: properties,
+      fromJson: (json) => json[fieldName] as bool,
+      required: [fieldName],
+    );
+  }
+
+  /// Convenience spec for `{"items": [...]}` list outputs.
+  ///
+  /// The underlying schema uses an object with a single `items` array
+  /// property, where each element is expected to match [itemOutput].
+  static OutputSpec<List<T>> listOf<T>({
+    required OutputSpec<T> itemOutput,
+    String name = 'ListOutput',
+    String? description,
+    String fieldName = 'items',
+  }) {
+    final itemSchema = itemOutput.format.schema ??
+        {
+          'type': 'object',
+        };
+
+    final schema = <String, dynamic>{
+      'type': 'object',
+      'properties': {
+        fieldName: {
+          'type': 'array',
+          'items': itemSchema,
+        },
+      },
+      'required': [fieldName],
+    };
+
+    final format = StructuredOutputFormat(
+      name: name,
+      description: description,
+      schema: schema,
+      strict: true,
+    );
+
+    return OutputSpec<List<T>>(
+      format: format,
+      fromJson: (json) {
+        final list = json[fieldName] as List;
+        return list
+            .map((e) => itemOutput.fromJson(
+                  (e as Map).cast<String, dynamic>(),
+                ))
+            .toList(growable: false);
+      },
+    );
+  }
+}
+
 /// Usage information for API calls
 class UsageInfo {
   final int? promptTokens;
@@ -450,6 +656,155 @@ class UsageInfo {
   @override
   int get hashCode =>
       Object.hash(promptTokens, completionTokens, totalTokens, reasoningTokens);
+}
+
+/// High-level language model interface used by helper functions.
+///
+/// This interface is intentionally aligned with the Vercel AI SDK's
+/// "language model" concept: a provider + model pair that can generate
+/// and stream text based on chat-style messages, while remaining
+/// provider-agnostic.
+abstract class LanguageModel {
+  /// Logical provider identifier as registered in the LLM provider registry.
+  String get providerId;
+
+  /// Provider-specific model identifier (e.g. `gpt-4o`, `claude-3.7-sonnet`).
+  String get modelId;
+
+  /// Effective configuration used when creating this model.
+  LLMConfig get config;
+
+  /// Generate a single non-streaming text result.
+  ///
+  /// This is a high-level wrapper over the underlying [ChatCapability]
+  /// that returns a [GenerateTextResult] for convenience.
+  Future<GenerateTextResult> generateText(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  });
+
+  /// Stream text deltas, thinking deltas, tool calls, and the final
+  /// completion event.
+  ///
+  /// This is a high-level wrapper over the underlying [ChatCapability]
+  /// that exposes the raw [ChatStreamEvent] stream.
+  Stream<ChatStreamEvent> streamText(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  });
+
+  /// Generate a structured object based on the given [output] spec.
+  ///
+  /// This method assumes the underlying provider/model has been
+  /// configured to produce structured JSON matching [output.format]
+  /// (for example via provider-specific configuration or builder
+  /// helpers). It wraps [generateText] and parses the JSON response
+  /// into a [GenerateObjectResult].
+  Future<GenerateObjectResult<T>> generateObject<T>(
+    OutputSpec<T> output,
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  });
+}
+
+/// Default language model implementation that wraps a [ChatCapability].
+///
+/// This class adapts any provider that implements [ChatCapability] to
+/// the high-level [LanguageModel] interface used by helper functions.
+class DefaultLanguageModel implements LanguageModel {
+  @override
+  final String providerId;
+
+  @override
+  final String modelId;
+
+  @override
+  final LLMConfig config;
+
+  final ChatCapability _chat;
+
+  DefaultLanguageModel({
+    required this.providerId,
+    required this.modelId,
+    required this.config,
+    required ChatCapability chat,
+  }) : _chat = chat;
+
+  @override
+  Future<GenerateTextResult> generateText(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await _chat.chat(
+      messages,
+      cancelToken: cancelToken,
+    );
+
+    return GenerateTextResult(
+      rawResponse: response,
+      text: response.text,
+      thinking: response.thinking,
+      toolCalls: response.toolCalls,
+      usage: response.usage,
+      warnings: response.warnings,
+      metadata: response.callMetadata,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> streamText(
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatStream(
+      messages,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<GenerateObjectResult<T>> generateObject<T>(
+    OutputSpec<T> output,
+    List<ChatMessage> messages, {
+    CancelToken? cancelToken,
+  }) async {
+    final textResult = await generateText(
+      messages,
+      cancelToken: cancelToken,
+    );
+
+    final rawText = textResult.text;
+    if (rawText == null || rawText.trim().isEmpty) {
+      throw const ResponseFormatError(
+        'Structured output is empty or missing JSON content',
+        '',
+      );
+    }
+
+    Map<String, dynamic> json;
+    try {
+      final decoded = jsonDecode(rawText);
+      if (decoded is Map<String, dynamic>) {
+        json = decoded;
+      } else if (decoded is Map) {
+        json = Map<String, dynamic>.from(decoded);
+      } else {
+        throw const FormatException('Top-level JSON value is not an object');
+      }
+    } catch (e) {
+      throw ResponseFormatError(
+        'Failed to parse structured JSON output: $e',
+        rawText,
+      );
+    }
+
+    final object = output.fromJson(json);
+
+    return GenerateObjectResult<T>(
+      object: object,
+      textResult: textResult,
+    );
+  }
 }
 
 /// Core chat capability interface that most LLM providers implement

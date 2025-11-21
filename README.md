@@ -166,37 +166,272 @@ Under the hood all providers convert `ChatMessage` → `ChatPromptMessage`, so:
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
 
-// Create DeepSeek provider for streaming with thinking
-final provider = await ai()
-    .deepseek()
-    .apiKey('your-deepseek-key')
-    .model('deepseek-reasoner')
-    .temperature(0.7)
-    .build();
+void main() async {
+  // Create DeepSeek provider for streaming with thinking
+  final provider = await ai()
+      .deepseek()
+      .apiKey('your-deepseek-key')
+      .model('deepseek-reasoner')
+      .temperature(0.7)
+      .build();
 
-final messages = [ChatMessage.user('What is 15 + 27? Show your work.')];
+  final messages = [
+    ChatMessage.user('What is 15 + 27? Show your work.'),
+  ];
 
-// Stream with real-time thinking process
-await for (final event in provider.chatStream(messages)) {
-  switch (event) {
-    case ThinkingDeltaEvent(delta: final delta):
-      // Show AI's thinking process in gray
-      stdout.write('\x1B[90m$delta\x1B[0m');
-      break;
-    case TextDeltaEvent(delta: final delta):
-      // Show final answer
-      stdout.write(delta);
-      break;
-    case CompletionEvent(response: final response):
-      print('\n✅ Completed');
-      if (response.usage != null) {
-        print('Tokens: ${response.usage!.totalTokens}');
-      }
-      break;
-    case ErrorEvent(error: final error):
-      print('Error: $error');
-      break;
+  // Stream with real-time thinking process
+  await for (final event in provider.chatStream(messages)) {
+    switch (event) {
+      case ThinkingDeltaEvent(delta: final delta):
+        // Show AI's thinking process in gray
+        stdout.write('\x1B[90m$delta\x1B[0m');
+        break;
+      case TextDeltaEvent(delta: final delta):
+        // Show final answer
+        stdout.write(delta);
+        break;
+      case CompletionEvent(response: final response):
+        print('\n✅ Completed');
+        if (response.usage != null) {
+          print('Tokens: ${response.usage!.totalTokens}');
+        }
+        break;
+      case ErrorEvent(error: final error):
+        print('Error: $error');
+        break;
+    }
   }
+}
+```
+
+### LanguageModel-style usage (Vercel AI SDK inspired)
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+Future<void> main() async {
+  // Configure provider + model in one step
+  final model = await ai()
+      .use('deepseek:deepseek-chat')
+      .apiKey('your-deepseek-key')
+      .buildLanguageModel();
+
+  // Generate a non-streaming response
+  final result = await model.generateText([
+    ChatMessage.user('Explain what a binary search tree is.'),
+  ]);
+
+  print('Text: ${result.text}');
+  if (result.hasThinking) {
+    print('Thinking: ${result.thinking}');
+  }
+
+  // Stream a response with thinking deltas
+  final streamModel = await ai()
+      .use('deepseek:deepseek-reasoner')
+      .apiKey('your-deepseek-key')
+      .buildLanguageModel();
+
+  await for (final event in streamModel.streamText([
+    ChatMessage.user('What is 15 + 27? Show your work.'),
+  ])) {
+    switch (event) {
+      case ThinkingDeltaEvent(delta: final delta):
+        stdout.write('\x1B[90m$delta\x1B[0m');
+        break;
+      case TextDeltaEvent(delta: final delta):
+        stdout.write(delta);
+        break;
+      case CompletionEvent(response: final response):
+        print('\nCompleted with ${response.usage?.totalTokens} tokens.');
+        break;
+    }
+  }
+}
+```
+
+### Structured outputs with OutputSpec & generateObject
+
+Use `OutputSpec` to define JSON schemas and typed parsers, then call `generateObject` to get strongly-typed results:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+class UserProfile {
+  final String name;
+  final int age;
+
+  const UserProfile(this.name, this.age);
+
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    return UserProfile(
+      json['name'] as String,
+      json['age'] as int,
+    );
+  }
+}
+
+Future<void> main() async {
+  final output = OutputSpec<UserProfile>.object(
+    name: 'UserProfile',
+    properties: {
+      'name': ParameterProperty(
+        propertyType: 'string',
+        description: 'User name',
+      ),
+      'age': ParameterProperty(
+        propertyType: 'integer',
+        description: 'Age in years',
+      ),
+    },
+    fromJson: UserProfile.fromJson,
+  );
+
+  final result = await generateObject<UserProfile>(
+    model: 'openai:gpt-4o-mini',
+    apiKey: 'your-openai-key',
+    output: output,
+    prompt: 'Return a JSON user profile with name and age.',
+  );
+
+  print('User: ${result.object.name}, age: ${result.object.age}');
+}
+```
+
+For simple scalar outputs you can use the built-in helpers:
+
+```dart
+final intOutput = OutputSpec<int>.intValue();
+final boolOutput = OutputSpec<bool>.boolValue();
+final listOfUsers = OutputSpec<List<UserProfile>>.listOf(
+  itemOutput: output, // the UserProfile spec from above
+);
+```
+
+### Agent-style tool loop with ToolLoopAgent
+
+Use `ToolLoopAgent` to run a minimal tool loop on top of `LanguageModel` and `ExecutableTool`:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+
+Future<void> main() async {
+  final model = await ai()
+      .use('openai:gpt-4o-mini')
+      .apiKey('your-openai-key')
+      .buildLanguageModel();
+
+  final tools = <String, ExecutableTool>{
+    'get_weather': ExecutableTool(
+      schema: Tool.function(
+        name: 'get_weather',
+        description: 'Get the weather for a city',
+        parameters: ParametersSchema(
+          schemaType: 'object',
+          properties: {
+            'city': ParameterProperty(
+              propertyType: 'string',
+              description: 'City name',
+            ),
+          },
+          required: const ['city'],
+        ),
+      ),
+      execute: (args) async {
+        final city = args['city'] as String;
+        // Call your real weather API here
+        return {'city': city, 'temperatureC': 24.5};
+      },
+    ),
+  };
+
+  final input = AgentInput(
+    model: model,
+    messages: [
+      ChatMessage.user(
+        'Use the get_weather tool to fetch the weather for Tokyo, '
+        'then explain the result.',
+      ),
+    ],
+    tools: tools,
+  );
+
+  const agent = ToolLoopAgent();
+  final traced = await agent.runTextWithSteps(input);
+
+  print('Final answer: ${traced.result.text}');
+  for (final step in traced.steps) {
+    print('Step #${step.iteration}: '
+        'model call with ${step.toolCalls.length} tool calls');
+  }
+}
+```
+
+### Streaming structured outputs with streamObject (MVP)
+
+If you want both streaming events and a structured result, use `streamObject`:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+Future<void> main() async {
+  final output = OutputSpec<int>.intValue();
+
+  final streamResult = streamObject<int>(
+    model: 'openai:gpt-4o-mini',
+    apiKey: 'your-openai-key',
+    output: output,
+    prompt: 'Respond with a JSON object {"value": 123}',
+  );
+
+  // Consume streaming events (for UI / logs)
+  await for (final event in streamResult.events) {
+    if (event is TextDeltaEvent) {
+      stdout.write(event.delta);
+    }
+  }
+
+  // Await the structured result once the stream completes
+  final objectResult = await streamResult.asObject;
+  print('\nParsed value: ${objectResult.object}');
+}
+```
+
+### DeepSeek text completion & FIM
+
+Use DeepSeek as a lightweight text completion / FIM provider via the `CompletionCapability` implemented by `DeepSeekProvider`:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+Future<void> main() async {
+  final provider = await ai()
+      .deepseek()
+      .apiKey('your-deepseek-key')
+      .model('deepseek-chat')
+      .build();
+
+  // Plain text completion
+  final completion = await provider.complete(
+    const CompletionRequest(
+      prompt: 'Explain what a binary search tree is.',
+      maxTokens: 256,
+      temperature: 0.7,
+    ),
+  );
+
+  print('Completion: ${completion.text}');
+
+  // FIM-style code completion (prefix + suffix)
+  final fim = await provider.completeFim(
+    prefix: 'def compute_gcd(a, b):',
+    suffix: '    return result',
+    maxTokens: 128,
+    temperature: 0.2,
+  );
+
+  print('FIM completion: ${fim.text}');
 }
 ```
 
@@ -237,6 +472,82 @@ final deepseekProvider = await ai()
 
 final reasoningResponse = await deepseekProvider.chat(messages);
 print('DeepSeek reasoning: ${reasoningResponse.thinking}');
+```
+
+### Using Ollama (local multimodal & admin)
+
+Run Ollama locally:
+
+```bash
+ollama serve
+ollama pull llava:latest
+```
+
+Multimodal chat with local Ollama (text + image):
+
+```dart
+import 'dart:io';
+import 'package:llm_dart/llm_dart.dart';
+
+void main() async {
+  // Create a provider for a local Ollama instance
+  final provider = OllamaProvider(
+    const OllamaConfig(
+      baseUrl: 'http://localhost:11434/',
+      model: 'llava:latest',
+    ),
+  );
+
+  // Load an image into memory
+  final imageBytes = await File('cat.png').readAsBytes();
+
+  final messages = [
+    ChatMessage.image(
+      role: ChatRole.user,
+      mime: ImageMime.png,
+      data: imageBytes,
+      content: 'Describe this image in detail.',
+    ),
+  ];
+
+  final response = await provider.chat(messages);
+  print(response.text);
+}
+```
+
+Manage local Ollama models with `OllamaAdmin`:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+void main() async {
+  // Connect to a local Ollama server
+  final admin = OllamaAdmin.local(
+    baseUrl: 'http://localhost:11434',
+    model: 'llama3.2',
+  );
+
+  // List local models
+  final localModels = await admin.listLocalModels();
+  for (final model in localModels) {
+    print('Local model: ${model.id}');
+  }
+
+  // List running models
+  final running = await admin.listRunningModels();
+  print('Running models: ${running.length}');
+
+  // Show model details
+  final info = await admin.showModel('llama3.2');
+  print('llama3.2 details: ${info['details']}');
+
+  // Pull a model if needed
+  await admin.pullModel('llama3.2');
+
+  // Get Ollama server version
+  final version = await admin.serverVersion();
+  print('Ollama version: ${version['version']}');
+}
 ```
 
 ### Web Search

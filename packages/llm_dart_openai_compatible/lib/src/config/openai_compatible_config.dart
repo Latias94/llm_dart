@@ -150,8 +150,7 @@ class OpenAICompatibleConfigs {
   static OpenAICompatibleConfig googleOpenAI({
     required String apiKey,
     String model = 'gemini-2.0-flash',
-    String baseUrl =
-        'https://generativelanguage.googleapis.com/v1beta/openai/',
+    String baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/',
     LLMConfig? originalConfig,
   }) {
     return OpenAICompatibleConfig(

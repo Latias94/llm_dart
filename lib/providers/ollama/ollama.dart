@@ -35,8 +35,10 @@ library;
 
 import 'package:llm_dart_ollama/llm_dart_ollama.dart';
 import '../../models/tool_models.dart';
+import 'admin.dart';
 
 export 'package:llm_dart_ollama/llm_dart_ollama.dart';
+export 'admin.dart';
 
 /// Create an Ollama provider with default configuration
 OllamaProvider createOllamaProvider({
@@ -61,10 +63,6 @@ OllamaProvider createOllamaProvider({
   bool? raw,
   bool? reasoning,
 }) {
-  // TODO(ollama-native): this helper currently targets an OpenAI-compatible
-  // surface (e.g. `/v1/chat/completions`). When we migrate the subpackage to
-  // the native Ollama API (`/api/chat`, `/api/generate`, `/api/embeddings`),
-  // review these parameters and their mapping to `options/format/think`.
   final config = OllamaConfig(
     baseUrl: baseUrl ?? 'http://localhost:11434',
     apiKey: apiKey,

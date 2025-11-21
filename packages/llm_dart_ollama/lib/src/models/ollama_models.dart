@@ -11,14 +11,16 @@ class OllamaModels implements ModelListingCapability {
 
   @override
   Future<List<AIModel>> models({CancelToken? cancelToken}) async {
-    final json = await client.getJson('/v1/models', cancelToken: cancelToken);
-    final models = json['data'] as List? ?? [];
+    // Native Ollama `/api/tags` endpoint for listing local models.
+    final json = await client.getJson('/api/tags', cancelToken: cancelToken);
+    final models = json['models'] as List? ?? [];
 
     return models
         .whereType<Map<String, dynamic>>()
         .map(
           (m) => AIModel(
-            id: m['id'] as String? ?? '',
+            // Use the full model identifier (e.g. "llama3.2:latest") as ID.
+            id: m['model'] as String? ?? m['name'] as String? ?? '',
             description: m['name'] as String?,
           ),
         )
