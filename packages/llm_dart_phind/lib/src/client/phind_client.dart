@@ -71,7 +71,7 @@ class PhindClient {
         ]
       };
     } on DioException catch (e) {
-      throw DioErrorHandler.handleDioError(e, 'Phind');
+      throw await DioErrorHandler.handleDioError(e, 'Phind');
     }
   }
 
@@ -106,7 +106,7 @@ class PhindClient {
         yield chunk;
       }
     } on DioException catch (e) {
-      throw DioErrorHandler.handleDioError(e, 'Phind');
+      throw await DioErrorHandler.handleDioError(e, 'Phind');
     }
   }
 

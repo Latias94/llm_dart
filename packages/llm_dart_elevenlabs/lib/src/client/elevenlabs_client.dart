@@ -50,7 +50,7 @@ class ElevenLabsClient {
 
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      throw DioErrorHandler.handleDioError(e, 'ElevenLabs');
+      throw await DioErrorHandler.handleDioError(e, 'ElevenLabs');
     }
   }
 
@@ -73,7 +73,7 @@ class ElevenLabsClient {
 
       return response.data as List<dynamic>;
     } on DioException catch (e) {
-      throw DioErrorHandler.handleDioError(e, 'ElevenLabs');
+      throw await DioErrorHandler.handleDioError(e, 'ElevenLabs');
     }
   }
 
@@ -101,7 +101,7 @@ class ElevenLabsClient {
 
       return Uint8List.fromList(response.data as List<int>);
     } on DioException catch (e) {
-      throw DioErrorHandler.handleDioError(e, 'ElevenLabs');
+      throw await DioErrorHandler.handleDioError(e, 'ElevenLabs');
     }
   }
 
@@ -148,7 +148,7 @@ class ElevenLabsClient {
         return responseData as Map<String, dynamic>;
       }
     } on DioException catch (e) {
-      throw DioErrorHandler.handleDioError(e, 'ElevenLabs');
+      throw await DioErrorHandler.handleDioError(e, 'ElevenLabs');
     } catch (e) {
       if (e is LLMError) rethrow;
       throw GenericError('Unexpected error: $e');

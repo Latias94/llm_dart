@@ -39,7 +39,7 @@ class DeepSeekClient {
       );
     } on DioException catch (e) {
       logger.severe('HTTP request failed: ${e.message}');
-      throw DeepSeekErrorHandler.handleDioError(e);
+      throw await DeepSeekErrorHandler.handleDioError(e);
     }
   }
 
@@ -88,7 +88,7 @@ class DeepSeekClient {
       }
     } on DioException catch (e) {
       logger.severe('Stream request failed: ${e.message}');
-      throw DeepSeekErrorHandler.handleDioError(e);
+      throw await DeepSeekErrorHandler.handleDioError(e);
     }
   }
 }

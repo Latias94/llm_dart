@@ -89,7 +89,7 @@ class GoogleFilesClient {
       return GoogleFile.fromJson(fileData);
     } on DioException catch (e) {
       logger.severe('Google Files upload failed: ${e.message}');
-      throw DioErrorHandler.handleDioError(e, 'Google Files');
+      throw await DioErrorHandler.handleDioError(e, 'Google Files');
     } catch (e) {
       logger.severe('Google Files upload error: $e');
       throw GenericError('File upload error: $e');

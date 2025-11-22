@@ -361,7 +361,7 @@ class OpenAICompatibleClient {
         yield remaining;
       }
     } on DioException catch (e) {
-      throw DioErrorHandler.handleDioError(e, config.providerId);
+      throw await DioErrorHandler.handleDioError(e, config.providerId);
     } catch (e) {
       throw GenericError('Unexpected error: $e');
     }

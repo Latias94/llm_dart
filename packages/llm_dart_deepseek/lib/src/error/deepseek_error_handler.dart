@@ -25,7 +25,7 @@ class DeepSeekErrorHandler {
   }
 
   /// Handle Dio errors specifically for DeepSeek.
-  static LLMError handleDioError(DioException e) {
+  static Future<LLMError> handleDioError(DioException e) async {
     final statusCode = e.response?.statusCode;
     final responseData = e.response?.data;
 

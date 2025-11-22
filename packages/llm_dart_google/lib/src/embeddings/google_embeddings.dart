@@ -43,7 +43,7 @@ class GoogleEmbeddings implements EmbeddingCapability {
         return _parseBatchEmbeddingResponse(responseData);
       }
     } on DioException catch (e) {
-      throw DioErrorHandler.handleDioError(e, 'Google');
+      throw await DioErrorHandler.handleDioError(e, 'Google');
     } catch (e) {
       throw GenericError('Unexpected error: $e');
     }

@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Dio error handler utility for consistent error handling across providers.
 class DioErrorHandler {
   /// Handle Dio errors and convert to appropriate LLM errors.
-  static LLMError handleDioError(DioException e, String providerName) {
+  static Future<LLMError> handleDioError(
+    DioException e,
+    String providerName,
+  ) async {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.sendTimeout:
@@ -14,20 +19,13 @@ class DioErrorHandler {
         final statusCode = e.response?.statusCode;
         final data = e.response?.data;
         if (statusCode != null) {
-          // Extract clean error message from response data.
-          String errorMessage = data?.toString() ?? 'Unknown error';
-          if (data is Map<String, dynamic>) {
-            final error = data['error'];
-            if (error is Map<String, dynamic>) {
-              errorMessage = error['message']?.toString() ?? errorMessage;
-            } else if (error is String) {
-              errorMessage = error;
-            }
-          }
+          final errorInfo = await _extractErrorInfo(data);
+          final errorMessage = errorInfo.message ?? 'Unknown error';
+
           return HttpErrorMapper.mapStatusCode(
             statusCode,
             errorMessage,
-            data is Map<String, dynamic> ? data : null,
+            errorInfo.responseData,
           );
         } else {
           return ProviderError('$providerName HTTP error: $data');
@@ -42,6 +40,69 @@ class DioErrorHandler {
         return GenericError('$providerName request failed: ${e.message}');
     }
   }
+}
+
+class _ErrorInfo {
+  final String? message;
+  final Map<String, dynamic>? responseData;
+
+  const _ErrorInfo(this.message, this.responseData);
+}
+
+Future<_ErrorInfo> _extractErrorInfo(dynamic data) async {
+  if (data == null) {
+    return const _ErrorInfo(null, null);
+  }
+
+  if (data is Map<String, dynamic>) {
+    String errorMessage = 'Unknown error';
+    final error = data['error'];
+    if (error is Map<String, dynamic>) {
+      errorMessage = error['message']?.toString() ?? data.toString();
+    } else if (error is String) {
+      errorMessage = error;
+    } else {
+      errorMessage = data.toString();
+    }
+    return _ErrorInfo(errorMessage, data);
+  }
+
+  if (data is ResponseBody) {
+    try {
+      final chunks = await data.stream.toList();
+      final bytes = chunks.expand((c) => c).toList();
+      final content = utf8.decode(bytes);
+
+      if (content.isEmpty) {
+        return const _ErrorInfo(null, null);
+      }
+
+      try {
+        final json = jsonDecode(content);
+        if (json is Map<String, dynamic>) {
+          String errorMessage = 'Unknown error';
+          final error = json['error'];
+          if (error is Map<String, dynamic>) {
+            errorMessage = error['message']?.toString() ?? content;
+          } else if (error is String) {
+            errorMessage = error;
+          } else {
+            errorMessage = content;
+          }
+          return _ErrorInfo(errorMessage, json);
+        }
+      } catch (_) {
+        // Not JSON, fall through and use raw content.
+      }
+
+      return _ErrorInfo(content, null);
+    } catch (e) {
+      return _ErrorInfo('Failed to read error response: $e', null);
+    }
+  }
+
+  // Fallback for other data types (String, List<int>, etc.).
+  return _ErrorInfo(data.toString(), null);
 }
 
 /// HTTP error mapper utility.
