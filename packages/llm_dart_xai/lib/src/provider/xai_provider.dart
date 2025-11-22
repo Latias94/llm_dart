@@ -27,7 +27,7 @@ class XAIProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _chat.chat(messages, cancelToken: cancelToken);
   }
@@ -36,7 +36,7 @@ class XAIProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
   }
@@ -45,7 +45,7 @@ class XAIProvider
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
   }
@@ -60,7 +60,7 @@ class XAIProvider
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _embeddings.embed(input, cancelToken: cancelToken);
   }

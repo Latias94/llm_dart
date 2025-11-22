@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/ollama_client.dart';
 import '../config/ollama_config.dart';
@@ -14,7 +15,7 @@ class OllamaChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }
@@ -23,11 +24,14 @@ class OllamaChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final body = _buildRequestBody(messages, tools, false);
-    final response =
-        await client.postJson('/api/chat', body, cancelToken: cancelToken);
+    final response = await client.postJson(
+      '/api/chat',
+      body,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
     return _parseResponse(response);
   }
 
@@ -35,11 +39,14 @@ class OllamaChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     final body = _buildRequestBody(messages, tools, true);
-    final stream =
-        client.postStreamRaw('/api/chat', body, cancelToken: cancelToken);
+    final stream = client.postStreamRaw(
+      '/api/chat',
+      body,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
 
     // Ollama streams NDJSON (one JSON object per line). We need to
     // buffer across chunks to avoid splitting JSON lines.

@@ -1,4 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../chat/ollama_chat.dart';
 import '../client/ollama_client.dart';
@@ -32,7 +33,7 @@ class OllamaProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _chat.chat(messages, cancelToken: cancelToken);
   }
@@ -41,7 +42,7 @@ class OllamaProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
   }
@@ -50,7 +51,7 @@ class OllamaProvider
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
   }
@@ -70,13 +71,13 @@ class OllamaProvider
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _embeddings.embed(input, cancelToken: cancelToken);
   }
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) {
+  Future<List<AIModel>> models({CancellationToken? cancelToken}) {
     return _models.models(cancelToken: cancelToken);
   }
 
@@ -111,38 +112,48 @@ class OllamaProvider
   /// Show detailed information about a model.
   Future<Map<String, dynamic>> showModel(
     String model, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
-    return _client.showModel(model, cancelToken: cancelToken);
+    return _client.showModel(
+      model,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
   }
 
   /// Copy a model to a new name.
   Future<void> copyModel(
     String source,
     String destination, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
-    return _client.copyModel(source, destination, cancelToken: cancelToken);
+    return _client.copyModel(
+      source,
+      destination,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
   }
 
   /// Delete a model and its data.
   Future<void> deleteModel(
     String model, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
-    return _client.deleteModel(model, cancelToken: cancelToken);
+    return _client.deleteModel(
+      model,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
   }
 
   /// Pull a model from the Ollama library.
   Future<Map<String, dynamic>> pullModel(
     String model, {
     bool insecure = false,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _client.pullModel(
       model,
       insecure: insecure,
-      cancelToken: cancelToken,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
   }
 
@@ -150,26 +161,30 @@ class OllamaProvider
   Future<Map<String, dynamic>> pushModel(
     String model, {
     bool insecure = false,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _client.pushModel(
       model,
       insecure: insecure,
-      cancelToken: cancelToken,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
   }
 
   /// List models currently loaded into memory.
   Future<List<Map<String, dynamic>>> listRunningModels({
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
-    return _client.listRunningModels(cancelToken: cancelToken);
+    return _client.listRunningModels(
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
   }
 
   /// Get Ollama server version information.
   Future<Map<String, dynamic>> serverVersion({
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
-    return _client.version(cancelToken: cancelToken);
+    return _client.version(
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
   }
 }

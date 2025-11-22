@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'package:logging/logging.dart';
 
 import '../client/phind_client.dart';
 import '../config/phind_config.dart';
@@ -22,7 +23,7 @@ class PhindChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     try {
       // Note: Phind does not support tools yet.
@@ -52,7 +53,7 @@ class PhindChat implements ChatCapability {
       final responseData = await client.postJson(
         chatEndpoint,
         requestBody,
-        cancelToken: cancelToken,
+        cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
       );
       return _parseResponse(responseData, warnings);
     } catch (e) {
@@ -68,7 +69,7 @@ class PhindChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     try {
       final requestBody = _buildRequestBody(messages, tools, true);
@@ -82,7 +83,7 @@ class PhindChat implements ChatCapability {
       final stream = client.postStreamRaw(
         chatEndpoint,
         requestBody,
-        cancelToken: cancelToken,
+        cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
       );
 
       await for (final chunk in stream) {
@@ -103,7 +104,7 @@ class PhindChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }

@@ -1,4 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/openai_client.dart';
 import '../config/openai_config.dart';
@@ -14,9 +15,11 @@ class OpenAIModels implements ModelListingCapability {
   OpenAIModels(this.client, this.config);
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
-    final responseData =
-        await client.getJson('models', cancelToken: cancelToken);
+  Future<List<AIModel>> models({CancellationToken? cancelToken}) async {
+    final responseData = await client.getJson(
+      'models',
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
 
     // responseData is already Map<String, dynamic> from client.get()
 

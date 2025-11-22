@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/openai_client.dart';
 import '../config/openai_config.dart';
@@ -38,7 +39,7 @@ class OpenAIAudio extends BaseAudioCapability {
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     if (request.text.isEmpty) {
       throw const InvalidRequestError('Text input cannot be empty');
@@ -55,7 +56,7 @@ class OpenAIAudio extends BaseAudioCapability {
     final audioData = await client.postRaw(
       'audio/speech',
       requestBody,
-      cancelToken: cancelToken,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
 
     // Determine content type based on format
@@ -128,7 +129,7 @@ class OpenAIAudio extends BaseAudioCapability {
   @override
   Future<STTResponse> speechToText(
     STTRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     if (request.audioData == null && request.filePath == null) {
       throw const InvalidRequestError(
@@ -189,7 +190,7 @@ class OpenAIAudio extends BaseAudioCapability {
     final responseData = await client.postForm(
       'audio/transcriptions',
       formData,
-      cancelToken: cancelToken,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
 
     // Parse word timing if available
@@ -329,7 +330,7 @@ class OpenAIAudio extends BaseAudioCapability {
   @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     if (request.audioData == null && request.filePath == null) {
       throw const InvalidRequestError(
@@ -371,7 +372,7 @@ class OpenAIAudio extends BaseAudioCapability {
     final responseData = await client.postForm(
       'audio/translations',
       formData,
-      cancelToken: cancelToken,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
 
     return STTResponse(
@@ -388,7 +389,7 @@ class OpenAIAudio extends BaseAudioCapability {
   @override
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     throw UnsupportedError('OpenAI does not support streaming text-to-speech');
   }

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/elevenlabs_client.dart';
 import '../config/elevenlabs_config.dart';
@@ -102,7 +103,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final response = await _textToSpeechInternal(
       request.text,
@@ -117,7 +118,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
       textNormalization: request.textNormalization.name,
       enableLogging: request.enableLogging,
       optimizeStreamingLatency: request.optimizeStreamingLatency,
-      cancelToken: cancelToken,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
 
     return TTSResponse(
@@ -135,7 +136,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
   @override
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     // ElevenLabs supports streaming TTS
     // This is a simplified implementation - in practice, you would implement
@@ -169,7 +170,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
   @override
   Future<STTResponse> speechToText(
     STTRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     late ElevenLabsSTTResponse response;
 
@@ -184,7 +185,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
         diarize: request.diarize,
         fileFormat: request.format,
         enableLogging: request.enableLogging,
-        cancelToken: cancelToken,
+        cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
       );
     } else if (request.filePath != null) {
       response = await _speechToTextFromFileInternal(
@@ -197,7 +198,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
         diarize: request.diarize,
         fileFormat: request.format,
         enableLogging: request.enableLogging,
-        cancelToken: cancelToken,
+        cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
       );
     } else {
       throw const InvalidRequestError(
@@ -506,7 +507,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
   @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     // ElevenLabs does not support audio translation
     throw UnsupportedError('ElevenLabs does not support audio translation');

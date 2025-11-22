@@ -1,7 +1,14 @@
 /// Well-known extension keys used in [LLMConfig.extensions].
 ///
-/// Centralizing these keys in one place avoids typos and makes
-/// refactors of configuration plumbing safer across packages.
+/// These keys form the "contract" between the high-level builder APIs
+/// (e.g. [LLMBuilder], HTTP helpers) and individual provider packages
+/// (OpenAI, Anthropic, Google, DeepSeek, xAI, Ollama, ElevenLabs).
+///
+/// All new extension-based configuration should use these constants
+/// instead of ad-hoc string literals so that:
+/// - configuration is easier to discover and document,
+/// - typos are avoided,
+/// - refactors across packages remain safe.
 abstract final class LLMConfigKeys {
   // Reasoning / structured output / embeddings
   static const String reasoningEffort = 'reasoningEffort';

@@ -10,7 +10,7 @@ class _DefaultSettingsChatProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }
@@ -19,7 +19,7 @@ class _DefaultSettingsChatProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     // Encode messages and tools into the response text so tests can
     // verify that the middleware modified them correctly.
@@ -35,7 +35,7 @@ class _DefaultSettingsChatProvider
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     final response = await chatWithTools(
       messages,

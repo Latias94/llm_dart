@@ -28,7 +28,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     throw const ProviderError('ElevenLabs does not support chat functionality');
   }
@@ -36,7 +36,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }
@@ -53,7 +53,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     yield ErrorEvent(
         const ProviderError('ElevenLabs does not support chat functionality'));
@@ -67,7 +67,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return audio.textToSpeech(request, cancelToken: cancelToken);
   }
@@ -75,7 +75,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   @override
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return audio.textToSpeechStream(request, cancelToken: cancelToken);
   }
@@ -88,7 +88,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   @override
   Future<STTResponse> speechToText(
     STTRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return audio.speechToText(request, cancelToken: cancelToken);
   }
@@ -96,7 +96,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return audio.translateAudio(request, cancelToken: cancelToken);
   }
@@ -121,7 +121,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   @override
   Future<List<int>> speech(
     String text, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final response = await textToSpeech(
       TTSRequest(text: text),

@@ -1,4 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/ollama_client.dart';
 import '../config/ollama_config.dart';
@@ -10,9 +11,12 @@ class OllamaModels implements ModelListingCapability {
   OllamaModels(this.client, this.config);
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+  Future<List<AIModel>> models({CancellationToken? cancelToken}) async {
     // Native Ollama `/api/tags` endpoint for listing local models.
-    final json = await client.getJson('/api/tags', cancelToken: cancelToken);
+    final json = await client.getJson(
+      '/api/tags',
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
     final models = json['models'] as List? ?? [];
 
     return models

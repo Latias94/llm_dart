@@ -698,7 +698,7 @@ class LLMBuilder {
     String? prompt,
     List<ChatMessage>? messages,
     ChatPromptMessage? structuredPrompt,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final provider = await build();
     final resolvedMessages = _resolveMessagesForTextGeneration(
@@ -735,7 +735,7 @@ class LLMBuilder {
     String? prompt,
     List<ChatMessage>? messages,
     ChatPromptMessage? structuredPrompt,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     final provider = await build();
     final resolvedMessages = _resolveMessagesForTextGeneration(
@@ -1274,7 +1274,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }
@@ -1283,7 +1283,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     final context = ChatCallContext(
       providerId: _providerId,
@@ -1301,7 +1301,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     final context = ChatCallContext(
       providerId: _providerId,
@@ -1336,7 +1336,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     final inner = _inner;
     if (inner is AudioCapability) {
@@ -1350,7 +1350,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
   @override
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     final inner = _inner;
     if (inner is AudioCapability) {
@@ -1374,7 +1374,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
   @override
   Future<STTResponse> speechToText(
     STTRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     final inner = _inner;
     if (inner is AudioCapability) {
@@ -1388,7 +1388,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
   @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     final inner = _inner;
     if (inner is AudioCapability) {
@@ -1437,7 +1437,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     final inner = _inner;
     if (inner is EmbeddingCapability) {
@@ -1552,7 +1552,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
   // === ModelListingCapability delegation ===
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) {
+  Future<List<AIModel>> models({CancellationToken? cancelToken}) {
     final inner = _inner;
     if (inner is ModelListingCapability) {
       return inner.models(cancelToken: cancelToken);
@@ -1743,7 +1743,7 @@ class _EmbeddingMiddlewareWrappedProvider
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     final context = EmbeddingCallContext(
       providerId: _providerId,

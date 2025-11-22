@@ -35,7 +35,7 @@ class FakeStreamProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return FakeStreamChatResponse('{"value":42}');
   }
@@ -44,7 +44,7 @@ class FakeStreamProvider implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return chat(messages, cancelToken: cancelToken);
   }
@@ -53,7 +53,7 @@ class FakeStreamProvider implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     // Stream JSON in two chunks to exercise buffering logic.
     yield const TextDeltaEvent('{"value":');

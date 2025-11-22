@@ -515,6 +515,97 @@ void main() async {
 }
 ```
 
+### Recommended Usage: Vercel-style vs Builder-style
+
+There are two primary ways to use `llm_dart`, inspired by the Vercel AI SDK:
+
+| Scenario | Recommended API | Example |
+|---------|-----------------|---------|
+| **Single provider, model-centric** | Vercel-style factories + `LanguageModel` | `createOpenAI()`, `createAnthropic()`, `generateTextWithModel()` |
+| **Multi-provider, config-centric** | `LLMBuilder` + provider registry | `ai().use('openai:gpt-4o')`, `ai().deepseek()...build()` |
+| **Quick one-off calls** | High-level helpers | `generateText()`, `streamText()`, `generateObject()` |
+
+**1. Vercel-style (model-centric)**
+
+Use provider factories that mirror Vercel AI SDK exports. You configure a provider once, then get `LanguageModel` / capability objects:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+Future<void> main() async {
+  // OpenAI
+  final openai = createOpenAI(apiKey: 'sk-...');
+  final gpt4o = openai.chat('gpt-4o');
+
+  final result = await generateTextWithModel(
+    gpt4o,
+    messages: [ChatMessage.user('Hello from Vercel-style API')],
+  );
+  print(result.text);
+
+  // Anthropic
+  final claude = createAnthropic(apiKey: 'sk-ant-...')
+      .chat('claude-sonnet-4-20250514');
+
+  // Google (Gemini)
+  final gemini = createGoogleGenerativeAI(apiKey: 'AIza-...')
+      .chat('gemini-1.5-flash');
+
+  // DeepSeek
+  final deepseek = createDeepSeek(apiKey: 'sk-deepseek-...')
+      .chat('deepseek-chat');
+
+  // xAI (Grok)
+  final grok = createXAI(apiKey: 'xai-...')
+      .chat('grok-3');
+}
+```
+
+This style is ideal when:
+
+- You prefer **model-centric** code (`openai.chat('gpt-4o')`) over builder-style.
+- You mostly stick to a small number of providers/models.
+- You want the API surface to feel close to the Vercel AI SDK.
+
+**2. Builder-style (provider registry)**
+
+Use `ai()` and `LLMBuilder` when you want more dynamic configuration, multiple providers, or advanced features:
+
+```dart
+// Model string "provider:model" (Vercel-style)
+final model = await ai()
+    .use('openai:gpt-4o')
+    .apiKey('sk-...')
+    .buildLanguageModel();
+
+final result = await model.generateText([
+  ChatMessage.user('Hello from builder-style API'),
+]);
+
+// Provider-specific builder helpers
+final deepseekProvider = await ai()
+    .deepseek()
+    .apiKey('sk-deepseek-...')
+    .model('deepseek-reasoner')
+    .build();
+```
+
+This style is ideal when:
+
+- You need to **dynamically choose providers/models** at runtime.
+- You want to use the **registry + capability system** (`LLMCapability`) and richer HTTP / logging / proxy config.
+- You are building higher-level abstractions (agents, tool loops, etc.) on top of `LanguageModel` or `ChatCapability`.
+
+**3. High-level helpers**
+
+For one-off calls where you don't need to keep a provider/model object, use:
+
+- `generateText(model: 'openai:gpt-4o', apiKey: ...)`
+- `streamText(model: 'deepseek:deepseek-reasoner', apiKey: ...)`
+- `generateObject<T>(model: 'openai:gpt-4o-mini', ...)`
+
+These map to builder-style under the hood but provide a concise API for scripting and quick experiments.
+
 Manage local Ollama models with `OllamaAdmin`:
 
 ```dart
@@ -795,12 +886,25 @@ Future<void> toolRoundTrip(ChatCapability provider) async {
 ### OpenAI
 
 ```dart
+// Vercel-style (model-centric)
+final openai = createOpenAI(apiKey: 'sk-...');
+final gpt4o = openai.chat('gpt-4o');
+
+final result = await generateTextWithModel(
+  gpt4o,
+  messages: [ChatMessage.user('Hello from OpenAI')],
+);
+print(result.text);
+
+// Builder / registry-style
 final provider = await createProvider(
   providerId: 'openai',
   apiKey: 'sk-...',
   model: 'gpt-4',
   temperature: 0.7,
-  extensions: {'reasoningEffort': 'medium'}, // For reasoning models
+  // For reasoning models (o1 / o3 / Gemini etc.)
+  // You can also use LLMBuilder.reasoningEffort(...) which writes this key.
+  extensions: {LLMConfigKeys.reasoningEffort: 'medium'},
 );
 ```
 
@@ -846,6 +950,20 @@ await responses.cancelResponse('resp_123');
 ### Anthropic (with Thinking Process)
 
 ```dart
+// Vercel-style (model-centric)
+final claudeModel = createAnthropic(apiKey: 'sk-ant-...')
+    .chat('claude-sonnet-4-20250514');
+
+final result = await generateTextWithModel(
+  claudeModel,
+  messages: [ChatMessage.user('Explain quantum computing step by step')],
+);
+print('Final answer: ${result.text}');
+if (result.thinking != null) {
+  print('Claude\'s reasoning: ${result.thinking}');
+}
+
+// Builder-style
 final provider = await ai()
     .anthropic()
     .apiKey('sk-ant-...')
@@ -866,6 +984,20 @@ if (response.thinking != null) {
 ### DeepSeek (with Reasoning)
 
 ```dart
+// Vercel-style (model-centric)
+final deepseekModel = createDeepSeek(apiKey: 'your-deepseek-key')
+    .chat('deepseek-reasoner');
+
+final result = await generateTextWithModel(
+  deepseekModel,
+  messages: [ChatMessage.user('Solve this logic puzzle step by step')],
+);
+print('Solution: ${result.text}');
+if (result.thinking != null) {
+  print('DeepSeek\'s reasoning: ${result.thinking}');
+}
+
+// Builder-style
 final provider = await ai()
     .deepseek()
     .apiKey('your-deepseek-key')
@@ -907,6 +1039,19 @@ if (response.thinking != null) {
 ### xAI (with Web Search)
 
 ```dart
+// Vercel-style (model-centric)
+final grokModel = createXAI(apiKey: 'your-xai-key')
+    .chat('grok-3');
+
+final webSearchResult = await generateTextWithModel(
+  grokModel,
+  messages: [
+    ChatMessage.user('What is the current stock price of NVIDIA?'),
+  ],
+);
+print(webSearchResult.text);
+
+// Builder-style
 final provider = await ai()
     .xai()
     .apiKey('your-xai-key')
@@ -933,6 +1078,16 @@ final newsProvider = await ai()
 ### Google (with Embeddings)
 
 ```dart
+// Vercel-style (model-centric)
+final google = createGoogleGenerativeAI(apiKey: 'your-google-key');
+final embeddingModel = google.embedding('text-embedding-004');
+
+final embeddings = await embeddingModel.embed([
+  'Text to embed for semantic search',
+  'Another piece of text',
+]);
+
+// Builder-style
 final provider = await ai()
     .google()
     .apiKey('your-google-key')
@@ -995,8 +1150,9 @@ Cancel in-flight requests for better resource management and user experience:
 ```dart
 import 'package:llm_dart/llm_dart.dart';
 
-// Create a cancel token
-final cancelToken = CancelToken();
+// Create a cancellation token source
+final cancelSource = CancellationTokenSource();
+final cancelToken = cancelSource.token;
 
 // Start a long-running request
 final responseFuture = provider.chat(
@@ -1005,7 +1161,7 @@ final responseFuture = provider.chat(
 );
 
 // Cancel it later (e.g., user navigates away)
-cancelToken.cancel('User cancelled');
+cancelSource.cancel('User cancelled');
 
 // Handle cancellation
 try {
@@ -1193,6 +1349,8 @@ All providers support common configuration options:
 Use the extension system for provider-specific features:
 
 ```dart
+import 'package:llm_dart/llm_dart.dart';
+
 final provider = await ai()
     .openai()
     .apiKey('your-key')
@@ -1201,6 +1359,124 @@ final provider = await ai()
     .extension('voice', 'alloy')           // OpenAI TTS voice
     .build();
 ```
+
+## OpenAI (Vercel AI-style API)
+
+In addition to the builder-based API, `llm_dart` provides an OpenAI interface
+that closely mirrors the Vercel AI SDK:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+Future<void> main() async {
+  final openai = createOpenAI(
+    apiKey: 'sk-...',                    // required
+    baseUrl: 'https://api.openai.com/v1/', // optional override
+  );
+
+  // Chat Completions-style model
+  final chatModel = openai.chat('gpt-4o');
+
+  final result = await generateTextWithModel(
+    model: chatModel,
+    messages: [
+      ChatMessage.user('Tell me a joke about Dart'),
+    ],
+  );
+
+  print(result.text);
+}
+```
+
+### Using the OpenAI Responses API
+
+You can also create a model backed by the OpenAI Responses API:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+Future<void> main() async {
+  final openai = createOpenAI(apiKey: 'sk-...');
+
+  final responsesModel = openai.responses('gpt-4.1-mini');
+
+  final result = await generateObjectWithModel<Map<String, dynamic>>(
+    model: responsesModel,
+    output: OutputSpec<Map<String, dynamic>>(
+      format: StructuredOutputFormat(
+        name: 'WeatherInfo',
+        schema: {
+          'type': 'object',
+          'properties': {
+            'location': {'type': 'string'},
+            'temperature': {'type': 'number'},
+          },
+          'required': ['location', 'temperature'],
+        },
+      ),
+      fromJson: (json) => json,
+    ),
+    messages: [
+      ChatMessage.user('Give me the current temperature in Paris.'),
+    ],
+  );
+
+  print(result.object);
+}
+```
+
+### Built-in tools (web search, file search, computer use)
+
+The OpenAI interface exposes built-in tools similar to `openai.tools` in the
+Vercel AI SDK:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+Future<void> main() async {
+  final openai = createOpenAI(apiKey: 'sk-...');
+
+  final webSearchTool = openai.tools.webSearch();
+
+  final model = openai.responses('gpt-4o');
+
+  final result = await runAgentText(
+    model: model,
+    messages: [
+      ChatMessage.user('What are the latest updates on Dart 3?'),
+    ],
+    tools: {
+      'web_search': ExecutableTool.fromFunction(
+        tool: Tool.function(
+          name: 'web_search',
+          description: 'Search the web for up-to-date information.',
+          parameters: ParametersSchema(
+            schemaType: 'object',
+            properties: {
+              'query': ParameterProperty(
+                propertyType: 'string',
+                description: 'Search query',
+              ),
+            },
+            required: ['query'],
+          ),
+        ),
+        function: (args) async {
+          // Integrate with your own web search or proxy service here.
+          return 'Search results for: ${args['query']}';
+        },
+      ),
+    },
+  );
+
+  print(result.text);
+}
+```
+
+This approach makes it easier to migrate from the Vercel AI SDK to `llm_dart`
+while keeping a similar mental model: create a provider, then create models
+for chat, responses, embeddings, images, or audio, and pass them into
+high-level helpers like `generateTextWithModel` or `runAgentText`.
 
 ## Examples
 

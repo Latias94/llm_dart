@@ -11,7 +11,7 @@ class _TestEmbeddingProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     // Minimal implementation for factory compatibility; not used in tests.
     return const _DummyChatResponse();
@@ -21,7 +21,7 @@ class _TestEmbeddingProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) =>
       chat(messages, cancelToken: cancelToken);
 
@@ -29,7 +29,7 @@ class _TestEmbeddingProvider
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     yield const TextDeltaEvent('unused');
   }
@@ -44,7 +44,7 @@ class _TestEmbeddingProvider
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     lastInput = List<String>.from(input);
     // Simple embedding: each text length as a single-dimension vector.

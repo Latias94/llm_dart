@@ -23,11 +23,189 @@
 /// ```
 library;
 
-import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_google/llm_dart_google.dart' as google_impl;
+
+import '../../core/provider_defaults.dart';
 import '../../models/chat_models.dart';
 
 export 'package:llm_dart_google/llm_dart_google.dart';
 export 'builder.dart';
+
+// Backwards-compatible aliases for config/provider types.
+typedef GoogleConfig = google_impl.GoogleConfig;
+typedef GoogleProvider = google_impl.GoogleProvider;
+typedef SafetySetting = google_impl.SafetySetting;
+
+/// Google Generative AI provider settings (Vercel AI-style).
+///
+/// Mirrors the core fields from `GoogleGenerativeAIProviderSettings` in the
+/// Vercel AI SDK while using Dart naming conventions.
+class GoogleGenerativeAIProviderSettings {
+  /// API key for authenticating requests.
+  final String apiKey;
+
+  /// Base URL for the Google Generative AI API.
+  ///
+  /// Defaults to `https://generativelanguage.googleapis.com/v1beta/`.
+  final String? baseUrl;
+
+  /// Additional custom headers to send with each request.
+  final Map<String, String>? headers;
+
+  /// Logical provider name used for metadata (e.g. `google.generative-ai`).
+  final String? name;
+
+  /// Optional default timeout applied via [LLMConfig.timeout].
+  final Duration? timeout;
+
+  const GoogleGenerativeAIProviderSettings({
+    required this.apiKey,
+    this.baseUrl,
+    this.headers,
+    this.name,
+    this.timeout,
+  });
+}
+
+/// Google Generative AI model factory (Vercel AI-style).
+///
+/// Provides a model-centric API similar to `createGoogleGenerativeAI` in
+/// the Vercel AI SDK. It returns [LanguageModel] instances and capability
+/// interfaces that can be used with high-level helpers.
+class GoogleGenerativeAI {
+  final GoogleGenerativeAIProviderSettings _settings;
+  final String _baseUrl;
+  final String _providerName;
+
+  GoogleGenerativeAI(GoogleGenerativeAIProviderSettings settings)
+      : _settings = settings,
+        _baseUrl = _normalizeBaseUrl(
+          settings.baseUrl ?? ProviderDefaults.googleBaseUrl,
+        ),
+        _providerName = settings.name ?? 'google';
+
+  /// Create a language model for text generation.
+  ///
+  /// Alias for [chat].
+  LanguageModel languageModel(String modelId) => chat(modelId);
+
+  /// Create a chat model for text generation.
+  LanguageModel chat(String modelId) {
+    final llmConfig = _createLLMConfig(modelId);
+    final config = google_impl.GoogleConfig.fromLLMConfig(llmConfig);
+    final client = google_impl.GoogleClient(config);
+    final chat = google_impl.GoogleChat(client, config);
+
+    return DefaultLanguageModel(
+      providerId: _providerName,
+      modelId: modelId,
+      config: llmConfig,
+      chat: chat,
+    );
+  }
+
+  /// Create an embeddings model.
+  EmbeddingCapability embedding(String modelId) {
+    final llmConfig = _createLLMConfig(modelId);
+    final config = google_impl.GoogleConfig.fromLLMConfig(llmConfig);
+    final client = google_impl.GoogleClient(config);
+    return google_impl.GoogleEmbeddings(client, config);
+  }
+
+  /// Alias for [embedding] to mirror the Vercel AI SDK.
+  EmbeddingCapability textEmbedding(String modelId) => embedding(modelId);
+
+  /// Alias for [embedding] to mirror the Vercel AI SDK.
+  EmbeddingCapability textEmbeddingModel(String modelId) => embedding(modelId);
+
+  /// Create an image generation model.
+  ImageGenerationCapability image(String modelId) => imageModel(modelId);
+
+  /// Alias for [image] to mirror the Vercel AI SDK.
+  ImageGenerationCapability imageModel(String modelId) {
+    final llmConfig = _createLLMConfig(modelId);
+    final config = google_impl.GoogleConfig.fromLLMConfig(llmConfig);
+    final client = google_impl.GoogleClient(config);
+    return google_impl.GoogleImages(client, config);
+  }
+
+  LLMConfig _createLLMConfig(String modelId) {
+    final headers = <String, String>{};
+
+    if (_settings.headers != null && _settings.headers!.isNotEmpty) {
+      headers.addAll(_settings.headers!);
+    }
+
+    final extensions = <String, dynamic>{};
+    if (headers.isNotEmpty) {
+      extensions[LLMConfigKeys.customHeaders] = headers;
+    }
+
+    return LLMConfig(
+      apiKey: _settings.apiKey,
+      baseUrl: _baseUrl,
+      model: modelId,
+      timeout: _settings.timeout,
+      extensions: extensions,
+    );
+  }
+
+  static String _normalizeBaseUrl(String value) {
+    if (value.isEmpty) return ProviderDefaults.googleBaseUrl;
+    return value.endsWith('/') ? value : '$value/';
+  }
+}
+
+/// Create a Google Generative AI model factory (Vercel AI-style).
+///
+/// Example:
+/// ```dart
+/// final google = createGoogleGenerativeAI(
+///   apiKey: 'AIza-...',
+/// );
+///
+/// final model = google.chat('gemini-1.5-flash');
+/// final result = await generateTextWithModel(
+///   model: model,
+///   messages: [ChatMessage.user('Hello')],
+/// );
+/// ```
+GoogleGenerativeAI createGoogleGenerativeAI({
+  required String apiKey,
+  String? baseUrl,
+  Map<String, String>? headers,
+  String? name,
+  Duration? timeout,
+}) {
+  return GoogleGenerativeAI(
+    GoogleGenerativeAIProviderSettings(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      headers: headers,
+      name: name,
+      timeout: timeout,
+    ),
+  );
+}
+
+/// Alias for [createGoogleGenerativeAI] to mirror the default `google`
+/// export from the Vercel AI SDK.
+GoogleGenerativeAI google({
+  required String apiKey,
+  String? baseUrl,
+  Map<String, String>? headers,
+  String? name,
+  Duration? timeout,
+}) {
+  return createGoogleGenerativeAI(
+    apiKey: apiKey,
+    baseUrl: baseUrl,
+    headers: headers,
+    name: name,
+    timeout: timeout,
+  );
+}
 
 /// Create a Google provider with default configuration
 GoogleProvider createGoogleProvider({

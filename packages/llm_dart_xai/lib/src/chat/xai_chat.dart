@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/xai_client.dart';
 import '../config/xai_config.dart';
@@ -16,7 +17,7 @@ class XAIChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }
@@ -25,15 +26,18 @@ class XAIChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing xAI API key');
     }
 
     final body = _buildRequestBody(messages, tools, false);
-    final response =
-        await client.postJson(chatEndpoint, body, cancelToken: cancelToken);
+    final response = await client.postJson(
+      chatEndpoint,
+      body,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
     return XAIChatResponse(response);
   }
 
@@ -41,7 +45,7 @@ class XAIChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     if (config.apiKey.isEmpty) {
       yield ErrorEvent(const AuthError('Missing xAI API key'));
@@ -52,8 +56,8 @@ class XAIChat implements ChatCapability {
       final effectiveTools = tools ?? config.tools;
       final body = _buildRequestBody(messages, effectiveTools, true);
 
-      final stream =
-          client.postStreamRaw(chatEndpoint, body, cancelToken: cancelToken);
+      final stream = client.postStreamRaw(chatEndpoint, body,
+          cancelToken: CancellationUtils.toDioCancelToken(cancelToken));
 
       await for (final chunk in stream) {
         final events = _parseStreamEvents(chunk);

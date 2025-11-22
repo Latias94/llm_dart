@@ -680,7 +680,7 @@ abstract class LanguageModel {
   /// that returns a [GenerateTextResult] for convenience.
   Future<GenerateTextResult> generateText(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   });
 
   /// Stream text deltas, thinking deltas, tool calls, and the final
@@ -690,7 +690,7 @@ abstract class LanguageModel {
   /// that exposes the raw [ChatStreamEvent] stream.
   Stream<ChatStreamEvent> streamText(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   });
 
   /// Generate a structured object based on the given [output] spec.
@@ -703,7 +703,7 @@ abstract class LanguageModel {
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   });
 }
 
@@ -733,7 +733,7 @@ class DefaultLanguageModel implements LanguageModel {
   @override
   Future<GenerateTextResult> generateText(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final response = await _chat.chat(
       messages,
@@ -754,7 +754,7 @@ class DefaultLanguageModel implements LanguageModel {
   @override
   Stream<ChatStreamEvent> streamText(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _chat.chatStream(
       messages,
@@ -766,7 +766,7 @@ class DefaultLanguageModel implements LanguageModel {
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final textResult = await generateText(
       messages,
@@ -822,7 +822,7 @@ abstract class ChatCapability {
   /// Returns the provider's response or throws an LLMError
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }
@@ -837,7 +837,7 @@ abstract class ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   });
 
   /// Sends a streaming chat request to the provider
@@ -850,7 +850,7 @@ abstract class ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   });
 
   /// Get current memory contents if provider supports memory
@@ -913,7 +913,7 @@ class ChatCallContext {
   final List<Tool>? tools;
 
   /// Optional cancellation token for this call.
-  final CancelToken? cancelToken;
+  final CancellationToken? cancelToken;
 
   /// Operation kind for this call (chat vs stream).
   final ChatOperationKind operationKind;
@@ -935,7 +935,7 @@ class ChatCallContext {
     LLMConfig? config,
     List<ChatMessage>? messages,
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
     ChatOperationKind? operationKind,
   }) {
     return ChatCallContext(
@@ -1096,7 +1096,7 @@ abstract class EmbeddingCapability {
   /// Returns a list of embedding vectors or throws an LLMError
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   });
 }
 
@@ -1115,7 +1115,7 @@ class EmbeddingCallContext {
   final List<String> input;
 
   /// Optional cancellation token for this call.
-  final CancelToken? cancelToken;
+  final CancellationToken? cancelToken;
 
   const EmbeddingCallContext({
     required this.providerId,
@@ -1131,7 +1131,7 @@ class EmbeddingCallContext {
     String? model,
     LLMConfig? config,
     List<String>? input,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return EmbeddingCallContext(
       providerId: providerId ?? this.providerId,
@@ -1202,7 +1202,7 @@ abstract class AudioCapability {
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     throw UnsupportedError('Text-to-speech not supported by this provider');
   }
@@ -1215,7 +1215,7 @@ abstract class AudioCapability {
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     throw UnsupportedError(
         'Streaming text-to-speech not supported by this provider');
@@ -1236,7 +1236,7 @@ abstract class AudioCapability {
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
   Future<STTResponse> speechToText(
     STTRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     throw UnsupportedError('Speech-to-text not supported by this provider');
   }
@@ -1249,7 +1249,7 @@ abstract class AudioCapability {
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     throw UnsupportedError('Audio translation not supported by this provider');
   }
@@ -1282,7 +1282,7 @@ abstract class AudioCapability {
   /// Simple text-to-speech conversion (convenience method)
   Future<List<int>> speech(
     String text, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final response = await textToSpeech(
       TTSRequest(text: text),
@@ -1334,7 +1334,7 @@ abstract class BaseAudioCapability implements AudioCapability {
   @override
   Future<List<int>> speech(
     String text, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final response = await textToSpeech(
       TTSRequest(text: text),
@@ -1539,7 +1539,7 @@ abstract class ModelListingCapability {
   /// [cancelToken] - Optional token to cancel the request
   ///
   /// Returns a list of available models or throws an LLMError
-  Future<List<AIModel>> models({CancelToken? cancelToken});
+  Future<List<AIModel>> models({CancellationToken? cancelToken});
 }
 
 /// Capability interface for image generation

@@ -32,7 +32,7 @@ class DeepSeekProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return _chat.chat(messages, cancelToken: cancelToken);
   }
@@ -41,7 +41,7 @@ class DeepSeekProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
   }
@@ -50,7 +50,7 @@ class DeepSeekProvider
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
   }
@@ -66,7 +66,7 @@ class DeepSeekProvider
   }
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+  Future<List<AIModel>> models({CancellationToken? cancelToken}) async {
     return _models.models(cancelToken: cancelToken);
   }
 

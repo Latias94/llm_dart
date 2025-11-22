@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../models/chat_models.dart';
 import '../models/tool_models.dart';
 import 'capability.dart';
+import 'cancellation.dart';
 import 'llm_error.dart';
 
 /// Input configuration for running an agent loop.
@@ -22,11 +23,20 @@ class AgentInput {
   /// Configuration for the tool loop behavior.
   final ToolLoopConfig loopConfig;
 
+  /// Optional cancellation token for the entire agent run.
+  ///
+  /// When provided, this token is forwarded to all underlying
+  /// [LanguageModel] calls made during the agent loop. Tool
+  /// execution itself is not automatically cancelled and should
+  /// be handled by tool implementations if needed.
+  final CancellationToken? cancelToken;
+
   const AgentInput({
     required this.model,
     required this.messages,
     required this.tools,
     this.loopConfig = const ToolLoopConfig(),
+    this.cancelToken,
   });
 
   AgentInput copyWith({
@@ -34,12 +44,14 @@ class AgentInput {
     List<ChatMessage>? messages,
     Map<String, ExecutableTool>? tools,
     ToolLoopConfig? loopConfig,
+    CancellationToken? cancelToken,
   }) {
     return AgentInput(
       model: model ?? this.model,
       messages: messages ?? this.messages,
       tools: tools ?? this.tools,
       loopConfig: loopConfig ?? this.loopConfig,
+      cancelToken: cancelToken ?? this.cancelToken,
     );
   }
 }
@@ -234,7 +246,10 @@ class ToolLoopAgent implements Agent {
     final steps = <AgentStepRecord>[];
 
     for (var i = 0; i < input.loopConfig.maxIterations; i++) {
-      final result = await input.model.generateText(messages);
+      final result = await input.model.generateText(
+        messages,
+        cancelToken: input.cancelToken,
+      );
       final calls = result.toolCalls ?? const [];
 
       if (calls.isEmpty) {
@@ -334,19 +349,20 @@ class ToolLoopAgent implements Agent {
         return AgentTextRunWithSteps(result: result, steps: steps);
       }
 
-      // Append assistant response (if any) and tool results to history.
-      if (result.text != null && result.text!.isNotEmpty) {
-        messages = [
-          ...messages,
-          ChatMessage.assistant(result.text!),
-          ...toolResults,
-        ];
-      } else {
-        messages = [
-          ...messages,
-          ...toolResults,
-        ];
-      }
+      // Append the assistant tool-use message and tool results to history.
+      //
+      // This mirrors the typical OpenAI pattern where the assistant
+      // message contains tool_calls, followed by one or more tool
+      // messages with results. We store the textual part (if any) in
+      // the assistant message and encode tool calls via ChatMessage.toolUse.
+      messages = [
+        ...messages,
+        ChatMessage.toolUse(
+          toolCalls: calls,
+          content: result.text ?? '',
+        ),
+        ...toolResults,
+      ];
 
       steps.add(
         AgentStepRecord(
@@ -358,7 +374,10 @@ class ToolLoopAgent implements Agent {
     }
 
     // Fallback after reaching iteration limit.
-    final finalResult = await input.model.generateText(messages);
+    final finalResult = await input.model.generateText(
+      messages,
+      cancelToken: input.cancelToken,
+    );
     steps.add(
       AgentStepRecord(
         iteration: steps.length + 1,

@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:llm_dart/core/cancellation.dart';
 import 'package:llm_dart/core/llm_error.dart';
 import 'package:test/test.dart';
@@ -8,56 +7,13 @@ import 'package:test/test.dart';
 /// These tests verify the cancellation infrastructure works correctly
 /// for all types of operations (chat, streaming, embeddings, audio).
 void main() {
-  group('CancelToken', () {
-    test('can be created', () {
-      final token = CancelToken();
-      expect(token, isNotNull);
-      expect(token.isCancelled, isFalse);
-    });
-
-    test('can be cancelled', () {
-      final token = CancelToken();
-      token.cancel('Test cancellation');
-      expect(token.isCancelled, isTrue);
-    });
-
-    test('can be cancelled without reason', () {
-      final token = CancelToken();
-      token.cancel();
-      expect(token.isCancelled, isTrue);
-    });
-
-    test('calling cancel multiple times is safe', () {
-      final token = CancelToken();
-      token.cancel('First');
-      token.cancel('Second'); // Should not throw
-      expect(token.isCancelled, isTrue);
-    });
-  });
-
   group('CancellationHelper', () {
     test('isCancelled detects CancelledError', () {
       final error = CancelledError('User cancelled');
       expect(CancellationHelper.isCancelled(error), isTrue);
     });
 
-    test('isCancelled detects DioException cancellation errors', () {
-      final error = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.cancel,
-      );
-      expect(CancellationHelper.isCancelled(error), isTrue);
-    });
-
     test('isCancelled returns false for non-cancel errors', () {
-      final error = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.connectionTimeout,
-      );
-      expect(CancellationHelper.isCancelled(error), isFalse);
-    });
-
-    test('isCancelled returns false for non-DioException errors', () {
       final error = Exception('Some other error');
       expect(CancellationHelper.isCancelled(error), isFalse);
     });
@@ -70,29 +26,7 @@ void main() {
       );
     });
 
-    test('getCancellationReason extracts reason from DioException cancel error',
-        () {
-      final error = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.cancel,
-        message: 'User cancelled',
-      );
-      expect(
-        CancellationHelper.getCancellationReason(error),
-        equals('User cancelled'),
-      );
-    });
-
     test('getCancellationReason returns null for non-cancel errors', () {
-      final error = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.connectionTimeout,
-        message: 'Timeout',
-      );
-      expect(CancellationHelper.getCancellationReason(error), isNull);
-    });
-
-    test('getCancellationReason returns null for non-DioException', () {
       final error = Exception('Some error');
       expect(CancellationHelper.getCancellationReason(error), isNull);
     });
@@ -125,40 +59,45 @@ void main() {
     });
   });
 
-  group('CancelToken usage patterns', () {
-    test('same token can be shared across operations', () {
-      final sharedToken = CancelToken();
+  group('CancellationTokenSource & CancellationToken', () {
+    test('token reflects cancellation state', () {
+      final source = CancellationTokenSource();
+      final token = source.token;
 
-      // This token could be used for multiple operations
-      expect(sharedToken.isCancelled, isFalse);
+      expect(token.isCancellationRequested, isFalse);
+      expect(token.reason, isNull);
 
-      // Cancel affects all operations using this token
-      sharedToken.cancel('Cancel all');
-      expect(sharedToken.isCancelled, isTrue);
+      source.cancel('Test cancellation');
+
+      expect(token.isCancellationRequested, isTrue);
+      expect(token.reason, equals('Test cancellation'));
     });
 
-    test('different tokens are independent', () {
-      final token1 = CancelToken();
-      final token2 = CancelToken();
+    test('callbacks are invoked on cancel', () async {
+      final source = CancellationTokenSource();
+      final token = source.token;
 
-      token1.cancel('Cancel first');
+      String? capturedReason;
+      token.onCancelled((reason) {
+        capturedReason = reason;
+      });
 
-      expect(token1.isCancelled, isTrue);
-      expect(token2.isCancelled, isFalse);
+      source.cancel('Callback reason');
+
+      expect(capturedReason, equals('Callback reason'));
     });
 
-    test('CancelToken.isCancel static method works', () {
-      final cancelError = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.cancel,
-      );
-      final otherError = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.badResponse,
-      );
+    test('callbacks fire immediately when already cancelled', () {
+      final source = CancellationTokenSource();
+      source.cancel('Early cancel');
 
-      expect(CancelToken.isCancel(cancelError), isTrue);
-      expect(CancelToken.isCancel(otherError), isFalse);
+      final token = source.token;
+      String? capturedReason;
+      token.onCancelled((reason) {
+        capturedReason = reason;
+      });
+
+      expect(capturedReason, equals('Early cancel'));
     });
   });
 }

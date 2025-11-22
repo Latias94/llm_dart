@@ -1,4 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/deepseek_client.dart';
 import '../config/deepseek_config.dart';
@@ -15,11 +16,11 @@ class DeepSeekModels implements ModelListingCapability {
   String get modelsEndpoint => 'models';
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+  Future<List<AIModel>> models({CancellationToken? cancelToken}) async {
     try {
       final response = await client.dio.get(
         modelsEndpoint,
-        cancelToken: cancelToken,
+        cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
       );
       final responseData = response.data as Map<String, dynamic>;
 

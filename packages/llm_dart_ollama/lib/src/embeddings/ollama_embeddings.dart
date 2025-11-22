@@ -1,4 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/ollama_client.dart';
 import '../config/ollama_config.dart';
@@ -12,7 +13,7 @@ class OllamaEmbeddings implements EmbeddingCapability {
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     // Native Ollama `/api/embed` embeddings endpoint.
     final body = <String, dynamic>{
@@ -59,8 +60,11 @@ class OllamaEmbeddings implements EmbeddingCapability {
       body['options'] = options;
     }
 
-    final json =
-        await client.postJson('/api/embed', body, cancelToken: cancelToken);
+    final json = await client.postJson(
+      '/api/embed',
+      body,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
 
     final data = json['embeddings'] as List?;
     if (data == null || data.isEmpty) {

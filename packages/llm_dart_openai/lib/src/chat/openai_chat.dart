@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/openai_client.dart';
 import '../config/openai_config.dart';
@@ -26,13 +27,13 @@ class OpenAIChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final requestBody = _buildRequestBody(messages, tools, false);
     final responseData = await client.postJson(
       chatEndpoint,
       requestBody,
-      cancelToken: cancelToken,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
     return _parseResponse(responseData);
   }
@@ -41,7 +42,7 @@ class OpenAIChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     final effectiveTools = tools ?? config.tools;
     final requestBody = _buildRequestBody(messages, effectiveTools, true);
@@ -54,7 +55,7 @@ class OpenAIChat implements ChatCapability {
       final stream = client.postStreamRaw(
         chatEndpoint,
         requestBody,
-        cancelToken: cancelToken,
+        cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
       );
 
       await for (final chunk in stream) {
@@ -81,7 +82,7 @@ class OpenAIChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }

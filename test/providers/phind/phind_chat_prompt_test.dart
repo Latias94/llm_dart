@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_phind/llm_dart_phind.dart';
 import 'package:test/test.dart';

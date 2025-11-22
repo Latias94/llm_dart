@@ -1,4 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 class AnthropicCacheControl {
   final String type;
@@ -192,7 +193,7 @@ class AnthropicModels implements ModelListingCapability {
   String get modelsEndpoint => 'models';
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+  Future<List<AIModel>> models({CancellationToken? cancelToken}) async {
     return listModels(cancelToken: cancelToken);
   }
 
@@ -200,7 +201,7 @@ class AnthropicModels implements ModelListingCapability {
     String? beforeId,
     String? afterId,
     int limit = 20,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     try {
       final queryParams = <String, dynamic>{};
@@ -214,7 +215,7 @@ class AnthropicModels implements ModelListingCapability {
 
       final responseData = await client.getJson(
         endpoint,
-        cancelToken: cancelToken,
+        cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
       );
       final data = responseData['data'] as List?;
 

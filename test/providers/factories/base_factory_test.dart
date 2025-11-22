@@ -75,7 +75,7 @@ class MockProvider implements ChatCapability, ProviderCapabilities {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return MockChatResponse(text: 'Mock response');
   }
@@ -84,7 +84,7 @@ class MockProvider implements ChatCapability, ProviderCapabilities {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     return chat(messages, cancelToken: cancelToken);
   }
@@ -93,7 +93,7 @@ class MockProvider implements ChatCapability, ProviderCapabilities {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     yield TextDeltaEvent('Mock response');
     yield CompletionEvent(MockChatResponse(text: 'Mock response'));

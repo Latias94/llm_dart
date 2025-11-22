@@ -148,7 +148,7 @@ Future<GenerateTextResult> generateText({
   String? prompt,
   List<ChatMessage>? messages,
   ChatPromptMessage? structuredPrompt,
-  CancelToken? cancelToken,
+  CancellationToken? cancelToken,
 }) {
   var builder = LLMBuilder().use(model);
 
@@ -167,6 +167,31 @@ Future<GenerateTextResult> generateText({
   );
 }
 
+/// Generate text using an existing [LanguageModel] instance.
+///
+/// This helper mirrors [generateText] but operates on a pre-configured
+/// [LanguageModel], which is useful when you want to:
+/// - Reuse the same model across multiple calls.
+/// - Pass models through dependency injection.
+/// - Decouple higher-level code from concrete providers.
+Future<GenerateTextResult> generateTextWithModel(
+  LanguageModel model, {
+  String? prompt,
+  List<ChatMessage>? messages,
+  ChatPromptMessage? structuredPrompt,
+  CancellationToken? cancelToken,
+}) {
+  final resolvedMessages = _resolveMessagesForTextGeneration(
+    prompt: prompt,
+    messages: messages,
+    structuredPrompt: structuredPrompt,
+  );
+  return model.generateText(
+    resolvedMessages,
+    cancelToken: cancelToken,
+  );
+}
+
 /// High-level streamText helper (Vercel AI SDK-style).
 ///
 /// This function mirrors [generateText] but returns a stream of
@@ -179,7 +204,7 @@ Stream<ChatStreamEvent> streamText({
   String? prompt,
   List<ChatMessage>? messages,
   ChatPromptMessage? structuredPrompt,
-  CancelToken? cancelToken,
+  CancellationToken? cancelToken,
 }) async* {
   var builder = LLMBuilder().use(model);
 
@@ -194,6 +219,28 @@ Stream<ChatStreamEvent> streamText({
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
+    cancelToken: cancelToken,
+  );
+}
+
+/// Stream text using an existing [LanguageModel] instance.
+///
+/// This helper mirrors [streamText] but operates on a pre-configured
+/// [LanguageModel].
+Stream<ChatStreamEvent> streamTextWithModel(
+  LanguageModel model, {
+  String? prompt,
+  List<ChatMessage>? messages,
+  ChatPromptMessage? structuredPrompt,
+  CancellationToken? cancelToken,
+}) async* {
+  final resolvedMessages = _resolveMessagesForTextGeneration(
+    prompt: prompt,
+    messages: messages,
+    structuredPrompt: structuredPrompt,
+  );
+  yield* model.streamText(
+    resolvedMessages,
     cancelToken: cancelToken,
   );
 }
@@ -222,7 +269,7 @@ Future<GenerateObjectResult<T>> generateObject<T>({
   String? prompt,
   List<ChatMessage>? messages,
   ChatPromptMessage? structuredPrompt,
-  CancelToken? cancelToken,
+  CancellationToken? cancelToken,
 }) async {
   var builder = LLMBuilder().use(model).jsonSchema(output.format);
 
@@ -293,6 +340,131 @@ class StreamObjectResult<T> {
   });
 }
 
+/// Generate a structured object using an existing [LanguageModel].
+///
+/// This helper assumes the given [model] has already been configured
+/// to produce structured JSON matching [output.format] and mirrors
+/// the behavior of [generateObject].
+Future<GenerateObjectResult<T>> generateObjectWithModel<T>({
+  required LanguageModel model,
+  required OutputSpec<T> output,
+  String? prompt,
+  List<ChatMessage>? messages,
+  ChatPromptMessage? structuredPrompt,
+  CancellationToken? cancelToken,
+}) async {
+  final resolvedMessages = _resolveMessagesForTextGeneration(
+    prompt: prompt,
+    messages: messages,
+    structuredPrompt: structuredPrompt,
+  );
+
+  return model.generateObject<T>(
+    output,
+    resolvedMessages,
+    cancelToken: cancelToken,
+  );
+}
+
+/// Run a text-only agent loop using the given [model] and [tools].
+///
+/// This helper constructs an [AgentInput] and delegates to the provided
+/// [agent] (defaults to [ToolLoopAgent]). The loop will:
+/// - Call the language model with the current messages.
+/// - Execute any requested tools and append their results.
+/// - Repeat until no tool calls remain or [ToolLoopConfig.maxIterations]
+///   is reached.
+Future<GenerateTextResult> runAgentText({
+  required LanguageModel model,
+  required List<ChatMessage> messages,
+  required Map<String, ExecutableTool> tools,
+  ToolLoopConfig loopConfig = const ToolLoopConfig(),
+  CancellationToken? cancelToken,
+  Agent? agent,
+}) async {
+  final input = AgentInput(
+    model: model,
+    messages: messages,
+    tools: tools,
+    loopConfig: loopConfig,
+    cancelToken: cancelToken,
+  );
+
+  final effectiveAgent = agent ?? const ToolLoopAgent();
+  return effectiveAgent.runText(input);
+}
+
+/// Run a text-only agent loop and return both the final result and steps.
+Future<AgentTextRunWithSteps> runAgentTextWithSteps({
+  required LanguageModel model,
+  required List<ChatMessage> messages,
+  required Map<String, ExecutableTool> tools,
+  ToolLoopConfig loopConfig = const ToolLoopConfig(),
+  CancellationToken? cancelToken,
+  Agent? agent,
+}) {
+  final input = AgentInput(
+    model: model,
+    messages: messages,
+    tools: tools,
+    loopConfig: loopConfig,
+    cancelToken: cancelToken,
+  );
+
+  final effectiveAgent = agent ?? const ToolLoopAgent();
+  return effectiveAgent.runTextWithSteps(input);
+}
+
+/// Run an agent loop that produces a structured object result.
+Future<GenerateObjectResult<T>> runAgentObject<T>({
+  required LanguageModel model,
+  required List<ChatMessage> messages,
+  required Map<String, ExecutableTool> tools,
+  required OutputSpec<T> output,
+  ToolLoopConfig loopConfig = const ToolLoopConfig(),
+  CancellationToken? cancelToken,
+  Agent? agent,
+}) async {
+  final input = AgentInput(
+    model: model,
+    messages: messages,
+    tools: tools,
+    loopConfig: loopConfig,
+    cancelToken: cancelToken,
+  );
+
+  final effectiveAgent = agent ?? const ToolLoopAgent();
+  return effectiveAgent.runObject<T>(
+    input: input,
+    output: output,
+  );
+}
+
+/// Run an agent loop that produces a structured object result and step trace.
+Future<AgentObjectRunWithSteps<T>> runAgentObjectWithSteps<T>({
+  required LanguageModel model,
+  required List<ChatMessage> messages,
+  required Map<String, ExecutableTool> tools,
+  required OutputSpec<T> output,
+  ToolLoopConfig loopConfig = const ToolLoopConfig(),
+  CancellationToken? cancelToken,
+  Agent? agent,
+}) {
+  final input = AgentInput(
+    model: model,
+    messages: messages,
+    tools: tools,
+    loopConfig: loopConfig,
+    cancelToken: cancelToken,
+  );
+
+  final effectiveAgent = agent ?? const ToolLoopAgent();
+  return effectiveAgent.runObjectWithSteps<T>(
+    input: input,
+    output: output,
+  );
+}
+
 /// Stream a structured object response using the given [model] and
 /// [output] specification.
 ///
@@ -309,7 +481,7 @@ StreamObjectResult<T> streamObject<T>({
   String? prompt,
   List<ChatMessage>? messages,
   ChatPromptMessage? structuredPrompt,
-  CancelToken? cancelToken,
+  CancellationToken? cancelToken,
 }) {
   var builder = LLMBuilder().use(model).jsonSchema(output.format);
 
@@ -405,6 +577,32 @@ StreamObjectResult<T> streamObject<T>({
   return StreamObjectResult<T>(
     events: controller.stream,
     asObject: completer.future,
+  );
+}
+
+/// Resolve input into a list of [ChatMessage]s for text generation.
+///
+/// Exactly one of [prompt], [messages], or [structuredPrompt] must be
+/// provided; otherwise an [ArgumentError] is thrown.
+List<ChatMessage> _resolveMessagesForTextGeneration({
+  String? prompt,
+  List<ChatMessage>? messages,
+  ChatPromptMessage? structuredPrompt,
+}) {
+  if (structuredPrompt != null) {
+    return [ChatMessage.fromPromptMessage(structuredPrompt)];
+  }
+
+  if (messages != null && messages.isNotEmpty) {
+    return messages;
+  }
+
+  if (prompt != null && prompt.isNotEmpty) {
+    return [ChatMessage.user(prompt)];
+  }
+
+  throw ArgumentError(
+    'You must provide either prompt, messages, or structuredPrompt for text generation.',
   );
 }
 

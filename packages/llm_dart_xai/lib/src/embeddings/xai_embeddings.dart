@@ -1,4 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/xai_client.dart';
 import '../config/xai_config.dart';
@@ -12,7 +13,7 @@ class XAIEmbeddings implements EmbeddingCapability {
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final embeddings = <List<double>>[];
 
@@ -26,8 +27,11 @@ class XAIEmbeddings implements EmbeddingCapability {
           'dimensions': config.embeddingDimensions,
       };
 
-      final json =
-          await client.postJson('embeddings', body, cancelToken: cancelToken);
+      final json = await client.postJson(
+        'embeddings',
+        body,
+        cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+      );
       final data = json['data'] as List?;
       if (data == null || data.isEmpty) {
         throw const ResponseFormatError(

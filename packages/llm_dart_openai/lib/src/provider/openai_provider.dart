@@ -92,7 +92,7 @@ class OpenAIProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     if (config.useResponsesAPI && _responses != null) {
       return _responses.chat(messages, cancelToken: cancelToken);
@@ -104,7 +104,7 @@ class OpenAIProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     if (config.useResponsesAPI && _responses != null) {
       return _responses.chatWithTools(
@@ -120,7 +120,7 @@ class OpenAIProvider
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     if (config.useResponsesAPI && _responses != null) {
       return _responses.chatStream(
@@ -158,7 +158,7 @@ class OpenAIProvider
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _embeddings.embed(input, cancelToken: cancelToken);
   }
@@ -171,7 +171,7 @@ class OpenAIProvider
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _audio.textToSpeech(request, cancelToken: cancelToken);
   }
@@ -179,7 +179,7 @@ class OpenAIProvider
   @override
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _audio.textToSpeechStream(request, cancelToken: cancelToken);
   }
@@ -192,7 +192,7 @@ class OpenAIProvider
   @override
   Future<STTResponse> speechToText(
     STTRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _audio.speechToText(request, cancelToken: cancelToken);
   }
@@ -200,7 +200,7 @@ class OpenAIProvider
   @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _audio.translateAudio(request, cancelToken: cancelToken);
   }
@@ -227,7 +227,7 @@ class OpenAIProvider
   @override
   Future<List<int>> speech(
     String text, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final response = await textToSpeech(
       TTSRequest(text: text),
@@ -422,7 +422,7 @@ class OpenAIProvider
   // ===== ModelListingCapability =====
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) {
+  Future<List<AIModel>> models({CancellationToken? cancelToken}) {
     return _models.models(cancelToken: cancelToken);
   }
 

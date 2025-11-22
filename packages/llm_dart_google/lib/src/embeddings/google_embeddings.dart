@@ -18,7 +18,7 @@ class GoogleEmbeddings implements EmbeddingCapability {
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing Google API key');
@@ -30,7 +30,7 @@ class GoogleEmbeddings implements EmbeddingCapability {
         final responseData = await client.postJson(
           embeddingEndpoint,
           requestBody,
-          cancelToken: cancelToken,
+          cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
         );
         return [_parseSingleEmbeddingResponse(responseData)];
       } else {
@@ -38,7 +38,7 @@ class GoogleEmbeddings implements EmbeddingCapability {
         final responseData = await client.postJson(
           batchEmbeddingEndpoint,
           requestBody,
-          cancelToken: cancelToken,
+          cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
         );
         return _parseBatchEmbeddingResponse(responseData);
       }

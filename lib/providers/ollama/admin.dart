@@ -42,13 +42,13 @@ class OllamaAdmin {
   OllamaProvider get provider => _provider;
 
   /// List models that are available locally (`GET /api/tags`).
-  Future<List<AIModel>> listLocalModels({CancelToken? cancelToken}) {
+  Future<List<AIModel>> listLocalModels({CancellationToken? cancelToken}) {
     return _provider.models(cancelToken: cancelToken);
   }
 
   /// List models that are currently loaded into memory (`GET /api/ps`).
   Future<List<Map<String, dynamic>>> listRunningModels({
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _provider.listRunningModels(cancelToken: cancelToken);
   }
@@ -57,7 +57,7 @@ class OllamaAdmin {
   Future<Map<String, dynamic>> showModel(
     String model, {
     bool verbose = false,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     // The underlying implementation already supports the full response;
     // the verbose flag is kept for future extension.
@@ -71,7 +71,7 @@ class OllamaAdmin {
   Future<void> copyModel(
     String source,
     String destination, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _provider.copyModel(
       source,
@@ -83,7 +83,7 @@ class OllamaAdmin {
   /// Delete a model and its data (`DELETE /api/delete`).
   Future<void> deleteModel(
     String model, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _provider.deleteModel(model, cancelToken: cancelToken);
   }
@@ -94,7 +94,7 @@ class OllamaAdmin {
   Future<Map<String, dynamic>> pullModel(
     String model, {
     bool insecure = false,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _provider.pullModel(
       model,
@@ -109,7 +109,7 @@ class OllamaAdmin {
   Future<Map<String, dynamic>> pushModel(
     String model, {
     bool insecure = false,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return _provider.pushModel(
       model,
@@ -119,7 +119,7 @@ class OllamaAdmin {
   }
 
   /// Get Ollama server version information (`GET /api/version`).
-  Future<Map<String, dynamic>> serverVersion({CancelToken? cancelToken}) {
+  Future<Map<String, dynamic>> serverVersion({CancellationToken? cancelToken}) {
     return _provider.serverVersion(cancelToken: cancelToken);
   }
 }

@@ -47,7 +47,7 @@ class FakeLanguageModel implements LanguageModel {
   @override
   Future<GenerateTextResult> generateText(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     callCount++;
 
@@ -96,7 +96,7 @@ class FakeLanguageModel implements LanguageModel {
   @override
   Stream<ChatStreamEvent> streamText(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     final result = await generateText(messages, cancelToken: cancelToken);
     if (result.text != null) {
@@ -109,7 +109,7 @@ class FakeLanguageModel implements LanguageModel {
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final textResult = await generateText(messages, cancelToken: cancelToken);
     final raw = textResult.text ?? '';
@@ -259,7 +259,7 @@ class _JsonLanguageModel implements LanguageModel {
   @override
   Future<GenerateTextResult> generateText(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     callCount++;
 
@@ -297,7 +297,7 @@ class _JsonLanguageModel implements LanguageModel {
   @override
   Stream<ChatStreamEvent> streamText(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     final result = await generateText(messages, cancelToken: cancelToken);
     if (result.text != null) {
@@ -310,7 +310,7 @@ class _JsonLanguageModel implements LanguageModel {
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final textResult = await generateText(messages, cancelToken: cancelToken);
     final raw = textResult.text ?? '';

@@ -38,7 +38,7 @@ class _TestChatProvider implements ChatCapability, ProviderCapabilities {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }
@@ -47,7 +47,7 @@ class _TestChatProvider implements ChatCapability, ProviderCapabilities {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     lastMessages = messages;
     lastTools = tools;
@@ -59,7 +59,7 @@ class _TestChatProvider implements ChatCapability, ProviderCapabilities {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     lastMessages = messages;
     lastTools = tools;

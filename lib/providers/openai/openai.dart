@@ -25,9 +25,13 @@
 /// ```
 library;
 
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_impl;
+
 import '../../core/provider_defaults.dart';
 import 'config.dart';
 import 'provider.dart';
+import 'builtin_tools.dart';
 
 // Core exports
 export 'config.dart';
@@ -46,6 +50,417 @@ export 'assistants.dart';
 export 'completion.dart';
 export 'responses.dart';
 export 'builtin_tools.dart';
+
+/// OpenAI provider settings (Vercel AI-style).
+///
+/// This mirrors the core fields from `OpenAIProviderSettings` in the
+/// Vercel AI SDK while adopting Dart conventions:
+/// - [apiKey] is required instead of being read from environment variables.
+/// - [baseUrl], [organization], [project] and [headers] are optional
+///   overrides for HTTP configuration.
+class OpenAIProviderSettings {
+  /// API key used for authenticating requests.
+  final String apiKey;
+
+  /// Base URL for the OpenAI API.
+  ///
+  /// Defaults to `https://api.openai.com/v1/` when not provided.
+  final String? baseUrl;
+
+  /// OpenAI organization header (`OpenAI-Organization`).
+  final String? organization;
+
+  /// OpenAI project header (`OpenAI-Project`).
+  final String? project;
+
+  /// Additional custom headers to send with each request.
+  final Map<String, String>? headers;
+
+  /// Logical provider name used for metadata (e.g. `openai`, `my-openai-proxy`).
+  final String? name;
+
+  /// Optional default timeout applied via [LLMConfig.timeout].
+  final Duration? timeout;
+
+  const OpenAIProviderSettings({
+    required this.apiKey,
+    this.baseUrl,
+    this.organization,
+    this.project,
+    this.headers,
+    this.name,
+    this.timeout,
+  });
+}
+
+/// Facade for creating OpenAI models in a Vercel AI-compatible style.
+///
+/// This class provides methods that closely mirror the `OpenAIProvider`
+/// interface from the Vercel AI SDK:
+///
+/// - [languageModel] / [responses] → OpenAI Responses API models
+/// - [chat] → Chat Completions-style models
+/// - [embedding] / [textEmbedding] / [textEmbeddingModel] → Embedding models
+/// - [image] / [imageModel] → Image generation models
+/// - [transcription] → Speech-to-text models
+/// - [speech] → Text-to-speech models
+///
+/// The methods return strongly-typed capability interfaces from
+/// `llm_dart_core`, with chat-style models wrapped as [LanguageModel]
+/// to align with the AI SDK's language model abstraction.
+class OpenAI {
+  final OpenAIProviderSettings _settings;
+  final String _baseUrl;
+  final String _providerName;
+
+  OpenAI(OpenAIProviderSettings settings)
+      : _settings = settings,
+        _baseUrl = _normalizeBaseUrl(
+          settings.baseUrl ?? ProviderDefaults.openaiBaseUrl,
+        ),
+        _providerName = settings.name ?? 'openai';
+
+  /// Create a language model using the OpenAI Responses API.
+  ///
+  /// This is the primary entry point and is equivalent to [responses].
+  LanguageModel languageModel(String modelId) => responses(modelId);
+
+  /// Create a chat model using the Chat Completions API.
+  ///
+  /// This maps to the non-Responses chat endpoint and is suitable for
+  /// most general-purpose chat use cases.
+  LanguageModel chat(String modelId) {
+    final config = _createOpenAIConfig(
+      modelId: modelId,
+      useResponsesAPI: false,
+    );
+    final client = openai_impl.OpenAIClient(config);
+    final chat = openai_impl.OpenAIChat(client, config);
+
+    return DefaultLanguageModel(
+      providerId: _providerName,
+      modelId: modelId,
+      config: config.originalConfig!,
+      chat: chat,
+    );
+  }
+
+  /// Create a language model backed by the OpenAI Responses API.
+  ///
+  /// This enables advanced features such as:
+  /// - Built-in tools (web search, file search, computer use)
+  /// - Background responses and response lifecycle management
+  /// - Reasoning-aware streaming with thinking deltas
+  OpenAIResponsesModel responses(String modelId) {
+    final config = _createOpenAIConfig(
+      modelId: modelId,
+      useResponsesAPI: true,
+    );
+    final client = openai_impl.OpenAIClient(config);
+    final responses = openai_impl.OpenAIResponses(client, config);
+
+    return OpenAIResponsesModel(
+      providerId: '$_providerName.responses',
+      modelId: modelId,
+      config: config.originalConfig!,
+      responses: responses,
+    );
+  }
+
+  /// Create an embedding model.
+  ///
+  /// Returns an [EmbeddingCapability] that can be used with
+  /// `embed(input, cancelToken: ...)`.
+  EmbeddingCapability embedding(String modelId) {
+    final config = _createOpenAIConfig(modelId: modelId);
+    final client = openai_impl.OpenAIClient(config);
+    return openai_impl.OpenAIEmbeddings(client, config);
+  }
+
+  /// Alias for [embedding] to mirror the Vercel AI SDK.
+  EmbeddingCapability textEmbedding(String modelId) => embedding(modelId);
+
+  /// Alias for [embedding] to mirror the Vercel AI SDK.
+  EmbeddingCapability textEmbeddingModel(String modelId) => embedding(modelId);
+
+  /// Create an image generation model.
+  ///
+  /// Returns an [ImageGenerationCapability] that can generate images
+  /// using OpenAI's image endpoints (e.g. DALL·E).
+  ImageGenerationCapability image(String modelId) => imageModel(modelId);
+
+  /// Alias for [image] to mirror the Vercel AI SDK.
+  ImageGenerationCapability imageModel(String modelId) {
+    final config = _createOpenAIConfig(modelId: modelId);
+    final client = openai_impl.OpenAIClient(config);
+    return openai_impl.OpenAIImages(client, config);
+  }
+
+  /// Create a transcription model (speech-to-text).
+  ///
+  /// Returns an [AudioCapability] configured for speech recognition.
+  AudioCapability transcription(String modelId) {
+    final config = _createOpenAIConfig(modelId: modelId);
+    final client = openai_impl.OpenAIClient(config);
+    return openai_impl.OpenAIAudio(client, config);
+  }
+
+  /// Create a speech model (text-to-speech).
+  ///
+  /// Returns an [AudioCapability] configured for text-to-speech.
+  AudioCapability speech(String modelId) => transcription(modelId);
+
+  /// OpenAI built-in tools (web search, file search, computer use).
+  ///
+  /// This mirrors the `openai.tools` namespace from the Vercel AI SDK.
+  OpenAITools get tools => const OpenAITools();
+
+  /// Internal helper to create a base [LLMConfig] for a given model.
+  LLMConfig _createLLMConfig(String modelId) {
+    final headers = <String, String>{};
+
+    if (_settings.organization != null && _settings.organization!.isNotEmpty) {
+      headers['OpenAI-Organization'] = _settings.organization!;
+    }
+
+    if (_settings.project != null && _settings.project!.isNotEmpty) {
+      headers['OpenAI-Project'] = _settings.project!;
+    }
+
+    if (_settings.headers != null && _settings.headers!.isNotEmpty) {
+      headers.addAll(_settings.headers!);
+    }
+
+    final extensions = <String, dynamic>{};
+    if (headers.isNotEmpty) {
+      extensions[LLMConfigKeys.customHeaders] = headers;
+    }
+
+    return LLMConfig(
+      apiKey: _settings.apiKey,
+      baseUrl: _baseUrl,
+      model: modelId,
+      timeout: _settings.timeout,
+      extensions: extensions,
+    );
+  }
+
+  /// Internal helper to create an [OpenAIConfig] for a given model.
+  openai_impl.OpenAIConfig _createOpenAIConfig({
+    required String modelId,
+    bool useResponsesAPI = false,
+  }) {
+    final baseConfig = _createLLMConfig(modelId);
+
+    return openai_impl.OpenAIConfig(
+      apiKey: _settings.apiKey,
+      baseUrl: _baseUrl,
+      model: modelId,
+      timeout: _settings.timeout,
+      useResponsesAPI: useResponsesAPI,
+      originalConfig: baseConfig,
+    );
+  }
+
+  static String _normalizeBaseUrl(String value) {
+    if (value.isEmpty) return ProviderDefaults.openaiBaseUrl;
+    return value.endsWith('/') ? value : '$value/';
+  }
+}
+
+/// LanguageModel wrapper for the OpenAI Responses API.
+///
+/// This type implements both [LanguageModel] and the full
+/// [openai_impl.OpenAIResponsesCapability] interface so that it can be used
+/// with high-level helpers (`generateTextWithModel`) and also access the
+/// underlying Responses API features (background responses, lifecycle
+/// management, response chaining, etc.).
+class OpenAIResponsesModel
+    implements LanguageModel, openai_impl.OpenAIResponsesCapability {
+  final DefaultLanguageModel _model;
+  final openai_impl.OpenAIResponses _responses;
+
+  OpenAIResponsesModel({
+    required String providerId,
+    required String modelId,
+    required LLMConfig config,
+    required openai_impl.OpenAIResponses responses,
+  })  : _responses = responses,
+        _model = DefaultLanguageModel(
+          providerId: providerId,
+          modelId: modelId,
+          config: config,
+          chat: responses,
+        );
+
+  @override
+  String get providerId => _model.providerId;
+
+  @override
+  String get modelId => _model.modelId;
+
+  @override
+  LLMConfig get config => _model.config;
+
+  @override
+  Future<GenerateTextResult> generateText(
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  }) {
+    return _model.generateText(messages, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<ChatStreamEvent> streamText(
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  }) {
+    return _model.streamText(messages, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<GenerateObjectResult<T>> generateObject<T>(
+    OutputSpec<T> output,
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  }) {
+    return _model.generateObject(
+      output,
+      messages,
+      cancelToken: cancelToken,
+    );
+  }
+
+  // ===== OpenAIResponsesCapability delegation =====
+
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools,
+  ) {
+    return _responses.chatWithTools(messages, tools);
+  }
+
+  @override
+  Future<ChatResponse> chatWithToolsBackground(
+    List<ChatMessage> messages,
+    List<Tool>? tools,
+  ) {
+    return _responses.chatWithToolsBackground(messages, tools);
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+  }) {
+    return _responses.chatStream(messages, tools: tools);
+  }
+
+  @override
+  Future<ChatResponse> getResponse(
+    String responseId, {
+    List<String>? include,
+    int? startingAfter,
+    bool stream = false,
+  }) {
+    return _responses.getResponse(
+      responseId,
+      include: include,
+      startingAfter: startingAfter,
+      stream: stream,
+    );
+  }
+
+  @override
+  Future<bool> deleteResponse(String responseId) {
+    return _responses.deleteResponse(responseId);
+  }
+
+  @override
+  Future<ChatResponse> cancelResponse(String responseId) {
+    return _responses.cancelResponse(responseId);
+  }
+
+  @override
+  Future<ResponseInputItemsList> listInputItems(
+    String responseId, {
+    String? after,
+    String? before,
+    List<String>? include,
+    int limit = 20,
+    String order = 'desc',
+  }) {
+    return _responses.listInputItems(
+      responseId,
+      after: after,
+      before: before,
+      include: include,
+      limit: limit,
+      order: order,
+    );
+  }
+
+  @override
+  Future<ChatResponse> continueConversation(
+    String previousResponseId,
+    List<ChatMessage> newMessages, {
+    List<Tool>? tools,
+    bool background = false,
+  }) {
+    return _responses.continueConversation(
+      previousResponseId,
+      newMessages,
+      tools: tools,
+      background: background,
+    );
+  }
+
+  @override
+  Future<ChatResponse> forkConversation(
+    String fromResponseId,
+    List<ChatMessage> newMessages, {
+    List<Tool>? tools,
+    bool background = false,
+  }) {
+    return _responses.forkConversation(
+      fromResponseId,
+      newMessages,
+      tools: tools,
+      background: background,
+    );
+  }
+}
+
+/// Lightweight facade around [OpenAIBuiltInTools] to mirror the
+/// `openai.tools` namespace from the Vercel AI SDK.
+class OpenAITools {
+  const OpenAITools();
+
+  OpenAIWebSearchTool webSearch() => OpenAIBuiltInTools.webSearch();
+
+  OpenAIFileSearchTool fileSearch({
+    List<String>? vectorStoreIds,
+    Map<String, dynamic>? parameters,
+  }) =>
+      OpenAIBuiltInTools.fileSearch(
+        vectorStoreIds: vectorStoreIds,
+        parameters: parameters,
+      );
+
+  OpenAIComputerUseTool computerUse({
+    required int displayWidth,
+    required int displayHeight,
+    required String environment,
+    Map<String, dynamic>? parameters,
+  }) =>
+      OpenAIBuiltInTools.computerUse(
+        displayWidth: displayWidth,
+        displayHeight: displayHeight,
+        environment: environment,
+        parameters: parameters,
+      );
+}
 
 /// Create an OpenAI provider with default settings
 OpenAIProvider createOpenAIProvider({
@@ -66,6 +481,65 @@ OpenAIProvider createOpenAIProvider({
   );
 
   return OpenAIProvider(config);
+}
+
+/// Create an OpenAI model factory (Vercel AI-style).
+///
+/// Example:
+/// ```dart
+/// final openai = createOpenAI(
+///   apiKey: 'sk-...',
+///   baseUrl: 'https://api.openai.com/v1/',
+/// );
+///
+/// final model = openai.chat('gpt-4o');
+/// final result = await generateTextWithModel(
+///   model: model,
+///   messages: [ChatMessage.user('Hello')],
+/// );
+/// ```
+OpenAI createOpenAI({
+  required String apiKey,
+  String? baseUrl,
+  String? organization,
+  String? project,
+  Map<String, String>? headers,
+  String? name,
+  Duration? timeout,
+}) {
+  return OpenAI(
+    OpenAIProviderSettings(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      organization: organization,
+      project: project,
+      headers: headers,
+      name: name,
+      timeout: timeout,
+    ),
+  );
+}
+
+/// Alias for [createOpenAI] to mirror the default `openai` export
+/// from the Vercel AI SDK.
+OpenAI openai({
+  required String apiKey,
+  String? baseUrl,
+  String? organization,
+  String? project,
+  Map<String, String>? headers,
+  String? name,
+  Duration? timeout,
+}) {
+  return createOpenAI(
+    apiKey: apiKey,
+    baseUrl: baseUrl,
+    organization: organization,
+    project: project,
+    headers: headers,
+    name: name,
+    timeout: timeout,
+  );
 }
 
 /// Create an OpenAI provider for OpenRouter

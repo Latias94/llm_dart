@@ -1,4 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/openai_client.dart';
 import '../config/openai_config.dart';
@@ -15,7 +16,7 @@ class OpenAIEmbeddings implements EmbeddingCapability {
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async {
     final requestBody = {
       'model': config.model,
@@ -28,7 +29,7 @@ class OpenAIEmbeddings implements EmbeddingCapability {
     final responseData = await client.postJson(
       'embeddings',
       requestBody,
-      cancelToken: cancelToken,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
 
     final data = responseData['data'] as List?;

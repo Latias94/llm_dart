@@ -1,10 +1,50 @@
 import 'dart:async';
+import 'dart:typed_data';
 
-import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/utils/http_config_utils.dart';
+import 'package:test/test.dart';
+
+/// A fake HttpClientAdapter that always returns a successful 200 response.
+class _FakeSuccessAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    return ResponseBody.fromString(
+      'OK',
+      200,
+      headers: {
+        'content-type': ['application/json'],
+      },
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+/// A fake HttpClientAdapter that always throws a connection error.
+class _FakeErrorAdapter implements HttpClientAdapter {
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<Uint8List>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    throw DioException.connectionError(
+      requestOptions: options,
+      reason: 'Simulated error',
+    );
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
 
 void main() {
   group('Dio HTTP Logging Tests', () {
@@ -104,10 +144,13 @@ void main() {
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
-        baseUrl: 'https://httpbin.org',
+        baseUrl: 'https://example.com',
         defaultHeaders: {'Authorization': 'Bearer test-key'},
         config: config,
       );
+
+      // Use a fake adapter to avoid real network calls.
+      dio.httpClientAdapter = _FakeSuccessAdapter();
 
       // Clear any setup logs
       logRecords.clear();
@@ -142,10 +185,13 @@ void main() {
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
-        baseUrl: 'https://httpbin.org',
+        baseUrl: 'https://example.com',
         defaultHeaders: {'Authorization': 'Bearer test-key'},
         config: config,
       );
+
+      // Use a fake adapter that always succeeds.
+      dio.httpClientAdapter = _FakeSuccessAdapter();
 
       // Clear any setup logs
       logRecords.clear();
@@ -183,10 +229,13 @@ void main() {
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
-        baseUrl: 'https://httpbin.org',
+        baseUrl: 'https://example.com',
         defaultHeaders: {'Authorization': 'Bearer test-key'},
         config: config,
       );
+
+      // Use a fake adapter that always fails to trigger error logging.
+      dio.httpClientAdapter = _FakeErrorAdapter();
 
       // Clear any setup logs
       logRecords.clear();
@@ -221,10 +270,13 @@ void main() {
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
-        baseUrl: 'https://httpbin.org',
+        baseUrl: 'https://example.com',
         defaultHeaders: {'Authorization': 'Bearer test-key'},
         config: config,
       );
+
+      // Use a fake adapter that always succeeds.
+      dio.httpClientAdapter = _FakeSuccessAdapter();
 
       // Clear any setup logs
       logRecords.clear();
@@ -259,10 +311,13 @@ void main() {
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
-        baseUrl: 'https://httpbin.org',
+        baseUrl: 'https://example.com',
         defaultHeaders: {'Authorization': 'Bearer test-key'},
         config: config,
       );
+
+      // Use a fake adapter that always succeeds.
+      dio.httpClientAdapter = _FakeSuccessAdapter();
 
       // Clear any setup logs
       logRecords.clear();
