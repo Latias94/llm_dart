@@ -68,7 +68,7 @@ void main() {
         final tool = OpenAIBuiltInTools.webSearch();
         final json = tool.toJson();
 
-        expect(json['type'], equals('web_search_preview'));
+        expect(json['type'], equals('web_search'));
         expect(tool.type, equals(OpenAIBuiltInToolType.webSearch));
       });
 

@@ -291,7 +291,7 @@ Future<void> main() async {
     try {
       final traced = await agent.runTextWithSteps(agentInput);
 
-      // Print per-step summary (similar精神 to miniagent).
+      // Print a per-step summary.
       for (final step in traced.steps) {
         print('--- Step ${step.iteration} ---');
         final result = step.modelResult;

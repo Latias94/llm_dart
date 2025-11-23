@@ -1,5 +1,6 @@
 import '../../builder/llm_builder.dart';
 import '../../core/capability.dart';
+import '../../core/web_search.dart';
 import 'mcp_models.dart';
 
 /// Anthropic-specific LLM builder with provider-specific configuration methods
@@ -212,6 +213,41 @@ class AnthropicBuilder {
     }
 
     return mcpServers(servers);
+  }
+
+  /// Configure Anthropic server-side web search (web_search_20250305 tool).
+  ///
+  /// This is a provider-specific helper that:
+  /// - Enables web search via [LLMConfigKeys.webSearchEnabled].
+  /// - Stores a [WebSearchConfig] tuned for Anthropic in
+  ///   [LLMConfigKeys.webSearchConfig].
+  ///
+  /// The underlying Anthropic provider then maps this configuration to the
+  /// official `web_search_20250305` tool fields:
+  /// - [maxUses] → `max_uses`
+  /// - [allowedDomains] → `allowed_domains`
+  /// - [blockedDomains] → `blocked_domains`
+  /// - [location] → `user_location`
+  AnthropicBuilder webSearch({
+    int? maxUses,
+    List<String>? allowedDomains,
+    List<String>? blockedDomains,
+    WebSearchLocation? location,
+  }) {
+    // Signal that web search should be enabled for this provider.
+    _baseBuilder.enableWebSearch();
+
+    // Store a provider-agnostic configuration that the Anthropic provider
+    // will translate to its native web search tool parameters.
+    final config = WebSearchConfig.anthropic(
+      maxUses: maxUses ?? 5,
+      allowedDomains: allowedDomains,
+      blockedDomains: blockedDomains,
+      location: location,
+    );
+
+    _baseBuilder.extension(LLMConfigKeys.webSearchConfig, config);
+    return this;
   }
 
   // ========== Build methods ==========

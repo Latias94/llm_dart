@@ -163,6 +163,41 @@ class GoogleLLMBuilder {
     return this;
   }
 
+  /// Configures Google Search grounding using a provider-specific builder.
+  ///
+  /// This mirrors the Vercel AI SDK `google.tools.googleSearch` helper:
+  /// it enables web search for Gemini models and forwards the given `mode`
+  /// and `dynamicThreshold` values to the underlying Google API (when
+  /// supported by the selected model).
+  ///
+  /// Example:
+  /// ```dart
+  /// final provider = await ai()
+  ///   .google((google) => google.googleSearchTool(
+  ///     mode: 'MODE_DYNAMIC',
+  ///     dynamicThreshold: 1.0,
+  ///   ))
+  ///   .apiKey(apiKey)
+  ///   .model('gemini-1.5-flash')
+  ///   .build();
+  /// ```
+  GoogleLLMBuilder googleSearchTool({
+    String mode = 'MODE_UNSPECIFIED',
+    double? dynamicThreshold,
+  }) {
+    final config = WebSearchConfig(
+      mode: mode,
+      dynamicThreshold: dynamicThreshold,
+      searchType: WebSearchType.web,
+    );
+
+    _baseBuilder
+      ..extension(LLMConfigKeys.webSearchEnabled, true)
+      ..extension(LLMConfigKeys.webSearchConfig, config);
+
+    return this;
+  }
+
   // ========== Convenience methods for common embedding configurations ==========
 
   /// Configure for semantic similarity tasks

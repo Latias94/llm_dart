@@ -437,7 +437,22 @@ class OpenAIResponsesModel
 class OpenAITools {
   const OpenAITools();
 
-  OpenAIWebSearchTool webSearch() => OpenAIBuiltInTools.webSearch();
+  /// Create an OpenAI web search tool.
+  ///
+  /// Mirrors `openai.tools.webSearch` from the Vercel AI SDK:
+  /// - [allowedDomains] → filters.allowed_domains
+  /// - [contextSize] → search_context_size
+  /// - [location] → user_location
+  OpenAIWebSearchTool webSearch({
+    List<String>? allowedDomains,
+    WebSearchContextSize? contextSize,
+    WebSearchLocation? location,
+  }) =>
+      OpenAIBuiltInTools.webSearch(
+        allowedDomains: allowedDomains,
+        contextSize: contextSize,
+        location: location,
+      );
 
   OpenAIFileSearchTool fileSearch({
     List<String>? vectorStoreIds,

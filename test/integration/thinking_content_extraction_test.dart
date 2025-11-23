@@ -49,13 +49,14 @@ void main() {
         bytes.sublist(0, 2), // '<t'
         bytes.sublist(2, 5), // 'hin'
         bytes.sublist(5, 8), // 'k>\n'
-        bytes.sublist(8, 20), // '用户询问了一个关于'
-        bytes.sublist(20, 40), // '编程的问题。\n我需要：\n1.'
-        bytes.sublist(40, 60), // ' 分析问题的核心\n2. 提供'
-        bytes.sublist(60, 80), // '清晰的解释\n3. 给出实用'
-        bytes.sublist(80, 90), // '的示例\n</th'
-        bytes.sublist(90, 95), // 'ink>'
-        bytes.sublist(95), // '\n\n根据您的问题...'
+        // Subsequent chunks contain the Chinese question text and its analysis.
+        bytes.sublist(8, 20),
+        bytes.sublist(20, 40),
+        bytes.sublist(40, 60),
+        bytes.sublist(60, 80),
+        bytes.sublist(80, 90),
+        bytes.sublist(90, 95),
+        bytes.sublist(95),
       ];
 
       // Reconstruct the response using UTF8 decoder

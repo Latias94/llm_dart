@@ -1,9 +1,10 @@
 /// Legacy configuration utilities.
 ///
-/// 新代码应优先直接使用 `HttpHeaderUtils`、`HttpConfigUtils`，并在各
-/// provider 子包内部实现消息/参数转换逻辑。
+/// New code should use `HttpHeaderUtils` and `HttpConfigUtils` directly, and
+/// implement message/parameter conversion logic inside each provider subpackage.
 ///
-/// 本文件只为需要兼容旧版 `ConfigUtils` 的场景提供显式导入路径：
+/// This file only exists to provide an explicit import path for code that still
+/// depends on the legacy `ConfigUtils`:
 /// `import 'package:llm_dart/legacy/config_utils.dart';`.
 library;
 

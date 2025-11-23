@@ -138,7 +138,8 @@ void main() {
       // retrieve the underlying test provider via the global registry.
       await embedProvider.embed(['a', 'bb']);
 
-      // We只能断言 transform 调用顺序，这保证了链式执行顺序正确。
+      // We can only assert the transform call order, which guarantees that
+      // the chaining execution order is correct.
       expect(transforms, ['t1', 't2']);
     });
 

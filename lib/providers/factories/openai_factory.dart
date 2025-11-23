@@ -69,6 +69,42 @@ class OpenAIProviderFactory
       model = _getSearchModel(model);
     }
 
+    // Derive built-in web search tool from unified WebSearchConfig when using
+    // the Responses API, mirroring Vercel's openai.tools.webSearch helper.
+    //
+    // This keeps the builder API provider-agnostic: calling
+    // `advancedWebSearch(...)` will automatically configure OpenAI's
+    // `web_search` built-in tool unless the user has explicitly added one
+    // via `OpenAIBuilder.webSearchTool()` or `openai.tools.webSearch()`.
+    List<OpenAIBuiltInTool>? builtInTools =
+        getExtension<List<OpenAIBuiltInTool>>(
+      config,
+      LLMConfigKeys.builtInTools,
+    );
+
+    final useResponsesAPI =
+        getExtension<bool>(config, LLMConfigKeys.useResponsesAPI) ?? false;
+
+    if (useResponsesAPI && webSearchConfig != null) {
+      final hasWebSearchTool =
+          (builtInTools ?? const <OpenAIBuiltInTool>[]).any(
+        (t) => t is OpenAIWebSearchTool,
+      );
+
+      if (!hasWebSearchTool) {
+        final webTool = OpenAIBuiltInTools.webSearch(
+          allowedDomains: webSearchConfig.allowedDomains,
+          contextSize: webSearchConfig.contextSize,
+          location: webSearchConfig.location,
+        );
+
+        builtInTools = [
+          ...?builtInTools,
+          webTool,
+        ];
+      }
+    }
+
     return OpenAIConfig(
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
@@ -101,7 +137,8 @@ class OpenAIProviderFactory
       previousResponseId:
           getExtension<String>(config, LLMConfigKeys.previousResponseId),
       builtInTools: getExtension<List<OpenAIBuiltInTool>>(
-          config, LLMConfigKeys.builtInTools),
+              config, LLMConfigKeys.builtInTools) ??
+          builtInTools,
       originalConfig: config,
     );
   }

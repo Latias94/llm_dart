@@ -512,6 +512,7 @@ class AnthropicRequestBuilder {
           inputSchema['properties'] = <String, dynamic>{};
         }
 
+        // Base definition for Anthropic web search tool.
         final toolDef = <String, dynamic>{
           'name': 'web_search',
           'description': tool.function.description.isNotEmpty
@@ -520,6 +521,26 @@ class AnthropicRequestBuilder {
           'input_schema': inputSchema,
           'type': 'web_search_20250305',
         };
+
+        // Optionally augment with WebSearchConfig when provided via LLMConfig.
+        final webSearchConfig = config.getExtension<WebSearchConfig>(
+          LLMConfigKeys.webSearchConfig,
+        );
+
+        if (webSearchConfig != null) {
+          if (webSearchConfig.maxUses != null) {
+            toolDef['max_uses'] = webSearchConfig.maxUses;
+          }
+          if (webSearchConfig.allowedDomains != null) {
+            toolDef['allowed_domains'] = webSearchConfig.allowedDomains;
+          }
+          if (webSearchConfig.blockedDomains != null) {
+            toolDef['blocked_domains'] = webSearchConfig.blockedDomains;
+          }
+          if (webSearchConfig.location != null) {
+            toolDef['user_location'] = webSearchConfig.location!.toJson();
+          }
+        }
 
         return toolDef;
       }

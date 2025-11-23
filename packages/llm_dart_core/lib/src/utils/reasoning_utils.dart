@@ -26,7 +26,8 @@ class ReasoningUtils {
     required bool hasReasoningContent,
     required String lastChunk,
   }) {
-    // 如果有reasoning_content或reasoning或thinking，说明是在思考中
+    // If there is reasoning_content / reasoning / thinking, we are currently in
+    // a reasoning phase.
     bool updatedHasReasoningContent = hasReasoningContent;
     if (delta != null &&
         (delta['reasoning_content'] != null ||
@@ -45,11 +46,12 @@ class ReasoningUtils {
 
     final deltaContent = delta['content'] as String;
 
-    // 检查当前chunk和上一个chunk的组合是否形成###Response标记
+    // Check whether the combination of the previous chunk and the current chunk
+    // forms a `###Response` marker.
     final combinedChunks = lastChunk + deltaContent;
     final updatedLastChunk = deltaContent;
 
-    // 检测思考结束
+    // Detect the end of the reasoning phase.
     if (combinedChunks.contains('###Response') || deltaContent == '</think>') {
       return ReasoningDetectionResult(
         isReasoningJustDone: true,
@@ -58,7 +60,8 @@ class ReasoningUtils {
       );
     }
 
-    // 如果之前有reasoning_content或reasoning，现在有普通content，说明思考结束
+    // If we previously saw reasoning_content / reasoning and now we see regular
+    // content, we treat this as the reasoning phase having finished.
     if (hasReasoningContent && deltaContent.isNotEmpty) {
       return ReasoningDetectionResult(
         isReasoningJustDone: true,

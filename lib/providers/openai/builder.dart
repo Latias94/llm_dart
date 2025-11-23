@@ -165,9 +165,19 @@ class OpenAIBuilder {
   ///
   /// Enables the model to search the web for real-time information.
   /// Only available with Responses API.
-  OpenAIBuilder webSearchTool() {
+  OpenAIBuilder webSearchTool({
+    List<String>? allowedDomains,
+    WebSearchContextSize? contextSize,
+    WebSearchLocation? location,
+  }) {
     final tools = _getBuiltInTools();
-    tools.add(OpenAIBuiltInTools.webSearch());
+    tools.add(
+      OpenAIBuiltInTools.webSearch(
+        allowedDomains: allowedDomains,
+        contextSize: contextSize,
+        location: location,
+      ),
+    );
     _baseBuilder.extension(LLMConfigKeys.builtInTools, tools);
     return this;
   }

@@ -1,9 +1,11 @@
 /// Legacy OpenAI-compatible provider defaults.
 ///
-/// 新代码应优先使用 `OpenAICompatibleProviderProfiles`（来自
-/// `llm_dart_openai_compatible` 包）获取更细粒度的模型/能力信息。
+/// New code should prefer `OpenAICompatibleProviderProfiles` from the
+/// `llm_dart_openai_compatible` package to get more fine-grained information
+/// about models and capabilities.
 ///
-/// 这里仅为历史代码提供 `OpenAICompatibleDefaults` 的显式导入路径：
+/// This file only provides an explicit import path for legacy code that still
+/// uses `OpenAICompatibleDefaults`:
 /// `import 'package:llm_dart/legacy/openai_compatible_defaults.dart';`.
 library;
 

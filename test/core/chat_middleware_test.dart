@@ -164,7 +164,8 @@ void main() {
       final response =
           await provider.chat([ChatMessage.user('base')]) as _TestChatResponse;
 
-      // 外层中间件在列表前面，结果应该是 M1(M2(base))
+      // The outer middleware appears earlier in the list, so the final result
+      // should be M1(M2(base)).
       expect(response.text, 'M1(M2(base))');
     });
 
@@ -200,7 +201,7 @@ void main() {
 
       expect(events.length, 1);
       final event = events.first as TextDeltaEvent;
-      // 外层 S1 包在最外面：S1(S2(base))
+      // The outer S1 wrapper should be applied last: S1(S2(base)).
       expect(event.delta, 'S1(S2(base))');
     });
 

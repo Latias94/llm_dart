@@ -97,6 +97,7 @@ class SearchParameters {
           'sources': sources!.map((s) => s.toJson()).toList(),
       };
 
-  // WebSearchConfig → SearchParameters 的转换逻辑保留在 XAIConfig 中，
-  // 这里不直接依赖 WebSearchConfig，避免子包对 core 的额外导出要求。
+  // The conversion logic from WebSearchConfig to SearchParameters lives in
+  // XAIConfig. We deliberately avoid depending on WebSearchConfig here to keep
+  // this subpackage decoupled from additional exports in the core package.
 }

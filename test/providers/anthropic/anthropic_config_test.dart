@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/providers/anthropic/request_builder.dart';
 
 void main() {
   group('AnthropicConfig Tests', () {
@@ -228,6 +229,53 @@ void main() {
 
         expect(anthropicConfig.getExtension<String>('customParam'),
             equals('customValue'));
+      });
+
+      test('should enable web search tool when webSearchConfig is set', () {
+        final webSearch = WebSearchConfig.anthropic(
+          maxUses: 3,
+          allowedDomains: ['example.com'],
+          blockedDomains: ['bad.com'],
+          location: WebSearchLocation.newYork(),
+        );
+
+        final llmConfig = LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.anthropic.com',
+          model: 'claude-sonnet-4-20250514',
+          extensions: {
+            LLMConfigKeys.webSearchEnabled: true,
+            LLMConfigKeys.webSearchConfig: webSearch,
+          },
+        );
+
+        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final builder = AnthropicRequestBuilder(anthropicConfig);
+
+        final webSearchTool = Tool.function(
+          name: 'web_search',
+          description: 'Search the web',
+          parameters: ParametersSchema(
+            schemaType: 'object',
+            properties: {
+              'query': ParameterProperty(
+                propertyType: 'string',
+                description: 'The search query to execute',
+              ),
+            },
+            required: const ['query'],
+          ),
+        );
+
+        final converted = builder.convertTool(webSearchTool);
+
+        expect(converted['type'], 'web_search_20250305');
+        expect(converted['name'], 'web_search');
+        expect(converted['max_uses'], 3);
+        expect(converted['allowed_domains'], ['example.com']);
+        expect(converted['blocked_domains'], ['bad.com']);
+        expect(converted['user_location'], isA<Map<String, dynamic>>());
+        expect(converted['user_location']['city'], 'New York');
       });
     });
 

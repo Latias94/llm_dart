@@ -479,11 +479,75 @@ class GoogleChat implements ChatCapability {
     final extraTools = (body['tools'] as List?)?.cast<Map<String, dynamic>>() ??
         <Map<String, dynamic>>[];
 
-    // Google Search grounding tool (google_search).
-    if (config.webSearchEnabled && _supportsGoogleSearchTool) {
-      extraTools.add({
-        'googleSearch': <String, dynamic>{},
-      });
+    // Google Search grounding tools.
+    //
+    // We mirror the Vercel AI SDK semantics:
+    // - For Gemini 2.x / 3.x / latest aliases, use the new googleSearch tool.
+    // - For Gemini 1.5 Flash models that support dynamic retrieval, use
+    //   googleSearchRetrieval with dynamicRetrievalConfig.
+    // - For other non-Gemini-2 models, fall back to basic googleSearchRetrieval.
+    if (config.webSearchEnabled) {
+      final webConfig = config.webSearchConfig;
+
+      // Map unified WebSearchConfig.mode to Google dynamic retrieval modes:
+      // - 'MODE_DYNAMIC' / 'mode_dynamic' -> MODE_DYNAMIC
+      // - 'MODE_UNSPECIFIED' / 'mode_unspecified' -> MODE_UNSPECIFIED
+      // - 'auto'   -> MODE_DYNAMIC      (run retrieval when needed)
+      // - 'on'     -> MODE_UNSPECIFIED  (always allow retrieval)
+      // - 'always' -> MODE_UNSPECIFIED
+      String? dynamicMode;
+      if (webConfig != null && webConfig.mode != null) {
+        final rawMode = webConfig.mode!;
+
+        // Direct Google modes take precedence if provided.
+        if (rawMode == 'MODE_DYNAMIC' || rawMode == 'mode_dynamic') {
+          dynamicMode = 'MODE_DYNAMIC';
+        } else if (rawMode == 'MODE_UNSPECIFIED' ||
+            rawMode == 'mode_unspecified') {
+          dynamicMode = 'MODE_UNSPECIFIED';
+        } else {
+          final mode = rawMode.toLowerCase();
+          if (mode == 'auto') {
+            dynamicMode = 'MODE_DYNAMIC';
+          } else if (mode == 'on' || mode == 'always') {
+            dynamicMode = 'MODE_UNSPECIFIED';
+          }
+        }
+      }
+
+      if (_isGemini2OrNewer) {
+        // Gemini 2.x and newer use the new googleSearch grounding tool.
+        //
+        // Note: The current Google API surface does not expose mode /
+        // dynamicThreshold configuration on this tool, so we intentionally
+        // send an empty config object (same as Vercel).
+        extraTools.add({'googleSearch': <String, dynamic>{}});
+      } else if (_supportsDynamicRetrieval) {
+        // Older Gemini models (1.5 Flash) use googleSearchRetrieval with
+        // dynamicRetrievalConfig. We propagate mode and optional
+        // dynamicThreshold (when provided via WebSearchConfig).
+        final dynamicRetrievalConfig = <String, dynamic>{};
+        if (dynamicMode != null) {
+          dynamicRetrievalConfig['mode'] = dynamicMode;
+        }
+
+        if (webConfig?.dynamicThreshold != null) {
+          dynamicRetrievalConfig['dynamicThreshold'] =
+              webConfig!.dynamicThreshold;
+        }
+
+        extraTools.add({
+          'googleSearchRetrieval': {
+            'dynamicRetrievalConfig': dynamicRetrievalConfig,
+          },
+        });
+      } else {
+        // Fallback for non-Gemini-2 models without dynamic retrieval
+        // support: basic googleSearchRetrieval without extra config.
+        extraTools.add({
+          'googleSearchRetrieval': <String, dynamic>{},
+        });
+      }
     }
 
     // Gemini File Search tool (file_search).
@@ -533,14 +597,38 @@ class GoogleChat implements ChatCapability {
     return body;
   }
 
-  /// Whether current model supports the Google Search grounding tool.
+  /// Whether current model is a "latest" alias that resolves to a modern
+  /// Gemini model.
   ///
-  /// The official docs recommend using `google_search` for Gemini 2.0+
-  /// models. We gate the tool on model id to avoid sending unsupported
-  /// parameters to older endpoints.
-  bool get _supportsGoogleSearchTool {
+  /// We follow the Vercel AI SDK logic:
+  /// - gemini-flash-latest
+  /// - gemini-flash-lite-latest
+  /// - gemini-pro-latest
+  bool get _isLatestModel {
     final model = config.model;
-    return model.contains('gemini-2.');
+    return model == 'gemini-flash-latest' ||
+        model == 'gemini-flash-lite-latest' ||
+        model == 'gemini-pro-latest';
+  }
+
+  /// Whether current model should be treated as Gemini 2.x or newer.
+  ///
+  /// This mirrors Vercel's `isGemini2orNewer` check and is used to decide
+  /// when to enable the new `googleSearch` grounding tool.
+  bool get _isGemini2OrNewer {
+    final model = config.model;
+    return model.contains('gemini-2') ||
+        model.contains('gemini-3') ||
+        _isLatestModel;
+  }
+
+  /// Whether current model supports dynamic retrieval configuration.
+  ///
+  /// Mirrors Vercel's `supportsDynamicRetrieval` logic:
+  /// - gemini-1.5-flash (excluding -8b variants)
+  bool get _supportsDynamicRetrieval {
+    final model = config.model;
+    return model.contains('gemini-1.5-flash') && !model.contains('-8b');
   }
 
   /// Whether current model supports the Gemini File Search tool.

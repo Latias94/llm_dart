@@ -1,12 +1,15 @@
 /// Legacy OpenAI helper APIs.
 ///
-/// 这些方法是早期直接把其他服务当作 OpenAI 兼容端点来用的快捷函数，
-/// 新代码应优先使用：
-/// - `ai().openRouter()` / `ai().groq()` / `ai().deepseek()` 等新的 Builder
-/// - 或 OpenAI-compatible provider 配置（`llm_dart_openai_compatible`）
+/// These helpers were originally added as convenience functions for treating
+/// other providers as OpenAI-compatible HTTP endpoints. New code should prefer:
+/// - Newer builders such as `ai().openRouter()`, `ai().groq()`,
+///   `ai().deepseek()`, etc.
+/// - OpenAI-compatible provider configuration from the
+///   `llm_dart_openai_compatible` package.
 ///
-/// 本文件仅通过 re-export 暴露这些已有的 helper，方便老代码显式
-/// `import 'package:llm_dart/legacy/openai_legacy.dart';` 使用。
+/// This file only re-exports the existing helpers to keep an explicit import
+/// path for legacy code:
+/// `import 'package:llm_dart/legacy/openai_legacy.dart';`.
 library;
 
 export '../providers/openai/openai.dart'

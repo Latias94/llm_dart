@@ -27,6 +27,12 @@ export 'src/models/responses_models.dart';
 // Core utilities
 export 'src/utils/reasoning_utils.dart';
 
+// Core tool validation
+export 'src/core/tool_validator.dart';
+
+// Core web search configuration
+export 'src/core/web_search.dart';
+
 // Additional core APIs (capabilities, config, registry, etc.) will be
 // exported incrementally as we migrate them from the main llm_dart
 // package into this core package.

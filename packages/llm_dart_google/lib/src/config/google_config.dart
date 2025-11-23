@@ -81,9 +81,10 @@ class GoogleConfig {
   final int? embeddingDimensions;
 
   final LLMConfig? _originalConfig;
-  // Stored as dynamic to avoid a hard dependency on the main
-  // package's WebSearchConfig type. We only care about presence.
-  final dynamic webSearchConfig;
+  // Optional unified web search configuration (from LLMConfig).
+  // This is interpreted as Google Search grounding configuration
+  // when web search is enabled for supported models.
+  final WebSearchConfig? webSearchConfig;
   final bool webSearchEnabled;
   final GoogleFileSearchConfig? fileSearchConfig;
   final bool codeExecutionEnabled;
@@ -132,8 +133,8 @@ class GoogleConfig {
   factory GoogleConfig.fromLLMConfig(LLMConfig config) {
     final webSearchEnabled =
         config.getExtension<bool>(LLMConfigKeys.webSearchEnabled) == true;
-    final dynamic webSearchConfig =
-        config.getExtension<dynamic>(LLMConfigKeys.webSearchConfig);
+    final webSearchConfig =
+        config.getExtension<WebSearchConfig>(LLMConfigKeys.webSearchConfig);
     final dynamic rawFileSearchConfig =
         config.getExtension<dynamic>(LLMConfigKeys.googleFileSearchConfig);
 
@@ -295,7 +296,7 @@ class GoogleConfig {
     String? embeddingTaskType,
     String? embeddingTitle,
     int? embeddingDimensions,
-    dynamic webSearchConfig,
+    WebSearchConfig? webSearchConfig,
     bool? webSearchEnabled,
     GoogleFileSearchConfig? fileSearchConfig,
     bool? codeExecutionEnabled,

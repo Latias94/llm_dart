@@ -14,7 +14,43 @@ void main() {
         const tool = OpenAIWebSearchTool();
         final json = tool.toJson();
 
-        expect(json['type'], equals('web_search_preview'));
+        expect(json['type'], equals('web_search'));
+        expect(json.containsKey('filters'), isFalse);
+        expect(json.containsKey('search_context_size'), isFalse);
+        expect(json.containsKey('user_location'), isFalse);
+      });
+
+      test('should serialize with allowedDomains, contextSize and location',
+          () {
+        const tool = OpenAIWebSearchTool(
+          allowedDomains: ['example.com', 'openai.com'],
+          contextSize: WebSearchContextSize.high,
+          location: WebSearchLocation(
+            country: 'US',
+            city: 'San Francisco',
+            region: 'California',
+            timezone: 'America/Los_Angeles',
+          ),
+        );
+
+        final json = tool.toJson();
+
+        expect(json['type'], equals('web_search'));
+
+        final filters = json['filters'] as Map<String, dynamic>?;
+        expect(filters, isNotNull);
+        expect(
+            filters!['allowed_domains'], equals(['example.com', 'openai.com']));
+
+        expect(json['search_context_size'], equals('high'));
+
+        final userLocation = json['user_location'] as Map<String, dynamic>?;
+        expect(userLocation, isNotNull);
+        expect(userLocation!['type'], equals('approximate'));
+        expect(userLocation['country'], equals('US'));
+        expect(userLocation['city'], equals('San Francisco'));
+        expect(userLocation['region'], equals('California'));
+        expect(userLocation['timezone'], equals('America/Los_Angeles'));
       });
 
       test('should create via factory method', () {
