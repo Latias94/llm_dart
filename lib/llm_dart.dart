@@ -67,9 +67,8 @@ export 'utils/default_settings_middleware.dart';
 
 // Convenience functions for creating providers
 import 'builder/llm_builder.dart';
-import 'core/capability.dart';
-import 'core/llm_error.dart';
 import 'models/tool_models.dart';
+import 'utils/message_resolver.dart';
 
 /// Create a new LLM builder instance
 ///
@@ -183,7 +182,7 @@ Future<GenerateTextResult> generateTextWithModel(
   ChatPromptMessage? structuredPrompt,
   CancellationToken? cancelToken,
 }) {
-  final resolvedMessages = _resolveMessagesForTextGeneration(
+  final resolvedMessages = resolveMessagesForTextGeneration(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
@@ -236,7 +235,7 @@ Stream<ChatStreamEvent> streamTextWithModel(
   ChatPromptMessage? structuredPrompt,
   CancellationToken? cancelToken,
 }) async* {
-  final resolvedMessages = _resolveMessagesForTextGeneration(
+  final resolvedMessages = resolveMessagesForTextGeneration(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
@@ -355,7 +354,7 @@ Future<GenerateObjectResult<T>> generateObjectWithModel<T>({
   ChatPromptMessage? structuredPrompt,
   CancellationToken? cancelToken,
 }) async {
-  final resolvedMessages = _resolveMessagesForTextGeneration(
+  final resolvedMessages = resolveMessagesForTextGeneration(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
@@ -579,32 +578,6 @@ StreamObjectResult<T> streamObject<T>({
   return StreamObjectResult<T>(
     events: controller.stream,
     asObject: completer.future,
-  );
-}
-
-/// Resolve input into a list of [ChatMessage]s for text generation.
-///
-/// Exactly one of [prompt], [messages], or [structuredPrompt] must be
-/// provided; otherwise an [ArgumentError] is thrown.
-List<ChatMessage> _resolveMessagesForTextGeneration({
-  String? prompt,
-  List<ChatMessage>? messages,
-  ChatPromptMessage? structuredPrompt,
-}) {
-  if (structuredPrompt != null) {
-    return [ChatMessage.fromPromptMessage(structuredPrompt)];
-  }
-
-  if (messages != null && messages.isNotEmpty) {
-    return messages;
-  }
-
-  if (prompt != null && prompt.isNotEmpty) {
-    return [ChatMessage.user(prompt)];
-  }
-
-  throw ArgumentError(
-    'You must provide either prompt, messages, or structuredPrompt for text generation.',
   );
 }
 

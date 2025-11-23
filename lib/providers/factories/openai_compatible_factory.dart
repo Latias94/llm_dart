@@ -1,7 +1,4 @@
-import '../../core/capability.dart';
-import '../../core/config.dart';
 import '../../core/registry.dart';
-import '../../core/web_search.dart';
 import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
 import 'base_factory.dart';

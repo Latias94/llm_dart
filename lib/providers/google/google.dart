@@ -24,18 +24,47 @@
 library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_google/llm_dart_google.dart' as google_impl;
+import 'package:llm_dart_google/llm_dart_google.dart'
+    show
+        GoogleConfig,
+        GoogleClient,
+        GoogleProvider,
+        GoogleChat,
+        GoogleEmbeddings,
+        GoogleImages,
+        SafetySetting;
 
 import '../../core/provider_defaults.dart';
 import '../../models/chat_models.dart';
 
-export 'package:llm_dart_google/llm_dart_google.dart';
-export 'builder.dart';
+/// Public Google provider surface re-export.
+///
+/// This mirrors the primary Google provider types while keeping internal
+/// implementation details (like HTTP strategies) in the sub-package.
+export 'package:llm_dart_google/llm_dart_google.dart'
+    show
+        // Core config / client / provider
+        GoogleConfig,
+        GoogleClient,
+        GoogleProvider,
 
-// Backwards-compatible aliases for config/provider types.
-typedef GoogleConfig = google_impl.GoogleConfig;
-typedef GoogleProvider = google_impl.GoogleProvider;
-typedef SafetySetting = google_impl.SafetySetting;
+        // Chat / embeddings / images
+        GoogleChat,
+        GoogleChatResponse,
+        GoogleEmbeddings,
+        GoogleImages,
+
+        // Safety & harm configuration
+        SafetySetting,
+        HarmCategory,
+        HarmBlockThreshold,
+
+        // Files API
+        GoogleFilesClient,
+        GoogleFile;
+
+// Builder APIs for configuring Google via LLMBuilder.
+export 'builder.dart';
 
 /// Google Generative AI provider settings (Vercel AI-style).
 ///
@@ -93,9 +122,9 @@ class GoogleGenerativeAI {
   /// Create a chat model for text generation.
   LanguageModel chat(String modelId) {
     final llmConfig = _createLLMConfig(modelId);
-    final config = google_impl.GoogleConfig.fromLLMConfig(llmConfig);
-    final client = google_impl.GoogleClient(config);
-    final chat = google_impl.GoogleChat(client, config);
+    final config = GoogleConfig.fromLLMConfig(llmConfig);
+    final client = GoogleClient(config);
+    final chat = GoogleChat(client, config);
 
     return DefaultLanguageModel(
       providerId: _providerName,
@@ -108,9 +137,9 @@ class GoogleGenerativeAI {
   /// Create an embeddings model.
   EmbeddingCapability embedding(String modelId) {
     final llmConfig = _createLLMConfig(modelId);
-    final config = google_impl.GoogleConfig.fromLLMConfig(llmConfig);
-    final client = google_impl.GoogleClient(config);
-    return google_impl.GoogleEmbeddings(client, config);
+    final config = GoogleConfig.fromLLMConfig(llmConfig);
+    final client = GoogleClient(config);
+    return GoogleEmbeddings(client, config);
   }
 
   /// Alias for [embedding] to mirror the Vercel AI SDK.
@@ -125,9 +154,9 @@ class GoogleGenerativeAI {
   /// Alias for [image] to mirror the Vercel AI SDK.
   ImageGenerationCapability imageModel(String modelId) {
     final llmConfig = _createLLMConfig(modelId);
-    final config = google_impl.GoogleConfig.fromLLMConfig(llmConfig);
-    final client = google_impl.GoogleClient(config);
-    return google_impl.GoogleImages(client, config);
+    final config = GoogleConfig.fromLLMConfig(llmConfig);
+    final client = GoogleClient(config);
+    return GoogleImages(client, config);
   }
 
   LLMConfig _createLLMConfig(String modelId) {

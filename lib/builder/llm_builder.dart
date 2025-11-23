@@ -1,7 +1,4 @@
-import '../core/capability.dart';
-import '../core/config.dart';
 import '../core/registry.dart';
-import '../core/web_search.dart';
 import '../models/tool_models.dart';
 import '../models/chat_models.dart';
 import '../models/audio_models.dart';
@@ -18,28 +15,7 @@ import '../providers/ollama/builder.dart';
 import '../providers/elevenlabs/builder.dart';
 import '../providers/openai/compatible/openrouter/builder.dart';
 import 'http_config.dart';
-
-List<ChatMessage> _resolveMessagesForTextGeneration({
-  String? prompt,
-  List<ChatMessage>? messages,
-  ChatPromptMessage? structuredPrompt,
-}) {
-  if (structuredPrompt != null) {
-    return [ChatMessage.fromPromptMessage(structuredPrompt)];
-  }
-
-  if (messages != null && messages.isNotEmpty) {
-    return messages;
-  }
-
-  if (prompt != null && prompt.isNotEmpty) {
-    return [ChatMessage.user(prompt)];
-  }
-
-  throw ArgumentError(
-    'You must provide either prompt, messages, or structuredPrompt for text generation.',
-  );
-}
+import '../utils/message_resolver.dart';
 
 /// Builder for configuring and instantiating LLM providers
 ///
@@ -703,7 +679,7 @@ class LLMBuilder {
     CancellationToken? cancelToken,
   }) async {
     final provider = await build();
-    final resolvedMessages = _resolveMessagesForTextGeneration(
+    final resolvedMessages = resolveMessagesForTextGeneration(
       prompt: prompt,
       messages: messages,
       structuredPrompt: structuredPrompt,
@@ -740,7 +716,7 @@ class LLMBuilder {
     CancellationToken? cancelToken,
   }) async* {
     final provider = await build();
-    final resolvedMessages = _resolveMessagesForTextGeneration(
+    final resolvedMessages = resolveMessagesForTextGeneration(
       prompt: prompt,
       messages: messages,
       structuredPrompt: structuredPrompt,

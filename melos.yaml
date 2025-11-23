@@ -1,0 +1,15 @@
+name: llm_dart_workspace
+
+packages:
+  - .
+  - packages/**
+
+scripts:
+  analyze:
+    run: dart analyze .
+    description: Run static analysis for the entire workspace.
+
+  test:
+    run: dart test
+    description: Run all tests for the workspace (root package uses dependency_overrides for subpackages).
+

@@ -1,5 +1,4 @@
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -28,7 +27,7 @@ void main() {
       expect(config.model, equals('gemini-1.5-flash'));
       expect(config.timeout, equals(const Duration(seconds: 15)));
 
-      final headers = config.extensions?[LLMConfigKeys.customHeaders];
+      final headers = config.extensions[LLMConfigKeys.customHeaders];
       expect(headers, isA<Map<String, String>>());
       expect(headers['X-Custom'], equals('value'));
     });

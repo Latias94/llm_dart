@@ -1,5 +1,4 @@
 import '../../builder/llm_builder.dart';
-import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import 'config.dart';
 import 'tts.dart';

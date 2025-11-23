@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/llm_dart.dart'
+    hide GoogleClient, GoogleConfig, GoogleFilesClient;
 import 'package:llm_dart_google/llm_dart_google.dart'
     show GoogleClient, GoogleConfig, GoogleFilesClient;
 

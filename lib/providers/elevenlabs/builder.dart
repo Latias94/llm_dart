@@ -1,5 +1,6 @@
 import '../../builder/llm_builder.dart';
 import '../../core/capability.dart';
+import '../../core/config.dart';
 
 /// ElevenLabs-specific LLM builder with provider-specific configuration methods
 ///

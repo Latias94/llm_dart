@@ -28,7 +28,7 @@ Future<void> main() async {
   final chatModel = openai.chat('gpt-4o-mini');
 
   final chatResult = await generateTextWithModel(
-    model: chatModel,
+    chatModel,
     messages: [
       ChatMessage.user('Introduce yourself in one sentence.'),
     ],
@@ -40,7 +40,7 @@ Future<void> main() async {
   final responsesModel = openai.responses('gpt-4.1-mini');
 
   final responsesResult = await generateTextWithModel(
-    model: responsesModel,
+    responsesModel,
     messages: [
       ChatMessage.user(
         'Give me three bullet points about the benefits of Dart.',

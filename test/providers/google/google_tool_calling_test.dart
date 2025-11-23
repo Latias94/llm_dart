@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
 
 class FakeGoogleClient extends GoogleClient {

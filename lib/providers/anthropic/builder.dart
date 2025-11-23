@@ -1,5 +1,6 @@
 import '../../builder/llm_builder.dart';
 import '../../core/capability.dart';
+import '../../core/config.dart';
 import '../../core/web_search.dart';
 import 'mcp_models.dart';
 

@@ -43,7 +43,6 @@ import 'package:llm_dart_xai/llm_dart_xai.dart' as xai_impl;
 
 import '../../core/provider_defaults.dart';
 import 'config.dart';
-import 'provider.dart';
 
 // Core exports
 export 'config.dart';

@@ -1,6 +1,6 @@
-import '../../core/capability.dart';
-import '../../core/config.dart';
 import '../../core/provider_defaults.dart';
+import '../../models/chat_models.dart';
+import '../../models/tool_models.dart';
 import 'base_factory.dart';
 import 'package:llm_dart_groq/llm_dart_groq.dart';
 

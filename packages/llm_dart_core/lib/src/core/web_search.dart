@@ -2,6 +2,7 @@
 ///
 /// This module provides a provider-agnostic interface for configuring
 /// web search functionality across different LLM providers.
+library;
 
 /// Types of web search.
 enum WebSearchType {

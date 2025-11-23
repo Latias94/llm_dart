@@ -2,8 +2,6 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_ollama/llm_dart_ollama.dart';
 import 'package:test/test.dart';
 
 class FakeOllamaClient extends OllamaClient {

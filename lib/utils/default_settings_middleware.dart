@@ -1,4 +1,3 @@
-import '../core/capability.dart';
 import '../models/chat_models.dart';
 import '../models/tool_models.dart';
 
