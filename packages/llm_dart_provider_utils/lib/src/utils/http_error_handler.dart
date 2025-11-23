@@ -182,7 +182,8 @@ class HttpErrorMapper {
     if (errorField is Map<String, dynamic>) {
       error = errorField;
       errorType = error['type'] as String?;
-      errorCode = error['code'] as String?;
+      // Error code can be string or numeric; normalize to string.
+      errorCode = error['code']?.toString();
     } else if (errorField is String) {
       // If error is a string, use it as the error message
       // and try to extract type/code from the message.

@@ -93,6 +93,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `package:llm_dart_provider_utils/llm_dart_provider_utils.dart`
   - `package:llm_dart_openai/llm_dart_openai.dart`, etc.
 
+## [0.10.4] - 2025-11-19
+
+### Fixed
+
+- **Error Message Propagation**: Fixed error responses showing "Instance of 'ResponseBody'" instead of actual API error messages (by [@isegal](https://github.com/isegal) in [#25](https://github.com/Latias94/llm_dart/pull/25))
+  - Made `handleDioError` async to properly read ResponseBody streams
+  - Added proper error message extraction from streamed error responses
+  - Applied fix across all provider clients for consistent error handling
+  - Error messages now display actual API error details for better debugging
+
+## [0.10.3] - 2025-11-17
+
+### Added
+
+- **Google Web Search Support**: Added web search (grounding) capability for Google Gemini models (by [@viumvi](https://github.com/viumvi) in [#24](https://github.com/Latias94/llm_dart/pull/24))
+
+### Fixed
+
+- **Error Code Type Handling**: Fixed error code parsing to handle both string and numeric error codes (by [@viumvi](https://github.com/viumvi) in [#22](https://github.com/Latias94/llm_dart/pull/22))
+  - Fixed `error['code']` casting issue when API returns numeric error codes
+  - Applied fix to OpenAI client SSE stream error handling
+  - Applied fix to HTTP error mapper for consistent error code handling
+
+- **Google Image Generation Aspect Ratio**: Added support for aspect ratio configuration in Google image generation (by [@viumvi](https://github.com/viumvi) in [#22](https://github.com/Latias94/llm_dart/pull/22))
+  - Added `aspectRatio` parameter to `imageConfig` in generation request
+  - Supports custom image sizes through `request.size` parameter
+
 ## [0.10.2] - 2025-11-13
 
 ### Fixed

@@ -91,7 +91,8 @@ class OpenAIClient {
           if (error != null) {
             final message = error['message']?.toString() ?? 'Unknown error';
             final type = error['type'] as String?;
-            final code = error['code'] as String?;
+            // Error code can be string or numeric; normalize to string.
+            final code = error['code']?.toString();
 
             throw ResponseFormatError(
               'SSE stream error: $message'

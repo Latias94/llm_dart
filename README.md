@@ -46,7 +46,7 @@ A modular Dart library for AI provider interactions. This library provides a uni
 |----------|------|-----------|-------|----------|-------|-------|-------|------------|------------|------------|-------|
 | OpenAI | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | GPT models, DALL-E, o1 reasoning |
 | Anthropic | ✅ | ✅ | ✅ | 🧠 | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ | Claude models with thinking |
-| Google | ✅ | ✅ | ✅ | 🧠 | ✅ | ✅ | ❌ | ❌ | ✅ | ❌ | Gemini models with reasoning |
+| Google | ✅ | ✅ | ✅ | 🧠 | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ | Gemini models with reasoning |
 | DeepSeek | ✅ | ✅ | ✅ | 🧠 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | DeepSeek reasoning models |
 | Groq | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | Ultra-fast inference |
 | Ollama | ✅ | ✅ | ✅ | 🧠 | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | Local models, privacy-focused |
