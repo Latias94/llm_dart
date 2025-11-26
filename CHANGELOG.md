@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **OpenAI Chat Streaming Tool Calls**: Fixed missing tool call IDs when using streaming tool calls with the OpenAI Chat Completions API ([#27](https://github.com/Latias94/llm_dart/pull/27))
+- **OpenAI Chat Streaming Tool Calls**: Fixed missing tool call IDs when using streaming tool calls with the OpenAI Chat Completions API (by [@ibercovich](https://github.com/ibercovich) in [#27](https://github.com/Latias94/llm_dart/pull/27))
   - Track tool call IDs by `index` across streaming chunks so that each `ToolCallDeltaEvent` has a stable `toolCall.id`.
 
 ## [0.10.4] - 2025-11-19
