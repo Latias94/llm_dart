@@ -22,6 +22,7 @@ class OpenAIChat implements ChatCapability {
   bool _hasReasoningContent = false;
   String _lastChunk = '';
   final StringBuffer _thinkingBuffer = StringBuffer();
+  final Map<int, String> _toolCallIds = {};
 
   OpenAIChat(this.client, this.config);
 
@@ -345,6 +346,7 @@ class OpenAIChat implements ChatCapability {
     _hasReasoningContent = false;
     _lastChunk = '';
     _thinkingBuffer.clear();
+    _toolCallIds.clear();
   }
 
   /// Parse stream events with reasoning support
@@ -412,12 +414,45 @@ class OpenAIChat implements ChatCapability {
     // Handle tool calls
     final toolCalls = delta['tool_calls'] as List?;
     if (toolCalls != null && toolCalls.isNotEmpty) {
-      final toolCall = toolCalls.first as Map<String, dynamic>;
-      if (toolCall.containsKey('id') && toolCall.containsKey('function')) {
+      final toolCallMap = toolCalls.first as Map<String, dynamic>;
+      final index = toolCallMap['index'] as int?;
+      
+      if (index != null) {
+        // If ID is present, store it
+        if (toolCallMap.containsKey('id')) {
+          final id = toolCallMap['id'] as String;
+          _toolCallIds[index] = id;
+        }
+        
+        // If we have an ID for this index (either just stored or from before), emit event
+        if (_toolCallIds.containsKey(index)) {
+          final id = _toolCallIds[index]!;
+          
+          // Construct a valid ToolCall delta even if ID is missing in this chunk
+          final functionMap = toolCallMap['function'] as Map<String, dynamic>?;
+          if (functionMap != null) {
+            final name = functionMap['name'] as String? ?? '';
+            final args = functionMap['arguments'] as String? ?? '';
+            
+            // Only emit if we have something to update
+            if (name.isNotEmpty || args.isNotEmpty) {
+              final toolCall = ToolCall(
+                id: id,
+                callType: 'function',
+                function: FunctionCall(
+                  name: name,
+                  arguments: args,
+                ),
+              );
+              events.add(ToolCallDeltaEvent(toolCall));
+            }
+          }
+        }
+      } else if (toolCallMap.containsKey('id') && toolCallMap.containsKey('function')) {
+        // Fallback for non-indexed tool calls (rare in streams but possible)
         try {
-          events.add(ToolCallDeltaEvent(ToolCall.fromJson(toolCall)));
+          events.add(ToolCallDeltaEvent(ToolCall.fromJson(toolCallMap)));
         } catch (e) {
-          // Skip malformed tool calls
           client.logger.warning('Failed to parse tool call: $e');
         }
       }
