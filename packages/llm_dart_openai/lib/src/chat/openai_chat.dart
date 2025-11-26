@@ -18,6 +18,12 @@ class OpenAIChat implements ChatCapability {
   bool _hasReasoningContent = false;
   String _lastChunk = '';
   final StringBuffer _thinkingBuffer = StringBuffer();
+  // Track tool call IDs by index for streaming tool calls.
+  // OpenAI sends tool calls in multiple chunks: the first chunk usually
+  // contains id/index, while subsequent chunks often only contain index and
+  // incremental arguments. This map preserves a stable id per index so that
+  // every ToolCallDeltaEvent has a consistent toolCall.id.
+  final Map<int, String> _toolCallIds = {};
 
   OpenAIChat(this.client, this.config);
 
@@ -339,6 +345,7 @@ class OpenAIChat implements ChatCapability {
     _hasReasoningContent = false;
     _lastChunk = '';
     _thinkingBuffer.clear();
+    _toolCallIds.clear();
   }
 
   /// Parse stream events with reasoning support
@@ -403,15 +410,55 @@ class OpenAIChat implements ChatCapability {
       events.add(TextDeltaEvent(content));
     }
 
-    // Handle tool calls
+    // Handle tool calls.
+    //
+    // OpenAI streams tool_calls in multiple chunks:
+    // - The first chunk typically has index + id + function.name + initial arguments
+    // - Subsequent chunks usually have only index + function.arguments deltas
+    //
+    // We cache id by index and reuse it for each chunk so that every
+    // ToolCallDeltaEvent carries a stable toolCall.id that callers can rely on.
     final toolCalls = delta['tool_calls'] as List?;
     if (toolCalls != null && toolCalls.isNotEmpty) {
-      final toolCall = toolCalls.first as Map<String, dynamic>;
-      if (toolCall.containsKey('id') && toolCall.containsKey('function')) {
+      final toolCallMap = toolCalls.first as Map<String, dynamic>;
+      final index = toolCallMap['index'] as int?;
+
+      if (index != null) {
+        // If this chunk contains an id, update the mapping.
+        final id = toolCallMap['id'] as String?;
+        if (id != null && id.isNotEmpty) {
+          _toolCallIds[index] = id;
+        }
+
+        // Look up the stable id for this index (from this or a previous chunk).
+        final stableId = _toolCallIds[index];
+        if (stableId != null) {
+          final functionMap =
+              toolCallMap['function'] as Map<String, dynamic>?;
+          if (functionMap != null) {
+            final name = functionMap['name'] as String? ?? '';
+            final args = functionMap['arguments'] as String? ?? '';
+
+            // Only emit events for meaningful deltas to avoid noise.
+            if (name.isNotEmpty || args.isNotEmpty) {
+              final toolCall = ToolCall(
+                id: stableId,
+                callType: 'function',
+                function: FunctionCall(
+                  name: name,
+                  arguments: args,
+                ),
+              );
+              events.add(ToolCallDeltaEvent(toolCall));
+            }
+          }
+        }
+      } else if (toolCallMap.containsKey('id') &&
+          toolCallMap.containsKey('function')) {
+        // Fallback: handle tool calls that provide a full object without index.
         try {
-          events.add(ToolCallDeltaEvent(ToolCall.fromJson(toolCall)));
+          events.add(ToolCallDeltaEvent(ToolCall.fromJson(toolCallMap)));
         } catch (e) {
-          // Skip malformed tool calls
           client.logger.warning('Failed to parse tool call: $e');
         }
       }
