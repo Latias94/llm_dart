@@ -7,3 +7,4 @@ typedef OpenAIResponses = openai.OpenAIResponses;
 
 /// Backwards-compatible alias for the OpenAI Responses API response type.
 typedef OpenAIResponsesResponse = openai.OpenAIResponsesResponse;
+

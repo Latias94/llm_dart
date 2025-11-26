@@ -102,6 +102,7 @@ Future<void> _processStreamingToolUse(
   var toolCallsCollected = <ToolCall>[];
   var hasToolCalls = false;
   var initialResponseText = '';
+  final toolCallAggregator = ToolCallAggregator();
 
   print('   📡 Starting streaming request to LLM...');
 
@@ -126,6 +127,7 @@ Future<void> _processStreamingToolUse(
         print('      📋 Arguments: ${toolCall.function.arguments}');
         print('      🆔 Call ID: ${toolCall.id}');
         toolCallsCollected.add(toolCall);
+        toolCallAggregator.addDelta(toolCall);
         break;
 
       case CompletionEvent():
@@ -134,8 +136,13 @@ Future<void> _processStreamingToolUse(
 
           // Execute tools with detailed logging
           final toolResults = <ToolCall>[];
-          for (int i = 0; i < toolCallsCollected.length; i++) {
-            final toolCall = toolCallsCollected[i];
+          final aggregatedToolCalls = toolCallAggregator.completedCalls;
+          final callsToUse = aggregatedToolCalls.isNotEmpty
+              ? aggregatedToolCalls
+              : toolCallsCollected;
+
+          for (int i = 0; i < callsToUse.length; i++) {
+            final toolCall = callsToUse[i];
             print('      Step ${i + 1}: Executing ${toolCall.function.name}');
 
             final result = await _executeMcpTool(
@@ -156,7 +163,7 @@ Future<void> _processStreamingToolUse(
 
           // Add tool results to conversation
           conversation.addAll([
-            ChatMessage.toolUse(toolCalls: toolCallsCollected),
+            ChatMessage.toolUse(toolCalls: callsToUse),
             ChatMessage.toolResult(results: toolResults),
           ]);
 

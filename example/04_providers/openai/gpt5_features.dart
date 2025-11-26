@@ -7,7 +7,7 @@ import 'package:llm_dart/llm_dart.dart';
 /// This example shows how to use GPT-5's new capabilities:
 /// - Verbosity control for output detail
 /// - Minimal reasoning effort for faster responses
-/// - GPT-5 model variants (gpt-5, gpt-5-mini, gpt-5-nano)
+/// - GPT-5 model variants (gpt-5.1, gpt-5-mini, gpt-5-nano)
 Future<void> main() async {
   // Get API key from environment
   final apiKey = Platform.environment['OPENAI_API_KEY'];
@@ -39,7 +39,7 @@ Future<void> demonstrateVerbosity(String apiKey) async {
   final lowProvider = await ai()
       .openai((openai) => openai.verbosity(Verbosity.low))
       .apiKey(apiKey)
-      .model('gpt-5')
+      .model('gpt-5.1')
       .build();
 
   final lowResponse = await lowProvider.chat([
@@ -52,7 +52,7 @@ Future<void> demonstrateVerbosity(String apiKey) async {
   final highProvider = await ai()
       .openai((openai) => openai.verbosity(Verbosity.high))
       .apiKey(apiKey)
-      .model('gpt-5')
+      .model('gpt-5.1')
       .timeout(Duration(minutes: 5)) // Longer timeout for high verbosity
       .build();
 
@@ -71,7 +71,7 @@ Future<void> demonstrateMinimalReasoning(String apiKey) async {
   final provider = await ai()
       .openai()
       .apiKey(apiKey)
-      .model('gpt-5')
+      .model('gpt-5-mini')
       .reasoningEffort(ReasoningEffort.minimal) // New minimal option
       .build();
 
@@ -90,7 +90,7 @@ Future<void> demonstrateMinimalReasoning(String apiKey) async {
 Future<void> compareModelVariants(String apiKey) async {
   print('--- GPT-5 Model Variants ---');
 
-  final models = ['gpt-5', 'gpt-5-mini', 'gpt-5-nano'];
+  final models = ['gpt-5.1', 'gpt-5-mini', 'gpt-5-nano'];
   final question = 'Write a haiku about artificial intelligence.';
 
   for (final model in models) {

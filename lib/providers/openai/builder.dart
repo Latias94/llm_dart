@@ -105,21 +105,22 @@ class OpenAIBuilder {
     return this;
   }
 
-  /// Sets verbosity level for GPT-5 models
+  /// Sets verbosity level for GPT-5 family models
   ///
   /// Controls how expansive the model's responses are:
   /// - `Verbosity.low`: Terse, minimal prose
   /// - `Verbosity.medium`: Balanced detail (default)
   /// - `Verbosity.high`: Verbose, great for audits, teaching, or hand-offs
   ///
-  /// This parameter is specific to GPT-5 series models and allows you to
+  /// This parameter is specific to GPT-5 series models (gpt-5.1, gpt-5,
+  /// gpt-5-mini, gpt-5-nano) and allows you to
   /// control output length and detail without changing your prompts.
   ///
   /// Example:
   /// ```dart
   /// final provider = await ai()
   ///     .openai((openai) => openai.verbosity(Verbosity.high))
-  ///     .model('gpt-5')
+  ///     .model('gpt-5.1') // Recommended GPT-5 family model
   ///     .build();
   /// ```
   OpenAIBuilder verbosity(Verbosity level) {
@@ -142,7 +143,7 @@ class OpenAIBuilder {
   ///         .useResponsesAPI()
   ///         .webSearchTool())
   ///     .apiKey(apiKey)
-  ///     .model('gpt-4o')
+  ///     .model('gpt-5-mini')
   ///     .build();
   /// ```
   OpenAIBuilder useResponsesAPI([bool use = true]) {

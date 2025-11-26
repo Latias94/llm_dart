@@ -483,6 +483,8 @@ Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
 
     var conversation = List<ChatMessage>.from(messages);
     var toolCallsCollected = <ToolCall>[];
+    final toolCallAggregator = ToolCallAggregator();
+    final loggedToolCallIds = <String>{};
 
     await for (final event in provider.chatStream(conversation, tools: tools)) {
       switch (event) {
@@ -491,8 +493,15 @@ Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
           break;
 
         case ToolCallDeltaEvent(toolCall: final toolCall):
-          print('\n   🔧 Tool call detected: ${toolCall.function.name}');
+          // Only log the first delta for each tool call ID to avoid noisy output
+          if (loggedToolCallIds.add(toolCall.id)) {
+            final name = toolCall.function.name.isNotEmpty
+                ? toolCall.function.name
+                : 'tool_call';
+            print('\n   🔧 Tool call detected: $name (id: ${toolCall.id})');
+          }
           toolCallsCollected.add(toolCall);
+          toolCallAggregator.addDelta(toolCall);
           break;
 
         case CompletionEvent(response: final response):
@@ -500,16 +509,18 @@ Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
 
           // If there were tool calls, execute them and continue
           if (toolCallsCollected.isNotEmpty) {
-            print('   Executing ${toolCallsCollected.length} tool calls...');
+            final aggregatedToolCalls = toolCallAggregator.completedCalls;
+            print(
+                '   Executing ${aggregatedToolCalls.length} aggregated tool calls...');
 
             // Add assistant message with tool calls
             conversation.add(ChatMessage.toolUse(
-              toolCalls: toolCallsCollected,
+              toolCalls: aggregatedToolCalls,
               content: response.text ?? '',
             ));
 
             // Execute tools and add results
-            for (final toolCall in toolCallsCollected) {
+            for (final toolCall in aggregatedToolCalls) {
               final result = await executeFunction(toolCall);
               print('   📄 ${toolCall.function.name} result: $result');
 
@@ -614,9 +625,17 @@ Future<void> demonstrateToolErrorHandling(ChatCapability provider) async {
       }
 
       // Get final response with error handling
-      final finalResponse = await provider.chat(conversation);
-      print('   AI: ${finalResponse.text}');
-      print('   ✅ Error handling demonstration successful\n');
+      try {
+        final finalResponse = await provider.chat(conversation);
+        print('   AI: ${finalResponse.text}');
+        print('   ✅ Error handling demonstration successful\n');
+      } catch (e) {
+        // Even if the final LLM call fails, the example still demonstrates
+        // how to surface and handle tool errors gracefully.
+        print('   ⚠️  Final AI response failed: $e');
+        print(
+            '   ✅ Error handling demonstration completed (tool errors handled)\n');
+      }
     } else {
       print('   ℹ️  AI chose not to use tools: ${response.text}\n');
     }
@@ -720,29 +739,65 @@ Future<void> demonstrateComplexWorkflow(ChatCapability provider) async {
     for (var round = 0; round < maxSteps; round++) {
       final response = await provider.chatWithTools(conversation, tools);
 
-      if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
+      final toolCalls = response.toolCalls;
+      if (toolCalls != null && toolCalls.isNotEmpty) {
         print(
-            '   🔧 Step $stepCount - AI executing ${response.toolCalls!.length} tools:');
+            '   🔧 Step $stepCount - AI executing ${toolCalls.length} tools:');
 
         // Add the assistant's tool call message
         conversation.add(ChatMessage.toolUse(
-          toolCalls: response.toolCalls!,
+          toolCalls: toolCalls,
           content: response.text ?? '',
         ));
 
-        // Execute all tool calls in this step
-        for (final toolCall in response.toolCalls!) {
-          print('      • ${toolCall.function.name}');
+        // Group tool calls by function name for more compact logging
+        final callsByName = <String, List<ToolCall>>{};
+        for (final toolCall in toolCalls) {
+          callsByName
+              .putIfAbsent(toolCall.function.name, () => <ToolCall>[])
+              .add(toolCall);
+        }
 
-          final result = await executeFunction(toolCall);
-          print(
-              '        → ${result.length > 100 ? '${result.substring(0, 100)}...' : result}');
+        for (final entry in callsByName.entries) {
+          final name = entry.key;
+          final calls = entry.value;
 
-          // Add tool result
-          conversation.add(ChatMessage.toolResult(
-            results: [toolCall],
-            content: result,
-          ));
+          if (calls.length == 1) {
+            // Single call for this tool
+            final toolCall = calls.first;
+            print('      • $name');
+
+            final result = await executeFunction(toolCall);
+            final display =
+                result.length > 100 ? '${result.substring(0, 100)}...' : result;
+            print('        → $display');
+
+            conversation.add(ChatMessage.toolResult(
+              results: [toolCall],
+              content: result,
+            ));
+          } else {
+            // Multiple calls for the same tool in this step
+            print('      • $name (x${calls.length})');
+
+            for (var i = 0; i < calls.length; i++) {
+              final toolCall = calls[i];
+              final result = await executeFunction(toolCall);
+              final display = result.length > 100
+                  ? '${result.substring(0, 100)}...'
+                  : result;
+
+              // Only print the first result in detail to keep logs compact
+              if (i == 0) {
+                print('        → $display');
+              }
+
+              conversation.add(ChatMessage.toolResult(
+                results: [toolCall],
+                content: result,
+              ));
+            }
+          }
         }
 
         stepCount++;

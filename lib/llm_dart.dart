@@ -64,6 +64,7 @@ export 'utils/http_error_handler.dart';
 export 'utils/http_response_handler.dart';
 export 'utils/logging_middleware.dart';
 export 'utils/default_settings_middleware.dart';
+export 'utils/tool_call_aggregator.dart';
 
 // Convenience functions for creating providers
 import 'builder/llm_builder.dart';

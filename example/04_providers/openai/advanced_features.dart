@@ -5,7 +5,7 @@ import 'package:llm_dart/llm_dart.dart';
 /// 🔵 OpenAI Advanced Features - Reasoning, Function Calling, and Assistants
 ///
 /// This example demonstrates advanced OpenAI capabilities:
-/// - Reasoning models (o1 series) with thinking process
+/// - Reasoning models (GPT-5.1) with thinking process
 /// - Function calling and tool usage
 /// - Assistants API integration
 /// - Advanced configuration options
@@ -28,16 +28,15 @@ void main() async {
   print('\n✅ OpenAI advanced features completed!');
 }
 
-/// Demonstrate reasoning models (o1 series)
+/// Demonstrate reasoning models (GPT-5.1)
 Future<void> demonstrateReasoningModels(String apiKey) async {
-  print('🧠 Reasoning Models (o1 Series):\n');
+  print('🧠 Reasoning Models (GPT-5.1):\n');
 
   final reasoningModels = [
     {
-      'name': 'o1-preview',
-      'description': 'Advanced reasoning for complex problems'
+      'name': 'gpt-5.1',
+      'description': 'Advanced reasoning for complex, multi-step problems',
     },
-    {'name': 'o1-mini', 'description': 'Fast reasoning for simpler tasks'},
   ];
 
   const complexProblem = '''
@@ -86,8 +85,7 @@ Show your reasoning step by step.
   }
 
   print('   💡 Reasoning Model Tips:');
-  print('      • Use o1-preview for complex mathematical/logical problems');
-  print('      • Use o1-mini for faster reasoning on simpler tasks');
+  print('      • Use gpt-5.1 for complex mathematical/logical problems');
   print('      • Allow longer timeouts for complex reasoning');
   print('      • Access thinking process for transparency');
   print('   ✅ Reasoning models demonstration completed\n');
@@ -101,7 +99,7 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
     final provider = await ai()
         .openai()
         .apiKey(apiKey)
-        .model('gpt-4o')
+        .model('gpt-5.1')
         .temperature(0.3)
         .build();
 
@@ -145,13 +143,13 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
 
     // Test function calling
     print('   Testing function calling with multiple tools...');
-    final response = await provider.chatWithTools([
-      ChatMessage.user(
-          'What\'s the weather like in Tokyo and calculate 15 * 23?')
-    ], tools);
+    const question = 'What\'s the weather like in Tokyo and calculate 15 * 23?';
 
-    print(
-        '      User: What\'s the weather like in Tokyo and calculate 15 * 23?');
+    final messages = [ChatMessage.user(question)];
+
+    final response = await provider.chatWithTools(messages, tools);
+
+    print('      User: $question');
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
       print('      🔧 Tool calls made:');
@@ -160,8 +158,14 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
             '         ${toolCall.function.name}: ${toolCall.function.arguments}');
       }
 
-      // Simulate tool execution and continue conversation
-      final toolResults = <ChatMessage>[];
+      // Build conversation with tool call message
+      final conversation = List<ChatMessage>.from(messages)
+        ..add(ChatMessage.toolUse(
+          toolCalls: response.toolCalls!,
+          content: response.text ?? '',
+        ));
+
+      // Simulate tool execution and add tool results
       for (final toolCall in response.toolCalls!) {
         String result;
         if (toolCall.function.name == 'get_weather') {
@@ -172,19 +176,14 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
           result = '{"error": "Unknown function"}';
         }
 
-        toolResults.add(ChatMessage.toolResult(
+        conversation.add(ChatMessage.toolResult(
           results: [toolCall],
           content: result,
         ));
       }
 
       // Continue conversation with tool results
-      final finalResponse = await provider.chat([
-        ChatMessage.user(
-            'What\'s the weather like in Tokyo and calculate 15 * 23?'),
-        ChatMessage.assistant(response.text ?? ''),
-        ...toolResults,
-      ]);
+      final finalResponse = await provider.chat(conversation);
 
       print('      Final response: ${finalResponse.text}');
     } else {
@@ -202,7 +201,8 @@ Future<void> demonstrateAssistantsAPI(String apiKey) async {
   print('🤖 Assistants API:\n');
 
   try {
-    final provider = await ai().openai().apiKey(apiKey).model('gpt-4o').build();
+    final provider =
+        await ai().openai().apiKey(apiKey).model('gpt-5.1').build();
 
     print('   Note: Assistants API requires OpenAI-specific implementation');
     print(
@@ -238,7 +238,7 @@ Future<void> demonstrateAdvancedConfiguration(String apiKey) async {
     final provider = await ai()
         .openai()
         .apiKey(apiKey)
-        .model('gpt-4o')
+        .model('gpt-5.1')
         .temperature(0.1)
         .build();
 
@@ -263,30 +263,37 @@ Return JSON with fields: name, age, job, company, location, experience_years
     final advancedProvider = await ai()
         .openai()
         .apiKey(apiKey)
-        .model('gpt-4o')
+        .model('gpt-5.1')
         .temperature(0.7)
         .topP(0.9)
         .extension('frequencyPenalty', 0.1)
         .extension('presencePenalty', 0.1)
         .maxTokens(500)
         .extension('seed', 42) // For reproducible outputs
-        .extension('logitBias', {50256: -100}) // Bias against specific tokens
+        .extension('logitBias', {
+      '50256': -100.0,
+    }) // Bias against specific tokens
         .build();
 
     final response = await advancedProvider
         .chat([ChatMessage.user('Write a creative short story about AI.')]);
 
-    print(
-        '      Advanced config response: ${response.text?.substring(0, 200)}...');
+    final fullText = response.text ?? '';
+    final previewLength = fullText.length < 200 ? fullText.length : 200;
+    final preview = fullText.substring(0, previewLength);
+
+    print('      Advanced config response: $preview...');
   } catch (e) {
     print('      ❌ Advanced config error: $e');
   }
 
   print('\n   💡 Advanced Configuration Tips:');
   print('      • Use structured output for data extraction');
-  print('      • Adjust frequency/presence penalties to reduce repetition');
+  print(
+      '      • For non-reasoning models (e.g. gpt-4.1, gpt-4o), adjust frequency/presence penalties to reduce repetition');
+  print(
+      '      • For reasoning models (GPT-5 family), focus on settings like seed or service tier instead');
   print('      • Use seed for reproducible outputs in testing');
-  print('      • Logit bias can guide model behavior');
   print('   ✅ Advanced configuration demonstration completed\n');
 }
 
@@ -298,11 +305,11 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
     final provider = await ai()
         .openai()
         .apiKey(apiKey)
-        .model('gpt-4o')
+        .model('gpt-5.1')
         .temperature(0.7)
         .build();
 
-    print('   Streaming with function calls...');
+    print('   Streaming with function calls (two-pass flow)...');
 
     final weatherTool = Tool.function(
       name: 'get_weather',
@@ -319,28 +326,34 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
       ),
     );
 
-    var textContent = StringBuffer();
-    var hasToolCalls = false;
+    const question =
+        'Tell me about the weather in Paris and write a short poem about it.';
 
-    await for (final event in provider.chatStream([
-      ChatMessage.user(
-          'Tell me about the weather in Paris and write a short poem about it.')
-    ], tools: [
-      weatherTool
-    ])) {
+    final tools = [weatherTool];
+    final messages = [ChatMessage.user(question)];
+
+    // First pass: stream planning + tool calls
+    final planningText = StringBuffer();
+    final streamedToolCalls = <ToolCall>[];
+    final aggregator = ToolCallAggregator();
+    var toolCallsDetected = false;
+
+    await for (final event in provider.chatStream(messages, tools: tools)) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
-          textContent.write(delta);
+          planningText.write(delta);
           stdout.write(delta);
           break;
-        case ToolCallDeltaEvent():
-          if (!hasToolCalls) {
-            print('\n\n🔧 Tool call detected');
-            hasToolCalls = true;
+        case ToolCallDeltaEvent(toolCall: final call):
+          if (!toolCallsDetected) {
+            print('\n\n🔧 Tool call detected in stream');
+            toolCallsDetected = true;
           }
+          streamedToolCalls.add(call);
+          aggregator.addDelta(call);
           break;
         case CompletionEvent(response: final response):
-          print('\n\n✅ Streaming completed');
+          print('\n\n✅ First streaming pass completed');
           if (response.usage != null) {
             print('   Tokens used: ${response.usage!.totalTokens}');
           }
@@ -354,9 +367,72 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
       }
     }
 
-    print('\n   Content length: ${textContent.length} characters');
-    print('   Had tool calls: $hasToolCalls');
+    final completedToolCalls = aggregator.completedCalls;
 
+    print('\n   First pass text length: ${planningText.length} characters');
+    print('   Tool calls (stream deltas): ${streamedToolCalls.length}');
+    print('   Tool calls (aggregated): ${completedToolCalls.length}');
+
+    if (completedToolCalls.isEmpty) {
+      print('   ℹ️  Model did not call tools during streaming\n');
+      print('   ✅ Advanced streaming demonstration completed\n');
+      return;
+    }
+
+    // Simulate tool execution based on streamed tool calls
+    final conversation = <ChatMessage>[
+      ChatMessage.user(question),
+      ChatMessage.toolUse(
+        toolCalls: completedToolCalls,
+        content: planningText.toString(),
+      ),
+    ];
+
+    for (final toolCall in completedToolCalls) {
+      String result;
+      if (toolCall.function.name == 'get_weather') {
+        result = '{"temperature": 22, "condition": "sunny", "humidity": 65}';
+      } else {
+        result = '{"error": "Unknown function"}';
+      }
+
+      conversation.add(ChatMessage.toolResult(
+        results: [toolCall],
+        content: result,
+      ));
+    }
+
+    // Second pass: stream final answer with tool results
+    print('\n   Streaming final answer with tool results...');
+
+    final finalText = StringBuffer();
+
+    await for (final event in provider.chatStream(conversation)) {
+      switch (event) {
+        case TextDeltaEvent(delta: final delta):
+          finalText.write(delta);
+          stdout.write(delta);
+          break;
+        case ToolCallDeltaEvent():
+          // In the second pass we expect the model to use the tool results
+          // directly and not call tools again, so we ignore extra tool calls.
+          break;
+        case CompletionEvent(response: final response):
+          print('\n\n✅ Second streaming pass completed');
+          if (response.usage != null) {
+            print('   Tokens used: ${response.usage!.totalTokens}');
+          }
+          break;
+        case ErrorEvent(error: final error):
+          print('\n❌ Stream error: $error');
+          break;
+        case ThinkingDeltaEvent():
+          // Handle thinking events if needed
+          break;
+      }
+    }
+
+    print('\n   Final streamed answer length: ${finalText.length} characters');
     print('   ✅ Advanced streaming demonstration completed\n');
   } catch (e) {
     print('   ❌ Advanced streaming failed: $e\n');
@@ -365,9 +441,9 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
 
 /// 🎯 Key OpenAI Advanced Concepts Summary:
 ///
-/// Reasoning Models (o1 Series):
-/// - o1-preview: Complex reasoning and problem solving
-/// - o1-mini: Faster reasoning for simpler tasks
+/// Reasoning Models (GPT-5 Series):
+/// - gpt-5.1: Advanced reasoning and problem solving
+/// - gpt-5-mini: Faster, cost-efficient reasoning for simpler tasks
 /// - Thinking process access for transparency
 /// - Extended timeouts for complex problems
 ///

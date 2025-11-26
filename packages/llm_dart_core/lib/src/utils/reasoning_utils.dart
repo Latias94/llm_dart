@@ -118,27 +118,51 @@ class ReasoningUtils {
     return content;
   }
 
-  /// Check if the model is an OpenAI reasoning model (o1, o3, o4 series)
-  /// This is used for specific OpenAI API parameter handling
+  /// Check if the model is an OpenAI reasoning model.
+  ///
+  /// This follows the same semantics as the TypeScript implementation:
+  /// - Non-reasoning chat models like gpt-3.*, gpt-4.*, chatgpt-4o, gpt-5-chat*
+  ///   are treated as standard models.
+  /// - All other OpenAI models (o1/o3/o4 series, GPT‑5 family, etc.) are
+  ///   treated as reasoning models and use `max_completion_tokens` instead
+  ///   of `max_tokens` and may have stricter parameter support.
   static bool isOpenAIReasoningModel(String model) {
-    return model.startsWith('o1') ||
-        model.startsWith('o3') ||
-        model.startsWith('o4');
+    final id = model.toLowerCase();
+
+    // Explicit non-reasoning chat families
+    if (id.startsWith('gpt-3')) return false;
+    if (id.startsWith('gpt-4')) return false;
+    if (id.startsWith('chatgpt-4o')) return false;
+    if (id.startsWith('gpt-5-chat')) return false;
+
+    // Everything else (o1/o3/o4, gpt-5, gpt-5.1, gpt-5-mini/nano/pro, etc.)
+    return true;
   }
 
   /// Check if the model is known to support reasoning (broader check)
   /// This is a hint for UI behavior, but actual reasoning detection
   /// should be based on response content, not model name
   static bool isKnownReasoningModel(String model) {
-    return isOpenAIReasoningModel(model) ||
+    final id = model.toLowerCase();
+
+    // Restrict OpenAI reasoning detection to known OpenAI-style ids
+    final isOpenAIModel = id.startsWith('gpt-') ||
+        id.startsWith('o1') ||
+        id.startsWith('o3') ||
+        id.startsWith('o4');
+
+    final isOpenAIReasoning =
+        isOpenAIModel && isOpenAIReasoningModel(model);
+
+    return isOpenAIReasoning ||
         model == 'deepseek-reasoner' ||
         model == 'deepseek-r1' ||
         model.contains('claude-3.7-sonnet') ||
         model.contains('claude-opus-4') ||
         model.contains('claude-sonnet-4') ||
         model.contains('qwen') && model.contains('reasoning') ||
-        model.toLowerCase().contains('reasoning') ||
-        model.toLowerCase().contains('thinking');
+        id.contains('reasoning') ||
+        id.contains('thinking');
   }
 
   /// Get reasoning effort parameter for different providers
