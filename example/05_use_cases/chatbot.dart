@@ -114,33 +114,29 @@ class Chatbot {
       // Add user message to history
       _addToHistory(ChatMessage.user(userInput));
 
-      // Get AI response with streaming
+      // Get AI response with streaming (high-level parts)
       final responseBuffer = StringBuffer();
 
-      await for (final event
-          in _builder.streamText(messages: _getContextMessages())) {
-        switch (event) {
-          case TextDeltaEvent(delta: final delta):
+      await for (final part
+          in _builder.streamTextParts(messages: _getContextMessages())) {
+        switch (part) {
+          case StreamTextDelta(delta: final delta):
             stdout.write(delta);
             responseBuffer.write(delta);
             break;
 
-          case CompletionEvent(response: final response):
+          case StreamFinish(result: final result):
             // Add complete response to history
             _addToHistory(ChatMessage.assistant(responseBuffer.toString()));
 
             // Log usage statistics
-            if (response.usage != null) {
-              _logUsage(response.usage!);
+            if (result.usage != null) {
+              _logUsage(result.usage!);
             }
             break;
 
-          case ErrorEvent(error: final error):
-            throw Exception('Stream error: $error');
-
-          case ThinkingDeltaEvent():
-          case ToolCallDeltaEvent():
-            // Handle other event types
+          default:
+            // Handle other event types (thinking, tools) if needed
             break;
         }
       }

@@ -14,7 +14,8 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAIChat streaming tool calls', () {
-    test('should preserve tool call id across incremental tool_calls', () async {
+    test('should preserve tool call id across incremental tool_calls',
+        () async {
       final config = openai.OpenAIConfig(
         apiKey: 'test-key',
         baseUrl: 'https://api.openai.com/v1/',
@@ -24,8 +25,7 @@ void main() {
       final client = _FakeOpenAIClient(config);
       final chat = openai.OpenAIChat(client, config);
 
-      final events =
-          await chat.chatStream([ChatMessage.user('test')]).toList();
+      final events = await chat.chatStream([ChatMessage.user('test')]).toList();
 
       final toolEvents = events.whereType<ToolCallDeltaEvent>().toList();
       expect(toolEvents, hasLength(3));

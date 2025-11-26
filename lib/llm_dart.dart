@@ -246,6 +246,37 @@ Stream<ChatStreamEvent> streamTextWithModel(
   );
 }
 
+/// High-level helper that returns provider-agnostic stream parts.
+///
+/// This mirrors [streamText] but adapts the low-level [ChatStreamEvent]
+/// values into [StreamTextPart] values (text start/delta/end, thinking
+/// deltas, tool input lifecycle, and final completion).
+Stream<StreamTextPart> streamTextParts({
+  required String model,
+  String? apiKey,
+  String? baseUrl,
+  String? prompt,
+  List<ChatMessage>? messages,
+  ChatPromptMessage? structuredPrompt,
+  CancellationToken? cancelToken,
+}) async* {
+  var builder = LLMBuilder().use(model);
+
+  if (apiKey != null) {
+    builder = builder.apiKey(apiKey);
+  }
+  if (baseUrl != null) {
+    builder = builder.baseUrl(baseUrl);
+  }
+
+  yield* builder.streamTextParts(
+    prompt: prompt,
+    messages: messages,
+    structuredPrompt: structuredPrompt,
+    cancelToken: cancelToken,
+  );
+}
+
 /// High-level structured object generation helper.
 ///
 /// This helper configures structured outputs via [StructuredOutputFormat]

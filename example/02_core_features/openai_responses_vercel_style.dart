@@ -34,31 +34,30 @@ Future<void> main() async {
   // In Dart:
   final model = openai.responses('gpt-4.1-mini');
 
-  // 3. Stream thinking + text deltas using the high-level helper.
+  // 3. Stream thinking + text parts using the high-level helper.
   final messages = [
     ChatMessage.user(
       'Explain what a binary search tree is, in 3 bullet points.',
     ),
   ];
 
-  print('Streaming response from OpenAI Responses API:\n');
+  print('Streaming response from OpenAI Responses API (streamTextParts):\n');
 
-  await for (final event in streamTextWithModel(
-    model,
-    messages: messages,
+  await for (final part in adaptStreamText(
+    model.streamText(messages),
   )) {
-    switch (event) {
-      case ThinkingDeltaEvent(delta: final delta):
+    switch (part) {
+      case StreamThinkingDelta(delta: final delta):
         // Thinking deltas (reasoning) in gray
         stdout.write('\x1B[90m$delta\x1B[0m');
         break;
-      case TextDeltaEvent(delta: final delta):
+      case StreamTextDelta(delta: final delta):
         // Final answer tokens
         stdout.write(delta);
         break;
-      case CompletionEvent(response: final response):
+      case StreamFinish(result: final result):
         print('\n\n---');
-        final usage = response.usage;
+        final usage = result.usage;
         if (usage != null) {
           print('Tokens: prompt=${usage.promptTokens}, '
               'completion=${usage.completionTokens}, '
@@ -66,9 +65,8 @@ Future<void> main() async {
               'total=${usage.totalTokens}');
         }
         break;
-      case ToolCallDeltaEvent():
-      case ErrorEvent():
-        // For simplicity we just ignore tools/errors here.
+      default:
+        // For simplicity we ignore tool parts here.
         break;
     }
   }

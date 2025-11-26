@@ -85,7 +85,7 @@ class FakeProviderFactory extends LLMProviderFactory<ChatCapability> {
 }
 
 void main() {
-  group('generateText / streamText helpers', () {
+  group('generateText / streaming helpers', () {
     setUp(() {
       LLMProviderRegistry.registerOrReplace(FakeProviderFactory());
     });
@@ -117,6 +117,20 @@ void main() {
 
       expect(events.any((e) => e is TextDeltaEvent), isTrue);
       expect(events.any((e) => e is CompletionEvent), isTrue);
+    });
+
+    test('streamTextParts should emit high-level parts', () async {
+      final parts = <StreamTextPart>[];
+
+      await for (final part in streamTextParts(
+        model: 'fake:test-model',
+        prompt: 'Hello',
+      )) {
+        parts.add(part);
+      }
+
+      expect(parts.any((p) => p is StreamTextDelta), isTrue);
+      expect(parts.any((p) => p is StreamFinish), isTrue);
     });
   });
 }

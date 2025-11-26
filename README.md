@@ -226,24 +226,27 @@ Future<void> main() async {
     print('Thinking: ${result.thinking}');
   }
 
-  // Stream a response with thinking deltas
+  // Stream a response using high-level stream parts
   final streamModel = await ai()
       .use('deepseek:deepseek-reasoner')
       .apiKey('your-deepseek-key')
       .buildLanguageModel();
 
-  await for (final event in streamModel.streamText([
+  await for (final part in streamModel.streamTextParts([
     ChatMessage.user('What is 15 + 27? Show your work.'),
   ])) {
-    switch (event) {
-      case ThinkingDeltaEvent(delta: final delta):
+    switch (part) {
+      case StreamThinkingDelta(delta: final delta):
         stdout.write('\x1B[90m$delta\x1B[0m');
         break;
-      case TextDeltaEvent(delta: final delta):
+      case StreamTextDelta(delta: final delta):
         stdout.write(delta);
         break;
-      case CompletionEvent(response: final response):
-        print('\nCompleted with ${response.usage?.totalTokens} tokens.');
+      case StreamFinish(result: final result):
+        print('\nCompleted with ${result.usage?.totalTokens} tokens.');
+        break;
+      default:
+        // Ignore other parts for this simple example (tool calls, etc.).
         break;
     }
   }
@@ -523,7 +526,7 @@ There are two primary ways to use `llm_dart`, inspired by the Vercel AI SDK:
 |---------|-----------------|---------|
 | **Single provider, model-centric** | Vercel-style factories + `LanguageModel` | `createOpenAI()`, `createAnthropic()`, `generateTextWithModel()` |
 | **Multi-provider, config-centric** | `LLMBuilder` + provider registry | `ai().use('openai:gpt-4o')`, `ai().deepseek()...build()` |
-| **Quick one-off calls** | High-level helpers | `generateText()`, `streamText()`, `generateObject()` |
+| **Quick one-off calls** | High-level helpers | `generateText()`, `streamTextParts()`, `generateObject()` |
 
 **1. Vercel-style (model-centric)**
 
@@ -601,10 +604,10 @@ This style is ideal when:
 For one-off calls where you don't need to keep a provider/model object, use:
 
 - `generateText(model: 'openai:gpt-4o', apiKey: ...)`
-- `streamText(model: 'deepseek:deepseek-reasoner', apiKey: ...)`
+- `streamTextParts(model: 'deepseek:deepseek-reasoner', apiKey: ...)`
 - `generateObject<T>(model: 'openai:gpt-4o-mini', ...)`
 
-These map to builder-style under the hood but provide a concise API for scripting and quick experiments.
+These map to builder-style under the hood but provide a concise API for scripting and quick experiments. Use `streamTextParts` if you want a Vercel-style stream of text/thinking/tool parts; the lower-level `streamText` that exposes raw `ChatStreamEvent` is still available for advanced scenarios.
 
 Manage local Ollama models with `OllamaAdmin`:
 

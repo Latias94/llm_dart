@@ -433,8 +433,7 @@ class OpenAIChat implements ChatCapability {
         // Look up the stable id for this index (from this or a previous chunk).
         final stableId = _toolCallIds[index];
         if (stableId != null) {
-          final functionMap =
-              toolCallMap['function'] as Map<String, dynamic>?;
+          final functionMap = toolCallMap['function'] as Map<String, dynamic>?;
           if (functionMap != null) {
             final name = functionMap['name'] as String? ?? '';
             final args = functionMap['arguments'] as String? ?? '';

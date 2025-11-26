@@ -99,9 +99,9 @@ Future<void> structuredPromptWithBuilder(LLMBuilder builder) async {
   print('🔗 Tagline:\n${result.text}\n');
 }
 
-/// Streaming responses using streamText and handling delta events.
+/// Streaming responses using high-level stream parts.
 Future<void> streamingExample(LLMBuilder builder) async {
-  print('🌊 Streaming with streamText:\n');
+  print('🌊 Streaming with streamTextParts:\n');
 
   final prompt =
       'Write a short, two-paragraph story about a developer learning Dart and building their first AI app.';
@@ -111,29 +111,26 @@ Future<void> streamingExample(LLMBuilder builder) async {
 
   final buffer = StringBuffer();
 
-  await for (final event in builder.streamText(prompt: prompt)) {
-    switch (event) {
-      case ThinkingDeltaEvent():
+  await for (final part in builder.streamTextParts(prompt: prompt)) {
+    switch (part) {
+      case StreamThinkingDelta():
         // For providers with visible reasoning, you could render this separately.
         // Here we ignore the delta to keep output simple.
         break;
-      case TextDeltaEvent(delta: final delta):
+      case StreamTextDelta(delta: final delta):
         stdout.write(delta);
         buffer.write(delta);
         break;
-      case CompletionEvent(response: final response):
-        if (response.usage != null) {
-          final usage = response.usage!;
+      case StreamFinish(result: final result):
+        if (result.usage != null) {
+          final usage = result.usage!;
           stdout.write('\n\n📊 Tokens: ${usage.totalTokens} total\n');
         } else {
           stdout.write('\n\n✅ Streaming complete.\n');
         }
         break;
-      case ToolCallDeltaEvent():
-        // Not used in this example.
-        break;
-      case ErrorEvent(error: final error):
-        stdout.write('\n❌ Streaming error: $error\n');
+      default:
+        // Tool parts and other events are not used in this simple example.
         break;
     }
   }

@@ -106,6 +106,14 @@ class FakeLanguageModel implements LanguageModel {
   }
 
   @override
+  Stream<StreamTextPart> streamTextParts(
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  }) {
+    return adaptStreamText(streamText(messages, cancelToken: cancelToken));
+  }
+
+  @override
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
     List<ChatMessage> messages, {
@@ -304,6 +312,14 @@ class _JsonLanguageModel implements LanguageModel {
       yield TextDeltaEvent(result.text!);
     }
     yield CompletionEvent(result.rawResponse);
+  }
+
+  @override
+  Stream<StreamTextPart> streamTextParts(
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  }) {
+    return adaptStreamText(streamText(messages, cancelToken: cancelToken));
   }
 
   @override

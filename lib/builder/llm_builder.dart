@@ -728,6 +728,28 @@ class LLMBuilder {
     );
   }
 
+  /// Stream high-level text parts using the current builder configuration.
+  ///
+  /// This is similar to [streamText] but adapts the low-level
+  /// [ChatStreamEvent] stream into a provider-agnostic sequence of
+  /// [StreamTextPart] values (text start/delta/end, thinking deltas,
+  /// tool input lifecycle events, and a final completion part).
+  Stream<StreamTextPart> streamTextParts({
+    String? prompt,
+    List<ChatMessage>? messages,
+    ChatPromptMessage? structuredPrompt,
+    CancellationToken? cancelToken,
+  }) async* {
+    final rawStream = streamText(
+      prompt: prompt,
+      messages: messages,
+      structuredPrompt: structuredPrompt,
+      cancelToken: cancelToken,
+    );
+
+    yield* adaptStreamText(rawStream);
+  }
+
   /// Builds and returns a configured LLM provider instance
   ///
   /// Returns a unified ChatCapability interface that can be used consistently

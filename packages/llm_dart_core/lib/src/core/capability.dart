@@ -391,6 +391,232 @@ class GenerateTextResult {
   bool get hasThinking => thinking != null && thinking!.trim().isNotEmpty;
 }
 
+/// High-level stream part for text generation helpers.
+///
+/// This provides a provider-agnostic view over a streaming chat call,
+/// similar in spirit to the Vercel AI SDK's `LanguageModelV3StreamPart`:
+/// - Text parts (start / delta / end)
+/// - Thinking deltas
+/// - Tool input lifecycle (start / delta / end) and final tool calls
+/// - Final completion with a [GenerateTextResult]
+sealed class StreamTextPart {
+  const StreamTextPart();
+}
+
+/// Marks the start of a text sequence.
+///
+/// The [id] allows callers to distinguish multiple parallel text streams
+/// in the future; for now, generated text uses a single id (`"0"`).
+class StreamTextStart extends StreamTextPart {
+  final String id;
+
+  const StreamTextStart(this.id);
+}
+
+/// Delta for streamed text.
+class StreamTextDelta extends StreamTextPart {
+  final String id;
+  final String delta;
+
+  const StreamTextDelta(this.id, this.delta);
+}
+
+/// Marks the end of a text sequence.
+class StreamTextEnd extends StreamTextPart {
+  final String id;
+
+  const StreamTextEnd(this.id);
+}
+
+/// Delta for streamed reasoning/thinking content.
+class StreamThinkingDelta extends StreamTextPart {
+  final String delta;
+
+  const StreamThinkingDelta(this.delta);
+}
+
+/// Marks the start of tool input for a given tool call.
+///
+/// [toolCallId] is stable across all chunks belonging to the same tool call.
+class StreamToolInputStart extends StreamTextPart {
+  final String toolCallId;
+  final String toolName;
+
+  const StreamToolInputStart({
+    required this.toolCallId,
+    required this.toolName,
+  });
+}
+
+/// Delta for streamed tool input arguments.
+class StreamToolInputDelta extends StreamTextPart {
+  final String toolCallId;
+  final String delta;
+
+  const StreamToolInputDelta({
+    required this.toolCallId,
+    required this.delta,
+  });
+}
+
+/// Marks the end of tool input arguments for a tool call.
+class StreamToolInputEnd extends StreamTextPart {
+  final String toolCallId;
+
+  const StreamToolInputEnd({
+    required this.toolCallId,
+  });
+}
+
+/// Finalized tool call with parsed arguments.
+///
+/// This is emitted once the accumulated arguments form valid JSON.
+class StreamToolCall extends StreamTextPart {
+  final ToolCall toolCall;
+
+  const StreamToolCall(this.toolCall);
+}
+
+/// Final completion for a streaming text call.
+///
+/// This wraps a [GenerateTextResult] built from the underlying
+/// [ChatResponse] and any provider-supplied metadata.
+class StreamFinish extends StreamTextPart {
+  final GenerateTextResult result;
+
+  const StreamFinish(this.result);
+}
+
+/// Adapter that converts low-level [ChatStreamEvent] values into
+/// high-level [StreamTextPart] values.
+///
+/// This function is provider-agnostic and relies only on the core
+/// streaming contract (text deltas, thinking deltas, tool call deltas,
+/// and completion events). Tool input chunks are merged by tool call id
+/// until they form valid JSON, at which point a [StreamToolCall] is
+/// emitted.
+Stream<StreamTextPart> adaptStreamText(
+  Stream<ChatStreamEvent> source,
+) async* {
+  const textId = '0';
+  var textStarted = false;
+
+  final toolStates = <String, _ToolInputState>{};
+
+  await for (final event in source) {
+    if (event is TextDeltaEvent) {
+      if (!textStarted) {
+        textStarted = true;
+        yield StreamTextStart(textId);
+      }
+
+      if (event.delta.isNotEmpty) {
+        yield StreamTextDelta(textId, event.delta);
+      }
+    } else if (event is ThinkingDeltaEvent) {
+      if (event.delta.isNotEmpty) {
+        yield StreamThinkingDelta(event.delta);
+      }
+    } else if (event is ToolCallDeltaEvent) {
+      final toolCall = event.toolCall;
+      final id = toolCall.id;
+      final name = toolCall.function.name;
+      final delta = toolCall.function.arguments;
+
+      var state = toolStates[id];
+      final isNew = state == null;
+
+      if (state == null) {
+        state = _ToolInputState(name);
+        toolStates[id] = state;
+
+        // Start of a new tool call input sequence.
+        yield StreamToolInputStart(
+          toolCallId: id,
+          toolName: name,
+        );
+      }
+
+      if (delta.isNotEmpty) {
+        state.buffer.write(delta);
+        yield StreamToolInputDelta(
+          toolCallId: id,
+          delta: delta,
+        );
+      }
+
+      // Some providers may emit a complete tool call in a single chunk.
+      // Others stream partial JSON; in both cases we treat the accumulated
+      // buffer as the source of truth and mark the tool call as complete
+      // once it parses as JSON.
+      if (!state.finished && _isParsableJson(state.buffer.toString())) {
+        state.finished = true;
+
+        yield StreamToolInputEnd(toolCallId: id);
+
+        // Use the accumulated JSON arguments for the final ToolCall.
+        yield StreamToolCall(
+          ToolCall(
+            id: id,
+            callType: toolCall.callType,
+            function: FunctionCall(
+              name: name,
+              arguments: state.buffer.toString(),
+            ),
+          ),
+        );
+      } else if (isNew && delta.isEmpty) {
+        // If we just started a tool call but there is no arguments delta yet,
+        // we still consider the start event sufficient. The final ToolCall will
+        // be emitted once arguments become valid JSON, or never if the provider
+        // never sends them.
+      }
+    } else if (event is CompletionEvent) {
+      final response = event.response;
+
+      if (textStarted) {
+        yield StreamTextEnd(textId);
+        textStarted = false;
+      }
+
+      final result = GenerateTextResult(
+        rawResponse: response,
+        text: response.text,
+        thinking: response.thinking,
+        toolCalls: response.toolCalls,
+        usage: response.usage,
+        warnings: response.warnings,
+        metadata: response.callMetadata,
+      );
+
+      yield StreamFinish(result);
+    }
+  }
+}
+
+/// Internal aggregation state for tool input chunks.
+class _ToolInputState {
+  final String toolName;
+  final StringBuffer buffer = StringBuffer();
+  bool finished = false;
+
+  _ToolInputState(this.toolName);
+}
+
+/// Best-effort JSON parse check used to decide when a streamed tool
+/// call has completed its arguments.
+bool _isParsableJson(String input) {
+  final trimmed = input.trim();
+  if (trimmed.isEmpty) return false;
+
+  try {
+    jsonDecode(trimmed);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 /// High-level result for structured object generation helpers.
 ///
 /// This combines a strongly-typed [object] parsed from the model's
@@ -693,6 +919,16 @@ abstract class LanguageModel {
     CancellationToken? cancelToken,
   });
 
+  /// Stream high-level parts for text generation.
+  ///
+  /// This is a companion to [streamText] that exposes a provider-agnostic
+  /// sequence of [StreamTextPart] values (text, thinking, tool input,
+  /// and final completion).
+  Stream<StreamTextPart> streamTextParts(
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  });
+
   /// Generate a structured object based on the given [output] spec.
   ///
   /// This method assumes the underlying provider/model has been
@@ -759,6 +995,16 @@ class DefaultLanguageModel implements LanguageModel {
     return _chat.chatStream(
       messages,
       cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<StreamTextPart> streamTextParts(
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  }) {
+    return adaptStreamText(
+      streamText(messages, cancelToken: cancelToken),
     );
   }
 

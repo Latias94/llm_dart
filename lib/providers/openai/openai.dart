@@ -319,6 +319,14 @@ class OpenAIResponsesModel
   }
 
   @override
+  Stream<StreamTextPart> streamTextParts(
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  }) {
+    return _model.streamTextParts(messages, cancelToken: cancelToken);
+  }
+
+  @override
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
     List<ChatMessage> messages, {

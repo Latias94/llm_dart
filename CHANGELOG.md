@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 > Release candidate for the 0.11.0 line. This version introduces a multi-package refactor, provider-level split, and core observability enhancements while keeping public APIs backwards compatible.
 
+### Added
+
+- **High-level streaming parts API (`StreamTextPart`)**
+  - Introduced a provider-agnostic streaming representation in `llm_dart_core`:
+    - `StreamTextPart` sealed hierarchy for text, thinking, tool input (start/delta/end), final tool calls, and completion.
+    - `adaptStreamText(Stream<ChatStreamEvent>)` to convert low-level provider events into high-level parts.
+  - Exposed new helpers that mirror the Vercel AI SDK's `streamText` semantics:
+    - `LanguageModel.streamTextParts(...)` – high-level streaming API on top of any `LanguageModel`.
+    - `LLMBuilder.streamTextParts(...)` – builder-style streaming helper.
+    - Top-level `streamTextParts(...)` – one-off helper for `model: "provider:model"` identifiers.
+  - Existing low-level streaming API remains available:
+    - `streamText(...) -> Stream<ChatStreamEvent>` is still supported for advanced use cases and middlewares.
+    - New code should prefer `streamTextParts(...)` for most UI and application-level streaming scenarios.
+
 ### Changed
 
 - **Multi-package architecture (Vercel AI SDK style)**  
