@@ -25,6 +25,12 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   bool _hasReasoningContent = false;
   String _lastChunk = '';
   final StringBuffer _thinkingBuffer = StringBuffer();
+  // Track tool call IDs by index for streaming tool calls in the Responses API.
+  // The Responses stream can send tool_calls incrementally where only the
+  // first chunk contains the id and later chunks reference the same call
+  // via an index. This map keeps a stable id per index so that every
+  // ToolCallDeltaEvent carries a consistent toolCall.id.
+  final Map<int, String> _toolCallIds = {};
 
   OpenAIResponses(this.client, this.config);
 
@@ -401,19 +407,26 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       body['service_tier'] = config.serviceTier!.value;
     }
 
+    // Determine if this is an OpenAI reasoning model (GPT-5 family, o1/o3/o4, etc.)
+    final isOpenAIReasoningModel = client.providerId == 'openai' &&
+        ReasoningUtils.isOpenAIReasoningModel(config.model);
+
     // Add OpenAI-specific extension parameters
+    //
+    // For OpenAI reasoning models, some parameters are not supported and
+    // should be omitted to avoid API errors.
     final frequencyPenalty = config.getExtension<double>('frequencyPenalty');
-    if (frequencyPenalty != null) {
+    if (frequencyPenalty != null && !isOpenAIReasoningModel) {
       body['frequency_penalty'] = frequencyPenalty;
     }
 
     final presencePenalty = config.getExtension<double>('presencePenalty');
-    if (presencePenalty != null) {
+    if (presencePenalty != null && !isOpenAIReasoningModel) {
       body['presence_penalty'] = presencePenalty;
     }
 
     final logitBias = config.getExtension<Map<String, double>>('logitBias');
-    if (logitBias != null && logitBias.isNotEmpty) {
+    if (logitBias != null && logitBias.isNotEmpty && !isOpenAIReasoningModel) {
       body['logit_bias'] = logitBias;
     }
 
@@ -428,12 +441,12 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     }
 
     final logprobs = config.getExtension<bool>('logprobs');
-    if (logprobs != null) {
+    if (logprobs != null && !isOpenAIReasoningModel) {
       body['logprobs'] = logprobs;
     }
 
     final topLogprobs = config.getExtension<int>('topLogprobs');
-    if (topLogprobs != null) {
+    if (topLogprobs != null && !isOpenAIReasoningModel) {
       body['top_logprobs'] = topLogprobs;
     }
 
@@ -509,6 +522,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     _hasReasoningContent = false;
     _lastChunk = '';
     _thinkingBuffer.clear();
+    _toolCallIds.clear();
   }
 
   /// Parse stream events with reasoning support
@@ -615,15 +629,52 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       events.add(TextDeltaEvent(content));
     }
 
-    // Handle tool calls (if supported in Responses API)
+    // Handle tool calls (if supported in Responses API).
+    //
+    // The Responses API can stream tool_calls incrementally. The first chunk
+    // typically includes index + id + function.name + initial arguments,
+    // while subsequent chunks often only provide index + function.arguments.
+    //
+    // We mirror the chat implementation and cache ids by index so that each
+    // ToolCallDeltaEvent has a stable id for callers to aggregate arguments.
     final toolCalls = json['tool_calls'] as List?;
     if (toolCalls != null && toolCalls.isNotEmpty) {
-      final toolCall = toolCalls.first as Map<String, dynamic>;
-      if (toolCall.containsKey('id') && toolCall.containsKey('function')) {
+      final toolCallMap = toolCalls.first as Map<String, dynamic>;
+      final index = toolCallMap['index'] as int?;
+
+      if (index != null) {
+        // Update mapping when an id is present on this chunk.
+        final id = toolCallMap['id'] as String?;
+        if (id != null && id.isNotEmpty) {
+          _toolCallIds[index] = id;
+        }
+
+        final stableId = _toolCallIds[index];
+        if (stableId != null) {
+          final functionMap = toolCallMap['function'] as Map<String, dynamic>?;
+          if (functionMap != null) {
+            final name = functionMap['name'] as String? ?? '';
+            final args = functionMap['arguments'] as String? ?? '';
+
+            if (name.isNotEmpty || args.isNotEmpty) {
+              final toolCall = ToolCall(
+                id: stableId,
+                callType: 'function',
+                function: FunctionCall(
+                  name: name,
+                  arguments: args,
+                ),
+              );
+              events.add(ToolCallDeltaEvent(toolCall));
+            }
+          }
+        }
+      } else if (toolCallMap.containsKey('id') &&
+          toolCallMap.containsKey('function')) {
+        // Fallback: handle tool calls that provide a full object without index.
         try {
-          events.add(ToolCallDeltaEvent(ToolCall.fromJson(toolCall)));
+          events.add(ToolCallDeltaEvent(ToolCall.fromJson(toolCallMap)));
         } catch (e) {
-          // Skip malformed tool calls
           client.logger.warning('Failed to parse tool call: $e');
         }
       }

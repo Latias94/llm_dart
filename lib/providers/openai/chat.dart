@@ -220,19 +220,27 @@ class OpenAIChat implements ChatCapability {
       body['service_tier'] = config.serviceTier!.value;
     }
 
+    // Determine if this is an OpenAI reasoning model (GPT-5 family, o1/o3/o4, etc.)
+    final isOpenAIReasoningModel = client.providerId == 'openai' &&
+        ReasoningUtils.isOpenAIReasoningModel(config.model);
+
     // Add OpenAI-specific extension parameters
+    //
+    // For OpenAI reasoning models, some parameters are not supported and
+    // should be omitted to avoid API errors. This matches the behavior in
+    // the TypeScript implementation.
     final frequencyPenalty = config.getExtension<double>('frequencyPenalty');
-    if (frequencyPenalty != null) {
+    if (frequencyPenalty != null && !isOpenAIReasoningModel) {
       body['frequency_penalty'] = frequencyPenalty;
     }
 
     final presencePenalty = config.getExtension<double>('presencePenalty');
-    if (presencePenalty != null) {
+    if (presencePenalty != null && !isOpenAIReasoningModel) {
       body['presence_penalty'] = presencePenalty;
     }
 
     final logitBias = config.getExtension<Map<String, double>>('logitBias');
-    if (logitBias != null && logitBias.isNotEmpty) {
+    if (logitBias != null && logitBias.isNotEmpty && !isOpenAIReasoningModel) {
       body['logit_bias'] = logitBias;
     }
 
@@ -247,12 +255,12 @@ class OpenAIChat implements ChatCapability {
     }
 
     final logprobs = config.getExtension<bool>('logprobs');
-    if (logprobs != null) {
+    if (logprobs != null && !isOpenAIReasoningModel) {
       body['logprobs'] = logprobs;
     }
 
     final topLogprobs = config.getExtension<int>('topLogprobs');
-    if (topLogprobs != null) {
+    if (topLogprobs != null && !isOpenAIReasoningModel) {
       body['top_logprobs'] = topLogprobs;
     }
 
@@ -416,24 +424,24 @@ class OpenAIChat implements ChatCapability {
     if (toolCalls != null && toolCalls.isNotEmpty) {
       final toolCallMap = toolCalls.first as Map<String, dynamic>;
       final index = toolCallMap['index'] as int?;
-      
+
       if (index != null) {
         // If ID is present, store it
         if (toolCallMap.containsKey('id')) {
           final id = toolCallMap['id'] as String;
           _toolCallIds[index] = id;
         }
-        
+
         // If we have an ID for this index (either just stored or from before), emit event
         if (_toolCallIds.containsKey(index)) {
           final id = _toolCallIds[index]!;
-          
+
           // Construct a valid ToolCall delta even if ID is missing in this chunk
           final functionMap = toolCallMap['function'] as Map<String, dynamic>?;
           if (functionMap != null) {
             final name = functionMap['name'] as String? ?? '';
             final args = functionMap['arguments'] as String? ?? '';
-            
+
             // Only emit if we have something to update
             if (name.isNotEmpty || args.isNotEmpty) {
               final toolCall = ToolCall(
@@ -448,7 +456,8 @@ class OpenAIChat implements ChatCapability {
             }
           }
         }
-      } else if (toolCallMap.containsKey('id') && toolCallMap.containsKey('function')) {
+      } else if (toolCallMap.containsKey('id') &&
+          toolCallMap.containsKey('function')) {
         // Fallback for non-indexed tool calls (rare in streams but possible)
         try {
           events.add(ToolCallDeltaEvent(ToolCall.fromJson(toolCallMap)));

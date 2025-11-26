@@ -55,6 +55,7 @@ export 'utils/capability_utils.dart';
 export 'utils/provider_registry.dart';
 export 'utils/utf8_stream_decoder.dart';
 export 'utils/http_config_utils.dart';
+export 'utils/tool_call_aggregator.dart';
 
 // Convenience functions for creating providers
 import 'builder/llm_builder.dart';

@@ -65,7 +65,7 @@ dart run gpt5_features.dart
 
 - **Verbosity Control**: Adjust output detail with `low`, `medium`, `high` settings
 - **Minimal Reasoning**: Use `ReasoningEffort.minimal` for faster responses
-- **Model Variants**: Support for `gpt-5`, `gpt-5-mini`, `gpt-5-nano`
+- **Model Variants**: Support for GPT-5 family models: `gpt-5.1`, `gpt-5-mini`, `gpt-5-nano`, and `gpt-5` (previous version)
 
 ## Usage Examples
 
@@ -112,13 +112,14 @@ final assistant = await assistantProvider.createAssistant(
 final provider = await ai()
     .openai((openai) => openai.verbosity(Verbosity.high))
     .apiKey('your-key')
-    .model('gpt-5')
+    .model('gpt-5.1') // Recommended latest GPT-5 family model
     .build();
 
 // Minimal reasoning for faster responses
 final fastProvider = await ai()
+    .openai()
     .apiKey('your-key')
-    .model('gpt-5')
+    .model('gpt-5-mini') // Cost-efficient GPT-5 family variant
     .reasoningEffort(ReasoningEffort.minimal)
     .build();
 ```
@@ -137,7 +138,7 @@ final provider = await ai()
         .webSearchTool()
         .fileSearchTool(vectorStoreIds: ['vs_123']))
     .apiKey('your-key')
-    .model('gpt-4o')
+    .model('gpt-5-mini') // Recommended cost-efficient GPT-5 family model
     .build();
 
 // New convenience method (recommended)
@@ -146,7 +147,7 @@ final provider = await ai()
         .webSearchTool()
         .fileSearchTool(vectorStoreIds: ['vs_123']))
     .apiKey('your-key')
-    .model('gpt-4o')
+    .model('gpt-5-mini') // Recommended cost-efficient GPT-5 family model
     .buildOpenAIResponses(); // Automatically enables Responses API
 ```
 
@@ -155,7 +156,7 @@ final provider = await ai()
 ```dart
 // Using buildOpenAIResponses() - no casting needed!
 final provider = await ai().openai().apiKey('your-key')
-    .model('gpt-4o').buildOpenAIResponses();
+    .model('gpt-5-mini').buildOpenAIResponses();
 
 // Direct access to Responses API
 final responses = provider.responses!;

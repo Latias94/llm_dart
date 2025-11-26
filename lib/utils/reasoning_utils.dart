@@ -115,12 +115,25 @@ class ReasoningUtils {
     return content;
   }
 
-  /// Check if the model is an OpenAI reasoning model (o1, o3, o4 series)
-  /// This is used for specific OpenAI API parameter handling
+  /// Check if the model is an OpenAI reasoning model
+  ///
+  /// This follows the same semantics as the TypeScript implementation:
+  /// - Non‑reasoning chat models like gpt-3.*, gpt-4.*, chatgpt-4o, gpt-5-chat*
+  ///   are treated as standard models.
+  /// - All other OpenAI models (o1/o3/o4 series, GPT‑5 family, etc.) are
+  ///   treated as reasoning models and use `max_completion_tokens` instead
+  ///   of `max_tokens` and may have stricter parameter support.
   static bool isOpenAIReasoningModel(String model) {
-    return model.startsWith('o1') ||
-        model.startsWith('o3') ||
-        model.startsWith('o4');
+    final id = model.toLowerCase();
+
+    // Explicit non-reasoning chat families
+    if (id.startsWith('gpt-3')) return false;
+    if (id.startsWith('gpt-4')) return false;
+    if (id.startsWith('chatgpt-4o')) return false;
+    if (id.startsWith('gpt-5-chat')) return false;
+
+    // Everything else (o1/o3/o4, gpt-5, gpt-5.1, gpt-5-mini/nano/pro, etc.)
+    return true;
   }
 
   /// Check if the model is known to support reasoning (broader check)

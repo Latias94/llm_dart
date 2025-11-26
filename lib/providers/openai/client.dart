@@ -293,9 +293,9 @@ class OpenAIClient {
         result['tool_calls'] = toolCalls.map((tc) => tc.toJson()).toList();
         break;
       case ToolResultMessage(results: final results):
-        // Tool results need to be converted to separate tool messages
-        // This case should not happen in normal message conversion
-        // as tool results are handled separately in buildRequestBody
+        // Tool results are normally handled in buildApiMessages where we
+        // expand them into individual tool role messages, but we keep a sane
+        // default here for completeness.
         result['content'] =
             message.content.isNotEmpty ? message.content : 'Tool result';
         result['tool_call_id'] = results.isNotEmpty ? results.first.id : null;
@@ -315,15 +315,22 @@ class OpenAIClient {
     // Convert messages to OpenAI format
     for (final message in messages) {
       if (message.messageType is ToolResultMessage) {
-        // Handle tool results as separate messages
+        // Expand tool results into separate `tool` role messages.
+        //
+        // OpenAI expects the tool message content to be the tool OUTPUT,
+        // not the original function arguments, so we prefer the
+        // ChatMessage.content here and only fall back to arguments if the
+        // content is empty.
         final toolResults = (message.messageType as ToolResultMessage).results;
         for (final result in toolResults) {
           apiMessages.add({
             'role': 'tool',
             'tool_call_id': result.id,
-            'content': result.function.arguments.isNotEmpty
-                ? result.function.arguments
-                : message.content,
+            'content': message.content.isNotEmpty
+                ? message.content
+                : (result.function.arguments.isNotEmpty
+                    ? result.function.arguments
+                    : 'Tool result'),
           });
         }
       } else {

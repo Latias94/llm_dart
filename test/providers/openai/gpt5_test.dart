@@ -28,7 +28,7 @@ void main() {
     });
 
     test('should support GPT-5 model names', () {
-      final models = ['gpt-5', 'gpt-5-mini', 'gpt-5-nano'];
+      final models = ['gpt-5', 'gpt-5.1', 'gpt-5-mini', 'gpt-5-nano'];
 
       for (final model in models) {
         final builder = ai().model(model);
