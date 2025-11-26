@@ -140,15 +140,25 @@ class ReasoningUtils {
   /// This is a hint for UI behavior, but actual reasoning detection
   /// should be based on response content, not model name
   static bool isKnownReasoningModel(String model) {
-    return isOpenAIReasoningModel(model) ||
+    final id = model.toLowerCase();
+
+    // Restrict OpenAI reasoning detection to known OpenAI-style ids
+    final isOpenAIModel = id.startsWith('gpt-') ||
+        id.startsWith('o1') ||
+        id.startsWith('o3') ||
+        id.startsWith('o4');
+
+    final isOpenAIReasoning = isOpenAIModel && isOpenAIReasoningModel(model);
+
+    return isOpenAIReasoning ||
         model == 'deepseek-reasoner' ||
         model == 'deepseek-r1' ||
         model.contains('claude-3.7-sonnet') ||
         model.contains('claude-opus-4') ||
         model.contains('claude-sonnet-4') ||
         model.contains('qwen') && model.contains('reasoning') ||
-        model.toLowerCase().contains('reasoning') ||
-        model.toLowerCase().contains('thinking');
+        id.contains('reasoning') ||
+        id.contains('thinking');
   }
 
   /// Get reasoning effort parameter for different providers
