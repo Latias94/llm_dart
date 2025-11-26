@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart/providers/openai/client.dart' as openai_client;
 import 'package:llm_dart/providers/openai/config.dart' as openai_config;
@@ -48,7 +47,7 @@ void main() {
 
 /// Fake OpenAIClient that returns a synthetic SSE stream for testing Responses API.
 class _FakeOpenAIClient extends openai_client.OpenAIClient {
-  _FakeOpenAIClient(openai_config.OpenAIConfig config) : super(config);
+  _FakeOpenAIClient(super.config);
 
   @override
   Stream<String> postStreamRaw(
