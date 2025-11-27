@@ -112,6 +112,23 @@ class LLMBuilder {
     );
   }
 
+  /// Ensure that the current provider supports chat/text capabilities.
+  ///
+  /// This is used by high-level text helpers (generateText/streamText/etc.)
+  /// to fail fast for providers that are intentionally audio-only, such as
+  /// ElevenLabs. Audio-centric providers remain fully usable via the
+  /// capability factory methods (e.g. [buildAudio]) and audio helpers.
+  void _ensureChatCapable(String operation) {
+    if (_providerId == 'elevenlabs') {
+      throw UnsupportedCapabilityError(
+        'Provider "elevenlabs" does not support $operation. '
+        'ElevenLabs specializes in audio capabilities. '
+        'Use buildAudio(), generateSpeech(), transcribe(), or '
+        'transcribeFile() instead.',
+      );
+    }
+  }
+
   /// Convenience methods for built-in providers
   LLMBuilder openai([OpenAIBuilder Function(OpenAIBuilder)? configure]) {
     provider('openai');
@@ -701,6 +718,8 @@ class LLMBuilder {
     List<ModelMessage>? promptMessages,
     CancellationToken? cancelToken,
   }) async {
+    _ensureChatCapable('text generation');
+
     final provider = await build();
     final resolvedMessages = resolveMessagesForTextGeneration(
       prompt: prompt,
@@ -740,6 +759,8 @@ class LLMBuilder {
     List<ModelMessage>? promptMessages,
     CancellationToken? cancelToken,
   }) async* {
+    _ensureChatCapable('streaming text');
+
     final provider = await build();
     final resolvedMessages = resolveMessagesForTextGeneration(
       prompt: prompt,
@@ -767,6 +788,8 @@ class LLMBuilder {
     List<ModelMessage>? promptMessages,
     CancellationToken? cancelToken,
   }) async* {
+    _ensureChatCapable('streaming text parts');
+
     final rawStream = streamText(
       prompt: prompt,
       messages: messages,
@@ -811,6 +834,8 @@ class LLMBuilder {
   /// - Pass the model into helper functions that operate on [LanguageModel]
   /// - Decouple higher-level logic from concrete provider types
   Future<LanguageModel> buildLanguageModel() async {
+    _ensureChatCapable('LanguageModel building');
+
     final provider = await build();
     final providerId = _providerId ?? 'unknown';
     final modelId = _config.model;
@@ -837,6 +862,8 @@ class LLMBuilder {
   /// the default behavior of [build] or capability-specific
   /// factory methods.
   Future<ChatCapability> buildWithMiddleware() async {
+    _ensureChatCapable('chat with middleware');
+
     final baseProvider = await build();
 
     // If no middlewares are registered, return the underlying provider.

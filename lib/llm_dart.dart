@@ -331,6 +331,17 @@ Future<ChatCapability> createProvider({
   int? topK,
   Map<String, dynamic>? extensions,
 }) async {
+  // ElevenLabs is an audio-focused provider and does not support the
+  // chat-centric [createProvider] helper. Users should build audio
+  // capabilities explicitly instead.
+  if (providerId == 'elevenlabs') {
+    throw const UnsupportedCapabilityError(
+      'createProvider() does not support the \"elevenlabs\" provider for '
+      'chat capabilities. Use ai().elevenlabs().apiKey(...).buildAudio() '
+      'or the generateSpeech()/transcribe() helpers for audio use cases.',
+    );
+  }
+
   var builder = LLMBuilder().provider(providerId).apiKey(apiKey).model(model);
 
   if (baseUrl != null) builder = builder.baseUrl(baseUrl);
@@ -410,6 +421,16 @@ Future<GenerateTextResult> generateTextWithModel(
   CancellationToken? cancelToken,
   LanguageModelCallOptions? options,
 }) {
+  // ElevenLabs is an audio-only provider and does not support chat/text
+  // generation. Fail fast here instead of surfacing a lower-level error.
+  if (model.providerId == 'elevenlabs') {
+    throw const UnsupportedCapabilityError(
+      'Provider "elevenlabs" does not support text generation. '
+      'Use audio helpers such as generateSpeech(), transcribe(), or '
+      'transcribeFile() instead.',
+    );
+  }
+
   final resolvedMessages = resolveMessagesForTextGeneration(
     prompt: prompt,
     messages: messages,
@@ -472,6 +493,14 @@ Stream<ChatStreamEvent> streamTextWithModel(
   CancellationToken? cancelToken,
   LanguageModelCallOptions? options,
 }) async* {
+  if (model.providerId == 'elevenlabs') {
+    throw const UnsupportedCapabilityError(
+      'Provider \"elevenlabs\" does not support streaming text. '
+      'Use audio helpers such as generateSpeech(), transcribe(), or '
+      'transcribeFile() instead.',
+    );
+  }
+
   final resolvedMessages = resolveMessagesForTextGeneration(
     prompt: prompt,
     messages: messages,
@@ -499,6 +528,14 @@ Stream<StreamTextPart> streamTextPartsWithModel(
   CancellationToken? cancelToken,
   LanguageModelCallOptions? options,
 }) async* {
+  if (model.providerId == 'elevenlabs') {
+    throw const UnsupportedCapabilityError(
+      'Provider \"elevenlabs\" does not support streaming text parts. '
+      'Use audio helpers such as generateSpeech(), transcribe(), or '
+      'transcribeFile() instead.',
+    );
+  }
+
   final resolvedMessages = resolveMessagesForTextGeneration(
     prompt: prompt,
     messages: messages,
