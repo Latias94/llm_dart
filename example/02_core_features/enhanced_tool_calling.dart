@@ -45,30 +45,25 @@ Future<void> demonstrateToolValidation(LanguageModel model) async {
   print('🔍 Tool Validation and Error Handling:\n');
 
   try {
-    // Define a calculator tool with strict validation
-    final calculatorTool = Tool.function(
-      name: 'calculate',
-      description: 'Perform mathematical calculations with validation',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'expression': ParameterProperty(
-            propertyType: 'string',
-            description: 'Mathematical expression (e.g., "2 + 3 * 4")',
-          ),
-          'precision': ParameterProperty(
-            propertyType: 'integer',
-            description: 'Number of decimal places for result',
-          ),
-          'operation_type': ParameterProperty(
-            propertyType: 'string',
-            description: 'Type of mathematical operation',
-            enumList: ['arithmetic', 'algebraic', 'trigonometric'],
-          ),
-        },
-        required: ['expression'],
-      ),
-    );
+    // Define a calculator tool with strict validation using ToolBuilder
+    final calculatorTool = tool('calculate', (t) {
+      t
+        ..description('Perform mathematical calculations with validation')
+        ..stringParam(
+          'expression',
+          description: 'Mathematical expression (e.g., "2 + 3 * 4")',
+          required: true,
+        )
+        ..integerParam(
+          'precision',
+          description: 'Number of decimal places for result',
+        )
+        ..enumParam(
+          'operation_type',
+          description: 'Type of mathematical operation',
+          values: ['arithmetic', 'algebraic', 'trigonometric'],
+        );
+    });
 
     final prompt = ChatPromptBuilder.user()
         .text('Calculate 15.7 * 8.3 with 2 decimal places precision')
@@ -126,34 +121,24 @@ Future<void> demonstrateToolChoiceStrategies(LanguageModel model) async {
   print('🎯 Tool Choice Strategies:\n');
 
   final tools = [
-    Tool.function(
-      name: 'get_weather',
-      description: 'Get current weather information',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'location': ParameterProperty(
-            propertyType: 'string',
-            description: 'City and country',
-          ),
-        },
-        required: ['location'],
-      ),
-    ),
-    Tool.function(
-      name: 'get_time',
-      description: 'Get current time in timezone',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'timezone': ParameterProperty(
-            propertyType: 'string',
-            description: 'Timezone identifier',
-          ),
-        },
-        required: ['timezone'],
-      ),
-    ),
+    tool('get_weather', (t) {
+      t
+        ..description('Get current weather information')
+        ..stringParam(
+          'location',
+          description: 'City and country',
+          required: true,
+        );
+    }),
+    tool('get_time', (t) {
+      t
+        ..description('Get current time in timezone')
+        ..stringParam(
+          'timezone',
+          description: 'Timezone identifier',
+          required: true,
+        );
+    }),
   ];
 
   // Test different tool choice strategies
@@ -230,21 +215,15 @@ Future<void> demonstrateStructuredOutputWithTools(LanguageModel model) async {
     }
 
     // Example invocation with a simple analysis tool
-    final analysisTool = Tool.function(
-      name: 'analyze_impact',
-      description: 'Analyze the impact of a technology on productivity',
-      parameters: const ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'topic': ParameterProperty(
-            propertyType: 'string',
-            description:
-                'Topic to analyze (e.g., "AI and software engineering")',
-          ),
-        },
-        required: ['topic'],
-      ),
-    );
+    final analysisTool = tool('analyze_impact', (t) {
+      t
+        ..description('Analyze the impact of a technology on productivity')
+        ..stringParam(
+          'topic',
+          description: 'Topic to analyze (e.g., "AI and software engineering")',
+          required: true,
+        );
+    });
 
     final prompt = ChatPromptBuilder.user()
         .text(
@@ -313,67 +292,67 @@ Future<void> demonstrateNestedObjectStructures(LanguageModel model) async {
 
   try {
     // Define a tool for processing orders with complex item structures
-    final processOrdersTool = Tool.function(
-      name: 'process_orders',
-      description: 'Process customer orders with complex item structures',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'orders': ParameterProperty(
-            propertyType: 'array',
-            description: 'Array of customer orders',
-            items: ParameterProperty(
-              propertyType: 'object',
-              description: 'Individual order object',
-              properties: {
-                'order_id': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Unique order identifier',
+    final processOrdersTool = tool('process_orders', (t) {
+      t
+        ..description('Process customer orders with complex item structures')
+        ..arrayParam(
+          'orders',
+          description: 'Array of customer orders',
+          required: true,
+          items: ParameterProperty(
+            propertyType: 'object',
+            description: 'Individual order object',
+            properties: {
+              'order_id': ParameterProperty(
+                propertyType: 'string',
+                description: 'Unique order identifier',
+              ),
+              'customer_name': ParameterProperty(
+                propertyType: 'string',
+                description: 'Customer full name',
+              ),
+              'items': ParameterProperty(
+                propertyType: 'array',
+                description: 'Array of items in the order',
+                items: ParameterProperty(
+                  propertyType: 'object',
+                  description: 'Individual item object',
+                  properties: {
+                    'product_name': ParameterProperty(
+                      propertyType: 'string',
+                      description: 'Name of the product',
+                    ),
+                    'quantity': ParameterProperty(
+                      propertyType: 'integer',
+                      description: 'Number of items ordered',
+                    ),
+                    'price': ParameterProperty(
+                      propertyType: 'number',
+                      description: 'Price per item in dollars',
+                    ),
+                    'category': ParameterProperty(
+                      propertyType: 'string',
+                      description: 'Product category',
+                      enumList: [
+                        'electronics',
+                        'clothing',
+                        'books',
+                        'home',
+                      ],
+                    ),
+                  },
+                  required: ['product_name', 'quantity', 'price'],
                 ),
-                'customer_name': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Customer full name',
-                ),
-                'items': ParameterProperty(
-                  propertyType: 'array',
-                  description: 'Array of items in the order',
-                  items: ParameterProperty(
-                    propertyType: 'object',
-                    description: 'Individual item object',
-                    properties: {
-                      'product_name': ParameterProperty(
-                        propertyType: 'string',
-                        description: 'Name of the product',
-                      ),
-                      'quantity': ParameterProperty(
-                        propertyType: 'integer',
-                        description: 'Number of items ordered',
-                      ),
-                      'price': ParameterProperty(
-                        propertyType: 'number',
-                        description: 'Price per item in dollars',
-                      ),
-                      'category': ParameterProperty(
-                        propertyType: 'string',
-                        description: 'Product category',
-                        enumList: ['electronics', 'clothing', 'books', 'home'],
-                      ),
-                    },
-                    required: ['product_name', 'quantity', 'price'],
-                  ),
-                ),
-                'total_amount': ParameterProperty(
-                  propertyType: 'number',
-                  description: 'Total order amount in dollars',
-                ),
-              },
-              required: ['order_id', 'customer_name', 'items'],
-            ),
+              ),
+              'total_amount': ParameterProperty(
+                propertyType: 'number',
+                description: 'Total order amount in dollars',
+              ),
+            },
+            required: ['order_id', 'customer_name', 'items'],
           ),
-        },
-        required: ['orders'],
-      ),
-    );
+        );
+    });
 
     final prompt = ChatPromptBuilder.user()
         .text(

@@ -1,6 +1,31 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'capability_utils.dart';
 
+/// Factory interface for providers that can create language models.
+///
+/// This mirrors the Vercel AI SDK concept where a provider exposes
+/// a `languageModel(modelId)` function that returns a configured
+/// language model instance.
+abstract class LanguageModelProviderFactory {
+  LanguageModel languageModel(String modelId);
+}
+
+/// Factory interface for providers that can create text embedding models.
+abstract class EmbeddingModelProviderFactory {
+  EmbeddingCapability textEmbeddingModel(String modelId);
+}
+
+/// Factory interface for providers that can create image generation models.
+abstract class ImageModelProviderFactory {
+  ImageGenerationCapability imageModel(String modelId);
+}
+
+/// Factory interface for providers that can create speech/transcription models.
+abstract class SpeechModelProviderFactory {
+  AudioCapability transcription(String modelId);
+  AudioCapability speech(String modelId);
+}
+
 /// Enterprise-grade provider registry for managing multiple providers
 /// and their capabilities. Useful for applications that work with
 /// multiple LLM providers or need dynamic provider selection.
@@ -262,3 +287,174 @@ class RegistryStats {
 
 /// Singleton instance for global provider registry
 final globalProviderRegistry = ProviderRegistry();
+
+/// High-level registry client that resolves combined model ids like
+/// `"openai:gpt-4o"` into strongly-typed model/capability interfaces.
+///
+/// This is conceptually similar to the `createProviderRegistry` helper
+/// in the Vercel AI SDK: callers register provider facades (such as
+/// OpenAI/GoogleGenerativeAI/DeepSeek) and then access models through
+/// a single registry entry point.
+class ProviderRegistryClient {
+  final ProviderRegistry _registry;
+  final String _separator;
+
+  ProviderRegistryClient(
+    this._registry, {
+    String separator = ':',
+  }) : _separator = separator;
+
+  /// Split a combined id like `"provider:model"` into its provider and
+  /// model components. Throws [InvalidRequestError] if the format is invalid.
+  (String, String) _splitId(String id, String modelType) {
+    final index = id.indexOf(_separator);
+    if (index == -1) {
+      throw InvalidRequestError(
+        'Invalid $modelType id for registry: $id '
+        '(must be in the format "providerId$_separator'
+        'modelId")',
+      );
+    }
+
+    final providerId = id.substring(0, index);
+    final modelId = id.substring(index + _separator.length);
+    return (providerId, modelId);
+  }
+
+  /// Resolve a language model for the given combined id.
+  ///
+  /// Example:
+  /// ```dart
+  /// final lm = registry.languageModel('openai:gpt-4o');
+  /// final result = await generateTextWithModel(
+  ///   lm,
+  ///   messages: [ModelMessage.userText('Hello')],
+  /// );
+  /// ```
+  LanguageModel languageModel(String id) {
+    final (providerId, modelId) = _splitId(id, 'languageModel');
+    final provider = _registry.getProvider<Object>(providerId);
+
+    if (provider is LanguageModelProviderFactory) {
+      return provider.languageModel(modelId);
+    }
+
+    throw InvalidRequestError(
+      'Provider "$providerId" does not support language models via '
+      'LanguageModelProviderFactory. '
+      'Make sure you register a facade such as OpenAI, GoogleGenerativeAI, '
+      'or DeepSeek that implements LanguageModelProviderFactory.',
+    );
+  }
+
+  /// Resolve a text embedding model for the given combined id.
+  ///
+  /// Example:
+  /// ```dart
+  /// final embedding = registry.textEmbeddingModel(
+  ///   'openai:text-embedding-3-small',
+  /// );
+  /// final vectors = await embedding.embed(['hello world']);
+  /// ```
+  EmbeddingCapability textEmbeddingModel(String id) {
+    final (providerId, modelId) = _splitId(id, 'textEmbeddingModel');
+    final provider = _registry.getProvider<Object>(providerId);
+
+    if (provider is EmbeddingModelProviderFactory) {
+      return provider.textEmbeddingModel(modelId);
+    }
+
+    throw InvalidRequestError(
+      'Provider "$providerId" does not support embedding models via '
+      'EmbeddingModelProviderFactory.',
+    );
+  }
+
+  /// Resolve an image generation model for the given combined id.
+  ///
+  /// Example:
+  /// ```dart
+  /// final imageModel = registry.imageModel('openai:dall-e-3');
+  /// final images = await imageModel.generateImage(
+  ///   prompt: 'A sunset over the mountains',
+  /// );
+  /// ```
+  ImageGenerationCapability imageModel(String id) {
+    final (providerId, modelId) = _splitId(id, 'imageModel');
+    final provider = _registry.getProvider<Object>(providerId);
+
+    if (provider is ImageModelProviderFactory) {
+      return provider.imageModel(modelId);
+    }
+
+    throw InvalidRequestError(
+      'Provider "$providerId" does not support image models via '
+      'ImageModelProviderFactory.',
+    );
+  }
+
+  /// Resolve a transcription (speech-to-text) model for the given id.
+  ///
+  /// Example:
+  /// ```dart
+  /// final stt = registry.transcriptionModel('openai:gpt-4o-transcribe');
+  /// final result = await stt.speechToText(request);
+  /// ```
+  AudioCapability transcriptionModel(String id) {
+    final (providerId, modelId) = _splitId(id, 'transcriptionModel');
+    final provider = _registry.getProvider<Object>(providerId);
+
+    if (provider is SpeechModelProviderFactory) {
+      return provider.transcription(modelId);
+    }
+
+    throw InvalidRequestError(
+      'Provider "$providerId" does not support transcription models via '
+      'SpeechModelProviderFactory.',
+    );
+  }
+
+  /// Resolve a speech (text-to-speech) model for the given id.
+  ///
+  /// Example:
+  /// ```dart
+  /// final tts = registry.speechModel('openai:gpt-4o-mini-tts');
+  /// final response = await tts.textToSpeech(request);
+  /// ```
+  AudioCapability speechModel(String id) {
+    final (providerId, modelId) = _splitId(id, 'speechModel');
+    final provider = _registry.getProvider<Object>(providerId);
+
+    if (provider is SpeechModelProviderFactory) {
+      return provider.speech(modelId);
+    }
+
+    throw InvalidRequestError(
+      'Provider "$providerId" does not support speech models via '
+      'SpeechModelProviderFactory.',
+    );
+  }
+
+  /// Expose underlying provider ids for diagnostics or tooling.
+  List<String> get providerIds => _registry.getProviderIds();
+
+  /// Expose registry statistics for debugging/monitoring.
+  RegistryStats get stats => _registry.getStats();
+}
+
+/// Create a registry client for the given provider facades.
+///
+/// The [providers] map typically contains Vercel-style provider facades
+/// such as `OpenAI`, `GoogleGenerativeAI`, or `DeepSeek`. The keys are
+/// logical provider identifiers (e.g. `"openai"`, `"google"`) which are
+/// used as the prefix in combined model ids like `"openai:gpt-4o"`.
+ProviderRegistryClient createProviderRegistry(
+  Map<String, Object> providers, {
+  String separator = ':',
+}) {
+  final registry = ProviderRegistry();
+  for (final entry in providers.entries) {
+    registry.registerProvider(entry.key, entry.value);
+  }
+  return ProviderRegistryClient(registry, separator: separator);
+}

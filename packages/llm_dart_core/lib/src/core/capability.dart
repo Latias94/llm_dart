@@ -857,7 +857,7 @@ String injectJsonInstruction({
   final lines = <String>[];
 
   if (hasPrompt) {
-    lines.add(prompt!);
+    lines.add(prompt);
     // Add an empty line after the prompt for readability.
     lines.add('');
   }
@@ -1549,7 +1549,7 @@ void _validateJsonAgainstSchema(
 
       final mapValue = value is Map<String, dynamic>
           ? value
-          : Map<String, dynamic>.from(value as Map);
+          : Map<String, dynamic>.from(value);
 
       final requiredProps =
           (schema['required'] as List<dynamic>? ?? const <dynamic>[])

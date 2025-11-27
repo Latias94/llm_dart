@@ -167,6 +167,58 @@ void main() async {
 }
 ```
 
+### Model-first helpers (Vercel AI SDK-style)
+
+For simple use cases, you can call high-level helpers directly with a `"provider:model"` identifier:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+Future<void> main() async {
+  const openaiKey = 'your-openai-key';
+
+  // 1. Text generation
+  final textResult = await generateText(
+    model: 'openai:gpt-4o-mini',
+    apiKey: openaiKey,
+    prompt: 'Tell me a joke about Dart.',
+  );
+  print(textResult.text);
+
+  // 2. Embeddings
+  final vectors = await embed(
+    model: 'openai:text-embedding-3-small',
+    apiKey: openaiKey,
+    input: ['hello', 'world'],
+  );
+  print('Embedding dimension: ${vectors.first.length}');
+
+  // 3. Image generation
+  final imageResponse = await generateImage(
+    model: 'openai:dall-e-3',
+    apiKey: openaiKey,
+    prompt: 'A cat playing piano on the moon',
+  );
+  print('First image URL: ${imageResponse.images.first.url}');
+
+  // 4. Text-to-speech
+  final audioBytes = await generateSpeech(
+    model: 'openai:gpt-4o-mini-tts',
+    apiKey: openaiKey,
+    text: 'Hello from llm_dart!',
+  );
+  print('Generated audio bytes: ${audioBytes.length}');
+
+  // 5. Audio transcription from file
+  final transcript = await transcribeFile(
+    model: 'openai:gpt-4o-transcribe',
+    apiKey: openaiKey,
+    filePath: 'audio.wav',
+  );
+  print('Transcript: $transcript');
+}
+```
+
 ### Prompt Building Patterns
 
 For most use cases, prefer the structured prompt model via `ChatPromptBuilder` and `ModelMessage`:

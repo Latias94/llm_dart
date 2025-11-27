@@ -41,6 +41,8 @@ library;
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_xai/llm_dart_xai.dart' as xai_impl;
 import 'config.dart';
+import '../../utils/provider_registry.dart'
+    show LanguageModelProviderFactory, EmbeddingModelProviderFactory;
 
 // Core exports
 export 'config.dart';
@@ -221,7 +223,8 @@ class XAIProviderSettings {
 /// Provides a model-centric API similar to `createXai` in the Vercel AI SDK.
 /// It returns [LanguageModel] instances and capability interfaces that can be
 /// used with high-level helpers.
-class XAI {
+class XAI
+    implements LanguageModelProviderFactory, EmbeddingModelProviderFactory {
   final XAIProviderSettings _settings;
   final String _baseUrl;
 
@@ -234,6 +237,7 @@ class XAI {
   /// Create a language model for text generation.
   ///
   /// Alias for [chat].
+  @override
   LanguageModel languageModel(String modelId) => chat(modelId);
 
   /// Create a chat model for text generation.
@@ -258,6 +262,11 @@ class XAI {
     final client = xai_impl.XAIClient(config);
     return xai_impl.XAIEmbeddings(client, config);
   }
+
+  /// Alias for [embedding] to mirror the Vercel AI SDK and support the
+  /// registry embedding factory interface.
+  @override
+  EmbeddingCapability textEmbeddingModel(String modelId) => embedding(modelId);
 
   LLMConfig _createLLMConfig(String modelId) {
     final headers = <String, String>{};

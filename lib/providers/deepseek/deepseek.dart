@@ -7,6 +7,7 @@ library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek_impl;
+import '../../utils/provider_registry.dart' show LanguageModelProviderFactory;
 
 export 'package:llm_dart_deepseek/llm_dart_deepseek.dart'
     show DeepSeekConfig, DeepSeekProvider;
@@ -65,7 +66,7 @@ class DeepSeekProviderSettings {
 /// Provides a model-centric API similar to `createDeepSeek` in the
 /// Vercel AI SDK. It returns [LanguageModel] instances that can be
 /// passed into helpers like [generateTextWithModel] or [runAgentText].
-class DeepSeek {
+class DeepSeek implements LanguageModelProviderFactory {
   final DeepSeekProviderSettings _settings;
   final String _baseUrl;
   final String _providerName;
@@ -80,6 +81,7 @@ class DeepSeek {
   /// Create a language model for text generation.
   ///
   /// Alias for [chat].
+  @override
   LanguageModel languageModel(String modelId) => chat(modelId);
 
   /// Create a chat model for text generation.

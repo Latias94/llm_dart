@@ -109,6 +109,8 @@ export 'package:llm_dart_core/llm_dart_core.dart'
         // Tools & structured output
         Tool,
         ExecutableTool,
+        ToolBuilder,
+        tool,
         ToolCall,
         ToolResult,
         FunctionCall,
@@ -614,6 +616,168 @@ Future<GenerateObjectResult<T>> generateObject<T>({
   );
 }
 
+/// High-level embedding helper (Vercel AI SDK-style).
+///
+/// This helper builds an [EmbeddingCapability] for the given `model`
+/// identifier (`"provider:model"`) and calls `embed(input)` on it.
+///
+/// Example:
+/// ```dart
+/// final vectors = await embed(
+///   model: 'openai:text-embedding-3-small',
+///   input: ['hello', 'world'],
+///   apiKey: openaiKey,
+/// );
+/// ```
+Future<List<List<double>>> embed({
+  required String model,
+  required List<String> input,
+  String? apiKey,
+  String? baseUrl,
+  CancellationToken? cancelToken,
+}) async {
+  var builder = LLMBuilder().use(model);
+
+  if (apiKey != null) {
+    builder = builder.apiKey(apiKey);
+  }
+  if (baseUrl != null) {
+    builder = builder.baseUrl(baseUrl);
+  }
+
+  final embeddingProvider = await builder.buildEmbedding();
+  return embeddingProvider.embed(input, cancelToken: cancelToken);
+}
+
+/// High-level image generation helper (Vercel AI SDK-style).
+///
+/// This helper builds an [ImageGenerationCapability] for the given
+/// `model` identifier (`"provider:model"`) and issues a single
+/// [ImageGenerationRequest]. The returned [ImageGenerationResponse]
+/// contains URLs or binary data for the generated images.
+Future<ImageGenerationResponse> generateImage({
+  required String model,
+  required String prompt,
+  String? apiKey,
+  String? baseUrl,
+  String? negativePrompt,
+  String? size,
+  int? count,
+  int? seed,
+  int? steps,
+  double? guidanceScale,
+  bool? enhancePrompt,
+  String? style,
+  String? quality,
+  String? responseFormat,
+  String? user,
+}) async {
+  var builder = LLMBuilder().use(model);
+
+  if (apiKey != null) {
+    builder = builder.apiKey(apiKey);
+  }
+  if (baseUrl != null) {
+    builder = builder.baseUrl(baseUrl);
+  }
+
+  final imageProvider = await builder.buildImageGeneration();
+
+  final request = ImageGenerationRequest(
+    prompt: prompt,
+    // Leave request.model null so providers use the configured model from
+    // LLMConfig; callers control the model via the `model` identifier.
+    model: null,
+    negativePrompt: negativePrompt,
+    size: size,
+    count: count,
+    seed: seed,
+    steps: steps,
+    guidanceScale: guidanceScale,
+    enhancePrompt: enhancePrompt,
+    style: style,
+    quality: quality,
+    responseFormat: responseFormat,
+    user: user,
+  );
+
+  return imageProvider.generateImages(request);
+}
+
+/// High-level text-to-speech helper (Vercel AI SDK-style).
+///
+/// Builds an [AudioCapability] for the given `model` identifier and
+/// returns raw audio bytes for the synthesized speech.
+Future<List<int>> generateSpeech({
+  required String model,
+  required String text,
+  String? apiKey,
+  String? baseUrl,
+  CancellationToken? cancelToken,
+}) async {
+  var builder = LLMBuilder().use(model);
+
+  if (apiKey != null) {
+    builder = builder.apiKey(apiKey);
+  }
+  if (baseUrl != null) {
+    builder = builder.baseUrl(baseUrl);
+  }
+
+  final audioProvider = await builder.buildAudio();
+  return audioProvider.speech(text, cancelToken: cancelToken);
+}
+
+/// High-level transcription helper for in-memory audio.
+///
+/// Builds an [AudioCapability] for the given `model` identifier and
+/// returns the transcribed text for the provided audio bytes.
+Future<String> transcribe({
+  required String model,
+  required List<int> audio,
+  String? apiKey,
+  String? baseUrl,
+  CancellationToken? cancelToken,
+}) async {
+  var builder = LLMBuilder().use(model);
+
+  if (apiKey != null) {
+    builder = builder.apiKey(apiKey);
+  }
+  if (baseUrl != null) {
+    builder = builder.baseUrl(baseUrl);
+  }
+
+  final audioProvider = await builder.buildAudio();
+  // AudioCapability.transcribe(...) is a convenience wrapper around
+  // speechToText(STTRequest.fromAudio).
+  return audioProvider.transcribe(audio);
+}
+
+/// High-level transcription helper for audio files.
+///
+/// This variant accepts a file path and uses the underlying audio
+/// provider's `transcribeFile(...)` convenience method.
+Future<String> transcribeFile({
+  required String model,
+  required String filePath,
+  String? apiKey,
+  String? baseUrl,
+  CancellationToken? cancelToken,
+}) async {
+  var builder = LLMBuilder().use(model);
+
+  if (apiKey != null) {
+    builder = builder.apiKey(apiKey);
+  }
+  if (baseUrl != null) {
+    builder = builder.baseUrl(baseUrl);
+  }
+
+  final audioProvider = await builder.buildAudio();
+  return audioProvider.transcribeFile(filePath);
+}
+
 /// Streaming structured object helper (MVP).
 ///
 /// This helper streams [ChatStreamEvent]s while concurrently
@@ -731,7 +895,7 @@ void _validateHelperJsonAgainstSchema(
 
       final mapValue = value is Map<String, dynamic>
           ? value
-          : Map<String, dynamic>.from(value as Map);
+          : Map<String, dynamic>.from(value);
 
       final requiredProps =
           (schema['required'] as List<dynamic>? ?? const <dynamic>[])

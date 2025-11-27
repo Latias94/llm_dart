@@ -23,6 +23,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `streamText(...) -> Stream<ChatStreamEvent>` is still supported for advanced use cases and middlewares.
     - New code should prefer `streamTextParts(...)` for most UI and application-level streaming scenarios.
 
+- **Provider registry client (Vercel AI SDK-style)**  
+  - Added `ProviderRegistryClient` and `createProviderRegistry` in `llm_dart` to mirror the `createProviderRegistry` pattern from the Vercel AI SDK:
+    - `createProviderRegistry({...})` accepts provider facades (OpenAI, GoogleGenerativeAI, DeepSeek, XAI, Ollama, etc.).
+    - `ProviderRegistryClient.languageModel('openai:gpt-4o')` returns a configured `LanguageModel`.
+    - `textEmbeddingModel('openai:text-embedding-3-small')`, `imageModel('google:gemini-1.5-flash')`, `speechModel('openai:gpt-4o-mini-tts')`, etc.
+  - Introduced lightweight factory interfaces for provider facades:
+    - `LanguageModelProviderFactory`, `EmbeddingModelProviderFactory`, `ImageModelProviderFactory`, `SpeechModelProviderFactory`.
+    - Implemented by: `OpenAI`, `GoogleGenerativeAI`, `DeepSeek`, `XAI`, and the new `Ollama` factory.
+  - Added focused tests:
+    - `test/utils/provider_registry_client_test.dart`
+    - `test/providers/ollama/ollama_registry_integration_test.dart`
+
+- **Ollama model factory (Vercel-style)**  
+  - Added an `Ollama` model factory in `lib/providers/ollama/ollama.dart`:
+    - `OllamaProviderSettings` for configuring `baseUrl`, `apiKey`, `timeout`, custom headers, and logical provider name.
+    - `Ollama.languageModel(modelId)` → wraps `OllamaProvider` as a `LanguageModel`.
+    - `Ollama.textEmbeddingModel(modelId)` → returns an `EmbeddingCapability` based on `OllamaProvider`.
+  - Added a top-level helper:
+    - `createOllama(...)` – Vercel-style entrypoint for Ollama models.
+  - Fully integrated with `createProviderRegistry`, so callers can do:
+    - `registry.languageModel('ollama:llama3.2')`
+    - `registry.textEmbeddingModel('ollama:nomic-embed-text')`
+
+- **Tool schema builder (`ToolBuilder` + `tool(...)`)**  
+  - Introduced a small DSL on top of `Tool` / `ParametersSchema` / `ParameterProperty` in `llm_dart_core`:
+    - `ToolBuilder` – fluent builder for function tools:
+      - `description(...)`
+      - `stringParam(...)`, `numberParam(...)`, `integerParam(...)`, `booleanParam(...)`
+      - `enumParam(...)` – string enum helper
+      - `arrayParam(...)` – arrays with `items: ParameterProperty`
+      - `objectParam(...)` – nested object parameters
+    - Top-level helper `tool(name, (builder) { ... })` to build `Tool` instances with a concise API.
+  - Re-exported from:
+    - `package:llm_dart_core/llm_dart_core.dart`
+    - `package:llm_dart/llm_dart.dart`
+  - Updated examples to demonstrate both the new DSL and the underlying schema types:
+    - `example/02_core_features/enhanced_tool_calling.dart`
+    - `example/02_core_features/tool_calling.dart` (shows `tool(...)` and equivalent `Tool.function + ParametersSchema` side-by-side for comparison).
+
 ### Changed
 
 - **Multi-package architecture (Vercel AI SDK style)**  

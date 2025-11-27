@@ -29,6 +29,12 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_impl;
 
 import 'builtin_tools.dart';
+import '../../utils/provider_registry.dart'
+    show
+        LanguageModelProviderFactory,
+        EmbeddingModelProviderFactory,
+        ImageModelProviderFactory,
+        SpeechModelProviderFactory;
 
 // Core exports
 export 'config.dart';
@@ -119,7 +125,12 @@ class OpenAIProviderSettings {
 /// The methods return strongly-typed capability interfaces from
 /// `llm_dart_core`, with chat-style models wrapped as [LanguageModel]
 /// to align with the AI SDK's language model abstraction.
-class OpenAI {
+class OpenAI
+    implements
+        LanguageModelProviderFactory,
+        EmbeddingModelProviderFactory,
+        ImageModelProviderFactory,
+        SpeechModelProviderFactory {
   final OpenAIProviderSettings _settings;
   final String _baseUrl;
   final String _providerName;
@@ -134,6 +145,7 @@ class OpenAI {
   /// Create a language model using the OpenAI Responses API.
   ///
   /// This is the primary entry point and is equivalent to [responses].
+  @override
   LanguageModel languageModel(String modelId) => responses(modelId);
 
   /// Create a chat model using the Chat Completions API.
@@ -192,6 +204,7 @@ class OpenAI {
   EmbeddingCapability textEmbedding(String modelId) => embedding(modelId);
 
   /// Alias for [embedding] to mirror the Vercel AI SDK.
+  @override
   EmbeddingCapability textEmbeddingModel(String modelId) => embedding(modelId);
 
   /// Create an image generation model.
@@ -201,6 +214,7 @@ class OpenAI {
   ImageGenerationCapability image(String modelId) => imageModel(modelId);
 
   /// Alias for [image] to mirror the Vercel AI SDK.
+  @override
   ImageGenerationCapability imageModel(String modelId) {
     final config = _createOpenAIConfig(modelId: modelId);
     final client = openai_impl.OpenAIClient(config);
@@ -210,6 +224,7 @@ class OpenAI {
   /// Create a transcription model (speech-to-text).
   ///
   /// Returns an [AudioCapability] configured for speech recognition.
+  @override
   AudioCapability transcription(String modelId) {
     final config = _createOpenAIConfig(modelId: modelId);
     final client = openai_impl.OpenAIClient(config);
@@ -219,6 +234,7 @@ class OpenAI {
   /// Create a speech model (text-to-speech).
   ///
   /// Returns an [AudioCapability] configured for text-to-speech.
+  @override
   AudioCapability speech(String modelId) => transcription(modelId);
 
   /// OpenAI built-in tools (web search, file search, computer use).

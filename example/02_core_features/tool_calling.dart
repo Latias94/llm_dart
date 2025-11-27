@@ -54,21 +54,36 @@ Future<void> demonstrateBasicToolCalling(LanguageModel model) async {
 
   try {
     // Define a simple calculator tool
-    final calculatorTool = Tool.function(
-      name: 'calculate',
-      description: 'Perform basic mathematical calculations',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'expression': ParameterProperty(
-            propertyType: 'string',
-            description:
-                'Mathematical expression to evaluate (e.g., "2 + 3 * 4")',
-          ),
-        },
-        required: ['expression'],
-      ),
-    );
+    //
+    // 写法 1（推荐）：使用 ToolBuilder / tool(...) 语法糖
+    final calculatorTool = tool('calculate', (t) {
+      t
+        ..description('Perform basic mathematical calculations')
+        ..stringParam(
+          'expression',
+          description:
+              'Mathematical expression to evaluate (e.g., "2 + 3 * 4")',
+          required: true,
+        );
+    });
+
+    // 写法 2（等价参考）：直接手写 Tool.function + ParametersSchema
+    //
+    // final calculatorTool = Tool.function(
+    //   name: 'calculate',
+    //   description: 'Perform basic mathematical calculations',
+    //   parameters: ParametersSchema(
+    //     schemaType: 'object',
+    //     properties: {
+    //       'expression': ParameterProperty(
+    //         propertyType: 'string',
+    //         description:
+    //             'Mathematical expression to evaluate (e.g., "2 + 3 * 4")',
+    //       ),
+    //     },
+    //     required: ['expression'],
+    //   ),
+    // );
 
     final prompt = ChatPromptBuilder.user()
         .text('What is 15 * 8 + 42? Please use the calculator tool.')
@@ -284,62 +299,47 @@ Future<void> demonstrateMultipleTools(LanguageModel model) async {
     // Define multiple tools
     final tools = [
       // Weather tool
-      Tool.function(
-        name: 'get_weather',
-        description: 'Get current weather information for a location',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'location': ParameterProperty(
-              propertyType: 'string',
-              description: 'City and state/country (e.g., "San Francisco, CA")',
-            ),
-            'unit': ParameterProperty(
-              propertyType: 'string',
-              description: 'Temperature unit',
-              enumList: ['celsius', 'fahrenheit'],
-            ),
-          },
-          required: ['location'],
-        ),
-      ),
+      tool('get_weather', (t) {
+        t
+          ..description('Get current weather information for a location')
+          ..stringParam(
+            'location',
+            description: 'City and state/country (e.g., "San Francisco, CA")',
+            required: true,
+          )
+          ..enumParam(
+            'unit',
+            description: 'Temperature unit',
+            values: ['celsius', 'fahrenheit'],
+          );
+      }),
 
       // Time tool
-      Tool.function(
-        name: 'get_current_time',
-        description: 'Get current time in a specific timezone',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'timezone': ParameterProperty(
-              propertyType: 'string',
-              description:
-                  'Timezone (e.g., "America/New_York", "Europe/London")',
-            ),
-          },
-          required: ['timezone'],
-        ),
-      ),
+      tool('get_current_time', (t) {
+        t
+          ..description('Get current time in a specific timezone')
+          ..stringParam(
+            'timezone',
+            description: 'Timezone (e.g., "America/New_York", "Europe/London")',
+            required: true,
+          );
+      }),
 
       // Random number tool
-      Tool.function(
-        name: 'generate_random_number',
-        description: 'Generate a random number within a specified range',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'min': ParameterProperty(
-              propertyType: 'integer',
-              description: 'Minimum value (inclusive)',
-            ),
-            'max': ParameterProperty(
-              propertyType: 'integer',
-              description: 'Maximum value (inclusive)',
-            ),
-          },
-          required: ['min', 'max'],
-        ),
-      ),
+      tool('generate_random_number', (t) {
+        t
+          ..description('Generate a random number within a specified range')
+          ..integerParam(
+            'min',
+            description: 'Minimum value (inclusive)',
+            required: true,
+          )
+          ..integerParam(
+            'max',
+            description: 'Maximum value (inclusive)',
+            required: true,
+          );
+      }),
     ];
 
     final prompt = ChatPromptBuilder.user()
@@ -401,40 +401,31 @@ Future<void> demonstrateToolChaining(LanguageModel model) async {
   try {
     final tools = [
       // Web search tool
-      Tool.function(
-        name: 'search_web',
-        description: 'Search the web for information',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'query': ParameterProperty(
-              propertyType: 'string',
-              description: 'Search query',
-            ),
-          },
-          required: ['query'],
-        ),
-      ),
+      tool('search_web', (t) {
+        t
+          ..description('Search the web for information')
+          ..stringParam(
+            'query',
+            description: 'Search query',
+            required: true,
+          );
+      }),
 
       // Note saving tool
-      Tool.function(
-        name: 'save_note',
-        description: 'Save information as a note',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'title': ParameterProperty(
-              propertyType: 'string',
-              description: 'Note title',
-            ),
-            'content': ParameterProperty(
-              propertyType: 'string',
-              description: 'Note content',
-            ),
-          },
-          required: ['title', 'content'],
-        ),
-      ),
+      tool('save_note', (t) {
+        t
+          ..description('Save information as a note')
+          ..stringParam(
+            'title',
+            description: 'Note title',
+            required: true,
+          )
+          ..stringParam(
+            'content',
+            description: 'Note content',
+            required: true,
+          );
+      }),
     ];
 
     final prompt = ChatPromptBuilder.user()
@@ -500,20 +491,15 @@ Future<void> demonstrateStreamingWithTools(String apiKey) async {
 
   try {
     final tools = [
-      Tool.function(
-        name: 'get_file_info',
-        description: 'Get information about a file',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'path': ParameterProperty(
-              propertyType: 'string',
-              description: 'File path to analyze',
-            ),
-          },
-          required: ['path'],
-        ),
-      ),
+      tool('get_file_info', (t) {
+        t
+          ..description('Get information about a file')
+          ..stringParam(
+            'path',
+            description: 'File path to analyze',
+            required: true,
+          );
+      }),
     ];
 
     const question =
@@ -625,21 +611,16 @@ Future<void> demonstrateToolErrorHandling(LanguageModel model) async {
   try {
     // Define a tool that might fail
     final tools = [
-      Tool.function(
-        name: 'risky_operation',
-        description: 'An operation that might fail',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'action': ParameterProperty(
-              propertyType: 'string',
-              description: 'Action to perform',
-              enumList: ['safe', 'risky', 'invalid'],
-            ),
-          },
-          required: ['action'],
-        ),
-      ),
+      tool('risky_operation', (t) {
+        t
+          ..description('An operation that might fail')
+          ..enumParam(
+            'action',
+            description: 'Action to perform',
+            values: ['safe', 'risky', 'invalid'],
+            required: true,
+          );
+      }),
     ];
 
     final prompt = ChatPromptBuilder.user()
@@ -739,52 +720,38 @@ Future<void> demonstrateComplexWorkflow(LanguageModel model) async {
   try {
     // Define a comprehensive set of tools for a research workflow
     final tools = [
-      Tool.function(
-        name: 'search_web',
-        description: 'Search the web for information',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'query': ParameterProperty(
-              propertyType: 'string',
-              description: 'Search query',
-            ),
-          },
-          required: ['query'],
-        ),
-      ),
-      Tool.function(
-        name: 'calculate',
-        description: 'Perform mathematical calculations',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'expression': ParameterProperty(
-              propertyType: 'string',
-              description: 'Mathematical expression to evaluate',
-            ),
-          },
-          required: ['expression'],
-        ),
-      ),
-      Tool.function(
-        name: 'save_note',
-        description: 'Save information as a note',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'title': ParameterProperty(
-              propertyType: 'string',
-              description: 'Note title',
-            ),
-            'content': ParameterProperty(
-              propertyType: 'string',
-              description: 'Note content',
-            ),
-          },
-          required: ['title', 'content'],
-        ),
-      ),
+      tool('search_web', (t) {
+        t
+          ..description('Search the web for information')
+          ..stringParam(
+            'query',
+            description: 'Search query',
+            required: true,
+          );
+      }),
+      tool('calculate', (t) {
+        t
+          ..description('Perform mathematical calculations')
+          ..stringParam(
+            'expression',
+            description: 'Mathematical expression to evaluate',
+            required: true,
+          );
+      }),
+      tool('save_note', (t) {
+        t
+          ..description('Save information as a note')
+          ..stringParam(
+            'title',
+            description: 'Note title',
+            required: true,
+          )
+          ..stringParam(
+            'content',
+            description: 'Note content',
+            required: true,
+          );
+      }),
     ];
 
     final prompts = <ModelMessage>[

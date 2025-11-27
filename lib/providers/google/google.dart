@@ -33,6 +33,11 @@ import 'package:llm_dart_google/llm_dart_google.dart'
         GoogleEmbeddings,
         GoogleImages,
         SafetySetting;
+import '../../utils/provider_registry.dart'
+    show
+        LanguageModelProviderFactory,
+        EmbeddingModelProviderFactory,
+        ImageModelProviderFactory;
 
 /// Public Google provider surface re-export.
 ///
@@ -101,7 +106,11 @@ class GoogleGenerativeAIProviderSettings {
 /// Provides a model-centric API similar to `createGoogleGenerativeAI` in
 /// the Vercel AI SDK. It returns [LanguageModel] instances and capability
 /// interfaces that can be used with high-level helpers.
-class GoogleGenerativeAI {
+class GoogleGenerativeAI
+    implements
+        LanguageModelProviderFactory,
+        EmbeddingModelProviderFactory,
+        ImageModelProviderFactory {
   final GoogleGenerativeAIProviderSettings _settings;
   final String _baseUrl;
   final String _providerName;
@@ -116,6 +125,7 @@ class GoogleGenerativeAI {
   /// Create a language model for text generation.
   ///
   /// Alias for [chat].
+  @override
   LanguageModel languageModel(String modelId) => chat(modelId);
 
   /// Create a chat model for text generation.
@@ -145,12 +155,14 @@ class GoogleGenerativeAI {
   EmbeddingCapability textEmbedding(String modelId) => embedding(modelId);
 
   /// Alias for [embedding] to mirror the Vercel AI SDK.
+  @override
   EmbeddingCapability textEmbeddingModel(String modelId) => embedding(modelId);
 
   /// Create an image generation model.
   ImageGenerationCapability image(String modelId) => imageModel(modelId);
 
   /// Alias for [image] to mirror the Vercel AI SDK.
+  @override
   ImageGenerationCapability imageModel(String modelId) {
     final llmConfig = _createLLMConfig(modelId);
     final config = GoogleConfig.fromLLMConfig(llmConfig);

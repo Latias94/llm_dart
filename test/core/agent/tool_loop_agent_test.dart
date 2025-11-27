@@ -929,13 +929,11 @@ void main() {
     });
 
     test('throws GenericError when tool retries are exhausted', () async {
-      var callCount = 0;
       final model = MockLanguageModel(
         providerId: 'mock',
         modelId: 'retry-model',
         config: LLMConfig(baseUrl: '', model: 'retry-model'),
         doGenerate: (messages, options) async {
-          callCount++;
           final toolCall = ToolCall(
             id: 'call_1',
             callType: 'function',

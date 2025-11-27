@@ -17,6 +17,7 @@ export 'src/core/agent.dart';
 // Core models
 export 'src/models/chat_models.dart';
 export 'src/models/tool_models.dart';
+export 'src/models/tool_builder.dart';
 export 'src/models/audio_models.dart';
 export 'src/models/image_models.dart';
 export 'src/models/file_models.dart';
