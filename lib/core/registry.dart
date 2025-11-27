@@ -46,6 +46,8 @@ class LLMProviderRegistry {
   static final Map<String, LLMProviderFactory> _factories = {};
   static bool _initialized = false;
   static final Logger _logger = Logger('LLMProviderRegistry');
+  // Collect registration failures for observability.
+  static final List<String> _registrationErrors = [];
 
   /// Register a provider factory
   ///
@@ -205,6 +207,8 @@ class LLMProviderRegistry {
 
   /// Register built-in providers
   static void _registerBuiltinProviders() {
+    _registrationErrors.clear();
+
     // Import and register built-in provider factories
     try {
       // Register OpenAI provider factory
@@ -264,9 +268,17 @@ class LLMProviderRegistry {
       // Register OpenAI-compatible providers
       _registerOpenAICompatibleProviders();
     } catch (e) {
-      _logger.warning('Failed to register built-in providers: $e');
+      _registrationErrors.add('registry-init: $e');
+      _logger.severe('Failed to register built-in providers: $e');
       // Silently fail if provider factories are not available
       // This allows the library to work even if some providers are not included
+    }
+
+    if (_registrationErrors.isNotEmpty) {
+      _logger.severe(
+        'One or more providers failed to register: '
+        '${_registrationErrors.join('; ')}',
+      );
     }
   }
 
@@ -275,6 +287,7 @@ class LLMProviderRegistry {
     try {
       return OpenAIProviderFactory();
     } catch (e) {
+      _registrationErrors.add('openai: $e');
       _logger.warning('Failed to create OpenAI factory: $e');
       return null;
     }
@@ -285,6 +298,7 @@ class LLMProviderRegistry {
     try {
       return AnthropicProviderFactory();
     } catch (e) {
+      _registrationErrors.add('anthropic: $e');
       _logger.warning('Failed to create Anthropic factory: $e');
       return null;
     }
@@ -295,6 +309,7 @@ class LLMProviderRegistry {
     try {
       return DeepSeekProviderFactory();
     } catch (e) {
+      _registrationErrors.add('deepseek: $e');
       _logger.warning('Failed to create DeepSeek factory: $e');
       return null;
     }
@@ -305,6 +320,7 @@ class LLMProviderRegistry {
     try {
       return OllamaProviderFactory();
     } catch (e) {
+      _registrationErrors.add('ollama: $e');
       _logger.warning('Failed to create Ollama factory: $e');
       return null;
     }
@@ -315,6 +331,7 @@ class LLMProviderRegistry {
     try {
       return GoogleProviderFactory();
     } catch (e) {
+      _registrationErrors.add('google: $e');
       _logger.warning('Failed to create Google factory: $e');
       return null;
     }
@@ -325,6 +342,7 @@ class LLMProviderRegistry {
     try {
       return XAIProviderFactory();
     } catch (e) {
+      _registrationErrors.add('xai: $e');
       _logger.warning('Failed to create XAI factory: $e');
       return null;
     }
@@ -335,6 +353,7 @@ class LLMProviderRegistry {
     try {
       return PhindProviderFactory();
     } catch (e) {
+      _registrationErrors.add('phind: $e');
       _logger.warning('Failed to create Phind factory: $e');
       return null;
     }
@@ -345,6 +364,7 @@ class LLMProviderRegistry {
     try {
       return GroqProviderFactory();
     } catch (e) {
+      _registrationErrors.add('groq: $e');
       _logger.warning('Failed to create Groq factory: $e');
       return null;
     }
@@ -355,6 +375,7 @@ class LLMProviderRegistry {
     try {
       return ElevenLabsProviderFactory();
     } catch (e) {
+      _registrationErrors.add('elevenlabs: $e');
       _logger.warning('Failed to create ElevenLabs factory: $e');
       return null;
     }
@@ -367,9 +388,16 @@ class LLMProviderRegistry {
       OpenAICompatibleProviderRegistrar.registerAll();
       _logger.fine('Registered OpenAI-compatible providers');
     } catch (e) {
+      _registrationErrors.add('openai-compatible: $e');
       _logger.warning('Failed to register OpenAI-compatible providers: $e');
       // Silently fail if OpenAI-compatible providers are not available
     }
+  }
+
+  /// Retrieve registration errors (if any) for diagnostics/telemetry.
+  static List<String> getRegistrationErrors() {
+    _ensureInitialized();
+    return List.unmodifiable(_registrationErrors);
   }
 }
 

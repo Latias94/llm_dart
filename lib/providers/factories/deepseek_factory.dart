@@ -1,6 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
-import '../../core/provider_defaults.dart';
 
 import 'base_factory.dart';
 
@@ -35,9 +34,10 @@ class DeepSeekProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('deepseek');
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: 'https://api.deepseek.com/v1/',
+        model: 'deepseek-chat',
+      );
 
   /// Transform unified config to DeepSeek-specific config
   DeepSeekConfig _transformConfig(LLMConfig config) {

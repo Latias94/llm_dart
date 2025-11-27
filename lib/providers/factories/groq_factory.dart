@@ -1,7 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_groq/llm_dart_groq.dart';
 
-import '../../core/provider_defaults.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Groq provider instances
@@ -32,9 +31,9 @@ class GroqProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('groq');
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+      baseUrl: 'https://api.groq.com/openai/v1/',
+      model: 'llama-3.3-70b-versatile');
 
   /// Transform unified config to Groq-specific config
   GroqConfig _transformConfig(LLMConfig config) {
@@ -42,10 +41,8 @@ class GroqProviderFactory extends BaseProviderFactory<ChatCapability> {
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl.isNotEmpty
           ? config.baseUrl
-          : ProviderDefaults.groqBaseUrl,
-      model: config.model.isNotEmpty
-          ? config.model
-          : ProviderDefaults.groqDefaultModel,
+          : 'https://api.groq.com/openai/v1/',
+      model: config.model.isNotEmpty ? config.model : 'llama-3.3-70b-versatile',
       maxTokens: config.maxTokens,
       temperature: config.temperature,
       systemPrompt: config.systemPrompt,

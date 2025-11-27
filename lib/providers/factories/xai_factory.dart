@@ -1,6 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_xai/llm_dart_xai.dart';
-import '../../core/provider_defaults.dart';
 import 'base_factory.dart';
 
 /// Factory for creating XAI provider instances using native XAI interface
@@ -36,9 +35,10 @@ class XAIProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('xai');
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: 'https://api.x.ai/v1/',
+        model: 'grok-3',
+      );
 
   /// Transform unified config to XAI-specific config
   XAIConfig _transformConfig(LLMConfig config) {

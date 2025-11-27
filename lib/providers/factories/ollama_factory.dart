@@ -1,6 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_ollama/llm_dart_ollama.dart';
-import '../../core/provider_defaults.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Ollama provider instances
@@ -34,9 +33,10 @@ class OllamaProviderFactory extends LocalProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('ollama');
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: 'http://localhost:11434/',
+        model: 'llama3.2',
+      );
 
   /// Transform unified config to Ollama-specific config
   OllamaConfig _transformConfig(LLMConfig config) {

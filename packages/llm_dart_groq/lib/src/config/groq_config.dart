@@ -1,7 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 
-// Local Groq defaults to avoid depending on the main package.
 const String _groqDefaultBaseUrl = 'https://api.groq.com/openai/v1/';
 const String _groqDefaultModel = 'llama-3.3-70b-versatile';
 

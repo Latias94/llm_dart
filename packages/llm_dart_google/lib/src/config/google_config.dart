@@ -2,6 +2,10 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'google_file_search_config.dart';
 
+const String _defaultBaseUrl =
+    'https://generativelanguage.googleapis.com/v1beta/';
+const String _defaultModel = 'gemini-1.5-flash';
+
 /// Google AI harm categories
 enum HarmCategory {
   harmCategoryUnspecified('HARM_CATEGORY_UNSPECIFIED'),
@@ -89,10 +93,6 @@ class GoogleConfig {
   final GoogleFileSearchConfig? fileSearchConfig;
   final bool codeExecutionEnabled;
   final bool urlContextEnabled;
-
-  static const String _defaultBaseUrl =
-      'https://generativelanguage.googleapis.com/v1beta/';
-  static const String _defaultModel = 'gemini-1.5-flash';
 
   const GoogleConfig({
     required this.apiKey,

@@ -268,14 +268,6 @@ Technical Details:
       print('Created sample.txt for demonstration');
     }
 
-    final provider = await ai()
-        .openai((openai) => openai.useResponsesAPI())
-        .apiKey(apiKey)
-        .model('gpt-4o')
-        .temperature(0.7)
-        .maxTokens(300)
-        .build();
-
     // Read file
     final fileBytes = await textFile.readAsBytes();
     print('Loaded file: ${fileBytes.length} bytes');

@@ -1,5 +1,4 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
-import '../../core/provider_defaults.dart';
 import 'base_factory.dart';
 import 'package:llm_dart_phind/llm_dart_phind.dart';
 
@@ -32,9 +31,10 @@ class PhindProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('phind');
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: 'https://https.extension.phind.com/agent/',
+        model: 'Phind-70B',
+      );
 
   /// Transform unified config to Phind-specific config
   PhindConfig _transformConfig(LLMConfig config) {

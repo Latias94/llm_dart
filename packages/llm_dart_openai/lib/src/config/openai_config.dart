@@ -2,7 +2,6 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../tools/openai_builtin_tools.dart';
 
-// Local OpenAI defaults to avoid depending on the main package.
 const String _openaiDefaultBaseUrl = 'https://api.openai.com/v1/';
 const String _openaiDefaultModel = 'gpt-4o';
 

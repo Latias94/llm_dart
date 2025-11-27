@@ -73,15 +73,43 @@ class LLMBuilder {
 
   /// Sets the provider to use (new registry-based approach)
   LLMBuilder provider(String providerId) {
+    final previous = _config;
     _providerId = providerId;
 
     // Get default config for this provider if it's registered
     final factory = LLMProviderRegistry.getFactory(providerId);
     if (factory != null) {
-      _config = factory.getDefaultConfig();
+      _mergeWithDefaults(factory.getDefaultConfig());
+    } else {
+      _config = previous;
     }
 
     return this;
+  }
+
+  /// Merge provider defaults into the current config without overwriting
+  /// values the caller has already set (apiKey, baseUrl, model, extensions, etc.).
+  void _mergeWithDefaults(LLMConfig defaults) {
+    _config = LLMConfig(
+      apiKey: _config.apiKey ?? defaults.apiKey,
+      baseUrl: _config.baseUrl.isNotEmpty ? _config.baseUrl : defaults.baseUrl,
+      model: _config.model.isNotEmpty ? _config.model : defaults.model,
+      maxTokens: _config.maxTokens ?? defaults.maxTokens,
+      temperature: _config.temperature ?? defaults.temperature,
+      systemPrompt: _config.systemPrompt ?? defaults.systemPrompt,
+      timeout: _config.timeout ?? defaults.timeout,
+      topP: _config.topP ?? defaults.topP,
+      topK: _config.topK ?? defaults.topK,
+      tools: _config.tools ?? defaults.tools,
+      toolChoice: _config.toolChoice ?? defaults.toolChoice,
+      stopSequences: _config.stopSequences ?? defaults.stopSequences,
+      user: _config.user ?? defaults.user,
+      serviceTier: _config.serviceTier ?? defaults.serviceTier,
+      extensions: {
+        ...defaults.extensions,
+        ..._config.extensions,
+      },
+    );
   }
 
   /// Convenience methods for built-in providers

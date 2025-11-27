@@ -1,5 +1,8 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+const String _defaultBaseUrl = 'https://api.deepseek.com/v1/';
+const String _defaultModel = 'deepseek-chat';
+
 /// DeepSeek provider configuration
 ///
 /// This class contains all configuration options for the DeepSeek providers.
@@ -27,9 +30,6 @@ class DeepSeekConfig {
 
   /// Reference to original LLMConfig for accessing extensions
   final LLMConfig? _originalConfig;
-
-  static const String _defaultBaseUrl = 'https://api.deepseek.com/v1/';
-  static const String _defaultModel = 'deepseek-chat';
 
   const DeepSeekConfig({
     required this.apiKey,

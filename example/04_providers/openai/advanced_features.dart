@@ -100,14 +100,6 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
   print('🔧 Function Calling:\n');
 
   try {
-    final model = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-5.1')
-        .temperature(0.3)
-        .tools(tools)
-        .buildLanguageModel();
-
     // Define tools/functions
     final weatherTool = Tool.function(
       name: 'get_weather',
@@ -146,6 +138,13 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
 
     final tools = [weatherTool, calculatorTool];
 
+    final model = await ai()
+        .openai()
+        .apiKey(apiKey)
+        .model('gpt-5.1')
+        .temperature(0.3)
+        .buildLanguageModel();
+
     // Test function calling
     print('   Testing function calling with multiple tools...');
     const question = 'What\'s the weather like in Tokyo and calculate 15 * 23?';
@@ -155,6 +154,7 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
     final response = await generateTextWithModel(
       model,
       promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: tools),
     );
 
     print('      User: $question');
@@ -166,34 +166,8 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
             '         ${toolCall.function.name}: ${toolCall.function.arguments}');
       }
 
-      // Build conversation with tool call message
-      final conversation = List<ChatMessage>.from(messages)
-        ..add(ChatMessage.toolUse(
-          toolCalls: response.toolCalls!,
-          content: response.text ?? '',
-        ));
-
-      // Simulate tool execution and add tool results
-      for (final toolCall in response.toolCalls!) {
-        String result;
-        if (toolCall.function.name == 'get_weather') {
-          result = '{"temperature": 22, "condition": "sunny", "humidity": 65}';
-        } else if (toolCall.function.name == 'calculate') {
-          result = '{"result": 345}';
-        } else {
-          result = '{"error": "Unknown function"}';
-        }
-
-        conversation.add(ChatMessage.toolResult(
-          results: [toolCall],
-          content: result,
-        ));
-      }
-
-      // Continue conversation with tool results
-      final finalResponse = await provider.chat(conversation);
-
-      print('      Final response: ${finalResponse.text}');
+      print(
+          '      (tool execution and follow-up conversation omitted for brevity)');
     } else {
       print('      Response: ${response.text}');
     }

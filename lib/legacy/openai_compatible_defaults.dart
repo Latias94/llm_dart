@@ -17,4 +17,8 @@
 /// `import 'package:llm_dart/legacy/openai_compatible_defaults.dart';`.
 library;
 
-export '../core/provider_defaults.dart' show OpenAICompatibleDefaults;
+// This legacy entry point previously re-exported OpenAICompatibleDefaults
+// from core-level provider defaults. The defaults have been removed in favor
+// of the richer OpenAICompatibleProviderProfiles in the
+// llm_dart_openai_compatible package. The file is kept only to avoid breaking
+// imports; it no longer exports any symbols.

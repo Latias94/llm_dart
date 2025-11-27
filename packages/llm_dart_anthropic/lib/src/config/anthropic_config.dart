@@ -1,5 +1,8 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+const String _defaultBaseUrl = 'https://api.anthropic.com/v1/';
+const String _defaultModel = 'claude-sonnet-4-20250514';
+
 /// Anthropic provider configuration (sub-package version).
 class AnthropicConfig {
   final String apiKey;
@@ -22,10 +25,6 @@ class AnthropicConfig {
   final ServiceTier? serviceTier;
 
   final LLMConfig? _originalConfig;
-
-  static const String _defaultBaseUrl = 'https://api.anthropic.com/v1/';
-  static const String _defaultModel = 'claude-sonnet-4-20250514';
-
   const AnthropicConfig({
     required this.apiKey,
     this.baseUrl = _defaultBaseUrl,

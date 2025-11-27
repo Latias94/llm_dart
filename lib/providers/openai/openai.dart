@@ -28,7 +28,6 @@ library;
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_impl;
 
-import '../../core/provider_defaults.dart';
 import 'builtin_tools.dart';
 
 // Core exports
@@ -48,6 +47,20 @@ export 'assistants.dart';
 export 'completion.dart';
 export 'responses.dart';
 export 'builtin_tools.dart';
+
+/// Local defaults for OpenAI and related providers (OpenRouter, Groq, DeepSeek, Copilot, Together).
+const _openaiBaseUrl = 'https://api.openai.com/v1/';
+const _openaiDefaultModel = 'gpt-4o';
+const _openRouterBaseUrl = 'https://openrouter.ai/api/v1/';
+const _openRouterDefaultModel = 'openai/gpt-4';
+const _groqBaseUrl = 'https://api.groq.com/openai/v1/';
+const _groqDefaultModel = 'llama-3.3-70b-versatile';
+const _deepseekBaseUrl = 'https://api.deepseek.com/v1/';
+const _deepseekDefaultModel = 'deepseek-chat';
+const _githubCopilotBaseUrl = 'https://api.githubcopilot.com/chat/completions';
+const _githubCopilotDefaultModel = 'gpt-4';
+const _togetherAIBaseUrl = 'https://api.together.xyz/v1/';
+const _togetherAIDefaultModel = 'meta-llama/Llama-3-70b-chat-hf';
 
 /// OpenAI provider settings (Vercel AI-style).
 ///
@@ -114,7 +127,7 @@ class OpenAI {
   OpenAI(OpenAIProviderSettings settings)
       : _settings = settings,
         _baseUrl = _normalizeBaseUrl(
-          settings.baseUrl ?? ProviderDefaults.openaiBaseUrl,
+          settings.baseUrl ?? _openaiBaseUrl,
         ),
         _providerName = settings.name ?? 'openai';
 
@@ -261,7 +274,7 @@ class OpenAI {
   }
 
   static String _normalizeBaseUrl(String value) {
-    if (value.isEmpty) return ProviderDefaults.openaiBaseUrl;
+    if (value.isEmpty) return _openaiBaseUrl;
     return value.endsWith('/') ? value : '$value/';
   }
 }
@@ -541,8 +554,8 @@ class OpenAITools {
 /// Create an OpenAI provider with default settings
 openai_impl.OpenAIProvider createOpenAIProvider({
   required String apiKey,
-  String model = ProviderDefaults.openaiDefaultModel,
-  String baseUrl = ProviderDefaults.openaiBaseUrl,
+  String model = _openaiDefaultModel,
+  String baseUrl = _openaiBaseUrl,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
@@ -632,7 +645,7 @@ OpenAI openai({
 )
 openai_impl.OpenAIProvider createOpenRouterProvider({
   required String apiKey,
-  String model = ProviderDefaults.openRouterDefaultModel,
+  String model = _openRouterDefaultModel,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
@@ -640,7 +653,7 @@ openai_impl.OpenAIProvider createOpenRouterProvider({
   final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: model,
-    baseUrl: ProviderDefaults.openRouterBaseUrl,
+    baseUrl: _openRouterBaseUrl,
     temperature: temperature,
     maxTokens: maxTokens,
     systemPrompt: systemPrompt,
@@ -661,7 +674,7 @@ openai_impl.OpenAIProvider createOpenRouterProvider({
 )
 openai_impl.OpenAIProvider createGroqProvider({
   required String apiKey,
-  String model = ProviderDefaults.groqDefaultModel,
+  String model = _groqDefaultModel,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
@@ -669,7 +682,7 @@ openai_impl.OpenAIProvider createGroqProvider({
   final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: model,
-    baseUrl: ProviderDefaults.groqBaseUrl,
+    baseUrl: _groqBaseUrl,
     temperature: temperature,
     maxTokens: maxTokens,
     systemPrompt: systemPrompt,
@@ -690,7 +703,7 @@ openai_impl.OpenAIProvider createGroqProvider({
 )
 openai_impl.OpenAIProvider createDeepSeekProvider({
   required String apiKey,
-  String model = ProviderDefaults.deepseekDefaultModel,
+  String model = _deepseekDefaultModel,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
@@ -698,7 +711,7 @@ openai_impl.OpenAIProvider createDeepSeekProvider({
   final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: model,
-    baseUrl: ProviderDefaults.deepseekBaseUrl,
+    baseUrl: _deepseekBaseUrl,
     temperature: temperature,
     maxTokens: maxTokens,
     systemPrompt: systemPrompt,
@@ -741,7 +754,7 @@ openai_impl.OpenAIProvider createAzureOpenAIProvider({
 )
 openai_impl.OpenAIProvider createCopilotProvider({
   required String apiKey,
-  String model = ProviderDefaults.githubCopilotDefaultModel,
+  String model = _githubCopilotDefaultModel,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
@@ -749,7 +762,7 @@ openai_impl.OpenAIProvider createCopilotProvider({
   final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: model,
-    baseUrl: ProviderDefaults.githubCopilotBaseUrl,
+    baseUrl: _githubCopilotBaseUrl,
     temperature: temperature,
     maxTokens: maxTokens,
     systemPrompt: systemPrompt,
@@ -770,7 +783,7 @@ openai_impl.OpenAIProvider createCopilotProvider({
 )
 openai_impl.OpenAIProvider createTogetherProvider({
   required String apiKey,
-  String model = ProviderDefaults.togetherAIDefaultModel,
+  String model = _togetherAIDefaultModel,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
@@ -778,7 +791,7 @@ openai_impl.OpenAIProvider createTogetherProvider({
   final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: model,
-    baseUrl: ProviderDefaults.togetherAIBaseUrl,
+    baseUrl: _togetherAIBaseUrl,
     temperature: temperature,
     maxTokens: maxTokens,
     systemPrompt: systemPrompt,

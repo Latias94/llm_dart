@@ -1,5 +1,8 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+const String _defaultBaseUrl = 'https://https.extension.phind.com/agent/';
+const String _defaultModel = 'Phind-70B';
+
 /// Phind provider configuration
 ///
 /// This class contains all configuration options for the Phind providers.
@@ -20,10 +23,6 @@ class PhindConfig {
 
   /// Reference to original LLMConfig for accessing extensions
   final LLMConfig? _originalConfig;
-
-  static const String _defaultBaseUrl =
-      'https://https.extension.phind.com/agent/';
-  static const String _defaultModel = 'Phind-70B';
 
   const PhindConfig({
     required this.apiKey,

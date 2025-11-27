@@ -40,8 +40,6 @@ library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_xai/llm_dart_xai.dart' as xai_impl;
-
-import '../../core/provider_defaults.dart';
 import 'config.dart';
 
 // Core exports
@@ -52,6 +50,8 @@ export 'provider.dart';
 // Capability modules
 export 'chat.dart';
 export 'embeddings.dart';
+
+const _defaultBaseUrl = 'https://api.x.ai/v1/';
 
 @Deprecated(
   'Use XAIConfig from package:llm_dart_xai/llm_dart_xai.dart instead. '
@@ -228,7 +228,7 @@ class XAI {
   XAI(XAIProviderSettings settings)
       : _settings = settings,
         _baseUrl = _normalizeBaseUrl(
-          settings.baseUrl ?? ProviderDefaults.xaiBaseUrl,
+          settings.baseUrl ?? _defaultBaseUrl,
         );
 
   /// Create a language model for text generation.
@@ -281,7 +281,7 @@ class XAI {
   }
 
   static String _normalizeBaseUrl(String value) {
-    if (value.isEmpty) return ProviderDefaults.xaiBaseUrl;
+    if (value.isEmpty) return _defaultBaseUrl;
     return value.endsWith('/') ? value : '$value/';
   }
 }

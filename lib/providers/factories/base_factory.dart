@@ -97,28 +97,12 @@ abstract class BaseProviderFactory<T extends ChatCapability>
     }
   }
 
-  /// Create default config with provider-specific defaults
-  /// Subclasses should override getProviderDefaults() to customize
+  /// Create default config with provider-specific defaults.
+  ///
+  /// Sub类应返回强类型的默认 LLMConfig（或从 provider 自己的 Config 导出），
+  /// 避免使用 Map 以减少错误。
   @override
-  LLMConfig getDefaultConfig() {
-    final defaults = getProviderDefaults();
-    final baseUrl = defaults['baseUrl'] as String?;
-    final model = defaults['model'] as String?;
-
-    if (baseUrl == null) {
-      throw GenericError(
-          'Provider $providerId must provide a baseUrl in getProviderDefaults()');
-    }
-
-    return LLMConfig(
-      baseUrl: baseUrl,
-      model: model ?? 'default-model',
-    );
-  }
-
-  /// Provider-specific default values
-  /// Subclasses must implement this to provide their defaults
-  Map<String, dynamic> getProviderDefaults();
+  LLMConfig getDefaultConfig();
 
   /// Helper method for creating provider instances with error handling
   T createProviderSafely<P>(

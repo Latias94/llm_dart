@@ -48,9 +48,9 @@ class DefaultChatSettings {
 /// - Injecting a default system prompt when none is present.
 /// - Supplying default tools when a call does not provide tools.
 ///
-/// For provider-level numeric defaults (temperature, maxTokens, etc.),
-/// prefer using `LLMBuilder` and `ProviderDefaults` so that providers
-/// can configure HTTP parameters at construction time.
+/// For provider-level defaults such as temperature or maxTokens, prefer
+/// configuring them via `LLMBuilder` or provider-specific defaults at build
+/// time instead of a centralized constants table.
 ChatMiddleware createDefaultChatSettingsMiddleware(
   DefaultChatSettings settings,
 ) {

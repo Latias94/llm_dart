@@ -1,5 +1,20 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+const String _defaultBaseUrl = 'https://api.elevenlabs.io/v1/';
+const String _defaultVoiceId = 'JBFqnCBsd6RMkjVDRZzb';
+const String _defaultTTSModel = 'eleven_multilingual_v2';
+const String _defaultSTTModel = 'scribe_v1';
+
+const List<String> _supportedAudioFormats = [
+  'mp3_44100_128',
+  'mp3_44100_192',
+  'pcm_16000',
+  'pcm_22050',
+  'pcm_24000',
+  'pcm_44100',
+  'ulaw_8000',
+];
+
 /// ElevenLabs provider configuration
 ///
 /// This class contains all configuration options for the ElevenLabs providers.
@@ -17,21 +32,6 @@ class ElevenLabsConfig {
 
   /// Reference to original LLMConfig for accessing extensions
   final LLMConfig? _originalConfig;
-
-  static const String _defaultBaseUrl = 'https://api.elevenlabs.io/v1/';
-  static const String _defaultVoiceId = 'JBFqnCBsd6RMkjVDRZzb';
-  static const String _defaultTTSModel = 'eleven_multilingual_v2';
-  static const String _defaultSTTModel = 'scribe_v1';
-
-  static const List<String> _supportedAudioFormats = [
-    'mp3_44100_128',
-    'mp3_44100_192',
-    'pcm_16000',
-    'pcm_22050',
-    'pcm_24000',
-    'pcm_44100',
-    'ulaw_8000',
-  ];
 
   const ElevenLabsConfig({
     required this.apiKey,

@@ -26,11 +26,12 @@ library;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic_impl;
 import 'package:llm_dart_core/llm_dart_core.dart';
 
-import '../../core/provider_defaults.dart';
-
 export 'package:llm_dart_anthropic/llm_dart_anthropic.dart'
     show AnthropicConfig, AnthropicProvider;
 export 'mcp_models.dart';
+
+const _defaultBaseUrl = 'https://api.anthropic.com/v1/';
+const _defaultModel = 'claude-sonnet-4-20250514';
 
 @Deprecated(
   'Use AnthropicConfig from package:llm_dart_anthropic/llm_dart_anthropic.dart '
@@ -94,7 +95,7 @@ class Anthropic {
   Anthropic(AnthropicProviderSettings settings)
       : _settings = settings,
         _baseUrl = _normalizeBaseUrl(
-          settings.baseUrl ?? ProviderDefaults.anthropicBaseUrl,
+          settings.baseUrl ?? _defaultBaseUrl,
         ),
         _providerName = settings.name ?? 'anthropic';
 
@@ -142,7 +143,7 @@ class Anthropic {
   }
 
   static String _normalizeBaseUrl(String value) {
-    if (value.isEmpty) return ProviderDefaults.anthropicBaseUrl;
+    if (value.isEmpty) return _defaultBaseUrl;
     return value.endsWith('/') ? value : '$value/';
   }
 }
@@ -215,8 +216,8 @@ anthropic_impl.AnthropicProvider createAnthropicProvider({
 }) {
   final config = anthropic_impl.AnthropicConfig(
     apiKey: apiKey,
-    model: model ?? ProviderDefaults.anthropicDefaultModel,
-    baseUrl: baseUrl ?? ProviderDefaults.anthropicBaseUrl,
+    model: model ?? _defaultModel,
+    baseUrl: baseUrl ?? _defaultBaseUrl,
     maxTokens: maxTokens,
     temperature: temperature,
     systemPrompt: systemPrompt,

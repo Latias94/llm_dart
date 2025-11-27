@@ -920,6 +920,18 @@ class LanguageModelCallOptions {
   /// Optional service tier override for this call.
   final ServiceTier? serviceTier;
 
+  /// Optional reasoning effort override (for providers that support it).
+  final ReasoningEffort? reasoningEffort;
+
+  /// Structured output schema for this call (provider-agnostic JSON schema).
+  final StructuredOutputFormat? jsonSchema;
+
+  /// Custom headers for this call (merged with provider defaults).
+  final Map<String, String>? headers;
+
+  /// Provider-agnostic metadata for this call (merged with existing metadata).
+  final Map<String, dynamic>? metadata;
+
   const LanguageModelCallOptions({
     this.maxTokens,
     this.temperature,
@@ -930,6 +942,10 @@ class LanguageModelCallOptions {
     this.toolChoice,
     this.user,
     this.serviceTier,
+    this.reasoningEffort,
+    this.jsonSchema,
+    this.headers,
+    this.metadata,
   });
 }
 

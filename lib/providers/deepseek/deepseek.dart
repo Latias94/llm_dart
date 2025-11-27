@@ -8,10 +8,10 @@ library;
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek_impl;
 
-import '../../core/provider_defaults.dart';
-
 export 'package:llm_dart_deepseek/llm_dart_deepseek.dart'
     show DeepSeekConfig, DeepSeekProvider;
+
+const _defaultBaseUrl = 'https://api.deepseek.com/v1/';
 
 @Deprecated(
   'Use DeepSeekConfig from package:llm_dart_deepseek/llm_dart_deepseek.dart '
@@ -73,7 +73,7 @@ class DeepSeek {
   DeepSeek(DeepSeekProviderSettings settings)
       : _settings = settings,
         _baseUrl = _normalizeBaseUrl(
-          settings.baseUrl ?? ProviderDefaults.deepseekBaseUrl,
+          settings.baseUrl ?? _defaultBaseUrl,
         ),
         _providerName = settings.name ?? 'deepseek';
 
@@ -119,7 +119,7 @@ class DeepSeek {
   }
 
   static String _normalizeBaseUrl(String value) {
-    if (value.isEmpty) return ProviderDefaults.deepseekBaseUrl;
+    if (value.isEmpty) return _defaultBaseUrl;
     return value.endsWith('/') ? value : '$value/';
   }
 }

@@ -242,8 +242,7 @@ export 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart'
         Utf8StreamDecoder,
         Utf8StreamDecoderExtension;
 
-// Core registry & defaults (still live in this package)
-export 'core/provider_defaults.dart';
+// Core registry
 export 'core/registry.dart';
 export 'core/base_http_provider.dart';
 
@@ -977,22 +976,7 @@ StreamObjectResult<T> streamObject<T>({
         );
       }
 
-      Map<String, dynamic> json;
-      try {
-        final decoded = jsonDecode(rawText);
-        if (decoded is Map<String, dynamic>) {
-          json = decoded;
-        } else if (decoded is Map) {
-          json = Map<String, dynamic>.from(decoded);
-        } else {
-          throw const FormatException('Top-level JSON value is not an object');
-        }
-      } catch (e) {
-        throw ResponseFormatError(
-          'Failed to parse structured JSON output: $e',
-          rawText,
-        );
-      }
+      final json = _parseStructuredJson(rawText);
 
       final response = finalResponse ?? _SimpleChatResponse(rawText);
 
@@ -1066,8 +1050,92 @@ LLMBuilder _applyCallOptions(
   if (options.serviceTier != null) {
     builder = builder.serviceTier(options.serviceTier!);
   }
+  if (options.reasoningEffort != null) {
+    builder = builder.reasoningEffort(options.reasoningEffort);
+  }
+  if (options.jsonSchema != null) {
+    builder = builder.jsonSchema(options.jsonSchema!);
+  }
+  if (options.headers != null && options.headers!.isNotEmpty) {
+    final existing = builder.currentConfig.getExtension<Map<String, String>>(
+          LLMConfigKeys.customHeaders,
+        ) ??
+        const {};
+    builder = builder.extension(
+      LLMConfigKeys.customHeaders,
+      {...existing, ...options.headers!},
+    );
+  }
+  if (options.metadata != null && options.metadata!.isNotEmpty) {
+    final existing = builder.currentConfig.getExtension<Map<String, dynamic>>(
+          LLMConfigKeys.metadata,
+        ) ??
+        const {};
+    builder = builder.extension(
+      LLMConfigKeys.metadata,
+      {...existing, ...options.metadata!},
+    );
+  }
 
   return builder;
+}
+
+/// Attempt to parse structured JSON from mixed text, handling code fences
+/// and trailing prose by extracting the first balanced JSON object.
+Map<String, dynamic> _parseStructuredJson(String rawText) {
+  Map<String, dynamic>? _tryParse(String input) {
+    try {
+      final decoded = jsonDecode(input);
+      if (decoded is Map<String, dynamic>) {
+        return decoded;
+      }
+      if (decoded is Map) {
+        return Map<String, dynamic>.from(decoded);
+      }
+    } catch (_) {
+      // Ignore and try the next strategy.
+    }
+    return null;
+  }
+
+  // 1) Direct parse
+  final direct = _tryParse(rawText);
+  if (direct != null) return direct;
+
+  // 2) Parse from fenced code block ```json ... ```
+  final fenceMatch =
+      RegExp(r'```(?:json)?\s*(.*?)\s*```', dotAll: true).firstMatch(rawText);
+  if (fenceMatch != null) {
+    final candidate = fenceMatch.group(1);
+    if (candidate != null) {
+      final parsed = _tryParse(candidate);
+      if (parsed != null) return parsed;
+    }
+  }
+
+  // 3) Extract first balanced JSON object from the text
+  final start = rawText.indexOf('{');
+  if (start != -1) {
+    var depth = 0;
+    for (var i = start; i < rawText.length; i++) {
+      final ch = rawText[i];
+      if (ch == '{') depth++;
+      if (ch == '}') {
+        depth--;
+        if (depth == 0) {
+          final candidate = rawText.substring(start, i + 1);
+          final parsed = _tryParse(candidate);
+          if (parsed != null) return parsed;
+          break;
+        }
+      }
+    }
+  }
+
+  throw ResponseFormatError(
+    'Failed to parse structured JSON output',
+    rawText,
+  );
 }
 
 /// Simple [ChatResponse] implementation used when no provider-specific

@@ -1,6 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
-import '../../core/provider_defaults.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Google (Gemini) provider instances
@@ -35,9 +34,10 @@ class GoogleProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('google');
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
+        model: 'gemini-1.5-flash',
+      );
 
   /// Transform unified config to Google-specific config
   GoogleConfig _transformConfig(LLMConfig config) {

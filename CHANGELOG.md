@@ -702,11 +702,10 @@ In new code, prefer:
   - Unified `FilePurpose` and `FileStatus` enums
   - Provider-agnostic file operations with format adaptation
 
-- **Provider Configuration Centralization**: Extracted default configurations
-  - New `ProviderDefaults` class with all provider endpoints and models
-  - `OpenAICompatibleDefaults` for OpenAI-compatible provider configurations
-  - Centralized capability definitions for all providers
-  - Eliminated configuration duplication across factory classes
+- **Provider Configuration Defaults**: defaults now live alongside each provider
+  - Factories return strongly typed `getDefaultConfig()` values
+  - Base URL/model are owned by provider modules to reduce duplication
+  - OpenAI-compatible profiles remain defined in their own package
 
 - **Unified Audio Capability Interface**: Revolutionary audio processing design
   - Single `AudioCapability` interface for all audio operations (TTS, STT, translation)

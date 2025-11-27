@@ -341,12 +341,15 @@ Future<void> demonstrateGracefulDegradation(LanguageModel model) async {
   print('🎭 Graceful Degradation:\n');
 
   final fallbackHandler = FallbackHandler([
-    () => generateTextWithModel(
-          model,
-          promptMessages: [
-            ChatPromptBuilder.user().text('What is the weather like?').build()
-          ],
-        ),
+    () async {
+      final result = await generateTextWithModel(
+        model,
+        promptMessages: [
+          ChatPromptBuilder.user().text('What is the weather like?').build()
+        ],
+      );
+      return SimpleChatResponse(result.text ?? '');
+    },
     () => _fallbackToSimpleResponse(),
     () => _fallbackToStaticResponse(),
   ]);
@@ -398,21 +401,25 @@ Future<void> demonstrateCircuitBreaker(LanguageModel model) async {
 }
 
 /// Demonstrate monitoring and logging
-Future<void> demonstrateMonitoringAndLogging(ChatCapability ai) async {
+Future<void> demonstrateMonitoringAndLogging(LanguageModel model) async {
   print('📊 Monitoring and Logging:\n');
 
   final monitor = AIServiceMonitor();
 
   try {
     // Monitor a successful call
-    await monitor.trackCall('chat_request', () async {
-      return await generateTextWithModel(
-        model,
-        promptMessages: [
-          ChatPromptBuilder.user().text('Successful request').build()
-        ],
-      );
-    });
+    await monitor.trackCall(
+      'chat_request',
+      () async {
+        final result = await generateTextWithModel(
+          model,
+          promptMessages: [
+            ChatPromptBuilder.user().text('Successful request').build()
+          ],
+        );
+        return SimpleChatResponse(result.text ?? '');
+      },
+    );
   } catch (e) {
     print('   ⚠️  Monitoring error during successful call: $e');
   }

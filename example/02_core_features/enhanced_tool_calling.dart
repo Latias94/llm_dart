@@ -229,7 +229,23 @@ Future<void> demonstrateStructuredOutputWithTools(LanguageModel model) async {
       print('   📋 Structured output validation: ❌ $e');
     }
 
-    // Example invocation (no actual call to keep example short)
+    // Example invocation with a simple analysis tool
+    final analysisTool = Tool.function(
+      name: 'analyze_impact',
+      description: 'Analyze the impact of a technology on productivity',
+      parameters: const ParametersSchema(
+        schemaType: 'object',
+        properties: {
+          'topic': ParameterProperty(
+            propertyType: 'string',
+            description:
+                'Topic to analyze (e.g., "AI and software engineering")',
+          ),
+        },
+        required: ['topic'],
+      ),
+    );
+
     final prompt = ChatPromptBuilder.user()
         .text(
             'Analyze the impact of AI on software engineering productivity. Provide insights, metrics, and risks.')
@@ -239,7 +255,7 @@ Future<void> demonstrateStructuredOutputWithTools(LanguageModel model) async {
       promptMessages: [prompt],
       options: LanguageModelCallOptions(
         tools: [analysisTool],
-        responseFormat: structuredFormat.toOpenAIResponseFormat(),
+        jsonSchema: structuredFormat,
       ),
     );
     print(
@@ -292,7 +308,7 @@ String _simulateCalculation(String expression, int precision) {
 }
 
 /// Demonstrate complex nested object structures in tool parameters
-Future<void> demonstrateNestedObjectStructures(ChatCapability provider) async {
+Future<void> demonstrateNestedObjectStructures(LanguageModel model) async {
   print('🏗️  Complex Nested Object Structures:\n');
 
   try {

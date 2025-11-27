@@ -34,8 +34,6 @@ import 'package:llm_dart_google/llm_dart_google.dart'
         GoogleImages,
         SafetySetting;
 
-import '../../core/provider_defaults.dart';
-
 /// Public Google provider surface re-export.
 ///
 /// This mirrors the primary Google provider types while keeping internal
@@ -64,6 +62,8 @@ export 'package:llm_dart_google/llm_dart_google.dart'
 
 // Builder APIs for configuring Google via LLMBuilder.
 export 'builder.dart';
+
+const _defaultBaseUrl = 'https://generativelanguage.googleapis.com/v1beta/';
 
 /// Google Generative AI provider settings (Vercel AI-style).
 ///
@@ -109,7 +109,7 @@ class GoogleGenerativeAI {
   GoogleGenerativeAI(GoogleGenerativeAIProviderSettings settings)
       : _settings = settings,
         _baseUrl = _normalizeBaseUrl(
-          settings.baseUrl ?? ProviderDefaults.googleBaseUrl,
+          settings.baseUrl ?? _defaultBaseUrl,
         ),
         _providerName = settings.name ?? 'google';
 
@@ -180,7 +180,7 @@ class GoogleGenerativeAI {
   }
 
   static String _normalizeBaseUrl(String value) {
-    if (value.isEmpty) return ProviderDefaults.googleBaseUrl;
+    if (value.isEmpty) return _defaultBaseUrl;
     return value.endsWith('/') ? value : '$value/';
   }
 }

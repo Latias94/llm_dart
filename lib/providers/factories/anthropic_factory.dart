@@ -1,6 +1,5 @@
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
-import '../../core/provider_defaults.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Anthropic provider instances
@@ -34,7 +33,8 @@ class AnthropicProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('anthropic');
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: 'https://api.anthropic.com/v1/',
+        model: 'claude-sonnet-4-20250514',
+      );
 }

@@ -63,11 +63,8 @@ class MockBaseFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() => {
-        'model': 'mock-model',
-        'baseUrl': 'https://api.mock.com',
-        'temperature': 0.7,
-      };
+  LLMConfig getDefaultConfig() =>
+      const LLMConfig(baseUrl: 'https://api.mock.com', model: 'mock-model');
 }
 
 // Mock provider implementation
@@ -146,10 +143,8 @@ class MockLocalFactory extends LocalProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() => {
-        'model': 'local-model',
-        'baseUrl': 'http://localhost:8080',
-      };
+  LLMConfig getDefaultConfig() =>
+      const LLMConfig(baseUrl: 'http://localhost:8080', model: 'local-model');
 }
 
 // Mock audio provider factory
@@ -175,10 +170,8 @@ class MockAudioFactory extends AudioProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() => {
-        'model': 'audio-model',
-        'baseUrl': 'https://api.audio.com',
-      };
+  LLMConfig getDefaultConfig() =>
+      const LLMConfig(baseUrl: 'https://api.audio.com', model: 'audio-model');
 }
 
 void main() {
@@ -247,12 +240,7 @@ void main() {
         expect(baseConfig['maxTokens'], equals(1000));
       });
 
-      test('should get provider defaults', () {
-        final defaults = factory.getProviderDefaults();
-        expect(defaults['model'], equals('mock-model'));
-        expect(defaults['baseUrl'], equals('https://api.mock.com'));
-        expect(defaults['temperature'], equals(0.7));
-      });
+      // Provider defaults now returned as LLMConfig via getDefaultConfig().
 
       test('should create provider safely', () {
         final config = LLMConfig(

@@ -1,5 +1,4 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
-import '../../core/provider_defaults.dart';
 import '../elevenlabs/elevenlabs.dart';
 import 'base_factory.dart';
 
@@ -41,9 +40,10 @@ class ElevenLabsProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('elevenlabs');
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: 'https://api.elevenlabs.io/v1/',
+        model: 'eleven_multilingual_v2',
+      );
 
   /// Transform unified config to ElevenLabs-specific config
   ElevenLabsConfig _transformConfig(LLMConfig config) {
