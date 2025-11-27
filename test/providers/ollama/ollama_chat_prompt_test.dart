@@ -1,30 +1,8 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:test/test.dart';
-
-class FakeOllamaClient extends OllamaClient {
-  Map<String, dynamic>? lastRequestBody;
-  String? lastEndpoint;
-
-  FakeOllamaClient(OllamaConfig config) : super(config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastRequestBody = data;
-
-    return {
-      'message': {'role': 'assistant', 'content': 'ok'},
-      'done': true,
-    };
-  }
-}
+import 'ollama_test_utils.dart';
 
 void main() {
   group('OllamaChat prompt mapping', () {
@@ -62,7 +40,7 @@ void main() {
         jsonSchema: schema,
       );
 
-      final client = FakeOllamaClient(config);
+      final client = CapturingOllamaClient(config);
       final chat = OllamaChat(client, config);
 
       final messages = <ChatMessage>[
@@ -120,7 +98,7 @@ void main() {
         model: 'llava:latest',
       );
 
-      final client = FakeOllamaClient(config);
+      final client = CapturingOllamaClient(config);
       final chat = OllamaChat(client, config);
 
       final imageBytes = <int>[1, 2, 3, 4];

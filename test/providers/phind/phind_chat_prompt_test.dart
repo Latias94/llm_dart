@@ -1,34 +1,6 @@
-import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:test/test.dart';
-
-class FakePhindClient extends PhindClient {
-  Map<String, dynamic>? lastRequestBody;
-  String? lastEndpoint;
-
-  FakePhindClient(PhindConfig config) : super(config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastRequestBody = data;
-
-    return {
-      'choices': [
-        {
-          'message': {
-            'role': 'assistant',
-            'content': 'ok',
-          },
-        },
-      ],
-    };
-  }
-}
+import 'phind_test_utils.dart';
 
 void main() {
   group('PhindChat prompt mapping', () {
@@ -39,7 +11,7 @@ void main() {
         systemPrompt: 'You are a coding assistant.',
       );
 
-      final client = FakePhindClient(config);
+      final client = CapturingPhindClient(config);
       final chat = PhindChat(client, config);
 
       final messages = <ChatMessage>[

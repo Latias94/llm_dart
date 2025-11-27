@@ -10,8 +10,7 @@ void main() {
         );
 
         expect(config.apiKey, equals('test-api-key'));
-        expect(
-            config.baseUrl, equals('https://https.extension.phind.com/agent/'));
+        expect(config.baseUrl, equals('https://api.phind.com/v1/'));
         expect(config.model, equals('Phind-70B'));
         expect(config.maxTokens, isNull);
         expect(config.temperature, isNull);
@@ -144,7 +143,7 @@ void main() {
       test('should create from LLMConfig', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
-          baseUrl: 'https://https.extension.phind.com/agent/',
+          baseUrl: 'https://api.phind.com/v1/',
           model: 'Phind-70B',
           maxTokens: 2000,
           temperature: 0.7,
@@ -159,8 +158,7 @@ void main() {
         final phindConfig = PhindConfig.fromLLMConfig(llmConfig);
 
         expect(phindConfig.apiKey, equals('test-key'));
-        expect(phindConfig.baseUrl,
-            equals('https://https.extension.phind.com/agent/'));
+        expect(phindConfig.baseUrl, equals('https://api.phind.com/v1/'));
         expect(phindConfig.model, equals('Phind-70B'));
         expect(phindConfig.maxTokens, equals(2000));
         expect(phindConfig.temperature, equals(0.7));
@@ -175,7 +173,7 @@ void main() {
       test('should access extensions from original config', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
-          baseUrl: 'https://https.extension.phind.com/agent/',
+          baseUrl: 'https://api.phind.com/v1/',
           model: 'Phind-70B',
           extensions: {'customParam': 'customValue'},
         );

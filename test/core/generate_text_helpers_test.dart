@@ -1,4 +1,7 @@
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_core/llm_dart_core.dart' show TextContentPart;
+import '../utils/mock_language_model.dart';
+import '../utils/mock_provider_factory.dart';
 import 'package:test/test.dart';
 
 class FakeChatResponse implements ChatResponse {
@@ -72,30 +75,109 @@ class FakeChatProvider implements ChatCapability {
       'summary';
 }
 
-class FakeProviderFactory extends LLMProviderFactory<ChatCapability> {
-  @override
-  String get providerId => 'fake';
+class _RichChatResponse implements ChatResponse {
+  final String? _text;
+  final List<ToolCall>? _toolCalls;
+  final UsageInfo? _usage;
+  final String? _thinking;
+  final List<CallWarning> _warnings;
+  final Map<String, dynamic>? _metadata;
+
+  const _RichChatResponse({
+    String? text,
+    List<ToolCall>? toolCalls,
+    UsageInfo? usage,
+    String? thinking,
+    List<CallWarning> warnings = const [],
+    Map<String, dynamic>? metadata,
+  })  : _text = text,
+        _toolCalls = toolCalls,
+        _usage = usage,
+        _thinking = thinking,
+        _warnings = warnings,
+        _metadata = metadata;
 
   @override
-  Set<LLMCapability> get supportedCapabilities => {
-        LLMCapability.chat,
-        LLMCapability.streaming,
-      };
+  String? get text => _text;
 
   @override
-  ChatCapability create(LLMConfig config) => FakeChatProvider();
+  List<ToolCall>? get toolCalls => _toolCalls;
 
   @override
-  bool validateConfig(LLMConfig config) => true;
+  UsageInfo? get usage => _usage;
 
   @override
-  LLMConfig getDefaultConfig() => LLMConfig(baseUrl: '', model: '');
+  String? get thinking => _thinking;
+
+  @override
+  List<CallWarning> get warnings => _warnings;
+
+  @override
+  Map<String, dynamic>? get metadata => _metadata;
+
+  @override
+  CallMetadata? get callMetadata {
+    final data = metadata;
+    if (data == null) return null;
+    return CallMetadata.fromJson(data);
+  }
+}
+
+class _RichChatProvider implements ChatCapability {
+  final ChatResponse _response;
+
+  _RichChatProvider(this._response);
+
+  @override
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    return _response;
+  }
+
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    return _response;
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async* {
+    yield CompletionEvent(_response);
+  }
+
+  @override
+  Future<List<ChatMessage>?> memoryContents() async => null;
+
+  @override
+  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
+      'summary';
 }
 
 void main() {
   group('generateText / streaming helpers', () {
     setUp(() {
-      LLMProviderRegistry.registerOrReplace(FakeProviderFactory());
+      LLMProviderRegistry.registerOrReplace(
+        MockProviderFactory<ChatCapability>(
+          providerId: 'fake',
+          supportedCapabilities: {
+            LLMCapability.chat,
+            LLMCapability.streaming,
+          },
+          create: (_) => FakeChatProvider(),
+        ),
+      );
     });
 
     tearDown(() {
@@ -167,13 +249,113 @@ void main() {
       expect(parts.any((p) => p is StreamTextDelta), isTrue);
       expect(parts.any((p) => p is StreamFinish), isTrue);
     });
+
+    test(
+        'generateText propagates thinking, toolCalls, usage, warnings, and metadata',
+        () async {
+      final toolCall = ToolCall(
+        id: 'call_1',
+        callType: 'function',
+        function: const FunctionCall(
+          name: 'do_something',
+          arguments: '{"value":1}',
+        ),
+      );
+
+      const usage = UsageInfo(
+        promptTokens: 3,
+        completionTokens: 5,
+        totalTokens: 8,
+      );
+
+      const warnings = [
+        CallWarning(
+          code: 'TEST_WARNING',
+          message: 'Test warning message',
+        ),
+      ];
+
+      final metadata = <String, dynamic>{
+        'provider': 'test-provider',
+        'model': 'test-model',
+        'request': {'path': '/v1/test'},
+        'response': {'status': 200},
+        'custom': 'value',
+      };
+
+      final response = _RichChatResponse(
+        text: 'final text',
+        toolCalls: [toolCall],
+        usage: usage,
+        thinking: 'thinking...',
+        warnings: warnings,
+        metadata: metadata,
+      );
+
+      LLMProviderRegistry.registerOrReplace(
+        MockProviderFactory<ChatCapability>(
+          providerId: 'rich',
+          supportedCapabilities: {
+            LLMCapability.chat,
+          },
+          create: (_) => _RichChatProvider(response),
+        ),
+      );
+
+      final result = await generateText(
+        model: 'rich:test-model',
+        prompt: 'Hello',
+      );
+
+      expect(result.text, equals('final text'));
+      expect(result.thinking, equals('thinking...'));
+      expect(result.toolCalls, isNotNull);
+      expect(result.toolCalls, hasLength(1));
+      expect(result.toolCalls!.single.id, equals('call_1'));
+      expect(result.usage, equals(usage));
+      expect(result.warnings, equals(warnings));
+
+      final callMetadata = result.metadata;
+      expect(callMetadata, isNotNull);
+      expect(callMetadata!.provider, equals('test-provider'));
+      expect(callMetadata.model, equals('test-model'));
+      expect(callMetadata.request?['path'], equals('/v1/test'));
+      expect(callMetadata.response?['status'], equals(200));
+      expect(callMetadata.providerMetadata?['custom'], equals('value'));
+
+      LLMProviderRegistry.unregister('rich');
+    });
   });
 
   group('generateTextWithModel / streamTextWithModel / generateObjectWithModel',
       () {
     test('generateTextWithModel forwards LanguageModelCallOptions', () async {
-      final model = _FakeLanguageModelWithOptions(
-        LLMConfig(baseUrl: '', model: 'test-model'),
+      final model = MockLanguageModel(
+        providerId: 'fake-model',
+        modelId: 'test-model',
+        config: LLMConfig(baseUrl: '', model: 'test-model'),
+        doGenerate: (messages, options) async {
+          expect(messages, hasLength(1));
+          final prompt = messages.first;
+          expect(prompt.role, ChatRole.user);
+          expect(prompt.parts, hasLength(1));
+          expect(prompt.parts.first, isA<TextContentPart>());
+          final textPart = prompt.parts.first as TextContentPart;
+          expect(textPart.text, equals('Hello'));
+
+          return GenerateTextResult(
+            rawResponse: FakeChatResponse(),
+            text: 'ok',
+            toolCalls: const [],
+            usage: const UsageInfo(
+              promptTokens: 1,
+              completionTokens: 1,
+              totalTokens: 2,
+            ),
+            warnings: const [],
+            metadata: null,
+          );
+        },
       );
 
       final options = LanguageModelCallOptions(
@@ -184,7 +366,9 @@ void main() {
 
       final result = await generateTextWithModel(
         model,
-        prompt: 'Hello',
+        promptMessages: [
+          ChatPromptBuilder.user().text('Hello').build(),
+        ],
         options: options,
       );
 
@@ -195,9 +379,90 @@ void main() {
       expect(model.lastOptions!.topP, equals(0.8));
     });
 
+    test('generateTextWithModel forwards tools and toolChoice', () async {
+      final tools = [
+        Tool.function(
+          name: 'get_weather',
+          description: 'Get the current weather for a location.',
+          parameters: ParametersSchema(
+            schemaType: 'object',
+            properties: {
+              'location': ParameterProperty(
+                propertyType: 'string',
+                description: 'City name, e.g. "Paris".',
+              ),
+            },
+            required: ['location'],
+          ),
+        ),
+      ];
+
+      final options = LanguageModelCallOptions(
+        tools: tools,
+        toolChoice: const AutoToolChoice(),
+      );
+
+      final model = MockLanguageModel(
+        providerId: 'fake-model',
+        modelId: 'test-model',
+        config: LLMConfig(baseUrl: '', model: 'test-model'),
+        doGenerate: (messages, generateOptions) async {
+          expect(messages, hasLength(1));
+          final prompt = messages.first;
+          expect(prompt.role, ChatRole.user);
+          expect(prompt.parts, hasLength(1));
+          expect(prompt.parts.first, isA<TextContentPart>());
+
+          expect(generateOptions, isNotNull);
+          expect(generateOptions!.tools, equals(tools));
+          expect(generateOptions.toolChoice, isA<AutoToolChoice>());
+
+          return GenerateTextResult(
+            rawResponse: FakeChatResponse(),
+            text: 'ok',
+            toolCalls: const [],
+            usage: const UsageInfo(
+              promptTokens: 1,
+              completionTokens: 1,
+              totalTokens: 2,
+            ),
+            warnings: const [],
+            metadata: null,
+          );
+        },
+      );
+
+      final result = await generateTextWithModel(
+        model,
+        promptMessages: [
+          ChatPromptBuilder.user().text('Weather in Paris').build(),
+        ],
+        options: options,
+      );
+
+      expect(result.text, equals('ok'));
+      expect(model.lastOptions, isNotNull);
+      expect(model.lastOptions!.tools, equals(tools));
+      expect(model.lastOptions!.toolChoice, isA<AutoToolChoice>());
+    });
+
     test('streamTextWithModel forwards LanguageModelCallOptions', () async {
-      final model = _FakeLanguageModelWithOptions(
-        LLMConfig(baseUrl: '', model: 'test-model'),
+      final model = MockLanguageModel(
+        providerId: 'fake-model',
+        modelId: 'test-model',
+        config: LLMConfig(baseUrl: '', model: 'test-model'),
+        doStream: (messages, options) async* {
+          expect(messages, hasLength(1));
+          final prompt = messages.first;
+          expect(prompt.role, ChatRole.user);
+          expect(prompt.parts, hasLength(1));
+          expect(prompt.parts.first, isA<TextContentPart>());
+          final textPart = prompt.parts.first as TextContentPart;
+          expect(textPart.text, equals('Stream hello'));
+
+          yield const TextDeltaEvent('chunk');
+          yield CompletionEvent(FakeChatResponse());
+        },
       );
 
       final options = LanguageModelCallOptions(
@@ -208,7 +473,9 @@ void main() {
       final events = <ChatStreamEvent>[];
       await for (final event in streamTextWithModel(
         model,
-        prompt: 'Stream hello',
+        promptMessages: [
+          ChatPromptBuilder.user().text('Stream hello').build(),
+        ],
         options: options,
       )) {
         events.add(event);
@@ -223,8 +490,22 @@ void main() {
 
     test('streamTextPartsWithModel forwards LanguageModelCallOptions',
         () async {
-      final model = _FakeLanguageModelWithOptions(
-        LLMConfig(baseUrl: '', model: 'test-model'),
+      final model = MockLanguageModel(
+        providerId: 'fake-model',
+        modelId: 'test-model',
+        config: LLMConfig(baseUrl: '', model: 'test-model'),
+        doStream: (messages, options) async* {
+          expect(messages, hasLength(1));
+          final prompt = messages.first;
+          expect(prompt.role, ChatRole.user);
+          expect(prompt.parts, hasLength(1));
+          expect(prompt.parts.first, isA<TextContentPart>());
+          final textPart = prompt.parts.first as TextContentPart;
+          expect(textPart.text, equals('Stream parts'));
+
+          yield const TextDeltaEvent('chunk');
+          yield CompletionEvent(FakeChatResponse());
+        },
       );
 
       final options = LanguageModelCallOptions(
@@ -235,7 +516,9 @@ void main() {
       final parts = <StreamTextPart>[];
       await for (final part in streamTextPartsWithModel(
         model,
-        prompt: 'Stream parts',
+        promptMessages: [
+          ChatPromptBuilder.user().text('Stream parts').build(),
+        ],
         options: options,
       )) {
         parts.add(part);
@@ -249,8 +532,32 @@ void main() {
     });
 
     test('generateObjectWithModel forwards LanguageModelCallOptions', () async {
-      final model = _FakeLanguageModelWithOptions(
-        LLMConfig(baseUrl: '', model: 'test-model'),
+      final model = MockLanguageModel(
+        providerId: 'fake-model',
+        modelId: 'test-model',
+        config: LLMConfig(baseUrl: '', model: 'test-model'),
+        doGenerate: (messages, options) async {
+          expect(messages, hasLength(1));
+          final prompt = messages.first;
+          expect(prompt.role, ChatRole.user);
+          expect(prompt.parts, hasLength(1));
+          expect(prompt.parts.first, isA<TextContentPart>());
+          final textPart = prompt.parts.first as TextContentPart;
+          expect(textPart.text, equals('Return JSON'));
+
+          return GenerateTextResult(
+            rawResponse: FakeChatResponse(),
+            text: '{"value":"ok"}',
+            toolCalls: const [],
+            usage: const UsageInfo(
+              promptTokens: 1,
+              completionTokens: 1,
+              totalTokens: 2,
+            ),
+            warnings: const [],
+            metadata: null,
+          );
+        },
       );
 
       final output = OutputSpec<Map<String, dynamic>>.object(
@@ -272,7 +579,9 @@ void main() {
       final result = await generateObjectWithModel<Map<String, dynamic>>(
         model: model,
         output: output,
-        prompt: 'Return JSON',
+        promptMessages: [
+          ChatPromptBuilder.user().text('Return JSON').build(),
+        ],
         options: options,
       );
 
@@ -282,110 +591,4 @@ void main() {
       expect(model.lastOptions!.temperature, equals(0.1));
     });
   });
-}
-
-/// Fake language model that records the last [LanguageModelCallOptions]
-/// passed via the `*WithOptions` methods.
-class _FakeLanguageModelWithOptions implements LanguageModel {
-  @override
-  final String providerId = 'fake-model';
-
-  @override
-  final String modelId = 'test-model';
-
-  @override
-  final LLMConfig config;
-
-  LanguageModelCallOptions? lastOptions;
-
-  _FakeLanguageModelWithOptions(this.config);
-
-  @override
-  Future<GenerateTextResult> generateText(
-    List<ChatMessage> messages, {
-    CancellationToken? cancelToken,
-  }) async {
-    return GenerateTextResult(
-      rawResponse: FakeChatResponse(),
-      text: 'ok',
-      toolCalls: const [],
-      usage: const UsageInfo(
-        promptTokens: 1,
-        completionTokens: 1,
-        totalTokens: 2,
-      ),
-      warnings: const [],
-      metadata: null,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> streamText(
-    List<ChatMessage> messages, {
-    CancellationToken? cancelToken,
-  }) async* {
-    yield const TextDeltaEvent('chunk');
-    yield CompletionEvent(FakeChatResponse());
-  }
-
-  @override
-  Stream<StreamTextPart> streamTextParts(
-    List<ChatMessage> messages, {
-    CancellationToken? cancelToken,
-  }) {
-    return adaptStreamText(streamText(messages, cancelToken: cancelToken));
-  }
-
-  @override
-  Future<GenerateObjectResult<T>> generateObject<T>(
-    OutputSpec<T> output,
-    List<ChatMessage> messages, {
-    CancellationToken? cancelToken,
-  }) async {
-    // Always return {"value": "ok"} for tests.
-    final object = output.fromJson({'value': 'ok'});
-    final textResult = await generateText(messages, cancelToken: cancelToken);
-    return GenerateObjectResult<T>(object: object, textResult: textResult);
-  }
-
-  @override
-  Future<GenerateTextResult> generateTextWithOptions(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    lastOptions = options;
-    return generateText(messages, cancelToken: cancelToken);
-  }
-
-  @override
-  Stream<ChatStreamEvent> streamTextWithOptions(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    lastOptions = options;
-    return streamText(messages, cancelToken: cancelToken);
-  }
-
-  @override
-  Stream<StreamTextPart> streamTextPartsWithOptions(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    lastOptions = options;
-    return streamTextParts(messages, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
-    OutputSpec<T> output,
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    lastOptions = options;
-    return generateObject<T>(output, messages, cancelToken: cancelToken);
-  }
 }

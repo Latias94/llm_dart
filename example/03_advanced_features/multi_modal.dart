@@ -39,14 +39,14 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
   print('👁️  Image Analysis:\n');
 
   try {
-    // Create vision-capable provider
-    final provider = await ai()
+    // Create vision-capable language model
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o') // Vision-capable model
         .temperature(0.7)
         .maxTokens(500)
-        .build();
+        .buildLanguageModel();
 
     // Simulate image data (in real usage, load from file)
     final imageUrl =
@@ -60,19 +60,28 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
         .imageUrl(imageUrl)
         .build();
 
-    final messages = <ChatMessage>[
-      ChatMessage.fromPromptMessage(visionPrompt),
-    ];
+    final messages = <ModelMessage>[visionPrompt];
 
-    final response = await provider.chat(messages);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(messages),
+    );
     print('   🤖 AI Analysis: ${response.text}');
 
     // Follow-up question about the image
-    messages.add(ChatMessage.assistant(response.text ?? ''));
-    messages.add(ChatMessage.user(
-        'What time of day do you think this photo was taken?'));
+    messages.add(
+      ChatPromptBuilder.assistant().text(response.text ?? '').build(),
+    );
+    messages.add(
+      ChatPromptBuilder.user()
+          .text('What time of day do you think this photo was taken?')
+          .build(),
+    );
 
-    final followUp = await provider.chat(messages);
+    final followUp = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(messages),
+    );
     print('   🤖 Follow-up: ${followUp.text}');
 
     print('   ✅ Image analysis successful\n');
@@ -374,14 +383,14 @@ Future<void> demonstrateDocumentProcessing(String apiKey) async {
   print('📄 Document Processing:\n');
 
   try {
-    // Create provider for document analysis
-    final provider = await ai()
+    // Create language model for document analysis
+    final model = await ai()
         .anthropic()
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.3)
         .maxTokens(1000)
-        .build();
+        .buildLanguageModel();
 
     // Simulate document content
     final documentContent = '''
@@ -409,22 +418,38 @@ Recommendations:
 
     print('   Processing business report...');
 
-    final messages = [
-      ChatMessage.system(
-          'You are a business analyst. Analyze documents and provide insights.'),
-      ChatMessage.user(
-          'Please analyze this quarterly report and provide key insights:\n\n$documentContent'),
+    final messages = <ModelMessage>[
+      ChatPromptBuilder.system()
+          .text(
+              'You are a business analyst. Analyze documents and provide insights.')
+          .build(),
+      ChatPromptBuilder.user()
+          .text(
+              'Please analyze this quarterly report and provide key insights:\n\n$documentContent')
+          .build(),
     ];
 
-    final response = await provider.chat(messages);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(messages),
+    );
     print('   🤖 Document Analysis: ${response.text}');
 
     // Follow-up analysis
-    messages.add(ChatMessage.assistant(response.text ?? ''));
-    messages.add(ChatMessage.user(
-        'What are the top 3 priorities for the next quarter based on this report?'));
+    messages.add(
+      ChatPromptBuilder.assistant().text(response.text ?? '').build(),
+    );
+    messages.add(
+      ChatPromptBuilder.user()
+          .text(
+              'What are the top 3 priorities for the next quarter based on this report?')
+          .build(),
+    );
 
-    final priorities = await provider.chat(messages);
+    final priorities = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(messages),
+    );
     print('\n   🎯 Priority Analysis: ${priorities.text}');
 
     print('   ✅ Document processing successful\n');
@@ -438,27 +463,33 @@ Future<void> demonstrateMultiModalConversation(String apiKey) async {
   print('🔄 Multi-modal Conversation:\n');
 
   try {
-    // Create vision-capable provider
-    final provider = await ai()
+    // Create vision-capable language model
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
         .maxTokens(800)
-        .build();
+        .buildLanguageModel();
 
     // Start conversation with text
-    var messages = <ChatMessage>[
-      ChatMessage.user(
-          'I\'m planning a garden. Can you help me choose plants?'),
+    var messages = <ModelMessage>[
+      ChatPromptBuilder.user()
+          .text('I\'m planning a garden. Can you help me choose plants?')
+          .build(),
     ];
 
-    var response = await provider.chat(messages);
+    var response = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(messages),
+    );
     print('   User: I\'m planning a garden. Can you help me choose plants?');
     print('   🤖 AI: ${response.text}\n');
 
     // Add image to conversation using ChatPromptBuilder for a multi-part message
-    messages.add(ChatMessage.assistant(response.text ?? ''));
+    messages.add(
+      ChatPromptBuilder.assistant().text(response.text ?? '').build(),
+    );
     final backyardPrompt = ChatPromptBuilder.user()
         .text(
             'Here\'s a photo of my backyard. What do you think would work well here?')
@@ -466,18 +497,30 @@ Future<void> demonstrateMultiModalConversation(String apiKey) async {
           'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',
         )
         .build();
-    messages.add(ChatMessage.fromPromptMessage(backyardPrompt));
+    messages.add(backyardPrompt);
 
-    response = await provider.chat(messages);
+    response = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(messages),
+    );
     print('   User: [Shares backyard photo] What would work well here?');
     print('   🤖 AI: ${response.text}\n');
 
     // Continue with text-only follow-up
-    messages.add(ChatMessage.assistant(response.text ?? ''));
-    messages.add(ChatMessage.user(
-        'I prefer low-maintenance plants. Any specific recommendations?'));
+    messages.add(
+      ChatPromptBuilder.assistant().text(response.text ?? '').build(),
+    );
+    messages.add(
+      ChatPromptBuilder.user()
+          .text(
+              'I prefer low-maintenance plants. Any specific recommendations?')
+          .build(),
+    );
 
-    response = await provider.chat(messages);
+    response = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(messages),
+    );
     print(
         '   User: I prefer low-maintenance plants. Any specific recommendations?');
     print('   🤖 AI: ${response.text}');

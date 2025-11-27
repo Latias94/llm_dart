@@ -9,8 +9,7 @@ import 'package:llm_dart_core/llm_dart_core.dart'
         TextContentPart,
         ToolCallContentPart,
         ToolResultContentPart,
-        ToolResultTextPayload,
-        ChatMessage;
+        ToolResultTextPayload;
 
 /// 🔧 Tool Calling - Function Integration with AI
 ///
@@ -540,9 +539,11 @@ Future<void> demonstrateStreamingWithTools(String apiKey) async {
 
     // First streaming pass: get tool calls and initial answer text.
     final toolCalls = <ToolCall>[];
-    final promptMessages = [ChatMessage.fromPromptMessage(prompt)];
 
-    await for (final part in model.streamTextParts(promptMessages)) {
+    await for (final part in streamTextPartsWithModel(
+      model,
+      promptMessages: [prompt],
+    )) {
       switch (part) {
         case StreamTextStart():
           break;

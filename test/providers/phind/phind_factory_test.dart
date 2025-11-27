@@ -46,7 +46,7 @@ void main() {
       test('should create provider with basic config', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
-          baseUrl: 'https://https.extension.phind.com/agent/',
+          baseUrl: 'https://api.phind.com/v1/',
           model: 'Phind-70B',
         );
 
@@ -77,7 +77,7 @@ void main() {
 
       test('should handle missing API key gracefully', () {
         final config = LLMConfig(
-          baseUrl: 'https://https.extension.phind.com/agent/',
+          baseUrl: 'https://api.phind.com/v1/',
           model: 'Phind-70B',
         );
 
@@ -87,7 +87,7 @@ void main() {
       test('should handle empty API key gracefully', () {
         final config = LLMConfig(
           apiKey: '',
-          baseUrl: 'https://https.extension.phind.com/agent/',
+          baseUrl: 'https://api.phind.com/v1/',
           model: 'Phind-70B',
         );
 

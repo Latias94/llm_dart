@@ -331,7 +331,7 @@ In new code, prefer:
 
 - Updated `dio` dependency from ^5.8.0 to ^5.9.0
 - Updated `test` dependency from ^1.25.15 to ^1.26.3
-- Updated `mcp_dart` dependency from ^0.5.1 to ^0.6.3
+- Updated `mcp_dart` dependency from ^0.5.1 to ^1.0.2 and aligned MCP integration examples with the new client/server modules
 
 ## [0.9.0] - 2025-8-8
 

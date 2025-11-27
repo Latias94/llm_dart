@@ -50,7 +50,7 @@ export 'chat.dart';
 PhindProvider createPhindProvider({
   required String apiKey,
   String model = 'Phind-70B',
-  String baseUrl = 'https://https.extension.phind.com/agent/',
+  String baseUrl = 'https://api.phind.com/v1/',
   double? temperature,
   int? maxTokens,
   String? systemPrompt,

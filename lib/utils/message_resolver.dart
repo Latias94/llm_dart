@@ -13,11 +13,26 @@ List<ChatMessage> resolveMessagesForTextGeneration({
   List<ChatMessage>? messages,
   ModelMessage? structuredPrompt,
   List<ModelMessage>? promptMessages,
+  ReasoningPruneMode reasoning = ReasoningPruneMode.none,
+  ToolCallPruneMode toolCalls = ToolCallPruneMode.none,
+  List<String>? toolNames,
+  bool removeEmptyMessages = true,
 }) {
   if (promptMessages != null && promptMessages.isNotEmpty) {
-    return promptMessages
-        .map((prompt) => ChatMessage.fromPromptMessage(prompt))
-        .toList();
+    final effectivePrompts = (reasoning != ReasoningPruneMode.none ||
+            toolCalls != ToolCallPruneMode.none)
+        ? pruneModelMessages(
+            messages: promptMessages,
+            reasoning: reasoning,
+            toolCalls: toolCalls,
+            toolNames: toolNames,
+            removeEmptyMessages: removeEmptyMessages,
+          )
+        : promptMessages;
+
+    return effectivePrompts
+        .map(ChatMessage.fromPromptMessage)
+        .toList(growable: false);
   }
 
   if (structuredPrompt != null) {

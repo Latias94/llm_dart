@@ -5,12 +5,10 @@
 /// - Emits ToolCallDeltaEvent instances in order with incremental arguments
 library;
 
-import 'dart:async';
-
-import 'package:dio/dio.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek;
 import 'package:test/test.dart';
+import 'deepseek_test_utils.dart';
 
 void main() {
   group('DeepSeekChat streaming tool calls', () {
@@ -22,7 +20,15 @@ void main() {
         model: 'deepseek-chat',
       );
 
-      final client = _FakeDeepSeekClient(config);
+      final client = FakeDeepSeekStreamClient(
+        config,
+        chunks: const <String>[
+          'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"get_weather","arguments":""}}]},"finish_reason":null}]}\n',
+          'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"type":"function","function":{"arguments":"{\\"location\\": \\""}}]},"finish_reason":null}]}\n',
+          'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"type":"function","function":{"arguments":"New York\\"}"}}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":1,"completion_tokens":2,"total_tokens":3}}\n',
+          'data: [DONE]\n',
+        ],
+      );
       final chat = deepseek.DeepSeekChat(client, config);
 
       final events = await chat.chatStream([ChatMessage.user('test')]).toList();
@@ -47,30 +53,4 @@ void main() {
       );
     });
   });
-}
-
-/// Fake DeepSeekClient that returns a synthetic SSE-style stream.
-///
-/// DeepSeekChat parses "data: ..." lines manually, similar to OpenAI's SSE,
-/// so we reuse the same chunk pattern as the OpenAI chat streaming test.
-class _FakeDeepSeekClient extends deepseek.DeepSeekClient {
-  _FakeDeepSeekClient(deepseek.DeepSeekConfig config) : super(config);
-
-  @override
-  Stream<String> postStreamRaw(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async* {
-    const chunks = <String>[
-      'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"get_weather","arguments":""}}]},"finish_reason":null}]}\n',
-      'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"type":"function","function":{"arguments":"{\\"location\\": \\""}}]},"finish_reason":null}]}\n',
-      'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"type":"function","function":{"arguments":"New York\\"}"}}]},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":1,"completion_tokens":2,"total_tokens":3}}\n',
-      'data: [DONE]\n',
-    ];
-
-    for (final chunk in chunks) {
-      yield chunk;
-    }
-  }
 }

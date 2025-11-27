@@ -2,6 +2,13 @@
 import 'dart:io';
 import 'dart:convert';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_core/llm_dart_core.dart'
+    show
+        ChatContentPart,
+        TextContentPart,
+        ToolCallContentPart,
+        ToolResultContentPart,
+        ToolResultTextPayload;
 import 'package:mcp_dart/mcp_dart.dart' hide Tool;
 
 /// stdio LLM Integration - AI Agents with stdio MCP Tools
@@ -41,13 +48,13 @@ Future<void> demonstrateBasicStdioIntegration(String apiKey) async {
 
   Client? mcpClient;
   try {
-    // Create LLM provider
-    final llmProvider = await ai()
+    // Create high-level language model
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
 
     // Create real MCP client connected to stdio server
     mcpClient = await _createRealStdioMcpClient();
@@ -61,16 +68,19 @@ Future<void> demonstrateBasicStdioIntegration(String apiKey) async {
     }
 
     // Test with a simple calculation request
-    final messages = [
-      ChatMessage.user('Calculate 25 * 8 + 12 using the available tools.')
-    ];
+    const userMessage = 'Calculate 25 * 8 + 12 using the available tools.';
+    final prompt = ChatPromptBuilder.user().text(userMessage).build();
 
     // Print actual user message
     print('   💬 User Message:');
-    print('      "${messages.last.content}"');
+    print('      "$userMessage"');
     print('   🤖 LLM: Analyzing request and selecting appropriate tools...');
 
-    final response = await llmProvider.chatWithTools(messages, mcpTools);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: mcpTools),
+    );
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
       print('   🤖 LLM: Requested ${response.toolCalls!.length} tool call(s):');
@@ -102,16 +112,24 @@ Future<void> demonstrateBasicStdioIntegration(String apiKey) async {
         ));
       }
 
-      // Send tool results back to LLM for final response
-      print('   🔄 Sending MCP results back to LLM for final response...');
-      final finalMessages = [
-        ...messages,
-        ChatMessage.toolUse(toolCalls: response.toolCalls!),
-        ChatMessage.toolResult(results: toolResultCalls),
+      // Build prompt-first conversation with tool calls and results.
+      final conversation = <ModelMessage>[
+        prompt,
+        _assistantWithToolCalls(response.text, response.toolCalls!),
       ];
 
-      final finalResponse = await llmProvider.chat(finalMessages);
-      print('   📝 LLM Final Response: ${finalResponse.text}');
+      for (final toolCall in toolResultCalls) {
+        conversation
+            .add(_toolResultMessage(toolCall, toolCall.function.arguments));
+      }
+
+      // Send tool results back to LLM for final response
+      print('   🔄 Sending MCP results back to LLM for final response...');
+      final finalResult = await generateTextWithModel(
+        model,
+        promptMessages: conversation,
+      );
+      print('   📝 LLM Final Response: ${finalResult.text}');
     } else {
       print('   📝 LLM Response: ${response.text}');
     }
@@ -129,36 +147,43 @@ Future<void> demonstrateStdioCalculationWorkflow(String apiKey) async {
 
   Client? mcpClient;
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.3)
-        .build();
+        .buildLanguageModel();
 
     // Create real MCP client connected to stdio server
     mcpClient = await _createRealStdioMcpClient();
     final mcpTools = await _getMcpToolsAsLlmDartTools(mcpClient);
 
-    // Mathematical workflow request
-    final messages = [
-      ChatMessage.system(
-          'You are a math assistant that can use calculation tools. '
-          'The calculation tool supports basic operations: +, -, *, /. '
-          'It does NOT support ^ (power), pi, sqrt, or other advanced functions. '
-          'Use only basic arithmetic operations and break down complex calculations into simple steps.'),
-      ChatMessage.user(
-          'I need to calculate the area of a circle with radius 7 (use 3.14159 for pi), '
-          'then find what percentage that area is of a square with side length 20. '
-          'Please use only basic arithmetic operations (+, -, *, /) in your calculations.'),
+    // Mathematical workflow request (prompt-first)
+    const systemPrompt =
+        'You are a math assistant that can use calculation tools. '
+        'The calculation tool supports basic operations: +, -, *, /. '
+        'It does NOT support ^ (power), pi, sqrt, or other advanced functions. '
+        'Use only basic arithmetic operations and break down complex calculations into simple steps.';
+    const userPrompt =
+        'I need to calculate the area of a circle with radius 7 (use 3.14159 for pi), '
+        'then find what percentage that area is of a square with side length 20. '
+        'Please use only basic arithmetic operations (+, -, *, /) in your calculations.';
+
+    final prompts = <ModelMessage>[
+      ChatPromptBuilder.system().text(systemPrompt).build(),
+      ChatPromptBuilder.user().text(userPrompt).build(),
     ];
 
     // Print actual user message
     print('   💬 User Message:');
-    print('      "${messages.last.content}"');
+    print('      "$userPrompt"');
     print('   🤖 LLM: Breaking down the mathematical workflow...');
 
-    final response = await provider.chatWithTools(messages, mcpTools);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: prompts,
+      options: LanguageModelCallOptions(tools: mcpTools),
+    );
 
     print('   📋 stdio calculation workflow execution:');
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
@@ -188,17 +213,24 @@ Future<void> demonstrateStdioCalculationWorkflow(String apiKey) async {
         ));
       }
 
-      // Send tool results back to LLM for final response
+      // Send tool results back to LLM for final response (prompt-first)
       print(
           '   🔄 Sending MCP results back to LLM for calculation final response...');
-      final finalMessages = [
-        ...messages,
-        ChatMessage.toolUse(toolCalls: response.toolCalls!),
-        ChatMessage.toolResult(results: toolResultCalls),
+      final conversation = <ModelMessage>[
+        ...prompts,
+        _assistantWithToolCalls(response.text, response.toolCalls!),
       ];
 
-      final finalResponse = await provider.chat(finalMessages);
-      print('   📝 Final Response: ${finalResponse.text}');
+      for (final toolCall in toolResultCalls) {
+        conversation
+            .add(_toolResultMessage(toolCall, toolCall.function.arguments));
+      }
+
+      final finalResult = await generateTextWithModel(
+        model,
+        promptMessages: conversation,
+      );
+      print('   📝 Final Response: ${finalResult.text}');
     } else {
       print('   📝 Final Response: ${response.text}');
     }
@@ -216,35 +248,42 @@ Future<void> demonstrateStdioMultiToolWorkflow(String apiKey) async {
 
   Client? mcpClient;
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.2)
-        .build();
+        .buildLanguageModel();
 
     // Create real MCP client connected to stdio server
     mcpClient = await _createRealStdioMcpClient();
     final mcpTools = await _getMcpToolsAsLlmDartTools(mcpClient);
 
-    // Multi-tool request
-    final messages = [
-      ChatMessage.system(
-          'You are a helpful assistant that can use various tools. '
-          'The calculation tool supports basic operations: +, -, *, /. '
-          'Use multiple tools to gather information and provide comprehensive answers. '
-          'Always use the calculation tool for mathematical operations.'),
-      ChatMessage.user(
-          'Please: 1) Get the current time, 2) Generate a random number between 1-10, '
-          '3) Use the calculation tool to calculate that number squared (multiply the number by itself), and 4) Generate a UUID for this session.'),
+    // Multi-tool request (prompt-first)
+    const systemPrompt =
+        'You are a helpful assistant that can use various tools. '
+        'The calculation tool supports basic operations: +, -, *, /. '
+        'Use multiple tools to gather information and provide comprehensive answers. '
+        'Always use the calculation tool for mathematical operations.';
+    const userPrompt =
+        'Please: 1) Get the current time, 2) Generate a random number between 1-10, '
+        '3) Use the calculation tool to calculate that number squared (multiply the number by itself), and 4) Generate a UUID for this session.';
+
+    final prompts = <ModelMessage>[
+      ChatPromptBuilder.system().text(systemPrompt).build(),
+      ChatPromptBuilder.user().text(userPrompt).build(),
     ];
 
     // Print actual user message
     print('   💬 User Message:');
-    print('      "${messages.last.content}"');
+    print('      "$userPrompt"');
     print('   🤖 LLM: Planning multi-tool workflow via stdio...');
 
-    final response = await provider.chatWithTools(messages, mcpTools);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: prompts,
+      options: LanguageModelCallOptions(tools: mcpTools),
+    );
 
     print('   📋 Multi-tool workflow execution via stdio:');
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
@@ -274,17 +313,24 @@ Future<void> demonstrateStdioMultiToolWorkflow(String apiKey) async {
         ));
       }
 
-      // Send tool results back to LLM for final response
+      // Send tool results back to LLM for final response (prompt-first)
       print(
           '   🔄 Sending MCP results back to LLM for multi-tool final response...');
-      final finalMessages = [
-        ...messages,
-        ChatMessage.toolUse(toolCalls: response.toolCalls!),
-        ChatMessage.toolResult(results: toolResultCalls),
+      final conversation = <ModelMessage>[
+        ...prompts,
+        _assistantWithToolCalls(response.text, response.toolCalls!),
       ];
 
-      final finalResponse = await provider.chat(finalMessages);
-      print('   📝 Final Response: ${finalResponse.text}');
+      for (final toolCall in toolResultCalls) {
+        conversation
+            .add(_toolResultMessage(toolCall, toolCall.function.arguments));
+      }
+
+      final finalResult = await generateTextWithModel(
+        model,
+        promptMessages: conversation,
+      );
+      print('   📝 Final Response: ${finalResult.text}');
     } else {
       print('   📝 Final Response: ${response.text}');
     }
@@ -294,6 +340,38 @@ Future<void> demonstrateStdioMultiToolWorkflow(String apiKey) async {
   } finally {
     await mcpClient?.close();
   }
+}
+
+/// Helper to build an assistant message that includes tool call parts.
+ModelMessage _assistantWithToolCalls(String? text, List<ToolCall> toolCalls) {
+  final parts = <ChatContentPart>[];
+  if (text != null && text.isNotEmpty) {
+    parts.add(TextContentPart(text));
+  }
+  for (final call in toolCalls) {
+    parts.add(
+      ToolCallContentPart(
+        toolName: call.function.name,
+        argumentsJson: call.function.arguments,
+        toolCallId: call.id,
+      ),
+    );
+  }
+  return ModelMessage(role: ChatRole.assistant, parts: parts);
+}
+
+/// Helper to build a tool result message from a tool call and text result.
+ModelMessage _toolResultMessage(ToolCall toolCall, String result) {
+  return ModelMessage(
+    role: ChatRole.assistant,
+    parts: [
+      ToolResultContentPart(
+        toolCallId: toolCall.id,
+        toolName: toolCall.function.name,
+        payload: ToolResultTextPayload(result),
+      ),
+    ],
+  );
 }
 
 /// Create real MCP client connected to stdio server

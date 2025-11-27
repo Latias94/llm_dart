@@ -32,7 +32,7 @@ class PhindProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   LLMConfig getDefaultConfig() => const LLMConfig(
-        baseUrl: 'https://https.extension.phind.com/agent/',
+        baseUrl: 'https://api.phind.com/v1/',
         model: 'Phind-70B',
       );
 

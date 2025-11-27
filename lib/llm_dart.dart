@@ -140,6 +140,9 @@ export 'package:llm_dart_core/llm_dart_core.dart'
         ServiceTier,
         ReasoningEffort,
         Verbosity,
+        ReasoningPruneMode,
+        ToolCallPruneMode,
+        pruneModelMessages,
 
         // Audio capabilities & models
         AudioFeature,
@@ -602,23 +605,7 @@ Future<GenerateObjectResult<T>> generateObject<T>({
     );
   }
 
-  Map<String, dynamic> json;
-  try {
-    final decoded = jsonDecode(rawText);
-    if (decoded is Map<String, dynamic>) {
-      json = decoded;
-    } else if (decoded is Map) {
-      json = Map<String, dynamic>.from(decoded);
-    } else {
-      throw const FormatException('Top-level JSON value is not an object');
-    }
-  } catch (e) {
-    throw ResponseFormatError(
-      'Failed to parse structured JSON output: $e',
-      rawText,
-    );
-  }
-
+  final json = _parseHelperStructuredObjectJson(rawText, output.format);
   final object = output.fromJson(json);
 
   return GenerateObjectResult<T>(
@@ -645,6 +632,137 @@ class StreamObjectResult<T> {
     required this.events,
     required this.asObject,
   });
+}
+
+/// Parse structured JSON output for the top-level [generateObject] helper.
+///
+/// This mirrors the core implementation used by [DefaultLanguageModel]
+/// and ensures consistent behavior between the model-centric and
+/// builder-centric structured output helpers.
+Map<String, dynamic> _parseHelperStructuredObjectJson(
+  String rawText,
+  StructuredOutputFormat format,
+) {
+  Map<String, dynamic> json;
+  try {
+    final decoded = jsonDecode(rawText);
+    if (decoded is Map<String, dynamic>) {
+      json = decoded;
+    } else if (decoded is Map) {
+      json = Map<String, dynamic>.from(decoded);
+    } else {
+      throw const FormatException('Top-level JSON value is not an object');
+    }
+  } catch (e) {
+    throw ResponseFormatError(
+      'Failed to parse structured JSON output: $e',
+      rawText,
+    );
+  }
+
+  final schema = format.schema;
+  if (schema != null) {
+    final errors = <String>[];
+    _validateHelperJsonAgainstSchema(json, schema, r'$', errors);
+    if (errors.isNotEmpty) {
+      throw StructuredOutputError(
+        'Structured output does not match schema: ${errors.join('; ')}',
+        schemaName: format.name,
+        schema: schema,
+        actualOutput: rawText,
+      );
+    }
+  }
+
+  return json;
+}
+
+void _validateHelperJsonAgainstSchema(
+  dynamic value,
+  Map<String, dynamic> schema,
+  String path,
+  List<String> errors,
+) {
+  final type = schema['type'];
+
+  switch (type) {
+    case 'string':
+      if (value is! String) {
+        errors.add('Expected string at $path, got ${value.runtimeType}');
+      }
+      break;
+    case 'number':
+      if (value is! num) {
+        errors.add('Expected number at $path, got ${value.runtimeType}');
+      }
+      break;
+    case 'integer':
+      if (value is! int) {
+        errors.add('Expected integer at $path, got ${value.runtimeType}');
+      }
+      break;
+    case 'boolean':
+      if (value is! bool) {
+        errors.add('Expected boolean at $path, got ${value.runtimeType}');
+      }
+      break;
+    case 'array':
+      if (value is! List) {
+        errors.add('Expected array at $path, got ${value.runtimeType}');
+        break;
+      }
+      final itemSchema = schema['items'];
+      if (itemSchema is Map<String, dynamic>) {
+        for (var i = 0; i < value.length; i++) {
+          _validateHelperJsonAgainstSchema(
+            value[i],
+            itemSchema,
+            '$path[$i]',
+            errors,
+          );
+        }
+      }
+      break;
+    case 'object':
+      if (value is! Map) {
+        errors.add('Expected object at $path, got ${value.runtimeType}');
+        break;
+      }
+
+      final mapValue = value is Map<String, dynamic>
+          ? value
+          : Map<String, dynamic>.from(value as Map);
+
+      final requiredProps =
+          (schema['required'] as List<dynamic>? ?? const <dynamic>[])
+              .cast<String>();
+      for (final prop in requiredProps) {
+        if (!mapValue.containsKey(prop)) {
+          errors.add('Missing required property "$prop" at $path');
+        }
+      }
+
+      final propertiesRaw = schema['properties'];
+      if (propertiesRaw is Map) {
+        final properties =
+            propertiesRaw.cast<String, dynamic>(); // schema fragments
+        for (final entry in properties.entries) {
+          final propName = entry.key;
+          final propSchema = entry.value;
+          if (propSchema is! Map<String, dynamic>) continue;
+          if (!mapValue.containsKey(propName)) continue;
+          _validateHelperJsonAgainstSchema(
+            mapValue[propName],
+            propSchema,
+            '$path.$propName',
+            errors,
+          );
+        }
+      }
+      break;
+    default:
+      break;
+  }
 }
 
 /// Generate a structured object using an existing [LanguageModel].
@@ -977,6 +1095,23 @@ StreamObjectResult<T> streamObject<T>({
       }
 
       final json = _parseStructuredJson(rawText);
+
+      // If a structured output schema is available, validate the parsed
+      // JSON against it. This mirrors the non-streaming generateObject
+      // behavior and surfaces schema mismatches as StructuredOutputError.
+      final schema = output.format.schema;
+      if (schema != null) {
+        final errors = <String>[];
+        _validateHelperJsonAgainstSchema(json, schema, r'$', errors);
+        if (errors.isNotEmpty) {
+          throw StructuredOutputError(
+            'Structured output does not match schema: ${errors.join('; ')}',
+            schemaName: output.format.name,
+            schema: schema,
+            actualOutput: rawText,
+          );
+        }
+      }
 
       final response = finalResponse ?? _SimpleChatResponse(rawText);
 

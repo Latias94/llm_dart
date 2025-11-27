@@ -336,12 +336,13 @@ class DataProcessor {
   /// Process text with AI based on operation type
   Future<String> processWithAI(String text) async {
     final systemPrompt = getSystemPromptForOperation(operation);
-    final messages = [
-      ChatMessage.system(systemPrompt),
-      ChatMessage.user(text),
+    final prompts = <ModelMessage>[
+      ChatPromptBuilder.system().text(systemPrompt).build(),
+      ChatPromptBuilder.user().text(text).build(),
     ];
-
-    final response = await aiProvider.chat(messages);
+    final response = await aiProvider.chat(
+      prompts.map((prompt) => ChatMessage.fromPromptMessage(prompt)).toList(),
+    );
     return response.text ?? 'No response generated';
   }
 

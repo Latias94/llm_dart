@@ -38,8 +38,11 @@ Future<void> demonstrateMockProvider() async {
     final mockProvider = MockChatProvider();
 
     // Test basic chat
-    final response =
-        await mockProvider.chat([ChatMessage.user('Hello, how are you?')]);
+    final basicPrompt =
+        ChatPromptBuilder.user().text('Hello, how are you?').build();
+    final response = await mockProvider.chat(
+      [ChatMessage.fromPromptMessage(basicPrompt)],
+    );
 
     print('   User: Hello, how are you?');
     print('   🤖 Mock AI: ${response.text}');
@@ -48,8 +51,11 @@ Future<void> demonstrateMockProvider() async {
     print('\n   Streaming test:');
     print('   🤖 Mock AI: ');
 
-    await for (final event
-        in mockProvider.chatStream([ChatMessage.user('Count to 5')])) {
+    final streamPrompt = ChatPromptBuilder.user().text('Count to 5').build();
+
+    await for (final event in mockProvider.chatStream(
+      [ChatMessage.fromPromptMessage(streamPrompt)],
+    )) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           stdout.write(delta);
@@ -89,8 +95,12 @@ Future<void> demonstrateLoggingProvider() async {
     final loggingProvider = LoggingChatProvider(baseProvider);
 
     // Test with logging
-    final response = await loggingProvider
-        .chat([ChatMessage.user('What is artificial intelligence?')]);
+    final prompt = ChatPromptBuilder.user()
+        .text('What is artificial intelligence?')
+        .build();
+    final response = await loggingProvider.chat(
+      [ChatMessage.fromPromptMessage(prompt)],
+    );
 
     print('   User: What is artificial intelligence?');
     print('   🤖 AI: ${response.text}');
@@ -122,7 +132,10 @@ Future<void> demonstrateCachingProvider() async {
     // First call - cache miss
     print('   First call (cache miss):');
     final stopwatch1 = Stopwatch()..start();
-    final response1 = await cachingProvider.chat([ChatMessage.user(question)]);
+    final prompt1 = ChatPromptBuilder.user().text(question).build();
+    final response1 = await cachingProvider.chat(
+      [ChatMessage.fromPromptMessage(prompt1)],
+    );
     stopwatch1.stop();
     print('   🤖 AI: ${response1.text}');
     print('   ⏱️  Time: ${stopwatch1.elapsedMilliseconds}ms');
@@ -130,7 +143,10 @@ Future<void> demonstrateCachingProvider() async {
     // Second call - cache hit
     print('\n   Second call (cache hit):');
     final stopwatch2 = Stopwatch()..start();
-    final response2 = await cachingProvider.chat([ChatMessage.user(question)]);
+    final prompt2 = ChatPromptBuilder.user().text(question).build();
+    final response2 = await cachingProvider.chat(
+      [ChatMessage.fromPromptMessage(prompt2)],
+    );
     stopwatch2.stop();
     print('   🤖 AI: ${response2.text}');
     print('   ⏱️  Time: ${stopwatch2.elapsedMilliseconds}ms');
@@ -159,8 +175,11 @@ Future<void> demonstrateCustomAPIProvider() async {
     );
 
     // Test custom provider
-    final response = await customProvider
-        .chat([ChatMessage.user('Hello from custom provider!')]);
+    final prompt =
+        ChatPromptBuilder.user().text('Hello from custom provider!').build();
+    final response = await customProvider.chat(
+      [ChatMessage.fromPromptMessage(prompt)],
+    );
 
     print('   User: Hello from custom provider!');
     print('   🤖 Custom AI: ${response.text}');
@@ -189,8 +208,11 @@ Future<void> demonstrateProviderChaining() async {
         LoggingChatProvider(CachingChatProvider(baseProvider));
 
     // Test chained provider
-    final response = await chainedProvider
-        .chat([ChatMessage.user('Test chained providers')]);
+    final prompt =
+        ChatPromptBuilder.user().text('Test chained providers').build();
+    final response = await chainedProvider.chat(
+      [ChatMessage.fromPromptMessage(prompt)],
+    );
 
     print('   User: Test chained providers');
     print('   🤖 Chained AI: ${response.text}');

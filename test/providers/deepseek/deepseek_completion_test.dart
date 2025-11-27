@@ -1,37 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
 import 'package:test/test.dart';
-
-class FakeDeepSeekClient extends DeepSeekClient {
-  Map<String, dynamic>? lastRequestBody;
-  String? lastEndpoint;
-
-  FakeDeepSeekClient(DeepSeekConfig config) : super(config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastRequestBody = data;
-
-    return {
-      'choices': [
-        {
-          'text': 'completed text',
-        },
-      ],
-      'usage': {
-        'prompt_tokens': 5,
-        'completion_tokens': 10,
-        'total_tokens': 15,
-      },
-    };
-  }
-}
+import 'deepseek_test_utils.dart';
 
 void main() {
   group('DeepSeekCompletion', () {
@@ -42,7 +12,7 @@ void main() {
         baseUrl: 'https://api.deepseek.com/v1/',
       );
 
-      final client = FakeDeepSeekClient(config);
+      final client = CapturingDeepSeekClient(config);
       final completion = DeepSeekCompletion(client, config);
 
       final request = const CompletionRequest(
@@ -82,7 +52,7 @@ void main() {
         maxTokens: 64,
       );
 
-      final client = FakeDeepSeekClient(config);
+      final client = CapturingDeepSeekClient(config);
       final completion = DeepSeekCompletion(client, config);
 
       final response = await completion.completeFim(

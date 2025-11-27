@@ -1,36 +1,6 @@
-import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:test/test.dart';
-
-class FakeGoogleClient extends GoogleClient {
-  Map<String, dynamic>? lastRequestBody;
-  String? lastEndpoint;
-
-  FakeGoogleClient(GoogleConfig config) : super(config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastRequestBody = data;
-
-    // Return a minimal valid response structure.
-    return {
-      'candidates': [
-        {
-          'content': {
-            'parts': [
-              {'text': 'ok'},
-            ],
-          },
-        },
-      ],
-    };
-  }
-}
+import 'google_test_utils.dart';
 
 void main() {
   group('Google Tool Calling Tests', () {
@@ -288,7 +258,7 @@ void main() {
           toolChoice: const SpecificToolChoice('get_weather'),
         );
 
-        final client = FakeGoogleClient(config);
+        final client = CapturingGoogleClient(config);
         final chat = GoogleChat(client, config);
 
         final messages = [ChatMessage.user('hello')];

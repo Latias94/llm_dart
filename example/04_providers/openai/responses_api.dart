@@ -92,6 +92,12 @@ void main() async {
   await responseLifecycleExample(apiKey);
 }
 
+/// Build a single user ModelMessage and bridge it to ChatMessage.
+List<ChatMessage> _userMessages(String text) {
+  final prompt = ChatPromptBuilder.user().text(text).build();
+  return [ChatMessage.fromPromptMessage(prompt)];
+}
+
 /// Example 0: Capability detection for type-safe Responses API usage
 Future<void> capabilityDetectionExample(String apiKey) async {
   print('--- Example 0: Capability Detection ---');
@@ -139,9 +145,9 @@ Future<void> capabilityDetectionExample(String apiKey) async {
           print('   • Built-in tools: Available');
 
           // Demonstrate type-safe access
-          final testResponse = await responsesAPI.chat([
-            ChatMessage.user('Hello! This is a capability test.'),
-          ]);
+          final testResponse = await responsesAPI.chat(
+            _userMessages('Hello! This is a capability test.'),
+          );
 
           if (testResponse is OpenAIResponsesResponse) {
             final responseId = testResponse.responseId;
@@ -173,9 +179,9 @@ Future<void> capabilityDetectionExample(String apiKey) async {
 
         // Direct access without casting
         final directAPI = autoProvider.responses!;
-        final quickTest = await directAPI.chat([
-          ChatMessage.user('Quick test of buildOpenAIResponses()'),
-        ]);
+        final quickTest = await directAPI.chat(
+          _userMessages('Quick test of buildOpenAIResponses()'),
+        );
         print(
             '   • Quick test response: ${quickTest.text?.substring(0, 50) ?? 'No text'}...');
       } catch (e) {
@@ -217,12 +223,11 @@ Future<void> basicResponsesAPIExample(String apiKey) async {
         .temperature(0.7)
         .build();
 
-    final messages = [
-      ChatMessage.user(
-          'Explain the difference between Responses API and Chat Completions API'),
-    ];
-
-    final response = await provider.chat(messages);
+    final response = await provider.chat(
+      _userMessages(
+        'Explain the difference between Responses API and Chat Completions API',
+      ),
+    );
     print('Response: ${response.text}\n');
 
     if (response.thinking != null) {
@@ -245,12 +250,9 @@ Future<void> webSearchExample(String apiKey) async {
         .model('gpt-4.1')
         .build();
 
-    final messages = [
-      ChatMessage.user(
-          'What are the latest developments in AI from this week?'),
-    ];
-
-    final response = await provider.chat(messages);
+    final response = await provider.chat(
+      _userMessages('What are the latest developments in AI from this week?'),
+    );
     print('Response with web search: ${response.text}\n');
   } catch (e) {
     print('Error in web search example: $e\n');
@@ -291,11 +293,10 @@ Future<void> functionCallingExample(String apiKey) async {
       ),
     ];
 
-    final messages = [
-      ChatMessage.user('What is the weather like in Boston today?'),
-    ];
-
-    final response = await provider.chatWithTools(messages, tools);
+    final response = await provider.chatWithTools(
+      _userMessages('What is the weather like in Boston today?'),
+      tools,
+    );
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
       print('Function call requested:');
@@ -325,12 +326,11 @@ Future<void> reasoningExample(String apiKey) async {
         .maxTokens(2000)
         .build();
 
-    final messages = [
-      ChatMessage.user(
-          'How much wood would a woodchuck chuck if a woodchuck could chuck wood? Please think through this step by step.'),
-    ];
-
-    final response = await provider.chat(messages);
+    final response = await provider.chat(
+      _userMessages(
+        'How much wood would a woodchuck chuck if a woodchuck could chuck wood? Please think through this step by step.',
+      ),
+    );
     print('Response: ${response.text}\n');
 
     if (response.thinking != null) {
@@ -371,12 +371,11 @@ Future<void> fileSearchExample(String apiKey) async {
         .model('gpt-4.1')
         .build();
 
-    final messages = [
-      ChatMessage.user(
-          'Search for information about machine learning in the uploaded documents'),
-    ];
-
-    final response = await provider.chat(messages);
+    final response = await provider.chat(
+      _userMessages(
+        'Search for information about machine learning in the uploaded documents',
+      ),
+    );
     print('Response with file search: ${response.text}\n');
   } catch (e) {
     print('Error in file search example (expected if no vector stores): $e\n');
@@ -397,12 +396,11 @@ Future<void> multipleToolsExample(String apiKey) async {
         .model('gpt-4.1')
         .build();
 
-    final messages = [
-      ChatMessage.user(
-          'Compare recent AI news with information from my documents about AI trends'),
-    ];
-
-    final response = await provider.chat(messages);
+    final response = await provider.chat(
+      _userMessages(
+        'Compare recent AI news with information from my documents about AI trends',
+      ),
+    );
     print('Response with multiple tools: ${response.text}\n');
   } catch (e) {
     print('Error in multiple tools example: $e\n');
@@ -420,12 +418,9 @@ Future<void> streamingExample(String apiKey) async {
         .model('gpt-4.1')
         .build();
 
-    final messages = [
-      ChatMessage.user('Tell me about the latest AI research papers'),
-    ];
-
     print('Streaming response:');
-    await for (final event in provider.chatStream(messages)) {
+    await for (final event in provider.chatStream(
+        _userMessages('Tell me about the latest AI research papers'))) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           stdout.write(delta);
@@ -492,11 +487,9 @@ Future<void> responseChainingExample(String apiKey) async {
         .model('gpt-4.1')
         .build();
 
-    final messages1 = [
-      ChatMessage.user('Start a story about a robot learning to paint'),
-    ];
-
-    final response1 = await provider1.chat(messages1);
+    final response1 = await provider1.chat(
+      _userMessages('Start a story about a robot learning to paint'),
+    );
     print('First response: ${response1.text}\n');
 
     // Extract response ID for chaining
@@ -512,12 +505,9 @@ Future<void> responseChainingExample(String apiKey) async {
           .model('gpt-4.1')
           .build();
 
-      final messages2 = [
-        ChatMessage.user(
-            'Continue the story with the robot discovering colors'),
-      ];
-
-      final response2 = await provider2.chat(messages2);
+      final response2 = await provider2.chat(
+        _userMessages('Continue the story with the robot discovering colors'),
+      );
       print('Chained response: ${response2.text}\n');
     } else {
       print('Response chaining not available (no response ID found)\n');
@@ -543,9 +533,9 @@ Future<void> statefulConversationExample(String apiKey) async {
     final responses = provider.responses!;
 
     // Start a conversation
-    final response1 = await responses.chat([
-      ChatMessage.user('My name is Alice. Tell me about quantum computing.'),
-    ]);
+    final response1 = await responses.chat(
+      _userMessages('My name is Alice. Tell me about quantum computing.'),
+    );
     print('Response 1: ${response1.text?.substring(0, 100)}...\n');
 
     // Get response ID for stateful continuation
@@ -557,15 +547,17 @@ Future<void> statefulConversationExample(String apiKey) async {
 
     if (responseId != null) {
       // Continue the conversation with state preservation
-      final response2 = await responses.continueConversation(responseId, [
-        ChatMessage.user('Remember my name and explain it in simple terms.'),
-      ]);
+      final response2 = await responses.continueConversation(
+        responseId,
+        _userMessages('Remember my name and explain it in simple terms.'),
+      );
       print('Response 2: ${response2.text?.substring(0, 100)}...\n');
 
       // Fork the conversation to explore different paths
-      final forkResponse = await responses.forkConversation(responseId, [
-        ChatMessage.user('Instead, tell me about classical computing.'),
-      ]);
+      final forkResponse = await responses.forkConversation(
+        responseId,
+        _userMessages('Instead, tell me about classical computing.'),
+      );
       print('Fork response: ${forkResponse.text?.substring(0, 100)}...\n');
     }
   } catch (e) {
@@ -597,9 +589,12 @@ Future<void> backgroundProcessingExample(String apiKey) async {
 
     // Start a background task
     print('Starting background processing...');
-    final backgroundResponse = await responses.chatWithToolsBackground([
-      ChatMessage.user('Write a detailed analysis of renewable energy trends.'),
-    ], null);
+    final backgroundResponse = await responses.chatWithToolsBackground(
+      _userMessages(
+        'Write a detailed analysis of renewable energy trends.',
+      ),
+      null,
+    );
 
     String? responseId;
     if (backgroundResponse is OpenAIResponsesResponse) {
@@ -657,9 +652,9 @@ Future<void> responseLifecycleExample(String apiKey) async {
     final responses = provider.responses!;
 
     // Create a response
-    final response = await responses.chat([
-      ChatMessage.user('Tell me about machine learning.'),
-    ]);
+    final response = await responses.chat(
+      _userMessages('Tell me about machine learning.'),
+    );
     print('Created response: ${response.text?.substring(0, 100)}...\n');
 
     String? responseId;

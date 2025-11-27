@@ -1,5 +1,6 @@
 import 'package:llm_dart/llm_dart.dart';
 import 'package:test/test.dart';
+import '../utils/mock_provider_factory.dart';
 
 class _TestEmbeddingProvider
     implements ChatCapability, EmbeddingCapability, ProviderCapabilities {
@@ -67,25 +68,6 @@ class _TestEmbeddingProvider
       supportedCapabilities.contains(capability);
 }
 
-class _TestEmbeddingProviderFactory extends LLMProviderFactory<ChatCapability> {
-  @override
-  String get providerId => 'test-embedding-provider';
-
-  @override
-  Set<LLMCapability> get supportedCapabilities =>
-      {LLMCapability.chat, LLMCapability.embedding};
-
-  @override
-  ChatCapability create(LLMConfig config) => _TestEmbeddingProvider(config);
-
-  @override
-  bool validateConfig(LLMConfig config) => true;
-
-  @override
-  LLMConfig getDefaultConfig() =>
-      LLMConfig(baseUrl: 'http://localhost', model: 'test-embed-model');
-}
-
 class _DummyChatResponse implements ChatResponse {
   const _DummyChatResponse();
 
@@ -114,7 +96,16 @@ class _DummyChatResponse implements ChatResponse {
 void main() {
   group('EmbeddingMiddleware', () {
     setUp(() {
-      LLMProviderRegistry.registerOrReplace(_TestEmbeddingProviderFactory());
+      LLMProviderRegistry.registerOrReplace(
+        MockProviderFactory<ChatCapability>(
+          providerId: 'test-embedding-provider',
+          supportedCapabilities: {
+            LLMCapability.chat,
+            LLMCapability.embedding,
+          },
+          create: (config) => _TestEmbeddingProvider(config),
+        ),
+      );
     });
 
     test('transform chain is applied in order for embed', () async {

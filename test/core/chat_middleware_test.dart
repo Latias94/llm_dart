@@ -1,5 +1,6 @@
 import 'package:llm_dart/llm_dart.dart';
 import 'package:test/test.dart';
+import '../utils/mock_provider_factory.dart';
 
 class _TestChatResponse implements ChatResponse {
   final String _text;
@@ -90,30 +91,20 @@ class _TestChatProvider implements ChatCapability, ProviderCapabilities {
       supportedCapabilities.contains(capability);
 }
 
-class _TestProviderFactory extends LLMProviderFactory<ChatCapability> {
-  @override
-  String get providerId => 'test-middleware-provider';
-
-  @override
-  Set<LLMCapability> get supportedCapabilities =>
-      {LLMCapability.chat, LLMCapability.streaming};
-
-  @override
-  ChatCapability create(LLMConfig config) => _TestChatProvider(config);
-
-  @override
-  bool validateConfig(LLMConfig config) => true;
-
-  @override
-  LLMConfig getDefaultConfig() =>
-      LLMConfig(baseUrl: 'http://localhost', model: 'test-model');
-}
-
 void main() {
   group('ChatMiddleware', () {
     setUp(() {
       // Ensure the test provider factory is registered.
-      LLMProviderRegistry.registerOrReplace(_TestProviderFactory());
+      LLMProviderRegistry.registerOrReplace(
+        MockProviderFactory<ChatCapability>(
+          providerId: 'test-middleware-provider',
+          supportedCapabilities: {
+            LLMCapability.chat,
+            LLMCapability.streaming,
+          },
+          create: (config) => _TestChatProvider(config),
+        ),
+      );
     });
 
     test('transform chain is applied in order for chat', () async {

@@ -1,7 +1,7 @@
-import 'package:dio/dio.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:test/test.dart';
+import 'openai_test_utils.dart';
 
 void main() {
   group('OpenAI reasoning model parameter handling', () {
@@ -16,7 +16,7 @@ void main() {
         topP: 0.9,
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = CapturingOpenAIClient(config);
       final chat = openai.OpenAIChat(client, config);
 
       await chat.chat([ChatMessage.user('Hello')]);
@@ -46,7 +46,7 @@ void main() {
         topP: 0.8,
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = CapturingOpenAIClient(config);
       final chat = openai.OpenAIChat(client, config);
 
       await chat.chat([ChatMessage.user('Hello')]);
@@ -78,7 +78,7 @@ void main() {
         useResponsesAPI: true,
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = CapturingOpenAIClient(config);
       final responses = openai.OpenAIResponses(client, config);
 
       await responses.chatWithTools([ChatMessage.user('Hello')], null);
@@ -116,7 +116,7 @@ void main() {
         useResponsesAPI: true,
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = CapturingOpenAIClient(config);
       final responses = openai.OpenAIResponses(client, config);
 
       await responses.chatWithTools([ChatMessage.user('Hello')], null);
@@ -136,49 +136,4 @@ void main() {
       expect(body.containsKey('reasoning'), isFalse);
     });
   });
-}
-
-/// Test client that captures JSON request bodies instead of doing HTTP.
-class _CapturingOpenAIClient extends openai.OpenAIClient {
-  Map<String, dynamic>? lastBody;
-  String? lastEndpoint;
-
-  _CapturingOpenAIClient(openai.OpenAIConfig config) : super(config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastBody = Map<String, dynamic>.from(body);
-
-    // Return a minimal chat-style response to satisfy parsers.
-    if (endpoint == 'chat/completions') {
-      return {
-        'choices': [
-          {
-            'message': {'role': 'assistant', 'content': 'ok'},
-          }
-        ],
-      };
-    }
-
-    // Minimal Responses API-style response.
-    if (endpoint == 'responses') {
-      return {
-        'output': [
-          {
-            'type': 'message',
-            'content': [
-              {'type': 'output_text', 'text': 'ok'},
-            ],
-          },
-        ],
-      };
-    }
-
-    return {};
-  }
 }

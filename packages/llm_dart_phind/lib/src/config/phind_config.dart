@@ -1,6 +1,7 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
-const String _defaultBaseUrl = 'https://https.extension.phind.com/agent/';
+// Default Phind API endpoint (native Phind interface).
+const String _defaultBaseUrl = 'https://api.phind.com/v1/';
 const String _defaultModel = 'Phind-70B';
 
 /// Phind provider configuration

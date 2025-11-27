@@ -233,6 +233,7 @@ Future<void> demonstrateRiverpodPattern(AIService aiService) async {
 /// Main AI service for Flutter integration
 class AIService {
   ChatCapability? _chatProvider;
+  LanguageModel? _chatModel;
   ImageGenerationCapability? _imageProvider;
   AudioCapability? _audioProvider;
 
@@ -241,12 +242,13 @@ class AIService {
   /// Initialize AI providers
   Future<void> initialize() async {
     try {
-      // Initialize chat provider
-      _chatProvider = await ai()
-          .openai()
-          .apiKey('your-api-key')
-          .model('gpt-3.5-turbo')
-          .build();
+      // Initialize chat provider and language model
+      final builder =
+          ai().openai().apiKey('your-api-key').model('gpt-3.5-turbo');
+
+      // Validate configuration and API key by building the provider
+      _chatProvider = await builder.build();
+      _chatModel = await builder.buildLanguageModel();
 
       // Initialize image provider (if available)
       if (_chatProvider is ImageGenerationCapability) {
@@ -274,6 +276,14 @@ class AIService {
     return _chatProvider!;
   }
 
+  /// Get language model for prompt-first chat.
+  LanguageModel get chatModel {
+    if (!_isInitialized || _chatModel == null) {
+      throw AIServiceException('Chat model not initialized');
+    }
+    return _chatModel!;
+  }
+
   /// Get image provider
   ImageGenerationCapability? get imageProvider => _imageProvider;
 
@@ -287,8 +297,8 @@ class AIService {
 /// Chat controller for Flutter UI
 class ChatController {
   final AIService _aiService;
-  final List<ChatMessage> _messages = [];
-  final StreamController<ChatMessage> _messageController =
+  final List<ModelMessage> _messages = [];
+  final StreamController<ModelMessage> _messageController =
       StreamController.broadcast();
 
   ChatController(this._aiService);
@@ -304,20 +314,24 @@ class ChatController {
   Future<String> sendMessage(String content) async {
     try {
       // Add user message
-      final userMessage = ChatMessage.user(content);
+      final userMessage = ChatPromptBuilder.user().text(content).build();
       _messages.add(userMessage);
       _messageController.add(userMessage);
 
       // Get AI response
-      final response = await _aiService.chatProvider.chat(_messages);
+      final result = await generateTextWithModel(
+        _aiService.chatModel,
+        promptMessages: _messages,
+      );
 
       // Add AI response
-      if (response.text != null) {
-        final aiMessage = ChatMessage.assistant(response.text!);
+      if (result.text != null && result.text!.isNotEmpty) {
+        final aiMessage =
+            ChatPromptBuilder.assistant().text(result.text!).build();
         _messages.add(aiMessage);
         _messageController.add(aiMessage);
 
-        return response.text!;
+        return result.text!;
       } else {
         throw ChatException('No response from AI');
       }
@@ -327,7 +341,7 @@ class ChatController {
   }
 
   /// Get message stream for UI updates
-  Stream<ChatMessage> get messageStream => _messageController.stream;
+  Stream<ModelMessage> get messageStream => _messageController.stream;
 
   /// Get message count
   int get messageCount => _messages.length;
@@ -405,12 +419,15 @@ class VoiceAssistantController {
       print('      🎤 Processing voice input...');
 
       // Get text response from AI
-      final response = await _aiService.chatProvider.chat([
-        ChatMessage.user(command),
-      ]);
+      final result = await generateTextWithModel(
+        _aiService.chatModel,
+        promptMessages: [
+          ChatPromptBuilder.user().text(command).build(),
+        ],
+      );
 
       // Convert response to speech (simulated)
-      if (response.text != null) {
+      if (result.text != null && result.text!.isNotEmpty) {
         print('      🔊 Converting to speech...');
         // In real implementation, use TTS
       }

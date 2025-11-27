@@ -236,7 +236,7 @@ ENVIRONMENT VARIABLES:
       LLMBuilder builder, String initialPrompt) async {
     print('🤖 Starting chat session. Type "quit" or "exit" to end.\n');
 
-    final conversation = <ChatMessage>[];
+    final conversation = <ModelMessage>[];
 
     // Add initial prompt
     await processMessage(builder, conversation, initialPrompt);
@@ -267,7 +267,7 @@ ENVIRONMENT VARIABLES:
       print('❓ Asking: $prompt\n');
     }
 
-    await processMessage(builder, [], prompt);
+    await processMessage(builder, <ModelMessage>[], prompt);
   }
 
   /// Handle generate command (content generation)
@@ -276,31 +276,36 @@ ENVIRONMENT VARIABLES:
       print('✨ Generating: $prompt\n');
     }
 
-    // Add system prompt for generation
-    final messages = [
-      ChatMessage.system(
-          'You are a creative content generator. Provide high-quality, engaging content.'),
-      ChatMessage.user(prompt),
+    // Add system prompt for generation (prompt-first)
+    final prompts = <ModelMessage>[
+      ChatPromptBuilder.system()
+          .text(
+            'You are a creative content generator. Provide high-quality, engaging content.',
+          )
+          .build(),
+      ChatPromptBuilder.user().text(prompt).build(),
     ];
 
-    await processMessages(builder, messages);
+    await processMessages(builder, prompts);
   }
 
   /// Process a single message and add to conversation
-  Future<void> processMessage(
-      LLMBuilder builder, List<ChatMessage> conversation, String prompt) async {
-    conversation.add(ChatMessage.user(prompt));
+  Future<void> processMessage(LLMBuilder builder,
+      List<ModelMessage> conversation, String prompt) async {
+    conversation.add(
+      ChatPromptBuilder.user().text(prompt).build(),
+    );
     await processMessages(builder, conversation);
   }
 
   /// Process messages and get AI response
   Future<void> processMessages(
-      LLMBuilder builder, List<ChatMessage> messages) async {
+      LLMBuilder builder, List<ModelMessage> prompts) async {
     try {
       if (_streaming) {
-        await handleStreamingResponse(builder, messages);
+        await handleStreamingResponse(builder, prompts);
       } else {
-        await handleRegularResponse(builder, messages);
+        await handleRegularResponse(builder, prompts);
       }
     } catch (e) {
       printError('AI Error: $e');
@@ -309,13 +314,15 @@ ENVIRONMENT VARIABLES:
 
   /// Handle regular (non-streaming) response
   Future<void> handleRegularResponse(
-      LLMBuilder builder, List<ChatMessage> messages) async {
+      LLMBuilder builder, List<ModelMessage> prompts) async {
     if (_verbose) {
       stdout.write('🤔 Thinking...');
     }
 
     final stopwatch = Stopwatch()..start();
-    final result = await builder.generateText(messages: messages);
+    final result = await builder.generateText(
+      promptMessages: prompts,
+    );
     stopwatch.stop();
 
     if (_verbose) {
@@ -333,19 +340,24 @@ ENVIRONMENT VARIABLES:
     }
 
     // Add response to conversation if it's a list we're maintaining
-    if (messages.isNotEmpty && messages.last.role == ChatRole.user) {
-      messages.add(ChatMessage.assistant(result.text ?? ''));
+    if (prompts.isNotEmpty &&
+        prompts.last.role == ChatRole.user &&
+        result.text != null &&
+        result.text!.isNotEmpty) {
+      prompts.add(
+        ChatPromptBuilder.assistant().text(result.text!).build(),
+      );
     }
   }
 
   /// Handle streaming response
   Future<void> handleStreamingResponse(
-      LLMBuilder builder, List<ChatMessage> messages) async {
+      LLMBuilder builder, List<ModelMessage> prompts) async {
     print('🤖 AI: ');
 
     final responseBuffer = StringBuffer();
 
-    await for (final event in builder.streamText(messages: messages)) {
+    await for (final event in builder.streamText(promptMessages: prompts)) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           stdout.write(delta);
@@ -369,8 +381,12 @@ ENVIRONMENT VARIABLES:
     }
 
     // Add response to conversation if it's a list we're maintaining
-    if (messages.isNotEmpty && messages.last.role == ChatRole.user) {
-      messages.add(ChatMessage.assistant(responseBuffer.toString()));
+    if (prompts.isNotEmpty &&
+        prompts.last.role == ChatRole.user &&
+        responseBuffer.isNotEmpty) {
+      prompts.add(
+        ChatPromptBuilder.assistant().text(responseBuffer.toString()).build(),
+      );
     }
   }
 

@@ -1,36 +1,8 @@
-import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:test/test.dart';
-
-class FakeOpenAICompatibleClient extends OpenAICompatibleClient {
-  Map<String, dynamic>? lastRequestBody;
-  String? lastEndpoint;
-
-  FakeOpenAICompatibleClient(OpenAICompatibleConfig config) : super(config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastRequestBody = body;
-
-    return {
-      'choices': [
-        {
-          'message': {
-            'role': 'assistant',
-            'content': 'ok',
-          },
-        },
-      ],
-    };
-  }
-}
+import 'openai_compatible_test_utils.dart';
 
 void main() {
   group('OpenAICompatibleChat prompt mapping', () {
@@ -58,7 +30,7 @@ void main() {
         tools: [tool],
       );
 
-      final client = FakeOpenAICompatibleClient(config);
+      final client = CapturingOpenAICompatibleClient(config);
       final chat = OpenAICompatibleChat(client, config);
 
       final messages = <ChatMessage>[

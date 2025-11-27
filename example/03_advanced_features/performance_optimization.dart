@@ -37,14 +37,14 @@ Future<void> demonstrateCachingStrategies(String apiKey) async {
   print('💾 Caching Strategies:\n');
 
   try {
-    // Create provider
-    final provider = await ai()
+    // Create language model
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.3) // Lower temperature for more consistent responses
         .maxTokens(200)
-        .build();
+        .buildLanguageModel();
 
     // Simple in-memory cache
     final cache = <String, String>{};
@@ -70,7 +70,11 @@ Future<void> demonstrateCachingStrategies(String apiKey) async {
         response = cache[question]!;
         fromCache = true;
       } else {
-        final aiResponse = await provider.chat([ChatMessage.user(question)]);
+        final prompt = ChatPromptBuilder.user().text(question).build();
+        final aiResponse = await generateTextWithModel(
+          model,
+          promptMessages: [prompt],
+        );
         response = aiResponse.text ?? 'No response';
         cache[question] = response;
       }
@@ -100,14 +104,14 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
   print('🔄 Parallel Processing:\n');
 
   try {
-    // Create provider
-    final provider = await ai()
+    // Create language model
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
         .maxTokens(100)
-        .build();
+        .buildLanguageModel();
 
     final questions = [
       'What is machine learning?',
@@ -122,7 +126,11 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
     final sequentialStopwatch = Stopwatch()..start();
 
     for (final question in questions) {
-      await provider.chat([ChatMessage.user(question)]);
+      final prompt = ChatPromptBuilder.user().text(question).build();
+      await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
       print('      ✓ ${question.substring(0, 30)}...');
     }
 
@@ -133,9 +141,13 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
     print('   Parallel Processing:');
     final parallelStopwatch = Stopwatch()..start();
 
-    final futures = questions
-        .map((question) => provider.chat([ChatMessage.user(question)]))
-        .toList();
+    final futures = questions.map((question) {
+      final prompt = ChatPromptBuilder.user().text(question).build();
+      return generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+    }).toList();
 
     await Future.wait(futures);
     parallelStopwatch.stop();
@@ -166,21 +178,25 @@ Future<void> demonstrateStreamingOptimization(String apiKey) async {
   print('🌊 Streaming Optimization:\n');
 
   try {
-    // Create fast provider (Groq for speed)
-    final provider = await ai()
+    // Create fast language model (Groq for speed)
+    final model = await ai()
         .groq()
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.7)
         .maxTokens(300)
-        .build();
+        .buildLanguageModel();
 
     final question = 'Write a short story about a robot learning to paint.';
+    final prompt = ChatPromptBuilder.user().text(question).build();
 
     // Regular response
     print('   Regular Response:');
     final regularStopwatch = Stopwatch()..start();
-    final response = await provider.chat([ChatMessage.user(question)]);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
     regularStopwatch.stop();
 
     print('      Total time: ${regularStopwatch.elapsedMilliseconds}ms');
@@ -195,8 +211,10 @@ Future<void> demonstrateStreamingOptimization(String apiKey) async {
     var chunkCount = 0;
     final responseBuffer = StringBuffer();
 
-    await for (final event
-        in provider.chatStream([ChatMessage.user(question)])) {
+    await for (final event in streamTextWithModel(
+      model,
+      promptMessages: [prompt],
+    )) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           chunkCount++;
@@ -254,14 +272,14 @@ Future<void> demonstrateBatchProcessing(String apiKey) async {
   print('📦 Batch Processing:\n');
 
   try {
-    // Create provider
-    final provider = await ai()
+    // Create language model
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.3)
         .maxTokens(50)
-        .build();
+        .buildLanguageModel();
 
     // Simulate a large dataset
     final dataItems = List.generate(
@@ -285,8 +303,13 @@ Future<void> demonstrateBatchProcessing(String apiKey) async {
       final batchStopwatch = Stopwatch()..start();
 
       // Process batch in parallel
-      final batchFutures =
-          batch.map((item) => provider.chat([ChatMessage.user(item)])).toList();
+      final batchFutures = batch.map((item) {
+        final prompt = ChatPromptBuilder.user().text(item).build();
+        return generateTextWithModel(
+          model,
+          promptMessages: [prompt],
+        );
+      }).toList();
 
       final batchResponses = await Future.wait(batchFutures);
       batchStopwatch.stop();
@@ -327,30 +350,39 @@ Future<void> demonstrateMemoryOptimization(String apiKey) async {
   print('🧠 Memory Optimization:\n');
 
   try {
-    // Create provider
-    final provider = await ai()
+    // Create language model
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
         .maxTokens(200)
-        .build();
+        .buildLanguageModel();
 
     // Simulate conversation with memory management
-    final conversation = <ChatMessage>[];
+    final conversation = <ModelMessage>[];
     const maxContextLength = 10; // Keep only last 10 messages
 
     print('   Simulating long conversation with memory management:');
 
     for (int i = 1; i <= 15; i++) {
       // Add user message
-      conversation.add(ChatMessage.user('Message $i: Tell me about topic $i'));
+      conversation.add(
+        ChatPromptBuilder.user()
+            .text('Message $i: Tell me about topic $i')
+            .build(),
+      );
 
       // Get AI response
-      final response = await provider.chat(conversation);
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: List<ModelMessage>.from(conversation),
+      );
 
       // Add AI response
-      conversation.add(ChatMessage.assistant(response.text ?? ''));
+      conversation.add(
+        ChatPromptBuilder.assistant().text(response.text ?? '').build(),
+      );
 
       // Memory management: keep only recent messages
       if (conversation.length > maxContextLength) {
@@ -373,9 +405,14 @@ Future<void> demonstrateMemoryOptimization(String apiKey) async {
 
     var totalChars = 0;
 
-    await for (final event in provider.chatStream([
-      ChatMessage.user('Write a detailed explanation of quantum computing.')
-    ])) {
+    final streamingPrompt = ChatPromptBuilder.user()
+        .text('Write a detailed explanation of quantum computing.')
+        .build();
+
+    await for (final event in streamTextWithModel(
+      model,
+      promptMessages: [streamingPrompt],
+    )) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           totalChars += delta.length;

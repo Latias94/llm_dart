@@ -1,5 +1,6 @@
 import 'package:llm_dart/llm_dart.dart';
 import 'package:test/test.dart';
+import '../utils/mock_provider_factory.dart';
 
 class _DefaultSettingsChatProvider
     implements ChatCapability, ProviderCapabilities {
@@ -96,31 +97,19 @@ class _DefaultSettingsChatResponse implements ChatResponse {
   CallMetadata? get callMetadata => null;
 }
 
-class _DefaultSettingsProviderFactory
-    extends LLMProviderFactory<ChatCapability> {
-  @override
-  String get providerId => 'test-default-settings-provider';
-
-  @override
-  Set<LLMCapability> get supportedCapabilities =>
-      {LLMCapability.chat, LLMCapability.streaming};
-
-  @override
-  ChatCapability create(LLMConfig config) =>
-      _DefaultSettingsChatProvider(config);
-
-  @override
-  bool validateConfig(LLMConfig config) => true;
-
-  @override
-  LLMConfig getDefaultConfig() =>
-      LLMConfig(baseUrl: 'http://localhost', model: 'test-model');
-}
-
 void main() {
   group('DefaultChatSettingsMiddleware', () {
     setUp(() {
-      LLMProviderRegistry.registerOrReplace(_DefaultSettingsProviderFactory());
+      LLMProviderRegistry.registerOrReplace(
+        MockProviderFactory<ChatCapability>(
+          providerId: 'test-default-settings-provider',
+          supportedCapabilities: {
+            LLMCapability.chat,
+            LLMCapability.streaming,
+          },
+          create: (config) => _DefaultSettingsChatProvider(config),
+        ),
+      );
     });
 
     test('injects system prompt when none present', () async {

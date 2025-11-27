@@ -85,6 +85,46 @@ class AIWebService {
     print('✅ AI provider initialized');
   }
 
+  /// Build system prompt string for a given content generation type.
+  String _buildSystemPromptForType(String type) {
+    switch (type) {
+      case 'blog':
+        return 'You are a professional blog writer. Create engaging, well-structured content.';
+      case 'email':
+        return 'You are a professional email writer. Create clear, concise, and appropriate emails.';
+      case 'code':
+        return 'You are a senior software developer. Write clean, well-documented code.';
+      default:
+        return 'You are a helpful content generator. Create high-quality content.';
+    }
+  }
+
+  /// Build ChatMessage list from a prompt-first representation.
+  ///
+  /// This keeps the internal logic working with [ChatMessage] while
+  /// demonstrating the recommended [ModelMessage] / [ChatPromptBuilder]
+  /// pattern for constructing prompts.
+  List<ChatMessage> _buildChatMessages({
+    String? systemPrompt,
+    required String userMessage,
+  }) {
+    final prompts = <ModelMessage>[];
+
+    if (systemPrompt != null && systemPrompt.isNotEmpty) {
+      prompts.add(
+        ChatPromptBuilder.system().text(systemPrompt).build(),
+      );
+    }
+
+    prompts.add(
+      ChatPromptBuilder.user().text(userMessage).build(),
+    );
+
+    return prompts
+        .map((prompt) => ChatMessage.fromPromptMessage(prompt))
+        .toList();
+  }
+
   /// Handle incoming HTTP requests
   Future<void> _handleRequest(HttpRequest request) async {
     try {
@@ -155,12 +195,11 @@ class AIWebService {
       print(
           '📨 Chat request: ${message.substring(0, message.length > 50 ? 50 : message.length)}...');
 
-      // Build messages
-      final messages = <ChatMessage>[];
-      if (systemPrompt != null) {
-        messages.add(ChatMessage.system(systemPrompt));
-      }
-      messages.add(ChatMessage.user(message));
+      // Build messages using prompt-first modeling and bridge to ChatMessage
+      final messages = _buildChatMessages(
+        systemPrompt: systemPrompt,
+        userMessage: message,
+      );
 
       // Get AI response
       final stopwatch = Stopwatch()..start();
@@ -221,29 +260,12 @@ class AIWebService {
       print('📝 Generate request: $type');
 
       // Build system prompt based on type
-      String systemPrompt;
-      switch (type) {
-        case 'blog':
-          systemPrompt =
-              'You are a professional blog writer. Create engaging, well-structured content.';
-          break;
-        case 'email':
-          systemPrompt =
-              'You are a professional email writer. Create clear, concise, and appropriate emails.';
-          break;
-        case 'code':
-          systemPrompt =
-              'You are a senior software developer. Write clean, well-documented code.';
-          break;
-        default:
-          systemPrompt =
-              'You are a helpful content generator. Create high-quality content.';
-      }
+      final systemPrompt = _buildSystemPromptForType(type);
 
-      final messages = [
-        ChatMessage.system(systemPrompt),
-        ChatMessage.user(prompt),
-      ];
+      final messages = _buildChatMessages(
+        systemPrompt: systemPrompt,
+        userMessage: prompt,
+      );
 
       final stopwatch = Stopwatch()..start();
       final response = await _aiProvider.chat(messages);

@@ -15,15 +15,15 @@ import 'package:llm_dart/llm_dart.dart';
 Future<void> main() async {
   print('📦 Batch Processing Examples\n');
 
-  // Initialize provider for batch processing
-  final provider = await initializeBatchProvider();
-  if (provider == null) {
-    print('❌ No provider available for batch processing');
+  // Initialize model for batch processing
+  final model = await initializeBatchModel();
+  if (model == null) {
+    print('❌ No model available for batch processing');
     return;
   }
 
   // Create batch processor
-  final batchProcessor = BatchProcessor(provider);
+  final batchProcessor = BatchProcessor(model);
 
   // Demonstrate different batch processing scenarios
   await demonstrateBasicBatchProcessing(batchProcessor);
@@ -41,18 +41,18 @@ Future<void> main() async {
   print('   • Monitor costs and optimize accordingly');
 }
 
-/// Initialize provider for batch processing
-Future<ChatCapability?> initializeBatchProvider() async {
+/// Initialize language model for batch processing
+Future<LanguageModel?> initializeBatchModel() async {
   try {
-    // Use a provider suitable for batch processing
+    // Use a model suitable for batch processing
     return await ai()
         .openai()
         .apiKey('your-openai-key')
         .model('gpt-3.5-turbo')
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
   } catch (e) {
-    print('⚠️  Provider initialization failed: $e');
+    print('⚠️  Model initialization failed: $e');
     return null;
   }
 }
@@ -417,9 +417,9 @@ class BatchProgress {
 
 /// Main batch processor class
 class BatchProcessor {
-  final ChatCapability _provider;
+  final LanguageModel _model;
 
-  BatchProcessor(this._provider);
+  BatchProcessor(this._model);
 
   /// Process a batch of tasks with default configuration
   Future<List<BatchResult>> processBatch(List<BatchTask> tasks) async {
@@ -517,12 +517,16 @@ class BatchProcessor {
           throw Exception('Simulated failure for testing');
         }
 
-        final response = await _provider.chat([ChatMessage.user(task.prompt)]);
+        final prompt = ChatPromptBuilder.user().text(task.prompt).build();
+        final result = await generateTextWithModel(
+          _model,
+          promptMessages: [prompt],
+        );
         final processingTime = DateTime.now().difference(startTime);
 
         return BatchResult(
           task: task,
-          response: response.text,
+          response: result.text,
           attemptCount: attempt,
           processingTime: processingTime,
         );

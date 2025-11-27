@@ -8,6 +8,7 @@ import '../models/file_models.dart';
 import '../models/moderation_models.dart';
 import '../models/assistant_models.dart';
 import 'llm_error.dart';
+import 'tool_validator.dart';
 import 'cancellation.dart';
 import 'config.dart';
 
@@ -821,6 +822,188 @@ class OutputSpec<T> {
   }
 }
 
+/// Inject textual JSON instructions into a natural language prompt.
+///
+/// This helper mirrors the behavior of the Vercel AI SDK's
+/// `injectJsonInstruction` utility. It combines an optional [prompt]
+/// with an optional JSON [schema] description using the following
+/// rules:
+///
+/// - When both [prompt] and [schema] are provided:
+///   - Returns: `<prompt>\n\nJSON schema:\n<schemaJson>\nYou MUST answer with a JSON object that matches the JSON schema above.`
+/// - When only [prompt] is provided:
+///   - Returns: `<prompt>\n\nYou MUST answer with JSON.`
+/// - When only [schema] is provided:
+///   - Returns: `JSON schema:\n<schemaJson>\nYou MUST answer with a JSON object that matches the JSON schema above.`
+/// - When neither is provided:
+///   - Returns: `You MUST answer with JSON.`
+///
+/// Callers can override the default `JSON schema:` prefix and
+/// suffix sentences via [schemaPrefix] and [schemaSuffix].
+String injectJsonInstruction({
+  String? prompt,
+  Map<String, dynamic>? schema,
+  String? schemaPrefix,
+  String? schemaSuffix,
+}) {
+  const defaultSchemaPrefix = 'JSON schema:';
+  const defaultSchemaSuffix =
+      'You MUST answer with a JSON object that matches the JSON schema above.';
+  const defaultGenericSuffix = 'You MUST answer with JSON.';
+
+  final hasPrompt = prompt != null && prompt.isNotEmpty;
+  final hasSchema = schema != null;
+
+  final lines = <String>[];
+
+  if (hasPrompt) {
+    lines.add(prompt!);
+    // Add an empty line after the prompt for readability.
+    lines.add('');
+  }
+
+  if (hasSchema) {
+    final effectivePrefix = schemaPrefix ?? defaultSchemaPrefix;
+    if (effectivePrefix.isNotEmpty) {
+      lines.add(effectivePrefix);
+    }
+
+    lines.add(jsonEncode(schema));
+
+    final effectiveSuffix = schemaSuffix ?? defaultSchemaSuffix;
+    if (effectiveSuffix.isNotEmpty) {
+      lines.add(effectiveSuffix);
+    }
+  } else {
+    final effectiveSuffix = schemaSuffix ?? defaultGenericSuffix;
+    if (effectiveSuffix.isNotEmpty) {
+      lines.add(effectiveSuffix);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+/// Reasoning pruning modes for [pruneModelMessages].
+enum ReasoningPruneMode {
+  /// Do not remove any reasoning content.
+  none,
+
+  /// Remove all [ReasoningContentPart] instances from assistant messages.
+  all,
+
+  /// Remove reasoning from all assistant messages except the last one.
+  beforeLastMessage,
+}
+
+/// Tool call pruning modes for [pruneModelMessages].
+enum ToolCallPruneMode {
+  /// Do not remove any tool call or tool result content.
+  none,
+
+  /// Remove all [ToolCallContentPart] and [ToolResultContentPart] instances
+  /// from assistant messages.
+  all,
+
+  /// Remove tool call and tool result parts from all assistant messages
+  /// except the last one.
+  beforeLastMessage,
+}
+
+/// Prune [ModelMessage] lists by removing reasoning and tool-related parts.
+///
+/// This helper mirrors the intent of the Vercel AI SDK's `pruneMessages`
+/// utility but is intentionally simplified for now:
+///
+/// - Reasoning pruning removes [ReasoningContentPart] instances.
+/// - Tool pruning removes [ToolCallContentPart] and [ToolResultContentPart]
+///   instances from assistant messages.
+/// - Tool pruning can be restricted to specific tool names via [toolNames].
+///
+/// When [removeEmptyMessages] is `true`, messages whose [ModelMessage.parts]
+/// list becomes empty after pruning are removed from the result.
+List<ModelMessage> pruneModelMessages({
+  required List<ModelMessage> messages,
+  ReasoningPruneMode reasoning = ReasoningPruneMode.none,
+  ToolCallPruneMode toolCalls = ToolCallPruneMode.none,
+  bool removeEmptyMessages = true,
+  List<String>? toolNames,
+}) {
+  if (messages.isEmpty) return const [];
+
+  final lastIndex = messages.length - 1;
+  final result = <ModelMessage>[];
+
+  for (var index = 0; index < messages.length; index++) {
+    final message = messages[index];
+    var parts = message.parts;
+
+    // Prune reasoning content from assistant messages.
+    if (reasoning != ReasoningPruneMode.none &&
+        message.role == ChatRole.assistant) {
+      final isLast = index == lastIndex;
+      final shouldPruneReasoning = reasoning == ReasoningPruneMode.all ||
+          (reasoning == ReasoningPruneMode.beforeLastMessage && !isLast);
+
+      if (shouldPruneReasoning) {
+        parts = parts
+            .where((part) => part is! ReasoningContentPart)
+            .toList(growable: false);
+      }
+    }
+
+    // Prune tool call and tool result content from assistant messages.
+    if (toolCalls != ToolCallPruneMode.none &&
+        message.role == ChatRole.assistant) {
+      final isLast = index == lastIndex;
+      final shouldPruneTools = toolCalls == ToolCallPruneMode.all ||
+          (toolCalls == ToolCallPruneMode.beforeLastMessage && !isLast);
+
+      if (shouldPruneTools) {
+        parts = parts.where((part) {
+          final isToolPart =
+              part is ToolCallContentPart || part is ToolResultContentPart;
+          if (!isToolPart) {
+            return true;
+          }
+
+          final toolName = switch (part) {
+            ToolCallContentPart(toolName: final name) => name,
+            ToolResultContentPart(toolName: final name) => name,
+            _ => null,
+          };
+
+          if (toolNames == null) {
+            // No filter provided: remove all tool-related parts.
+            return false;
+          }
+
+          // Keep parts whose tool name is not in the removal list.
+          return toolName == null || !toolNames.contains(toolName);
+        }).toList(growable: false);
+      }
+    }
+
+    if (removeEmptyMessages && parts.isEmpty) {
+      continue;
+    }
+
+    if (identical(parts, message.parts)) {
+      result.add(message);
+    } else {
+      result.add(
+        ModelMessage(
+          role: message.role,
+          parts: parts,
+          providerOptions: message.providerOptions,
+        ),
+      );
+    }
+  }
+
+  return result;
+}
+
 /// Usage information for API calls
 class UsageInfo {
   final int? promptTokens;
@@ -1139,23 +1322,7 @@ class DefaultLanguageModel implements LanguageModel {
       );
     }
 
-    Map<String, dynamic> json;
-    try {
-      final decoded = jsonDecode(rawText);
-      if (decoded is Map<String, dynamic>) {
-        json = decoded;
-      } else if (decoded is Map) {
-        json = Map<String, dynamic>.from(decoded);
-      } else {
-        throw const FormatException('Top-level JSON value is not an object');
-      }
-    } catch (e) {
-      throw ResponseFormatError(
-        'Failed to parse structured JSON output: $e',
-        rawText,
-      );
-    }
-
+    final json = _parseStructuredObjectJson(rawText, output.format);
     final object = output.fromJson(json);
 
     return GenerateObjectResult<T>(
@@ -1240,29 +1407,181 @@ class DefaultLanguageModel implements LanguageModel {
       );
     }
 
-    Map<String, dynamic> json;
-    try {
-      final decoded = jsonDecode(rawText);
-      if (decoded is Map<String, dynamic>) {
-        json = decoded;
-      } else if (decoded is Map) {
-        json = Map<String, dynamic>.from(decoded);
-      } else {
-        throw const FormatException('Top-level JSON value is not an object');
-      }
-    } catch (e) {
-      throw ResponseFormatError(
-        'Failed to parse structured JSON output: $e',
-        rawText,
-      );
-    }
-
+    final json = _parseStructuredObjectJson(rawText, output.format);
     final object = output.fromJson(json);
 
     return GenerateObjectResult<T>(
       object: object,
       textResult: textResult,
     );
+  }
+}
+
+/// Parse structured JSON output for object generation and validate it
+/// against the provided [StructuredOutputFormat].
+///
+/// This helper is shared by both [generateObject] and
+/// [generateObjectWithOptions] to ensure consistent behavior:
+/// - JSON must parse successfully.
+/// - Top-level value must be a JSON object.
+/// - Basic schema validation is performed via
+///   [ToolValidator.validateStructuredOutput], which may throw
+///   [StructuredOutputError] if the schema is invalid.
+Map<String, dynamic> _parseStructuredObjectJson(
+  String rawText,
+  StructuredOutputFormat format,
+) {
+  Map<String, dynamic> json;
+  try {
+    final decoded = jsonDecode(rawText);
+    if (decoded is Map<String, dynamic>) {
+      json = decoded;
+    } else if (decoded is Map) {
+      json = Map<String, dynamic>.from(decoded);
+    } else {
+      throw const FormatException('Top-level JSON value is not an object');
+    }
+  } catch (e) {
+    throw ResponseFormatError(
+      'Failed to parse structured JSON output: $e',
+      rawText,
+    );
+  }
+
+  // Perform a basic schema validation pass. If validation fails, the
+  // validator throws a [StructuredOutputError], which we allow to
+  // propagate to callers.
+  try {
+    ToolValidator.validateStructuredOutput(format);
+  } on StructuredOutputError catch (e) {
+    throw StructuredOutputError(
+      e.message,
+      schemaName: format.name,
+      schema: format.schema,
+      actualOutput: rawText,
+    );
+  }
+
+  // If a schema is present, validate the parsed JSON against it and
+  // surface mismatches as [StructuredOutputError]. This provides a
+  // best-effort schema validation similar to the Vercel AI SDK's
+  // structured output behavior.
+  final schema = format.schema;
+  if (schema != null) {
+    final errors = <String>[];
+    _validateJsonAgainstSchema(json, schema, r'$', errors);
+    if (errors.isNotEmpty) {
+      throw StructuredOutputError(
+        'Structured output does not match schema: ${errors.join('; ')}',
+        schemaName: format.name,
+        schema: schema,
+        actualOutput: rawText,
+      );
+    }
+  }
+
+  return json;
+}
+
+/// Recursively validate a JSON value against a simplified JSON schema.
+///
+/// This supports the subset of JSON schema we generate from
+/// [ParameterProperty] definitions:
+/// - `type`: `object`, `array`, `string`, `number`, `integer`, `boolean`
+/// - `properties` and `required` (for object types)
+/// - `items` (for array types)
+void _validateJsonAgainstSchema(
+  dynamic value,
+  Map<String, dynamic> schema,
+  String path,
+  List<String> errors,
+) {
+  final type = schema['type'];
+
+  switch (type) {
+    case 'string':
+      if (value is! String) {
+        errors.add('Expected string at $path, got ${value.runtimeType}');
+      }
+      break;
+
+    case 'number':
+      if (value is! num) {
+        errors.add('Expected number at $path, got ${value.runtimeType}');
+      }
+      break;
+
+    case 'integer':
+      if (value is! int) {
+        errors.add('Expected integer at $path, got ${value.runtimeType}');
+      }
+      break;
+
+    case 'boolean':
+      if (value is! bool) {
+        errors.add('Expected boolean at $path, got ${value.runtimeType}');
+      }
+      break;
+
+    case 'array':
+      if (value is! List) {
+        errors.add('Expected array at $path, got ${value.runtimeType}');
+        break;
+      }
+      final itemSchema = schema['items'];
+      if (itemSchema is Map<String, dynamic>) {
+        for (var i = 0; i < value.length; i++) {
+          _validateJsonAgainstSchema(
+            value[i],
+            itemSchema,
+            '$path[$i]',
+            errors,
+          );
+        }
+      }
+      break;
+
+    case 'object':
+      if (value is! Map) {
+        errors.add('Expected object at $path, got ${value.runtimeType}');
+        break;
+      }
+
+      final mapValue = value is Map<String, dynamic>
+          ? value
+          : Map<String, dynamic>.from(value as Map);
+
+      final requiredProps =
+          (schema['required'] as List<dynamic>? ?? const <dynamic>[])
+              .cast<String>();
+      for (final prop in requiredProps) {
+        if (!mapValue.containsKey(prop)) {
+          errors.add('Missing required property "$prop" at $path');
+        }
+      }
+
+      final propertiesRaw = schema['properties'];
+      if (propertiesRaw is Map) {
+        final properties =
+            propertiesRaw.cast<String, dynamic>(); // schema fragments
+        for (final entry in properties.entries) {
+          final propName = entry.key;
+          final propSchema = entry.value;
+          if (propSchema is! Map<String, dynamic>) continue;
+          if (!mapValue.containsKey(propName)) continue;
+          _validateJsonAgainstSchema(
+            mapValue[propName],
+            propSchema,
+            '$path.$propName',
+            errors,
+          );
+        }
+      }
+      break;
+
+    default:
+      // Unknown or unsupported type: skip validation for flexibility.
+      break;
   }
 }
 
