@@ -11,7 +11,7 @@ import '../config/phind_config.dart';
 ///
 /// This module handles all chat-related functionality for Phind providers.
 /// Phind is specialized for coding tasks and has a unique API format.
-class PhindChat implements ChatCapability {
+class PhindChat implements ChatCapability, PromptChatCapability {
   final PhindClient client;
   final PhindConfig config;
 
@@ -23,6 +23,71 @@ class PhindChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    return chatPrompt(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async* {
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    yield* chatPromptStream(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    return chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<List<ChatMessage>?> memoryContents() async => null;
+
+  @override
+  Future<String> summarizeHistory(List<ChatMessage> messages) async {
+    final prompt =
+        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
+    final request = [ChatMessage.user(prompt)];
+    final response = await chat(request);
+    final text = response.text;
+    if (text == null) {
+      throw const GenericError('no text in summary response');
+    }
+    return text;
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     try {
@@ -44,7 +109,12 @@ class PhindChat implements ChatCapability {
         );
       }
 
-      final requestBody = _buildRequestBody(messages, tools, false);
+      final requestBody = _buildRequestBody(
+        messages,
+        tools,
+        false,
+        options: options,
+      );
 
       if (client.logger.isLoggable(Level.FINE)) {
         client.logger.fine('Phind request payload: ${jsonEncode(requestBody)}');
@@ -66,13 +136,19 @@ class PhindChat implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     try {
-      final requestBody = _buildRequestBody(messages, tools, true);
+      final requestBody = _buildRequestBody(
+        messages,
+        tools,
+        true,
+        options: options,
+      );
 
       if (client.logger.isLoggable(Level.FINE)) {
         client.logger
@@ -99,30 +175,6 @@ class PhindChat implements ChatCapability {
         yield ErrorEvent(GenericError('Unexpected error: $e'));
       }
     }
-  }
-
-  @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    CancellationToken? cancelToken,
-  }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final prompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final request = [ChatMessage.user(prompt)];
-    final response = await chat(request);
-    final text = response.text;
-    if (text == null) {
-      throw const GenericError('no text in summary response');
-    }
-    return text;
   }
 
   /// Parse response from Phind API
@@ -198,13 +250,11 @@ class PhindChat implements ChatCapability {
 
   /// Build request body for Phind API
   Map<String, dynamic> _buildRequestBody(
-    List<ChatMessage> messages,
+    List<ModelMessage> promptMessages,
     List<Tool>? tools,
-    bool stream,
-  ) {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-
+    bool stream, {
+    LanguageModelCallOptions? options,
+  }) {
     final messageHistory = <Map<String, dynamic>>[];
 
     // Convert messages to Phind format using prompt model
@@ -246,7 +296,7 @@ class PhindChat implements ChatCapability {
 
     // Find the last user message for user_input field
     final lastUserMessage =
-        messages.where((m) => m.role == ChatRole.user).lastOrNull;
+        promptMessages.where((m) => m.role == ChatRole.user).lastOrNull;
 
     return {
       'additional_extension_context': '',
@@ -254,7 +304,13 @@ class PhindChat implements ChatCapability {
       'is_vscode_extension': true,
       'message_history': messageHistory,
       'requested_model': config.model,
-      'user_input': lastUserMessage?.content ?? '',
+      'user_input': lastUserMessage == null
+          ? ''
+          : lastUserMessage.parts
+              .whereType<TextContentPart>()
+              .map((p) => p.text)
+              .join('\n')
+              .trim(),
     };
   }
 }

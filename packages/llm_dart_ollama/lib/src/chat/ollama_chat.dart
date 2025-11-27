@@ -6,7 +6,7 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import '../client/ollama_client.dart';
 import '../config/ollama_config.dart';
 
-class OllamaChat implements ChatCapability {
+class OllamaChat implements ChatCapability, PromptChatCapability {
   final OllamaClient client;
   final OllamaConfig config;
 
@@ -15,18 +15,75 @@ class OllamaChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    final body = _buildRequestBody(messages, tools, false);
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    return chatPrompt(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async* {
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    yield* chatPromptStream(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<List<ChatMessage>?> memoryContents() async => null;
+
+  @override
+  Future<String> summarizeHistory(List<ChatMessage> messages) async {
+    final summaryPrompt =
+        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
+    final response = await chat([ChatMessage.user(summaryPrompt)]);
+    return response.text ?? '';
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    final body = _buildRequestBody(
+      messages,
+      tools,
+      false,
+      options: options,
+    );
     final response = await client.postJson(
       '/api/chat',
       body,
@@ -36,12 +93,18 @@ class OllamaChat implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
-    final body = _buildRequestBody(messages, tools, true);
+    final body = _buildRequestBody(
+      messages,
+      tools,
+      true,
+      options: options,
+    );
     final stream = client.postStreamRaw(
       '/api/chat',
       body,
@@ -99,26 +162,12 @@ class OllamaChat implements ChatCapability {
     }
   }
 
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final summaryPrompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final response = await chat([ChatMessage.user(summaryPrompt)]);
-    return response.text ?? '';
-  }
-
   Map<String, dynamic> _buildRequestBody(
-    List<ChatMessage> messages,
+    List<ModelMessage> promptMessages,
     List<Tool>? tools,
-    bool stream,
-  ) {
-    final promptMessages = messages
-        .map((message) => message.toPromptMessage())
-        .toList(growable: false);
-
+    bool stream, {
+    LanguageModelCallOptions? options,
+  }) {
     final apiMessages = _buildOllamaMessagesFromPrompt(promptMessages);
 
     final body = <String, dynamic>{
@@ -128,37 +177,42 @@ class OllamaChat implements ChatCapability {
     };
 
     // Ollama-style options block for advanced parameters.
-    final options = <String, dynamic>{};
-    if (config.temperature != null) {
-      options['temperature'] = config.temperature;
+    final requestOptions = <String, dynamic>{};
+    final effectiveTemperature = options?.temperature ?? config.temperature;
+    final effectiveMaxTokens = options?.maxTokens ?? config.maxTokens;
+    final effectiveTopP = options?.topP ?? config.topP;
+    final effectiveTopK = options?.topK ?? config.topK;
+
+    if (effectiveTemperature != null) {
+      requestOptions['temperature'] = effectiveTemperature;
     }
-    if (config.maxTokens != null) {
+    if (effectiveMaxTokens != null) {
       // Map maxTokens to num_predict for native Ollama.
-      options['num_predict'] = config.maxTokens;
+      requestOptions['num_predict'] = effectiveMaxTokens;
     }
-    if (config.topP != null) {
-      options['top_p'] = config.topP;
+    if (effectiveTopP != null) {
+      requestOptions['top_p'] = effectiveTopP;
     }
-    if (config.topK != null) {
-      options['top_k'] = config.topK;
+    if (effectiveTopK != null) {
+      requestOptions['top_k'] = effectiveTopK;
     }
     if (config.numCtx != null) {
-      options['num_ctx'] = config.numCtx;
+      requestOptions['num_ctx'] = config.numCtx;
     }
     if (config.numGpu != null) {
-      options['num_gpu'] = config.numGpu;
+      requestOptions['num_gpu'] = config.numGpu;
     }
     if (config.numThread != null) {
-      options['num_thread'] = config.numThread;
+      requestOptions['num_thread'] = config.numThread;
     }
     if (config.numBatch != null) {
-      options['num_batch'] = config.numBatch;
+      requestOptions['num_batch'] = config.numBatch;
     }
     if (config.numa != null) {
-      options['numa'] = config.numa;
+      requestOptions['numa'] = config.numa;
     }
-    if (options.isNotEmpty) {
-      body['options'] = options;
+    if (requestOptions.isNotEmpty) {
+      body['options'] = requestOptions;
     }
 
     // Top-level advanced parameters aligned with Ollama docs.
@@ -174,7 +228,7 @@ class OllamaChat implements ChatCapability {
       body['think'] = true;
     }
 
-    final effectiveTools = tools ?? config.tools;
+    final effectiveTools = options?.tools ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = effectiveTools.map(_convertTool).toList();
     }
@@ -195,7 +249,7 @@ class OllamaChat implements ChatCapability {
 
   /// Build Ollama-style chat messages from structured prompt messages.
   List<Map<String, dynamic>> _buildOllamaMessagesFromPrompt(
-    List<ChatPromptMessage> promptMessages,
+    List<ModelMessage> promptMessages,
   ) {
     final apiMessages = <Map<String, dynamic>>[];
 
@@ -213,7 +267,7 @@ class OllamaChat implements ChatCapability {
     return apiMessages;
   }
 
-  Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {
+  Map<String, dynamic> _convertPromptMessage(ModelMessage message) {
     final role = switch (message.role) {
       ChatRole.system => 'system',
       ChatRole.user => 'user',
@@ -308,7 +362,7 @@ class OllamaChat implements ChatCapability {
   }
 
   void _appendToolResultMessagesFromPrompt(
-    ChatPromptMessage message,
+    ModelMessage message,
     List<Map<String, dynamic>> apiMessages,
   ) {
     final fallbackText = message.parts

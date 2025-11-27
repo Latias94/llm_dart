@@ -10,13 +10,19 @@ import '../config/deepseek_config.dart';
 ///
 /// This module handles all chat-related functionality for DeepSeek providers,
 /// including streaming, tool calling, and reasoning model support.
-class DeepSeekChat implements ChatCapability {
+class DeepSeekChat implements ChatCapability, PromptChatCapability {
   final DeepSeekClient client;
   final DeepSeekConfig config;
 
   bool _hasReasoningContent = false;
   String _lastChunk = '';
   final StringBuffer _thinkingBuffer = StringBuffer();
+  // Track tool call streaming state for DeepSeek.
+  // DeepSeek streams tool_calls in an OpenAI-compatible way: the first chunk
+  // usually carries id + index, while subsequent chunks only contain index and
+  // incremental arguments. We delegate index → id mapping to
+  // [ToolCallStreamState].
+  final ToolCallStreamState _toolCallStreamState = ToolCallStreamState();
 
   DeepSeekChat(this.client, this.config);
 
@@ -26,51 +32,48 @@ class DeepSeekChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    final warnings = <CallWarning>[];
-    final requestBody = _buildRequestBody(messages, tools, false, warnings);
-    final responseData = await client.postJson(
-      chatEndpoint,
-      requestBody,
-      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    return chatPrompt(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
     );
-    return _parseResponse(responseData, warnings);
   }
 
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
-    final effectiveTools = tools ?? config.tools;
-    final warnings = <CallWarning>[];
-    final requestBody =
-        _buildRequestBody(messages, effectiveTools, true, warnings);
-
-    _resetStreamState();
-
-    final stream = client.postStreamRaw(
-      chatEndpoint,
-      requestBody,
-      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    yield* chatPromptStream(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
     );
-
-    await for (final chunk in stream) {
-      final events = _parseStreamEvents(chunk, warnings);
-      for (final event in events) {
-        yield event;
-      }
-    }
   }
 
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -89,10 +92,66 @@ class DeepSeekChat implements ChatCapability {
     return text;
   }
 
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    final warnings = <CallWarning>[];
+    final requestBody = _buildRequestBody(
+      messages,
+      tools,
+      false,
+      options,
+      warnings,
+    );
+    final responseData = await client.postJson(
+      chatEndpoint,
+      requestBody,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
+    return _parseResponse(responseData, warnings);
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async* {
+    final warnings = <CallWarning>[];
+    final requestBody = _buildRequestBody(
+      messages,
+      tools,
+      true,
+      options,
+      warnings,
+    );
+
+    _resetStreamState();
+
+    final stream = client.postStreamRaw(
+      chatEndpoint,
+      requestBody,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
+
+    await for (final chunk in stream) {
+      final events = _parseStreamEvents(chunk, warnings);
+      for (final event in events) {
+        yield event;
+      }
+    }
+  }
+
   void _resetStreamState() {
     _hasReasoningContent = false;
     _lastChunk = '';
     _thinkingBuffer.clear();
+    _toolCallStreamState.reset();
   }
 
   DeepSeekChatResponse _parseResponse(
@@ -265,13 +324,10 @@ class DeepSeekChat implements ChatCapability {
 
     final toolCalls = delta['tool_calls'] as List?;
     if (toolCalls != null && toolCalls.isNotEmpty) {
-      final toolCall = toolCalls.first as Map<String, dynamic>;
-      if (toolCall.containsKey('id') && toolCall.containsKey('function')) {
-        try {
-          events.add(ToolCallDeltaEvent(ToolCall.fromJson(toolCall)));
-        } catch (e) {
-          client.logger.warning('Failed to parse tool call: $e');
-        }
+      final toolCallMap = toolCalls.first as Map<String, dynamic>;
+      final toolCall = _toolCallStreamState.processDelta(toolCallMap);
+      if (toolCall != null) {
+        events.add(ToolCallDeltaEvent(toolCall));
       }
     }
 
@@ -332,14 +388,12 @@ class DeepSeekChat implements ChatCapability {
   }
 
   Map<String, dynamic> _buildRequestBody(
-    List<ChatMessage> messages,
+    List<ModelMessage> promptMessages,
     List<Tool>? tools,
     bool stream,
+    LanguageModelCallOptions? options,
     List<CallWarning> warnings,
   ) {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-
     final apiMessages = <Map<String, dynamic>>[];
 
     if (config.systemPrompt != null && config.systemPrompt!.isNotEmpty) {
@@ -356,10 +410,16 @@ class DeepSeekChat implements ChatCapability {
       'stream': stream,
     };
 
-    if (config.maxTokens != null) body['max_tokens'] = config.maxTokens;
-    if (config.temperature != null) body['temperature'] = config.temperature;
-    if (config.topP != null) body['top_p'] = config.topP;
-    if (config.topK != null) body['top_k'] = config.topK;
+    final effectiveMaxTokens = options?.maxTokens ?? config.maxTokens;
+    final effectiveTemperature = options?.temperature ?? config.temperature;
+    final effectiveTopP = options?.topP ?? config.topP;
+    final effectiveTopK = options?.topK ?? config.topK;
+
+    if (effectiveMaxTokens != null) body['max_tokens'] = effectiveMaxTokens;
+    if (effectiveTemperature != null)
+      body['temperature'] = effectiveTemperature;
+    if (effectiveTopP != null) body['top_p'] = effectiveTopP;
+    if (effectiveTopK != null) body['top_k'] = effectiveTopK;
 
     // Forward advanced sampling parameters directly regardless of whether the
     // model is a reasoning variant. DeepSeek will surface any validation
@@ -381,11 +441,11 @@ class DeepSeekChat implements ChatCapability {
       body['response_format'] = config.responseFormat;
     }
 
-    final effectiveTools = tools ?? config.tools;
+    final effectiveTools = options?.tools ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = effectiveTools.map((t) => t.toJson()).toList();
 
-      final effectiveToolChoice = config.toolChoice;
+      final effectiveToolChoice = options?.toolChoice ?? config.toolChoice;
       if (effectiveToolChoice != null) {
         body['tool_choice'] = effectiveToolChoice.toJson();
       }
@@ -394,7 +454,7 @@ class DeepSeekChat implements ChatCapability {
     return body;
   }
 
-  Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {
+  Map<String, dynamic> _convertPromptMessage(ModelMessage message) {
     final role = switch (message.role) {
       ChatRole.system => 'system',
       ChatRole.user => 'user',
@@ -436,7 +496,7 @@ class DeepSeekChat implements ChatCapability {
   }
 
   // Legacy ChatMessage-based conversion is now replaced by
-  // the ChatPromptMessage-based _convertPromptMessage implementation.
+  // the ModelMessage-based _convertPromptMessage implementation.
 }
 
 /// DeepSeek chat response implementation.

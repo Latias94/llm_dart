@@ -1,7 +1,6 @@
+import 'package:llm_dart_core/llm_dart_core.dart';
+
 import '../../../../builder/llm_builder.dart';
-import '../../../../core/capability.dart';
-import '../../../../core/config.dart';
-import '../../../../core/web_search.dart';
 
 /// OpenRouter-specific LLM builder with provider-specific configuration methods
 ///

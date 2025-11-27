@@ -884,6 +884,55 @@ class UsageInfo {
       Object.hash(promptTokens, completionTokens, totalTokens, reasoningTokens);
 }
 
+/// Per-call options for language model invocations.
+///
+/// This mirrors a subset of the Vercel AI SDK's call settings concept and is
+/// intended for settings that are naturally scoped to a single model call
+/// rather than to the model instance itself.
+class LanguageModelCallOptions {
+  /// Maximum number of tokens to generate in the completion.
+  final int? maxTokens;
+
+  /// Temperature for sampling (0.0–1.0, provider-specific ranges may apply).
+  final double? temperature;
+
+  /// Top-p (nucleus) sampling parameter.
+  final double? topP;
+
+  /// Top-k sampling parameter.
+  final int? topK;
+
+  /// Stop sequences that end generation when produced.
+  final List<String>? stopSequences;
+
+  /// Tools available to the model for this call.
+  ///
+  /// When provided, these should be preferred over any tools configured on
+  /// the underlying model or builder for this specific invocation.
+  final List<Tool>? tools;
+
+  /// Tool choice strategy for this call.
+  final ToolChoice? toolChoice;
+
+  /// Optional user identifier for this call.
+  final String? user;
+
+  /// Optional service tier override for this call.
+  final ServiceTier? serviceTier;
+
+  const LanguageModelCallOptions({
+    this.maxTokens,
+    this.temperature,
+    this.topP,
+    this.topK,
+    this.stopSequences,
+    this.tools,
+    this.toolChoice,
+    this.user,
+    this.serviceTier,
+  });
+}
+
 /// High-level language model interface used by helper functions.
 ///
 /// This interface is intentionally aligned with the Vercel AI SDK's
@@ -939,6 +988,53 @@ abstract class LanguageModel {
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
     List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  });
+
+  /// Generate text with additional per-call options.
+  ///
+  /// This is a companion to [generateText] that allows callers to
+  /// specify settings that are naturally scoped to a single call,
+  /// such as sampling parameters, stop sequences, tools, and user
+  /// identifiers. Implementations may choose to ignore unsupported
+  /// options.
+  Future<GenerateTextResult> generateTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  });
+
+  /// Stream text with additional per-call options.
+  ///
+  /// This mirrors [streamText] but accepts [LanguageModelCallOptions]
+  /// for per-call configuration. Unsupported options may be ignored
+  /// by implementations.
+  Stream<ChatStreamEvent> streamTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  });
+
+  /// Stream structured text parts with additional per-call options.
+  ///
+  /// This mirrors [streamTextParts] but accepts [LanguageModelCallOptions]
+  /// for per-call configuration. Unsupported options may be ignored
+  /// by implementations.
+  Stream<StreamTextPart> streamTextPartsWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  });
+
+  /// Generate a structured object with additional per-call options.
+  ///
+  /// This mirrors [generateObject] but accepts [LanguageModelCallOptions]
+  /// for per-call configuration. Unsupported options may be ignored
+  /// by implementations.
+  Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
+    OutputSpec<T> output,
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   });
 }
@@ -1051,6 +1147,107 @@ class DefaultLanguageModel implements LanguageModel {
       textResult: textResult,
     );
   }
+
+  @override
+  Future<GenerateTextResult> generateTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    final response = await _chat.chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
+
+    return GenerateTextResult(
+      rawResponse: response,
+      text: response.text,
+      thinking: response.thinking,
+      toolCalls: response.toolCalls,
+      usage: response.usage,
+      warnings: response.warnings,
+      metadata: response.callMetadata,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> streamTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatStream(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<StreamTextPart> streamTextPartsWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return adaptStreamText(
+      streamTextWithOptions(
+        messages,
+        options: options,
+        cancelToken: cancelToken,
+      ),
+    );
+  }
+
+  @override
+  Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
+    OutputSpec<T> output,
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    // We intentionally delegate to [generateTextWithOptions] so that
+    // per-call options (sampling, stop sequences, tools, etc.) apply
+    // consistently to both text and structured object generation.
+    final textResult = await generateTextWithOptions(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
+
+    final rawText = textResult.text;
+    if (rawText == null || rawText.trim().isEmpty) {
+      throw const ResponseFormatError(
+        'Structured output is empty or missing JSON content',
+        '',
+      );
+    }
+
+    Map<String, dynamic> json;
+    try {
+      final decoded = jsonDecode(rawText);
+      if (decoded is Map<String, dynamic>) {
+        json = decoded;
+      } else if (decoded is Map) {
+        json = Map<String, dynamic>.from(decoded);
+      } else {
+        throw const FormatException('Top-level JSON value is not an object');
+      }
+    } catch (e) {
+      throw ResponseFormatError(
+        'Failed to parse structured JSON output: $e',
+        rawText,
+      );
+    }
+
+    final object = output.fromJson(json);
+
+    return GenerateObjectResult<T>(
+      object: object,
+      textResult: textResult,
+    );
+  }
 }
 
 /// Core chat capability interface that most LLM providers implement
@@ -1059,30 +1256,72 @@ class DefaultLanguageModel implements LanguageModel {
 /// - OpenAI: https://platform.openai.com/docs/guides/tools
 /// - Anthropic: https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview
 /// - xAI: https://docs.x.ai/docs/guides/function-calling
+abstract class PromptChatCapability {
+  /// Sends a chat request to the provider using structured prompt messages.
+  ///
+  /// This is the prompt-first variant of [ChatCapability.chatWithTools] and
+  /// should be preferred by new provider implementations. Callers that still
+  /// operate on [ChatMessage] can bridge via
+  /// [ChatMessage.fromPromptMessage]/[ChatMessage.toPromptMessage].
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  });
+
+  /// Sends a streaming chat request using structured prompt messages.
+  ///
+  /// This mirrors [chatPrompt] but returns a [Stream] of [ChatStreamEvent]s
+  /// for streaming use cases.
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  });
+}
+
+/// Legacy chat capability interface that most LLM providers implement.
+///
+/// New provider implementations are encouraged to also implement
+/// [PromptChatCapability] and to internally prefer the structured
+/// [ModelMessage] model. The [ChatCapability] interface remains
+/// the primary entrypoint for backwards-compatible callers that use
+/// the simpler [ChatMessage] model.
 abstract class ChatCapability {
   /// Sends a chat request to the provider with a sequence of messages.
   ///
   /// [messages] - The conversation history as a list of chat messages
+  /// [options] - Optional per-call language model options
   /// [cancelToken] - Optional token to cancel the request
   ///
   /// Returns the provider's response or throws an LLMError
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   /// Sends a chat request to the provider with a sequence of messages and tools.
   ///
   /// [messages] - The conversation history as a list of chat messages
   /// [tools] - Optional list of tools to use in the chat
+  /// [options] - Optional per-call language model options
   /// [cancelToken] - Optional token to cancel the request
   ///
   /// Returns the provider's response or throws an LLMError
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   });
 
@@ -1090,12 +1329,14 @@ abstract class ChatCapability {
   ///
   /// [messages] - The conversation history as a list of chat messages
   /// [tools] - Optional list of tools to use in the chat
+  /// [options] - Optional per-call language model options
   /// [cancelToken] - Optional token to cancel the stream
   ///
   /// Returns a stream of chat events
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   });
 
@@ -1158,6 +1399,12 @@ class ChatCallContext {
   /// Optional tools available for this call.
   final List<Tool>? tools;
 
+  /// Optional per-call language model options.
+  ///
+  /// When present, these options should be forwarded to the underlying
+  /// [ChatCapability] implementation for this call.
+  final LanguageModelCallOptions? options;
+
   /// Optional cancellation token for this call.
   final CancellationToken? cancelToken;
 
@@ -1170,6 +1417,7 @@ class ChatCallContext {
     required this.config,
     required this.messages,
     this.tools,
+    this.options,
     this.cancelToken,
     this.operationKind = ChatOperationKind.chat,
   });
@@ -1181,6 +1429,7 @@ class ChatCallContext {
     LLMConfig? config,
     List<ChatMessage>? messages,
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
     ChatOperationKind? operationKind,
   }) {
@@ -1190,6 +1439,7 @@ class ChatCallContext {
       config: config ?? this.config,
       messages: messages ?? this.messages,
       tools: tools ?? this.tools,
+      options: options ?? this.options,
       cancelToken: cancelToken ?? this.cancelToken,
       operationKind: operationKind ?? this.operationKind,
     );

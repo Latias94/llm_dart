@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:test/test.dart';
 
-import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart/providers/anthropic/config.dart';
 import 'package:llm_dart/providers/anthropic/dio_strategy.dart';
-import 'package:llm_dart/providers/openai/config.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:llm_dart/providers/openai/dio_strategy.dart';
 import 'package:llm_dart/providers/google/config.dart';
 import 'package:llm_dart/providers/google/dio_strategy.dart';
@@ -21,7 +21,7 @@ import 'package:llm_dart/providers/phind/config.dart';
 import 'package:llm_dart/providers/phind/dio_strategy.dart';
 import 'package:llm_dart/providers/elevenlabs/config.dart';
 import 'package:llm_dart/providers/elevenlabs/dio_strategy.dart';
-import 'package:llm_dart/utils/dio_client_factory.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('DioClientFactory', () {
@@ -47,7 +47,7 @@ void main() {
     });
 
     test('should create Dio client with OpenAI strategy', () {
-      final config = OpenAIConfig(
+      final config = openai.OpenAIConfig(
         baseUrl: 'https://api.openai.com/v1/',
         apiKey: 'test-key',
         model: 'gpt-4',
@@ -172,7 +172,7 @@ void main() {
     });
 
     test('OpenAIDioStrategy should build correct headers', () {
-      final config = OpenAIConfig(
+      final config = openai.OpenAIConfig(
         baseUrl: 'https://api.openai.com/v1/',
         apiKey: 'test-key',
         model: 'gpt-4',
@@ -322,7 +322,7 @@ void main() {
         },
         {
           'strategy': OpenAIDioStrategy(),
-          'config': OpenAIConfig(
+          'config': openai.OpenAIConfig(
               apiKey: 'test-key',
               baseUrl: 'https://api.example.com',
               model: 'test-model',
@@ -411,7 +411,7 @@ void main() {
         },
         {
           'strategy': OpenAIDioStrategy(),
-          'config': OpenAIConfig(
+          'config': openai.OpenAIConfig(
               apiKey: 'test-key',
               baseUrl: 'https://api.example.com',
               model: 'test-model',
@@ -504,7 +504,7 @@ void main() {
         },
         {
           'strategy': OpenAIDioStrategy(),
-          'config': OpenAIConfig(
+          'config': openai.OpenAIConfig(
               apiKey: 'test-key',
               baseUrl: 'https://api.example.com',
               model: 'test-model',

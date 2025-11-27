@@ -20,31 +20,31 @@ void main() async {
   // Get API key
   final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
 
-  // Create AI provider
-  final provider = await ai()
+  // Create AI model
+  final model = await ai()
       .openai()
       .apiKey(apiKey)
       .model('gpt-4.1-mini')
       .temperature(0.3) // Lower temperature for more consistent structure
       .maxTokens(1000)
-      .build();
+      .buildLanguageModel();
 
   // Demonstrate different structured output scenarios
-  await demonstrateBasicStructuredOutput(provider);
-  await demonstrateComplexStructures(provider);
-  await demonstrateDataValidation(provider);
-  await demonstrateErrorHandling(provider);
+  await demonstrateBasicStructuredOutput(model);
+  await demonstrateComplexStructures(model);
+  await demonstrateDataValidation(model);
+  await demonstrateErrorHandling(model);
 
   print('\n✅ Structured output completed!');
 }
 
 /// Demonstrate basic structured output
-Future<void> demonstrateBasicStructuredOutput(ChatCapability provider) async {
+Future<void> demonstrateBasicStructuredOutput(LanguageModel model) async {
   print('📋 Basic Structured Output:\n');
 
   try {
-    final messages = [
-      ChatMessage.system('''
+    final prompts = [
+      ChatPromptBuilder.system().text('''
 Extract person information and return as JSON. Use this exact format:
 {
   "name": "full name",
@@ -54,18 +54,21 @@ Extract person information and return as JSON. Use this exact format:
   "skills": ["skill1", "skill2"]
 }
 Return only the JSON data, no other text.
-'''),
-      ChatMessage.user('''
+''').build(),
+      ChatPromptBuilder.user().text('''
 Extract information about this person:
 "John Smith is a 32-year-old software engineer at TechCorp.
 He has experience in Python, JavaScript, and cloud computing.
 You can reach him at john.smith@email.com"
-'''),
+''').build(),
     ];
 
     print('   User: Extract person information from text');
 
-    final response = await provider.chat(messages);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: prompts,
+    );
     final jsonText = response.text ?? '';
 
     print('   🤖 AI Response: $jsonText');
@@ -93,7 +96,7 @@ You can reach him at john.smith@email.com"
 }
 
 /// Demonstrate complex nested structures
-Future<void> demonstrateComplexStructures(ChatCapability provider) async {
+Future<void> demonstrateComplexStructures(LanguageModel model) async {
   print('🏗️  Complex Nested Structures:\n');
 
   try {
@@ -138,13 +141,13 @@ Future<void> demonstrateComplexStructures(ChatCapability provider) async {
       }
     };
 
-    final messages = [
-      ChatMessage.system('''
+    final prompts = [
+      ChatPromptBuilder.system().text('''
 Extract company information and return as JSON following this schema:
 ${jsonEncode(companySchema)}
 Only return valid JSON.
-'''),
-      ChatMessage.user('''
+''').build(),
+      ChatPromptBuilder.user().text('''
 Create a fictional tech company with the following details:
 - Company name: InnovateTech
 - Founded in 2018
@@ -152,12 +155,15 @@ Create a fictional tech company with the following details:
 - Headquarters in San Francisco, USA
 - 3 employees: CEO Alice Johnson (\$150,000), CTO Bob Wilson (\$130,000), Developer Carol Davis (\$90,000)
 - Revenue: \$2.5M, Profit: \$500K (USD)
-'''),
+''').build(),
     ];
 
     print('   User: Create fictional company data structure');
 
-    final response = await provider.chat(messages);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: prompts,
+    );
     final jsonText = response.text ?? '';
 
     print('   🤖 AI Response: $jsonText');
@@ -190,7 +196,7 @@ Create a fictional tech company with the following details:
 }
 
 /// Demonstrate data validation
-Future<void> demonstrateDataValidation(ChatCapability provider) async {
+Future<void> demonstrateDataValidation(LanguageModel model) async {
   print('✅ Data Validation:\n');
 
   try {
@@ -223,16 +229,21 @@ Future<void> demonstrateDataValidation(ChatCapability provider) async {
     for (int i = 0; i < testCases.length; i++) {
       print('   Test Case ${i + 1}: ${testCases[i]}');
 
-      final messages = [
-        ChatMessage.system('''
+      final prompts = [
+        ChatPromptBuilder.system().text('''
 Extract product information as JSON following this schema:
 ${jsonEncode(productSchema)}
 Ensure all validation rules are followed. Only return valid JSON.
-'''),
-        ChatMessage.user('Extract product info: ${testCases[i]}'),
+''').build(),
+        ChatPromptBuilder.user()
+            .text('Extract product info: ${testCases[i]}')
+            .build(),
       ];
 
-      final response = await provider.chat(messages);
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: prompts,
+      );
       final jsonText = response.text ?? '';
 
       try {
@@ -261,23 +272,27 @@ Ensure all validation rules are followed. Only return valid JSON.
 }
 
 /// Demonstrate error handling for malformed data
-Future<void> demonstrateErrorHandling(ChatCapability provider) async {
+Future<void> demonstrateErrorHandling(LanguageModel model) async {
   print('🛡️  Error Handling for Malformed Data:\n');
 
   try {
-    final messages = [
-      ChatMessage.system('''
+    final prompts = [
+      ChatPromptBuilder.system().text('''
 Return a JSON object with user information. 
 Include: name, age, email, preferences (array of strings).
 Only return valid JSON.
-'''),
-      ChatMessage.user(
-          'Create user data for someone who likes pizza and movies'),
+''').build(),
+      ChatPromptBuilder.user()
+          .text('Create user data for someone who likes pizza and movies')
+          .build(),
     ];
 
     print('   User: Create user data with preferences');
 
-    final response = await provider.chat(messages);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: prompts,
+    );
     final jsonText = response.text ?? '';
 
     print('   🤖 Raw response: $jsonText');

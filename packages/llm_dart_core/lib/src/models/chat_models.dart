@@ -457,11 +457,11 @@ class ToolResultContentPart extends ChatContentPart {
   });
 }
 
-/// High-level prompt message built from structured content parts.
+/// High-level model message built from structured content parts.
 ///
 /// This is the provider-agnostic, multi-part representation that providers
-/// should consume internally, instead of working directly with ChatMessage.
-class ChatPromptMessage {
+/// should consume internally, instead of working directly with [ChatMessage].
+class ModelMessage {
   final ChatRole role;
   final List<ChatContentPart> parts;
 
@@ -472,14 +472,31 @@ class ChatPromptMessage {
   /// - Google: system-level modifiers or media options
   final Map<String, dynamic> providerOptions;
 
-  const ChatPromptMessage({
+  const ModelMessage({
     required this.role,
     required this.parts,
     this.providerOptions = const {},
   });
 }
 
-/// A single message in a chat conversation.
+@Deprecated(
+  'ChatPromptMessage has been renamed to ModelMessage to better reflect '
+  'its role as the structured, model-facing message type. '
+  'Use ModelMessage instead. This alias will be removed in a future release.',
+)
+typedef ChatPromptMessage = ModelMessage;
+
+/// A single message in a chat conversation (legacy chat model).
+///
+/// New code should prefer the structured [ModelMessage] +
+/// [ChatContentPart] model for prompt construction. [ChatMessage]
+/// is kept primarily as a convenience and backwards-compatible
+/// wrapper around the underlying prompt messages.
+@Deprecated(
+  'ChatMessage is a legacy chat model. '
+  'Use ModelMessage + ChatContentPart for new code. '
+  'ChatMessage will be removed in a future breaking release.',
+)
 class ChatMessage {
   /// The role of who sent this message (user or assistant)
   final ChatRole role;
@@ -498,7 +515,7 @@ class ChatMessage {
 
   /// Internal key used to store structured [ChatContentPart] lists
   /// inside [extensions] when a [ChatMessage] is constructed from a
-  /// [ChatPromptMessage].
+  /// [ModelMessage].
   ///
   /// This allows [ChatMessage.toPromptMessage] to recover the original
   /// structured content parts and provider options.
@@ -524,7 +541,7 @@ class ChatMessage {
         extensions: {...extensions, key: value},
       );
 
-  /// Create a [ChatMessage] from a structured [ChatPromptMessage].
+  /// Create a [ChatMessage] from a structured [ModelMessage].
   ///
   /// The resulting message will:
   /// - Preserve the [role] from the prompt.
@@ -536,8 +553,7 @@ class ChatMessage {
   /// The [messageType] and [content] fields are left in a minimal,
   /// placeholder state because the actual rich content lives in the
   /// structured parts.
-  factory ChatMessage.fromPromptMessage(ChatPromptMessage prompt) =>
-      ChatMessage(
+  factory ChatMessage.fromPromptMessage(ModelMessage prompt) => ChatMessage(
         role: prompt.role,
         messageType: const TextMessage(),
         content: '',
@@ -646,20 +662,20 @@ class ChatMessage {
         content: content,
       );
 
-  /// Convert this ChatMessage into a structured ChatPromptMessage.
+  /// Convert this ChatMessage into a structured [ModelMessage].
   ///
   /// This provides a best-effort mapping from the legacy messageType-based
   /// model to the new multi-part content model. Provider-specific extensions
-  /// are preserved at the message level via [ChatPromptMessage.providerOptions].
-  ChatPromptMessage toPromptMessage() {
-    // If this message was constructed from a ChatPromptMessage, recover
+  /// are preserved at the message level via [ModelMessage.providerOptions].
+  ModelMessage toPromptMessage() {
+    // If this message was constructed from a ModelMessage, recover
     // the original structured content parts and provider options.
     final storedParts =
         getExtension<List<ChatContentPart>>(_promptPartsExtensionKey);
     if (storedParts != null) {
       final options = Map<String, dynamic>.from(extensions);
       options.remove(_promptPartsExtensionKey);
-      return ChatPromptMessage(
+      return ModelMessage(
         role: role,
         parts: storedParts,
         providerOptions: options,
@@ -720,7 +736,7 @@ class ChatMessage {
         break;
     }
 
-    return ChatPromptMessage(
+    return ModelMessage(
       role: role,
       parts: parts,
       providerOptions: extensions,

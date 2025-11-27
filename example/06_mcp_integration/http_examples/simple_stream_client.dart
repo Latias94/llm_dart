@@ -38,16 +38,6 @@ Future<void> demonstrateStreamingToolUse(String apiKey) async {
   StreamableHttpClientTransport? transport;
 
   try {
-    // Create streaming LLM provider
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .temperature(0.7)
-        .build();
-
-    print('   🤖 Creating LLM provider: OpenAI GPT-4o-mini');
-
     // Create MCP client for HTTP server
     final mcpConnection = await _createHttpMcpClient();
     mcpClient = mcpConnection.client;
@@ -61,6 +51,17 @@ Future<void> demonstrateStreamingToolUse(String apiKey) async {
       print('      • ${tool.function.name}: ${tool.function.description}');
     }
 
+    // Create high-level language model with tools configured
+    final model = await ai()
+        .openai()
+        .apiKey(apiKey)
+        .model('gpt-4o-mini')
+        .temperature(0.7)
+        .tools(mcpTools)
+        .buildLanguageModel();
+
+    print('   🤖 Creating LLM model: OpenAI GPT-4o-mini');
+
     // Streaming conversation requesting current time
     final messages = [
       ChatMessage.system(
@@ -73,7 +74,7 @@ Future<void> demonstrateStreamingToolUse(String apiKey) async {
     print('\n   🤖 LLM Processing...');
 
     // Process the streaming response with detailed logging
-    await _processStreamingToolUse(provider, messages, mcpTools, mcpClient);
+    await _processStreamingToolUse(model, messages, mcpTools, mcpClient);
 
     print('\n   ✅ Streaming tool use demonstration successful\n');
   } catch (e) {
@@ -93,120 +94,113 @@ Future<void> demonstrateStreamingToolUse(String apiKey) async {
 
 /// Process streaming response with detailed tool use logging
 Future<void> _processStreamingToolUse(
-  ChatCapability provider,
+  LanguageModel model,
   List<ChatMessage> messages,
   List<Tool> tools,
   Client mcpClient,
 ) async {
   var conversation = List<ChatMessage>.from(messages);
-  var toolCallsCollected = <ToolCall>[];
-  var hasToolCalls = false;
   var initialResponseText = '';
-  final toolCallAggregator = ToolCallAggregator();
+  var hasToolCalls = false;
+  final toolCalls = <ToolCall>[];
 
   print('   📡 Starting streaming request to LLM...');
 
   // First stream - get initial response and tool calls
-  await for (final event in provider.chatStream(conversation, tools: tools)) {
-    switch (event) {
-      case TextDeltaEvent(delta: final delta):
-        initialResponseText += delta;
-        // Don't print yet, wait to see if there are tool calls
+  await for (final part in model.streamTextParts(conversation)) {
+    switch (part) {
+      case StreamTextStart():
         break;
-
-      case ToolCallDeltaEvent(toolCall: final toolCall):
+      case StreamTextDelta(delta: final delta):
+        initialResponseText += delta;
+        break;
+      case StreamThinkingDelta(delta: final delta):
+        print('   🧠 Thinking: $delta');
+        break;
+      case StreamToolInputStart(
+          toolCallId: final toolCallId,
+          toolName: final toolName
+        ):
         if (!hasToolCalls) {
-          // If we have initial text, print it first
           if (initialResponseText.isNotEmpty) {
             print('   🤖 LLM Initial Response: $initialResponseText');
           }
           print('\n   🔧 LLM requested tool calls:');
           hasToolCalls = true;
         }
-        print('      📞 Function: ${toolCall.function.name}');
+        print('      📞 Function: $toolName');
+        print('      🆔 Call ID: $toolCallId');
+        break;
+      case StreamToolInputDelta():
+        // Skip detailed argument deltas for brevity
+        break;
+      case StreamToolInputEnd():
+        break;
+      case StreamToolCall(toolCall: final toolCall):
         print('      📋 Arguments: ${toolCall.function.arguments}');
-        print('      🆔 Call ID: ${toolCall.id}');
-        toolCallsCollected.add(toolCall);
-        toolCallAggregator.addDelta(toolCall);
+        toolCalls.add(toolCall);
         break;
-
-      case CompletionEvent():
-        if (hasToolCalls) {
-          print('\n   🛠️  Executing MCP tools via HTTP...');
-
-          // Execute tools with detailed logging
-          final toolResults = <ToolCall>[];
-          final aggregatedToolCalls = toolCallAggregator.completedCalls;
-          final callsToUse = aggregatedToolCalls.isNotEmpty
-              ? aggregatedToolCalls
-              : toolCallsCollected;
-
-          for (int i = 0; i < callsToUse.length; i++) {
-            final toolCall = callsToUse[i];
-            print('      Step ${i + 1}: Executing ${toolCall.function.name}');
-
-            final result = await _executeMcpTool(
-              mcpClient,
-              toolCall.function.name,
-              toolCall.function.arguments,
-            );
-
-            toolResults.add(ToolCall(
-              id: toolCall.id,
-              callType: 'function',
-              function: FunctionCall(
-                name: toolCall.function.name,
-                arguments: result,
-              ),
-            ));
-          }
-
-          // Add tool results to conversation
-          conversation.addAll([
-            ChatMessage.toolUse(toolCalls: callsToUse),
-            ChatMessage.toolResult(results: toolResults),
-          ]);
-
-          print(
-              '\n   🔄 Sending tool results back to LLM for final response...');
-          print('   🤖 LLM Final Response:');
-          stdout.write('      '); // Initial indentation for streaming text
-
-          // Second stream - get final response with streaming output
-          await for (final finalEvent in provider.chatStream(conversation)) {
-            switch (finalEvent) {
-              case TextDeltaEvent(delta: final delta):
-                // Replace newlines with indented newlines to maintain formatting
-                final indentedDelta = delta.replaceAll('\n', '\n      ');
-                stdout.write(indentedDelta);
-                break;
-              case CompletionEvent():
-                print(''); // New line after streaming
-                break;
-              case ErrorEvent(error: final error):
-                print('\n   ❌ Final response error: $error');
-                break;
-              case ToolCallDeltaEvent():
-              case ThinkingDeltaEvent():
-                // Handle other events if needed
-                break;
-            }
-          }
-        } else {
-          // No tool calls, just print the response
-          if (initialResponseText.isNotEmpty) {
-            print('   🤖 LLM Response: $initialResponseText');
-          }
-        }
+      case StreamTextEnd():
         break;
-
-      case ErrorEvent(error: final error):
-        print('\n   ❌ Streaming error: $error');
+      case StreamFinish():
         break;
+    }
+  }
 
-      case ThinkingDeltaEvent(delta: final delta):
-        print('   🧠 Thinking: $delta');
-        break;
+  if (hasToolCalls) {
+    print('\n   🛠️  Executing MCP tools via HTTP...');
+
+    // Execute tools with detailed logging
+    final toolResults = <ToolCall>[];
+
+    for (int i = 0; i < toolCalls.length; i++) {
+      final toolCall = toolCalls[i];
+      print('      Step ${i + 1}: Executing ${toolCall.function.name}');
+
+      final result = await _executeMcpTool(
+        mcpClient,
+        toolCall.function.name,
+        toolCall.function.arguments,
+      );
+
+      toolResults.add(ToolCall(
+        id: toolCall.id,
+        callType: 'function',
+        function: FunctionCall(
+          name: toolCall.function.name,
+          arguments: result,
+        ),
+      ));
+    }
+
+    // Add tool results to conversation
+    conversation.addAll([
+      ChatMessage.toolUse(toolCalls: toolCalls),
+      ChatMessage.toolResult(results: toolResults),
+    ]);
+
+    print('\n   🔄 Sending tool results back to LLM for final response...');
+    print('   🤖 LLM Final Response:');
+    stdout.write('      '); // Initial indentation for streaming text
+
+    // Second stream - get final response with streaming output
+    await for (final finalPart in model.streamTextParts(conversation)) {
+      switch (finalPart) {
+        case StreamTextDelta(delta: final delta):
+          final indentedDelta = delta.replaceAll('\n', '\n      ');
+          stdout.write(indentedDelta);
+          break;
+        case StreamFinish():
+          print(''); // New line after streaming
+          break;
+        default:
+          break;
+      }
+    }
+  } else {
+    // No tool calls, just print the response
+    if (initialResponseText.isNotEmpty) {
+      print('   🤖 LLM Response: $initialResponseText');
     }
   }
 }

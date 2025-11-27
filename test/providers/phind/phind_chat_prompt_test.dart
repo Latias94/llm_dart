@@ -32,7 +32,7 @@ class FakePhindClient extends PhindClient {
 
 void main() {
   group('PhindChat prompt mapping', () {
-    test('builds message_history from ChatPromptMessage', () async {
+    test('builds message_history from ModelMessage', () async {
       final config = PhindConfig(
         apiKey: 'test-key',
         model: 'phind-code-1',

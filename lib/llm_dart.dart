@@ -8,24 +8,244 @@ library;
 import 'dart:async';
 import 'dart:convert';
 
-// Core exports
-export 'core/capability.dart';
-export 'core/cancellation.dart';
-export 'core/llm_error.dart';
-export 'core/config.dart';
+// Core exports (forwarded from llm_dart_core).
+//
+// The root package now re-exports a curated SDK surface from
+// `llm_dart_core` instead of the entire core API. This keeps the
+// default import:
+//   import 'package:llm_dart/llm_dart.dart';
+// focused on high-level usage (messages, tools, language models,
+// agents, and helper functions).
+//
+// For full access to all core types (capabilities, low-level models,
+// registry, etc.), prefer importing `llm_dart_core` directly:
+//   import 'package:llm_dart_core/llm_dart_core.dart';
+export 'package:llm_dart_core/llm_dart_core.dart'
+    show
+        // Core error / cancellation
+        LLMError,
+        HttpError,
+        GenericError,
+        InvalidRequestError,
+        AuthError,
+        ProviderError,
+        ResponseFormatError,
+        TimeoutError,
+        NotFoundError,
+        JsonError,
+        ToolConfigError,
+        ToolExecutionError,
+        ToolValidationError,
+        StructuredOutputError,
+        RateLimitError,
+        QuotaExceededError,
+        ModelNotAvailableError,
+        CancelledError,
+        ContentFilterError,
+        ServerError,
+        UnsupportedCapabilityError,
+        OpenAIResponsesError,
+        CancellationToken,
+        CancellationTokenSource,
+
+        // Core config & capabilities (high-level)
+        LLMConfig,
+        LLMCapability,
+        LanguageModel,
+        ChatCapability,
+        EmbeddingCapability,
+        CompletionCapability,
+        ToolExecutionCapability,
+        ModerationCapability,
+        ModelListingCapability,
+        ProviderCapabilities,
+        ChatResponse,
+        Agent,
+        AgentInput,
+        ToolLoopAgent,
+        ToolLoopConfig,
+
+        // Chat models & stream types
+        ChatRole,
+        ChatMessage,
+        ModelMessage,
+        MessageBuilder,
+        MessageType,
+        TextMessage,
+        ImageMessage,
+        FileMessage,
+        ImageUrlMessage,
+        ToolUseMessage,
+        ToolResultMessage,
+        ImageMime,
+        ImageMimeExtension,
+        FileMime,
+        ChatStreamEvent,
+        TextDeltaEvent,
+        ThinkingDeltaEvent,
+        ToolCallDeltaEvent,
+        CompletionEvent,
+        ErrorEvent,
+        StreamTextPart,
+        StreamTextStart,
+        StreamTextDelta,
+        StreamTextEnd,
+        StreamThinkingDelta,
+        StreamToolInputStart,
+        StreamToolInputDelta,
+        StreamToolInputEnd,
+        StreamToolCall,
+        StreamFinish,
+        GenerateTextResult,
+        GenerateObjectResult,
+
+        // Chat / embedding middleware & contexts
+        ChatOperationKind,
+        ChatCallContext,
+        ChatMiddleware,
+        EmbeddingCallContext,
+        EmbeddingMiddleware,
+
+        // Tools & structured output
+        Tool,
+        ExecutableTool,
+        ToolCall,
+        ToolResult,
+        FunctionCall,
+        FunctionTool,
+        ParameterProperty,
+        ParametersSchema,
+        ToolChoice,
+        AutoToolChoice,
+        AnyToolChoice,
+        NoneToolChoice,
+        SpecificToolChoice,
+        ParallelToolConfig,
+        ToolValidator,
+        OutputSpec,
+        StructuredOutputFormat,
+
+        // Model capability configuration
+        ModelCapabilityConfig,
+        LLMConfigKeys,
+
+        // Cancellation helpers
+        CancellationHelper,
+
+        // Call options and metadata
+        LanguageModelCallOptions,
+        CallWarning,
+        UsageInfo,
+        CallMetadata,
+        ServiceTier,
+        ReasoningEffort,
+        Verbosity,
+
+        // Audio capabilities & models
+        AudioFeature,
+        AudioCapability,
+        BaseAudioCapability,
+        AudioProcessingMode,
+        AudioQuality,
+        AudioFormat,
+        TextNormalization,
+        AudioStreamEvent,
+        AudioDataEvent,
+        AudioMetadataEvent,
+        AudioTimingEvent,
+        AudioErrorEvent,
+        TTSRequest,
+        TTSResponse,
+        STTRequest,
+        STTResponse,
+        AudioTranslationRequest,
+        TimestampGranularity,
+        EnhancedWordTiming,
+        VoiceInfo,
+        RealtimeAudioSession,
+        RealtimeAudioEvent,
+        RealtimeAudioConfig,
+        RealtimeTranscriptionEvent,
+        RealtimeAudioResponseEvent,
+        RealtimeSessionStatusEvent,
+        RealtimeErrorEvent,
+
+        // Image generation capabilities & models
+        ImageGenerationCapability,
+        ImageGenerationRequest,
+        ImageEditRequest,
+        ImageVariationRequest,
+        ImageGenerationResponse,
+        ImageInput,
+        ImageDimensions,
+        ImageStyle,
+        ImageQuality,
+        ImageSize,
+
+        // Stream helpers
+        adaptStreamText,
+
+        // File capabilities & models
+        FileManagementCapability,
+        FilePurpose,
+        FileStatus,
+        FileObject,
+        FileUploadRequest,
+        FileListResponse,
+        FileListQuery,
+
+        // Moderation models
+        ModerationRequest,
+        ModerationCategories,
+        ModerationCategoryScores,
+        ModerationResult,
+        ModerationResponse,
+
+        // Model listing
+        AIModel,
+
+        // Responses API models
+        ResponseInputItemsList,
+        ResponseInputItem,
+
+        // Web search configuration
+        WebSearchConfig,
+        WebSearchType,
+        WebSearchContextSize,
+        WebSearchStrategy,
+        WebSearchLocation,
+
+        // Assistant capabilities & models
+        AssistantCapability,
+        AssistantToolType,
+        AssistantTool,
+        CodeInterpreterTool,
+        FileSearchTool,
+        AssistantFunctionTool,
+        AssistantResponseFormat,
+        Assistant,
+        CreateAssistantRequest,
+        ModifyAssistantRequest,
+        ListAssistantsResponse,
+        DeleteAssistantResponse,
+        ListAssistantsQuery;
+
+// Provider utils exports (HTTP config, error handling, UTF-8 decoding).
+//
+// These utilities live in the llm_dart_provider_utils package but are
+// re-exported here for convenience so that common SDK usage only needs
+// `package:llm_dart/llm_dart.dart`.
+export 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart'
+    show
+        HttpConfigUtils,
+        DioErrorHandler,
+        Utf8StreamDecoder,
+        Utf8StreamDecoderExtension;
+
+// Core registry & defaults (still live in this package)
+export 'core/provider_defaults.dart';
 export 'core/registry.dart';
 export 'core/base_http_provider.dart';
-export 'core/tool_validator.dart';
-export 'core/web_search.dart';
-
-// Model exports
-export 'models/chat_models.dart';
-export 'models/tool_models.dart';
-export 'models/audio_models.dart';
-export 'models/image_models.dart';
-export 'models/file_models.dart';
-export 'models/moderation_models.dart';
-export 'models/assistant_models.dart';
 
 // Provider exports
 export 'providers/openai/openai.dart'
@@ -58,17 +278,13 @@ export 'builder/provider_config.dart';
 export 'utils/config_utils.dart';
 export 'utils/capability_utils.dart';
 export 'utils/provider_registry.dart';
-export 'utils/utf8_stream_decoder.dart';
-export 'utils/http_config_utils.dart';
-export 'utils/http_error_handler.dart';
-export 'utils/http_response_handler.dart';
 export 'utils/logging_middleware.dart';
 export 'utils/default_settings_middleware.dart';
-export 'utils/tool_call_aggregator.dart';
 
 // Convenience functions for creating providers
+import 'package:llm_dart_core/llm_dart_core.dart';
+
 import 'builder/llm_builder.dart';
-import 'models/tool_models.dart';
 import 'utils/message_resolver.dart';
 
 /// Create a new LLM builder instance
@@ -149,8 +365,10 @@ Future<GenerateTextResult> generateText({
   String? baseUrl,
   String? prompt,
   List<ChatMessage>? messages,
-  ChatPromptMessage? structuredPrompt,
+  ModelMessage? structuredPrompt,
+  List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
 }) {
   var builder = LLMBuilder().use(model);
 
@@ -161,10 +379,13 @@ Future<GenerateTextResult> generateText({
     builder = builder.baseUrl(baseUrl);
   }
 
+  builder = _applyCallOptions(builder, options);
+
   return builder.generateText(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
+    promptMessages: promptMessages,
     cancelToken: cancelToken,
   );
 }
@@ -180,16 +401,20 @@ Future<GenerateTextResult> generateTextWithModel(
   LanguageModel model, {
   String? prompt,
   List<ChatMessage>? messages,
-  ChatPromptMessage? structuredPrompt,
+  ModelMessage? structuredPrompt,
+  List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
 }) {
   final resolvedMessages = resolveMessagesForTextGeneration(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
+    promptMessages: promptMessages,
   );
-  return model.generateText(
+  return model.generateTextWithOptions(
     resolvedMessages,
+    options: options,
     cancelToken: cancelToken,
   );
 }
@@ -205,8 +430,10 @@ Stream<ChatStreamEvent> streamText({
   String? baseUrl,
   String? prompt,
   List<ChatMessage>? messages,
-  ChatPromptMessage? structuredPrompt,
+  ModelMessage? structuredPrompt,
+  List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
 }) async* {
   var builder = LLMBuilder().use(model);
 
@@ -217,10 +444,13 @@ Stream<ChatStreamEvent> streamText({
     builder = builder.baseUrl(baseUrl);
   }
 
+  builder = _applyCallOptions(builder, options);
+
   yield* builder.streamText(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
+    promptMessages: promptMessages,
     cancelToken: cancelToken,
   );
 }
@@ -233,16 +463,47 @@ Stream<ChatStreamEvent> streamTextWithModel(
   LanguageModel model, {
   String? prompt,
   List<ChatMessage>? messages,
-  ChatPromptMessage? structuredPrompt,
+  ModelMessage? structuredPrompt,
+  List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
 }) async* {
   final resolvedMessages = resolveMessagesForTextGeneration(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
+    promptMessages: promptMessages,
   );
-  yield* model.streamText(
+  yield* model.streamTextWithOptions(
     resolvedMessages,
+    options: options,
+    cancelToken: cancelToken,
+  );
+}
+
+/// Stream high-level text parts using an existing [LanguageModel] instance.
+///
+/// This helper mirrors [streamTextParts] but operates on a pre-configured
+/// [LanguageModel] and accepts [LanguageModelCallOptions] for per-call
+/// configuration.
+Stream<StreamTextPart> streamTextPartsWithModel(
+  LanguageModel model, {
+  String? prompt,
+  List<ChatMessage>? messages,
+  ModelMessage? structuredPrompt,
+  List<ModelMessage>? promptMessages,
+  CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
+}) async* {
+  final resolvedMessages = resolveMessagesForTextGeneration(
+    prompt: prompt,
+    messages: messages,
+    structuredPrompt: structuredPrompt,
+    promptMessages: promptMessages,
+  );
+  yield* model.streamTextPartsWithOptions(
+    resolvedMessages,
+    options: options,
     cancelToken: cancelToken,
   );
 }
@@ -258,8 +519,10 @@ Stream<StreamTextPart> streamTextParts({
   String? baseUrl,
   String? prompt,
   List<ChatMessage>? messages,
-  ChatPromptMessage? structuredPrompt,
+  ModelMessage? structuredPrompt,
+  List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
 }) async* {
   var builder = LLMBuilder().use(model);
 
@@ -270,10 +533,17 @@ Stream<StreamTextPart> streamTextParts({
     builder = builder.baseUrl(baseUrl);
   }
 
+  // For now, streamTextParts follows the same per-call configuration
+  // surface as streamText (maxTokens, sampling, tools, etc.) via
+  // [LanguageModelCallOptions]. This keeps the API consistent while
+  // we evaluate whether additional stream-specific settings are needed.
+  builder = _applyCallOptions(builder, options);
+
   yield* builder.streamTextParts(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
+    promptMessages: promptMessages,
     cancelToken: cancelToken,
   );
 }
@@ -301,8 +571,10 @@ Future<GenerateObjectResult<T>> generateObject<T>({
   String? baseUrl,
   String? prompt,
   List<ChatMessage>? messages,
-  ChatPromptMessage? structuredPrompt,
+  ModelMessage? structuredPrompt,
+  List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
 }) async {
   var builder = LLMBuilder().use(model).jsonSchema(output.format);
 
@@ -313,10 +585,13 @@ Future<GenerateObjectResult<T>> generateObject<T>({
     builder = builder.baseUrl(baseUrl);
   }
 
+  builder = _applyCallOptions(builder, options);
+
   final textResult = await builder.generateText(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
+    promptMessages: promptMessages,
     cancelToken: cancelToken,
   );
 
@@ -383,18 +658,22 @@ Future<GenerateObjectResult<T>> generateObjectWithModel<T>({
   required OutputSpec<T> output,
   String? prompt,
   List<ChatMessage>? messages,
-  ChatPromptMessage? structuredPrompt,
+  ModelMessage? structuredPrompt,
+  List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
 }) async {
   final resolvedMessages = resolveMessagesForTextGeneration(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
+    promptMessages: promptMessages,
   );
 
-  return model.generateObject<T>(
+  return model.generateObjectWithOptions<T>(
     output,
     resolvedMessages,
+    options: options,
     cancelToken: cancelToken,
   );
 }
@@ -414,6 +693,7 @@ Future<GenerateTextResult> runAgentText({
   ToolLoopConfig loopConfig = const ToolLoopConfig(),
   CancellationToken? cancelToken,
   Agent? agent,
+  LanguageModelCallOptions? options,
 }) async {
   final input = AgentInput(
     model: model,
@@ -421,6 +701,39 @@ Future<GenerateTextResult> runAgentText({
     tools: tools,
     loopConfig: loopConfig,
     cancelToken: cancelToken,
+    callOptions: options,
+  );
+
+  final effectiveAgent = agent ?? const ToolLoopAgent();
+  return effectiveAgent.runText(input);
+}
+
+/// Run a text-only agent loop using structured prompt messages.
+///
+/// This variant accepts the initial conversation as a list of
+/// [ModelMessage]s and bridges them to [ChatMessage] internally so
+/// that providers can still recover the full structured content model.
+Future<GenerateTextResult> runAgentPromptText({
+  required LanguageModel model,
+  required List<ModelMessage> promptMessages,
+  required Map<String, ExecutableTool> tools,
+  ToolLoopConfig loopConfig = const ToolLoopConfig(),
+  CancellationToken? cancelToken,
+  Agent? agent,
+  LanguageModelCallOptions? options,
+}) async {
+  final initialMessages = promptMessages
+      .map((prompt) => ChatMessage.fromPromptMessage(prompt))
+      .toList();
+
+  final input = AgentInput(
+    model: model,
+    messages: initialMessages,
+    promptMessages: promptMessages,
+    tools: tools,
+    loopConfig: loopConfig,
+    cancelToken: cancelToken,
+    callOptions: options,
   );
 
   final effectiveAgent = agent ?? const ToolLoopAgent();
@@ -435,6 +748,7 @@ Future<AgentTextRunWithSteps> runAgentTextWithSteps({
   ToolLoopConfig loopConfig = const ToolLoopConfig(),
   CancellationToken? cancelToken,
   Agent? agent,
+  LanguageModelCallOptions? options,
 }) {
   final input = AgentInput(
     model: model,
@@ -442,6 +756,36 @@ Future<AgentTextRunWithSteps> runAgentTextWithSteps({
     tools: tools,
     loopConfig: loopConfig,
     cancelToken: cancelToken,
+    callOptions: options,
+  );
+
+  final effectiveAgent = agent ?? const ToolLoopAgent();
+  return effectiveAgent.runTextWithSteps(input);
+}
+
+/// Run a text-only agent loop using structured prompt messages and
+/// return both the final result and per-step trace.
+Future<AgentTextRunWithSteps> runAgentPromptTextWithSteps({
+  required LanguageModel model,
+  required List<ModelMessage> promptMessages,
+  required Map<String, ExecutableTool> tools,
+  ToolLoopConfig loopConfig = const ToolLoopConfig(),
+  CancellationToken? cancelToken,
+  Agent? agent,
+  LanguageModelCallOptions? options,
+}) {
+  final initialMessages = promptMessages
+      .map((prompt) => ChatMessage.fromPromptMessage(prompt))
+      .toList();
+
+  final input = AgentInput(
+    model: model,
+    messages: initialMessages,
+    promptMessages: promptMessages,
+    tools: tools,
+    loopConfig: loopConfig,
+    cancelToken: cancelToken,
+    callOptions: options,
   );
 
   final effectiveAgent = agent ?? const ToolLoopAgent();
@@ -457,6 +801,7 @@ Future<GenerateObjectResult<T>> runAgentObject<T>({
   ToolLoopConfig loopConfig = const ToolLoopConfig(),
   CancellationToken? cancelToken,
   Agent? agent,
+  LanguageModelCallOptions? options,
 }) async {
   final input = AgentInput(
     model: model,
@@ -464,6 +809,40 @@ Future<GenerateObjectResult<T>> runAgentObject<T>({
     tools: tools,
     loopConfig: loopConfig,
     cancelToken: cancelToken,
+    callOptions: options,
+  );
+
+  final effectiveAgent = agent ?? const ToolLoopAgent();
+  return effectiveAgent.runObject<T>(
+    input: input,
+    output: output,
+  );
+}
+
+/// Run an agent loop using structured prompt messages that produces a
+/// structured object result.
+Future<GenerateObjectResult<T>> runAgentPromptObject<T>({
+  required LanguageModel model,
+  required List<ModelMessage> promptMessages,
+  required Map<String, ExecutableTool> tools,
+  required OutputSpec<T> output,
+  ToolLoopConfig loopConfig = const ToolLoopConfig(),
+  CancellationToken? cancelToken,
+  Agent? agent,
+  LanguageModelCallOptions? options,
+}) async {
+  final initialMessages = promptMessages
+      .map((prompt) => ChatMessage.fromPromptMessage(prompt))
+      .toList();
+
+  final input = AgentInput(
+    model: model,
+    messages: initialMessages,
+    promptMessages: promptMessages,
+    tools: tools,
+    loopConfig: loopConfig,
+    cancelToken: cancelToken,
+    callOptions: options,
   );
 
   final effectiveAgent = agent ?? const ToolLoopAgent();
@@ -482,6 +861,7 @@ Future<AgentObjectRunWithSteps<T>> runAgentObjectWithSteps<T>({
   ToolLoopConfig loopConfig = const ToolLoopConfig(),
   CancellationToken? cancelToken,
   Agent? agent,
+  LanguageModelCallOptions? options,
 }) {
   final input = AgentInput(
     model: model,
@@ -489,6 +869,40 @@ Future<AgentObjectRunWithSteps<T>> runAgentObjectWithSteps<T>({
     tools: tools,
     loopConfig: loopConfig,
     cancelToken: cancelToken,
+    callOptions: options,
+  );
+
+  final effectiveAgent = agent ?? const ToolLoopAgent();
+  return effectiveAgent.runObjectWithSteps<T>(
+    input: input,
+    output: output,
+  );
+}
+
+/// Run an agent loop using structured prompt messages that produces a
+/// structured object result and step trace.
+Future<AgentObjectRunWithSteps<T>> runAgentPromptObjectWithSteps<T>({
+  required LanguageModel model,
+  required List<ModelMessage> promptMessages,
+  required Map<String, ExecutableTool> tools,
+  required OutputSpec<T> output,
+  ToolLoopConfig loopConfig = const ToolLoopConfig(),
+  CancellationToken? cancelToken,
+  Agent? agent,
+  LanguageModelCallOptions? options,
+}) {
+  final initialMessages = promptMessages
+      .map((prompt) => ChatMessage.fromPromptMessage(prompt))
+      .toList();
+
+  final input = AgentInput(
+    model: model,
+    messages: initialMessages,
+    promptMessages: promptMessages,
+    tools: tools,
+    loopConfig: loopConfig,
+    cancelToken: cancelToken,
+    callOptions: options,
   );
 
   final effectiveAgent = agent ?? const ToolLoopAgent();
@@ -513,8 +927,10 @@ StreamObjectResult<T> streamObject<T>({
   String? baseUrl,
   String? prompt,
   List<ChatMessage>? messages,
-  ChatPromptMessage? structuredPrompt,
+  ModelMessage? structuredPrompt,
+  List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
 }) {
   var builder = LLMBuilder().use(model).jsonSchema(output.format);
 
@@ -524,6 +940,8 @@ StreamObjectResult<T> streamObject<T>({
   if (baseUrl != null) {
     builder = builder.baseUrl(baseUrl);
   }
+
+  builder = _applyCallOptions(builder, options);
 
   final controller = StreamController<ChatStreamEvent>();
   final completer = Completer<GenerateObjectResult<T>>();
@@ -536,6 +954,7 @@ StreamObjectResult<T> streamObject<T>({
         prompt: prompt,
         messages: messages,
         structuredPrompt: structuredPrompt,
+        promptMessages: promptMessages,
         cancelToken: cancelToken,
       )) {
         if (event is TextDeltaEvent) {
@@ -611,6 +1030,44 @@ StreamObjectResult<T> streamObject<T>({
     events: controller.stream,
     asObject: completer.future,
   );
+}
+
+/// Apply per-call language model options to an [LLMBuilder].
+LLMBuilder _applyCallOptions(
+  LLMBuilder builder,
+  LanguageModelCallOptions? options,
+) {
+  if (options == null) return builder;
+
+  if (options.maxTokens != null) {
+    builder = builder.maxTokens(options.maxTokens!);
+  }
+  if (options.temperature != null) {
+    builder = builder.temperature(options.temperature!);
+  }
+  if (options.topP != null) {
+    builder = builder.topP(options.topP!);
+  }
+  if (options.topK != null) {
+    builder = builder.topK(options.topK!);
+  }
+  if (options.stopSequences != null) {
+    builder = builder.stopSequences(options.stopSequences!);
+  }
+  if (options.tools != null) {
+    builder = builder.tools(options.tools!);
+  }
+  if (options.toolChoice != null) {
+    builder = builder.toolChoice(options.toolChoice!);
+  }
+  if (options.user != null) {
+    builder = builder.user(options.user!);
+  }
+  if (options.serviceTier != null) {
+    builder = builder.serviceTier(options.serviceTier!);
+  }
+
+  return builder;
 }
 
 /// Simple [ChatResponse] implementation used when no provider-specific

@@ -42,6 +42,7 @@ library;
 
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 void main() async {
   print('=== OpenAI Responses API Examples ===\n');
@@ -97,6 +98,7 @@ Future<void> capabilityDetectionExample(String apiKey) async {
 
   try {
     // Create standard OpenAI provider (without Responses API)
+    // Standard provider (Chat Completions) – shown for capability contrast.
     final standardProvider =
         await ai().openai().apiKey(apiKey).model('gpt-4o-mini').build();
 
@@ -126,8 +128,9 @@ Future<void> capabilityDetectionExample(String apiKey) async {
       print('✅ OpenAI Responses API capability detected');
 
       // Safe casting to OpenAI provider
-      if (responsesProvider is OpenAIProvider) {
-        final responsesAPI = responsesProvider.responses;
+      if (responsesProvider is openai.OpenAIProvider) {
+        final openai.OpenAIProvider responsesProviderTyped = responsesProvider;
+        final responsesAPI = responsesProviderTyped.responses;
         if (responsesAPI != null) {
           print('✅ Responses API module available');
           print('   • Stateful conversations: Available');

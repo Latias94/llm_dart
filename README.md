@@ -83,6 +83,45 @@ dart pub add llm_dart
 
 ## Quick Start
 
+### Recommended Imports
+
+The project is now modularized. For new code, we recommend:
+
+- High-level builder & helpers (Vercel AI SDK-style):
+  - `import 'package:llm_dart/llm_dart.dart';`
+- Core models, capabilities, config, agents:
+  - `import 'package:llm_dart_core/llm_dart_core.dart';`
+- Provider-specific features:
+  - OpenAI: `import 'package:llm_dart_openai/llm_dart_openai.dart';`
+  - Anthropic: `import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';`
+  - Google: `import 'package:llm_dart_google/llm_dart_google.dart';`
+  - DeepSeek: `import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';`
+  - Ollama: `import 'package:llm_dart_ollama/llm_dart_ollama.dart';`
+  - xAI: `import 'package:llm_dart_xai/llm_dart_xai.dart';`
+  - Groq: `import 'package:llm_dart_groq/llm_dart_groq.dart';`
+  - Phind: `import 'package:llm_dart_phind/llm_dart_phind.dart';`
+  - ElevenLabs: `import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';`
+- Shared HTTP / provider utilities:
+  - `import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';`
+
+The legacy wrapper paths
+`package:llm_dart/core/...` and `package:llm_dart/models/...`
+are now marked as **deprecated** and will be removed in a future major release.
+Please prefer the imports listed above for new code and refactors.
+
+#### Legacy shims
+
+For backwards compatibility, a few legacy shim entrypoints remain:
+
+- `package:llm_dart/legacy/config_utils.dart`
+- `package:llm_dart/legacy/openai_legacy.dart`
+- `package:llm_dart/legacy/openai_compatible_defaults.dart`
+
+These are all marked as `@Deprecated` and will be removed in a future
+release. New code should use `llm_dart_core`, provider subpackages
+(`llm_dart_openai`, `llm_dart_openai_compatible`, etc.), and
+`llm_dart_provider_utils` instead.
+
 ### Basic Usage
 
 ```dart
@@ -90,32 +129,35 @@ import 'package:llm_dart/llm_dart.dart';
 
 void main() async {
   // Method 1: Using the new ai() builder with provider methods
-  final provider = await ai()
+  final model = await ai()
       .openai()
       .apiKey('your-api-key')
       .model('gpt-4')
       .temperature(0.7)
-      .build();
+      .buildLanguageModel();
 
   // Method 2: Using provider() with string ID (extensible)
-  final provider2 = await ai()
+  final model2 = await ai()
       .provider('openai')
       .apiKey('your-api-key')
       .model('gpt-4')
       .temperature(0.7)
-      .build();
+      .buildLanguageModel();
 
   // Method 3: Using convenience function
-  final directProvider = await createProvider(
+  final directModel = await createProvider(
     providerId: 'openai',
     apiKey: 'your-api-key',
     model: 'gpt-4',
     temperature: 0.7,
-  );
+  ).then((chat) => chat.buildLanguageModel());
 
   // Simple chat
-  final messages = [ChatMessage.user('Hello, world!')];
-  final response = await provider.chat(messages);
+  final prompt = ChatPromptBuilder.user().text('Hello, world!').build();
+  final response = await generateTextWithModel(
+    model,
+    promptMessages: [prompt],
+  );
   print(response.text);
 
   // Access thinking process (for supported models)
@@ -127,18 +169,7 @@ void main() async {
 
 ### Prompt Building Patterns
 
-For most use cases you can keep using simple `ChatMessage` helpers:
-
-```dart
-final messages = [
-  ChatMessage.system('You are a helpful assistant.'),
-  ChatMessage.user('Explain quantum computing in simple terms.'),
-];
-final response = await provider.chat(messages);
-print(response.text);
-```
-
-For advanced or multi‑modal prompts (text + images/files/audio/video), use the structured prompt model via `ChatPromptBuilder` and bridge it into `ChatMessage`:
+For most use cases, prefer the structured prompt model via `ChatPromptBuilder` and `ModelMessage`:
 
 ```dart
 // Build a structured, multi-part prompt
@@ -147,18 +178,17 @@ final prompt = ChatPromptBuilder.user()
     .imageUrl('https://example.com/cat.png')
     .build();
 
-// Send it through the regular chat API
-final response = await provider.chat([
-  ChatMessage.fromPromptMessage(prompt),
-]);
+// Send it via the model-centric helper (preferred)
+final model = createOpenAI(apiKey: 'sk-...').chat('gpt-4o-mini');
+final result = await generateTextWithModel(
+  model,
+  promptMessages: [prompt],
+);
 
-print(response.text);
+print(result.text);
 ```
 
-Under the hood all providers convert `ChatMessage` → `ChatPromptMessage`, so:
-
-- Use `ChatMessage.user/assistant/system` for simple text‑only flows.
-- Use `ChatPromptBuilder + ChatMessage.fromPromptMessage` when you need multiple parts, multiple attachments, or rich multi‑modal prompts (for example, Gemini, GPT‑4o vision, Anthropic documents).
+**Prompt-first 推荐**：默认使用 `ChatPromptBuilder` + `ModelMessage`；`ChatMessage` 仅为兼容旧代码的便捷封装。
 
 ### Streaming with DeepSeek Reasoning
 
@@ -167,20 +197,20 @@ import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
 
 void main() async {
-  // Create DeepSeek provider for streaming with thinking
-  final provider = await ai()
+  // Create DeepSeek model for streaming with thinking
+  final model = await ai()
       .deepseek()
       .apiKey('your-deepseek-key')
       .model('deepseek-reasoner')
       .temperature(0.7)
-      .build();
+      .buildLanguageModel();
 
-  final messages = [
-    ChatMessage.user('What is 15 + 27? Show your work.'),
-  ];
+  final prompt =
+      ChatPromptBuilder.user().text('What is 15 + 27? Show your work.').build();
 
   // Stream with real-time thinking process
-  await for (final event in provider.chatStream(messages)) {
+  await for (final event
+      in streamTextWithModel(model, promptMessages: [prompt])) {
     switch (event) {
       case ThinkingDeltaEvent(delta: final delta):
         // Show AI's thinking process in gray
@@ -742,13 +772,13 @@ if (response.toolCalls != null) {
 }
 ```
 
-## Advanced Usage: Structured Prompts (ChatPromptMessage + ChatContentPart)
+## Advanced Usage: Structured Prompts (ModelMessage + ChatContentPart)
 
-Under the hood all providers convert `ChatMessage` → `ChatPromptMessage`, so:
+Under the hood all providers convert the legacy `ChatMessage` model into the structured `ModelMessage` model, so:
 
 - You can keep using `ChatMessage.user(...)` / `ChatMessage.image(...)` for simple text or single‑attachment prompts.
 - For **multi‑part / multi‑modal** prompts (text + multiple images/files/audio/video + tool results), use the structured prompt model:
-  - `ChatPromptMessage` as the provider‑agnostic prompt.
+  - `ModelMessage` as the provider‑agnostic prompt.
   - `ChatContentPart` as building blocks (text, files, tool calls/results).
   - `ChatPromptBuilder` as a fluent helper to construct them.
 
@@ -775,10 +805,7 @@ Future<void> describeImageAcrossProviders(List<int> imageBytes) async {
       )
       .build();
 
-  // 2) Bridge into ChatMessage for the public ChatCapability API.
-  final messages = [ChatMessage.fromPromptMessage(prompt)];
-
-  // 3) Use the same prompt with different providers.
+  // 2) Use the same structured prompt with different providers via LanguageModel.
   final openai = await ai()
       .openai()
       .apiKey('OPENAI_KEY')
@@ -797,17 +824,26 @@ Future<void> describeImageAcrossProviders(List<int> imageBytes) async {
       .model('gemini-1.5-flash')
       .build();
 
-  final openaiResponse = await openai.chat(messages);
-  final anthropicResponse = await anthropic.chat(messages);
-  final googleResponse = await google.chat(messages);
+  final openaiResult = await generateTextWithModel(
+    openai,
+    promptMessages: [prompt],
+  );
+  final anthropicResult = await generateTextWithModel(
+    anthropic,
+    promptMessages: [prompt],
+  );
+  final googleResult = await generateTextWithModel(
+    google,
+    promptMessages: [prompt],
+  );
 
-  print('OpenAI: ${openaiResponse.text}');
-  print('Anthropic: ${anthropicResponse.text}');
-  print('Google: ${googleResponse.text}');
+  print('OpenAI: ${openaiResult.text}');
+  print('Anthropic: ${anthropicResult.text}');
+  print('Google: ${googleResult.text}');
 }
 ```
 
-Each provider maps the same `ChatPromptMessage` to its native format:
+Each provider maps the same `ModelMessage` to its native format:
 
 - OpenAI / OpenAI‑compatible: `messages[].content` with `text` + `image_url` / `input_*` parts.
 - Anthropic: `messages[].content` blocks with `text` + `image`/`document` + tool use/result blocks.
@@ -857,7 +893,7 @@ Future<void> toolRoundTrip(ChatCapability provider) async {
   };
 
   // 3) Build a structured tool result and send back.
-  final toolResultPrompt = ChatPromptMessage(
+  final toolResultPrompt = ModelMessage(
     role: ChatRole.user,
     parts: [
       ToolResultContentPart(
@@ -882,7 +918,10 @@ Future<void> toolRoundTrip(ChatCapability provider) async {
 推荐实践：
 
 - 简单场景：继续用 `ChatMessage.user/assistant/system` 这些便捷构造方法。
-- 复杂场景（多模态 + 工具 + 多部分）：用 `ChatPromptBuilder` 构造 `ChatPromptMessage`，再用 `ChatMessage.fromPromptMessage` 与现有 API 对接。
+- 复杂场景（多模态 + 工具 + 多部分）：用 `ChatPromptBuilder` 构造 `ModelMessage`，再通过：
+  - `generateTextWithModel(model, promptMessages: [...])`
+  - 或代理型 API（如 `runAgentPromptText` / `runAgentPromptObject`）
+  将结构化 prompt 传递给模型。
 
 ## Provider Examples
 

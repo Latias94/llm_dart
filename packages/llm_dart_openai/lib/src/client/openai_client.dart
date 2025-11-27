@@ -118,12 +118,12 @@ class OpenAIClient {
     _sseBuffer.clear();
   }
 
-  /// Build API messages from the structured ChatPromptMessage model.
+  /// Build API messages from the structured ModelMessage model.
   ///
   /// This provides a provider-agnostic content model that is mapped to
   /// OpenAI's chat/completions or Responses API message formats.
   List<Map<String, dynamic>> buildApiMessagesFromPrompt(
-    List<ChatPromptMessage> promptMessages,
+    List<ModelMessage> promptMessages,
   ) {
     final apiMessages = <Map<String, dynamic>>[];
 
@@ -242,7 +242,7 @@ class OpenAIClient {
     return result;
   }
 
-  Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {
+  Map<String, dynamic> _convertPromptMessage(ModelMessage message) {
     final role = switch (message.role) {
       ChatRole.system => 'system',
       ChatRole.user => 'user',
@@ -393,7 +393,7 @@ class OpenAIClient {
   }
 
   void _appendToolResultMessagesFromPrompt(
-    ChatPromptMessage message,
+    ModelMessage message,
     List<Map<String, dynamic>> apiMessages,
   ) {
     final fallbackText = message.parts

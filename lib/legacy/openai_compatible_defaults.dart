@@ -1,3 +1,11 @@
+@Deprecated(
+  'Legacy OpenAI-compatible provider defaults. '
+  'Use OpenAICompatibleProviderProfiles from '
+  'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart '
+  'for model- and provider-specific configuration. '
+  'This shim will be removed in a future release.',
+)
+
 /// Legacy OpenAI-compatible provider defaults.
 ///
 /// New code should prefer `OpenAICompatibleProviderProfiles` from the
@@ -5,7 +13,7 @@
 /// about models and capabilities.
 ///
 /// This file only provides an explicit import path for legacy code that still
-/// uses `OpenAICompatibleDefaults`:
+/// uses `OpenAICompatibleDefaults`: New code should not depend on this path.
 /// `import 'package:llm_dart/legacy/openai_compatible_defaults.dart';`.
 library;
 

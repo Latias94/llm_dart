@@ -1,4 +1,4 @@
-import 'capability.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Centralized provider default configurations
 ///

@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
-import 'package:llm_dart/core/config.dart';
-import 'package:llm_dart/utils/http_config_utils.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:test/test.dart';
 
 /// A fake HttpClientAdapter that always returns a successful 200 response.

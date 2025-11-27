@@ -1,5 +1,4 @@
-import '../../core/capability.dart';
-import '../../core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import '../../core/provider_defaults.dart';
 import '../elevenlabs/elevenlabs.dart';
 import 'base_factory.dart';

@@ -21,27 +21,27 @@ void main() async {
   // Get API key
   final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
 
-  // Create AI provider with enhanced capabilities
-  final provider = await ai()
+  // Create AI model with enhanced capabilities
+  final model = await ai()
       .openai()
       .apiKey(apiKey)
       .model('gpt-4o')
       .temperature(0.1)
       .maxTokens(1000)
-      .build();
+      .buildLanguageModel();
 
   // Demonstrate enhanced tool calling features
-  await demonstrateToolValidation(provider);
-  await demonstrateToolChoiceStrategies(provider);
-  await demonstrateNestedObjectStructures(provider);
-  await demonstrateStructuredOutputWithTools(provider);
+  await demonstrateToolValidation(model);
+  await demonstrateToolChoiceStrategies(model);
+  await demonstrateNestedObjectStructures(model);
+  await demonstrateStructuredOutputWithTools(model);
   await demonstrateProviderSpecificFeatures();
 
   print('\n✅ Enhanced tool calling completed!');
 }
 
 /// Demonstrate tool validation and error handling
-Future<void> demonstrateToolValidation(ChatCapability provider) async {
+Future<void> demonstrateToolValidation(LanguageModel model) async {
   print('🔍 Tool Validation and Error Handling:\n');
 
   try {
@@ -70,14 +70,18 @@ Future<void> demonstrateToolValidation(ChatCapability provider) async {
       ),
     );
 
-    final messages = [
-      ChatMessage.user('Calculate 15.7 * 8.3 with 2 decimal places precision')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('Calculate 15.7 * 8.3 with 2 decimal places precision')
+        .build();
 
     print('   User: Calculate 15.7 * 8.3 with 2 decimal places precision');
     print('   Available tools: calculate (with validation)');
 
-    final response = await provider.chatWithTools(messages, [calculatorTool]);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: [calculatorTool]),
+    );
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
       print('   🔧 Tool calls made:');
@@ -118,7 +122,7 @@ Future<void> demonstrateToolValidation(ChatCapability provider) async {
 }
 
 /// Demonstrate different tool choice strategies
-Future<void> demonstrateToolChoiceStrategies(ChatCapability provider) async {
+Future<void> demonstrateToolChoiceStrategies(LanguageModel model) async {
   print('🎯 Tool Choice Strategies:\n');
 
   final tools = [
@@ -182,8 +186,7 @@ Future<void> demonstrateToolChoiceStrategies(ChatCapability provider) async {
 }
 
 /// Demonstrate structured outputs with tools
-Future<void> demonstrateStructuredOutputWithTools(
-    ChatCapability provider) async {
+Future<void> demonstrateStructuredOutputWithTools(LanguageModel model) async {
   print('📊 Structured Output with Tools:\n');
 
   try {
@@ -225,6 +228,22 @@ Future<void> demonstrateStructuredOutputWithTools(
     } catch (e) {
       print('   📋 Structured output validation: ❌ $e');
     }
+
+    // Example invocation (no actual call to keep example short)
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Analyze the impact of AI on software engineering productivity. Provide insights, metrics, and risks.')
+        .build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(
+        tools: [analysisTool],
+        responseFormat: structuredFormat.toOpenAIResponseFormat(),
+      ),
+    );
+    print(
+        '   📝 Structured response preview: ${response.text?.substring(0, 120) ?? ''}...\n');
 
     print('   ✅ Structured output with tools completed\n');
   } catch (e) {
@@ -340,18 +359,20 @@ Future<void> demonstrateNestedObjectStructures(ChatCapability provider) async {
       ),
     );
 
-    final messages = [
-      ChatMessage.user(
-        'Process order ORD001 for Alice Johnson: 2x Laptop at \$999 each (electronics), 1x T-shirt at \$25 (clothing). Total: \$2023. Use the process_orders tool.',
-      )
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Process order ORD001 for Alice Johnson: 2x Laptop at \$999 each (electronics), 1x T-shirt at \$25 (clothing). Total: \$2023. Use the process_orders tool.')
+        .build();
 
     print('   User: Process order ORD001 for Alice Johnson...');
     print(
         '   Available tools: process_orders (with nested arrays and objects)');
 
-    final response =
-        await provider.chatWithTools(messages, [processOrdersTool]);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: [processOrdersTool]),
+    );
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
       print('   🔧 AI tool calls:');

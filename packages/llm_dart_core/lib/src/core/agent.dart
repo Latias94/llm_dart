@@ -14,8 +14,21 @@ class AgentInput {
   /// Language model used by the agent.
   final LanguageModel model;
 
-  /// Initial conversation messages.
+  /// Initial conversation messages (legacy chat model).
+  ///
+  /// This is the primary representation used by [LanguageModel] today.
+  /// For prompt-first call sites that work with [ModelMessage], see
+  /// [promptMessages].
   final List<ChatMessage> messages;
+
+  /// Optional structured prompt messages.
+  ///
+  /// This allows callers to provide the initial conversation using the
+  /// multi-part [ModelMessage] model. Agents that support prompt-first
+  /// operation (such as [ToolLoopAgent]) may prefer this representation
+  /// and bridge to [ChatMessage] internally via
+  /// [ChatMessage.fromPromptMessage] when needed.
+  final List<ModelMessage>? promptMessages;
 
   /// Map of tool name to [ExecutableTool] implementation.
   final Map<String, ExecutableTool> tools;
@@ -31,27 +44,39 @@ class AgentInput {
   /// be handled by tool implementations if needed.
   final CancellationToken? cancelToken;
 
+  /// Optional per-call language model options for this agent run.
+  ///
+  /// These options are forwarded to [LanguageModel] calls made during
+  /// the agent loop via the `*WithOptions` methods when available.
+  final LanguageModelCallOptions? callOptions;
+
   const AgentInput({
     required this.model,
     required this.messages,
     required this.tools,
+    this.promptMessages,
     this.loopConfig = const ToolLoopConfig(),
     this.cancelToken,
+    this.callOptions,
   });
 
   AgentInput copyWith({
     LanguageModel? model,
     List<ChatMessage>? messages,
+    List<ModelMessage>? promptMessages,
     Map<String, ExecutableTool>? tools,
     ToolLoopConfig? loopConfig,
     CancellationToken? cancelToken,
+    LanguageModelCallOptions? callOptions,
   }) {
     return AgentInput(
       model: model ?? this.model,
       messages: messages ?? this.messages,
+      promptMessages: promptMessages ?? this.promptMessages,
       tools: tools ?? this.tools,
       loopConfig: loopConfig ?? this.loopConfig,
       cancelToken: cancelToken ?? this.cancelToken,
+      callOptions: callOptions ?? this.callOptions,
     );
   }
 }
@@ -242,12 +267,23 @@ class ToolLoopAgent implements Agent {
 
   @override
   Future<AgentTextRunWithSteps> runTextWithSteps(AgentInput input) async {
-    var messages = List<ChatMessage>.from(input.messages);
+    // Prefer explicit ChatMessage conversation when provided; otherwise,
+    // bridge structured prompt messages to ChatMessage using the
+    // ChatMessage.fromPromptMessage helper so that providers can still
+    // recover the original ModelMessage-based content model.
+    var messages = input.messages.isNotEmpty
+        ? List<ChatMessage>.from(input.messages)
+        : (input.promptMessages != null
+            ? input.promptMessages!
+                .map((prompt) => ChatMessage.fromPromptMessage(prompt))
+                .toList()
+            : <ChatMessage>[]);
     final steps = <AgentStepRecord>[];
 
     for (var i = 0; i < input.loopConfig.maxIterations; i++) {
-      final result = await input.model.generateText(
+      final result = await input.model.generateTextWithOptions(
         messages,
+        options: input.callOptions,
         cancelToken: input.cancelToken,
       );
       final calls = result.toolCalls ?? const [];
@@ -374,8 +410,9 @@ class ToolLoopAgent implements Agent {
     }
 
     // Fallback after reaching iteration limit.
-    final finalResult = await input.model.generateText(
+    final finalResult = await input.model.generateTextWithOptions(
       messages,
+      options: input.callOptions,
       cancelToken: input.cancelToken,
     );
     steps.add(

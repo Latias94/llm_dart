@@ -11,6 +11,7 @@ class _TestEmbeddingProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     // Minimal implementation for factory compatibility; not used in tests.
@@ -21,14 +22,20 @@ class _TestEmbeddingProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) =>
-      chat(messages, cancelToken: cancelToken);
+      chat(
+        messages,
+        options: options,
+        cancelToken: cancelToken,
+      );
 
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     yield const TextDeltaEvent('unused');

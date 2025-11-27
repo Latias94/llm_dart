@@ -21,21 +21,21 @@ void main() async {
   // Get API key
   final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
 
-  // Create AI provider
-  final provider = await ai()
+  // Create AI model
+  final model = await ai()
       .openai()
       .apiKey(apiKey)
       .model('gpt-4o-mini')
       .temperature(0.7)
       .maxTokens(500)
-      .build();
+      .buildLanguageModel();
 
   // Demonstrate different error handling scenarios
   await demonstrateErrorTypes();
-  await demonstrateRetryStrategies(provider);
-  await demonstrateGracefulDegradation(provider);
-  await demonstrateCircuitBreaker(provider);
-  await demonstrateMonitoringAndLogging(provider);
+  await demonstrateRetryStrategies(model);
+  await demonstrateGracefulDegradation(model);
+  await demonstrateCircuitBreaker(model);
+  await demonstrateMonitoringAndLogging(model);
 
   print('\n✅ Error handling completed!');
 }
@@ -70,13 +70,17 @@ Future<void> testAuthenticationError() async {
   print('   🔐 Testing Authentication Error:');
 
   try {
-    final invalidAi = await ai()
+    final invalidModel = await ai()
         .openai()
         .apiKey('invalid-key-12345')
         .model('gpt-4o-mini')
-        .build();
+        .buildLanguageModel();
 
-    await invalidAi.chat([ChatMessage.user('Hello')]);
+    final prompt = ChatPromptBuilder.user().text('Hello').build();
+    await generateTextWithModel(
+      invalidModel,
+      promptMessages: [prompt],
+    );
     print('      ❌ Expected authentication error but got success');
   } on AuthError catch (e) {
     print('      ✅ Caught AuthError: ${e.message}');
@@ -104,13 +108,17 @@ Future<void> testInvalidRequestError() async {
   print('   📝 Testing Invalid Request Error:');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY')
         .model('invalid-model-name-xyz')
-        .build();
+        .buildLanguageModel();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    final prompt = ChatPromptBuilder.user().text('Hello').build();
+    await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
     print('      ❌ Expected invalid request error but got success');
   } on InvalidRequestError catch (e) {
     print('      ✅ Caught InvalidRequestError: ${e.message}');
@@ -132,14 +140,18 @@ Future<void> testNetworkError() async {
   print('   🌐 Testing Network Error:');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey('sk-test')
         .baseUrl('https://invalid-domain-12345.com/v1/')
         .model('gpt-4o-mini')
-        .build();
+        .buildLanguageModel();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    final prompt = ChatPromptBuilder.user().text('Hello').build();
+    await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
     print('      ❌ Expected network error but got success');
   } on HttpError catch (e) {
     print('      ✅ Caught HttpError: ${e.message}');
@@ -158,14 +170,18 @@ Future<void> testTimeoutError() async {
   print('   ⏰ Testing Timeout Error:');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY')
         .model('gpt-4o-mini')
         .timeout(Duration(milliseconds: 1)) // Very short timeout
-        .build();
+        .buildLanguageModel();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    final prompt = ChatPromptBuilder.user().text('Hello').build();
+    await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
     print('      ❌ Expected timeout error but got success');
   } on TimeoutError catch (e) {
     print('      ✅ Caught TimeoutError: ${e.message}');
@@ -220,23 +236,23 @@ Future<void> testUnsupportedCapabilityError() async {
 }
 
 /// Demonstrate retry strategies
-Future<void> demonstrateRetryStrategies(ChatCapability ai) async {
+Future<void> demonstrateRetryStrategies(LanguageModel model) async {
   print('🔄 Retry Strategies:\n');
 
   // Test exponential backoff
-  await testExponentialBackoff(ai);
+  await testExponentialBackoff(model);
 
   // Test linear backoff
-  await testLinearBackoff(ai);
+  await testLinearBackoff(model);
 
   // Test immediate retry
-  await testImmediateRetry(ai);
+  await testImmediateRetry(model);
 
   print('   ✅ Retry strategies demonstration completed\n');
 }
 
 /// Test exponential backoff retry
-Future<void> testExponentialBackoff(ChatCapability ai) async {
+Future<void> testExponentialBackoff(LanguageModel model) async {
   print('   📈 Exponential Backoff Retry:');
 
   final retryHandler = RetryHandler(
@@ -251,7 +267,12 @@ Future<void> testExponentialBackoff(ChatCapability ai) async {
       if (DateTime.now().millisecond % 3 != 0) {
         throw Exception('Simulated intermittent failure');
       }
-      return await ai.chat([ChatMessage.user('Hello')]);
+      return await generateTextWithModel(
+        model,
+        promptMessages: [
+          ChatPromptBuilder.user().text('Hello').build(),
+        ],
+      );
     });
 
     final text = result.text ?? '';
@@ -263,7 +284,7 @@ Future<void> testExponentialBackoff(ChatCapability ai) async {
 }
 
 /// Test linear backoff retry
-Future<void> testLinearBackoff(ChatCapability ai) async {
+Future<void> testLinearBackoff(LanguageModel model) async {
   print('   📊 Linear Backoff Retry:');
 
   final retryHandler = RetryHandler(
@@ -274,7 +295,12 @@ Future<void> testLinearBackoff(ChatCapability ai) async {
 
   try {
     final result = await retryHandler.execute(() async {
-      return await ai.chat([ChatMessage.user('What is 2+2?')]);
+      return await generateTextWithModel(
+        model,
+        promptMessages: [
+          ChatPromptBuilder.user().text('What is 2+2?').build(),
+        ],
+      );
     });
 
     print('      ✅ Success: ${result.text}');
@@ -284,7 +310,7 @@ Future<void> testLinearBackoff(ChatCapability ai) async {
 }
 
 /// Test immediate retry
-Future<void> testImmediateRetry(ChatCapability ai) async {
+Future<void> testImmediateRetry(LanguageModel model) async {
   print('   ⚡ Immediate Retry:');
 
   final retryHandler = RetryHandler(
@@ -294,7 +320,12 @@ Future<void> testImmediateRetry(ChatCapability ai) async {
 
   try {
     final result = await retryHandler.execute(() async {
-      return await ai.chat([ChatMessage.user('Hello again!')]);
+      return await generateTextWithModel(
+        model,
+        promptMessages: [
+          ChatPromptBuilder.user().text('Hello again!').build(),
+        ],
+      );
     });
 
     final text = result.text ?? '';
@@ -306,11 +337,16 @@ Future<void> testImmediateRetry(ChatCapability ai) async {
 }
 
 /// Demonstrate graceful degradation
-Future<void> demonstrateGracefulDegradation(ChatCapability ai) async {
+Future<void> demonstrateGracefulDegradation(LanguageModel model) async {
   print('🎭 Graceful Degradation:\n');
 
   final fallbackHandler = FallbackHandler([
-    () => ai.chat([ChatMessage.user('What is the weather like?')]),
+    () => generateTextWithModel(
+          model,
+          promptMessages: [
+            ChatPromptBuilder.user().text('What is the weather like?').build()
+          ],
+        ),
     () => _fallbackToSimpleResponse(),
     () => _fallbackToStaticResponse(),
   ]);
@@ -326,7 +362,7 @@ Future<void> demonstrateGracefulDegradation(ChatCapability ai) async {
 }
 
 /// Demonstrate circuit breaker pattern
-Future<void> demonstrateCircuitBreaker(ChatCapability ai) async {
+Future<void> demonstrateCircuitBreaker(LanguageModel model) async {
   print('⚡ Circuit Breaker Pattern:\n');
 
   final circuitBreaker = CircuitBreaker(
@@ -342,7 +378,12 @@ Future<void> demonstrateCircuitBreaker(ChatCapability ai) async {
         if (i <= 2) {
           throw Exception('Simulated service failure');
         }
-        return await ai.chat([ChatMessage.user('Hello $i')]);
+        return await generateTextWithModel(
+          model,
+          promptMessages: [
+            ChatPromptBuilder.user().text('Hello $i').build(),
+          ],
+        );
       });
 
       final text = result.text ?? '';
@@ -365,7 +406,12 @@ Future<void> demonstrateMonitoringAndLogging(ChatCapability ai) async {
   try {
     // Monitor a successful call
     await monitor.trackCall('chat_request', () async {
-      return await ai.chat([ChatMessage.user('Successful request')]);
+      return await generateTextWithModel(
+        model,
+        promptMessages: [
+          ChatPromptBuilder.user().text('Successful request').build()
+        ],
+      );
     });
   } catch (e) {
     print('   ⚠️  Monitoring error during successful call: $e');

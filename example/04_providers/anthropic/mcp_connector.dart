@@ -32,8 +32,8 @@ Future<void> demonstrateBasicMcpConnector(String apiKey) async {
   print('🔧 Basic MCP Connector:\n');
 
   try {
-    // Configure Anthropic provider with MCP server
-    final provider = await ai()
+    // Configure Anthropic language model with MCP server (prompt-first)
+    final model = await ai()
         .anthropic((anthropic) => anthropic.mcpServers([
               const AnthropicMCPServer.url(
                 name: 'example-server',
@@ -42,22 +42,26 @@ Future<void> demonstrateBasicMcpConnector(String apiKey) async {
             ]))
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
-        .build();
+        .buildLanguageModel();
 
     print('   📡 Configured MCP server: example-server');
     print('   🤖 Model: claude-sonnet-4-20250514');
 
     // Send a message that might use MCP tools
-    final response = await provider.chat([
-      ChatMessage.user('What tools do you have available from the MCP server?')
-    ]);
+    final prompt = ChatPromptBuilder.user()
+        .text('What tools do you have available from the MCP server?')
+        .build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   💬 User: What tools do you have available from the MCP server?');
     print('   🤖 Claude: ${response.text}');
 
     // Check for MCP tool usage
-    final mcpToolUses =
-        (response as anthropic_sub.AnthropicChatResponse).mcpToolUses;
+    final raw = response.rawResponse as anthropic_sub.AnthropicChatResponse?;
+    final mcpToolUses = raw?.mcpToolUses;
     if (mcpToolUses != null && mcpToolUses.isNotEmpty) {
       print('   🔧 MCP Tools Used:');
       for (final toolUse in mcpToolUses) {
@@ -76,7 +80,7 @@ Future<void> demonstrateMultipleMcpServers(String apiKey) async {
   print('🌐 Multiple MCP Servers:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .anthropic((anthropic) => anthropic.withMcpServers(
               fileServerUrl: 'https://file-server.example.com/mcp',
               databaseServerUrl: 'https://db-server.example.com/mcp',
@@ -94,7 +98,7 @@ Future<void> demonstrateMultipleMcpServers(String apiKey) async {
             ))
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
-        .build();
+        .buildLanguageModel();
 
     print('   📡 Configured multiple MCP servers:');
     print('      • file_server (File operations)');
@@ -102,10 +106,13 @@ Future<void> demonstrateMultipleMcpServers(String apiKey) async {
     print('      • web_server (Web scraping)');
     print('      • custom-analytics (Data analysis)');
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Can you help me analyze some data using the available tools?')
-    ]);
+    final prompt = ChatPromptBuilder.user()
+        .text('Can you help me analyze some data using the available tools?')
+        .build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print(
         '   💬 User: Can you help me analyze some data using the available tools?');
@@ -126,7 +133,7 @@ Future<void> demonstrateMcpWithAuthentication(String apiKey) async {
     // through an OAuth flow. This is just for demonstration.
     const mockAccessToken = 'mock_access_token_here';
 
-    final provider = await ai()
+    final model = await ai()
         .anthropic((anthropic) => anthropic.mcpServers([
               const AnthropicMCPServer.url(
                 name: 'authenticated-server',
@@ -140,21 +147,26 @@ Future<void> demonstrateMcpWithAuthentication(String apiKey) async {
             ]))
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
-        .build();
+        .buildLanguageModel();
 
     print('   🔒 Configured authenticated MCP server');
     print('   🎫 Using OAuth access token');
     print('   🛡️ Limited to specific tools: secure_operation, private_data');
 
-    final response = await provider
-        .chat([ChatMessage.user('Access my private data securely.')]);
+    final prompt = ChatPromptBuilder.user()
+        .text('Access my private data securely.')
+        .build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   💬 User: Access my private data securely.');
     print('   🤖 Claude: ${response.text}');
 
     // Check for MCP tool results
-    final mcpToolResults =
-        (response as anthropic_sub.AnthropicChatResponse).mcpToolResults;
+    final raw = response.rawResponse as anthropic_sub.AnthropicChatResponse?;
+    final mcpToolResults = raw?.mcpToolResults;
     if (mcpToolResults != null && mcpToolResults.isNotEmpty) {
       print('   📊 MCP Tool Results:');
       for (final result in mcpToolResults) {

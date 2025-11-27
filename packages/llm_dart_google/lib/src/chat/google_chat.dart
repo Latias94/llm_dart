@@ -8,7 +8,7 @@ import '../client/google_client.dart';
 import '../config/google_config.dart';
 import '../files/google_files.dart';
 
-class GoogleChat implements ChatCapability {
+class GoogleChat implements ChatCapability, PromptChatCapability {
   final GoogleClient client;
   final GoogleConfig config;
 
@@ -28,10 +28,54 @@ class GoogleChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    final effectiveTools = tools ?? config.tools;
-    final requestBody = _buildRequestBody(messages, effectiveTools, false);
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    return chatPrompt(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async* {
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    yield* chatPromptStream(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  void _resetStreamState() {
+    _streamBuffer = '';
+    _isFirstChunk = true;
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    final requestBody = _buildRequestBodyFromPrompt(
+      messages,
+      tools,
+      false,
+      options: options,
+    );
     final responseData = await client.postJson(
       _buildEndpoint(stream: false),
       requestBody,
@@ -41,15 +85,20 @@ class GoogleChat implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     _resetStreamState();
 
-    final effectiveTools = tools ?? config.tools;
-    final requestBody = _buildRequestBody(messages, effectiveTools, true);
+    final requestBody = _buildRequestBodyFromPrompt(
+      messages,
+      tools,
+      true,
+      options: options,
+    );
 
     final stream = client.postStreamRaw(
       _buildEndpoint(stream: true),
@@ -65,17 +114,18 @@ class GoogleChat implements ChatCapability {
     }
   }
 
-  void _resetStreamState() {
-    _streamBuffer = '';
-    _isFirstChunk = true;
-  }
-
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -322,22 +372,12 @@ class GoogleChat implements ChatCapability {
     return null;
   }
 
-  Map<String, dynamic> _buildRequestBody(
-    List<ChatMessage> messages,
-    List<Tool>? tools,
-    bool stream,
-  ) {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-
-    return _buildRequestBodyFromPrompt(promptMessages, tools, stream);
-  }
-
   Map<String, dynamic> _buildRequestBodyFromPrompt(
-    List<ChatPromptMessage> promptMessages,
+    List<ModelMessage> promptMessages,
     List<Tool>? tools,
-    bool stream,
-  ) {
+    bool stream, {
+    LanguageModelCallOptions? options,
+  }) {
     final contents = <Map<String, dynamic>>[];
 
     final systemTexts = <String>[];
@@ -346,7 +386,7 @@ class GoogleChat implements ChatCapability {
       systemTexts.add(config.systemPrompt!);
     }
 
-    final remainingMessages = <ChatPromptMessage>[];
+    final remainingMessages = <ModelMessage>[];
     var isPrefix = true;
     for (final message in promptMessages) {
       if (isPrefix && message.role == ChatRole.system) {
@@ -380,23 +420,30 @@ class GoogleChat implements ChatCapability {
 
     final generationConfig = <String, dynamic>{};
 
-    if (config.maxTokens != null) {
-      generationConfig['maxOutputTokens'] = config.maxTokens;
+    final effectiveMaxTokens = options?.maxTokens ?? config.maxTokens;
+    final effectiveTemperature = options?.temperature ?? config.temperature;
+    final effectiveTopP = options?.topP ?? config.topP;
+    final effectiveTopK = options?.topK ?? config.topK;
+    final effectiveStopSequences =
+        options?.stopSequences ?? config.stopSequences;
+
+    if (effectiveMaxTokens != null) {
+      generationConfig['maxOutputTokens'] = effectiveMaxTokens;
     }
-    if (config.temperature != null) {
-      generationConfig['temperature'] = config.temperature;
+    if (effectiveTemperature != null) {
+      generationConfig['temperature'] = effectiveTemperature;
     }
-    if (config.topP != null) {
-      generationConfig['topP'] = config.topP;
+    if (effectiveTopP != null) {
+      generationConfig['topP'] = effectiveTopP;
     }
-    if (config.topK != null) {
-      generationConfig['topK'] = config.topK;
+    if (effectiveTopK != null) {
+      generationConfig['topK'] = effectiveTopK;
     }
     if (config.candidateCount != null) {
       generationConfig['candidateCount'] = config.candidateCount;
     }
-    if (config.stopSequences != null) {
-      generationConfig['stopSequences'] = config.stopSequences;
+    if (effectiveStopSequences != null) {
+      generationConfig['stopSequences'] = effectiveStopSequences;
     }
 
     if (config.frequencyPenalty != null) {
@@ -459,7 +506,7 @@ class GoogleChat implements ChatCapability {
           effectiveSafetySettings.map((s) => s.toJson()).toList();
     }
 
-    final effectiveTools = tools ?? config.tools;
+    final effectiveTools = options?.tools ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = [
         {
@@ -468,7 +515,7 @@ class GoogleChat implements ChatCapability {
         },
       ];
 
-      final effectiveToolChoice = config.toolChoice;
+      final effectiveToolChoice = options?.toolChoice ?? config.toolChoice;
       if (effectiveToolChoice != null) {
         body['toolConfig'] =
             _convertToolChoice(effectiveToolChoice, effectiveTools);
@@ -650,7 +697,7 @@ class GoogleChat implements ChatCapability {
 
   bool get _supportsUrlContextTool => _supportsCodeExecutionTool;
 
-  Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {
+  Map<String, dynamic> _convertPromptMessage(ModelMessage message) {
     final parts = <Map<String, dynamic>>[];
 
     final role = message.role == ChatRole.user ? 'user' : 'model';

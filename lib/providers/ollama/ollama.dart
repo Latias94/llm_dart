@@ -34,7 +34,7 @@
 library;
 
 import 'package:llm_dart_ollama/llm_dart_ollama.dart';
-import '../../models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 export 'package:llm_dart_ollama/llm_dart_ollama.dart';
 export 'admin.dart';

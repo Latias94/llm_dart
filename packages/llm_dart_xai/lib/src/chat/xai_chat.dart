@@ -6,7 +6,7 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import '../client/xai_client.dart';
 import '../config/xai_config.dart';
 
-class XAIChat implements ChatCapability {
+class XAIChat implements ChatCapability, PromptChatCapability {
   final XAIClient client;
   final XAIConfig config;
 
@@ -17,57 +17,49 @@ class XAIChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    if (config.apiKey.isEmpty) {
-      throw const AuthError('Missing xAI API key');
-    }
-
-    final body = _buildRequestBody(messages, tools, false);
-    final response = await client.postJson(
-      chatEndpoint,
-      body,
-      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    return chatPrompt(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
     );
-    return XAIChatResponse(response);
   }
 
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
-    if (config.apiKey.isEmpty) {
-      yield ErrorEvent(const AuthError('Missing xAI API key'));
-      return;
-    }
-
-    try {
-      final effectiveTools = tools ?? config.tools;
-      final body = _buildRequestBody(messages, effectiveTools, true);
-
-      final stream = client.postStreamRaw(chatEndpoint, body,
-          cancelToken: CancellationUtils.toDioCancelToken(cancelToken));
-
-      await for (final chunk in stream) {
-        final events = _parseStreamEvents(chunk);
-        for (final event in events) {
-          yield event;
-        }
-      }
-    } catch (e) {
-      yield ErrorEvent(GenericError('Unexpected error: $e'));
-    }
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    yield* chatPromptStream(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -85,14 +77,74 @@ class XAIChat implements ChatCapability {
     return text;
   }
 
-  Map<String, dynamic> _buildRequestBody(
-    List<ChatMessage> messages,
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
     List<Tool>? tools,
-    bool stream,
-  ) {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    if (config.apiKey.isEmpty) {
+      throw const AuthError('Missing xAI API key');
+    }
 
+    final body = _buildRequestBody(
+      messages,
+      tools,
+      false,
+      options: options,
+    );
+    final response = await client.postJson(
+      chatEndpoint,
+      body,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
+    return XAIChatResponse(response);
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async* {
+    if (config.apiKey.isEmpty) {
+      yield ErrorEvent(const AuthError('Missing xAI API key'));
+      return;
+    }
+
+    try {
+      final body = _buildRequestBody(
+        messages,
+        tools,
+        true,
+        options: options,
+      );
+
+      final stream = client.postStreamRaw(
+        chatEndpoint,
+        body,
+        cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+      );
+
+      await for (final chunk in stream) {
+        final events = _parseStreamEvents(chunk);
+        for (final event in events) {
+          yield event;
+        }
+      }
+    } catch (e) {
+      yield ErrorEvent(GenericError('Unexpected error: $e'));
+    }
+  }
+
+  Map<String, dynamic> _buildRequestBody(
+    List<ModelMessage> promptMessages,
+    List<Tool>? tools,
+    bool stream, {
+    LanguageModelCallOptions? options,
+  }) {
     final apiMessages = _buildXaiMessagesFromPrompt(promptMessages);
 
     // Prefer explicit system messages over config.systemPrompt
@@ -112,24 +164,29 @@ class XAIChat implements ChatCapability {
       'stream': stream,
     };
 
-    if (config.temperature != null) {
-      body['temperature'] = config.temperature;
+    final effectiveTemperature = options?.temperature ?? config.temperature;
+    final effectiveMaxTokens = options?.maxTokens ?? config.maxTokens;
+    final effectiveTopP = options?.topP ?? config.topP;
+    final effectiveTopK = options?.topK ?? config.topK;
+
+    if (effectiveTemperature != null) {
+      body['temperature'] = effectiveTemperature;
     }
-    if (config.maxTokens != null) {
-      body['max_tokens'] = config.maxTokens;
+    if (effectiveMaxTokens != null) {
+      body['max_tokens'] = effectiveMaxTokens;
     }
-    if (config.topP != null) {
-      body['top_p'] = config.topP;
+    if (effectiveTopP != null) {
+      body['top_p'] = effectiveTopP;
     }
-    if (config.topK != null) {
-      body['top_k'] = config.topK;
+    if (effectiveTopK != null) {
+      body['top_k'] = effectiveTopK;
     }
 
-    final effectiveTools = tools ?? config.tools;
+    final effectiveTools = options?.tools ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = effectiveTools.map(_convertTool).toList();
 
-      final effectiveToolChoice = config.toolChoice;
+      final effectiveToolChoice = options?.toolChoice ?? config.toolChoice;
       if (effectiveToolChoice != null) {
         body['tool_choice'] = effectiveToolChoice.toJson();
       }
@@ -148,9 +205,9 @@ class XAIChat implements ChatCapability {
     return body;
   }
 
-  /// Build XAI chat messages from the structured ChatPromptMessage model.
+  /// Build XAI chat messages from the structured ModelMessage model.
   List<Map<String, dynamic>> _buildXaiMessagesFromPrompt(
-    List<ChatPromptMessage> promptMessages,
+    List<ModelMessage> promptMessages,
   ) {
     final apiMessages = <Map<String, dynamic>>[];
 
@@ -168,7 +225,7 @@ class XAIChat implements ChatCapability {
     return apiMessages;
   }
 
-  Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {
+  Map<String, dynamic> _convertPromptMessage(ModelMessage message) {
     final role = switch (message.role) {
       ChatRole.system => 'system',
       ChatRole.user => 'user',
@@ -305,7 +362,7 @@ class XAIChat implements ChatCapability {
   }
 
   void _appendToolResultMessagesFromPrompt(
-    ChatPromptMessage message,
+    ModelMessage message,
     List<Map<String, dynamic>> apiMessages,
   ) {
     final fallbackText = message.parts

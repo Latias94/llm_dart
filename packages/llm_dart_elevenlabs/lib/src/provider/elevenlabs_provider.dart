@@ -28,6 +28,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     throw const ProviderError('ElevenLabs does not support chat functionality');
@@ -36,9 +37,15 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -53,6 +60,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     yield ErrorEvent(

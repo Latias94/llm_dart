@@ -1,7 +1,9 @@
 import 'dart:convert';
 
-import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
+
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart/llm_dart.dart' as root;
 
 class FakeChatResponse implements ChatResponse {
   final String? _text;
@@ -41,6 +43,8 @@ class FakeLanguageModel implements LanguageModel {
   final LLMConfig config;
 
   int callCount = 0;
+
+  LanguageModelCallOptions? lastOptions;
 
   FakeLanguageModel(this.providerId, this.modelId, this.config);
 
@@ -124,6 +128,47 @@ class FakeLanguageModel implements LanguageModel {
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
     final object = output.fromJson(decoded);
     return GenerateObjectResult<T>(object: object, textResult: textResult);
+  }
+
+  @override
+  Future<GenerateTextResult> generateTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    lastOptions = options;
+    return generateText(messages, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<ChatStreamEvent> streamTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    lastOptions = options;
+    return streamText(messages, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<StreamTextPart> streamTextPartsWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    lastOptions = options;
+    return streamTextParts(messages, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
+    OutputSpec<T> output,
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    lastOptions = options;
+    return generateObject<T>(output, messages, cancelToken: cancelToken);
   }
 }
 
@@ -245,6 +290,133 @@ void main() {
 
       expect(result.object.result, equals(3));
     });
+
+    test('runText forwards AgentInput.callOptions to LanguageModel', () async {
+      final model = FakeLanguageModel(
+        'fake',
+        'test-model',
+        LLMConfig(baseUrl: '', model: 'test-model'),
+      );
+
+      final tools = <String, ExecutableTool>{
+        'get_sum': ExecutableTool(
+          schema: Tool.function(
+            name: 'get_sum',
+            description: 'Sum two integers',
+            parameters: ParametersSchema(
+              schemaType: 'object',
+              properties: {
+                'a': ParameterProperty(
+                  propertyType: 'integer',
+                  description: 'First operand',
+                ),
+                'b': ParameterProperty(
+                  propertyType: 'integer',
+                  description: 'Second operand',
+                ),
+              },
+              required: const ['a', 'b'],
+            ),
+          ),
+          execute: (args) async {
+            final a = args['a'] as int;
+            final b = args['b'] as int;
+            return {'result': a + b};
+          },
+        ),
+      };
+
+      final options = LanguageModelCallOptions(
+        maxTokens: 123,
+        temperature: 0.5,
+        topP: 0.9,
+      );
+
+      final input = AgentInput(
+        model: model,
+        messages: [ChatMessage.user('Add 1 and 2')],
+        tools: tools,
+        callOptions: options,
+      );
+
+      const agent = ToolLoopAgent();
+      final result = await agent.runText(input);
+
+      expect(result.text, equals('3'));
+      expect(model.callCount, greaterThanOrEqualTo(2));
+      expect(model.lastOptions, isNotNull);
+      expect(model.lastOptions!.maxTokens, equals(123));
+      expect(model.lastOptions!.temperature, equals(0.5));
+      expect(model.lastOptions!.topP, equals(0.9));
+    });
+
+    test(
+        'runAgentObject helper forwards LanguageModelCallOptions to LanguageModel',
+        () async {
+      final model = _JsonLanguageModelWithOptions(
+        LLMConfig(baseUrl: '', model: 'test-model'),
+      );
+
+      final tools = <String, ExecutableTool>{
+        'get_sum': ExecutableTool(
+          schema: Tool.function(
+            name: 'get_sum',
+            description: 'Sum two integers',
+            parameters: ParametersSchema(
+              schemaType: 'object',
+              properties: {
+                'a': ParameterProperty(
+                  propertyType: 'integer',
+                  description: 'First operand',
+                ),
+                'b': ParameterProperty(
+                  propertyType: 'integer',
+                  description: 'Second operand',
+                ),
+              },
+              required: const ['a', 'b'],
+            ),
+          ),
+          execute: (args) async {
+            final a = args['a'] as int;
+            final b = args['b'] as int;
+            return {'result': a + b};
+          },
+        ),
+      };
+
+      final output = OutputSpec<SumResult>.object(
+        name: 'SumResult',
+        properties: {
+          'result': ParameterProperty(
+            propertyType: 'integer',
+            description: 'Sum result',
+          ),
+        },
+        fromJson: SumResult.fromJson,
+      );
+
+      final options = LanguageModelCallOptions(
+        maxTokens: 456,
+        temperature: 0.7,
+        topP: 0.8,
+      );
+
+      final result = await root.runAgentObject<SumResult>(
+        model: model,
+        messages: [ChatMessage.user('Add 1 and 2 and return JSON')],
+        tools: tools,
+        output: output,
+        options: options,
+      );
+
+      expect(result.object.result, equals(3));
+      expect(model.callCount, greaterThanOrEqualTo(2));
+      expect(model.lastOptions, isNotNull);
+      expect(model.lastOptions!.maxTokens, equals(456));
+      expect(model.lastOptions!.temperature, equals(0.7));
+      expect(model.lastOptions!.topP, equals(0.8));
+    });
   });
 }
 
@@ -333,5 +505,172 @@ class _JsonLanguageModel implements LanguageModel {
     final decoded = jsonDecode(raw) as Map<String, dynamic>;
     final object = output.fromJson(decoded);
     return GenerateObjectResult<T>(object: object, textResult: textResult);
+  }
+
+  @override
+  Future<GenerateTextResult> generateTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return generateText(messages, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<ChatStreamEvent> streamTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return streamText(messages, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<StreamTextPart> streamTextPartsWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return streamTextParts(messages, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
+    OutputSpec<T> output,
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return generateObject<T>(output, messages, cancelToken: cancelToken);
+  }
+}
+
+/// Variant of [_JsonLanguageModel] that records the last per-call options.
+class _JsonLanguageModelWithOptions implements LanguageModel {
+  @override
+  final String providerId = 'fake';
+
+  @override
+  final String modelId = 'test-model';
+
+  @override
+  final LLMConfig config;
+
+  int callCount = 0;
+
+  LanguageModelCallOptions? lastOptions;
+
+  _JsonLanguageModelWithOptions(this.config);
+
+  @override
+  Future<GenerateTextResult> generateText(
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  }) async {
+    callCount++;
+
+    if (callCount == 1) {
+      final toolCall = ToolCall(
+        id: 'call_1',
+        callType: 'function',
+        function: const FunctionCall(
+          name: 'get_sum',
+          arguments: '{"a":1,"b":2}',
+        ),
+      );
+
+      return GenerateTextResult(
+        rawResponse: FakeChatResponse(null),
+        text: null,
+        toolCalls: [toolCall],
+        usage: null,
+        warnings: const [],
+        metadata: null,
+      );
+    } else {
+      final jsonText = jsonEncode({'result': 3});
+      return GenerateTextResult(
+        rawResponse: FakeChatResponse(jsonText),
+        text: jsonText,
+        toolCalls: const [],
+        usage: null,
+        warnings: const [],
+        metadata: null,
+      );
+    }
+  }
+
+  @override
+  Stream<ChatStreamEvent> streamText(
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  }) async* {
+    final result = await generateText(messages, cancelToken: cancelToken);
+    if (result.text != null) {
+      yield TextDeltaEvent(result.text!);
+    }
+    yield CompletionEvent(result.rawResponse);
+  }
+
+  @override
+  Stream<StreamTextPart> streamTextParts(
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  }) {
+    return adaptStreamText(streamText(messages, cancelToken: cancelToken));
+  }
+
+  @override
+  Future<GenerateObjectResult<T>> generateObject<T>(
+    OutputSpec<T> output,
+    List<ChatMessage> messages, {
+    CancellationToken? cancelToken,
+  }) async {
+    final textResult = await generateText(messages, cancelToken: cancelToken);
+    final raw = textResult.text ?? '';
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    final object = output.fromJson(decoded);
+    return GenerateObjectResult<T>(object: object, textResult: textResult);
+  }
+
+  @override
+  Future<GenerateTextResult> generateTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    lastOptions = options;
+    return generateText(messages, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<ChatStreamEvent> streamTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    lastOptions = options;
+    return streamText(messages, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<StreamTextPart> streamTextPartsWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    lastOptions = options;
+    return streamTextParts(messages, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
+    OutputSpec<T> output,
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    lastOptions = options;
+    return generateObject<T>(output, messages, cancelToken: cancelToken);
   }
 }

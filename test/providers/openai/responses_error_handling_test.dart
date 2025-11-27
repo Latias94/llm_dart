@@ -6,6 +6,7 @@ library;
 
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 void main() {
   group('OpenAI Responses API Error Handling', () {
@@ -269,7 +270,7 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         expect(openaiProvider.config.useResponsesAPI, isTrue);
       });
 
@@ -285,7 +286,7 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         // Should accumulate all tools, even duplicates
         expect(openaiProvider.config.builtInTools, hasLength(4));
       });
@@ -300,7 +301,7 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         expect(openaiProvider.config.previousResponseId, equals('resp_second'));
       });
 
@@ -349,7 +350,7 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         final responses1 = openaiProvider.responses;
         final responses2 = openaiProvider.responses;
 

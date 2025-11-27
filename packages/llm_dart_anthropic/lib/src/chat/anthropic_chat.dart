@@ -9,7 +9,7 @@ import '../mcp/anthropic_mcp_models.dart';
 import '../request/anthropic_request_builder.dart';
 
 /// Anthropic Chat capability implementation for the sub-package.
-class AnthropicChat implements ChatCapability {
+class AnthropicChat implements ChatCapability, PromptChatCapability {
   final AnthropicClient client;
   final AnthropicConfig config;
   late final AnthropicRequestBuilder _requestBuilder;
@@ -27,10 +27,32 @@ class AnthropicChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    final requestBody =
-        _requestBuilder.buildRequestBody(messages, tools, false);
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    return chatPrompt(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    final requestBody = _requestBuilder.buildRequestBodyFromPrompt(
+      messages,
+      tools,
+      false,
+      options: options,
+    );
     final responseData = await client.postJson(
       chatEndpoint,
       requestBody,
@@ -43,13 +65,34 @@ class AnthropicChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async* {
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    yield* chatPromptStream(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     _resetStreamState();
 
-    final effectiveTools = tools ?? config.tools;
-    final requestBody =
-        _requestBuilder.buildRequestBody(messages, effectiveTools, true);
+    final requestBody = _requestBuilder.buildRequestBodyFromPrompt(
+      messages,
+      tools,
+      true,
+      options: options,
+    );
 
     final stream = client.postStreamRaw(
       chatEndpoint,
@@ -68,9 +111,15 @@ class AnthropicChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -109,6 +158,8 @@ class AnthropicChat implements ChatCapability {
     List<ChatMessage> messages,
     List<Tool>? tools,
   ) {
+    final thinkingEnabled = config.reasoning && config.supportsReasoning;
+
     final anthropicMessages = <Map<String, dynamic>>[];
     final systemMessages = <String>[];
 
@@ -141,7 +192,7 @@ class AnthropicChat implements ChatCapability {
           effectiveTools.map((t) => _requestBuilder.convertTool(t)).toList();
     }
 
-    if (config.reasoning) {
+    if (thinkingEnabled) {
       final thinkingConfig = <String, dynamic>{
         'type': 'enabled',
       };

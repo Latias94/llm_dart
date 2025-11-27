@@ -1,6 +1,5 @@
 import '../../builder/llm_builder.dart';
-import '../../core/capability.dart';
-import '../../core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Ollama-specific LLM builder with provider-specific configuration methods
 ///

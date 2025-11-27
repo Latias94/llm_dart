@@ -1,14 +1,25 @@
-import '../models/chat_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Resolve input into a list of [ChatMessage]s for text generation.
 ///
-/// Exactly one of [prompt], [messages], or [structuredPrompt] must be
-/// provided; otherwise an [ArgumentError] is thrown.
+/// The preferred prompt-first representation is [promptMessages]
+/// (a list of [ModelMessage]s). For backwards compatibility this
+/// helper also accepts:
+/// - [structuredPrompt] (single [ModelMessage])
+/// - [messages] (legacy [ChatMessage] list)
+/// - [prompt] (plain text)
 List<ChatMessage> resolveMessagesForTextGeneration({
   String? prompt,
   List<ChatMessage>? messages,
-  ChatPromptMessage? structuredPrompt,
+  ModelMessage? structuredPrompt,
+  List<ModelMessage>? promptMessages,
 }) {
+  if (promptMessages != null && promptMessages.isNotEmpty) {
+    return promptMessages
+        .map((prompt) => ChatMessage.fromPromptMessage(prompt))
+        .toList();
+  }
+
   if (structuredPrompt != null) {
     return [ChatMessage.fromPromptMessage(structuredPrompt)];
   }

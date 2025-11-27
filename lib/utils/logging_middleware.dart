@@ -1,6 +1,5 @@
 import 'package:logging/logging.dart';
-
-import '../models/chat_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Configuration options for the built-in logging middlewares.
 class LoggingOptions {

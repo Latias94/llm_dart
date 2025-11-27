@@ -52,32 +52,33 @@ void main() async {
   print('\n✅ All examples completed!');
 }
 
-/// Example 1: Image URL with Chat Completions API (default)
+/// Example 1: Image URL with Chat Completions API (default, prompt-first)
 Future<void> imageUrlChatCompletionsExample(String apiKey) async {
   print('--- Example 1: Image URL with Chat Completions API ---');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
         .maxTokens(300)
+        .buildLanguageModel();
+
+    // Build a structured prompt: text + image URL.
+    final prompt = ChatPromptBuilder.user()
+        .text('Describe this image in one sentence.')
+        .imageUrl(
+          'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/481px-Cat03.jpg',
+        )
         .build();
 
-    // Use ChatMessage.imageUrl() to send an image URL with text
-    final messages = [
-      ChatMessage.imageUrl(
-        role: ChatRole.user,
-        url:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/481px-Cat03.jpg',
-        content: 'Describe this image in one sentence.',
-      ),
-    ];
-
     print('Sending image URL with text prompt...');
-    final response = await provider.chat(messages);
-    print('Response: ${response.text}\n');
+    final result = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
+    print('Response: ${result.text}\n');
   } catch (e) {
     print('Error: $e\n');
   }
@@ -88,26 +89,27 @@ Future<void> imageUrlResponsesAPIExample(String apiKey) async {
   print('--- Example 2: Image URL with Responses API ---');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai((openai) => openai.useResponsesAPI())
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
+        .buildLanguageModel();
+
+    // Same structured prompt; the library handles format differences automatically.
+    final prompt = ChatPromptBuilder.user()
+        .text('What animal is this?')
+        .imageUrl(
+          'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/481px-Cat03.jpg',
+        )
         .build();
 
-    // Same API - the library handles format differences automatically
-    final messages = [
-      ChatMessage.imageUrl(
-        role: ChatRole.user,
-        url:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/481px-Cat03.jpg',
-        content: 'What animal is this?',
-      ),
-    ];
-
     print('Sending image URL with Responses API...');
-    final response = await provider.chat(messages);
-    print('Response: ${response.text}\n');
+    final result = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
+    print('Response: ${result.text}\n');
   } catch (e) {
     print('Error: $e\n');
   }
@@ -127,31 +129,34 @@ Future<void> base64ImageExample(String apiKey) async {
       return;
     }
 
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
         .maxTokens(300)
-        .build();
+        .buildLanguageModel();
 
     // Read image file
     final imageBytes = await imageFile.readAsBytes();
     print('Loaded image: ${imageBytes.length} bytes');
 
-    // Use ChatMessage.image() to send base64 encoded image
-    final messages = [
-      ChatMessage.image(
-        role: ChatRole.user,
-        data: imageBytes,
-        mime: ImageMime.jpeg,
-        content: 'Describe this cat in detail.',
-      ),
-    ];
+    // Build a prompt with base64-encoded image bytes.
+    final prompt = ChatPromptBuilder.user()
+        .text('Describe this cat in detail.')
+        .imageBytes(
+          imageBytes,
+          mime: ImageMime.jpeg,
+          filename: 'Cat03.jpg',
+        )
+        .build();
 
     print('Sending base64 encoded image...');
-    final response = await provider.chat(messages);
-    print('Response: ${response.text}\n');
+    final result = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
+    print('Response: ${result.text}\n');
   } catch (e) {
     print('Error: $e\n');
   }
@@ -162,28 +167,31 @@ Future<void> mixedContentExample(String apiKey) async {
   print('--- Example 4: Mixed Content (Text + Image) ---');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
         .maxTokens(400)
+        .buildLanguageModel();
+
+    // Build a mixed-content prompt: image URL + detailed question text.
+    final prompt = ChatPromptBuilder.user()
+        .imageUrl(
+          'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg',
+        )
+        .text(
+          'Look at this image and answer: What time of day was this photo likely taken? '
+          'Explain your reasoning.',
+        )
         .build();
 
-    // The 'content' parameter allows you to add text alongside the image
-    final messages = [
-      ChatMessage.imageUrl(
-        role: ChatRole.user,
-        url:
-            'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg',
-        content:
-            'Look at this image and answer: What time of day was this photo likely taken? Explain your reasoning.',
-      ),
-    ];
-
     print('Sending image with detailed question...');
-    final response = await provider.chat(messages);
-    print('Response: ${response.text}\n');
+    final result = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
+    print('Response: ${result.text}\n');
   } catch (e) {
     print('Error: $e\n');
   }
@@ -202,30 +210,34 @@ Future<void> fileMessageExample(String apiKey) async {
       return;
     }
 
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
         .maxTokens(500)
-        .build();
+        .buildLanguageModel();
 
     // Read PDF file
     final pdfBytes = await pdfFile.readAsBytes();
     print('Loaded PDF: ${pdfBytes.length} bytes');
 
-    // Use ChatMessage.pdf() convenience method
-    final messages = [
-      ChatMessage.pdf(
-        role: ChatRole.user,
-        data: pdfBytes,
-        content: 'Summarize the content of this PDF document.',
-      ),
-    ];
+    // Build a prompt with the PDF file as a document part.
+    final prompt = ChatPromptBuilder.user()
+        .text('Summarize the content of this PDF document.')
+        .fileBytes(
+          pdfBytes,
+          mime: FileMime.pdf,
+          filename: 'sample.pdf',
+        )
+        .build();
 
     print('Sending PDF file...');
-    final response = await provider.chat(messages);
-    print('Response: ${response.text}\n');
+    final result = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
+    print('Response: ${result.text}\n');
   } catch (e) {
     print('Error: $e\n');
   }
@@ -268,19 +280,30 @@ Technical Details:
     final fileBytes = await textFile.readAsBytes();
     print('Loaded file: ${fileBytes.length} bytes');
 
-    // Use ChatMessage.file() for generic file types
-    final messages = [
-      ChatMessage.file(
-        role: ChatRole.user,
-        data: fileBytes,
-        mime: FileMime.txt,
-        content: 'What are the key points in this document?',
-      ),
-    ];
+    // Use ChatPromptBuilder for generic file types.
+    final prompt = ChatPromptBuilder.user()
+        .text('What are the key points in this document?')
+        .fileBytes(
+          fileBytes,
+          mime: FileMime.txt,
+          filename: 'sample.txt',
+        )
+        .build();
 
     print('Sending file with Responses API...');
-    final response = await provider.chat(messages);
-    print('Response: ${response.text}\n');
+    final model = await ai()
+        .openai((openai) => openai.useResponsesAPI())
+        .apiKey(apiKey)
+        .model('gpt-4o')
+        .temperature(0.7)
+        .maxTokens(300)
+        .buildLanguageModel();
+
+    final result = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
+    print('Response: ${result.text}\n');
   } catch (e) {
     print('Error: $e\n');
   }
@@ -290,30 +313,29 @@ Technical Details:
 ///
 /// ## Image Messages:
 ///
-/// ### 1. Image URL Messages (ChatMessage.imageUrl)
+/// ### 1. Image URL Messages (ChatPromptBuilder.imageUrl)
 /// - Send images via URL
 /// - No file upload needed
 /// - Supports public URLs
-/// - Can include text prompt in 'content' parameter
+/// - Combine with `.text(...)` for instructions
 ///
-/// ### 2. Base64 Image Messages (ChatMessage.image)
+/// ### 2. Base64 Image Messages (ChatPromptBuilder.imageBytes)
 /// - Send local image files
-/// - Automatically base64 encoded
-/// - Supported formats: JPEG, PNG, GIF, WebP
-/// - Can include text prompt in 'content' parameter
+/// - Automatically base64 encoded by providers
+/// - Supported formats: JPEG, PNG, GIF, WebP (depending on provider)
+/// - Combine with `.text(...)` for prompts
 ///
 /// ## File Messages:
 ///
-/// ### 1. Generic File Messages (ChatMessage.file)
+/// ### 1. Generic File Messages (ChatPromptBuilder.fileBytes)
 /// - Send any file type
 /// - Specify MIME type with FileMime enum
-/// - Automatically base64 encoded
-/// - Can include text prompt in 'content' parameter
+/// - Providers base64 encode as needed
+/// - Combine with `.text(...)` for instructions
 ///
-/// ### 2. PDF Messages (ChatMessage.pdf)
-/// - Convenience method for PDF files
-/// - Automatically sets correct MIME type
-/// - Same functionality as ChatMessage.file with FileMime.pdf
+/// ### 2. PDF Messages (ChatPromptBuilder.fileBytes + FileMime.pdf)
+/// - Use `FileMime.pdf` for PDF files
+/// - Same functionality as generic file messages with explicit MIME
 ///
 /// ## API Format Differences:
 ///
@@ -321,19 +343,19 @@ Technical Details:
 /// - **Chat Completions API** (default): Uses nested object format
 /// - **Responses API**: Uses flat format with different type names
 ///
-/// You don't need to worry about these differences - just use the same
-/// ChatMessage methods and the library handles the conversion!
+/// You don't need to worry about these differences - just build
+/// structured prompts with `ChatPromptBuilder` / `ModelMessage` and
+/// let the library handle the conversion!
 ///
 /// ## Mixed Content:
 ///
 /// All image and file message methods support the 'content' parameter:
 /// ```dart
-/// ChatMessage.imageUrl(
-///   role: ChatRole.user,
-///   url: 'https://example.com/image.jpg',
-///   content: 'Your text prompt here',  // Optional but recommended
-/// )
+/// final prompt = ChatPromptBuilder.user()
+///     .imageUrl('https://example.com/image.jpg')
+///     .text('Your text prompt here')
+///     .build();
 /// ```
 ///
-/// This creates a message with both text and media content, allowing you
+/// This creates a prompt with both text and media content, allowing you
 /// to provide specific instructions or questions about the image/file.

@@ -35,16 +35,17 @@ Future<void> main() async {
   final model = openai.responses('gpt-4.1-mini');
 
   // 3. Stream thinking + text parts using the high-level helper.
-  final messages = [
-    ChatMessage.user(
-      'Explain what a binary search tree is, in 3 bullet points.',
-    ),
-  ];
+  final prompt = ChatPromptBuilder.user()
+      .text('Explain what a binary search tree is, in 3 bullet points.')
+      .build();
 
   print('Streaming response from OpenAI Responses API (streamTextParts):\n');
 
   await for (final part in adaptStreamText(
-    model.streamText(messages),
+    streamTextWithModel(
+      model,
+      promptMessages: [prompt],
+    ),
   )) {
     switch (part) {
       case StreamThinkingDelta(delta: final delta):

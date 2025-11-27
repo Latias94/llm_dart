@@ -1,7 +1,7 @@
 import '../../builder/llm_builder.dart';
-import '../../models/chat_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_impl;
 import 'builtin_tools.dart';
-import 'provider.dart';
 
 /// OpenAI-specific LLM builder with provider-specific configuration methods
 ///
@@ -404,7 +404,7 @@ class OpenAIBuilder {
   /// **Note**: This method automatically enables Responses API even if not
   /// explicitly called with `useResponsesAPI()`. The returned provider will
   /// always support `LLMCapability.openaiResponses`.
-  Future<OpenAIProvider> buildOpenAIResponses() async {
+  Future<openai_impl.OpenAIProvider> buildOpenAIResponses() async {
     // Automatically enable Responses API if not already enabled
     final isResponsesAPIEnabled = _baseBuilder.currentConfig
             .getExtension<bool>(LLMConfigKeys.useResponsesAPI) ??
@@ -416,9 +416,9 @@ class OpenAIBuilder {
     final provider = await build();
 
     // Ensure we have an OpenAI provider
-    if (provider is! OpenAIProvider) {
+    if (provider is! openai_impl.OpenAIProvider) {
       throw StateError(
-          'Expected OpenAIProvider but got ${provider.runtimeType}. '
+          'Expected openai.OpenAIProvider but got ${provider.runtimeType}. '
           'This should not happen when using buildOpenAIResponses().');
     }
 

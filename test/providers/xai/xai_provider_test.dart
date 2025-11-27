@@ -1,13 +1,14 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
 
 void main() {
   group('XAIProvider Tests', () {
-    late XAIProvider provider;
-    late XAIConfig config;
+    late xai.XAIProvider provider;
+    late xai.XAIConfig config;
 
     setUp(() {
-      config = const XAIConfig(
+      config = const xai.XAIConfig(
         apiKey: 'test-api-key',
         baseUrl: 'https://api.x.ai/v1/',
         model: 'grok-3',
@@ -15,7 +16,7 @@ void main() {
         temperature: 0.7,
         liveSearch: true,
       );
-      provider = XAIProvider(config);
+      provider = xai.XAIProvider(config);
     });
 
     group('Provider Initialization', () {
@@ -45,7 +46,7 @@ void main() {
 
       test('should support vision for vision models', () {
         final visionConfig = config.copyWith(model: 'grok-vision-beta');
-        final visionProvider = XAIProvider(visionConfig);
+        final visionProvider = xai.XAIProvider(visionConfig);
 
         expect(visionProvider.supports(LLMCapability.vision), isTrue);
       });
@@ -117,7 +118,7 @@ void main() {
 
       test('should return correct model family for embedding models', () {
         final embedConfig = config.copyWith(model: 'text-embedding-ada-002');
-        final embedProvider = XAIProvider(embedConfig);
+        final embedProvider = xai.XAIProvider(embedConfig);
 
         expect(embedProvider.config.modelFamily, equals('Embedding'));
       });
@@ -136,7 +137,7 @@ void main() {
 
       test('should not detect live search when disabled', () {
         final noSearchConfig = config.copyWith(liveSearch: false);
-        final noSearchProvider = XAIProvider(noSearchConfig);
+        final noSearchProvider = xai.XAIProvider(noSearchConfig);
 
         expect(noSearchProvider.config.isLiveSearchEnabled, isFalse);
       });
@@ -152,7 +153,7 @@ void main() {
 
       test('should handle vision models correctly', () {
         final visionConfig = config.copyWith(model: 'grok-vision-beta');
-        final visionProvider = XAIProvider(visionConfig);
+        final visionProvider = xai.XAIProvider(visionConfig);
 
         expect(visionProvider.config.supportsVision, isTrue);
         expect(visionProvider.supports(LLMCapability.vision), isTrue);
@@ -161,7 +162,7 @@ void main() {
 
       test('should handle embedding models correctly', () {
         final embedConfig = config.copyWith(model: 'text-embedding-ada-002');
-        final embedProvider = XAIProvider(embedConfig);
+        final embedProvider = xai.XAIProvider(embedConfig);
 
         expect(embedProvider.config.supportsEmbeddings, isTrue);
         expect(embedProvider.supports(LLMCapability.embedding), isTrue);
@@ -171,33 +172,33 @@ void main() {
 
     group('Search Configuration', () {
       test('should handle search parameters', () {
-        final searchParams = SearchParameters.webSearch(maxResults: 5);
+        final searchParams = xai.SearchParameters.webSearch(maxResults: 5);
         final searchConfig = config.copyWith(searchParameters: searchParams);
-        final searchProvider = XAIProvider(searchConfig);
+        final searchProvider = xai.XAIProvider(searchConfig);
 
         expect(searchProvider.config.searchParameters, equals(searchParams));
         expect(searchProvider.config.isLiveSearchEnabled, isTrue);
       });
 
       test('should handle web search configuration', () {
-        final searchParams = SearchParameters.webSearch(
+        final searchParams = xai.SearchParameters.webSearch(
           maxResults: 10,
           excludedWebsites: ['example.com'],
         );
         final searchConfig = config.copyWith(searchParameters: searchParams);
-        final searchProvider = XAIProvider(searchConfig);
+        final searchProvider = xai.XAIProvider(searchConfig);
 
         expect(searchProvider.config.searchParameters, isNotNull);
         expect(searchProvider.supports(LLMCapability.liveSearch), isTrue);
       });
 
       test('should handle news search configuration', () {
-        final searchParams = SearchParameters.newsSearch(
+        final searchParams = xai.SearchParameters.newsSearch(
           maxResults: 5,
           fromDate: '2024-01-01',
         );
         final searchConfig = config.copyWith(searchParameters: searchParams);
-        final searchProvider = XAIProvider(searchConfig);
+        final searchProvider = xai.XAIProvider(searchConfig);
 
         expect(searchProvider.config.searchParameters, isNotNull);
         expect(searchProvider.supports(LLMCapability.liveSearch), isTrue);
@@ -218,7 +219,7 @@ void main() {
           embeddingEncodingFormat: 'float',
           embeddingDimensions: 1536,
         );
-        final embedProvider = XAIProvider(embedConfig);
+        final embedProvider = xai.XAIProvider(embedConfig);
 
         expect(embedProvider.config.embeddingEncodingFormat, equals('float'));
         expect(embedProvider.config.embeddingDimensions, equals(1536));
@@ -229,7 +230,7 @@ void main() {
           tools: [],
           toolChoice: const AutoToolChoice(),
         );
-        final toolProvider = XAIProvider(toolConfig);
+        final toolProvider = xai.XAIProvider(toolConfig);
 
         expect(toolProvider.config.tools, equals([]));
         expect(toolProvider.config.toolChoice, isA<ToolChoice>());
@@ -241,14 +242,14 @@ void main() {
         final invalidConfig = config.copyWith(model: 'invalid-model');
 
         // Should not throw during initialization
-        expect(() => XAIProvider(invalidConfig), returnsNormally);
+        expect(() => xai.XAIProvider(invalidConfig), returnsNormally);
       });
 
       test('should handle empty model gracefully', () {
         final emptyModelConfig = config.copyWith(model: '');
 
         // Should not throw during initialization
-        expect(() => XAIProvider(emptyModelConfig), returnsNormally);
+        expect(() => xai.XAIProvider(emptyModelConfig), returnsNormally);
       });
 
       test('should handle missing search parameters gracefully', () {
@@ -258,7 +259,7 @@ void main() {
         );
 
         // Should not throw during initialization
-        expect(() => XAIProvider(noSearchConfig), returnsNormally);
+        expect(() => xai.XAIProvider(noSearchConfig), returnsNormally);
       });
     });
   });

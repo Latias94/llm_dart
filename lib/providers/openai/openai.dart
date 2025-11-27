@@ -29,8 +29,6 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_impl;
 
 import '../../core/provider_defaults.dart';
-import 'config.dart';
-import 'provider.dart';
 import 'builtin_tools.dart';
 
 // Core exports
@@ -245,7 +243,7 @@ class OpenAI {
     );
   }
 
-  /// Internal helper to create an [OpenAIConfig] for a given model.
+  /// Internal helper to create an [openai_impl.OpenAIConfig] for a given model.
   openai_impl.OpenAIConfig _createOpenAIConfig({
     required String modelId,
     bool useResponsesAPI = false,
@@ -335,6 +333,61 @@ class OpenAIResponsesModel
     return _model.generateObject(
       output,
       messages,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<GenerateTextResult> generateTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    // Delegate to the underlying DefaultLanguageModel implementation.
+    return _model.generateTextWithOptions(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> streamTextWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _model.streamTextWithOptions(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<StreamTextPart> streamTextPartsWithOptions(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _model.streamTextPartsWithOptions(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
+    OutputSpec<T> output,
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _model.generateObjectWithOptions(
+      output,
+      messages,
+      options: options,
       cancelToken: cancelToken,
     );
   }
@@ -486,7 +539,7 @@ class OpenAITools {
 }
 
 /// Create an OpenAI provider with default settings
-OpenAIProvider createOpenAIProvider({
+openai_impl.OpenAIProvider createOpenAIProvider({
   required String apiKey,
   String model = ProviderDefaults.openaiDefaultModel,
   String baseUrl = ProviderDefaults.openaiBaseUrl,
@@ -494,7 +547,7 @@ OpenAIProvider createOpenAIProvider({
   int? maxTokens,
   String? systemPrompt,
 }) {
-  final config = OpenAIConfig(
+  final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: model,
     baseUrl: baseUrl,
@@ -503,7 +556,7 @@ OpenAIProvider createOpenAIProvider({
     systemPrompt: systemPrompt,
   );
 
-  return OpenAIProvider(config);
+  return openai_impl.OpenAIProvider(config);
 }
 
 /// Create an OpenAI model factory (Vercel AI-style).
@@ -577,14 +630,14 @@ OpenAI openai({
   'or OpenAICompatibleConfigs.openrouter(...) instead of '
   'createOpenRouterProvider on the OpenAI facade.',
 )
-OpenAIProvider createOpenRouterProvider({
+openai_impl.OpenAIProvider createOpenRouterProvider({
   required String apiKey,
   String model = ProviderDefaults.openRouterDefaultModel,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
 }) {
-  final config = OpenAIConfig(
+  final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: model,
     baseUrl: ProviderDefaults.openRouterBaseUrl,
@@ -593,7 +646,7 @@ OpenAIProvider createOpenRouterProvider({
     systemPrompt: systemPrompt,
   );
 
-  return OpenAIProvider(config);
+  return openai_impl.OpenAIProvider(config);
 }
 
 /// Create an OpenAI provider for Groq.
@@ -606,14 +659,14 @@ OpenAIProvider createOpenRouterProvider({
   'Use GroqProvider from package:llm_dart/providers/groq/groq.dart '
   'or ai().groq() instead of createGroqProvider on the OpenAI facade.',
 )
-OpenAIProvider createGroqProvider({
+openai_impl.OpenAIProvider createGroqProvider({
   required String apiKey,
   String model = ProviderDefaults.groqDefaultModel,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
 }) {
-  final config = OpenAIConfig(
+  final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: model,
     baseUrl: ProviderDefaults.groqBaseUrl,
@@ -622,7 +675,7 @@ OpenAIProvider createGroqProvider({
     systemPrompt: systemPrompt,
   );
 
-  return OpenAIProvider(config);
+  return openai_impl.OpenAIProvider(config);
 }
 
 /// Create an OpenAI provider for DeepSeek.
@@ -635,14 +688,14 @@ OpenAIProvider createGroqProvider({
   'Use DeepSeekProvider from package:llm_dart/providers/deepseek/deepseek.dart '
   'or ai().deepseek() instead of createDeepSeekProvider on the OpenAI facade.',
 )
-OpenAIProvider createDeepSeekProvider({
+openai_impl.OpenAIProvider createDeepSeekProvider({
   required String apiKey,
   String model = ProviderDefaults.deepseekDefaultModel,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
 }) {
-  final config = OpenAIConfig(
+  final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: model,
     baseUrl: ProviderDefaults.deepseekBaseUrl,
@@ -651,11 +704,11 @@ OpenAIProvider createDeepSeekProvider({
     systemPrompt: systemPrompt,
   );
 
-  return OpenAIProvider(config);
+  return openai_impl.OpenAIProvider(config);
 }
 
 /// Create an OpenAI provider for Azure OpenAI
-OpenAIProvider createAzureOpenAIProvider({
+openai_impl.OpenAIProvider createAzureOpenAIProvider({
   required String apiKey,
   required String endpoint,
   required String deploymentName,
@@ -664,7 +717,7 @@ OpenAIProvider createAzureOpenAIProvider({
   int? maxTokens,
   String? systemPrompt,
 }) {
-  final config = OpenAIConfig(
+  final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: deploymentName,
     baseUrl: '$endpoint/openai/deployments/$deploymentName/',
@@ -673,7 +726,7 @@ OpenAIProvider createAzureOpenAIProvider({
     systemPrompt: systemPrompt,
   );
 
-  return OpenAIProvider(config);
+  return openai_impl.OpenAIProvider(config);
 }
 
 /// Create an OpenAI provider for GitHub Copilot
@@ -686,14 +739,14 @@ OpenAIProvider createAzureOpenAIProvider({
   'createCopilotProvider on the OpenAI facade. '
   'This helper will be removed in a future release.',
 )
-OpenAIProvider createCopilotProvider({
+openai_impl.OpenAIProvider createCopilotProvider({
   required String apiKey,
   String model = ProviderDefaults.githubCopilotDefaultModel,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
 }) {
-  final config = OpenAIConfig(
+  final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: model,
     baseUrl: ProviderDefaults.githubCopilotBaseUrl,
@@ -702,7 +755,7 @@ OpenAIProvider createCopilotProvider({
     systemPrompt: systemPrompt,
   );
 
-  return OpenAIProvider(config);
+  return openai_impl.OpenAIProvider(config);
 }
 
 /// Create an OpenAI provider for Together AI
@@ -715,14 +768,14 @@ OpenAIProvider createCopilotProvider({
   'createTogetherProvider on the OpenAI facade. '
   'This helper will be removed in a future release.',
 )
-OpenAIProvider createTogetherProvider({
+openai_impl.OpenAIProvider createTogetherProvider({
   required String apiKey,
   String model = ProviderDefaults.togetherAIDefaultModel,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
 }) {
-  final config = OpenAIConfig(
+  final config = openai_impl.OpenAIConfig(
     apiKey: apiKey,
     model: model,
     baseUrl: ProviderDefaults.togetherAIBaseUrl,
@@ -731,5 +784,5 @@ OpenAIProvider createTogetherProvider({
     systemPrompt: systemPrompt,
   );
 
-  return OpenAIProvider(config);
+  return openai_impl.OpenAIProvider(config);
 }

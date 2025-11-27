@@ -25,13 +25,13 @@ Future<void> demonstrateSpeedBenchmark(String apiKey) async {
   print('Speed Benchmark - Groq\'s Key Advantage\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .groq()
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant') // Fastest model
         .temperature(0.7)
         .maxTokens(200)
-        .build();
+        .buildLanguageModel();
 
     final testQuestions = [
       'What is machine learning?',
@@ -47,7 +47,11 @@ Future<void> demonstrateSpeedBenchmark(String apiKey) async {
 
     for (int i = 0; i < testQuestions.length; i++) {
       final stopwatch = Stopwatch()..start();
-      await provider.chat([ChatMessage.user(testQuestions[i])]);
+      final prompt = ChatPromptBuilder.user().text(testQuestions[i]).build();
+      await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
       stopwatch.stop();
 
       times.add(stopwatch.elapsedMilliseconds);
@@ -80,13 +84,13 @@ Future<void> demonstrateStreamingSpeed(String apiKey) async {
   print('Streaming Speed - Real-time Performance\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .groq()
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.7)
         .maxTokens(300)
-        .build();
+        .buildLanguageModel();
 
     final question = 'Write a short story about a robot discovering emotions.';
     print('Question: $question');
@@ -96,8 +100,12 @@ Future<void> demonstrateStreamingSpeed(String apiKey) async {
     var firstChunkTime = 0;
     var chunkCount = 0;
 
-    await for (final event
-        in provider.chatStream([ChatMessage.user(question)])) {
+    final prompt = ChatPromptBuilder.user().text(question).build();
+
+    await for (final event in streamTextWithModel(
+      model,
+      promptMessages: [prompt],
+    )) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           chunkCount++;
@@ -136,13 +144,13 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
   print('Parallel Processing - High Throughput\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .groq()
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.7)
         .maxTokens(100)
-        .build();
+        .buildLanguageModel();
 
     final questions = [
       'What is AI?',
@@ -157,16 +165,23 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
     final stopwatch = Stopwatch()..start();
 
     // Process all questions simultaneously
-    final futures =
-        questions.map((q) => provider.chat([ChatMessage.user(q)])).toList();
+    final futures = questions.map((q) {
+      final prompt = ChatPromptBuilder.user().text(q).build();
+      return generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+    }).toList();
     final responses = await Future.wait(futures);
 
     stopwatch.stop();
 
     print('\nResults:');
     for (int i = 0; i < questions.length; i++) {
+      final text = responses[i].text ?? '';
+      final preview = text.length > 80 ? '${text.substring(0, 80)}...' : text;
       print('${i + 1}. ${questions[i]}');
-      print('   ${responses[i].text?.substring(0, 80)}...\n');
+      print('   $preview\n');
     }
 
     print('Parallel Processing Performance:');

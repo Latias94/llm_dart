@@ -28,15 +28,22 @@ Future<void> main() async {
   final videoUrl = Platform.environment['GEMINI_VIDEO_URL'] ??
       'https://storage.googleapis.com/generativeai-downloads/data/GoogleIO2023_Keynote.mp4';
 
-  // Build a Gemini provider that can handle multimodal inputs.
-  final provider =
-      await ai().google().apiKey(apiKey).model('gemini-2.5-flash').build();
+  // Build a Gemini language model that can handle multimodal inputs.
+  //
+  // We use the Vercel-style Google factory so that the rest of the example
+  // can work with the prompt-first [ModelMessage] model via
+  // [generateTextWithModel] instead of the legacy ChatMessage API.
+  final googleFactory = google(apiKey: apiKey);
+  final model = googleFactory.chat('gemini-2.5-flash');
 
-  await _runAudioExample(provider, audioPath);
-  await _runVideoExample(provider, videoUrl);
+  await _runAudioExample(model, audioPath);
+  await _runVideoExample(model, videoUrl);
 }
 
-Future<void> _runAudioExample(ChatCapability provider, String audioPath) async {
+Future<void> _runAudioExample(
+  LanguageModel model,
+  String audioPath,
+) async {
   print('=== Audio Understanding ===');
 
   if (!File(audioPath).existsSync()) {
@@ -59,18 +66,21 @@ Future<void> _runAudioExample(ChatCapability provider, String audioPath) async {
       )
       .build();
 
-  final response = await provider.chat([
-    // Convert the structured prompt into a ChatMessage that
-    // preserves all content parts for providers that consume
-    // ChatPromptMessage internally (e.g. Gemini).
-    ChatMessage.fromPromptMessage(prompt),
-  ]);
+  // Use the prompt-first helper so that we pass the structured
+  // [ModelMessage] directly to the model.
+  final result = await generateTextWithModel(
+    model,
+    promptMessages: [prompt],
+  );
 
   print('--- Audio Response ---');
-  print(response.text);
+  print(result.text);
 }
 
-Future<void> _runVideoExample(ChatCapability provider, String videoUrl) async {
+Future<void> _runVideoExample(
+  LanguageModel model,
+  String videoUrl,
+) async {
   print('\n=== Video Understanding ===');
 
   final prompt = ChatPromptBuilder.user()
@@ -81,10 +91,11 @@ Future<void> _runVideoExample(ChatCapability provider, String videoUrl) async {
       )
       .build();
 
-  final response = await provider.chat([
-    ChatMessage.fromPromptMessage(prompt),
-  ]);
+  final result = await generateTextWithModel(
+    model,
+    promptMessages: [prompt],
+  );
 
   print('--- Video Response ---');
-  print(response.text);
+  print(result.text);
 }

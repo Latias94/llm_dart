@@ -36,29 +36,33 @@ Future<void> demonstrateVerbosity(String apiKey) async {
 
   // Low verbosity - terse response
   print('\n🔹 Low Verbosity (terse):');
-  final lowProvider = await ai()
+  final lowModel = await ai()
       .openai((openai) => openai.verbosity(Verbosity.low))
       .apiKey(apiKey)
       .model('gpt-5.1')
-      .build();
+      .buildLanguageModel();
 
-  final lowResponse = await lowProvider.chat([
-    ChatMessage.user(question),
-  ]);
+  final lowPrompt = ChatPromptBuilder.user().text(question).build();
+  final lowResponse = await generateTextWithModel(
+    lowModel,
+    promptMessages: [lowPrompt],
+  );
   print(lowResponse.text ?? 'No response');
 
   // High verbosity - detailed response
   print('\n🔹 High Verbosity (detailed):');
-  final highProvider = await ai()
+  final highModel = await ai()
       .openai((openai) => openai.verbosity(Verbosity.high))
       .apiKey(apiKey)
       .model('gpt-5.1')
       .timeout(Duration(minutes: 5)) // Longer timeout for high verbosity
-      .build();
+      .buildLanguageModel();
 
-  final highResponse = await highProvider.chat([
-    ChatMessage.user(question),
-  ]);
+  final highPrompt = ChatPromptBuilder.user().text(question).build();
+  final highResponse = await generateTextWithModel(
+    highModel,
+    promptMessages: [highPrompt],
+  );
   print(highResponse.text ?? 'No response');
 
   print('\n${'=' * 50}\n');
@@ -68,17 +72,21 @@ Future<void> demonstrateVerbosity(String apiKey) async {
 Future<void> demonstrateMinimalReasoning(String apiKey) async {
   print('--- Minimal Reasoning Effort ---');
 
-  final provider = await ai()
+  final model = await ai()
       .openai()
       .apiKey(apiKey)
       .model('gpt-5-mini')
       .reasoningEffort(ReasoningEffort.minimal) // New minimal option
-      .build();
+      .buildLanguageModel();
 
   print('🔹 Quick math problem with minimal reasoning:');
-  final response = await provider.chat([
-    ChatMessage.user('What is 15 * 23? Just give me the answer.'),
-  ]);
+  final prompt = ChatPromptBuilder.user()
+      .text('What is 15 * 23? Just give me the answer.')
+      .build();
+  final response = await generateTextWithModel(
+    model,
+    promptMessages: [prompt],
+  );
 
   print('Response: ${response.text ?? 'No response'}');
   print('Usage: ${response.usage}');
@@ -96,12 +104,15 @@ Future<void> compareModelVariants(String apiKey) async {
   for (final model in models) {
     print('\n🔹 Model: $model');
 
-    final provider = await ai().openai().apiKey(apiKey).model(model).build();
+    final languageModel =
+        await ai().openai().apiKey(apiKey).model(model).buildLanguageModel();
 
     try {
-      final response = await provider.chat([
-        ChatMessage.user(question),
-      ]);
+      final prompt = ChatPromptBuilder.user().text(question).build();
+      final response = await generateTextWithModel(
+        languageModel,
+        promptMessages: [prompt],
+      );
 
       print('Response: ${response.text ?? 'No response'}');
       if (response.usage != null) {

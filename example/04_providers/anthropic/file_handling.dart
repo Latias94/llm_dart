@@ -144,12 +144,13 @@ Future<void> demonstrateTextFileProcessing(String apiKey) async {
   print('📄 Text File Processing:\n');
 
   try {
-    final provider = createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.3,
-      maxTokens: 1500,
-    );
+    final model = await ai()
+        .anthropic()
+        .apiKey(apiKey)
+        .model('claude-sonnet-4-20250514')
+        .temperature(0.3)
+        .maxTokens(1500)
+        .buildLanguageModel();
 
     // Create a sample text file
     const sampleText = '''
@@ -186,23 +187,25 @@ from 3.2 to 4.7 out of 5.
     // Read and process the file
     final fileData = await File(filename).readAsBytes();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please analyze this project report and provide insights:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: fileData,
-        content: 'Project report for analysis',
-      ),
-      ChatMessage.user('''
+    final prompt = ChatPromptBuilder.user()
+        .text('Please analyze this project report and provide insights:')
+        .fileBytes(
+          fileData,
+          mime: FileMime.txt,
+          filename: filename,
+        )
+        .text('''
 Based on this report, please:
 1. Summarize the key achievements
 2. Identify potential risks or concerns
 3. Suggest next steps for improvement
 4. Rate the project success (1-10) with justification
-'''),
-    ]);
+''').build();
+
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('      ✅ File processed successfully');
     print('      File size: ${fileData.length} bytes');
@@ -222,12 +225,13 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
   print('🖼️  Image Analysis:\n');
 
   try {
-    final provider = createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.4,
-      maxTokens: 1000,
-    );
+    final model = await ai()
+        .anthropic()
+        .apiKey(apiKey)
+        .model('claude-sonnet-4-20250514')
+        .temperature(0.4)
+        .maxTokens(1000)
+        .buildLanguageModel();
 
     // Create a simple test image (placeholder - in real use, you'd have actual images)
     print('   Note: This example shows the structure for image analysis.');
@@ -241,23 +245,25 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
     if (await imageFile.exists()) {
       final imageData = await imageFile.readAsBytes();
 
-      final response = await provider.chat([
-        ChatMessage.user(
-            'Please analyze this image and describe what you see:'),
-        ChatMessage.file(
-          role: ChatRole.user,
-          mime: FileMime.png,
-          data: imageData,
-          content: 'Chart or diagram for analysis',
-        ),
-        ChatMessage.user('''
+      final prompt = ChatPromptBuilder.user()
+          .text('Please analyze this image and describe what you see:')
+          .fileBytes(
+            imageData,
+            mime: FileMime.png,
+            filename: imagePath,
+          )
+          .text('''
 Please provide:
 1. A detailed description of the image
 2. Any data or trends you can identify
 3. Insights or conclusions you can draw
 4. Suggestions for improvement if applicable
-'''),
-      ]);
+''').build();
+
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
 
       print('      ✅ Image analyzed successfully');
       print('      Image size: ${imageData.length} bytes');
@@ -265,7 +271,7 @@ Please provide:
     } else {
       print('      ℹ️  No sample image found. Here\'s how to analyze images:');
       print('      1. Load image file as bytes');
-      print('      2. Create ChatMessage.file with appropriate MIME type');
+      print('      2. 使用 ChatPromptBuilder.fileBytes 附加文件并指定 MIME');
       print('      3. Include descriptive prompts for analysis');
       print('      4. Claude can analyze charts, diagrams, photos, etc.');
     }
@@ -281,13 +287,6 @@ Future<void> demonstratePDFProcessing(String apiKey) async {
   print('📋 PDF Processing:\n');
 
   try {
-    final provider = createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.3,
-      maxTokens: 2000,
-    );
-
     // Create a sample PDF content (as text for demonstration)
     const pdfContent = '''
 RESEARCH PAPER: The Impact of AI on Modern Business
@@ -325,24 +324,35 @@ advantages and operational improvements for modern businesses.
     // Simulate PDF processing
     final pdfBytes = Uint8List.fromList(pdfContent.codeUnits);
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please analyze this research paper and provide a comprehensive review:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.pdf,
-        data: pdfBytes,
-        content: 'Research paper on AI impact in business',
-      ),
-      ChatMessage.user('''
+    final model = await ai()
+        .anthropic()
+        .apiKey(apiKey)
+        .model('claude-sonnet-4-20250514')
+        .temperature(0.3)
+        .maxTokens(2000)
+        .buildLanguageModel();
+
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Please analyze this research paper and provide a comprehensive review:')
+        .fileBytes(
+          pdfBytes,
+          mime: FileMime.pdf,
+          filename: 'research_paper.pdf',
+        )
+        .text('''
 Please provide:
 1. A concise summary of the paper's main findings
 2. Critical analysis of the methodology
 3. Assessment of the conclusions' validity
 4. Suggestions for future research directions
 5. Overall quality rating (1-10) with justification
-'''),
-    ]);
+''').build();
+
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('      ✅ PDF content processed successfully');
     print('      Content size: ${pdfBytes.length} bytes');
@@ -359,13 +369,6 @@ Future<void> demonstrateMultiFileAnalysis(String apiKey) async {
   print('📚 Multi-File Analysis:\n');
 
   try {
-    final provider = createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.3,
-      maxTokens: 2000,
-    );
-
     // Create multiple sample files
     const file1Content = '''
 Q1 Sales Report:
@@ -403,36 +406,45 @@ Q3 Sales Report:
     final file2Data = await File('q2_report.txt').readAsBytes();
     final file3Data = await File('q3_report.txt').readAsBytes();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please analyze these quarterly sales reports and provide insights:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: file1Data,
-        content: 'Q1 Sales Report',
-      ),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: file2Data,
-        content: 'Q2 Sales Report',
-      ),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: file3Data,
-        content: 'Q3 Sales Report',
-      ),
-      ChatMessage.user('''
+    final model = await ai()
+        .anthropic()
+        .apiKey(apiKey)
+        .model('claude-sonnet-4-20250514')
+        .temperature(0.3)
+        .maxTokens(2000)
+        .buildLanguageModel();
+
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Please analyze these quarterly sales reports and provide insights:')
+        .fileBytes(
+          file1Data,
+          mime: FileMime.txt,
+          filename: 'q1_report.txt',
+        )
+        .fileBytes(
+          file2Data,
+          mime: FileMime.txt,
+          filename: 'q2_report.txt',
+        )
+        .fileBytes(
+          file3Data,
+          mime: FileMime.txt,
+          filename: 'q3_report.txt',
+        )
+        .text('''
 Based on these three quarterly reports, please:
 1. Identify trends across the quarters
 2. Analyze product performance patterns
 3. Evaluate customer acquisition trends
 4. Predict Q4 performance
 5. Recommend strategic actions
-'''),
-    ]);
+''').build();
+
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('      ✅ Multi-file analysis completed');
     print('      Files processed: 3');
@@ -456,13 +468,6 @@ Future<void> demonstrateDocumentComparison(String apiKey) async {
   print('🔍 Document Comparison:\n');
 
   try {
-    final provider = createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.2, // Lower for analytical comparison
-      maxTokens: 1500,
-    );
-
     // Create two versions of a document
     const version1 = '''
 Company Policy: Remote Work Guidelines
@@ -494,30 +499,39 @@ Company Policy: Remote Work Guidelines
     final v1Data = await File('policy_v1.txt').readAsBytes();
     final v2Data = await File('policy_v2.txt').readAsBytes();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please compare these two versions of our remote work policy:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: v1Data,
-        content: 'Remote Work Policy - Version 1',
-      ),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: v2Data,
-        content: 'Remote Work Policy - Version 2',
-      ),
-      ChatMessage.user('''
+    final model = await ai()
+        .anthropic()
+        .apiKey(apiKey)
+        .model('claude-sonnet-4-20250514')
+        .temperature(0.2) // Lower for analytical comparison
+        .maxTokens(1500)
+        .buildLanguageModel();
+
+    final prompt = ChatPromptBuilder.user()
+        .text('Please compare these two versions of our remote work policy:')
+        .fileBytes(
+          v1Data,
+          mime: FileMime.txt,
+          filename: 'policy_v1.txt',
+        )
+        .fileBytes(
+          v2Data,
+          mime: FileMime.txt,
+          filename: 'policy_v2.txt',
+        )
+        .text('''
 Please provide:
 1. Key differences between the versions
 2. Analysis of which changes are improvements
 3. Potential issues with the new version
 4. Recommendations for further refinements
 5. Overall assessment of the policy evolution
-'''),
-    ]);
+''').build();
+
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('      ✅ Document comparison completed');
     print('      Documents compared: 2 versions');

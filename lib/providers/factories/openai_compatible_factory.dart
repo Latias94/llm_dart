@@ -1,6 +1,5 @@
 import '../../core/registry.dart';
-import '../../models/tool_models.dart';
-import '../../models/chat_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'base_factory.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart'
     show

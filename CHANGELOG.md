@@ -97,6 +97,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - All packages in the workspace have been aligned to the `0.11.0-rc.1` version:
     - `llm_dart`, `llm_dart_core`, `llm_dart_provider_utils`, all provider sub-packages, and the OpenAI-compatible protocol package.
 
+- **Prompt-first message model (`ModelMessage`)**
+  - Introduced `ModelMessage` in `llm_dart_core` as the primary, provider‑agnostic message model built from `ChatContentPart` values.
+  - Added `PromptChatCapability` interface for providers that natively consume `List<ModelMessage>` prompts:
+    - `OpenAIChat`, `AnthropicChat`, `DeepSeekChat`, `GoogleChat`, `OllamaChat`, `XAIChat`, `PhindChat`, `OpenAICompatibleChat` now all implement `PromptChatCapability`.
+    - Existing `ChatCapability` methods (`chat`, `chatWithTools`, `chatStream`) are now thin bridges that convert `ChatMessage` → `ModelMessage` (legacy shim).
+  - Extended high‑level helpers to accept prompt‑first inputs:
+    - `generateTextWithModel`, `streamTextWithModel`, `streamTextPartsWithModel`, `generateObjectWithModel` now accept `promptMessages: List<ModelMessage>`.
+    - Internally they call `ChatMessage.fromPromptMessage` once and delegate to `LanguageModel.*WithOptions(...)`, so providers still see the full structured prompt model.
+  - Added prompt‑first Agent helpers:
+    - `runAgentPromptText`, `runAgentPromptTextWithSteps`, `runAgentPromptObject`, `runAgentPromptObjectWithSteps` accept `promptMessages: List<ModelMessage>` and wire them through `AgentInput.promptMessages`.
+    - `ToolLoopAgent` now prefers `AgentInput.promptMessages` when present, falling back to `AgentInput.messages` for legacy code.
+
 ### Migration Notes
 
 - For most users importing `package:llm_dart/llm_dart.dart`, no code changes are required:
@@ -106,6 +118,119 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `package:llm_dart_core/llm_dart_core.dart`
   - `package:llm_dart_provider_utils/llm_dart_provider_utils.dart`
   - `package:llm_dart_openai/llm_dart_openai.dart`, etc.
+
+#### Migration Guide: from `ChatMessage` to `ModelMessage`
+
+You can adopt the prompt‑first model incrementally without breaking existing code. The old APIs remain available and continue to work.
+
+**1. Simple text prompts (prompt-first recommended)**
+
+Existing code:
+
+```dart
+final result = await generateTextWithModel(
+  model,
+  promptMessages: [ModelMessage(role: ChatRole.user, parts: [TextContentPart('Hello')])],
+);
+```
+
+Recommended prompt‑first style (optional for simple cases):
+
+```dart
+final messages = [
+  ModelMessage(
+    role: ChatRole.user,
+    parts: [TextContentPart('Hello')],
+  ),
+];
+
+final result = await generateTextWithModel(
+  model,
+  promptMessages: messages,
+);
+```
+
+**2. Multi‑modal / multi‑part prompts**
+
+Existing code:
+
+```dart
+final prompt = ChatPromptBuilder.user()
+    .text('Describe this image.')
+    .imageBytes(imageBytes, mime: ImageMime.png)
+    .build();
+
+final response = await provider.chat([
+  promptMessages: [prompt],
+]);
+```
+
+Migration (prompt‑first, model‑centric):
+
+```dart
+final prompt = ChatPromptBuilder.user()
+    .text('Describe this image.')
+    .imageBytes(imageBytes, mime: ImageMime.png)
+    .build(); // returns ModelMessage
+
+final result = await generateTextWithModel(
+  model,
+  promptMessages: [prompt],
+);
+```
+
+**3. Tool loops / Agents**
+
+Existing code:
+
+```dart
+final tools = <String, ExecutableTool>{ /* ... */ };
+
+final textResult = await runAgentText(
+  model: model,
+  promptMessages: [
+    ModelMessage(
+      role: ChatRole.user,
+      parts: [TextContentPart('Call tools to solve this task.')],
+    ),
+  ],
+  tools: tools,
+);
+```
+
+Prompt‑first Agent usage:
+
+```dart
+final promptMessages = [
+  ModelMessage(
+    role: ChatRole.user,
+    parts: [TextContentPart('Call tools to solve this task.')],
+  ),
+];
+
+final textResult = await runAgentPromptText(
+  model: model,
+  promptMessages: promptMessages,
+  tools: tools,
+);
+```
+
+`ToolLoopAgent` automatically bridges `ModelMessage` → `ChatMessage` using `ChatMessage.fromPromptMessage`, so providers still see the full structured prompt model internally.
+
+**4. When to keep using ChatMessage (legacy shim)**
+
+- Only for legacy compatibility or quick demos; new code should default to `ChatPromptBuilder` + `ModelMessage`.
+- You want a very lightweight, text‑only API and are not yet ready to migrate to structured prompts.
+
+In new code, prefer:
+
+- `ModelMessage` + `ChatContentPart` for prompt construction.
+- `promptMessages: [...]` in:
+  - `generateTextWithModel`
+  - `streamTextWithModel`
+  - `streamTextPartsWithModel`
+  - `generateObjectWithModel`
+  - `runAgentPromptText` / `runAgentPromptObject` (and their `WithSteps` variants).
 
 ## [0.10.5] - 2025-11-26
 

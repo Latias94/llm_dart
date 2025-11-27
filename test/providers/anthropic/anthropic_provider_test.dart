@@ -1,20 +1,21 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 
 void main() {
   group('AnthropicProvider Tests', () {
-    late AnthropicProvider provider;
-    late AnthropicConfig config;
+    late anthropic.AnthropicProvider provider;
+    late anthropic.AnthropicConfig config;
 
     setUp(() {
-      config = const AnthropicConfig(
+      config = const anthropic.AnthropicConfig(
         apiKey: 'test-api-key',
         model: 'claude-sonnet-4-20250514',
         baseUrl: 'https://api.anthropic.com',
         maxTokens: 1000,
         temperature: 0.7,
       );
-      provider = AnthropicProvider(config);
+      provider = anthropic.AnthropicProvider(config);
     });
 
     group('Provider Initialization', () {
@@ -25,24 +26,26 @@ void main() {
       });
 
       test('should validate thinking config on initialization', () {
-        final reasoningConfig = const AnthropicConfig(
+        final reasoningConfig = const anthropic.AnthropicConfig(
           apiKey: 'test-api-key',
           model: 'claude-sonnet-4-20250514',
           reasoning: true,
           thinkingBudgetTokens: 5000,
         );
 
-        expect(() => AnthropicProvider(reasoningConfig), returnsNormally);
+        expect(() => anthropic.AnthropicProvider(reasoningConfig),
+            returnsNormally);
       });
 
       test('should warn about invalid thinking config', () {
-        final invalidConfig = const AnthropicConfig(
+        final invalidConfig = const anthropic.AnthropicConfig(
           apiKey: 'test-api-key',
           model: 'claude-3-haiku-20240307', // Doesn't support reasoning
           reasoning: true,
         );
 
-        expect(() => AnthropicProvider(invalidConfig), returnsNormally);
+        expect(
+            () => anthropic.AnthropicProvider(invalidConfig), returnsNormally);
       });
     });
 
@@ -57,7 +60,7 @@ void main() {
 
       test('should support vision for vision models', () {
         final visionConfig = config.copyWith(model: 'claude-sonnet-4-20250514');
-        final visionProvider = AnthropicProvider(visionConfig);
+        final visionProvider = anthropic.AnthropicProvider(visionConfig);
 
         expect(visionProvider.supports(LLMCapability.vision), isTrue);
       });
@@ -67,7 +70,7 @@ void main() {
           model: 'claude-sonnet-4-20250514',
           reasoning: true,
         );
-        final reasoningProvider = AnthropicProvider(reasoningConfig);
+        final reasoningProvider = anthropic.AnthropicProvider(reasoningConfig);
 
         expect(reasoningProvider.supports(LLMCapability.reasoning), isTrue);
       });

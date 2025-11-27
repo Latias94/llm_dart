@@ -28,7 +28,7 @@ class FakeOllamaClient extends OllamaClient {
 
 void main() {
   group('OllamaChat prompt mapping', () {
-    test('builds messages from ChatPromptMessage with tools and jsonSchema',
+    test('builds messages from ModelMessage with tools and jsonSchema',
         () async {
       final tool = Tool.function(
         name: 'get_weather',

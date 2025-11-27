@@ -120,10 +120,10 @@ dart run 05_use_cases/multimodal_app.dart --demo
 
 - Simple text conversations use `ChatMessage.user/assistant/system(...)` directly.
 - Multi‑modal or complex prompts (especially in provider‑specific examples such as Gemini audio/video) use:
-  - `ChatPromptBuilder` to build a `ChatPromptMessage` with multiple parts.
-  - `ChatMessage.fromPromptMessage(prompt)` to send it through `chat(...)`.
+  - `ChatPromptBuilder` to build a structured `ModelMessage` with multiple parts.
+  - Model‑centric helpers such as `generateTextWithModel(model, promptMessages: [...])` to send them through the unified API (or, for legacy flows, `ChatMessage.fromPromptMessage(prompt)` + `chat(...)`).
 
-This mirrors the internal content model (`ChatPromptMessage` + `ChatContentPart`) and keeps advanced examples consistent across providers.
+This mirrors the internal content model (`ModelMessage` + `ChatContentPart`) and keeps advanced examples consistent across providers.
 
 ## Learning Path
 

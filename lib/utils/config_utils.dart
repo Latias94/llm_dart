@@ -1,8 +1,6 @@
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart'
     show HttpHeaderUtils;
-
-import '../models/tool_models.dart';
-import '../models/chat_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Utility class for common configuration transformations
 ///

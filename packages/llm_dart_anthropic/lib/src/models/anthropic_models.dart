@@ -164,7 +164,7 @@ extension AnthropicMessageBuilderExtension on MessageBuilder {
 
     if (anthropicBuilder._cacheEnabled) {
       // Attach Anthropic provider options for cacheControl so that
-      // the new ChatPromptMessage-based pipeline can read it directly.
+      // the new ModelMessage-based pipeline can read it directly.
       final cacheControl = AnthropicCacheControl.ephemeral(
         ttl: anthropicBuilder._cacheTtl?.value,
       );

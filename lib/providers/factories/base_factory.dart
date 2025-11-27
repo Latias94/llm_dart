@@ -1,6 +1,4 @@
-import '../../core/capability.dart';
-import '../../core/config.dart';
-import '../../core/llm_error.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import '../../core/registry.dart';
 
 /// Base factory class that provides common functionality for all provider factories

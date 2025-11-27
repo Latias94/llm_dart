@@ -213,6 +213,7 @@ class MockChatProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     // Simulate API delay
@@ -238,6 +239,7 @@ class MockChatProvider implements ChatCapability {
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     List<Tool>? tools,
     CancellationToken? cancelToken,
   }) async* {
@@ -268,9 +270,14 @@ class MockChatProvider implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    return chat(messages, cancelToken: cancelToken); // Simple implementation
+    return chat(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    ); // Simple implementation
   }
 
   @override
@@ -302,6 +309,7 @@ class LoggingChatProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     final stopwatch = Stopwatch()..start();
@@ -309,8 +317,11 @@ class LoggingChatProvider implements ChatCapability {
     print('   📝 [LOG] Starting chat request with ${messages.length} messages');
 
     try {
-      final response =
-          await _baseProvider.chat(messages, cancelToken: cancelToken);
+      final response = await _baseProvider.chat(
+        messages,
+        options: options,
+        cancelToken: cancelToken,
+      );
       stopwatch.stop();
 
       print('   📝 [LOG] Chat completed in ${stopwatch.elapsedMilliseconds}ms');
@@ -330,13 +341,18 @@ class LoggingChatProvider implements ChatCapability {
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     List<Tool>? tools,
     CancellationToken? cancelToken,
   }) async* {
     print('   📝 [LOG] Starting streaming chat request');
 
-    await for (final event in _baseProvider.chatStream(messages,
-        tools: tools, cancelToken: cancelToken)) {
+    await for (final event in _baseProvider.chatStream(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    )) {
       switch (event) {
         case TextDeltaEvent():
           print('   📝 [LOG] Text delta received');
@@ -359,11 +375,16 @@ class LoggingChatProvider implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     print('   📝 [LOG] Chat with ${tools?.length ?? 0} tools');
-    return _baseProvider.chatWithTools(messages, tools,
-        cancelToken: cancelToken);
+    return _baseProvider.chatWithTools(
+      messages,
+      tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -389,6 +410,7 @@ class CachingChatProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     final cacheKey = _generateCacheKey(messages);
@@ -399,8 +421,11 @@ class CachingChatProvider implements ChatCapability {
     }
 
     print('   💾 [CACHE] Cache miss, calling base provider');
-    final response =
-        await _baseProvider.chat(messages, cancelToken: cancelToken);
+    final response = await _baseProvider.chat(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
     _cache[cacheKey] = response;
 
     return response;
@@ -409,23 +434,33 @@ class CachingChatProvider implements ChatCapability {
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     List<Tool>? tools,
     CancellationToken? cancelToken,
   }) {
     // For simplicity, streaming bypasses cache
-    return _baseProvider.chatStream(messages,
-        tools: tools, cancelToken: cancelToken);
+    return _baseProvider.chatStream(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     // Tools bypass cache for safety
-    return _baseProvider.chatWithTools(messages, tools,
-        cancelToken: cancelToken);
+    return _baseProvider.chatWithTools(
+      messages,
+      tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -458,6 +493,7 @@ class CustomAPIProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     // Simulate custom API call
@@ -472,10 +508,15 @@ class CustomAPIProvider implements ChatCapability {
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     List<Tool>? tools,
     CancellationToken? cancelToken,
   }) async* {
-    final response = await chat(messages, cancelToken: cancelToken);
+    final response = await chat(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
     yield TextDeltaEvent(response.text ?? '');
     yield CompletionEvent(response);
   }
@@ -484,9 +525,14 @@ class CustomAPIProvider implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
-    return chat(messages, cancelToken: cancelToken);
+    return chat(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override

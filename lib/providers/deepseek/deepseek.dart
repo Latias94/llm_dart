@@ -13,8 +13,20 @@ import '../../core/provider_defaults.dart';
 export 'package:llm_dart_deepseek/llm_dart_deepseek.dart'
     show DeepSeekConfig, DeepSeekProvider;
 
-// Backwards-compatible aliases for config/provider types.
+@Deprecated(
+  'Use DeepSeekConfig from package:llm_dart_deepseek/llm_dart_deepseek.dart '
+  'instead. This alias exists only for backwards compatibility and will be '
+  'removed in a future release.',
+)
+// Backwards-compatible alias for the DeepSeek configuration type.
 typedef DeepSeekConfig = deepseek_impl.DeepSeekConfig;
+
+@Deprecated(
+  'Use DeepSeekProvider from package:llm_dart_deepseek/llm_dart_deepseek.dart '
+  'instead. This alias exists only for backwards compatibility and will be '
+  'removed in a future release.',
+)
+// Backwards-compatible alias for the DeepSeek provider type.
 typedef DeepSeekProvider = deepseek_impl.DeepSeekProvider;
 
 /// DeepSeek provider settings (Vercel AI-style).
@@ -163,7 +175,7 @@ DeepSeek deepseek({
 }
 
 /// Create a DeepSeek provider with default configuration
-DeepSeekProvider createDeepSeekProvider({
+deepseek_impl.DeepSeekProvider createDeepSeekProvider({
   required String apiKey,
   String? model,
   String? baseUrl,
@@ -191,7 +203,7 @@ DeepSeekProvider createDeepSeekProvider({
 }
 
 /// Create a DeepSeek provider for chat
-DeepSeekProvider createDeepSeekChatProvider({
+deepseek_impl.DeepSeekProvider createDeepSeekChatProvider({
   required String apiKey,
   String model = 'deepseek-chat',
   String? systemPrompt,
@@ -209,7 +221,7 @@ DeepSeekProvider createDeepSeekChatProvider({
 
 /// Create a DeepSeek provider for reasoning tasks
 /// Uses the deepseek-reasoner model which supports reasoning/thinking
-DeepSeekProvider createDeepSeekReasoningProvider({
+deepseek_impl.DeepSeekProvider createDeepSeekReasoningProvider({
   required String apiKey,
   String model = 'deepseek-reasoner',
   String? systemPrompt,

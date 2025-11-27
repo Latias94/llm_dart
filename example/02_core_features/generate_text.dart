@@ -22,31 +22,34 @@ void main() async {
     return;
   }
 
-  // Create a reusable builder for OpenAI chat models.
-  final builder = ai()
+  // Create a reusable model for OpenAI chat models.
+  final model = await ai()
       .openai()
       .apiKey(apiKey)
       .model('gpt-4o-mini')
       .temperature(0.7)
-      .maxTokens(400);
+      .maxTokens(400)
+      .buildLanguageModel();
 
-  // Validate configuration and API key once.
-  await builder.build();
-
-  await basicGenerateText(builder);
-  await conversationWithMessages(builder);
-  await structuredPromptWithBuilder(builder);
-  await streamingExample(builder);
+  await basicGenerateText(model);
+  await conversationWithMessages(model);
+  await structuredPromptWithBuilder(model);
+  await streamingExample(model);
 
   print('\n✅ generateText / streamText examples completed!');
 }
 
 /// Simple one-shot text generation using the prompt parameter.
-Future<void> basicGenerateText(LLMBuilder builder) async {
+Future<void> basicGenerateText(LanguageModel model) async {
   print('🔤 Basic generateText:\n');
 
-  final result = await builder.generateText(
-    prompt: 'Give me three bullet-point tips for learning Dart effectively.',
+  final prompt = ChatPromptBuilder.user()
+      .text('Give me three bullet-point tips for learning Dart effectively.')
+      .build();
+
+  final result = await generateTextWithModel(
+    model,
+    promptMessages: [prompt],
   );
 
   print(
@@ -61,27 +64,34 @@ Future<void> basicGenerateText(LLMBuilder builder) async {
 }
 
 /// Multi-turn conversation by passing a full message history.
-Future<void> conversationWithMessages(LLMBuilder builder) async {
+Future<void> conversationWithMessages(LanguageModel model) async {
   print('💬 Multi-turn conversation with generateText:\n');
 
-  final history = <ChatMessage>[
-    ChatMessage.system(
-        'You are a concise and friendly assistant. Keep answers under 3 sentences.'),
-    ChatMessage.user('What is a Future in Dart?'),
-    ChatMessage.assistant(
-        'A Future represents a value that will be available at some time in the future, '
-        'typically the result of an asynchronous operation.'),
-    ChatMessage.user('How is it typically used?'),
+  final history = <ModelMessage>[
+    ChatPromptBuilder.system()
+        .text(
+            'You are a concise and friendly assistant. Keep answers under 3 sentences.')
+        .build(),
+    ChatPromptBuilder.user().text('What is a Future in Dart?').build(),
+    ChatPromptBuilder.assistant()
+        .text(
+            'A Future represents a value that will be available at some time in the future, '
+            'typically the result of an asynchronous operation.')
+        .build(),
+    ChatPromptBuilder.user().text('How is it typically used?').build(),
   ];
 
-  final result = await builder.generateText(messages: history);
+  final result = await generateTextWithModel(
+    model,
+    promptMessages: history,
+  );
 
   print('User: How is it typically used?');
   print('AI  : ${result.text}\n');
 }
 
-/// Using ChatPromptBuilder + ChatMessage.fromPromptMessage for structured prompts.
-Future<void> structuredPromptWithBuilder(LLMBuilder builder) async {
+/// Structured prompts with ChatPromptBuilder + promptMessages.
+Future<void> structuredPromptWithBuilder(LanguageModel model) async {
   print('🧱 Structured prompt with ChatPromptBuilder:\n');
 
   final prompt = ChatPromptBuilder.user()
@@ -91,8 +101,9 @@ Future<void> structuredPromptWithBuilder(LLMBuilder builder) async {
           'A mobile app that helps you track your daily habits and stay motivated.')
       .build();
 
-  final result = await builder.generateText(
-    messages: [ChatMessage.fromPromptMessage(prompt)],
+  final result = await generateTextWithModel(
+    model,
+    promptMessages: [prompt],
   );
 
   print('📝 Structured prompt description included as multiple parts.');
@@ -100,7 +111,7 @@ Future<void> structuredPromptWithBuilder(LLMBuilder builder) async {
 }
 
 /// Streaming responses using high-level stream parts.
-Future<void> streamingExample(LLMBuilder builder) async {
+Future<void> streamingExample(LanguageModel model) async {
   print('🌊 Streaming with streamTextParts:\n');
 
   final prompt =
@@ -111,7 +122,12 @@ Future<void> streamingExample(LLMBuilder builder) async {
 
   final buffer = StringBuffer();
 
-  await for (final part in builder.streamTextParts(prompt: prompt)) {
+  await for (final part in streamTextPartsWithModel(
+    model,
+    promptMessages: [
+      ChatPromptBuilder.user().text(prompt).build(),
+    ],
+  )) {
     switch (part) {
       case StreamThinkingDelta():
         // For providers with visible reasoning, you could render this separately.

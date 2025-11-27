@@ -92,40 +92,58 @@ class OpenAIProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     if (config.useResponsesAPI && _responses != null) {
-      return _responses.chat(messages, cancelToken: cancelToken);
+      return _responses.chat(
+        messages,
+        options: options,
+        cancelToken: cancelToken,
+      );
     }
-    return _chat.chat(messages, cancelToken: cancelToken);
+    return _chat.chat(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     if (config.useResponsesAPI && _responses != null) {
       return _responses.chatWithTools(
         messages,
         tools,
+        options: options,
         cancelToken: cancelToken,
       );
     }
-    return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
+    return _chat.chatWithTools(
+      messages,
+      tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     if (config.useResponsesAPI && _responses != null) {
       return _responses.chatStream(
         messages,
         tools: tools,
+        options: options,
         cancelToken: cancelToken,
       );
     }
@@ -133,6 +151,7 @@ class OpenAIProvider
     return _chat.chatStream(
       messages,
       tools: tools,
+      options: options,
       cancelToken: cancelToken,
     );
   }

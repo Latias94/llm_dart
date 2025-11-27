@@ -21,20 +21,27 @@ class GroqProvider implements ChatCapability, ProviderCapabilities {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
-    return _chat.chat(messages, cancelToken: cancelToken);
+    return _chat.chat(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     return _chat.chatWithTools(
       messages,
       tools,
+      options: options,
       cancelToken: cancelToken,
     );
   }
@@ -43,11 +50,13 @@ class GroqProvider implements ChatCapability, ProviderCapabilities {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     return _chat.chatStream(
       messages,
       tools: tools,
+      options: options,
       cancelToken: cancelToken,
     );
   }

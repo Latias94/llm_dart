@@ -1,6 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
-/// Fluent builder for constructing ChatPromptMessage instances with
+/// Fluent builder for constructing ModelMessage instances with
 /// multi-part, multi-modal content.
 ///
 /// This is a convenience layer on top of the core chat content model
@@ -129,11 +129,11 @@ class ChatPromptBuilder {
     return this;
   }
 
-  /// Build the ChatPromptMessage instance.
-  ChatPromptMessage build({
+  /// Build the ModelMessage instance.
+  ModelMessage build({
     Map<String, dynamic> providerOptions = const {},
   }) {
-    return ChatPromptMessage(
+    return ModelMessage(
       role: _role,
       parts: List<ChatContentPart>.unmodifiable(_parts),
       providerOptions: providerOptions,

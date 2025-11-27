@@ -28,24 +28,23 @@ void main() async {
   }
 
   try {
-    // Create AI provider
-    final provider = await ai()
+    // Create AI model
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
         .maxTokens(500)
-        .build();
+        .buildLanguageModel();
 
     // Demonstrate different cancellation scenarios
-    await demonstrateStreamCancellation(provider);
-    if (provider is ModelListingCapability) {
-      await demonstrateListModelsCancellation(
-          provider as ModelListingCapability);
+    await demonstrateStreamCancellation(model);
+    if (model is ModelListingCapability) {
+      await demonstrateListModelsCancellation(model as ModelListingCapability);
     }
-    await demonstrateMultipleRequestCancellation(provider);
-    await demonstrateCancellationHandling(provider);
-    await demonstrateCancellationTiming(provider);
+    await demonstrateMultipleRequestCancellation(model);
+    await demonstrateCancellationHandling(model);
+    await demonstrateCancellationTiming(model);
 
     print('\n✅ Cancellation demo completed!');
   } catch (e) {
@@ -56,7 +55,7 @@ void main() async {
 }
 
 /// Demonstrate cancelling a streaming chat response
-Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
+Future<void> demonstrateStreamCancellation(LanguageModel model) async {
   print('🌊 Stream Cancellation:\n');
 
   try {
@@ -64,12 +63,11 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
     final cancelSource = CancellationTokenSource();
     final cancelToken = cancelSource.token;
 
-    final messages = [
-      ChatMessage.user(
-          'Write a very long essay about the history of computers, '
-          'starting from the abacus and covering at least 50 different '
-          'milestones in computing history.')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('Write a very long essay about the history of computers, '
+            'starting from the abacus and covering at least 50 different '
+            'milestones in computing history.')
+        .build();
 
     print('   User: Write a very long essay about computers...');
     print('   AI: ');
@@ -80,8 +78,8 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
 
     // Start streaming
     final streamFuture = () async {
-      await for (final event
-          in provider.chatStream(messages, cancelToken: cancelToken)) {
+      await for (final event in streamTextWithModel(model,
+          promptMessages: [prompt], cancelToken: cancelToken)) {
         switch (event) {
           case TextDeltaEvent(delta: final delta):
             chunkCount++;
@@ -179,8 +177,7 @@ Future<void> demonstrateListModelsCancellation(
 }
 
 /// Demonstrate cancelling multiple requests with one token
-Future<void> demonstrateMultipleRequestCancellation(
-    ChatCapability provider) async {
+Future<void> demonstrateMultipleRequestCancellation(LanguageModel model) async {
   print('🔗 Multiple Request Cancellation:\n');
 
   try {
@@ -191,18 +188,25 @@ Future<void> demonstrateMultipleRequestCancellation(
     print('   Starting multiple requests with shared token...');
 
     // Start multiple requests with the same token
-    final request1 = provider.chat(
-      [ChatMessage.user('What is 2+2?')],
+    final request1 = streamTextWithModel(
+      model,
+      promptMessages: [ChatPromptBuilder.user().text('What is 2+2?').build()],
       cancelToken: sharedToken,
     );
 
-    final request2 = provider.chat(
-      [ChatMessage.user('What is the capital of France?')],
+    final request2 = streamTextWithModel(
+      model,
+      promptMessages: [
+        ChatPromptBuilder.user().text('What is the capital of France?').build()
+      ],
       cancelToken: sharedToken,
     );
 
-    final request3 = provider.chat(
-      [ChatMessage.user('Write a haiku about coding.')],
+    final request3 = streamTextWithModel(
+      model,
+      promptMessages: [
+        ChatPromptBuilder.user().text('Write a haiku about coding.').build()
+      ],
       cancelToken: sharedToken,
     );
 
@@ -218,12 +222,15 @@ Future<void> demonstrateMultipleRequestCancellation(
 
     await Future.wait([
       request1
+          .drain()
           .then((_) => completedCount++)
           .catchError((e) => cancelledCount++),
       request2
+          .drain()
           .then((_) => completedCount++)
           .catchError((e) => cancelledCount++),
       request3
+          .drain()
           .then((_) => completedCount++)
           .catchError((e) => cancelledCount++),
     ]);
@@ -238,7 +245,7 @@ Future<void> demonstrateMultipleRequestCancellation(
 }
 
 /// Demonstrate proper cancellation error handling
-Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
+Future<void> demonstrateCancellationHandling(LanguageModel model) async {
   print('🛡️  Cancellation Error Handling:\n');
 
   // Test 1: Using CancellationHelper.isCancelled()
@@ -246,13 +253,14 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
   try {
     final source = CancellationTokenSource();
     final cancelToken = source.token;
-    final requestFuture = provider.chat(
-      [ChatMessage.user('Hello')],
+    final requestStream = streamTextWithModel(
+      model,
+      promptMessages: [ChatPromptBuilder.user().text('Hello').build()],
       cancelToken: cancelToken,
     );
 
     source.cancel('Test cancellation');
-    await requestFuture;
+    await requestStream.drain();
 
     print('      ❌ Expected cancellation error');
   } catch (e) {
@@ -270,13 +278,14 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
   try {
     final source = CancellationTokenSource();
     final cancelToken = source.token;
-    final requestFuture = provider.chat(
-      [ChatMessage.user('Hello again')],
+    final requestStream = streamTextWithModel(
+      model,
+      promptMessages: [ChatPromptBuilder.user().text('Hello again').build()],
       cancelToken: cancelToken,
     );
 
     source.cancel('Test CancelledError catch');
-    await requestFuture;
+    await requestStream.drain();
 
     print('      ❌ Expected CancelledError');
   } on CancelledError catch (e) {
@@ -296,10 +305,11 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
   try {
     final source = CancellationTokenSource();
     final cancelToken = source.token;
-    final future = provider.chat(
-      [ChatMessage.user('Test')],
+    final future = streamTextWithModel(
+      model,
+      promptMessages: [ChatPromptBuilder.user().text('Test').build()],
       cancelToken: cancelToken,
-    );
+    ).drain();
     source.cancel();
     await future;
   } catch (e) {
@@ -310,9 +320,16 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
 
   // Test other error type (invalid API key)
   try {
-    final invalidProvider =
-        await ai().openai().apiKey('sk-invalid').model('gpt-4o-mini').build();
-    await invalidProvider.chat([ChatMessage.user('Test')]);
+    final invalidModel = await ai()
+        .openai()
+        .apiKey('sk-invalid')
+        .model('gpt-4o-mini')
+        .buildLanguageModel();
+    final prompt = ChatPromptBuilder.user().text('Test').build();
+    await generateTextWithModel(
+      invalidModel,
+      promptMessages: [prompt],
+    );
   } catch (e) {
     final isCancelled = CancellationHelper.isCancelled(e);
     print(
@@ -323,7 +340,7 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
 }
 
 /// Demonstrate cancellation timing and behavior
-Future<void> demonstrateCancellationTiming(ChatCapability provider) async {
+Future<void> demonstrateCancellationTiming(LanguageModel model) async {
   print('⏱️  Cancellation Timing:\n');
 
   // Test 1: Cancel before request starts
@@ -333,8 +350,11 @@ Future<void> demonstrateCancellationTiming(ChatCapability provider) async {
     source.cancel('Pre-cancelled');
     final cancelToken = source.token;
 
-    final response = await provider.chat(
-      [ChatMessage.user('This should not execute')],
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [
+        ChatPromptBuilder.user().text('This should not execute').build()
+      ],
       cancelToken: cancelToken,
     );
 
@@ -355,8 +375,13 @@ Future<void> demonstrateCancellationTiming(ChatCapability provider) async {
     final source = CancellationTokenSource();
     final cancelToken = source.token;
 
-    final requestFuture = provider.chat(
-      [ChatMessage.user('Count from 1 to 1000 with explanations.')],
+    final requestFuture = generateTextWithModel(
+      model,
+      promptMessages: [
+        ChatPromptBuilder.user()
+            .text('Count from 1 to 1000 with explanations.')
+            .build()
+      ],
       cancelToken: cancelToken,
     );
 

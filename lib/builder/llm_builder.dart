@@ -1,11 +1,5 @@
 import '../core/registry.dart';
-import '../models/tool_models.dart';
-import '../models/chat_models.dart';
-import '../models/audio_models.dart';
-import '../models/image_models.dart';
-import '../models/file_models.dart';
-import '../models/moderation_models.dart';
-import '../models/assistant_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAIProvider;
 import '../providers/google/builder.dart';
 import '../providers/google/tts.dart';
@@ -670,12 +664,13 @@ class LLMBuilder {
   /// You must provide exactly one of:
   /// - [prompt]: simple single-turn user message
   /// - [messages]: full conversation history
-  /// - [structuredPrompt]: a structured [ChatPromptMessage] built via
+  /// - [structuredPrompt]: a structured [ModelMessage] built via
   ///   [ChatPromptBuilder].
   Future<GenerateTextResult> generateText({
     String? prompt,
     List<ChatMessage>? messages,
-    ChatPromptMessage? structuredPrompt,
+    ModelMessage? structuredPrompt,
+    List<ModelMessage>? promptMessages,
     CancellationToken? cancelToken,
   }) async {
     final provider = await build();
@@ -683,6 +678,7 @@ class LLMBuilder {
       prompt: prompt,
       messages: messages,
       structuredPrompt: structuredPrompt,
+      promptMessages: promptMessages,
     );
 
     final response = await provider.chat(
@@ -712,7 +708,8 @@ class LLMBuilder {
   Stream<ChatStreamEvent> streamText({
     String? prompt,
     List<ChatMessage>? messages,
-    ChatPromptMessage? structuredPrompt,
+    ModelMessage? structuredPrompt,
+    List<ModelMessage>? promptMessages,
     CancellationToken? cancelToken,
   }) async* {
     final provider = await build();
@@ -720,6 +717,7 @@ class LLMBuilder {
       prompt: prompt,
       messages: messages,
       structuredPrompt: structuredPrompt,
+      promptMessages: promptMessages,
     );
 
     yield* provider.chatStream(
@@ -737,13 +735,15 @@ class LLMBuilder {
   Stream<StreamTextPart> streamTextParts({
     String? prompt,
     List<ChatMessage>? messages,
-    ChatPromptMessage? structuredPrompt,
+    ModelMessage? structuredPrompt,
+    List<ModelMessage>? promptMessages,
     CancellationToken? cancelToken,
   }) async* {
     final rawStream = streamText(
       prompt: prompt,
       messages: messages,
       structuredPrompt: structuredPrompt,
+      promptMessages: promptMessages,
       cancelToken: cancelToken,
     );
 
@@ -1225,6 +1225,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
     var next = (ChatCallContext c) => _chat.chatWithTools(
           c.messages,
           c.tools,
+          options: c.options,
           cancelToken: c.cancelToken,
         );
 
@@ -1256,6 +1257,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
     var next = (ChatCallContext c) => _chat.chatStream(
           c.messages,
           tools: c.tools,
+          options: c.options,
           cancelToken: c.cancelToken,
         );
 
@@ -1274,15 +1276,22 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     final context = ChatCallContext(
@@ -1291,6 +1300,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
       config: _config,
       messages: messages,
       tools: tools,
+      options: options,
       cancelToken: cancelToken,
       operationKind: ChatOperationKind.chat,
     );
@@ -1301,6 +1311,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     final context = ChatCallContext(
@@ -1309,6 +1320,7 @@ class _MiddlewareWrappedProvider extends BaseAudioCapability
       config: _config,
       messages: messages,
       tools: tools,
+      options: options,
       cancelToken: cancelToken,
       operationKind: ChatOperationKind.stream,
     );

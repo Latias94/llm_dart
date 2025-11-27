@@ -87,13 +87,13 @@ class OpenAICompatibleClient {
     _sseBuffer.clear();
   }
 
-  /// Build API messages from the structured ChatPromptMessage model.
+  /// Build API messages from the structured ModelMessage model.
   ///
   /// This mirrors the OpenAI client's behavior but keeps only the
   /// subset of features that are meaningful for generic
   /// OpenAI-compatible providers.
   List<Map<String, dynamic>> buildApiMessagesFromPrompt(
-    List<ChatPromptMessage> promptMessages,
+    List<ModelMessage> promptMessages,
   ) {
     final apiMessages = <Map<String, dynamic>>[];
 
@@ -111,7 +111,7 @@ class OpenAICompatibleClient {
     return apiMessages;
   }
 
-  Map<String, dynamic> _convertPromptMessage(ChatPromptMessage message) {
+  Map<String, dynamic> _convertPromptMessage(ModelMessage message) {
     final role = switch (message.role) {
       ChatRole.system => 'system',
       ChatRole.user => 'user',
@@ -245,7 +245,7 @@ class OpenAICompatibleClient {
   }
 
   void _appendToolResultMessagesFromPrompt(
-    ChatPromptMessage message,
+    ModelMessage message,
     List<Map<String, dynamic>> apiMessages,
   ) {
     final fallbackText = message.parts

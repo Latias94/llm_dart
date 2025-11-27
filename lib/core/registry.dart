@@ -1,8 +1,5 @@
 import 'package:logging/logging.dart';
-
-import 'capability.dart';
-import 'config.dart';
-import 'llm_error.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import '../providers/factories/openai_factory.dart';
 import '../providers/factories/anthropic_factory.dart';
 import '../providers/factories/deepseek_factory.dart';

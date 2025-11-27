@@ -1,11 +1,12 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
 
 void main() {
   group('XAIConfig Tests', () {
     group('Basic Configuration', () {
       test('should create config with required parameters', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-api-key',
         );
 
@@ -28,8 +29,8 @@ void main() {
       });
 
       test('should create config with all parameters', () {
-        final searchParams = SearchParameters.webSearch(maxResults: 5);
-        final config = XAIConfig(
+        final searchParams = xai.SearchParameters.webSearch(maxResults: 5);
+        final config = xai.XAIConfig(
           apiKey: 'test-api-key',
           baseUrl: 'https://custom.api.com',
           model: 'grok-vision-beta',
@@ -67,7 +68,7 @@ void main() {
 
     group('Model Support Detection', () {
       test('should detect reasoning support for Grok models', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
         );
@@ -76,7 +77,7 @@ void main() {
       });
 
       test('should detect vision support for vision models', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           model: 'grok-vision-beta',
         );
@@ -85,7 +86,7 @@ void main() {
       });
 
       test('should not support vision for regular models', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
         );
@@ -94,7 +95,7 @@ void main() {
       });
 
       test('should support tool calling', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
         );
@@ -103,7 +104,7 @@ void main() {
       });
 
       test('should detect search support for Grok models', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
         );
@@ -112,7 +113,7 @@ void main() {
       });
 
       test('should detect embeddings support for embedding models', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           model: 'text-embedding-ada-002',
         );
@@ -121,7 +122,7 @@ void main() {
       });
 
       test('should not support embeddings for chat models', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
         );
@@ -132,7 +133,7 @@ void main() {
 
     group('Live Search Configuration', () {
       test('should detect live search when explicitly enabled', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           liveSearch: true,
         );
@@ -141,8 +142,8 @@ void main() {
       });
 
       test('should detect live search when search parameters are provided', () {
-        final searchParams = SearchParameters.webSearch();
-        final config = XAIConfig(
+        final searchParams = xai.SearchParameters.webSearch();
+        final config = xai.XAIConfig(
           apiKey: 'test-key',
           searchParameters: searchParams,
         );
@@ -151,7 +152,7 @@ void main() {
       });
 
       test('should not detect live search when disabled', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           liveSearch: false,
         );
@@ -162,7 +163,7 @@ void main() {
 
     group('Model Family Detection', () {
       test('should detect Grok family', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
         );
@@ -171,7 +172,7 @@ void main() {
       });
 
       test('should detect Embedding family', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           model: 'text-embedding-ada-002',
         );
@@ -180,7 +181,7 @@ void main() {
       });
 
       test('should return Unknown for unrecognized models', () {
-        const config = XAIConfig(
+        const config = xai.XAIConfig(
           apiKey: 'test-key',
           model: 'unknown-model',
         );
@@ -191,7 +192,7 @@ void main() {
 
     group('Configuration Copying', () {
       test('should copy config with new values', () {
-        const original = XAIConfig(
+        const original = xai.XAIConfig(
           apiKey: 'original-key',
           model: 'grok-3',
           temperature: 0.5,
@@ -211,8 +212,8 @@ void main() {
       });
 
       test('should preserve original values when not specified', () {
-        final searchParams = SearchParameters.webSearch();
-        final original = XAIConfig(
+        final searchParams = xai.SearchParameters.webSearch();
+        final original = xai.XAIConfig(
           apiKey: 'test-key',
           model: 'grok-vision-beta',
           maxTokens: 1000,
@@ -255,7 +256,7 @@ void main() {
           },
         );
 
-        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
+        final xaiConfig = xai.XAIConfig.fromLLMConfig(llmConfig);
 
         expect(xaiConfig.apiKey, equals('test-key'));
         expect(xaiConfig.baseUrl, equals('https://api.x.ai/v1/'));
@@ -281,7 +282,7 @@ void main() {
           extensions: {'customParam': 'customValue'},
         );
 
-        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
+        final xaiConfig = xai.XAIConfig.fromLLMConfig(llmConfig);
 
         expect(xaiConfig.getExtension<String>('customParam'),
             equals('customValue'));
@@ -297,7 +298,7 @@ void main() {
           },
         );
 
-        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
+        final xaiConfig = xai.XAIConfig.fromLLMConfig(llmConfig);
 
         expect(xaiConfig.liveSearch, isTrue);
         expect(xaiConfig.searchParameters, isNotNull);

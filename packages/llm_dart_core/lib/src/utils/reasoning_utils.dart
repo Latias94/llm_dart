@@ -151,8 +151,7 @@ class ReasoningUtils {
         id.startsWith('o3') ||
         id.startsWith('o4');
 
-    final isOpenAIReasoning =
-        isOpenAIModel && isOpenAIReasoningModel(model);
+    final isOpenAIReasoning = isOpenAIModel && isOpenAIReasoningModel(model);
 
     return isOpenAIReasoning ||
         model == 'deepseek-reasoner' ||

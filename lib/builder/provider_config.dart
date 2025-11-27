@@ -1,4 +1,4 @@
-import '../core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Provider-specific configuration builder
 class ProviderConfig {

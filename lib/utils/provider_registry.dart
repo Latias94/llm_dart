@@ -1,4 +1,4 @@
-import '../core/capability.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'capability_utils.dart';
 
 /// Enterprise-grade provider registry for managing multiple providers

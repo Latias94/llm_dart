@@ -13,6 +13,32 @@ class AnthropicRequestBuilder {
 
   AnthropicRequestBuilder(this.config);
 
+  /// Compute model-specific max output tokens, mirroring the TypeScript
+  /// `getMaxOutputTokensForModel` helper.
+  _MaxOutputTokensInfo _getMaxOutputTokensForModel(String modelId) {
+    if (modelId.contains('claude-sonnet-4-') ||
+        modelId.contains('claude-3-7-sonnet') ||
+        modelId.contains('claude-haiku-4-5')) {
+      return const _MaxOutputTokensInfo(64000, true);
+    } else if (modelId.contains('claude-opus-4-')) {
+      return const _MaxOutputTokensInfo(32000, true);
+    } else if (modelId.contains('claude-3-5-haiku')) {
+      return const _MaxOutputTokensInfo(8192, true);
+    } else if (modelId.contains('claude-3-haiku')) {
+      return const _MaxOutputTokensInfo(4096, true);
+    } else {
+      // Fallback: use a conservative default and mark as unknown model
+      // so we do not clamp user-provided values too aggressively.
+      return const _MaxOutputTokensInfo(4096, false);
+    }
+  }
+
+  /// Build request body from legacy [ChatMessage] list.
+  ///
+  /// Internally converts messages to the structured [ModelMessage]
+  /// model and delegates to [buildRequestBodyFromPrompt]. This keeps the
+  /// public API backwards-compatible while allowing newer call sites to
+  /// work directly with prompt messages.
   Map<String, dynamic> buildRequestBody(
     List<ChatMessage> messages,
     List<Tool>? tools,
@@ -20,9 +46,18 @@ class AnthropicRequestBuilder {
   ) {
     final promptMessages =
         messages.map((message) => message.toPromptMessage()).toList();
+    return buildRequestBodyFromPrompt(promptMessages, tools, stream);
+  }
 
+  /// Build request body from structured [ModelMessage] list.
+  Map<String, dynamic> buildRequestBodyFromPrompt(
+    List<ModelMessage> promptMessages,
+    List<Tool>? tools,
+    bool stream, {
+    LanguageModelCallOptions? options,
+  }) {
     final processedData = _processMessagesFromPrompt(promptMessages);
-    final processedTools = _processTools(messages, tools);
+    final processedTools = _processToolsFromPrompt(promptMessages, tools);
 
     if (processedData.messages.isEmpty) {
       throw const InvalidRequestError(
@@ -32,10 +67,32 @@ class AnthropicRequestBuilder {
 
     _validateMessageSequence(processedData.messages);
 
+    // Base max output tokens for this model, mirroring the TypeScript
+    // implementation. When thinking is enabled, we will adjust this
+    // value by the thinking budget and clamp to the model maximum.
+    final maxInfo = _getMaxOutputTokensForModel(config.model);
+    final baseMaxTokens =
+        options?.maxTokens ?? config.maxTokens ?? maxInfo.maxOutputTokens;
+
+    final thinkingEnabled = config.reasoning && config.supportsReasoning;
+    final thinkingBudget = config.thinkingBudgetTokens;
+
+    var effectiveMaxTokens = baseMaxTokens;
+
+    if (thinkingEnabled && thinkingBudget != null) {
+      // Adjust max tokens to account for thinking budget.
+      effectiveMaxTokens = baseMaxTokens + thinkingBudget;
+
+      // Clamp to known model limits to avoid exceeding Anthropic caps.
+      if (maxInfo.knownModel && effectiveMaxTokens > maxInfo.maxOutputTokens) {
+        effectiveMaxTokens = maxInfo.maxOutputTokens;
+      }
+    }
+
     final body = <String, dynamic>{
       'model': config.model,
       'messages': processedData.messages,
-      'max_tokens': config.maxTokens ?? 1024,
+      'max_tokens': effectiveMaxTokens,
       'stream': stream,
     };
 
@@ -47,7 +104,7 @@ class AnthropicRequestBuilder {
   }
 
   ProcessedPrompt _processMessagesFromPrompt(
-    List<ChatPromptMessage> promptMessages,
+    List<ModelMessage> promptMessages,
   ) {
     final validator = AnthropicCacheControlValidator();
 
@@ -81,15 +138,19 @@ class AnthropicRequestBuilder {
     );
   }
 
-  ProcessedTools _processTools(
-    List<ChatMessage> messages,
+  /// Extract tools from prompt messages plus config-level tools.
+  ProcessedTools _processToolsFromPrompt(
+    List<ModelMessage> promptMessages,
     List<Tool>? configTools,
   ) {
     final messageTools = <Tool>[];
     Map<String, dynamic>? toolCacheControl;
 
-    for (final message in messages) {
-      final result = _extractToolsFromMessage(message);
+    for (final prompt in promptMessages) {
+      // Recover a legacy ChatMessage view so we can reuse the existing
+      // tool-extraction logic without duplicating it.
+      final legacyMessage = ChatMessage.fromPromptMessage(prompt);
+      final result = _extractToolsFromMessage(legacyMessage);
       messageTools.addAll(result.tools);
       toolCacheControl ??= result.cacheControl;
     }
@@ -109,7 +170,7 @@ class AnthropicRequestBuilder {
   }
 
   void _convertSystemMessageFromPrompt(
-    ChatPromptMessage message,
+    ModelMessage message,
     List<Map<String, dynamic>> systemContent,
     AnthropicCacheControlValidator validator,
   ) {
@@ -153,7 +214,7 @@ class AnthropicRequestBuilder {
   }
 
   Map<String, dynamic> _convertNonSystemMessageFromPrompt(
-    ChatPromptMessage message,
+    ModelMessage message,
     AnthropicCacheControlValidator validator,
   ) {
     final content = <Map<String, dynamic>>[];
@@ -435,19 +496,25 @@ class AnthropicRequestBuilder {
   }
 
   void _addOptionalParameters(Map<String, dynamic> body) {
-    if (config.temperature != null) {
-      body['temperature'] = config.temperature;
+    final thinkingEnabled = config.reasoning && config.supportsReasoning;
+
+    // Sampling parameters are not supported when thinking is enabled on
+    // reasoning-capable models. We only forward them for standard calls.
+    if (!thinkingEnabled) {
+      if (config.temperature != null) {
+        body['temperature'] = config.temperature;
+      }
+
+      if (config.topP != null) {
+        body['top_p'] = config.topP;
+      }
+
+      if (config.topK != null) {
+        body['top_k'] = config.topK;
+      }
     }
 
-    if (config.topP != null) {
-      body['top_p'] = config.topP;
-    }
-
-    if (config.topK != null) {
-      body['top_k'] = config.topK;
-    }
-
-    if (config.reasoning) {
+    if (thinkingEnabled) {
       final thinkingConfig = <String, dynamic>{
         'type': 'enabled',
       };
@@ -497,7 +564,7 @@ class AnthropicRequestBuilder {
   }
 
   // Legacy ChatMessage-based conversion is now routed through the
-  // ChatPromptMessage-based implementation for non-system messages.
+  // ModelMessage-based implementation for non-system messages.
 
   Map<String, dynamic> convertTool(Tool tool) {
     try {
@@ -642,4 +709,12 @@ class ToolExtractionResult {
     required this.tools,
     this.cacheControl,
   });
+}
+
+/// Internal helper mirroring the TypeScript getMaxOutputTokensForModel.
+class _MaxOutputTokensInfo {
+  final int maxOutputTokens;
+  final bool knownModel;
+
+  const _MaxOutputTokensInfo(this.maxOutputTokens, this.knownModel);
 }

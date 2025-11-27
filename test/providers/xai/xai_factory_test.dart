@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
 import 'package:llm_dart/providers/factories/xai_factory.dart';
 
 void main() {
@@ -55,7 +56,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<XAIProvider>());
+        expect(provider, isA<xai.XAIProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -71,7 +72,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<XAIProvider>());
+        expect(provider, isA<xai.XAIProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -97,7 +98,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<XAIProvider>());
+        expect(provider, isA<xai.XAIProvider>());
         expect(provider, isA<ChatCapability>());
       });
 

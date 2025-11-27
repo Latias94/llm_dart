@@ -1,10 +1,11 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 void main() {
   group('OpenAI Responses API Configuration', () {
     test('should create OpenAI config with Responses API enabled', () {
-      final config = OpenAIConfig(
+      final config = openai.OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4o',
         useResponsesAPI: true,
@@ -22,7 +23,7 @@ void main() {
         parameters: {'max_results': 5},
       );
 
-      final config = OpenAIConfig(
+      final config = openai.OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4o',
         useResponsesAPI: true,
@@ -35,7 +36,7 @@ void main() {
     });
 
     test('should create OpenAI config with previous response ID', () {
-      final config = OpenAIConfig(
+      final config = openai.OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4o',
         useResponsesAPI: true,
@@ -55,10 +56,10 @@ void main() {
           .model('gpt-4o')
           .build();
 
-      expect(provider, isA<OpenAIProvider>());
+      expect(provider, isA<openai.OpenAIProvider>());
 
       // Access the config through the provider
-      final openaiProvider = provider as OpenAIProvider;
+      final openaiProvider = provider as openai.OpenAIProvider;
       expect(openaiProvider.config.useResponsesAPI, isTrue);
       expect(openaiProvider.config.builtInTools, hasLength(2));
     });
@@ -136,7 +137,7 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         expect(openaiProvider.config.builtInTools, hasLength(3));
 
         final tools = openaiProvider.config.builtInTools!;
@@ -153,14 +154,14 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         expect(openaiProvider.config.previousResponseId, equals('resp_123'));
       });
     });
 
     group('Config Validation', () {
       test('should handle copyWith for Responses API fields', () {
-        final originalConfig = OpenAIConfig(
+        final originalConfig = openai.OpenAIConfig(
           apiKey: 'test-key',
           model: 'gpt-4o',
           useResponsesAPI: false,
@@ -183,21 +184,21 @@ void main() {
       });
 
       test('should handle equality with Responses API fields', () {
-        final config1 = OpenAIConfig(
+        final config1 = openai.OpenAIConfig(
           apiKey: 'test-key',
           model: 'gpt-4o',
           useResponsesAPI: true,
           previousResponseId: 'resp_123',
         );
 
-        final config2 = OpenAIConfig(
+        final config2 = openai.OpenAIConfig(
           apiKey: 'test-key',
           model: 'gpt-4o',
           useResponsesAPI: true,
           previousResponseId: 'resp_123',
         );
 
-        final config3 = OpenAIConfig(
+        final config3 = openai.OpenAIConfig(
           apiKey: 'test-key',
           model: 'gpt-4o',
           useResponsesAPI: false,

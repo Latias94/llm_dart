@@ -1,5 +1,4 @@
-import '../models/chat_models.dart';
-import '../models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Default chat settings applied via middleware.
 ///

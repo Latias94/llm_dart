@@ -29,8 +29,10 @@ Future<void> main() async {
 
   final chatResult = await generateTextWithModel(
     chatModel,
-    messages: [
-      ChatMessage.user('Introduce yourself in one sentence.'),
+    promptMessages: [
+      ChatPromptBuilder.user()
+          .text('Introduce yourself in one sentence.')
+          .build(),
     ],
   );
 
@@ -41,10 +43,10 @@ Future<void> main() async {
 
   final responsesResult = await generateTextWithModel(
     responsesModel,
-    messages: [
-      ChatMessage.user(
-        'Give me three bullet points about the benefits of Dart.',
-      ),
+    promptMessages: [
+      ChatPromptBuilder.user()
+          .text('Give me three bullet points about the benefits of Dart.')
+          .build(),
     ],
   );
 

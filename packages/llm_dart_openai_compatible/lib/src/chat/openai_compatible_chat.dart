@@ -11,13 +11,19 @@ import '../provider_profiles/openai_compatible_provider_profiles.dart';
 ///
 /// This module implements ChatCapability for any provider that exposes
 /// an OpenAI-style chat/completions API.
-class OpenAICompatibleChat implements ChatCapability {
+class OpenAICompatibleChat implements ChatCapability, PromptChatCapability {
   final OpenAICompatibleClient client;
   final OpenAICompatibleConfig config;
 
   bool _hasReasoningContent = false;
   String _lastChunk = '';
   final StringBuffer _thinkingBuffer = StringBuffer();
+  // Track tool call streaming state for OpenAI-compatible providers.
+  // These providers typically follow the same pattern as OpenAI: the first
+  // chunk carries id + index, while subsequent chunks only contain index and
+  // incremental arguments. We delegate index → id mapping to
+  // [ToolCallStreamState].
+  final ToolCallStreamState _toolCallStreamState = ToolCallStreamState();
 
   OpenAICompatibleChat(this.client, this.config);
 
@@ -27,9 +33,80 @@ class OpenAICompatibleChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    final requestBody = _buildRequestBody(messages, tools, false);
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    return chatPrompt(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async* {
+    final promptMessages =
+        messages.map((message) => message.toPromptMessage()).toList();
+    yield* chatPromptStream(
+      promptMessages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<List<ChatMessage>?> memoryContents() async => null;
+
+  @override
+  Future<String> summarizeHistory(List<ChatMessage> messages) async {
+    final prompt =
+        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
+    final request = [ChatMessage.user(prompt)];
+    final response = await chat(request);
+    final text = response.text;
+    if (text == null) {
+      throw const GenericError('no text in summary response');
+    }
+
+    return ReasoningUtils.filterThinkingContent(text);
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    final requestBody = _buildRequestBody(
+      messages,
+      tools,
+      false,
+      options: options,
+    );
     final responseData = await client.postJson(
       chatEndpoint,
       requestBody,
@@ -39,13 +116,18 @@ class OpenAICompatibleChat implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
-    final effectiveTools = tools ?? config.tools;
-    final requestBody = _buildRequestBody(messages, effectiveTools, true);
+    final requestBody = _buildRequestBody(
+      messages,
+      tools,
+      true,
+      options: options,
+    );
 
     _resetStreamState();
 
@@ -68,42 +150,16 @@ class OpenAICompatibleChat implements ChatCapability {
     }
   }
 
-  @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    CancellationToken? cancelToken,
-  }) {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final prompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final request = [ChatMessage.user(prompt)];
-    final response = await chat(request);
-    final text = response.text;
-    if (text == null) {
-      throw const GenericError('no text in summary response');
-    }
-
-    return ReasoningUtils.filterThinkingContent(text);
-  }
-
   Map<String, dynamic> _buildRequestBody(
-    List<ChatMessage> messages,
+    List<ModelMessage> promptMessages,
     List<Tool>? tools,
-    bool stream,
-  ) {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-
+    bool stream, {
+    LanguageModelCallOptions? options,
+  }) {
     final apiMessages = client.buildApiMessagesFromPrompt(promptMessages);
 
-    final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
+    final hasSystemMessage =
+        promptMessages.any((m) => m.role == ChatRole.system);
     if (!hasSystemMessage && config.systemPrompt != null) {
       apiMessages.insert(0, {'role': 'system', 'content': config.systemPrompt});
     }
@@ -114,29 +170,36 @@ class OpenAICompatibleChat implements ChatCapability {
       'stream': stream,
     };
 
+    final effectiveMaxTokens = options?.maxTokens ?? config.maxTokens;
+    final effectiveTemperature = options?.temperature ?? config.temperature;
+    final effectiveTopP = options?.topP ?? config.topP;
+    final effectiveTopK = options?.topK ?? config.topK;
+
     // Reasoning-specific parameter restrictions are no longer enforced here.
     // We always forward the configured parameters and let the underlying
     // OpenAI-compatible provider decide how to handle them.
-    if (config.maxTokens != null) {
-      body['max_tokens'] = config.maxTokens;
+    if (effectiveMaxTokens != null) {
+      body['max_tokens'] = effectiveMaxTokens;
     }
-    if (config.temperature != null) {
-      body['temperature'] = config.temperature;
+    if (effectiveTemperature != null) {
+      body['temperature'] = effectiveTemperature;
     }
-    if (config.topP != null) {
-      body['top_p'] = config.topP;
+    if (effectiveTopP != null) {
+      body['top_p'] = effectiveTopP;
     }
-    if (config.topK != null) body['top_k'] = config.topK;
+    if (effectiveTopK != null) {
+      body['top_k'] = effectiveTopK;
+    }
 
     if (config.reasoningEffort != null) {
       body['reasoning_effort'] = config.reasoningEffort!.value;
     }
 
-    final effectiveTools = tools ?? config.tools;
+    final effectiveTools = options?.tools ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = effectiveTools.map((t) => t.toJson()).toList();
 
-      final effectiveToolChoice = config.toolChoice;
+      final effectiveToolChoice = options?.toolChoice ?? config.toolChoice;
       if (effectiveToolChoice != null) {
         body['tool_choice'] = effectiveToolChoice.toJson();
       }
@@ -165,16 +228,20 @@ class OpenAICompatibleChat implements ChatCapability {
       body['response_format'] = responseFormat;
     }
 
-    if (config.stopSequences != null && config.stopSequences!.isNotEmpty) {
-      body['stop'] = config.stopSequences;
+    final effectiveStopSequences =
+        options?.stopSequences ?? config.stopSequences;
+    if (effectiveStopSequences != null && effectiveStopSequences.isNotEmpty) {
+      body['stop'] = effectiveStopSequences;
     }
 
-    if (config.user != null) {
-      body['user'] = config.user;
+    final effectiveUser = options?.user ?? config.user;
+    if (effectiveUser != null) {
+      body['user'] = effectiveUser;
     }
 
-    if (config.serviceTier != null) {
-      body['service_tier'] = config.serviceTier!.value;
+    final effectiveServiceTier = options?.serviceTier ?? config.serviceTier;
+    if (effectiveServiceTier != null) {
+      body['service_tier'] = effectiveServiceTier.value;
     }
 
     // Apply provider-specific request body transformers (e.g. Google Gemini).
@@ -283,6 +350,7 @@ class OpenAICompatibleChat implements ChatCapability {
     _hasReasoningContent = false;
     _lastChunk = '';
     _thinkingBuffer.clear();
+    _toolCallStreamState.reset();
   }
 
   List<ChatStreamEvent> _parseStreamEventWithReasoning(
@@ -339,11 +407,10 @@ class OpenAICompatibleChat implements ChatCapability {
 
     final toolCalls = delta['tool_calls'] as List?;
     if (toolCalls != null && toolCalls.isNotEmpty) {
-      final toolCall = toolCalls.first as Map<String, dynamic>;
-      if (toolCall.containsKey('id') && toolCall.containsKey('function')) {
-        try {
-          events.add(ToolCallDeltaEvent(ToolCall.fromJson(toolCall)));
-        } catch (_) {}
+      final toolCallMap = toolCalls.first as Map<String, dynamic>;
+      final toolCall = _toolCallStreamState.processDelta(toolCallMap);
+      if (toolCall != null) {
+        events.add(ToolCallDeltaEvent(toolCall));
       }
     }
 

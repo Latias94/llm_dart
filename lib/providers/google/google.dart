@@ -35,7 +35,6 @@ import 'package:llm_dart_google/llm_dart_google.dart'
         SafetySetting;
 
 import '../../core/provider_defaults.dart';
-import '../../models/chat_models.dart';
 
 /// Public Google provider surface re-export.
 ///

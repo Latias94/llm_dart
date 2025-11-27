@@ -1,12 +1,13 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart/providers/anthropic/request_builder.dart';
 
 void main() {
-  group('AnthropicConfig Tests', () {
+  group('anthropic.AnthropicConfig Tests', () {
     group('Basic Configuration', () {
       test('should create config with required parameters', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-api-key',
         );
 
@@ -19,7 +20,7 @@ void main() {
       });
 
       test('should create config with all parameters', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-api-key',
           baseUrl: 'https://custom.api.com',
           model: 'claude-sonnet-4-20250514',
@@ -57,7 +58,7 @@ void main() {
 
     group('Model Support Detection', () {
       test('should detect vision support for vision models', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-5-sonnet-20241022',
         );
@@ -66,7 +67,7 @@ void main() {
       });
 
       test('should detect reasoning support for known reasoning models', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         );
@@ -75,7 +76,7 @@ void main() {
       });
 
       test('should detect interleaved thinking support for Claude 4', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         );
@@ -84,7 +85,7 @@ void main() {
       });
 
       test('should not support reasoning for unknown models by default', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-haiku-20240307',
         );
@@ -96,7 +97,7 @@ void main() {
 
     group('Thinking Configuration Validation', () {
       test('should validate valid reasoning config', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
           reasoning: true,
@@ -107,7 +108,7 @@ void main() {
       });
 
       test('should allow reasoning for any model when explicitly enabled', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-haiku-20240307',
           reasoning: true,
@@ -119,7 +120,7 @@ void main() {
       });
 
       test('should allow interleaved thinking when explicitly enabled', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-5-sonnet-20241022',
           interleavedThinking: true,
@@ -131,7 +132,7 @@ void main() {
       });
 
       test('should reject excessive thinking budget', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
           reasoning: true,
@@ -144,7 +145,7 @@ void main() {
       });
 
       test('should reject too small thinking budget', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
           reasoning: true,
@@ -159,7 +160,7 @@ void main() {
 
     group('Configuration Copying', () {
       test('should copy config with new values', () {
-        const original = AnthropicConfig(
+        const original = anthropic.AnthropicConfig(
           apiKey: 'original-key',
           model: 'claude-3-5-sonnet-20241022',
           temperature: 0.5,
@@ -176,7 +177,7 @@ void main() {
       });
 
       test('should preserve original values when not specified', () {
-        const original = AnthropicConfig(
+        const original = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
           reasoning: true,
@@ -207,7 +208,8 @@ void main() {
           },
         );
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
 
         expect(anthropicConfig.apiKey, equals('test-key'));
         expect(anthropicConfig.model, equals('claude-sonnet-4-20250514'));
@@ -225,7 +227,8 @@ void main() {
           extensions: {'customParam': 'customValue'},
         );
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
 
         expect(anthropicConfig.getExtension<String>('customParam'),
             equals('customValue'));
@@ -249,7 +252,8 @@ void main() {
           },
         );
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
         final builder = AnthropicRequestBuilder(anthropicConfig);
 
         final webSearchTool = Tool.function(
@@ -282,7 +286,7 @@ void main() {
     group('Thinking Budget Limits', () {
       test('should return correct max thinking budget for reasoning models',
           () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         );
@@ -291,7 +295,7 @@ void main() {
       });
 
       test('should return zero for non-reasoning models', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-haiku-20240307',
         );

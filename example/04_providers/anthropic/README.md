@@ -41,16 +41,24 @@ dart run mcp_connector.dart
 - **OAuth Support**: Secure authentication with external services
 - **Tool Filtering**: Control which tools are available to Claude
 
-## Usage Examples
+## Usage Examples (Prompt-first)
 
 ### Extended Thinking
 ```dart
-final provider = await ai().anthropic().apiKey('your-key')
-    .model('claude-sonnet-4-20250514').build();
+final model = await ai()
+    .anthropic()
+    .apiKey('your-key')
+    .model('claude-sonnet-4-20250514')
+    .buildLanguageModel();
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this logic puzzle step by step'),
-]);
+final prompt = ChatPromptBuilder.user()
+    .text('Solve this logic puzzle step by step')
+    .build();
+
+final response = await generateTextWithModel(
+  model,
+  promptMessages: [prompt],
+);
 
 // Access Claude's thinking process
 if (response.thinking != null) {
@@ -69,14 +77,25 @@ final fileObject = await provider.uploadFile(FileUploadRequest(
   purpose: FilePurpose.assistants,
 ));
 
-final analysis = await provider.chat([
-  ChatMessage.user('Analyze this document: ${fileObject.id}'),
-]);
+final model = await ai()
+    .anthropic()
+    .apiKey('your-key')
+    .model('claude-sonnet-4-20250514')
+    .buildLanguageModel();
+
+final prompt = ChatPromptBuilder.user()
+    .text('Analyze this document: ${fileObject.id}')
+    .build();
+
+final analysis = await generateTextWithModel(
+  model,
+  promptMessages: [prompt],
+);
 ```
 
 ### MCP Connector
 ```dart
-final provider = await ai()
+final model = await ai()
     .anthropic((anthropic) => anthropic
         .mcpServers([
           AnthropicMCPServer.url(
@@ -87,11 +106,16 @@ final provider = await ai()
         ]))
     .apiKey('your-key')
     .model('claude-sonnet-4-20250514')
+    .buildLanguageModel();
+
+final prompt = ChatPromptBuilder.user()
+    .text('Use the file server to read my documents')
     .build();
 
-final response = await provider.chat([
-  ChatMessage.user('Use the file server to read my documents'),
-]);
+final response = await generateTextWithModel(
+  model,
+  promptMessages: [prompt],
+);
 ```
 
 ## Next Steps

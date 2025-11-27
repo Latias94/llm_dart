@@ -53,12 +53,24 @@ export 'provider.dart';
 export 'chat.dart';
 export 'embeddings.dart';
 
-// Backwards-compatible aliases for config/provider types.
+@Deprecated(
+  'Use XAIConfig from package:llm_dart_xai/llm_dart_xai.dart instead. '
+  'This alias exists only for backwards compatibility and will be '
+  'removed in a future release.',
+)
+// Backwards-compatible alias for the xAI configuration type.
 typedef XAIConfig = xai_impl.XAIConfig;
+
+@Deprecated(
+  'Use XAIProvider from package:llm_dart_xai/llm_dart_xai.dart instead. '
+  'This alias exists only for backwards compatibility and will be '
+  'removed in a future release.',
+)
+// Backwards-compatible alias for the xAI provider type.
 typedef XAIProvider = xai_impl.XAIProvider;
 
 /// Create an xAI provider with default settings
-XAIProvider createXAIProvider({
+xai_impl.XAIProvider createXAIProvider({
   required String apiKey,
   String model = 'grok-3',
   String baseUrl = 'https://api.x.ai/v1/',
@@ -68,7 +80,7 @@ XAIProvider createXAIProvider({
   SearchParameters? searchParameters,
   bool? liveSearch,
 }) {
-  final config = XAIConfig(
+  final config = xai_impl.XAIConfig(
     apiKey: apiKey,
     model: model,
     baseUrl: baseUrl,
@@ -79,11 +91,11 @@ XAIProvider createXAIProvider({
     liveSearch: liveSearch,
   );
 
-  return XAIProvider(config);
+  return xai_impl.XAIProvider(config);
 }
 
 /// Create an xAI provider with search capabilities
-XAIProvider createXAISearchProvider({
+xai_impl.XAIProvider createXAISearchProvider({
   required String apiKey,
   String model = 'grok-3',
   double? temperature,
@@ -103,7 +115,7 @@ XAIProvider createXAISearchProvider({
     toDate: toDate,
   );
 
-  final config = XAIConfig(
+  final config = xai_impl.XAIConfig(
     apiKey: apiKey,
     model: model,
     temperature: temperature,
@@ -113,7 +125,7 @@ XAIProvider createXAISearchProvider({
     liveSearch: true, // Explicitly enable live search
   );
 
-  return XAIProvider(config);
+  return xai_impl.XAIProvider(config);
 }
 
 /// Create an xAI provider with Live Search enabled
@@ -133,7 +145,7 @@ XAIProvider createXAISearchProvider({
 ///   ChatMessage.user('What are the latest developments in AI?')
 /// ]);
 /// ```
-XAIProvider createXAILiveSearchProvider({
+xai_impl.XAIProvider createXAILiveSearchProvider({
   required String apiKey,
   String model = 'grok-3',
   double? temperature,
@@ -142,7 +154,7 @@ XAIProvider createXAILiveSearchProvider({
   int? maxSearchResults,
   List<String>? excludedWebsites,
 }) {
-  final config = XAIConfig(
+  final config = xai_impl.XAIConfig(
     apiKey: apiKey,
     model: model,
     temperature: temperature,
@@ -155,18 +167,18 @@ XAIProvider createXAILiveSearchProvider({
     ),
   );
 
-  return XAIProvider(config);
+  return xai_impl.XAIProvider(config);
 }
 
 /// Create an xAI provider for Grok Vision
-XAIProvider createGrokVisionProvider({
+xai_impl.XAIProvider createGrokVisionProvider({
   required String apiKey,
   String model = 'grok-vision-beta',
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
 }) {
-  final config = XAIConfig(
+  final config = xai_impl.XAIConfig(
     apiKey: apiKey,
     model: model,
     temperature: temperature,
@@ -174,7 +186,7 @@ XAIProvider createGrokVisionProvider({
     systemPrompt: systemPrompt,
   );
 
-  return XAIProvider(config);
+  return xai_impl.XAIProvider(config);
 }
 
 /// XAI provider settings (Vercel AI-style).

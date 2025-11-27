@@ -49,7 +49,7 @@ Show your reasoning step by step.
     try {
       print('   Testing ${model['name']}: ${model['description']}');
 
-      final provider = await ai()
+      final reasoningModel = await ai()
           .openai()
           .apiKey(apiKey)
           .model(model['name']!)
@@ -57,10 +57,14 @@ Show your reasoning step by step.
           .reasoningEffort(ReasoningEffort.medium)
           .maxTokens(2000)
           .timeout(Duration(seconds: 120)) // Longer timeout for reasoning
-          .build();
+          .buildLanguageModel();
 
       final stopwatch = Stopwatch()..start();
-      final response = await provider.chat([ChatMessage.user(complexProblem)]);
+      final prompt = ChatPromptBuilder.user().text(complexProblem).build();
+      final response = await generateTextWithModel(
+        reasoningModel,
+        promptMessages: [prompt],
+      );
       stopwatch.stop();
 
       print('      Problem: Chickens and rabbits puzzle');
@@ -96,12 +100,13 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
   print('🔧 Function Calling:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-5.1')
         .temperature(0.3)
-        .build();
+        .tools(tools)
+        .buildLanguageModel();
 
     // Define tools/functions
     final weatherTool = Tool.function(
@@ -145,9 +150,12 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
     print('   Testing function calling with multiple tools...');
     const question = 'What\'s the weather like in Tokyo and calculate 15 * 23?';
 
-    final messages = [ChatMessage.user(question)];
+    final prompt = ChatPromptBuilder.user().text(question).build();
 
-    final response = await provider.chatWithTools(messages, tools);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('      User: $question');
 
@@ -260,7 +268,7 @@ Return JSON with fields: name, age, job, company, location, experience_years
   // Advanced parameters
   print('\n   Advanced Parameters:');
   try {
-    final advancedProvider = await ai()
+    final advancedModel = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-5.1')
@@ -273,10 +281,16 @@ Return JSON with fields: name, age, job, company, location, experience_years
         .extension('logitBias', {
       '50256': -100.0,
     }) // Bias against specific tokens
+        .buildLanguageModel();
+
+    final prompt = ChatPromptBuilder.user()
+        .text('Write a creative short story about AI.')
         .build();
 
-    final response = await advancedProvider
-        .chat([ChatMessage.user('Write a creative short story about AI.')]);
+    final response = await generateTextWithModel(
+      advancedModel,
+      promptMessages: [prompt],
+    );
 
     final fullText = response.text ?? '';
     final previewLength = fullText.length < 200 ? fullText.length : 200;
@@ -302,15 +316,6 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
   print('🌊 Advanced Streaming:\n');
 
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-5.1')
-        .temperature(0.7)
-        .build();
-
-    print('   Streaming with function calls (two-pass flow)...');
-
     final weatherTool = Tool.function(
       name: 'get_weather',
       description: 'Get weather information',
@@ -330,71 +335,102 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
         'Tell me about the weather in Paris and write a short poem about it.';
 
     final tools = [weatherTool];
-    final messages = [ChatMessage.user(question)];
+    final prompt = ChatPromptBuilder.user().text(question).build();
 
-    // First pass: stream planning + tool calls
+    print('   Streaming with function calls (two-pass flow)...\n');
+    print('   User: $question');
+    print('   Available tools: get_weather\n');
+
+    // Build a high-level LanguageModel with tools configured.
+    final model = await ai()
+        .openai()
+        .apiKey(apiKey)
+        .model('gpt-5.1')
+        .temperature(0.7)
+        .tools(tools)
+        .buildLanguageModel();
+
+    // First pass: stream planning + tool calls using StreamTextPart.
     final planningText = StringBuffer();
     final streamedToolCalls = <ToolCall>[];
-    final aggregator = ToolCallAggregator();
     var toolCallsDetected = false;
 
-    await for (final event in provider.chatStream(messages, tools: tools)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
-          planningText.write(delta);
-          stdout.write(delta);
+    await for (final part in model.streamTextPartsWithOptions(
+      [ChatMessage.fromPromptMessage(prompt)],
+      options: null,
+    )) {
+      switch (part) {
+        case StreamTextStart():
           break;
-        case ToolCallDeltaEvent(toolCall: final call):
+        case StreamTextDelta(delta: final delta):
+          stdout.write(delta);
+          planningText.write(delta);
+          break;
+        case StreamThinkingDelta():
+          // Ignore thinking content for this example
+          break;
+        case StreamToolInputStart(
+            toolCallId: final toolCallId,
+            toolName: final toolName
+          ):
           if (!toolCallsDetected) {
-            print('\n\n🔧 Tool call detected in stream');
+            print('\n');
+            print('   🔧 Tool call detected in stream');
             toolCallsDetected = true;
           }
-          streamedToolCalls.add(call);
-          aggregator.addDelta(call);
+          print('      • Tool input started: $toolName (id: $toolCallId)');
           break;
-        case CompletionEvent(response: final response):
-          print('\n\n✅ First streaming pass completed');
-          if (response.usage != null) {
-            print('   Tokens used: ${response.usage!.totalTokens}');
+        case StreamToolInputDelta():
+          // Arguments deltas are aggregated internally; we keep logs compact.
+          break;
+        case StreamToolInputEnd(toolCallId: final toolCallId):
+          print('      • Tool input completed for id: $toolCallId');
+          break;
+        case StreamToolCall(toolCall: final toolCall):
+          streamedToolCalls.add(toolCall);
+          print(
+              '      • Final tool call: ${toolCall.function.name}(${toolCall.function.arguments})');
+          break;
+        case StreamTextEnd():
+          break;
+        case StreamFinish(result: final result):
+          print('\n   🏁 First streaming pass completed');
+          if (result.usage != null) {
+            print('   Tokens used: ${result.usage!.totalTokens}');
           }
-          break;
-        case ErrorEvent(error: final error):
-          print('\n❌ Stream error: $error');
-          break;
-        case ThinkingDeltaEvent():
-          // Handle thinking events if needed
           break;
       }
     }
 
-    final completedToolCalls = aggregator.completedCalls;
-
     print('\n   First pass text length: ${planningText.length} characters');
-    print('   Tool calls (stream deltas): ${streamedToolCalls.length}');
-    print('   Tool calls (aggregated): ${completedToolCalls.length}');
+    print('   Tool calls detected: ${streamedToolCalls.length}');
 
-    if (completedToolCalls.isEmpty) {
-      print('   ℹ️  Model did not call tools during streaming\n');
+    if (streamedToolCalls.isEmpty) {
+      print('   ℹ️  Model did not call tools during streaming');
       print('   ✅ Advanced streaming demonstration completed\n');
       return;
     }
 
-    // Simulate tool execution based on streamed tool calls
+    // Simulate tool execution based on streamed tool calls.
     final conversation = <ChatMessage>[
-      ChatMessage.user(question),
+      ChatMessage.fromPromptMessage(prompt),
       ChatMessage.toolUse(
-        toolCalls: completedToolCalls,
+        toolCalls: streamedToolCalls,
         content: planningText.toString(),
       ),
     ];
 
-    for (final toolCall in completedToolCalls) {
+    for (final toolCall in streamedToolCalls) {
+      final name = toolCall.function.name;
       String result;
-      if (toolCall.function.name == 'get_weather') {
+
+      if (name == 'get_weather') {
         result = '{"temperature": 22, "condition": "sunny", "humidity": 65}';
       } else {
-        result = '{"error": "Unknown function"}';
+        result = '{"error": "Unknown function: $name"}';
       }
+
+      print('   📄 $name result: $result');
 
       conversation.add(ChatMessage.toolResult(
         results: [toolCall],
@@ -402,32 +438,42 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
       ));
     }
 
-    // Second pass: stream final answer with tool results
-    print('\n   Streaming final answer with tool results...');
+    // Second pass: stream final answer with tool results.
+    print('\n   Streaming final answer with tool results...\n');
 
     final finalText = StringBuffer();
 
-    await for (final event in provider.chatStream(conversation)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
-          finalText.write(delta);
+    await for (final part in model.streamTextPartsWithOptions(
+      conversation,
+      options: null,
+    )) {
+      switch (part) {
+        case StreamTextStart():
+          break;
+        case StreamTextDelta(delta: final delta):
           stdout.write(delta);
+          finalText.write(delta);
           break;
-        case ToolCallDeltaEvent():
-          // In the second pass we expect the model to use the tool results
-          // directly and not call tools again, so we ignore extra tool calls.
+        case StreamThinkingDelta():
+          // Ignore thinking content in the second pass as well
           break;
-        case CompletionEvent(response: final response):
-          print('\n\n✅ Second streaming pass completed');
-          if (response.usage != null) {
-            print('   Tokens used: ${response.usage!.totalTokens}');
+        case StreamToolInputStart():
+          // In the second pass we expect the model to use tool results directly.
+          // If it still tries to call tools, we ignore them in this example.
+          break;
+        case StreamToolInputDelta():
+          break;
+        case StreamToolInputEnd():
+          break;
+        case StreamToolCall():
+          break;
+        case StreamTextEnd():
+          break;
+        case StreamFinish(result: final result):
+          print('\n\n   🏁 Second streaming pass completed');
+          if (result.usage != null) {
+            print('   Tokens used: ${result.usage!.totalTokens}');
           }
-          break;
-        case ErrorEvent(error: final error):
-          print('\n❌ Stream error: $error');
-          break;
-        case ThinkingDeltaEvent():
-          // Handle thinking events if needed
           break;
       }
     }

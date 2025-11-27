@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import '../core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// HTTP configuration builder for LLM providers
 ///

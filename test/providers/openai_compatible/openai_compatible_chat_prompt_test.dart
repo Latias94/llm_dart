@@ -34,8 +34,7 @@ class FakeOpenAICompatibleClient extends OpenAICompatibleClient {
 
 void main() {
   group('OpenAICompatibleChat prompt mapping', () {
-    test('builds messages from ChatPromptMessage with multimodal + tools',
-        () async {
+    test('builds messages from ModelMessage with multimodal + tools', () async {
       final tool = Tool.function(
         name: 'get_weather',
         description: 'Get the weather',

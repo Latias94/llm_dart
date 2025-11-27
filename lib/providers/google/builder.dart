@@ -1,5 +1,5 @@
 import '../../builder/llm_builder.dart';
-import '../../models/chat_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'config.dart';
 import 'tts.dart';
 

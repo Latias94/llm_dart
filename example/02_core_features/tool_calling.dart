@@ -21,28 +21,28 @@ void main() async {
   // Get API key
   final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
 
-  // Create AI provider (OpenAI has excellent tool calling support)
-  final provider = await ai()
+  // Create AI model (OpenAI has excellent tool calling support)
+  final model = await ai()
       .openai()
       .apiKey(apiKey)
       .model('gpt-4.1-mini')
       .temperature(0.1) // Lower temperature for more reliable tool calls
       .maxTokens(1000)
-      .build();
+      .buildLanguageModel();
 
   // Demonstrate different tool calling scenarios
-  await demonstrateBasicToolCalling(provider);
-  await demonstrateMultipleTools(provider);
-  await demonstrateToolChaining(provider);
-  await demonstrateStreamingWithTools(provider);
-  await demonstrateToolErrorHandling(provider);
-  await demonstrateComplexWorkflow(provider);
+  await demonstrateBasicToolCalling(model);
+  await demonstrateMultipleTools(model);
+  await demonstrateToolChaining(model);
+  await demonstrateStreamingWithTools(apiKey);
+  await demonstrateToolErrorHandling(model);
+  await demonstrateComplexWorkflow(model);
 
   print('\n✅ Tool calling completed!');
 }
 
 /// Demonstrate basic tool calling functionality
-Future<void> demonstrateBasicToolCalling(ChatCapability provider) async {
+Future<void> demonstrateBasicToolCalling(LanguageModel model) async {
   print('🔨 Basic Tool Calling:\n');
 
   try {
@@ -63,26 +63,31 @@ Future<void> demonstrateBasicToolCalling(ChatCapability provider) async {
       ),
     );
 
-    final messages = [
-      ChatMessage.user('What is 15 * 8 + 42? Please use the calculator tool.')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('What is 15 * 8 + 42? Please use the calculator tool.')
+        .build();
 
     print('   User: What is 15 * 8 + 42? Please use the calculator tool.');
     print('   Available tools: calculate');
 
     // Send request with tools
-    final response = await provider.chatWithTools(messages, [calculatorTool]);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: [calculatorTool]),
+    );
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
       print('   🔧 AI wants to call tools:');
 
-      final conversation = List<ChatMessage>.from(messages);
+      final conversation = <ModelMessage>[prompt];
 
       // Add the assistant's tool call message
-      conversation.add(ChatMessage.toolUse(
-        toolCalls: response.toolCalls!,
-        content: response.text ?? '',
-      ));
+      conversation.add(
+        ChatPromptBuilder.assistant()
+            .text(response.text ?? '')
+            .build(toolCalls: response.toolCalls),
+      );
 
       // Execute each tool call
       for (final toolCall in response.toolCalls!) {
@@ -94,14 +99,16 @@ Future<void> demonstrateBasicToolCalling(ChatCapability provider) async {
         print('      • Result: $result');
 
         // Add tool result to conversation
-        conversation.add(ChatMessage.toolResult(
-          results: [toolCall],
-          content: result,
-        ));
+        conversation.add(
+          ChatPromptBuilder.tool(result).build(toolResultCalls: [toolCall]),
+        );
       }
 
       // Get final response with tool results
-      final finalResponse = await provider.chat(conversation);
+      final finalResponse = await generateTextWithModel(
+        model,
+        promptMessages: conversation,
+      );
       print('   AI: ${finalResponse.text}');
       print('   ✅ Basic tool calling successful\n');
     } else {
@@ -236,7 +243,7 @@ String _getFileInfo(String path) {
 }
 
 /// Demonstrate multiple tools in one conversation
-Future<void> demonstrateMultipleTools(ChatCapability provider) async {
+Future<void> demonstrateMultipleTools(LanguageModel model) async {
   print('🛠️  Multiple Tools:\n');
 
   try {
@@ -301,28 +308,31 @@ Future<void> demonstrateMultipleTools(ChatCapability provider) async {
       ),
     ];
 
-    final messages = [
-      ChatMessage.user(
-          'I need to know: 1) Weather in Tokyo, 2) Current time in Japan, 3) A random number between 1 and 100')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'I need to know: 1) Weather in Tokyo, 2) Current time in Japan, 3) A random number between 1 and 100')
+        .build();
 
     print(
         '   User: I need to know: 1) Weather in Tokyo, 2) Current time in Japan, 3) A random number between 1 and 100');
     print(
         '   Available tools: get_weather, get_current_time, generate_random_number');
 
-    final response = await provider.chatWithTools(messages, tools);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: tools),
+    );
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
       print('   🔧 AI wants to call ${response.toolCalls!.length} tools:');
 
-      final conversation = List<ChatMessage>.from(messages);
-
-      // Add the assistant's tool call message
-      conversation.add(ChatMessage.toolUse(
-        toolCalls: response.toolCalls!,
-        content: response.text ?? '',
-      ));
+      final conversation = <ModelMessage>[prompt];
+      conversation.add(
+        ChatPromptBuilder.assistant()
+            .text(response.text ?? '')
+            .build(toolCalls: response.toolCalls),
+      );
 
       // Execute all tool calls
       for (final toolCall in response.toolCalls!) {
@@ -333,14 +343,16 @@ Future<void> demonstrateMultipleTools(ChatCapability provider) async {
         print('        → $result');
 
         // Add each tool result
-        conversation.add(ChatMessage.toolResult(
-          results: [toolCall],
-          content: result,
-        ));
+        conversation.add(
+          ChatPromptBuilder.tool(result).build(toolResultCalls: [toolCall]),
+        );
       }
 
       // Get final response
-      final finalResponse = await provider.chat(conversation);
+      final finalResponse = await generateTextWithModel(
+        model,
+        promptMessages: conversation,
+      );
       print('   AI: ${finalResponse.text}');
       print('   ✅ Multiple tools executed successfully\n');
     } else {
@@ -352,7 +364,7 @@ Future<void> demonstrateMultipleTools(ChatCapability provider) async {
 }
 
 /// Demonstrate tool chaining (using results from one tool in another)
-Future<void> demonstrateToolChaining(ChatCapability provider) async {
+Future<void> demonstrateToolChaining(LanguageModel model) async {
   print('🔗 Tool Chaining:\n');
 
   try {
@@ -394,32 +406,37 @@ Future<void> demonstrateToolChaining(ChatCapability provider) async {
       ),
     ];
 
-    final messages = [
-      ChatMessage.user(
-          'Search for information about "Dart programming language" and save the key points as a note titled "Dart Overview"')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Search for information about "Dart programming language" and save the key points as a note titled "Dart Overview"')
+        .build();
 
     print(
         '   User: Search for information about "Dart programming language" and save the key points as a note titled "Dart Overview"');
     print('   Available tools: search_web, save_note');
     print('   This demonstrates tool chaining...\n');
 
-    var conversation = List<ChatMessage>.from(messages);
+    var conversation = <ModelMessage>[prompt];
     var stepCount = 1;
 
     // Allow multiple rounds of tool calling
     for (var round = 0; round < 3; round++) {
-      final response = await provider.chatWithTools(conversation, tools);
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: conversation,
+        options: LanguageModelCallOptions(tools: tools),
+      );
 
       if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
         print(
             '   🔧 Step $stepCount - AI wants to call ${response.toolCalls!.length} tools:');
 
         // Add the assistant's tool call message
-        conversation.add(ChatMessage.toolUse(
-          toolCalls: response.toolCalls!,
-          content: response.text ?? '',
-        ));
+        conversation.add(
+          ChatPromptBuilder.assistant()
+              .text(response.text ?? '')
+              .build(toolCalls: response.toolCalls),
+        );
 
         // Execute all tool calls
         for (final toolCall in response.toolCalls!) {
@@ -429,10 +446,9 @@ Future<void> demonstrateToolChaining(ChatCapability provider) async {
           print('        → $result');
 
           // Add tool result
-          conversation.add(ChatMessage.toolResult(
-            results: [toolCall],
-            content: result,
-          ));
+          conversation.add(
+            ChatPromptBuilder.tool(result).build(toolResultCalls: [toolCall]),
+          );
         }
 
         stepCount++;
@@ -449,8 +465,9 @@ Future<void> demonstrateToolChaining(ChatCapability provider) async {
   }
 }
 
-/// Demonstrate streaming with tool calls
-Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
+/// Demonstrate streaming with tool calls using the high-level
+/// `streamTextParts` API (Vercel AI SDK style).
+Future<void> demonstrateStreamingWithTools(String apiKey) async {
   print('🌊 Streaming with Tools:\n');
 
   try {
@@ -471,81 +488,97 @@ Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
       ),
     ];
 
-    final messages = [
-      ChatMessage.user(
-          'Can you check the file "/home/user/document.txt" and tell me about it?')
-    ];
+    const question =
+        'Can you check the file "/home/user/document.txt" and tell me about it?';
+    final prompt = ChatPromptBuilder.user().text(question).build();
 
-    print(
-        '   User: Can you check the file "/home/user/document.txt" and tell me about it?');
+    print('   User: $question');
     print('   Available tools: get_file_info');
     print('   Streaming response...\n');
 
-    var conversation = List<ChatMessage>.from(messages);
-    var toolCallsCollected = <ToolCall>[];
-    final toolCallAggregator = ToolCallAggregator();
-    final loggedToolCallIds = <String>{};
+    // Build a high-level LanguageModel with tools configured.
+    final model = await ai()
+        .openai()
+        .apiKey(apiKey)
+        .model('gpt-4.1-mini')
+        .temperature(0.1)
+        .maxTokens(1000)
+        .tools(tools)
+        .buildLanguageModel();
 
-    await for (final event in provider.chatStream(conversation, tools: tools)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    final toolCalls = <ToolCall>[];
+    final textBuffer = StringBuffer();
+    var sawToolInput = false;
+
+    // First streaming pass: get tool calls and initial answer text.
+    await for (final part in model.streamTextParts([prompt])) {
+      switch (part) {
+        case StreamTextStart():
+          break;
+        case StreamTextDelta(delta: final delta):
           stdout.write(delta);
+          textBuffer.write(delta);
           break;
-
-        case ToolCallDeltaEvent(toolCall: final toolCall):
-          // Only log the first delta for each tool call ID to avoid noisy output
-          if (loggedToolCallIds.add(toolCall.id)) {
-            final name = toolCall.function.name.isNotEmpty
-                ? toolCall.function.name
-                : 'tool_call';
-            print('\n   🔧 Tool call detected: $name (id: ${toolCall.id})');
+        case StreamThinkingDelta():
+          // Ignore thinking for this example
+          break;
+        case StreamToolInputStart(
+            toolCallId: final toolCallId,
+            toolName: final toolName
+          ):
+          if (!sawToolInput) {
+            print('\n');
+            sawToolInput = true;
           }
-          toolCallsCollected.add(toolCall);
-          toolCallAggregator.addDelta(toolCall);
+          print('   🔧 Tool call started: $toolName (id: $toolCallId)');
           break;
-
-        case CompletionEvent(response: final response):
-          print('\n   🏁 Stream completed');
-
-          // If there were tool calls, execute them and continue
-          if (toolCallsCollected.isNotEmpty) {
-            final aggregatedToolCalls = toolCallAggregator.completedCalls;
-            print(
-                '   Executing ${aggregatedToolCalls.length} aggregated tool calls...');
-
-            // Add assistant message with tool calls
-            conversation.add(ChatMessage.toolUse(
-              toolCalls: aggregatedToolCalls,
-              content: response.text ?? '',
-            ));
-
-            // Execute tools and add results
-            for (final toolCall in aggregatedToolCalls) {
-              final result = await executeFunction(toolCall);
-              print('   📄 ${toolCall.function.name} result: $result');
-
-              conversation.add(ChatMessage.toolResult(
-                results: [toolCall],
-                content: result,
-              ));
-            }
-
-            // Get final response
-            print('\n   Getting final response...');
-            final finalResponse = await provider.chat(conversation);
-            print('   AI: ${finalResponse.text}');
-          }
+        case StreamToolInputDelta():
+          // We don't print every arguments delta to keep logs compact
           break;
-
-        case ErrorEvent(error: final error):
-          print('\n   ❌ Stream error: $error');
+        case StreamToolInputEnd(toolCallId: final toolCallId):
+          print('   🔧 Tool input completed for id: $toolCallId');
           break;
-
-        case ThinkingDeltaEvent():
-          // Handle thinking if needed
+        case StreamToolCall(toolCall: final toolCall):
+          toolCalls.add(toolCall);
+          print(
+              '   🔧 Final tool call: ${toolCall.function.name}(${toolCall.function.arguments})');
+          break;
+        case StreamTextEnd():
+          break;
+        case StreamFinish():
+          print('\n   🏁 First streaming pass completed');
           break;
       }
     }
+
+    if (toolCalls.isEmpty) {
+      print('\n   ℹ️  Model did not call tools during streaming');
+      print('   ✅ Streaming with tools completed\n');
+      return;
+    }
+
+    // Execute tools and build follow-up conversation.
+    print('\n   Executing ${toolCalls.length} tool calls...');
+
+    final conversation = <ModelMessage>[
+      prompt,
+      ChatPromptBuilder.assistant()
+          .text(textBuffer.toString())
+          .build(toolCalls: toolCalls),
+    ];
+
+    for (final toolCall in toolCalls) {
+      final result = await executeFunction(toolCall);
+      print('   📄 ${toolCall.function.name} result: $result');
+
+      conversation.add(
+          ChatPromptBuilder.tool(result).build(toolResultCalls: [toolCall]));
+    }
+
+    // Second pass: get final answer (non-streaming for simplicity).
+    print('\n   Getting final response...');
+    final finalResult = await model.generateText(conversation);
+    print('   AI: ${finalResult.text}');
 
     print('\n   ✅ Streaming with tools completed\n');
   } catch (e) {
@@ -554,7 +587,7 @@ Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
 }
 
 /// Demonstrate tool error handling
-Future<void> demonstrateToolErrorHandling(ChatCapability provider) async {
+Future<void> demonstrateToolErrorHandling(LanguageModel model) async {
   print('🛡️  Tool Error Handling:\n');
 
   try {
@@ -577,27 +610,30 @@ Future<void> demonstrateToolErrorHandling(ChatCapability provider) async {
       ),
     ];
 
-    final messages = [
-      ChatMessage.user(
-          'Please perform a risky operation and handle any errors gracefully.')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Please perform a risky operation and handle any errors gracefully.')
+        .build();
 
     print(
         '   User: Please perform a risky operation and handle any errors gracefully.');
     print('   Available tools: risky_operation');
 
-    final response = await provider.chatWithTools(messages, tools);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: tools),
+    );
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
       print('   🔧 AI wants to call tools:');
 
-      final conversation = List<ChatMessage>.from(messages);
-
-      // Add the assistant's tool call message
-      conversation.add(ChatMessage.toolUse(
-        toolCalls: response.toolCalls!,
-        content: response.text ?? '',
-      ));
+      final conversation = <ModelMessage>[prompt];
+      conversation.add(
+        ChatPromptBuilder.assistant()
+            .text(response.text ?? '')
+            .build(toolCalls: response.toolCalls),
+      );
 
       // Execute tool calls with error handling
       for (final toolCall in response.toolCalls!) {
@@ -609,24 +645,26 @@ Future<void> demonstrateToolErrorHandling(ChatCapability provider) async {
           print('      • Result: $result');
 
           // Add successful result
-          conversation.add(ChatMessage.toolResult(
-            results: [toolCall],
-            content: result,
-          ));
+          conversation.add(
+            ChatPromptBuilder.tool(result).build(toolResultCalls: [toolCall]),
+          );
         } catch (e) {
           print('      • Error: $e');
 
           // Add error result - AI can handle this gracefully
-          conversation.add(ChatMessage.toolResult(
-            results: [toolCall],
-            content: 'Error: $e',
-          ));
+          conversation.add(
+            ChatPromptBuilder.tool('Error: $e')
+                .build(toolResultCalls: [toolCall]),
+          );
         }
       }
 
       // Get final response with error handling
       try {
-        final finalResponse = await provider.chat(conversation);
+        final finalResponse = await generateTextWithModel(
+          model,
+          promptMessages: conversation,
+        );
         print('   AI: ${finalResponse.text}');
         print('   ✅ Error handling demonstration successful\n');
       } catch (e) {
@@ -667,7 +705,7 @@ Future<String> _executeRiskyFunction(ToolCall toolCall) async {
 }
 
 /// Demonstrate complex workflow with multiple tool interactions
-Future<void> demonstrateComplexWorkflow(ChatCapability provider) async {
+Future<void> demonstrateComplexWorkflow(LanguageModel model) async {
   print('🏗️  Complex Workflow:\n');
 
   try {
@@ -721,9 +759,11 @@ Future<void> demonstrateComplexWorkflow(ChatCapability provider) async {
       ),
     ];
 
-    final messages = [
-      ChatMessage.user(
-          'I need to research renewable energy adoption rates, calculate the growth percentage from 2020 to 2023, and save a summary report. Can you help me with this complete workflow?')
+    final prompts = <ModelMessage>[
+      ChatPromptBuilder.user()
+          .text(
+              'I need to research renewable energy adoption rates, calculate the growth percentage from 2020 to 2023, and save a summary report. Can you help me with this complete workflow?')
+          .build(),
     ];
 
     print(
@@ -731,13 +771,17 @@ Future<void> demonstrateComplexWorkflow(ChatCapability provider) async {
     print('   Available tools: search_web, calculate, save_note');
     print('   This demonstrates a complex multi-step workflow...\n');
 
-    var conversation = List<ChatMessage>.from(messages);
+    var conversation = List<ModelMessage>.from(prompts);
     var stepCount = 1;
     var maxSteps = 5; // Prevent infinite loops
 
     // Allow multiple rounds of tool calling for complex workflow
     for (var round = 0; round < maxSteps; round++) {
-      final response = await provider.chatWithTools(conversation, tools);
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: conversation,
+        options: LanguageModelCallOptions(tools: tools),
+      );
 
       final toolCalls = response.toolCalls;
       if (toolCalls != null && toolCalls.isNotEmpty) {
@@ -745,10 +789,11 @@ Future<void> demonstrateComplexWorkflow(ChatCapability provider) async {
             '   🔧 Step $stepCount - AI executing ${toolCalls.length} tools:');
 
         // Add the assistant's tool call message
-        conversation.add(ChatMessage.toolUse(
-          toolCalls: toolCalls,
-          content: response.text ?? '',
-        ));
+        conversation.add(
+          ChatPromptBuilder.assistant()
+              .text(response.text ?? '')
+              .build(toolCalls: toolCalls),
+        );
 
         // Group tool calls by function name for more compact logging
         final callsByName = <String, List<ToolCall>>{};
@@ -772,10 +817,9 @@ Future<void> demonstrateComplexWorkflow(ChatCapability provider) async {
                 result.length > 100 ? '${result.substring(0, 100)}...' : result;
             print('        → $display');
 
-            conversation.add(ChatMessage.toolResult(
-              results: [toolCall],
-              content: result,
-            ));
+            conversation.add(
+              ChatPromptBuilder.tool(result).build(toolResultCalls: [toolCall]),
+            );
           } else {
             // Multiple calls for the same tool in this step
             print('      • $name (x${calls.length})');
@@ -792,10 +836,10 @@ Future<void> demonstrateComplexWorkflow(ChatCapability provider) async {
                 print('        → $display');
               }
 
-              conversation.add(ChatMessage.toolResult(
-                results: [toolCall],
-                content: result,
-              ));
+              conversation.add(
+                ChatPromptBuilder.tool(result)
+                    .build(toolResultCalls: [toolCall]),
+              );
             }
           }
         }

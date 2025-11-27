@@ -19,39 +19,40 @@ void main() async {
   // Get API key
   final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
 
-  // Create AI provider (Groq is great for streaming due to speed)
-  final provider = await ai()
+  // Create AI model (Groq is great for streaming due to speed)
+  final model = await ai()
       .groq()
       .apiKey(apiKey)
       .model('llama-3.1-8b-instant')
       .temperature(0.7)
       .maxTokens(500)
-      .build();
+      .buildLanguageModel();
 
   // Demonstrate different streaming scenarios
-  await demonstrateBasicStreaming(provider);
-  await demonstrateStreamEventTypes(provider);
-  await demonstrateStreamingWithThinking(provider);
-  await demonstrateStreamErrorHandling(provider);
-  await demonstrateStreamPerformance(provider);
+  await demonstrateBasicStreaming(model);
+  await demonstrateStreamEventTypes(model);
+  await demonstrateStreamingWithThinking(model);
+  await demonstrateStreamErrorHandling(model);
+  await demonstrateStreamPerformance(model);
 
   print('\n✅ Streaming chat completed!');
 }
 
 /// Demonstrate basic streaming functionality
-Future<void> demonstrateBasicStreaming(ChatCapability provider) async {
+Future<void> demonstrateBasicStreaming(LanguageModel model) async {
   print('⚡ Basic Streaming:\n');
 
   try {
-    final messages = [
-      ChatMessage.user('Count from 1 to 10 and explain each number briefly.')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('Count from 1 to 10 and explain each number briefly.')
+        .build();
 
     print('   User: Count from 1 to 10 and explain each number briefly.');
     print('   AI: ');
 
     // Stream the response
-    await for (final event in provider.chatStream(messages)) {
+    await for (final event
+        in streamTextWithModel(model, promptMessages: [prompt])) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           // Print each text chunk as it arrives
@@ -76,13 +77,13 @@ Future<void> demonstrateBasicStreaming(ChatCapability provider) async {
 }
 
 /// Demonstrate different stream event types
-Future<void> demonstrateStreamEventTypes(ChatCapability provider) async {
+Future<void> demonstrateStreamEventTypes(LanguageModel model) async {
   print('📡 Stream Event Types:\n');
 
   try {
-    final messages = [
-      ChatMessage.user('Write a short poem about programming.')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('Write a short poem about programming.')
+        .build();
 
     print('   User: Write a short poem about programming.');
     print('   Processing events:\n');
@@ -90,7 +91,8 @@ Future<void> demonstrateStreamEventTypes(ChatCapability provider) async {
     var textChunks = 0;
     var totalText = '';
 
-    await for (final event in provider.chatStream(messages)) {
+    await for (final event
+        in streamTextWithModel(model, promptMessages: [prompt])) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           textChunks++;
@@ -129,33 +131,36 @@ Future<void> demonstrateStreamEventTypes(ChatCapability provider) async {
 }
 
 /// Demonstrate streaming with thinking process (if supported)
-Future<void> demonstrateStreamingWithThinking(ChatCapability provider) async {
+Future<void> demonstrateStreamingWithThinking(LanguageModel baseModel) async {
   print('🧠 Streaming with Thinking Process:\n');
 
   try {
     // Try with a provider that supports thinking (switch to Anthropic if available)
     final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
-    ChatCapability thinkingProvider = provider;
+    LanguageModel thinkingModel = baseModel;
 
     if (anthropicKey != null && anthropicKey.isNotEmpty) {
-      thinkingProvider = await ai()
+      thinkingModel = await ai()
           .anthropic()
           .apiKey(anthropicKey)
           .model('claude-3-5-haiku-20241022')
           .temperature(0.7)
-          .build();
+          .buildLanguageModel();
     }
 
-    final messages = [
-      ChatMessage.user('Solve this step by step: What is 15% of 240?')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('Solve this step by step: What is 15% of 240?')
+        .build();
 
     print('   User: Solve this step by step: What is 15% of 240?');
     print('   Processing with thinking:\n');
 
     var hasThinking = false;
 
-    await for (final event in thinkingProvider.chatStream(messages)) {
+    await for (final event in streamTextWithModel(
+      thinkingModel,
+      promptMessages: [prompt],
+    )) {
       switch (event) {
         case ThinkingDeltaEvent(delta: final delta):
           hasThinking = true;
@@ -194,24 +199,25 @@ Future<void> demonstrateStreamingWithThinking(ChatCapability provider) async {
 }
 
 /// Demonstrate stream error handling
-Future<void> demonstrateStreamErrorHandling(ChatCapability provider) async {
+Future<void> demonstrateStreamErrorHandling(LanguageModel model) async {
   print('🛡️  Stream Error Handling:\n');
 
   try {
     // Create a provider with invalid settings to trigger errors
-    final invalidProvider = await ai()
+    final invalidModel = await ai()
         .openai()
         .apiKey('invalid-key') // Invalid API key
         .model('gpt-4o-mini')
-        .build();
+        .buildLanguageModel();
 
-    final messages = [
-      ChatMessage.user('This should fail due to invalid API key.')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('This should fail due to invalid API key.')
+        .build();
 
     print('   Testing error handling with invalid API key...');
 
-    await for (final event in invalidProvider.chatStream(messages)) {
+    await for (final event
+        in streamTextWithModel(invalidModel, promptMessages: [prompt])) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           print('   📝 Unexpected text: $delta');
@@ -246,14 +252,13 @@ Future<void> demonstrateStreamErrorHandling(ChatCapability provider) async {
 }
 
 /// Demonstrate stream performance characteristics
-Future<void> demonstrateStreamPerformance(ChatCapability provider) async {
+Future<void> demonstrateStreamPerformance(LanguageModel model) async {
   print('🚀 Stream Performance:\n');
 
   try {
-    final messages = [
-      ChatMessage.user(
-          'Write a detailed explanation of machine learning in 200 words.')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('Write a detailed explanation of machine learning in 200 words.')
+        .build();
 
     print(
         '   User: Write a detailed explanation of machine learning in 200 words.');
@@ -265,7 +270,8 @@ Future<void> demonstrateStreamPerformance(ChatCapability provider) async {
     var totalChars = 0;
     final chunkTimes = <int>[];
 
-    await for (final event in provider.chatStream(messages)) {
+    await for (final event
+        in streamTextWithModel(model, promptMessages: [prompt])) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           chunkCount++;

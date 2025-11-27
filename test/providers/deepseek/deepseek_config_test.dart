@@ -1,11 +1,12 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek;
 
 void main() {
-  group('DeepSeekConfig Tests', () {
+  group('deepseek.DeepSeekConfig Tests', () {
     group('Basic Configuration', () {
       test('should create config with required parameters', () {
-        const config = DeepSeekConfig(
+        const config = deepseek.DeepSeekConfig(
           apiKey: 'test-api-key',
         );
 
@@ -15,7 +16,7 @@ void main() {
       });
 
       test('should create config with all parameters', () {
-        const config = DeepSeekConfig(
+        const config = deepseek.DeepSeekConfig(
           apiKey: 'test-api-key',
           baseUrl: 'https://custom.api.com',
           model: 'deepseek-reasoner',
@@ -51,7 +52,7 @@ void main() {
 
     group('Model Support Detection', () {
       test('should detect reasoning support for reasoning models', () {
-        const config = DeepSeekConfig(
+        const config = deepseek.DeepSeekConfig(
           apiKey: 'test-key',
           model: 'deepseek-reasoner',
         );
@@ -60,7 +61,7 @@ void main() {
       });
 
       test('should not support reasoning for non-reasoning models', () {
-        const config = DeepSeekConfig(
+        const config = deepseek.DeepSeekConfig(
           apiKey: 'test-key',
           model: 'deepseek-chat',
         );
@@ -69,12 +70,12 @@ void main() {
       });
 
       test('should not support vision for any models', () {
-        const chatConfig = DeepSeekConfig(
+        const chatConfig = deepseek.DeepSeekConfig(
           apiKey: 'test-key',
           model: 'deepseek-chat',
         );
 
-        const reasonerConfig = DeepSeekConfig(
+        const reasonerConfig = deepseek.DeepSeekConfig(
           apiKey: 'test-key',
           model: 'deepseek-reasoner',
         );
@@ -86,7 +87,7 @@ void main() {
 
     group('Configuration Copying', () {
       test('should copy config with new values', () {
-        const original = DeepSeekConfig(
+        const original = deepseek.DeepSeekConfig(
           apiKey: 'original-key',
           model: 'deepseek-chat',
           temperature: 0.5,
@@ -103,7 +104,7 @@ void main() {
       });
 
       test('should preserve original values when not specified', () {
-        const original = DeepSeekConfig(
+        const original = deepseek.DeepSeekConfig(
           apiKey: 'test-key',
           model: 'deepseek-reasoner',
           logprobs: true,
@@ -120,7 +121,7 @@ void main() {
       });
 
       test('should copy DeepSeek-specific parameters', () {
-        const original = DeepSeekConfig(
+        const original = deepseek.DeepSeekConfig(
           apiKey: 'test-key',
           model: 'deepseek-chat',
           frequencyPenalty: 0.1,
@@ -147,7 +148,7 @@ void main() {
           maxTokens: 1500,
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
+        final deepseekConfig = deepseek.DeepSeekConfig.fromLLMConfig(llmConfig);
 
         expect(deepseekConfig.apiKey, equals('test-key'));
         expect(deepseekConfig.model, equals('deepseek-reasoner'));
@@ -169,7 +170,7 @@ void main() {
           },
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
+        final deepseekConfig = deepseek.DeepSeekConfig.fromLLMConfig(llmConfig);
 
         expect(deepseekConfig.logprobs, isTrue);
         expect(deepseekConfig.topLogprobs, equals(3));
@@ -186,7 +187,7 @@ void main() {
           extensions: {'customParam': 'customValue'},
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
+        final deepseekConfig = deepseek.DeepSeekConfig.fromLLMConfig(llmConfig);
 
         expect(deepseekConfig.getExtension<String>('customParam'),
             equals('customValue'));
@@ -199,7 +200,7 @@ void main() {
           model: 'deepseek-chat',
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
+        final deepseekConfig = deepseek.DeepSeekConfig.fromLLMConfig(llmConfig);
 
         expect(deepseekConfig.logprobs, isNull);
         expect(deepseekConfig.topLogprobs, isNull);
@@ -211,7 +212,7 @@ void main() {
 
     group('Default Values', () {
       test('should use correct default values', () {
-        const config = DeepSeekConfig(
+        const config = deepseek.DeepSeekConfig(
           apiKey: 'test-key',
         );
 
@@ -245,7 +246,7 @@ void main() {
           ),
         ];
 
-        final config = DeepSeekConfig(
+        final config = deepseek.DeepSeekConfig(
           apiKey: 'test-key',
           tools: tools,
           toolChoice: const AutoToolChoice(),
@@ -268,7 +269,7 @@ void main() {
           ),
         ];
 
-        const original = DeepSeekConfig(
+        const original = deepseek.DeepSeekConfig(
           apiKey: 'test-key',
           model: 'deepseek-chat',
         );

@@ -97,67 +97,70 @@ Future<void> demonstrateAllProviders(Map<String, String> apiKeys) async {
       print('   ${provider['name']}: ${provider['description']}');
 
       // Create provider using the appropriate method
-      late final dynamic providerInstance;
+      late final LanguageModel model;
       switch (provider['method']) {
         case 'deepseekOpenAI':
-          providerInstance = await ai()
+          model = await ai()
               .deepseekOpenAI()
               .apiKey(provider['key']!)
               .model(provider['model']!)
               .temperature(0.7)
               .maxTokens(200)
-              .build();
+              .buildLanguageModel();
           break;
         case 'groqOpenAI':
-          providerInstance = await ai()
+          model = await ai()
               .groqOpenAI()
               .apiKey(provider['key']!)
               .model(provider['model']!)
               .temperature(0.7)
               .maxTokens(200)
-              .build();
+              .buildLanguageModel();
           break;
         case 'xaiOpenAI':
-          providerInstance = await ai()
+          model = await ai()
               .xaiOpenAI()
               .apiKey(provider['key']!)
               .model(provider['model']!)
               .temperature(0.7)
               .maxTokens(200)
-              .build();
+              .buildLanguageModel();
           break;
         case 'openRouter':
-          providerInstance = await ai()
+          model = await ai()
               .openRouter()
               .apiKey(provider['key']!)
               .model(provider['model']!)
               .temperature(0.7)
               .maxTokens(200)
-              .build();
+              .buildLanguageModel();
           break;
         case 'githubCopilot':
-          providerInstance = await ai()
+          model = await ai()
               .githubCopilot()
               .apiKey(provider['key']!)
               .model(provider['model']!)
               .temperature(0.7)
               .maxTokens(200)
-              .build();
+              .buildLanguageModel();
           break;
         case 'togetherAI':
-          providerInstance = await ai()
+          model = await ai()
               .togetherAI()
               .apiKey(provider['key']!)
               .model(provider['model']!)
               .temperature(0.7)
               .maxTokens(200)
-              .build();
+              .buildLanguageModel();
           break;
       }
 
       final stopwatch = Stopwatch()..start();
-      final response =
-          await providerInstance.chat([ChatMessage.user(question)]);
+      final prompt = ChatPromptBuilder.user().text(question).build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
       stopwatch.stop();
 
       print('      Response: ${response.text?.substring(0, 100)}...');
@@ -198,76 +201,80 @@ Future<void> demonstrateProviderComparison(Map<String, String> apiKeys) async {
 
     for (final providerMethod in task['providers'] as List<String>) {
       try {
-        late final dynamic provider;
+        late final LanguageModel model;
         late final String providerName;
 
         switch (providerMethod) {
           case 'deepseekOpenAI':
-            provider = await ai()
+            model = await ai()
                 .deepseekOpenAI()
                 .apiKey(apiKeys['deepseek']!)
                 .model('deepseek-chat')
                 .temperature(0.3)
                 .maxTokens(150)
-                .build();
+                .buildLanguageModel();
             providerName = 'DeepSeek';
             break;
           case 'groqOpenAI':
-            provider = await ai()
+            model = await ai()
                 .groqOpenAI()
                 .apiKey(apiKeys['groq']!)
                 .model('llama-3.3-70b-versatile')
                 .temperature(0.3)
                 .maxTokens(150)
-                .build();
+                .buildLanguageModel();
             providerName = 'Groq';
             break;
           case 'githubCopilot':
-            provider = await ai()
+            model = await ai()
                 .githubCopilot()
                 .apiKey(apiKeys['copilot']!)
                 .model('gpt-4')
                 .temperature(0.3)
                 .maxTokens(150)
-                .build();
+                .buildLanguageModel();
             providerName = 'GitHub Copilot';
             break;
           case 'xaiOpenAI':
-            provider = await ai()
+            model = await ai()
                 .xaiOpenAI()
                 .apiKey(apiKeys['xai']!)
                 .model('grok-3')
                 .temperature(0.8)
                 .maxTokens(150)
-                .build();
+                .buildLanguageModel();
             providerName = 'xAI Grok';
             break;
           case 'openRouter':
-            provider = await ai()
+            model = await ai()
                 .openRouter()
                 .apiKey(apiKeys['openrouter']!)
                 .model('openai/gpt-4')
                 .temperature(0.8)
                 .maxTokens(150)
-                .build();
+                .buildLanguageModel();
             providerName = 'OpenRouter';
             break;
           case 'togetherAI':
-            provider = await ai()
+            model = await ai()
                 .togetherAI()
                 .apiKey(apiKeys['together']!)
                 .model('meta-llama/Llama-3-70b-chat-hf')
                 .temperature(0.8)
                 .maxTokens(150)
-                .build();
+                .buildLanguageModel();
             providerName = 'Together AI';
             break;
           default:
             continue;
         }
 
-        final response =
-            await provider.chat([ChatMessage.user(task['prompt'] as String)]);
+        final prompt =
+            ChatPromptBuilder.user().text(task['prompt'] as String).build();
+        final response = await generateTextWithModel(
+          model,
+          promptMessages: [prompt],
+        );
         print('      $providerName: ${response.text}');
         print('');
       } catch (e) {
@@ -294,11 +301,16 @@ Future<void> demonstrateSpecializedUseCases(Map<String, String> apiKeys) async {
         .model('llama-3.3-70b-versatile')
         .temperature(0.5)
         .maxTokens(100)
-        .build();
+        .buildLanguageModel();
 
     final stopwatch = Stopwatch()..start();
-    final response = await groq
-        .chat([ChatMessage.user('Quickly explain what is machine learning?')]);
+    final prompt = ChatPromptBuilder.user()
+        .text('Quickly explain what is machine learning?')
+        .build();
+    final response = await generateTextWithModel(
+      groq,
+      promptMessages: [prompt],
+    );
     stopwatch.stop();
 
     print('      Response: ${response.text}');
@@ -317,12 +329,16 @@ Future<void> demonstrateSpecializedUseCases(Map<String, String> apiKeys) async {
         .temperature(0.1)
         .maxTokens(300)
         .reasoning(true)
-        .build();
+        .buildLanguageModel();
 
-    final response = await deepseek.chat([
-      ChatMessage.user(
-          'If a train travels 120 km in 1.5 hours, and then 80 km in 45 minutes, what is the average speed for the entire journey?')
-    ]);
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'If a train travels 120 km in 1.5 hours, and then 80 km in 45 minutes, what is the average speed for the entire journey?')
+        .build();
+    final response = await generateTextWithModel(
+      deepseek,
+      promptMessages: [prompt],
+    );
 
     print('      Response: ${response.text}');
     if (response.thinking != null) {
@@ -343,12 +359,16 @@ Future<void> demonstrateSpecializedUseCases(Map<String, String> apiKeys) async {
         .maxTokens(200)
         .systemPrompt(
             'You are a helpful coding assistant. Provide clean, well-commented code.')
-        .build();
+        .buildLanguageModel();
 
-    final response = await copilot.chat([
-      ChatMessage.user(
-          'Create a simple HTTP server in Dart that responds with "Hello World"')
-    ]);
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Create a simple HTTP server in Dart that responds with "Hello World"')
+        .build();
+    final response = await generateTextWithModel(
+      copilot,
+      promptMessages: [prompt],
+    );
 
     print('      Response: ${response.text}');
   } catch (e) {
@@ -364,12 +384,15 @@ Future<void> demonstrateSpecializedUseCases(Map<String, String> apiKeys) async {
         .model('anthropic/claude-3-sonnet')
         .temperature(0.7)
         .maxTokens(150)
-        .build();
+        .buildLanguageModel();
 
-    final response = await openrouter.chat([
-      ChatMessage.user(
-          'Explain the difference between AI, ML, and Deep Learning')
-    ]);
+    final prompt = ChatPromptBuilder.user()
+        .text('Explain the difference between AI, ML, and Deep Learning')
+        .build();
+    final response = await generateTextWithModel(
+      openrouter,
+      promptMessages: [prompt],
+    );
 
     print('      Response (Claude via OpenRouter): ${response.text}');
   } catch (e) {
@@ -386,13 +409,17 @@ Future<void> demonstrateBestPractices(Map<String, String> apiKeys) async {
   // Error handling
   print('   Error Handling:');
   try {
-    final provider = await ai()
+    final model = await ai()
         .deepseekOpenAI()
         .apiKey('invalid-key')
         .model('deepseek-chat')
-        .build();
+        .buildLanguageModel();
 
-    await provider.chat([ChatMessage.user('Test')]);
+    final prompt = ChatPromptBuilder.user().text('Test').build();
+    await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
   } on AuthError catch (e) {
     print('      ✅ Properly caught AuthError: ${e.message}');
   } catch (e) {
@@ -418,8 +445,12 @@ Future<void> demonstrateBestPractices(Map<String, String> apiKeys) async {
 
   for (int i = 0; i < fallbackProviders.length; i++) {
     try {
-      final provider = await fallbackProviders[i]().build();
-      await provider.chat([ChatMessage.user('Test fallback')]);
+      final model = await fallbackProviders[i]().buildLanguageModel();
+      final prompt = ChatPromptBuilder.user().text('Test fallback').build();
+      await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
       print('      ✅ Successfully used fallback provider ${i + 1}');
       break;
     } catch (e) {
@@ -455,7 +486,7 @@ Future<void> demonstrateBestPractices(Map<String, String> apiKeys) async {
 
   for (final entry in optimizedConfigs.entries) {
     try {
-      await entry.value().build();
+      await entry.value().buildLanguageModel();
       print('      ✅ ${entry.key}: Configuration ready');
     } catch (e) {
       print('      ❌ ${entry.key}: Configuration failed - $e');

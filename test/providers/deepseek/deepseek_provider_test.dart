@@ -1,20 +1,21 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek;
 
 void main() {
   group('DeepSeekProvider Tests', () {
-    late DeepSeekProvider provider;
-    late DeepSeekConfig config;
+    late deepseek.DeepSeekProvider provider;
+    late deepseek.DeepSeekConfig config;
 
     setUp(() {
-      config = const DeepSeekConfig(
+      config = const deepseek.DeepSeekConfig(
         apiKey: 'test-api-key',
         model: 'deepseek-chat',
         baseUrl: 'https://api.deepseek.com/v1/',
         maxTokens: 1000,
         temperature: 0.7,
       );
-      provider = DeepSeekProvider(config);
+      provider = deepseek.DeepSeekProvider(config);
     });
 
     group('Provider Initialization', () {
@@ -25,12 +26,12 @@ void main() {
       });
 
       test('should initialize with reasoning model', () {
-        final reasoningConfig = const DeepSeekConfig(
+        final reasoningConfig = const deepseek.DeepSeekConfig(
           apiKey: 'test-api-key',
           model: 'deepseek-reasoner',
         );
 
-        final reasoningProvider = DeepSeekProvider(reasoningConfig);
+        final reasoningProvider = deepseek.DeepSeekProvider(reasoningConfig);
         expect(reasoningProvider, isNotNull);
         expect(reasoningProvider.config.model, equals('deepseek-reasoner'));
       });
@@ -46,7 +47,7 @@ void main() {
 
       test('should support reasoning for reasoning models', () {
         final reasoningConfig = config.copyWith(model: 'deepseek-reasoner');
-        final reasoningProvider = DeepSeekProvider(reasoningConfig);
+        final reasoningProvider = deepseek.DeepSeekProvider(reasoningConfig);
 
         expect(reasoningProvider.supports(LLMCapability.reasoning), isTrue);
       });
@@ -75,7 +76,7 @@ void main() {
 
       test('should include reasoning in capabilities for reasoning models', () {
         final reasoningConfig = config.copyWith(model: 'deepseek-reasoner');
-        final reasoningProvider = DeepSeekProvider(reasoningConfig);
+        final reasoningProvider = deepseek.DeepSeekProvider(reasoningConfig);
 
         final capabilities = reasoningProvider.supportedCapabilities;
         expect(capabilities, contains(LLMCapability.reasoning));
@@ -139,7 +140,7 @@ void main() {
       });
 
       test('should handle custom configuration', () {
-        final customConfig = const DeepSeekConfig(
+        final customConfig = const deepseek.DeepSeekConfig(
           apiKey: 'custom-key',
           model: 'deepseek-reasoner',
           baseUrl: 'https://custom.api.com',
@@ -149,7 +150,7 @@ void main() {
           topK: 40,
         );
 
-        final customProvider = DeepSeekProvider(customConfig);
+        final customProvider = deepseek.DeepSeekProvider(customConfig);
 
         expect(customProvider.config.apiKey, equals('custom-key'));
         expect(customProvider.config.model, equals('deepseek-reasoner'));
@@ -170,10 +171,10 @@ void main() {
           temperature: 0.7,
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
-        final factoryProvider = DeepSeekProvider(deepseekConfig);
+        final deepseekConfig = deepseek.DeepSeekConfig.fromLLMConfig(llmConfig);
+        final factoryProvider = deepseek.DeepSeekProvider(deepseekConfig);
 
-        expect(factoryProvider, isA<DeepSeekProvider>());
+        expect(factoryProvider, isA<deepseek.DeepSeekProvider>());
         expect(factoryProvider.config.apiKey, equals('test-key'));
         expect(factoryProvider.config.model, equals('deepseek-chat'));
         expect(factoryProvider.config.temperature, equals(0.7));
@@ -192,7 +193,7 @@ void main() {
           },
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
+        final deepseekConfig = deepseek.DeepSeekConfig.fromLLMConfig(llmConfig);
 
         expect(deepseekConfig.logprobs, isTrue);
         expect(deepseekConfig.topLogprobs, equals(5));
@@ -209,7 +210,7 @@ void main() {
           temperature: 0.8,
         );
 
-        expect(helperProvider, isA<DeepSeekProvider>());
+        expect(helperProvider, isA<deepseek.DeepSeekProvider>());
         expect(helperProvider.config.apiKey, equals('helper-key'));
         expect(helperProvider.config.model, equals('deepseek-chat'));
         expect(helperProvider.config.temperature, equals(0.8));
@@ -221,7 +222,7 @@ void main() {
           systemPrompt: 'Think step by step',
         );
 
-        expect(reasoningProvider, isA<DeepSeekProvider>());
+        expect(reasoningProvider, isA<deepseek.DeepSeekProvider>());
         expect(reasoningProvider.config.apiKey, equals('reasoning-key'));
         expect(reasoningProvider.config.model, equals('deepseek-reasoner'));
         expect(reasoningProvider.config.systemPrompt,

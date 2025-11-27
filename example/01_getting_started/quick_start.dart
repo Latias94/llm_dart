@@ -23,18 +23,21 @@ Future<void> quickStartWithOpenAI() async {
   try {
     final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
 
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
+        .buildLanguageModel();
+
+    final prompt = ChatPromptBuilder.user()
+        .text('Hello! Please introduce yourself in one sentence.')
         .build();
 
-    final messages = [
-      ChatMessage.user('Hello! Please introduce yourself in one sentence.')
-    ];
-
-    final response = await provider.chat(messages);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   AI Reply: ${response.text}');
     print('   ✅ Success\n');
@@ -50,18 +53,21 @@ Future<void> quickStartWithGroq() async {
   try {
     final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
 
-    final provider = await ai()
+    final model = await ai()
         .groq()
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.7)
+        .buildLanguageModel();
+
+    final prompt = ChatPromptBuilder.user()
+        .text('What is the capital of France? Answer in one sentence.')
         .build();
 
-    final messages = [
-      ChatMessage.user('What is the capital of France? Answer in one sentence.')
-    ];
-
-    final response = await provider.chat(messages);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   AI Reply: ${response.text}');
     print('   ✅ Success\n');
@@ -75,18 +81,21 @@ Future<void> quickStartWithOllama() async {
   print('Method 3: Ollama (local)');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .ollama()
         .baseUrl('http://localhost:11434')
         .model('llama3.2')
         .temperature(0.7)
+        .buildLanguageModel();
+
+    final prompt = ChatPromptBuilder.user()
+        .text('Hello! Introduce yourself in one sentence.')
         .build();
 
-    final messages = [
-      ChatMessage.user('Hello! Introduce yourself in one sentence.')
-    ];
-
-    final response = await provider.chat(messages);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   AI Reply: ${response.text}');
     print('   ✅ Success\n');
@@ -107,8 +116,8 @@ Future<void> quickStartWithOllama() async {
 /// Configuration:
 /// - apiKey, model, temperature, maxTokens
 ///
-/// Messages:
-/// - ChatMessage.user() / .system() / .assistant()
+/// Prompts:
+/// - 推荐使用 ChatPromptBuilder + ModelMessage（prompt-first）
 ///
 /// Response:
 /// - response.text, response.usage, response.thinking

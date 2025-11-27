@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart/providers/openai/responses_capability.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 void main() {
   group('OpenAI Responses API Stateful Features', () {
@@ -12,7 +13,7 @@ void main() {
           .model('gpt-4o')
           .build();
 
-      final openaiProvider = provider as OpenAIProvider;
+      final openaiProvider = provider as openai.OpenAIProvider;
       expect(openaiProvider.responses, isNotNull);
       expect(openaiProvider.responses, isA<OpenAIResponses>());
     });
@@ -22,7 +23,7 @@ void main() {
       final provider =
           await ai().openai().apiKey('test-key').model('gpt-4o').build();
 
-      final openaiProvider = provider as OpenAIProvider;
+      final openaiProvider = provider as openai.OpenAIProvider;
       expect(openaiProvider.responses, isNull);
     });
 
@@ -33,7 +34,7 @@ void main() {
           .model('gpt-4o')
           .build();
 
-      final openaiProvider = provider as OpenAIProvider;
+      final openaiProvider = provider as openai.OpenAIProvider;
       final responses = openaiProvider.responses!;
 
       expect(responses, isA<OpenAIResponsesCapability>());
@@ -48,7 +49,7 @@ void main() {
           .model('gpt-4o')
           .build();
 
-      final openaiProvider = provider as OpenAIProvider;
+      final openaiProvider = provider as openai.OpenAIProvider;
       final responses = openaiProvider.responses!;
 
       // Check that all methods exist (without calling them to avoid API key requirements)
@@ -69,7 +70,7 @@ void main() {
           .model('gpt-4o')
           .build();
 
-      final openaiProvider = provider as OpenAIProvider;
+      final openaiProvider = provider as openai.OpenAIProvider;
       final responses = openaiProvider.responses!;
 
       // Check that basic methods exist (without calling them to avoid API key requirements)

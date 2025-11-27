@@ -32,8 +32,20 @@ export 'package:llm_dart_anthropic/llm_dart_anthropic.dart'
     show AnthropicConfig, AnthropicProvider;
 export 'mcp_models.dart';
 
-// Backwards-compatible aliases for config and provider types.
+@Deprecated(
+  'Use AnthropicConfig from package:llm_dart_anthropic/llm_dart_anthropic.dart '
+  'instead. This alias exists only for backwards compatibility and will be '
+  'removed in a future release.',
+)
+// Backwards-compatible alias for the Anthropic configuration type.
 typedef AnthropicConfig = anthropic_impl.AnthropicConfig;
+
+@Deprecated(
+  'Use AnthropicProvider from package:llm_dart_anthropic/llm_dart_anthropic.dart '
+  'instead. This alias exists only for backwards compatibility and will be '
+  'removed in a future release.',
+)
+// Backwards-compatible alias for the Anthropic provider type.
 typedef AnthropicProvider = anthropic_impl.AnthropicProvider;
 
 /// Anthropic provider settings (Vercel AI-style).
@@ -186,7 +198,7 @@ Anthropic anthropic({
 }
 
 /// Create an Anthropic provider with default configuration
-AnthropicProvider createAnthropicProvider({
+anthropic_impl.AnthropicProvider createAnthropicProvider({
   required String apiKey,
   String? model,
   String? baseUrl,
@@ -221,7 +233,7 @@ AnthropicProvider createAnthropicProvider({
 }
 
 /// Create an Anthropic provider for chat
-AnthropicProvider createAnthropicChatProvider({
+anthropic_impl.AnthropicProvider createAnthropicChatProvider({
   required String apiKey,
   String model = 'claude-sonnet-4-20250514',
   String? systemPrompt,
@@ -238,7 +250,7 @@ AnthropicProvider createAnthropicChatProvider({
 }
 
 /// Create an Anthropic provider for reasoning tasks
-AnthropicProvider createAnthropicReasoningProvider({
+anthropic_impl.AnthropicProvider createAnthropicReasoningProvider({
   required String apiKey,
   String model = 'claude-sonnet-4-20250514',
   String? systemPrompt,

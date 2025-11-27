@@ -1,5 +1,9 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek;
+import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
 
 void main() {
   group('HTTP Configuration Integration Tests', () {
@@ -18,10 +22,10 @@ void main() {
 
         // Test that provider was created successfully
         expect(provider, isNotNull);
-        expect(provider, isA<AnthropicProvider>());
+        expect(provider, isA<anthropic.AnthropicProvider>());
 
         // Test that HTTP configuration was applied (without making API calls)
-        final anthropicProvider = provider as AnthropicProvider;
+        final anthropicProvider = provider as anthropic.AnthropicProvider;
         expect(anthropicProvider.config.apiKey, equals('test-api-key'));
         expect(
             anthropicProvider.config.model, equals('claude-sonnet-4-20250514'));
@@ -40,10 +44,10 @@ void main() {
 
         // Test that provider was created successfully
         expect(provider, isNotNull);
-        expect(provider, isA<OpenAIProvider>());
+        expect(provider, isA<openai.OpenAIProvider>());
 
         // Test that HTTP configuration was applied (without making API calls)
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         expect(openaiProvider.config.apiKey, equals('test-api-key'));
         expect(openaiProvider.config.model, equals('gpt-4'));
       });
@@ -61,10 +65,10 @@ void main() {
 
         // Test that provider was created successfully
         expect(provider, isNotNull);
-        expect(provider, isA<DeepSeekProvider>());
+        expect(provider, isA<deepseek.DeepSeekProvider>());
 
         // Test that HTTP configuration was applied (without making API calls)
-        final deepseekProvider = provider as DeepSeekProvider;
+        final deepseekProvider = provider as deepseek.DeepSeekProvider;
         expect(deepseekProvider.config.apiKey, equals('test-api-key'));
         expect(deepseekProvider.config.model, equals('deepseek-chat'));
       });
@@ -101,10 +105,10 @@ void main() {
 
         // Test that provider was created successfully
         expect(provider, isNotNull);
-        expect(provider, isA<XAIProvider>());
+        expect(provider, isA<xai.XAIProvider>());
 
         // Test that HTTP configuration was applied (without making API calls)
-        final xaiProvider = provider as XAIProvider;
+        final xaiProvider = provider as xai.XAIProvider;
         expect(xaiProvider.config.apiKey, equals('test-api-key'));
         expect(xaiProvider.config.model, equals('grok-3'));
       });
@@ -152,9 +156,9 @@ void main() {
 
         // Test that provider was created successfully with complex configuration
         expect(provider, isNotNull);
-        expect(provider, isA<AnthropicProvider>());
+        expect(provider, isA<anthropic.AnthropicProvider>());
 
-        final anthropicProvider = provider as AnthropicProvider;
+        final anthropicProvider = provider as anthropic.AnthropicProvider;
         expect(anthropicProvider.config.apiKey, equals('test-api-key'));
         expect(
             anthropicProvider.config.model, equals('claude-sonnet-4-20250514'));
@@ -169,9 +173,9 @@ void main() {
 
         // Test that provider was created successfully without HTTP config
         expect(provider, isNotNull);
-        expect(provider, isA<AnthropicProvider>());
+        expect(provider, isA<anthropic.AnthropicProvider>());
 
-        final anthropicProvider = provider as AnthropicProvider;
+        final anthropicProvider = provider as anthropic.AnthropicProvider;
         expect(anthropicProvider.config.apiKey, equals('test-api-key'));
         expect(
             anthropicProvider.config.model, equals('claude-sonnet-4-20250514'));
@@ -201,9 +205,9 @@ void main() {
 
         // Verify all providers were created
         expect(providers, hasLength(3));
-        expect(providers[0], isA<AnthropicProvider>());
-        expect(providers[1], isA<OpenAIProvider>());
-        expect(providers[2], isA<DeepSeekProvider>());
+        expect(providers[0], isA<anthropic.AnthropicProvider>());
+        expect(providers[1], isA<openai.OpenAIProvider>());
+        expect(providers[2], isA<deepseek.DeepSeekProvider>());
       });
     });
   });

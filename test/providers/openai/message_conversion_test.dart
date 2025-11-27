@@ -1,28 +1,30 @@
+import 'dart:typed_data';
+
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'dart:typed_data';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 void main() {
   group('OpenAI Message Conversion Tests', () {
-    late OpenAIClient client;
-    late OpenAIClient responsesClient;
+    late openai.OpenAIClient client;
+    late openai.OpenAIClient responsesClient;
 
     setUp(() {
       // Client for Chat Completions API (default)
-      final config = OpenAIConfig(
+      final config = openai.OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4o',
         useResponsesAPI: false,
       );
-      client = OpenAIClient(config);
+      client = openai.OpenAIClient(config);
 
       // Client for Responses API
-      final responsesConfig = OpenAIConfig(
+      final responsesConfig = openai.OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4o',
         useResponsesAPI: true,
       );
-      responsesClient = OpenAIClient(responsesConfig);
+      responsesClient = openai.OpenAIClient(responsesConfig);
     });
 
     group('TextMessage Conversion', () {

@@ -22,11 +22,11 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   bool _hasReasoningContent = false;
   String _lastChunk = '';
   final StringBuffer _thinkingBuffer = StringBuffer();
-  // Track tool call IDs by index for streaming tool calls in the Responses API.
+  // Track tool call streaming state for the Responses API.
   // Similar to Chat, the Responses API may only send the id in the first
   // chunk and then reference the same tool call via index in subsequent
-  // chunks. This map keeps a stable id per index.
-  final Map<int, String> _toolCallIds = {};
+  // chunks. We delegate index → id mapping to [ToolCallStreamState].
+  final ToolCallStreamState _toolCallStreamState = ToolCallStreamState();
 
   OpenAIResponses(this.client, this.config);
 
@@ -36,9 +36,16 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    final requestBody = _buildRequestBody(messages, tools, false, false);
+    final requestBody = _buildRequestBody(
+      messages,
+      tools,
+      false,
+      false,
+      options: options,
+    );
     final responseData = await client.postJson(
       responsesEndpoint,
       requestBody,
@@ -61,11 +68,17 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     final effectiveTools = tools ?? config.tools;
-    final requestBody =
-        _buildRequestBody(messages, effectiveTools, true, false);
+    final requestBody = _buildRequestBody(
+      messages,
+      effectiveTools,
+      true,
+      false,
+      options: options,
+    );
 
     _resetStreamState();
 
@@ -98,9 +111,15 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -216,8 +235,12 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
         config.copyWith(previousResponseId: previousResponseId);
     final tempResponses = OpenAIResponses(client, updatedConfig);
 
-    final requestBody =
-        tempResponses._buildRequestBody(newMessages, tools, false, background);
+    final requestBody = tempResponses._buildRequestBody(
+      newMessages,
+      tools,
+      false,
+      background,
+    );
     final responseData = await client.postJson(responsesEndpoint, requestBody);
     return _parseResponse(responseData);
   }
@@ -237,12 +260,12 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     );
   }
 
-  Map<String, dynamic> _buildRequestBody(
-    List<ChatMessage> messages,
-    List<Tool>? tools,
-    bool stream,
-    bool background,
-  ) {
+  Map<String, dynamic> _buildRequestBody(List<ChatMessage> messages,
+      List<Tool>? tools, bool stream, bool background,
+      {LanguageModelCallOptions? options}) {
+    final isReasoningModel =
+        ReasoningUtils.isOpenAIReasoningModel(config.model);
+
     final promptMessages =
         messages.map((message) => message.toPromptMessage()).toList();
     final apiMessages = client.buildApiMessagesFromPrompt(promptMessages);
@@ -264,22 +287,33 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       body['previous_response_id'] = config.previousResponseId;
     }
 
-    // Forward core sampling and length parameters directly without enforcing
-    // provider-specific reasoning restrictions.
-    if (config.maxTokens != null) {
-      body['max_output_tokens'] = config.maxTokens;
+    // Core sampling and length parameters.
+    // The Responses API uses max_output_tokens for all models.
+    //
+    // Per-call options override config-level defaults when provided so
+    // that LanguageModelCallOptions behaves consistently across Chat and
+    // Responses APIs.
+    final effectiveMaxTokens = options?.maxTokens ?? config.maxTokens;
+    if (effectiveMaxTokens != null) {
+      body['max_output_tokens'] = effectiveMaxTokens;
     }
 
-    if (config.temperature != null) {
-      body['temperature'] = config.temperature;
+    // Reasoning models do not support temperature/top_p on the Responses API.
+    final effectiveTemperature = options?.temperature ?? config.temperature;
+    final effectiveTopP = options?.topP ?? config.topP;
+    final effectiveTopK = options?.topK ?? config.topK;
+
+    if (effectiveTemperature != null && !isReasoningModel) {
+      body['temperature'] = effectiveTemperature;
     }
 
-    if (config.topP != null) {
-      body['top_p'] = config.topP;
+    if (effectiveTopP != null && !isReasoningModel) {
+      body['top_p'] = effectiveTopP;
     }
-    if (config.topK != null) body['top_k'] = config.topK;
+    if (effectiveTopK != null) body['top_k'] = effectiveTopK;
 
-    if (config.reasoningEffort != null) {
+    // Only attach reasoning config for reasoning-capable models.
+    if (config.reasoningEffort != null && isReasoningModel) {
       body['reasoning'] = {
         'effort': config.reasoningEffort!.value,
       };
@@ -287,7 +321,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
 
     final allTools = <Map<String, dynamic>>[];
 
-    final effectiveTools = tools ?? config.tools;
+    final effectiveTools = options?.tools ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       allTools
           .addAll(effectiveTools.map((t) => _convertToolToResponsesFormat(t)));
@@ -300,7 +334,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     if (allTools.isNotEmpty) {
       body['tools'] = allTools;
 
-      final effectiveToolChoice = config.toolChoice;
+      final effectiveToolChoice = options?.toolChoice ?? config.toolChoice;
       if (effectiveToolChoice != null &&
           effectiveTools != null &&
           effectiveTools.isNotEmpty) {
@@ -331,16 +365,20 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       body['response_format'] = responseFormat;
     }
 
-    if (config.stopSequences != null && config.stopSequences!.isNotEmpty) {
-      body['stop'] = config.stopSequences;
+    final effectiveStopSequences =
+        options?.stopSequences ?? config.stopSequences;
+    if (effectiveStopSequences != null && effectiveStopSequences.isNotEmpty) {
+      body['stop'] = effectiveStopSequences;
     }
 
-    if (config.user != null) {
-      body['user'] = config.user;
+    final effectiveUser = options?.user ?? config.user;
+    if (effectiveUser != null) {
+      body['user'] = effectiveUser;
     }
 
-    if (config.serviceTier != null) {
-      body['service_tier'] = config.serviceTier!.value;
+    final effectiveServiceTier = options?.serviceTier ?? config.serviceTier;
+    if (effectiveServiceTier != null) {
+      body['service_tier'] = effectiveServiceTier.value;
     }
 
     final extraBody = body['extra_body'] as Map<String, dynamic>?;
@@ -399,7 +437,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     _hasReasoningContent = false;
     _lastChunk = '';
     _thinkingBuffer.clear();
-    _toolCallIds.clear();
+    _toolCallStreamState.reset();
   }
 
   List<ChatStreamEvent> _parseStreamEventWithReasoning(
@@ -501,43 +539,9 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     final toolCalls = json['tool_calls'] as List?;
     if (toolCalls != null && toolCalls.isNotEmpty) {
       final toolCallMap = toolCalls.first as Map<String, dynamic>;
-      final index = toolCallMap['index'] as int?;
-
-      if (index != null) {
-        // If this chunk contains an id, update the mapping.
-        final id = toolCallMap['id'] as String?;
-        if (id != null && id.isNotEmpty) {
-          _toolCallIds[index] = id;
-        }
-
-        final stableId = _toolCallIds[index];
-        if (stableId != null) {
-          final functionMap = toolCallMap['function'] as Map<String, dynamic>?;
-          if (functionMap != null) {
-            final name = functionMap['name'] as String? ?? '';
-            final args = functionMap['arguments'] as String? ?? '';
-
-            if (name.isNotEmpty || args.isNotEmpty) {
-              final toolCall = ToolCall(
-                id: stableId,
-                callType: 'function',
-                function: FunctionCall(
-                  name: name,
-                  arguments: args,
-                ),
-              );
-              events.add(ToolCallDeltaEvent(toolCall));
-            }
-          }
-        }
-      } else if (toolCallMap.containsKey('id') &&
-          toolCallMap.containsKey('function')) {
-        // Fallback: handle tool calls that provide a full object without index.
-        try {
-          events.add(ToolCallDeltaEvent(ToolCall.fromJson(toolCallMap)));
-        } catch (e) {
-          client.logger.warning('Failed to parse tool call: $e');
-        }
+      final toolCall = _toolCallStreamState.processDelta(toolCallMap);
+      if (toolCall != null) {
+        events.add(ToolCallDeltaEvent(toolCall));
       }
     }
 

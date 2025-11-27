@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart/providers/factories/anthropic_factory.dart';
 
 void main() {
@@ -53,7 +54,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<AnthropicProvider>());
+        expect(provider, isA<anthropic.AnthropicProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -71,7 +72,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<AnthropicProvider>());
+        expect(provider, isA<anthropic.AnthropicProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -97,7 +98,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<AnthropicProvider>());
+        expect(provider, isA<anthropic.AnthropicProvider>());
         expect(provider, isA<ChatCapability>());
       });
 

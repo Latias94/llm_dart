@@ -1,12 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
 import 'package:test/test.dart';
 
-class FakeXAIClient extends XAIClient {
+class FakeXAIClient extends xai.XAIClient {
   Map<String, dynamic>? lastRequestBody;
   String? lastEndpoint;
 
-  FakeXAIClient(XAIConfig config) : super(config);
+  FakeXAIClient(xai.XAIConfig config) : super(config);
 
   @override
   Future<Map<String, dynamic>> postJson(
@@ -48,14 +49,14 @@ class FakeXAIClient extends XAIClient {
 void main() {
   group('XAIChat request body mapping', () {
     test('includes system prompt and user message', () async {
-      const config = XAIConfig(
+      const config = xai.XAIConfig(
         apiKey: 'test-key',
         model: 'grok-3',
         systemPrompt: 'You are a helpful assistant.',
       );
 
       final client = FakeXAIClient(config);
-      final chat = XAIChat(client, config);
+      final chat = xai.XAIChat(client, config);
 
       final messages = [ChatMessage.user('Hello')];
 
@@ -84,13 +85,13 @@ void main() {
     });
 
     test('builds multi-modal user message and tool result messages', () async {
-      const config = XAIConfig(
+      const config = xai.XAIConfig(
         apiKey: 'test-key',
         model: 'grok-3',
       );
 
       final client = FakeXAIClient(config);
-      final chat = XAIChat(client, config);
+      final chat = xai.XAIChat(client, config);
 
       final imageMessage = ChatMessage.imageUrl(
         role: ChatRole.user,
@@ -162,7 +163,7 @@ void main() {
         ),
       );
 
-      final config = XAIConfig(
+      final config = xai.XAIConfig(
         apiKey: 'test-key',
         model: 'grok-3',
         tools: [tool],
@@ -170,7 +171,7 @@ void main() {
       );
 
       final client = FakeXAIClient(config);
-      final chat = XAIChat(client, config);
+      final chat = xai.XAIChat(client, config);
 
       await chat.chatWithTools([ChatMessage.user('Hello')], null);
 
@@ -195,19 +196,19 @@ void main() {
     });
 
     test('maps searchParameters to search_parameters', () async {
-      final searchParams = SearchParameters.webSearch(
+      final searchParams = xai.SearchParameters.webSearch(
         maxResults: 5,
         excludedWebsites: ['example.com'],
       );
 
-      final config = XAIConfig(
+      final config = xai.XAIConfig(
         apiKey: 'test-key',
         model: 'grok-3',
         searchParameters: searchParams,
       );
 
       final client = FakeXAIClient(config);
-      final chat = XAIChat(client, config);
+      final chat = xai.XAIChat(client, config);
 
       await chat.chat([ChatMessage.user('Hello')]);
 
@@ -262,7 +263,7 @@ void main() {
         'citations': ['https://example.com'],
       };
 
-      final response = XAIChatResponse(rawResponse);
+      final response = xai.XAIChatResponse(rawResponse);
 
       expect(response.text, equals('Hello'));
       expect(response.thinking, equals('Chain-of-thought reasoning'));

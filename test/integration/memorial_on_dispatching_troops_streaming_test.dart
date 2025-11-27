@@ -1,6 +1,7 @@
 import 'dart:math';
+
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Tests for streaming the complete 《出师表》(Memorial on Dispatching Troops) content
 ///
@@ -8,14 +9,14 @@ import 'package:llm_dart/llm_dart.dart';
 /// is properly handled in streaming scenarios without character loss.
 void main() {
   group('Memorial on Dispatching Troops Streaming Tests', () {
-    late OpenAIClient client;
+    late openai.OpenAIClient client;
 
     setUp(() {
-      final config = OpenAIConfig(
+      final config = openai.OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4o',
       );
-      client = OpenAIClient(config);
+      client = openai.OpenAIClient(config);
     });
 
     test('handles complete 《出师表》 original text in streaming', () {

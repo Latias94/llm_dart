@@ -1,4 +1,4 @@
-import '../core/capability.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Utility class for capability checking and safe execution
 /// Provides multiple approaches for different user levels and use cases

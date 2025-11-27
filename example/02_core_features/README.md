@@ -87,12 +87,14 @@ dart run enhanced_tool_calling.dart
 ### Basic Chat
 ```dart
 // Type-safe provider initialization
-final provider = await ai().openai().apiKey('your-key').buildChat();
+final model = await ai().openai().apiKey('your-key').buildLanguageModel();
 
 // Simple conversation
-final response = await provider.chat([
-  ChatMessage.user('Hello, how are you?'),
-]);
+final prompt = ChatPromptBuilder.user().text('Hello, how are you?').build();
+final response = await generateTextWithModel(
+  model,
+  promptMessages: [prompt],
+);
 print(response.text);
 ```
 

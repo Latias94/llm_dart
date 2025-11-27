@@ -1,6 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/core/capability.dart';
-import 'package:llm_dart/core/llm_error.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart/providers/google/google.dart';
 
 void main() {

@@ -62,20 +62,26 @@ Future<void> demoBasicWebSearch(String? xaiKey, String? anthropicKey,
 
   final query = 'What are the latest developments in AI this week?';
   print('Query: "$query"\n');
+  final prompt = ChatPromptBuilder.user().text(query).build();
 
   // xAI Grok
   if (xaiKey != null) {
     try {
       print('🤖 xAI Grok:');
-      final provider = await ai()
+      final model = await ai()
           .xai()
           .apiKey(xaiKey)
           .model('grok-3')
           .enableWebSearch()
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider.chat([ChatMessage.user(query)]);
-      print('   ${response.text?.substring(0, 200)}...\n');
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+      final text = response.text ?? '';
+      print(
+          '   ${text.length > 200 ? '${text.substring(0, 200)}...' : text}\n');
     } catch (e) {
       print('   ❌ Error: $e\n');
     }
@@ -85,15 +91,20 @@ Future<void> demoBasicWebSearch(String? xaiKey, String? anthropicKey,
   if (anthropicKey != null) {
     try {
       print('🧠 Anthropic Claude:');
-      final provider = await ai()
+      final model = await ai()
           .anthropic()
           .apiKey(anthropicKey)
           .model('claude-sonnet-4-20250514')
           .enableWebSearch()
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider.chat([ChatMessage.user(query)]);
-      print('   ${response.text?.substring(0, 200)}...\n');
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+      final text = response.text ?? '';
+      print(
+          '   ${text.length > 200 ? '${text.substring(0, 200)}...' : text}\n');
     } catch (e) {
       print('   ❌ Error: $e\n');
     }
@@ -103,15 +114,20 @@ Future<void> demoBasicWebSearch(String? xaiKey, String? anthropicKey,
   if (openaiKey != null) {
     try {
       print('🔍 OpenAI:');
-      final provider = await ai()
+      final model = await ai()
           .openai()
           .apiKey(openaiKey)
           .model('gpt-4o-search-preview')
           .enableWebSearch()
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider.chat([ChatMessage.user(query)]);
-      print('   ${response.text?.substring(0, 200)}...\n');
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+      final text = response.text ?? '';
+      print(
+          '   ${text.length > 200 ? '${text.substring(0, 200)}...' : text}\n');
     } catch (e) {
       print('   ❌ Error: $e\n');
     }
@@ -121,15 +137,20 @@ Future<void> demoBasicWebSearch(String? xaiKey, String? anthropicKey,
   if (openrouterKey != null) {
     try {
       print('🌐 OpenRouter:');
-      final provider = await ai()
+      final model = await ai()
           .openRouter()
           .apiKey(openrouterKey)
           .model('anthropic/claude-3.5-sonnet:online')
           .enableWebSearch()
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider.chat([ChatMessage.user(query)]);
-      print('   ${response.text?.substring(0, 200)}...\n');
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+      final text = response.text ?? '';
+      print(
+          '   ${text.length > 200 ? '${text.substring(0, 200)}...' : text}\n');
     } catch (e) {
       print('   ❌ Error: $e\n');
     }
@@ -148,18 +169,25 @@ Future<void> demoProviderSpecificConfigs(String? xaiKey, String? anthropicKey,
   if (xaiKey != null) {
     try {
       print('\n1. xAI News Search:');
-      final provider = await ai()
+      final model = await ai()
           .xai()
           .apiKey(xaiKey)
           .newsSearch(
             maxResults: 5,
             fromDate: '2024-12-01',
           )
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider.chat(
-          [ChatMessage.user('What are the top tech news stories this month?')]);
-      print('   ${response.text?.substring(0, 200)}...\n');
+      final prompt = ChatPromptBuilder.user()
+          .text('What are the top tech news stories this month?')
+          .build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+      final text = response.text ?? '';
+      print(
+          '   ${text.length > 200 ? '${text.substring(0, 200)}...' : text}\n');
     } catch (e) {
       print('   ❌ Error: $e\n');
     }
@@ -169,7 +197,7 @@ Future<void> demoProviderSpecificConfigs(String? xaiKey, String? anthropicKey,
   if (anthropicKey != null) {
     try {
       print('2. Anthropic with Domain Filtering:');
-      final provider = await ai()
+      final model = await ai()
           .anthropic()
           .apiKey(anthropicKey)
           .webSearch(
@@ -177,12 +205,18 @@ Future<void> demoProviderSpecificConfigs(String? xaiKey, String? anthropicKey,
             allowedDomains: ['wikipedia.org', 'github.com', 'arxiv.org'],
             location: WebSearchLocation.sanFrancisco(),
           )
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider.chat([
-        ChatMessage.user('Find information about machine learning research')
-      ]);
-      print('   ${response.text?.substring(0, 200)}...\n');
+      final prompt = ChatPromptBuilder.user()
+          .text('Find information about machine learning research')
+          .build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+      final text = response.text ?? '';
+      print(
+          '   ${text.length > 200 ? '${text.substring(0, 200)}...' : text}\n');
     } catch (e) {
       print('   ❌ Error: $e\n');
     }
@@ -192,16 +226,23 @@ Future<void> demoProviderSpecificConfigs(String? xaiKey, String? anthropicKey,
   if (openaiKey != null) {
     try {
       print('3. OpenAI with High Context:');
-      final provider = await ai()
+      final model = await ai()
           .openai((openai) =>
               openai.webSearch(contextSize: WebSearchContextSize.high))
           .apiKey(openaiKey)
           .model('gpt-4o-search-preview')
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider
-          .chat([ChatMessage.user('Explain quantum computing breakthroughs')]);
-      print('   ${response.text?.substring(0, 200)}...\n');
+      final prompt = ChatPromptBuilder.user()
+          .text('Explain quantum computing breakthroughs')
+          .build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+      final text = response.text ?? '';
+      print(
+          '   ${text.length > 200 ? '${text.substring(0, 200)}...' : text}\n');
     } catch (e) {
       print('   ❌ Error: $e\n');
     }
@@ -211,18 +252,25 @@ Future<void> demoProviderSpecificConfigs(String? xaiKey, String? anthropicKey,
   if (openrouterKey != null) {
     try {
       print('4. OpenRouter with Custom Search Prompt:');
-      final provider = await ai()
+      final model = await ai()
           .openRouter((openrouter) => openrouter.webSearch(
                 maxResults: 5,
                 searchPrompt: 'Focus on recent academic papers and research',
               ))
           .apiKey(openrouterKey)
           .model('anthropic/claude-3.5-sonnet')
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider
-          .chat([ChatMessage.user('Find recent AI research papers')]);
-      print('   ${response.text?.substring(0, 200)}...\n');
+      final prompt = ChatPromptBuilder.user()
+          .text('Find recent AI research papers')
+          .build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+      final text = response.text ?? '';
+      print(
+          '   ${text.length > 200 ? '${text.substring(0, 200)}...' : text}\n');
     } catch (e) {
       print('   ❌ Error: $e\n');
     }
@@ -238,14 +286,23 @@ Future<void> demoAdvancedSearchScenarios(
   if (xaiKey != null) {
     try {
       print('\n1. Real-time Information Query:');
-      final provider =
-          await ai().xai().apiKey(xaiKey).quickWebSearch(maxResults: 3).build();
+      final model = await ai()
+          .xai()
+          .apiKey(xaiKey)
+          .quickWebSearch(maxResults: 3)
+          .buildLanguageModel();
 
-      final response = await provider.chat([
-        ChatMessage.user(
-            'What is the current stock price of NVIDIA and recent news about the company?')
-      ]);
-      print('   ${response.text?.substring(0, 300)}...\n');
+      final prompt = ChatPromptBuilder.user()
+          .text(
+              'What is the current stock price of NVIDIA and recent news about the company?')
+          .build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+      final text = response.text ?? '';
+      print(
+          '   ${text.length > 300 ? '${text.substring(0, 300)}...' : text}\n');
     } catch (e) {
       print('   ❌ Error: $e\n');
     }
@@ -254,7 +311,7 @@ Future<void> demoAdvancedSearchScenarios(
   if (anthropicKey != null) {
     try {
       print('2. Academic Research Query:');
-      final provider = await ai()
+      final model = await ai()
           .anthropic()
           .apiKey(anthropicKey)
           .advancedWebSearch(
@@ -263,13 +320,19 @@ Future<void> demoAdvancedSearchScenarios(
             allowedDomains: ['arxiv.org', 'scholar.google.com', 'nature.com'],
             searchType: WebSearchType.academic,
           )
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider.chat([
-        ChatMessage.user(
-            'Find recent papers on large language model efficiency improvements')
-      ]);
-      print('   ${response.text?.substring(0, 300)}...\n');
+      final prompt = ChatPromptBuilder.user()
+          .text(
+              'Find recent papers on large language model efficiency improvements')
+          .build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
+      final text = response.text ?? '';
+      print(
+          '   ${text.length > 300 ? '${text.substring(0, 300)}...' : text}\n');
     } catch (e) {
       print('   ❌ Error: $e\n');
     }
@@ -283,11 +346,11 @@ Future<void> demoConfigurationExamples() async {
 
   print('\n1. Simple Web Search:');
   print('''
-  final provider = await ai()
+  final model = await ai()
       .xai()
       .apiKey(apiKey)
       .enableWebSearch()  // Just enable it!
-      .build();
+      .buildLanguageModel();
   ''');
 
   print('2. Quick Configuration:');

@@ -95,10 +95,10 @@ void main() {
       expect(payload.value, '{"temperature": "20C"}');
     });
 
-    test('round-trips ChatPromptMessage via ChatMessage.fromPromptMessage', () {
+    test('round-trips ModelMessage via ChatMessage.fromPromptMessage', () {
       final bytes = <int>[1, 2, 3, 4];
 
-      final prompt = ChatPromptMessage(
+      final prompt = ModelMessage(
         role: ChatRole.user,
         parts: [
           const TextContentPart('Hello with file'),

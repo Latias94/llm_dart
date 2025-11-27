@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// 🚀 buildOpenAIResponses() Method Demo
 ///
@@ -75,8 +76,8 @@ Future<void> demonstrateTraditionalApproach(String apiKey) async {
     if (provider is ProviderCapabilities &&
         (provider as ProviderCapabilities)
             .supports(LLMCapability.openaiResponses) &&
-        provider is OpenAIProvider) {
-      final openaiProvider = provider;
+        provider is openai.OpenAIProvider) {
+      final openai.OpenAIProvider openaiProvider = provider;
       final responsesAPI = openaiProvider.responses;
 
       if (responsesAPI != null) {

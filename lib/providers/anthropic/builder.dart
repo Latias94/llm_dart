@@ -1,7 +1,5 @@
 import '../../builder/llm_builder.dart';
-import '../../core/capability.dart';
-import '../../core/config.dart';
-import '../../core/web_search.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'mcp_models.dart';
 
 /// Anthropic-specific LLM builder with provider-specific configuration methods

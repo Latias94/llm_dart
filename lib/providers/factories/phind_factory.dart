@@ -1,5 +1,4 @@
-import '../../core/capability.dart';
-import '../../core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import '../../core/provider_defaults.dart';
 import 'base_factory.dart';
 import 'package:llm_dart_phind/llm_dart_phind.dart';
