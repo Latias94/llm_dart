@@ -78,6 +78,7 @@ abstract final class LLMConfigKeys {
   static const String sendTimeout = 'sendTimeout';
   static const String enableHttpLogging = 'enableHttpLogging';
   static const String customDio = 'customDio';
+  static const String customInterceptors = 'customInterceptors';
 
   // OpenAI-style sampling controls (generic mapping keys)
   static const String frequencyPenalty = 'frequencyPenalty';

@@ -336,6 +336,27 @@ class OpenAICompatibleProviderProfiles {
     },
   );
 
+  /// SiliconFlow configuration using OpenAI-compatible interface.
+  static final OpenAICompatibleProviderConfig siliconflow =
+      OpenAICompatibleProviderConfig(
+    providerId: 'siliconflow',
+    displayName: 'SiliconFlow (OpenAI-compatible)',
+    description: 'SiliconFlow models using OpenAI-compatible interface',
+    defaultBaseUrl: 'https://api.siliconflow.cn/v1/',
+    // Default to a common chat-capable model; callers should override this
+    // with their preferred SiliconFlow model identifier.
+    defaultModel: 'deepseek-ai/DeepSeek-V3',
+    supportedCapabilities: {
+      LLMCapability.chat,
+      LLMCapability.streaming,
+      LLMCapability.toolCalling,
+      LLMCapability.embedding,
+    },
+    supportsReasoningEffort: false,
+    supportsStructuredOutput: true,
+    modelConfigs: const {},
+  );
+
   /// OpenRouter configuration using OpenAI-compatible interface.
   static const OpenAICompatibleProviderConfig openRouter =
       OpenAICompatibleProviderConfig(
@@ -384,6 +405,7 @@ class OpenAICompatibleProviderProfiles {
       openRouter,
       githubCopilot,
       togetherAI,
+      siliconflow,
     ];
   }
 
@@ -400,6 +422,8 @@ class OpenAICompatibleProviderProfiles {
         return groq;
       case 'phind-openai':
         return phind;
+      case 'siliconflow':
+        return siliconflow;
       case 'openrouter':
         return openRouter;
       case 'github-copilot':

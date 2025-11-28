@@ -33,6 +33,7 @@ class HttpConfigUtils {
 
     _configureHttpClientAdapter(dio, config);
     _configureLogging(dio, config);
+     _configureCustomInterceptors(dio, config);
 
     return dio;
   }
@@ -125,6 +126,16 @@ class HttpConfigUtils {
         },
       ),
     );
+  }
+
+  static void _configureCustomInterceptors(Dio dio, LLMConfig config) {
+    final interceptors = config
+        .getExtension<List<Interceptor>>(LLMConfigKeys.customInterceptors);
+    if (interceptors == null || interceptors.isEmpty) return;
+
+    for (final interceptor in interceptors) {
+      dio.interceptors.add(interceptor);
+    }
   }
 
   /// Simple Dio factory for providers that don't need advanced HTTP features.

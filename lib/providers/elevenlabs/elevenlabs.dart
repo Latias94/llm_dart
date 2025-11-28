@@ -140,6 +140,11 @@ class ElevenLabs implements SpeechModelProviderFactory {
       extensions[LLMConfigKeys.customHeaders] = headers;
     }
 
+    // Attach logical provider name as metadata for observability tooling.
+    extensions[LLMConfigKeys.metadata] = <String, dynamic>{
+      'provider': _providerName,
+    };
+
     return LLMConfig(
       apiKey: _settings.apiKey,
       baseUrl: _baseUrl,

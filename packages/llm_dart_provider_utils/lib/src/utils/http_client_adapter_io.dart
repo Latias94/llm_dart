@@ -20,32 +20,29 @@ class HttpClientAdapterConfig {
     if ((proxyUrl != null && proxyUrl.isNotEmpty) ||
         bypassSSL ||
         (certificatePath != null && certificatePath.isNotEmpty)) {
-      if (proxyUrl != null) {
+      if (proxyUrl != null && proxyUrl.isNotEmpty) {
         _logger.info('Configuring HTTP proxy: $proxyUrl');
       }
       if (bypassSSL) {
         _logger.warning('⚠️ SSL certificate verification is disabled');
       }
-      if (certificatePath != null) {
+      if (certificatePath != null && certificatePath.isNotEmpty) {
         _logger.info('Loading SSL certificate from: $certificatePath');
       }
 
       dio.httpClientAdapter = IOHttpClientAdapter(
         createHttpClient: () {
-          final client = HttpClient();
+          SecurityContext? context;
 
-          if (proxyUrl != null && proxyUrl.isNotEmpty) {
-            client.findProxy = (uri) => 'PROXY $proxyUrl';
-          }
-
-          if (bypassSSL) {
-            client.badCertificateCallback = (cert, host, port) => true;
-          }
-
+          // When a custom certificate is provided, extend the default trusted
+          // roots with the additional certificate. This is useful for
+          // private CAs or self-signed certificates.
           if (certificatePath != null && certificatePath.isNotEmpty) {
             try {
               final certFile = File(certificatePath);
               if (certFile.existsSync()) {
+                context = SecurityContext(withTrustedRoots: true)
+                  ..setTrustedCertificates(certificatePath);
                 _logger.info('SSL certificate loaded successfully');
               } else {
                 _logger.warning(
@@ -55,6 +52,17 @@ class HttpClientAdapterConfig {
             } catch (e) {
               _logger.severe('Failed to load SSL certificate: $e');
             }
+          }
+
+          final client =
+              context != null ? HttpClient(context: context) : HttpClient();
+
+          if (proxyUrl != null && proxyUrl.isNotEmpty) {
+            client.findProxy = (uri) => 'PROXY $proxyUrl';
+          }
+
+          if (bypassSSL) {
+            client.badCertificateCallback = (cert, host, port) => true;
           }
 
           return client;

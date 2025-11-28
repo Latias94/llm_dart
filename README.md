@@ -133,7 +133,6 @@ void main() async {
       .openai()
       .apiKey('your-api-key')
       .model('gpt-4')
-      .temperature(0.7)
       .buildLanguageModel();
 
   // Method 2: Using provider() with string ID (extensible)
@@ -141,16 +140,14 @@ void main() async {
       .provider('openai')
       .apiKey('your-api-key')
       .model('gpt-4')
-      .temperature(0.7)
       .buildLanguageModel();
 
   // Method 3: Using convenience function
-  final directModel = await createProvider(
-    providerId: 'openai',
-    apiKey: 'your-api-key',
-    model: 'gpt-4',
-    temperature: 0.7,
-  ).then((chat) => chat.buildLanguageModel());
+  final directModel = await ai()
+      .provider('openai')
+      .apiKey('your-api-key')
+      .model('gpt-4')
+      .buildLanguageModel();
 
   // Simple chat
   final prompt = ChatPromptBuilder.user().text('Hello, world!').build();
@@ -991,15 +988,15 @@ final result = await generateTextWithModel(
 print(result.text);
 
 // Builder / registry-style
-final provider = await createProvider(
-  providerId: 'openai',
-  apiKey: 'sk-...',
-  model: 'gpt-4',
-  temperature: 0.7,
-  // For reasoning models (o1 / o3 / Gemini etc.)
-  // You can also use LLMBuilder.reasoningEffort(...) which writes this key.
-  extensions: {LLMConfigKeys.reasoningEffort: 'medium'},
-);
+final provider = await ai()
+    .provider('openai')
+    .apiKey('sk-...')
+    .model('gpt-4')
+    .temperature(0.7)
+    // For reasoning models (o1 / o3 / Gemini etc.)
+    // You can also use LLMBuilder.reasoningEffort(...) which writes this key.
+    .extension(LLMConfigKeys.reasoningEffort, 'medium')
+    .build();
 ```
 
 #### Responses API (Stateful Conversations)

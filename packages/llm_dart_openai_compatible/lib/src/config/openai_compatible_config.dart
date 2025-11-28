@@ -251,4 +251,22 @@ class OpenAICompatibleConfigs {
       originalConfig: originalConfig,
     );
   }
+
+  /// SiliconFlow preset using its OpenAI-compatible endpoint.
+  ///
+  /// Base URL: https://api.siliconflow.cn/v1/
+  static OpenAICompatibleConfig siliconflow({
+    required String apiKey,
+    required String model,
+    String baseUrl = 'https://api.siliconflow.cn/v1/',
+    LLMConfig? originalConfig,
+  }) {
+    return OpenAICompatibleConfig(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      model: model,
+      providerId: 'siliconflow',
+      originalConfig: originalConfig,
+    );
+  }
 }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:logging/logging.dart';
 
@@ -40,6 +41,7 @@ Future<void> main() async {
   await demonstrateCustomHeaders(openaiApiKey);
   await demonstrateTimeoutConfiguration(openaiApiKey);
   await demonstrateLoggingConfiguration(openaiApiKey);
+  await demonstrateCustomInterceptorConfiguration(openaiApiKey);
   await demonstrateComprehensiveConfig(openaiApiKey);
 
   // await demonstrateConfigValidation();
@@ -229,6 +231,57 @@ Future<void> demonstrateLoggingConfiguration(String openaiApiKey) async {
     print('   📝 Response: ${response.text}\n');
   } catch (e) {
     print('   ❌ Logging configuration failed: $e\n');
+  }
+}
+
+/// Demonstrate custom interceptor configuration
+///
+/// This shows how to attach a custom Dio interceptor without replacing
+/// the entire HTTP client, using the lightweight `addInterceptor` API.
+Future<void> demonstrateCustomInterceptorConfiguration(
+  String openaiApiKey,
+) async {
+  print('🧩 Custom Interceptor Configuration (OpenAI):\n');
+
+  try {
+    final metricsInterceptor = InterceptorsWrapper(
+      onRequest: (options, handler) {
+        print(
+          '   [custom-interceptor] → ${options.method} ${options.uri}',
+        );
+        handler.next(options);
+      },
+      onResponse: (response, handler) {
+        print(
+          '   [custom-interceptor] ← ${response.statusCode} ${response.requestOptions.uri}',
+        );
+        handler.next(response);
+      },
+      onError: (error, handler) {
+        print(
+          '   [custom-interceptor] ✗ ${error.requestOptions.method} ${error.requestOptions.uri}: ${error.message}',
+        );
+        handler.next(error);
+      },
+    );
+
+    final provider = await ai()
+        .openai()
+        .apiKey(openaiApiKey)
+        .model('gpt-4o-mini')
+        .http((http) => http.addInterceptor(metricsInterceptor))
+        .build();
+
+    final response = await provider.chat([
+      ChatMessage.user(
+        'Hello! This request uses a custom Dio interceptor for metrics.',
+      ),
+    ]);
+
+    print('   ✅ Custom interceptor configuration successful');
+    print('   📝 Response: ${response.text}\n');
+  } catch (e) {
+    print('   ❌ Custom interceptor configuration failed: $e\n');
   }
 }
 

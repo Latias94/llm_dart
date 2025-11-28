@@ -15,3 +15,4 @@ export 'src/provider_profiles/openai_compatible_provider_profiles.dart'
 export 'src/client/openai_compatible_client.dart';
 export 'src/chat/openai_compatible_chat.dart';
 export 'src/provider/openai_compatible_provider.dart';
+export 'src/embeddings/openai_compatible_embeddings.dart';

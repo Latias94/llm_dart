@@ -7,6 +7,7 @@ import '../models/image_models.dart';
 import '../models/file_models.dart';
 import '../models/moderation_models.dart';
 import '../models/assistant_models.dart';
+import '../models/rerank_models.dart';
 import 'llm_error.dart';
 import 'tool_validator.dart';
 import 'cancellation.dart';
@@ -122,6 +123,22 @@ enum LLMCapability {
   /// **Note**: This is currently OpenAI-specific as other providers don't
   /// yet support similar stateful conversation APIs.
   openaiResponses,
+
+  /// Reranking capabilities
+  ///
+  /// This indicates the provider supports semantic reranking of documents
+  /// against a query. Implementations fall into two broad classes:
+  ///
+  /// - **Native rerank APIs** exposed by some providers (e.g. Cohere,
+  ///   Bedrock, Together-style endpoints).
+  /// - **Embedding-based reranking** where the SDK computes vector
+  ///   embeddings for the query and documents and ranks them via
+  ///   cosine similarity.
+  ///
+  /// Callers should use [RerankingCapability] (or high-level helpers
+  /// such as `rerank(...)`) instead of relying on provider-specific
+  /// HTTP shapes.
+  reranking,
 }
 
 /// Warning information for an LLM call.
@@ -446,6 +463,25 @@ class StreamToolInputStart extends StreamTextPart {
   const StreamToolInputStart({
     required this.toolCallId,
     required this.toolName,
+  });
+}
+
+/// Capability for semantic reranking of documents against a query.
+///
+/// Implementations may be backed by dedicated reranking APIs or by
+/// embedding-based similarity under the hood. Callers should treat this
+/// as a black box that returns ranked documents with relevance scores.
+abstract class RerankingCapability {
+  /// Rerank [documents] for the given [query].
+  ///
+  /// Implementations should return documents sorted by descending
+  /// relevance score. When [topN] is provided, at most [topN] documents
+  /// should be returned.
+  Future<RerankResult> rerank({
+    required String query,
+    required List<RerankDocument> documents,
+    int? topN,
+    CancellationToken? cancelToken,
   });
 }
 

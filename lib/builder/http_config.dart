@@ -108,6 +108,40 @@ class HttpConfig {
     return this;
   }
 
+  /// Adds a single custom Dio interceptor.
+  ///
+  /// This is a lightweight alternative to [dioClient] when you only need
+  /// to attach additional interceptors (for metrics, tracing, etc.) while
+  /// keeping the default HTTP configuration logic.
+  ///
+  /// Interceptors added via this method are:
+  /// - Applied after the base Dio instance is created.
+  /// - Ignored when a custom Dio client is provided via [dioClient].
+  ///
+  /// Note: Configurations that carry interceptors are not meant to be
+  /// serialized to JSON.
+  HttpConfig addInterceptor(Interceptor interceptor) {
+    final existing =
+        _config[LLMConfigKeys.customInterceptors] as List<Interceptor>? ??
+            <Interceptor>[];
+    _config[LLMConfigKeys.customInterceptors] = [...existing, interceptor];
+    return this;
+  }
+
+  /// Adds multiple custom Dio interceptors.
+  ///
+  /// See [addInterceptor] for behaviour details.
+  HttpConfig interceptors(List<Interceptor> interceptors) {
+    final existing =
+        _config[LLMConfigKeys.customInterceptors] as List<Interceptor>? ??
+            <Interceptor>[];
+    _config[LLMConfigKeys.customInterceptors] = [
+      ...existing,
+      ...interceptors,
+    ];
+    return this;
+  }
+
   /// Get the configuration map
   Map<String, dynamic> build() => Map.from(_config);
 }

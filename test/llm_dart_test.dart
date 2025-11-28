@@ -48,7 +48,6 @@ void main() {
           maxTokens: 1000,
           systemPrompt: 'You are a helpful assistant',
           timeout: Duration(seconds: 30),
-          stream: true,
           topP: 0.9,
           topK: 50,
           extensions: {'custom': 'value'},

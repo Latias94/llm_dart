@@ -24,6 +24,7 @@ export 'src/models/file_models.dart';
 export 'src/models/moderation_models.dart';
 export 'src/models/assistant_models.dart';
 export 'src/models/responses_models.dart';
+export 'src/models/rerank_models.dart';
 
 // Core utilities
 export 'src/utils/reasoning_utils.dart';

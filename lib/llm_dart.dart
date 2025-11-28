@@ -233,7 +233,12 @@ export 'package:llm_dart_core/llm_dart_core.dart'
         ModifyAssistantRequest,
         ListAssistantsResponse,
         DeleteAssistantResponse,
-        ListAssistantsQuery;
+        ListAssistantsQuery,
+
+        // Reranking models
+        RerankDocument,
+        RerankResultItem,
+        RerankResult;
 
 // Provider utils exports (HTTP config, error handling, UTF-8 decoding).
 //
@@ -326,7 +331,6 @@ Future<ChatCapability> createProvider({
   int? maxTokens,
   String? systemPrompt,
   Duration? timeout,
-  bool stream = false,
   double? topP,
   int? topK,
   Map<String, dynamic>? extensions,
@@ -384,7 +388,9 @@ Future<GenerateTextResult> generateText({
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
   LanguageModelCallOptions? options,
-}) {
+  void Function(GenerateTextResult result)? onFinish,
+  void Function(List<CallWarning> warnings)? onWarnings,
+}) async {
   var builder = LLMBuilder().use(model);
 
   if (apiKey != null) {
@@ -396,13 +402,22 @@ Future<GenerateTextResult> generateText({
 
   builder = _applyCallOptions(builder, options);
 
-  return builder.generateText(
+  final result = await builder.generateText(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
     cancelToken: cancelToken,
   );
+
+  if (onFinish != null) {
+    onFinish(result);
+  }
+  if (onWarnings != null && result.warnings.isNotEmpty) {
+    onWarnings(result.warnings);
+  }
+
+  return result;
 }
 
 /// Generate text using an existing [LanguageModel] instance.
@@ -420,7 +435,9 @@ Future<GenerateTextResult> generateTextWithModel(
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
   LanguageModelCallOptions? options,
-}) {
+  void Function(GenerateTextResult result)? onFinish,
+  void Function(List<CallWarning> warnings)? onWarnings,
+}) async {
   // ElevenLabs is an audio-only provider and does not support chat/text
   // generation. Fail fast here instead of surfacing a lower-level error.
   if (model.providerId == 'elevenlabs') {
@@ -437,11 +454,21 @@ Future<GenerateTextResult> generateTextWithModel(
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
   );
-  return model.generateTextWithOptions(
+
+  final result = await model.generateTextWithOptions(
     resolvedMessages,
     options: options,
     cancelToken: cancelToken,
   );
+
+  if (onFinish != null) {
+    onFinish(result);
+  }
+  if (onWarnings != null && result.warnings.isNotEmpty) {
+    onWarnings(result.warnings);
+  }
+
+  return result;
 }
 
 /// High-level streamText helper (Vercel AI SDK-style).
@@ -459,6 +486,8 @@ Stream<ChatStreamEvent> streamText({
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
   LanguageModelCallOptions? options,
+  void Function(GenerateTextResult result)? onFinish,
+  void Function(List<CallWarning> warnings)? onWarnings,
 }) async* {
   var builder = LLMBuilder().use(model);
 
@@ -471,13 +500,38 @@ Stream<ChatStreamEvent> streamText({
 
   builder = _applyCallOptions(builder, options);
 
-  yield* builder.streamText(
+  final source = builder.streamText(
     prompt: prompt,
     messages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
     cancelToken: cancelToken,
   );
+
+  await for (final event in source) {
+    if (event is CompletionEvent &&
+        (onFinish != null || onWarnings != null)) {
+      final response = event.response;
+      final result = GenerateTextResult(
+        rawResponse: response,
+        text: response.text,
+        thinking: response.thinking,
+        toolCalls: response.toolCalls,
+        usage: response.usage,
+        warnings: response.warnings,
+        metadata: response.callMetadata,
+      );
+
+      if (onFinish != null) {
+        onFinish(result);
+      }
+      if (onWarnings != null && result.warnings.isNotEmpty) {
+        onWarnings(result.warnings);
+      }
+    }
+
+    yield event;
+  }
 }
 
 /// Stream text using an existing [LanguageModel] instance.
@@ -492,6 +546,8 @@ Stream<ChatStreamEvent> streamTextWithModel(
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
   LanguageModelCallOptions? options,
+  void Function(GenerateTextResult result)? onFinish,
+  void Function(List<CallWarning> warnings)? onWarnings,
 }) async* {
   if (model.providerId == 'elevenlabs') {
     throw const UnsupportedCapabilityError(
@@ -507,11 +563,37 @@ Stream<ChatStreamEvent> streamTextWithModel(
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
   );
-  yield* model.streamTextWithOptions(
+
+  final source = model.streamTextWithOptions(
     resolvedMessages,
     options: options,
     cancelToken: cancelToken,
   );
+
+  await for (final event in source) {
+    if (event is CompletionEvent &&
+        (onFinish != null || onWarnings != null)) {
+      final response = event.response;
+      final result = GenerateTextResult(
+        rawResponse: response,
+        text: response.text,
+        thinking: response.thinking,
+        toolCalls: response.toolCalls,
+        usage: response.usage,
+        warnings: response.warnings,
+        metadata: response.callMetadata,
+      );
+
+      if (onFinish != null) {
+        onFinish(result);
+      }
+      if (onWarnings != null && result.warnings.isNotEmpty) {
+        onWarnings(result.warnings);
+      }
+    }
+
+    yield event;
+  }
 }
 
 /// Stream high-level text parts using an existing [LanguageModel] instance.
@@ -684,6 +766,71 @@ Future<List<List<double>>> embed({
 
   final embeddingProvider = await builder.buildEmbedding();
   return embeddingProvider.embed(input, cancelToken: cancelToken);
+}
+
+/// High-level rerank helper (AI SDK-style, embedding-based).
+///
+/// This helper uses an embedding model (`"provider:model"`) to compute
+/// cosine similarity between a [query] and the given [documents], and
+/// returns a [RerankResult] with ranked documents.
+///
+/// It is implemented purely in terms of the generic [embed] helper, so
+/// it works with any provider that supports [EmbeddingCapability]
+/// (OpenAI, Google, xAI, Ollama, etc.).
+///
+/// Example:
+/// ```dart
+/// final result = await rerank(
+///   model: 'openai:text-embedding-3-small',
+///   query: 'rust http client',
+///   documents: [
+///     'How to write a HTTP client in Rust',
+///     'Cooking pasta like a pro',
+///   ],
+/// );
+///
+/// for (final item in result.ranking) {
+///   print('${item.score}: ${item.document.text}');
+/// }
+/// ```
+Future<RerankResult> rerank({
+  required String model,
+  required String query,
+  required List<String> documents,
+  String? apiKey,
+  String? baseUrl,
+  int? topN,
+  CancellationToken? cancelToken,
+}) async {
+  if (documents.isEmpty) {
+    return RerankResult(query: query, ranking: const []);
+  }
+
+  final builder = LLMBuilder().use(model);
+
+  if (apiKey != null) {
+    builder.apiKey(apiKey);
+  }
+  if (baseUrl != null) {
+    builder.baseUrl(baseUrl);
+  }
+
+  final reranker = await builder.buildReranker();
+
+  final docs = <RerankDocument>[
+    for (var i = 0; i < documents.length; i++)
+      RerankDocument(
+        id: i.toString(),
+        text: documents[i],
+      ),
+  ];
+
+  return reranker.rerank(
+    query: query,
+    documents: docs,
+    topN: topN,
+    cancelToken: cancelToken,
+  );
 }
 
 /// High-level image generation helper (Vercel AI SDK-style).
