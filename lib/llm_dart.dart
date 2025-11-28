@@ -509,8 +509,7 @@ Stream<ChatStreamEvent> streamText({
   );
 
   await for (final event in source) {
-    if (event is CompletionEvent &&
-        (onFinish != null || onWarnings != null)) {
+    if (event is CompletionEvent && (onFinish != null || onWarnings != null)) {
       final response = event.response;
       final result = GenerateTextResult(
         rawResponse: response,
@@ -571,8 +570,7 @@ Stream<ChatStreamEvent> streamTextWithModel(
   );
 
   await for (final event in source) {
-    if (event is CompletionEvent &&
-        (onFinish != null || onWarnings != null)) {
+    if (event is CompletionEvent && (onFinish != null || onWarnings != null)) {
       final response = event.response;
       final result = GenerateTextResult(
         rawResponse: response,

@@ -33,7 +33,7 @@ class HttpConfigUtils {
 
     _configureHttpClientAdapter(dio, config);
     _configureLogging(dio, config);
-     _configureCustomInterceptors(dio, config);
+    _configureCustomInterceptors(dio, config);
 
     return dio;
   }

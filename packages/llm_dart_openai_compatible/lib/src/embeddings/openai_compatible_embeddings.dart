@@ -68,4 +68,3 @@ class OpenAICompatibleEmbeddings implements EmbeddingCapability {
     }
   }
 }
-
