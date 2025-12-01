@@ -9,3 +9,5 @@ export 'src/chat/anthropic_chat.dart';
 export 'src/files/anthropic_files.dart';
 export 'src/request/anthropic_request_builder.dart';
 export 'src/http/anthropic_dio_strategy.dart';
+export 'src/factory/anthropic_provider_factory.dart'
+    show AnthropicProviderFactory, registerAnthropicProvider;

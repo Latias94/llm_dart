@@ -22,7 +22,7 @@ class _FakeLanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     throw UnimplementedError();
@@ -30,7 +30,7 @@ class _FakeLanguageModel implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     throw UnimplementedError();
@@ -38,7 +38,7 @@ class _FakeLanguageModel implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextParts(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     throw UnimplementedError();
@@ -47,7 +47,7 @@ class _FakeLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     throw UnimplementedError();
@@ -55,7 +55,7 @@ class _FakeLanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -64,7 +64,7 @@ class _FakeLanguageModel implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -73,7 +73,7 @@ class _FakeLanguageModel implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextPartsWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -83,7 +83,7 @@ class _FakeLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {

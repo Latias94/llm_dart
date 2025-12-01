@@ -1,3 +1,8 @@
+// The Phind provider facade uses ChatMessage-based examples to mirror
+// the legacy chat interface. New code should build prompts with
+// ModelMessage + ChatContentPart instead.
+// ignore_for_file: deprecated_member_use
+
 /// Modular Phind Provider
 ///
 /// This library provides a modular implementation of the Phind provider

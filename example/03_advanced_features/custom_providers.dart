@@ -1,7 +1,9 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 import 'dart:io';
 import 'dart:math';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
+import 'package:llm_dart_core/llm_dart_core.dart' show DefaultLanguageModel;
 
 /// 🔧 Custom Providers - Build Your Own AI Providers
 ///
@@ -25,6 +27,7 @@ void main() async {
   await demonstrateCachingProvider();
   await demonstrateCustomAPIProvider();
   await demonstrateProviderChaining();
+  await demonstrateLanguageModelWrapper();
 
   print('\n✅ Custom providers completed!');
 }
@@ -80,6 +83,52 @@ Future<void> demonstrateMockProvider() async {
     print('   ✅ Mock provider demonstration successful\n');
   } catch (e) {
     print('   ❌ Mock provider failed: $e\n');
+  }
+}
+
+/// Demonstrate wrapping a custom ChatCapability as a prompt-first LanguageModel.
+///
+/// This shows how to bridge legacy [ChatMessage]-based providers into the
+/// prompt-first [ModelMessage] + [LanguageModel] world so that higher-level
+/// helpers and agents can be reused.
+Future<void> demonstrateLanguageModelWrapper() async {
+  print('🧱 LanguageModel Wrapper around Custom ChatCapability:\n');
+
+  try {
+    // 1) Start from any ChatCapability (here we reuse the MockChatProvider).
+    final mockProvider = MockChatProvider();
+
+    // 2) Wrap it in a DefaultLanguageModel so prompt-first helpers can be used.
+    final model = DefaultLanguageModel(
+      providerId: 'mock',
+      modelId: 'mock-chat',
+      config: const LLMConfig(
+        baseUrl: 'https://mock.local/',
+        model: 'mock-chat',
+      ),
+      chat: mockProvider,
+    );
+
+    // 3) Build a prompt-first conversation using ModelMessage.
+    final messages = <ModelMessage>[
+      ModelMessage.systemText(
+        'You are a mock assistant used for testing and demos.',
+      ),
+      ModelMessage.userText(
+        'Explain how to wrap a custom ChatCapability as a LanguageModel.',
+      ),
+    ];
+
+    // 4) Use the standard prompt-first helper on the wrapped model.
+    final result = await generateTextPromptWithModel(
+      model,
+      messages: messages,
+    );
+
+    print('   🤖 Wrapped LanguageModel response: ${result.text}');
+    print('   ✅ LanguageModel wrapper demonstration successful\n');
+  } catch (e) {
+    print('   ❌ LanguageModel wrapper demonstration failed: $e\n');
   }
 }
 

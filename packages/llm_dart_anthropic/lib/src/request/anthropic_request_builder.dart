@@ -1,3 +1,8 @@
+// Helper for building Anthropic request bodies from both legacy
+// ChatMessage lists and the newer ModelMessage prompt model. This
+// module intentionally uses ChatMessage as a compatibility layer.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';

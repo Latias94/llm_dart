@@ -9,7 +9,7 @@ const String _openaiDefaultModel = 'gpt-4o';
 ///
 /// This class contains all configuration options for the OpenAI providers.
 /// It's extracted from the main provider to improve modularity and reusability.
-class OpenAIConfig {
+class OpenAIConfig implements ProviderHttpConfig {
   final String apiKey;
   final String baseUrl;
   final String model;
@@ -73,6 +73,7 @@ class OpenAIConfig {
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
   /// Get the original LLMConfig for HTTP configuration
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   OpenAIConfig copyWith({

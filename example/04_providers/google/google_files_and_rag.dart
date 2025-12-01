@@ -57,35 +57,38 @@ Future<void> main() async {
   );
   print('   ✅ Uploaded file: ${uploaded.name} (${uploaded.displayName})');
 
-  // === 2) Build high-level provider with File Search enabled ===
-  final provider = await ai()
+  // === 2) Build high-level LanguageModel with File Search enabled ===
+  final model = await ai()
       .google((google) => google.fileSearch(
             fileSearchStoreNames: [storeName],
             topK: 12,
           ))
       .apiKey(apiKey)
       .model('gemini-2.5-flash')
-      .build();
+      .buildLanguageModel();
 
   // For this example we rely on File Search store contents;
   // the uploaded file can be associated with the store using
   // Google Console or additional management APIs.
 
-  final messages = <ChatMessage>[
-    ChatMessage.system(
+  final messages = <ModelMessage>[
+    ModelMessage.systemText(
       '你是一个帮助阅读文档的助手，请结合文件搜索结果回答问题，并尽量引用原文中的表述。',
     ),
-    ChatMessage.user(
+    ModelMessage.userText(
       '请根据知识库中的文档，简要说明系统的核心模块和它们之间的关系。',
     ),
   ];
 
-  final response = await provider.chat(messages);
+  final response = await generateTextPromptWithModel(
+    model,
+    messages: messages,
+  );
 
   print('=== RAG Response ===');
   print(response.text);
 
-  final meta = response.callMetadata;
+  final meta = response.metadata;
   if (meta != null) {
     print('\n--- Call Metadata ---');
     print('provider: ${meta.provider}, model: ${meta.model}');

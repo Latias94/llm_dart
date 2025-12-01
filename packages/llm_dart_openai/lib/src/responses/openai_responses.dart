@@ -1,3 +1,8 @@
+// OpenAI Responses API implementation based on the ChatMessage-based
+// ChatCapability and the structured ModelMessage prompt model.
+// ChatMessage usage is intentional here for compatibility.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart';

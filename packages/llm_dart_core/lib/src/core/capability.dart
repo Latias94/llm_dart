@@ -1,3 +1,8 @@
+// Core capability and LanguageModel interfaces. These types still use the
+// legacy ChatMessage model in their signatures for backwards compatibility
+// with existing providers and helpers while newer APIs adopt ModelMessage.
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'dart:convert';
 
 import '../models/chat_models.dart';
@@ -1172,8 +1177,8 @@ class LanguageModelCallOptions {
 ///
 /// This interface is intentionally aligned with the Vercel AI SDK's
 /// "language model" concept: a provider + model pair that can generate
-/// and stream text based on chat-style messages, while remaining
-/// provider-agnostic.
+/// and stream text based on prompt-first [ModelMessage] conversations,
+/// while remaining provider-agnostic.
 abstract class LanguageModel {
   /// Logical provider identifier as registered in the LLM provider registry.
   String get providerId;
@@ -1186,20 +1191,20 @@ abstract class LanguageModel {
 
   /// Generate a single non-streaming text result.
   ///
-  /// This is a high-level wrapper over the underlying [ChatCapability]
+  /// This is a high-level wrapper over the underlying chat capabilities
   /// that returns a [GenerateTextResult] for convenience.
   Future<GenerateTextResult> generateText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   });
 
   /// Stream text deltas, thinking deltas, tool calls, and the final
   /// completion event.
   ///
-  /// This is a high-level wrapper over the underlying [ChatCapability]
+  /// This is a high-level wrapper over the underlying chat capabilities
   /// that exposes the raw [ChatStreamEvent] stream.
   Stream<ChatStreamEvent> streamText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   });
 
@@ -1209,20 +1214,20 @@ abstract class LanguageModel {
   /// sequence of [StreamTextPart] values (text, thinking, tool input,
   /// and final completion).
   Stream<StreamTextPart> streamTextParts(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   });
 
   /// Generate a structured object based on the given [output] spec.
   ///
-  /// This method assumes the underlying provider/model has been
-  /// configured to produce structured JSON matching [output.format]
-  /// (for example via provider-specific configuration or builder
-  /// helpers). It wraps [generateText] and parses the JSON response
-  /// into a [GenerateObjectResult].
+  /// This method assumes the underlying provider/model has been configured
+  /// to produce structured JSON matching [output.format] (for example via
+  /// provider-specific configuration or builder helpers). It wraps
+  /// [generateText] and parses the JSON response into a
+  /// [GenerateObjectResult].
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   });
 
@@ -1234,7 +1239,7 @@ abstract class LanguageModel {
   /// identifiers. Implementations may choose to ignore unsupported
   /// options.
   Future<GenerateTextResult> generateTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   });
@@ -1245,7 +1250,7 @@ abstract class LanguageModel {
   /// for per-call configuration. Unsupported options may be ignored
   /// by implementations.
   Stream<ChatStreamEvent> streamTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   });
@@ -1256,7 +1261,7 @@ abstract class LanguageModel {
   /// for per-call configuration. Unsupported options may be ignored
   /// by implementations.
   Stream<StreamTextPart> streamTextPartsWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   });
@@ -1268,7 +1273,7 @@ abstract class LanguageModel {
   /// by implementations.
   Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   });
@@ -1297,41 +1302,44 @@ class DefaultLanguageModel implements LanguageModel {
     required ChatCapability chat,
   }) : _chat = chat;
 
+  /// Convert prompt-first messages into legacy [ChatMessage]s.
+  ///
+  /// This bridges the [LanguageModel] prompt-first surface to providers
+  /// that still implement [ChatCapability] in terms of [ChatMessage].
+  List<ChatMessage> _toLegacyMessages(List<ModelMessage> messages) {
+    return messages
+        .map((message) => ChatMessage.fromPromptMessage(message))
+        .toList(growable: false);
+  }
+
   @override
   Future<GenerateTextResult> generateText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async {
-    final response = await _chat.chat(
+    // Delegate to the options-aware variant without per-call overrides.
+    return generateTextWithOptions(
       messages,
+      options: null,
       cancelToken: cancelToken,
-    );
-
-    return GenerateTextResult(
-      rawResponse: response,
-      text: response.text,
-      thinking: response.thinking,
-      toolCalls: response.toolCalls,
-      usage: response.usage,
-      warnings: response.warnings,
-      metadata: response.callMetadata,
     );
   }
 
   @override
   Stream<ChatStreamEvent> streamText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
-    return _chat.chatStream(
+    return streamTextWithOptions(
       messages,
+      options: null,
       cancelToken: cancelToken,
     );
   }
 
   @override
   Stream<StreamTextPart> streamTextParts(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return adaptStreamText(
@@ -1342,7 +1350,7 @@ class DefaultLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async {
     final textResult = await generateText(
@@ -1369,12 +1377,14 @@ class DefaultLanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
+    final legacyMessages = _toLegacyMessages(messages);
+
     final response = await _chat.chatWithTools(
-      messages,
+      legacyMessages,
       null,
       options: options,
       cancelToken: cancelToken,
@@ -1393,12 +1403,14 @@ class DefaultLanguageModel implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
+    final legacyMessages = _toLegacyMessages(messages);
+
     return _chat.chatStream(
-      messages,
+      legacyMessages,
       options: options,
       cancelToken: cancelToken,
     );
@@ -1406,7 +1418,7 @@ class DefaultLanguageModel implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextPartsWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1422,7 +1434,7 @@ class DefaultLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {

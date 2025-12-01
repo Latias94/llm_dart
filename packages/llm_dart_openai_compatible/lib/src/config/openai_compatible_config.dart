@@ -5,7 +5,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 /// This configuration describes the common parameters needed to talk to
 /// any provider that exposes an OpenAI-style REST API (chat/completions
 /// endpoints, embeddings, etc.), independent of the actual vendor.
-class OpenAICompatibleConfig {
+class OpenAICompatibleConfig implements ProviderHttpConfig {
   /// API key for authentication.
   final String apiKey;
 
@@ -79,6 +79,7 @@ class OpenAICompatibleConfig {
   /// Get extension value from original config, if available.
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   OpenAICompatibleConfig copyWith({

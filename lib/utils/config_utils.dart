@@ -1,3 +1,8 @@
+// This legacy helper converts ChatMessage-based conversations into
+// provider-specific payloads. New code should prefer ModelMessage +
+// provider-specific mapping in dedicated subpackages.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart'
     show HttpHeaderUtils;
 import 'package:llm_dart_core/llm_dart_core.dart';

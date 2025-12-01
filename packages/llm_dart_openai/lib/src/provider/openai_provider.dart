@@ -1,3 +1,8 @@
+// OpenAI provider implementation built on the ChatMessage-based
+// ChatCapability/EmbeddingCapability/etc. surface from llm_dart_core.
+// Internally modules convert to ModelMessage where needed.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../assistants/openai_assistants.dart';

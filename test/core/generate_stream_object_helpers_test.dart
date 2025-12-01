@@ -1,6 +1,11 @@
+// Streaming structured object helper tests rely on ChatMessage-based
+// prompts to validate backwards compatibility of streamObject.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import '../utils/mock_provider_factory.dart';
 

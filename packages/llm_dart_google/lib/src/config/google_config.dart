@@ -54,7 +54,7 @@ class SafetySetting {
 }
 
 /// Google (Gemini) provider configuration for the sub-package.
-class GoogleConfig {
+class GoogleConfig implements ProviderHttpConfig {
   final String apiKey;
   final String baseUrl;
   final String model;
@@ -218,6 +218,7 @@ class GoogleConfig {
 
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   bool get supportsReasoning {

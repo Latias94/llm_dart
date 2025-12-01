@@ -1,6 +1,13 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_core/llm_dart_core.dart'
+    show
+        ChatContentPart,
+        TextContentPart,
+        ToolCallContentPart,
+        ToolResultContentPart,
+        ToolResultTextPayload;
 
 /// 🔵 OpenAI Advanced Features - Reasoning, Function Calling, and Assistants
 ///
@@ -183,23 +190,34 @@ Future<void> demonstrateAssistantsAPI(String apiKey) async {
   print('🤖 Assistants API:\n');
 
   try {
-    final provider =
-        await ai().openai().apiKey(apiKey).model('gpt-5.1').build();
+    // For now we demonstrate assistant-like behavior using a prompt-first
+    // LanguageModel. A dedicated Assistants API integration can build on the
+    // same pattern.
+    final model = await ai()
+        .openai()
+        .apiKey(apiKey)
+        .model('gpt-5.1')
+        .buildLanguageModel();
 
     print('   Note: Assistants API requires OpenAI-specific implementation');
     print(
         '   For now, demonstrating basic conversation with assistant-like behavior...');
 
-    final response = await provider.chat([
-      ChatMessage.system('''
+    final messages = <ModelMessage>[
+      ModelMessage.systemText('''
 You are a patient and helpful math tutor. When solving problems:
 1. Break down the problem into steps
 2. Explain each step clearly
 3. Show all calculations
 4. Verify the answer
 '''),
-      ChatMessage.user('Solve this quadratic equation: 2x² + 5x - 3 = 0'),
-    ]);
+      ModelMessage.userText('Solve this quadratic equation: 2x² + 5x - 3 = 0'),
+    ];
+
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: messages,
+    );
 
     print('      Math Tutor Response:');
     print('      ${response.text}');
@@ -217,22 +235,27 @@ Future<void> demonstrateAdvancedConfiguration(String apiKey) async {
   // Structured output
   print('   Structured Output:');
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-5.1')
         .temperature(0.1)
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user('''
+    final messages = <ModelMessage>[
+      ModelMessage.userText('''
 Extract information from this text and return it in JSON format:
 "John Smith, age 30, works as a software engineer at TechCorp. 
 He lives in San Francisco and has 5 years of experience."
 
 Return JSON with fields: name, age, job, company, location, experience_years
-''')
-    ]);
+'''),
+    ];
+
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: messages,
+    );
 
     print('      Structured response: ${response.text}');
   } catch (e) {
@@ -330,7 +353,7 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
     var toolCallsDetected = false;
 
     await for (final part in model.streamTextPartsWithOptions(
-      [ChatMessage.fromPromptMessage(prompt)],
+      [prompt],
       options: null,
     )) {
       switch (part) {
@@ -385,14 +408,31 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
       return;
     }
 
-    // Simulate tool execution based on streamed tool calls.
-    final conversation = <ChatMessage>[
-      ChatMessage.fromPromptMessage(prompt),
-      ChatMessage.toolUse(
-        toolCalls: streamedToolCalls,
-        content: planningText.toString(),
-      ),
+    // Simulate tool execution based on streamed tool calls and build a
+    // prompt-first conversation for the second pass.
+    final conversation = <ModelMessage>[
+      prompt,
     ];
+
+    // Assistant message containing the planning text + tool call parts.
+    final toolUseParts = <ChatContentPart>[
+      if (planningText.isNotEmpty) TextContentPart(planningText.toString()),
+      for (final toolCall in streamedToolCalls)
+        ToolCallContentPart(
+          toolName: toolCall.function.name,
+          argumentsJson: toolCall.function.arguments,
+          toolCallId: toolCall.id,
+        ),
+    ];
+
+    if (toolUseParts.isNotEmpty) {
+      conversation.add(
+        ModelMessage(
+          role: ChatRole.assistant,
+          parts: toolUseParts,
+        ),
+      );
+    }
 
     for (final toolCall in streamedToolCalls) {
       final name = toolCall.function.name;
@@ -406,10 +446,18 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
 
       print('   📄 $name result: $result');
 
-      conversation.add(ChatMessage.toolResult(
-        results: [toolCall],
-        content: result,
-      ));
+      conversation.add(
+        ModelMessage(
+          role: ChatRole.user,
+          parts: [
+            ToolResultContentPart(
+              toolCallId: toolCall.id,
+              toolName: toolCall.function.name,
+              payload: ToolResultTextPayload(result),
+            ),
+          ],
+        ),
+      );
     }
 
     // Second pass: stream final answer with tool results.

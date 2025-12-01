@@ -20,23 +20,26 @@ Future<void> main() async {
   }
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .google((google) => google.enableCodeExecution())
         .apiKey(apiKey)
         .model('gemini-2.5-flash')
-        .build();
+        .buildLanguageModel();
 
-    final messages = <ChatMessage>[
-      ChatMessage.system(
+    final messages = <ModelMessage>[
+      ModelMessage.systemText(
         'You are a helpful assistant that can execute code for calculations '
         'and small simulations. Prefer running code when it improves accuracy.',
       ),
-      ChatMessage.user(
+      ModelMessage.userText(
         '使用代码计算 1 到 10 的平方和，并给出计算过程。',
       ),
     ];
 
-    final response = await provider.chat(messages);
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: messages,
+    );
 
     print('=== Code Execution Response ===');
     print(response.text);
@@ -46,7 +49,7 @@ Future<void> main() async {
       print(response.thinking);
     }
 
-    final meta = response.callMetadata;
+    final meta = response.metadata;
     if (meta != null) {
       print('\n--- Call Metadata ---');
       print('provider: ${meta.provider}, model: ${meta.model}');

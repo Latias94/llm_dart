@@ -153,7 +153,14 @@ final provider = await ai()
 
 #### Stateful Conversations
 
+These examples use the low-level Responses API with the legacy `ChatMessage`
+model for fine-grained control. For prompt-first `LanguageModel` usage with
+structured prompts, see `responses_api.dart` and the main README.
+
 ```dart
+import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
+
 // Using buildOpenAIResponses() - no casting needed!
 final provider = await ai().openai().apiKey('your-key')
     .model('gpt-5-mini').buildOpenAIResponses();

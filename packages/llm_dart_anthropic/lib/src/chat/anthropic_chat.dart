@@ -1,3 +1,8 @@
+// Anthropic chat capability implementation built on ChatMessage-based
+// ChatCapability for compatibility with the core library. Internally
+// it converts to ModelMessage-based prompts for request building.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
@@ -15,7 +20,8 @@ class AnthropicChat implements ChatCapability, PromptChatCapability {
   late final AnthropicRequestBuilder _requestBuilder;
 
   final Map<int, _ToolCallState> _activeToolCalls = {};
-  final StringBuffer _sseBuffer = StringBuffer();
+  // Shared SSE line buffer used for streaming responses.
+  final SSELineBuffer _sseLineBuffer = SSELineBuffer();
 
   AnthropicChat(this.client, this.config) {
     _requestBuilder = AnthropicRequestBuilder(config);
@@ -211,29 +217,14 @@ class AnthropicChat implements ChatCapability, PromptChatCapability {
 
   void _resetStreamState() {
     _activeToolCalls.clear();
-    _sseBuffer.clear();
+    _sseLineBuffer.clear();
   }
 
   List<ChatStreamEvent> _parseStreamEvents(String chunk) {
     final events = <ChatStreamEvent>[];
 
-    _sseBuffer.write(chunk);
-    final bufferContent = _sseBuffer.toString();
-    final lastNewlineIndex = bufferContent.lastIndexOf('\n');
-
-    if (lastNewlineIndex == -1) {
-      return events;
-    }
-
-    final completeContent = bufferContent.substring(0, lastNewlineIndex + 1);
-    final remainingContent = bufferContent.substring(lastNewlineIndex + 1);
-
-    _sseBuffer.clear();
-    if (remainingContent.isNotEmpty) {
-      _sseBuffer.write(remainingContent);
-    }
-
-    final lines = completeContent.split('\n');
+    final lines = _sseLineBuffer.addChunk(chunk);
+    if (lines.isEmpty) return events;
 
     for (final line in lines) {
       final trimmedLine = line.trim();

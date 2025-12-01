@@ -1,3 +1,8 @@
+// This middleware logs ChatMessage-based conversations flowing through the
+// legacy ChatCapability surface. New code should prefer prompt-first helpers,
+// but logging still works on the ChatMessage model for compatibility.
+// ignore_for_file: deprecated_member_use
+
 import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 

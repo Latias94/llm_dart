@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 /// Example demonstrating OpenAI's new Responses API
 ///
 /// This example shows how to use the Responses API with built-in tools
@@ -42,6 +44,7 @@ library;
 
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 void main() async {

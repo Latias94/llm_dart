@@ -1,3 +1,8 @@
+// The xAI provider facade demonstrates usage with ChatMessage in
+// its examples for backwards compatibility. New code should prefer
+// ModelMessage + ChatContentPart and the model-centric helpers.
+// ignore_for_file: deprecated_member_use
+
 /// Modular xAI Provider
 ///
 /// This library provides a modular implementation of the xAI provider

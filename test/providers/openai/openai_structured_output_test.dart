@@ -1,3 +1,8 @@
+// OpenAI structured output tests use ChatMessage-based prompts to
+// ensure compatibility of structured JSON outputs with legacy chat
+// flows.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:test/test.dart';

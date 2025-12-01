@@ -273,6 +273,36 @@ class LLMConfig {
   }
 }
 
+/// Minimal HTTP-facing configuration interface for provider configs.
+///
+/// Provider-specific configuration types (OpenAIConfig, GoogleConfig,
+/// AnthropicConfig, etc.) implement this interface so that shared HTTP
+/// utilities (such as [DioClientFactory]) can access the base URL, model
+/// identifier, API key and the original [LLMConfig] without depending on
+/// concrete provider types or using untyped `dynamic` accessors.
+abstract class ProviderHttpConfig {
+  /// API key used for authentication (if any).
+  ///
+  /// Local providers such as Ollama may leave this null.
+  String? get apiKey;
+
+  /// Base URL for HTTP requests to this provider.
+  String get baseUrl;
+
+  /// Model identifier associated with this configuration.
+  ///
+  /// The underlying type is intentionally `Object?` to accommodate
+  /// providers where the model is optional or represented differently.
+  Object? get model;
+
+  /// Original high-level [LLMConfig] this provider config was derived from.
+  ///
+  /// When a provider config is built via `fromLLMConfig`, this reference
+  /// allows HTTP utilities to recover shared extensions (custom Dio,
+  /// HTTP timeouts, proxies, etc.) in a type-safe way.
+  LLMConfig? get originalConfig;
+}
+
 /// OpenAI-compatible provider configuration
 ///
 /// This configuration defines the capabilities and behavior of providers that

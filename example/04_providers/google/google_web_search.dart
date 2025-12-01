@@ -19,33 +19,36 @@ Future<void> main() async {
     );
   }
 
-  // Build a Gemini 2.5 provider with Google Search grounding enabled.
-  final provider = await ai()
+  // Build a Gemini 2.5 LanguageModel with Google Search grounding enabled.
+  final model = await ai()
       .google()
       .apiKey(apiKey)
       // Use a Gemini 2.x model that supports the `google_search` tool.
       .model('gemini-2.5-flash')
       // Unified web search configuration (works across providers).
       .enableWebSearch()
-      .build();
+      .buildLanguageModel();
 
-  final messages = <ChatMessage>[
-    ChatMessage.system(
+  final messages = <ModelMessage>[
+    ModelMessage.systemText(
       'You are a helpful assistant. Use real-time information when needed.',
     ),
-    ChatMessage.user(
+    ModelMessage.userText(
       'Who won the UEFA Euro 2024 final, and where was it played?',
     ),
   ];
 
-  final response = await provider.chat(messages);
+  final result = await generateTextPromptWithModel(
+    model,
+    messages: messages,
+  );
 
   // ignore: avoid_print
   print('=== Gemini Web Search Response ===');
   // ignore: avoid_print
-  print(response.text);
+  print(result.text);
 
-  final meta = response.callMetadata;
+  final meta = result.metadata;
   if (meta != null) {
     // ignore: avoid_print
     print('\n--- Call Metadata ---');

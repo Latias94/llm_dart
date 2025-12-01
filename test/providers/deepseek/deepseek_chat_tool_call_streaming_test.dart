@@ -3,6 +3,9 @@
 /// This test verifies that the DeepSeekChat streaming implementation:
 /// - Preserves a stable tool call ID across all chunks
 /// - Emits ToolCallDeltaEvent instances in order with incremental arguments
+///
+/// These tests use ChatMessage-based prompts for compatibility.
+// ignore_for_file: deprecated_member_use
 library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';

@@ -7,7 +7,7 @@ const String _defaultModel = 'deepseek-chat';
 ///
 /// This class contains all configuration options for the DeepSeek providers.
 /// It's extracted from the main provider to improve modularity and reusability.
-class DeepSeekConfig {
+class DeepSeekConfig implements ProviderHttpConfig {
   final String apiKey;
   final String baseUrl;
   final String model;
@@ -99,6 +99,7 @@ class DeepSeekConfig {
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
   /// Get the original LLMConfig for HTTP configuration
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   /// Check if this model supports reasoning/thinking

@@ -1,3 +1,8 @@
+// ToolLoopAgent tests currently validate the ChatMessage-based
+// LanguageModel surface as well as the newer ModelMessage path.
+// The legacy ChatMessage usage here is intentional for compatibility.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 
 import 'package:test/test.dart';
@@ -51,7 +56,7 @@ class FakeLanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async {
     callCount++;
@@ -100,7 +105,7 @@ class FakeLanguageModel implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async* {
     final result = await generateText(messages, cancelToken: cancelToken);
@@ -112,7 +117,7 @@ class FakeLanguageModel implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextParts(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return adaptStreamText(streamText(messages, cancelToken: cancelToken));
@@ -121,7 +126,7 @@ class FakeLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async {
     final textResult = await generateText(messages, cancelToken: cancelToken);
@@ -133,7 +138,7 @@ class FakeLanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -143,7 +148,7 @@ class FakeLanguageModel implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -153,7 +158,7 @@ class FakeLanguageModel implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextPartsWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -164,7 +169,7 @@ class FakeLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -222,7 +227,12 @@ void main() {
 
       final input = AgentInput(
         model: model,
-        messages: [ChatMessage.user('Add 1 and 2')],
+        messages: [
+          ModelMessage(
+            role: ChatRole.user,
+            parts: const [TextContentPart('Add 1 and 2')],
+          ),
+        ],
         tools: tools,
       );
 
@@ -268,7 +278,12 @@ void main() {
 
       final input = AgentInput(
         model: model,
-        messages: [ChatMessage.user('Add 1 and 2 and return JSON')],
+        messages: [
+          ModelMessage(
+            role: ChatRole.user,
+            parts: const [TextContentPart('Add 1 and 2 and return JSON')],
+          ),
+        ],
         tools: tools,
       );
 
@@ -335,7 +350,12 @@ void main() {
 
       final input = AgentInput(
         model: model,
-        messages: [ChatMessage.user('Add 1 and 2')],
+        messages: [
+          ModelMessage(
+            role: ChatRole.user,
+            parts: const [TextContentPart('Add 1 and 2')],
+          ),
+        ],
         tools: tools,
         callOptions: options,
       );
@@ -405,7 +425,14 @@ void main() {
 
       final result = await root.runAgentObject<SumResult>(
         model: model,
-        messages: [ChatMessage.user('Add 1 and 2 and return JSON')],
+        messages: [
+          ModelMessage(
+            role: ChatRole.user,
+            parts: const [
+              TextContentPart('Add 1 and 2 and return JSON'),
+            ],
+          ),
+        ],
         tools: tools,
         output: output,
         options: options,
@@ -456,7 +483,12 @@ void main() {
 
       final input = AgentInput(
         model: model,
-        messages: [ChatMessage.user('Add 1 and 2')],
+        messages: [
+          ModelMessage(
+            role: ChatRole.user,
+            parts: const [TextContentPart('Add 1 and 2')],
+          ),
+        ],
         tools: tools,
       );
 
@@ -530,9 +562,9 @@ void main() {
 
       expect(result.text, equals('result'));
       // MockLanguageModel only performs a single generateText call here.
-      expect(model.lastPromptMessages, isNotNull);
-      expect(model.lastPromptMessages, hasLength(1));
-      final recorded = model.lastPromptMessages!.first;
+      expect(model.lastMessages, isNotNull);
+      expect(model.lastMessages, hasLength(1));
+      final recorded = model.lastMessages!.first;
       expect(recorded.role, equals(ChatRole.user));
       expect(recorded.parts, hasLength(1));
       expect((recorded.parts.first as TextContentPart).text, 'Add 1 and 2');
@@ -702,7 +734,12 @@ void main() {
 
       final input = AgentInput(
         model: model,
-        messages: [ChatMessage.user('Call two tools in parallel')],
+        messages: [
+          ModelMessage(
+            role: ChatRole.user,
+            parts: const [TextContentPart('Call two tools in parallel')],
+          ),
+        ],
         tools: tools,
         loopConfig: const ToolLoopConfig(
           maxIterations: 4,
@@ -822,7 +859,12 @@ void main() {
 
       final input = AgentInput(
         model: model,
-        messages: [ChatMessage.user('Call two tools sequentially')],
+        messages: [
+          ModelMessage(
+            role: ChatRole.user,
+            parts: const [TextContentPart('Call two tools sequentially')],
+          ),
+        ],
         tools: tools,
         loopConfig: const ToolLoopConfig(
           maxIterations: 4,
@@ -909,7 +951,12 @@ void main() {
 
       final input = AgentInput(
         model: model,
-        messages: [ChatMessage.user('Call flaky tool')],
+        messages: [
+          ModelMessage(
+            role: ChatRole.user,
+            parts: const [TextContentPart('Call flaky tool')],
+          ),
+        ],
         tools: tools,
         loopConfig: const ToolLoopConfig(
           maxIterations: 4,
@@ -978,7 +1025,12 @@ void main() {
 
       final input = AgentInput(
         model: model,
-        messages: [ChatMessage.user('Call always failing tool')],
+        messages: [
+          ModelMessage(
+            role: ChatRole.user,
+            parts: const [TextContentPart('Call always failing tool')],
+          ),
+        ],
         tools: tools,
         loopConfig: const ToolLoopConfig(
           maxIterations: 2,
@@ -1083,7 +1135,12 @@ void main() {
 
       final input = AgentInput(
         model: model,
-        messages: [ChatMessage.user('Add 1 and 2')],
+        messages: [
+          ModelMessage(
+            role: ChatRole.user,
+            parts: const [TextContentPart('Add 1 and 2')],
+          ),
+        ],
         tools: tools,
         loopConfig: const ToolLoopConfig(
           maxIterations: 4,
@@ -1205,7 +1262,7 @@ class _SimpleJsonLanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async {
     const jsonText = '{"result":7}';
@@ -1221,7 +1278,7 @@ class _SimpleJsonLanguageModel implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async* {
     final result = await generateText(messages, cancelToken: cancelToken);
@@ -1233,7 +1290,7 @@ class _SimpleJsonLanguageModel implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextParts(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return adaptStreamText(streamText(messages, cancelToken: cancelToken));
@@ -1242,7 +1299,7 @@ class _SimpleJsonLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async {
     final textResult = await generateText(messages, cancelToken: cancelToken);
@@ -1254,7 +1311,7 @@ class _SimpleJsonLanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1263,7 +1320,7 @@ class _SimpleJsonLanguageModel implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1272,7 +1329,7 @@ class _SimpleJsonLanguageModel implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextPartsWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1282,7 +1339,7 @@ class _SimpleJsonLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1308,7 +1365,7 @@ class _JsonLanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async {
     callCount++;
@@ -1346,7 +1403,7 @@ class _JsonLanguageModel implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async* {
     final result = await generateText(messages, cancelToken: cancelToken);
@@ -1358,7 +1415,7 @@ class _JsonLanguageModel implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextParts(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return adaptStreamText(streamText(messages, cancelToken: cancelToken));
@@ -1367,7 +1424,7 @@ class _JsonLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async {
     final textResult = await generateText(messages, cancelToken: cancelToken);
@@ -1379,7 +1436,7 @@ class _JsonLanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1388,7 +1445,7 @@ class _JsonLanguageModel implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1397,7 +1454,7 @@ class _JsonLanguageModel implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextPartsWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1407,7 +1464,7 @@ class _JsonLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1434,7 +1491,7 @@ class _JsonLanguageModelWithOptions implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async {
     callCount++;
@@ -1472,7 +1529,7 @@ class _JsonLanguageModelWithOptions implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async* {
     final result = await generateText(messages, cancelToken: cancelToken);
@@ -1484,7 +1541,7 @@ class _JsonLanguageModelWithOptions implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextParts(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return adaptStreamText(streamText(messages, cancelToken: cancelToken));
@@ -1493,7 +1550,7 @@ class _JsonLanguageModelWithOptions implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) async {
     final textResult = await generateText(messages, cancelToken: cancelToken);
@@ -1505,7 +1562,7 @@ class _JsonLanguageModelWithOptions implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1515,7 +1572,7 @@ class _JsonLanguageModelWithOptions implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1525,7 +1582,7 @@ class _JsonLanguageModelWithOptions implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextPartsWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -1536,7 +1593,7 @@ class _JsonLanguageModelWithOptions implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {

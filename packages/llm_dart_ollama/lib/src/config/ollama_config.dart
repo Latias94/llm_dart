@@ -1,7 +1,7 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Ollama provider configuration for the sub-package.
-class OllamaConfig {
+class OllamaConfig implements ProviderHttpConfig {
   final String baseUrl;
   final String? apiKey;
   final String model;
@@ -81,6 +81,7 @@ class OllamaConfig {
 
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   bool get supportsReasoning {

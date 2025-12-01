@@ -1,7 +1,13 @@
 import 'dart:typed_data';
 
+// OpenAI message conversion tests assert how ChatMessage-based prompts
+// are converted into OpenAI request payloads. ChatMessage is used
+// intentionally here to validate compatibility.
+// ignore_for_file: deprecated_member_use
+
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 void main() {

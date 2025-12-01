@@ -1,3 +1,8 @@
+// The DeepSeek provider facade keeps ChatMessage-based examples in
+// documentation for compatibility with existing code. Prefer the
+// prompt-first helpers for new integrations.
+// ignore_for_file: deprecated_member_use
+
 /// DeepSeek Provider facade for the main `llm_dart` package.
 ///
 /// This library now re-exports the DeepSeek provider implementation

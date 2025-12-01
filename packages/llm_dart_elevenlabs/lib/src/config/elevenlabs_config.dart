@@ -19,7 +19,7 @@ const List<String> _supportedAudioFormats = [
 ///
 /// This class contains all configuration options for the ElevenLabs providers.
 /// ElevenLabs specializes in text-to-speech and speech-to-text capabilities.
-class ElevenLabsConfig {
+class ElevenLabsConfig implements ProviderHttpConfig {
   final String apiKey;
   final String baseUrl;
   final String? voiceId;
@@ -67,6 +67,7 @@ class ElevenLabsConfig {
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
   /// Get the original LLMConfig for HTTP configuration
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   /// Check if this configuration supports text-to-speech

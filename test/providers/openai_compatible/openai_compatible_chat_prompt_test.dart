@@ -1,3 +1,8 @@
+// OpenAI-compatible chat prompt tests exercise ChatMessage-based
+// prompts and verify mapping into the generic OpenAI-compatible
+// request model.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';

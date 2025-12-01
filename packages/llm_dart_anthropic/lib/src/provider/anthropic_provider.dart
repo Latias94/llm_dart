@@ -1,3 +1,8 @@
+// Anthropic provider implementation built on ChatMessage-based
+// ChatCapability and related interfaces from llm_dart_core.
+// ChatMessage usage is intentional here for compatibility.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../chat/anthropic_chat.dart';
@@ -85,6 +90,20 @@ class AnthropicProvider
   }
 
   String get providerName => 'Anthropic';
+
+  /// Superset of capabilities that Anthropic models can support.
+  ///
+  /// Individual models may only support a subset of these at runtime,
+  /// as reflected by [supportedCapabilities].
+  static const Set<LLMCapability> baseCapabilities = {
+    LLMCapability.chat,
+    LLMCapability.streaming,
+    LLMCapability.toolCalling,
+    LLMCapability.modelListing,
+    LLMCapability.fileManagement,
+    LLMCapability.vision,
+    LLMCapability.reasoning,
+  };
 
   @override
   Set<LLMCapability> get supportedCapabilities => {

@@ -1,4 +1,8 @@
-import 'package:llm_dart/llm_dart.dart';
+// Anthropic thinking mode tests validate request shaping. They use
+// ChatMessage-based prompts to exercise the legacy request builder.
+// ignore_for_file: deprecated_member_use
+
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic_pkg;
 import 'package:test/test.dart';
 

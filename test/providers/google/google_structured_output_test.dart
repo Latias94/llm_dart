@@ -1,4 +1,9 @@
+// Google structured output tests use ChatMessage-based prompts to
+// verify jsonSchema integration and structured responses.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 
 import 'google_test_utils.dart';

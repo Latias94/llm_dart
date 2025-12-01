@@ -1,9 +1,10 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 import 'dart:collection';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 
 /// 📊 Batch Processing Tool - Large-scale Data Processing
 ///

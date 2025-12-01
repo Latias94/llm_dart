@@ -1,6 +1,11 @@
+// Ollama chat prompt mapping tests use ChatMessage-based prompts to
+// validate compatibility with the Ollama Chat capability.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import 'ollama_test_utils.dart';
 

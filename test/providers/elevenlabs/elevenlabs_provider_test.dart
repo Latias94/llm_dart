@@ -75,8 +75,8 @@ void main() {
         expect(provider, isA<AudioCapability>());
       });
 
-      test('should implement ChatCapability (but not support it)', () {
-        expect(provider, isA<ChatCapability>());
+      test('should not implement ChatCapability', () {
+        expect(provider, isNot(isA<ChatCapability>()));
       });
     });
 
@@ -137,44 +137,6 @@ void main() {
 
       test('should have translateFile method', () {
         expect(provider.translateFile, isA<Function>());
-      });
-    });
-
-    group('Chat Methods (Unsupported)', () {
-      test('should throw error for chat method', () async {
-        expect(
-          () => provider.chat([]),
-          throwsA(isA<ProviderError>()),
-        );
-      });
-
-      test('should throw error for chatWithTools method', () async {
-        expect(
-          () => provider.chatWithTools([], null),
-          throwsA(isA<ProviderError>()),
-        );
-      });
-
-      test('should throw error for summarizeHistory method', () async {
-        expect(
-          () => provider.summarizeHistory([]),
-          throwsA(isA<ProviderError>()),
-        );
-      });
-
-      test('should return null for memoryContents method', () async {
-        final result = await provider.memoryContents();
-        expect(result, isNull);
-      });
-
-      test('should emit error for chatStream method', () async {
-        final stream = provider.chatStream([]);
-        await expectLater(
-          stream,
-          emitsInOrder([
-            isA<ErrorEvent>(),
-          ]),
-        );
       });
     });
 

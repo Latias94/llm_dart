@@ -271,6 +271,19 @@ In new code, prefer:
   - `generateObjectWithModel`
   - `runAgentPromptText` / `runAgentPromptObject` (and their `WithSteps` variants).
 
+#### Internal data model changes (prompt-first, but backwards compatible)
+
+- The internal chat content model has been refactored to be **prompt-first** and multi-part:
+  - `ModelMessage` + `ChatContentPart` (text, files, reasoning, tool calls/results) is now the canonical representation.
+  - All built-in providers map their native APIs to this structured model and back.
+- `ChatMessage` is now treated as a **legacy shim**:
+  - Kept under `package:llm_dart/legacy/chat.dart` for backwards compatibility.
+  - `ChatMessage.toPromptMessage()` and `ChatMessage.fromPromptMessage()` bridge between legacy and prompt-first models.
+  - Internal middlewares and some advanced examples still operate on `ChatMessage`, but all new examples/docs use `ModelMessage`.
+- A new `LanguageModel` abstraction has been added on top of provider-specific `ChatCapability` implementations:
+  - `DefaultLanguageModel` wraps any `ChatCapability` and adapts `List<ModelMessage>` prompts to legacy chat APIs.
+  - High-level helpers (`generateTextWithModel`, `streamTextWithModel`, `runAgentPromptText`, etc.) all consume `LanguageModel` + `ModelMessage` and handle bridging internally.
+
 ## [0.10.5] - 2025-11-26
 
 ### Added

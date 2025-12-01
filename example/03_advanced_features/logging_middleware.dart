@@ -7,7 +7,7 @@ import 'package:llm_dart/llm_dart.dart';
 ///
 /// This example shows how to:
 /// - Configure a Logger for llm_dart
-/// - Attach the chat logging middleware to a provider
+/// - Attach the chat logging middleware to a provider/model
 /// - Run a simple chat and a streaming chat with logs enabled
 Future<void> main() async {
   // Configure root logger to print to stdout.
@@ -36,37 +36,47 @@ Future<void> main() async {
     ),
   );
 
-  // Build an OpenAI provider with the logging middleware attached.
+  // Build an OpenAI LanguageModel with the logging middleware attached.
   //
   // Replace "YOUR_OPENAI_API_KEY" with your real API key or read it from
   // environment variables in a real application.
-  final provider = await ai()
+  final model = await ai()
       .openai()
       .apiKey('YOUR_OPENAI_API_KEY')
-      .middlewares([loggingMiddleware]).buildWithMiddleware();
+      .middlewares([loggingMiddleware])
+      .model('gpt-4o-mini')
+      .buildLanguageModel();
 
-  // === Non-streaming chat example ===
-  final response = await provider.chat([
-    ChatMessage.system('You are a helpful assistant.'),
-    ChatMessage.user('Explain what middlewares do in llm_dart.'),
-  ]);
+  // === Non-streaming chat example (prompt-first) ===
+  final messages = <ModelMessage>[
+    ModelMessage.systemText('You are a helpful assistant.'),
+    ModelMessage.userText('Explain what middlewares do in llm_dart.'),
+  ];
+
+  final response = await generateTextPromptWithModel(
+    model,
+    messages: messages,
+  );
 
   // ignore: avoid_print
   print('--- Non-streaming response ---');
   // ignore: avoid_print
   print(response.text);
 
-  // === Streaming chat example ===
-  final stream = provider.chatStream([
-    ChatMessage.system('You are a helpful assistant.'),
-    ChatMessage.user('Stream a short response about logging.'),
-  ]);
+  // === Streaming chat example (prompt-first) ===
+  final streamMessages = <ModelMessage>[
+    ModelMessage.systemText('You are a helpful assistant.'),
+    ModelMessage.userText('Stream a short response about logging.'),
+  ];
 
   // ignore: avoid_print
   print('\n--- Streaming response ---');
   final buffer = StringBuffer();
 
-  await for (final event in stream) {
+  await for (final event in streamTextWithModel(
+    model,
+    promptMessages: streamMessages,
+  )) {
     if (event is TextDeltaEvent) {
       buffer.write(event.delta);
     }

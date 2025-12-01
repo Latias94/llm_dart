@@ -1,6 +1,7 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// 🚀 buildOpenAIResponses() Method Demo
@@ -54,6 +55,7 @@ void main() async {
   await demonstrateConvenienceMethod(apiKey);
   await demonstrateErrorHandling(apiKey);
   await demonstrateCapabilityComparison(apiKey);
+  await demonstrateResponsesAgentPrompt(apiKey);
 
   print('\n✅ buildOpenAIResponses() demo completed!');
 }
@@ -233,6 +235,78 @@ void _printCapabilities(dynamic provider) {
     print('      📊 Total: ${capabilities.length} capabilities');
   } else {
     print('      ❌ Provider does not implement ProviderCapabilities');
+  }
+}
+
+/// Demonstrate using an OpenAI Responses-backed model with ToolLoopAgent
+/// and prompt-first ModelMessage conversations.
+Future<void> demonstrateResponsesAgentPrompt(String apiKey) async {
+  print('\n🤖 Responses API + ToolLoopAgent (prompt-first):\n');
+
+  try {
+    // 1) Build a prompt-first LanguageModel backed by the OpenAI Responses API.
+    //
+    // This mirrors the Vercel AI SDK pattern:
+    //   const openai = createOpenAI({ apiKey });
+    //   const model = openai.responses('gpt-4o');
+    final openaiFacade = createOpenAI(apiKey: apiKey);
+    final responsesModel = openaiFacade.responses('gpt-4o');
+
+    // 2) Define a simple web_search tool with schema + executor.
+    final tools = <String, ExecutableTool>{
+      'web_search': ExecutableTool(
+        schema: Tool.function(
+          name: 'web_search',
+          description: 'Search the web for up-to-date information.',
+          parameters: ParametersSchema(
+            schemaType: 'object',
+            properties: {
+              'query': ParameterProperty(
+                propertyType: 'string',
+                description: 'Search query',
+              ),
+            },
+            required: const ['query'],
+          ),
+        ),
+        execute: (args) async {
+          final query = args['query'] as String;
+          // In a real app, call your own search service or proxy here and
+          // return a structured JSON object.
+          return <String, dynamic>{
+            'results': 'Search results for: $query',
+          };
+        },
+      ),
+    };
+
+    // 3) Build a prompt-first conversation using ModelMessage.
+    final messages = <ModelMessage>[
+      ModelMessage.systemText(
+        'You are a research assistant. Use the web_search tool for '
+        'up-to-date information and cite your findings.',
+      ),
+      ModelMessage.userText(
+        'Using web_search, find recent news about Dart 3 performance '
+        'improvements and summarize them.',
+      ),
+    ];
+
+    // 4) Run the agent loop with ToolLoopAgent using the prompt-first API.
+    final result = await runAgentPromptText(
+      model: responsesModel,
+      promptMessages: messages,
+      tools: tools,
+      loopConfig: const ToolLoopConfig(
+        maxIterations: 4,
+        runToolsInParallel: true,
+      ),
+    );
+
+    print('   Final answer (Responses + Agent): ${result.text}');
+    print('   ✅ Responses-backed agent demonstration completed');
+  } catch (e) {
+    print('   ❌ Responses-backed agent demo failed: $e');
   }
 }
 

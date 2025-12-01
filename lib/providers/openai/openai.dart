@@ -1,3 +1,8 @@
+// The OpenAI provider facade intentionally exposes ChatMessage-based
+// chat APIs as part of the public surface for backwards compatibility.
+// New code should prefer ModelMessage + ChatContentPart via helpers.
+// ignore_for_file: deprecated_member_use
+
 /// Modular OpenAI Provider
 ///
 /// This library provides a modular implementation of the OpenAI provider
@@ -331,7 +336,7 @@ class OpenAIResponsesModel
 
   @override
   Future<GenerateTextResult> generateText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return _model.generateText(messages, cancelToken: cancelToken);
@@ -339,7 +344,7 @@ class OpenAIResponsesModel
 
   @override
   Stream<ChatStreamEvent> streamText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return _model.streamText(messages, cancelToken: cancelToken);
@@ -347,7 +352,7 @@ class OpenAIResponsesModel
 
   @override
   Stream<StreamTextPart> streamTextParts(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return _model.streamTextParts(messages, cancelToken: cancelToken);
@@ -356,7 +361,7 @@ class OpenAIResponsesModel
   @override
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return _model.generateObject(
@@ -368,7 +373,7 @@ class OpenAIResponsesModel
 
   @override
   Future<GenerateTextResult> generateTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -382,7 +387,7 @@ class OpenAIResponsesModel
 
   @override
   Stream<ChatStreamEvent> streamTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -395,7 +400,7 @@ class OpenAIResponsesModel
 
   @override
   Stream<StreamTextPart> streamTextPartsWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -409,7 +414,7 @@ class OpenAIResponsesModel
   @override
   Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {

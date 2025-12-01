@@ -1,3 +1,8 @@
+// This middleware intentionally works on ChatMessage-based histories, since
+// it plugs into the legacy ChatCapability surface. New code should prefer
+// ModelMessage + ChatContentPart with prompt-first helpers.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Default chat settings applied via middleware.

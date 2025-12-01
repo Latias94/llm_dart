@@ -38,13 +38,13 @@ abstract class DioEnhancer {
   String get name;
 }
 
-/// Unified factory for creating Dio clients across all providers
+/// Unified factory for creating Dio clients across all providers.
 ///
 /// This factory eliminates code duplication by providing a consistent
 /// approach to Dio client creation while allowing provider-specific
 /// customizations through the strategy pattern.
 class DioClientFactory {
-  /// Create a configured Dio client using provider strategy
+  /// Create a configured Dio client using provider strategy.
   ///
   /// Priority order:
   /// 1. Custom Dio client (if provided via extensions)
@@ -52,7 +52,7 @@ class DioClientFactory {
   /// 3. Provider defaults
   static Dio create({
     required ProviderDioStrategy strategy,
-    required dynamic config,
+    required ProviderHttpConfig config,
   }) {
     // Extract custom Dio from config extensions
     final customDio = _extractCustomDio(config);
@@ -66,19 +66,18 @@ class DioClientFactory {
     }
   }
 
-  /// Extract custom Dio from config extensions
-  static Dio? _extractCustomDio(dynamic config) {
-    if (config.originalConfig != null) {
-      return config.originalConfig!.getExtension<Dio>(LLMConfigKeys.customDio);
-    }
-    return null;
+  /// Extract custom Dio from config extensions.
+  static Dio? _extractCustomDio(ProviderHttpConfig config) {
+    final original = config.originalConfig;
+    if (original == null) return null;
+    return original.getExtension<Dio>(LLMConfigKeys.customDio);
   }
 
-  /// Enhance custom Dio with provider-specific requirements
+  /// Enhance custom Dio with provider-specific requirements.
   static Dio _enhanceCustomDio(
     Dio customDio,
     ProviderDioStrategy strategy,
-    dynamic config,
+    ProviderHttpConfig config,
   ) {
     // Ensure base URL is set if not already configured
     if (customDio.options.baseUrl.isEmpty) {
@@ -100,10 +99,10 @@ class DioClientFactory {
     return customDio;
   }
 
-  /// Create new configured Dio instance
+  /// Create new configured Dio instance.
   static Dio _createConfiguredDio(
     ProviderDioStrategy strategy,
-    dynamic config,
+    ProviderHttpConfig config,
   ) {
     final originalConfig =
         config.originalConfig ?? _createFallbackConfig(strategy, config);
@@ -124,14 +123,15 @@ class DioClientFactory {
     return dio;
   }
 
-  /// Create minimal fallback config when originalConfig is not available
+  /// Create minimal fallback config when [ProviderHttpConfig.originalConfig]
+  /// is not available.
   static LLMConfig _createFallbackConfig(
     ProviderDioStrategy strategy,
-    dynamic config,
+    ProviderHttpConfig config,
   ) {
     return LLMConfig(
       baseUrl: strategy.getBaseUrl(config),
-      model: config.model,
+      model: config.model?.toString() ?? '',
       apiKey: config.apiKey,
       timeout: strategy.getTimeout(config),
     );

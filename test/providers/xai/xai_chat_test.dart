@@ -1,4 +1,9 @@
+// xAI chat tests exercise ChatMessage-based chat flows to validate
+// prompt mapping and streaming behavior for the xAI provider.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
 import 'package:test/test.dart';
 import 'xai_test_utils.dart';

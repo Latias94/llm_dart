@@ -9,6 +9,8 @@ library;
 
 export 'src/utils/dio_client_factory.dart';
 export 'src/utils/http_response_handler.dart';
+export 'src/utils/openai_message_mapper.dart';
+export 'src/utils/sse_line_buffer.dart';
 export 'src/utils/http_config_utils.dart';
 export 'src/utils/utf8_stream_decoder.dart';
 export 'src/utils/http_error_handler.dart';

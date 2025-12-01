@@ -40,17 +40,22 @@ dart run xai_grok.dart
 
 ### Provider Fallback Strategy
 ```dart
-final providers = [
+final modelBuilders = [
   () => ai().groqOpenAI().apiKey('groq-key').model('llama-3.3-70b-versatile'),
   () => ai().deepseekOpenAI().apiKey('deepseek-key').model('deepseek-chat'),
   () => ai().openRouter().apiKey('openrouter-key').model('openai/gpt-3.5-turbo'),
 ];
 
-for (final providerBuilder in providers) {
+for (final builder in modelBuilders) {
   try {
-    final provider = await providerBuilder().build();
-    final response = await provider.chat([ChatMessage.user('Test')]);
-    print('Success: ${response.text}');
+    final model = await builder().buildLanguageModel();
+    final result = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText('Test'),
+      ],
+    );
+    print('Success: ${result.text}');
     break;
   } catch (e) {
     print('Provider failed, trying next...');

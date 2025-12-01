@@ -1,3 +1,10 @@
+// This root library focuses on the prompt-first ModelMessage-based
+// chat model. The legacy ChatMessage model is still available via
+// the separate `legacy/chat.dart` entry point for backwards
+// compatibility. Internal helpers may continue to use ChatMessage
+// as a bridge between old and new call sites.
+// ignore_for_file: deprecated_member_use
+
 /// LLM Dart Library - A modular Dart library for AI provider interactions
 ///
 /// This library provides a unified interface for interacting with different
@@ -6,7 +13,6 @@
 library;
 
 import 'dart:async';
-import 'dart:convert';
 
 // Core exports (forwarded from llm_dart_core).
 //
@@ -67,16 +73,15 @@ export 'package:llm_dart_core/llm_dart_core.dart'
 
         // Chat models & stream types
         ChatRole,
-        ChatMessage,
         ModelMessage,
+        ChatContentPart,
+        TextContentPart,
+        FileContentPart,
+        UrlFileContentPart,
+        ReasoningContentPart,
+        ToolCallContentPart,
+        ToolResultContentPart,
         MessageBuilder,
-        MessageType,
-        TextMessage,
-        ImageMessage,
-        FileMessage,
-        ImageUrlMessage,
-        ToolUseMessage,
-        ToolResultMessage,
         ImageMime,
         ImageMimeExtension,
         FileMime,
@@ -340,7 +345,7 @@ Future<ChatCapability> createProvider({
   // capabilities explicitly instead.
   if (providerId == 'elevenlabs') {
     throw const UnsupportedCapabilityError(
-      'createProvider() does not support the \"elevenlabs\" provider for '
+      'createProvider() does not support the "elevenlabs" provider for '
       'chat capabilities. Use ai().elevenlabs().apiKey(...).buildAudio() '
       'or the generateSpeech()/transcribe() helpers for audio use cases.',
     );
@@ -420,6 +425,33 @@ Future<GenerateTextResult> generateText({
   return result;
 }
 
+/// Prompt-first generateText helper using [ModelMessage] conversations.
+///
+/// This variant mirrors [generateText] but accepts the conversation as
+/// a list of structured [ModelMessage]s instead of the legacy
+/// [ChatMessage] model. It is the preferred entry point for new code.
+Future<GenerateTextResult> generateTextPrompt({
+  required String model,
+  required List<ModelMessage> messages,
+  String? apiKey,
+  String? baseUrl,
+  CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
+  void Function(GenerateTextResult result)? onFinish,
+  void Function(List<CallWarning> warnings)? onWarnings,
+}) {
+  return generateText(
+    model: model,
+    apiKey: apiKey,
+    baseUrl: baseUrl,
+    promptMessages: messages,
+    cancelToken: cancelToken,
+    options: options,
+    onFinish: onFinish,
+    onWarnings: onWarnings,
+  );
+}
+
 /// Generate text using an existing [LanguageModel] instance.
 ///
 /// This helper mirrors [generateText] but operates on a pre-configured
@@ -448,9 +480,10 @@ Future<GenerateTextResult> generateTextWithModel(
     );
   }
 
-  final resolvedMessages = resolveMessagesForTextGeneration(
+  // Resolve into a structured ModelMessage conversation.
+  final resolvedMessages = resolvePromptMessagesForTextGeneration(
     prompt: prompt,
-    messages: messages,
+    legacyMessages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
   );
@@ -469,6 +502,28 @@ Future<GenerateTextResult> generateTextWithModel(
   }
 
   return result;
+}
+
+/// Prompt-first generateText helper using an existing [LanguageModel].
+///
+/// This mirrors [generateTextPrompt] but operates on a pre-configured
+/// [LanguageModel] instance.
+Future<GenerateTextResult> generateTextPromptWithModel(
+  LanguageModel model, {
+  required List<ModelMessage> messages,
+  CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
+  void Function(GenerateTextResult result)? onFinish,
+  void Function(List<CallWarning> warnings)? onWarnings,
+}) {
+  return generateTextWithModel(
+    model,
+    promptMessages: messages,
+    cancelToken: cancelToken,
+    options: options,
+    onFinish: onFinish,
+    onWarnings: onWarnings,
+  );
 }
 
 /// High-level streamText helper (Vercel AI SDK-style).
@@ -533,6 +588,32 @@ Stream<ChatStreamEvent> streamText({
   }
 }
 
+/// Prompt-first streamText helper using [ModelMessage] conversations.
+///
+/// This mirrors [streamText] but accepts a list of [ModelMessage]s and
+/// is the recommended API for new integrations.
+Stream<ChatStreamEvent> streamTextPrompt({
+  required String model,
+  required List<ModelMessage> messages,
+  String? apiKey,
+  String? baseUrl,
+  CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
+  void Function(GenerateTextResult result)? onFinish,
+  void Function(List<CallWarning> warnings)? onWarnings,
+}) {
+  return streamText(
+    model: model,
+    apiKey: apiKey,
+    baseUrl: baseUrl,
+    promptMessages: messages,
+    cancelToken: cancelToken,
+    options: options,
+    onFinish: onFinish,
+    onWarnings: onWarnings,
+  );
+}
+
 /// Stream text using an existing [LanguageModel] instance.
 ///
 /// This helper mirrors [streamText] but operates on a pre-configured
@@ -550,15 +631,15 @@ Stream<ChatStreamEvent> streamTextWithModel(
 }) async* {
   if (model.providerId == 'elevenlabs') {
     throw const UnsupportedCapabilityError(
-      'Provider \"elevenlabs\" does not support streaming text. '
+      'Provider "elevenlabs" does not support streaming text. '
       'Use audio helpers such as generateSpeech(), transcribe(), or '
       'transcribeFile() instead.',
     );
   }
 
-  final resolvedMessages = resolveMessagesForTextGeneration(
+  final resolvedMessages = resolvePromptMessagesForTextGeneration(
     prompt: prompt,
-    messages: messages,
+    legacyMessages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
   );
@@ -594,6 +675,28 @@ Stream<ChatStreamEvent> streamTextWithModel(
   }
 }
 
+/// Prompt-first streamText helper using an existing [LanguageModel].
+///
+/// This mirrors [streamTextPrompt] but operates on a pre-configured
+/// [LanguageModel] instance.
+Stream<ChatStreamEvent> streamTextPromptWithModel(
+  LanguageModel model, {
+  required List<ModelMessage> messages,
+  CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
+  void Function(GenerateTextResult result)? onFinish,
+  void Function(List<CallWarning> warnings)? onWarnings,
+}) {
+  return streamTextWithModel(
+    model,
+    promptMessages: messages,
+    cancelToken: cancelToken,
+    options: options,
+    onFinish: onFinish,
+    onWarnings: onWarnings,
+  );
+}
+
 /// Stream high-level text parts using an existing [LanguageModel] instance.
 ///
 /// This helper mirrors [streamTextParts] but operates on a pre-configured
@@ -610,15 +713,15 @@ Stream<StreamTextPart> streamTextPartsWithModel(
 }) async* {
   if (model.providerId == 'elevenlabs') {
     throw const UnsupportedCapabilityError(
-      'Provider \"elevenlabs\" does not support streaming text parts. '
+      'Provider "elevenlabs" does not support streaming text parts. '
       'Use audio helpers such as generateSpeech(), transcribe(), or '
       'transcribeFile() instead.',
     );
   }
 
-  final resolvedMessages = resolveMessagesForTextGeneration(
+  final resolvedMessages = resolvePromptMessagesForTextGeneration(
     prompt: prompt,
-    messages: messages,
+    legacyMessages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
   );
@@ -626,6 +729,44 @@ Stream<StreamTextPart> streamTextPartsWithModel(
     resolvedMessages,
     options: options,
     cancelToken: cancelToken,
+  );
+}
+
+/// Prompt-first helper that returns provider-agnostic stream parts.
+///
+/// This mirrors [streamTextParts] but accepts a list of [ModelMessage]s
+/// and is the recommended streaming API for new integrations.
+Stream<StreamTextPart> streamTextPartsPrompt({
+  required String model,
+  required List<ModelMessage> messages,
+  String? apiKey,
+  String? baseUrl,
+  CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
+}) {
+  return streamTextParts(
+    model: model,
+    apiKey: apiKey,
+    baseUrl: baseUrl,
+    promptMessages: messages,
+    cancelToken: cancelToken,
+    options: options,
+  );
+}
+
+/// Stream high-level text parts using an existing [LanguageModel] and
+/// prompt-first [ModelMessage] conversations.
+Stream<StreamTextPart> streamTextPartsPromptWithModel(
+  LanguageModel model, {
+  required List<ModelMessage> messages,
+  CancellationToken? cancelToken,
+  LanguageModelCallOptions? options,
+}) {
+  return streamTextPartsWithModel(
+    model,
+    promptMessages: messages,
+    cancelToken: cancelToken,
+    options: options,
   );
 }
 
@@ -724,7 +865,7 @@ Future<GenerateObjectResult<T>> generateObject<T>({
     );
   }
 
-  final json = _parseHelperStructuredObjectJson(rawText, output.format);
+  final json = parseStructuredObjectJson(rawText, output.format);
   final object = output.fromJson(json);
 
   return GenerateObjectResult<T>(
@@ -980,137 +1121,6 @@ class StreamObjectResult<T> {
   });
 }
 
-/// Parse structured JSON output for the top-level [generateObject] helper.
-///
-/// This mirrors the core implementation used by [DefaultLanguageModel]
-/// and ensures consistent behavior between the model-centric and
-/// builder-centric structured output helpers.
-Map<String, dynamic> _parseHelperStructuredObjectJson(
-  String rawText,
-  StructuredOutputFormat format,
-) {
-  Map<String, dynamic> json;
-  try {
-    final decoded = jsonDecode(rawText);
-    if (decoded is Map<String, dynamic>) {
-      json = decoded;
-    } else if (decoded is Map) {
-      json = Map<String, dynamic>.from(decoded);
-    } else {
-      throw const FormatException('Top-level JSON value is not an object');
-    }
-  } catch (e) {
-    throw ResponseFormatError(
-      'Failed to parse structured JSON output: $e',
-      rawText,
-    );
-  }
-
-  final schema = format.schema;
-  if (schema != null) {
-    final errors = <String>[];
-    _validateHelperJsonAgainstSchema(json, schema, r'$', errors);
-    if (errors.isNotEmpty) {
-      throw StructuredOutputError(
-        'Structured output does not match schema: ${errors.join('; ')}',
-        schemaName: format.name,
-        schema: schema,
-        actualOutput: rawText,
-      );
-    }
-  }
-
-  return json;
-}
-
-void _validateHelperJsonAgainstSchema(
-  dynamic value,
-  Map<String, dynamic> schema,
-  String path,
-  List<String> errors,
-) {
-  final type = schema['type'];
-
-  switch (type) {
-    case 'string':
-      if (value is! String) {
-        errors.add('Expected string at $path, got ${value.runtimeType}');
-      }
-      break;
-    case 'number':
-      if (value is! num) {
-        errors.add('Expected number at $path, got ${value.runtimeType}');
-      }
-      break;
-    case 'integer':
-      if (value is! int) {
-        errors.add('Expected integer at $path, got ${value.runtimeType}');
-      }
-      break;
-    case 'boolean':
-      if (value is! bool) {
-        errors.add('Expected boolean at $path, got ${value.runtimeType}');
-      }
-      break;
-    case 'array':
-      if (value is! List) {
-        errors.add('Expected array at $path, got ${value.runtimeType}');
-        break;
-      }
-      final itemSchema = schema['items'];
-      if (itemSchema is Map<String, dynamic>) {
-        for (var i = 0; i < value.length; i++) {
-          _validateHelperJsonAgainstSchema(
-            value[i],
-            itemSchema,
-            '$path[$i]',
-            errors,
-          );
-        }
-      }
-      break;
-    case 'object':
-      if (value is! Map) {
-        errors.add('Expected object at $path, got ${value.runtimeType}');
-        break;
-      }
-
-      final mapValue = value is Map<String, dynamic>
-          ? value
-          : Map<String, dynamic>.from(value);
-
-      final requiredProps =
-          (schema['required'] as List<dynamic>? ?? const <dynamic>[])
-              .cast<String>();
-      for (final prop in requiredProps) {
-        if (!mapValue.containsKey(prop)) {
-          errors.add('Missing required property "$prop" at $path');
-        }
-      }
-
-      final propertiesRaw = schema['properties'];
-      if (propertiesRaw is Map) {
-        final properties =
-            propertiesRaw.cast<String, dynamic>(); // schema fragments
-        for (final entry in properties.entries) {
-          final propName = entry.key;
-          final propSchema = entry.value;
-          if (propSchema is! Map<String, dynamic>) continue;
-          if (!mapValue.containsKey(propName)) continue;
-          _validateHelperJsonAgainstSchema(
-            mapValue[propName],
-            propSchema,
-            '$path.$propName',
-            errors,
-          );
-        }
-      }
-      break;
-    default:
-      break;
-  }
-}
-
 /// Generate a structured object using an existing [LanguageModel].
 ///
 /// This helper assumes the given [model] has already been configured
@@ -1126,9 +1136,9 @@ Future<GenerateObjectResult<T>> generateObjectWithModel<T>({
   CancellationToken? cancelToken,
   LanguageModelCallOptions? options,
 }) async {
-  final resolvedMessages = resolveMessagesForTextGeneration(
+  final resolvedMessages = resolvePromptMessagesForTextGeneration(
     prompt: prompt,
-    messages: messages,
+    legacyMessages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
   );
@@ -1158,9 +1168,13 @@ Future<GenerateTextResult> runAgentText({
   Agent? agent,
   LanguageModelCallOptions? options,
 }) async {
+  final promptMessages = messages
+      .map((message) => message.toPromptMessage())
+      .toList(growable: false);
+
   final input = AgentInput(
     model: model,
-    messages: messages,
+    messages: promptMessages,
     tools: tools,
     loopConfig: loopConfig,
     cancelToken: cancelToken,
@@ -1185,14 +1199,9 @@ Future<GenerateTextResult> runAgentPromptText({
   Agent? agent,
   LanguageModelCallOptions? options,
 }) async {
-  final initialMessages = promptMessages
-      .map((prompt) => ChatMessage.fromPromptMessage(prompt))
-      .toList();
-
   final input = AgentInput(
     model: model,
-    messages: initialMessages,
-    promptMessages: promptMessages,
+    messages: promptMessages,
     tools: tools,
     loopConfig: loopConfig,
     cancelToken: cancelToken,
@@ -1213,9 +1222,13 @@ Future<AgentTextRunWithSteps> runAgentTextWithSteps({
   Agent? agent,
   LanguageModelCallOptions? options,
 }) {
+  final promptMessages = messages
+      .map((message) => message.toPromptMessage())
+      .toList(growable: false);
+
   final input = AgentInput(
     model: model,
-    messages: messages,
+    messages: promptMessages,
     tools: tools,
     loopConfig: loopConfig,
     cancelToken: cancelToken,
@@ -1237,14 +1250,9 @@ Future<AgentTextRunWithSteps> runAgentPromptTextWithSteps({
   Agent? agent,
   LanguageModelCallOptions? options,
 }) {
-  final initialMessages = promptMessages
-      .map((prompt) => ChatMessage.fromPromptMessage(prompt))
-      .toList();
-
   final input = AgentInput(
     model: model,
-    messages: initialMessages,
-    promptMessages: promptMessages,
+    messages: promptMessages,
     tools: tools,
     loopConfig: loopConfig,
     cancelToken: cancelToken,
@@ -1258,7 +1266,7 @@ Future<AgentTextRunWithSteps> runAgentPromptTextWithSteps({
 /// Run an agent loop that produces a structured object result.
 Future<GenerateObjectResult<T>> runAgentObject<T>({
   required LanguageModel model,
-  required List<ChatMessage> messages,
+  required List<ModelMessage> messages,
   required Map<String, ExecutableTool> tools,
   required OutputSpec<T> output,
   ToolLoopConfig loopConfig = const ToolLoopConfig(),
@@ -1294,14 +1302,9 @@ Future<GenerateObjectResult<T>> runAgentPromptObject<T>({
   Agent? agent,
   LanguageModelCallOptions? options,
 }) async {
-  final initialMessages = promptMessages
-      .map((prompt) => ChatMessage.fromPromptMessage(prompt))
-      .toList();
-
   final input = AgentInput(
     model: model,
-    messages: initialMessages,
-    promptMessages: promptMessages,
+    messages: promptMessages,
     tools: tools,
     loopConfig: loopConfig,
     cancelToken: cancelToken,
@@ -1318,7 +1321,7 @@ Future<GenerateObjectResult<T>> runAgentPromptObject<T>({
 /// Run an agent loop that produces a structured object result and step trace.
 Future<AgentObjectRunWithSteps<T>> runAgentObjectWithSteps<T>({
   required LanguageModel model,
-  required List<ChatMessage> messages,
+  required List<ModelMessage> messages,
   required Map<String, ExecutableTool> tools,
   required OutputSpec<T> output,
   ToolLoopConfig loopConfig = const ToolLoopConfig(),
@@ -1354,14 +1357,9 @@ Future<AgentObjectRunWithSteps<T>> runAgentPromptObjectWithSteps<T>({
   Agent? agent,
   LanguageModelCallOptions? options,
 }) {
-  final initialMessages = promptMessages
-      .map((prompt) => ChatMessage.fromPromptMessage(prompt))
-      .toList();
-
   final input = AgentInput(
     model: model,
-    messages: initialMessages,
-    promptMessages: promptMessages,
+    messages: promptMessages,
     tools: tools,
     loopConfig: loopConfig,
     cancelToken: cancelToken,
@@ -1440,24 +1438,7 @@ StreamObjectResult<T> streamObject<T>({
         );
       }
 
-      final json = _parseStructuredJson(rawText);
-
-      // If a structured output schema is available, validate the parsed
-      // JSON against it. This mirrors the non-streaming generateObject
-      // behavior and surfaces schema mismatches as StructuredOutputError.
-      final schema = output.format.schema;
-      if (schema != null) {
-        final errors = <String>[];
-        _validateHelperJsonAgainstSchema(json, schema, r'$', errors);
-        if (errors.isNotEmpty) {
-          throw StructuredOutputError(
-            'Structured output does not match schema: ${errors.join('; ')}',
-            schemaName: output.format.name,
-            schema: schema,
-            actualOutput: rawText,
-          );
-        }
-      }
+      final json = parseStructuredObjectJson(rawText, output.format);
 
       final response = finalResponse ?? _SimpleChatResponse(rawText);
 
@@ -1559,64 +1540,6 @@ LLMBuilder _applyCallOptions(
   }
 
   return builder;
-}
-
-/// Attempt to parse structured JSON from mixed text, handling code fences
-/// and trailing prose by extracting the first balanced JSON object.
-Map<String, dynamic> _parseStructuredJson(String rawText) {
-  Map<String, dynamic>? _tryParse(String input) {
-    try {
-      final decoded = jsonDecode(input);
-      if (decoded is Map<String, dynamic>) {
-        return decoded;
-      }
-      if (decoded is Map) {
-        return Map<String, dynamic>.from(decoded);
-      }
-    } catch (_) {
-      // Ignore and try the next strategy.
-    }
-    return null;
-  }
-
-  // 1) Direct parse
-  final direct = _tryParse(rawText);
-  if (direct != null) return direct;
-
-  // 2) Parse from fenced code block ```json ... ```
-  final fenceMatch =
-      RegExp(r'```(?:json)?\s*(.*?)\s*```', dotAll: true).firstMatch(rawText);
-  if (fenceMatch != null) {
-    final candidate = fenceMatch.group(1);
-    if (candidate != null) {
-      final parsed = _tryParse(candidate);
-      if (parsed != null) return parsed;
-    }
-  }
-
-  // 3) Extract first balanced JSON object from the text
-  final start = rawText.indexOf('{');
-  if (start != -1) {
-    var depth = 0;
-    for (var i = start; i < rawText.length; i++) {
-      final ch = rawText[i];
-      if (ch == '{') depth++;
-      if (ch == '}') {
-        depth--;
-        if (depth == 0) {
-          final candidate = rawText.substring(start, i + 1);
-          final parsed = _tryParse(candidate);
-          if (parsed != null) return parsed;
-          break;
-        }
-      }
-    }
-  }
-
-  throw ResponseFormatError(
-    'Failed to parse structured JSON output',
-    rawText,
-  );
 }
 
 /// Simple [ChatResponse] implementation used when no provider-specific

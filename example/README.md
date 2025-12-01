@@ -118,12 +118,54 @@ dart run 05_use_cases/multimodal_app.dart --demo
 
 ## Prompt Patterns in Examples
 
-- Simple text conversations use `ChatMessage.user/assistant/system(...)` directly.
+- For new code, prefer prompt‑first modeling with `ChatPromptBuilder` + `ModelMessage`.
 - Multi‑modal or complex prompts (especially in provider‑specific examples such as Gemini audio/video) use:
   - `ChatPromptBuilder` to build a structured `ModelMessage` with multiple parts.
-  - Model‑centric helpers such as `generateTextWithModel(model, promptMessages: [...])` to send them through the unified API (or, for legacy flows, `ChatMessage.fromPromptMessage(prompt)` + `chat(...)`).
+  - Model‑centric helpers such as `generateTextWithModel(model, promptMessages: [...])` to send them through the unified API.
+- Legacy helpers like `ChatMessage.user/assistant/system(...)` remain available for quick, text‑only demos and for implementing custom `ChatCapability` providers (see `custom_providers.dart`).
 
 This mirrors the internal content model (`ModelMessage` + `ChatContentPart`) and keeps advanced examples consistent across providers.
+
+## Legacy ChatMessage & Migration
+
+Some examples and custom providers still use the older `ChatMessage` API. It
+is now considered legacy and is exposed only via a dedicated namespace:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
+
+Future<void> main() async {
+  // Legacy history using ChatMessage
+  final legacyMessages = <ChatMessage>[
+    ChatMessage.system('You are a helpful assistant.'),
+    ChatMessage.user('Tell me a fun fact about Dart.'),
+  ];
+
+  // Convert to ModelMessage before calling prompt-first helpers
+  final promptMessages = legacyMessages
+      .map((message) => message.toPromptMessage())
+      .toList(growable: false);
+
+  final result = await generateTextPrompt(
+    model: 'openai:gpt-4o-mini',
+    apiKey: 'your-openai-key',
+    messages: promptMessages,
+  );
+
+  print(result.text);
+}
+```
+
+Recommended migration strategy:
+
+- When touching existing examples that use `ChatMessage`, add the
+  `package:llm_dart/legacy/chat.dart` import and keep the code working.
+- When you introduce new examples, prefer `ChatPromptBuilder` +
+  `ModelMessage` and the prompt-first helpers
+  (`generateTextPromptWithModel`, `runAgentPromptText`, etc.).
+- Over time, you can switch example histories from `List<ChatMessage>` to
+  `List<ModelMessage>` and remove the bridging step completely.
 
 ## Learning Path
 

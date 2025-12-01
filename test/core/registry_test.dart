@@ -1,5 +1,10 @@
+// Registry tests exercise ChatMessage-based ChatCapability providers
+// to ensure the registry and helper functions remain compatible.
+// ignore_for_file: deprecated_member_use
+
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import '../utils/mock_provider_factory.dart';
 
 // Mock ChatResponse implementation

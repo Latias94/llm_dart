@@ -1,6 +1,11 @@
 /// OpenAI-specific Responses API capability interface for the subpackage.
 library;
 
+// OpenAI-specific capability interface for the Responses API that
+// intentionally uses ChatMessage to stay aligned with the core
+// ChatCapability surface.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// OpenAI-specific capability interface for stateful Responses API

@@ -1,3 +1,8 @@
+// The Google provider facade uses ChatMessage in examples and helper
+// methods to stay compatible with the legacy chat surface. New code
+// should prefer ModelMessage + ChatContentPart with prompt-first APIs.
+// ignore_for_file: deprecated_member_use
+
 /// Modular Google Provider
 ///
 /// This library provides a modular implementation of the Google provider

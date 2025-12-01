@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 
 import 'dart:convert';
 import 'dart:io';
@@ -206,13 +206,18 @@ Future<void> main() async {
       .buildLanguageModel();
 
   // 3. Start REPL with a system prompt and ToolLoopAgent.
-  final history = <ChatMessage>[
-    ChatMessage.system(
-      'You are a helpful coding and file assistant. '
-      'You are running in a workspace at "${workspace.path}". '
-      'Use the provided tools (read_file, write_file, run_shell) '
-      'to inspect and edit files, and to run commands when helpful. '
-      'Always explain what you did and show important outputs.',
+  final history = <ModelMessage>[
+    ModelMessage(
+      role: ChatRole.system,
+      parts: [
+        TextContentPart(
+          'You are a helpful coding and file assistant. '
+          'You are running in a workspace at "${workspace.path}". '
+          'Use the provided tools (read_file, write_file, run_shell) '
+          'to inspect and edit files, and to run commands when helpful. '
+          'Always explain what you did and show important outputs.',
+        ),
+      ],
     ),
   ];
 
@@ -262,10 +267,15 @@ Future<void> main() async {
       history
         ..clear()
         ..add(
-          ChatMessage.system(
-            'You are a helpful coding and file assistant. '
-            'Conversation history was cleared. '
-            'Workspace: "${workspace.path}".',
+          ModelMessage(
+            role: ChatRole.system,
+            parts: [
+              TextContentPart(
+                'You are a helpful coding and file assistant. '
+                'Conversation history was cleared. '
+                'Workspace: "${workspace.path}".',
+              ),
+            ],
           ),
         );
       print('History cleared.\n');
@@ -273,11 +283,16 @@ Future<void> main() async {
     }
 
     // Append user message to conversation.
-    history.add(ChatMessage.user(input));
+    history.add(
+      ModelMessage(
+        role: ChatRole.user,
+        parts: [TextContentPart(input)],
+      ),
+    );
 
     final agentInput = AgentInput(
       model: model,
-      messages: List<ChatMessage>.from(history),
+      messages: List<ModelMessage>.from(history),
       tools: tools,
       loopConfig: const ToolLoopConfig(
         maxIterations: 8,
@@ -324,7 +339,12 @@ Future<void> main() async {
 
       // Append final assistant message to history for next turn.
       if (traced.result.text != null && traced.result.text!.trim().isNotEmpty) {
-        history.add(ChatMessage.assistant(traced.result.text!));
+        history.add(
+          ModelMessage(
+            role: ChatRole.assistant,
+            parts: [TextContentPart(traced.result.text!)],
+          ),
+        );
       }
     } on LLMError catch (e) {
       print('LLM error: $e\n');

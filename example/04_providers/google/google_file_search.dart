@@ -27,7 +27,7 @@ Future<void> main() async {
   }
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .google((google) => google.fileSearch(
               fileSearchStoreNames: [storeName],
               topK: 8,
@@ -35,24 +35,27 @@ Future<void> main() async {
         .apiKey(apiKey)
         // File Search is supported on Gemini 2.5 models.
         .model('gemini-2.5-flash')
-        .build();
+        .buildLanguageModel();
 
-    final messages = <ChatMessage>[
-      ChatMessage.system(
+    final messages = <ModelMessage>[
+      ModelMessage.systemText(
         'You are a helpful assistant that answers questions using the '
         'documents available in the configured File Search store.',
       ),
-      ChatMessage.user(
+      ModelMessage.userText(
         '根据知识库回答：请简要说明本项目的架构设计要点。',
       ),
     ];
 
-    final response = await provider.chat(messages);
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: messages,
+    );
 
     print('=== File Search Response ===');
     print(response.text);
 
-    final meta = response.callMetadata;
+    final meta = response.metadata;
     if (meta != null) {
       print('\n--- Call Metadata ---');
       print('provider: ${meta.provider}, model: ${meta.model}');

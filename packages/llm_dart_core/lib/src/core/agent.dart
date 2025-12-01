@@ -1,7 +1,13 @@
+// Agent implementation currently bridges between the legacy ChatMessage
+// model and the newer ModelMessage prompt model. ChatMessage is used
+// here intentionally as a compatibility layer for LanguageModel APIs.
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'dart:convert';
 
 import '../models/chat_models.dart';
 import '../models/tool_models.dart';
+import '../utils/structured_output_utils.dart';
 import 'capability.dart';
 import 'cancellation.dart';
 import 'llm_error.dart';
@@ -14,21 +20,12 @@ class AgentInput {
   /// Language model used by the agent.
   final LanguageModel model;
 
-  /// Initial conversation messages (legacy chat model).
+  /// Initial conversation messages in the prompt-first [ModelMessage] format.
   ///
-  /// This is the primary representation used by [LanguageModel] today.
-  /// For prompt-first call sites that work with [ModelMessage], see
-  /// [promptMessages].
-  final List<ChatMessage> messages;
-
-  /// Optional structured prompt messages.
-  ///
-  /// This allows callers to provide the initial conversation using the
-  /// multi-part [ModelMessage] model. Agents that support prompt-first
-  /// operation (such as [ToolLoopAgent]) may prefer this representation
-  /// and bridge to [ChatMessage] internally via
-  /// [ChatMessage.fromPromptMessage] when needed.
-  final List<ModelMessage>? promptMessages;
+  /// Callers are expected to construct these using [ModelMessage] +
+  /// [ChatContentPart] (or higher-level builders) rather than the
+  /// legacy [ChatMessage] model.
+  final List<ModelMessage> messages;
 
   /// Map of tool name to [ExecutableTool] implementation.
   final Map<String, ExecutableTool> tools;
@@ -54,7 +51,6 @@ class AgentInput {
     required this.model,
     required this.messages,
     required this.tools,
-    this.promptMessages,
     this.loopConfig = const ToolLoopConfig(),
     this.cancelToken,
     this.callOptions,
@@ -62,8 +58,7 @@ class AgentInput {
 
   AgentInput copyWith({
     LanguageModel? model,
-    List<ChatMessage>? messages,
-    List<ModelMessage>? promptMessages,
+    List<ModelMessage>? messages,
     Map<String, ExecutableTool>? tools,
     ToolLoopConfig? loopConfig,
     CancellationToken? cancelToken,
@@ -72,7 +67,6 @@ class AgentInput {
     return AgentInput(
       model: model ?? this.model,
       messages: messages ?? this.messages,
-      promptMessages: promptMessages ?? this.promptMessages,
       tools: tools ?? this.tools,
       loopConfig: loopConfig ?? this.loopConfig,
       cancelToken: cancelToken ?? this.cancelToken,
@@ -267,17 +261,10 @@ class ToolLoopAgent implements Agent {
 
   @override
   Future<AgentTextRunWithSteps> runTextWithSteps(AgentInput input) async {
-    // Prefer explicit ChatMessage conversation when provided; otherwise,
-    // bridge structured prompt messages to ChatMessage using the
-    // ChatMessage.fromPromptMessage helper so that providers can still
-    // recover the original ModelMessage-based content model.
-    var messages = input.messages.isNotEmpty
-        ? List<ChatMessage>.from(input.messages)
-        : (input.promptMessages != null
-            ? input.promptMessages!
-                .map((prompt) => ChatMessage.fromPromptMessage(prompt))
-                .toList()
-            : <ChatMessage>[]);
+    // Agent operates purely on prompt-first ModelMessage conversations.
+    // We clone the initial messages so that each run can evolve its own
+    // conversation history without mutating the caller's list.
+    var messages = List<ModelMessage>.from(input.messages);
     final steps = <AgentStepRecord>[];
 
     for (var i = 0; i < input.loopConfig.maxIterations; i++) {
@@ -299,7 +286,7 @@ class ToolLoopAgent implements Agent {
         return AgentTextRunWithSteps(result: result, steps: steps);
       }
 
-      final toolResults = <ChatMessage>[];
+      final toolResults = <ModelMessage>[];
       final toolCallRecords = <AgentToolCallRecord>[];
 
       Future<AgentToolCallRecord> runSingleToolCall(ToolCall call) async {
@@ -333,19 +320,16 @@ class ToolLoopAgent implements Agent {
             final output = await handler.execute(args);
             final outputJson = jsonEncode(output);
 
-            final resultCall = ToolCall(
-              id: call.id,
-              callType: call.callType,
-              function: FunctionCall(
-                name: call.function.name,
-                arguments: outputJson,
-              ),
-            );
-
             toolResults.add(
-              ChatMessage.toolResult(
-                results: [resultCall],
-                content: '',
+              ModelMessage(
+                role: ChatRole.user,
+                parts: <ChatContentPart>[
+                  ToolResultContentPart(
+                    toolCallId: call.id,
+                    toolName: call.function.name,
+                    payload: ToolResultTextPayload(outputJson),
+                  ),
+                ],
               ),
             );
 
@@ -390,13 +374,29 @@ class ToolLoopAgent implements Agent {
       // This mirrors the typical OpenAI pattern where the assistant
       // message contains tool_calls, followed by one or more tool
       // messages with results. We store the textual part (if any) in
-      // the assistant message and encode tool calls via ChatMessage.toolUse.
+      // the assistant message and encode tool calls via
+      // ToolCallContentPart / ToolResultContentPart.
+      final toolCallParts = <ChatContentPart>[];
+      if (result.text != null && result.text!.isNotEmpty) {
+        toolCallParts.add(TextContentPart(result.text!));
+      }
+      for (final call in calls) {
+        toolCallParts.add(
+          ToolCallContentPart(
+            toolName: call.function.name,
+            argumentsJson: call.function.arguments,
+            toolCallId: call.id,
+          ),
+        );
+      }
+
       messages = [
         ...messages,
-        ChatMessage.toolUse(
-          toolCalls: calls,
-          content: result.text ?? '',
-        ),
+        if (toolCallParts.isNotEmpty)
+          ModelMessage(
+            role: ChatRole.assistant,
+            parts: toolCallParts,
+          ),
         ...toolResults,
       ];
 
@@ -454,23 +454,7 @@ class ToolLoopAgent implements Agent {
       );
     }
 
-    Map<String, dynamic> json;
-    try {
-      final decoded = jsonDecode(rawText);
-      if (decoded is Map<String, dynamic>) {
-        json = decoded;
-      } else if (decoded is Map) {
-        json = Map<String, dynamic>.from(decoded);
-      } else {
-        throw const FormatException('Top-level JSON value is not an object');
-      }
-    } catch (e) {
-      throw ResponseFormatError(
-        'Failed to parse structured JSON output: $e',
-        rawText,
-      );
-    }
-
+    final json = parseStructuredObjectJson(rawText, output.format);
     final object = output.fromJson(json);
 
     final objectResult = GenerateObjectResult<T>(

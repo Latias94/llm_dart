@@ -1,7 +1,8 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 import 'dart:convert';
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:mcp_dart/mcp_dart.dart' hide Tool;
 
 /// Simple HTTP Streaming LLM Integration - Streaming Tool Use Demo
@@ -107,7 +108,11 @@ Future<void> _processStreamingToolUse(
   print('   📡 Starting streaming request to LLM...');
 
   // First stream - get initial response and tool calls
-  await for (final part in model.streamTextParts(conversation)) {
+  final initialPrompt = conversation
+      .map((message) => message.toPromptMessage())
+      .toList(growable: false);
+
+  await for (final part in model.streamTextParts(initialPrompt)) {
     switch (part) {
       case StreamTextStart():
         break;
@@ -184,7 +189,11 @@ Future<void> _processStreamingToolUse(
     stdout.write('      '); // Initial indentation for streaming text
 
     // Second stream - get final response with streaming output
-    await for (final finalPart in model.streamTextParts(conversation)) {
+    final finalPrompt = conversation
+        .map((message) => message.toPromptMessage())
+        .toList(growable: false);
+
+    await for (final finalPart in model.streamTextParts(finalPrompt)) {
       switch (finalPart) {
         case StreamTextDelta(delta: final delta):
           final indentedDelta = delta.replaceAll('\n', '\n      ');

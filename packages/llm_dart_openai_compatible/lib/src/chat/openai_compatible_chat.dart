@@ -1,3 +1,8 @@
+// OpenAI-compatible chat capability built on the legacy ChatMessage
+// ChatCapability. This module converts messages to ModelMessage-based
+// prompts internally but keeps ChatMessage at the public surface.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart';

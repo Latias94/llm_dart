@@ -1,3 +1,8 @@
+// OpenAI chat capability implementation built on the legacy
+// ChatMessage-based ChatCapability surface. Internally it bridges
+// to the structured ModelMessage model for request building.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
@@ -13,14 +18,6 @@ import '../config/openai_config.dart';
 class OpenAIChat implements ChatCapability, PromptChatCapability {
   final OpenAIClient client;
   final OpenAIConfig config;
-
-  // State tracking for stream processing
-  bool _hasReasoningContent = false;
-  String _lastChunk = '';
-  final StringBuffer _thinkingBuffer = StringBuffer();
-  // Track tool call IDs by index for streaming tool calls.
-  // We delegate index → id mapping and delta parsing to [ToolCallStreamState].
-  final ToolCallStreamState _toolCallStreamState = ToolCallStreamState();
 
   OpenAIChat(this.client, this.config);
 
@@ -95,8 +92,8 @@ class OpenAIChat implements ChatCapability, PromptChatCapability {
       options: options,
     );
 
-    // Reset stream state
-    _resetStreamState();
+    // Per-stream state used for reasoning and tool call tracking.
+    final state = _OpenAIStreamState();
 
     try {
       final stream = client.postStreamRaw(
@@ -107,7 +104,7 @@ class OpenAIChat implements ChatCapability, PromptChatCapability {
 
       await for (final chunk in stream) {
         try {
-          final events = _parseStreamEvents(chunk);
+          final events = _parseStreamEvents(chunk, state);
           for (final event in events) {
             yield event;
           }
@@ -390,7 +387,10 @@ class OpenAIChat implements ChatCapability, PromptChatCapability {
   }
 
   /// Parse streaming events
-  List<ChatStreamEvent> _parseStreamEvents(String chunk) {
+  List<ChatStreamEvent> _parseStreamEvents(
+    String chunk,
+    _OpenAIStreamState state,
+  ) {
     final events = <ChatStreamEvent>[];
 
     // Parse SSE chunk - now returns a list of JSON objects
@@ -399,13 +399,8 @@ class OpenAIChat implements ChatCapability, PromptChatCapability {
 
     // Process each JSON object in the chunk
     for (final json in jsonList) {
-      // Use existing stream parsing logic with proper state tracking
-      final parsedEvents = _parseStreamEventWithReasoning(
-        json,
-        _hasReasoningContent,
-        _lastChunk,
-        _thinkingBuffer,
-      );
+      // Use existing stream parsing logic with per-stream state tracking.
+      final parsedEvents = _parseStreamEventWithReasoning(json, state);
 
       events.addAll(parsedEvents);
     }
@@ -413,20 +408,10 @@ class OpenAIChat implements ChatCapability, PromptChatCapability {
     return events;
   }
 
-  /// Reset stream state (call this when starting a new stream)
-  void _resetStreamState() {
-    _hasReasoningContent = false;
-    _lastChunk = '';
-    _thinkingBuffer.clear();
-    _toolCallStreamState.reset();
-  }
-
   /// Parse stream events with reasoning support
   List<ChatStreamEvent> _parseStreamEventWithReasoning(
     Map<String, dynamic> json,
-    bool hasReasoningContent,
-    String lastChunk,
-    StringBuffer thinkingBuffer,
+    _OpenAIStreamState state,
   ) {
     final events = <ChatStreamEvent>[];
     final choices = json['choices'] as List?;
@@ -440,8 +425,8 @@ class OpenAIChat implements ChatCapability, PromptChatCapability {
     final reasoningContent = ReasoningUtils.extractReasoningContent(delta);
 
     if (reasoningContent != null && reasoningContent.isNotEmpty) {
-      thinkingBuffer.write(reasoningContent);
-      _hasReasoningContent = true; // Update state
+      state.thinkingBuffer.write(reasoningContent);
+      state.hasReasoningContent = true; // Update state
       events.add(ThinkingDeltaEvent(reasoningContent));
       return events;
     }
@@ -450,17 +435,17 @@ class OpenAIChat implements ChatCapability, PromptChatCapability {
     final content = delta['content'] as String?;
     if (content != null && content.isNotEmpty) {
       // Update last chunk for reasoning detection
-      _lastChunk = content;
+      state.lastChunk = content;
 
       // Check reasoning status using utils
       final reasoningResult = ReasoningUtils.checkReasoningStatus(
         delta: delta,
-        hasReasoningContent: _hasReasoningContent,
-        lastChunk: lastChunk,
+        hasReasoningContent: state.hasReasoningContent,
+        lastChunk: state.lastChunk,
       );
 
       // Update state based on reasoning detection
-      _hasReasoningContent = reasoningResult.hasReasoningContent;
+      state.hasReasoningContent = reasoningResult.hasReasoningContent;
 
       // Filter out thinking tags for models that use <think> tags
       if (ReasoningUtils.containsThinkingTags(content)) {
@@ -472,7 +457,7 @@ class OpenAIChat implements ChatCapability, PromptChatCapability {
         if (thinkMatch != null) {
           final thinkingText = thinkMatch.group(1)?.trim();
           if (thinkingText != null && thinkingText.isNotEmpty) {
-            thinkingBuffer.write(thinkingText);
+            state.thinkingBuffer.write(thinkingText);
             events.add(ThinkingDeltaEvent(thinkingText));
           }
         }
@@ -494,7 +479,7 @@ class OpenAIChat implements ChatCapability, PromptChatCapability {
     final toolCalls = delta['tool_calls'] as List?;
     if (toolCalls != null && toolCalls.isNotEmpty) {
       final toolCallMap = toolCalls.first as Map<String, dynamic>;
-      final toolCall = _toolCallStreamState.processDelta(toolCallMap);
+      final toolCall = state.toolCallStreamState.processDelta(toolCallMap);
       if (toolCall != null) {
         events.add(ToolCallDeltaEvent(toolCall));
       }
@@ -504,8 +489,9 @@ class OpenAIChat implements ChatCapability, PromptChatCapability {
     final finishReason = choice['finish_reason'] as String?;
     if (finishReason != null) {
       final usage = json['usage'] as Map<String, dynamic>?;
-      final thinkingContent =
-          thinkingBuffer.isNotEmpty ? thinkingBuffer.toString() : null;
+      final thinkingContent = state.thinkingBuffer.isNotEmpty
+          ? state.thinkingBuffer.toString()
+          : null;
 
       final response = OpenAIChatResponse(
         {
@@ -528,13 +514,21 @@ class OpenAIChat implements ChatCapability, PromptChatCapability {
       );
 
       events.add(CompletionEvent(response));
-
-      // Reset state after completion
-      _resetStreamState();
     }
 
     return events;
   }
+}
+
+/// Per-stream state used when parsing OpenAI chat streaming responses.
+class _OpenAIStreamState {
+  bool hasReasoningContent = false;
+  String lastChunk = '';
+  final StringBuffer thinkingBuffer = StringBuffer();
+
+  /// Track tool call IDs by index for streaming tool calls.
+  /// We delegate index → id mapping and delta parsing to [ToolCallStreamState].
+  final ToolCallStreamState toolCallStreamState = ToolCallStreamState();
 }
 
 /// OpenAI chat response implementation

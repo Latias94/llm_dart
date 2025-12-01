@@ -380,7 +380,8 @@ void main() {
 
       for (final provider in providers) {
         final strategy = provider['strategy'] as ProviderDioStrategy;
-        final config = provider['config'];
+        final config =
+            provider['config'] as ProviderHttpConfig; // ensure strong typing
 
         final dio = DioClientFactory.create(
           strategy: strategy,
@@ -469,7 +470,8 @@ void main() {
 
       for (final provider in providers) {
         final strategy = provider['strategy'] as ProviderDioStrategy;
-        final config = provider['config'];
+        final config =
+            provider['config'] as ProviderHttpConfig; // ensure strong typing
 
         final dio = DioClientFactory.create(
           strategy: strategy,
@@ -552,7 +554,8 @@ void main() {
 
       for (final testCase in testCases) {
         final strategy = testCase['strategy'] as ProviderDioStrategy;
-        final config = testCase['config'];
+        final config =
+            testCase['config'] as ProviderHttpConfig; // ensure strong typing
         final expectedHeaders =
             testCase['expectedHeaders'] as Map<String, String>;
 

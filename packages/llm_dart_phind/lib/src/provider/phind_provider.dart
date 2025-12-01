@@ -1,3 +1,8 @@
+// Phind provider implementation built on ChatMessage-based
+// ChatCapability from llm_dart_core. ChatMessage usage here is
+// intentional for compatibility with existing helpers.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../chat/phind_chat.dart';

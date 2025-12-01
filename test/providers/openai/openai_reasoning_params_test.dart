@@ -1,3 +1,7 @@
+// OpenAI reasoning params tests use ChatMessage-based chat flows to
+// validate reasoning-related request shaping for backwards compatibility.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:test/test.dart';

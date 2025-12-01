@@ -1,3 +1,8 @@
+// Phind chat capability implementation based on the ChatMessage
+// ChatCapability interface. Internally this module converts to
+// ModelMessage prompts where needed.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';

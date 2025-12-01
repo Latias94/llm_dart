@@ -1,3 +1,7 @@
+// OpenAI text completion capability implemented on top of the
+// ChatMessage-based chat completions API for compatibility.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../client/openai_client.dart';

@@ -21,3 +21,5 @@ export 'src/responses/openai_responses.dart';
 export 'src/models/openai_models.dart';
 export 'src/http/openai_dio_strategy.dart';
 export 'src/assistants/openai_assistants.dart';
+export 'src/factory/openai_provider_factory.dart'
+    show OpenAIProviderFactory, registerOpenAIProvider;

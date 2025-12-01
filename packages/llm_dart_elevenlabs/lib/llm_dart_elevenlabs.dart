@@ -6,3 +6,5 @@ export 'src/client/elevenlabs_client.dart';
 export 'src/audio/elevenlabs_audio.dart';
 export 'src/models/elevenlabs_models.dart';
 export 'src/provider/elevenlabs_provider.dart';
+export 'src/factory/elevenlabs_provider_factory.dart'
+    show ElevenLabsProviderFactory, registerElevenLabsProvider;

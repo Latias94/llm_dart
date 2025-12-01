@@ -1,3 +1,8 @@
+// Ollama chat capability implementation built on the ChatMessage-based
+// ChatCapability surface. It converts messages to ModelMessage prompts
+// internally for request construction.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';

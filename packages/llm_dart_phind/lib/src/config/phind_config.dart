@@ -8,7 +8,7 @@ const String _defaultModel = 'Phind-70B';
 ///
 /// This class contains all configuration options for the Phind providers.
 /// Phind is a coding-focused AI assistant with specialized models.
-class PhindConfig {
+class PhindConfig implements ProviderHttpConfig {
   final String apiKey;
   final String baseUrl;
   final String model;
@@ -62,6 +62,7 @@ class PhindConfig {
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
   /// Get the original LLMConfig for HTTP configuration
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   /// Check if this model supports tool calling

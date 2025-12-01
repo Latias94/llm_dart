@@ -25,10 +25,10 @@ Future<void> main() async {
   // Recommended reasoning-capable model (see provider profile).
   const modelId = 'gemini-2.5-flash-preview-05-20';
 
-  // Build provider using the OpenAI-compatible interface.
+  // Build a prompt-first LanguageModel using the OpenAI-compatible interface.
   // Reasoning configuration and web search are applied via extensions and
   // translated by the Google-specific request transformers.
-  final provider = await ai()
+  final model = await ai()
       .googleOpenAI()
       .apiKey(apiKey)
       .model(modelId)
@@ -39,21 +39,24 @@ Future<void> main() async {
       .webSearch(
     maxResults: 5,
     blockedDomains: const ['reddit.com', 'twitter.com'],
-  ).build();
+  ).buildLanguageModel();
 
   // Example question that benefits from up-to-date information and reasoning.
-  final messages = [
-    ChatMessage.system(
+  final messages = <ModelMessage>[
+    ModelMessage.systemText(
       'You are a research assistant. Answer concisely and cite key sources.',
     ),
-    ChatMessage.user(
+    ModelMessage.userText(
       'Summarize the latest advances in small language models (SLMs) '
       'for on-device inference. Focus on practical deployment tips.',
     ),
   ];
 
   try {
-    final response = await provider.chat(messages);
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: messages,
+    );
 
     print('\n🧠 Model reply:\n');
     print(response.text ?? '<no text>');

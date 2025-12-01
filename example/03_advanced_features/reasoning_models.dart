@@ -38,15 +38,15 @@ Future<void> demonstrateBasicReasoning(String apiKey) async {
   print('🔍 Basic Reasoning with DeepSeek R1:\n');
 
   try {
-    // Create DeepSeek reasoning model
-    final reasoningProvider = await ai()
+    // Create DeepSeek reasoning model (prompt-first LanguageModel)
+    final reasoningModel = await ai()
         .deepseek()
         .apiKey(apiKey)
         .model('deepseek-reasoner') // DeepSeek reasoning model
         .temperature(0.7)
         .maxTokens(2000)
         .timeout(const Duration(seconds: 300)) // Reasoning can take longer
-        .build();
+        .buildLanguageModel();
 
     final problem = '''
 A farmer has chickens and rabbits. In total, there are 35 heads and 94 legs.
@@ -56,18 +56,25 @@ Show your reasoning step by step.
 
     print('   Problem: $problem');
 
-    final response = await reasoningProvider.chat([ChatMessage.user(problem)]);
+    final messages = <ModelMessage>[
+      ModelMessage.userText(problem),
+    ];
 
-    print('   🤖 AI Response: ${response.text}');
+    final result = await generateTextPromptWithModel(
+      reasoningModel,
+      messages: messages,
+    );
+
+    print('   🤖 AI Response: ${result.text}');
 
     // Check if thinking process is available
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
+    if (result.thinking != null && result.thinking!.isNotEmpty) {
       print(
-          '\n   🧠 Thinking Process Available: ${response.thinking!.length} characters');
+          '\n   🧠 Thinking Process Available: ${result.thinking!.length} characters');
       print('   First 200 chars of thinking:');
-      final thinkingPreview = response.thinking!.length > 200
-          ? '${response.thinking!.substring(0, 200)}...'
-          : response.thinking!;
+      final thinkingPreview = result.thinking!.length > 200
+          ? '${result.thinking!.substring(0, 200)}...'
+          : result.thinking!;
       print('   \x1B[90m$thinkingPreview\x1B[0m'); // Gray color for thinking
     } else {
       print('\n   ℹ️  No thinking process available for this model');
@@ -92,15 +99,15 @@ Future<void> demonstrateComplexProblemSolving(String apiKey) async {
   print('🧩 Complex Problem Solving with DeepSeek R1:\n');
 
   try {
-    // Create DeepSeek reasoning model for complex problems
-    final reasoningProvider = await ai()
+    // Create DeepSeek reasoning model for complex problems (LanguageModel)
+    final reasoningModel = await ai()
         .deepseek()
         .apiKey(apiKey)
         .model('deepseek-reasoner')
         .temperature(0.8)
         .maxTokens(3000)
         .timeout(const Duration(seconds: 300)) // Reasoning can take longer
-        .build();
+        .buildLanguageModel();
 
     final complexProblem = '''
 You are planning a dinner party for 8 people. You have the following constraints:
@@ -117,15 +124,21 @@ Include estimated costs and explain your reasoning.
     print(
         '   Complex Problem: Planning a dinner party with multiple constraints');
 
-    final response =
-        await reasoningProvider.chat([ChatMessage.user(complexProblem)]);
+    final messages = <ModelMessage>[
+      ModelMessage.userText(complexProblem),
+    ];
 
-    print('   🤖 AI Solution: ${response.text}');
+    final result = await generateTextPromptWithModel(
+      reasoningModel,
+      messages: messages,
+    );
+
+    print('   🤖 AI Solution: ${result.text}');
 
     // Analyze the thinking process
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
+    if (result.thinking != null && result.thinking!.isNotEmpty) {
       print('\n   🧠 Thinking Process Analysis:');
-      final thinking = response.thinking!;
+      final thinking = result.thinking!;
       print('      • Total thinking length: ${thinking.length} characters');
       print(
           '      • Estimated thinking time: ${(thinking.length / 100).round()} seconds');
@@ -175,14 +188,14 @@ Future<void> demonstrateStreamingReasoning(String apiKey) async {
   print('=' * 50);
 
   try {
-    // Create DeepSeek reasoning model for streaming
-    final reasoningProvider = await ai()
+    // Create DeepSeek reasoning model for streaming (LanguageModel)
+    final reasoningModel = await ai()
         .deepseek()
         .apiKey(apiKey)
         .model('deepseek-reasoner')
         .temperature(0.7)
         .maxTokens(2000)
-        .build();
+        .buildLanguageModel();
 
     final problem =
         'What is 15 + 27? Please show your calculation step by step.';
@@ -194,9 +207,15 @@ Future<void> demonstrateStreamingReasoning(String apiKey) async {
     var responseContent = StringBuffer();
     var isThinking = true;
 
-    // Send streaming chat request and handle events
-    await for (final event
-        in reasoningProvider.chatStream([ChatMessage.user(problem)])) {
+    // Send streaming request via prompt-first helper and handle events
+    final messages = <ModelMessage>[
+      ModelMessage.userText(problem),
+    ];
+
+    await for (final event in streamTextWithModel(
+      reasoningModel,
+      promptMessages: messages,
+    )) {
       switch (event) {
         case ThinkingDeltaEvent(delta: final delta):
           // Collect thinking/reasoning content
@@ -281,25 +300,31 @@ and finally 40 mph for 30 minutes, what is the total distance traveled?
 /// Test DeepSeek reasoning model
 Future<void> testDeepSeekReasoningModel(String apiKey, String problem) async {
   try {
-    final reasoningProvider = await ai()
+    final reasoningModel = await ai()
         .deepseek()
         .apiKey(apiKey)
         .model('deepseek-r1') // DeepSeek reasoning model
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
 
     final stopwatch = Stopwatch()..start();
-    final response = await reasoningProvider.chat([ChatMessage.user(problem)]);
+    final result = await generateTextPromptWithModel(
+      reasoningModel,
+      messages: [
+        ModelMessage.userText(problem),
+      ],
+    );
     stopwatch.stop();
 
     print('\n   🧠 DeepSeek Reasoning Model (deepseek-r1):');
     print('      Response time: ${stopwatch.elapsedMilliseconds}ms');
-    print('      Answer: ${response.text}');
+    print('      Answer: ${result.text}');
 
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
-      print('      Thinking process: ${response.thinking!.length} chars');
+    if (result.thinking != null && result.thinking!.isNotEmpty) {
+      print('      Thinking process: ${result.thinking!.length} chars');
+      final sample = result.thinking!;
       print(
-          '      Sample thinking: \x1B[90m${response.thinking!.substring(0, response.thinking!.length > 100 ? 100 : response.thinking!.length)}...\x1B[0m');
+          '      Sample thinking: \x1B[90m${sample.substring(0, sample.length > 100 ? 100 : sample.length)}...\x1B[0m');
     }
   } catch (e, stackTrace) {
     print('\n   ❌ DeepSeek reasoning model test failed!');
@@ -313,20 +338,25 @@ Future<void> testDeepSeekReasoningModel(String apiKey, String problem) async {
 /// Test standard model
 Future<void> testStandardModel(String apiKey, String problem) async {
   try {
-    final standardProvider = await ai()
+    final standardModel = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini') // Standard model
         .temperature(0.3)
-        .build();
+        .buildLanguageModel();
 
     final stopwatch = Stopwatch()..start();
-    final response = await standardProvider.chat([ChatMessage.user(problem)]);
+    final result = await generateTextPromptWithModel(
+      standardModel,
+      messages: [
+        ModelMessage.userText(problem),
+      ],
+    );
     stopwatch.stop();
 
     print('\n   📊 Standard Model (gpt-4o-mini):');
     print('      Response time: ${stopwatch.elapsedMilliseconds}ms');
-    print('      Answer: ${response.text}');
+    print('      Answer: ${result.text}');
   } catch (e) {
     print('\n   ❌ Standard model test failed!');
     print('   Error type: ${e.runtimeType}');
@@ -340,20 +370,25 @@ Future<void> testStandardModel(String apiKey, String problem) async {
 /// Test Anthropic model
 Future<void> testAnthropicModel(String apiKey, String problem) async {
   try {
-    final anthropicProvider = await ai()
+    final anthropicModel = await ai()
         .anthropic()
         .apiKey(apiKey)
         .model('claude-3-5-haiku-20241022')
         .temperature(0.3)
-        .build();
+        .buildLanguageModel();
 
     final stopwatch = Stopwatch()..start();
-    final response = await anthropicProvider.chat([ChatMessage.user(problem)]);
+    final result = await generateTextPromptWithModel(
+      anthropicModel,
+      messages: [
+        ModelMessage.userText(problem),
+      ],
+    );
     stopwatch.stop();
 
     print('\n   🎭 Anthropic Model (Claude):');
     print('      Response time: ${stopwatch.elapsedMilliseconds}ms');
-    print('      Answer: ${response.text}');
+    print('      Answer: ${result.text}');
   } catch (e) {
     print('\n   ❌ Anthropic model test failed!');
     print('   Error type: ${e.runtimeType}');
@@ -369,13 +404,13 @@ Future<void> demonstrateThinkingProcessAnalysis(String apiKey) async {
   print('🔬 Thinking Process Analysis with DeepSeek R1:\n');
 
   try {
-    final deepseekProvider = await ai()
+    final deepseekModel = await ai()
         .deepseek()
         .apiKey(apiKey)
         .model('deepseek-r1')
         .temperature(0.7)
         .maxTokens(3000)
-        .build();
+        .buildLanguageModel();
 
     final analyticalProblem = '''
 Analyze the following business scenario and provide recommendations:
@@ -392,13 +427,17 @@ What are the top 3 priorities to address, and why?
 
     print('   Business Problem: Coffee shop losing customers');
 
-    final response =
-        await deepseekProvider.chat([ChatMessage.user(analyticalProblem)]);
+    final result = await generateTextPromptWithModel(
+      deepseekModel,
+      messages: [
+        ModelMessage.userText(analyticalProblem),
+      ],
+    );
 
-    print('   🤖 AI Analysis: ${response.text}');
+    print('   🤖 AI Analysis: ${result.text}');
 
     // Analyze response structure
-    final responseText = response.text ?? '';
+    final responseText = result.text ?? '';
     print('\n   📈 Response Analysis:');
     print('      • Response length: ${responseText.length} characters');
     print('      • Number of paragraphs: ${responseText.split('\n\n').length}');

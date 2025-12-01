@@ -1,4 +1,10 @@
+// Embedding middleware tests exercise ChatMessage-based ChatCapability
+// alongside EmbeddingCapability to ensure compatibility with the
+// legacy chat surface.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import '../utils/mock_provider_factory.dart';
 

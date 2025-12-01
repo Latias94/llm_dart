@@ -1,4 +1,9 @@
+// Message resolver tests validate conversions between prompt-first
+// ModelMessage inputs and legacy ChatMessage-based chat histories.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart/utils/message_resolver.dart';
 import 'package:test/test.dart';
 

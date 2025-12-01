@@ -1,3 +1,8 @@
+// xAI provider implementation built on ChatMessage-based chat and
+// embedding capabilities from llm_dart_core. ChatMessage usage is
+// intentional here for compatibility with existing helpers.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../chat/xai_chat.dart';
@@ -20,6 +25,20 @@ class XAIProvider
   }
 
   String get providerName => 'xAI';
+
+  /// Superset of capabilities that xAI models can support.
+  ///
+  /// Individual models may only support a subset of these at runtime,
+  /// as reflected by [supportedCapabilities].
+  static const Set<LLMCapability> baseCapabilities = {
+    LLMCapability.chat,
+    LLMCapability.streaming,
+    LLMCapability.embedding,
+    LLMCapability.toolCalling,
+    LLMCapability.vision,
+    LLMCapability.reasoning,
+    LLMCapability.liveSearch,
+  };
 
   /// Expose client for tests and advanced usage.
   XAIClient get client => _client;

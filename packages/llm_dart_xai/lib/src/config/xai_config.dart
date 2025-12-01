@@ -2,7 +2,8 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'search_parameters.dart';
 
-class XAIConfig {
+/// xAI provider configuration for the sub-package.
+class XAIConfig implements ProviderHttpConfig {
   final String apiKey;
   final String baseUrl;
   final String model;
@@ -118,6 +119,7 @@ class XAIConfig {
 
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   bool get supportsReasoning => model.contains('grok');

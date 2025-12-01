@@ -1,3 +1,8 @@
+// DeepSeek chat capability implementation based on the ChatMessage
+// ChatCapability surface. It converts to ModelMessage prompts for
+// request building behind the scenes.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';

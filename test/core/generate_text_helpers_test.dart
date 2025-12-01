@@ -1,4 +1,9 @@
+// Tests for high-level text helpers. These tests intentionally use
+// ChatMessage to verify backwards compatibility of the helper APIs.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' show TextContentPart;
 import '../utils/mock_language_model.dart';
 import '../utils/mock_provider_factory.dart';

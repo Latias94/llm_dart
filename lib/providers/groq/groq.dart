@@ -1,3 +1,8 @@
+// The Groq provider facade retains ChatMessage-based examples and
+// helpers to ease migration from older versions. Prompt-first APIs
+// based on ModelMessage are recommended for new code.
+// ignore_for_file: deprecated_member_use
+
 /// Modular Groq Provider
 ///
 /// This library provides a modular implementation of the Groq provider

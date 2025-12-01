@@ -10,7 +10,7 @@ import '../models/elevenlabs_models.dart';
 /// This is the main provider class that implements audio capabilities
 /// and delegates to specialized modules for different functionalities.
 /// ElevenLabs specializes in text-to-speech and speech-to-text services.
-class ElevenLabsProvider implements ChatCapability, AudioCapability {
+class ElevenLabsProvider implements AudioCapability {
   final ElevenLabsConfig config;
   final ElevenLabsClient client;
   late final ElevenLabsAudio audio;
@@ -23,49 +23,14 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
 
   String get providerName => 'ElevenLabs';
 
-  // ChatCapability implementation (not supported)
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    throw const ProviderError('ElevenLabs does not support chat functionality');
-  }
-
-  @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chatWithTools(
-      messages,
-      null,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    throw const ProviderError('ElevenLabs does not support chat functionality');
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async* {
-    yield ErrorEvent(
-        const ProviderError('ElevenLabs does not support chat functionality'));
-  }
+  /// Superset of capabilities that ElevenLabs models can support.
+  ///
+  /// Individual models may only support a subset of these at runtime,
+  /// as reflected by [supportedFeatures].
+  static const Set<LLMCapability> baseCapabilities = {
+    LLMCapability.textToSpeech,
+    LLMCapability.speechToText,
+  };
 
   // AudioCapability implementation (delegated to audio module)
 

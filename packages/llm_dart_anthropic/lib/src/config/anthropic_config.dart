@@ -4,7 +4,7 @@ const String _defaultBaseUrl = 'https://api.anthropic.com/v1/';
 const String _defaultModel = 'claude-sonnet-4-20250514';
 
 /// Anthropic provider configuration (sub-package version).
-class AnthropicConfig {
+class AnthropicConfig implements ProviderHttpConfig {
   final String apiKey;
   final String baseUrl;
   final String model;
@@ -117,6 +117,7 @@ class AnthropicConfig {
 
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   bool get supportsReasoning {

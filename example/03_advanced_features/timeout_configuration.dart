@@ -40,17 +40,21 @@ Future<void> example1GlobalTimeoutOnly(String apiKey) async {
   print('   Result: connection=2min, receive=2min, send=2min\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(minutes: 2)) // Global timeout for all operations
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider
-        .chat([ChatMessage.user('Hello! Please respond briefly.')]);
+    final result = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText('Hello! Please respond briefly.'),
+      ],
+    );
 
-    print('   ✅ Success: ${response.text}\n');
+    print('   ✅ Success: ${result.text}\n');
   } catch (e) {
     print('   ❌ Error: $e\n');
   }
@@ -64,7 +68,7 @@ Future<void> example2HttpTimeoutsOnly(String apiKey) async {
   print('   Result: connection=30s, receive=5min, send=1min\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
@@ -72,12 +76,18 @@ Future<void> example2HttpTimeoutsOnly(String apiKey) async {
             .connectionTimeout(Duration(seconds: 30)) // Quick connection
             .receiveTimeout(Duration(minutes: 5)) // Long response wait
             .sendTimeout(Duration(minutes: 1))) // Medium send time
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider
-        .chat([ChatMessage.user('Explain quantum computing in one sentence.')]);
+    final result = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText(
+          'Explain quantum computing in one sentence.',
+        ),
+      ],
+    );
 
-    print('   ✅ Success: ${response.text}\n');
+    print('   ✅ Success: ${result.text}\n');
   } catch (e) {
     print('   ❌ Error: $e\n');
   }
@@ -91,19 +101,25 @@ Future<void> example3MixedConfiguration(String apiKey) async {
   print('   Result: connection=2min, receive=10min, send=2min\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(minutes: 2)) // Global default: 2 minutes
         .http((http) => http.receiveTimeout(
             Duration(minutes: 10))) // Override only receive timeout
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider
-        .chat([ChatMessage.user('What are the benefits of renewable energy?')]);
+    final result = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText(
+          'What are the benefits of renewable energy?',
+        ),
+      ],
+    );
 
-    print('   ✅ Success: ${response.text}\n');
+    print('   ✅ Success: ${result.text}\n');
   } catch (e) {
     print('   ❌ Error: $e\n');
   }
@@ -117,7 +133,7 @@ Future<void> example4EnterpriseScenario(String apiKey) async {
   print('   Result: All timeouts extended for corporate network\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
@@ -132,14 +148,18 @@ Future<void> example4EnterpriseScenario(String apiKey) async {
               'X-Corporate-ID': 'dept-ai-research',
               'X-Environment': 'production',
             }).enableLogging(false)) // Disabled in production
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Summarize the latest AI trends for our quarterly report.')
-    ]);
+    final result = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText(
+          'Summarize the latest AI trends for our quarterly report.',
+        ),
+      ],
+    );
 
-    print('   ✅ Success: ${response.text}\n');
+    print('   ✅ Success: ${result.text}\n');
   } catch (e) {
     print('   ❌ Error: $e\n');
   }
@@ -153,7 +173,7 @@ Future<void> example5DevelopmentScenario(String apiKey) async {
   print('   Result: Quick feedback for development\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
@@ -165,12 +185,16 @@ Future<void> example5DevelopmentScenario(String apiKey) async {
               'X-Environment': 'development',
               'X-Debug-Mode': 'true',
             }).enableLogging(true)) // Enabled for debugging
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider
-        .chat([ChatMessage.user('Test message for development.')]);
+    final result = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText('Test message for development.'),
+      ],
+    );
 
-    print('   ✅ Success: ${response.text}\n');
+    print('   ✅ Success: ${result.text}\n');
   } catch (e) {
     print('   ❌ Error: $e\n');
   }

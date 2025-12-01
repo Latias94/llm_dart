@@ -1,6 +1,11 @@
+// Structured object helpers tests use ChatMessage-based prompts to
+// verify backwards compatibility of generateObject and streamObject.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import '../utils/mock_provider_factory.dart';
 

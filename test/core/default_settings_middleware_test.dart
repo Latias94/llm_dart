@@ -1,4 +1,9 @@
+// Default settings middleware tests work on ChatMessage-based chat
+// flows to validate system prompt injection and default tooling.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import '../utils/mock_provider_factory.dart';
 

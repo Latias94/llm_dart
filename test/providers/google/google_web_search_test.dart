@@ -1,4 +1,10 @@
+// Google web search tests use ChatMessage-based prompts to verify
+// web search configuration and payload shaping for the Google chat
+// implementation.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import 'google_test_utils.dart';
 

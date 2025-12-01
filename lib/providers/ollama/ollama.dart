@@ -1,3 +1,8 @@
+// The Ollama provider facade continues to support ChatMessage-based
+// chat/completion examples for existing code. Prompt-first patterns
+// using ModelMessage are recommended for new integrations.
+// ignore_for_file: deprecated_member_use
+
 /// Modular Ollama Provider
 ///
 /// This library provides a modular implementation of the Ollama provider

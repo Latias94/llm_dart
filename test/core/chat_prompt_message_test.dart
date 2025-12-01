@@ -1,3 +1,7 @@
+// Chat prompt mapping tests verify conversions between ChatMessage
+// and the structured ModelMessage prompt model.
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'package:test/test.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 

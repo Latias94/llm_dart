@@ -33,7 +33,7 @@ void main() async {
 /// AI-powered web service
 class AIWebService {
   late HttpServer _server;
-  late ChatCapability _aiProvider;
+  late LanguageModel _model;
   final Map<String, int> _rateLimits = {}; // Simple rate limiting
   final List<String> _validApiKeys = [
     'demo-key-123',
@@ -74,15 +74,15 @@ class AIWebService {
   Future<void> _initializeAI() async {
     final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
 
-    _aiProvider = await ai()
+    _model = await ai()
         .groq()
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.7)
         .maxTokens(500)
-        .build();
+        .buildLanguageModel();
 
-    print('✅ AI provider initialized');
+    print('✅ AI model initialized');
   }
 
   /// Build system prompt string for a given content generation type.
@@ -99,30 +99,27 @@ class AIWebService {
     }
   }
 
-  /// Build ChatMessage list from a prompt-first representation.
+  /// Build a prompt-first ModelMessage conversation from simple inputs.
   ///
-  /// This keeps the internal logic working with [ChatMessage] while
-  /// demonstrating the recommended [ModelMessage] / [ChatPromptBuilder]
-  /// pattern for constructing prompts.
-  List<ChatMessage> _buildChatMessages({
+  /// This demonstrates the recommended [ModelMessage] /
+  /// [ChatPromptBuilder] pattern for constructing prompts.
+  List<ModelMessage> _buildPromptMessages({
     String? systemPrompt,
     required String userMessage,
   }) {
-    final prompts = <ModelMessage>[];
+    final messages = <ModelMessage>[];
 
     if (systemPrompt != null && systemPrompt.isNotEmpty) {
-      prompts.add(
+      messages.add(
         ChatPromptBuilder.system().text(systemPrompt).build(),
       );
     }
 
-    prompts.add(
+    messages.add(
       ChatPromptBuilder.user().text(userMessage).build(),
     );
 
-    return prompts
-        .map((prompt) => ChatMessage.fromPromptMessage(prompt))
-        .toList();
+    return messages;
   }
 
   /// Handle incoming HTTP requests
@@ -195,27 +192,30 @@ class AIWebService {
       print(
           '📨 Chat request: ${message.substring(0, message.length > 50 ? 50 : message.length)}...');
 
-      // Build messages using prompt-first modeling and bridge to ChatMessage
-      final messages = _buildChatMessages(
+      // Build messages using prompt-first modeling (ModelMessage)
+      final messages = _buildPromptMessages(
         systemPrompt: systemPrompt,
         userMessage: message,
       );
 
       // Get AI response
       final stopwatch = Stopwatch()..start();
-      final response = await _aiProvider.chat(messages);
+      final result = await generateTextPromptWithModel(
+        _model,
+        messages: messages,
+      );
       stopwatch.stop();
 
       // Send response
       final responseData = {
-        'response': response.text,
-        'model': 'llama-3.1-8b-instant',
+        'response': result.text,
+        'model': _model.modelId,
         'response_time_ms': stopwatch.elapsedMilliseconds,
-        'usage': response.usage != null
+        'usage': result.usage != null
             ? {
-                'prompt_tokens': response.usage!.promptTokens,
-                'completion_tokens': response.usage!.completionTokens,
-                'total_tokens': response.usage!.totalTokens,
+                'prompt_tokens': result.usage!.promptTokens,
+                'completion_tokens': result.usage!.completionTokens,
+                'total_tokens': result.usage!.totalTokens,
               }
             : null,
         'timestamp': DateTime.now().toIso8601String(),
@@ -262,19 +262,22 @@ class AIWebService {
       // Build system prompt based on type
       final systemPrompt = _buildSystemPromptForType(type);
 
-      final messages = _buildChatMessages(
+      final messages = _buildPromptMessages(
         systemPrompt: systemPrompt,
         userMessage: prompt,
       );
 
       final stopwatch = Stopwatch()..start();
-      final response = await _aiProvider.chat(messages);
+      final response = await generateTextPromptWithModel(
+        _model,
+        messages: messages,
+      );
       stopwatch.stop();
 
       final responseData = {
         'content': response.text,
         'type': type,
-        'model': 'llama-3.1-8b-instant',
+        'model': _model.modelId,
         'response_time_ms': stopwatch.elapsedMilliseconds,
         'timestamp': DateTime.now().toIso8601String(),
       };
@@ -294,15 +297,19 @@ class AIWebService {
     }
 
     try {
-      // Test AI provider
-      final testResponse = await _aiProvider
-          .chat([ChatMessage.user('Health check - respond with OK')]);
+      // Test AI model with a simple prompt-first call
+      final testResult = await generateTextPromptWithModel(
+        _model,
+        messages: [
+          ModelMessage.userText('Health check - respond with OK'),
+        ],
+      );
 
       final healthData = {
         'status': 'healthy',
         'ai_provider': 'groq',
-        'model': 'llama-3.1-8b-instant',
-        'ai_responsive': testResponse.text != null,
+        'model': _model.modelId,
+        'ai_responsive': testResult.text != null,
         'timestamp': DateTime.now().toIso8601String(),
         'uptime_seconds': DateTime.now().millisecondsSinceEpoch ~/ 1000,
       };

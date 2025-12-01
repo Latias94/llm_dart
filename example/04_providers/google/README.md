@@ -203,7 +203,7 @@ OpenAI-compatible interface via `googleOpenAI()`. This is useful when you want:
 ### Recommended Usage Pattern
 
 ```dart
-final provider = await ai()
+final model = await ai()
     .googleOpenAI()
     .apiKey(Platform.environment['GOOGLE_API_KEY']!)
     // Reasoning-capable model with OpenAI-compatible endpoint.
@@ -216,14 +216,19 @@ final provider = await ai()
       maxResults: 5,
       blockedDomains: const ['reddit.com', 'twitter.com'],
     )
-    .build();
+    .buildLanguageModel();
 
-final response = await provider.chat([
-  ChatMessage.user('Explain quantization strategies for on-device LLMs.'),
-]);
+final result = await generateTextPromptWithModel(
+  model,
+  messages: [
+    ModelMessage.userText(
+      'Explain quantization strategies for on-device LLMs.',
+    ),
+  ],
+);
 
-print(response.text);
-print(response.thinking); // Reasoning content when available
+print(result.text);
+print(result.thinking); // Reasoning content when available
 ```
 
 ### When to Use `google()` vs `googleOpenAI()`

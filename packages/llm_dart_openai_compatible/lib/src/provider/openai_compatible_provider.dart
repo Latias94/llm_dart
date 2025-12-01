@@ -1,3 +1,8 @@
+// Generic provider implementation for OpenAI-compatible vendors built
+// on the ChatMessage-based ChatCapability surface from llm_dart_core.
+// ChatMessage usage is intentional here for compatibility.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:math' as math;
 
 import 'package:llm_dart_core/llm_dart_core.dart';

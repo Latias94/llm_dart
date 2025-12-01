@@ -186,11 +186,11 @@ void main() {
 
     group('Provider Interface Compliance', () {
       test('should implement BaseProviderFactory', () {
-        expect(factory, isA<BaseProviderFactory<ChatCapability>>());
+        expect(factory, isA<BaseProviderFactory>());
       });
 
       test('should implement LLMProviderFactory', () {
-        expect(factory, isA<LLMProviderFactory<ChatCapability>>());
+        expect(factory, isA<LLMProviderFactory>());
       });
 
       test('should create providers that implement required interfaces', () {
@@ -202,8 +202,9 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<ChatCapability>());
+        expect(provider, isA<ElevenLabsProvider>());
         expect(provider, isA<AudioCapability>());
+        expect(provider, isNot(isA<ChatCapability>()));
       });
     });
 

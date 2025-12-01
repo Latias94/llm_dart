@@ -12,6 +12,8 @@ export 'src/core/cancellation.dart';
 export 'src/core/capability.dart';
 export 'src/core/config.dart';
 export 'src/core/config_extensions.dart';
+export 'src/core/provider_registry.dart';
+export 'src/core/provider_factory_base.dart';
 export 'src/core/agent.dart';
 
 // Core models
@@ -28,6 +30,7 @@ export 'src/models/rerank_models.dart';
 
 // Core utilities
 export 'src/utils/reasoning_utils.dart';
+export 'src/utils/structured_output_utils.dart';
 
 // Core tool validation
 export 'src/core/tool_validator.dart';

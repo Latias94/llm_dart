@@ -1,3 +1,9 @@
+// Chat and prompt models. This file defines both the legacy ChatMessage
+// model (kept for backwards compatibility) and the newer ModelMessage +
+// ChatContentPart prompt model. References to ChatMessage within this
+// file are intentional.
+// ignore_for_file: deprecated_member_use_from_same_package
+
 import 'dart:convert';
 import 'tool_models.dart';
 
@@ -477,6 +483,51 @@ class ModelMessage {
     required this.parts,
     this.providerOptions = const {},
   });
+
+  /// Convenience constructor for a user text message.
+  ///
+  /// This is equivalent to creating a [ModelMessage] with a single
+  /// [TextContentPart] and [ChatRole.user].
+  factory ModelMessage.userText(
+    String text, {
+    Map<String, dynamic> providerOptions = const {},
+  }) {
+    return ModelMessage(
+      role: ChatRole.user,
+      parts: <ChatContentPart>[TextContentPart(text)],
+      providerOptions: providerOptions,
+    );
+  }
+
+  /// Convenience constructor for a system text message.
+  ///
+  /// This is equivalent to creating a [ModelMessage] with a single
+  /// [TextContentPart] and [ChatRole.system].
+  factory ModelMessage.systemText(
+    String text, {
+    Map<String, dynamic> providerOptions = const {},
+  }) {
+    return ModelMessage(
+      role: ChatRole.system,
+      parts: <ChatContentPart>[TextContentPart(text)],
+      providerOptions: providerOptions,
+    );
+  }
+
+  /// Convenience constructor for an assistant text message.
+  ///
+  /// This is equivalent to creating a [ModelMessage] with a single
+  /// [TextContentPart] and [ChatRole.assistant].
+  factory ModelMessage.assistantText(
+    String text, {
+    Map<String, dynamic> providerOptions = const {},
+  }) {
+    return ModelMessage(
+      role: ChatRole.assistant,
+      parts: <ChatContentPart>[TextContentPart(text)],
+      providerOptions: providerOptions,
+    );
+  }
 }
 
 @Deprecated(

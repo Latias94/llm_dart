@@ -1,3 +1,8 @@
+// Google chat capability implementation built on ChatMessage-based
+// ChatCapability. Internally this module works with ModelMessage
+// prompts but keeps ChatMessage for compatibility with llm_dart_core.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:convert';
 
 import 'package:dio/dio.dart';

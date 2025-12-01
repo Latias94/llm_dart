@@ -1,3 +1,7 @@
+// Response message view tests convert between ChatMessage-based views
+// and the structured content-part representation to validate mapping.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
 

@@ -1,3 +1,8 @@
+// The Anthropic provider facade exposes ChatMessage-based chat usage
+// in its public surface for compatibility. For new code, prefer the
+// prompt-first ModelMessage APIs from llm_dart_core.
+// ignore_for_file: deprecated_member_use
+
 /// Modular Anthropic Provider
 ///
 /// This library provides a modular implementation of the Anthropic provider
@@ -25,6 +30,7 @@ library;
 
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic_impl;
 import 'package:llm_dart_core/llm_dart_core.dart';
+import '../../utils/provider_registry.dart' show LanguageModelProviderFactory;
 
 export 'package:llm_dart_anthropic/llm_dart_anthropic.dart'
     show AnthropicConfig, AnthropicProvider;
@@ -87,7 +93,7 @@ class AnthropicProviderSettings {
 /// Provides a model-centric API similar to `createAnthropic` in the
 /// Vercel AI SDK. It returns [LanguageModel] instances that can be
 /// passed into helpers like [generateTextWithModel] or [runAgentText].
-class Anthropic {
+class Anthropic implements LanguageModelProviderFactory {
   final AnthropicProviderSettings _settings;
   final String _baseUrl;
   final String _providerName;
@@ -102,6 +108,7 @@ class Anthropic {
   /// Create a language model for text generation.
   ///
   /// Alias for [chat].
+  @override
   LanguageModel languageModel(String modelId) => chat(modelId);
 
   /// Create a chat model for text generation.

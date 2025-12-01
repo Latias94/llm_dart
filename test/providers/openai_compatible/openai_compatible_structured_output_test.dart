@@ -1,4 +1,10 @@
+// OpenAI-compatible structured output tests use ChatMessage-based
+// prompts to validate structured JSON responses via the compatibility
+// layer.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:test/test.dart';
 

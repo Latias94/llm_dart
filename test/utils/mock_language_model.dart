@@ -1,3 +1,8 @@
+// Mock implementation of LanguageModel for unit tests. This type
+// intentionally uses the legacy ChatMessage-based LanguageModel
+// surface to verify compatibility with existing helpers.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:async';
 import 'dart:convert';
 
@@ -18,11 +23,8 @@ class MockLanguageModel implements LanguageModel {
   @override
   final LLMConfig config;
 
-  /// Last raw ChatMessage list passed into any method.
-  List<ChatMessage>? lastMessages;
-
-  /// Last prompt-first ModelMessage list derived from [lastMessages].
-  List<ModelMessage>? lastPromptMessages;
+  /// Last prompt-first [ModelMessage] list passed into any method.
+  List<ModelMessage>? lastMessages;
 
   /// Last per-call options passed into any `*WithOptions` method.
   LanguageModelCallOptions? lastOptions;
@@ -54,21 +56,14 @@ class MockLanguageModel implements LanguageModel {
     this.doStream,
   }) : config = config ?? LLMConfig(baseUrl: '', model: 'mock-model');
 
-  List<ModelMessage> _toPromptMessages(List<ChatMessage> messages) {
-    return messages
-        .map((message) => message.toPromptMessage())
-        .toList(growable: false);
-  }
-
-  void _record(List<ChatMessage> messages, LanguageModelCallOptions? options) {
+  void _record(List<ModelMessage> messages, LanguageModelCallOptions? options) {
     lastMessages = messages;
-    lastPromptMessages = _toPromptMessages(messages);
     lastOptions = options;
   }
 
   @override
   Future<GenerateTextResult> generateText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return generateTextWithOptions(
@@ -80,7 +75,7 @@ class MockLanguageModel implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamText(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return streamTextWithOptions(
@@ -92,7 +87,7 @@ class MockLanguageModel implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextParts(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return adaptStreamText(
@@ -103,7 +98,7 @@ class MockLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObject<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     CancellationToken? cancelToken,
   }) {
     return generateObjectWithOptions<T>(
@@ -116,7 +111,7 @@ class MockLanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generateTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -124,7 +119,7 @@ class MockLanguageModel implements LanguageModel {
 
     if (doGenerate != null) {
       return doGenerate!(
-        lastPromptMessages ?? const <ModelMessage>[],
+        lastMessages ?? const <ModelMessage>[],
         options,
       );
     }
@@ -144,7 +139,7 @@ class MockLanguageModel implements LanguageModel {
 
   @override
   Stream<ChatStreamEvent> streamTextWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -152,7 +147,7 @@ class MockLanguageModel implements LanguageModel {
 
     if (doStream != null) {
       return doStream!(
-        lastPromptMessages ?? const <ModelMessage>[],
+        lastMessages ?? const <ModelMessage>[],
         options,
       );
     }
@@ -165,7 +160,7 @@ class MockLanguageModel implements LanguageModel {
 
   @override
   Stream<StreamTextPart> streamTextPartsWithOptions(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
@@ -181,7 +176,7 @@ class MockLanguageModel implements LanguageModel {
   @override
   Future<GenerateObjectResult<T>> generateObjectWithOptions<T>(
     OutputSpec<T> output,
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {

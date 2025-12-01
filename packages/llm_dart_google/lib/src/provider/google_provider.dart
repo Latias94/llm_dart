@@ -1,3 +1,8 @@
+// Google provider implementation built on ChatMessage-based
+// capabilities from llm_dart_core. ChatMessage is used here
+// intentionally for compatibility with existing helpers.
+// ignore_for_file: deprecated_member_use
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../chat/google_chat.dart';
@@ -173,6 +178,22 @@ class GoogleProvider
   }
 
   String get providerName => 'Google';
+
+  /// Superset of capabilities that Google models can support.
+  ///
+  /// Individual models may only support a subset of these at runtime,
+  /// as reflected by [supportedCapabilities].
+  static const Set<LLMCapability> baseCapabilities = {
+    LLMCapability.chat,
+    LLMCapability.streaming,
+    LLMCapability.toolCalling,
+    LLMCapability.embedding,
+    LLMCapability.reasoning,
+    LLMCapability.vision,
+    LLMCapability.imageGeneration,
+    LLMCapability.textToSpeech,
+    LLMCapability.streamingTextToSpeech,
+  };
 
   @override
   Set<LLMCapability> get supportedCapabilities => {

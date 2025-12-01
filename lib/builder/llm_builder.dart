@@ -1,3 +1,9 @@
+// This file intentionally uses the legacy ChatMessage model as the primary
+// surface area for high-level helpers (generateText/streamText/etc.).
+// New code should prefer ModelMessage + ChatContentPart, but the builder
+// keeps ChatMessage-based APIs for backwards compatibility.
+// ignore_for_file: deprecated_member_use
+
 import 'dart:math' as math;
 
 import '../core/registry.dart';
@@ -75,6 +81,11 @@ class LLMBuilder {
 
   /// Sets the provider to use (new registry-based approach)
   LLMBuilder provider(String providerId) {
+    // Ensure built-in providers are registered before resolving defaults.
+    // This mirrors the previous behavior where providers were registered
+    // lazily on first use by the registry itself.
+    registerBuiltinProviders();
+
     final previous = _config;
     _providerId = providerId;
 
@@ -121,13 +132,35 @@ class LLMBuilder {
   /// ElevenLabs. Audio-centric providers remain fully usable via the
   /// capability factory methods (e.g. [buildAudio]) and audio helpers.
   void _ensureChatCapable(String operation) {
-    if (_providerId == 'elevenlabs') {
-      throw UnsupportedCapabilityError(
-        'Provider "elevenlabs" does not support $operation. '
-        'ElevenLabs specializes in audio capabilities. '
-        'Use buildAudio(), generateSpeech(), transcribe(), or '
-        'transcribeFile() instead.',
-      );
+    if (_providerId == null) {
+      throw const GenericError('No provider specified');
+    }
+
+    final providerId = _providerId!;
+
+    // Use the registry's capability information to determine whether
+    // the selected provider can handle chat/text operations.
+    if (!LLMProviderRegistry.supportsCapability(
+      providerId,
+      LLMCapability.chat,
+    )) {
+      final buffer = StringBuffer()
+        ..write('Provider "$providerId" does not support $operation. ');
+
+      if (providerId == 'elevenlabs') {
+        buffer
+          ..write('ElevenLabs specializes in audio capabilities. ')
+          ..write(
+            'Use buildAudio(), generateSpeech(), transcribe(), or '
+            'transcribeFile() instead.',
+          );
+      } else {
+        buffer.write(
+          'Check the provider documentation for supported capabilities.',
+        );
+      }
+
+      throw UnsupportedCapabilityError(buffer.toString());
     }
   }
 
@@ -821,6 +854,11 @@ class LLMBuilder {
       throw const GenericError('No provider specified');
     }
 
+    // Ensure the selected provider exposes chat capabilities before
+    // going through the registry. This fails fast for audio-only
+    // providers such as ElevenLabs.
+    _ensureChatCapable('chat capabilities');
+
     // Use the registry to create the provider
     return LLMProviderRegistry.createProvider(_providerId!, _config);
   }
@@ -903,14 +941,23 @@ class LLMBuilder {
   /// final voices = await audioProvider.getVoices();
   /// ```
   Future<AudioCapability> buildAudio() async {
-    final provider = await build();
-    if (provider is! AudioCapability) {
+    if (_providerId == null) {
+      throw const GenericError('No provider specified');
+    }
+
+    try {
+      // Use the typed factory helper so that audio-only providers like
+      // ElevenLabs can be created without pretending to support chat.
+      return LLMProviderRegistry.createProviderTyped<AudioCapability>(
+        _providerId!,
+        _config,
+      );
+    } on UnsupportedCapabilityError {
       throw UnsupportedCapabilityError(
         'Provider "$_providerId" does not support audio capabilities. '
-        'Supported providers: OpenAI, ElevenLabs',
+        'Supported providers include OpenAI (TTS) and ElevenLabs.',
       );
     }
-    return provider as AudioCapability;
   }
 
   /// Builds a provider with ImageGenerationCapability
