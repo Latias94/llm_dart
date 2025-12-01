@@ -12,7 +12,11 @@ import '../config/search_parameters.dart';
 import '../embeddings/xai_embeddings.dart';
 
 class XAIProvider
-    implements ChatCapability, EmbeddingCapability, ProviderCapabilities {
+    implements
+        ChatCapability,
+        PromptChatCapability,
+        EmbeddingCapability,
+        ProviderCapabilities {
   final XAIClient _client;
   final XAIConfig config;
 
@@ -188,4 +192,36 @@ class XAIProvider
 
   @override
   String toString() => 'XAIProvider(model: ${config.model})';
+
+  // ===== PromptChatCapability (prompt-first) =====
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPrompt(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPromptStream(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
 }

@@ -9,13 +9,7 @@ import 'dart:math' as math;
 import '../core/registry.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAIProvider;
-import '../providers/google/builder.dart';
 import '../providers/google/tts.dart';
-import '../providers/openai/builder.dart';
-import '../providers/anthropic/builder.dart';
-import '../providers/ollama/builder.dart';
-import '../providers/elevenlabs/builder.dart';
-import '../providers/openai/compatible/openrouter/builder.dart';
 import 'http_config.dart';
 import '../utils/message_resolver.dart';
 
@@ -163,80 +157,6 @@ class LLMBuilder {
       throw UnsupportedCapabilityError(buffer.toString());
     }
   }
-
-  /// Convenience methods for built-in providers
-  LLMBuilder openai([OpenAIBuilder Function(OpenAIBuilder)? configure]) {
-    provider('openai');
-    if (configure != null) {
-      final openaiBuilder = OpenAIBuilder(this);
-      configure(openaiBuilder);
-    }
-    return this;
-  }
-
-  LLMBuilder anthropic(
-      [AnthropicBuilder Function(AnthropicBuilder)? configure]) {
-    provider('anthropic');
-    if (configure != null) {
-      final anthropicBuilder = AnthropicBuilder(this);
-      configure(anthropicBuilder);
-    }
-    return this;
-  }
-
-  LLMBuilder google([GoogleLLMBuilder Function(GoogleLLMBuilder)? configure]) {
-    provider('google');
-    if (configure != null) {
-      final googleBuilder = GoogleLLMBuilder(this);
-      configure(googleBuilder);
-    }
-    return this;
-  }
-
-  LLMBuilder deepseek() => provider('deepseek');
-
-  LLMBuilder ollama([OllamaBuilder Function(OllamaBuilder)? configure]) {
-    provider('ollama');
-    if (configure != null) {
-      final ollamaBuilder = OllamaBuilder(this);
-      configure(ollamaBuilder);
-    }
-    return this;
-  }
-
-  LLMBuilder xai() => provider('xai');
-  LLMBuilder phind() => provider('phind');
-  LLMBuilder groq() => provider('groq');
-
-  LLMBuilder elevenlabs(
-      [ElevenLabsBuilder Function(ElevenLabsBuilder)? configure]) {
-    provider('elevenlabs');
-    if (configure != null) {
-      final elevenLabsBuilder = ElevenLabsBuilder(this);
-      configure(elevenLabsBuilder);
-    }
-    return this;
-  }
-
-  /// Convenience methods for OpenAI-compatible providers
-  /// These use the OpenAI interface but with provider-specific configurations
-  LLMBuilder deepseekOpenAI() => provider('deepseek-openai');
-  LLMBuilder googleOpenAI() => provider('google-openai');
-  LLMBuilder xaiOpenAI() => provider('xai-openai');
-  LLMBuilder groqOpenAI() => provider('groq-openai');
-  LLMBuilder phindOpenAI() => provider('phind-openai');
-  LLMBuilder openRouter(
-      [OpenRouterBuilder Function(OpenRouterBuilder)? configure]) {
-    provider('openrouter');
-    if (configure != null) {
-      final openRouterBuilder = OpenRouterBuilder(this);
-      configure(openRouterBuilder);
-    }
-    return this;
-  }
-
-  LLMBuilder githubCopilot() => provider('github-copilot');
-  LLMBuilder togetherAI() => provider('together-ai');
 
   /// Replaces the current middleware list with the given middlewares.
   ///
@@ -1205,113 +1125,6 @@ class LLMBuilder {
       );
     }
     return provider as ModelListingCapability;
-  }
-
-  /// Builds an OpenAI provider with Responses API enabled
-  ///
-  /// This is a convenience method that automatically:
-  /// - Ensures the provider is OpenAI
-  /// - Enables the Responses API (`useResponsesAPI(true)`)
-  /// - Returns a properly typed OpenAIProvider with Responses API access
-  /// - Ensures the `openaiResponses` capability is available
-  ///
-  /// Throws [UnsupportedCapabilityError] if the provider is not OpenAI.
-  ///
-  /// Example:
-  /// ```dart
-  /// final provider = await ai()
-  ///     .openai((openai) => openai
-  ///         .webSearchTool()
-  ///         .fileSearchTool(vectorStoreIds: ['vs_123']))
-  ///     .apiKey(apiKey)
-  ///     .model('gpt-4o')
-  ///     .buildOpenAIResponses();
-  ///
-  /// // Direct access to Responses API without casting
-  /// final responsesAPI = provider.responses!;
-  /// final response = await responsesAPI.chat(messages);
-  /// ```
-  ///
-  /// **Note**: This method automatically enables Responses API even if not
-  /// explicitly called with `useResponsesAPI()`. The returned provider will
-  /// always support `LLMCapability.openaiResponses`.
-  Future<OpenAIProvider> buildOpenAIResponses() async {
-    if (_providerId != 'openai') {
-      throw UnsupportedCapabilityError(
-        'buildOpenAIResponses() can only be used with OpenAI provider. '
-        'Current provider: $_providerId. Use .openai() first.',
-      );
-    }
-
-    // Automatically enable Responses API if not already enabled
-    final isResponsesAPIEnabled =
-        _config.getExtension<bool>(LLMConfigKeys.useResponsesAPI) ?? false;
-    if (!isResponsesAPIEnabled) {
-      extension(LLMConfigKeys.useResponsesAPI, true);
-    }
-
-    final provider = await build();
-
-    // Cast to OpenAI provider (safe since we checked provider ID)
-    final openaiProvider = provider as OpenAIProvider;
-
-    // Verify that Responses API is properly initialized
-    if (openaiProvider.responses == null) {
-      throw StateError('OpenAI Responses API not properly initialized. '
-          'This should not happen when using buildOpenAIResponses().');
-    }
-
-    return openaiProvider;
-  }
-
-  /// Builds a Google provider with TTS capability
-  ///
-  /// This is a convenience method that automatically:
-  /// - Ensures the provider is Google
-  /// - Sets a TTS-compatible model if not already set
-  /// - Returns a properly typed GoogleTTSCapability
-  /// - Ensures the TTS functionality is available
-  ///
-  /// Throws [UnsupportedCapabilityError] if the provider is not Google or doesn't support TTS.
-  ///
-  /// Example:
-  /// ```dart
-  /// final ttsProvider = await ai()
-  ///     .google((google) => google
-  ///         .ttsModel('gemini-2.5-flash-preview-tts')
-  ///         .enableAudioOutput())
-  ///     .apiKey(apiKey)
-  ///     .buildGoogleTTS();
-  ///
-  /// // Direct usage without type casting
-  /// final response = await ttsProvider.generateSpeech(request);
-  /// ```
-  ///
-  /// **Note**: This method automatically sets a TTS model if none is specified.
-  Future<GoogleTTSCapability> buildGoogleTTS() async {
-    if (_providerId != 'google') {
-      throw UnsupportedCapabilityError(
-        'buildGoogleTTS() can only be used with Google provider. '
-        'Current provider: $_providerId. Use .google() first.',
-      );
-    }
-
-    // Set default TTS model if none specified
-    if (_config.model.isEmpty || !_config.model.contains('tts')) {
-      model('gemini-2.5-flash-preview-tts');
-    }
-
-    final provider = await build();
-
-    // Cast to Google TTS capability (safe since we checked provider ID)
-    if (provider is! GoogleTTSCapability) {
-      throw UnsupportedCapabilityError(
-        'Google provider does not support TTS capabilities. '
-        'Make sure you are using a TTS-compatible model.',
-      );
-    }
-
-    return provider as GoogleTTSCapability;
   }
 }
 

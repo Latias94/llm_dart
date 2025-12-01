@@ -14,7 +14,8 @@ import '../config/phind_config.dart';
 /// This is the main provider class that implements the ChatCapability interface
 /// and delegates to specialized modules for different functionalities.
 /// Phind is specialized for coding tasks and development assistance.
-class PhindProvider implements ChatCapability, ProviderCapabilities {
+class PhindProvider
+    implements ChatCapability, PromptChatCapability, ProviderCapabilities {
   final PhindConfig config;
   final PhindClient client;
 
@@ -144,4 +145,36 @@ class PhindProvider implements ChatCapability, ProviderCapabilities {
 
   @override
   String toString() => 'PhindProvider(model: ${config.model})';
+
+  // ===== PromptChatCapability (prompt-first) =====
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPrompt(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPromptStream(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
 }

@@ -276,10 +276,12 @@ GoogleProvider createGoogleProvider({
   String? embeddingTitle,
   int? embeddingDimensions,
 }) {
-  final config = GoogleConfig(
-    apiKey: apiKey,
-    model: model ?? 'gemini-1.5-flash',
-    baseUrl: baseUrl ?? 'https://generativelanguage.googleapis.com/v1beta/',
+  // 统一默认配置：依赖子包 GoogleConfig 的默认 baseUrl/model/maxInlineDataSize，
+  // 然后通过 copyWith 应用调用方覆盖，避免在顶层重复维护常量。
+  var config = GoogleConfig(apiKey: apiKey);
+  config = config.copyWith(
+    model: model,
+    baseUrl: baseUrl,
     maxTokens: maxTokens,
     temperature: temperature,
     systemPrompt: systemPrompt,
@@ -292,7 +294,7 @@ GoogleProvider createGoogleProvider({
     enableImageGeneration: enableImageGeneration,
     responseModalities: responseModalities,
     safetySettings: safetySettings,
-    maxInlineDataSize: maxInlineDataSize ?? 20 * 1024 * 1024,
+    maxInlineDataSize: maxInlineDataSize,
     candidateCount: candidateCount,
     stopSequences: stopSequences,
     embeddingTaskType: embeddingTaskType,

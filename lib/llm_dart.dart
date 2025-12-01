@@ -282,6 +282,7 @@ export 'providers/factories/base_factory.dart';
 
 // Builder exports
 export 'builder/llm_builder.dart';
+export 'builder/llm_builder_providers.dart';
 export 'builder/chat_prompt_builder.dart';
 export 'builder/http_config.dart';
 export 'builder/audio_config.dart';
@@ -383,6 +384,12 @@ Future<ChatCapability> createProvider({
 ///
 /// Under the hood it uses [LLMBuilder] and the provider registry, and
 /// returns a provider-agnostic [GenerateTextResult].
+///
+/// 对于新代码，推荐优先使用：
+/// - [promptMessages] + [ModelMessage]（或）
+/// - [generateTextPrompt] / [generateTextPromptWithModel]
+///
+/// [messages]（[ChatMessage]）参数仅为兼容旧代码保留。
 Future<GenerateTextResult> generateText({
   required String model,
   String? apiKey,
@@ -1151,6 +1158,12 @@ Future<GenerateObjectResult<T>> generateObjectWithModel<T>({
   );
 }
 
+@Deprecated(
+  'runAgentText() uses the legacy ChatMessage model. '
+  'Use runAgentPromptText() with ModelMessage instead. '
+  'This helper will be removed in a future breaking release.',
+)
+
 /// Run a text-only agent loop using the given [model] and [tools].
 ///
 /// This helper constructs an [AgentInput] and delegates to the provided
@@ -1211,6 +1224,12 @@ Future<GenerateTextResult> runAgentPromptText({
   final effectiveAgent = agent ?? const ToolLoopAgent();
   return effectiveAgent.runText(input);
 }
+
+@Deprecated(
+  'runAgentTextWithSteps() uses the legacy ChatMessage model. '
+  'Use runAgentPromptTextWithSteps() with ModelMessage instead. '
+  'This helper will be removed in a future breaking release.',
+)
 
 /// Run a text-only agent loop and return both the final result and steps.
 Future<AgentTextRunWithSteps> runAgentTextWithSteps({

@@ -2,16 +2,30 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../tools/openai_builtin_tools.dart';
 
-const String _openaiDefaultBaseUrl = 'https://api.openai.com/v1/';
-const String _openaiDefaultModel = 'gpt-4o';
+/// Public defaults for OpenAI base URL and model.
+///
+/// These constants provide a single source of truth for OpenAI defaults
+/// across the SDK (registry, high-level factories, helpers, etc.).
+const String openaiDefaultBaseUrl = 'https://api.openai.com/v1/';
+const String openaiDefaultModel = 'gpt-4o';
+
+// Internal aliases used by this config class. Keeping a private copy
+// allows us to change internal usage without affecting public API.
+const String _openaiDefaultBaseUrl = openaiDefaultBaseUrl;
+const String _openaiDefaultModel = openaiDefaultModel;
 
 /// OpenAI provider configuration
 ///
 /// This class contains all configuration options for the OpenAI providers.
 /// It's extracted from the main provider to improve modularity and reusability.
 class OpenAIConfig implements ProviderHttpConfig {
+  @override
   final String apiKey;
+
+  @override
   final String baseUrl;
+
+  @override
   final String model;
   final int? maxTokens;
   final double? temperature;
@@ -68,6 +82,66 @@ class OpenAIConfig implements ProviderHttpConfig {
     this.builtInTools,
     LLMConfig? originalConfig,
   }) : _originalConfig = originalConfig;
+
+  /// Build an [OpenAIConfig] from a unified [LLMConfig].
+  ///
+  /// This maps common fields (baseUrl, model, sampling parameters, tools,
+  /// stop sequences, user, service tier) and OpenAI-specific extensions
+  /// (reasoningEffort, jsonSchema, voice, embeddingEncodingFormat,
+  /// embeddingDimensions, Responses API options). Web-search-specific
+  /// model switching and built-in tool inference are handled separately
+  /// in the provider factory.
+  factory OpenAIConfig.fromLLMConfig(LLMConfig config) {
+    final apiKey = config.apiKey;
+    if (apiKey == null || apiKey.isEmpty) {
+      throw const GenericError(
+        'OpenAIConfig.fromLLMConfig requires a non-empty apiKey in LLMConfig.',
+      );
+    }
+
+    // Fall back to OpenAI defaults when baseUrl/model are empty strings.
+    final baseUrl =
+        config.baseUrl.isNotEmpty ? config.baseUrl : openaiDefaultBaseUrl;
+    final model = config.model.isNotEmpty ? config.model : openaiDefaultModel;
+
+    return OpenAIConfig(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      model: model,
+      maxTokens: config.maxTokens,
+      temperature: config.temperature,
+      systemPrompt: config.systemPrompt,
+      timeout: config.timeout,
+      topP: config.topP,
+      topK: config.topK,
+      tools: config.tools,
+      toolChoice: config.toolChoice,
+      stopSequences: config.stopSequences,
+      user: config.user,
+      serviceTier: config.serviceTier,
+      reasoningEffort: ReasoningEffort.fromString(
+        config.getExtension<String>(LLMConfigKeys.reasoningEffort),
+      ),
+      jsonSchema: config.getExtension<StructuredOutputFormat>(
+        LLMConfigKeys.jsonSchema,
+      ),
+      voice: config.getExtension<String>(LLMConfigKeys.voice),
+      embeddingEncodingFormat: config.getExtension<String>(
+        LLMConfigKeys.embeddingEncodingFormat,
+      ),
+      embeddingDimensions: config.getExtension<int>(
+        LLMConfigKeys.embeddingDimensions,
+      ),
+      useResponsesAPI:
+          config.getExtension<bool>(LLMConfigKeys.useResponsesAPI) ?? false,
+      previousResponseId:
+          config.getExtension<String>(LLMConfigKeys.previousResponseId),
+      builtInTools: config.getExtension<List<OpenAIBuiltInTool>>(
+        LLMConfigKeys.builtInTools,
+      ),
+      originalConfig: config,
+    );
+  }
 
   /// Get extension value from original config
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);

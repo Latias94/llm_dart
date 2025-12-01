@@ -1,7 +1,6 @@
-// ignore_for_file: avoid_print, deprecated_member_use
+// ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 
 /// 🚀 Ollama Advanced Features - Performance & Optimization
 ///
@@ -44,7 +43,7 @@ Future<void> demonstratePerformanceOptimization(String baseUrl) async {
   try {
     // High-performance configuration with GPU acceleration
     print('   High-Performance Configuration:');
-    final highPerfProvider = await ai()
+    final highPerfModel = await ai()
         .ollama((ollama) => ollama
             .numCtx(4096) // Large context window
             .numGpu(1) // Use GPU acceleration
@@ -54,11 +53,15 @@ Future<void> demonstratePerformanceOptimization(String baseUrl) async {
         .baseUrl(baseUrl)
         .model('llama3.2')
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
 
     final stopwatch = Stopwatch()..start();
-    final response = await highPerfProvider
-        .chat([ChatMessage.user('Explain quantum computing in 3 sentences.')]);
+    final response = await generateTextPromptWithModel(
+      highPerfModel,
+      messages: [
+        ModelMessage.userText('Explain quantum computing in 3 sentences.'),
+      ],
+    );
     stopwatch.stop();
 
     print('      Response: ${response.text}');
@@ -66,7 +69,7 @@ Future<void> demonstratePerformanceOptimization(String baseUrl) async {
 
     // Memory-efficient configuration
     print('   Memory-Efficient Configuration:');
-    final memoryEfficientProvider = await ai()
+    final memoryEfficientModel = await ai()
         .ollama((ollama) => ollama
             .numCtx(2048) // Smaller context window
             .numGpu(0) // CPU only
@@ -75,11 +78,15 @@ Future<void> demonstratePerformanceOptimization(String baseUrl) async {
         .baseUrl(baseUrl)
         .model('llama3.2')
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
 
     final stopwatch2 = Stopwatch()..start();
-    final response2 = await memoryEfficientProvider
-        .chat([ChatMessage.user('What is machine learning?')]);
+    final response2 = await generateTextPromptWithModel(
+      memoryEfficientModel,
+      messages: [
+        ModelMessage.userText('What is machine learning?'),
+      ],
+    );
     stopwatch2.stop();
 
     print('      Response: ${response2.text}');
@@ -97,34 +104,72 @@ Future<void> demonstrateContextManagement(String baseUrl) async {
 
   try {
     // Long context configuration
-    final longContextProvider = await ai()
+    final longContextModel = await ai()
         .ollama((ollama) => ollama
             .numCtx(8192) // Large context window
             .keepAlive('10m')) // Keep model in memory longer
         .baseUrl(baseUrl)
         .model('llama3.2')
-        .build();
+        .buildLanguageModel();
 
     // Build a long conversation
     final conversation = [
-      ChatMessage.system('You are a helpful assistant with excellent memory.'),
-      ChatMessage.user('I\'m planning a trip to Japan. What should I know?'),
+      ModelMessage.systemText(
+        'You are a helpful assistant with excellent memory.',
+      ),
+      ModelMessage.userText(
+        'I\'m planning a trip to Japan. What should I know?',
+      ),
     ];
 
-    var response = await longContextProvider.chat(conversation);
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
-    print('   Assistant: ${response.text?.substring(0, 100)}...\n');
+    var response = await generateTextPromptWithModel(
+      longContextModel,
+      messages: conversation,
+    );
+
+    final firstReply = response.text;
+    if (firstReply != null && firstReply.isNotEmpty) {
+      conversation.add(ModelMessage.assistantText(firstReply));
+      final truncated = firstReply.length > 100
+          ? '${firstReply.substring(0, 100)}...'
+          : firstReply;
+      print('   Assistant: $truncated\n');
+    }
 
     // Continue conversation with context
-    conversation.add(ChatMessage.user('What about the best time to visit?'));
-    response = await longContextProvider.chat(conversation);
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
-    print('   Assistant: ${response.text?.substring(0, 100)}...\n');
+    conversation.add(
+      ModelMessage.userText('What about the best time to visit?'),
+    );
+    response = await generateTextPromptWithModel(
+      longContextModel,
+      messages: conversation,
+    );
+
+    final secondReply = response.text;
+    if (secondReply != null && secondReply.isNotEmpty) {
+      conversation.add(ModelMessage.assistantText(secondReply));
+      final truncated = secondReply.length > 100
+          ? '${secondReply.substring(0, 100)}...'
+          : secondReply;
+      print('   Assistant: $truncated\n');
+    }
 
     // Add more context
-    conversation.add(ChatMessage.user('And what about food recommendations?'));
-    response = await longContextProvider.chat(conversation);
-    print('   Assistant: ${response.text?.substring(0, 100)}...\n');
+    conversation.add(
+      ModelMessage.userText('And what about food recommendations?'),
+    );
+    response = await generateTextPromptWithModel(
+      longContextModel,
+      messages: conversation,
+    );
+
+    final thirdReply = response.text;
+    if (thirdReply != null && thirdReply.isNotEmpty) {
+      final truncated = thirdReply.length > 100
+          ? '${thirdReply.substring(0, 100)}...'
+          : thirdReply;
+      print('   Assistant: $truncated\n');
+    }
 
     print('   💡 Context Tips:');
     print('      • Larger numCtx = more memory usage but better context');
@@ -142,7 +187,7 @@ Future<void> demonstrateStructuredOutput(String baseUrl) async {
 
   try {
     // Configure for JSON output
-    final structuredProvider = await ai()
+    final structuredModel = await ai()
         .ollama()
         .baseUrl(baseUrl)
         .model('llama3.2')
@@ -167,12 +212,18 @@ Future<void> demonstrateStructuredOutput(String baseUrl) async {
             'required': ['rating', 'summary', 'pros', 'cons', 'recommended']
           },
         ))
-        .build();
+        .buildLanguageModel();
 
-    final response = await structuredProvider.chat([
-      ChatMessage.user(
-          'Review this product: "Wireless headphones with 30-hour battery life, noise cancellation, and comfortable fit. Price: \$150."')
-    ]);
+    final response = await generateTextPromptWithModel(
+      structuredModel,
+      messages: [
+        ModelMessage.userText(
+          'Review this product: '
+          '"Wireless headphones with 30-hour battery life, noise '
+          'cancellation, and comfortable fit. Price: \$150."',
+        ),
+      ],
+    );
 
     print('   Structured Review:');
     print('   ${response.text}');
@@ -190,25 +241,31 @@ Future<void> demonstrateModelMemoryManagement(String baseUrl) async {
   try {
     // Short-lived model (unloads quickly)
     print('   Short-lived model configuration:');
-    final shortLivedProvider = await ai()
+    final shortLivedModel = await ai()
         .ollama((ollama) => ollama.keepAlive('30s')) // Unload after 30 seconds
         .baseUrl(baseUrl)
         .model('llama3.2')
-        .build();
+        .buildLanguageModel();
 
-    await shortLivedProvider.chat([ChatMessage.user('Hello!')]);
+    await generateTextPromptWithModel(
+      shortLivedModel,
+      messages: [ModelMessage.userText('Hello!')],
+    );
     print('      ✅ Model will unload in 30 seconds');
 
     // Long-lived model (stays in memory)
     print('   Long-lived model configuration:');
-    final longLivedProvider = await ai()
+    final longLivedModel = await ai()
         .ollama((ollama) =>
             ollama.keepAlive('30m')) // Keep in memory for 30 minutes
         .baseUrl(baseUrl)
         .model('llama3.2')
-        .build();
+        .buildLanguageModel();
 
-    await longLivedProvider.chat([ChatMessage.user('Hello!')]);
+    await generateTextPromptWithModel(
+      longLivedModel,
+      messages: [ModelMessage.userText('Hello!')],
+    );
     print('      ✅ Model will stay loaded for 30 minutes');
 
     print('   💡 Memory Management Tips:');
@@ -248,15 +305,19 @@ Future<void> demonstrateToolCalling(String baseUrl) async {
       ),
     );
 
-    final toolProvider = await ai()
+    final toolModel = await ai()
         .ollama()
         .baseUrl(baseUrl)
         .model('llama3.2') // Ensure model supports tool calling
         .temperature(0.1)
-        .tools([weatherTool]).build();
+        .tools([weatherTool]).buildLanguageModel();
 
-    final response = await toolProvider
-        .chat([ChatMessage.user('What\'s the weather like in Tokyo?')]);
+    final response = await generateTextPromptWithModel(
+      toolModel,
+      messages: [
+        ModelMessage.userText('What\'s the weather like in Tokyo?'),
+      ],
+    );
 
     print('   Tool Response:');
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {

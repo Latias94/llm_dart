@@ -1,8 +1,8 @@
-// ignore_for_file: avoid_print, deprecated_member_use
+// ignore_for_file: avoid_print
 import 'dart:convert';
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
+import 'package:llm_dart_core/llm_dart_core.dart' show ToolResultTextPayload;
 import 'package:mcp_dart/mcp_dart.dart' hide Tool;
 
 /// Simple HTTP Streaming LLM Integration - Streaming Tool Use Demo
@@ -64,14 +64,18 @@ Future<void> demonstrateStreamingToolUse(String apiKey) async {
     print('   🤖 Creating LLM model: OpenAI GPT-4o-mini');
 
     // Streaming conversation requesting current time
-    final messages = [
-      ChatMessage.system(
-          'You are a helpful assistant. When users ask for time-related information, use the available tools to get accurate current time.'),
-      ChatMessage.user('Hi! Can you please tell me what time it is right now?'),
+    final messages = <ModelMessage>[
+      ModelMessage.systemText(
+        'You are a helpful assistant. When users ask for time-related '
+        'information, use the available tools to get accurate current time.',
+      ),
+      ModelMessage.userText(
+        'Hi! Can you please tell me what time it is right now?',
+      ),
     ];
 
     print('\n   💬 User Message:');
-    print('      "${messages.last.content}"');
+    print('      "Hi! Can you please tell me what time it is right now?"');
     print('\n   🤖 LLM Processing...');
 
     // Process the streaming response with detailed logging
@@ -96,11 +100,11 @@ Future<void> demonstrateStreamingToolUse(String apiKey) async {
 /// Process streaming response with detailed tool use logging
 Future<void> _processStreamingToolUse(
   LanguageModel model,
-  List<ChatMessage> messages,
+  List<ModelMessage> messages,
   List<Tool> tools,
   Client mcpClient,
 ) async {
-  var conversation = List<ChatMessage>.from(messages);
+  var conversation = List<ModelMessage>.from(messages);
   var initialResponseText = '';
   var hasToolCalls = false;
   final toolCalls = <ToolCall>[];
@@ -108,11 +112,12 @@ Future<void> _processStreamingToolUse(
   print('   📡 Starting streaming request to LLM...');
 
   // First stream - get initial response and tool calls
-  final initialPrompt = conversation
-      .map((message) => message.toPromptMessage())
-      .toList(growable: false);
+  final initialPrompt = List<ModelMessage>.from(conversation);
 
-  await for (final part in model.streamTextParts(initialPrompt)) {
+  await for (final part in model.streamTextPartsWithOptions(
+    initialPrompt,
+    options: LanguageModelCallOptions(tools: tools),
+  )) {
     switch (part) {
       case StreamTextStart():
         break;
@@ -155,12 +160,22 @@ Future<void> _processStreamingToolUse(
   if (hasToolCalls) {
     print('\n   🛠️  Executing MCP tools via HTTP...');
 
-    // Execute tools with detailed logging
-    final toolResults = <ToolCall>[];
+    // Execute tools with detailed logging and build structured tool messages
+    final toolCallParts = <ChatContentPart>[];
+    final toolResultParts = <ChatContentPart>[];
 
     for (int i = 0; i < toolCalls.length; i++) {
       final toolCall = toolCalls[i];
       print('      Step ${i + 1}: Executing ${toolCall.function.name}');
+
+      // Append tool call content for the assistant message
+      toolCallParts.add(
+        ToolCallContentPart(
+          toolName: toolCall.function.name,
+          argumentsJson: toolCall.function.arguments,
+          toolCallId: toolCall.id,
+        ),
+      );
 
       final result = await _executeMcpTool(
         mcpClient,
@@ -168,20 +183,26 @@ Future<void> _processStreamingToolUse(
         toolCall.function.arguments,
       );
 
-      toolResults.add(ToolCall(
-        id: toolCall.id,
-        callType: 'function',
-        function: FunctionCall(
-          name: toolCall.function.name,
-          arguments: result,
+      // Append tool result content for the user/tool result message
+      toolResultParts.add(
+        ToolResultContentPart(
+          toolCallId: toolCall.id,
+          toolName: toolCall.function.name,
+          payload: ToolResultTextPayload(result),
         ),
-      ));
+      );
     }
 
-    // Add tool results to conversation
+    // Add tool calls and results to the conversation as structured messages
     conversation.addAll([
-      ChatMessage.toolUse(toolCalls: toolCalls),
-      ChatMessage.toolResult(results: toolResults),
+      ModelMessage(
+        role: ChatRole.assistant,
+        parts: toolCallParts,
+      ),
+      ModelMessage(
+        role: ChatRole.user,
+        parts: toolResultParts,
+      ),
     ]);
 
     print('\n   🔄 Sending tool results back to LLM for final response...');
@@ -189,11 +210,12 @@ Future<void> _processStreamingToolUse(
     stdout.write('      '); // Initial indentation for streaming text
 
     // Second stream - get final response with streaming output
-    final finalPrompt = conversation
-        .map((message) => message.toPromptMessage())
-        .toList(growable: false);
+    final finalPrompt = List<ModelMessage>.from(conversation);
 
-    await for (final finalPart in model.streamTextParts(finalPrompt)) {
+    await for (final finalPart in model.streamTextPartsWithOptions(
+      finalPrompt,
+      options: LanguageModelCallOptions(tools: tools),
+    )) {
       switch (finalPart) {
         case StreamTextDelta(delta: final delta):
           final indentedDelta = delta.replaceAll('\n', '\n      ');

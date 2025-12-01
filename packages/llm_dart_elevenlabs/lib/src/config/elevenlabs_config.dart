@@ -1,9 +1,16 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
-const String _defaultBaseUrl = 'https://api.elevenlabs.io/v1/';
-const String _defaultVoiceId = 'JBFqnCBsd6RMkjVDRZzb';
-const String _defaultTTSModel = 'eleven_multilingual_v2';
-const String _defaultSTTModel = 'scribe_v1';
+/// Public defaults for ElevenLabs base URL and models.
+const String elevenLabsDefaultBaseUrl = 'https://api.elevenlabs.io/v1/';
+const String elevenLabsDefaultVoiceId = 'JBFqnCBsd6RMkjVDRZzb';
+const String elevenLabsDefaultTTSModel = 'eleven_multilingual_v2';
+const String elevenLabsDefaultSTTModel = 'scribe_v1';
+
+// Internal aliases used by this config class.
+const String _defaultBaseUrl = elevenLabsDefaultBaseUrl;
+const String _defaultVoiceId = elevenLabsDefaultVoiceId;
+const String _defaultTTSModel = elevenLabsDefaultTTSModel;
+const String _defaultSTTModel = elevenLabsDefaultSTTModel;
 
 const List<String> _supportedAudioFormats = [
   'mp3_44100_128',
@@ -20,9 +27,14 @@ const List<String> _supportedAudioFormats = [
 /// This class contains all configuration options for the ElevenLabs providers.
 /// ElevenLabs specializes in text-to-speech and speech-to-text capabilities.
 class ElevenLabsConfig implements ProviderHttpConfig {
+  @override
   final String apiKey;
+
+  @override
   final String baseUrl;
   final String? voiceId;
+
+  @override
   final String? model;
   final Duration? timeout;
   final double? stability;
@@ -46,19 +58,23 @@ class ElevenLabsConfig implements ProviderHttpConfig {
     LLMConfig? originalConfig,
   }) : _originalConfig = originalConfig;
 
-  /// Create ElevenLabsConfig from unified LLMConfig
+  /// Create ElevenLabsConfig from unified LLMConfig.
+  ///
+  /// This maps common fields (baseUrl/model/timeout) and ElevenLabs-specific
+  /// extensions stored on [LLMConfig.extensions].
   factory ElevenLabsConfig.fromLLMConfig(LLMConfig config) {
     return ElevenLabsConfig(
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl.isNotEmpty ? config.baseUrl : _defaultBaseUrl,
-      model: config.model,
+      model: config.model.isNotEmpty ? config.model : _defaultTTSModel,
       timeout: config.timeout,
       // ElevenLabs-specific extensions
-      voiceId: config.getExtension<String>('voiceId'),
-      stability: config.getExtension<double>('stability'),
-      similarityBoost: config.getExtension<double>('similarityBoost'),
-      style: config.getExtension<double>('style'),
-      useSpeakerBoost: config.getExtension<bool>('useSpeakerBoost'),
+      voiceId: config.getExtension<String>(LLMConfigKeys.voiceId),
+      stability: config.getExtension<double>(LLMConfigKeys.stability),
+      similarityBoost:
+          config.getExtension<double>(LLMConfigKeys.similarityBoost),
+      style: config.getExtension<double>(LLMConfigKeys.style),
+      useSpeakerBoost: config.getExtension<bool>(LLMConfigKeys.useSpeakerBoost),
       originalConfig: config,
     );
   }

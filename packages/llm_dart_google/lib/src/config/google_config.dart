@@ -55,8 +55,11 @@ class SafetySetting {
 
 /// Google (Gemini) provider configuration for the sub-package.
 class GoogleConfig implements ProviderHttpConfig {
+  @override
   final String apiKey;
+  @override
   final String baseUrl;
+  @override
   final String model;
   final int? maxTokens;
   final double? temperature;

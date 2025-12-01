@@ -18,6 +18,7 @@ import '../completion/deepseek_completion.dart';
 class DeepSeekProvider
     implements
         ChatCapability,
+        PromptChatCapability,
         CompletionCapability,
         ModelListingCapability,
         ProviderCapabilities {
@@ -134,5 +135,37 @@ class DeepSeekProvider
   @override
   bool supports(LLMCapability capability) {
     return supportedCapabilities.contains(capability);
+  }
+
+  // ===== PromptChatCapability (prompt-first) =====
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPrompt(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPromptStream(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 }

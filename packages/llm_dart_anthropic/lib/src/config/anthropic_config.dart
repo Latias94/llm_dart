@@ -5,8 +5,11 @@ const String _defaultModel = 'claude-sonnet-4-20250514';
 
 /// Anthropic provider configuration (sub-package version).
 class AnthropicConfig implements ProviderHttpConfig {
+  @override
   final String apiKey;
+  @override
   final String baseUrl;
+  @override
   final String model;
   final int? maxTokens;
   final double? temperature;

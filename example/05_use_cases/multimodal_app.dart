@@ -1,7 +1,6 @@
-// ignore_for_file: avoid_print, deprecated_member_use
+// ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 
 /// 🎭 Multimodal Application - Text, Image, and Audio Processing
 ///
@@ -378,13 +377,25 @@ EXAMPLES:
 
   /// Analyze text content
   Future<String> analyzeText(String text) async {
-    final messages = [
-      ChatMessage.system(
-          'Analyze the given text and provide insights about its tone, key themes, sentiment, and main message. Be concise and informative.'),
-      ChatMessage.user(text),
+    final messages = <ModelMessage>[
+      ModelMessage(
+        role: ChatRole.system,
+        parts: <ChatContentPart>[
+          TextContentPart(
+            'Analyze the given text and provide insights about its tone, '
+            'key themes, sentiment, and main message. Be concise and informative.',
+          ),
+        ],
+      ),
+      ModelMessage(
+        role: ChatRole.user,
+        parts: <ChatContentPart>[TextContentPart(text)],
+      ),
     ];
 
-    final result = await _chatBuilder.generateText(messages: messages);
+    final result = await _chatBuilder.generateText(
+      promptMessages: messages,
+    );
     return result.text ?? 'Analysis not available';
   }
 
@@ -400,7 +411,7 @@ EXAMPLES:
         .build();
 
     final result = await _chatBuilder.generateText(
-      messages: [ChatMessage.fromPromptMessage(structuredPrompt)],
+      promptMessages: [structuredPrompt],
     );
     return result.text ?? 'Content generation failed';
   }
@@ -431,13 +442,26 @@ EXAMPLES:
 
   /// Create image prompt from text content
   Future<String> createImagePrompt(String textContent) async {
-    final messages = [
-      ChatMessage.system(
-          'Based on the given text content, create a detailed image generation prompt that would create a visually appealing image to accompany the text. Focus on visual elements, style, and mood.'),
-      ChatMessage.user(textContent),
+    final messages = <ModelMessage>[
+      ModelMessage(
+        role: ChatRole.system,
+        parts: <ChatContentPart>[
+          TextContentPart(
+            'Based on the given text content, create a detailed image '
+            'generation prompt that would create a visually appealing image '
+            'to accompany the text. Focus on visual elements, style, and mood.',
+          ),
+        ],
+      ),
+      ModelMessage(
+        role: ChatRole.user,
+        parts: <ChatContentPart>[TextContentPart(textContent)],
+      ),
     ];
 
-    final result = await _chatBuilder.generateText(messages: messages);
+    final result = await _chatBuilder.generateText(
+      promptMessages: messages,
+    );
     return result.text ?? 'A generic illustration';
   }
 
@@ -449,25 +473,51 @@ EXAMPLES:
       print('   🎵 Audio provider available for real processing');
     }
 
-    final messages = [
-      ChatMessage.system(
-          'Process the given text for audio narration. Improve clarity, add appropriate pauses, and suggest tone and emphasis. Return the optimized script.'),
-      ChatMessage.user(text),
+    final messages = <ModelMessage>[
+      ModelMessage(
+        role: ChatRole.system,
+        parts: <ChatContentPart>[
+          TextContentPart(
+            'Process the given text for audio narration. Improve clarity, '
+            'add appropriate pauses, and suggest tone and emphasis. '
+            'Return the optimized script.',
+          ),
+        ],
+      ),
+      ModelMessage(
+        role: ChatRole.user,
+        parts: <ChatContentPart>[TextContentPart(text)],
+      ),
     ];
 
-    final result = await _chatBuilder.generateText(messages: messages);
+    final result = await _chatBuilder.generateText(
+      promptMessages: messages,
+    );
     return result.text ?? 'Audio processing not available';
   }
 
   /// Create audio script from text content
   Future<String> createAudioScript(String textContent) async {
-    final messages = [
-      ChatMessage.system(
-          'Convert the given text content into an engaging audio script suitable for narration. Add appropriate pauses, emphasis, and speaking directions.'),
-      ChatMessage.user(textContent),
+    final messages = <ModelMessage>[
+      ModelMessage(
+        role: ChatRole.system,
+        parts: <ChatContentPart>[
+          TextContentPart(
+            'Convert the given text content into an engaging audio script '
+            'suitable for narration. Add appropriate pauses, emphasis, '
+            'and speaking directions.',
+          ),
+        ],
+      ),
+      ModelMessage(
+        role: ChatRole.user,
+        parts: <ChatContentPart>[TextContentPart(textContent)],
+      ),
     ];
 
-    final result = await _chatBuilder.generateText(messages: messages);
+    final result = await _chatBuilder.generateText(
+      promptMessages: messages,
+    );
     return result.text ?? 'Audio script generation failed';
   }
 }

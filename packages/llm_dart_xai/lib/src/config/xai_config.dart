@@ -4,8 +4,11 @@ import 'search_parameters.dart';
 
 /// xAI provider configuration for the sub-package.
 class XAIConfig implements ProviderHttpConfig {
+  @override
   final String apiKey;
+  @override
   final String baseUrl;
+  @override
   final String model;
   final int? maxTokens;
   final double? temperature;

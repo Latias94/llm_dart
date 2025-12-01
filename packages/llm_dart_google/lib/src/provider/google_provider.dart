@@ -15,6 +15,7 @@ import '../tts/google_tts.dart';
 class GoogleProvider
     implements
         ChatCapability,
+        PromptChatCapability,
         EmbeddingCapability,
         ImageGenerationCapability,
         GoogleTTSCapability,
@@ -175,6 +176,38 @@ class GoogleProvider
   @override
   Future<List<String>> getSupportedLanguages() async {
     return _tts.getSupportedLanguages();
+  }
+
+  // ===== PromptChatCapability (prompt-first) =====
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPrompt(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPromptStream(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   String get providerName => 'Google';

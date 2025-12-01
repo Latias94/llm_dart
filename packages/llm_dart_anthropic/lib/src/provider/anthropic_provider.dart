@@ -14,6 +14,7 @@ import '../models/anthropic_models.dart';
 class AnthropicProvider
     implements
         ChatCapability,
+        PromptChatCapability,
         ModelListingCapability,
         FileManagementCapability,
         ProviderCapabilities {
@@ -193,5 +194,37 @@ class AnthropicProvider
 
   Future<Map<String, bool>> deleteFiles(List<String> fileIds) async {
     return _files.deleteFiles(fileIds);
+  }
+
+  // ===== PromptChatCapability (prompt-first) =====
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPrompt(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPromptStream(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 }

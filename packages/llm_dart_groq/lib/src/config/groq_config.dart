@@ -1,8 +1,16 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 
-const String _groqDefaultBaseUrl = 'https://api.groq.com/openai/v1/';
-const String _groqDefaultModel = 'llama-3.3-70b-versatile';
+/// Public defaults for Groq base URL and model.
+///
+/// These constants provide a single source of truth for Groq defaults
+/// across the SDK (registry, helpers, etc.).
+const String groqDefaultBaseUrl = 'https://api.groq.com/openai/v1/';
+const String groqDefaultModel = 'llama-3.3-70b-versatile';
+
+// Internal aliases used by this config class.
+const String _groqDefaultBaseUrl = groqDefaultBaseUrl;
+const String _groqDefaultModel = groqDefaultModel;
 
 /// Groq provider configuration built on top of the OpenAI-compatible config.
 ///

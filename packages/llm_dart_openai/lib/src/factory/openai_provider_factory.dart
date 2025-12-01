@@ -43,14 +43,18 @@ class OpenAIProviderFactory
 
   @override
   LLMConfig getDefaultConfig() => const LLMConfig(
-        baseUrl: 'https://api.openai.com/v1/',
-        model: 'gpt-4o',
+        baseUrl: openaiDefaultBaseUrl,
+        model: openaiDefaultModel,
       );
 
   /// Transform unified config to OpenAI-specific config.
   OpenAIConfig _transformConfig(LLMConfig config) {
+    // Start from the generic mapping provided by OpenAIConfig so that
+    // all common fields and extensions are handled consistently.
+    var openaiConfig = OpenAIConfig.fromLLMConfig(config);
+
     // Handle web search configuration.
-    String? model = config.model;
+    var model = openaiConfig.model;
 
     // Check for webSearchEnabled flag.
     final webSearchEnabled =
@@ -74,14 +78,9 @@ class OpenAIProviderFactory
     // `advancedWebSearch(...)` will automatically configure OpenAI's
     // `web_search` built-in tool unless the user has explicitly added one
     // via OpenAI-specific helpers.
-    List<OpenAIBuiltInTool>? builtInTools =
-        getExtension<List<OpenAIBuiltInTool>>(
-      config,
-      LLMConfigKeys.builtInTools,
-    );
+    var builtInTools = openaiConfig.builtInTools;
 
-    final useResponsesAPI =
-        getExtension<bool>(config, LLMConfigKeys.useResponsesAPI) ?? false;
+    final useResponsesAPI = openaiConfig.useResponsesAPI;
 
     if (useResponsesAPI && webSearchConfig != null) {
       final hasWebSearchTool =
@@ -103,51 +102,13 @@ class OpenAIProviderFactory
       }
     }
 
-    return OpenAIConfig(
-      apiKey: config.apiKey!,
-      baseUrl: config.baseUrl,
+    // Apply model & built-in tools overrides on top of base config.
+    openaiConfig = openaiConfig.copyWith(
       model: model,
-      maxTokens: config.maxTokens,
-      temperature: config.temperature,
-      systemPrompt: config.systemPrompt,
-      timeout: config.timeout,
-      topP: config.topP,
-      topK: config.topK,
-      tools: config.tools,
-      toolChoice: config.toolChoice,
-      // Common parameters.
-      stopSequences: config.stopSequences,
-      user: config.user,
-      serviceTier: config.serviceTier,
-      // OpenAI-specific extensions using helper method.
-      reasoningEffort: ReasoningEffort.fromString(
-        getExtension<String>(config, LLMConfigKeys.reasoningEffort),
-      ),
-      jsonSchema: getExtension<StructuredOutputFormat>(
-        config,
-        LLMConfigKeys.jsonSchema,
-      ),
-      voice: getExtension<String>(config, LLMConfigKeys.voice),
-      embeddingEncodingFormat: getExtension<String>(
-        config,
-        LLMConfigKeys.embeddingEncodingFormat,
-      ),
-      embeddingDimensions: getExtension<int>(
-        config,
-        LLMConfigKeys.embeddingDimensions,
-      ),
-      // Responses API configuration.
-      useResponsesAPI:
-          getExtension<bool>(config, LLMConfigKeys.useResponsesAPI) ?? false,
-      previousResponseId:
-          getExtension<String>(config, LLMConfigKeys.previousResponseId),
-      builtInTools: getExtension<List<OpenAIBuiltInTool>>(
-            config,
-            LLMConfigKeys.builtInTools,
-          ) ??
-          builtInTools,
-      originalConfig: config,
+      builtInTools: builtInTools,
     );
+
+    return openaiConfig;
   }
 
   /// Check if the model supports web search.

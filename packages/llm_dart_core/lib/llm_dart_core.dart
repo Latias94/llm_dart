@@ -31,6 +31,9 @@ export 'src/models/rerank_models.dart';
 // Core utilities
 export 'src/utils/reasoning_utils.dart';
 export 'src/utils/structured_output_utils.dart';
+export 'src/utils/capability_utils.dart';
+export 'src/utils/provider_registry.dart';
+export 'src/utils/message_resolver.dart';
 
 // Core tool validation
 export 'src/core/tool_validator.dart';

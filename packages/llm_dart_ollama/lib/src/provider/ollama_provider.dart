@@ -16,6 +16,7 @@ import '../models/ollama_models.dart';
 class OllamaProvider
     implements
         ChatCapability,
+        PromptChatCapability,
         CompletionCapability,
         EmbeddingCapability,
         ModelListingCapability,
@@ -207,6 +208,38 @@ class OllamaProvider
   }) {
     return _client.version(
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
+  }
+
+  // ===== PromptChatCapability (prompt-first) =====
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPrompt(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    return _chat.chatPromptStream(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
     );
   }
 }

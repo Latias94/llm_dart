@@ -1294,13 +1294,21 @@ class DefaultLanguageModel implements LanguageModel {
   final LLMConfig config;
 
   final ChatCapability _chat;
+  final PromptChatCapability? _promptChat;
 
   DefaultLanguageModel({
     required this.providerId,
     required this.modelId,
     required this.config,
     required ChatCapability chat,
-  }) : _chat = chat;
+  })  : _chat = chat,
+        // Prefer the prompt-first interface when the underlying
+        // provider supports it. This avoids unnecessary conversions
+        // through the legacy ChatMessage model while keeping full
+        // backwards compatibility for providers that only implement
+        // ChatCapability.
+        _promptChat =
+            chat is PromptChatCapability ? chat as PromptChatCapability : null;
 
   /// Convert prompt-first messages into legacy [ChatMessage]s.
   ///
@@ -1381,14 +1389,25 @@ class DefaultLanguageModel implements LanguageModel {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    final legacyMessages = _toLegacyMessages(messages);
-
-    final response = await _chat.chatWithTools(
-      legacyMessages,
-      null,
-      options: options,
-      cancelToken: cancelToken,
-    );
+    // Prefer prompt-first chat when available to avoid bridging
+    // through the legacy ChatMessage surface.
+    final ChatResponse response;
+    if (_promptChat != null) {
+      response = await _promptChat!.chatPrompt(
+        messages,
+        tools: null,
+        options: options,
+        cancelToken: cancelToken,
+      );
+    } else {
+      final legacyMessages = _toLegacyMessages(messages);
+      response = await _chat.chatWithTools(
+        legacyMessages,
+        null,
+        options: options,
+        cancelToken: cancelToken,
+      );
+    }
 
     return GenerateTextResult(
       rawResponse: response,
@@ -1407,8 +1426,16 @@ class DefaultLanguageModel implements LanguageModel {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
-    final legacyMessages = _toLegacyMessages(messages);
+    if (_promptChat != null) {
+      return _promptChat!.chatPromptStream(
+        messages,
+        tools: null,
+        options: options,
+        cancelToken: cancelToken,
+      );
+    }
 
+    final legacyMessages = _toLegacyMessages(messages);
     return _chat.chatStream(
       legacyMessages,
       options: options,

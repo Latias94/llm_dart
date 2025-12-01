@@ -2,8 +2,11 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Ollama provider configuration for the sub-package.
 class OllamaConfig implements ProviderHttpConfig {
+  @override
   final String baseUrl;
+  @override
   final String? apiKey;
+  @override
   final String model;
   final int? maxTokens;
   final double? temperature;

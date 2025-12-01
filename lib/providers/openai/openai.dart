@@ -34,12 +34,6 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_impl;
 
 import 'builtin_tools.dart';
-import '../../utils/provider_registry.dart'
-    show
-        LanguageModelProviderFactory,
-        EmbeddingModelProviderFactory,
-        ImageModelProviderFactory,
-        SpeechModelProviderFactory;
 
 // Core exports
 export 'config.dart';
@@ -60,8 +54,7 @@ export 'responses.dart';
 export 'builtin_tools.dart';
 
 /// Local defaults for OpenAI and related providers (OpenRouter, Groq, DeepSeek, Copilot, Together).
-const _openaiBaseUrl = 'https://api.openai.com/v1/';
-const _openaiDefaultModel = 'gpt-4o';
+const _openaiBaseUrl = openai_impl.openaiDefaultBaseUrl;
 const _openRouterBaseUrl = 'https://openrouter.ai/api/v1/';
 const _openRouterDefaultModel = 'openai/gpt-4';
 const _groqBaseUrl = 'https://api.groq.com/openai/v1/';
@@ -575,14 +568,16 @@ class OpenAITools {
 /// Create an OpenAI provider with default settings
 openai_impl.OpenAIProvider createOpenAIProvider({
   required String apiKey,
-  String model = _openaiDefaultModel,
-  String baseUrl = _openaiBaseUrl,
+  String? model,
+  String? baseUrl,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
 }) {
-  final config = openai_impl.OpenAIConfig(
-    apiKey: apiKey,
+  // 统一依赖子包 OpenAIConfig 的默认 baseUrl/model，避免常量分叉。
+  // 先用默认值构造，再通过 copyWith 应用调用方覆盖。
+  var config = openai_impl.OpenAIConfig(apiKey: apiKey);
+  config = config.copyWith(
     model: model,
     baseUrl: baseUrl,
     temperature: temperature,

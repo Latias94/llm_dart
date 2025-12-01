@@ -27,6 +27,7 @@ import '../responses/openai_responses.dart';
 class OpenAIProvider
     implements
         ChatCapability,
+        PromptChatCapability,
         EmbeddingCapability,
         AudioCapability,
         FileManagementCapability,
@@ -175,6 +176,64 @@ class OpenAIProvider
       return _responses.summarizeHistory(messages);
     }
     return _chat.summarizeHistory(messages);
+  }
+
+  // ===== PromptChatCapability (prompt-first) =====
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    if (config.useResponsesAPI && _responses != null) {
+      // Responses API currently exposes a ChatMessage-based surface.
+      // Bridge the prompt-first messages to ChatMessage and delegate.
+      final legacyMessages = messages
+          .map((m) => ChatMessage.fromPromptMessage(m))
+          .toList(growable: false);
+      return _responses.chatWithTools(
+        legacyMessages,
+        tools,
+        options: options,
+        cancelToken: cancelToken,
+      );
+    }
+
+    return _chat.chatPrompt(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatPromptStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) {
+    if (config.useResponsesAPI && _responses != null) {
+      final legacyMessages = messages
+          .map((m) => ChatMessage.fromPromptMessage(m))
+          .toList(growable: false);
+      return _responses.chatStream(
+        legacyMessages,
+        tools: tools,
+        options: options,
+        cancelToken: cancelToken,
+      );
+    }
+
+    return _chat.chatPromptStream(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   // ===== EmbeddingCapability =====

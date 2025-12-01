@@ -8,8 +8,11 @@ const String _defaultModel = 'deepseek-chat';
 /// This class contains all configuration options for the DeepSeek providers.
 /// It's extracted from the main provider to improve modularity and reusability.
 class DeepSeekConfig implements ProviderHttpConfig {
+  @override
   final String apiKey;
+  @override
   final String baseUrl;
+  @override
   final String model;
   final int? maxTokens;
   final double? temperature;

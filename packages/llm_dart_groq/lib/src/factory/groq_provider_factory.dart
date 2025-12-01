@@ -32,37 +32,13 @@ class GroqProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   LLMConfig getDefaultConfig() => const LLMConfig(
-        baseUrl: 'https://api.groq.com/openai/v1/',
-        model: 'llama-3.3-70b-versatile',
+        baseUrl: groqDefaultBaseUrl,
+        model: groqDefaultModel,
       );
 
   /// Transform unified config to Groq-specific config.
   GroqConfig _transformConfig(LLMConfig config) {
-    return GroqConfig(
-      apiKey: config.apiKey!,
-      baseUrl: config.baseUrl.isNotEmpty
-          ? config.baseUrl
-          : 'https://api.groq.com/openai/v1/',
-      model: config.model.isNotEmpty ? config.model : 'llama-3.3-70b-versatile',
-      maxTokens: config.maxTokens,
-      temperature: config.temperature,
-      systemPrompt: config.systemPrompt,
-      timeout: config.timeout,
-      topP: config.topP,
-      topK: config.topK,
-      tools: config.tools,
-      toolChoice: config.toolChoice,
-      reasoningEffort: ReasoningEffort.fromString(
-        config.getExtension<String>(LLMConfigKeys.reasoningEffort),
-      ),
-      jsonSchema: config.getExtension<StructuredOutputFormat>(
-        LLMConfigKeys.jsonSchema,
-      ),
-      stopSequences: config.stopSequences,
-      user: config.user,
-      serviceTier: config.serviceTier,
-      originalConfig: config,
-    );
+    return GroqConfig.fromLLMConfig(config);
   }
 }
 
