@@ -32,22 +32,25 @@ Future<void> demonstrateBasicThinking() async {
   print('🧠 Basic Thinking Process:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .ollama()
         .baseUrl('http://localhost:11434')
         .model('gpt-oss:latest')
         .reasoning(true)
         .temperature(0.3)
         .maxTokens(1000)
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user('''
+    final prompt = ChatPromptBuilder.user().text('''
 I have 3 red balls, 2 blue balls, and 5 green balls in a bag.
 If I randomly pick 3 balls without replacement, what's the probability
 that I get exactly one ball of each color?
-''')
-    ]);
+''').build();
+
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   Problem: Probability calculation with colored balls');
     print('   Model: gpt-oss:latest (local reasoning model)');
@@ -87,14 +90,14 @@ Future<void> demonstrateMathematicalReasoning() async {
   print('🔢 Mathematical Reasoning:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .ollama()
         .baseUrl('http://localhost:11434')
         .model('gpt-oss:latest')
         .reasoning(true)
         .temperature(0.1) // Lower for precise calculations
         .maxTokens(1500)
-        .build();
+        .buildLanguageModel();
 
     final mathProblem = '''
 A company's revenue follows this pattern:
@@ -107,7 +110,11 @@ What is the growth pattern, and what will be the revenue in Month 6?
 Show your work step by step.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(mathProblem)]);
+    final prompt = ChatPromptBuilder.user().text(mathProblem).build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   Problem: Revenue pattern analysis and prediction');
 
@@ -140,14 +147,14 @@ Future<void> demonstrateStreamingThinking() async {
   print('🌊 Streaming Thinking Process:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .ollama()
         .baseUrl('http://localhost:11434')
         .model('gpt-oss:latest')
         .reasoning(true)
         .temperature(0.4)
         .maxTokens(1200)
-        .build();
+        .buildLanguageModel();
 
     print('   Problem: Logic puzzle with real-time thinking');
     print('   Watching Ollama think in real-time...\n');
@@ -156,15 +163,18 @@ Future<void> demonstrateStreamingThinking() async {
     var responseContent = StringBuffer();
     var isThinking = true;
 
-    await for (final event in provider.chatStream([
-      ChatMessage.user('''
+    final prompt = ChatPromptBuilder.user().text('''
 Four people need to cross a bridge at night. They have one flashlight.
 The bridge can hold only two people at a time. They must walk together
 when crossing. Person A takes 1 minute, B takes 2 minutes, C takes 5 minutes,
 and D takes 10 minutes. When two people cross together, they walk at the
 slower person's pace. What's the minimum time to get everyone across?
-''')
-    ])) {
+''').build();
+
+    await for (final event in streamTextWithModel(
+      model,
+      promptMessages: [prompt],
+    )) {
       switch (event) {
         case ThinkingDeltaEvent(delta: final delta):
           thinkingContent.write(delta);
@@ -211,14 +221,14 @@ Future<void> demonstrateLogicalPuzzle() async {
   print('🧩 Logical Puzzle Solving:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .ollama()
         .baseUrl('http://localhost:11434')
         .model('gpt-oss:latest')
         .reasoning(true)
         .temperature(0.3)
         .maxTokens(1500)
-        .build();
+        .buildLanguageModel();
 
     final logicPuzzle = '''
 You have 12 coins, one of which is fake (lighter than the others).
@@ -226,7 +236,11 @@ You have a balance scale and can use it exactly 3 times.
 How do you identify the fake coin? Describe your strategy step by step.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(logicPuzzle)]);
+    final prompt = ChatPromptBuilder.user().text(logicPuzzle).build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   Puzzle: Classic 12-coin balance scale problem');
 
@@ -281,20 +295,24 @@ of getting heads on the 11th flip? Explain your reasoning.
 
   final models = ['gpt-oss:latest', 'qwen2.5:latest', 'llama3.2:latest'];
 
-  for (final model in models) {
-    print('   Testing model: $model');
+  for (final modelId in models) {
+    print('   Testing model: $modelId');
 
     try {
-      final provider = await ai()
+      final model = await ai()
           .ollama()
           .baseUrl('http://localhost:11434')
-          .model(model)
+          .model(modelId)
           .reasoning(true)
           .temperature(0.2)
           .maxTokens(800)
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider.chat([ChatMessage.user(testProblem)]);
+      final prompt = ChatPromptBuilder.user().text(testProblem).build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
 
       if (response.thinking != null && response.thinking!.isNotEmpty) {
         print('   ✅ Thinking capability: Available');

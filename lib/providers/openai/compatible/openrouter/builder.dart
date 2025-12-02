@@ -1,6 +1,6 @@
+import 'package:llm_dart_core/llm_dart_core.dart';
+
 import '../../../../builder/llm_builder.dart';
-import '../../../../core/capability.dart';
-import '../../../../core/web_search.dart';
 
 /// OpenRouter-specific LLM builder with provider-specific configuration methods
 ///
@@ -41,7 +41,7 @@ class OpenRouterBuilder {
     bool useOnlineShortcut = true,
   }) {
     _baseBuilder.extension(
-        'webSearchConfig',
+        LLMConfigKeys.webSearchConfig,
         WebSearchConfig.openRouter(
           maxResults: maxResults,
           searchPrompt: searchPrompt,
@@ -64,7 +64,7 @@ class OpenRouterBuilder {
   ///     .build();
   /// ```
   OpenRouterBuilder searchPrompt(String prompt) {
-    _baseBuilder.extension('searchPrompt', prompt);
+    _baseBuilder.extension(LLMConfigKeys.searchPrompt, prompt);
     return this;
   }
 
@@ -84,7 +84,7 @@ class OpenRouterBuilder {
   ///     .build();
   /// ```
   OpenRouterBuilder useOnlineShortcut(bool enabled) {
-    _baseBuilder.extension('useOnlineShortcut', enabled);
+    _baseBuilder.extension(LLMConfigKeys.useOnlineShortcut, enabled);
     return this;
   }
 
@@ -95,7 +95,7 @@ class OpenRouterBuilder {
   ///
   /// Range: 1-20 (recommended: 3-10)
   OpenRouterBuilder maxSearchResults(int maxResults) {
-    _baseBuilder.extension('maxSearchResults', maxResults);
+    _baseBuilder.extension(LLMConfigKeys.maxSearchResults, maxResults);
     return this;
   }
 

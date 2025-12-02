@@ -49,8 +49,8 @@ void main() async {
 }
 
 /// Create all available providers
-Future<Map<String, ChatCapability?>> createProviders() async {
-  final providers = <String, ChatCapability?>{};
+Future<Map<String, LanguageModel?>> createProviders() async {
+  final providers = <String, LanguageModel?>{};
 
   // OpenAI
   try {
@@ -60,7 +60,7 @@ Future<Map<String, ChatCapability?>> createProviders() async {
         .apiKey(openaiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
   } catch (e) {
     providers['OpenAI'] = null;
     print('⚠️  OpenAI creation failed: $e');
@@ -75,7 +75,7 @@ Future<Map<String, ChatCapability?>> createProviders() async {
         .apiKey(anthropicKey)
         .model('claude-3-5-haiku-20241022')
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
   } catch (e) {
     providers['Anthropic'] = null;
     print('⚠️  Anthropic creation failed: $e');
@@ -89,7 +89,7 @@ Future<Map<String, ChatCapability?>> createProviders() async {
         .apiKey(groqKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
   } catch (e) {
     providers['Groq'] = null;
     print('⚠️  Groq creation failed: $e');
@@ -104,7 +104,7 @@ Future<Map<String, ChatCapability?>> createProviders() async {
         .apiKey(deepseekKey)
         .model('deepseek-chat')
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
   } catch (e) {
     providers['DeepSeek'] = null;
     print('⚠️  DeepSeek creation failed: $e');
@@ -117,7 +117,7 @@ Future<Map<String, ChatCapability?>> createProviders() async {
         .baseUrl('http://localhost:11434')
         .model('llama3.2')
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
   } catch (e) {
     providers['Ollama'] = null;
     print('⚠️  Ollama creation failed: $e');
@@ -128,12 +128,15 @@ Future<Map<String, ChatCapability?>> createProviders() async {
 
 /// Test a single provider
 Future<ProviderResult> testProvider(
-    String name, ChatCapability provider, String question) async {
+    String name, LanguageModel model, String question) async {
   final stopwatch = Stopwatch()..start();
 
   try {
-    final messages = [ChatMessage.user(question)];
-    final response = await provider.chat(messages);
+    final prompt = ChatPromptBuilder.user().text(question).build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     stopwatch.stop();
 

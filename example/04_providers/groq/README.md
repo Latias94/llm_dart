@@ -27,14 +27,20 @@ dart run fast_inference.dart
 
 ### Speed-Optimized Streaming
 ```dart
-final provider = await ai().groq().apiKey('your-key')
-    .model('llama-3.1-8b-instant').build();
+final model = await ai()
+    .groq()
+    .apiKey('your-key')
+    .model('llama-3.1-8b-instant')
+    .buildLanguageModel();
 
 final stopwatch = Stopwatch()..start();
 
-await for (final event in provider.chatStream([
-  ChatMessage.user('Generate a quick story'),
-])) {
+await for (final event in streamTextWithModel(
+  model,
+  promptMessages: [
+    ModelMessage.userText('Generate a quick story'),
+  ],
+)) {
   if (event is TextDeltaEvent) {
     print('Token: ${event.delta} (${stopwatch.elapsedMilliseconds}ms)');
   }

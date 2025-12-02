@@ -1,47 +1,7 @@
-import '../../core/capability.dart';
-import '../../core/config.dart';
-import '../../core/provider_defaults.dart';
-import '../google/google.dart';
-import 'base_factory.dart';
+library;
 
-/// Factory for creating Google (Gemini) provider instances
-class GoogleProviderFactory extends BaseProviderFactory<ChatCapability> {
-  @override
-  String get providerId => 'google';
-
-  @override
-  String get displayName => 'Google';
-
-  @override
-  String get description =>
-      'Google Gemini models including Gemini 1.5 Flash and Pro';
-
-  @override
-  Set<LLMCapability> get supportedCapabilities => {
-        LLMCapability.chat,
-        LLMCapability.streaming,
-        LLMCapability.toolCalling,
-        LLMCapability.embedding,
-        LLMCapability.reasoning,
-        LLMCapability.vision,
-      };
-
-  @override
-  ChatCapability create(LLMConfig config) {
-    return createProviderSafely<GoogleConfig>(
-      config,
-      () => _transformConfig(config),
-      (googleConfig) => GoogleProvider(googleConfig),
-    );
-  }
-
-  @override
-  Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('google');
-  }
-
-  /// Transform unified config to Google-specific config
-  GoogleConfig _transformConfig(LLMConfig config) {
-    return GoogleConfig.fromLLMConfig(config);
-  }
-}
+/// Backwards-compatible re-export for the Google provider factory and
+/// registration helper. The canonical implementation lives in the
+/// `llm_dart_google` package.
+export 'package:llm_dart_google/llm_dart_google.dart'
+    show GoogleProviderFactory, registerGoogleProvider;

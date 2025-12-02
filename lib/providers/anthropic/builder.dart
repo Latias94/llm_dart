@@ -1,5 +1,5 @@
 import '../../builder/llm_builder.dart';
-import '../../core/capability.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'mcp_models.dart';
 
 /// Anthropic-specific LLM builder with provider-specific configuration methods
@@ -36,7 +36,7 @@ class AnthropicBuilder {
   ///     .build();
   /// ```
   AnthropicBuilder metadata(Map<String, dynamic> data) {
-    _baseBuilder.extension('metadata', data);
+    _baseBuilder.extension(LLMConfigKeys.metadata, data);
     return this;
   }
 
@@ -54,7 +54,7 @@ class AnthropicBuilder {
   ///     .build();
   /// ```
   AnthropicBuilder container(String containerId) {
-    _baseBuilder.extension('container', containerId);
+    _baseBuilder.extension(LLMConfigKeys.container, containerId);
     return this;
   }
 
@@ -82,7 +82,7 @@ class AnthropicBuilder {
   ///     .build();
   /// ```
   AnthropicBuilder mcpServers(List<AnthropicMCPServer> servers) {
-    _baseBuilder.extension('mcpServers', servers);
+    _baseBuilder.extension(LLMConfigKeys.mcpServers, servers);
     return this;
   }
 
@@ -212,6 +212,61 @@ class AnthropicBuilder {
     }
 
     return mcpServers(servers);
+  }
+
+  /// Configure Anthropic server-side web search (web_search_20250305 tool).
+  ///
+  /// This is a provider-specific helper that:
+  /// - Enables web search via [LLMConfigKeys.webSearchEnabled].
+  /// - Stores a [WebSearchConfig] tuned for Anthropic in
+  ///   [LLMConfigKeys.webSearchConfig].
+  ///
+  /// The underlying Anthropic provider then maps this configuration to the
+  /// official `web_search_20250305` tool fields:
+  /// - [maxUses] → `max_uses`
+  /// - [allowedDomains] → `allowed_domains`
+  /// - [blockedDomains] → `blocked_domains`
+  /// - [location] → `user_location`
+  AnthropicBuilder webSearch({
+    int? maxUses,
+    List<String>? allowedDomains,
+    List<String>? blockedDomains,
+    WebSearchLocation? location,
+  }) {
+    // Signal that web search should be enabled for this provider.
+    _baseBuilder.enableWebSearch();
+
+    // Store a provider-agnostic configuration that the Anthropic provider
+    // will translate to its native web search tool parameters.
+    final config = WebSearchConfig.anthropic(
+      maxUses: maxUses ?? 5,
+      allowedDomains: allowedDomains,
+      blockedDomains: blockedDomains,
+      location: location,
+    );
+
+    _baseBuilder.extension(LLMConfigKeys.webSearchConfig, config);
+    return this;
+  }
+
+  /// Sets thinking budget tokens for Anthropic extended thinking.
+  ///
+  /// This is passed through the [LLMConfigKeys.thinkingBudgetTokens]
+  /// extension key to the underlying AnthropicConfig to configure
+  /// extended thinking for Claude 4 models.
+  AnthropicBuilder thinkingBudgetTokens(int tokens) {
+    _baseBuilder.extension(LLMConfigKeys.thinkingBudgetTokens, tokens);
+    return this;
+  }
+
+  /// Enables interleaved thinking for Anthropic (Claude 4 models only).
+  ///
+  /// Uses [LLMConfigKeys.interleavedThinking] to control whether Claude
+  /// models enable the mode where thinking traces and answers are
+  /// interleaved in the output.
+  AnthropicBuilder interleavedThinking(bool enable) {
+    _baseBuilder.extension(LLMConfigKeys.interleavedThinking, enable);
+    return this;
   }
 
   // ========== Build methods ==========

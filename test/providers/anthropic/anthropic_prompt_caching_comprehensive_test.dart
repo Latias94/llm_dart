@@ -1,5 +1,10 @@
+// Comprehensive Anthropic prompt caching tests validate how
+// MessageBuilder and ChatMessage interact to build cached prompts.
+// ignore_for_file: deprecated_member_use
+
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 
 /// Comprehensive test suite for Anthropic prompt caching according to correct design
 /// Tests MessageBuilder-level caching where:

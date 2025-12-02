@@ -1,9 +1,7 @@
 import '../../builder/llm_builder.dart';
-import '../../core/capability.dart';
-import '../../core/web_search.dart';
-import '../../models/chat_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_impl;
 import 'builtin_tools.dart';
-import 'provider.dart';
 
 /// OpenAI-specific LLM builder with provider-specific configuration methods
 ///
@@ -31,7 +29,7 @@ class OpenAIBuilder {
   /// - Positive values: Discourage repetition
   /// - Range: -2.0 to 2.0
   OpenAIBuilder frequencyPenalty(double penalty) {
-    _baseBuilder.extension('frequencyPenalty', penalty);
+    _baseBuilder.extension(LLMConfigKeys.frequencyPenalty, penalty);
     return this;
   }
 
@@ -46,7 +44,16 @@ class OpenAIBuilder {
   /// - Positive values: Encourage new topics
   /// - Range: -2.0 to 2.0
   OpenAIBuilder presencePenalty(double penalty) {
-    _baseBuilder.extension('presencePenalty', penalty);
+    _baseBuilder.extension(LLMConfigKeys.presencePenalty, penalty);
+    return this;
+  }
+
+  /// Sets voice for text-to-speech models (e.g. OpenAI TTS voices).
+  ///
+  /// This is an OpenAI-specific voice name setting (e.g. `alloy`, `verse`).
+  /// The value is passed via [LLMConfigKeys.voice] to the OpenAI audio module.
+  OpenAIBuilder voice(String voiceName) {
+    _baseBuilder.extension(LLMConfigKeys.voice, voiceName);
     return this;
   }
 
@@ -60,7 +67,7 @@ class OpenAIBuilder {
   /// - 0: No bias (default)
   /// - 100: Token is strongly encouraged
   OpenAIBuilder logitBias(Map<String, double> bias) {
-    _baseBuilder.extension('logitBias', bias);
+    _baseBuilder.extension(LLMConfigKeys.logitBias, bias);
     return this;
   }
 
@@ -70,7 +77,7 @@ class OpenAIBuilder {
   /// deterministically, such that repeated requests with the same seed
   /// and parameters should return the same result.
   OpenAIBuilder seed(int seedValue) {
-    _baseBuilder.extension('seed', seedValue);
+    _baseBuilder.extension(LLMConfigKeys.seed, seedValue);
     return this;
   }
 
@@ -82,7 +89,7 @@ class OpenAIBuilder {
   /// - true: Enable parallel tool calls (default for newer models)
   /// - false: Disable parallel tool calls (sequential execution)
   OpenAIBuilder parallelToolCalls(bool enabled) {
-    _baseBuilder.extension('parallelToolCalls', enabled);
+    _baseBuilder.extension(LLMConfigKeys.parallelToolCalls, enabled);
     return this;
   }
 
@@ -91,7 +98,7 @@ class OpenAIBuilder {
   /// Whether to return log probabilities of the output tokens.
   /// If true, returns the log probabilities of each output token.
   OpenAIBuilder logprobs(bool enabled) {
-    _baseBuilder.extension('logprobs', enabled);
+    _baseBuilder.extension(LLMConfigKeys.logprobs, enabled);
     return this;
   }
 
@@ -103,7 +110,7 @@ class OpenAIBuilder {
   ///
   /// Range: 0-20
   OpenAIBuilder topLogprobs(int count) {
-    _baseBuilder.extension('topLogprobs', count);
+    _baseBuilder.extension(LLMConfigKeys.topLogprobs, count);
     return this;
   }
 
@@ -126,7 +133,7 @@ class OpenAIBuilder {
   ///     .build();
   /// ```
   OpenAIBuilder verbosity(Verbosity level) {
-    _baseBuilder.extension('verbosity', level.value);
+    _baseBuilder.extension(LLMConfigKeys.verbosity, level.value);
     return this;
   }
 
@@ -149,7 +156,7 @@ class OpenAIBuilder {
   ///     .build();
   /// ```
   OpenAIBuilder useResponsesAPI([bool use = true]) {
-    _baseBuilder.extension('useResponsesAPI', use);
+    _baseBuilder.extension(LLMConfigKeys.useResponsesAPI, use);
     return this;
   }
 
@@ -158,7 +165,7 @@ class OpenAIBuilder {
   /// Used with Responses API to maintain context across multiple API calls.
   /// This allows for multi-turn conversations with state preservation.
   OpenAIBuilder previousResponseId(String responseId) {
-    _baseBuilder.extension('previousResponseId', responseId);
+    _baseBuilder.extension(LLMConfigKeys.previousResponseId, responseId);
     return this;
   }
 
@@ -166,10 +173,20 @@ class OpenAIBuilder {
   ///
   /// Enables the model to search the web for real-time information.
   /// Only available with Responses API.
-  OpenAIBuilder webSearchTool() {
+  OpenAIBuilder webSearchTool({
+    List<String>? allowedDomains,
+    WebSearchContextSize? contextSize,
+    WebSearchLocation? location,
+  }) {
     final tools = _getBuiltInTools();
-    tools.add(OpenAIBuiltInTools.webSearch());
-    _baseBuilder.extension('builtInTools', tools);
+    tools.add(
+      OpenAIBuiltInTools.webSearch(
+        allowedDomains: allowedDomains,
+        contextSize: contextSize,
+        location: location,
+      ),
+    );
+    _baseBuilder.extension(LLMConfigKeys.builtInTools, tools);
     return this;
   }
 
@@ -195,7 +212,7 @@ class OpenAIBuilder {
       vectorStoreIds: vectorStoreIds,
       parameters: parameters,
     ));
-    _baseBuilder.extension('builtInTools', tools);
+    _baseBuilder.extension(LLMConfigKeys.builtInTools, tools);
     return this;
   }
 
@@ -229,14 +246,14 @@ class OpenAIBuilder {
       environment: environment,
       parameters: parameters,
     ));
-    _baseBuilder.extension('builtInTools', tools);
+    _baseBuilder.extension(LLMConfigKeys.builtInTools, tools);
     return this;
   }
 
   /// Helper method to get or create built-in tools list
   List<OpenAIBuiltInTool> _getBuiltInTools() {
     final existingTools = _baseBuilder.currentConfig
-        .getExtension<List<OpenAIBuiltInTool>>('builtInTools');
+        .getExtension<List<OpenAIBuiltInTool>>(LLMConfigKeys.builtInTools);
     return existingTools != null
         ? List.from(existingTools)
         : <OpenAIBuiltInTool>[];
@@ -262,7 +279,7 @@ class OpenAIBuilder {
     WebSearchContextSize contextSize = WebSearchContextSize.medium,
   }) {
     _baseBuilder.extension(
-        'webSearchConfig',
+        LLMConfigKeys.webSearchConfig,
         WebSearchConfig.openai(
           contextSize: contextSize,
         ));
@@ -396,22 +413,26 @@ class OpenAIBuilder {
   /// **Note**: This method automatically enables Responses API even if not
   /// explicitly called with `useResponsesAPI()`. The returned provider will
   /// always support `LLMCapability.openaiResponses`.
-  Future<OpenAIProvider> buildOpenAIResponses() async {
+  Future<openai_impl.OpenAIProvider> buildOpenAIResponses() async {
     // Automatically enable Responses API if not already enabled
-    final isResponsesAPIEnabled =
-        _baseBuilder.currentConfig.getExtension<bool>('useResponsesAPI') ??
-            false;
+    final isResponsesAPIEnabled = _baseBuilder.currentConfig
+            .getExtension<bool>(LLMConfigKeys.useResponsesAPI) ??
+        false;
     if (!isResponsesAPIEnabled) {
       useResponsesAPI(true);
     }
 
     final provider = await build();
 
-    // Ensure we have an OpenAI provider
-    if (provider is! OpenAIProvider) {
-      throw StateError(
-          'Expected OpenAIProvider but got ${provider.runtimeType}. '
-          'This should not happen when using buildOpenAIResponses().');
+    // Ensure we have an OpenAI provider. If the current builder is configured
+    // for a non‑OpenAI backend (e.g. Anthropic), surface this as a capability
+    // error instead of an internal StateError so callers can handle it
+    // consistently with other build* helpers.
+    if (provider is! openai_impl.OpenAIProvider) {
+      throw UnsupportedCapabilityError(
+        'OpenAI Responses API is only available for OpenAI-compatible providers. '
+        'Received provider type: ${provider.runtimeType}.',
+      );
     }
 
     // Verify that Responses API is properly initialized

@@ -7,6 +7,12 @@ This directory contains specific usage examples for the Google (Gemini) provider
 - `embeddings.dart` - Google text embedding model usage examples
 - `image_generation.dart` - Google image generation functionality examples
 - `google_tts_example.dart` - Google native text-to-speech examples
+- `google_openai_compatible.dart` - Google Gemini via OpenAI-compatible interface (googleOpenAI)
+- `google_web_search.dart` - Gemini 2.x with Google Search grounding via unified web search config
+- `google_file_search.dart` - Gemini 2.5 File Search (RAG) via file_search tool
+- `google_code_execution.dart` - Gemini 2.x code execution via code_execution tool
+- `google_multimodal_audio_video.dart` - Gemini 2.5 multimodal audio & video understanding examples
+- `google_files_and_rag.dart` - Gemini 2.5 Files API upload + File Search RAG example
 
 ## 🔢 Embeddings
 
@@ -185,12 +191,77 @@ try {
 - [Gemini API Reference](https://ai.google.dev/api)
 - [Core Features Examples](../../02_core_features/embeddings.dart)
 
+## 🔗 OpenAI-Compatible Gemini (googleOpenAI)
+
+In addition to the native `google()` builder, you can use Gemini through the
+OpenAI-compatible interface via `googleOpenAI()`. This is useful when you want:
+
+- A unified OpenAI-style API across providers
+- To reuse existing OpenAI-compatible tooling and abstractions
+- To configure reasoning/thinking and web search with a common pattern
+
+### Recommended Usage Pattern
+
+```dart
+final model = await ai()
+    .googleOpenAI()
+    .apiKey(Platform.environment['GOOGLE_API_KEY']!)
+    // Reasoning-capable model with OpenAI-compatible endpoint.
+    .model('gemini-2.5-flash-preview-05-20')
+    // Enable stronger reasoning for complex tasks.
+    .reasoningEffort(ReasoningEffort.high)
+    // Enable unified web search configuration.
+    .enableWebSearch()
+    .webSearch(
+      maxResults: 5,
+      blockedDomains: const ['reddit.com', 'twitter.com'],
+    )
+    .buildLanguageModel();
+
+final result = await generateTextPromptWithModel(
+  model,
+  messages: [
+    ModelMessage.userText(
+      'Explain quantization strategies for on-device LLMs.',
+    ),
+  ],
+);
+
+print(result.text);
+print(result.thinking); // Reasoning content when available
+```
+
+### When to Use `google()` vs `googleOpenAI()`
+
+- Use `google()` when:
+  - You want full access to Gemini native features (multimodal prompts, safety settings, streaming TTS, etc.).
+  - You are building a Gemini-focused application and do not rely on OpenAI-compatible tooling.
+
+- Use `googleOpenAI()` when:
+  - You already have OpenAI-style integrations and want to plug Gemini into the same pipeline.
+  - You want a uniform interface across multiple providers (DeepSeek/Groq/xAI/OpenRouter/Gemini).
+  - You rely on OpenAI-compatible abstractions for prompts, tools, and structured output.
+
+### Example File
+
+Run the dedicated example:
+
+```bash
+dart run example/04_providers/google/google_openai_compatible.dart
+```
+
+
 ## 📖 Next Steps
 
 Try running the example:
 
 ```bash
 dart run example/04_providers/google/embeddings.dart
+dart run example/04_providers/google/google_web_search.dart
+dart run example/04_providers/google/google_file_search.dart
+dart run example/04_providers/google/google_code_execution.dart
+dart run example/04_providers/google/google_multimodal_audio_video.dart
+dart run example/04_providers/google/google_files_and_rag.dart
 ```
 
 ## 🎨 Image Generation

@@ -119,25 +119,22 @@ void main() {
 
     group('Default Configuration', () {
       test('should provide default configuration', () {
-        final defaultConfig = factory.getProviderDefaults();
+        final defaultConfig = factory.getDefaultConfig();
 
-        expect(defaultConfig, isNotEmpty);
-        expect(defaultConfig['baseUrl'], isNotNull);
+        expect(defaultConfig.baseUrl, isNotNull);
       });
 
       test('should have valid default base URL', () {
-        final defaultConfig = factory.getProviderDefaults();
-        final baseUrl = defaultConfig['baseUrl'] as String?;
+        final defaultConfig = factory.getDefaultConfig();
+        final baseUrl = defaultConfig.baseUrl;
 
         expect(baseUrl, isNotNull);
         expect(baseUrl, equals('https://api.elevenlabs.io/v1/'));
       });
 
       test('should have default voice settings', () {
-        final defaultConfig = factory.getProviderDefaults();
-
-        expect(defaultConfig, isNotEmpty);
-        // ElevenLabs may have default voice configurations
+        final defaultConfig = factory.getDefaultConfig();
+        expect(defaultConfig.model, isNotEmpty);
       });
     });
 
@@ -189,11 +186,11 @@ void main() {
 
     group('Provider Interface Compliance', () {
       test('should implement BaseProviderFactory', () {
-        expect(factory, isA<BaseProviderFactory<ChatCapability>>());
+        expect(factory, isA<BaseProviderFactory>());
       });
 
       test('should implement LLMProviderFactory', () {
-        expect(factory, isA<LLMProviderFactory<ChatCapability>>());
+        expect(factory, isA<LLMProviderFactory>());
       });
 
       test('should create providers that implement required interfaces', () {
@@ -205,8 +202,9 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<ChatCapability>());
+        expect(provider, isA<ElevenLabsProvider>());
         expect(provider, isA<AudioCapability>());
+        expect(provider, isNot(isA<ChatCapability>()));
       });
     });
 

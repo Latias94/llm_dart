@@ -80,34 +80,49 @@ dart run performance_optimization.dart
 
 ## Usage Examples
 
-### Reasoning with DeepSeek R1
+### Reasoning with DeepSeek R1 (prompt-first)
 ```dart
-// Access AI thinking process
-final provider = await ai().deepseek().apiKey('your-key')
-    .model('deepseek-reasoner').build();
+// Access AI thinking process using LanguageModel + ModelMessage
+final model = await ai()
+    .deepseek()
+    .apiKey('your-key')
+    .model('deepseek-reasoner')
+    .buildLanguageModel();
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this step by step: 15 + 27 * 3'),
-]);
+final messages = <ModelMessage>[
+  ModelMessage.userText('Solve this step by step: 15 + 27 * 3'),
+];
+
+final result = await generateTextPromptWithModel(
+  model,
+  messages: messages,
+);
 
 // Access thinking process
-if (response.thinking != null) {
-  print('AI Thinking: ${response.thinking}');
+if (result.thinking != null) {
+  print('AI Thinking: ${result.thinking}');
 }
-print('Answer: ${response.text}');
+print('Answer: ${result.text}');
 ```
 
-### Multi-modal Processing
+### Multi-modal Processing (prompt-first)
 ```dart
-// Process image with text
-final provider = await ai().openai().apiKey('your-key').build();
+// Process image with text using ChatPromptBuilder + ModelMessage
+final model = await ai()
+    .openai()
+    .apiKey('your-key')
+    .model('gpt-4o-mini')
+    .buildLanguageModel();
 
-final response = await provider.chat([
-  ChatMessage.user([
-    ChatMessageContent.text('What do you see in this image?'),
-    ChatMessageContent.image('data:image/jpeg;base64,...'),
-  ]),
-]);
+final prompt = ChatPromptBuilder.user()
+    .text('What do you see in this image?')
+    .imageUrl('data:image/jpeg;base64,...')
+    .build();
+
+final response = await generateTextPromptWithModel(
+  model,
+  messages: [prompt],
+);
 ```
 
 ### Batch Processing
@@ -133,10 +148,10 @@ for (final result in results) {
 }
 ```
 
-### HTTP Configuration (Layered Approach)
+### HTTP Configuration (Layered Approach, prompt-first)
 ```dart
-// Clean, organized HTTP configuration
-final provider = await ai()
+// Clean, organized HTTP configuration with a LanguageModel
+final model = await ai()
     .openai()
     .apiKey('your-key')
     .http((http) => http
@@ -144,7 +159,7 @@ final provider = await ai()
         .headers({'X-Custom-Header': 'value'})
         .connectionTimeout(Duration(seconds: 30))
         .enableLogging(true))
-    .build();
+    .buildLanguageModel();
 ```
 
 ### Custom Dio Client (Advanced HTTP Control)
@@ -162,20 +177,20 @@ customDio.interceptors.add(InterceptorsWrapper(
   },
 ));
 
-// Use custom Dio (highest priority)
-final provider = await ai()
+// Use custom Dio (highest priority) with a LanguageModel
+final model = await ai()
     .anthropic()
     .apiKey('your-key')
     .http((http) => http
         .dioClient(customDio)  // Takes priority over other HTTP settings
         .enableLogging(true))  // This will be ignored
-    .build();
+    .buildLanguageModel();
 ```
 
-### Timeout Configuration (Priority Hierarchy)
+### Timeout Configuration (Priority Hierarchy, prompt-first)
 ```dart
-// Global timeout with HTTP-specific overrides
-final provider = await ai()
+// Global timeout with HTTP-specific overrides on a LanguageModel
+final model = await ai()
     .openai()
     .apiKey('your-key')
     .timeout(Duration(minutes: 2))     // Global default: 2 minutes
@@ -183,7 +198,7 @@ final provider = await ai()
         .connectionTimeout(Duration(seconds: 30))  // Override connection: 30s
         .receiveTimeout(Duration(minutes: 5)))     // Override receive: 5min
         // sendTimeout will use global timeout (2 minutes)
-    .build();
+    .buildLanguageModel();
 
 // Priority: HTTP-specific > Global > Provider defaults > System defaults
 ```

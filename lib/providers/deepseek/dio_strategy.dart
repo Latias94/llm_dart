@@ -1,17 +1,9 @@
-import '../../utils/config_utils.dart';
-import '../../utils/dio_client_factory.dart';
-import 'config.dart';
-
-/// DeepSeek-specific Dio strategy implementation
+/// Backwards-compatible alias for the DeepSeek Dio strategy.
 ///
-/// Uses OpenAI-compatible authentication (Bearer token).
-class DeepSeekDioStrategy extends BaseProviderDioStrategy {
-  @override
-  String get providerName => 'DeepSeek';
+/// The actual implementation now lives in the `llm_dart_deepseek`
+/// subpackage. This file is kept so that existing imports from
+/// `providers/deepseek/dio_strategy.dart` continue to work.
+library;
 
-  @override
-  Map<String, String> buildHeaders(dynamic config) {
-    final deepSeekConfig = config as DeepSeekConfig;
-    return ConfigUtils.buildOpenAIHeaders(deepSeekConfig.apiKey);
-  }
-}
+export 'package:llm_dart_deepseek/llm_dart_deepseek.dart'
+    show DeepSeekDioStrategy;

@@ -1,7 +1,9 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use
 import 'dart:io';
 import 'dart:math';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
+import 'package:llm_dart_core/llm_dart_core.dart' show DefaultLanguageModel;
 
 /// 🔧 Custom Providers - Build Your Own AI Providers
 ///
@@ -25,6 +27,7 @@ void main() async {
   await demonstrateCachingProvider();
   await demonstrateCustomAPIProvider();
   await demonstrateProviderChaining();
+  await demonstrateLanguageModelWrapper();
 
   print('\n✅ Custom providers completed!');
 }
@@ -38,8 +41,11 @@ Future<void> demonstrateMockProvider() async {
     final mockProvider = MockChatProvider();
 
     // Test basic chat
-    final response =
-        await mockProvider.chat([ChatMessage.user('Hello, how are you?')]);
+    final basicPrompt =
+        ChatPromptBuilder.user().text('Hello, how are you?').build();
+    final response = await mockProvider.chat(
+      [ChatMessage.fromPromptMessage(basicPrompt)],
+    );
 
     print('   User: Hello, how are you?');
     print('   🤖 Mock AI: ${response.text}');
@@ -48,8 +54,11 @@ Future<void> demonstrateMockProvider() async {
     print('\n   Streaming test:');
     print('   🤖 Mock AI: ');
 
-    await for (final event
-        in mockProvider.chatStream([ChatMessage.user('Count to 5')])) {
+    final streamPrompt = ChatPromptBuilder.user().text('Count to 5').build();
+
+    await for (final event in mockProvider.chatStream(
+      [ChatMessage.fromPromptMessage(streamPrompt)],
+    )) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           stdout.write(delta);
@@ -77,6 +86,52 @@ Future<void> demonstrateMockProvider() async {
   }
 }
 
+/// Demonstrate wrapping a custom ChatCapability as a prompt-first LanguageModel.
+///
+/// This shows how to bridge legacy [ChatMessage]-based providers into the
+/// prompt-first [ModelMessage] + [LanguageModel] world so that higher-level
+/// helpers and agents can be reused.
+Future<void> demonstrateLanguageModelWrapper() async {
+  print('🧱 LanguageModel Wrapper around Custom ChatCapability:\n');
+
+  try {
+    // 1) Start from any ChatCapability (here we reuse the MockChatProvider).
+    final mockProvider = MockChatProvider();
+
+    // 2) Wrap it in a DefaultLanguageModel so prompt-first helpers can be used.
+    final model = DefaultLanguageModel(
+      providerId: 'mock',
+      modelId: 'mock-chat',
+      config: const LLMConfig(
+        baseUrl: 'https://mock.local/',
+        model: 'mock-chat',
+      ),
+      chat: mockProvider,
+    );
+
+    // 3) Build a prompt-first conversation using ModelMessage.
+    final messages = <ModelMessage>[
+      ModelMessage.systemText(
+        'You are a mock assistant used for testing and demos.',
+      ),
+      ModelMessage.userText(
+        'Explain how to wrap a custom ChatCapability as a LanguageModel.',
+      ),
+    ];
+
+    // 4) Use the standard prompt-first helper on the wrapped model.
+    final result = await generateTextPromptWithModel(
+      model,
+      messages: messages,
+    );
+
+    print('   🤖 Wrapped LanguageModel response: ${result.text}');
+    print('   ✅ LanguageModel wrapper demonstration successful\n');
+  } catch (e) {
+    print('   ❌ LanguageModel wrapper demonstration failed: $e\n');
+  }
+}
+
 /// Demonstrate a logging provider wrapper
 Future<void> demonstrateLoggingProvider() async {
   print('📝 Logging Provider Wrapper:\n');
@@ -89,8 +144,12 @@ Future<void> demonstrateLoggingProvider() async {
     final loggingProvider = LoggingChatProvider(baseProvider);
 
     // Test with logging
-    final response = await loggingProvider
-        .chat([ChatMessage.user('What is artificial intelligence?')]);
+    final prompt = ChatPromptBuilder.user()
+        .text('What is artificial intelligence?')
+        .build();
+    final response = await loggingProvider.chat(
+      [ChatMessage.fromPromptMessage(prompt)],
+    );
 
     print('   User: What is artificial intelligence?');
     print('   🤖 AI: ${response.text}');
@@ -122,7 +181,10 @@ Future<void> demonstrateCachingProvider() async {
     // First call - cache miss
     print('   First call (cache miss):');
     final stopwatch1 = Stopwatch()..start();
-    final response1 = await cachingProvider.chat([ChatMessage.user(question)]);
+    final prompt1 = ChatPromptBuilder.user().text(question).build();
+    final response1 = await cachingProvider.chat(
+      [ChatMessage.fromPromptMessage(prompt1)],
+    );
     stopwatch1.stop();
     print('   🤖 AI: ${response1.text}');
     print('   ⏱️  Time: ${stopwatch1.elapsedMilliseconds}ms');
@@ -130,7 +192,10 @@ Future<void> demonstrateCachingProvider() async {
     // Second call - cache hit
     print('\n   Second call (cache hit):');
     final stopwatch2 = Stopwatch()..start();
-    final response2 = await cachingProvider.chat([ChatMessage.user(question)]);
+    final prompt2 = ChatPromptBuilder.user().text(question).build();
+    final response2 = await cachingProvider.chat(
+      [ChatMessage.fromPromptMessage(prompt2)],
+    );
     stopwatch2.stop();
     print('   🤖 AI: ${response2.text}');
     print('   ⏱️  Time: ${stopwatch2.elapsedMilliseconds}ms');
@@ -159,8 +224,11 @@ Future<void> demonstrateCustomAPIProvider() async {
     );
 
     // Test custom provider
-    final response = await customProvider
-        .chat([ChatMessage.user('Hello from custom provider!')]);
+    final prompt =
+        ChatPromptBuilder.user().text('Hello from custom provider!').build();
+    final response = await customProvider.chat(
+      [ChatMessage.fromPromptMessage(prompt)],
+    );
 
     print('   User: Hello from custom provider!');
     print('   🤖 Custom AI: ${response.text}');
@@ -189,8 +257,11 @@ Future<void> demonstrateProviderChaining() async {
         LoggingChatProvider(CachingChatProvider(baseProvider));
 
     // Test chained provider
-    final response = await chainedProvider
-        .chat([ChatMessage.user('Test chained providers')]);
+    final prompt =
+        ChatPromptBuilder.user().text('Test chained providers').build();
+    final response = await chainedProvider.chat(
+      [ChatMessage.fromPromptMessage(prompt)],
+    );
 
     print('   User: Test chained providers');
     print('   🤖 Chained AI: ${response.text}');
@@ -213,7 +284,8 @@ class MockChatProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) async {
     // Simulate API delay
     await Future.delayed(Duration(milliseconds: 100 + _random.nextInt(200)));
@@ -238,8 +310,9 @@ class MockChatProvider implements ChatCapability {
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     final userMessage = messages.lastWhere(
       (m) => m.role == ChatRole.user,
@@ -268,9 +341,14 @@ class MockChatProvider implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) async {
-    return chat(messages, cancelToken: cancelToken); // Simple implementation
+    return chat(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    ); // Simple implementation
   }
 
   @override
@@ -302,15 +380,19 @@ class LoggingChatProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) async {
     final stopwatch = Stopwatch()..start();
 
     print('   📝 [LOG] Starting chat request with ${messages.length} messages');
 
     try {
-      final response =
-          await _baseProvider.chat(messages, cancelToken: cancelToken);
+      final response = await _baseProvider.chat(
+        messages,
+        options: options,
+        cancelToken: cancelToken,
+      );
       stopwatch.stop();
 
       print('   📝 [LOG] Chat completed in ${stopwatch.elapsedMilliseconds}ms');
@@ -330,13 +412,18 @@ class LoggingChatProvider implements ChatCapability {
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
     print('   📝 [LOG] Starting streaming chat request');
 
-    await for (final event in _baseProvider.chatStream(messages,
-        tools: tools, cancelToken: cancelToken)) {
+    await for (final event in _baseProvider.chatStream(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    )) {
       switch (event) {
         case TextDeltaEvent():
           print('   📝 [LOG] Text delta received');
@@ -359,11 +446,16 @@ class LoggingChatProvider implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) async {
     print('   📝 [LOG] Chat with ${tools?.length ?? 0} tools');
-    return _baseProvider.chatWithTools(messages, tools,
-        cancelToken: cancelToken);
+    return _baseProvider.chatWithTools(
+      messages,
+      tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -389,7 +481,8 @@ class CachingChatProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) async {
     final cacheKey = _generateCacheKey(messages);
 
@@ -399,8 +492,11 @@ class CachingChatProvider implements ChatCapability {
     }
 
     print('   💾 [CACHE] Cache miss, calling base provider');
-    final response =
-        await _baseProvider.chat(messages, cancelToken: cancelToken);
+    final response = await _baseProvider.chat(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
     _cache[cacheKey] = response;
 
     return response;
@@ -409,23 +505,33 @@ class CachingChatProvider implements ChatCapability {
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) {
     // For simplicity, streaming bypasses cache
-    return _baseProvider.chatStream(messages,
-        tools: tools, cancelToken: cancelToken);
+    return _baseProvider.chatStream(
+      messages,
+      tools: tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) {
     // Tools bypass cache for safety
-    return _baseProvider.chatWithTools(messages, tools,
-        cancelToken: cancelToken);
+    return _baseProvider.chatWithTools(
+      messages,
+      tools,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -458,7 +564,8 @@ class CustomAPIProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) async {
     // Simulate custom API call
     await Future.delayed(Duration(milliseconds: 300));
@@ -472,10 +579,15 @@ class CustomAPIProvider implements ChatCapability {
   @override
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
+    LanguageModelCallOptions? options,
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    CancellationToken? cancelToken,
   }) async* {
-    final response = await chat(messages, cancelToken: cancelToken);
+    final response = await chat(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
     yield TextDeltaEvent(response.text ?? '');
     yield CompletionEvent(response);
   }
@@ -484,9 +596,14 @@ class CustomAPIProvider implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) {
-    return chat(messages, cancelToken: cancelToken);
+    return chat(
+      messages,
+      options: options,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -518,6 +635,15 @@ class MockChatResponse implements ChatResponse {
     this.thinking,
     this.toolCalls,
   });
+
+  @override
+  List<CallWarning> get warnings => const [];
+
+  @override
+  Map<String, dynamic>? get metadata => null;
+
+  @override
+  CallMetadata? get callMetadata => null;
 }
 
 class MockUsage extends UsageInfo {

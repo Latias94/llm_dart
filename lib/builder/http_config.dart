@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// HTTP configuration builder for LLM providers
 ///
@@ -9,57 +10,58 @@ class HttpConfig {
 
   /// Sets HTTP proxy configuration
   HttpConfig proxy(String proxyUrl) {
-    _config['httpProxy'] = proxyUrl;
+    _config[LLMConfigKeys.httpProxy] = proxyUrl;
     return this;
   }
 
   /// Sets custom HTTP headers
   HttpConfig headers(Map<String, String> headers) {
-    _config['customHeaders'] = headers;
+    _config[LLMConfigKeys.customHeaders] = headers;
     return this;
   }
 
   /// Sets a single custom HTTP header
   HttpConfig header(String name, String value) {
     final existingHeaders =
-        _config['customHeaders'] as Map<String, String>? ?? <String, String>{};
-    _config['customHeaders'] = {...existingHeaders, name: value};
+        _config[LLMConfigKeys.customHeaders] as Map<String, String>? ??
+            <String, String>{};
+    _config[LLMConfigKeys.customHeaders] = {...existingHeaders, name: value};
     return this;
   }
 
   /// Enables SSL certificate verification bypass
   HttpConfig bypassSSLVerification(bool bypass) {
-    _config['bypassSSLVerification'] = bypass;
+    _config[LLMConfigKeys.bypassSSLVerification] = bypass;
     return this;
   }
 
   /// Sets custom SSL certificate path
   HttpConfig sslCertificate(String certificatePath) {
-    _config['sslCertificate'] = certificatePath;
+    _config[LLMConfigKeys.sslCertificate] = certificatePath;
     return this;
   }
 
   /// Sets connection timeout
   HttpConfig connectionTimeout(Duration timeout) {
-    _config['connectionTimeout'] = timeout;
+    _config[LLMConfigKeys.connectionTimeout] = timeout;
     return this;
   }
 
   /// Sets receive timeout
   HttpConfig receiveTimeout(Duration timeout) {
-    _config['receiveTimeout'] = timeout;
+    _config[LLMConfigKeys.receiveTimeout] = timeout;
     return this;
   }
 
   /// Sets send timeout
   HttpConfig sendTimeout(Duration timeout) {
-    _config['sendTimeout'] = timeout;
+    _config[LLMConfigKeys.sendTimeout] = timeout;
     return this;
   }
 
   /// Enables request/response logging for debugging
   HttpConfig enableLogging(bool enable) {
-    _config['enableHttpLogging'] = enable;
+    _config[LLMConfigKeys.enableHttpLogging] = enable;
     return this;
   }
 
@@ -102,7 +104,41 @@ class HttpConfig {
   ///     .build();
   /// ```
   HttpConfig dioClient(Dio dio) {
-    _config['customDio'] = dio;
+    _config[LLMConfigKeys.customDio] = dio;
+    return this;
+  }
+
+  /// Adds a single custom Dio interceptor.
+  ///
+  /// This is a lightweight alternative to [dioClient] when you only need
+  /// to attach additional interceptors (for metrics, tracing, etc.) while
+  /// keeping the default HTTP configuration logic.
+  ///
+  /// Interceptors added via this method are:
+  /// - Applied after the base Dio instance is created.
+  /// - Ignored when a custom Dio client is provided via [dioClient].
+  ///
+  /// Note: Configurations that carry interceptors are not meant to be
+  /// serialized to JSON.
+  HttpConfig addInterceptor(Interceptor interceptor) {
+    final existing =
+        _config[LLMConfigKeys.customInterceptors] as List<Interceptor>? ??
+            <Interceptor>[];
+    _config[LLMConfigKeys.customInterceptors] = [...existing, interceptor];
+    return this;
+  }
+
+  /// Adds multiple custom Dio interceptors.
+  ///
+  /// See [addInterceptor] for behaviour details.
+  HttpConfig interceptors(List<Interceptor> interceptors) {
+    final existing =
+        _config[LLMConfigKeys.customInterceptors] as List<Interceptor>? ??
+            <Interceptor>[];
+    _config[LLMConfigKeys.customInterceptors] = [
+      ...existing,
+      ...interceptors,
+    ];
     return this;
   }
 

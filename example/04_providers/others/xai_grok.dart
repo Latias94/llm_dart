@@ -33,29 +33,38 @@ Future<void> demonstrateBasicGrok(String apiKey) async {
   print('🤖 Basic Grok Functionality:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .xai()
         .apiKey(apiKey)
         .model('grok-3')
         .temperature(0.7)
         .maxTokens(500)
-        .build();
+        .buildLanguageModel();
 
     // Test basic conversation
     print('   Basic Conversation:');
-    var response = await provider.chat([
-      ChatMessage.user('Hello Grok! Tell me something interesting about AI.')
-    ]);
+    var prompt = ChatPromptBuilder.user()
+        .text('Hello Grok! Tell me something interesting about AI.')
+        .build();
+    var response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
     print('      User: Hello Grok! Tell me something interesting about AI.');
     print('      Grok: ${response.text}\n');
 
     // Test with system prompt
     print('   With System Prompt:');
-    response = await provider.chat([
-      ChatMessage.system(
-          'You are Grok, a witty AI assistant with a sense of humor.'),
-      ChatMessage.user('Explain quantum computing like I\'m 5 years old.')
-    ]);
+    prompt = ChatPromptBuilder.system()
+        .text('You are Grok, a witty AI assistant with a sense of humor.')
+        .build();
+    final user = ChatPromptBuilder.user()
+        .text('Explain quantum computing like I\'m 5 years old.')
+        .build();
+    response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt, user],
+    );
     print('      System: You are Grok, a witty AI assistant...');
     print('      User: Explain quantum computing like I\'m 5 years old.');
     print('      Grok: ${response.text}');
@@ -75,13 +84,13 @@ Future<void> demonstratePersonalityFeatures(String apiKey) async {
   print('😄 Personality Features:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .xai()
         .apiKey(apiKey)
         .model('grok-3')
         .temperature(0.8) // Higher for more personality
         .maxTokens(400)
-        .build();
+        .buildLanguageModel();
 
     final personalityTests = [
       'Tell me a joke about programming.',
@@ -93,11 +102,15 @@ Future<void> demonstratePersonalityFeatures(String apiKey) async {
     for (final test in personalityTests) {
       print('   Testing: $test');
 
-      final response = await provider.chat([
-        ChatMessage.system(
-            'Be witty, engaging, and show your personality. Don\'t be afraid to be humorous or opinionated.'),
-        ChatMessage.user(test)
-      ]);
+      final prompt = ChatPromptBuilder.system()
+          .text(
+              'Be witty, engaging, and show your personality. Don\'t be afraid to be humorous or opinionated.')
+          .build();
+      final user = ChatPromptBuilder.user().text(test).build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt, user],
+      );
 
       print('      Grok: ${response.text}\n');
     }
@@ -118,13 +131,13 @@ Future<void> demonstrateRealTimeInformation(String apiKey) async {
   print('🌐 Real-Time Information:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .xai()
         .apiKey(apiKey)
         .model('grok-3')
         .temperature(0.3) // Lower for factual information
         .maxTokens(600)
-        .build();
+        .buildLanguageModel();
 
     final realTimeQueries = [
       'What are the latest developments in AI this week?',
@@ -136,11 +149,15 @@ Future<void> demonstrateRealTimeInformation(String apiKey) async {
     for (final query in realTimeQueries) {
       print('   Query: $query');
 
-      final response = await provider.chat([
-        ChatMessage.system(
-            'Provide current, up-to-date information. If you\'re not sure about recent events, be honest about your knowledge cutoff.'),
-        ChatMessage.user(query)
-      ]);
+      final prompt = ChatPromptBuilder.system()
+          .text(
+              'Provide current, up-to-date information. If you\'re not sure about recent events, be honest about your knowledge cutoff.')
+          .build();
+      final user = ChatPromptBuilder.user().text(query).build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt, user],
+      );
 
       print('      Grok: ${response.text}\n');
     }
@@ -161,42 +178,59 @@ Future<void> demonstrateConversationalStyle(String apiKey) async {
   print('💬 Conversational Style:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .xai()
         .apiKey(apiKey)
         .model('grok-3')
         .temperature(0.7)
         .maxTokens(400)
-        .build();
+        .buildLanguageModel();
 
     // Multi-turn conversation
     print('   Multi-turn Conversation:');
-    final conversation = [
-      ChatMessage.system(
-          'You are Grok. Be conversational, witty, and remember the context of our chat.'),
-      ChatMessage.user('I\'m thinking about learning to code. Any advice?'),
+    final conversation = <ModelMessage>[
+      ChatPromptBuilder.system()
+          .text(
+              'You are Grok. Be conversational, witty, and remember the context of our chat.')
+          .build(),
+      ChatPromptBuilder.user()
+          .text('I\'m thinking about learning to code. Any advice?')
+          .build(),
     ];
 
-    var response = await provider.chat(conversation);
+    var response = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(conversation),
+    );
     print('      User: I\'m thinking about learning to code. Any advice?');
     print('      Grok: ${response.text}\n');
 
     // Continue conversation
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
-    conversation.add(ChatMessage.user(
-        'I\'m particularly interested in AI and machine learning.'));
+    conversation
+        .add(ChatPromptBuilder.assistant().text(response.text ?? '').build());
+    conversation.add(ChatPromptBuilder.user()
+        .text('I\'m particularly interested in AI and machine learning.')
+        .build());
 
-    response = await provider.chat(conversation);
+    response = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(conversation),
+    );
     print(
         '      User: I\'m particularly interested in AI and machine learning.');
     print('      Grok: ${response.text}\n');
 
     // Another follow-up
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
-    conversation.add(
-        ChatMessage.user('What programming language should I start with?'));
+    conversation
+        .add(ChatPromptBuilder.assistant().text(response.text ?? '').build());
+    conversation.add(ChatPromptBuilder.user()
+        .text('What programming language should I start with?')
+        .build());
 
-    response = await provider.chat(conversation);
+    response = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(conversation),
+    );
     print('      User: What programming language should I start with?');
     print('      Grok: ${response.text}');
 
@@ -218,13 +252,17 @@ Future<void> demonstrateBestPractices(String apiKey) async {
   // Error handling
   print('   Error Handling:');
   try {
-    final provider = await ai()
+    final model = await ai()
         .xai()
         .apiKey('invalid-key') // Intentionally invalid
         .model('grok-3')
-        .build();
+        .buildLanguageModel();
 
-    await provider.chat([ChatMessage.user('Test')]);
+    final prompt = ChatPromptBuilder.user().text('Test').build();
+    await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
   } on AuthError catch (e) {
     print('      ✅ Properly caught AuthError: ${e.message}');
   } catch (e) {
@@ -234,7 +272,7 @@ Future<void> demonstrateBestPractices(String apiKey) async {
   // Optimal configuration
   print('\n   Optimal Configuration:');
   try {
-    final optimizedProvider = await ai()
+    final optimizedModel = await ai()
         .xai()
         .apiKey(apiKey)
         .model('grok-3')
@@ -242,11 +280,15 @@ Future<void> demonstrateBestPractices(String apiKey) async {
         .maxTokens(500) // Reasonable response length
         .systemPrompt('You are Grok, a helpful and witty AI assistant.')
         .timeout(Duration(seconds: 30))
-        .build();
+        .buildLanguageModel();
 
-    final response = await optimizedProvider.chat([
-      ChatMessage.user('Give me a creative solution to reduce plastic waste.')
-    ]);
+    final optimizedPrompt = ChatPromptBuilder.user()
+        .text('Give me a creative solution to reduce plastic waste.')
+        .build();
+    final response = await generateTextWithModel(
+      optimizedModel,
+      promptMessages: [optimizedPrompt],
+    );
 
     print('      ✅ Optimized response: ${response.text?.substring(0, 150)}...');
   } catch (e) {
@@ -256,18 +298,23 @@ Future<void> demonstrateBestPractices(String apiKey) async {
   // Streaming for better UX
   print('\n   Streaming for Better UX:');
   try {
-    final streamProvider = await ai()
+    final streamModel = await ai()
         .xai()
         .apiKey(apiKey)
         .model('grok-3')
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
 
     print('      Question: Write a short poem about technology.');
     print('      Grok (streaming): ');
 
-    await for (final event in streamProvider.chatStream(
-        [ChatMessage.user('Write a short poem about technology.')])) {
+    final streamPrompt = ChatPromptBuilder.user()
+        .text('Write a short poem about technology.')
+        .build();
+    await for (final event in streamTextWithModel(
+      streamModel,
+      promptMessages: [streamPrompt],
+    )) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           stdout.write(delta);

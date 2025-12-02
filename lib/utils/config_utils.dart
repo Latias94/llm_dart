@@ -1,11 +1,25 @@
-import '../core/config.dart';
-import '../models/tool_models.dart';
-import '../models/chat_models.dart';
+// This legacy helper converts ChatMessage-based conversations into
+// provider-specific payloads. New code should prefer ModelMessage +
+// provider-specific mapping in dedicated subpackages.
+// ignore_for_file: deprecated_member_use
+
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart'
+    show HttpHeaderUtils;
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Utility class for common configuration transformations
 ///
 /// This class provides helper methods for converting between unified LLMConfig
 /// and provider-specific configurations, reducing code duplication across providers.
+///
+/// NOTE: Header-building helpers delegate to `HttpHeaderUtils` in the
+/// `llm_dart_provider_utils` package and are kept here only for backwards
+/// compatibility. New code should prefer `HttpHeaderUtils` directly.
+@Deprecated(
+  'ConfigUtils is legacy. Use HttpHeaderUtils from '
+  'llm_dart_provider_utils for HTTP headers and implement '
+  'message conversion inside provider-specific packages.',
+)
 class ConfigUtils {
   /// Extract common HTTP headers from config
   static Map<String, String> buildHeaders({
@@ -13,38 +27,21 @@ class ConfigUtils {
     required String authHeaderName,
     String? authPrefix,
     Map<String, String>? additionalHeaders,
-  }) {
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-      authHeaderName: authPrefix != null ? '$authPrefix $apiKey' : apiKey,
-    };
-
-    if (additionalHeaders != null) {
-      headers.addAll(additionalHeaders);
-    }
-
-    return headers;
-  }
+  }) =>
+      HttpHeaderUtils.buildHeaders(
+        apiKey: apiKey,
+        authHeaderName: authHeaderName,
+        authPrefix: authPrefix,
+        additionalHeaders: additionalHeaders,
+      );
 
   /// Build OpenAI-compatible headers
-  static Map<String, String> buildOpenAIHeaders(String apiKey) {
-    return buildHeaders(
-      apiKey: apiKey,
-      authHeaderName: 'Authorization',
-      authPrefix: 'Bearer',
-    );
-  }
+  static Map<String, String> buildOpenAIHeaders(String apiKey) =>
+      HttpHeaderUtils.buildOpenAIHeaders(apiKey);
 
   /// Build Anthropic-compatible headers
-  static Map<String, String> buildAnthropicHeaders(String apiKey) {
-    return buildHeaders(
-      apiKey: apiKey,
-      authHeaderName: 'x-api-key',
-      additionalHeaders: {
-        'anthropic-version': '2023-06-01',
-      },
-    );
-  }
+  static Map<String, String> buildAnthropicHeaders(String apiKey) =>
+      HttpHeaderUtils.buildAnthropicHeaders(apiKey);
 
   /// Extract common request parameters from LLMConfig
   static Map<String, dynamic> buildCommonParams(LLMConfig config) {

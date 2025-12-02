@@ -1,5 +1,11 @@
+// Sanity tests for the root llm_dart entry point. These tests also
+// reference ChatMessage via the legacy entry point to ensure the
+// legacy API surface is available.
+// ignore_for_file: deprecated_member_use
+
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 
 void main() {
   group('LLM Dart Library Entry Point', () {
@@ -48,7 +54,6 @@ void main() {
           maxTokens: 1000,
           systemPrompt: 'You are a helpful assistant',
           timeout: Duration(seconds: 30),
-          stream: true,
           topP: 0.9,
           topK: 50,
           extensions: {'custom': 'value'},

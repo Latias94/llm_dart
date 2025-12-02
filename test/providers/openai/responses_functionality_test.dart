@@ -3,17 +3,23 @@
 /// This test suite focuses on testing the actual functionality and method
 /// behavior of the OpenAI Responses API implementation, including mocking
 /// and integration scenarios.
+///
+/// These tests use ChatMessage-based prompts to verify compatibility
+/// with the legacy chat surface.
+// ignore_for_file: deprecated_member_use
 library;
 
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:llm_dart/providers/openai/responses_capability.dart';
 
 void main() {
   group('OpenAI Responses API Functionality', () {
     // ========== Method Interface Tests ==========
     group('Method Interfaces', () {
-      late OpenAIProvider provider;
+      late openai.OpenAIProvider provider;
       late OpenAIResponses responses;
 
       setUp(() async {
@@ -21,7 +27,7 @@ void main() {
             .openai((openai) => openai.useResponsesAPI().webSearchTool())
             .apiKey('test-key')
             .model('gpt-4o')
-            .build() as OpenAIProvider;
+            .build() as openai.OpenAIProvider;
 
         responses = provider.responses!;
       });
@@ -82,7 +88,7 @@ void main() {
 
     // ========== Message Handling Tests ==========
     group('Message Handling', () {
-      late OpenAIProvider provider;
+      late openai.OpenAIProvider provider;
       late OpenAIResponses responses;
 
       setUp(() async {
@@ -90,7 +96,7 @@ void main() {
             .openai((openai) => openai.useResponsesAPI())
             .apiKey('test-key')
             .model('gpt-4o')
-            .build() as OpenAIProvider;
+            .build() as openai.OpenAIProvider;
 
         responses = provider.responses!;
       });
@@ -154,7 +160,7 @@ void main() {
 
     // ========== Tool Handling Tests ==========
     group('Tool Handling', () {
-      late OpenAIProvider provider;
+      late openai.OpenAIProvider provider;
       late OpenAIResponses responses;
 
       setUp(() async {
@@ -162,7 +168,7 @@ void main() {
             .openai((openai) => openai.useResponsesAPI().webSearchTool())
             .apiKey('test-key')
             .model('gpt-4o')
-            .build() as OpenAIProvider;
+            .build() as openai.OpenAIProvider;
 
         responses = provider.responses!;
       });
@@ -295,7 +301,7 @@ void main() {
 
     // ========== Response ID Handling Tests ==========
     group('Response ID Handling', () {
-      late OpenAIProvider provider;
+      late openai.OpenAIProvider provider;
       late OpenAIResponses responses;
 
       setUp(() async {
@@ -303,7 +309,7 @@ void main() {
             .openai((openai) => openai.useResponsesAPI())
             .apiKey('test-key')
             .model('gpt-4o')
-            .build() as OpenAIProvider;
+            .build() as openai.OpenAIProvider;
 
         responses = provider.responses!;
       });
@@ -368,7 +374,7 @@ void main() {
 
     // ========== Streaming Tests ==========
     group('Streaming', () {
-      late OpenAIProvider provider;
+      late openai.OpenAIProvider provider;
       late OpenAIResponses responses;
 
       setUp(() async {
@@ -376,7 +382,7 @@ void main() {
             .openai((openai) => openai.useResponsesAPI().webSearchTool())
             .apiKey('test-key')
             .model('gpt-4o')
-            .build() as OpenAIProvider;
+            .build() as openai.OpenAIProvider;
 
         responses = provider.responses!;
       });

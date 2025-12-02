@@ -46,7 +46,7 @@ void main() {
       test('should create provider with basic config', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
-          baseUrl: 'https://https.extension.phind.com/agent/',
+          baseUrl: 'https://api.phind.com/v1/',
           model: 'Phind-70B',
         );
 
@@ -77,7 +77,7 @@ void main() {
 
       test('should handle missing API key gracefully', () {
         final config = LLMConfig(
-          baseUrl: 'https://https.extension.phind.com/agent/',
+          baseUrl: 'https://api.phind.com/v1/',
           model: 'Phind-70B',
         );
 
@@ -87,7 +87,7 @@ void main() {
       test('should handle empty API key gracefully', () {
         final config = LLMConfig(
           apiKey: '',
-          baseUrl: 'https://https.extension.phind.com/agent/',
+          baseUrl: 'https://api.phind.com/v1/',
           model: 'Phind-70B',
         );
 
@@ -97,16 +97,15 @@ void main() {
 
     group('Default Configuration', () {
       test('should provide default configuration', () {
-        final defaultConfig = factory.getProviderDefaults();
+        final defaultConfig = factory.getDefaultConfig();
 
-        expect(defaultConfig, isNotEmpty);
-        expect(defaultConfig['model'], isNotNull);
-        expect(defaultConfig['baseUrl'], isNotNull);
+        expect(defaultConfig.model, isNotNull);
+        expect(defaultConfig.baseUrl, isNotNull);
       });
 
       test('should have valid default model', () {
-        final defaultConfig = factory.getProviderDefaults();
-        final model = defaultConfig['model'] as String?;
+        final defaultConfig = factory.getDefaultConfig();
+        final model = defaultConfig.model;
 
         expect(model, isNotNull);
         expect(model, isNotEmpty);
@@ -114,8 +113,8 @@ void main() {
       });
 
       test('should have valid default base URL', () {
-        final defaultConfig = factory.getProviderDefaults();
-        final baseUrl = defaultConfig['baseUrl'] as String?;
+        final defaultConfig = factory.getDefaultConfig();
+        final baseUrl = defaultConfig.baseUrl;
 
         expect(baseUrl, isNotNull);
         expect(baseUrl, equals('https://api.phind.com/v1/'));

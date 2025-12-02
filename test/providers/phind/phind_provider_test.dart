@@ -9,7 +9,7 @@ void main() {
     setUp(() {
       config = const PhindConfig(
         apiKey: 'test-api-key',
-        baseUrl: 'https://https.extension.phind.com/agent/',
+        baseUrl: 'https://api.phind.com/v1/',
         model: 'Phind-70B',
         maxTokens: 1000,
         temperature: 0.7,

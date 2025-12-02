@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
 import 'package:llm_dart/providers/factories/xai_factory.dart';
 
 void main() {
@@ -55,7 +56,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<XAIProvider>());
+        expect(provider, isA<xai.XAIProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -65,13 +66,13 @@ void main() {
           baseUrl: 'https://api.x.ai/v1/',
           model: 'grok-3',
           extensions: {
-            'liveSearch': true,
+            LLMConfigKeys.liveSearch: true,
           },
         );
 
         final provider = factory.create(config);
 
-        expect(provider, isA<XAIProvider>());
+        expect(provider, isA<xai.XAIProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -89,15 +90,15 @@ void main() {
           tools: [],
           toolChoice: const AutoToolChoice(),
           extensions: {
-            'embeddingEncodingFormat': 'float',
-            'embeddingDimensions': 1536,
-            'liveSearch': true,
+            LLMConfigKeys.embeddingEncodingFormat: 'float',
+            LLMConfigKeys.embeddingDimensions: 1536,
+            LLMConfigKeys.liveSearch: true,
           },
         );
 
         final provider = factory.create(config);
 
-        expect(provider, isA<XAIProvider>());
+        expect(provider, isA<xai.XAIProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -123,16 +124,15 @@ void main() {
 
     group('Default Configuration', () {
       test('should provide default configuration', () {
-        final defaultConfig = factory.getProviderDefaults();
+        final defaultConfig = factory.getDefaultConfig();
 
-        expect(defaultConfig, isNotEmpty);
-        expect(defaultConfig['model'], isNotNull);
-        expect(defaultConfig['baseUrl'], isNotNull);
+        expect(defaultConfig.model, isNotNull);
+        expect(defaultConfig.baseUrl, isNotNull);
       });
 
       test('should have valid default model', () {
-        final defaultConfig = factory.getProviderDefaults();
-        final model = defaultConfig['model'] as String?;
+        final defaultConfig = factory.getDefaultConfig();
+        final model = defaultConfig.model;
 
         expect(model, isNotNull);
         expect(model, isNotEmpty);
@@ -140,8 +140,8 @@ void main() {
       });
 
       test('should have valid default base URL', () {
-        final defaultConfig = factory.getProviderDefaults();
-        final baseUrl = defaultConfig['baseUrl'] as String?;
+        final defaultConfig = factory.getDefaultConfig();
+        final baseUrl = defaultConfig.baseUrl;
 
         expect(baseUrl, isNotNull);
         expect(baseUrl, equals('https://api.x.ai/v1/'));

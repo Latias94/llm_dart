@@ -1,0 +1,26 @@
+dependency_overrides:
+  llm_dart_core:
+    path: packages/llm_dart_core
+  llm_dart_provider_utils:
+    path: packages/llm_dart_provider_utils
+  llm_dart_openai:
+    path: packages/llm_dart_openai
+  llm_dart_openai_compatible:
+    path: packages/llm_dart_openai_compatible
+  llm_dart_groq:
+    path: packages/llm_dart_groq
+  llm_dart_deepseek:
+    path: packages/llm_dart_deepseek
+  llm_dart_google:
+    path: packages/llm_dart_google
+  llm_dart_anthropic:
+    path: packages/llm_dart_anthropic
+  llm_dart_ollama:
+    path: packages/llm_dart_ollama
+  llm_dart_xai:
+    path: packages/llm_dart_xai
+  llm_dart_elevenlabs:
+    path: packages/llm_dart_elevenlabs
+  llm_dart_phind:
+    path: packages/llm_dart_phind
+

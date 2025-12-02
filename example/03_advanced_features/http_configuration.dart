@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:logging/logging.dart';
 
@@ -40,6 +41,7 @@ Future<void> main() async {
   await demonstrateCustomHeaders(openaiApiKey);
   await demonstrateTimeoutConfiguration(openaiApiKey);
   await demonstrateLoggingConfiguration(openaiApiKey);
+  await demonstrateCustomInterceptorConfiguration(openaiApiKey);
   await demonstrateComprehensiveConfig(openaiApiKey);
 
   // await demonstrateConfigValidation();
@@ -52,17 +54,22 @@ Future<void> demonstrateBasicHttpConfig(String apiKey) async {
   print('🔧 Basic HTTP Configuration:\n');
 
   try {
-    // Create provider with basic HTTP settings
-    final provider = await ai()
+    // Create LanguageModel with basic HTTP settings
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(seconds: 30))
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This is a test with basic HTTP configuration.'),
-    ]);
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText(
+          'Hello! This is a test with basic HTTP configuration.',
+        ),
+      ],
+    );
 
     print('   ✅ Basic HTTP configuration successful');
     print('   📝 Response: ${response.text}\n');
@@ -100,7 +107,7 @@ Future<void> demonstrateCustomHeaders(String openaiApiKey) async {
   print('📋 Custom Headers Configuration (OpenAI):\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
@@ -109,11 +116,16 @@ Future<void> demonstrateCustomHeaders(String openaiApiKey) async {
               'X-Client-Version': '1.0.0',
               'User-Agent': 'LLMDart-Demo/1.0',
             }).header('X-Additional-Header', 'additional-value'))
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This request includes custom headers.'),
-    ]);
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText(
+          'Hello! This request includes custom headers.',
+        ),
+      ],
+    );
 
     print('   ✅ Custom headers configuration successful');
     print('   📝 Response: ${response.text}\n');
@@ -167,22 +179,25 @@ Future<void> demonstrateTimeoutConfiguration(String openaiApiKey) async {
   try {
     // Example 1: Global timeout only
     print('   📝 Example 1: Global timeout only');
-    final provider1 = await ai()
+    final model1 = await ai()
         .openai()
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(minutes: 1)) // Global timeout for all operations
-        .build();
+        .buildLanguageModel();
 
-    final response1 = await provider1.chat([
-      ChatMessage.user('Hello! This uses global timeout.'),
-    ]);
+    final response1 = await generateTextPromptWithModel(
+      model1,
+      messages: [
+        ModelMessage.userText('Hello! This uses global timeout.'),
+      ],
+    );
     print('   ✅ Global timeout: connection=1m, receive=1m, send=1m');
     print('   📝 Response: ${response1.text}\n');
 
     // Example 2: Mixed configuration (global + HTTP overrides)
     print('   📝 Example 2: Mixed configuration (global + HTTP overrides)');
-    final provider2 = await ai()
+    final model2 = await ai()
         .openai()
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
@@ -192,11 +207,16 @@ Future<void> demonstrateTimeoutConfiguration(String openaiApiKey) async {
                 Duration(seconds: 15)) // Override connection: 15s
             .receiveTimeout(Duration(minutes: 3))) // Override receive: 3m
         // sendTimeout will use global timeout (2 minutes)
-        .build();
+        .buildLanguageModel();
 
-    final response2 = await provider2.chat([
-      ChatMessage.user('Hello! This uses mixed timeout configuration.'),
-    ]);
+    final response2 = await generateTextPromptWithModel(
+      model2,
+      messages: [
+        ModelMessage.userText(
+          'Hello! This uses mixed timeout configuration.',
+        ),
+      ],
+    );
     print('   ✅ Mixed timeouts: connection=15s, receive=3m, send=2m');
     print('   📝 Priority: HTTP-specific > Global > Provider defaults');
     print('   📝 Response: ${response2.text}\n');
@@ -210,20 +230,23 @@ Future<void> demonstrateLoggingConfiguration(String openaiApiKey) async {
   print('📊 HTTP Logging Configuration (OpenAI):\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
         .http((http) => http.enableLogging(true))
-        .build();
+        .buildLanguageModel();
 
     print('   ✅ HTTP logging enabled');
     print('   📝 All HTTP requests and responses will be logged');
     print('   📝 Making a test request...\n');
 
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This request will be logged.'),
-    ]);
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText('Hello! This request will be logged.'),
+      ],
+    );
 
     print('   ✅ Request completed with logging');
     print('   📝 Response: ${response.text}\n');
@@ -232,12 +255,66 @@ Future<void> demonstrateLoggingConfiguration(String openaiApiKey) async {
   }
 }
 
+/// Demonstrate custom interceptor configuration
+///
+/// This shows how to attach a custom Dio interceptor without replacing
+/// the entire HTTP client, using the lightweight `addInterceptor` API.
+Future<void> demonstrateCustomInterceptorConfiguration(
+  String openaiApiKey,
+) async {
+  print('🧩 Custom Interceptor Configuration (OpenAI):\n');
+
+  try {
+    final metricsInterceptor = InterceptorsWrapper(
+      onRequest: (options, handler) {
+        print(
+          '   [custom-interceptor] → ${options.method} ${options.uri}',
+        );
+        handler.next(options);
+      },
+      onResponse: (response, handler) {
+        print(
+          '   [custom-interceptor] ← ${response.statusCode} ${response.requestOptions.uri}',
+        );
+        handler.next(response);
+      },
+      onError: (error, handler) {
+        print(
+          '   [custom-interceptor] ✗ ${error.requestOptions.method} ${error.requestOptions.uri}: ${error.message}',
+        );
+        handler.next(error);
+      },
+    );
+
+    final model = await ai()
+        .openai()
+        .apiKey(openaiApiKey)
+        .model('gpt-4o-mini')
+        .http((http) => http.addInterceptor(metricsInterceptor))
+        .buildLanguageModel();
+
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText(
+          'Hello! This request uses a custom Dio interceptor for metrics.',
+        ),
+      ],
+    );
+
+    print('   ✅ Custom interceptor configuration successful');
+    print('   📝 Response: ${response.text}\n');
+  } catch (e) {
+    print('   ❌ Custom interceptor configuration failed: $e\n');
+  }
+}
+
 /// Demonstrate comprehensive HTTP configuration
 Future<void> demonstrateComprehensiveConfig(String openaiApiKey) async {
   print('🎯 Comprehensive HTTP Configuration (OpenAI):\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
@@ -253,12 +330,16 @@ Future<void> demonstrateComprehensiveConfig(String openaiApiKey) async {
         // Provider-specific configuration
         .temperature(0.7)
         .maxTokens(1000)
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Hello! This request uses comprehensive HTTP configuration.'),
-    ]);
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText(
+          'Hello! This request uses comprehensive HTTP configuration.',
+        ),
+      ],
+    );
 
     print('   ✅ Comprehensive configuration successful');
     print('   📝 All HTTP settings applied successfully');

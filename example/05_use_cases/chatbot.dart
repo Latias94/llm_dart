@@ -78,8 +78,8 @@ class Chatbot {
   final ChatbotPersonality personality;
   final int maxContextLength;
 
-  late ChatCapability _ai;
-  final List<ChatMessage> _conversationHistory = [];
+  late LLMBuilder _builder;
+  final List<ModelMessage> _conversationHistory = [];
   int _messageCount = 0;
 
   Chatbot({
@@ -91,14 +91,16 @@ class Chatbot {
   /// Initialize the chatbot
   Future<void> initialize() async {
     try {
-      _ai = await ai()
+      _builder = ai()
           .groq()
           .apiKey(apiKey)
           .model('llama-3.1-8b-instant')
           .temperature(_getTemperatureForPersonality())
           .maxTokens(500)
-          .systemPrompt(_getSystemPromptForPersonality())
-          .build();
+          .systemPrompt(_getSystemPromptForPersonality());
+
+      // Build once to validate configuration and API key.
+      await _builder.build();
 
       print('✅ Chatbot initialized with ${personality.name} personality');
     } catch (e) {
@@ -110,34 +112,38 @@ class Chatbot {
   Future<void> respondToUser(String userInput) async {
     try {
       // Add user message to history
-      _addToHistory(ChatMessage.user(userInput));
+      _addToHistory(
+        ChatPromptBuilder.user().text(userInput).build(),
+      );
 
-      // Get AI response with streaming
+      // Get AI response with streaming (high-level parts)
       final responseBuffer = StringBuffer();
 
-      await for (final event in _ai.chatStream(_getContextMessages())) {
-        switch (event) {
-          case TextDeltaEvent(delta: final delta):
+      await for (final part
+          in _builder.streamTextParts(promptMessages: _getContextPrompts())) {
+        switch (part) {
+          case StreamTextDelta(delta: final delta):
             stdout.write(delta);
             responseBuffer.write(delta);
             break;
 
-          case CompletionEvent(response: final response):
+          case StreamFinish(result: final result):
             // Add complete response to history
-            _addToHistory(ChatMessage.assistant(responseBuffer.toString()));
+            final text = responseBuffer.toString();
+            if (text.isNotEmpty) {
+              _addToHistory(
+                ChatPromptBuilder.assistant().text(text).build(),
+              );
+            }
 
             // Log usage statistics
-            if (response.usage != null) {
-              _logUsage(response.usage!);
+            if (result.usage != null) {
+              _logUsage(result.usage!);
             }
             break;
 
-          case ErrorEvent(error: final error):
-            throw Exception('Stream error: $error');
-
-          case ThinkingDeltaEvent():
-          case ToolCallDeltaEvent():
-            // Handle other event types
+          default:
+            // Handle other event types (thinking, tools) if needed
             break;
         }
       }
@@ -154,18 +160,26 @@ class Chatbot {
     print('\n⚠️  Error occurred, trying fallback...');
 
     try {
-      // Fallback 1: Try with reduced context
-      final simpleMessages = [
-        ChatMessage.system(_getSystemPromptForPersonality()),
-        ChatMessage.user(userInput),
+      // Fallback 1: Try with reduced context using prompt-first modeling
+      final simplePrompts = <ModelMessage>[
+        ChatPromptBuilder.system()
+            .text(_getSystemPromptForPersonality())
+            .build(),
+        ChatPromptBuilder.user().text(userInput).build(),
       ];
 
-      final response = await _ai.chat(simpleMessages);
-      print(response.text ?? 'Sorry, I couldn\'t generate a response.');
+      final result = await _builder.generateText(
+        promptMessages: simplePrompts,
+      );
+      print(result.text ?? 'Sorry, I couldn\'t generate a response.');
 
       // Add to history if successful
-      _addToHistory(ChatMessage.user(userInput));
-      _addToHistory(ChatMessage.assistant(response.text ?? ''));
+      _addToHistory(simplePrompts[1]); // user message
+      if (result.text != null && result.text!.isNotEmpty) {
+        _addToHistory(
+          ChatPromptBuilder.assistant().text(result.text!).build(),
+        );
+      }
     } catch (fallbackError) {
       // Fallback 2: Generic error response
       print(
@@ -174,7 +188,7 @@ class Chatbot {
   }
 
   /// Add message to conversation history with context management
-  void _addToHistory(ChatMessage message) {
+  void _addToHistory(ModelMessage message) {
     _conversationHistory.add(message);
 
     // Manage context length (keep system message + recent messages)
@@ -189,18 +203,22 @@ class Chatbot {
     }
   }
 
-  /// Get messages for current context
-  List<ChatMessage> _getContextMessages() {
+  /// Get prompt messages for current context
+  List<ModelMessage> _getContextPrompts() {
     // Always include system message if not in history
-    final messages = <ChatMessage>[];
+    final prompts = <ModelMessage>[];
 
     if (_conversationHistory.isEmpty ||
         _conversationHistory.first.role != ChatRole.system) {
-      messages.add(ChatMessage.system(_getSystemPromptForPersonality()));
+      prompts.add(
+        ChatPromptBuilder.system()
+            .text(_getSystemPromptForPersonality())
+            .build(),
+      );
     }
 
-    messages.addAll(_conversationHistory);
-    return messages;
+    prompts.addAll(_conversationHistory);
+    return prompts;
   }
 
   /// Get system prompt based on personality
@@ -257,14 +275,19 @@ class Chatbot {
     }
 
     try {
-      final summaryMessages = [
-        ChatMessage.system(
-            'Summarize the following conversation in 2-3 sentences:'),
+      final summaryPrompts = <ModelMessage>[
+        ChatPromptBuilder.system()
+            .text(
+              'Summarize the following conversation in 2-3 sentences:',
+            )
+            .build(),
         ..._conversationHistory.where((m) => m.role != ChatRole.system),
       ];
 
-      final response = await _ai.chat(summaryMessages);
-      return response.text ?? 'Unable to generate summary.';
+      final result = await _builder.generateText(
+        promptMessages: summaryPrompts,
+      );
+      return result.text ?? 'Unable to generate summary.';
     } catch (e) {
       return 'Error generating summary: $e';
     }

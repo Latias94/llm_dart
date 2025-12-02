@@ -44,10 +44,10 @@ class AICliTool {
       }
 
       // Initialize AI provider
-      final aiProvider = await initializeProvider();
+      final builder = await initializeProvider();
 
       // Execute command
-      await executeCommand(command, aiProvider);
+      await executeCommand(command, builder);
     } catch (e) {
       printError('Error: $e');
       exit(1);
@@ -150,12 +150,10 @@ ENVIRONMENT VARIABLES:
   }
 
   /// Initialize AI provider based on configuration
-  Future<ChatCapability> initializeProvider() async {
+  Future<LLMBuilder> initializeProvider() async {
     if (_verbose) {
       print('🔧 Initializing $_provider provider with model $_model...');
     }
-
-    final builder = ai();
 
     switch (_provider.toLowerCase()) {
       case 'openai':
@@ -163,39 +161,43 @@ ENVIRONMENT VARIABLES:
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('OPENAI_API_KEY environment variable not set');
         }
-        return await builder
+        final builder = ai()
             .openai()
             .apiKey(apiKey)
             .model(_model)
             .temperature(_temperature)
-            .maxTokens(_maxTokens)
-            .build();
+            .maxTokens(_maxTokens);
+        // Validate configuration and API key
+        await builder.build();
+        return builder;
 
       case 'groq':
         final apiKey = Platform.environment['GROQ_API_KEY'];
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('GROQ_API_KEY environment variable not set');
         }
-        return await builder
+        final builder = ai()
             .groq()
             .apiKey(apiKey)
             .model(_model)
             .temperature(_temperature)
-            .maxTokens(_maxTokens)
-            .build();
+            .maxTokens(_maxTokens);
+        await builder.build();
+        return builder;
 
       case 'anthropic':
         final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('ANTHROPIC_API_KEY environment variable not set');
         }
-        return await builder
+        final builder = ai()
             .anthropic()
             .apiKey(apiKey)
             .model(_model)
             .temperature(_temperature)
-            .maxTokens(_maxTokens)
-            .build();
+            .maxTokens(_maxTokens);
+        await builder.build();
+        return builder;
 
       default:
         throw Exception(
@@ -204,7 +206,7 @@ ENVIRONMENT VARIABLES:
   }
 
   /// Execute the parsed command
-  Future<void> executeCommand(String command, ChatCapability provider) async {
+  Future<void> executeCommand(String command, LLMBuilder builder) async {
     final parts = command.split(' ');
     final commandType = parts[0];
     final prompt = parts.sublist(1).join(' ');
@@ -216,13 +218,13 @@ ENVIRONMENT VARIABLES:
 
     switch (commandType) {
       case 'chat':
-        await handleChatCommand(provider, prompt);
+        await handleChatCommand(builder, prompt);
         break;
       case 'ask':
-        await handleAskCommand(provider, prompt);
+        await handleAskCommand(builder, prompt);
         break;
       case 'generate':
-        await handleGenerateCommand(provider, prompt);
+        await handleGenerateCommand(builder, prompt);
         break;
       default:
         printError('Unknown command: $commandType');
@@ -231,13 +233,13 @@ ENVIRONMENT VARIABLES:
 
   /// Handle chat command (interactive conversation)
   Future<void> handleChatCommand(
-      ChatCapability provider, String initialPrompt) async {
+      LLMBuilder builder, String initialPrompt) async {
     print('🤖 Starting chat session. Type "quit" or "exit" to end.\n');
 
-    final conversation = <ChatMessage>[];
+    final conversation = <ModelMessage>[];
 
     // Add initial prompt
-    await processMessage(provider, conversation, initialPrompt);
+    await processMessage(builder, conversation, initialPrompt);
 
     // Interactive loop
     while (true) {
@@ -255,51 +257,55 @@ ENVIRONMENT VARIABLES:
         continue;
       }
 
-      await processMessage(provider, conversation, input);
+      await processMessage(builder, conversation, input);
     }
   }
 
   /// Handle ask command (single question)
-  Future<void> handleAskCommand(ChatCapability provider, String prompt) async {
+  Future<void> handleAskCommand(LLMBuilder builder, String prompt) async {
     if (_verbose) {
       print('❓ Asking: $prompt\n');
     }
 
-    await processMessage(provider, [], prompt);
+    await processMessage(builder, <ModelMessage>[], prompt);
   }
 
   /// Handle generate command (content generation)
-  Future<void> handleGenerateCommand(
-      ChatCapability provider, String prompt) async {
+  Future<void> handleGenerateCommand(LLMBuilder builder, String prompt) async {
     if (_verbose) {
       print('✨ Generating: $prompt\n');
     }
 
-    // Add system prompt for generation
-    final messages = [
-      ChatMessage.system(
-          'You are a creative content generator. Provide high-quality, engaging content.'),
-      ChatMessage.user(prompt),
+    // Add system prompt for generation (prompt-first)
+    final prompts = <ModelMessage>[
+      ChatPromptBuilder.system()
+          .text(
+            'You are a creative content generator. Provide high-quality, engaging content.',
+          )
+          .build(),
+      ChatPromptBuilder.user().text(prompt).build(),
     ];
 
-    await processMessages(provider, messages);
+    await processMessages(builder, prompts);
   }
 
   /// Process a single message and add to conversation
-  Future<void> processMessage(ChatCapability provider,
-      List<ChatMessage> conversation, String prompt) async {
-    conversation.add(ChatMessage.user(prompt));
-    await processMessages(provider, conversation);
+  Future<void> processMessage(LLMBuilder builder,
+      List<ModelMessage> conversation, String prompt) async {
+    conversation.add(
+      ChatPromptBuilder.user().text(prompt).build(),
+    );
+    await processMessages(builder, conversation);
   }
 
   /// Process messages and get AI response
   Future<void> processMessages(
-      ChatCapability provider, List<ChatMessage> messages) async {
+      LLMBuilder builder, List<ModelMessage> prompts) async {
     try {
       if (_streaming) {
-        await handleStreamingResponse(provider, messages);
+        await handleStreamingResponse(builder, prompts);
       } else {
-        await handleRegularResponse(provider, messages);
+        await handleRegularResponse(builder, prompts);
       }
     } catch (e) {
       printError('AI Error: $e');
@@ -308,13 +314,15 @@ ENVIRONMENT VARIABLES:
 
   /// Handle regular (non-streaming) response
   Future<void> handleRegularResponse(
-      ChatCapability provider, List<ChatMessage> messages) async {
+      LLMBuilder builder, List<ModelMessage> prompts) async {
     if (_verbose) {
       stdout.write('🤔 Thinking...');
     }
 
     final stopwatch = Stopwatch()..start();
-    final response = await provider.chat(messages);
+    final result = await builder.generateText(
+      promptMessages: prompts,
+    );
     stopwatch.stop();
 
     if (_verbose) {
@@ -323,28 +331,33 @@ ENVIRONMENT VARIABLES:
       print('🤖 AI:');
     }
 
-    print(response.text ?? 'No response generated');
+    print(result.text ?? 'No response generated');
 
-    if (_verbose && response.usage != null) {
-      final usage = response.usage!;
+    if (_verbose && result.usage != null) {
+      final usage = result.usage!;
       print(
           '\n📊 Usage: ${usage.totalTokens} tokens (${usage.promptTokens} prompt + ${usage.completionTokens} completion)');
     }
 
     // Add response to conversation if it's a list we're maintaining
-    if (messages.isNotEmpty && messages.last.role == ChatRole.user) {
-      messages.add(ChatMessage.assistant(response.text ?? ''));
+    if (prompts.isNotEmpty &&
+        prompts.last.role == ChatRole.user &&
+        result.text != null &&
+        result.text!.isNotEmpty) {
+      prompts.add(
+        ChatPromptBuilder.assistant().text(result.text!).build(),
+      );
     }
   }
 
   /// Handle streaming response
   Future<void> handleStreamingResponse(
-      ChatCapability provider, List<ChatMessage> messages) async {
+      LLMBuilder builder, List<ModelMessage> prompts) async {
     print('🤖 AI: ');
 
     final responseBuffer = StringBuffer();
 
-    await for (final event in provider.chatStream(messages)) {
+    await for (final event in builder.streamText(promptMessages: prompts)) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           stdout.write(delta);
@@ -368,8 +381,12 @@ ENVIRONMENT VARIABLES:
     }
 
     // Add response to conversation if it's a list we're maintaining
-    if (messages.isNotEmpty && messages.last.role == ChatRole.user) {
-      messages.add(ChatMessage.assistant(responseBuffer.toString()));
+    if (prompts.isNotEmpty &&
+        prompts.last.role == ChatRole.user &&
+        responseBuffer.isNotEmpty) {
+      prompts.add(
+        ChatPromptBuilder.assistant().text(responseBuffer.toString()).build(),
+      );
     }
   }
 

@@ -1,5 +1,10 @@
+// Chat model tests cover the legacy ChatMessage factories alongside
+// the newer ModelMessage and ChatContentPart abstractions.
+// ignore_for_file: deprecated_member_use
+
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy/chat.dart';
 import 'dart:typed_data';
 
 void main() {

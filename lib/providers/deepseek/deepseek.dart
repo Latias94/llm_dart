@@ -1,45 +1,187 @@
-/// Modular DeepSeek Provider
+// The DeepSeek provider facade keeps ChatMessage-based examples in
+// documentation for compatibility with existing code. Prefer the
+// prompt-first helpers for new integrations.
+// ignore_for_file: deprecated_member_use
+
+/// DeepSeek Provider facade for the main `llm_dart` package.
 ///
-/// This library provides a modular implementation of the DeepSeek provider
-///
-/// **Key Benefits:**
-/// - Single Responsibility: Each module handles one capability
-/// - Easier Testing: Modules can be tested independently
-/// - Better Maintainability: Changes isolated to specific modules
-/// - Cleaner Code: Smaller, focused classes
-/// - Reusability: Modules can be reused across providers
-///
-/// **Usage:**
-/// ```dart
-/// import 'package:llm_dart/providers/deepseek/deepseek.dart';
-///
-/// final provider = DeepSeekProvider(DeepSeekConfig(
-///   apiKey: 'your-api-key',
-///   model: 'deepseek-chat',
-/// ));
-///
-/// // Use chat capability
-/// final response = await provider.chat(messages);
-/// ```
+/// This library now re-exports the DeepSeek provider implementation
+/// from the `llm_dart_deepseek` subpackage, while keeping the original
+/// import path stable for backwards compatibility.
 library;
 
-import 'config.dart';
-import 'provider.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek_impl;
 
-// Core exports
-export 'config.dart';
-export 'client.dart';
-export 'provider.dart';
+export 'package:llm_dart_deepseek/llm_dart_deepseek.dart'
+    show DeepSeekConfig, DeepSeekProvider;
 
-// Capability modules
-export 'chat.dart';
-export 'models.dart';
+const _defaultBaseUrl = 'https://api.deepseek.com/v1/';
 
-// Error handling
-export 'error_handler.dart';
+@Deprecated(
+  'Use DeepSeekConfig from package:llm_dart_deepseek/llm_dart_deepseek.dart '
+  'instead. This alias exists only for backwards compatibility and will be '
+  'removed in a future release.',
+)
+// Backwards-compatible alias for the DeepSeek configuration type.
+typedef DeepSeekConfig = deepseek_impl.DeepSeekConfig;
+
+@Deprecated(
+  'Use DeepSeekProvider from package:llm_dart_deepseek/llm_dart_deepseek.dart '
+  'instead. This alias exists only for backwards compatibility and will be '
+  'removed in a future release.',
+)
+// Backwards-compatible alias for the DeepSeek provider type.
+typedef DeepSeekProvider = deepseek_impl.DeepSeekProvider;
+
+/// DeepSeek provider settings (Vercel AI-style).
+///
+/// Mirrors the core fields from `DeepSeekProviderSettings` in the
+/// Vercel AI SDK while using Dart naming conventions.
+class DeepSeekProviderSettings {
+  /// API key for authenticating requests.
+  final String apiKey;
+
+  /// Base URL for the DeepSeek API.
+  ///
+  /// Defaults to `https://api.deepseek.com/v1/`.
+  final String? baseUrl;
+
+  /// Additional custom headers to send with each request.
+  final Map<String, String>? headers;
+
+  /// Logical provider name used for metadata (e.g. `deepseek.chat`).
+  final String? name;
+
+  /// Optional default timeout applied via [LLMConfig.timeout].
+  final Duration? timeout;
+
+  const DeepSeekProviderSettings({
+    required this.apiKey,
+    this.baseUrl,
+    this.headers,
+    this.name,
+    this.timeout,
+  });
+}
+
+/// DeepSeek model factory (Vercel AI-style).
+///
+/// Provides a model-centric API similar to `createDeepSeek` in the
+/// Vercel AI SDK. It returns [LanguageModel] instances that can be
+/// passed into helpers like [generateTextWithModel] or [runAgentText].
+class DeepSeek implements LanguageModelProviderFactory {
+  final DeepSeekProviderSettings _settings;
+  final String _baseUrl;
+  final String _providerName;
+
+  DeepSeek(DeepSeekProviderSettings settings)
+      : _settings = settings,
+        _baseUrl = _normalizeBaseUrl(
+          settings.baseUrl ?? _defaultBaseUrl,
+        ),
+        _providerName = settings.name ?? 'deepseek';
+
+  /// Create a language model for text generation.
+  ///
+  /// Alias for [chat].
+  @override
+  LanguageModel languageModel(String modelId) => chat(modelId);
+
+  /// Create a chat model for text generation.
+  LanguageModel chat(String modelId) {
+    final llmConfig = _createLLMConfig(modelId);
+    final config = deepseek_impl.DeepSeekConfig.fromLLMConfig(llmConfig);
+    final client = deepseek_impl.DeepSeekClient(config);
+    final chat = deepseek_impl.DeepSeekChat(client, config);
+
+    return DefaultLanguageModel(
+      providerId: _providerName,
+      modelId: modelId,
+      config: llmConfig,
+      chat: chat,
+    );
+  }
+
+  LLMConfig _createLLMConfig(String modelId) {
+    final headers = <String, String>{};
+
+    if (_settings.headers != null && _settings.headers!.isNotEmpty) {
+      headers.addAll(_settings.headers!);
+    }
+
+    final extensions = <String, dynamic>{};
+    if (headers.isNotEmpty) {
+      extensions[LLMConfigKeys.customHeaders] = headers;
+    }
+
+    return LLMConfig(
+      apiKey: _settings.apiKey,
+      baseUrl: _baseUrl,
+      model: modelId,
+      timeout: _settings.timeout,
+      extensions: extensions,
+    );
+  }
+
+  static String _normalizeBaseUrl(String value) {
+    if (value.isEmpty) return _defaultBaseUrl;
+    return value.endsWith('/') ? value : '$value/';
+  }
+}
+
+/// Create a DeepSeek model factory (Vercel AI-style).
+///
+/// Example:
+/// ```dart
+/// final deepseek = createDeepSeek(
+///   apiKey: 'sk-deepseek-...',
+/// );
+///
+/// final model = deepseek.chat('deepseek-chat');
+/// final result = await generateTextWithModel(
+///   model: model,
+///   messages: [ChatMessage.user('Hello')],
+/// );
+/// ```
+DeepSeek createDeepSeek({
+  required String apiKey,
+  String? baseUrl,
+  Map<String, String>? headers,
+  String? name,
+  Duration? timeout,
+}) {
+  return DeepSeek(
+    DeepSeekProviderSettings(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      headers: headers,
+      name: name,
+      timeout: timeout,
+    ),
+  );
+}
+
+/// Alias for [createDeepSeek] to mirror the default `deepseek` export
+/// from the Vercel AI SDK.
+DeepSeek deepseek({
+  required String apiKey,
+  String? baseUrl,
+  Map<String, String>? headers,
+  String? name,
+  Duration? timeout,
+}) {
+  return createDeepSeek(
+    apiKey: apiKey,
+    baseUrl: baseUrl,
+    headers: headers,
+    name: name,
+    timeout: timeout,
+  );
+}
 
 /// Create a DeepSeek provider with default configuration
-DeepSeekProvider createDeepSeekProvider({
+deepseek_impl.DeepSeekProvider createDeepSeekProvider({
   required String apiKey,
   String? model,
   String? baseUrl,
@@ -51,7 +193,7 @@ DeepSeekProvider createDeepSeekProvider({
   double? topP,
   int? topK,
 }) {
-  final config = DeepSeekConfig(
+  final config = deepseek_impl.DeepSeekConfig(
     apiKey: apiKey,
     model: model ?? 'deepseek-chat',
     baseUrl: baseUrl ?? 'https://api.deepseek.com/v1/',
@@ -63,11 +205,11 @@ DeepSeekProvider createDeepSeekProvider({
     topK: topK,
   );
 
-  return DeepSeekProvider(config);
+  return deepseek_impl.DeepSeekProvider(config);
 }
 
 /// Create a DeepSeek provider for chat
-DeepSeekProvider createDeepSeekChatProvider({
+deepseek_impl.DeepSeekProvider createDeepSeekChatProvider({
   required String apiKey,
   String model = 'deepseek-chat',
   String? systemPrompt,
@@ -85,7 +227,7 @@ DeepSeekProvider createDeepSeekChatProvider({
 
 /// Create a DeepSeek provider for reasoning tasks
 /// Uses the deepseek-reasoner model which supports reasoning/thinking
-DeepSeekProvider createDeepSeekReasoningProvider({
+deepseek_impl.DeepSeekProvider createDeepSeekReasoningProvider({
   required String apiKey,
   String model = 'deepseek-reasoner',
   String? systemPrompt,

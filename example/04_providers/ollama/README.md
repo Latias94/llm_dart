@@ -48,50 +48,61 @@ dart run thinking_example.dart
 
 ### Local Model Configuration
 ```dart
-final provider = await ai().ollama()
+final model = await ai().ollama()
     .baseUrl('http://localhost:11434')
     .model('llama3.2')
     .numGpu(1)           // GPU acceleration
     .numThread(8)        // CPU threads
-    .build();
+    .buildLanguageModel();
 
-final response = await provider.chat([
-  ChatMessage.user('Explain quantum computing'),
-]);
+final result = await generateTextPromptWithModel(
+  model,
+  messages: [
+    ModelMessage.userText('Explain quantum computing'),
+  ],
+);
 
 // All processing happens locally
-print('Local response: ${response.text}');
+print('Local response: ${result.text}');
 ```
 
 ### Privacy-Focused Setup
 ```dart
 // Completely offline operation
-final provider = await ai().ollama()
+final model = await ai().ollama()
     .baseUrl('http://localhost:11434')
     .model('phi3')       // Lightweight model
-    .build();
+    .buildLanguageModel();
 
 // No data leaves your machine
-final response = await provider.chat([
-  ChatMessage.user('Analyze this sensitive document'),
-]);
+final result = await generateTextPromptWithModel(
+  model,
+  messages: [
+    ModelMessage.userText('Analyze this sensitive document'),
+  ],
+);
+
+print('Analysis: ${result.text}');
 ```
 
 ### Reasoning Models
 ```dart
-// Local reasoning with thinking process
-final provider = await ai().ollama()
+// Local reasoning with thinking process (prompt-first)
+final model = await ai().ollama()
     .baseUrl('http://localhost:11434')
     .model('gpt-oss:latest') // Reasoning model
     .reasoning(true)         // Enable reasoning process
-    .build();
+    .buildLanguageModel();
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this step by step: What is 15 * 23 + 7 * 11?'),
-]);
+final result = await generateTextPromptWithModel(
+  model,
+  messages: [
+    ModelMessage.userText('Solve this step by step: What is 15 * 23 + 7 * 11?'),
+  ],
+);
 
-print('Thinking: ${response.thinking}');
-print('Answer: ${response.text}');
+print('Thinking: ${result.thinking}');
+print('Answer: ${result.text}');
 ```
 
 ## Next Steps

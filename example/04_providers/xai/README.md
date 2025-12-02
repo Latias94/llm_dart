@@ -32,28 +32,40 @@ dart run live_search.dart
 
 ### Live Search Query
 ```dart
-final provider = await ai().xai().apiKey('your-key')
-    .model('grok-3').build();
+final model = await ai()
+    .xai()
+    .apiKey('your-key')
+    .model('grok-3')
+    .buildLanguageModel();
 
-final response = await provider.chat([
-  ChatMessage.user('What are the latest AI developments this week?'),
-]);
+final result = await generateTextPromptWithModel(
+  model,
+  messages: [
+    ModelMessage.userText('What are the latest AI developments this week?'),
+  ],
+);
 
 // Grok automatically includes live search results
-print('Current info: ${response.text}');
+print('Current info: ${result.text}');
 ```
 
 ### Real-time Data Access
 ```dart
-final provider = await ai().xai().apiKey('your-key')
-    .model('grok-3').build();
+final model = await ai()
+    .xai()
+    .apiKey('your-key')
+    .model('grok-3')
+    .buildLanguageModel();
 
-final response = await provider.chat([
-  ChatMessage.user('Current Bitcoin price and market trends'),
-]);
+final result = await generateTextPromptWithModel(
+  model,
+  messages: [
+    ModelMessage.userText('Current Bitcoin price and market trends'),
+  ],
+);
 
 // Live financial data integrated automatically
-print('Live data: ${response.text}');
+print('Live data: ${result.text}');
 ```
 
 ## Next Steps

@@ -13,15 +13,15 @@ library;
 
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/models/responses_models.dart';
 import 'package:llm_dart/providers/openai/responses_capability.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 void main() {
   group('OpenAI Responses API Comprehensive Tests', () {
     // ========== Configuration Tests ==========
     group('Configuration', () {
       test('should create config with Responses API enabled', () {
-        final config = OpenAIConfig(
+        final config = openai.OpenAIConfig(
           apiKey: 'test-key',
           model: 'gpt-4o',
           useResponsesAPI: true,
@@ -33,7 +33,7 @@ void main() {
       });
 
       test('should create config with previous response ID', () {
-        final config = OpenAIConfig(
+        final config = openai.OpenAIConfig(
           apiKey: 'test-key',
           model: 'gpt-4o',
           useResponsesAPI: true,
@@ -45,7 +45,7 @@ void main() {
       });
 
       test('should handle config copyWith for Responses API fields', () {
-        final originalConfig = OpenAIConfig(
+        final originalConfig = openai.OpenAIConfig(
           apiKey: 'test-key',
           model: 'gpt-4o',
           useResponsesAPI: false,
@@ -68,21 +68,21 @@ void main() {
       });
 
       test('should handle config equality with Responses API fields', () {
-        final config1 = OpenAIConfig(
+        final config1 = openai.OpenAIConfig(
           apiKey: 'test-key',
           model: 'gpt-4o',
           useResponsesAPI: true,
           previousResponseId: 'resp_123',
         );
 
-        final config2 = OpenAIConfig(
+        final config2 = openai.OpenAIConfig(
           apiKey: 'test-key',
           model: 'gpt-4o',
           useResponsesAPI: true,
           previousResponseId: 'resp_123',
         );
 
-        final config3 = OpenAIConfig(
+        final config3 = openai.OpenAIConfig(
           apiKey: 'test-key',
           model: 'gpt-4o',
           useResponsesAPI: false,
@@ -100,7 +100,7 @@ void main() {
         final tool = OpenAIBuiltInTools.webSearch();
         final json = tool.toJson();
 
-        expect(json['type'], equals('web_search_preview'));
+        expect(json['type'], equals('web_search'));
         expect(tool.type, equals(OpenAIBuiltInToolType.webSearch));
         expect(tool, isA<OpenAIWebSearchTool>());
       });
@@ -198,9 +198,9 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        expect(provider, isA<OpenAIProvider>());
+        expect(provider, isA<openai.OpenAIProvider>());
 
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         expect(openaiProvider.config.useResponsesAPI, isTrue);
         expect(openaiProvider.config.builtInTools, hasLength(2));
         expect(openaiProvider.responses, isNotNull);
@@ -220,7 +220,7 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         expect(openaiProvider.config.builtInTools, hasLength(3));
 
         final tools = openaiProvider.config.builtInTools!;
@@ -237,7 +237,7 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         expect(
             openaiProvider.config.previousResponseId, equals('resp_chain_123'));
       });
@@ -251,7 +251,7 @@ void main() {
             .model('gpt-4o')
             .buildOpenAIResponses();
 
-        expect(provider, isA<OpenAIProvider>());
+        expect(provider, isA<openai.OpenAIProvider>());
         expect(provider.responses, isNotNull);
         expect(provider.config.useResponsesAPI, isTrue);
         expect(provider.supports(LLMCapability.openaiResponses), isTrue);
@@ -438,7 +438,7 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         expect(openaiProvider.responses, isNotNull);
         expect(openaiProvider.responses, isA<OpenAIResponses>());
         expect(openaiProvider.responses, isA<OpenAIResponsesCapability>());
@@ -450,7 +450,7 @@ void main() {
         final provider =
             await ai().openai().apiKey('test-key').model('gpt-4o').build();
 
-        final openaiProvider = provider as OpenAIProvider;
+        final openaiProvider = provider as openai.OpenAIProvider;
         expect(openaiProvider.responses, isNull);
       });
 
@@ -465,7 +465,7 @@ void main() {
         if (provider is ProviderCapabilities &&
             (provider as ProviderCapabilities)
                 .supports(LLMCapability.openaiResponses) &&
-            provider is OpenAIProvider) {
+            provider is openai.OpenAIProvider) {
           final openaiProvider = provider;
           final responses = openaiProvider.responses;
 
