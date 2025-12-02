@@ -169,8 +169,7 @@ void main() {
       expect(tools.first.keys, isNot(contains('functionDeclarations')));
     });
 
-    test('function tools in callTools behave like legacy tools list',
-        () async {
+    test('function tools in callTools behave like legacy tools list', () async {
       final config = GoogleConfig(
         apiKey: 'test-key',
         model: 'gemini-1.5-flash',
@@ -225,4 +224,3 @@ void main() {
     });
   });
 }
-

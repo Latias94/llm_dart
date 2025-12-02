@@ -254,8 +254,7 @@ class OpenAICodeInterpreterTool implements OpenAIBuiltInTool {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is OpenAICodeInterpreterTool &&
-        other.parameters == parameters;
+    return other is OpenAICodeInterpreterTool && other.parameters == parameters;
   }
 
   @override

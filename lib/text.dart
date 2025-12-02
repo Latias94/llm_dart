@@ -22,15 +22,15 @@ import 'builder/llm_builder.dart';
 /// - `"deepseek:deepseek-reasoner"`
 /// - `"ollama:llama3.2"`
 ///
-  /// Under the hood it uses [LLMBuilder] and the provider registry, and
-  /// returns a provider-agnostic [GenerateTextResult].
-  ///
-  /// For new code, prefer one of the following:
-  /// - [promptMessages] with [ModelMessage], or
-  /// - [generateTextPrompt] / [generateTextPromptWithModel].
-  ///
-  /// The [messages] ([ChatMessage]) parameter is kept only for
-  /// backwards compatibility.
+/// Under the hood it uses [LLMBuilder] and the provider registry, and
+/// returns a provider-agnostic [GenerateTextResult].
+///
+/// For new code, prefer one of the following:
+/// - [promptMessages] with [ModelMessage], or
+/// - [generateTextPrompt] / [generateTextPromptWithModel].
+///
+/// The [messages] ([ChatMessage]) parameter is kept only for
+/// backwards compatibility.
 Future<GenerateTextResult> generateText({
   required String model,
   String? apiKey,

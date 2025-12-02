@@ -7,7 +7,8 @@ import 'openai_test_utils.dart';
 
 void main() {
   group('OpenAI Responses callTools integration', () {
-    test('maps provider-defined web_search to web_search built-in tool', () async {
+    test('maps provider-defined web_search to web_search built-in tool',
+        () async {
       final config = openai_impl.OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4.1-mini',
@@ -42,7 +43,8 @@ void main() {
       expect(filters?['allowed_domains'], equals(['example.com']));
     });
 
-    test('maps provider-defined file_search to file_search built-in tool', () async {
+    test('maps provider-defined file_search to file_search built-in tool',
+        () async {
       final config = openai_impl.OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4.1-mini',
@@ -80,7 +82,9 @@ void main() {
       expect(tool['filters'], equals({'tag': 'docs'}));
     });
 
-    test('maps provider-defined code_interpreter to code_interpreter built-in tool', () async {
+    test(
+        'maps provider-defined code_interpreter to code_interpreter built-in tool',
+        () async {
       final config = openai_impl.OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4.1-mini',
@@ -114,7 +118,9 @@ void main() {
       expect(tool['runtime'], equals('python'));
     });
 
-    test('maps provider-defined image_generation to image_generation built-in tool', () async {
+    test(
+        'maps provider-defined image_generation to image_generation built-in tool',
+        () async {
       final config = openai_impl.OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4.1-mini',

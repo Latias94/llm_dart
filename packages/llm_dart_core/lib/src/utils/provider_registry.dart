@@ -26,13 +26,13 @@ abstract class SpeechModelProviderFactory {
   AudioCapability speech(String modelId);
 }
 
-  /// Enterprise-grade provider registry for managing multiple providers
-  /// and their capabilities.
-  ///
-  /// This is a runtime provider registry, complementary to
-  /// `LLMProviderRegistry` (factory registry). It is intended for
-  /// managing provider instances and their capability matrix at the
-  /// application layer.
+/// Enterprise-grade provider registry for managing multiple providers
+/// and their capabilities.
+///
+/// This is a runtime provider registry, complementary to
+/// `LLMProviderRegistry` (factory registry). It is intended for
+/// managing provider instances and their capability matrix at the
+/// application layer.
 class ProviderRegistry {
   final Map<String, dynamic> _providers = {};
   final Map<String, Set<LLMCapability>> _capabilities = {};
@@ -236,12 +236,12 @@ class RegistryStats {
   });
 }
 
-  /// High-level client for resolving typed models from a [ProviderRegistry].
-  ///
-  /// Provides parsing of `"provider:model"`-style identifiers, e.g.:
-  /// - `languageModel('openai:gpt-4o')`
-  /// - `textEmbeddingModel('openai:text-embedding-3-small')`
-  /// - `imageModel('openai:dall-e-3')`, etc.
+/// High-level client for resolving typed models from a [ProviderRegistry].
+///
+/// Provides parsing of `"provider:model"`-style identifiers, e.g.:
+/// - `languageModel('openai:gpt-4o')`
+/// - `textEmbeddingModel('openai:text-embedding-3-small')`
+/// - `imageModel('openai:dall-e-3')`, etc.
 class ProviderRegistryClient {
   final ProviderRegistry _registry;
   final String _separator;

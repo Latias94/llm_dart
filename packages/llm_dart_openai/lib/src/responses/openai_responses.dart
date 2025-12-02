@@ -355,8 +355,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
                   spec.args['allowedDomains'] as List<String>?;
               final contextSize =
                   spec.args['contextSize'] as WebSearchContextSize?;
-              final location =
-                  spec.args['location'] as WebSearchLocation?;
+              final location = spec.args['location'] as WebSearchLocation?;
 
               final tool = OpenAIBuiltInTools.webSearch(
                 allowedDomains: allowedDomains,
@@ -372,8 +371,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
               final vectorStoreIds =
                   spec.args['vectorStoreIds'] as List<String>?;
               final maxNumResults = spec.args['maxNumResults'] as int?;
-              final filters =
-                  spec.args['filters'] as Map<String, dynamic>?;
+              final filters = spec.args['filters'] as Map<String, dynamic>?;
 
               final params = <String, dynamic>{};
               if (maxNumResults != null) {

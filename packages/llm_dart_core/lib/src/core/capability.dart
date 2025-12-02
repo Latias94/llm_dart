@@ -1172,7 +1172,7 @@ class LanguageModelCallOptions {
     this.topK,
     this.stopSequences,
     this.tools,
-     this.callTools,
+    this.callTools,
     this.toolChoice,
     this.user,
     this.serviceTier,

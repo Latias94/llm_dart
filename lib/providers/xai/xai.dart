@@ -285,8 +285,7 @@ class XAI
   /// be used with Responses-style integrations or future xAI-specific
   /// provider-defined tool handling. The current chat integration does
   /// not interpret these specs directly.
-  XAIProviderDefinedTools get providerTools =>
-      const XAIProviderDefinedTools();
+  XAIProviderDefinedTools get providerTools => const XAIProviderDefinedTools();
 
   /// Build an executable web search tool that automatically calls xAI.
   ///
@@ -308,8 +307,8 @@ class XAI
   }) {
     final schema = tools.webSearch();
 
-    return createProviderDefinedExecutableTool<
-        Map<String, dynamic>, Map<String, dynamic>>(
+    return createProviderDefinedExecutableTool<Map<String, dynamic>,
+        Map<String, dynamic>>(
       schema: schema,
       execute: (args) async {
         final rawQuery = args['query'];

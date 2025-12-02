@@ -555,8 +555,7 @@ class GoogleChat implements ChatCapability, PromptChatCapability {
                 }
                 final dynamicThreshold = spec.args['dynamicThreshold'];
                 if (dynamicThreshold is num) {
-                  dynamicRetrievalConfig['dynamicThreshold'] =
-                      dynamicThreshold;
+                  dynamicRetrievalConfig['dynamicThreshold'] = dynamicThreshold;
                 }
 
                 googleTools.add({

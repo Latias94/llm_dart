@@ -209,8 +209,8 @@ class GoogleGenerativeAI
   }) {
     final schema = tools.webSearch();
 
-    return createProviderDefinedExecutableTool<
-        Map<String, dynamic>, Map<String, dynamic>>(
+    return createProviderDefinedExecutableTool<Map<String, dynamic>,
+        Map<String, dynamic>>(
       schema: schema,
       execute: (args) async {
         final rawQuery = args['query'];
@@ -239,7 +239,8 @@ class GoogleGenerativeAI
 
         llmConfig = llmConfig
             .withExtension(LLMConfigKeys.webSearchEnabled, true)
-            .withExtension(LLMConfigKeys.webSearchConfig, effectiveWebSearchConfig);
+            .withExtension(
+                LLMConfigKeys.webSearchConfig, effectiveWebSearchConfig);
 
         final googleConfig = GoogleConfig.fromLLMConfig(llmConfig);
         final client = GoogleClient(googleConfig);
@@ -642,11 +643,11 @@ GoogleProvider createGoogleProvider({
   String? embeddingTaskType,
   String? embeddingTitle,
   int? embeddingDimensions,
-  }) {
-	  // Use GoogleConfig defaults for baseUrl/model/maxInlineDataSize and then
-	  // apply caller overrides via copyWith to avoid duplicating constants
-	  // at this top level.
-	  var config = GoogleConfig(apiKey: apiKey);
+}) {
+  // Use GoogleConfig defaults for baseUrl/model/maxInlineDataSize and then
+  // apply caller overrides via copyWith to avoid duplicating constants
+  // at this top level.
+  var config = GoogleConfig(apiKey: apiKey);
   config = config.copyWith(
     model: model,
     baseUrl: baseUrl,
