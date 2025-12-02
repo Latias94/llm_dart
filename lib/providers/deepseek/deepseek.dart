@@ -12,7 +12,6 @@ library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek_impl;
-import '../../utils/provider_registry.dart' show LanguageModelProviderFactory;
 
 export 'package:llm_dart_deepseek/llm_dart_deepseek.dart'
     show DeepSeekConfig, DeepSeekProvider;

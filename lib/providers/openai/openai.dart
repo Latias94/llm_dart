@@ -574,8 +574,8 @@ openai_impl.OpenAIProvider createOpenAIProvider({
   int? maxTokens,
   String? systemPrompt,
 }) {
-  // 统一依赖子包 OpenAIConfig 的默认 baseUrl/model，避免常量分叉。
-  // 先用默认值构造，再通过 copyWith 应用调用方覆盖。
+  // Use the OpenAIConfig defaults for baseUrl/model from the subpackage
+  // to avoid duplicating constants, then apply caller overrides via copyWith.
   var config = openai_impl.OpenAIConfig(apiKey: apiKey);
   config = config.copyWith(
     model: model,

@@ -30,7 +30,6 @@ library;
 
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic_impl;
 import 'package:llm_dart_core/llm_dart_core.dart';
-import '../../utils/provider_registry.dart' show LanguageModelProviderFactory;
 
 export 'package:llm_dart_anthropic/llm_dart_anthropic.dart'
     show AnthropicConfig, AnthropicProvider;

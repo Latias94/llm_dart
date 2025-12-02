@@ -271,7 +271,7 @@ Please provide:
     } else {
       print('      ℹ️  No sample image found. Here\'s how to analyze images:');
       print('      1. Load image file as bytes');
-      print('      2. 使用 ChatPromptBuilder.fileBytes 附加文件并指定 MIME');
+      print('      2. Use ChatPromptBuilder.fileBytes to attach the file and specify the MIME type');
       print('      3. Include descriptive prompts for analysis');
       print('      4. Claude can analyze charts, diagrams, photos, etc.');
     }

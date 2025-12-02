@@ -8,11 +8,11 @@ import '../models/chat_models.dart';
 
 /// Resolve input into a list of [ChatMessage]s for text generation.
 ///
-/// 优先使用 prompt-first 的 [promptMessages]（`List<ModelMessage>`），
-/// 为了兼容还支持：
-/// - [structuredPrompt]：单个 [ModelMessage]
-/// - [messages]：旧的 [ChatMessage] 列表
-/// - [prompt]：纯文本用户输入
+/// Prefers prompt-first [promptMessages] (`List<ModelMessage>`) when
+/// provided, but also supports:
+/// - [structuredPrompt]: a single [ModelMessage]
+/// - [messages]: legacy [ChatMessage] list
+/// - [prompt]: plain user text
 List<ChatMessage> resolveMessagesForTextGeneration({
   String? prompt,
   List<ChatMessage>? messages,
@@ -59,15 +59,15 @@ List<ChatMessage> resolveMessagesForTextGeneration({
 
 /// Resolve input into a list of prompt-first [ModelMessage]s for text generation.
 ///
-/// 与 [resolveMessagesForTextGeneration] 相反，这里返回的是 prompt-first
-/// 的 [ModelMessage] 列表，接受：
-/// - [promptMessages]：首选的 structured prompt；
-/// - [structuredPrompt]：单个 [ModelMessage]；
-/// - [legacyMessages]：旧的 [ChatMessage]，通过 `toPromptMessage()` 转换；
-/// - [prompt]：简单的用户文本。
+/// In contrast to [resolveMessagesForTextGeneration], this returns a
+/// prompt-first list of [ModelMessage]s and accepts:
+/// - [promptMessages]: preferred structured prompt list;
+/// - [structuredPrompt]: a single [ModelMessage];
+/// - [legacyMessages]: legacy [ChatMessage]s converted via `toPromptMessage()`;
+/// - [prompt]: simple user text.
 ///
-/// [reasoning] / [toolCalls] 可选裁剪行为与
-/// [resolveMessagesForTextGeneration] 一致。
+/// Optional [reasoning] / [toolCalls] pruning behavior matches
+/// [resolveMessagesForTextGeneration].
 List<ModelMessage> resolvePromptMessagesForTextGeneration({
   String? prompt,
   List<ChatMessage>? legacyMessages,

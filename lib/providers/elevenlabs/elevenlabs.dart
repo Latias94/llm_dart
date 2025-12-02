@@ -40,7 +40,6 @@
 library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import '../../utils/provider_registry.dart' show SpeechModelProviderFactory;
 import 'config.dart';
 import 'provider.dart';
 

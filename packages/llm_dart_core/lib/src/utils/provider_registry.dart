@@ -5,7 +5,8 @@ import 'capability_utils.dart';
 
 /// Factory interface for providers that can create language models.
 ///
-/// 对应 Vercel AI SDK 中 provider 的 `languageModel(modelId)` 能力。
+/// Mirrors the `languageModel(modelId)` capability on providers in the
+/// Vercel AI SDK.
 abstract class LanguageModelProviderFactory {
   LanguageModel languageModel(String modelId);
 }
@@ -26,11 +27,13 @@ abstract class SpeechModelProviderFactory {
   AudioCapability speech(String modelId);
 }
 
-/// Enterprise-grade provider registry for managing multiple providers
-/// and their capabilities.
-///
-/// 这是一个“运行时 provider 注册表”，与 `LLMProviderRegistry`（工厂注册）
-/// 互补，适合在应用层管理多个 provider 实例及其能力矩阵。
+  /// Enterprise-grade provider registry for managing multiple providers
+  /// and their capabilities.
+  ///
+  /// This is a runtime provider registry, complementary to
+  /// `LLMProviderRegistry` (factory registry). It is intended for
+  /// managing provider instances and their capability matrix at the
+  /// application layer.
 class ProviderRegistry {
   final Map<String, dynamic> _providers = {};
   final Map<String, Set<LLMCapability>> _capabilities = {};
@@ -90,7 +93,8 @@ class ProviderRegistry {
 
   /// Find the best provider for a set of requirements.
   ///
-  /// 返回满足所有必需能力、且偏好能力最多的 providerId。
+  /// Returns the providerId that satisfies all required capabilities
+  /// and has the highest number of preferred capabilities.
   String? findBestProvider(
     Set<LLMCapability> required, {
     Set<LLMCapability>? preferred,
@@ -233,12 +237,12 @@ class RegistryStats {
   });
 }
 
-/// High-level client for resolving typed models from a [ProviderRegistry].
-///
-/// 提供 `"provider:model"` 风格 id 的解析能力：
-/// - `languageModel('openai:gpt-4o')`
-/// - `textEmbeddingModel('openai:text-embedding-3-small')`
-/// - `imageModel('openai:dall-e-3')` 等。
+  /// High-level client for resolving typed models from a [ProviderRegistry].
+  ///
+  /// Provides parsing of `"provider:model"`-style identifiers, e.g.:
+  /// - `languageModel('openai:gpt-4o')`
+  /// - `textEmbeddingModel('openai:text-embedding-3-small')`
+  /// - `imageModel('openai:dall-e-3')`, etc.
 class ProviderRegistryClient {
   final ProviderRegistry _registry;
   final String _separator;
@@ -347,9 +351,10 @@ class ProviderRegistryClient {
 
 /// Create a registry client for the given provider facades.
 ///
-/// [providers] 通常是 Vercel 风格的 provider façade，例如 `OpenAI`、
-/// `GoogleGenerativeAI`、`DeepSeek` 等。keys 是逻辑 providerId，
-/// 会作为组合 modelId 的前缀（例如 `"openai:gpt-4o"`）。
+/// [providers] is typically a map of Vercel-style provider facades such
+/// as `OpenAI`, `GoogleGenerativeAI`, `DeepSeek`, etc. Keys are logical
+/// providerIds that act as the prefix component of combined modelIds
+/// (for example `"openai:gpt-4o"`).
 ProviderRegistryClient createProviderRegistry(
   Map<String, Object> providers, {
   String separator = ':',

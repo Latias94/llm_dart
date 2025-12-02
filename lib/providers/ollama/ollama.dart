@@ -40,8 +40,6 @@ library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_ollama/llm_dart_ollama.dart';
-import '../../utils/provider_registry.dart'
-    show LanguageModelProviderFactory, EmbeddingModelProviderFactory;
 
 export 'package:llm_dart_ollama/llm_dart_ollama.dart';
 export 'admin.dart';
@@ -50,22 +48,25 @@ const _defaultBaseUrl = 'http://localhost:11434/';
 
 /// Ollama provider settings (Vercel AI-style).
 ///
-/// 为 Ollama 提供一个轻量的 model factory 配置对象，方便在
-/// `createProviderRegistry` 中注册并按 `"ollama:model"` 的形式使用。
+/// Provides a lightweight configuration object for the Ollama model
+/// factory so it can be registered with `createProviderRegistry`
+/// and used via `"ollama:model"` identifiers.
 class OllamaProviderSettings {
-  /// 可选 API key，一般用于自定义代理或鉴权场景。
+  /// Optional API key, typically used for custom proxy or auth setups.
   final String? apiKey;
 
-  /// Ollama HTTP 服务地址，默认指向本机。
+  /// Ollama HTTP service URL, defaults to a local instance.
   final String? baseUrl;
 
-  /// 统一的请求超时时间，对应 [LLMConfig.timeout]。
+  /// Unified request timeout, mapped to [LLMConfig.timeout].
   final Duration? timeout;
 
-  /// 自定义 HTTP 头，通过 [LLMConfig.extensions] 传递给底层实现。
+  /// Custom HTTP headers, passed to the underlying implementation
+  /// via [LLMConfig.extensions].
   final Map<String, String>? headers;
 
-  /// 逻辑 provider 名称，用于 [LanguageModel.providerId] 等元数据。
+  /// Logical provider name, used for [LanguageModel.providerId] and
+  /// other metadata.
   final String? name;
 
   const OllamaProviderSettings({
@@ -77,11 +78,12 @@ class OllamaProviderSettings {
   });
 }
 
-/// Ollama model factory（Vercel AI 风格）。
+/// Ollama model factory (Vercel AI-style).
 ///
-/// 提供与 `OpenAI`/`GoogleGenerativeAI`/`DeepSeek` 一致的 model-first API，
-/// 并实现 `LanguageModelProviderFactory` 与 `EmbeddingModelProviderFactory`，
-/// 便于与 [createProviderRegistry] 集成。
+/// Provides a model-first API consistent with `OpenAI` /
+/// `GoogleGenerativeAI` / `DeepSeek` and implements
+/// [LanguageModelProviderFactory] and [EmbeddingModelProviderFactory]
+/// for easy integration with [createProviderRegistry].
 class Ollama
     implements LanguageModelProviderFactory, EmbeddingModelProviderFactory {
   final OllamaProviderSettings _settings;
@@ -95,10 +97,11 @@ class Ollama
         ),
         _providerName = settings.name ?? 'ollama';
 
-  /// 语言模型入口，兼容 Registry 的 `languageModel("ollama:llama3.2")` 用法。
+  /// Language model entry point, compatible with the registry call
+  /// `languageModel("ollama:llama3.2")`.
   ///
-  /// 内部直接构造一个 [OllamaProvider] 并由 [DefaultLanguageModel] 包装为
-  /// 抽象的 [LanguageModel]。
+  /// Internally constructs an [OllamaProvider] and wraps it in
+  /// [DefaultLanguageModel] as an abstract [LanguageModel].
   @override
   LanguageModel languageModel(String modelId) {
     final llmConfig = _createLLMConfig(modelId);
@@ -113,11 +116,11 @@ class Ollama
     );
   }
 
-  /// 嵌入模型入口，兼容 Registry 的
-  /// `textEmbeddingModel("ollama:nomic-embed-text")` 用法。
+  /// Embedding model entry point, compatible with the registry call
+  /// `textEmbeddingModel("ollama:nomic-embed-text")`.
   ///
-  /// 由于 [OllamaProvider] 本身实现了 [EmbeddingCapability]，这里直接
-  /// 返回 provider 实例。
+  /// Since [OllamaProvider] implements [EmbeddingCapability] directly,
+  /// this simply returns the provider instance.
   @override
   EmbeddingCapability textEmbeddingModel(String modelId) {
     final llmConfig = _createLLMConfig(modelId);
@@ -153,9 +156,9 @@ class Ollama
   }
 }
 
-/// 创建一个 Ollama model factory（Vercel AI 风格）。
+/// Create an Ollama model factory (Vercel AI-style).
 ///
-/// 示例：
+/// Example:
 /// ```dart
 /// final ollama = createOllama(
 ///   baseUrl: 'http://localhost:11434',

@@ -249,6 +249,26 @@ class AnthropicBuilder {
     return this;
   }
 
+  /// Sets thinking budget tokens for Anthropic extended thinking.
+  ///
+  /// This is passed through the [LLMConfigKeys.thinkingBudgetTokens]
+  /// extension key to the underlying AnthropicConfig to configure
+  /// extended thinking for Claude 4 models.
+  AnthropicBuilder thinkingBudgetTokens(int tokens) {
+    _baseBuilder.extension(LLMConfigKeys.thinkingBudgetTokens, tokens);
+    return this;
+  }
+
+  /// Enables interleaved thinking for Anthropic (Claude 4 models only).
+  ///
+  /// Uses [LLMConfigKeys.interleavedThinking] to control whether Claude
+  /// models enable the mode where thinking traces and answers are
+  /// interleaved in the output.
+  AnthropicBuilder interleavedThinking(bool enable) {
+    _baseBuilder.extension(LLMConfigKeys.interleavedThinking, enable);
+    return this;
+  }
+
   // ========== Build methods ==========
 
   /// Builds and returns a configured LLM provider instance

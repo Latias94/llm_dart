@@ -12,17 +12,19 @@ import '../providers/openai/compatible/openrouter/builder.dart';
 
 /// Provider-specific convenience methods for [LLMBuilder].
 ///
-/// 这些方法以 extension 形式挂在 [LLMBuilder] 上，用于配置内置 provider：
+/// These methods are exposed as an extension on [LLMBuilder] to configure
+/// built-in providers:
 /// - `.openai((openai) => ...)`
 /// - `.anthropic((anthropic) => ...)`
 /// - `.google((google) => ...)`
 /// - `.ollama((ollama) => ...)`
 /// - `.elevenlabs((e) => ...)`
-/// 以及 OpenAI 兼容 provider：
+/// and OpenAI-compatible providers:
 /// - `.deepseekOpenAI()`, `.googleOpenAI()`, `.xaiOpenAI()`, `.groqOpenAI()`,
 ///   `.phindOpenAI()`, `.openRouter((openrouter) => ...)`
 ///
-/// 这样可以让核心 [LLMBuilder] 保持中立，而 provider 相关语义集中在扩展中。
+/// This keeps the core [LLMBuilder] neutral while concentrating
+/// provider-specific semantics in this extension.
 extension LLMBuilderProviderShortcuts on LLMBuilder {
   /// Configure the OpenAI provider.
   ///
@@ -135,11 +137,12 @@ extension LLMBuilderProviderShortcuts on LLMBuilder {
 
   /// Builds an OpenAI provider with Responses API enabled.
   ///
-  /// 这是一个便捷方法，等价于：
+  /// This is a convenience method equivalent to:
   /// - `.openai((o) => o.useResponsesAPI(...))`
-  /// - 然后构建 `openai_impl.OpenAIProvider` 并确保 `responses` 已正确初始化。
+  /// - then constructing `openai_impl.OpenAIProvider` and ensuring
+  ///   that `responses` is initialized.
   ///
-  /// 示例：
+  /// Example:
   /// ```dart
   /// final provider = await ai()
   ///     .openai((openai) => openai
@@ -155,7 +158,8 @@ extension LLMBuilderProviderShortcuts on LLMBuilder {
 
   /// Builds a Google provider with TTS capability.
   ///
-  /// 这是一个便捷方法，会构造一个实现了 [GoogleTTSCapability] 的 Google provider：
+  /// This is a convenience method that constructs a Google provider
+  /// implementing [GoogleTTSCapability]:
   /// ```dart
   /// final ttsProvider = await ai()
   ///     .google((google) => google.ttsModel('gemini-2.5-flash-preview-tts'))

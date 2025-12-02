@@ -48,6 +48,15 @@ class OpenAIBuilder {
     return this;
   }
 
+  /// Sets voice for text-to-speech models (e.g. OpenAI TTS voices).
+  ///
+  /// This is an OpenAI-specific voice name setting (e.g. `alloy`, `verse`).
+  /// The value is passed via [LLMConfigKeys.voice] to the OpenAI audio module.
+  OpenAIBuilder voice(String voiceName) {
+    _baseBuilder.extension(LLMConfigKeys.voice, voiceName);
+    return this;
+  }
+
   /// Sets logit bias for specific tokens
   ///
   /// Modify the likelihood of specified tokens appearing in the completion.
@@ -415,11 +424,15 @@ class OpenAIBuilder {
 
     final provider = await build();
 
-    // Ensure we have an OpenAI provider
+    // Ensure we have an OpenAI provider. If the current builder is configured
+    // for a non‑OpenAI backend (e.g. Anthropic), surface this as a capability
+    // error instead of an internal StateError so callers can handle it
+    // consistently with other build* helpers.
     if (provider is! openai_impl.OpenAIProvider) {
-      throw StateError(
-          'Expected openai.OpenAIProvider but got ${provider.runtimeType}. '
-          'This should not happen when using buildOpenAIResponses().');
+      throw UnsupportedCapabilityError(
+        'OpenAI Responses API is only available for OpenAI-compatible providers. '
+        'Received provider type: ${provider.runtimeType}.',
+      );
     }
 
     // Verify that Responses API is properly initialized

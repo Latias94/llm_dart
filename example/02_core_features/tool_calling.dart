@@ -55,7 +55,7 @@ Future<void> demonstrateBasicToolCalling(LanguageModel model) async {
   try {
     // Define a simple calculator tool
     //
-    // 写法 1（推荐）：使用 ToolBuilder / tool(...) 语法糖
+    // Style 1 (recommended): use ToolBuilder / tool(...) helper syntax
     final calculatorTool = tool('calculate', (t) {
       t
         ..description('Perform basic mathematical calculations')
@@ -67,7 +67,8 @@ Future<void> demonstrateBasicToolCalling(LanguageModel model) async {
         );
     });
 
-    // 写法 2（等价参考）：直接手写 Tool.function + ParametersSchema
+    // Style 2 (equivalent reference): manually construct Tool.function
+    // with a ParametersSchema
     //
     // final calculatorTool = Tool.function(
     //   name: 'calculate',

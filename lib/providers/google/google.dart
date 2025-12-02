@@ -38,11 +38,6 @@ import 'package:llm_dart_google/llm_dart_google.dart'
         GoogleEmbeddings,
         GoogleImages,
         SafetySetting;
-import '../../utils/provider_registry.dart'
-    show
-        LanguageModelProviderFactory,
-        EmbeddingModelProviderFactory,
-        ImageModelProviderFactory;
 
 /// Public Google provider surface re-export.
 ///
@@ -275,10 +270,11 @@ GoogleProvider createGoogleProvider({
   String? embeddingTaskType,
   String? embeddingTitle,
   int? embeddingDimensions,
-}) {
-  // 统一默认配置：依赖子包 GoogleConfig 的默认 baseUrl/model/maxInlineDataSize，
-  // 然后通过 copyWith 应用调用方覆盖，避免在顶层重复维护常量。
-  var config = GoogleConfig(apiKey: apiKey);
+  }) {
+	  // Use GoogleConfig defaults for baseUrl/model/maxInlineDataSize and then
+	  // apply caller overrides via copyWith to avoid duplicating constants
+	  // at this top level.
+	  var config = GoogleConfig(apiKey: apiKey);
   config = config.copyWith(
     model: model,
     baseUrl: baseUrl,

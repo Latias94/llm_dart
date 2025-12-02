@@ -117,7 +117,7 @@ Future<void> quickStartWithOllama() async {
 /// - apiKey, model, temperature, maxTokens
 ///
 /// Prompts:
-/// - 推荐使用 ChatPromptBuilder + ModelMessage（prompt-first）
+/// - Prefer ChatPromptBuilder + ModelMessage (prompt-first)
 ///
 /// Response:
 /// - response.text, response.usage, response.thinking

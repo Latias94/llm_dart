@@ -2,23 +2,25 @@ import '../core/capability.dart';
 
 /// Utility class for capability checking and safe execution.
 ///
-/// 提供多种基于能力枚举和接口检测的工具方法，适用于：
-/// - 运行时判断某个 provider 是否支持特定能力；
-/// - 根据能力安全地执行某些操作（带回退或错误）；
-/// - 构建能力矩阵和校验报告。
+/// Provides several helper methods based on capability enums and
+/// interface detection, useful for:
+/// - Checking at runtime whether a provider supports a capability;
+/// - Safely executing operations based on capabilities (with fallback or errors);
+/// - Building capability matrices and validation reports.
 class CapabilityUtils {
   // ========== Basic Capability Checking ==========
 
   /// Simple capability check using interface type.
   ///
-  /// 最简单的能力检测：直接用 Dart 的 `is` 判断接口实现。
+  /// The simplest capability check: use Dart's `is` operator to test
+  /// whether the provider implements the interface.
   static bool hasCapability<T>(dynamic provider) {
     return provider is T;
   }
 
   /// Check capability using enum (requires [ProviderCapabilities]).
   ///
-  /// 适合做统一能力管理和动态查询。
+  /// Suitable for centralized capability management and dynamic queries.
   static bool supportsCapability(dynamic provider, LLMCapability capability) {
     if (provider is ProviderCapabilities) {
       return provider.supports(capability);
@@ -28,7 +30,7 @@ class CapabilityUtils {
 
   /// Check multiple capabilities at once.
   ///
-  /// 适合有一组强约束能力需求的场景。
+  /// Useful when you have a strongly constrained set of required capabilities.
   static bool supportsAllCapabilities(
     dynamic provider,
     Set<LLMCapability> capabilities,
@@ -39,7 +41,8 @@ class CapabilityUtils {
 
   /// Check if provider supports any of the given capabilities.
   ///
-  /// 适合“有其一即可”的降级场景。
+  /// Useful for graceful-degradation scenarios where any capability
+  /// in the set is acceptable.
   static bool supportsAnyCapability(
     dynamic provider,
     Set<LLMCapability> capabilities,
@@ -52,7 +55,8 @@ class CapabilityUtils {
 
   /// Execute action safely with capability check.
   ///
-  /// 如果 provider 不实现能力 `T`，返回 `null` 而不是抛异常。
+  /// If the provider does not implement capability `T`, returns `null`
+  /// instead of throwing an exception.
   static Future<R?> withCapability<T, R>(
     dynamic provider,
     Future<R> Function(T) action,
@@ -65,7 +69,7 @@ class CapabilityUtils {
 
   /// Execute action safely with error handling.
   ///
-  /// 如果 provider 不支持能力，则抛出 [CapabilityError]。
+  /// Throws [CapabilityError] if the provider does not support `T`.
   static Future<R> requireCapability<T, R>(
     dynamic provider,
     Future<R> Function(T) action, {
@@ -81,7 +85,8 @@ class CapabilityUtils {
 
   /// Execute action with fallback if capability not supported.
   ///
-  /// 不支持能力时执行 [fallback]，适合渐进式增强/优雅降级。
+  /// Executes [fallback] when the capability is not supported; useful
+  /// for progressive enhancement / graceful degradation patterns.
   static Future<R> withFallback<T, R>(
     dynamic provider,
     Future<R> Function(T) action,
@@ -95,7 +100,8 @@ class CapabilityUtils {
 
   /// Execute multiple actions based on available capabilities.
   ///
-  /// 根据 provider 的能力映射来选择执行哪些动作，返回结果字典。
+  /// Selects which actions to run based on the provider's capabilities
+  /// and returns a result map.
   static Future<Map<String, dynamic>> executeByCapabilities(
     dynamic provider,
     Map<LLMCapability, Future<dynamic> Function()> actions,
