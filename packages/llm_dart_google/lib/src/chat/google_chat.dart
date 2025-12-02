@@ -511,6 +511,180 @@ class GoogleChat implements ChatCapability, PromptChatCapability {
           effectiveSafetySettings.map((s) => s.toJson()).toList();
     }
 
+    // Preferred tool path: unified callTools (function + provider-defined).
+    //
+    // When [callTools] is provided, it takes precedence over the legacy
+    // [tools] list and allows providers to interpret provider-defined
+    // tools (for example Google grounding tools) in a Vercel AI SDK-style
+    // fashion. This mirrors the behavior of `google-prepare-tools.ts`.
+    final callTools = options?.callTools;
+    if (callTools != null && callTools.isNotEmpty) {
+      final functionSpecs = <FunctionCallToolSpec>[];
+      final providerSpecs = <ProviderDefinedToolSpec>[];
+
+      for (final spec in callTools) {
+        if (spec is FunctionCallToolSpec) {
+          functionSpecs.add(spec);
+        } else if (spec is ProviderDefinedToolSpec) {
+          providerSpecs.add(spec);
+        }
+      }
+
+      final hasFunctionTools = functionSpecs.isNotEmpty;
+      final hasProviderDefinedTools = providerSpecs.isNotEmpty;
+
+      // When both function tools and provider-defined tools are present,
+      // we follow the Vercel semantics: provider-defined tools win and
+      // function tools are ignored.
+      if (hasProviderDefinedTools) {
+        final googleTools = <Map<String, dynamic>>[];
+
+        for (final spec in providerSpecs) {
+          switch (spec.id) {
+            case 'google.google_search':
+              if (_isGemini2OrNewer) {
+                // Gemini 2.x and newer use the new googleSearch tool.
+                googleTools.add({'googleSearch': <String, dynamic>{}});
+              } else if (_supportsDynamicRetrieval) {
+                // Older Gemini models (1.5 Flash) use googleSearchRetrieval
+                // with dynamicRetrievalConfig provided via args.
+                final dynamicRetrievalConfig = <String, dynamic>{};
+                final mode = spec.args['mode'];
+                if (mode is String && mode.isNotEmpty) {
+                  dynamicRetrievalConfig['mode'] = mode;
+                }
+                final dynamicThreshold = spec.args['dynamicThreshold'];
+                if (dynamicThreshold is num) {
+                  dynamicRetrievalConfig['dynamicThreshold'] =
+                      dynamicThreshold;
+                }
+
+                googleTools.add({
+                  'googleSearchRetrieval': {
+                    'dynamicRetrievalConfig': dynamicRetrievalConfig,
+                  },
+                });
+              } else {
+                // Fallback for non-Gemini-2 models without dynamic retrieval
+                googleTools.add({
+                  'googleSearchRetrieval': <String, dynamic>{},
+                });
+              }
+              break;
+
+            case 'google.url_context':
+              if (_supportsUrlContextTool) {
+                googleTools.add({'urlContext': <String, dynamic>{}});
+              } else {
+                client.logger.warning(
+                  'The URL context tool is only supported on Gemini 2.x models. '
+                  'Current model: ${config.model}',
+                );
+              }
+              break;
+
+            case 'google.code_execution':
+              if (_supportsCodeExecutionTool) {
+                googleTools.add({'codeExecution': <String, dynamic>{}});
+              } else {
+                client.logger.warning(
+                  'The code execution tool is only supported on Gemini 2.x models. '
+                  'Current model: ${config.model}',
+                );
+              }
+              break;
+
+            case 'google.file_search':
+              if (_supportsFileSearchTool) {
+                final args = <String, dynamic>{};
+                for (final entry in spec.args.entries) {
+                  args[entry.key] = entry.value;
+                }
+                googleTools.add({'fileSearch': args});
+              } else {
+                client.logger.warning(
+                  'The file search tool is only supported on Gemini 2.5 models. '
+                  'Current model: ${config.model}',
+                );
+              }
+              break;
+
+            case 'google.vertex_rag_store':
+              if (_isGemini2OrNewer) {
+                final ragCorpus = spec.args['ragCorpus'];
+                final topK = spec.args['topK'];
+
+                if (ragCorpus is String && ragCorpus.isNotEmpty) {
+                  final ragStore = <String, dynamic>{
+                    'rag_resources': {
+                      'rag_corpus': ragCorpus,
+                    },
+                  };
+                  if (topK is num) {
+                    ragStore['similarity_top_k'] = topK;
+                  }
+
+                  googleTools.add({
+                    'retrieval': {
+                      'vertex_rag_store': ragStore,
+                    },
+                  });
+                } else {
+                  client.logger.warning(
+                    'google.vertex_rag_store tool requires a non-empty "ragCorpus" argument.',
+                  );
+                }
+              } else {
+                client.logger.warning(
+                  'The Vertex RAG store tool is only supported on Gemini 2.x models. '
+                  'Current model: ${config.model}',
+                );
+              }
+              break;
+
+            default:
+              client.logger.warning(
+                'Unsupported provider-defined tool id for Google: ${spec.id}',
+              );
+              break;
+          }
+        }
+
+        if (googleTools.isNotEmpty) {
+          body['tools'] = googleTools;
+        }
+
+        // When provider-defined tools are used we intentionally skip
+        // functionDeclarations and toolConfig, mirroring the behavior of
+        // the Vercel AI SDK where provider-defined tools form an
+        // alternative tool path.
+        return body;
+      }
+
+      // If only function tools are present in callTools, fall back to the
+      // same behavior as the legacy [tools] list but using the wrapped
+      // [Tool] instances from [FunctionCallToolSpec].
+      if (hasFunctionTools) {
+        final functionTools =
+            functionSpecs.map((spec) => spec.tool).toList(growable: false);
+
+        body['tools'] = [
+          {
+            'functionDeclarations':
+                functionTools.map((t) => _convertTool(t)).toList(),
+          },
+        ];
+
+        final effectiveToolChoice = options?.toolChoice ?? config.toolChoice;
+        if (effectiveToolChoice != null) {
+          body['toolConfig'] =
+              _convertToolChoice(effectiveToolChoice, functionTools);
+        }
+
+        return body;
+      }
+    }
+
     final effectiveTools = options?.tools ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = [

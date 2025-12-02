@@ -152,6 +152,14 @@ class Anthropic implements LanguageModelProviderFactory {
     if (value.isEmpty) return _defaultBaseUrl;
     return value.endsWith('/') ? value : '$value/';
   }
+
+  /// Anthropic provider-defined tools (web search, MCP, etc.).
+  ///
+  /// This mirrors the `anthropic.tools` namespace in the Vercel AI SDK
+  /// for the tools that are implemented in this Dart package. For now
+  /// we expose the web search tool used by the `web_search_20250305`
+  /// server-side integration.
+  AnthropicTools get tools => const AnthropicTools();
 }
 
 /// Create an Anthropic model factory (Vercel AI-style).
@@ -202,6 +210,56 @@ Anthropic anthropic({
     name: name,
     timeout: timeout,
   );
+}
+
+/// Lightweight facade for Anthropic provider-defined tools.
+///
+/// This mirrors the `anthropic.tools` namespace from the Vercel AI SDK
+/// for the subset of tools that are supported in this Dart port.
+class AnthropicTools {
+  const AnthropicTools();
+
+  /// Web search tool (`web_search_20250305`).
+  ///
+  /// Returns a [Tool] with:
+  /// - name: `web_search`
+  /// - single `query` string parameter describing the search query
+  ///
+  /// The underlying Anthropic request builder (`AnthropicRequestBuilder`)
+  /// recognizes this tool name and maps it to Anthropic's official
+  /// `web_search_20250305` tool type, augmenting it with configuration
+  /// from [WebSearchConfig] when present.
+  ///
+  /// Example:
+  /// ```dart
+  /// final anthropic = createAnthropic(apiKey: apiKey);
+  ///
+  /// final webSearchTool = anthropic.tools.webSearch20250305();
+  ///
+  /// final result = await generateText({
+  ///   model: 'anthropic:claude-sonnet-4-20250514',
+  ///   tools: {
+  ///     'web_search': webSearchTool,
+  ///   },
+  ///   // ...
+  /// });
+  /// ```
+  Tool webSearch20250305() {
+    return Tool.function(
+      name: 'web_search',
+      description: 'Search the web for current information',
+      parameters: ParametersSchema(
+        schemaType: 'object',
+        properties: {
+          'query': ParameterProperty(
+            propertyType: 'string',
+            description: 'The search query to execute',
+          ),
+        },
+        required: const ['query'],
+      ),
+    );
+  }
 }
 
 /// Create an Anthropic provider with default configuration

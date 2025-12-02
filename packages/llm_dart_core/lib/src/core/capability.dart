@@ -1135,6 +1135,15 @@ class LanguageModelCallOptions {
   /// the underlying model or builder for this specific invocation.
   final List<Tool>? tools;
 
+  /// Unified tool specification for this call (function + provider-defined).
+  ///
+  /// When provided, this list takes precedence over [tools] and allows
+  /// callers to mix traditional function tools ([Tool]) with
+  /// provider-defined tools ([ProviderDefinedToolSpec]). Providers that
+  /// support provider-defined tools (such as Google) can interpret these
+  /// entries to prepare their native tool configuration.
+  final List<CallToolSpec>? callTools;
+
   /// Tool choice strategy for this call.
   final ToolChoice? toolChoice;
 
@@ -1163,6 +1172,7 @@ class LanguageModelCallOptions {
     this.topK,
     this.stopSequences,
     this.tools,
+     this.callTools,
     this.toolChoice,
     this.user,
     this.serviceTier,
@@ -1393,7 +1403,7 @@ class DefaultLanguageModel implements LanguageModel {
     // through the legacy ChatMessage surface.
     final ChatResponse response;
     if (_promptChat != null) {
-      response = await _promptChat!.chatPrompt(
+      response = await _promptChat.chatPrompt(
         messages,
         tools: null,
         options: options,
@@ -1427,7 +1437,7 @@ class DefaultLanguageModel implements LanguageModel {
     CancellationToken? cancelToken,
   }) {
     if (_promptChat != null) {
-      return _promptChat!.chatPromptStream(
+      return _promptChat.chatPromptStream(
         messages,
         tools: null,
         options: options,

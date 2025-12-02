@@ -45,6 +45,8 @@ library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_xai/llm_dart_xai.dart' as xai_impl;
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart'
+    show createProviderDefinedExecutableTool;
 import 'config.dart';
 
 // Core exports
@@ -271,6 +273,94 @@ class XAI
   @override
   EmbeddingCapability textEmbeddingModel(String modelId) => embedding(modelId);
 
+  /// xAI provider-defined tools.
+  ///
+  /// This mirrors the `xai.tools` namespace from the Vercel AI SDK for
+  /// the subset of tools that are implemented in this Dart port.
+  XAITools get tools => const XAITools();
+
+  /// Provider-defined tools factory for xAI.
+  ///
+  /// These helpers create [ProviderDefinedToolSpec] instances that can
+  /// be used with Responses-style integrations or future xAI-specific
+  /// provider-defined tool handling. The current chat integration does
+  /// not interpret these specs directly.
+  XAIProviderDefinedTools get providerTools =>
+      const XAIProviderDefinedTools();
+
+  /// Build an executable web search tool that automatically calls xAI.
+  ///
+  /// This helper constructs an [ExecutableTool] whose schema comes from
+  /// [tools.webSearch] and whose execution logic:
+  /// - Calls the xAI chat endpoint with [SearchParameters] and `liveSearch`
+  ///   enabled so that Grok performs real-time web search.
+  /// - Returns a JSON object `{ "query": string, "answer": string }`.
+  ///
+  /// This mirrors the intent of the `xai.webSearch` provider-defined tool
+  /// in the Vercel AI SDK, but is implemented client-side using the
+  /// existing xAI chat integration.
+  ExecutableTool webSearchTool({
+    required String modelId,
+    SearchParameters? searchParameters,
+    String? systemPrompt,
+    double? temperature,
+    int? maxTokens,
+  }) {
+    final schema = tools.webSearch();
+
+    return createProviderDefinedExecutableTool<
+        Map<String, dynamic>, Map<String, dynamic>>(
+      schema: schema,
+      execute: (args) async {
+        final rawQuery = args['query'];
+        final query = rawQuery is String ? rawQuery : '';
+
+        if (query.trim().isEmpty) {
+          return {
+            'query': query,
+            'answer': '',
+            'error': 'Empty query for xAI web_search tool.',
+          };
+        }
+
+        final config = xai_impl.XAIConfig(
+          apiKey: _settings.apiKey,
+          baseUrl: _baseUrl,
+          model: modelId,
+          temperature: temperature,
+          maxTokens: maxTokens,
+          systemPrompt: systemPrompt,
+          // Enable live search with the provided search parameters
+          liveSearch: true,
+          searchParameters:
+              searchParameters ?? SearchParameters.webSearch(maxResults: null),
+        );
+
+        final client = xai_impl.XAIClient(config);
+        final chat = xai_impl.XAIChat(client, config);
+
+        final messages = <ModelMessage>[
+          ModelMessage(
+            role: ChatRole.user,
+            parts: <ChatContentPart>[
+              TextContentPart(query),
+            ],
+          ),
+        ];
+
+        final response = await chat.chatPrompt(messages);
+        final text = response.text ?? '';
+
+        return <String, dynamic>{
+          'query': query,
+          'answer': text,
+        };
+      },
+      decodeArgs: (raw) => raw,
+      encodeResult: (out) => out,
+    );
+  }
+
   LLMConfig _createLLMConfig(String modelId) {
     final headers = <String, String>{};
 
@@ -342,4 +432,127 @@ XAI xai({
     headers: headers,
     timeout: timeout,
   );
+}
+
+/// xAI provider-defined tools facade.
+///
+/// This mirrors the `xai.tools` namespace from the Vercel AI SDK for
+/// the subset of tools that are supported in this Dart port. For now
+/// we expose a schema helper for the `web_search` tool; callers can
+/// turn it into an [ExecutableTool] via [ProviderDefinedToolFactory]
+/// when they want to provide a concrete implementation.
+class XAITools {
+  const XAITools();
+
+  /// Web search tool schema for xAI.
+  ///
+  /// Returns a [Tool] with:
+  /// - name: `web_search`
+  /// - parameters: `{ query: string }`
+  ///
+  /// This is intended to be used with [ExecutableTool] / agents when
+  /// you want the model to request web searches via a unified schema:
+  ///
+  /// ```dart
+  /// final xaiFactory = createXAI(apiKey: apiKey);
+  /// final schema = xaiFactory.tools.webSearch();
+  ///
+  /// final exec = ExecutableTool(
+  ///   schema: schema,
+  ///   execute: (args) async {
+  ///     // Implement your xAI/web search integration here.
+  ///     return {'result': 'search results for: ${args['query']}'};
+  ///   },
+  /// );
+  /// ```
+  Tool webSearch() {
+    return Tool.function(
+      name: 'web_search',
+      description: 'Search the web using xAI live search / Grok capabilities.',
+      parameters: ParametersSchema(
+        schemaType: 'object',
+        properties: {
+          'query': ParameterProperty(
+            propertyType: 'string',
+            description: 'Search query text.',
+          ),
+        },
+        required: const ['query'],
+      ),
+    );
+  }
+}
+
+/// xAI provider-defined tools factory.
+///
+/// This mirrors the `xai.web_search` / `xai.x_search` provider-defined
+/// tools in the Vercel AI SDK. These specs are intended to be used with
+/// Responses-style integrations; the current chat integration does not
+/// yet consume them directly.
+class XAIProviderDefinedTools {
+  const XAIProviderDefinedTools();
+
+  /// Provider-defined web search tool for xAI.
+  ///
+  /// Corresponds to the `xai.web_search` provider-defined tool ID in
+  /// the Vercel AI SDK. The arguments map directly to the schema used
+  /// in `web-search.ts`:
+  /// - [allowedDomains]
+  /// - [excludedDomains]
+  /// - [enableImageUnderstanding]
+  ProviderDefinedToolSpec webSearch({
+    List<String>? allowedDomains,
+    List<String>? excludedDomains,
+    bool? enableImageUnderstanding,
+  }) {
+    final args = <String, dynamic>{};
+    if (allowedDomains != null) args['allowedDomains'] = allowedDomains;
+    if (excludedDomains != null) args['excludedDomains'] = excludedDomains;
+    if (enableImageUnderstanding != null) {
+      args['enableImageUnderstanding'] = enableImageUnderstanding;
+    }
+
+    return ProviderDefinedToolSpec(
+      id: 'xai.web_search',
+      args: args,
+    );
+  }
+
+  /// Provider-defined X search tool for xAI.
+  ///
+  /// Corresponds to the `xai.x_search` provider-defined tool ID in the
+  /// Vercel AI SDK. The arguments mirror those from `x-search.ts`:
+  /// - [allowedXHandles]
+  /// - [excludedXHandles]
+  /// - [fromDate]
+  /// - [toDate]
+  /// - [enableImageUnderstanding]
+  /// - [enableVideoUnderstanding]
+  ProviderDefinedToolSpec xSearch({
+    List<String>? allowedXHandles,
+    List<String>? excludedXHandles,
+    String? fromDate,
+    String? toDate,
+    bool? enableImageUnderstanding,
+    bool? enableVideoUnderstanding,
+  }) {
+    final args = <String, dynamic>{};
+    if (allowedXHandles != null) args['allowedXHandles'] = allowedXHandles;
+    if (excludedXHandles != null) {
+      args['excludedXHandles'] = excludedXHandles;
+    }
+    if (fromDate != null) args['fromDate'] = fromDate;
+    if (toDate != null) args['toDate'] = toDate;
+    if (enableImageUnderstanding != null) {
+      args['enableImageUnderstanding'] = enableImageUnderstanding;
+    }
+    if (enableVideoUnderstanding != null) {
+      args['enableVideoUnderstanding'] = enableVideoUnderstanding;
+    }
+
+    return ProviderDefinedToolSpec(
+      id: 'xai.x_search',
+      args: args,
+    );
+  }
 }

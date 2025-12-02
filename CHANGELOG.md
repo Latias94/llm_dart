@@ -11,6 +11,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Provider-defined tools (function + provider-defined union)**
+  - Added `CallToolSpec` union type in `llm_dart_core` to represent call-level tools:
+    - `FunctionCallToolSpec` wraps existing `Tool` instances (function tools).
+    - `ProviderDefinedToolSpec` describes provider-defined tools via a globally unique `id` (e.g. `google.google_search`, `xai.web_search`) and JSON `args`.
+  - Extended `LanguageModelCallOptions` with an optional `callTools` field:
+    - When `callTools` is provided, it takes precedence over the legacy `tools: List<Tool>` field.
+    - Existing code that only uses `tools` remains fully compatible.
+  - Re-exported `CallToolSpec`, `FunctionCallToolSpec`, and `ProviderDefinedToolSpec` from the root `llm_dart` package for convenience.
+
+- **Google provider-defined tools (Vercel AI SDK-style)**
+  - Added a `GoogleProviderDefinedTools` factory on `GoogleGenerativeAI`:
+    - `google.providerTools.googleSearch({ mode, dynamicThreshold })` → `ProviderDefinedToolSpec('google.google_search', ...)`.
+    - `google.providerTools.urlContext()` → `ProviderDefinedToolSpec('google.url_context')`.
+    - `google.providerTools.fileSearch({ fileSearchStoreNames, topK, metadataFilter })` → `ProviderDefinedToolSpec('google.file_search', ...)`.
+    - `google.providerTools.codeExecution()` → `ProviderDefinedToolSpec('google.code_execution')`.
+    - `google.providerTools.vertexRagStore({ ragCorpus, topK })` → `ProviderDefinedToolSpec('google.vertex_rag_store', ...)`.
+  - Extended `GoogleChat._buildRequestBodyFromPrompt` to interpret `LanguageModelCallOptions.callTools`:
+    - When provider-defined tools are present, they are mapped to native Gemini tools following the Vercel AI SDK semantics:
+      - `google.google_search` → `googleSearch` or `googleSearchRetrieval` (with `dynamicRetrievalConfig` when applicable).
+      - `google.url_context` → `urlContext` (Gemini 2.x only).
+      - `google.code_execution` → `codeExecution` (Gemini 2.x only).
+      - `google.file_search` → `fileSearch` (Gemini 2.5 only).
+      - `google.vertex_rag_store` → Vertex RAG Store retrieval configuration (Gemini 2.x only).
+    - When both function tools and provider-defined tools are present, provider-defined tools win and function tools are ignored (mirrors `google-prepare-tools.ts` behavior).
+    - When only function tools are present in `callTools`, they are treated equivalently to the legacy `tools: List<Tool>` path (functionDeclarations + toolConfig).
+
+- **Google tools facade enhancements**
+  - Expanded `GoogleTools` (schema helpers) to cover additional Gemini tools:
+    - `webSearch()` → unified `web_search` function tool schema with `{ query: string }`.
+    - `urlContext()` → `url_context` with an empty parameter object.
+    - `fileSearch()` → `file_search` with `fileSearchStoreNames`, `topK`, `metadataFilter`.
+    - `codeExecution()` → `code_execution` with `language` and `code` parameters.
+    - `vertexRagStore()` → `vertex_rag_store` with `ragCorpus` and `topK`.
+  - Added `GoogleGenerativeAI.webSearchTool(...)` convenience helper:
+    - Builds an `ExecutableTool` that uses the existing Google chat integration with `WebSearchConfig` / grounding metadata.
+    - Returns a JSON payload `{ query, answer, groundingMetadata?, urlContextMetadata? }`.
+
+- **xAI provider-defined tools helpers**
+  - Added `XAIProviderDefinedTools` on the `XAI` facade:
+    - `xai.providerTools.webSearch({ allowedDomains, excludedDomains, enableImageUnderstanding })` → `ProviderDefinedToolSpec('xai.web_search', ...)`.
+    - `xai.providerTools.xSearch({ allowedXHandles, excludedXHandles, fromDate, toDate, enableImageUnderstanding, enableVideoUnderstanding })` → `ProviderDefinedToolSpec('xai.x_search', ...)`.
+  - These specs mirror the Vercel AI SDK’s `xai.web_search` / `xai.x_search` provider-defined tools and are intended for future xAI Responses-style integrations. The existing `xai.webSearchTool(...)` executable helper remains the primary way to perform live search via the chat API.
+
+- **OpenAI Responses built-in tools expansion**
+  - Extended `llm_dart_openai` built-in tool support beyond web search / file search / computer use:
+    - Added `OpenAICodeInterpreterTool` for the `code_interpreter` Responses tool.
+    - Added `OpenAIImageGenerationTool` for the `image_generation` Responses tool.
+  - Updated the OpenAI facade `OpenAITools` to mirror the Vercel AI SDK `openai.tools` namespace:
+    - `openai.tools.codeInterpreter({ Map<String, dynamic>? parameters })`
+    - `openai.tools.imageGeneration({ String? model, Map<String, dynamic>? parameters })`
+  - Built-in tools are still attached via `OpenAI.responses(..., builtInTools: [...])` and serialized into the Responses `tools` array alongside function tools, so existing integrations remain fully compatible.
+
+- **High-level helpers: callTools integration**
+  - Updated top-level text helpers to recognize `LanguageModelCallOptions.callTools`:
+    - `generateText(...)` and `streamText(...)` now:
+      - Use `LLMBuilder` + `_applyCallOptions` for static config (apiKey, baseUrl, sampling parameters, etc.).
+      - When `options.callTools` is non-empty, they build a `LanguageModel` via `builder.buildLanguageModel()` and delegate to:
+        - `generateTextWithModel(...)` / `streamTextWithModel(...)` with the full `options` (including `callTools`), so providers like Google can honor provider-defined tools.
+      - When `callTools` is empty, they keep the previous behavior of calling `builder.generateText(...)` / `builder.streamText(...)` directly.
+
 - **High-level streaming parts API (`StreamTextPart`)**
   - Introduced a provider-agnostic streaming representation in `llm_dart_core`:
     - `StreamTextPart` sealed hierarchy for text, thinking, tool input (start/delta/end), final tool calls, and completion.

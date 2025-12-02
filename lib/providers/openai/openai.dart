@@ -172,10 +172,30 @@ class OpenAI
   /// - Built-in tools (web search, file search, computer use)
   /// - Background responses and response lifecycle management
   /// - Reasoning-aware streaming with thinking deltas
-  OpenAIResponsesModel responses(String modelId) {
+  ///
+  /// You can optionally attach OpenAI built-in tools (mirroring the
+  /// `openai.tools.*` helpers in the Vercel AI SDK) via [builtInTools]:
+  ///
+  /// ```dart
+  /// final openai = createOpenAI(apiKey: apiKey);
+  ///
+  /// final model = openai.responses(
+  ///   'gpt-4o',
+  ///   builtInTools: [
+  ///     openai.tools.webSearch(
+  ///       contextSize: WebSearchContextSize.medium,
+  ///     ),
+  ///   ],
+  /// );
+  /// ```
+  OpenAIResponsesModel responses(
+    String modelId, {
+    List<OpenAIBuiltInTool>? builtInTools,
+  }) {
     final config = _createOpenAIConfig(
       modelId: modelId,
       useResponsesAPI: true,
+      builtInTools: builtInTools,
     );
     final client = openai_impl.OpenAIClient(config);
     final responses = openai_impl.OpenAIResponses(client, config);
@@ -240,6 +260,16 @@ class OpenAI
   /// This mirrors the `openai.tools` namespace from the Vercel AI SDK.
   OpenAITools get tools => const OpenAITools();
 
+  /// Provider-defined tools for OpenAI Responses API.
+  ///
+  /// These helpers produce [ProviderDefinedToolSpec] instances that can
+  /// be passed via [LanguageModelCallOptions.callTools] for Responses
+  /// calls. They mirror the `openai.tools.*` provider-defined tools
+  /// from the Vercel AI SDK (web search, file search, code interpreter,
+  /// image generation).
+  OpenAIProviderDefinedTools get providerTools =>
+      const OpenAIProviderDefinedTools();
+
   /// Internal helper to create a base [LLMConfig] for a given model.
   LLMConfig _createLLMConfig(String modelId) {
     final headers = <String, String>{};
@@ -271,20 +301,29 @@ class OpenAI
   }
 
   /// Internal helper to create an [openai_impl.OpenAIConfig] for a given model.
+  ///
+  /// This method starts from a unified [LLMConfig] (so that headers,
+  /// timeouts and extensions stay in one place) and then maps it to
+  /// [OpenAIConfig] via [OpenAIConfig.fromLLMConfig]. Responses API
+  /// options and built-in tools are passed through extensions.
   openai_impl.OpenAIConfig _createOpenAIConfig({
     required String modelId,
     bool useResponsesAPI = false,
+    List<OpenAIBuiltInTool>? builtInTools,
   }) {
-    final baseConfig = _createLLMConfig(modelId);
+    var baseConfig = _createLLMConfig(modelId);
 
-    return openai_impl.OpenAIConfig(
-      apiKey: _settings.apiKey,
-      baseUrl: _baseUrl,
-      model: modelId,
-      timeout: _settings.timeout,
-      useResponsesAPI: useResponsesAPI,
-      originalConfig: baseConfig,
-    );
+    if (useResponsesAPI) {
+      baseConfig =
+          baseConfig.withExtension(LLMConfigKeys.useResponsesAPI, true);
+    }
+
+    if (builtInTools != null && builtInTools.isNotEmpty) {
+      baseConfig =
+          baseConfig.withExtension(LLMConfigKeys.builtInTools, builtInTools);
+    }
+
+    return openai_impl.OpenAIConfig.fromLLMConfig(baseConfig);
   }
 
   static String _normalizeBaseUrl(String value) {
@@ -563,6 +602,125 @@ class OpenAITools {
         environment: environment,
         parameters: parameters,
       );
+
+  /// Create an OpenAI code interpreter tool.
+  ///
+  /// This maps to OpenAI's `code_interpreter` Responses tool and mirrors
+  /// the intent of `openai.tools.codeInterpreter` in the Vercel AI SDK.
+  /// The [parameters] map is provider-specific and reserved for future
+  /// extensions; most use cases can omit it.
+  OpenAICodeInterpreterTool codeInterpreter({
+    Map<String, dynamic>? parameters,
+  }) =>
+      OpenAIBuiltInTools.codeInterpreter(
+        parameters: parameters,
+      );
+
+  /// Create an OpenAI image generation tool.
+  ///
+  /// This maps to OpenAI's `image_generation` Responses tool. You can
+  /// optionally override the [model] (for example `gpt-image-1`) and
+  /// pass additional [parameters] such as size, quality, or style that
+  /// the provider understands.
+  OpenAIImageGenerationTool imageGeneration({
+    String? model,
+    Map<String, dynamic>? parameters,
+  }) =>
+      OpenAIBuiltInTools.imageGeneration(
+        model: model,
+        parameters: parameters,
+      );
+}
+
+/// OpenAI provider-defined tools factory (Responses API).
+///
+/// This mirrors the provider-defined tools concept from the Vercel AI SDK
+/// for the OpenAI Responses API. The helpers here produce
+/// [ProviderDefinedToolSpec] instances that can be passed via
+/// [LanguageModelCallOptions.callTools] to enable built-in tools in a
+/// provider-agnostic way. The underlying Responses implementation then
+/// converts these specs into native OpenAI tool configurations.
+class OpenAIProviderDefinedTools {
+  const OpenAIProviderDefinedTools();
+
+  /// Provider-defined web search tool (`openai.web_search`).
+  ///
+  /// Arguments mirror the Vercel AI SDK web search tool:
+  /// - [allowedDomains] → filters.allowedDomains
+  /// - [contextSize] → searchContextSize
+  /// - [location] → userLocation
+  ProviderDefinedToolSpec webSearch({
+    List<String>? allowedDomains,
+    WebSearchContextSize? contextSize,
+    WebSearchLocation? location,
+  }) {
+    final args = <String, dynamic>{};
+    if (allowedDomains != null) args['allowedDomains'] = allowedDomains;
+    if (contextSize != null) args['contextSize'] = contextSize;
+    if (location != null) args['location'] = location;
+
+    return ProviderDefinedToolSpec(
+      id: 'openai.web_search',
+      args: args,
+    );
+  }
+
+  /// Provider-defined file search tool (`openai.file_search`).
+  ///
+  /// Arguments are a simplified subset of the Vercel AI SDK file search
+  /// tool and map to the corresponding Responses tool configuration.
+  ProviderDefinedToolSpec fileSearch({
+    required List<String> vectorStoreIds,
+    int? maxNumResults,
+    Map<String, dynamic>? filters,
+  }) {
+    final args = <String, dynamic>{
+      'vectorStoreIds': vectorStoreIds,
+    };
+    if (maxNumResults != null) args['maxNumResults'] = maxNumResults;
+    if (filters != null) args['filters'] = filters;
+
+    return ProviderDefinedToolSpec(
+      id: 'openai.file_search',
+      args: args,
+    );
+  }
+
+  /// Provider-defined code interpreter tool (`openai.code_interpreter`).
+  ///
+  /// For now this only accepts an opaque [parameters] bag which is
+  /// forwarded to the underlying Responses tool.
+  ProviderDefinedToolSpec codeInterpreter({
+    Map<String, dynamic>? parameters,
+  }) {
+    final args = <String, dynamic>{};
+    if (parameters != null) args['parameters'] = parameters;
+
+    return ProviderDefinedToolSpec(
+      id: 'openai.code_interpreter',
+      args: args,
+    );
+  }
+
+  /// Provider-defined image generation tool (`openai.image_generation`).
+  ///
+  /// Arguments mirror the core model/parameter structure of the Vercel
+  /// AI SDK image generation tool:
+  /// - [model] specifies the image model (e.g. `gpt-image-1`)
+  /// - [parameters] is an opaque bag for provider-specific options
+  ProviderDefinedToolSpec imageGeneration({
+    String? model,
+    Map<String, dynamic>? parameters,
+  }) {
+    final args = <String, dynamic>{};
+    if (model != null) args['model'] = model;
+    if (parameters != null) args['parameters'] = parameters;
+
+    return ProviderDefinedToolSpec(
+      id: 'openai.image_generation',
+      args: args,
+    );
+  }
 }
 
 /// Create an OpenAI provider with default settings

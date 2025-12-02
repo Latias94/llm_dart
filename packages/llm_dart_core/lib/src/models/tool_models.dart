@@ -230,6 +230,45 @@ class Tool {
       );
 }
 
+/// Call-level tool specification used by language model call options.
+///
+/// This type unifies traditional function tools (represented by [Tool])
+/// with provider-defined tools that are interpreted by a specific
+/// provider (for example Google provider-defined tools).
+sealed class CallToolSpec {
+  const CallToolSpec();
+}
+
+/// Wrapper for a standard [Tool] used as a call-level tool.
+///
+/// This allows callers to mix function tools with provider-defined
+/// tools in a single list when configuring a model call.
+class FunctionCallToolSpec extends CallToolSpec {
+  final Tool tool;
+
+  const FunctionCallToolSpec(this.tool);
+}
+
+/// Provider-defined tool specification.
+///
+/// This mirrors the "provider-defined tool" concept from the Vercel AI
+/// SDK. The [id] is a globally unique identifier describing which
+/// provider and tool are being requested (for example
+/// `google.google_search`), and [args] is a JSON-compatible map that
+/// the provider will interpret when preparing the request payload.
+class ProviderDefinedToolSpec extends CallToolSpec {
+  /// Globally unique tool identifier (e.g. `google.google_search`).
+  final String id;
+
+  /// Provider-specific arguments for this tool.
+  final Map<String, dynamic> args;
+
+  const ProviderDefinedToolSpec({
+    required this.id,
+    this.args = const {},
+  });
+}
+
 /// Tool choice determines how the LLM uses available tools.
 /// The behavior is standardized across different LLM providers.
 ///

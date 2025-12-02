@@ -10,6 +10,7 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/openai_client.dart';
 import '../config/openai_config.dart';
+import '../tools/openai_builtin_tools.dart';
 import 'openai_responses_capability.dart';
 
 /// OpenAI Responses API capability implementation for the subpackage.
@@ -324,6 +325,124 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       };
     }
 
+    // Preferred code path for tools: unified callTools (function + provider-defined).
+    //
+    // When [callTools] is provided, it takes precedence over the legacy
+    // [tools] list and allows callers to mix traditional function tools
+    // with provider-defined tools (`openai.*`) for the Responses API.
+    final callTools = options?.callTools;
+    if (callTools != null && callTools.isNotEmpty) {
+      final functionSpecs = <FunctionCallToolSpec>[];
+      final providerSpecs = <ProviderDefinedToolSpec>[];
+
+      for (final spec in callTools) {
+        if (spec is FunctionCallToolSpec) {
+          functionSpecs.add(spec);
+        } else if (spec is ProviderDefinedToolSpec) {
+          providerSpecs.add(spec);
+        }
+      }
+
+      final allTools = <Map<String, dynamic>>[];
+
+      // Map provider-defined tools with `openai.*` ids to built-in
+      // Responses tools.
+      for (final spec in providerSpecs) {
+        switch (spec.id) {
+          case 'openai.web_search':
+            {
+              final allowedDomains =
+                  spec.args['allowedDomains'] as List<String>?;
+              final contextSize =
+                  spec.args['contextSize'] as WebSearchContextSize?;
+              final location =
+                  spec.args['location'] as WebSearchLocation?;
+
+              final tool = OpenAIBuiltInTools.webSearch(
+                allowedDomains: allowedDomains,
+                contextSize: contextSize,
+                location: location,
+              );
+
+              allTools.add(tool.toJson());
+              break;
+            }
+          case 'openai.file_search':
+            {
+              final vectorStoreIds =
+                  spec.args['vectorStoreIds'] as List<String>?;
+              final maxNumResults = spec.args['maxNumResults'] as int?;
+              final filters =
+                  spec.args['filters'] as Map<String, dynamic>?;
+
+              final params = <String, dynamic>{};
+              if (maxNumResults != null) {
+                params['max_num_results'] = maxNumResults;
+              }
+              if (filters != null && filters.isNotEmpty) {
+                params['filters'] = filters;
+              }
+
+              final tool = OpenAIBuiltInTools.fileSearch(
+                vectorStoreIds: vectorStoreIds,
+                parameters: params.isEmpty ? null : params,
+              );
+
+              allTools.add(tool.toJson());
+              break;
+            }
+          case 'openai.code_interpreter':
+            {
+              final parameters =
+                  spec.args['parameters'] as Map<String, dynamic>?;
+              final tool = OpenAIBuiltInTools.codeInterpreter(
+                parameters: parameters,
+              );
+              allTools.add(tool.toJson());
+              break;
+            }
+          case 'openai.image_generation':
+            {
+              final model = spec.args['model'] as String?;
+              final parameters =
+                  spec.args['parameters'] as Map<String, dynamic>?;
+              final tool = OpenAIBuiltInTools.imageGeneration(
+                model: model,
+                parameters: parameters,
+              );
+              allTools.add(tool.toJson());
+              break;
+            }
+          default:
+            // Ignore unsupported provider-defined tool ids for OpenAI.
+            break;
+        }
+      }
+
+      // Map function tools from FunctionCallToolSpec into the Responses
+      // function tool format.
+      if (functionSpecs.isNotEmpty) {
+        final functionTools =
+            functionSpecs.map((spec) => spec.tool).toList(growable: false);
+        allTools.addAll(
+          functionTools.map((t) => _convertToolToResponsesFormat(t)),
+        );
+
+        final effectiveToolChoice = options?.toolChoice ?? config.toolChoice;
+        if (effectiveToolChoice != null && functionTools.isNotEmpty) {
+          body['tool_choice'] = effectiveToolChoice.toJson();
+        }
+      }
+
+      if (allTools.isNotEmpty) {
+        body['tools'] = allTools;
+      }
+
+      // When callTools is used we intentionally skip the legacy tools +
+      // builtInTools path to avoid mixing configuration sources.
+      return body;
+    }
+
     final allTools = <Map<String, dynamic>>[];
 
     final effectiveTools = options?.tools ?? tools ?? config.tools;
@@ -579,6 +698,132 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   }
 }
 
+/// Typed view over a single web search source (URL or API).
+class OpenAIResponsesWebSearchSource {
+  final String type;
+  final String? url;
+  final String? name;
+
+  const OpenAIResponsesWebSearchSource({
+    required this.type,
+    this.url,
+    this.name,
+  });
+}
+
+/// Typed view over the web search action executed by the tool.
+class OpenAIResponsesWebSearchAction {
+  /// Action type: `search` | `open_page` | `find`.
+  final String type;
+
+  /// Search query (for `search` actions).
+  final String? query;
+
+  /// URL associated with `open_page` / `find` actions.
+  final String? url;
+
+  /// Search pattern for `find` actions.
+  final String? pattern;
+
+  /// Optional list of sources for `search` actions.
+  final List<OpenAIResponsesWebSearchSource>? sources;
+
+  const OpenAIResponsesWebSearchAction({
+    required this.type,
+    this.query,
+    this.url,
+    this.pattern,
+    this.sources,
+  });
+}
+
+/// Typed view over a single `web_search_call` output item.
+class OpenAIResponsesWebSearchCall {
+  final String id;
+  final String status;
+  final OpenAIResponsesWebSearchAction action;
+
+  const OpenAIResponsesWebSearchCall({
+    required this.id,
+    required this.status,
+    required this.action,
+  });
+}
+
+/// Typed view over a single file search result item.
+class OpenAIResponsesFileSearchResultItem {
+  final Map<String, dynamic> attributes;
+  final String fileId;
+  final String filename;
+  final double score;
+  final String text;
+
+  const OpenAIResponsesFileSearchResultItem({
+    required this.attributes,
+    required this.fileId,
+    required this.filename,
+    required this.score,
+    required this.text,
+  });
+}
+
+/// Typed view over a `file_search_call` output item.
+class OpenAIResponsesFileSearchCall {
+  final String id;
+  final List<String> queries;
+  final List<OpenAIResponsesFileSearchResultItem>? results;
+
+  const OpenAIResponsesFileSearchCall({
+    required this.id,
+    required this.queries,
+    this.results,
+  });
+}
+
+/// Typed view over a single code interpreter output item.
+class OpenAIResponsesCodeInterpreterOutputItem {
+  /// Output type: `logs` or `image`.
+  final String type;
+
+  /// Logs content when [type] is `logs`.
+  final String? logs;
+
+  /// Image URL when [type] is `image`.
+  final String? url;
+
+  const OpenAIResponsesCodeInterpreterOutputItem({
+    required this.type,
+    this.logs,
+    this.url,
+  });
+}
+
+/// Typed view over a `code_interpreter_call` output item.
+class OpenAIResponsesCodeInterpreterCall {
+  final String id;
+  final String containerId;
+  final String? code;
+  final List<OpenAIResponsesCodeInterpreterOutputItem>? outputs;
+
+  const OpenAIResponsesCodeInterpreterCall({
+    required this.id,
+    required this.containerId,
+    this.code,
+    this.outputs,
+  });
+}
+
+/// Typed view over an `image_generation_call` output item.
+class OpenAIResponsesImageGenerationCall {
+  final String id;
+  final String result;
+
+  const OpenAIResponsesImageGenerationCall({
+    required this.id,
+    required this.result,
+  });
+}
+
 /// OpenAI Responses API response implementation
 class OpenAIResponsesResponse implements ChatResponse {
   final Map<String, dynamic> _rawResponse;
@@ -702,6 +947,226 @@ class OpenAIResponsesResponse implements ChatResponse {
   }
 
   String? get responseId => _rawResponse['id'] as String?;
+
+  /// Typed access to web search tool calls (if any).
+  ///
+  /// This inspects the structured `output` list for items of type
+  /// `web_search_call` and converts them into strongly-typed
+  /// [OpenAIResponsesWebSearchCall] instances. If no such items are
+  /// present or the response does not contain an `output` list, this
+  /// returns `null`.
+  List<OpenAIResponsesWebSearchCall>? get webSearchCalls {
+    final output = _rawResponse['output'] as List?;
+    if (output == null || output.isEmpty) return null;
+
+    final results = <OpenAIResponsesWebSearchCall>[];
+
+    for (final item in output) {
+      if (item is! Map<String, dynamic>) continue;
+      if (item['type'] != 'web_search_call') continue;
+
+      final id = item['id'] as String? ?? '';
+      final status = item['status'] as String? ?? '';
+      final action = item['action'] as Map<String, dynamic>?;
+      if (action == null) continue;
+
+      final actionType = action['type'] as String? ?? '';
+      String? query;
+      String? url;
+      String? pattern;
+      List<OpenAIResponsesWebSearchSource>? sources;
+
+      if (actionType == 'search') {
+        query = action['query'] as String?;
+        final rawSources = action['sources'] as List?;
+        if (rawSources != null && rawSources.isNotEmpty) {
+          sources = <OpenAIResponsesWebSearchSource>[];
+          for (final src in rawSources) {
+            if (src is! Map<String, dynamic>) continue;
+            final type = src['type'] as String? ?? '';
+            final urlValue = src['url'] as String?;
+            final nameValue = src['name'] as String?;
+            sources.add(
+              OpenAIResponsesWebSearchSource(
+                type: type,
+                url: urlValue,
+                name: nameValue,
+              ),
+            );
+          }
+        }
+      } else if (actionType == 'open_page') {
+        url = action['url'] as String?;
+      } else if (actionType == 'find') {
+        url = action['url'] as String?;
+        pattern = action['pattern'] as String?;
+      }
+
+      results.add(
+        OpenAIResponsesWebSearchCall(
+          id: id,
+          status: status,
+          action: OpenAIResponsesWebSearchAction(
+            type: actionType,
+            query: query,
+            url: url,
+            pattern: pattern,
+            sources: sources,
+          ),
+        ),
+      );
+    }
+
+    return results.isEmpty ? null : results;
+  }
+
+  /// Typed access to file search tool calls (if any).
+  ///
+  /// This inspects the `output` list for items of type `file_search_call`
+  /// and converts them into [OpenAIResponsesFileSearchCall] instances.
+  List<OpenAIResponsesFileSearchCall>? get fileSearchCalls {
+    final output = _rawResponse['output'] as List?;
+    if (output == null || output.isEmpty) return null;
+
+    final results = <OpenAIResponsesFileSearchCall>[];
+
+    for (final item in output) {
+      if (item is! Map<String, dynamic>) continue;
+      if (item['type'] != 'file_search_call') continue;
+
+      final id = item['id'] as String? ?? '';
+      final rawQueries = item['queries'] as List?;
+      final queries = rawQueries != null
+          ? rawQueries.map((q) => q.toString()).toList()
+          : const <String>[];
+
+      final rawResults = item['results'] as List?;
+      List<OpenAIResponsesFileSearchResultItem>? parsedResults;
+
+      if (rawResults != null && rawResults.isNotEmpty) {
+        parsedResults = <OpenAIResponsesFileSearchResultItem>[];
+        for (final r in rawResults) {
+          if (r is! Map<String, dynamic>) continue;
+          final attributesRaw = r['attributes'];
+          final attributes = attributesRaw is Map<String, dynamic>
+              ? attributesRaw
+              : attributesRaw is Map
+                  ? Map<String, dynamic>.from(attributesRaw)
+                  : <String, dynamic>{};
+          final fileId = r['file_id'] as String? ?? '';
+          final filename = r['filename'] as String? ?? '';
+          final score = (r['score'] as num?)?.toDouble() ?? 0.0;
+          final text = r['text'] as String? ?? '';
+
+          parsedResults.add(
+            OpenAIResponsesFileSearchResultItem(
+              attributes: attributes,
+              fileId: fileId,
+              filename: filename,
+              score: score,
+              text: text,
+            ),
+          );
+        }
+      }
+
+      results.add(
+        OpenAIResponsesFileSearchCall(
+          id: id,
+          queries: queries,
+          results: parsedResults,
+        ),
+      );
+    }
+
+    return results.isEmpty ? null : results;
+  }
+
+  /// Typed access to code interpreter tool calls (if any).
+  ///
+  /// This inspects the `output` list for items of type
+  /// `code_interpreter_call` and converts them into
+  /// [OpenAIResponsesCodeInterpreterCall] instances.
+  List<OpenAIResponsesCodeInterpreterCall>? get codeInterpreterCalls {
+    final output = _rawResponse['output'] as List?;
+    if (output == null || output.isEmpty) return null;
+
+    final results = <OpenAIResponsesCodeInterpreterCall>[];
+
+    for (final item in output) {
+      if (item is! Map<String, dynamic>) continue;
+      if (item['type'] != 'code_interpreter_call') continue;
+
+      final id = item['id'] as String? ?? '';
+      final containerId = item['container_id'] as String? ?? '';
+      final code = item['code'] as String?;
+
+      final rawOutputs = item['outputs'] as List?;
+      List<OpenAIResponsesCodeInterpreterOutputItem>? outputs;
+      if (rawOutputs != null && rawOutputs.isNotEmpty) {
+        outputs = <OpenAIResponsesCodeInterpreterOutputItem>[];
+        for (final o in rawOutputs) {
+          if (o is! Map<String, dynamic>) continue;
+          final type = o['type'] as String? ?? '';
+          if (type == 'logs') {
+            outputs.add(
+              OpenAIResponsesCodeInterpreterOutputItem(
+                type: type,
+                logs: o['logs'] as String? ?? '',
+              ),
+            );
+          } else if (type == 'image') {
+            outputs.add(
+              OpenAIResponsesCodeInterpreterOutputItem(
+                type: type,
+                url: o['url'] as String? ?? '',
+              ),
+            );
+          }
+        }
+      }
+
+      results.add(
+        OpenAIResponsesCodeInterpreterCall(
+          id: id,
+          containerId: containerId,
+          code: code,
+          outputs: outputs,
+        ),
+      );
+    }
+
+    return results.isEmpty ? null : results;
+  }
+
+  /// Typed access to image generation tool calls (if any).
+  ///
+  /// This inspects the `output` list for items of type
+  /// `image_generation_call` and converts them into
+  /// [OpenAIResponsesImageGenerationCall] instances.
+  List<OpenAIResponsesImageGenerationCall>? get imageGenerationCalls {
+    final output = _rawResponse['output'] as List?;
+    if (output == null || output.isEmpty) return null;
+
+    final results = <OpenAIResponsesImageGenerationCall>[];
+
+    for (final item in output) {
+      if (item is! Map<String, dynamic>) continue;
+      if (item['type'] != 'image_generation_call') continue;
+
+      final id = item['id'] as String? ?? '';
+      final result = item['result'] as String? ?? '';
+
+      results.add(
+        OpenAIResponsesImageGenerationCall(
+          id: id,
+          result: result,
+        ),
+      );
+    }
+
+    return results.isEmpty ? null : results;
+  }
 
   @override
   String toString() {

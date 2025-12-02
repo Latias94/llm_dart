@@ -49,5 +49,24 @@ void main() {
         equals('claude-3-5-sonnet-20241022'),
       );
     });
+
+    test('tools helpers expose webSearch20250305', () {
+      final instance = anthropic(
+        apiKey: 'test-key',
+        name: 'anthropic-with-tools',
+      );
+
+      final tool = instance.tools.webSearch20250305();
+
+      expect(tool.function.name, equals('web_search'));
+      expect(tool.toolType, equals('function'));
+
+      final params = tool.function.parameters;
+      expect(params.schemaType, equals('object'));
+      expect(params.properties.containsKey('query'), isTrue);
+
+      final queryParam = params.properties['query']!;
+      expect(queryParam.propertyType, equals('string'));
+    });
   });
 }

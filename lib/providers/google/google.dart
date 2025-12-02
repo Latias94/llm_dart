@@ -38,6 +38,8 @@ import 'package:llm_dart_google/llm_dart_google.dart'
         GoogleEmbeddings,
         GoogleImages,
         SafetySetting;
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart'
+    show createProviderDefinedExecutableTool;
 
 /// Public Google provider surface re-export.
 ///
@@ -170,6 +172,118 @@ class GoogleGenerativeAI
     return GoogleImages(client, config);
   }
 
+  /// Google provider-defined tools facade.
+  ///
+  /// This mirrors the `google.tools` namespace from the Vercel AI SDK
+  /// for the subset of tools that are implemented in this Dart port.
+  GoogleTools get tools => const GoogleTools();
+
+  /// Provider-defined tools factory for Google / Gemini.
+  ///
+  /// These helpers create [ProviderDefinedToolSpec] instances that can
+  /// be passed via [LanguageModelCallOptions.callTools] to enable
+  /// Gemini grounding, File Search, Code Execution and Vertex RAG Store
+  /// features in a Vercel AI SDK-compatible way.
+  GoogleProviderDefinedTools get providerTools =>
+      const GoogleProviderDefinedTools();
+
+  /// Build an executable web search tool that automatically calls Google.
+  ///
+  /// This helper constructs an [ExecutableTool] whose schema comes from
+  /// [tools.webSearch] and whose execution logic:
+  /// - Calls the Google Gemini chat endpoint with unified [WebSearchConfig]
+  ///   enabled so that the model can perform real-time web search via
+  ///   Google Search grounding.
+  /// - Returns a JSON object `{ "query": string, "answer": string }` and
+  ///   includes grounding metadata when available.
+  ///
+  /// This mirrors the intent of the `google.tools.googleSearch` helper
+  /// in the Vercel AI SDK but is implemented client-side using the
+  /// existing Google chat integration.
+  ExecutableTool webSearchTool({
+    required String modelId,
+    WebSearchConfig? webSearchConfig,
+    String? systemPrompt,
+    double? temperature,
+    int? maxTokens,
+  }) {
+    final schema = tools.webSearch();
+
+    return createProviderDefinedExecutableTool<
+        Map<String, dynamic>, Map<String, dynamic>>(
+      schema: schema,
+      execute: (args) async {
+        final rawQuery = args['query'];
+        final query = rawQuery is String ? rawQuery : '';
+
+        if (query.trim().isEmpty) {
+          return {
+            'query': query,
+            'answer': '',
+            'error': 'Empty query for Google web_search tool.',
+          };
+        }
+
+        // Start from the unified LLMConfig used by this provider so that
+        // headers, timeouts and other extensions stay consistent.
+        var llmConfig = _createLLMConfig(modelId).copyWith(
+          maxTokens: maxTokens,
+          temperature: temperature,
+          systemPrompt: systemPrompt,
+        );
+
+        final effectiveWebSearchConfig = webSearchConfig ??
+            const WebSearchConfig(
+              searchType: WebSearchType.web,
+            );
+
+        llmConfig = llmConfig
+            .withExtension(LLMConfigKeys.webSearchEnabled, true)
+            .withExtension(LLMConfigKeys.webSearchConfig, effectiveWebSearchConfig);
+
+        final googleConfig = GoogleConfig.fromLLMConfig(llmConfig);
+        final client = GoogleClient(googleConfig);
+        final chat = GoogleChat(client, googleConfig);
+
+        final messages = <ModelMessage>[
+          ModelMessage(
+            role: ChatRole.user,
+            parts: <ChatContentPart>[
+              TextContentPart(query),
+            ],
+          ),
+        ];
+
+        final response = await chat.chatPrompt(messages);
+        final text = response.text ?? '';
+        final metadata = response.metadata;
+
+        final result = <String, dynamic>{
+          'query': query,
+          'answer': text,
+        };
+
+        // Surface grounding metadata when web search is enabled so that
+        // callers can inspect citations and retrieval details.
+        if (metadata != null) {
+          final grounding = metadata['groundingMetadata'];
+          if (grounding != null) {
+            result['groundingMetadata'] = grounding;
+          }
+
+          final urlContext = metadata['urlContextMetadata'];
+          if (urlContext != null) {
+            result['urlContextMetadata'] = urlContext;
+          }
+        }
+
+        return result;
+      },
+      decodeArgs: (raw) => raw,
+      encodeResult: (out) => out,
+    );
+  }
+
   LLMConfig _createLLMConfig(String modelId) {
     final headers = <String, String>{};
 
@@ -194,6 +308,264 @@ class GoogleGenerativeAI
   static String _normalizeBaseUrl(String value) {
     if (value.isEmpty) return _defaultBaseUrl;
     return value.endsWith('/') ? value : '$value/';
+  }
+}
+
+/// Google provider-defined tools factory.
+///
+/// This mirrors the provider-defined tools concept from the Vercel AI SDK.
+/// The methods on this class create [ProviderDefinedToolSpec] instances
+/// that can be passed via [LanguageModelCallOptions.callTools] when
+/// calling a model. The Google provider will interpret these specs and
+/// map them to native Gemini grounding / File Search / Code Execution
+/// tools in the request payload.
+class GoogleProviderDefinedTools {
+  const GoogleProviderDefinedTools();
+
+  /// Provider-defined Google Search grounding tool.
+  ///
+  /// This corresponds to the `google.google_search` provider-defined tool
+  /// in the Vercel AI SDK. The [mode] and [dynamicThreshold] arguments
+  /// map to dynamic retrieval configuration for older Gemini models
+  /// (e.g. `googleSearchRetrieval.dynamicRetrievalConfig`).
+  ProviderDefinedToolSpec googleSearch({
+    String? mode,
+    double? dynamicThreshold,
+  }) {
+    final args = <String, dynamic>{};
+    if (mode != null) args['mode'] = mode;
+    if (dynamicThreshold != null) args['dynamicThreshold'] = dynamicThreshold;
+
+    return ProviderDefinedToolSpec(
+      id: 'google.google_search',
+      args: args,
+    );
+  }
+
+  /// Provider-defined URL context tool for Gemini.
+  ///
+  /// This maps to the `google.url_context` provider-defined tool in the
+  /// Vercel AI SDK and enables URL-based grounding for supported models.
+  ProviderDefinedToolSpec urlContext() {
+    return const ProviderDefinedToolSpec(
+      id: 'google.url_context',
+    );
+  }
+
+  /// Provider-defined File Search tool for Gemini 2.5.
+  ///
+  /// This corresponds to `google.file_search` in the Vercel AI SDK and
+  /// configures Gemini File Search with one or more File Search stores
+  /// and optional metadata filters.
+  ProviderDefinedToolSpec fileSearch({
+    required List<String> fileSearchStoreNames,
+    int? topK,
+    String? metadataFilter,
+  }) {
+    final args = <String, dynamic>{
+      'fileSearchStoreNames': fileSearchStoreNames,
+    };
+    if (topK != null) args['topK'] = topK;
+    if (metadataFilter != null) args['metadataFilter'] = metadataFilter;
+
+    return ProviderDefinedToolSpec(
+      id: 'google.file_search',
+      args: args,
+    );
+  }
+
+  /// Provider-defined Code Execution tool for Gemini 2.x.
+  ///
+  /// This maps to `google.code_execution` in the Vercel AI SDK and
+  /// enables Gemini Code Execution for supported models.
+  ProviderDefinedToolSpec codeExecution() {
+    return const ProviderDefinedToolSpec(
+      id: 'google.code_execution',
+    );
+  }
+
+  /// Provider-defined Vertex RAG Store tool.
+  ///
+  /// This corresponds to `google.vertex_rag_store` in the Vercel AI SDK
+  /// and configures Retrieval-Augmented Generation against a Vertex
+  /// RAG Store corpus.
+  ProviderDefinedToolSpec vertexRagStore({
+    required String ragCorpus,
+    int? topK,
+  }) {
+    final args = <String, dynamic>{
+      'ragCorpus': ragCorpus,
+    };
+    if (topK != null) args['topK'] = topK;
+
+    return ProviderDefinedToolSpec(
+      id: 'google.vertex_rag_store',
+      args: args,
+    );
+  }
+}
+
+/// Google provider-defined tools facade.
+///
+/// This mirrors the `google.tools` namespace from the Vercel AI SDK for
+/// the subset of tools that are supported in this Dart port. For now we
+/// expose a schema helper for a unified `web_search` tool that can be
+/// turned into an [ExecutableTool] via [GoogleGenerativeAI.webSearchTool]
+/// or [createProviderDefinedExecutableTool].
+class GoogleTools {
+  const GoogleTools();
+
+  /// Web search tool schema for Google / Gemini.
+  ///
+  /// Returns a [Tool] with:
+  /// - name: `web_search`
+  /// - parameters: `{ query: string }`
+  ///
+  /// This is intended to be used with [ExecutableTool] / agents when
+  /// you want the model to request web searches via a unified schema.
+  Tool webSearch() {
+    return Tool.function(
+      name: 'web_search',
+      description:
+          'Search the web using Google Gemini and Google Search grounding.',
+      parameters: ParametersSchema(
+        schemaType: 'object',
+        properties: {
+          'query': ParameterProperty(
+            propertyType: 'string',
+            description: 'Search query text.',
+          ),
+        },
+        required: const ['query'],
+      ),
+    );
+  }
+
+  /// URL context tool schema for Google / Gemini.
+  ///
+  /// This mirrors the intent of `google.tools.urlContext` in the
+  /// Vercel AI SDK: it gives the model access to web pages via
+  /// Google\'s URL context grounding feature. The tool itself has
+  /// no input parameters; relevant URLs are taken from the prompt.
+  Tool urlContext() {
+    return Tool.function(
+      name: 'url_context',
+      description:
+          'Enable URL-based grounding so the model can retrieve content from web pages.',
+      parameters: const ParametersSchema(
+        schemaType: 'object',
+        properties: <String, ParameterProperty>{},
+        required: <String>[],
+      ),
+    );
+  }
+
+  /// File Search tool schema for Google / Gemini.
+  ///
+  /// This is inspired by `google.tools.fileSearch` from the Vercel
+  /// AI SDK. It describes a tool that configures Gemini File Search
+  /// with one or more File Search store names and optional filters.
+  ///
+  /// Note: In this Dart port, File Search is primarily controlled via
+  /// [GoogleLLMBuilder.fileSearch] / [GoogleConfig.fileSearchConfig].
+  /// This schema helper is intended for agent-style tool use where
+  /// you may want the model to request file search operations and
+  /// handle them via a custom [ExecutableTool].
+  Tool fileSearch() {
+    return Tool.function(
+      name: 'file_search',
+      description:
+          'Retrieve knowledge from Gemini File Search stores for RAG-style queries.',
+      parameters: ParametersSchema(
+        schemaType: 'object',
+        properties: <String, ParameterProperty>{
+          'fileSearchStoreNames': ParameterProperty(
+            propertyType: 'array',
+            description:
+                'The names of the file_search_stores to retrieve from. Example: `fileSearchStores/my-file-search-store-123`.',
+            items: ParameterProperty(
+              propertyType: 'string',
+              description: 'Fully-qualified File Search store resource name.',
+            ),
+          ),
+          'topK': ParameterProperty(
+            propertyType: 'integer',
+            description:
+                'The number of file search retrieval chunks to retrieve.',
+          ),
+          'metadataFilter': ParameterProperty(
+            propertyType: 'string',
+            description:
+                'Metadata filter to apply to the file search retrieval documents. See https://google.aip.dev/160 for the syntax.',
+          ),
+        },
+        required: const ['fileSearchStoreNames'],
+      ),
+    );
+  }
+
+  /// Code execution tool schema for Google / Gemini.
+  ///
+  /// This mirrors `google.tools.codeExecution` from the Vercel AI SDK
+  /// and describes a tool that lets the model generate and run code
+  /// (typically Python) via Gemini\'s Code Execution feature.
+  ///
+  /// Note: Enabling actual server-side code execution is done via
+  /// [GoogleLLMBuilder.enableCodeExecution] / [GoogleConfig.codeExecutionEnabled].
+  Tool codeExecution() {
+    return Tool.function(
+      name: 'code_execution',
+      description:
+          'Generate and run code snippets using Gemini Code Execution.',
+      parameters: ParametersSchema(
+        schemaType: 'object',
+        properties: <String, ParameterProperty>{
+          'language': ParameterProperty(
+            propertyType: 'string',
+            description: 'Programming language of the code snippet.',
+          ),
+          'code': ParameterProperty(
+            propertyType: 'string',
+            description: 'Source code to execute.',
+          ),
+        },
+        required: const ['language', 'code'],
+      ),
+    );
+  }
+
+  /// Vertex RAG Store tool schema for Google / Gemini (Vertex).
+  ///
+  /// This corresponds to `google.tools.vertexRagStore` in the Vercel
+  /// AI SDK and describes a tool that allows the model to perform
+  /// Retrieval-Augmented Generation (RAG) against a Vertex RAG Store.
+  ///
+  /// Note: This Dart port does not yet wire this schema to the Vertex
+  /// RAG Store API. It is exposed so that agents can use a consistent
+  /// tool contract and you can implement the execution logic via an
+  /// [ExecutableTool] where needed.
+  Tool vertexRagStore() {
+    return Tool.function(
+      name: 'vertex_rag_store',
+      description:
+          'Perform RAG searches against a Vertex RAG Store corpus using Gemini.',
+      parameters: ParametersSchema(
+        schemaType: 'object',
+        properties: <String, ParameterProperty>{
+          'ragCorpus': ParameterProperty(
+            propertyType: 'string',
+            description:
+                'RagCorpus resource name, e.g. projects/{project}/locations/{location}/ragCorpora/{rag_corpus}.',
+          ),
+          'topK': ParameterProperty(
+            propertyType: 'integer',
+            description:
+                'The number of top contexts to retrieve from the RAG Store.',
+          ),
+        },
+        required: const ['ragCorpus'],
+      ),
+    );
   }
 }
 

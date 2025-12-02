@@ -1849,37 +1849,21 @@ import 'package:llm_dart/llm_dart.dart';
 Future<void> main() async {
   final openai = createOpenAI(apiKey: 'sk-...');
 
-  final webSearchTool = openai.tools.webSearch();
+  // Attach OpenAI's built-in web_search tool to a Responses model.
+  final model = openai.responses(
+    'gpt-4o',
+    builtInTools: [
+      openai.tools.webSearch(
+        contextSize: WebSearchContextSize.medium,
+      ),
+    ],
+  );
 
-  final model = openai.responses('gpt-4o');
-
-  final result = await runAgentPromptText(
-    model: model,
-    promptMessages: [
+  final result = await generateTextWithModel(
+    model,
+    messages: [
       ModelMessage.userText('What are the latest updates on Dart 3?'),
     ],
-    tools: {
-      'web_search': ExecutableTool.fromFunction(
-        tool: Tool.function(
-          name: 'web_search',
-          description: 'Search the web for up-to-date information.',
-          parameters: ParametersSchema(
-            schemaType: 'object',
-            properties: {
-              'query': ParameterProperty(
-                propertyType: 'string',
-                description: 'Search query',
-              ),
-            },
-            required: ['query'],
-          ),
-        ),
-        function: (args) async {
-          // Integrate with your own web search or proxy service here.
-          return 'Search results for: ${args['query']}';
-        },
-      ),
-    },
   );
 
   print(result.text);

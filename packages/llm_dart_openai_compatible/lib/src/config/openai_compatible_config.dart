@@ -7,15 +7,18 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 /// endpoints, embeddings, etc.), independent of the actual vendor.
 class OpenAICompatibleConfig implements ProviderHttpConfig {
   /// API key for authentication.
+  @override
   final String apiKey;
 
   /// Base URL for the OpenAI-compatible API, e.g.:
   /// - https://api.openai.com/v1/
   /// - https://api.groq.com/openai/v1/
   /// - https://api.deepinfra.com/v1/openai/
+  @override
   final String baseUrl;
 
   /// Default model identifier.
+  @override
   final String model;
 
   /// Optional system prompt for chat models.

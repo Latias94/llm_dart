@@ -16,6 +16,12 @@ enum OpenAIBuiltInToolType {
 
   /// Computer use tool for browser and system automation
   computerUse,
+
+  /// Code interpreter tool for executing code in a secure sandbox
+  codeInterpreter,
+
+  /// Image generation tool for creating images via Responses API
+  imageGeneration,
 }
 
 /// Base class for OpenAI built-in tools
@@ -214,6 +220,102 @@ class OpenAIComputerUseTool implements OpenAIBuiltInTool {
       Object.hash(displayWidth, displayHeight, environment, parameters);
 }
 
+/// Code interpreter built-in tool
+///
+/// Enables the model to execute code in a secure sandbox as part of the
+/// Responses API. This maps to OpenAI's `code_interpreter` tool. The
+/// current implementation does not expose additional configuration
+/// fields; it simply toggles the availability of the tool.
+class OpenAICodeInterpreterTool implements OpenAIBuiltInTool {
+  /// Optional extra parameters for future extension.
+  final Map<String, dynamic>? parameters;
+
+  @override
+  OpenAIBuiltInToolType get type => OpenAIBuiltInToolType.codeInterpreter;
+
+  const OpenAICodeInterpreterTool({this.parameters});
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'type': 'code_interpreter',
+    };
+
+    if (parameters != null) {
+      json.addAll(parameters!);
+    }
+
+    return json;
+  }
+
+  @override
+  String toString() => 'OpenAICodeInterpreterTool(parameters: $parameters)';
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is OpenAICodeInterpreterTool &&
+        other.parameters == parameters;
+  }
+
+  @override
+  int get hashCode => Object.hash(type, parameters);
+}
+
+/// Image generation built-in tool
+///
+/// Enables the model to generate images via the Responses API. This maps
+/// to OpenAI's `image_generation` tool. The [model] field can be used to
+/// specify an image model (for example `gpt-image-1`); any additional
+/// configuration can be passed via [parameters].
+class OpenAIImageGenerationTool implements OpenAIBuiltInTool {
+  /// Optional image generation model identifier (e.g. `gpt-image-1`).
+  final String? model;
+
+  /// Additional parameters for image generation (size, quality, etc.).
+  final Map<String, dynamic>? parameters;
+
+  @override
+  OpenAIBuiltInToolType get type => OpenAIBuiltInToolType.imageGeneration;
+
+  const OpenAIImageGenerationTool({
+    this.model,
+    this.parameters,
+  });
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'type': 'image_generation',
+    };
+
+    if (model != null && model!.isNotEmpty) {
+      json['model'] = model;
+    }
+
+    if (parameters != null) {
+      json.addAll(parameters!);
+    }
+
+    return json;
+  }
+
+  @override
+  String toString() =>
+      'OpenAIImageGenerationTool(model: $model, parameters: $parameters)';
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is OpenAIImageGenerationTool &&
+        other.model == model &&
+        other.parameters == parameters;
+  }
+
+  @override
+  int get hashCode => Object.hash(model, parameters);
+}
+
 /// Convenience factory methods for creating built-in tools
 class OpenAIBuiltInTools {
   /// Create a web search tool
@@ -235,6 +337,22 @@ class OpenAIBuiltInTools {
   }) =>
       OpenAIFileSearchTool(
         vectorStoreIds: vectorStoreIds,
+        parameters: parameters,
+      );
+
+  /// Create a code interpreter tool
+  static OpenAICodeInterpreterTool codeInterpreter({
+    Map<String, dynamic>? parameters,
+  }) =>
+      OpenAICodeInterpreterTool(parameters: parameters);
+
+  /// Create an image generation tool
+  static OpenAIImageGenerationTool imageGeneration({
+    String? model,
+    Map<String, dynamic>? parameters,
+  }) =>
+      OpenAIImageGenerationTool(
+        model: model,
         parameters: parameters,
       );
 

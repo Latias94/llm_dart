@@ -11,4 +11,6 @@ export 'package:llm_dart_openai/llm_dart_openai.dart'
         OpenAIWebSearchTool,
         OpenAIFileSearchTool,
         OpenAIComputerUseTool,
+        OpenAICodeInterpreterTool,
+        OpenAIImageGenerationTool,
         OpenAIBuiltInTools;

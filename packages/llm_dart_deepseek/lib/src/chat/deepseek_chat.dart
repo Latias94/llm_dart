@@ -420,11 +420,18 @@ class DeepSeekChat implements ChatCapability, PromptChatCapability {
     final effectiveTopP = options?.topP ?? config.topP;
     final effectiveTopK = options?.topK ?? config.topK;
 
-    if (effectiveMaxTokens != null) body['max_tokens'] = effectiveMaxTokens;
-    if (effectiveTemperature != null)
+    if (effectiveMaxTokens != null) {
+      body['max_tokens'] = effectiveMaxTokens;
+    }
+    if (effectiveTemperature != null) {
       body['temperature'] = effectiveTemperature;
-    if (effectiveTopP != null) body['top_p'] = effectiveTopP;
-    if (effectiveTopK != null) body['top_k'] = effectiveTopK;
+    }
+    if (effectiveTopP != null) {
+      body['top_p'] = effectiveTopP;
+    }
+    if (effectiveTopK != null) {
+      body['top_k'] = effectiveTopK;
+    }
 
     // Forward advanced sampling parameters directly regardless of whether the
     // model is a reasoning variant. DeepSeek will surface any validation

@@ -55,6 +55,27 @@ Future<GenerateTextResult> generateText({
 
   builder = _applyCallOptions(builder, options);
 
+  // When provider-defined tools (callTools) are present, we prefer the
+  // LanguageModel path so that per-call tool specs (including
+  // provider-defined tools) are honored by providers that support them
+  // (for example Google grounding tools).
+  final hasCallTools =
+      options?.callTools != null && options!.callTools!.isNotEmpty;
+  if (hasCallTools) {
+    final languageModel = await builder.buildLanguageModel();
+    return generateTextWithModel(
+      languageModel,
+      prompt: prompt,
+      messages: messages,
+      structuredPrompt: structuredPrompt,
+      promptMessages: promptMessages,
+      cancelToken: cancelToken,
+      options: options,
+      onFinish: onFinish,
+      onWarnings: onWarnings,
+    );
+  }
+
   final result = await builder.generateText(
     prompt: prompt,
     messages: messages,
@@ -202,6 +223,24 @@ Stream<ChatStreamEvent> streamText({
   }
 
   builder = _applyCallOptions(builder, options);
+
+  final hasCallTools =
+      options?.callTools != null && options!.callTools!.isNotEmpty;
+  if (hasCallTools) {
+    final languageModel = await builder.buildLanguageModel();
+    yield* streamTextWithModel(
+      languageModel,
+      prompt: prompt,
+      messages: messages,
+      structuredPrompt: structuredPrompt,
+      promptMessages: promptMessages,
+      cancelToken: cancelToken,
+      options: options,
+      onFinish: onFinish,
+      onWarnings: onWarnings,
+    );
+    return;
+  }
 
   final source = builder.streamText(
     prompt: prompt,

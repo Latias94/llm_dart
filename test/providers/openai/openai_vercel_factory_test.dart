@@ -51,6 +51,28 @@ void main() {
       expect(config.model, equals('gpt-4.1-mini'));
     });
 
+    test('responses() can attach built-in tools', () {
+      final openai = createOpenAI(
+        apiKey: 'test-key',
+        name: 'my-openai',
+      );
+
+      final webSearchTool = openai.tools.webSearch();
+
+      final model = openai.responses(
+        'gpt-4.1-mini',
+        builtInTools: [webSearchTool],
+      );
+
+      final config = model.config;
+      final builtInTools = config
+          .getExtension<List<OpenAIBuiltInTool>>(LLMConfigKeys.builtInTools);
+
+      expect(builtInTools, isNotNull);
+      expect(builtInTools, hasLength(1));
+      expect(builtInTools!.first, isA<OpenAIWebSearchTool>());
+    });
+
     test('embedding/image/audio helpers create capabilities', () {
       final openai = createOpenAI(apiKey: 'test-key');
 
@@ -98,6 +120,19 @@ void main() {
       expect(computerUseTool.environment, equals('browser'));
       final computerParams = computerUseTool.parameters;
       expect(computerParams?['mode'], equals('auto'));
+
+      final codeInterpreterTool =
+          openai.tools.codeInterpreter(parameters: const {'runtime': 'python'});
+      expect(codeInterpreterTool.type.toString(), contains('codeInterpreter'));
+      expect(codeInterpreterTool.parameters?['runtime'], equals('python'));
+
+      final imageGenTool = openai.tools.imageGeneration(
+        model: 'gpt-image-1',
+        parameters: const {'size': '1024x1024'},
+      );
+      expect(imageGenTool.type.toString(), contains('imageGeneration'));
+      expect(imageGenTool.model, equals('gpt-image-1'));
+      expect(imageGenTool.parameters?['size'], equals('1024x1024'));
     });
 
     test('openai() alias forwards to createOpenAI', () {
