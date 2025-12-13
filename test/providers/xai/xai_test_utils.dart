@@ -6,7 +6,7 @@ class CapturingXAIClient extends xai.XAIClient {
   Map<String, dynamic>? lastRequestBody;
   String? lastEndpoint;
 
-  CapturingXAIClient(xai.XAIConfig config) : super(config);
+  CapturingXAIClient(super.config);
 
   @override
   Future<Map<String, dynamic>> postJson(

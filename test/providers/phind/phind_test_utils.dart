@@ -6,7 +6,7 @@ class CapturingPhindClient extends PhindClient {
   Map<String, dynamic>? lastRequestBody;
   String? lastEndpoint;
 
-  CapturingPhindClient(PhindConfig config) : super(config);
+  CapturingPhindClient(super.config);
 
   @override
   Future<Map<String, dynamic>> postJson(

@@ -6,7 +6,7 @@ class CapturingGoogleClient extends GoogleClient {
   Map<String, dynamic>? lastRequestBody;
   String? lastEndpoint;
 
-  CapturingGoogleClient(GoogleConfig config) : super(config);
+  CapturingGoogleClient(super.config);
 
   @override
   Future<Map<String, dynamic>> postJson(

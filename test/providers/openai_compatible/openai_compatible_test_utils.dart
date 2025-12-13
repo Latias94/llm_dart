@@ -6,8 +6,7 @@ class CapturingOpenAICompatibleClient extends OpenAICompatibleClient {
   Map<String, dynamic>? lastRequestBody;
   String? lastEndpoint;
 
-  CapturingOpenAICompatibleClient(OpenAICompatibleConfig config)
-      : super(config);
+  CapturingOpenAICompatibleClient(super.config);
 
   @override
   Future<Map<String, dynamic>> postJson(
@@ -36,9 +35,9 @@ class FakeOpenAICompatibleStreamClient extends OpenAICompatibleClient {
   final List<String> chunks;
 
   FakeOpenAICompatibleStreamClient(
-    OpenAICompatibleConfig config, {
+    super.config, {
     required this.chunks,
-  }) : super(config);
+  });
 
   @override
   Stream<String> postStreamRaw(

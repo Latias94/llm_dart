@@ -6,7 +6,7 @@ class CapturingOllamaClient extends OllamaClient {
   Map<String, dynamic>? lastRequestBody;
   String? lastEndpoint;
 
-  CapturingOllamaClient(OllamaConfig config) : super(config);
+  CapturingOllamaClient(super.config);
 
   @override
   Future<Map<String, dynamic>> postJson(

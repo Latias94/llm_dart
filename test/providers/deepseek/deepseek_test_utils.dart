@@ -6,7 +6,7 @@ class CapturingDeepSeekClient extends deepseek.DeepSeekClient {
   Map<String, dynamic>? lastRequestBody;
   String? lastEndpoint;
 
-  CapturingDeepSeekClient(deepseek.DeepSeekConfig config) : super(config);
+  CapturingDeepSeekClient(super.config);
 
   @override
   Future<Map<String, dynamic>> postJson(
@@ -41,9 +41,9 @@ class FakeDeepSeekStreamClient extends deepseek.DeepSeekClient {
   final List<String> chunks;
 
   FakeDeepSeekStreamClient(
-    deepseek.DeepSeekConfig config, {
+    super.config, {
     required this.chunks,
-  }) : super(config);
+  });
 
   @override
   Stream<String> postStreamRaw(
