@@ -115,6 +115,11 @@ Legacy shim entrypoints under `package:llm_dart/legacy/...` have been removed.
 If you are migrating from older versions, use prompt-first `ModelMessage` /
 `ChatPromptBuilder` and the provider subpackages instead.
 
+### Public API（稳定性约定）
+
+- 稳定入口：`package:llm_dart/llm_dart.dart`（全家桶）、`package:llm_dart_core/llm_dart_core.dart`、`package:llm_dart_provider_utils/llm_dart_provider_utils.dart`、以及各 provider 子包（例如 `package:llm_dart_openai/llm_dart_openai.dart`）。
+- 不保证稳定：任何 `.../src/...` 的直接导入路径（内部实现细节，可能随时调整）。
+
 ### Usage Modes
 
 There are two primary ways to use the library, depending on how much control
