@@ -5,27 +5,24 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import '../config/anthropic_config.dart';
 
 /// Anthropic-specific Dio strategy implementation.
-class AnthropicDioStrategy extends BaseProviderDioStrategy {
+class AnthropicDioStrategy extends BaseProviderDioStrategy<AnthropicConfig> {
   @override
   String get providerName => 'Anthropic';
 
   @override
-  Map<String, String> buildHeaders(dynamic config) {
-    final anthropicConfig = config as AnthropicConfig;
+  Map<String, String> buildHeaders(AnthropicConfig config) {
     return {
       'Content-Type': 'application/json',
-      'x-api-key': anthropicConfig.apiKey,
+      'x-api-key': config.apiKey,
       'anthropic-version': '2023-06-01',
     };
   }
 
   @override
-  List<DioEnhancer> getEnhancers(dynamic config) {
-    final anthropicConfig = config as AnthropicConfig;
-
+  List<DioEnhancer> getEnhancers(AnthropicConfig config) {
     return [
       InterceptorEnhancer(
-        _createEndpointHeadersInterceptor(anthropicConfig),
+        _createEndpointHeadersInterceptor(config),
         'AnthropicEndpointHeaders',
       ),
     ];

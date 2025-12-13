@@ -1,7 +1,4 @@
-// xAI provider implementation built on ChatMessage-based chat and
-// embedding capabilities from llm_dart_core. ChatMessage usage is
-// intentional here for compatibility with existing helpers.
-// ignore_for_file: deprecated_member_use
+// xAI provider implementation (prompt-first).
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
@@ -14,7 +11,6 @@ import '../embeddings/xai_embeddings.dart';
 class XAIProvider
     implements
         ChatCapability,
-        PromptChatCapability,
         EmbeddingCapability,
         ProviderCapabilities {
   final XAIClient _client;
@@ -49,27 +45,14 @@ class XAIProvider
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     return _chat.chat(
       messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatWithTools(
-      messages,
-      tools,
+      tools: tools,
       options: options,
       cancelToken: cancelToken,
     );
@@ -77,7 +60,7 @@ class XAIProvider
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -89,13 +72,6 @@ class XAIProvider
       cancelToken: cancelToken,
     );
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() => _chat.memoryContents();
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) =>
-      _chat.summarizeHistory(messages);
 
   @override
   Future<List<List<double>>> embed(
@@ -192,36 +168,4 @@ class XAIProvider
 
   @override
   String toString() => 'XAIProvider(model: ${config.model})';
-
-  // ===== PromptChatCapability (prompt-first) =====
-
-  @override
-  Future<ChatResponse> chatPrompt(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatPrompt(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatPromptStream(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
 }

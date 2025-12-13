@@ -1,7 +1,4 @@
-// Ollama provider implementation built on ChatMessage-based
-// capabilities from llm_dart_core. ChatMessage usage is intentional
-// here for compatibility with existing helpers.
-// ignore_for_file: deprecated_member_use
+// Ollama provider implementation (prompt-first).
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
@@ -16,7 +13,6 @@ import '../models/ollama_models.dart';
 class OllamaProvider
     implements
         ChatCapability,
-        PromptChatCapability,
         CompletionCapability,
         EmbeddingCapability,
         ModelListingCapability,
@@ -38,27 +34,14 @@ class OllamaProvider
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     return _chat.chat(
       messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatWithTools(
-      messages,
-      tools,
+      tools: tools,
       options: options,
       cancelToken: cancelToken,
     );
@@ -66,7 +49,7 @@ class OllamaProvider
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -78,13 +61,6 @@ class OllamaProvider
       cancelToken: cancelToken,
     );
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() => _chat.memoryContents();
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) =>
-      _chat.summarizeHistory(messages);
 
   @override
   Future<CompletionResponse> complete(CompletionRequest request) {
@@ -208,38 +184,6 @@ class OllamaProvider
   }) {
     return _client.version(
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
-    );
-  }
-
-  // ===== PromptChatCapability (prompt-first) =====
-
-  @override
-  Future<ChatResponse> chatPrompt(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatPrompt(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatPromptStream(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
     );
   }
 }

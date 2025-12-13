@@ -1,10 +1,7 @@
-// Embedding middleware tests exercise ChatMessage-based ChatCapability
-// alongside EmbeddingCapability to ensure compatibility with the
-// legacy chat surface.
-// ignore_for_file: deprecated_member_use
+// Embedding middleware tests exercise EmbeddingCapability alongside a minimal
+// ChatCapability implementation for builder compatibility.
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import '../utils/mock_provider_factory.dart';
 
@@ -17,7 +14,8 @@ class _TestEmbeddingProvider
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -26,34 +24,14 @@ class _TestEmbeddingProvider
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) =>
-      chat(
-        messages,
-        options: options,
-        cancelToken: cancelToken,
-      );
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     yield const TextDeltaEvent('unused');
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 
   @override
   Future<List<List<double>>> embed(

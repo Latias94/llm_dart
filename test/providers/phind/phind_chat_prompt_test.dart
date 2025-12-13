@@ -1,9 +1,6 @@
-// Phind chat prompt mapping tests validate how ChatMessage inputs
-// are converted into ModelMessage prompts for the Phind provider.
-// ignore_for_file: deprecated_member_use
+// Phind chat prompt mapping tests validate prompt-first ModelMessage inputs.
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import 'phind_test_utils.dart';
 
@@ -19,9 +16,9 @@ void main() {
       final client = CapturingPhindClient(config);
       final chat = PhindChat(client, config);
 
-      final messages = <ChatMessage>[
-        ChatMessage.user('Explain this code'),
-        ChatMessage.assistant('Sure, here is an explanation.'),
+      final messages = <ModelMessage>[
+        ModelMessage.userText('Explain this code'),
+        ModelMessage.assistantText('Sure, here is an explanation.'),
       ];
 
       await chat.chat(messages);

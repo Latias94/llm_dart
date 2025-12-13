@@ -1,7 +1,4 @@
-// This middleware intentionally works on ChatMessage-based histories, since
-// it plugs into the legacy ChatCapability surface. New code should prefer
-// ModelMessage + ChatContentPart with prompt-first helpers.
-// ignore_for_file: deprecated_member_use
+// Default chat settings middleware for prompt-first ModelMessage histories.
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
@@ -68,8 +65,8 @@ ChatMiddleware createDefaultChatSettingsMiddleware(
         final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
 
         if (!hasSystemMessage || !settings.onlyWhenNoSystemMessage) {
-          messages = <ChatMessage>[
-            ChatMessage.system(settings.systemPrompt!),
+          messages = <ModelMessage>[
+            ModelMessage.systemText(settings.systemPrompt!),
             ...messages,
           ];
         }

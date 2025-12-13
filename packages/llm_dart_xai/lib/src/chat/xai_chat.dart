@@ -1,7 +1,4 @@
-// xAI (Grok) chat capability implementation based on the ChatMessage
-// ChatCapability surface. It converts to ModelMessage prompts for
-// request building behind the scenes.
-// ignore_for_file: deprecated_member_use
+// xAI (Grok) chat capability implementation (prompt-first).
 
 import 'dart:convert';
 
@@ -11,7 +8,7 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import '../client/xai_client.dart';
 import '../config/xai_config.dart';
 
-class XAIChat implements ChatCapability, PromptChatCapability {
+class XAIChat implements ChatCapability {
   final XAIClient client;
   final XAIConfig config;
 
@@ -21,69 +18,6 @@ class XAIChat implements ChatCapability, PromptChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return chatWithTools(
-      messages,
-      null,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    return chatPrompt(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async* {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    yield* chatPromptStream(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final prompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final response = await chat([ChatMessage.user(prompt)]);
-    final text = response.text;
-    if (text == null) {
-      throw const GenericError('no text in summary response');
-    }
-    return text;
-  }
-
-  @override
-  Future<ChatResponse> chatPrompt(
     List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
@@ -108,7 +42,7 @@ class XAIChat implements ChatCapability, PromptChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatPromptStream(
+  Stream<ChatStreamEvent> chatStream(
     List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,

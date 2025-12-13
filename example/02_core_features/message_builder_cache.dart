@@ -39,8 +39,12 @@ void main() async {
       MessageBuilder.user().text('What is quantum computing?').build();
 
   print('1. Basic message:');
-  print('   Content: ${basicMessage.content}');
-  print('   Has extensions: ${basicMessage.extensions.isNotEmpty}');
+  final basicText = basicMessage.parts
+      .whereType<TextContentPart>()
+      .map((p) => p.text)
+      .join();
+  print('   Text: $basicText');
+  print('   Has provider options: ${basicMessage.providerOptions.isNotEmpty}');
   print('');
 
   // Example 2: System message with cached content
@@ -55,10 +59,14 @@ void main() async {
       .build();
 
   print('2. System message with cached content:');
-  print('   Content preview: ${systemMessage.content.substring(0, 50)}...');
+  final systemText = systemMessage.parts
+      .whereType<TextContentPart>()
+      .map((p) => p.text)
+      .join();
+  print('   Text preview: ${systemText.substring(0, 50)}...');
   print(
-      '   Has Anthropic extension: ${systemMessage.hasExtension('anthropic')}');
-  print('   Extension data: ${systemMessage.getExtension('anthropic')}');
+      '   Has Anthropic options: ${systemMessage.providerOptions.containsKey('anthropic')}');
+  print('   Anthropic options: ${systemMessage.providerOptions['anthropic']}');
   print('');
 
   // Example 3: Mixed content with different cache TTLs
@@ -76,8 +84,12 @@ void main() async {
       .build();
 
   print('3. Mixed message with short-term cache:');
-  print('   Content: ${mixedMessage.content}');
-  print('   Extensions: ${mixedMessage.extensions}');
+  final mixedText = mixedMessage.parts
+      .whereType<TextContentPart>()
+      .map((p) => p.text)
+      .join();
+  print('   Text: $mixedText');
+  print('   Provider options: ${mixedMessage.providerOptions}');
   print('');
 
   // Example 4: Multiple content blocks via contentBlocks method
@@ -94,9 +106,13 @@ void main() async {
       .build();
 
   print('4. Complex message with multiple content blocks:');
-  print('   Content: ${complexMessage.content}');
+  final complexText = complexMessage.parts
+      .whereType<TextContentPart>()
+      .map((p) => p.text)
+      .join();
+  print('   Text: $complexText');
   print(
-      '   Anthropic blocks: ${complexMessage.getExtension<Map>('anthropic')?['contentBlocks']}');
+      '   Anthropic blocks: ${(complexMessage.providerOptions['anthropic'] as Map?)?['contentBlocks']}');
   print('');
 
   // Example 5: Building a conversation with caching
@@ -123,9 +139,9 @@ void main() async {
   for (int i = 0; i < conversation.length; i++) {
     final message = conversation[i];
     print('   Message ${i + 1} (${message.role}):');
-    print(
-        '     Content: ${message.content.replaceAll('\n', ' ').substring(0, 60)}...');
-    print('     Cached: ${message.hasExtension('anthropic')}');
+    final text = message.parts.whereType<TextContentPart>().map((p) => p.text).join();
+    print('     Text: ${text.replaceAll('\n', ' ').substring(0, 60)}...');
+    print('     Cached: ${message.providerOptions.containsKey('anthropic')}');
   }
 
   // Example 6: Tool caching (Anthropic only)
@@ -188,8 +204,12 @@ void main() async {
       .text('Use these tools to help users with research tasks.')
       .build();
 
-  print('   Message content: ${unifiedMessage.content}');
-  print('   Extensions: ${unifiedMessage.extensions.keys.join(', ')}');
+  final unifiedText = unifiedMessage.parts
+      .whereType<TextContentPart>()
+      .map((p) => p.text)
+      .join();
+  print('   Message text: $unifiedText');
+  print('   Provider options keys: ${unifiedMessage.providerOptions.keys.join(', ')}');
   print(
       '   ✓ Cache configuration applies to subsequent content (tools in this case)');
   print('   ✓ More intuitive: .cache() applies to what comes after it');

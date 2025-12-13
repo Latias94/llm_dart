@@ -188,7 +188,9 @@ class OllamaBuilder {
   /// - true: Enable reasoning mode
   /// - false: Disable reasoning mode (default)
   OllamaBuilder reasoning(bool enabled) {
-    _baseBuilder.extension(LLMConfigKeys.reasoning, enabled);
+    // Delegate to the base builder so that reasoning behaviour is
+    // configured via the canonical extension key and shared helpers.
+    _baseBuilder.reasoning(enabled);
     return this;
   }
 

@@ -1,7 +1,5 @@
-// OpenAI-compatible chat capability built on the legacy ChatMessage
-// ChatCapability. This module converts messages to ModelMessage-based
-// prompts internally but keeps ChatMessage at the public surface.
-// ignore_for_file: deprecated_member_use
+// OpenAI-compatible chat capability implemented on top of the prompt-first
+// ChatCapability surface (ModelMessage + ChatContentPart).
 
 import 'dart:async';
 
@@ -16,7 +14,7 @@ import '../provider_profiles/openai_compatible_provider_profiles.dart';
 ///
 /// This module implements ChatCapability for any provider that exposes
 /// an OpenAI-style chat/completions API.
-class OpenAICompatibleChat implements ChatCapability, PromptChatCapability {
+class OpenAICompatibleChat implements ChatCapability {
   final OpenAICompatibleClient client;
   final OpenAICompatibleConfig config;
 
@@ -35,72 +33,7 @@ class OpenAICompatibleChat implements ChatCapability, PromptChatCapability {
   String get chatEndpoint => 'chat/completions';
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    return chatPrompt(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async* {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    yield* chatPromptStream(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return chatWithTools(
-      messages,
-      null,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final prompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final request = [ChatMessage.user(prompt)];
-    final response = await chat(request);
-    final text = response.text;
-    if (text == null) {
-      throw const GenericError('no text in summary response');
-    }
-
-    return ReasoningUtils.filterThinkingContent(text);
-  }
-
-  @override
-  Future<ChatResponse> chatPrompt(
     List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
@@ -121,7 +54,7 @@ class OpenAICompatibleChat implements ChatCapability, PromptChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatPromptStream(
+  Stream<ChatStreamEvent> chatStream(
     List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,

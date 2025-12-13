@@ -1,7 +1,4 @@
-// Phind chat capability implementation based on the ChatMessage
-// ChatCapability interface. Internally this module converts to
-// ModelMessage prompts where needed.
-// ignore_for_file: deprecated_member_use
+// Phind chat capability implementation (prompt-first).
 
 import 'dart:convert';
 
@@ -16,7 +13,7 @@ import '../config/phind_config.dart';
 ///
 /// This module handles all chat-related functionality for Phind providers.
 /// Phind is specialized for coding tasks and has a unique API format.
-class PhindChat implements ChatCapability, PromptChatCapability {
+class PhindChat implements ChatCapability {
   final PhindClient client;
   final PhindConfig config;
 
@@ -25,71 +22,7 @@ class PhindChat implements ChatCapability, PromptChatCapability {
   String get chatEndpoint => '';
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    return chatPrompt(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async* {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    yield* chatPromptStream(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chatWithTools(
-      messages,
-      null,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final prompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final request = [ChatMessage.user(prompt)];
-    final response = await chat(request);
-    final text = response.text;
-    if (text == null) {
-      throw const GenericError('no text in summary response');
-    }
-    return text;
-  }
-
-  @override
-  Future<ChatResponse> chatPrompt(
     List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
@@ -141,7 +74,7 @@ class PhindChat implements ChatCapability, PromptChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatPromptStream(
+  Stream<ChatStreamEvent> chatStream(
     List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,

@@ -1,5 +1,4 @@
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_impl;
 import 'package:test/test.dart';
 
@@ -17,7 +16,7 @@ void main() {
       final client = CapturingOpenAIClient(config);
       final responses = openai_impl.OpenAIResponses(client, config);
 
-      final messages = <ChatMessage>[ChatMessage.user('hello')];
+      final messages = <ModelMessage>[ModelMessage.userText('hello')];
 
       final options = LanguageModelCallOptions(
         callTools: const [
@@ -53,7 +52,7 @@ void main() {
       final client = CapturingOpenAIClient(config);
       final responses = openai_impl.OpenAIResponses(client, config);
 
-      final messages = <ChatMessage>[ChatMessage.user('hello')];
+      final messages = <ModelMessage>[ModelMessage.userText('hello')];
 
       final options = LanguageModelCallOptions(
         callTools: const [
@@ -93,7 +92,7 @@ void main() {
       final client = CapturingOpenAIClient(config);
       final responses = openai_impl.OpenAIResponses(client, config);
 
-      final messages = <ChatMessage>[ChatMessage.user('hello')];
+      final messages = <ModelMessage>[ModelMessage.userText('hello')];
 
       final options = LanguageModelCallOptions(
         callTools: const [
@@ -129,7 +128,7 @@ void main() {
       final client = CapturingOpenAIClient(config);
       final responses = openai_impl.OpenAIResponses(client, config);
 
-      final messages = <ChatMessage>[ChatMessage.user('hello')];
+      final messages = <ModelMessage>[ModelMessage.userText('hello')];
 
       final options = LanguageModelCallOptions(
         callTools: const [

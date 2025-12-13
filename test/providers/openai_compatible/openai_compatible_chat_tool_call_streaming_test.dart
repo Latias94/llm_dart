@@ -3,9 +3,6 @@
 /// This test verifies that the OpenAICompatibleChat streaming implementation:
 /// - Preserves a stable tool call ID across all chunks
 /// - Emits ToolCallDeltaEvent instances in order with incremental arguments
-///
-/// These tests use ChatMessage-based prompts for compatibility.
-// ignore_for_file: deprecated_member_use
 library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
@@ -35,7 +32,8 @@ void main() {
       );
       final chat = OpenAICompatibleChat(client, config);
 
-      final events = await chat.chatStream([ChatMessage.user('test')]).toList();
+      final events =
+          await chat.chatStream([ModelMessage.userText('test')]).toList();
 
       final toolEvents = events.whereType<ToolCallDeltaEvent>().toList();
       expect(toolEvents, hasLength(3));

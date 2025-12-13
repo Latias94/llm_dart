@@ -1,6 +1,4 @@
-// OpenAI reasoning params tests use ChatMessage-based chat flows to
-// validate reasoning-related request shaping for backwards compatibility.
-// ignore_for_file: deprecated_member_use
+// OpenAI reasoning params tests validate reasoning-related request shaping.
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
@@ -23,7 +21,7 @@ void main() {
       final client = CapturingOpenAIClient(config);
       final chat = openai.OpenAIChat(client, config);
 
-      await chat.chat([ChatMessage.user('Hello')]);
+      await chat.chat([ModelMessage.userText('Hello')]);
 
       final body = client.lastBody;
       expect(body, isNotNull);
@@ -53,7 +51,7 @@ void main() {
       final client = CapturingOpenAIClient(config);
       final chat = openai.OpenAIChat(client, config);
 
-      await chat.chat([ChatMessage.user('Hello')]);
+      await chat.chat([ModelMessage.userText('Hello')]);
 
       final body = client.lastBody;
       expect(body, isNotNull);
@@ -85,7 +83,7 @@ void main() {
       final client = CapturingOpenAIClient(config);
       final responses = openai.OpenAIResponses(client, config);
 
-      await responses.chatWithTools([ChatMessage.user('Hello')], null);
+      await responses.chatWithTools([ModelMessage.userText('Hello')], null);
 
       final body = client.lastBody;
       expect(body, isNotNull);
@@ -123,7 +121,7 @@ void main() {
       final client = CapturingOpenAIClient(config);
       final responses = openai.OpenAIResponses(client, config);
 
-      await responses.chatWithTools([ChatMessage.user('Hello')], null);
+      await responses.chatWithTools([ModelMessage.userText('Hello')], null);
 
       final body = client.lastBody;
       expect(body, isNotNull);

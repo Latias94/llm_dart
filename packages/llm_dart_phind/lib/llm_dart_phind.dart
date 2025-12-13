@@ -7,3 +7,7 @@ export 'src/chat/phind_chat.dart';
 export 'src/provider/phind_provider.dart';
 export 'src/factory/phind_provider_factory.dart'
     show PhindProviderFactory, registerPhindProvider;
+
+// Vercel AI-style facade exports (model-centric API).
+export 'src/facade/phind_facade.dart'
+    show PhindProviderSettings, Phind, createPhind, phind;

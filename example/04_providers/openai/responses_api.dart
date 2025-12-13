@@ -1,5 +1,3 @@
-// ignore_for_file: deprecated_member_use
-
 /// Example demonstrating OpenAI's new Responses API
 ///
 /// This example shows how to use the Responses API with built-in tools
@@ -44,7 +42,6 @@ library;
 
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 void main() async {
@@ -95,10 +92,9 @@ void main() async {
   await responseLifecycleExample(apiKey);
 }
 
-/// Build a single user ModelMessage and bridge it to ChatMessage.
-List<ChatMessage> _userMessages(String text) {
-  final prompt = ChatPromptBuilder.user().text(text).build();
-  return [ChatMessage.fromPromptMessage(prompt)];
+/// Build a single user ModelMessage.
+List<ModelMessage> _userMessages(String text) {
+  return [ModelMessage.userText(text)];
 }
 
 /// Example 0: Capability detection for type-safe Responses API usage
@@ -296,9 +292,9 @@ Future<void> functionCallingExample(String apiKey) async {
       ),
     ];
 
-    final response = await provider.chatWithTools(
+    final response = await provider.chat(
       _userMessages('What is the weather like in Boston today?'),
-      tools,
+      tools: tools,
     );
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
@@ -467,7 +463,9 @@ Future<void> computerUseExample(String apiKey) async {
         .build();
 
     final messages = [
-      ChatMessage.user('Help me search for information about Dart programming'),
+      ModelMessage.userText(
+        'Help me search for information about Dart programming',
+      ),
     ];
 
     final response = await provider.chat(messages);

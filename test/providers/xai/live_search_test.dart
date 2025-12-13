@@ -134,36 +134,10 @@ void main() {
       expect(json.containsKey('excluded_websites'), isFalse);
     });
 
-    test('should create live search provider with convenience function', () {
-      final provider = createXAILiveSearchProvider(
-        apiKey: 'test-key',
-        model: 'grok-3',
-        maxSearchResults: 7,
-        excludedWebsites: ['blocked.com'],
-      );
-
-      expect(provider.config.liveSearch, isTrue);
-      expect(provider.config.searchParameters, isNotNull);
-      expect(provider.config.searchParameters!.maxSearchResults, equals(7));
-      expect(provider.config.searchParameters!.sources!.first.excludedWebsites,
-          contains('blocked.com'));
-    });
-
-    test('should create search provider with convenience function', () {
-      final provider = createXAISearchProvider(
-        apiKey: 'test-key',
-        model: 'grok-3',
-        searchMode: 'always',
-        maxSearchResults: 15,
-        fromDate: '2024-06-01',
-      );
-
-      expect(provider.config.liveSearch, isTrue);
-      expect(provider.config.searchParameters, isNotNull);
-      expect(provider.config.searchParameters!.mode, equals('always'));
-      expect(provider.config.searchParameters!.maxSearchResults, equals(15));
-      expect(provider.config.searchParameters!.fromDate, equals('2024-06-01'));
-    });
+    // Provider-level convenience constructors were removed during the
+    // multi-package refactor. Use:
+    // - `XAIProvider(XAIConfig(...))` for direct provider configuration, or
+    // - `ai().xai().webSearch(...)` / `ai().xai().newsSearch(...)` for builder usage.
   });
 
   group('xAI Live Search Request Building', () {

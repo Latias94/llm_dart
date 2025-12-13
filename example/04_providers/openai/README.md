@@ -153,13 +153,12 @@ final provider = await ai()
 
 #### Stateful Conversations
 
-These examples use the low-level Responses API with the legacy `ChatMessage`
-model for fine-grained control. For prompt-first `LanguageModel` usage with
-structured prompts, see `responses_api.dart` and the main README.
+These examples use the low-level Responses API with prompt-first
+`ModelMessage` inputs for fine-grained control. For `LanguageModel` usage
+with structured prompts, see `responses_api.dart` and the main README.
 
 ```dart
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 
 // Using buildOpenAIResponses() - no casting needed!
 final provider = await ai().openai().apiKey('your-key')
@@ -170,13 +169,13 @@ final responses = provider.responses!;
 
 // Create initial response
 final response1 = await responses.chat([
-  ChatMessage.user('My name is Alice. Tell me about AI'),
+  ModelMessage.userText('My name is Alice. Tell me about AI'),
 ]);
 
 // Continue conversation with state preservation
 final responseId = (response1 as OpenAIResponsesResponse).responseId;
 final response2 = await responses.continueConversation(responseId!, [
-  ChatMessage.user('Remember my name and explain machine learning'),
+  ModelMessage.userText('Remember my name and explain machine learning'),
 ]);
 ```
 
@@ -185,7 +184,7 @@ final response2 = await responses.continueConversation(responseId!, [
 ```dart
 // Start long-running task in background
 final backgroundResponse = await responses.chatWithToolsBackground([
-  ChatMessage.user('Write a detailed research report'),
+  ModelMessage.userText('Write a detailed research report'),
 ], null);
 
 // Check status later
@@ -208,8 +207,8 @@ await responses.deleteResponse('resp_123');
 // Cancel background response
 await responses.cancelResponse('resp_123');
 
-final response = await provider.chat([
-  ChatMessage.user('Search for recent AI developments'),
+final response = await responses.chat([
+  ModelMessage.userText('Search for recent AI developments'),
 ]);
 ```
 

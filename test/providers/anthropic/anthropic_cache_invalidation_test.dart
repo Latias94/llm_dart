@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import '../../test_utils/model_message_test_extensions.dart';
 
 /// Test suite for Anthropic prompt caching invalidation scenarios
 /// Tests cache invalidation conditions according to official documentation

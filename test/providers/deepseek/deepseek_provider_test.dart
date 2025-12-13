@@ -108,20 +108,8 @@ void main() {
         expect(provider.chat, isA<Function>());
       });
 
-      test('should have chatWithTools method', () {
-        expect(provider.chatWithTools, isA<Function>());
-      });
-
       test('should have chatStream method', () {
         expect(provider.chatStream, isA<Function>());
-      });
-
-      test('should have memoryContents method', () {
-        expect(provider.memoryContents, isA<Function>());
-      });
-
-      test('should have summarizeHistory method', () {
-        expect(provider.summarizeHistory, isA<Function>());
       });
     });
 
@@ -202,33 +190,9 @@ void main() {
       });
     });
 
-    group('Helper Functions', () {
-      test('createDeepSeekProvider should work', () {
-        final helperProvider = createDeepSeekProvider(
-          apiKey: 'helper-key',
-          model: 'deepseek-chat',
-          temperature: 0.8,
-        );
-
-        expect(helperProvider, isA<deepseek.DeepSeekProvider>());
-        expect(helperProvider.config.apiKey, equals('helper-key'));
-        expect(helperProvider.config.model, equals('deepseek-chat'));
-        expect(helperProvider.config.temperature, equals(0.8));
-      });
-
-      test('createDeepSeekReasoningProvider should work', () {
-        final reasoningProvider = createDeepSeekReasoningProvider(
-          apiKey: 'reasoning-key',
-          systemPrompt: 'Think step by step',
-        );
-
-        expect(reasoningProvider, isA<deepseek.DeepSeekProvider>());
-        expect(reasoningProvider.config.apiKey, equals('reasoning-key'));
-        expect(reasoningProvider.config.model, equals('deepseek-reasoner'));
-        expect(reasoningProvider.config.systemPrompt,
-            equals('Think step by step'));
-        expect(reasoningProvider.supports(LLMCapability.reasoning), isTrue);
-      });
-    });
+    // Provider-level convenience constructors were intentionally removed
+    // during the multi-package refactor. Prefer:
+    // - `DeepSeekProvider(DeepSeekConfig(...))` for low-level provider access, or
+    // - `createDeepSeek(...).chat(modelId)` for model-centric usage.
   });
 }

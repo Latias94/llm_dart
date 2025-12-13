@@ -1,7 +1,5 @@
-// Agent implementation currently bridges between the legacy ChatMessage
-// model and the newer ModelMessage prompt model. ChatMessage is used
-// here intentionally as a compatibility layer for LanguageModel APIs.
-// ignore_for_file: deprecated_member_use_from_same_package
+// Agent implementation is prompt-first and operates on ModelMessage
+// conversations via the LanguageModel interface.
 
 import 'dart:convert';
 
@@ -23,8 +21,7 @@ class AgentInput {
   /// Initial conversation messages in the prompt-first [ModelMessage] format.
   ///
   /// Callers are expected to construct these using [ModelMessage] +
-  /// [ChatContentPart] (or higher-level builders) rather than the
-  /// legacy [ChatMessage] model.
+  /// [ChatContentPart] (or higher-level builders).
   final List<ModelMessage> messages;
 
   /// Map of tool name to [ExecutableTool] implementation.

@@ -1,7 +1,4 @@
-// Groq provider implementation built on ChatMessage-based chat
-// capabilities from the OpenAI-compatible layer. ChatMessage is
-// used intentionally here for compatibility with llm_dart_core.
-// ignore_for_file: deprecated_member_use
+// Groq provider implementation built on the OpenAI-compatible chat layer.
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
@@ -25,27 +22,14 @@ class GroqProvider implements ChatCapability, ProviderCapabilities {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     return _chat.chat(
       messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatWithTools(
-      messages,
-      tools,
+      tools: tools,
       options: options,
       cancelToken: cancelToken,
     );
@@ -53,7 +37,7 @@ class GroqProvider implements ChatCapability, ProviderCapabilities {
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -64,16 +48,6 @@ class GroqProvider implements ChatCapability, ProviderCapabilities {
       options: options,
       cancelToken: cancelToken,
     );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() {
-    return _chat.memoryContents();
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) {
-    return _chat.summarizeHistory(messages);
   }
 
   // ===== ProviderCapabilities =====

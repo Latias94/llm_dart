@@ -1,7 +1,4 @@
-// Anthropic provider implementation built on ChatMessage-based
-// ChatCapability and related interfaces from llm_dart_core.
-// ChatMessage usage is intentional here for compatibility.
-// ignore_for_file: deprecated_member_use
+// Anthropic provider implementation (prompt-first).
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
@@ -14,7 +11,6 @@ import '../models/anthropic_models.dart';
 class AnthropicProvider
     implements
         ChatCapability,
-        PromptChatCapability,
         ModelListingCapability,
         FileManagementCapability,
         ProviderCapabilities {
@@ -39,27 +35,14 @@ class AnthropicProvider
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     return _chat.chat(
       messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return _chat.chatWithTools(
-      messages,
-      tools,
+      tools: tools,
       options: options,
       cancelToken: cancelToken,
     );
@@ -67,7 +50,7 @@ class AnthropicProvider
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -78,16 +61,6 @@ class AnthropicProvider
       options: options,
       cancelToken: cancelToken,
     );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async {
-    return _chat.memoryContents();
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return _chat.summarizeHistory(messages);
   }
 
   String get providerName => 'Anthropic';
@@ -143,8 +116,10 @@ class AnthropicProvider
     return _models.getModel(modelId);
   }
 
-  Future<int> countTokens(List<ChatMessage> messages,
-      {List<Tool>? tools}) async {
+  Future<int> countTokens(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+  }) async {
     return _chat.countTokens(messages, tools: tools);
   }
 
@@ -196,35 +171,4 @@ class AnthropicProvider
     return _files.deleteFiles(fileIds);
   }
 
-  // ===== PromptChatCapability (prompt-first) =====
-
-  @override
-  Future<ChatResponse> chatPrompt(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatPrompt(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatPromptStream(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
 }

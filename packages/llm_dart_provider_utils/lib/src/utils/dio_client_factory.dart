@@ -3,26 +3,26 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'http_config_utils.dart';
 
-/// Strategy interface for provider-specific Dio configuration
+/// Strategy interface for provider-specific Dio configuration.
 ///
-/// Each provider implements this interface to define their specific
-/// requirements for HTTP client setup, including headers, authentication,
-/// and custom enhancements.
-abstract class ProviderDioStrategy {
+/// Each provider implements this interface with its concrete
+/// [ProviderHttpConfig] type to define HTTP headers, timeouts and
+/// optional Dio enhancements in a type-safe way.
+abstract class ProviderDioStrategy<TConfig extends ProviderHttpConfig> {
   /// Provider name for logging and debugging
   String get providerName;
 
   /// Build provider-specific HTTP headers
-  Map<String, String> buildHeaders(dynamic config);
+  Map<String, String> buildHeaders(TConfig config);
 
   /// Get list of provider-specific enhancers
-  List<DioEnhancer> getEnhancers(dynamic config);
+  List<DioEnhancer> getEnhancers(TConfig config);
 
   /// Get base URL for the provider
-  String getBaseUrl(dynamic config);
+  String getBaseUrl(TConfig config);
 
   /// Get timeout configuration
-  Duration? getTimeout(dynamic config);
+  Duration? getTimeout(TConfig config);
 }
 
 /// Interface for composable Dio enhancements
@@ -50,9 +50,9 @@ class DioClientFactory {
   /// 1. Custom Dio client (if provided via extensions)
   /// 2. HTTP configuration with provider strategy
   /// 3. Provider defaults
-  static Dio create({
-    required ProviderDioStrategy strategy,
-    required ProviderHttpConfig config,
+  static Dio create<TConfig extends ProviderHttpConfig>({
+    required ProviderDioStrategy<TConfig> strategy,
+    required TConfig config,
   }) {
     // Extract custom Dio from config extensions
     final customDio = _extractCustomDio(config);
@@ -67,17 +67,19 @@ class DioClientFactory {
   }
 
   /// Extract custom Dio from config extensions.
-  static Dio? _extractCustomDio(ProviderHttpConfig config) {
+  static Dio? _extractCustomDio<TConfig extends ProviderHttpConfig>(
+    TConfig config,
+  ) {
     final original = config.originalConfig;
     if (original == null) return null;
     return original.getExtension<Dio>(LLMConfigKeys.customDio);
   }
 
   /// Enhance custom Dio with provider-specific requirements.
-  static Dio _enhanceCustomDio(
+  static Dio _enhanceCustomDio<TConfig extends ProviderHttpConfig>(
     Dio customDio,
-    ProviderDioStrategy strategy,
-    ProviderHttpConfig config,
+    ProviderDioStrategy<TConfig> strategy,
+    TConfig config,
   ) {
     // Ensure base URL is set if not already configured
     if (customDio.options.baseUrl.isEmpty) {
@@ -100,9 +102,9 @@ class DioClientFactory {
   }
 
   /// Create new configured Dio instance.
-  static Dio _createConfiguredDio(
-    ProviderDioStrategy strategy,
-    ProviderHttpConfig config,
+  static Dio _createConfiguredDio<TConfig extends ProviderHttpConfig>(
+    ProviderDioStrategy<TConfig> strategy,
+    TConfig config,
   ) {
     final originalConfig =
         config.originalConfig ?? _createFallbackConfig(strategy, config);
@@ -125,9 +127,9 @@ class DioClientFactory {
 
   /// Create minimal fallback config when [ProviderHttpConfig.originalConfig]
   /// is not available.
-  static LLMConfig _createFallbackConfig(
-    ProviderDioStrategy strategy,
-    ProviderHttpConfig config,
+  static LLMConfig _createFallbackConfig<TConfig extends ProviderHttpConfig>(
+    ProviderDioStrategy<TConfig> strategy,
+    TConfig config,
   ) {
     return LLMConfig(
       baseUrl: strategy.getBaseUrl(config),
@@ -163,15 +165,17 @@ abstract class BaseHttpProvider {
 }
 
 /// Base implementation for common provider strategy patterns
-abstract class BaseProviderDioStrategy implements ProviderDioStrategy {
+abstract class BaseProviderDioStrategy<TConfig extends ProviderHttpConfig>
+    implements ProviderDioStrategy<TConfig> {
   @override
-  String getBaseUrl(dynamic config) => config.baseUrl;
+  String getBaseUrl(TConfig config) => config.baseUrl;
 
   @override
-  Duration? getTimeout(dynamic config) {
+  Duration? getTimeout(TConfig config) {
     // Try direct timeout property first (common for provider-specific configs).
     try {
-      final directTimeout = config.timeout as Duration?;
+      final dynamicConfig = config as dynamic;
+      final Duration? directTimeout = dynamicConfig.timeout as Duration?;
       if (directTimeout != null) {
         return directTimeout;
       }
@@ -193,7 +197,7 @@ abstract class BaseProviderDioStrategy implements ProviderDioStrategy {
   }
 
   @override
-  List<DioEnhancer> getEnhancers(dynamic config) => [];
+  List<DioEnhancer> getEnhancers(TConfig config) => [];
 }
 
 /// Interceptor-based enhancer for adding custom interceptors

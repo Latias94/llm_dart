@@ -1,7 +1,4 @@
-// ToolLoopAgent tests currently validate the ChatMessage-based
-// LanguageModel surface as well as the newer ModelMessage path.
-// The legacy ChatMessage usage here is intentional for compatibility.
-// ignore_for_file: deprecated_member_use
+// ToolLoopAgent tests validate prompt-first agent loops using ModelMessage.
 
 import 'dart:convert';
 

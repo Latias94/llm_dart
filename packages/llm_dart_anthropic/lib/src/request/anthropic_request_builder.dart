@@ -1,7 +1,5 @@
-// Helper for building Anthropic request bodies from both legacy
-// ChatMessage lists and the newer ModelMessage prompt model. This
-// module intentionally uses ChatMessage as a compatibility layer.
-// ignore_for_file: deprecated_member_use
+// Helper for building Anthropic request bodies from prompt-first ModelMessage
+// conversations.
 
 import 'dart:convert';
 
@@ -36,22 +34,6 @@ class AnthropicRequestBuilder {
       // so we do not clamp user-provided values too aggressively.
       return const _MaxOutputTokensInfo(4096, false);
     }
-  }
-
-  /// Build request body from legacy [ChatMessage] list.
-  ///
-  /// Internally converts messages to the structured [ModelMessage]
-  /// model and delegates to [buildRequestBodyFromPrompt]. This keeps the
-  /// public API backwards-compatible while allowing newer call sites to
-  /// work directly with prompt messages.
-  Map<String, dynamic> buildRequestBody(
-    List<ChatMessage> messages,
-    List<Tool>? tools,
-    bool stream,
-  ) {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    return buildRequestBodyFromPrompt(promptMessages, tools, stream);
   }
 
   /// Build request body from structured [ModelMessage] list.
@@ -152,10 +134,7 @@ class AnthropicRequestBuilder {
     Map<String, dynamic>? toolCacheControl;
 
     for (final prompt in promptMessages) {
-      // Recover a legacy ChatMessage view so we can reuse the existing
-      // tool-extraction logic without duplicating it.
-      final legacyMessage = ChatMessage.fromPromptMessage(prompt);
-      final result = _extractToolsFromMessage(legacyMessage);
+      final result = _extractToolsFromPromptMessage(prompt);
       messageTools.addAll(result.tools);
       toolCacheControl ??= result.cacheControl;
     }
@@ -407,14 +386,14 @@ class AnthropicRequestBuilder {
     });
   }
 
-  ToolExtractionResult _extractToolsFromMessage(ChatMessage message) {
+  ToolExtractionResult _extractToolsFromPromptMessage(ModelMessage message) {
     final tools = <Tool>[];
     Map<String, dynamic>? cacheControl;
 
-    final anthropicData =
-        message.getExtension<Map<String, dynamic>>('anthropic');
-    if (anthropicData != null) {
-      final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
+    final rawProviderOptions = message.providerOptions['anthropic'];
+    if (rawProviderOptions is Map<String, dynamic>) {
+      final contentBlocks =
+          rawProviderOptions['contentBlocks'] as List<dynamic>?;
       if (contentBlocks != null) {
         for (final block in contentBlocks) {
           if (block is Map<String, dynamic>) {
@@ -567,9 +546,6 @@ class AnthropicRequestBuilder {
           mcpServers.map((server) => server.toJson()).toList();
     }
   }
-
-  // Legacy ChatMessage-based conversion is now routed through the
-  // ModelMessage-based implementation for non-system messages.
 
   Map<String, dynamic> convertTool(Tool tool) {
     try {

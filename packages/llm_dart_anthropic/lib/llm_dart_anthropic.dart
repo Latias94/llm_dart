@@ -11,3 +11,12 @@ export 'src/request/anthropic_request_builder.dart';
 export 'src/http/anthropic_dio_strategy.dart';
 export 'src/factory/anthropic_provider_factory.dart'
     show AnthropicProviderFactory, registerAnthropicProvider;
+
+// Vercel AI-style facade exports (model-centric API).
+export 'src/facade/anthropic_facade.dart'
+    show
+        AnthropicProviderSettings,
+        Anthropic,
+        AnthropicTools,
+        createAnthropic,
+        anthropic;

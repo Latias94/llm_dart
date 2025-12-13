@@ -1,7 +1,7 @@
-// Core capability and LanguageModel interfaces. These types still use the
-// legacy ChatMessage model in their signatures for backwards compatibility
-// with existing providers and helpers while newer APIs adopt ModelMessage.
-// ignore_for_file: deprecated_member_use_from_same_package
+// Core capability and LanguageModel interfaces.
+//
+// llm_dart_core is prompt-first: chat capabilities operate on ModelMessage and
+// ChatContentPart.
 
 import 'dart:convert';
 
@@ -1304,31 +1304,13 @@ class DefaultLanguageModel implements LanguageModel {
   final LLMConfig config;
 
   final ChatCapability _chat;
-  final PromptChatCapability? _promptChat;
 
   DefaultLanguageModel({
     required this.providerId,
     required this.modelId,
     required this.config,
     required ChatCapability chat,
-  })  : _chat = chat,
-        // Prefer the prompt-first interface when the underlying
-        // provider supports it. This avoids unnecessary conversions
-        // through the legacy ChatMessage model while keeping full
-        // backwards compatibility for providers that only implement
-        // ChatCapability.
-        _promptChat =
-            chat is PromptChatCapability ? chat as PromptChatCapability : null;
-
-  /// Convert prompt-first messages into legacy [ChatMessage]s.
-  ///
-  /// This bridges the [LanguageModel] prompt-first surface to providers
-  /// that still implement [ChatCapability] in terms of [ChatMessage].
-  List<ChatMessage> _toLegacyMessages(List<ModelMessage> messages) {
-    return messages
-        .map((message) => ChatMessage.fromPromptMessage(message))
-        .toList(growable: false);
-  }
+  }) : _chat = chat;
 
   @override
   Future<GenerateTextResult> generateText(
@@ -1399,25 +1381,12 @@ class DefaultLanguageModel implements LanguageModel {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
-    // Prefer prompt-first chat when available to avoid bridging
-    // through the legacy ChatMessage surface.
-    final ChatResponse response;
-    if (_promptChat != null) {
-      response = await _promptChat.chatPrompt(
-        messages,
-        tools: null,
-        options: options,
-        cancelToken: cancelToken,
-      );
-    } else {
-      final legacyMessages = _toLegacyMessages(messages);
-      response = await _chat.chatWithTools(
-        legacyMessages,
-        null,
-        options: options,
-        cancelToken: cancelToken,
-      );
-    }
+    final response = await _chat.chat(
+      messages,
+      tools: null,
+      options: options,
+      cancelToken: cancelToken,
+    );
 
     return GenerateTextResult(
       rawResponse: response,
@@ -1436,18 +1405,9 @@ class DefaultLanguageModel implements LanguageModel {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
-    if (_promptChat != null) {
-      return _promptChat.chatPromptStream(
-        messages,
-        tools: null,
-        options: options,
-        cancelToken: cancelToken,
-      );
-    }
-
-    final legacyMessages = _toLegacyMessages(messages);
     return _chat.chatStream(
-      legacyMessages,
+      messages,
+      tools: null,
       options: options,
       cancelToken: cancelToken,
     );
@@ -1676,109 +1636,27 @@ void _validateJsonAgainstSchema(
 /// - OpenAI: https://platform.openai.com/docs/guides/tools
 /// - Anthropic: https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview
 /// - xAI: https://docs.x.ai/docs/guides/function-calling
-abstract class PromptChatCapability {
-  /// Sends a chat request to the provider using structured prompt messages.
-  ///
-  /// This is the prompt-first variant of [ChatCapability.chatWithTools] and
-  /// should be preferred by new provider implementations. Callers that still
-  /// operate on [ChatMessage] can bridge via
-  /// [ChatMessage.fromPromptMessage]/[ChatMessage.toPromptMessage].
-  Future<ChatResponse> chatPrompt(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  });
-
-  /// Sends a streaming chat request using structured prompt messages.
-  ///
-  /// This mirrors [chatPrompt] but returns a [Stream] of [ChatStreamEvent]s
-  /// for streaming use cases.
-  Stream<ChatStreamEvent> chatPromptStream(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  });
-}
-
-/// Legacy chat capability interface that most LLM providers implement.
-///
-/// New provider implementations are encouraged to also implement
-/// [PromptChatCapability] and to internally prefer the structured
-/// [ModelMessage] model. The [ChatCapability] interface remains
-/// the primary entrypoint for backwards-compatible callers that use
-/// the simpler [ChatMessage] model.
 abstract class ChatCapability {
-  /// Sends a chat request to the provider with a sequence of messages.
+  /// Sends a chat request to the provider with a sequence of prompt messages.
   ///
-  /// [messages] - The conversation history as a list of chat messages
-  /// [options] - Optional per-call language model options
-  /// [cancelToken] - Optional token to cancel the request
-  ///
-  /// Returns the provider's response or throws an LLMError
+  /// [messages] is a prompt-first conversation represented by [ModelMessage]
+  /// and [ChatContentPart] values.
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chatWithTools(
-      messages,
-      null,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  /// Sends a chat request to the provider with a sequence of messages and tools.
-  ///
-  /// [messages] - The conversation history as a list of chat messages
-  /// [tools] - Optional list of tools to use in the chat
-  /// [options] - Optional per-call language model options
-  /// [cancelToken] - Optional token to cancel the request
-  ///
-  /// Returns the provider's response or throws an LLMError
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  });
-
-  /// Sends a streaming chat request to the provider
-  ///
-  /// [messages] - The conversation history as a list of chat messages
-  /// [tools] - Optional list of tools to use in the chat
-  /// [options] - Optional per-call language model options
-  /// [cancelToken] - Optional token to cancel the stream
-  ///
-  /// Returns a stream of chat events
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   });
 
-  /// Get current memory contents if provider supports memory
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  /// Summarizes a conversation history into a concise 2-3 sentence summary
+  /// Sends a streaming chat request to the provider.
   ///
-  /// [messages] - The conversation messages to summarize
-  ///
-  /// Returns a string containing the summary or throws an LLMError
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final prompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final request = [ChatMessage.user(prompt)];
-    final response = await chat(request);
-    final text = response.text;
-    if (text == null) {
-      throw const GenericError('no text in summary response');
-    }
-    return text;
-  }
+  /// This mirrors [chat] but returns a stream of [ChatStreamEvent] values.
+  Stream<ChatStreamEvent> chatStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  });
 }
 
 /// Kind of chat operation for middleware.
@@ -1814,7 +1692,7 @@ class ChatCallContext {
   final LLMConfig config;
 
   /// Conversation history messages for this call.
-  final List<ChatMessage> messages;
+  final List<ModelMessage> messages;
 
   /// Optional tools available for this call.
   final List<Tool>? tools;
@@ -1847,7 +1725,7 @@ class ChatCallContext {
     String? providerId,
     String? model,
     LLMConfig? config,
-    List<ChatMessage>? messages,
+    List<ModelMessage>? messages,
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -2752,7 +2630,7 @@ abstract class EnhancedChatCapability extends ChatCapability {
   ///
   /// Returns the provider's response or throws an LLMError
   Future<ChatResponse> chatWithAdvancedTools(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     ToolChoice? toolChoice,
     StructuredOutputFormat? structuredOutput,
@@ -2767,7 +2645,7 @@ abstract class EnhancedChatCapability extends ChatCapability {
   ///
   /// Returns a stream of chat events
   Stream<ChatStreamEvent> chatStreamWithAdvancedTools(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     ToolChoice? toolChoice,
     StructuredOutputFormat? structuredOutput,

@@ -1,10 +1,7 @@
-// Google web search tests use ChatMessage-based prompts to verify
-// web search configuration and payload shaping for the Google chat
-// implementation.
-// ignore_for_file: deprecated_member_use
+// Google web search tests validate prompt-first ModelMessage inputs and
+// request shaping for web search configuration.
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import 'google_test_utils.dart';
 
@@ -20,7 +17,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      final messages = [ChatMessage.user('hello')];
+      final messages = [ModelMessage.userText('hello')];
       await chat.chat(messages);
 
       final body = client.lastRequestBody;
@@ -48,7 +45,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      final messages = [ChatMessage.user('hello')];
+      final messages = [ModelMessage.userText('hello')];
       await chat.chat(messages);
 
       final body = client.lastRequestBody;
@@ -85,7 +82,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      final messages = [ChatMessage.user('hello')];
+      final messages = [ModelMessage.userText('hello')];
       await chat.chat(messages);
 
       final body = client.lastRequestBody;
@@ -121,7 +118,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      final messages = [ChatMessage.user('hello')];
+      final messages = [ModelMessage.userText('hello')];
       await chat.chat(messages);
 
       final body = client.lastRequestBody;

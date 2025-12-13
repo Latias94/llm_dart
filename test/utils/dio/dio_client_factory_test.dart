@@ -379,9 +379,10 @@ void main() {
       ];
 
       for (final provider in providers) {
-        final strategy = provider['strategy'] as ProviderDioStrategy;
-        final config =
-            provider['config'] as ProviderHttpConfig; // ensure strong typing
+        // Use dynamic to let generic inference pick the correct config type
+        // for each provider-specific strategy.
+        final strategy = provider['strategy'] as dynamic;
+        final config = provider['config'] as ProviderHttpConfig;
 
         final dio = DioClientFactory.create(
           strategy: strategy,
@@ -469,9 +470,8 @@ void main() {
       ];
 
       for (final provider in providers) {
-        final strategy = provider['strategy'] as ProviderDioStrategy;
-        final config =
-            provider['config'] as ProviderHttpConfig; // ensure strong typing
+        final strategy = provider['strategy'] as dynamic;
+        final config = provider['config'] as ProviderHttpConfig;
 
         final dio = DioClientFactory.create(
           strategy: strategy,
@@ -553,9 +553,8 @@ void main() {
       ];
 
       for (final testCase in testCases) {
-        final strategy = testCase['strategy'] as ProviderDioStrategy;
-        final config =
-            testCase['config'] as ProviderHttpConfig; // ensure strong typing
+        final strategy = testCase['strategy'] as dynamic;
+        final config = testCase['config'] as ProviderHttpConfig;
         final expectedHeaders =
             testCase['expectedHeaders'] as Map<String, String>;
 

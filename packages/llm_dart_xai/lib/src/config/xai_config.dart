@@ -56,15 +56,10 @@ class XAIConfig implements ProviderHttpConfig {
     bool? liveSearchEnabled =
         config.getExtension<bool>(LLMConfigKeys.liveSearch);
 
-    final webSearchEnabled =
-        config.getExtension<bool>(LLMConfigKeys.webSearchEnabled);
-    if (webSearchEnabled == true &&
-        searchParams == null &&
-        liveSearchEnabled != true) {
-      liveSearchEnabled = true;
-      searchParams = SearchParameters.webSearch();
-    }
-
+    // Prefer a structured WebSearchConfig (if provided) over the simple
+    // webSearchEnabled flag. This allows callers like XAIBuilder.webSearch()
+    // to supply detailed search parameters while keeping
+    // enableWebSearch() as a convenient "on/off" switch.
     final dynamic webSearchConfig =
         config.getExtension<dynamic>(LLMConfigKeys.webSearchConfig);
     if (webSearchConfig != null && searchParams == null) {
@@ -90,6 +85,15 @@ class XAIConfig implements ProviderHttpConfig {
       } catch (_) {
         // If structure doesn't match, ignore and fall back to other config.
       }
+    }
+
+    final webSearchEnabled =
+        config.getExtension<bool>(LLMConfigKeys.webSearchEnabled);
+    if (webSearchEnabled == true &&
+        searchParams == null &&
+        liveSearchEnabled != true) {
+      liveSearchEnabled = true;
+      searchParams = SearchParameters.webSearch();
     }
 
     return XAIConfig(

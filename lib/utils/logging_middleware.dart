@@ -1,7 +1,4 @@
-// This middleware logs ChatMessage-based conversations flowing through the
-// legacy ChatCapability surface. New code should prefer prompt-first helpers,
-// but logging still works on the ChatMessage model for compatibility.
-// ignore_for_file: deprecated_member_use
+// Chat logging middleware for prompt-first ModelMessage conversations.
 
 import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
@@ -71,10 +68,18 @@ String _truncate(String value, int maxLength) {
   return '${value.substring(0, maxLength)}...<${value.length - maxLength} more chars>';
 }
 
-String _safeMessagePreview(ChatMessage message, int maxLength) {
-  final name = message.name != null ? ' (${message.name})' : '';
-  final content = _truncate(message.content, maxLength);
-  return '${message.role.name}$name: $content';
+String _safeMessagePreview(ModelMessage message, int maxLength) {
+  final text = message.parts
+      .whereType<TextContentPart>()
+      .map((p) => p.text)
+      .join('\n');
+
+  final preview = text.isNotEmpty
+      ? text
+      : message.parts.map((p) => p.runtimeType.toString()).join(', ');
+
+  final content = _truncate(preview, maxLength);
+  return '${message.role.name}: $content';
 }
 
 String _formatUsage(UsageInfo usage) {

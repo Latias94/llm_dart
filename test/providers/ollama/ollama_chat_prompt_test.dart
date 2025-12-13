@@ -1,11 +1,9 @@
-// Ollama chat prompt mapping tests use ChatMessage-based prompts to
-// validate compatibility with the Ollama Chat capability.
-// ignore_for_file: deprecated_member_use
+// Ollama chat prompt mapping tests validate prompt-first ModelMessage inputs.
 
 import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
+import 'package:llm_dart_core/llm_dart_core.dart' show ToolResultTextPayload;
 import 'package:test/test.dart';
 import 'ollama_test_utils.dart';
 
@@ -48,23 +46,21 @@ void main() {
       final client = CapturingOllamaClient(config);
       final chat = OllamaChat(client, config);
 
-      final messages = <ChatMessage>[
-        ChatMessage.user('Hello'),
-        ChatMessage.toolResult(
-          results: [
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: const FunctionCall(
-                name: 'get_weather',
-                arguments: '{"location":"Tokyo"}',
-              ),
+      final messages = <ModelMessage>[
+        ModelMessage.userText('Hello'),
+        const ModelMessage(
+          role: ChatRole.user,
+          parts: [
+            ToolResultContentPart(
+              toolCallId: 'call_1',
+              toolName: 'get_weather',
+              payload: ToolResultTextPayload('{"location":"Tokyo"}'),
             ),
           ],
         ),
       ];
 
-      await chat.chatWithTools(messages, null);
+      await chat.chat(messages);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);
@@ -108,13 +104,11 @@ void main() {
 
       final imageBytes = <int>[1, 2, 3, 4];
 
-      final messages = <ChatMessage>[
-        ChatMessage.image(
-          role: ChatRole.user,
-          mime: ImageMime.png,
-          data: imageBytes,
-          content: 'Describe this image',
-        ),
+      final messages = <ModelMessage>[
+        ChatPromptBuilder.user()
+            .text('Describe this image')
+            .imageBytes(imageBytes, mime: ImageMime.png)
+            .build(),
       ];
 
       await chat.chat(messages);

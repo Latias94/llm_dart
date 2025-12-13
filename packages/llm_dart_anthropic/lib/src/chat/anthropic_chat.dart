@@ -1,7 +1,4 @@
-// Anthropic chat capability implementation built on ChatMessage-based
-// ChatCapability for compatibility with the core library. Internally
-// it converts to ModelMessage-based prompts for request building.
-// ignore_for_file: deprecated_member_use
+// Anthropic chat capability implementation (prompt-first).
 
 import 'dart:convert';
 
@@ -14,7 +11,7 @@ import '../mcp/anthropic_mcp_models.dart';
 import '../request/anthropic_request_builder.dart';
 
 /// Anthropic Chat capability implementation for the sub-package.
-class AnthropicChat implements ChatCapability, PromptChatCapability {
+class AnthropicChat implements ChatCapability {
   final AnthropicClient client;
   final AnthropicConfig config;
   late final AnthropicRequestBuilder _requestBuilder;
@@ -30,24 +27,7 @@ class AnthropicChat implements ChatCapability, PromptChatCapability {
   String get chatEndpoint => 'messages';
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    return chatPrompt(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatPrompt(
+  Future<ChatResponse> chat(
     List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
@@ -69,23 +49,6 @@ class AnthropicChat implements ChatCapability, PromptChatCapability {
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async* {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    yield* chatPromptStream(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
     List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
@@ -114,39 +77,23 @@ class AnthropicChat implements ChatCapability, PromptChatCapability {
     }
   }
 
-  @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
+  Future<int> countTokens(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
   }) async {
-    return chatWithTools(
+    final requestBody = _requestBuilder.buildRequestBodyFromPrompt(
       messages,
-      null,
-      options: options,
-      cancelToken: cancelToken,
+      tools,
+      false,
     );
-  }
 
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final prompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final request = [ChatMessage.user(prompt)];
-    final response = await chat(request);
-    final text = response.text;
-    if (text == null) {
-      throw const GenericError('no text in summary response');
-    }
-    return text;
-  }
-
-  Future<int> countTokens(List<ChatMessage> messages,
-      {List<Tool>? tools}) async {
-    final requestBody = _buildTokenCountRequestBody(messages, tools);
+    // The count_tokens endpoint only needs the prompt shape; remove
+    // generation-specific settings to avoid provider-side validation errors.
+    requestBody.remove('max_tokens');
+    requestBody.remove('stream');
+    requestBody.remove('temperature');
+    requestBody.remove('top_p');
+    requestBody.remove('top_k');
 
     try {
       final responseData =
@@ -154,61 +101,20 @@ class AnthropicChat implements ChatCapability, PromptChatCapability {
       return responseData['input_tokens'] as int? ?? 0;
     } catch (e) {
       client.logger.warning('Failed to count tokens: $e');
-      final totalChars =
-          messages.map((m) => m.content.length).fold(0, (a, b) => a + b);
+
+      var totalChars = 0;
+      for (final message in messages) {
+        for (final part in message.parts) {
+          if (part is TextContentPart) {
+            totalChars += part.text.length;
+          } else if (part is ReasoningContentPart) {
+            totalChars += part.text.length;
+          }
+        }
+      }
+
       return (totalChars / 4).ceil();
     }
-  }
-
-  Map<String, dynamic> _buildTokenCountRequestBody(
-    List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) {
-    final thinkingEnabled = config.reasoning && config.supportsReasoning;
-
-    final anthropicMessages = <Map<String, dynamic>>[];
-    final systemMessages = <String>[];
-
-    for (final message in messages) {
-      if (message.role == ChatRole.system) {
-        systemMessages.add(message.content);
-      } else {
-        anthropicMessages.add(_convertMessage(message));
-      }
-    }
-
-    final body = <String, dynamic>{
-      'model': config.model,
-      'messages': anthropicMessages,
-    };
-
-    final allSystemPrompts = <String>[];
-    if (config.systemPrompt != null && config.systemPrompt!.isNotEmpty) {
-      allSystemPrompts.add(config.systemPrompt!);
-    }
-    allSystemPrompts.addAll(systemMessages);
-
-    if (allSystemPrompts.isNotEmpty) {
-      body['system'] = allSystemPrompts.join('\n\n');
-    }
-
-    final effectiveTools = tools ?? config.tools;
-    if (effectiveTools != null && effectiveTools.isNotEmpty) {
-      body['tools'] =
-          effectiveTools.map((t) => _requestBuilder.convertTool(t)).toList();
-    }
-
-    if (thinkingEnabled) {
-      final thinkingConfig = <String, dynamic>{
-        'type': 'enabled',
-      };
-      if (config.thinkingBudgetTokens != null) {
-        thinkingConfig['budget_tokens'] = config.thinkingBudgetTokens;
-      }
-      body['thinking'] = thinkingConfig;
-    }
-
-    return body;
   }
 
   ChatResponse _parseResponse(Map<String, dynamic> responseData) {
@@ -466,157 +372,6 @@ class AnthropicChat implements ChatCapability, PromptChatCapability {
     }
 
     return null;
-  }
-
-  Map<String, dynamic> _convertMessage(ChatMessage message) {
-    final content = <Map<String, dynamic>>[];
-
-    final anthropicData =
-        message.getExtension<Map<String, dynamic>>('anthropic');
-
-    Map<String, dynamic>? cacheControl;
-    if (anthropicData != null) {
-      final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
-      if (contentBlocks != null) {
-        for (final block in contentBlocks) {
-          if (block is Map<String, dynamic>) {
-            if (block['cache_control'] != null && block['text'] == '') {
-              cacheControl = block['cache_control'];
-              continue;
-            }
-            if (block['type'] == 'tools') {
-              continue;
-            }
-            content.add(block);
-          }
-        }
-      }
-
-      if (message.content.isNotEmpty) {
-        final textBlock = <String, dynamic>{
-          'type': 'text',
-          'text': message.content
-        };
-        if (cacheControl != null) {
-          textBlock['cache_control'] = cacheControl;
-        }
-        content.add(textBlock);
-      }
-    } else {
-      switch (message.messageType) {
-        case TextMessage():
-          content.add({'type': 'text', 'text': message.content});
-          break;
-        case ImageMessage(mime: final mime, data: final data):
-          final supportedFormats = [
-            'image/jpeg',
-            'image/png',
-            'image/gif',
-            'image/webp'
-          ];
-          if (!supportedFormats.contains(mime.mimeType)) {
-            content.add({
-              'type': 'text',
-              'text':
-                  '[Unsupported image format: ${mime.mimeType}. Supported formats: ${supportedFormats.join(', ')}]',
-            });
-          } else {
-            content.add({
-              'type': 'image',
-              'source': {
-                'type': 'base64',
-                'media_type': mime.mimeType,
-                'data': base64Encode(data),
-              },
-            });
-          }
-          break;
-        case FileMessage(mime: final mime, data: final data):
-          if (mime.mimeType == 'application/pdf') {
-            if (!config.supportsPDF) {
-              content.add({
-                'type': 'text',
-                'text':
-                    '[PDF documents are not supported by model ${config.model}]',
-              });
-            } else {
-              content.add({
-                'type': 'document',
-                'source': {
-                  'type': 'base64',
-                  'media_type': 'application/pdf',
-                  'data': base64Encode(data),
-                },
-              });
-            }
-          } else {
-            content.add({
-              'type': 'text',
-              'text':
-                  '[File type ${mime.description} (${mime.mimeType}) is not supported by Anthropic. Only PDF documents are supported.]',
-            });
-          }
-          break;
-        case ImageUrlMessage(url: final url):
-          content.add({
-            'type': 'text',
-            'text':
-                '[Image URL not supported by Anthropic. Please upload the image directly: $url]',
-          });
-          break;
-        case ToolUseMessage(toolCalls: final toolCalls):
-          for (final toolCall in toolCalls) {
-            try {
-              final input = jsonDecode(toolCall.function.arguments);
-              content.add({
-                'type': 'tool_use',
-                'id': toolCall.id,
-                'name': toolCall.function.name,
-                'input': input,
-              });
-            } catch (e) {
-              client.logger.warning(
-                'Failed to parse tool call arguments: ${toolCall.function.arguments}, error: $e',
-              );
-              content.add({
-                'type': 'text',
-                'text':
-                    '[Error: Invalid tool call arguments for ${toolCall.function.name}]',
-              });
-            }
-          }
-          break;
-        case ToolResultMessage(results: final results):
-          for (final result in results) {
-            bool isError = false;
-            String resultContent = result.function.arguments;
-
-            try {
-              final parsed = jsonDecode(resultContent);
-              if (parsed is Map<String, dynamic>) {
-                isError = parsed['error'] != null ||
-                    parsed['is_error'] == true ||
-                    parsed['success'] == false;
-              }
-            } catch (_) {
-              final lowerContent = resultContent.toLowerCase();
-              isError = lowerContent.contains('error') ||
-                  lowerContent.contains('failed') ||
-                  lowerContent.contains('exception');
-            }
-
-            content.add({
-              'type': 'tool_result',
-              'tool_use_id': result.id,
-              'content': resultContent,
-              'is_error': isError,
-            });
-          }
-          break;
-      }
-    }
-
-    return {'role': message.role.name, 'content': content};
   }
 }
 

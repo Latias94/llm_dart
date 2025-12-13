@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import '../../test_utils/model_message_test_extensions.dart';
 
 /// Test suite for Anthropic tools caching API structure validation
 /// Tests that tools caching produces correct API request structure

@@ -1,6 +1,5 @@
-// Response message view tests convert between ChatMessage-based views
-// and the structured content-part representation to validate mapping.
-// ignore_for_file: deprecated_member_use
+// Response message view tests validate conversion into assistant/tool
+// message groupings for prompt-first ModelMessage conversations.
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
@@ -14,7 +13,7 @@ import 'package:test/test.dart';
 ///   single assistant message.
 /// - Tool-result parts are grouped into a separate "tool" message
 ///   represented here as a user-role message, which matches how
-///   tool results are typically encoded via [ChatMessage.toolResult].
+///   tool results are typically sent back to providers.
 List<ModelMessage> _toResponseModelMessages(List<ChatContentPart> parts) {
   final assistantParts = <ChatContentPart>[];
   final toolResultParts = <ToolResultContentPart>[];

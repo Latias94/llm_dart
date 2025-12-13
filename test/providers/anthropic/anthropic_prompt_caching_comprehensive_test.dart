@@ -1,14 +1,14 @@
-// Comprehensive Anthropic prompt caching tests validate how
-// MessageBuilder and ChatMessage interact to build cached prompts.
-// ignore_for_file: deprecated_member_use
+// Comprehensive Anthropic prompt caching tests validate how MessageBuilder
+// constructs prompt-first ModelMessage instances and attaches Anthropic caching
+// metadata for request building.
 
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
+import '../../test_utils/model_message_test_extensions.dart';
 
 /// Comprehensive test suite for Anthropic prompt caching according to correct design
 /// Tests MessageBuilder-level caching where:
-/// - One MessageBuilder = One ChatMessage
+/// - One MessageBuilder = One ModelMessage
 /// - .cache() applies to ALL content in the MessageBuilder (texts + tools)
 /// - Multiple .text() calls are merged with newlines
 /// - Users control caching granularity by creating multiple MessageBuilders
@@ -366,7 +366,7 @@ void main() {
       test('Complex conversation with mixed caching strategies', () {
         // Demonstrate a realistic conversation with different caching needs
 
-        final conversation = <ChatMessage>[];
+        final conversation = <ModelMessage>[];
 
         // 1. System message with tools - long-term cache
         conversation.add(MessageBuilder.system()

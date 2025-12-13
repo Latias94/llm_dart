@@ -55,7 +55,9 @@ class GoogleLLMBuilder {
   ///
   /// Valid values: ReasoningEffort.low, ReasoningEffort.medium, ReasoningEffort.high
   GoogleLLMBuilder reasoningEffort(ReasoningEffort effort) {
-    _baseBuilder.extension(LLMConfigKeys.reasoningEffort, effort);
+    // Delegate to the base builder so that the extension value is stored
+    // using the canonical string representation (low/medium/high).
+    _baseBuilder.reasoningEffort(effort);
     return this;
   }
 
@@ -191,7 +193,7 @@ class GoogleLLMBuilder {
     );
 
     _baseBuilder
-      ..extension(LLMConfigKeys.webSearchEnabled, true)
+      ..enableWebSearch()
       ..extension(LLMConfigKeys.webSearchConfig, config);
 
     return this;

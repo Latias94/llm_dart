@@ -1,11 +1,8 @@
-// Streaming structured object helper tests rely on ChatMessage-based
-// prompts to validate backwards compatibility of streamObject.
-// ignore_for_file: deprecated_member_use
+// Streaming structured object helper tests (prompt-first).
 
 import 'dart:async';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import '../utils/mock_provider_factory.dart';
 
@@ -39,7 +36,8 @@ class FakeStreamChatResponse implements ChatResponse {
 class FakeStreamProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -47,22 +45,8 @@ class FakeStreamProvider implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chat(
-      messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -72,13 +56,6 @@ class FakeStreamProvider implements ChatCapability {
     yield const TextDeltaEvent('42}');
     yield CompletionEvent(FakeStreamChatResponse('{"value":42}'));
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 }
 
 void main() {
@@ -315,7 +292,8 @@ void main() {
 class _CompletionOnlyStreamProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -323,35 +301,14 @@ class _CompletionOnlyStreamProvider implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chat(
-      messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     yield CompletionEvent(FakeStreamChatResponse('{"value":13}'));
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 }
 
 /// Stream provider that emits JSON which does not conform to the
@@ -362,7 +319,8 @@ class _SchemaMismatchStreamProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -370,22 +328,8 @@ class _SchemaMismatchStreamProvider implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chat(
-      messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -394,13 +338,6 @@ class _SchemaMismatchStreamProvider implements ChatCapability {
     yield const TextDeltaEvent('not-an-int"}');
     yield CompletionEvent(FakeStreamChatResponse(_invalidJson));
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 }
 
 class _WarningStreamResponse implements ChatResponse {
@@ -438,7 +375,8 @@ class _WarningStreamProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -446,18 +384,8 @@ class _WarningStreamProvider implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chat(messages, options: options, cancelToken: cancelToken);
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -465,20 +393,14 @@ class _WarningStreamProvider implements ChatCapability {
     yield const TextDeltaEvent('{"value":5}');
     yield CompletionEvent(_WarningStreamResponse('{"value":5}', _warnings));
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 }
 
 /// Stream provider that emits invalid JSON so that [streamObject] fails.
 class _InvalidJsonStreamProvider implements ChatCapability {
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -486,22 +408,8 @@ class _InvalidJsonStreamProvider implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chat(
-      messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -510,13 +418,6 @@ class _InvalidJsonStreamProvider implements ChatCapability {
     yield const TextDeltaEvent('json');
     yield CompletionEvent(FakeStreamChatResponse('still not json'));
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 }
 
 /// Stream provider that emits a fenced ```json code block containing the
@@ -527,7 +428,8 @@ class _CodeFenceStreamProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -535,22 +437,8 @@ class _CodeFenceStreamProvider implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chat(
-      messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -558,13 +446,6 @@ class _CodeFenceStreamProvider implements ChatCapability {
     yield const TextDeltaEvent(_payload);
     yield CompletionEvent(FakeStreamChatResponse(_payload));
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 }
 
 /// Stream provider that emits raw text with an embedded JSON object and
@@ -575,7 +456,8 @@ class _EmbeddedJsonStreamProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -583,22 +465,8 @@ class _EmbeddedJsonStreamProvider implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chat(
-      messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -612,11 +480,4 @@ class _EmbeddedJsonStreamProvider implements ChatCapability {
     );
     yield CompletionEvent(FakeStreamChatResponse(_payload));
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 }

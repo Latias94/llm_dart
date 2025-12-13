@@ -213,16 +213,16 @@ class OpenAICompatibleClient {
 }
 
 /// Minimal Dio strategy for OpenAI-compatible providers.
-class _OpenAICompatibleDioStrategy extends BaseProviderDioStrategy {
+class _OpenAICompatibleDioStrategy
+    extends BaseProviderDioStrategy<OpenAICompatibleConfig> {
   @override
   String get providerName => 'OpenAICompatible';
 
   @override
-  Map<String, String> buildHeaders(dynamic config) {
-    final c = config as OpenAICompatibleConfig;
+  Map<String, String> buildHeaders(OpenAICompatibleConfig config) {
     return {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ${c.apiKey}',
+      'Authorization': 'Bearer ${config.apiKey}',
     };
   }
 }

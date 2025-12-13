@@ -1,9 +1,7 @@
-// xAI chat tests exercise ChatMessage-based chat flows to validate
-// prompt mapping and streaming behavior for the xAI provider.
-// ignore_for_file: deprecated_member_use
+// xAI chat tests validate prompt-first request shaping for the xAI provider.
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
+import 'package:llm_dart_core/llm_dart_core.dart' show ToolResultTextPayload;
 import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
 import 'package:test/test.dart';
 import 'xai_test_utils.dart';
@@ -20,7 +18,7 @@ void main() {
       final client = CapturingXAIClient(config);
       final chat = xai.XAIChat(client, config);
 
-      final messages = [ChatMessage.user('Hello')];
+      final messages = [ModelMessage.userText('Hello')];
 
       await chat.chat(messages);
 
@@ -55,24 +53,23 @@ void main() {
       final client = CapturingXAIClient(config);
       final chat = xai.XAIChat(client, config);
 
-      final imageMessage = ChatMessage.imageUrl(
+      final imageMessage = ModelMessage(
         role: ChatRole.user,
-        url: 'https://example.com/image.jpg',
-        content: 'Look at this image',
+        parts: const [
+          TextContentPart('Look at this image'),
+          UrlFileContentPart('https://example.com/image.jpg'),
+        ],
       );
 
-      final toolCall = ToolCall(
-        id: 'tool-1',
-        callType: 'function',
-        function: const FunctionCall(
-          name: 'get_weather',
-          arguments: '{}',
-        ),
-      );
-
-      final toolResultMessage = ChatMessage.toolResult(
-        results: [toolCall],
-        content: '',
+      final toolResultMessage = ModelMessage(
+        role: ChatRole.user,
+        parts: const [
+          ToolResultContentPart(
+            toolCallId: 'tool-1',
+            toolName: 'get_weather',
+            payload: ToolResultTextPayload('{}'),
+          ),
+        ],
       );
 
       await chat.chat([imageMessage, toolResultMessage]);
@@ -135,7 +132,7 @@ void main() {
       final client = CapturingXAIClient(config);
       final chat = xai.XAIChat(client, config);
 
-      await chat.chatWithTools([ChatMessage.user('Hello')], null);
+      await chat.chat([ModelMessage.userText('Hello')]);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);
@@ -172,7 +169,7 @@ void main() {
       final client = CapturingXAIClient(config);
       final chat = xai.XAIChat(client, config);
 
-      await chat.chat([ChatMessage.user('Hello')]);
+      await chat.chat([ModelMessage.userText('Hello')]);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);

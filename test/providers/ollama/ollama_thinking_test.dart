@@ -52,26 +52,9 @@ void main() {
       }
     });
 
-    test(
-        'createOllamaReasoningProvider should create provider with thinking enabled',
-        () {
-      final provider = createOllamaReasoningProvider(
-        baseUrl: 'http://localhost:11434',
-        model: 'gpt-oss:latest',
-      );
-
-      expect(provider, isA<OllamaProvider>());
-    });
-
-    test('createOllamaProvider should accept thinking parameter', () {
-      final provider = createOllamaProvider(
-        baseUrl: 'http://localhost:11434',
-        model: 'gpt-oss:latest',
-        reasoning: true,
-      );
-
-      expect(provider, isA<OllamaProvider>());
-    });
+    // Provider-level convenience constructors were removed during the
+    // multi-package refactor. Use `OllamaProvider(OllamaConfig(...))`
+    // or the `ai().ollama()` builder shortcuts instead.
 
     test('OllamaConfig.fromLLMConfig should handle reasoning extension', () {
       final llmConfig = LLMConfig(

@@ -8,3 +8,11 @@ export 'src/models/elevenlabs_models.dart';
 export 'src/provider/elevenlabs_provider.dart';
 export 'src/factory/elevenlabs_provider_factory.dart'
     show ElevenLabsProviderFactory, registerElevenLabsProvider;
+
+// Vercel AI-style facade exports (model-centric API).
+export 'src/facade/elevenlabs_facade.dart'
+    show
+        ElevenLabsProviderSettings,
+        ElevenLabs,
+        createElevenLabs,
+        elevenlabs;

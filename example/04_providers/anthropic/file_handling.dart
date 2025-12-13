@@ -39,9 +39,11 @@ Future<void> demonstrateFileManagement(String apiKey) async {
   print('📁 File Management API:\n');
 
   try {
-    final provider = createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
+    final provider = AnthropicProvider(
+      AnthropicConfig(
+        apiKey: apiKey,
+        model: 'claude-sonnet-4-20250514',
+      ),
     );
 
     // Example 1: Upload a text file
@@ -572,7 +574,7 @@ Please provide:
 /// - Cross-document pattern recognition
 ///
 /// Best Practices:
-/// - Use createAnthropicProvider() for full file management access
+/// - Use `AnthropicProvider(AnthropicConfig(...))` for full file management access
 /// - Use appropriate MIME types for files
 /// - Provide context with file uploads
 /// - Use lower temperature for analytical tasks

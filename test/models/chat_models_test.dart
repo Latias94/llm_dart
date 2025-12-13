@@ -1,16 +1,13 @@
-// Chat model tests cover the legacy ChatMessage factories alongside
-// the newer ModelMessage and ChatContentPart abstractions.
-// ignore_for_file: deprecated_member_use
-
-import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'dart:typed_data';
 
+import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_core/llm_dart_core.dart' show ToolResultTextPayload;
+import 'package:test/test.dart';
+
 void main() {
-  group('Chat Models Tests', () {
-    group('ChatRole Enum', () {
-      test('should have correct values', () {
+  group('Chat Models', () {
+    group('ChatRole', () {
+      test('has expected values', () {
         expect(ChatRole.values, hasLength(3));
         expect(ChatRole.values, contains(ChatRole.user));
         expect(ChatRole.values, contains(ChatRole.assistant));
@@ -18,8 +15,8 @@ void main() {
       });
     });
 
-    group('ImageMime Enum', () {
-      test('should have correct MIME types', () {
+    group('ImageMime', () {
+      test('has expected MIME types', () {
         expect(ImageMime.jpeg.mimeType, equals('image/jpeg'));
         expect(ImageMime.png.mimeType, equals('image/png'));
         expect(ImageMime.gif.mimeType, equals('image/gif'));
@@ -27,13 +24,15 @@ void main() {
       });
     });
 
-    group('FileMime Class', () {
-      test('should have correct MIME types', () {
+    group('FileMime', () {
+      test('has expected MIME types', () {
         expect(FileMime.pdf.mimeType, equals('application/pdf'));
         expect(
-            FileMime.docx.mimeType,
-            equals(
-                'application/vnd.openxmlformats-officedocument.wordprocessingml.document'));
+          FileMime.docx.mimeType,
+          equals(
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          ),
+        );
         expect(FileMime.txt.mimeType, equals('text/plain'));
         expect(FileMime.csv.mimeType, equals('text/csv'));
         expect(FileMime.json.mimeType, equals('application/json'));
@@ -44,210 +43,104 @@ void main() {
         expect(FileMime.avi.mimeType, equals('video/x-msvideo'));
       });
 
-      test('should support equality comparison', () {
+      test('supports equality', () {
         expect(FileMime.pdf, equals(FileMime.pdf));
-        expect(FileMime.pdf == FileMime('application/pdf'), isTrue);
+        expect(FileMime.pdf == const FileMime('application/pdf'), isTrue);
         expect(FileMime.pdf == FileMime.txt, isFalse);
       });
 
-      test('should have correct string representation', () {
+      test('has expected string representation', () {
         expect(FileMime.pdf.toString(), equals('application/pdf'));
         expect(FileMime.json.toString(), equals('application/json'));
       });
     });
 
-    group('MessageType Classes', () {
-      test('TextMessage should be created correctly', () {
-        const message = TextMessage();
-        expect(message, isA<MessageType>());
+    group('ChatContentPart', () {
+      test('TextContentPart stores text', () {
+        const part = TextContentPart('Hello');
+        expect(part.text, equals('Hello'));
       });
 
-      test('ImageMessage should store data correctly', () {
+      test('ReasoningContentPart stores text', () {
+        const part = ReasoningContentPart('Think step by step');
+        expect(part.text, equals('Think step by step'));
+      });
+
+      test('FileContentPart stores file fields', () {
         final data = Uint8List.fromList([1, 2, 3, 4]);
-        final message = ImageMessage(ImageMime.png, data);
+        final part = FileContentPart(
+          FileMime.pdf,
+          data,
+          filename: 'test.pdf',
+          uri: 'https://example.com/test.pdf',
+        );
 
-        expect(message.mime, equals(ImageMime.png));
-        expect(message.data, equals(data));
+        expect(part.mime, equals(FileMime.pdf));
+        expect(part.data, equals(data));
+        expect(part.filename, equals('test.pdf'));
+        expect(part.uri, equals('https://example.com/test.pdf'));
       });
 
-      test('FileMessage should store data correctly', () {
-        final data = Uint8List.fromList([1, 2, 3, 4]);
-        final message = FileMessage(FileMime.pdf, data);
-
-        expect(message.mime, equals(FileMime.pdf));
-        expect(message.data, equals(data));
+      test('UrlFileContentPart stores url', () {
+        const part = UrlFileContentPart('https://example.com/image.jpg');
+        expect(part.url, equals('https://example.com/image.jpg'));
       });
 
-      test('ImageUrlMessage should store URL correctly', () {
-        const url = 'https://example.com/image.jpg';
-        const message = ImageUrlMessage(url);
+      test('ToolCallContentPart stores tool call fields', () {
+        const part = ToolCallContentPart(
+          toolName: 'get_weather',
+          argumentsJson: '{"location":"Boston"}',
+          toolCallId: 'call_1',
+        );
 
-        expect(message.url, equals(url));
+        expect(part.toolName, equals('get_weather'));
+        expect(part.argumentsJson, equals('{"location":"Boston"}'));
+        expect(part.toolCallId, equals('call_1'));
       });
 
-      test('ToolUseMessage should store tool calls correctly', () {
-        final toolCalls = [
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'test_function',
-              arguments: '{"param": "value"}',
-            ),
-          ),
-        ];
-        final message = ToolUseMessage(toolCalls);
+      test('ToolResultContentPart stores tool result fields', () {
+        const part = ToolResultContentPart(
+          toolCallId: 'call_1',
+          toolName: 'get_weather',
+          payload: ToolResultTextPayload('Sunny'),
+        );
 
-        expect(message.toolCalls, equals(toolCalls));
+        expect(part.toolCallId, equals('call_1'));
+        expect(part.toolName, equals('get_weather'));
+        expect(part.payload, isA<ToolResultTextPayload>());
       });
     });
 
-    group('ChatMessage Factory Methods', () {
-      test('should create user message correctly', () {
-        final message = ChatMessage.user('Hello, world!');
-
+    group('ModelMessage', () {
+      test('userText builds a user text message', () {
+        final message = ModelMessage.userText('Hi');
         expect(message.role, equals(ChatRole.user));
-        expect(message.content, equals('Hello, world!'));
-        expect(message.messageType, isA<TextMessage>());
-        expect(message.name, isNull);
+        expect(message.parts, hasLength(1));
+        expect(message.parts.first, isA<TextContentPart>());
+        expect((message.parts.first as TextContentPart).text, equals('Hi'));
       });
 
-      test('should create assistant message correctly', () {
-        final message = ChatMessage.assistant('Hello! How can I help?');
-
-        expect(message.role, equals(ChatRole.assistant));
-        expect(message.content, equals('Hello! How can I help?'));
-        expect(message.messageType, isA<TextMessage>());
-        expect(message.name, isNull);
-      });
-
-      test('should create system message correctly', () {
-        final message = ChatMessage.system(
-          'You are a helpful assistant',
-          name: 'system',
-        );
-
+      test('systemText builds a system text message', () {
+        final message = ModelMessage.systemText('System');
         expect(message.role, equals(ChatRole.system));
-        expect(message.content, equals('You are a helpful assistant'));
-        expect(message.messageType, isA<TextMessage>());
-        expect(message.name, equals('system'));
+        expect(message.parts, hasLength(1));
+        expect((message.parts.first as TextContentPart).text, equals('System'));
       });
 
-      test('should create image message correctly', () {
-        final data = Uint8List.fromList([1, 2, 3, 4]);
-        final message = ChatMessage.image(
-          role: ChatRole.user,
-          mime: ImageMime.png,
-          data: data,
-          content: 'Image description',
-        );
-
-        expect(message.role, equals(ChatRole.user));
-        expect(message.content, equals('Image description'));
-        expect(message.messageType, isA<ImageMessage>());
-
-        final imageMessage = message.messageType as ImageMessage;
-        expect(imageMessage.mime, equals(ImageMime.png));
-        expect(imageMessage.data, equals(data));
-      });
-
-      test('should create image URL message correctly', () {
-        const url = 'https://example.com/image.jpg';
-        final message = ChatMessage.imageUrl(
-          role: ChatRole.user,
-          url: url,
-          content: 'Image from URL',
-        );
-
-        expect(message.role, equals(ChatRole.user));
-        expect(message.content, equals('Image from URL'));
-        expect(message.messageType, isA<ImageUrlMessage>());
-
-        final urlMessage = message.messageType as ImageUrlMessage;
-        expect(urlMessage.url, equals(url));
-      });
-
-      test('should create file message correctly', () {
-        final data = Uint8List.fromList([1, 2, 3, 4]);
-        final message = ChatMessage.file(
-          role: ChatRole.user,
-          mime: FileMime.pdf,
-          data: data,
-          content: 'PDF document',
-        );
-
-        expect(message.role, equals(ChatRole.user));
-        expect(message.content, equals('PDF document'));
-        expect(message.messageType, isA<FileMessage>());
-
-        final fileMessage = message.messageType as FileMessage;
-        expect(fileMessage.mime, equals(FileMime.pdf));
-        expect(fileMessage.data, equals(data));
-      });
-
-      test('should create PDF message correctly', () {
-        final data = Uint8List.fromList([1, 2, 3, 4]);
-        final message = ChatMessage.pdf(
-          role: ChatRole.user,
-          data: data,
-          content: 'PDF document',
-        );
-
-        expect(message.role, equals(ChatRole.user));
-        expect(message.content, equals('PDF document'));
-        expect(message.messageType, isA<FileMessage>());
-
-        final fileMessage = message.messageType as FileMessage;
-        expect(fileMessage.mime, equals(FileMime.pdf));
-        expect(fileMessage.data, equals(data));
-      });
-
-      test('should create tool use message correctly', () {
-        final toolCalls = [
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'test_function',
-              arguments: '{"param": "value"}',
-            ),
-          ),
-        ];
-        final message = ChatMessage.toolUse(
-          toolCalls: toolCalls,
-          content: 'Using tools',
-        );
-
+      test('assistantText builds an assistant text message', () {
+        final message = ModelMessage.assistantText('Hello');
         expect(message.role, equals(ChatRole.assistant));
-        expect(message.content, equals('Using tools'));
-        expect(message.messageType, isA<ToolUseMessage>());
-
-        final toolMessage = message.messageType as ToolUseMessage;
-        expect(toolMessage.toolCalls, equals(toolCalls));
+        expect(message.parts, hasLength(1));
+        expect((message.parts.first as TextContentPart).text, equals('Hello'));
       });
 
-      test('should create tool result message correctly', () {
-        final results = [
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'test_function',
-              arguments: '{"result": "success"}',
-            ),
-          ),
-        ];
-        final message = ChatMessage.toolResult(
-          results: results,
-          content: 'Tool results',
+      test('supports providerOptions', () {
+        final message = ModelMessage.userText(
+          'Hi',
+          providerOptions: const {'custom': true},
         );
 
-        expect(message.role, equals(ChatRole.user));
-        expect(message.content, equals('Tool results'));
-        expect(message.messageType, isA<ToolResultMessage>());
-
-        final resultMessage = message.messageType as ToolResultMessage;
-        expect(resultMessage.results, equals(results));
+        expect(message.providerOptions, containsPair('custom', true));
       });
     });
   });

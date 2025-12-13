@@ -1,6 +1,21 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
-/// Provider-specific configuration builder
+/// Provider-specific configuration builder (legacy).
+///
+/// This type predates the provider-specific builder pattern based on
+/// [LLMBuilder] (for example OpenAIBuilder, AnthropicBuilder,
+/// OllamaBuilder). New code should prefer the `ai().openai(...)`,
+/// `ai().anthropic(...)`, and related helpers instead of constructing
+/// [ProviderConfig] directly.
+///
+/// It is kept for backwards compatibility and tests only and will be
+/// removed in a future breaking release.
+@Deprecated(
+  'ProviderConfig is legacy. Use provider-specific builders like '
+  'OpenAIBuilder / AnthropicBuilder / OllamaBuilder via '
+  'ai().openai((o) => ...), ai().anthropic((a) => ...), etc. '
+  'This type will be removed in a future breaking release.',
+)
 class ProviderConfig {
   final Map<String, dynamic> _config = {};
 

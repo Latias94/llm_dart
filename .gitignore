@@ -30,3 +30,10 @@ coverage/
 
 # Claude Code configuration
 CLAUDE.md
+
+# Local reference repositories (not part of the Dart workspace)
+repo-ref/
+
+# Local documentation drafts (not committed yet)
+docs/
+api.md

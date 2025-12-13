@@ -1,9 +1,7 @@
-// Default settings middleware tests work on ChatMessage-based chat
-// flows to validate system prompt injection and default tooling.
-// ignore_for_file: deprecated_member_use
+// Default settings middleware tests validate system prompt injection and
+// default tooling (prompt-first).
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import '../utils/mock_provider_factory.dart';
 
@@ -15,29 +13,23 @@ class _DefaultSettingsChatProvider
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return chatWithTools(
-      messages,
-      null,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     // Encode messages and tools into the response text so tests can
     // verify that the middleware modified them correctly.
-    final messagePart =
-        messages.map((m) => '${m.role.name}:${m.content}').toList().join('|');
+    final messagePart = messages
+        .map((m) {
+          final text = m.parts
+              .whereType<TextContentPart>()
+              .map((part) => part.text)
+              .join();
+          return '${m.role.name}:$text';
+        })
+        .toList()
+        .join('|');
     final toolPart = tools == null || tools.isEmpty
         ? 'tools:[]'
         : 'tools:[${tools.map((t) => t.function.name).join(',')}]';
@@ -46,25 +38,18 @@ class _DefaultSettingsChatProvider
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
-    final response = await chatWithTools(
+    final response = await chat(
       messages,
-      tools,
+      tools: tools,
       cancelToken: cancelToken,
     );
     yield CompletionEvent(response);
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 
   @override
   Set<LLMCapability> get supportedCapabilities =>
@@ -126,7 +111,7 @@ void main() {
           .middlewares([middleware]).buildWithMiddleware();
 
       final response = await provider.chat([
-        ChatMessage.user('Hello'),
+        ModelMessage.userText('Hello'),
       ]) as _DefaultSettingsChatResponse;
 
       // Expect system message to be injected at the beginning.
@@ -147,8 +132,8 @@ void main() {
           .middlewares([middleware]).buildWithMiddleware();
 
       final response = await provider.chat([
-        ChatMessage.system('Existing system'),
-        ChatMessage.user('Hello'),
+        ModelMessage.systemText('Existing system'),
+        ModelMessage.userText('Hello'),
       ]) as _DefaultSettingsChatResponse;
 
       // Expect original system message to remain first, without duplication.
@@ -179,7 +164,7 @@ void main() {
           .middlewares([middleware]).buildWithMiddleware();
 
       final response = await provider.chat([
-        ChatMessage.user('Hello'),
+        ModelMessage.userText('Hello'),
       ]) as _DefaultSettingsChatResponse;
 
       expect(response.text, endsWith('tools:[test_tool]'));

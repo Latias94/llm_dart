@@ -8,12 +8,12 @@ import '../config/phind_config.dart';
 /// - Empty User-Agent header (required by Phind API)
 /// - Specific Accept headers
 /// - Identity encoding
-class PhindDioStrategy extends BaseProviderDioStrategy {
+class PhindDioStrategy extends BaseProviderDioStrategy<PhindConfig> {
   @override
   String get providerName => 'Phind';
 
   @override
-  Map<String, String> buildHeaders(dynamic config) {
+  Map<String, String> buildHeaders(PhindConfig config) {
     return {
       'Content-Type': 'application/json',
       'User-Agent': '',
@@ -23,8 +23,7 @@ class PhindDioStrategy extends BaseProviderDioStrategy {
   }
 
   @override
-  Duration? getTimeout(dynamic config) {
-    final phindConfig = config as PhindConfig;
-    return phindConfig.timeout ?? const Duration(seconds: 60);
+  Duration? getTimeout(PhindConfig config) {
+    return config.timeout ?? const Duration(seconds: 60);
   }
 }

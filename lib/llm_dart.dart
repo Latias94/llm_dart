@@ -258,8 +258,7 @@ export 'core/registry.dart';
 export 'core/base_http_provider.dart';
 
 // Provider exports
-export 'providers/openai/openai.dart'
-    hide createDeepSeekProvider, createGroqProvider;
+export 'providers/openai/openai.dart';
 export 'providers/anthropic/anthropic.dart';
 export 'providers/anthropic/client.dart';
 export 'providers/anthropic/models.dart';
@@ -287,11 +286,8 @@ export 'builder/provider_config.dart';
 
 // Utility exports
 //
-// ConfigUtils is still exposed via a legacy shim (the implementation
-// has moved into llm_dart_core). Other capabilities and registry helpers
-// are re-exported directly from llm_dart_core to avoid depending on
-// additional shims in this package.
-export 'utils/config_utils.dart';
+// Other capabilities and registry helpers are re-exported directly from
+// llm_dart_core.
 export 'package:llm_dart_core/llm_dart_core.dart'
     show CapabilityUtils, CapabilityError, CapabilityValidationReport;
 export 'package:llm_dart_core/llm_dart_core.dart'

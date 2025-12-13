@@ -11,3 +11,13 @@ export 'src/tts/google_tts.dart';
 export 'src/files/google_files.dart';
 export 'src/factory/google_provider_factory.dart'
     show GoogleProviderFactory, registerGoogleProvider;
+
+// Vercel AI-style facade exports (model-centric API).
+export 'src/facade/google_facade.dart'
+    show
+        GoogleGenerativeAIProviderSettings,
+        GoogleGenerativeAI,
+        GoogleProviderDefinedTools,
+        GoogleTools,
+        createGoogleGenerativeAI,
+        google;

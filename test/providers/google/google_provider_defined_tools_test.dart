@@ -2,10 +2,8 @@
 // These tests exercise the LanguageModelCallOptions.callTools path and
 // ensure that provider-defined tool specs are converted into the correct
 // Google API "tools" payload.
-// ignore_for_file: deprecated_member_use
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 
 import 'google_test_utils.dart';
@@ -21,7 +19,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      final messages = [ChatMessage.user('hello')];
+      final messages = [ModelMessage.userText('hello')];
 
       final options = LanguageModelCallOptions(
         callTools: const [
@@ -31,7 +29,7 @@ void main() {
         ],
       );
 
-      await chat.chatWithTools(messages, null, options: options);
+      await chat.chat(messages, options: options);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);
@@ -53,7 +51,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      final messages = [ChatMessage.user('hello')];
+      final messages = [ModelMessage.userText('hello')];
 
       final options = LanguageModelCallOptions(
         callTools: const [
@@ -67,7 +65,7 @@ void main() {
         ],
       );
 
-      await chat.chatWithTools(messages, null, options: options);
+      await chat.chat(messages, options: options);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);
@@ -97,7 +95,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      final messages = [ChatMessage.user('hello')];
+      final messages = [ModelMessage.userText('hello')];
 
       final options = LanguageModelCallOptions(
         callTools: const [
@@ -110,7 +108,7 @@ void main() {
         ],
       );
 
-      await chat.chatWithTools(messages, null, options: options);
+      await chat.chat(messages, options: options);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);
@@ -134,7 +132,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      final messages = [ChatMessage.user('hello')];
+      final messages = [ModelMessage.userText('hello')];
 
       final functionTool = Tool.function(
         name: 'get_weather',
@@ -158,7 +156,7 @@ void main() {
         ],
       );
 
-      await chat.chatWithTools(messages, null, options: options);
+      await chat.chat(messages, options: options);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);
@@ -178,7 +176,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      final messages = [ChatMessage.user('hello')];
+      final messages = [ModelMessage.userText('hello')];
 
       final functionTool = Tool.function(
         name: 'get_weather',
@@ -200,7 +198,7 @@ void main() {
         toolChoice: const SpecificToolChoice('get_weather'),
       );
 
-      await chat.chatWithTools(messages, null, options: options);
+      await chat.chat(messages, options: options);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);

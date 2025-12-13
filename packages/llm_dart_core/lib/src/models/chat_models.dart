@@ -1,8 +1,7 @@
-// Chat and prompt models. This file defines both the legacy ChatMessage
-// model (kept for backwards compatibility) and the newer ModelMessage +
-// ChatContentPart prompt model. References to ChatMessage within this
-// file are intentional.
-// ignore_for_file: deprecated_member_use_from_same_package
+// Chat and prompt models.
+//
+// llm_dart_core is prompt-first: ModelMessage + ChatContentPart are the only
+// supported conversation types for chat capabilities.
 
 import 'dart:convert';
 import 'tool_models.dart';
@@ -285,53 +284,6 @@ class FunctionCall {
   String toString() => jsonEncode(toJson());
 }
 
-/// The type of a message in a chat conversation.
-sealed class MessageType {
-  const MessageType();
-}
-
-/// A text message
-class TextMessage extends MessageType {
-  const TextMessage();
-}
-
-/// An image message
-class ImageMessage extends MessageType {
-  final ImageMime mime;
-  final List<int> data;
-
-  const ImageMessage(this.mime, this.data);
-}
-
-/// File message for documents, audio, video, etc.
-class FileMessage extends MessageType {
-  final FileMime mime;
-  final List<int> data;
-
-  const FileMessage(this.mime, this.data);
-}
-
-/// An image URL message
-class ImageUrlMessage extends MessageType {
-  final String url;
-
-  const ImageUrlMessage(this.url);
-}
-
-/// A tool use message
-class ToolUseMessage extends MessageType {
-  final List<ToolCall> toolCalls;
-
-  const ToolUseMessage(this.toolCalls);
-}
-
-/// Tool result message
-class ToolResultMessage extends MessageType {
-  final List<ToolCall> results;
-
-  const ToolResultMessage(this.results);
-}
-
 /// ============================
 /// New content-part abstractions
 /// ============================
@@ -466,7 +418,7 @@ class ToolResultContentPart extends ChatContentPart {
 /// High-level model message built from structured content parts.
 ///
 /// This is the provider-agnostic, multi-part representation that providers
-/// should consume internally, instead of working directly with [ChatMessage].
+/// should consume internally for request/response mapping.
 class ModelMessage {
   final ChatRole role;
   final List<ChatContentPart> parts;
@@ -526,271 +478,6 @@ class ModelMessage {
       role: ChatRole.assistant,
       parts: <ChatContentPart>[TextContentPart(text)],
       providerOptions: providerOptions,
-    );
-  }
-}
-
-@Deprecated(
-  'ChatPromptMessage has been renamed to ModelMessage to better reflect '
-  'its role as the structured, model-facing message type. '
-  'Use ModelMessage instead. This alias will be removed in a future release.',
-)
-typedef ChatPromptMessage = ModelMessage;
-
-/// A single message in a chat conversation (legacy chat model).
-///
-/// New code should prefer the structured [ModelMessage] +
-/// [ChatContentPart] model for prompt construction. [ChatMessage]
-/// is kept primarily as a convenience and backwards-compatible
-/// wrapper around the underlying prompt messages.
-@Deprecated(
-  'ChatMessage is a legacy chat model. '
-  'Use ModelMessage + ChatContentPart for new code. '
-  'ChatMessage will be removed in a future breaking release.',
-)
-class ChatMessage {
-  /// The role of who sent this message (user or assistant)
-  final ChatRole role;
-
-  /// The type of the message (text, image, audio, video, etc)
-  final MessageType messageType;
-
-  /// The text content of the message
-  final String content;
-
-  /// Optional name for the participant (useful for system messages)
-  final String? name;
-
-  /// Provider-specific extensions
-  final Map<String, dynamic> extensions;
-
-  /// Internal key used to store structured [ChatContentPart] lists
-  /// inside [extensions] when a [ChatMessage] is constructed from a
-  /// [ModelMessage].
-  ///
-  /// This allows [ChatMessage.toPromptMessage] to recover the original
-  /// structured content parts and provider options.
-  static const String _promptPartsExtensionKey = '__llm_dart_prompt_parts';
-
-  const ChatMessage({
-    required this.role,
-    required this.messageType,
-    required this.content,
-    this.name,
-    this.extensions = const {},
-  });
-
-  // Extension helpers
-  T? getExtension<T>(String key) => extensions[key] as T?;
-  bool hasExtension(String key) => extensions.containsKey(key);
-
-  ChatMessage withExtension(String key, dynamic value) => ChatMessage(
-        role: role,
-        messageType: messageType,
-        content: content,
-        name: name,
-        extensions: {...extensions, key: value},
-      );
-
-  /// Create a [ChatMessage] from a structured [ModelMessage].
-  ///
-  /// The resulting message will:
-  /// - Preserve the [role] from the prompt.
-  /// - Store the prompt's [ChatContentPart] list in [extensions] under
-  ///   an internal key so that [toPromptMessage] can recover it.
-  /// - Merge the prompt's [providerOptions] into [extensions] so that
-  ///   provider-specific configuration is preserved.
-  ///
-  /// The [messageType] and [content] fields are left in a minimal,
-  /// placeholder state because the actual rich content lives in the
-  /// structured parts.
-  factory ChatMessage.fromPromptMessage(ModelMessage prompt) => ChatMessage(
-        role: prompt.role,
-        messageType: const TextMessage(),
-        content: '',
-        extensions: {
-          ...prompt.providerOptions,
-          _promptPartsExtensionKey: prompt.parts,
-        },
-      );
-
-  /// Create a user message
-  factory ChatMessage.user(String content) => ChatMessage(
-        role: ChatRole.user,
-        messageType: const TextMessage(),
-        content: content,
-      );
-
-  /// Create an assistant message
-  factory ChatMessage.assistant(String content) => ChatMessage(
-        role: ChatRole.assistant,
-        messageType: const TextMessage(),
-        content: content,
-      );
-
-  /// Create a system message
-  factory ChatMessage.system(
-    String content, {
-    String? name,
-  }) =>
-      ChatMessage(
-        role: ChatRole.system,
-        messageType: const TextMessage(),
-        content: content,
-        name: name,
-      );
-
-  /// Create an image message
-  factory ChatMessage.image({
-    required ChatRole role,
-    required ImageMime mime,
-    required List<int> data,
-    String content = '',
-  }) =>
-      ChatMessage(
-        role: role,
-        messageType: ImageMessage(mime, data),
-        content: content,
-      );
-
-  /// Create an image URL message
-  factory ChatMessage.imageUrl({
-    required ChatRole role,
-    required String url,
-    String content = '',
-  }) =>
-      ChatMessage(
-        role: role,
-        messageType: ImageUrlMessage(url),
-        content: content,
-      );
-
-  /// Create a file message
-  factory ChatMessage.file({
-    required ChatRole role,
-    required FileMime mime,
-    required List<int> data,
-    String content = '',
-  }) =>
-      ChatMessage(
-        role: role,
-        messageType: FileMessage(mime, data),
-        content: content,
-      );
-
-  /// Create a PDF document message (convenience method)
-  factory ChatMessage.pdf({
-    required ChatRole role,
-    required List<int> data,
-    String content = '',
-  }) =>
-      ChatMessage.file(
-        role: role,
-        mime: FileMime.pdf,
-        data: data,
-        content: content,
-      );
-
-  /// Create a tool use message
-  factory ChatMessage.toolUse({
-    required List<ToolCall> toolCalls,
-    String content = '',
-  }) =>
-      ChatMessage(
-        role: ChatRole.assistant,
-        messageType: ToolUseMessage(toolCalls),
-        content: content,
-      );
-
-  /// Create a tool result message
-  factory ChatMessage.toolResult({
-    required List<ToolCall> results,
-    String content = '',
-  }) =>
-      ChatMessage(
-        role: ChatRole.user,
-        messageType: ToolResultMessage(results),
-        content: content,
-      );
-
-  /// Convert this ChatMessage into a structured [ModelMessage].
-  ///
-  /// This provides a best-effort mapping from the legacy messageType-based
-  /// model to the new multi-part content model. Provider-specific extensions
-  /// are preserved at the message level via [ModelMessage.providerOptions].
-  ModelMessage toPromptMessage() {
-    // If this message was constructed from a ModelMessage, recover
-    // the original structured content parts and provider options.
-    final storedParts =
-        getExtension<List<ChatContentPart>>(_promptPartsExtensionKey);
-    if (storedParts != null) {
-      final options = Map<String, dynamic>.from(extensions);
-      options.remove(_promptPartsExtensionKey);
-      return ModelMessage(
-        role: role,
-        parts: storedParts,
-        providerOptions: options,
-      );
-    }
-
-    final parts = <ChatContentPart>[];
-
-    // Map primary messageType to one or more content parts.
-    switch (messageType) {
-      case TextMessage():
-        if (content.isNotEmpty) {
-          parts.add(TextContentPart(content));
-        }
-        break;
-      case ImageMessage(mime: final mime, data: final data):
-        if (content.isNotEmpty) {
-          parts.add(TextContentPart(content));
-        }
-        parts.add(FileContentPart(mime.toFileMime(), data));
-        break;
-      case FileMessage(mime: final mime, data: final data):
-        if (content.isNotEmpty) {
-          parts.add(TextContentPart(content));
-        }
-        parts.add(FileContentPart(mime, data));
-        break;
-      case ImageUrlMessage(url: final url):
-        if (content.isNotEmpty) {
-          parts.add(TextContentPart(content));
-        }
-        parts.add(UrlFileContentPart(url));
-        break;
-      case ToolUseMessage(toolCalls: final toolCalls):
-        if (content.isNotEmpty) {
-          parts.add(TextContentPart(content));
-        }
-        for (final call in toolCalls) {
-          parts.add(ToolCallContentPart(
-            toolName: call.function.name,
-            argumentsJson: call.function.arguments,
-            toolCallId: call.id,
-          ));
-        }
-        break;
-      case ToolResultMessage(results: final results):
-        if (content.isNotEmpty) {
-          parts.add(TextContentPart(content));
-        }
-        for (final result in results) {
-          // For now, interpret the arguments JSON as a text payload.
-          parts.add(ToolResultContentPart(
-            toolCallId: result.id,
-            toolName: result.function.name,
-            payload: ToolResultTextPayload(result.function.arguments),
-          ));
-        }
-        break;
-    }
-
-    return ModelMessage(
-      role: role,
-      parts: parts,
-      providerOptions: extensions,
     );
   }
 }
@@ -859,7 +546,7 @@ class MessageBuilder {
   String? _name;
 
   // Provider-specific options that should be attached to the resulting
-  // ChatMessage.extensions. Each provider can supply its own options map.
+  // ModelMessage.providerOptions. Each provider can supply its own options map.
   final Map<String, Map<String, dynamic>> _providerOptions = {};
 
   MessageBuilder._(this._role);
@@ -905,30 +592,54 @@ class MessageBuilder {
 
   /// Set provider-specific options for a given provider id.
   ///
-  /// These options will be merged into the ChatMessage.extensions entry
-  /// for that provider. If options already exist, the new values will
-  /// be merged on top.
+  /// These options will be merged into [ModelMessage.providerOptions] for that
+  /// provider. If options already exist, the new values will be merged on top.
   void setProviderOptions(String providerId, Map<String, dynamic> options) {
     final existing = _providerOptions[providerId] ?? <String, dynamic>{};
     _providerOptions[providerId] = {...existing, ...options};
   }
 
-  // Build ChatMessage with extensions
-  ChatMessage build() {
-    // Create universal text content, excluding tools blocks and empty text blocks
-    final textBlocks = _blocks.where(
-        (block) => block is! ToolsBlock && block.displayText.trim().isNotEmpty);
-    final content = textBlocks.map((block) => block.displayText).join('\n');
+  /// Build a prompt-first [ModelMessage].
+  ///
+  /// Provider-specific content blocks are stored in [ModelMessage.providerOptions]
+  /// so providers can interpret advanced features (e.g. Anthropic cache control)
+  /// without relying on legacy shims.
+  ModelMessage build() {
+    // Convert blocks into structured prompt parts.
+    final parts = <ChatContentPart>[];
 
-    // Group blocks by provider
-    final extensions = <String, dynamic>{};
+    for (final block in _blocks) {
+      if (block is ToolsBlock) continue;
+
+      final json = block.toJson();
+      final type = json['type'];
+      if (type == 'tools') {
+        // Tool definitions are handled out-of-band by provider request builders.
+        continue;
+      }
+
+      // Provider-specific cache markers (e.g. Anthropic cache_control flags)
+      // are metadata-only and should not surface as empty text parts.
+      if (block.providerId != 'universal' &&
+          type == 'text' &&
+          json['cache_control'] != null) {
+        final text = json['text'];
+        if (text is String && text.isEmpty) {
+          continue;
+        }
+      }
+
+      parts.add(TextContentPart(block.displayText));
+    }
+
+    // Group blocks by provider for providerOptions.
+    final providerOptions = <String, dynamic>{};
 
     final providerGroups = <String, List<ContentBlock>>{};
     final universalTools = <ToolsBlock>[];
 
     for (final block in _blocks) {
       if (block.providerId == 'universal') {
-        // Special handling for ToolsBlock - they might need to be moved to anthropic extension
         if (block is ToolsBlock) {
           universalTools.add(block);
         }
@@ -938,49 +649,47 @@ class MessageBuilder {
       providerGroups.putIfAbsent(block.providerId, () => []).add(block);
     }
 
-    // Check if we have Anthropic cache markers and tools that need to be combined
+    // Preserve the previous behavior where tools can be cached together with
+    // Anthropic cache markers by moving tool blocks into the Anthropic group
+    // when a cache marker is present.
     if (providerGroups.containsKey('anthropic') && universalTools.isNotEmpty) {
       final anthropicBlocks = providerGroups['anthropic']!;
 
-      // Check if there's a cache marker (empty text block with cache_control)
       final hasCacheMarker = anthropicBlocks.any((block) {
         final json = block.toJson();
         return json['cache_control'] != null && json['text'] == '';
       });
 
       if (hasCacheMarker) {
-        // Move tools to anthropic extension for caching
-        // Create AnthropicToolsBlock from universal ToolsBlock
         for (final toolsBlock in universalTools) {
-          // Create a new block that will be treated as anthropic-specific
-          final anthropicToolsBlock =
-              _AnthropicToolsBlockWrapper(toolsBlock.tools);
-          anthropicBlocks.add(anthropicToolsBlock);
+          anthropicBlocks.add(_AnthropicToolsBlockWrapper(toolsBlock.tools));
         }
       }
     }
 
-    // Create extensions for each provider
     for (final entry in providerGroups.entries) {
-      extensions[entry.key] = {
+      providerOptions[entry.key] = {
         'contentBlocks': entry.value.map((block) => block.toJson()).toList(),
       };
     }
 
-    // Merge provider-specific options into extensions
+    // Merge provider-specific options into providerOptions.
     for (final entry in _providerOptions.entries) {
       final providerId = entry.key;
       final options = entry.value;
-      final existing = extensions[providerId] as Map<String, dynamic>? ?? {};
-      extensions[providerId] = {...existing, ...options};
+      final existing =
+          providerOptions[providerId] as Map<String, dynamic>? ?? {};
+      providerOptions[providerId] = {...existing, ...options};
     }
 
-    return ChatMessage(
+    if (_name != null && _name!.isNotEmpty) {
+      providerOptions['name'] = _name;
+    }
+
+    return ModelMessage(
       role: _role,
-      messageType: const TextMessage(),
-      content: content,
-      name: _name,
-      extensions: extensions,
+      parts: parts,
+      providerOptions: providerOptions,
     );
   }
 }

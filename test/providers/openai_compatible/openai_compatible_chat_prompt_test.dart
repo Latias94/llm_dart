@@ -1,10 +1,7 @@
-// OpenAI-compatible chat prompt tests exercise ChatMessage-based
-// prompts and verify mapping into the generic OpenAI-compatible
-// request model.
-// ignore_for_file: deprecated_member_use
+// OpenAI-compatible chat prompt tests verify prompt-first ModelMessage mapping
+// into the OpenAI-compatible request model.
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:test/test.dart';
 import 'openai_compatible_test_utils.dart';
@@ -38,28 +35,28 @@ void main() {
       final client = CapturingOpenAICompatibleClient(config);
       final chat = OpenAICompatibleChat(client, config);
 
-      final messages = <ChatMessage>[
-        ChatMessage.user('Hello'),
-        ChatMessage.imageUrl(
+      final messages = <ModelMessage>[
+        ModelMessage.userText('Hello'),
+        ModelMessage(
           role: ChatRole.user,
-          url: 'https://example.com/image.png',
-          content: 'Look at this image',
+          parts: const [
+            TextContentPart('Look at this image'),
+            UrlFileContentPart('https://example.com/image.png'),
+          ],
         ),
-        ChatMessage.toolUse(
-          toolCalls: [
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: const FunctionCall(
-                name: 'get_weather',
-                arguments: '{"location":"Paris"}',
-              ),
+        const ModelMessage(
+          role: ChatRole.assistant,
+          parts: [
+            ToolCallContentPart(
+              toolName: 'get_weather',
+              argumentsJson: '{"location":"Paris"}',
+              toolCallId: 'call_1',
             ),
           ],
         ),
       ];
 
-      await chat.chatWithTools(messages, null);
+      await chat.chat(messages, tools: null);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);

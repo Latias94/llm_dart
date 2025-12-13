@@ -5,22 +5,21 @@ import '../config/elevenlabs_config.dart';
 /// ElevenLabs-specific Dio strategy implementation
 ///
 /// Handles ElevenLabs' unique authentication using xi-api-key header.
-class ElevenLabsDioStrategy extends BaseProviderDioStrategy {
+class ElevenLabsDioStrategy
+    extends BaseProviderDioStrategy<ElevenLabsConfig> {
   @override
   String get providerName => 'ElevenLabs';
 
   @override
-  Map<String, String> buildHeaders(dynamic config) {
-    final elevenLabsConfig = config as ElevenLabsConfig;
+  Map<String, String> buildHeaders(ElevenLabsConfig config) {
     return {
-      'xi-api-key': elevenLabsConfig.apiKey,
+      'xi-api-key': config.apiKey,
       'Content-Type': 'application/json',
     };
   }
 
   @override
-  Duration? getTimeout(dynamic config) {
-    final elevenLabsConfig = config as ElevenLabsConfig;
-    return elevenLabsConfig.timeout ?? const Duration(seconds: 60);
+  Duration? getTimeout(ElevenLabsConfig config) {
+    return config.timeout ?? const Duration(seconds: 60);
   }
 }

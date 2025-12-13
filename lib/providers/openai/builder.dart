@@ -29,7 +29,9 @@ class OpenAIBuilder {
   /// - Positive values: Discourage repetition
   /// - Range: -2.0 to 2.0
   OpenAIBuilder frequencyPenalty(double penalty) {
-    _baseBuilder.extension(LLMConfigKeys.frequencyPenalty, penalty);
+    // Delegate to the base builder so shared sampling configuration
+    // (frequencyPenalty) stays consistent across providers.
+    _baseBuilder.frequencyPenalty(penalty);
     return this;
   }
 
@@ -44,7 +46,9 @@ class OpenAIBuilder {
   /// - Positive values: Encourage new topics
   /// - Range: -2.0 to 2.0
   OpenAIBuilder presencePenalty(double penalty) {
-    _baseBuilder.extension(LLMConfigKeys.presencePenalty, penalty);
+    // Delegate to the base builder so shared sampling configuration
+    // (presencePenalty) stays consistent across providers.
+    _baseBuilder.presencePenalty(penalty);
     return this;
   }
 
@@ -77,7 +81,9 @@ class OpenAIBuilder {
   /// deterministically, such that repeated requests with the same seed
   /// and parameters should return the same result.
   OpenAIBuilder seed(int seedValue) {
-    _baseBuilder.extension(LLMConfigKeys.seed, seedValue);
+    // Delegate to the base builder so shared sampling configuration
+    // (seed) stays consistent across providers.
+    _baseBuilder.seed(seedValue);
     return this;
   }
 

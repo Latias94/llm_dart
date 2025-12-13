@@ -4,14 +4,11 @@
 /// behavior of the OpenAI Responses API implementation, including mocking
 /// and integration scenarios.
 ///
-/// These tests use ChatMessage-based prompts to verify compatibility
-/// with the legacy chat surface.
-// ignore_for_file: deprecated_member_use
+/// These tests use prompt-first ModelMessage inputs.
 library;
 
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:llm_dart/providers/openai/responses_capability.dart';
 
@@ -103,7 +100,7 @@ void main() {
 
       test('should handle empty message list', () {
         // Test that methods can accept empty message lists without API calls
-        final messages = <ChatMessage>[];
+        final messages = <ModelMessage>[];
         expect(messages, isEmpty);
         expect(responses.chat, isA<Function>());
         expect(responses.chatWithTools, isA<Function>());
@@ -111,10 +108,9 @@ void main() {
       });
 
       test('should handle single message', () {
-        final messages = [ChatMessage.user('Hello, world!')];
+        final messages = [ModelMessage.userText('Hello, world!')];
         expect(messages, hasLength(1));
         expect(messages.first.role, equals(ChatRole.user));
-        expect(messages.first.content, equals('Hello, world!'));
 
         // Verify methods exist without calling them
         expect(responses.chat, isA<Function>());
@@ -124,10 +120,10 @@ void main() {
 
       test('should handle multiple messages', () {
         final messages = [
-          ChatMessage.system('You are a helpful assistant.'),
-          ChatMessage.user('What is the weather like?'),
-          ChatMessage.assistant('I need to check the weather for you.'),
-          ChatMessage.user('Please check for San Francisco.'),
+          ModelMessage.systemText('You are a helpful assistant.'),
+          ModelMessage.userText('What is the weather like?'),
+          ModelMessage.assistantText('I need to check the weather for you.'),
+          ModelMessage.userText('Please check for San Francisco.'),
         ];
 
         expect(messages, hasLength(4));
@@ -144,9 +140,10 @@ void main() {
 
       test('should handle messages with different content types', () {
         final messages = [
-          ChatMessage.user('Describe this image'),
-          ChatMessage.user(
-              'What do you see in this image: https://example.com/image.jpg'),
+          ModelMessage.userText('Describe this image'),
+          ModelMessage.userText(
+            'What do you see in this image: https://example.com/image.jpg',
+          ),
         ];
 
         expect(messages, hasLength(2));
@@ -174,7 +171,7 @@ void main() {
       });
 
       test('should handle null tools', () {
-        final messages = [ChatMessage.user('Hello')];
+        final messages = [ModelMessage.userText('Hello')];
         expect(messages, hasLength(1));
 
         // Test that methods exist and can accept null tools without API calls
@@ -183,7 +180,7 @@ void main() {
       });
 
       test('should handle empty tools list', () {
-        final messages = [ChatMessage.user('Hello')];
+        final messages = [ModelMessage.userText('Hello')];
         final tools = <Tool>[];
 
         expect(messages, hasLength(1));
@@ -195,7 +192,7 @@ void main() {
       });
 
       test('should handle single tool', () {
-        final messages = [ChatMessage.user('What is the weather?')];
+        final messages = [ModelMessage.userText('What is the weather?')];
         final tools = [
           Tool.function(
             name: 'get_weather',
@@ -223,7 +220,8 @@ void main() {
       });
 
       test('should handle multiple tools', () {
-        final messages = [ChatMessage.user('Help me with weather and time')];
+        final messages =
+            [ModelMessage.userText('Help me with weather and time')];
         final tools = [
           Tool.function(
             name: 'get_weather',
@@ -266,7 +264,7 @@ void main() {
       });
 
       test('should handle complex tool parameters', () {
-        final messages = [ChatMessage.user('Process this data')];
+        final messages = [ModelMessage.userText('Process this data')];
         final tools = [
           Tool.function(
             name: 'process_data',
@@ -388,7 +386,7 @@ void main() {
       });
 
       test('should handle streaming with empty messages', () {
-        final messages = <ChatMessage>[];
+        final messages = <ModelMessage>[];
         expect(messages, isEmpty);
 
         // Test that streaming method exists without calling it
@@ -396,7 +394,7 @@ void main() {
       });
 
       test('should handle streaming with messages', () {
-        final messages = [ChatMessage.user('Tell me a story')];
+        final messages = [ModelMessage.userText('Tell me a story')];
         expect(messages, hasLength(1));
         expect(messages.first.role, equals(ChatRole.user));
 
@@ -405,7 +403,7 @@ void main() {
       });
 
       test('should handle streaming with tools', () {
-        final messages = [ChatMessage.user('What is the weather?')];
+        final messages = [ModelMessage.userText('What is the weather?')];
         final tools = [
           Tool.function(
             name: 'get_weather',

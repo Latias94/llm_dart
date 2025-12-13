@@ -1,10 +1,7 @@
-// OpenAI-compatible structured output tests use ChatMessage-based
-// prompts to validate structured JSON responses via the compatibility
-// layer.
-// ignore_for_file: deprecated_member_use
+// OpenAI-compatible structured output tests validate prompt-first ModelMessage
+// inputs and JSON schema request shaping.
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:test/test.dart';
 
@@ -41,7 +38,7 @@ void main() {
       final client = CapturingOpenAICompatibleClient(config);
       final chat = OpenAICompatibleChat(client, config);
 
-      await chat.chat([ChatMessage.user('Return a user object')]);
+      await chat.chat([ModelMessage.userText('Return a user object')]);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);
@@ -92,7 +89,9 @@ void main() {
       final client = CapturingOpenAICompatibleClient(config);
       final chat = OpenAICompatibleChat(client, config);
 
-      await chat.chat([ChatMessage.user('Return a flexible user object')]);
+      await chat.chat([
+        ModelMessage.userText('Return a flexible user object'),
+      ]);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);

@@ -10,3 +10,7 @@ export 'src/models/ollama_models.dart';
 export 'src/provider/ollama_provider.dart';
 export 'src/factory/ollama_provider_factory.dart'
     show OllamaProviderFactory, registerOllamaProvider;
+
+// Vercel AI-style facade exports (model-centric API).
+export 'src/facade/ollama_facade.dart'
+    show OllamaProviderSettings, Ollama, createOllama;

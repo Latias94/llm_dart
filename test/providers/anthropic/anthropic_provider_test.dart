@@ -116,20 +116,8 @@ void main() {
         expect(provider.chat, isA<Function>());
       });
 
-      test('should have chatWithTools method', () {
-        expect(provider.chatWithTools, isA<Function>());
-      });
-
       test('should have chatStream method', () {
         expect(provider.chatStream, isA<Function>());
-      });
-
-      test('should have memoryContents method', () {
-        expect(provider.memoryContents, isA<Function>());
-      });
-
-      test('should have summarizeHistory method', () {
-        expect(provider.summarizeHistory, isA<Function>());
       });
 
       test('should have countTokens method', () {

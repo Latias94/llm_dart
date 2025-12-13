@@ -1,7 +1,4 @@
-// Google provider implementation built on ChatMessage-based
-// capabilities from llm_dart_core. ChatMessage is used here
-// intentionally for compatibility with existing helpers.
-// ignore_for_file: deprecated_member_use
+// Google provider implementation (prompt-first).
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
@@ -15,7 +12,6 @@ import '../tts/google_tts.dart';
 class GoogleProvider
     implements
         ChatCapability,
-        PromptChatCapability,
         EmbeddingCapability,
         ImageGenerationCapability,
         GoogleTTSCapability,
@@ -37,27 +33,14 @@ class GoogleProvider
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     return _chat.chat(
       messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return _chat.chatWithTools(
-      messages,
-      tools,
+      tools: tools,
       options: options,
       cancelToken: cancelToken,
     );
@@ -65,7 +48,7 @@ class GoogleProvider
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -76,16 +59,6 @@ class GoogleProvider
       options: options,
       cancelToken: cancelToken,
     );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async {
-    return _chat.memoryContents();
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return _chat.summarizeHistory(messages);
   }
 
   @override
@@ -176,38 +149,6 @@ class GoogleProvider
   @override
   Future<List<String>> getSupportedLanguages() async {
     return _tts.getSupportedLanguages();
-  }
-
-  // ===== PromptChatCapability (prompt-first) =====
-
-  @override
-  Future<ChatResponse> chatPrompt(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatPrompt(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatPromptStream(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
   }
 
   String get providerName => 'Google';

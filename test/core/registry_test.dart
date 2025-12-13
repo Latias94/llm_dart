@@ -1,10 +1,7 @@
-// Registry tests exercise ChatMessage-based ChatCapability providers
-// to ensure the registry and helper functions remain compatible.
-// ignore_for_file: deprecated_member_use
+// Registry tests validate provider registration, lookup, and creation.
 
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import '../utils/mock_provider_factory.dart';
 
 // Mock ChatResponse implementation
@@ -39,7 +36,8 @@ class MockChatResponse implements ChatResponse {
 class _MockProvider implements ChatCapability, ProviderCapabilities {
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -47,22 +45,8 @@ class _MockProvider implements ChatCapability, ProviderCapabilities {
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chat(
-      messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -73,13 +57,6 @@ class _MockProvider implements ChatCapability, ProviderCapabilities {
       MockChatResponse('Mock response'),
     );
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'Mock summary';
 
   @override
   Set<LLMCapability> get supportedCapabilities => {

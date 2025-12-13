@@ -9,3 +9,11 @@ export 'src/embeddings/xai_embeddings.dart';
 export 'src/provider/xai_provider.dart';
 export 'src/factory/xai_provider_factory.dart'
     show XAIProviderFactory, registerXAIProvider;
+export 'src/facade/xai_facade.dart'
+    show
+        XAIProviderSettings,
+        XAI,
+        XAITools,
+        XAIProviderDefinedTools,
+        createXAI,
+        xai;

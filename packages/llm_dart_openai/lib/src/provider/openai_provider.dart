@@ -1,7 +1,4 @@
-// OpenAI provider implementation built on the ChatMessage-based
-// ChatCapability/EmbeddingCapability/etc. surface from llm_dart_core.
-// Internally modules convert to ModelMessage where needed.
-// ignore_for_file: deprecated_member_use
+// OpenAI provider implementation (prompt-first).
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
@@ -27,7 +24,6 @@ import '../responses/openai_responses.dart';
 class OpenAIProvider
     implements
         ChatCapability,
-        PromptChatCapability,
         EmbeddingCapability,
         AudioCapability,
         FileManagementCapability,
@@ -97,42 +93,22 @@ class OpenAIProvider
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     if (config.useResponsesAPI && _responses != null) {
       return _responses.chat(
         messages,
+        tools: tools,
         options: options,
         cancelToken: cancelToken,
       );
     }
     return _chat.chat(
       messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    if (config.useResponsesAPI && _responses != null) {
-      return _responses.chatWithTools(
-        messages,
-        tools,
-        options: options,
-        cancelToken: cancelToken,
-      );
-    }
-    return _chat.chatWithTools(
-      messages,
-      tools,
+      tools: tools,
       options: options,
       cancelToken: cancelToken,
     );
@@ -140,7 +116,7 @@ class OpenAIProvider
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -155,80 +131,6 @@ class OpenAIProvider
     }
 
     return _chat.chatStream(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() {
-    if (config.useResponsesAPI && _responses != null) {
-      return _responses.memoryContents();
-    }
-    return _chat.memoryContents();
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) {
-    if (config.useResponsesAPI && _responses != null) {
-      return _responses.summarizeHistory(messages);
-    }
-    return _chat.summarizeHistory(messages);
-  }
-
-  // ===== PromptChatCapability (prompt-first) =====
-
-  @override
-  Future<ChatResponse> chatPrompt(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    if (config.useResponsesAPI && _responses != null) {
-      // Responses API currently exposes a ChatMessage-based surface.
-      // Bridge the prompt-first messages to ChatMessage and delegate.
-      final legacyMessages = messages
-          .map((m) => ChatMessage.fromPromptMessage(m))
-          .toList(growable: false);
-      return _responses.chatWithTools(
-        legacyMessages,
-        tools,
-        options: options,
-        cancelToken: cancelToken,
-      );
-    }
-
-    return _chat.chatPrompt(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    if (config.useResponsesAPI && _responses != null) {
-      final legacyMessages = messages
-          .map((m) => ChatMessage.fromPromptMessage(m))
-          .toList(growable: false);
-      return _responses.chatStream(
-        legacyMessages,
-        tools: tools,
-        options: options,
-        cancelToken: cancelToken,
-      );
-    }
-
-    return _chat.chatPromptStream(
       messages,
       tools: tools,
       options: options,

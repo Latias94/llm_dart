@@ -1,9 +1,6 @@
 import 'dart:convert';
 
-// Core OpenAI HTTP client and message conversion utilities. This client
-// supports both ChatMessage-based conversations and the newer ModelMessage
-// prompt model for backwards compatibility.
-// ignore_for_file: deprecated_member_use
+// Core OpenAI HTTP client and message conversion utilities (prompt-first).
 
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
@@ -128,106 +125,6 @@ class OpenAIClient {
       promptMessages,
       isResponsesApi: config.useResponsesAPI,
     );
-  }
-
-  Map<String, dynamic> convertMessage(ChatMessage message) {
-    final result = <String, dynamic>{'role': message.role.name};
-
-    if (message.name != null) {
-      result['name'] = message.name;
-    }
-
-    switch (message.messageType) {
-      case TextMessage():
-        result['content'] = message.content;
-        break;
-      case ImageMessage(mime: final mime, data: final data):
-        final base64Data = base64Encode(data);
-        final imageDataUrl = 'data:${mime.mimeType};base64,$base64Data';
-        final contentArray = <Map<String, dynamic>>[];
-
-        if (message.content.isNotEmpty) {
-          if (config.useResponsesAPI) {
-            contentArray.add({'type': 'input_text', 'text': message.content});
-          } else {
-            contentArray.add({'type': 'text', 'text': message.content});
-          }
-        }
-
-        if (config.useResponsesAPI) {
-          contentArray.add({
-            'type': 'input_image',
-            'image_url': imageDataUrl,
-          });
-        } else {
-          contentArray.add({
-            'type': 'image_url',
-            'image_url': {'url': imageDataUrl},
-          });
-        }
-
-        result['content'] = contentArray;
-        break;
-
-      case ImageUrlMessage(url: final url):
-        final contentArray = <Map<String, dynamic>>[];
-
-        if (message.content.isNotEmpty) {
-          if (config.useResponsesAPI) {
-            contentArray.add({'type': 'input_text', 'text': message.content});
-          } else {
-            contentArray.add({'type': 'text', 'text': message.content});
-          }
-        }
-
-        if (config.useResponsesAPI) {
-          contentArray.add({'type': 'input_image', 'image_url': url});
-        } else {
-          contentArray.add({
-            'type': 'image_url',
-            'image_url': {'url': url},
-          });
-        }
-
-        result['content'] = contentArray;
-        break;
-
-      case FileMessage(data: final data):
-        final base64Data = base64Encode(data);
-        final contentArray = <Map<String, dynamic>>[];
-
-        if (message.content.isNotEmpty) {
-          if (config.useResponsesAPI) {
-            contentArray.add({'type': 'input_text', 'text': message.content});
-          } else {
-            contentArray.add({'type': 'text', 'text': message.content});
-          }
-        }
-
-        if (config.useResponsesAPI) {
-          contentArray.add({'type': 'input_file', 'file_data': base64Data});
-        } else {
-          contentArray.add({
-            'type': 'file',
-            'file': {'file_data': base64Data},
-          });
-        }
-
-        result['content'] = contentArray;
-        break;
-
-      case ToolUseMessage(toolCalls: final toolCalls):
-        result['tool_calls'] = toolCalls.map((tc) => tc.toJson()).toList();
-        break;
-
-      case ToolResultMessage(results: final results):
-        result['content'] =
-            message.content.isNotEmpty ? message.content : 'Tool result';
-        result['tool_call_id'] = results.isNotEmpty ? results.first.id : null;
-        break;
-    }
-
-    return result;
   }
 
   Future<Map<String, dynamic>> postJson(

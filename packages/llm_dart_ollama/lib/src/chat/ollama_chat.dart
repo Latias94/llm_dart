@@ -1,7 +1,4 @@
-// Ollama chat capability implementation built on the ChatMessage-based
-// ChatCapability surface. It converts messages to ModelMessage prompts
-// internally for request construction.
-// ignore_for_file: deprecated_member_use
+// Ollama chat capability implementation (prompt-first).
 
 import 'dart:convert';
 
@@ -11,7 +8,7 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import '../client/ollama_client.dart';
 import '../config/ollama_config.dart';
 
-class OllamaChat implements ChatCapability, PromptChatCapability {
+class OllamaChat implements ChatCapability {
   final OllamaClient client;
   final OllamaConfig config;
 
@@ -19,65 +16,6 @@ class OllamaChat implements ChatCapability, PromptChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chatWithTools(
-      messages,
-      null,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    return chatPrompt(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async* {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    yield* chatPromptStream(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final summaryPrompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final response = await chat([ChatMessage.user(summaryPrompt)]);
-    return response.text ?? '';
-  }
-
-  @override
-  Future<ChatResponse> chatPrompt(
     List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
@@ -98,7 +36,7 @@ class OllamaChat implements ChatCapability, PromptChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatPromptStream(
+  Stream<ChatStreamEvent> chatStream(
     List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,

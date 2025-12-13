@@ -1,8 +1,5 @@
-// This file exposes high-level text, embedding, image, and structured
-// output helpers. It serves as a Vercel AI SDK-style entry point.
-// Internally it still relies on ChatMessage for backwards compatibility;
-// new code should prefer ModelMessage + ChatContentPart.
-// ignore_for_file: deprecated_member_use
+// High-level text, embedding, image, and structured output helpers.
+// This module is prompt-first and operates on ModelMessage conversations.
 
 library;
 
@@ -28,15 +25,14 @@ import 'builder/llm_builder.dart';
 /// For new code, prefer one of the following:
 /// - [promptMessages] with [ModelMessage], or
 /// - [generateTextPrompt] / [generateTextPromptWithModel].
-///
-/// The [messages] ([ChatMessage]) parameter is kept only for
-/// backwards compatibility.
+/// 
+/// This helper is prompt-first and does not support the removed
+/// `ChatMessage` legacy model.
 Future<GenerateTextResult> generateText({
   required String model,
   String? apiKey,
   String? baseUrl,
   String? prompt,
-  List<ChatMessage>? messages,
   ModelMessage? structuredPrompt,
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
@@ -55,33 +51,12 @@ Future<GenerateTextResult> generateText({
 
   builder = _applyCallOptions(builder, options);
 
-  // When provider-defined tools (callTools) are present, we prefer the
-  // LanguageModel path so that per-call tool specs (including
-  // provider-defined tools) are honored by providers that support them
-  // (for example Google grounding tools).
-  final hasCallTools =
-      options?.callTools != null && options!.callTools!.isNotEmpty;
-  if (hasCallTools) {
-    final languageModel = await builder.buildLanguageModel();
-    return generateTextWithModel(
-      languageModel,
-      prompt: prompt,
-      messages: messages,
-      structuredPrompt: structuredPrompt,
-      promptMessages: promptMessages,
-      cancelToken: cancelToken,
-      options: options,
-      onFinish: onFinish,
-      onWarnings: onWarnings,
-    );
-  }
-
   final result = await builder.generateText(
     prompt: prompt,
-    messages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
     cancelToken: cancelToken,
+    options: options,
   );
 
   if (onFinish != null) {
@@ -97,8 +72,9 @@ Future<GenerateTextResult> generateText({
 /// Prompt-first generateText helper using [ModelMessage] conversations.
 ///
 /// This variant mirrors [generateText] but accepts the conversation as
-/// a list of structured [ModelMessage]s instead of the legacy
-/// [ChatMessage] model. It is the preferred entry point for new code.
+/// a list of structured [ModelMessage]s.
+///
+/// It is the preferred entry point for new code.
 Future<GenerateTextResult> generateTextPrompt({
   required String model,
   required List<ModelMessage> messages,
@@ -131,7 +107,6 @@ Future<GenerateTextResult> generateTextPrompt({
 Future<GenerateTextResult> generateTextWithModel(
   LanguageModel model, {
   String? prompt,
-  List<ChatMessage>? messages,
   ModelMessage? structuredPrompt,
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
@@ -152,7 +127,6 @@ Future<GenerateTextResult> generateTextWithModel(
   // Resolve into a structured ModelMessage conversation.
   final resolvedMessages = resolvePromptMessagesForTextGeneration(
     prompt: prompt,
-    legacyMessages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
   );
@@ -205,7 +179,6 @@ Stream<ChatStreamEvent> streamText({
   String? apiKey,
   String? baseUrl,
   String? prompt,
-  List<ChatMessage>? messages,
   ModelMessage? structuredPrompt,
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
@@ -224,30 +197,12 @@ Stream<ChatStreamEvent> streamText({
 
   builder = _applyCallOptions(builder, options);
 
-  final hasCallTools =
-      options?.callTools != null && options!.callTools!.isNotEmpty;
-  if (hasCallTools) {
-    final languageModel = await builder.buildLanguageModel();
-    yield* streamTextWithModel(
-      languageModel,
-      prompt: prompt,
-      messages: messages,
-      structuredPrompt: structuredPrompt,
-      promptMessages: promptMessages,
-      cancelToken: cancelToken,
-      options: options,
-      onFinish: onFinish,
-      onWarnings: onWarnings,
-    );
-    return;
-  }
-
   final source = builder.streamText(
     prompt: prompt,
-    messages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
     cancelToken: cancelToken,
+    options: options,
   );
 
   await for (final event in source) {
@@ -308,7 +263,6 @@ Stream<ChatStreamEvent> streamTextPrompt({
 Stream<ChatStreamEvent> streamTextWithModel(
   LanguageModel model, {
   String? prompt,
-  List<ChatMessage>? messages,
   ModelMessage? structuredPrompt,
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
@@ -326,7 +280,6 @@ Stream<ChatStreamEvent> streamTextWithModel(
 
   final resolvedMessages = resolvePromptMessagesForTextGeneration(
     prompt: prompt,
-    legacyMessages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
   );
@@ -392,7 +345,6 @@ Stream<ChatStreamEvent> streamTextPromptWithModel(
 Stream<StreamTextPart> streamTextPartsWithModel(
   LanguageModel model, {
   String? prompt,
-  List<ChatMessage>? messages,
   ModelMessage? structuredPrompt,
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
@@ -408,7 +360,6 @@ Stream<StreamTextPart> streamTextPartsWithModel(
 
   final resolvedMessages = resolvePromptMessagesForTextGeneration(
     prompt: prompt,
-    legacyMessages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
   );
@@ -467,7 +418,6 @@ Stream<StreamTextPart> streamTextParts({
   String? apiKey,
   String? baseUrl,
   String? prompt,
-  List<ChatMessage>? messages,
   ModelMessage? structuredPrompt,
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
@@ -490,10 +440,10 @@ Stream<StreamTextPart> streamTextParts({
 
   yield* builder.streamTextParts(
     prompt: prompt,
-    messages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
     cancelToken: cancelToken,
+    options: options,
   );
 }
 
@@ -519,7 +469,6 @@ Future<GenerateObjectResult<T>> generateObject<T>({
   String? apiKey,
   String? baseUrl,
   String? prompt,
-  List<ChatMessage>? messages,
   ModelMessage? structuredPrompt,
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
@@ -538,10 +487,10 @@ Future<GenerateObjectResult<T>> generateObject<T>({
 
   final textResult = await builder.generateText(
     prompt: prompt,
-    messages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
     cancelToken: cancelToken,
+    options: options,
   );
 
   final rawText = textResult.text;
@@ -743,7 +692,6 @@ Future<GenerateObjectResult<T>> generateObjectWithModel<T>({
   required LanguageModel model,
   required OutputSpec<T> output,
   String? prompt,
-  List<ChatMessage>? messages,
   ModelMessage? structuredPrompt,
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
@@ -751,7 +699,6 @@ Future<GenerateObjectResult<T>> generateObjectWithModel<T>({
 }) async {
   final resolvedMessages = resolvePromptMessagesForTextGeneration(
     prompt: prompt,
-    legacyMessages: messages,
     structuredPrompt: structuredPrompt,
     promptMessages: promptMessages,
   );
@@ -778,7 +725,6 @@ StreamObjectResult<T> streamObject<T>({
   String? apiKey,
   String? baseUrl,
   String? prompt,
-  List<ChatMessage>? messages,
   ModelMessage? structuredPrompt,
   List<ModelMessage>? promptMessages,
   CancellationToken? cancelToken,
@@ -802,13 +748,15 @@ StreamObjectResult<T> streamObject<T>({
 
   () async {
     try {
-      await for (final event in builder.streamText(
+      final source = builder.streamText(
         prompt: prompt,
-        messages: messages,
         structuredPrompt: structuredPrompt,
         promptMessages: promptMessages,
         cancelToken: cancelToken,
-      )) {
+        options: options,
+      );
+
+      await for (final event in source) {
         if (event is TextDeltaEvent) {
           buffer.write(event.delta);
         } else if (event is CompletionEvent) {

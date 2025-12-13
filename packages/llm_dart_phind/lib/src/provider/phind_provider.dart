@@ -1,7 +1,4 @@
-// Phind provider implementation built on ChatMessage-based
-// ChatCapability from llm_dart_core. ChatMessage usage here is
-// intentional for compatibility with existing helpers.
-// ignore_for_file: deprecated_member_use
+// Phind provider implementation (prompt-first).
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
@@ -15,7 +12,7 @@ import '../config/phind_config.dart';
 /// and delegates to specialized modules for different functionalities.
 /// Phind is specialized for coding tasks and development assistance.
 class PhindProvider
-    implements ChatCapability, PromptChatCapability, ProviderCapabilities {
+    implements ChatCapability, ProviderCapabilities {
   final PhindConfig config;
   final PhindClient client;
 
@@ -45,23 +42,8 @@ class PhindProvider
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return _chat.chatWithTools(
-      messages,
-      tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -76,25 +58,17 @@ class PhindProvider
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     return _chat.chat(
       messages,
+      tools: tools,
       options: options,
       cancelToken: cancelToken,
     );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async {
-    return _chat.memoryContents();
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return _chat.summarizeHistory(messages);
   }
 
   /// Create a new provider with updated configuration
@@ -145,36 +119,4 @@ class PhindProvider
 
   @override
   String toString() => 'PhindProvider(model: ${config.model})';
-
-  // ===== PromptChatCapability (prompt-first) =====
-
-  @override
-  Future<ChatResponse> chatPrompt(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatPrompt(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatPromptStream(
-      messages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
 }

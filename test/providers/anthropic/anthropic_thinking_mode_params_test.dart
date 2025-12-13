@@ -1,8 +1,7 @@
-// Anthropic thinking mode tests validate request shaping. They use
-// ChatMessage-based prompts to exercise the legacy request builder.
-// ignore_for_file: deprecated_member_use
+// Anthropic thinking mode tests validate request shaping for prompt-first
+// request building.
 
-import 'package:llm_dart/legacy/chat.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic_pkg;
 import 'package:test/test.dart';
 
@@ -23,8 +22,8 @@ void main() {
 
       final builder = anthropic_pkg.AnthropicRequestBuilder(config);
 
-      final body = builder.buildRequestBody(
-        [ChatMessage.user('Hello')],
+      final body = builder.buildRequestBodyFromPrompt(
+        [ModelMessage.userText('Hello')],
         null,
         false,
       );
@@ -62,8 +61,8 @@ void main() {
 
       final builder = anthropic_pkg.AnthropicRequestBuilder(config);
 
-      final body = builder.buildRequestBody(
-        [ChatMessage.user('Hello')],
+      final body = builder.buildRequestBodyFromPrompt(
+        [ModelMessage.userText('Hello')],
         null,
         false,
       );

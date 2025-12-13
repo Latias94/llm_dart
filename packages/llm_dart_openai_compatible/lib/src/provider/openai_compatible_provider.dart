@@ -1,7 +1,5 @@
-// Generic provider implementation for OpenAI-compatible vendors built
-// on the ChatMessage-based ChatCapability surface from llm_dart_core.
-// ChatMessage usage is intentional here for compatibility.
-// ignore_for_file: deprecated_member_use
+// Generic provider implementation for OpenAI-compatible vendors built on the
+// prompt-first ChatCapability surface (ModelMessage + ChatContentPart).
 
 import 'dart:math' as math;
 
@@ -38,27 +36,14 @@ class OpenAICompatibleProvider
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     return _chat.chat(
       messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return _chat.chatWithTools(
-      messages,
-      tools,
+      tools: tools,
       options: options,
       cancelToken: cancelToken,
     );
@@ -66,7 +51,7 @@ class OpenAICompatibleProvider
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -78,13 +63,6 @@ class OpenAICompatibleProvider
       cancelToken: cancelToken,
     );
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() => _chat.memoryContents();
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) =>
-      _chat.summarizeHistory(messages);
 
   @override
   Set<LLMCapability> get supportedCapabilities {

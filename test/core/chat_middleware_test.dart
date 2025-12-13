@@ -1,10 +1,7 @@
-// Chat middleware tests intentionally exercise the ChatMessage-based
-// ChatCapability surface to verify logging, defaults, and other
+// Chat middleware tests (prompt-first) validate logging, defaults, and other
 // cross-cutting behavior.
-// ignore_for_file: deprecated_member_use
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import '../utils/mock_provider_factory.dart';
 
@@ -37,41 +34,34 @@ class _TestChatResponse implements ChatResponse {
 
 class _TestChatProvider implements ChatCapability, ProviderCapabilities {
   final LLMConfig config;
-  List<ChatMessage> lastMessages = [];
+  List<ModelMessage> lastMessages = [];
   List<Tool>? lastTools;
 
   _TestChatProvider(this.config);
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return chatWithTools(
-      messages,
-      null,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     lastMessages = messages;
     lastTools = tools;
-    final text = messages.map((m) => m.content).join('|');
+    final text = messages
+        .map(
+          (message) => message.parts
+              .whereType<TextContentPart>()
+              .map((part) => part.text)
+              .join(),
+        )
+        .join('|');
     return _TestChatResponse(text);
   }
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -80,13 +70,6 @@ class _TestChatProvider implements ChatCapability, ProviderCapabilities {
     lastTools = tools;
     yield const TextDeltaEvent('base');
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 
   @override
   Set<LLMCapability> get supportedCapabilities =>
@@ -124,7 +107,7 @@ void main() {
             transforms.add('t1');
             final updatedMessages = [
               ...ctx.messages,
-              ChatMessage.user('t1'),
+              ModelMessage.userText('t1'),
             ];
             return ctx.copyWith(messages: updatedMessages);
           },
@@ -135,7 +118,7 @@ void main() {
             transforms.add('t2');
             final updatedMessages = [
               ...ctx.messages,
-              ChatMessage.user('t2'),
+              ModelMessage.userText('t2'),
             ];
             return ctx.copyWith(messages: updatedMessages);
           },
@@ -143,7 +126,7 @@ void main() {
       ]).buildWithMiddleware();
 
       final response =
-          await provider.chat([ChatMessage.user('base')]) as _TestChatResponse;
+          await provider.chat([ModelMessage.userText('base')]) as _TestChatResponse;
 
       expect(transforms, ['t1', 't2']);
       expect(response.text, 'base|t1|t2');
@@ -167,7 +150,7 @@ void main() {
       ]).buildWithMiddleware();
 
       final response =
-          await provider.chat([ChatMessage.user('base')]) as _TestChatResponse;
+          await provider.chat([ModelMessage.userText('base')]) as _TestChatResponse;
 
       // The outer middleware appears earlier in the list, so the final result
       // should be M1(M2(base)).
@@ -202,7 +185,7 @@ void main() {
       ]).buildWithMiddleware();
 
       final events =
-          await provider.chatStream([ChatMessage.user('base')]).toList();
+          await provider.chatStream([ModelMessage.userText('base')]).toList();
 
       expect(events.length, 1);
       final event = events.first as TextDeltaEvent;
@@ -223,8 +206,8 @@ void main() {
         ),
       ]).buildWithMiddleware();
 
-      await provider.chat([ChatMessage.user('base')]);
-      await provider.chatStream([ChatMessage.user('base')]).toList();
+      await provider.chat([ModelMessage.userText('base')]);
+      await provider.chatStream([ModelMessage.userText('base')]).toList();
 
       expect(kinds, [ChatOperationKind.chat, ChatOperationKind.stream]);
     });

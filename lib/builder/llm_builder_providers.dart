@@ -9,6 +9,9 @@ import '../providers/google/tts.dart';
 import '../providers/ollama/builder.dart';
 import '../providers/elevenlabs/builder.dart';
 import '../providers/openai/compatible/openrouter/builder.dart';
+import '../providers/xai/builder.dart';
+import '../providers/deepseek/builder.dart';
+import '../providers/phind/builder.dart';
 
 /// Provider-specific convenience methods for [LLMBuilder].
 ///
@@ -67,7 +70,25 @@ extension LLMBuilderProviderShortcuts on LLMBuilder {
   }
 
   /// Configure the DeepSeek provider.
-  LLMBuilder deepseek() => provider('deepseek');
+  ///
+  /// Example:
+  /// ```dart
+  /// final provider = await ai()
+  ///   .deepseek((deepseek) => deepseek
+  ///     .logprobs(true)
+  ///     .topLogprobs(5))
+  ///   .apiKey(apiKey)
+  ///   .model('deepseek-chat')
+  ///   .build();
+  /// ```
+  LLMBuilder deepseek([DeepSeekBuilder Function(DeepSeekBuilder)? configure]) {
+    provider('deepseek');
+    if (configure != null) {
+      final deepseekBuilder = DeepSeekBuilder(this);
+      configure(deepseekBuilder);
+    }
+    return this;
+  }
 
   /// Configure the Ollama provider.
   LLMBuilder ollama([OllamaBuilder Function(OllamaBuilder)? configure]) {
@@ -80,10 +101,43 @@ extension LLMBuilderProviderShortcuts on LLMBuilder {
   }
 
   /// Configure the xAI provider.
-  LLMBuilder xai() => provider('xai');
+  ///
+  /// Example:
+  /// ```dart
+  /// final provider = await ai()
+  ///   .xai((xai) => xai
+  ///     .liveSearch()
+  ///     .webSearch(maxResults: 5))
+  ///   .apiKey(apiKey)
+  ///   .model('grok-3')
+  ///   .build();
+  /// ```
+  LLMBuilder xai([XAIBuilder Function(XAIBuilder)? configure]) {
+    provider('xai');
+    if (configure != null) {
+      final xaiBuilder = XAIBuilder(this);
+      configure(xaiBuilder);
+    }
+    return this;
+  }
 
   /// Configure the Phind provider.
-  LLMBuilder phind() => provider('phind');
+  ///
+  /// Example:
+  /// ```dart
+  /// final provider = await ai()
+  ///   .phind((phind) => phind.forCodingAssistant())
+  ///   .apiKey(apiKey)
+  ///   .build();
+  /// ```
+  LLMBuilder phind([PhindBuilder Function(PhindBuilder)? configure]) {
+    provider('phind');
+    if (configure != null) {
+      final phindBuilder = PhindBuilder(this);
+      configure(phindBuilder);
+    }
+    return this;
+  }
 
   /// Configure the Groq provider.
   LLMBuilder groq() => provider('groq');

@@ -220,7 +220,7 @@ void main() {
       });
 
       test('should set voice', () {
-        final builder = LLMBuilder().voice('alloy');
+        final builder = LLMBuilder().openai((openai) => openai.voice('alloy'));
         expect(builder, isNotNull);
       });
 
@@ -432,13 +432,13 @@ void main() {
         );
 
         final builder = LLMBuilder()
-            .openai((openai) => openai.seed(12345).parallelToolCalls(true))
+            .openai((openai) =>
+                openai.seed(12345).parallelToolCalls(true).voice('alloy'))
             .apiKey('test-key')
             .model('gpt-4')
             .tools([tool])
             .toolChoice(AutoToolChoice())
             .reasoningEffort(ReasoningEffort.medium)
-            .voice('alloy')
             .responseFormat('json_object');
 
         expect(builder, isNotNull);

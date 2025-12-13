@@ -1,10 +1,7 @@
-// Base factory tests use ChatMessage-based ChatCapability providers to
-// validate provider factory behavior and compatibility.
-// ignore_for_file: deprecated_member_use
+// Base factory tests validate provider factory behavior.
 
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 
 // Mock ChatResponse implementation
 class MockChatResponse implements ChatResponse {
@@ -76,7 +73,8 @@ class MockBaseFactory extends BaseProviderFactory<ChatCapability> {
 class MockProvider implements ChatCapability, ProviderCapabilities {
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -84,22 +82,8 @@ class MockProvider implements ChatCapability, ProviderCapabilities {
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chat(
-      messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -107,13 +91,6 @@ class MockProvider implements ChatCapability, ProviderCapabilities {
     yield TextDeltaEvent('Mock response');
     yield CompletionEvent(MockChatResponse(text: 'Mock response'));
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'Mock summary';
 
   @override
   Set<LLMCapability> get supportedCapabilities => {

@@ -153,7 +153,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - `typedef GoogleProvider = google.GoogleProvider;`, etc.
   - Configuration types are also aliased to sub-package implementations:
     - `OpenAIConfig`, `AnthropicConfig`, `GoogleConfig`, `DeepSeekConfig`, `GroqConfig`, `OllamaConfig`, `XAIConfig`, `ElevenLabsConfig`, `PhindConfig` now come from their respective sub-packages.
-  - Legacy helper functions like `createOpenAIProvider`, `createGroqProvider`, `createDeepSeekProvider`, etc., remain available and are wired to the new provider sub-packages.
+  - Legacy helper functions like `createOpenAIProvider`, `createGroqProvider`, `createDeepSeekProvider`, etc. have been removed.
+    - Use provider constructors (`OpenAIProvider(OpenAIConfig(...))`, etc.) when you need low-level access.
+    - Prefer the model-centric facades (`createOpenAI(...)`, `createGroq(...)`, `createDeepSeek(...)`) for Vercel AI SDK-style usage.
 
 - **Configuration consolidation & fallbacks**
   - All provider-specific defaulting logic for `baseUrl` / `model` has been centralized into `fromLLMConfig` or factory transforms:
@@ -198,15 +200,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Prompt-first message model (`ModelMessage`)**
   - Introduced `ModelMessage` in `llm_dart_core` as the primary, provider‑agnostic message model built from `ChatContentPart` values.
-  - Added `PromptChatCapability` interface for providers that natively consume `List<ModelMessage>` prompts:
-    - `OpenAIChat`, `AnthropicChat`, `DeepSeekChat`, `GoogleChat`, `OllamaChat`, `XAIChat`, `PhindChat`, `OpenAICompatibleChat` now all implement `PromptChatCapability`.
-    - Existing `ChatCapability` methods (`chat`, `chatWithTools`, `chatStream`) are now thin bridges that convert `ChatMessage` → `ModelMessage` (legacy shim).
+  - `ChatCapability` is now prompt-first and consumes `List<ModelMessage>` prompts directly:
+    - All built-in providers (OpenAI, Anthropic, DeepSeek, Google, Ollama, xAI, Phind, OpenAI-compatible) implement this prompt-first signature.
+    - Tool calling is configured via the `tools:` parameter on `chat(...)` / `chatStream(...)`.
   - Extended high‑level helpers to accept prompt‑first inputs:
     - `generateTextWithModel`, `streamTextWithModel`, `streamTextPartsWithModel`, `generateObjectWithModel` now accept `promptMessages: List<ModelMessage>`.
-    - Internally they call `ChatMessage.fromPromptMessage` once and delegate to `LanguageModel.*WithOptions(...)`, so providers still see the full structured prompt model.
+    - Internally they resolve `prompt` / `structuredPrompt` / `promptMessages` into `List<ModelMessage>` and delegate to `LanguageModel.*WithOptions(...)`.
   - Added prompt‑first Agent helpers:
-    - `runAgentPromptText`, `runAgentPromptTextWithSteps`, `runAgentPromptObject`, `runAgentPromptObjectWithSteps` accept `promptMessages: List<ModelMessage>` and wire them through `AgentInput.promptMessages`.
-    - `ToolLoopAgent` now prefers `AgentInput.promptMessages` when present, falling back to `AgentInput.messages` for legacy code.
+    - `runAgentPromptText`, `runAgentPromptTextWithSteps`, `runAgentPromptObject`, `runAgentPromptObjectWithSteps` accept `promptMessages: List<ModelMessage>` and pass them into `AgentInput.messages`.
+    - `ToolLoopAgent` is prompt-first and consumes `AgentInput.messages`.
+
+- **Dio strategy generics (type-safe HTTP configuration)**
+  - Updated `ProviderDioStrategy` and `BaseProviderDioStrategy` in `llm_dart_provider_utils` to be generic over `TConfig extends ProviderHttpConfig`:
+    - Each provider strategy now declares its concrete config type, e.g.:
+      - `OpenAIDioStrategy extends BaseProviderDioStrategy<OpenAIConfig>`.
+      - `GoogleDioStrategy extends BaseProviderDioStrategy<GoogleConfig>`.
+      - `DeepSeekDioStrategy extends BaseProviderDioStrategy<DeepSeekConfig>`.
+      - `AnthropicDioStrategy extends BaseProviderDioStrategy<AnthropicConfig>`.
+      - `OllamaDioStrategy extends BaseProviderDioStrategy<OllamaConfig>`.
+      - `XAIDioStrategy extends BaseProviderDioStrategy<XAIConfig>`.
+      - `ElevenLabsDioStrategy extends BaseProviderDioStrategy<ElevenLabsConfig>`.
+      - `_OpenAICompatibleDioStrategy extends BaseProviderDioStrategy<OpenAICompatibleConfig>`.
+      - `PhindDioStrategy extends BaseProviderDioStrategy<PhindConfig>`.
+      - `GroqDioStrategy extends BaseProviderDioStrategy<GroqConfig>`.
+  - `DioClientFactory.create` is now generic over the concrete `ProviderHttpConfig`:
+    - Signature changed from `create({ ProviderDioStrategy, ProviderHttpConfig })` to `create<TConfig extends ProviderHttpConfig>({ ProviderDioStrategy<TConfig>, TConfig })`.
+    - Call sites in provider clients (OpenAI, Anthropic, Google, DeepSeek, Ollama, xAI, ElevenLabs, Phind, OpenAI-compatible, Groq) remain source-compatible; the correct generic type is inferred from the config.
+  - Improved type-safety and IDE support:
+    - Strategy implementations now receive strongly-typed config objects instead of `dynamic`.
+    - Reduces the risk of accidentally mixing strategies and configs from different providers.
 
 ### Migration Notes
 
@@ -220,7 +242,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 #### Migration Guide: from `ChatMessage` to `ModelMessage`
 
-You can adopt the prompt‑first model incrementally without breaking existing code. The old APIs remain available and continue to work.
+`llm_dart` is fully prompt-first: conversations are represented by
+`ModelMessage` + `ChatContentPart`. Legacy `ChatMessage` shims have been removed.
 
 **1. Simple text prompts (prompt-first recommended)**
 
@@ -259,9 +282,7 @@ final prompt = ChatPromptBuilder.user()
     .imageBytes(imageBytes, mime: ImageMime.png)
     .build();
 
-final response = await provider.chat([
-  promptMessages: [prompt],
-]);
+final response = await provider.chat([prompt]);
 ```
 
 Migration (prompt‑first, model‑centric):
@@ -280,23 +301,6 @@ final result = await generateTextWithModel(
 
 **3. Tool loops / Agents**
 
-Existing code:
-
-```dart
-final tools = <String, ExecutableTool>{ /* ... */ };
-
-final textResult = await runAgentText(
-  model: model,
-  promptMessages: [
-    ModelMessage(
-      role: ChatRole.user,
-      parts: [TextContentPart('Call tools to solve this task.')],
-    ),
-  ],
-  tools: tools,
-);
-```
-
 Prompt‑first Agent usage:
 
 ```dart
@@ -314,13 +318,6 @@ final textResult = await runAgentPromptText(
 );
 ```
 
-`ToolLoopAgent` automatically bridges `ModelMessage` → `ChatMessage` using `ChatMessage.fromPromptMessage`, so providers still see the full structured prompt model internally.
-
-**4. When to keep using ChatMessage (legacy shim)**
-
-- Only for legacy compatibility or quick demos; new code should default to `ChatPromptBuilder` + `ModelMessage`.
-- You want a very lightweight, text‑only API and are not yet ready to migrate to structured prompts.
-
 In new code, prefer:
 
 - `ModelMessage` + `ChatContentPart` for prompt construction.
@@ -331,18 +328,14 @@ In new code, prefer:
   - `generateObjectWithModel`
   - `runAgentPromptText` / `runAgentPromptObject` (and their `WithSteps` variants).
 
-#### Internal data model changes (prompt-first, but backwards compatible)
+#### Internal data model changes (prompt-first)
 
 - The internal chat content model has been refactored to be **prompt-first** and multi-part:
   - `ModelMessage` + `ChatContentPart` (text, files, reasoning, tool calls/results) is now the canonical representation.
   - All built-in providers map their native APIs to this structured model and back.
-- `ChatMessage` is now treated as a **legacy shim**:
-  - Kept under `package:llm_dart/legacy/chat.dart` for backwards compatibility.
-  - `ChatMessage.toPromptMessage()` and `ChatMessage.fromPromptMessage()` bridge between legacy and prompt-first models.
-  - Internal middlewares and some advanced examples still operate on `ChatMessage`, but all new examples/docs use `ModelMessage`.
 - A new `LanguageModel` abstraction has been added on top of provider-specific `ChatCapability` implementations:
-  - `DefaultLanguageModel` wraps any `ChatCapability` and adapts `List<ModelMessage>` prompts to legacy chat APIs.
-  - High-level helpers (`generateTextWithModel`, `streamTextWithModel`, `runAgentPromptText`, etc.) all consume `LanguageModel` + `ModelMessage` and handle bridging internally.
+  - `DefaultLanguageModel` wraps any `ChatCapability` and exposes a consistent, provider-agnostic surface.
+  - High-level helpers (`generateTextWithModel`, `streamTextWithModel`, `runAgentPromptText`, etc.) all consume `LanguageModel` + `ModelMessage`.
 
 ## [0.10.5] - 2025-11-26
 
@@ -874,8 +867,8 @@ In new code, prefer:
 ### Removed
 
 - **OpenAI Compatible Provider**: Removed `OpenAICompatibleProvider` class
-  - Functionality replaced by convenience functions in modular implementation
-  - `createDeepSeekProvider()`, `createGroqProvider()`, etc. provide same functionality
+  - Functionality replaced by the OpenAI-compatible subpackage (`llm_dart_openai_compatible`)
+  - Use `OpenAICompatibleConfigs.*` or builder shortcuts like `ai().openRouter()` / `ai().groqOpenAI()` / `ai().deepseekOpenAI()`
   - Simplified architecture with better performance
 
 - **Legacy Provider Files**: Cleaned up deprecated implementations

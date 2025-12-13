@@ -1,8 +1,7 @@
-// ignore_for_file: avoid_print, deprecated_member_use
+// ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:math';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' show DefaultLanguageModel;
 
 /// 🔧 Custom Providers - Build Your Own AI Providers
@@ -44,7 +43,7 @@ Future<void> demonstrateMockProvider() async {
     final basicPrompt =
         ChatPromptBuilder.user().text('Hello, how are you?').build();
     final response = await mockProvider.chat(
-      [ChatMessage.fromPromptMessage(basicPrompt)],
+      [basicPrompt],
     );
 
     print('   User: Hello, how are you?');
@@ -57,7 +56,7 @@ Future<void> demonstrateMockProvider() async {
     final streamPrompt = ChatPromptBuilder.user().text('Count to 5').build();
 
     await for (final event in mockProvider.chatStream(
-      [ChatMessage.fromPromptMessage(streamPrompt)],
+      [streamPrompt],
     )) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
@@ -87,10 +86,6 @@ Future<void> demonstrateMockProvider() async {
 }
 
 /// Demonstrate wrapping a custom ChatCapability as a prompt-first LanguageModel.
-///
-/// This shows how to bridge legacy [ChatMessage]-based providers into the
-/// prompt-first [ModelMessage] + [LanguageModel] world so that higher-level
-/// helpers and agents can be reused.
 Future<void> demonstrateLanguageModelWrapper() async {
   print('🧱 LanguageModel Wrapper around Custom ChatCapability:\n');
 
@@ -148,7 +143,7 @@ Future<void> demonstrateLoggingProvider() async {
         .text('What is artificial intelligence?')
         .build();
     final response = await loggingProvider.chat(
-      [ChatMessage.fromPromptMessage(prompt)],
+      [prompt],
     );
 
     print('   User: What is artificial intelligence?');
@@ -183,7 +178,7 @@ Future<void> demonstrateCachingProvider() async {
     final stopwatch1 = Stopwatch()..start();
     final prompt1 = ChatPromptBuilder.user().text(question).build();
     final response1 = await cachingProvider.chat(
-      [ChatMessage.fromPromptMessage(prompt1)],
+      [prompt1],
     );
     stopwatch1.stop();
     print('   🤖 AI: ${response1.text}');
@@ -194,7 +189,7 @@ Future<void> demonstrateCachingProvider() async {
     final stopwatch2 = Stopwatch()..start();
     final prompt2 = ChatPromptBuilder.user().text(question).build();
     final response2 = await cachingProvider.chat(
-      [ChatMessage.fromPromptMessage(prompt2)],
+      [prompt2],
     );
     stopwatch2.stop();
     print('   🤖 AI: ${response2.text}');
@@ -227,7 +222,7 @@ Future<void> demonstrateCustomAPIProvider() async {
     final prompt =
         ChatPromptBuilder.user().text('Hello from custom provider!').build();
     final response = await customProvider.chat(
-      [ChatMessage.fromPromptMessage(prompt)],
+      [prompt],
     );
 
     print('   User: Hello from custom provider!');
@@ -260,7 +255,7 @@ Future<void> demonstrateProviderChaining() async {
     final prompt =
         ChatPromptBuilder.user().text('Test chained providers').build();
     final response = await chainedProvider.chat(
-      [ChatMessage.fromPromptMessage(prompt)],
+      [prompt],
     );
 
     print('   User: Test chained providers');
@@ -283,7 +278,8 @@ class MockChatProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -292,11 +288,16 @@ class MockChatProvider implements ChatCapability {
 
     final userMessage = messages.lastWhere(
       (m) => m.role == ChatRole.user,
-      orElse: () => ChatMessage.user(''),
+      orElse: () => ModelMessage.userText(''),
     );
 
+    final input = userMessage.parts
+        .whereType<TextContentPart>()
+        .map((part) => part.text)
+        .join();
+
     // Generate mock response based on user input
-    final response = _generateMockResponse(userMessage.content.toString());
+    final response = _generateMockResponse(input);
 
     return MockChatResponse(
       text: response,
@@ -309,17 +310,22 @@ class MockChatProvider implements ChatCapability {
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
+    List<ModelMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     final userMessage = messages.lastWhere(
       (m) => m.role == ChatRole.user,
-      orElse: () => ChatMessage.user(''),
+      orElse: () => ModelMessage.userText(''),
     );
 
-    final response = _generateMockResponse(userMessage.content.toString());
+    final input = userMessage.parts
+        .whereType<TextContentPart>()
+        .map((part) => part.text)
+        .join();
+
+    final response = _generateMockResponse(input);
     final words = response.split(' ');
 
     // Stream words with delays
@@ -335,28 +341,6 @@ class MockChatProvider implements ChatCapability {
         completionTokens: words.length,
       ),
     ));
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chat(
-      messages,
-      options: options,
-      cancelToken: cancelToken,
-    ); // Simple implementation
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return 'Mock summary of ${messages.length} messages';
   }
 
   String _generateMockResponse(String input) {
@@ -379,17 +363,22 @@ class LoggingChatProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
     final stopwatch = Stopwatch()..start();
 
     print('   📝 [LOG] Starting chat request with ${messages.length} messages');
+    if (tools != null && tools.isNotEmpty) {
+      print('   📝 [LOG] Tools enabled: ${tools.length}');
+    }
 
     try {
       final response = await _baseProvider.chat(
         messages,
+        tools: tools,
         options: options,
         cancelToken: cancelToken,
       );
@@ -411,9 +400,9 @@ class LoggingChatProvider implements ChatCapability {
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
+    List<ModelMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     print('   📝 [LOG] Starting streaming chat request');
@@ -441,34 +430,6 @@ class LoggingChatProvider implements ChatCapability {
       yield event;
     }
   }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    print('   📝 [LOG] Chat with ${tools?.length ?? 0} tools');
-    return _baseProvider.chatWithTools(
-      messages,
-      tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async {
-    print('   📝 [LOG] Getting memory contents');
-    return _baseProvider.memoryContents();
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    print('   📝 [LOG] Summarizing ${messages.length} messages');
-    return _baseProvider.summarizeHistory(messages);
-  }
 }
 
 /// Caching wrapper provider
@@ -480,10 +441,22 @@ class CachingChatProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
+    final hasTools = tools != null && tools.isNotEmpty;
+    if (hasTools) {
+      print('   💾 [CACHE] Tools enabled, bypassing cache');
+      return _baseProvider.chat(
+        messages,
+        tools: tools,
+        options: options,
+        cancelToken: cancelToken,
+      );
+    }
+
     final cacheKey = _generateCacheKey(messages);
 
     if (_cache.containsKey(cacheKey)) {
@@ -494,6 +467,7 @@ class CachingChatProvider implements ChatCapability {
     print('   💾 [CACHE] Cache miss, calling base provider');
     final response = await _baseProvider.chat(
       messages,
+      tools: tools,
       options: options,
       cancelToken: cancelToken,
     );
@@ -504,9 +478,9 @@ class CachingChatProvider implements ChatCapability {
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
+    List<ModelMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     // For simplicity, streaming bypasses cache
@@ -518,34 +492,14 @@ class CachingChatProvider implements ChatCapability {
     );
   }
 
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    // Tools bypass cache for safety
-    return _baseProvider.chatWithTools(
-      messages,
-      tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async {
-    return _baseProvider.memoryContents();
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return _baseProvider.summarizeHistory(messages);
-  }
-
-  String _generateCacheKey(List<ChatMessage> messages) {
-    return messages.map((m) => '${m.role}:${m.content}').join('|');
+  String _generateCacheKey(List<ModelMessage> messages) {
+    return messages.map((message) {
+      final text = message.parts
+          .whereType<TextContentPart>()
+          .map((part) => part.text)
+          .join();
+      return '${message.role}:$text';
+    }).join('|');
   }
 }
 
@@ -563,7 +517,8 @@ class CustomAPIProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -578,40 +533,19 @@ class CustomAPIProvider implements ChatCapability {
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
+    List<ModelMessage> messages, {
     List<Tool>? tools,
+    LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     final response = await chat(
       messages,
+      tools: tools,
       options: options,
       cancelToken: cancelToken,
     );
     yield TextDeltaEvent(response.text ?? '');
     yield CompletionEvent(response);
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) {
-    return chat(
-      messages,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return 'Custom API summary of ${messages.length} messages';
   }
 }
 
@@ -663,7 +597,7 @@ class MockUsage extends UsageInfo {
 /// - ChatCapability: Core interface to implement
 /// - chat(): Single request/response
 /// - chatStream(): Streaming responses
-/// - chatWithTools(): Tool-enabled chat
+/// - chat(..., tools: ...): Tool-enabled chat
 ///
 /// Implementation Patterns:
 /// - Mock providers: Testing and development

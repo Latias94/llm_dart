@@ -40,13 +40,16 @@ class OpenRouterBuilder {
     String? searchPrompt,
     bool useOnlineShortcut = true,
   }) {
-    _baseBuilder.extension(
+    _baseBuilder
+      ..enableWebSearch()
+      ..extension(
         LLMConfigKeys.webSearchConfig,
         WebSearchConfig.openRouter(
           maxResults: maxResults,
           searchPrompt: searchPrompt,
           useOnlineShortcut: useOnlineShortcut,
-        ));
+        ),
+      );
     return this;
   }
 

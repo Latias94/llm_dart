@@ -1,11 +1,8 @@
-// Structured object helpers tests use ChatMessage-based prompts to
-// verify backwards compatibility of generateObject and streamObject.
-// ignore_for_file: deprecated_member_use
+// Structured object helpers tests (prompt-first).
 
 import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import '../utils/mock_provider_factory.dart';
 
@@ -47,17 +44,8 @@ class FakeObjectChatProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return FakeObjectChatResponse(responseText);
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -66,7 +54,7 @@ class FakeObjectChatProvider implements ChatCapability {
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -74,13 +62,6 @@ class FakeObjectChatProvider implements ChatCapability {
     yield TextDeltaEvent(responseText);
     yield CompletionEvent(FakeObjectChatResponse(responseText));
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 }
 
 class TestObject {
@@ -373,7 +354,8 @@ class _WarningObjectChatProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -384,18 +366,8 @@ class _WarningObjectChatProvider implements ChatCapability {
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chat(messages, options: options, cancelToken: cancelToken);
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -408,11 +380,4 @@ class _WarningObjectChatProvider implements ChatCapability {
       ),
     );
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 }

@@ -1,6 +1,4 @@
-// OpenAI text completion capability implemented on top of the
-// ChatMessage-based chat completions API for compatibility.
-// ignore_for_file: deprecated_member_use
+// OpenAI text completion capability implemented on top of Chat Completions.
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
@@ -19,9 +17,7 @@ class OpenAICompletion implements CompletionCapability {
 
   @override
   Future<CompletionResponse> complete(CompletionRequest request) async {
-    final messages = [ChatMessage.user(request.prompt)];
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
+    final promptMessages = [ModelMessage.userText(request.prompt)];
 
     final requestBody = <String, dynamic>{
       'model': config.model,
@@ -53,9 +49,7 @@ class OpenAICompletion implements CompletionCapability {
   }
 
   Stream<String> completeStream(CompletionRequest request) async* {
-    final messages = [ChatMessage.user(request.prompt)];
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
+    final promptMessages = [ModelMessage.userText(request.prompt)];
 
     final requestBody = <String, dynamic>{
       'model': config.model,

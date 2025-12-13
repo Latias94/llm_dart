@@ -1,7 +1,6 @@
-// Mock implementation of LanguageModel for unit tests. This type
-// intentionally uses the legacy ChatMessage-based LanguageModel
-// surface to verify compatibility with existing helpers.
-// ignore_for_file: deprecated_member_use
+// Mock implementation of LanguageModel for unit tests.
+//
+// Records the last prompt-first messages and per-call options.
 
 import 'dart:async';
 import 'dart:convert';

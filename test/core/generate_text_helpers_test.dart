@@ -1,10 +1,6 @@
-// Tests for high-level text helpers. These tests intentionally use
-// ChatMessage to verify backwards compatibility of the helper APIs.
-// ignore_for_file: deprecated_member_use
+// Tests for high-level text helpers (prompt-first).
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
-import 'package:llm_dart_core/llm_dart_core.dart' show TextContentPart;
 import '../utils/mock_language_model.dart';
 import '../utils/mock_provider_factory.dart';
 import 'package:test/test.dart';
@@ -41,18 +37,8 @@ class FakeChatProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    lastOptions = options;
-    return FakeChatResponse();
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -62,7 +48,7 @@ class FakeChatProvider implements ChatCapability {
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -71,13 +57,6 @@ class FakeChatProvider implements ChatCapability {
     yield const TextDeltaEvent('hi');
     yield CompletionEvent(FakeChatResponse());
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 }
 
 class _RichChatResponse implements ChatResponse {
@@ -135,17 +114,8 @@ class _RichChatProvider implements ChatCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return _response;
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async {
@@ -154,20 +124,13 @@ class _RichChatProvider implements ChatCapability {
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) async* {
     yield CompletionEvent(_response);
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'summary';
 }
 
 void main() {

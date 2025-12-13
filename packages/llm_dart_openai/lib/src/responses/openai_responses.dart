@@ -1,7 +1,4 @@
-// OpenAI Responses API implementation based on the ChatMessage-based
-// ChatCapability and the structured ModelMessage prompt model.
-// ChatMessage usage is intentional here for compatibility.
-// ignore_for_file: deprecated_member_use
+// OpenAI Responses API implementation (prompt-first).
 
 import 'dart:async';
 
@@ -40,7 +37,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
 
   @override
   Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
+    List<ModelMessage> messages,
     List<Tool>? tools, {
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -62,17 +59,24 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
 
   @override
   Future<ChatResponse> chatWithToolsBackground(
-    List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) async {
-    final requestBody = _buildRequestBody(messages, tools, false, true);
+    List<ModelMessage> messages,
+    List<Tool>? tools, {
+    LanguageModelCallOptions? options,
+  }) async {
+    final requestBody = _buildRequestBody(
+      messages,
+      tools,
+      false,
+      true,
+      options: options,
+    );
     final responseData = await client.postJson(responsesEndpoint, requestBody);
     return _parseResponse(responseData);
   }
 
   @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
@@ -116,33 +120,17 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
 
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
     LanguageModelCallOptions? options,
     CancellationToken? cancelToken,
   }) {
     return chatWithTools(
       messages,
-      null,
+      tools,
       options: options,
       cancelToken: cancelToken,
     );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final prompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final request = [ChatMessage.user(prompt)];
-    final response = await chat(request);
-    final text = response.text;
-    if (text == null) {
-      throw const GenericError('no text in summary response');
-    }
-
-    return ReasoningUtils.filterThinkingContent(text);
   }
 
   @override
@@ -233,7 +221,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   @override
   Future<ChatResponse> continueConversation(
     String previousResponseId,
-    List<ChatMessage> newMessages, {
+    List<ModelMessage> newMessages, {
     List<Tool>? tools,
     bool background = false,
   }) async {
@@ -254,7 +242,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   @override
   Future<ChatResponse> forkConversation(
     String fromResponseId,
-    List<ChatMessage> newMessages, {
+    List<ModelMessage> newMessages, {
     List<Tool>? tools,
     bool background = false,
   }) {
@@ -266,17 +254,20 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     );
   }
 
-  Map<String, dynamic> _buildRequestBody(List<ChatMessage> messages,
-      List<Tool>? tools, bool stream, bool background,
-      {LanguageModelCallOptions? options}) {
+  Map<String, dynamic> _buildRequestBody(
+    List<ModelMessage> promptMessages,
+    List<Tool>? tools,
+    bool stream,
+    bool background, {
+    LanguageModelCallOptions? options,
+  }) {
     final isReasoningModel =
         ReasoningUtils.isOpenAIReasoningModel(config.model);
 
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
     final apiMessages = client.buildApiMessagesFromPrompt(promptMessages);
 
-    final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
+    final hasSystemMessage =
+        promptMessages.any((m) => m.role == ChatRole.system);
 
     if (!hasSystemMessage && config.systemPrompt != null) {
       apiMessages.insert(0, {'role': 'system', 'content': config.systemPrompt});

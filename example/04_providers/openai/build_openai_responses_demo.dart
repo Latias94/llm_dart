@@ -1,7 +1,6 @@
-// ignore_for_file: avoid_print, deprecated_member_use
+// ignore_for_file: avoid_print
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// 🚀 buildOpenAIResponses() Method Demo
@@ -87,7 +86,7 @@ Future<void> demonstrateTraditionalApproach(String apiKey) async {
 
         // Test basic functionality
         final response = await responsesAPI.chat([
-          ChatMessage.user('Hello from traditional approach!'),
+          ModelMessage.userText('Hello from traditional approach!'),
         ]);
         print(
             '   💬 Response: ${response.text?.substring(0, 50) ?? 'No text'}...');
@@ -131,7 +130,7 @@ Future<void> demonstrateConvenienceMethod(String apiKey) async {
 
     // Test basic functionality
     final response = await responsesAPI.chat([
-      ChatMessage.user('Hello from convenience method!'),
+      ModelMessage.userText('Hello from convenience method!'),
     ]);
     print('   💬 Response: ${response.text?.substring(0, 50) ?? 'No text'}...');
 

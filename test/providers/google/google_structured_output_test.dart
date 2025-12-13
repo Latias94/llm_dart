@@ -1,9 +1,7 @@
-// Google structured output tests use ChatMessage-based prompts to
-// verify jsonSchema integration and structured responses.
-// ignore_for_file: deprecated_member_use
+// Google structured output tests validate prompt-first ModelMessage inputs and
+// JSON schema request shaping.
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 
 import 'google_test_utils.dart';
@@ -36,7 +34,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      await chat.chat([ChatMessage.user('Hello')]);
+      await chat.chat([ModelMessage.userText('Hello')]);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);
@@ -80,7 +78,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      await chat.chat([ChatMessage.user('Describe the image')]);
+      await chat.chat([ModelMessage.userText('Describe the image')]);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);
@@ -113,7 +111,7 @@ void main() {
       final client = CapturingGoogleClient(config);
       final chat = GoogleChat(client, config);
 
-      await chat.chat([ChatMessage.user('Hello')]);
+      await chat.chat([ModelMessage.userText('Hello')]);
 
       final body = client.lastRequestBody;
       expect(body, isNotNull);

@@ -23,3 +23,14 @@ export 'src/http/openai_dio_strategy.dart';
 export 'src/assistants/openai_assistants.dart';
 export 'src/factory/openai_provider_factory.dart'
     show OpenAIProviderFactory, registerOpenAIProvider;
+
+// Vercel AI-style facade exports (model-centric API).
+export 'src/facade/openai_facade.dart'
+    show
+        OpenAIProviderSettings,
+        OpenAI,
+        OpenAIResponsesModel,
+        OpenAITools,
+        OpenAIProviderDefinedTools,
+        createOpenAI,
+        openai;

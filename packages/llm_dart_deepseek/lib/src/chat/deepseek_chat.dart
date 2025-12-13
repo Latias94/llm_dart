@@ -1,7 +1,4 @@
-// DeepSeek chat capability implementation based on the ChatMessage
-// ChatCapability surface. It converts to ModelMessage prompts for
-// request building behind the scenes.
-// ignore_for_file: deprecated_member_use
+// DeepSeek chat capability implementation (prompt-first).
 
 import 'dart:convert';
 
@@ -15,7 +12,7 @@ import '../config/deepseek_config.dart';
 ///
 /// This module handles all chat-related functionality for DeepSeek providers,
 /// including streaming, tool calling, and reasoning model support.
-class DeepSeekChat implements ChatCapability, PromptChatCapability {
+class DeepSeekChat implements ChatCapability {
   final DeepSeekClient client;
   final DeepSeekConfig config;
 
@@ -34,94 +31,7 @@ class DeepSeekChat implements ChatCapability, PromptChatCapability {
   String get chatEndpoint => 'chat/completions';
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    return chatPrompt(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async* {
-    final promptMessages =
-        messages.map((message) => message.toPromptMessage()).toList();
-    yield* chatPromptStream(
-      promptMessages,
-      tools: tools,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    return chatWithTools(
-      messages,
-      null,
-      options: options,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final prompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final request = [ChatMessage.user(prompt)];
-    final response = await chat(request);
-    final text = response.text;
-    if (text == null) {
-      throw const GenericError('no text in summary response');
-    }
-    return text;
-  }
-
-  @override
-  Future<ChatResponse> chatPrompt(
-    List<ModelMessage> messages, {
-    List<Tool>? tools,
-    LanguageModelCallOptions? options,
-    CancellationToken? cancelToken,
-  }) async {
-    final warnings = <CallWarning>[];
-    final requestBody = _buildRequestBody(
-      messages,
-      tools,
-      false,
-      options,
-      warnings,
-    );
-    final responseData = await client.postJson(
-      chatEndpoint,
-      requestBody,
-      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
-    );
-    return _parseResponse(responseData, warnings);
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
     List<ModelMessage> messages, {
     List<Tool>? tools,
     LanguageModelCallOptions? options,
@@ -150,6 +60,29 @@ class DeepSeekChat implements ChatCapability, PromptChatCapability {
         yield event;
       }
     }
+  }
+
+  @override
+  Future<ChatResponse> chat(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  }) async {
+    final warnings = <CallWarning>[];
+    final requestBody = _buildRequestBody(
+      messages,
+      tools,
+      false,
+      options,
+      warnings,
+    );
+    final responseData = await client.postJson(
+      chatEndpoint,
+      requestBody,
+      cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+    );
+    return _parseResponse(responseData, warnings);
   }
 
   void _resetStreamState() {
@@ -507,8 +440,6 @@ class DeepSeekChat implements ChatCapability, PromptChatCapability {
     return result;
   }
 
-  // Legacy ChatMessage-based conversion is now replaced by
-  // the ModelMessage-based _convertPromptMessage implementation.
 }
 
 /// DeepSeek chat response implementation.

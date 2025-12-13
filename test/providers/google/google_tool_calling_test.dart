@@ -1,9 +1,6 @@
-// Google tool calling tests rely on ChatMessage-based prompts to
-// verify tool invocation and request shaping.
-// ignore_for_file: deprecated_member_use
+// Google tool calling tests verify tool invocation and request shaping.
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 import 'package:test/test.dart';
 import 'google_test_utils.dart';
 
@@ -266,9 +263,9 @@ void main() {
         final client = CapturingGoogleClient(config);
         final chat = GoogleChat(client, config);
 
-        final messages = [ChatMessage.user('hello')];
+        final messages = [ModelMessage.userText('hello')];
 
-        await chat.chatWithTools(messages, testTools);
+        await chat.chat(messages, tools: testTools);
 
         final body = client.lastRequestBody;
         expect(body, isNotNull);

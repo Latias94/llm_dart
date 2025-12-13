@@ -10,3 +10,7 @@ export 'src/error/deepseek_error_handler.dart';
 export 'src/completion/deepseek_completion.dart';
 export 'src/factory/deepseek_provider_factory.dart'
     show DeepSeekProviderFactory, registerDeepSeekProvider;
+
+// Vercel AI-style facade exports (model-centric API).
+export 'src/facade/deepseek_facade.dart'
+    show DeepSeekProviderSettings, DeepSeek, createDeepSeek, deepseek;

@@ -111,16 +111,9 @@ Please prefer the imports listed above for new code and refactors.
 
 #### Legacy shims
 
-For backwards compatibility, a few legacy shim entrypoints remain:
-
-- `package:llm_dart/legacy/config_utils.dart`
-- `package:llm_dart/legacy/openai_legacy.dart`
-- `package:llm_dart/legacy/openai_compatible_defaults.dart`
-
-These are all marked as `@Deprecated` and will be removed in a future
-release. New code should use `llm_dart_core`, provider subpackages
-(`llm_dart_openai`, `llm_dart_openai_compatible`, etc.), and
-`llm_dart_provider_utils` instead.
+Legacy shim entrypoints under `package:llm_dart/legacy/...` have been removed.
+If you are migrating from older versions, use prompt-first `ModelMessage` /
+`ChatPromptBuilder` and the provider subpackages instead.
 
 ### Usage Modes
 
@@ -351,7 +344,7 @@ final result = await generateTextWithModel(
 print(result.text);
 ```
 
-**Prompt-first 推荐**：默认使用 `ChatPromptBuilder` + `ModelMessage`；`ChatMessage` 只在兼容旧代码或直接使用低级 `ChatCapability` 接口时使用。
+**Prompt-first 推荐**：默认使用 `ChatPromptBuilder` + `ModelMessage`；`llm_dart` 现已统一为 prompt-first（不再提供 `ChatMessage` 兼容层）。
 
 ### Streaming with DeepSeek Reasoning
 
@@ -580,103 +573,34 @@ Future<void> main() async {
 }
 ```
 
-### Legacy ChatMessage & Migration
+### Migration: Prompt-first messages
 
-The internal content model of `llm_dart` is now based on `ModelMessage` +
-`ChatContentPart`, and this is the recommended API for all new code. The
-older `ChatMessage` type is kept only for backwards compatibility and lives
-under a dedicated legacy namespace.
+`llm_dart` is fully prompt-first: conversations are represented by
+`ModelMessage` + `ChatContentPart`.
 
-#### Accessing ChatMessage from the legacy namespace
+If you are migrating from older versions, the common mapping is:
 
-If you still have existing code that uses `ChatMessage`, import it from the
-legacy entrypoint:
+- `system/user/assistant` text → `ModelMessage.systemText/userText/assistantText`
+- Multi-part / multi-modal prompts → `ChatPromptBuilder` (recommended)
 
 ```dart
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 
 Future<void> main() async {
-  // Legacy chat-style history
-  final legacyMessages = <ChatMessage>[
-    ChatMessage.system('You are a helpful assistant.'),
-    ChatMessage.user('What is the capital of France?'),
+  final messages = <ModelMessage>[
+    ModelMessage.systemText('You are a helpful assistant.'),
+    ModelMessage.userText('What is the capital of France?'),
   ];
 
-  // Convert to prompt-first ModelMessage list
-  final promptMessages = legacyMessages
-      .map((message) => message.toPromptMessage())
-      .toList(growable: false);
-
-  // Use the prompt-first helper with ModelMessage[]
   final result = await generateTextPrompt(
     model: 'openai:gpt-4o-mini',
     apiKey: 'your-openai-key',
-    messages: promptMessages,
+    messages: messages,
   );
 
   print(result.text);
 }
 ```
-
-This pattern lets you keep existing `List<ChatMessage>` histories in your
-application while gradually converting call sites over to prompt-first
-helpers.
-
-#### Migrating agents and tool-calling code
-
-For agent-style flows, you can also bridge from `ChatMessage` to
-`ModelMessage` when calling the new prompt-first helpers:
-
-```dart
-import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
-
-Future<void> main() async {
-  final model = await ai()
-      .use('openai:gpt-4o-mini')
-      .apiKey('your-openai-key')
-      .buildLanguageModel();
-
-  // Legacy-style history
-  final legacyMessages = <ChatMessage>[
-    ChatMessage.system('You are a helpful research assistant.'),
-    ChatMessage.user('Find the latest updates on Dart 3 and summarize them.'),
-  ];
-
-  // Bridge to ModelMessage for the agent loop
-  final promptMessages = legacyMessages
-      .map((message) => message.toPromptMessage())
-      .toList(growable: false);
-
-  // Run the prompt-first agent API
-  final result = await runAgentPromptText(
-    model: model,
-    promptMessages: promptMessages,
-    tools: {
-      // Define your ExecutableTool instances here
-    },
-  );
-
-  print('Final answer: ${result.text}');
-}
-```
-
-Migration guidelines:
-
-- New code should use `ChatPromptBuilder` / `ModelMessage.systemText()`,
-  `.userText()`, `.assistantText()` and prompt-first helpers like
-  `generateTextPrompt`, `generateTextPromptWithModel`,
-  `runAgentPromptText`, and `runAgentPromptObject`.
-- Existing code that already uses `ChatMessage` can keep its local types
-  and only convert to `ModelMessage` at the boundary where you call
-  prompt-first helpers.
-- Over time, you can replace `ChatMessage` usage in your domain layer with
-  `ModelMessage` directly and remove the bridging step.
-
-In a future major release, `ChatMessage` may move to a separate legacy
-package or be removed entirely. Treat it as a compatibility layer rather
-than the primary API surface.
 
 ### Streaming structured outputs with streamObject (MVP)
 
@@ -1090,9 +1014,9 @@ if (result.toolCalls != null) {
 
 ## Advanced Usage: Structured Prompts (ModelMessage + ChatContentPart)
 
-Under the hood all providers convert the legacy `ChatMessage` model into the structured `ModelMessage` model, so:
+All providers operate on the structured `ModelMessage` prompt model, so:
 
-- Existing code that already uses `ChatMessage.user(...)` / `ChatMessage.image(...)` can keep doing so; the helpers will bridge to `ModelMessage` internally.
+- For text-only prompts, `ModelMessage.userText/systemText/assistantText(...)` is usually enough.
 - For **multi‑part / multi‑modal** prompts (text + multiple images/files/audio/video + tool results), use the structured prompt model:
   - `ModelMessage` as the provider‑agnostic prompt.
   - `ChatContentPart` as building blocks (text, files, tool calls/results).
@@ -1169,9 +1093,8 @@ Each provider maps the same `ModelMessage` to its native format:
 
 You can also drive tool use round‑trips using `ToolCallContentPart` and
 `ToolResultContentPart`. The example below uses the low-level
-`ChatCapability.chatWithTools` API with the legacy `ChatMessage` model to
-show how to integrate structured tool results; for new code, prefer the
-prompt-first `LanguageModel` helpers (`generateTextWithModel`,
+`ChatCapability` API with prompt-first `ModelMessage` inputs; for most apps,
+prefer the `LanguageModel` helpers (`generateTextWithModel`,
 `runAgentPromptText`, etc.) described earlier.
 
 ```dart
@@ -1198,8 +1121,8 @@ Future<void> toolRoundTrip(ChatCapability provider) async {
   ];
 
   // 1) Ask the model to call the tool.
-  final messages = [ChatMessage.user('What is the weather in Tokyo?')];
-  final response = await provider.chatWithTools(messages, tools);
+  final messages = [ModelMessage.userText('What is the weather in Tokyo?')];
+  final response = await provider.chat(messages, tools: tools);
   final calls = response.toolCalls ?? [];
   if (calls.isEmpty) return;
 
@@ -1227,11 +1150,10 @@ Future<void> toolRoundTrip(ChatCapability provider) async {
 
   final followupMessages = [
     ...messages,
-    ChatMessage.fromPromptMessage(toolResultPrompt),
+    toolResultPrompt,
   ];
 
-  final followupResponse =
-      await provider.chatWithTools(followupMessages, tools);
+  final followupResponse = await provider.chat(followupMessages, tools: tools);
   print('Final answer: ${followupResponse.text}');
 }
 ```
@@ -1276,41 +1198,25 @@ final provider = await ai()
 OpenAI's new Responses API provides stateful conversation management with
 built-in tools.
 
-The low-level `responses.chat(...)` APIs shown here still use the legacy
-`ChatMessage` model (from `package:llm_dart/legacy/chat.dart`). For new
-prompt-first usage that only needs request/response generation, prefer the
-`LanguageModel` helpers demonstrated in the next section.
-
 ```dart
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 
-final provider = await ai()
-    .openai((openai) => openai
-        .useResponsesAPI()
-        .webSearchTool()
-        .fileSearchTool(vectorStoreIds: ['vs_123']))
-    .apiKey('your-key')
-    .model('gpt-4o')
-    .build();
-
-// Cast to access stateful features
-final responsesProvider = provider as OpenAIProvider;
-final responses = responsesProvider.responses!;
+final openai = createOpenAI(apiKey: 'your-key');
+final responses = openai.responses('gpt-4o');
 
 // Stateful conversation with automatic context preservation
 final response1 = await responses.chat([
-  ChatMessage.user('My name is Alice. Tell me about quantum computing'),
+  ModelMessage.userText('My name is Alice. Tell me about quantum computing'),
 ]);
 
 final responseId = (response1 as OpenAIResponsesResponse).responseId;
 final response2 = await responses.continueConversation(responseId!, [
-  ChatMessage.user('Remember my name and explain it simply'),
+  ModelMessage.userText('Remember my name and explain it simply'),
 ]);
 
 // Background processing for long tasks
 final backgroundTask = await responses.chatWithToolsBackground([
-  ChatMessage.user('Write a detailed research report'),
+  ModelMessage.userText('Write a detailed research report'),
 ], null);
 
 // Response lifecycle management
@@ -1610,7 +1516,7 @@ See [cancellation_demo.dart](example/02_core_features/cancellation_demo.dart) fo
 
 ```dart
 try {
-  final response = await provider.chatWithTools(messages, null);
+  final response = await provider.chat(messages);
   print(response.text);
 } on CancelledError catch (e) {
   print('Request cancelled: $e');
@@ -1630,15 +1536,25 @@ try {
 ### Capability-Based Design
 
 The library uses a capability-based interface design instead of monolithic "god interfaces".
-Low-level `ChatCapability` still operates on the legacy `ChatMessage` model,
-while higher-level helpers wrap these capabilities behind prompt-first
-`LanguageModel` interfaces using `ModelMessage`:
+Core capabilities are prompt-first and operate on structured `ModelMessage`
+conversations:
 
 ```dart
-// Core capabilities (low-level, legacy ChatMessage model)
+// Core capabilities (prompt-first)
 abstract class ChatCapability {
-  Future<ChatResponse> chat(List<ChatMessage> messages);
-  Stream<ChatStreamEvent> chatStream(List<ChatMessage> messages);
+  Future<ChatResponse> chat(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  });
+
+  Stream<ChatStreamEvent> chatStream(
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
+  });
 }
 
 abstract class EmbeddingCapability {
@@ -1861,7 +1777,7 @@ Future<void> main() async {
 
   final result = await generateTextWithModel(
     model,
-    messages: [
+    promptMessages: [
       ModelMessage.userText('What are the latest updates on Dart 3?'),
     ],
   );
@@ -1873,7 +1789,7 @@ Future<void> main() async {
 This approach makes it easier to migrate from the Vercel AI SDK to `llm_dart`
 while keeping a similar mental model: create a provider, then create models
 for chat, responses, embeddings, images, or audio, and pass them into
-high-level helpers like `generateTextWithModel` or `runAgentText`.
+high-level helpers like `generateTextWithModel` or `runAgentPromptText`.
 
 ## Examples
 

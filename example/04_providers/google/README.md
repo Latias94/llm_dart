@@ -94,22 +94,14 @@ final provider = await ai()
     .buildEmbedding();
 ```
 
-### Convenience Factory Functions
+### Model-centric Facade (Vercel AI-style)
 
 ```dart
-// Create embedding provider with default settings
-final provider = createGoogleEmbeddingProvider(
-  apiKey: 'your-api-key',
-);
+// Create the model factory
+final google = createGoogleGenerativeAI(apiKey: 'your-api-key');
 
-// Use custom parameters and Google configuration
-final customProvider = await ai()
-    .google((google) => google
-        .embeddingTaskType('SEMANTIC_SIMILARITY')
-        .embeddingDimensions(768))
-    .apiKey('your-api-key')
-    .model('text-embedding-004')
-    .buildEmbedding();
+// Create an embedding model
+final provider = google.textEmbeddingModel('text-embedding-004');
 ```
 
 ### Batch Processing

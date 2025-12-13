@@ -1,11 +1,7 @@
-// Sanity tests for the root llm_dart entry point. These tests also
-// reference ChatMessage via the legacy entry point to ensure the
-// legacy API surface is available.
-// ignore_for_file: deprecated_member_use
+// Sanity tests for the root llm_dart entry point.
 
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/legacy/chat.dart';
 
 void main() {
   group('LLM Dart Library Entry Point', () {
@@ -121,7 +117,7 @@ void main() {
 
       test('model exports are available', () {
         // Test that model classes can be referenced
-        expect(ChatMessage, isA<Type>());
+        expect(ModelMessage, isA<Type>());
         expect(ToolCall, isA<Type>());
       });
 
