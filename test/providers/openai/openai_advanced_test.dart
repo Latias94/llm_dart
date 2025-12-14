@@ -1,14 +1,16 @@
-import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
 import 'dart:typed_data';
+
+import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:test/test.dart';
 
 void main() {
   group('OpenAI Advanced Features Tests', () {
-    late OpenAIProvider provider;
+    late openai.OpenAIProvider provider;
 
     setUp(() {
-      provider = OpenAIProvider(
-        OpenAIConfig(
+      provider = openai.OpenAIProvider(
+        openai.OpenAIConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.openai.com/v1',
         ),

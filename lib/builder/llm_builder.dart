@@ -1,18 +1,20 @@
-import '../core/capability.dart';
-import '../core/config.dart';
-import '../core/registry.dart';
-import '../core/llm_error.dart';
-import '../core/web_search.dart';
-import '../models/tool_models.dart';
-import '../models/chat_models.dart';
-import '../providers/google/builder.dart';
-import '../providers/openai/builder.dart';
-import '../providers/openai/provider.dart';
-import '../providers/anthropic/builder.dart';
-import '../providers/ollama/builder.dart';
-import '../providers/elevenlabs/builder.dart';
-import '../providers/openai/compatible/openrouter/builder.dart';
+// Prompt-first LLM builder. This is the primary entry point for configuring
+// providers and producing ChatCapability / LanguageModel instances.
+
+import 'dart:math' as math;
+
+import 'package:llm_dart_core/llm_dart_core.dart';
+import '../src/builtin_providers.dart';
 import 'http_config.dart';
+
+part 'llm_builder_http_extensions.dart';
+part 'llm_builder_image_extensions.dart';
+part 'llm_builder_audio_extensions.dart';
+part 'llm_builder_search_extensions.dart';
+part 'llm_builder_reranking_adapter.dart';
+part 'llm_builder_chat_middleware_wrapper.dart';
+part 'llm_builder_text_helpers.dart';
+part 'llm_builder_capabilities.dart';
 
 /// Builder for configuring and instantiating LLM providers
 ///
@@ -30,95 +32,180 @@ class LLMBuilder {
     model: '',
   );
 
+  /// Registered chat middlewares for this builder.
+  ///
+  /// These middlewares are applied only when using middleware-aware
+  /// build methods (e.g. [buildWithMiddleware]) to keep the default
+  /// build behavior fully backwards compatible.
+  final List<ChatMiddleware> _middlewares = [];
+
+  /// Registered embedding middlewares for this builder.
+  ///
+  /// These middlewares are applied only when using embedding-aware
+  /// build methods (e.g. [buildEmbeddingWithMiddleware]) to keep the
+  /// default build behavior fully backwards compatible.
+  final List<EmbeddingMiddleware> _embeddingMiddlewares = [];
+
   /// Creates a new empty builder instance with default values
   LLMBuilder();
 
+  /// Configure provider and model using a single model identifier.
+  ///
+  /// The [modelId] should be in the form `"provider:model"`, for example:
+  /// - `"openai:gpt-4o"`
+  /// - `"deepseek:deepseek-reasoner"`
+  /// - `"ollama:llama3.2"`
+  ///
+  /// This mirrors the model-centric style of the Vercel AI SDK while
+  /// reusing the existing provider registry under the hood.
+  LLMBuilder use(String modelId) {
+    final separatorIndex = modelId.indexOf(':');
+    if (separatorIndex <= 0 || separatorIndex == modelId.length - 1) {
+      throw ArgumentError(
+        'Model identifier must be in the form "provider:model", e.g. "openai:gpt-4o". '
+        'Received: "$modelId".',
+      );
+    }
+
+    final providerId = modelId.substring(0, separatorIndex);
+    final model = modelId.substring(separatorIndex + 1);
+
+    provider(providerId);
+    this.model(model);
+
+    return this;
+  }
+
   /// Sets the provider to use (new registry-based approach)
   LLMBuilder provider(String providerId) {
+    // Ensure built-in providers are registered before resolving defaults.
+    // This mirrors the previous behavior where providers were registered
+    // lazily on first use by the registry itself.
+    registerBuiltinProviders();
+
+    final previous = _config;
     _providerId = providerId;
 
     // Get default config for this provider if it's registered
     final factory = LLMProviderRegistry.getFactory(providerId);
     if (factory != null) {
-      _config = factory.getDefaultConfig();
+      _mergeWithDefaults(factory.getDefaultConfig());
+    } else {
+      _config = previous;
     }
 
     return this;
   }
 
-  /// Convenience methods for built-in providers
-  LLMBuilder openai([OpenAIBuilder Function(OpenAIBuilder)? configure]) {
-    provider('openai');
-    if (configure != null) {
-      final openaiBuilder = OpenAIBuilder(this);
-      configure(openaiBuilder);
+  /// Merge provider defaults into the current config without overwriting
+  /// values the caller has already set (apiKey, baseUrl, model, extensions, etc.).
+  void _mergeWithDefaults(LLMConfig defaults) {
+    _config = LLMConfig(
+      apiKey: _config.apiKey ?? defaults.apiKey,
+      baseUrl: _config.baseUrl.isNotEmpty ? _config.baseUrl : defaults.baseUrl,
+      model: _config.model.isNotEmpty ? _config.model : defaults.model,
+      maxTokens: _config.maxTokens ?? defaults.maxTokens,
+      temperature: _config.temperature ?? defaults.temperature,
+      systemPrompt: _config.systemPrompt ?? defaults.systemPrompt,
+      timeout: _config.timeout ?? defaults.timeout,
+      topP: _config.topP ?? defaults.topP,
+      topK: _config.topK ?? defaults.topK,
+      tools: _config.tools ?? defaults.tools,
+      toolChoice: _config.toolChoice ?? defaults.toolChoice,
+      stopSequences: _config.stopSequences ?? defaults.stopSequences,
+      user: _config.user ?? defaults.user,
+      serviceTier: _config.serviceTier ?? defaults.serviceTier,
+      extensions: {
+        ...defaults.extensions,
+        ..._config.extensions,
+      },
+    );
+  }
+
+  /// Ensure that the current provider supports chat/text capabilities.
+  ///
+  /// This is used by high-level text helpers (generateText/streamText/etc.)
+  /// to fail fast for providers that are intentionally audio-only, such as
+  /// ElevenLabs. Audio-centric providers remain fully usable via the
+  /// capability factory methods (e.g. [buildAudio]) and audio helpers.
+  void _ensureChatCapable(String operation) {
+    if (_providerId == null) {
+      throw const GenericError('No provider specified');
     }
+
+    final providerId = _providerId!;
+
+    // Use the registry's capability information to determine whether
+    // the selected provider can handle chat/text operations.
+    if (!LLMProviderRegistry.supportsCapability(
+      providerId,
+      LLMCapability.chat,
+    )) {
+      final buffer = StringBuffer()
+        ..write('Provider "$providerId" does not support $operation. ');
+
+      if (providerId == 'elevenlabs') {
+        buffer
+          ..write('ElevenLabs specializes in audio capabilities. ')
+          ..write(
+            'Use buildAudio(), generateSpeech(), transcribe(), or '
+            'transcribeFile() instead.',
+          );
+      } else {
+        buffer.write(
+          'Check the provider documentation for supported capabilities.',
+        );
+      }
+
+      throw UnsupportedCapabilityError(buffer.toString());
+    }
+  }
+
+  /// Replaces the current middleware list with the given middlewares.
+  ///
+  /// This is conceptually similar to the `middleware`/`middlewares`
+  /// option in the Vercel AI SDK: callers provide the complete
+  /// middleware configuration for this builder.
+  LLMBuilder middlewares(List<ChatMiddleware> middlewares) {
+    _middlewares
+      ..clear()
+      ..addAll(middlewares);
     return this;
   }
 
-  LLMBuilder anthropic(
-      [AnthropicBuilder Function(AnthropicBuilder)? configure]) {
-    provider('anthropic');
-    if (configure != null) {
-      final anthropicBuilder = AnthropicBuilder(this);
-      configure(anthropicBuilder);
-    }
+  /// Adds a single middleware to the end of the middleware list.
+  ///
+  /// This is a convenience method for incremental configuration.
+  LLMBuilder addMiddleware(ChatMiddleware middleware) {
+    _middlewares.add(middleware);
     return this;
   }
 
-  LLMBuilder google([GoogleLLMBuilder Function(GoogleLLMBuilder)? configure]) {
-    provider('google');
-    if (configure != null) {
-      final googleBuilder = GoogleLLMBuilder(this);
-      configure(googleBuilder);
-    }
+  /// Clears all configured middlewares.
+  LLMBuilder clearMiddlewares() {
+    _middlewares.clear();
     return this;
   }
 
-  LLMBuilder deepseek() => provider('deepseek');
-
-  LLMBuilder ollama([OllamaBuilder Function(OllamaBuilder)? configure]) {
-    provider('ollama');
-    if (configure != null) {
-      final ollamaBuilder = OllamaBuilder(this);
-      configure(ollamaBuilder);
-    }
+  /// Replaces the current embedding middleware list with the given middlewares.
+  LLMBuilder embeddingMiddlewares(List<EmbeddingMiddleware> middlewares) {
+    _embeddingMiddlewares
+      ..clear()
+      ..addAll(middlewares);
     return this;
   }
 
-  LLMBuilder xai() => provider('xai');
-  LLMBuilder phind() => provider('phind');
-  LLMBuilder groq() => provider('groq');
-
-  LLMBuilder elevenlabs(
-      [ElevenLabsBuilder Function(ElevenLabsBuilder)? configure]) {
-    provider('elevenlabs');
-    if (configure != null) {
-      final elevenLabsBuilder = ElevenLabsBuilder(this);
-      configure(elevenLabsBuilder);
-    }
+  /// Adds a single embedding middleware to the end of the middleware list.
+  LLMBuilder addEmbeddingMiddleware(EmbeddingMiddleware middleware) {
+    _embeddingMiddlewares.add(middleware);
     return this;
   }
 
-  /// Convenience methods for OpenAI-compatible providers
-  /// These use the OpenAI interface but with provider-specific configurations
-  LLMBuilder deepseekOpenAI() => provider('deepseek-openai');
-  LLMBuilder googleOpenAI() => provider('google-openai');
-  LLMBuilder xaiOpenAI() => provider('xai-openai');
-  LLMBuilder groqOpenAI() => provider('groq-openai');
-  LLMBuilder phindOpenAI() => provider('phind-openai');
-  LLMBuilder openRouter(
-      [OpenRouterBuilder Function(OpenRouterBuilder)? configure]) {
-    provider('openrouter');
-    if (configure != null) {
-      final openRouterBuilder = OpenRouterBuilder(this);
-      configure(openRouterBuilder);
-    }
+  /// Clears all configured embedding middlewares.
+  LLMBuilder clearEmbeddingMiddlewares() {
+    _embeddingMiddlewares.clear();
     return this;
   }
-
-  LLMBuilder githubCopilot() => provider('github-copilot');
-  LLMBuilder togetherAI() => provider('together-ai');
 
   /// Sets the API key for authentication
   LLMBuilder apiKey(String key) {
@@ -205,6 +292,37 @@ class LLMBuilder {
     return this;
   }
 
+  /// Sets frequency penalty for reducing repetition (-2.0 to 2.0).
+  ///
+  /// This mirrors the OpenAI-style `frequency_penalty` parameter and is
+  /// consumed by providers that support it (OpenAI, Google, DeepSeek,
+  /// OpenAI‑compatible profiles, etc.).
+  LLMBuilder frequencyPenalty(double penalty) {
+    _config = _config.withExtension(LLMConfigKeys.frequencyPenalty, penalty);
+    return this;
+  }
+
+  /// Sets presence penalty for encouraging topic diversity (-2.0 to 2.0).
+  ///
+  /// This mirrors the OpenAI-style `presence_penalty` parameter and is
+  /// consumed by providers that support it (OpenAI, Google, DeepSeek,
+  /// OpenAI‑compatible profiles, etc.).
+  LLMBuilder presencePenalty(double penalty) {
+    _config = _config.withExtension(LLMConfigKeys.presencePenalty, penalty);
+    return this;
+  }
+
+  /// Sets a random seed for deterministic sampling (when supported).
+  ///
+  /// Providers that support deterministic runs (e.g. OpenAI, Google,
+  /// some OpenAI‑compatible backends) will use this value to make
+  /// repeated calls with the same configuration return identical
+  /// results as far as possible.
+  LLMBuilder seed(int seedValue) {
+    _config = _config.withExtension(LLMConfigKeys.seed, seedValue);
+    return this;
+  }
+
   /// Sets the function tools
   LLMBuilder tools(List<Tool> tools) {
     _config = _config.copyWith(tools: tools);
@@ -238,37 +356,20 @@ class LLMBuilder {
   /// Sets the reasoning effort for models that support it (e.g., OpenAI o1, Gemini)
   /// Valid values: ReasoningEffort.low, ReasoningEffort.medium, ReasoningEffort.high, or null to disable
   LLMBuilder reasoningEffort(ReasoningEffort? effort) {
-    _config = _config.withExtension('reasoningEffort', effort?.value);
+    _config =
+        _config.withExtension(LLMConfigKeys.reasoningEffort, effort?.value);
     return this;
   }
 
   /// Sets structured output schema for JSON responses
   LLMBuilder jsonSchema(StructuredOutputFormat schema) {
-    _config = _config.withExtension('jsonSchema', schema);
-    return this;
-  }
-
-  /// Sets voice for text-to-speech (OpenAI providers)
-  LLMBuilder voice(String voiceName) {
-    _config = _config.withExtension('voice', voiceName);
+    _config = _config.withExtension(LLMConfigKeys.jsonSchema, schema);
     return this;
   }
 
   /// Enables reasoning/thinking for supported providers (Anthropic, OpenAI o1, Ollama)
   LLMBuilder reasoning(bool enable) {
-    _config = _config.withExtension('reasoning', enable);
-    return this;
-  }
-
-  /// Sets thinking budget tokens for Anthropic extended thinking
-  LLMBuilder thinkingBudgetTokens(int tokens) {
-    _config = _config.withExtension('thinkingBudgetTokens', tokens);
-    return this;
-  }
-
-  /// Enables interleaved thinking for Anthropic (Claude 4 models only)
-  LLMBuilder interleavedThinking(bool enable) {
-    _config = _config.withExtension('interleavedThinking', enable);
+    _config = _config.withExtension(LLMConfigKeys.reasoning, enable);
     return this;
   }
 
@@ -281,41 +382,11 @@ class LLMBuilder {
   /// Gets the current configuration (for internal use by builders)
   LLMConfig get currentConfig => _config;
 
-  /// Configure HTTP settings using a fluent builder
-  ///
-  /// This method provides a clean, organized way to configure HTTP settings
-  /// without cluttering the main LLMBuilder interface.
-  ///
-  /// Example:
-  /// ```dart
-  /// final provider = await ai()
-  ///     .openai()
-  ///     .apiKey(apiKey)
-  ///     .http((http) => http
-  ///         .proxy('http://proxy.company.com:8080')
-  ///         .headers({'X-Custom-Header': 'value'})
-  ///         .connectionTimeout(Duration(seconds: 30))
-  ///         .enableLogging(true))
-  ///     .build();
-  /// ```
-  LLMBuilder http(HttpConfig Function(HttpConfig) configure) {
-    final httpConfig = HttpConfig();
-    final configuredHttp = configure(httpConfig);
-    final httpSettings = configuredHttp.build();
-
-    // Apply all HTTP settings as extensions
-    for (final entry in httpSettings.entries) {
-      _config = _config.withExtension(entry.key, entry.value);
-    }
-
-    return this;
-  }
-
   /// Convenience methods for common extensions
   LLMBuilder embeddingEncodingFormat(String format) =>
-      extension('embeddingEncodingFormat', format);
+      extension(LLMConfigKeys.embeddingEncodingFormat, format);
   LLMBuilder embeddingDimensions(int dimensions) =>
-      extension('embeddingDimensions', dimensions);
+      extension(LLMConfigKeys.embeddingDimensions, dimensions);
 
   /// Web Search configuration methods
   ///
@@ -339,7 +410,8 @@ class LLMBuilder {
   ///     .enableWebSearch()
   ///     .build();
   /// ```
-  LLMBuilder enableWebSearch() => extension('webSearchEnabled', true);
+  LLMBuilder enableWebSearch() =>
+      extension(LLMConfigKeys.webSearchEnabled, true);
 
   /// Configures web search with detailed options
   ///
@@ -378,7 +450,7 @@ class LLMBuilder {
       fromDate: fromDate,
       toDate: toDate,
     );
-    return extension('webSearchConfig', config);
+    return extension(LLMConfigKeys.webSearchConfig, config);
   }
 
   /// Quick web search setup with basic options
@@ -434,7 +506,7 @@ class LLMBuilder {
       mode: 'auto',
       searchType: WebSearchType.news,
     );
-    return extension('webSearchConfig', config);
+    return extension(LLMConfigKeys.webSearchConfig, config);
   }
 
   /// Configures search location for localized results
@@ -452,7 +524,7 @@ class LLMBuilder {
   ///     .build();
   /// ```
   LLMBuilder searchLocation(WebSearchLocation location) {
-    return extension('webSearchLocation', location);
+    return extension(LLMConfigKeys.webSearchLocation, location);
   }
 
   /// Advanced web search configuration with full control
@@ -484,6 +556,7 @@ class LLMBuilder {
     List<String>? blockedDomains,
     WebSearchLocation? location,
     String? mode,
+    double? dynamicThreshold,
     String? fromDate,
     String? toDate,
     WebSearchType? searchType,
@@ -498,57 +571,13 @@ class LLMBuilder {
       blockedDomains: blockedDomains,
       location: location,
       mode: mode,
+      dynamicThreshold: dynamicThreshold,
       fromDate: fromDate,
       toDate: toDate,
       searchType: searchType,
     );
-    return extension('webSearchConfig', config);
+    return extension(LLMConfigKeys.webSearchConfig, config);
   }
-
-  /// Image generation configuration methods
-  LLMBuilder imageSize(String size) => extension('imageSize', size);
-  LLMBuilder batchSize(int size) => extension('batchSize', size);
-  LLMBuilder imageSeed(String seed) => extension('imageSeed', seed);
-  LLMBuilder numInferenceSteps(int steps) =>
-      extension('numInferenceSteps', steps);
-  LLMBuilder guidanceScale(double scale) => extension('guidanceScale', scale);
-  LLMBuilder promptEnhancement(bool enabled) =>
-      extension('promptEnhancement', enabled);
-
-  /// Audio configuration methods
-  LLMBuilder audioFormat(String format) => extension('audioFormat', format);
-  LLMBuilder audioQuality(String quality) => extension('audioQuality', quality);
-  LLMBuilder sampleRate(int rate) => extension('sampleRate', rate);
-  LLMBuilder languageCode(String code) => extension('languageCode', code);
-
-  /// Advanced audio configuration methods
-  LLMBuilder audioProcessingMode(String mode) =>
-      extension('audioProcessingMode', mode);
-  LLMBuilder includeTimestamps(bool enabled) =>
-      extension('includeTimestamps', enabled);
-  LLMBuilder timestampGranularity(String granularity) =>
-      extension('timestampGranularity', granularity);
-  LLMBuilder textNormalization(String mode) =>
-      extension('textNormalization', mode);
-  LLMBuilder instructions(String instructions) =>
-      extension('instructions', instructions);
-  LLMBuilder previousText(String text) => extension('previousText', text);
-  LLMBuilder nextText(String text) => extension('nextText', text);
-  LLMBuilder audioSeed(int seed) => extension('audioSeed', seed);
-  LLMBuilder enableLogging(bool enabled) => extension('enableLogging', enabled);
-  LLMBuilder optimizeStreamingLatency(int level) =>
-      extension('optimizeStreamingLatency', level);
-
-  /// STT-specific configuration methods
-  LLMBuilder diarize(bool enabled) => extension('diarize', enabled);
-  LLMBuilder numSpeakers(int count) => extension('numSpeakers', count);
-  LLMBuilder tagAudioEvents(bool enabled) =>
-      extension('tagAudioEvents', enabled);
-  LLMBuilder webhook(bool enabled) => extension('webhook', enabled);
-  LLMBuilder prompt(String prompt) => extension('prompt', prompt);
-  LLMBuilder responseFormat(String format) =>
-      extension('responseFormat', format);
-  LLMBuilder cloudStorageUrl(String url) => extension('cloudStorageUrl', url);
 
   /// Builds and returns a configured LLM provider instance
   ///
@@ -568,316 +597,75 @@ class LLMBuilder {
       throw const GenericError('No provider specified');
     }
 
+    // Ensure the selected provider exposes chat capabilities before
+    // going through the registry. This fails fast for audio-only
+    // providers such as ElevenLabs.
+    _ensureChatCapable('chat capabilities');
+
     // Use the registry to create the provider
     return LLMProviderRegistry.createProvider(_providerId!, _config);
   }
 
+  /// Builds a high-level [LanguageModel] wrapper for this builder.
+  ///
+  /// This method adapts the underlying [ChatCapability] to the
+  /// provider-agnostic [LanguageModel] interface, which is conceptually
+  /// aligned with the Vercel AI SDK's language model abstraction.
+  ///
+  /// This is useful when you want to:
+  /// - Keep a stable reference to a configured model
+  /// - Pass the model into helper functions that operate on [LanguageModel]
+  /// - Decouple higher-level logic from concrete provider types
+  ///
+  /// If chat middlewares are configured on this builder, they will be applied
+  /// to the underlying [ChatCapability] used by the returned [LanguageModel].
+  Future<LanguageModel> buildLanguageModel() async {
+    _ensureChatCapable('LanguageModel building');
+
+    final provider = await buildWithMiddleware();
+    final providerId = _providerId ?? 'unknown';
+    final modelId = _config.model;
+
+    return DefaultLanguageModel(
+      providerId: providerId,
+      modelId: modelId,
+      config: _config,
+      chat: provider,
+    );
+  }
+
+  /// Builds a provider with chat middlewares applied.
+  ///
+  /// This method wraps the underlying provider in a lightweight
+  /// proxy that:
+  /// - Executes the registered [ChatMiddleware] chain for
+  ///   `chat` / `chatWithTools` calls.
+  /// - Delegates all other capabilities (audio, embeddings,
+  ///   images, etc.) directly to the underlying provider.
+  ///
+  /// The returned instance is suitable for applications that want
+  /// cross-cutting concerns around chat calls without changing
+  /// the default behavior of [build] or capability-specific
+  /// factory methods.
+  Future<ChatCapability> buildWithMiddleware() async {
+    _ensureChatCapable('chat with middleware');
+
+    final baseProvider = await build();
+
+    // If no middlewares are registered, return the underlying provider.
+    if (_middlewares.isEmpty) {
+      return baseProvider;
+    }
+
+    return _MiddlewareWrappedProvider(
+      baseProvider,
+      _providerId ?? 'unknown',
+      _config,
+      List<ChatMiddleware>.from(_middlewares),
+    );
+  }
+
   // ========== Capability Factory Methods ==========
-  // These methods provide type-safe access to specific capabilities
-  // at build time, eliminating the need for runtime type casting.
-
-  /// Builds a provider with AudioCapability
-  ///
-  /// Returns a provider that implements AudioCapability for text-to-speech,
-  /// speech-to-text, and other audio processing features.
-  ///
-  /// Throws [UnsupportedCapabilityError] if the provider doesn't support audio capabilities.
-  ///
-  /// Example:
-  /// ```dart
-  /// final audioProvider = await ai()
-  ///     .openai()
-  ///     .apiKey(apiKey)
-  ///     .buildAudio();
-  ///
-  /// // Direct usage without type casting
-  /// final voices = await audioProvider.getVoices();
-  /// ```
-  Future<AudioCapability> buildAudio() async {
-    final provider = await build();
-    if (provider is! AudioCapability) {
-      throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support audio capabilities. '
-        'Supported providers: OpenAI, ElevenLabs',
-      );
-    }
-    return provider as AudioCapability;
-  }
-
-  /// Builds a provider with ImageGenerationCapability
-  ///
-  /// Returns a provider that implements ImageGenerationCapability for
-  /// generating, editing, and creating variations of images.
-  ///
-  /// Throws [UnsupportedCapabilityError] if the provider doesn't support image generation.
-  ///
-  /// Example:
-  /// ```dart
-  /// final imageProvider = await ai()
-  ///     .openai()
-  ///     .apiKey(apiKey)
-  ///     .model('dall-e-3')
-  ///     .buildImageGeneration();
-  ///
-  /// // Direct usage without type casting
-  /// final images = await imageProvider.generateImage(prompt: 'A sunset');
-  /// ```
-  Future<ImageGenerationCapability> buildImageGeneration() async {
-    final provider = await build();
-    if (provider is! ImageGenerationCapability) {
-      throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support image generation capabilities. '
-        'Supported providers: OpenAI (DALL-E)',
-      );
-    }
-    return provider as ImageGenerationCapability;
-  }
-
-  /// Builds a provider with EmbeddingCapability
-  ///
-  /// Returns a provider that implements EmbeddingCapability for
-  /// generating vector embeddings from text.
-  ///
-  /// Throws [UnsupportedCapabilityError] if the provider doesn't support embeddings.
-  ///
-  /// Example:
-  /// ```dart
-  /// final embeddingProvider = await ai()
-  ///     .openai()
-  ///     .apiKey(apiKey)
-  ///     .model('text-embedding-3-small')
-  ///     .buildEmbedding();
-  ///
-  /// // Direct usage without type casting
-  /// final embeddings = await embeddingProvider.embed(['Hello world']);
-  /// ```
-  Future<EmbeddingCapability> buildEmbedding() async {
-    final provider = await build();
-    if (provider is! EmbeddingCapability) {
-      throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support embedding capabilities. '
-        'Supported providers: OpenAI, Google, DeepSeek',
-      );
-    }
-    return provider as EmbeddingCapability;
-  }
-
-  /// Builds a provider with FileManagementCapability
-  ///
-  /// Returns a provider that implements FileManagementCapability for
-  /// uploading, managing, and processing files.
-  ///
-  /// Throws [UnsupportedCapabilityError] if the provider doesn't support file management.
-  ///
-  /// Example:
-  /// ```dart
-  /// final fileProvider = await ai()
-  ///     .openai()
-  ///     .apiKey(apiKey)
-  ///     .buildFileManagement();
-  ///
-  /// // Direct usage without type casting
-  /// final file = await fileProvider.uploadFile('document.pdf');
-  /// ```
-  Future<FileManagementCapability> buildFileManagement() async {
-    final provider = await build();
-    if (provider is! FileManagementCapability) {
-      throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support file management capabilities. '
-        'Supported providers: OpenAI, Anthropic',
-      );
-    }
-    return provider as FileManagementCapability;
-  }
-
-  /// Builds a provider with ModerationCapability
-  ///
-  /// Returns a provider that implements ModerationCapability for
-  /// content moderation and safety checks.
-  ///
-  /// Throws [UnsupportedCapabilityError] if the provider doesn't support moderation.
-  ///
-  /// Example:
-  /// ```dart
-  /// final moderationProvider = await ai()
-  ///     .openai()
-  ///     .apiKey(apiKey)
-  ///     .buildModeration();
-  ///
-  /// // Direct usage without type casting
-  /// final result = await moderationProvider.moderate('Some text to check');
-  /// ```
-  Future<ModerationCapability> buildModeration() async {
-    final provider = await build();
-    if (provider is! ModerationCapability) {
-      throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support moderation capabilities. '
-        'Supported providers: OpenAI',
-      );
-    }
-    return provider as ModerationCapability;
-  }
-
-  /// Builds a provider with AssistantCapability
-  ///
-  /// Returns a provider that implements AssistantCapability for
-  /// creating and managing AI assistants.
-  ///
-  /// Throws [UnsupportedCapabilityError] if the provider doesn't support assistants.
-  ///
-  /// Example:
-  /// ```dart
-  /// final assistantProvider = await ai()
-  ///     .openai()
-  ///     .apiKey(apiKey)
-  ///     .buildAssistant();
-  ///
-  /// // Direct usage without type casting
-  /// final assistant = await assistantProvider.createAssistant(request);
-  /// ```
-  Future<AssistantCapability> buildAssistant() async {
-    final provider = await build();
-    if (provider is! AssistantCapability) {
-      throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support assistant capabilities. '
-        'Supported providers: OpenAI',
-      );
-    }
-    return provider as AssistantCapability;
-  }
-
-  /// Builds a provider with ModelListingCapability
-  ///
-  /// Returns a provider that implements ModelListingCapability for
-  /// discovering available models.
-  ///
-  /// Throws [UnsupportedCapabilityError] if the provider doesn't support model listing.
-  ///
-  /// Example:
-  /// ```dart
-  /// final modelProvider = await ai()
-  ///     .openai()
-  ///     .apiKey(apiKey)
-  ///     .buildModelListing();
-  ///
-  /// // Direct usage without type casting
-  /// final models = await modelProvider.listModels();
-  /// ```
-  Future<ModelListingCapability> buildModelListing() async {
-    final provider = await build();
-    if (provider is! ModelListingCapability) {
-      throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support model listing capabilities. '
-        'Supported providers: OpenAI, Anthropic, DeepSeek, Ollama',
-      );
-    }
-    return provider as ModelListingCapability;
-  }
-
-  /// Builds an OpenAI provider with Responses API enabled
-  ///
-  /// This is a convenience method that automatically:
-  /// - Ensures the provider is OpenAI
-  /// - Enables the Responses API (`useResponsesAPI(true)`)
-  /// - Returns a properly typed OpenAIProvider with Responses API access
-  /// - Ensures the `openaiResponses` capability is available
-  ///
-  /// Throws [UnsupportedCapabilityError] if the provider is not OpenAI.
-  ///
-  /// Example:
-  /// ```dart
-  /// final provider = await ai()
-  ///     .openai((openai) => openai
-  ///         .webSearchTool()
-  ///         .fileSearchTool(vectorStoreIds: ['vs_123']))
-  ///     .apiKey(apiKey)
-  ///     .model('gpt-4o')
-  ///     .buildOpenAIResponses();
-  ///
-  /// // Direct access to Responses API without casting
-  /// final responsesAPI = provider.responses!;
-  /// final response = await responsesAPI.chat(messages);
-  /// ```
-  ///
-  /// **Note**: This method automatically enables Responses API even if not
-  /// explicitly called with `useResponsesAPI()`. The returned provider will
-  /// always support `LLMCapability.openaiResponses`.
-  Future<OpenAIProvider> buildOpenAIResponses() async {
-    if (_providerId != 'openai') {
-      throw UnsupportedCapabilityError(
-        'buildOpenAIResponses() can only be used with OpenAI provider. '
-        'Current provider: $_providerId. Use .openai() first.',
-      );
-    }
-
-    // Automatically enable Responses API if not already enabled
-    final isResponsesAPIEnabled =
-        _config.getExtension<bool>('useResponsesAPI') ?? false;
-    if (!isResponsesAPIEnabled) {
-      extension('useResponsesAPI', true);
-    }
-
-    final provider = await build();
-
-    // Cast to OpenAI provider (safe since we checked provider ID)
-    final openaiProvider = provider as OpenAIProvider;
-
-    // Verify that Responses API is properly initialized
-    if (openaiProvider.responses == null) {
-      throw StateError('OpenAI Responses API not properly initialized. '
-          'This should not happen when using buildOpenAIResponses().');
-    }
-
-    return openaiProvider;
-  }
-
-  /// Builds a Google provider with TTS capability
-  ///
-  /// This is a convenience method that automatically:
-  /// - Ensures the provider is Google
-  /// - Sets a TTS-compatible model if not already set
-  /// - Returns a properly typed GoogleTTSCapability
-  /// - Ensures the TTS functionality is available
-  ///
-  /// Throws [UnsupportedCapabilityError] if the provider is not Google or doesn't support TTS.
-  ///
-  /// Example:
-  /// ```dart
-  /// final ttsProvider = await ai()
-  ///     .google((google) => google
-  ///         .ttsModel('gemini-2.5-flash-preview-tts')
-  ///         .enableAudioOutput())
-  ///     .apiKey(apiKey)
-  ///     .buildGoogleTTS();
-  ///
-  /// // Direct usage without type casting
-  /// final response = await ttsProvider.generateSpeech(request);
-  /// ```
-  ///
-  /// **Note**: This method automatically sets a TTS model if none is specified.
-  Future<GoogleTTSCapability> buildGoogleTTS() async {
-    if (_providerId != 'google') {
-      throw UnsupportedCapabilityError(
-        'buildGoogleTTS() can only be used with Google provider. '
-        'Current provider: $_providerId. Use .google() first.',
-      );
-    }
-
-    // Set default TTS model if none specified
-    if (_config.model.isEmpty || !_config.model.contains('tts')) {
-      model('gemini-2.5-flash-preview-tts');
-    }
-
-    final provider = await build();
-
-    // Cast to Google TTS capability (safe since we checked provider ID)
-    if (provider is! GoogleTTSCapability) {
-      throw UnsupportedCapabilityError(
-        'Google provider does not support TTS capabilities. '
-        'Make sure you are using a TTS-compatible model.',
-      );
-    }
-
-    return provider as GoogleTTSCapability;
-  }
+  // See LLMBuilderCapabilities extension in llm_builder_capabilities.dart
+  // for type-safe accessors to specific capabilities.
 }

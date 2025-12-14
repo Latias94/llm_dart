@@ -38,7 +38,7 @@ class BatchProcessor {
   bool _verbose = false;
   final Duration _rateLimitDelay = Duration(milliseconds: 500);
 
-  late ChatCapability _aiProvider;
+  late LanguageModel _aiModel;
 
   /// Run the batch processor
   Future<void> run(List<String> arguments) async {
@@ -156,13 +156,13 @@ OUTPUT FORMAT (JSONL):
   Future<void> initializeAI() async {
     final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
 
-    _aiProvider = await ai()
+    _aiModel = await ai()
         .groq()
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.3)
         .maxTokens(1000)
-        .build();
+        .buildLanguageModel();
 
     if (_verbose) {
       print('✅ AI provider initialized');
@@ -190,7 +190,7 @@ OUTPUT FORMAT (JSONL):
     try {
       // Process data in batches
       final processor = DataProcessor(
-        aiProvider: _aiProvider,
+        aiModel: _aiModel,
         operation: _operation,
         concurrency: _concurrency,
         verbose: _verbose,
@@ -206,7 +206,7 @@ OUTPUT FORMAT (JSONL):
 
 /// Data processor for handling batch operations
 class DataProcessor {
-  final ChatCapability aiProvider;
+  final LanguageModel aiModel;
   final String operation;
   final int concurrency;
   final bool verbose;
@@ -217,7 +217,7 @@ class DataProcessor {
   final Stopwatch _stopwatch = Stopwatch();
 
   DataProcessor({
-    required this.aiProvider,
+    required this.aiModel,
     required this.operation,
     required this.concurrency,
     required this.verbose,
@@ -336,12 +336,14 @@ class DataProcessor {
   /// Process text with AI based on operation type
   Future<String> processWithAI(String text) async {
     final systemPrompt = getSystemPromptForOperation(operation);
-    final messages = [
-      ChatMessage.system(systemPrompt),
-      ChatMessage.user(text),
+    final prompts = <ModelMessage>[
+      ChatPromptBuilder.system().text(systemPrompt).build(),
+      ChatPromptBuilder.user().text(text).build(),
     ];
-
-    final response = await aiProvider.chat(messages);
+    final response = await generateTextWithModel(
+      aiModel,
+      promptMessages: prompts,
+    );
     return response.text ?? 'No response generated';
   }
 

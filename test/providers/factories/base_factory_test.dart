@@ -1,3 +1,5 @@
+// Base factory tests validate provider factory behavior.
+
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 
@@ -29,6 +31,15 @@ class MockChatResponse implements ChatResponse {
 
   @override
   UsageInfo? get usage => _usage;
+
+  @override
+  List<CallWarning> get warnings => const [];
+
+  @override
+  Map<String, dynamic>? get metadata => null;
+
+  @override
+  CallMetadata? get callMetadata => null;
 }
 
 // Mock factory for testing base functionality
@@ -54,48 +65,32 @@ class MockBaseFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() => {
-        'model': 'mock-model',
-        'baseUrl': 'https://api.mock.com',
-        'temperature': 0.7,
-      };
+  LLMConfig getDefaultConfig() =>
+      const LLMConfig(baseUrl: 'https://api.mock.com', model: 'mock-model');
 }
 
 // Mock provider implementation
 class MockProvider implements ChatCapability, ProviderCapabilities {
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) async {
     return MockChatResponse(text: 'Mock response');
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    CancelToken? cancelToken,
-  }) async {
-    return chat(messages, cancelToken: cancelToken);
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) async* {
     yield TextDeltaEvent('Mock response');
     yield CompletionEvent(MockChatResponse(text: 'Mock response'));
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'Mock summary';
 
   @override
   Set<LLMCapability> get supportedCapabilities => {
@@ -130,10 +125,8 @@ class MockLocalFactory extends LocalProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() => {
-        'model': 'local-model',
-        'baseUrl': 'http://localhost:8080',
-      };
+  LLMConfig getDefaultConfig() =>
+      const LLMConfig(baseUrl: 'http://localhost:8080', model: 'local-model');
 }
 
 // Mock audio provider factory
@@ -159,10 +152,8 @@ class MockAudioFactory extends AudioProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() => {
-        'model': 'audio-model',
-        'baseUrl': 'https://api.audio.com',
-      };
+  LLMConfig getDefaultConfig() =>
+      const LLMConfig(baseUrl: 'https://api.audio.com', model: 'audio-model');
 }
 
 void main() {
@@ -231,12 +222,7 @@ void main() {
         expect(baseConfig['maxTokens'], equals(1000));
       });
 
-      test('should get provider defaults', () {
-        final defaults = factory.getProviderDefaults();
-        expect(defaults['model'], equals('mock-model'));
-        expect(defaults['baseUrl'], equals('https://api.mock.com'));
-        expect(defaults['temperature'], equals(0.7));
-      });
+      // Provider defaults now returned as LLMConfig via getDefaultConfig().
 
       test('should create provider safely', () {
         final config = LLMConfig(

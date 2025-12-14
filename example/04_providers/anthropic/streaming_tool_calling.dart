@@ -23,27 +23,27 @@ void main() async {
     exit(1);
   }
 
-  // Create Anthropic provider
-  final provider = await ai()
+  // Create Anthropic language model (Prompt-first)
+  final model = await ai()
       .anthropic()
       .apiKey(apiKey)
       .model('claude-sonnet-4-20250514')
       .temperature(0.1)
       .maxTokens(1000)
-      .build();
+      .buildLanguageModel();
 
-  print('✅ Provider created: Claude Sonnet 4\n');
+  print('✅ Model created: Claude Sonnet 4\n');
 
   // Demonstrate different streaming tool scenarios
-  await demonstrateBasicStreamingTool(provider);
-  await demonstrateMultipleToolsStreaming(provider);
-  await demonstrateComplexParametersStreaming(provider);
+  await demonstrateBasicStreamingTool(model);
+  await demonstrateMultipleToolsStreaming(model);
+  await demonstrateComplexParametersStreaming(model);
 
   print('\n✅ All streaming tool calling examples completed!');
 }
 
 /// Demonstrate basic streaming tool call
-Future<void> demonstrateBasicStreamingTool(ChatCapability provider) async {
+Future<void> demonstrateBasicStreamingTool(LanguageModel model) async {
   print('🔧 Basic Streaming Tool Call:\n');
 
   try {
@@ -69,9 +69,9 @@ Future<void> demonstrateBasicStreamingTool(ChatCapability provider) async {
       ),
     ];
 
-    final messages = [
-      ChatMessage.user('What is the weather like in Tokyo? Use celsius.')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('What is the weather like in Tokyo? Use celsius.')
+        .build();
 
     print('   User: What is the weather like in Tokyo? Use celsius.');
     print('   Available tools: get_weather');
@@ -80,7 +80,11 @@ Future<void> demonstrateBasicStreamingTool(ChatCapability provider) async {
     var toolCallsDetected = <ToolCall>[];
     var textContent = StringBuffer();
 
-    await for (final event in provider.chatStream(messages, tools: tools)) {
+    await for (final event in streamTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: tools),
+    )) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           textContent.write(delta);
@@ -124,7 +128,7 @@ Future<void> demonstrateBasicStreamingTool(ChatCapability provider) async {
 }
 
 /// Demonstrate multiple tools in streaming
-Future<void> demonstrateMultipleToolsStreaming(ChatCapability provider) async {
+Future<void> demonstrateMultipleToolsStreaming(LanguageModel model) async {
   print('🔧 Multiple Tools Streaming:\n');
 
   try {
@@ -159,10 +163,9 @@ Future<void> demonstrateMultipleToolsStreaming(ChatCapability provider) async {
       ),
     ];
 
-    final messages = [
-      ChatMessage.user(
-          'What is the weather in Paris and what time is it in Tokyo?')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('What is the weather in Paris and what time is it in Tokyo?')
+        .build();
 
     print(
         '   User: What is the weather in Paris and what time is it in Tokyo?');
@@ -171,7 +174,11 @@ Future<void> demonstrateMultipleToolsStreaming(ChatCapability provider) async {
 
     var toolCallsDetected = <ToolCall>[];
 
-    await for (final event in provider.chatStream(messages, tools: tools)) {
+    await for (final event in streamTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: tools),
+    )) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           stdout.write(delta);
@@ -212,8 +219,7 @@ Future<void> demonstrateMultipleToolsStreaming(ChatCapability provider) async {
 }
 
 /// Demonstrate complex parameters in streaming
-Future<void> demonstrateComplexParametersStreaming(
-    ChatCapability provider) async {
+Future<void> demonstrateComplexParametersStreaming(LanguageModel model) async {
   print('🔧 Complex Parameters Streaming:\n');
 
   try {
@@ -256,10 +262,10 @@ Future<void> demonstrateComplexParametersStreaming(
       ),
     ];
 
-    final messages = [
-      ChatMessage.user(
-          'Create a meeting titled "Team Sync" with attendees alice@example.com and bob@example.com at Conference Room A')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Create a meeting titled "Team Sync" with attendees alice@example.com and bob@example.com at Conference Room A')
+        .build();
 
     print(
         '   User: Create a meeting titled "Team Sync" with attendees alice@example.com and bob@example.com');
@@ -268,7 +274,11 @@ Future<void> demonstrateComplexParametersStreaming(
 
     var toolCallsDetected = <ToolCall>[];
 
-    await for (final event in provider.chatStream(messages, tools: tools)) {
+    await for (final event in streamTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: tools),
+    )) {
       switch (event) {
         case TextDeltaEvent(delta: final delta):
           stdout.write(delta);

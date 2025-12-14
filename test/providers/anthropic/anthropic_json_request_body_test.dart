@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import '../../test_utils/model_message_test_extensions.dart';
 
 /// Test suite to examine the actual JSON request body generated
 /// by the current Anthropic implementation

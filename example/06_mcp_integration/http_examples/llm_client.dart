@@ -2,6 +2,13 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_core/llm_dart_core.dart'
+    show
+        ChatContentPart,
+        TextContentPart,
+        ToolCallContentPart,
+        ToolResultContentPart,
+        ToolResultTextPayload;
 import 'package:mcp_dart/mcp_dart.dart' hide Tool;
 
 /// HTTP LLM Integration - Real AI Agents with HTTP MCP Tools
@@ -38,6 +45,38 @@ void main() async {
   exit(0);
 }
 
+/// Helper to build an assistant message that includes tool call parts.
+ModelMessage _assistantWithToolCalls(String? text, List<ToolCall> toolCalls) {
+  final parts = <ChatContentPart>[];
+  if (text != null && text.isNotEmpty) {
+    parts.add(TextContentPart(text));
+  }
+  for (final call in toolCalls) {
+    parts.add(
+      ToolCallContentPart(
+        toolName: call.function.name,
+        argumentsJson: call.function.arguments,
+        toolCallId: call.id,
+      ),
+    );
+  }
+  return ModelMessage(role: ChatRole.assistant, parts: parts);
+}
+
+/// Helper to build a tool result message from a tool call and text result.
+ModelMessage _toolResultMessage(ToolCall toolCall, String result) {
+  return ModelMessage(
+    role: ChatRole.assistant,
+    parts: [
+      ToolResultContentPart(
+        toolCallId: toolCall.id,
+        toolName: toolCall.function.name,
+        payload: ToolResultTextPayload(result),
+      ),
+    ],
+  );
+}
+
 /// Demonstrate basic HTTP MCP + LLM integration
 Future<void> demonstrateBasicHttpIntegration(String apiKey) async {
   print('🔗 Basic HTTP MCP + LLM Integration:\n');
@@ -46,13 +85,13 @@ Future<void> demonstrateBasicHttpIntegration(String apiKey) async {
   StreamableHttpClientTransport? transport;
 
   try {
-    // Create LLM provider
-    final llmProvider = await ai()
+    // Create high-level language model (prompt-first, Vercel-style)
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
-        .build();
+        .buildLanguageModel();
 
     // Create MCP client for HTTP server
     final mcpConnection = await _createHttpMcpClient();
@@ -68,25 +107,31 @@ Future<void> demonstrateBasicHttpIntegration(String apiKey) async {
     }
 
     // Test with a greeting and calculation request
-    final messages = [
-      ChatMessage.user(
-          'Please greet me as "Alice" and then calculate 18 * 24 + 6.')
-    ];
+    const userMessage =
+        'Please greet me as "Alice" and then calculate 18 * 24 + 6.';
+    final prompt = ChatPromptBuilder.user().text(userMessage).build();
 
     // Print actual user message
     print('   💬 User Message:');
-    print('      "${messages.last.content}"');
+    print('      "$userMessage"');
     print('   🤖 LLM: Processing request with HTTP MCP tools...');
 
-    final response = await llmProvider.chatWithTools(messages, mcpTools);
+    // First pass: let the model plan and emit tool calls.
+    final result = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: mcpTools),
+    );
 
-    if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
-      print('   🤖 LLM: Requested ${response.toolCalls!.length} tool call(s):');
+    final toolCalls = result.toolCalls ?? const <ToolCall>[];
+
+    if (toolCalls.isNotEmpty) {
+      print('   🤖 LLM: Requested ${toolCalls.length} tool call(s):');
 
       // Execute MCP tools and collect results
       final toolResultCalls = <ToolCall>[];
-      for (int i = 0; i < response.toolCalls!.length; i++) {
-        final toolCall = response.toolCalls![i];
+      for (int i = 0; i < toolCalls.length; i++) {
+        final toolCall = toolCalls[i];
         print('      ${i + 1}. 🛠️  Tool Call:');
         print('         📞 Function: ${toolCall.function.name}');
         print('         📋 Arguments: ${toolCall.function.arguments}');
@@ -110,18 +155,27 @@ Future<void> demonstrateBasicHttpIntegration(String apiKey) async {
         ));
       }
 
-      // Send tool results back to LLM for final response
-      print('   🔄 Sending MCP results back to LLM for final response...');
-      final finalMessages = [
-        ...messages,
-        ChatMessage.toolUse(toolCalls: response.toolCalls!),
-        ChatMessage.toolResult(results: toolResultCalls),
+      // Build prompt-first conversation with tool calls and results.
+      final conversation = <ModelMessage>[
+        prompt,
+        _assistantWithToolCalls(result.text, toolCalls),
       ];
 
-      final finalResponse = await llmProvider.chat(finalMessages);
-      print('   📝 LLM Final Response: ${finalResponse.text}');
+      for (final toolCall in toolResultCalls) {
+        conversation
+            .add(_toolResultMessage(toolCall, toolCall.function.arguments));
+      }
+
+      // Send tool results back to LLM for final response using ModelMessage
+      print('   🔄 Sending MCP results back to LLM for final response...');
+      final finalResult = await generateTextWithModel(
+        model,
+        promptMessages: conversation,
+      );
+
+      print('   📝 LLM Final Response: ${finalResult.text}');
     } else {
-      print('   📝 LLM Response: ${response.text}');
+      print('   📝 LLM Response: ${result.text}');
     }
     print('   ✅ Basic HTTP integration successful\n');
   } catch (e) {
@@ -146,12 +200,12 @@ Future<void> demonstrateHttpStreamingWorkflow(String apiKey) async {
   StreamableHttpClientTransport? transport;
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.3)
-        .build();
+        .buildLanguageModel();
 
     // Create MCP client for HTTP server
     final mcpConnection = await _createHttpMcpClient();
@@ -176,21 +230,28 @@ Future<void> demonstrateHttpStreamingWorkflow(String apiKey) async {
               if (meta != null) '_meta': meta,
             }));
 
-    // Streaming workflow request
-    final messages = [
-      ChatMessage.system(
-          'You are a friendly assistant that can use streaming tools. '
-          'Use the multi-greet tool to send personalized greetings.'),
-      ChatMessage.user(
-          'Please use the multi-greet tool to greet me as "Charlie" with multiple messages.'),
+    // Streaming workflow request (prompt-first)
+    const systemPrompt =
+        'You are a friendly assistant that can use streaming tools. '
+        'Use the multi-greet tool to send personalized greetings.';
+    const userPrompt =
+        'Please use the multi-greet tool to greet me as "Charlie" with multiple messages.';
+
+    final prompts = <ModelMessage>[
+      ChatPromptBuilder.system().text(systemPrompt).build(),
+      ChatPromptBuilder.user().text(userPrompt).build(),
     ];
 
     // Print actual user message
     print('   💬 User Message:');
-    print('      "${messages.last.content}"');
+    print('      "$userPrompt"');
     print('   🤖 LLM: Initiating HTTP streaming workflow...');
 
-    final response = await provider.chatWithTools(messages, mcpTools);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: prompts,
+      options: LanguageModelCallOptions(tools: mcpTools),
+    );
 
     print('   📋 HTTP streaming execution:');
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
@@ -222,17 +283,24 @@ Future<void> demonstrateHttpStreamingWorkflow(String apiKey) async {
         ));
       }
 
-      // Send tool results back to LLM for final response
+      // Send tool results back to LLM for final response (prompt-first)
       print(
           '   🔄 Sending MCP results back to LLM for streaming final response...');
-      final finalMessages = [
-        ...messages,
-        ChatMessage.toolUse(toolCalls: response.toolCalls!),
-        ChatMessage.toolResult(results: toolResultCalls),
+      final conversation = <ModelMessage>[
+        ...prompts,
+        _assistantWithToolCalls(response.text, response.toolCalls!),
       ];
 
-      final finalResponse = await provider.chat(finalMessages);
-      print('   📝 Final Response: ${finalResponse.text}');
+      for (final toolCall in toolResultCalls) {
+        conversation
+            .add(_toolResultMessage(toolCall, toolCall.function.arguments));
+      }
+
+      final finalResult = await generateTextWithModel(
+        model,
+        promptMessages: conversation,
+      );
+      print('   📝 Final Response: ${finalResult.text}');
     } else {
       print('   📝 Final Response: ${response.text}');
     }
@@ -260,12 +328,12 @@ Future<void> demonstrateHttpSessionManagement(String apiKey) async {
   StreamableHttpClientTransport? transport;
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.2)
-        .build();
+        .buildLanguageModel();
 
     // Create MCP client for HTTP server
     final mcpConnection = await _createHttpMcpClient();
@@ -275,22 +343,29 @@ Future<void> demonstrateHttpSessionManagement(String apiKey) async {
     // Get MCP tools and convert to llm_dart tools
     final mcpTools = await _getMcpToolsAsLlmDartTools(mcpClient);
 
-    // Session-based workflow request
-    final messages = [
-      ChatMessage.system(
-          'You are a session-aware assistant. Use tools to demonstrate session management.'),
-      ChatMessage.user(
-          'Please: 1) Generate a UUID for this session, 2) Get the current time, '
-          '3) Calculate 7 * 9, and 4) Greet me as "Session User".'),
+    // Session-based workflow request (prompt-first)
+    const systemPrompt =
+        'You are a session-aware assistant. Use tools to demonstrate session management.';
+    const userPrompt =
+        'Please: 1) Generate a UUID for this session, 2) Get the current time, '
+        '3) Calculate 7 * 9, and 4) Greet me as "Session User".';
+
+    final prompts = <ModelMessage>[
+      ChatPromptBuilder.system().text(systemPrompt).build(),
+      ChatPromptBuilder.user().text(userPrompt).build(),
     ];
 
     // Print actual user message
     print('   💬 User Message:');
-    print('      "${messages.last.content}"');
+    print('      "$userPrompt"');
     print('   🤖 LLM: Processing request with HTTP MCP tools...');
     print('   🆔 Session ID: ${transport.sessionId}');
 
-    final response = await provider.chatWithTools(messages, mcpTools);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: prompts,
+      options: LanguageModelCallOptions(tools: mcpTools),
+    );
 
     print('   📋 Session-managed workflow via HTTP:');
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
@@ -321,17 +396,24 @@ Future<void> demonstrateHttpSessionManagement(String apiKey) async {
         ));
       }
 
-      // Send tool results back to LLM for final response
+      // Send tool results back to LLM for final response (prompt-first)
       print(
           '   🔄 Sending MCP results back to LLM for session final response...');
-      final finalMessages = [
-        ...messages,
-        ChatMessage.toolUse(toolCalls: response.toolCalls!),
-        ChatMessage.toolResult(results: toolResultCalls),
+      final conversation = <ModelMessage>[
+        ...prompts,
+        _assistantWithToolCalls(response.text, response.toolCalls!),
       ];
 
-      final finalResponse = await provider.chat(finalMessages);
-      print('   📝 Final Response: ${finalResponse.text}');
+      for (final toolCall in toolResultCalls) {
+        conversation
+            .add(_toolResultMessage(toolCall, toolCall.function.arguments));
+      }
+
+      final finalResult = await generateTextWithModel(
+        model,
+        promptMessages: conversation,
+      );
+      print('   📝 Final Response: ${finalResult.text}');
     } else {
       print('   📝 Final Response: ${response.text}');
     }

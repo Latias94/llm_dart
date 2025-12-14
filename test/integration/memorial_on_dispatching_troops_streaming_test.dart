@@ -1,25 +1,26 @@
 import 'dart:math';
-import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
 
-/// Tests for streaming the complete 《出师表》(Memorial on Dispatching Troops) content
+import 'package:test/test.dart';
+import 'package:llm_dart_openai/testing.dart' as openai;
+
+/// Tests for streaming the complete "Memorial on Dispatching Troops" content
 ///
 /// This test specifically validates that long Chinese classical text content
 /// is properly handled in streaming scenarios without character loss.
 void main() {
   group('Memorial on Dispatching Troops Streaming Tests', () {
-    late OpenAIClient client;
+    late openai.OpenAIClient client;
 
     setUp(() {
-      final config = OpenAIConfig(
+      final config = openai.OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4o',
       );
-      client = OpenAIClient(config);
+      client = openai.OpenAIClient(config);
     });
 
     test('handles complete 《出师表》 original text in streaming', () {
-      // The complete original text of 《出师表》
+      // The complete original text of "Memorial on Dispatching Troops"
       const memorialText =
           '''　先帝创业未半而中道崩殂，今天下三分，益州疲弊，此诚危急存亡之秋也。然侍卫之臣不懈于内，忠志之士忘身于外者，盖追先帝之殊遇，欲报之于陛下也。诚宜开张圣听，以光先帝遗德，恢弘志士之气，不宜妄自菲薄，引喻失义，以塞忠谏之路也。
 

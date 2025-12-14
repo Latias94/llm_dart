@@ -1,11 +1,12 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_anthropic/testing.dart' as anthropic;
 
 void main() {
-  group('AnthropicConfig Tests', () {
+  group('anthropic.AnthropicConfig Tests', () {
     group('Basic Configuration', () {
       test('should create config with required parameters', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-api-key',
         );
 
@@ -18,7 +19,7 @@ void main() {
       });
 
       test('should create config with all parameters', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-api-key',
           baseUrl: 'https://custom.api.com',
           model: 'claude-sonnet-4-20250514',
@@ -56,7 +57,7 @@ void main() {
 
     group('Model Support Detection', () {
       test('should detect vision support for vision models', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-5-sonnet-20241022',
         );
@@ -65,7 +66,7 @@ void main() {
       });
 
       test('should detect reasoning support for known reasoning models', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         );
@@ -74,7 +75,7 @@ void main() {
       });
 
       test('should detect interleaved thinking support for Claude 4', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         );
@@ -83,7 +84,7 @@ void main() {
       });
 
       test('should not support reasoning for unknown models by default', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-haiku-20240307',
         );
@@ -95,7 +96,7 @@ void main() {
 
     group('Thinking Configuration Validation', () {
       test('should validate valid reasoning config', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
           reasoning: true,
@@ -106,7 +107,7 @@ void main() {
       });
 
       test('should allow reasoning for any model when explicitly enabled', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-haiku-20240307',
           reasoning: true,
@@ -118,7 +119,7 @@ void main() {
       });
 
       test('should allow interleaved thinking when explicitly enabled', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-5-sonnet-20241022',
           interleavedThinking: true,
@@ -130,7 +131,7 @@ void main() {
       });
 
       test('should reject excessive thinking budget', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
           reasoning: true,
@@ -143,7 +144,7 @@ void main() {
       });
 
       test('should reject too small thinking budget', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
           reasoning: true,
@@ -158,7 +159,7 @@ void main() {
 
     group('Configuration Copying', () {
       test('should copy config with new values', () {
-        const original = AnthropicConfig(
+        const original = anthropic.AnthropicConfig(
           apiKey: 'original-key',
           model: 'claude-3-5-sonnet-20241022',
           temperature: 0.5,
@@ -175,7 +176,7 @@ void main() {
       });
 
       test('should preserve original values when not specified', () {
-        const original = AnthropicConfig(
+        const original = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
           reasoning: true,
@@ -200,13 +201,14 @@ void main() {
           model: 'claude-sonnet-4-20250514',
           temperature: 0.7,
           extensions: {
-            'reasoning': true,
-            'thinkingBudgetTokens': 3000,
-            'interleavedThinking': false,
+            LLMConfigKeys.reasoning: true,
+            LLMConfigKeys.thinkingBudgetTokens: 3000,
+            LLMConfigKeys.interleavedThinking: false,
           },
         );
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
 
         expect(anthropicConfig.apiKey, equals('test-key'));
         expect(anthropicConfig.model, equals('claude-sonnet-4-20250514'));
@@ -224,17 +226,66 @@ void main() {
           extensions: {'customParam': 'customValue'},
         );
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
 
         expect(anthropicConfig.getExtension<String>('customParam'),
             equals('customValue'));
+      });
+
+      test('should enable web search tool when webSearchConfig is set', () {
+        final webSearch = WebSearchConfig.anthropic(
+          maxUses: 3,
+          allowedDomains: ['example.com'],
+          blockedDomains: ['bad.com'],
+          location: WebSearchLocation.newYork(),
+        );
+
+        final llmConfig = LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.anthropic.com',
+          model: 'claude-sonnet-4-20250514',
+          extensions: {
+            LLMConfigKeys.webSearchEnabled: true,
+            LLMConfigKeys.webSearchConfig: webSearch,
+          },
+        );
+
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
+        final builder = anthropic.AnthropicRequestBuilder(anthropicConfig);
+
+        final webSearchTool = Tool.function(
+          name: 'web_search',
+          description: 'Search the web',
+          parameters: ParametersSchema(
+            schemaType: 'object',
+            properties: {
+              'query': ParameterProperty(
+                propertyType: 'string',
+                description: 'The search query to execute',
+              ),
+            },
+            required: const ['query'],
+          ),
+        );
+
+        final converted = builder.convertTool(webSearchTool);
+
+        expect(converted['type'], 'web_search_20250305');
+        expect(converted['name'], 'web_search');
+        expect(converted['max_uses'], 3);
+        expect(converted['allowed_domains'], ['example.com']);
+        expect(converted['blocked_domains'], ['bad.com']);
+        expect(converted['user_location'], isA<Map<String, dynamic>>());
+        expect(converted['user_location']['city'], 'New York');
       });
     });
 
     group('Thinking Budget Limits', () {
       test('should return correct max thinking budget for reasoning models',
           () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         );
@@ -243,7 +294,7 @@ void main() {
       });
 
       test('should return zero for non-reasoning models', () {
-        const config = AnthropicConfig(
+        const config = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-haiku-20240307',
         );

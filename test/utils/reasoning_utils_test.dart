@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/utils/reasoning_utils.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 void main() {
   group('ReasoningUtils', () {

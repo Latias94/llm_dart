@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import '../../test_utils/model_message_test_extensions.dart';
 
 /// Test suite to verify that tools are not duplicated in system and tools arrays
 /// This tests the fix for the bug where tools appeared in both places

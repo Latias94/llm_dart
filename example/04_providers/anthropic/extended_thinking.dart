@@ -34,20 +34,23 @@ Future<void> demonstrateBasicThinking(String apiKey) async {
 
   try {
     // Use Claude Sonnet 4 for thinking capabilities
-    final provider = await ai()
+    final model = await ai()
         .anthropic()
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.3) // Lower for more focused thinking
         .maxTokens(1500)
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user('''
+    final prompt = ChatPromptBuilder.user().text('''
 I have a 3-gallon jug and a 5-gallon jug. I need to measure exactly 4 gallons of water.
 How can I do this? Please show your thinking process step by step.
-''')
-    ]);
+''').build();
+
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print(
         '   Problem: Water jug puzzle (3-gallon and 5-gallon jugs, measure 4 gallons)');
@@ -79,13 +82,13 @@ Future<void> demonstrateComplexReasoning(String apiKey) async {
   print('🔬 Complex Reasoning:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .anthropic()
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.2) // Even lower for analytical tasks
         .maxTokens(2000)
-        .build();
+        .buildLanguageModel();
 
     final complexProblem = '''
 A company is considering two investment options:
@@ -98,7 +101,12 @@ Assuming a discount rate of 8%, which option is better?
 Please show all calculations and reasoning.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(complexProblem)]);
+    final prompt = ChatPromptBuilder.user().text(complexProblem).build();
+
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   Problem: Investment analysis with NPV calculations');
 
@@ -131,13 +139,13 @@ Future<void> demonstrateStreamingThinking(String apiKey) async {
   print('🌊 Streaming Thinking Process:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .anthropic()
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.4)
         .maxTokens(1500)
-        .build();
+        .buildLanguageModel();
 
     print('   Problem: Logic puzzle with real-time thinking');
     print('   Watching Claude think in real-time...\n');
@@ -146,8 +154,7 @@ Future<void> demonstrateStreamingThinking(String apiKey) async {
     var responseContent = StringBuffer();
     var isThinking = true;
 
-    await for (final event in provider.chatStream([
-      ChatMessage.user('''
+    final prompt = ChatPromptBuilder.user().text('''
 Five friends (Alice, Bob, Carol, David, Eve) are sitting in a row.
 - Alice is not at either end
 - Bob is somewhere to the left of Carol
@@ -155,8 +162,12 @@ Five friends (Alice, Bob, Carol, David, Eve) are sitting in a row.
 - Carol is not next to Alice
 
 What is the seating arrangement? Show your reasoning.
-''')
-    ])) {
+''').build();
+
+    await for (final event in streamTextWithModel(
+      model,
+      promptMessages: [prompt],
+    )) {
       switch (event) {
         case ThinkingDeltaEvent(delta: final delta):
           thinkingContent.write(delta);
@@ -203,13 +214,13 @@ Future<void> demonstrateEthicalReasoning(String apiKey) async {
   print('⚖️  Ethical Reasoning:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .anthropic()
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.3)
         .maxTokens(1500)
-        .build();
+        .buildLanguageModel();
 
     final ethicalDilemma = '''
 A self-driving car's AI must make a split-second decision:
@@ -221,7 +232,11 @@ What should the AI decide? Consider multiple ethical frameworks
 and show your reasoning process.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(ethicalDilemma)]);
+    final prompt = ChatPromptBuilder.user().text(ethicalDilemma).build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   Dilemma: Autonomous vehicle ethical decision making');
 
@@ -272,13 +287,13 @@ Future<void> demonstrateComparativeAnalysis(String apiKey) async {
   print('📊 Comparative Analysis:\n');
 
   try {
-    final provider = await ai()
+    final model = await ai()
         .anthropic()
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.3)
         .maxTokens(2000)
-        .build();
+        .buildLanguageModel();
 
     final analysisTask = '''
 Compare and contrast three programming paradigms:
@@ -295,7 +310,11 @@ For each paradigm, analyze:
 Provide a comprehensive comparison with examples.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(analysisTask)]);
+    final prompt = ChatPromptBuilder.user().text(analysisTask).build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   Task: Programming paradigms comparative analysis');
 

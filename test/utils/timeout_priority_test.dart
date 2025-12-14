@@ -10,7 +10,8 @@ void main() {
         model: 'test-model',
         timeout: Duration(minutes: 2), // Global timeout
       ).withExtensions({
-        'connectionTimeout': Duration(seconds: 30), // HTTP-specific timeout
+        LLMConfigKeys.connectionTimeout:
+            Duration(seconds: 30), // HTTP-specific timeout
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -95,8 +96,9 @@ void main() {
         model: 'test-model',
         timeout: Duration(minutes: 2), // Global timeout
       ).withExtensions({
-        'connectionTimeout': Duration(seconds: 15), // Override connection
-        'receiveTimeout': Duration(minutes: 5), // Override receive
+        LLMConfigKeys.connectionTimeout:
+            Duration(seconds: 15), // Override connection
+        LLMConfigKeys.receiveTimeout: Duration(minutes: 5), // Override receive
         // sendTimeout not specified, should use global
       });
 
@@ -123,7 +125,8 @@ void main() {
         model: 'test-model',
         timeout: Duration(minutes: 2), // Global timeout
       ).withExtensions({
-        'connectionTimeout': Duration(seconds: 20), // Highest priority
+        LLMConfigKeys.connectionTimeout:
+            Duration(seconds: 20), // Highest priority
         // receiveTimeout not set - will use global
         // sendTimeout not set - will use global
       });
@@ -207,7 +210,7 @@ void main() {
           model: 'test-model',
           timeout: Duration.zero, // Zero global timeout
         ).withExtensions({
-          'connectionTimeout': Duration.zero, // Zero HTTP timeout
+          LLMConfigKeys.connectionTimeout: Duration.zero, // Zero HTTP timeout
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(
@@ -228,7 +231,8 @@ void main() {
           model: 'test-model',
           timeout: Duration(hours: 1), // Large global timeout
         ).withExtensions({
-          'receiveTimeout': Duration(hours: 2), // Even larger HTTP timeout
+          LLMConfigKeys.receiveTimeout:
+              Duration(hours: 2), // Even larger HTTP timeout
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(

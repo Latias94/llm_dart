@@ -1,6 +1,10 @@
 import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_anthropic/testing.dart' as anthropic;
+import 'package:llm_dart_openai/testing.dart' as openai;
+import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
+import 'package:llm_dart_xai/testing.dart' as xai_testing;
 
 void main() {
   group('Custom Dio Client Support Tests', () {
@@ -19,17 +23,19 @@ void main() {
           model: 'test-model',
           timeout: Duration(seconds: 60), // Should be ignored
         ).withExtensions({
-          'customDio': customDio,
-          'connectionTimeout': Duration(seconds: 30), // Should be ignored
-          'customHeaders': {
+          LLMConfigKeys.customDio: customDio,
+          LLMConfigKeys.connectionTimeout:
+              Duration(seconds: 30), // Should be ignored
+          LLMConfigKeys.customHeaders: {
             'X-Should-Be-Ignored': 'ignored'
           }, // Should be ignored
-          'enableHttpLogging': true, // Should be ignored
+          LLMConfigKeys.enableHttpLogging: true, // Should be ignored
         });
 
         // Test with Anthropic provider
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
 
         // Custom Dio should be used directly
         expect(anthropicClient.dio, equals(customDio));
@@ -50,13 +56,14 @@ void main() {
           model: 'test-model',
           timeout: Duration(seconds: 45),
         ).withExtensions({
-          'connectionTimeout': Duration(seconds: 30),
-          'customHeaders': {'X-Test': 'test-value'},
-          'enableHttpLogging': true,
+          LLMConfigKeys.connectionTimeout: Duration(seconds: 30),
+          LLMConfigKeys.customHeaders: {'X-Test': 'test-value'},
+          LLMConfigKeys.enableHttpLogging: true,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
 
         // Should use HTTP configuration
         expect(anthropicClient.dio.options.connectTimeout,
@@ -71,12 +78,12 @@ void main() {
       });
 
       test('should fall back to provider defaults when no configuration', () {
-        final anthropicConfig = AnthropicConfig(
+        final anthropicConfig = anthropic.AnthropicConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.anthropic.com/v1/',
           model: 'claude-sonnet-4-20250514',
         );
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
 
         // Should use provider defaults
         expect(anthropicClient.dio.options.baseUrl,
@@ -108,11 +115,12 @@ void main() {
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
 
         // Should have both custom interceptor and Anthropic-specific interceptor(s)
         expect(
@@ -145,11 +153,12 @@ void main() {
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
 
         // Should have 2 custom interceptors + Anthropic interceptor(s) >= 3 total
         expect(
@@ -168,11 +177,12 @@ void main() {
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
 
         // Base URL should be applied from config
         expect(anthropicClient.dio.options.baseUrl,
@@ -188,11 +198,12 @@ void main() {
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
 
         // Custom base URL should be preserved
         expect(anthropicClient.dio.options.baseUrl,
@@ -211,11 +222,12 @@ void main() {
           apiKey: 'test-key', // Should not override custom Authorization
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
 
         // Custom headers should be preserved (user's headers take precedence)
         expect(anthropicClient.dio.options.headers['Authorization'],
@@ -243,11 +255,12 @@ void main() {
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
 
         // Should have both custom and essential headers
         expect(anthropicClient.dio.options.headers['X-Custom'],
@@ -277,23 +290,24 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
         // Test with multiple providers
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
 
-        final openaiConfig = OpenAIConfig(
+        final openaiConfig = openai.OpenAIConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.openai.com/v1/',
           model: 'gpt-4',
           originalConfig: llmConfig,
         );
-        final openaiClient = OpenAIClient(openaiConfig);
+        final openaiClient = openai.OpenAIClient(openaiConfig);
 
-        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
-        final xaiClient = XAIClient(xaiConfig);
+        final xaiConfig = xai.XAIConfig.fromLLMConfig(llmConfig);
+        final xaiClient = xai_testing.XAIClient(xaiConfig);
 
         // All should use the same custom Dio
         expect(anthropicClient.dio, equals(customDio));
@@ -326,20 +340,21 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
         // Create clients for different providers
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
 
-        final openaiConfig = OpenAIConfig(
+        final openaiConfig = openai.OpenAIConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.openai.com/v1/',
           model: 'gpt-4',
           originalConfig: llmConfig,
         );
-        final openaiClient = OpenAIClient(openaiConfig);
+        final openaiClient = openai.OpenAIClient(openaiConfig);
 
         // Anthropic adds interceptors, OpenAI doesn't add provider-specific ones
         expect(
@@ -358,15 +373,17 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customDio': null, // Explicitly null
+          LLMConfigKeys.customDio: null, // Explicitly null
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
 
         // Should not throw and should fall back to HTTP configuration
-        expect(() => AnthropicClient(anthropicConfig), returnsNormally);
+        expect(
+            () => anthropic.AnthropicClient(anthropicConfig), returnsNormally);
 
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
         expect(anthropicClient.dio, isNotNull);
         expect(anthropicClient.dio.options.baseUrl,
             equals('https://api.example.com'));
@@ -383,15 +400,17 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig =
+            anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
 
         // Should not throw during client creation
-        expect(() => AnthropicClient(anthropicConfig), returnsNormally);
+        expect(
+            () => anthropic.AnthropicClient(anthropicConfig), returnsNormally);
 
-        final anthropicClient = AnthropicClient(anthropicConfig);
+        final anthropicClient = anthropic.AnthropicClient(anthropicConfig);
         expect(anthropicClient.dio, equals(customDio));
         // Unusual configuration should be preserved (user's responsibility)
         expect(anthropicClient.dio.options.connectTimeout,

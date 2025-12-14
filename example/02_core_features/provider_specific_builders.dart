@@ -50,7 +50,7 @@ Future<void> demoOpenAIBuilder(String? apiKey) async {
 
   try {
     // OpenAI with provider-specific parameters
-    final provider = await ai()
+    final model = await ai()
         .openai((openai) => openai
             .frequencyPenalty(0.5)
             .presencePenalty(0.3)
@@ -63,12 +63,15 @@ Future<void> demoOpenAIBuilder(String? apiKey) async {
         .model('gpt-4')
         .temperature(0.7)
         .maxTokens(100)
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Write a creative short story opening about a mysterious door.')
-    ]);
+    final prompt = ChatPromptBuilder.user()
+        .text('Write a creative short story opening about a mysterious door.')
+        .build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   📝 Creative writing response:');
     print('   ${response.text?.substring(0, 150)}...\n');
@@ -89,7 +92,7 @@ Future<void> demoAnthropicBuilder(String? apiKey) async {
 
   try {
     // Anthropic with metadata and container configuration
-    final provider = await ai()
+    final model = await ai()
         .anthropic((anthropic) => anthropic.metadata({
               'user_id': 'demo_user_123',
               'session_id': 'session_456',
@@ -104,10 +107,15 @@ Future<void> demoAnthropicBuilder(String? apiKey) async {
         .model('claude-sonnet-4-20250514')
         .temperature(0.5)
         .maxTokens(100)
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat(
-        [ChatMessage.user('Explain the concept of metadata in AI systems.')]);
+    final prompt = ChatPromptBuilder.user()
+        .text('Explain the concept of metadata in AI systems.')
+        .build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   🔍 Metadata-tracked response:');
     print('   ${response.text?.substring(0, 150)}...\n');
@@ -123,7 +131,7 @@ Future<void> demoOllamaBuilder(String baseUrl) async {
 
   try {
     // Ollama with performance optimization
-    final provider = await ai()
+    final model = await ai()
         .ollama((ollama) => ollama
             .numCtx(4096)
             .numGpu(-1) // Use all GPU layers
@@ -136,11 +144,15 @@ Future<void> demoOllamaBuilder(String baseUrl) async {
         .model('llama3.2')
         .temperature(0.7)
         .maxTokens(100)
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user('Explain how GPU acceleration works in language models.')
-    ]);
+    final prompt = ChatPromptBuilder.user()
+        .text('Explain how GPU acceleration works in language models.')
+        .build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   ⚡ High-performance response:');
     print('   ${response.text?.substring(0, 150)}...\n');
@@ -198,7 +210,7 @@ Future<void> demoOpenRouterBuilder(String? apiKey) async {
 
   try {
     // OpenRouter with web search configuration
-    final provider = await ai()
+    final model = await ai()
         .openRouter((openrouter) => openrouter
             .webSearch(
               maxResults: 5,
@@ -209,12 +221,15 @@ Future<void> demoOpenRouterBuilder(String? apiKey) async {
         .model('anthropic/claude-3.5-sonnet')
         .temperature(0.3)
         .maxTokens(150)
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'What are the latest developments in large language models?')
-    ]);
+    final prompt = ChatPromptBuilder.user()
+        .text('What are the latest developments in large language models?')
+        .build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   🔍 Web-enhanced response:');
     print('   ${response.text?.substring(0, 200)}...\n');

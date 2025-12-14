@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
 
 void main() {
   group('xAI Live Search Tests', () {
@@ -11,10 +12,10 @@ void main() {
           .enableWebSearch()
           .build();
 
-      expect(provider, isA<XAIProvider>());
+      expect(provider, isA<xai.XAIProvider>());
 
       // Access the internal config to verify live search is enabled
-      final xaiProvider = provider as XAIProvider;
+      final xaiProvider = provider as xai.XAIProvider;
       expect(xaiProvider.config.liveSearch, isTrue);
       expect(xaiProvider.config.searchParameters, isNotNull);
       expect(xaiProvider.config.searchParameters!.mode, equals('auto'));
@@ -35,7 +36,7 @@ void main() {
           )
           .build();
 
-      final xaiProvider = provider as XAIProvider;
+      final xaiProvider = provider as xai.XAIProvider;
       expect(xaiProvider.config.searchParameters, isNotNull);
       expect(xaiProvider.config.searchParameters!.maxSearchResults, equals(5));
       expect(
@@ -57,14 +58,14 @@ void main() {
           )
           .build();
 
-      final xaiProvider = provider as XAIProvider;
+      final xaiProvider = provider as xai.XAIProvider;
       expect(xaiProvider.config.searchParameters, isNotNull);
       expect(xaiProvider.config.searchParameters!.maxSearchResults, equals(10));
       expect(xaiProvider.config.searchParameters!.mode, equals('always'));
     });
 
     test('should build correct search parameters JSON', () {
-      final searchParams = SearchParameters.webSearch(
+      final searchParams = xai.SearchParameters.webSearch(
         mode: 'auto',
         maxResults: 5,
         excludedWebsites: ['example.com'],
@@ -80,7 +81,7 @@ void main() {
     });
 
     test('should build correct news search parameters JSON', () {
-      final searchParams = SearchParameters.newsSearch(
+      final searchParams = xai.SearchParameters.newsSearch(
         mode: 'auto',
         maxResults: 3,
         fromDate: '2024-01-01',
@@ -97,7 +98,7 @@ void main() {
     });
 
     test('should build combined search parameters JSON', () {
-      final searchParams = SearchParameters.combined(
+      final searchParams = xai.SearchParameters.combined(
         mode: 'auto',
         maxResults: 8,
       );
@@ -112,7 +113,7 @@ void main() {
     });
 
     test('should handle search source with excluded websites', () {
-      final source = SearchSource(
+      final source = xai.SearchSource(
         sourceType: 'web',
         excludedWebsites: ['spam.com', 'ads.com'],
       );
@@ -125,7 +126,7 @@ void main() {
     });
 
     test('should handle search source without excluded websites', () {
-      final source = SearchSource(sourceType: 'news');
+      final source = xai.SearchSource(sourceType: 'news');
 
       final json = source.toJson();
 
@@ -133,47 +134,21 @@ void main() {
       expect(json.containsKey('excluded_websites'), isFalse);
     });
 
-    test('should create live search provider with convenience function', () {
-      final provider = createXAILiveSearchProvider(
-        apiKey: 'test-key',
-        model: 'grok-3',
-        maxSearchResults: 7,
-        excludedWebsites: ['blocked.com'],
-      );
-
-      expect(provider.config.liveSearch, isTrue);
-      expect(provider.config.searchParameters, isNotNull);
-      expect(provider.config.searchParameters!.maxSearchResults, equals(7));
-      expect(provider.config.searchParameters!.sources!.first.excludedWebsites,
-          contains('blocked.com'));
-    });
-
-    test('should create search provider with convenience function', () {
-      final provider = createXAISearchProvider(
-        apiKey: 'test-key',
-        model: 'grok-3',
-        searchMode: 'always',
-        maxSearchResults: 15,
-        fromDate: '2024-06-01',
-      );
-
-      expect(provider.config.liveSearch, isTrue);
-      expect(provider.config.searchParameters, isNotNull);
-      expect(provider.config.searchParameters!.mode, equals('always'));
-      expect(provider.config.searchParameters!.maxSearchResults, equals(15));
-      expect(provider.config.searchParameters!.fromDate, equals('2024-06-01'));
-    });
+    // Provider-level convenience constructors were removed during the
+    // multi-package refactor. Use:
+    // - `XAIProvider(XAIConfig(...))` for direct provider configuration, or
+    // - `ai().xai().webSearch(...)` / `ai().xai().newsSearch(...)` for builder usage.
   });
 
   group('xAI Live Search Request Building', () {
     test(
         'should include search_parameters in request body when live search enabled',
         () {
-      final config = XAIConfig(
+      final config = xai.XAIConfig(
         apiKey: 'test-key',
         model: 'grok-3',
         liveSearch: true,
-        searchParameters: SearchParameters.webSearch(maxResults: 5),
+        searchParameters: xai.SearchParameters.webSearch(maxResults: 5),
       );
 
       // final chat = XAIChat(XAIClient(config), config);
@@ -186,7 +161,7 @@ void main() {
     });
 
     test('should not include search_parameters when live search disabled', () {
-      final config = XAIConfig(
+      final config = xai.XAIConfig(
         apiKey: 'test-key',
         model: 'grok-3',
         liveSearch: false,

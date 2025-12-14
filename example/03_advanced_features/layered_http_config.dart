@@ -64,7 +64,7 @@ Future<void> demonstrateBasicLayeredConfig(String openaiApiKey) async {
 
   try {
     // Clean, organized HTTP configuration
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
@@ -72,11 +72,16 @@ Future<void> demonstrateBasicLayeredConfig(String openaiApiKey) async {
             .headers({'X-Request-ID': 'layered-demo-001'})
             .connectionTimeout(Duration(seconds: 30))
             .enableLogging(true))
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This uses the new layered HTTP configuration.'),
-    ]);
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText(
+          'Hello! This uses the new layered HTTP configuration.',
+        ),
+      ],
+    );
 
     print('   ✅ Layered HTTP configuration successful');
     print('   📝 Response: ${response.text}\n');
@@ -91,7 +96,7 @@ Future<void> demonstrateAdvancedLayeredConfig(String anthropicApiKey) async {
 
   try {
     // Complex HTTP configuration with multiple settings
-    final provider = await ai()
+    final model = await ai()
         .anthropic()
         .apiKey(anthropicApiKey)
         .model('claude-3-5-haiku-20241022')
@@ -115,12 +120,16 @@ Future<void> demonstrateAdvancedLayeredConfig(String anthropicApiKey) async {
             // Proxy configuration (example - IO platforms only)
             // .proxy('http://corporate-proxy:8080')
             )
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Hello! This uses advanced layered HTTP configuration with multiple settings.'),
-    ]);
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText(
+          'Hello! This uses advanced layered HTTP configuration with multiple settings.',
+        ),
+      ],
+    );
 
     print('   ✅ Advanced layered configuration successful');
     print('   📝 All HTTP settings applied cleanly');
@@ -190,8 +199,8 @@ Future<void> demonstrateCustomDioClient(String anthropicApiKey) async {
       },
     ));
 
-    // Use custom Dio with the provider
-    final provider = await ai()
+    // Use custom Dio with the provider (wrapped as a LanguageModel)
+    final model = await ai()
         .anthropic()
         .apiKey(anthropicApiKey)
         .model('claude-3-5-haiku-20241022')
@@ -200,15 +209,19 @@ Future<void> demonstrateCustomDioClient(String anthropicApiKey) async {
             .enableLogging(
                 true) // This will be ignored since custom Dio is used
             .connectionTimeout(Duration(seconds: 60))) // This will be ignored
-        .build();
+        .buildLanguageModel();
 
     print('   📝 Priority: Custom Dio > HTTP config > Provider defaults');
     print('   📝 Making request with custom Dio client...\n');
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Hello! This request uses a custom Dio client with advanced monitoring and retry logic.'),
-    ]);
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText(
+          'Hello! This request uses a custom Dio client with advanced monitoring and retry logic.',
+        ),
+      ],
+    );
 
     print('   ✅ Custom Dio client demonstration successful');
     print('   📝 Response: ${response.text}\n');
@@ -232,7 +245,7 @@ Future<void> demonstrateTimeoutPriorityInLayeredConfig(
 
   try {
     // Example: Global timeout with HTTP-specific overrides
-    final provider = await ai()
+    final model = await ai()
         .deepseek()
         .apiKey(deepseekApiKey)
         .model('deepseek-chat')
@@ -244,11 +257,16 @@ Future<void> demonstrateTimeoutPriorityInLayeredConfig(
             .receiveTimeout(Duration(minutes: 5)) // Override receive: 5min
             // sendTimeout will use global timeout (2 minutes)
             .enableLogging(false))
-        .build();
+        .buildLanguageModel();
 
-    final response = await provider.chat([
-      ChatMessage.user('This demonstrates timeout priority in layered config!'),
-    ]);
+    final response = await generateTextPromptWithModel(
+      model,
+      messages: [
+        ModelMessage.userText(
+          'This demonstrates timeout priority in layered config!',
+        ),
+      ],
+    );
 
     print('   ✅ Timeout priority demonstration successful');
     print('   📝 Final timeouts: connection=15s, receive=5min, send=2min');

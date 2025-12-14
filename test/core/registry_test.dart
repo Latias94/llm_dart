@@ -1,5 +1,8 @@
+// Registry tests validate provider registration, lookup, and creation.
+
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import '../utils/mock_provider_factory.dart';
 
 // Mock ChatResponse implementation
 class MockChatResponse implements ChatResponse {
@@ -18,32 +21,35 @@ class MockChatResponse implements ChatResponse {
 
   @override
   UsageInfo? get usage => null;
+
+  @override
+  List<CallWarning> get warnings => const [];
+
+  @override
+  Map<String, dynamic>? get metadata => null;
+
+  @override
+  CallMetadata? get callMetadata => null;
 }
 
-// Mock provider for testing
-class MockProvider implements ChatCapability, ProviderCapabilities {
+// Mock provider for registry tests
+class _MockProvider implements ChatCapability, ProviderCapabilities {
   @override
   Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    List<ModelMessage> messages, {
+    List<Tool>? tools,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) async {
     return MockChatResponse('Mock response');
   }
 
   @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    CancelToken? cancelToken,
-  }) async {
-    return chat(messages, cancelToken: cancelToken);
-  }
-
-  @override
   Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
+    List<ModelMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    LanguageModelCallOptions? options,
+    CancellationToken? cancelToken,
   }) async* {
     yield TextDeltaEvent('Mock');
     yield TextDeltaEvent(' response');
@@ -51,13 +57,6 @@ class MockProvider implements ChatCapability, ProviderCapabilities {
       MockChatResponse('Mock response'),
     );
   }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async =>
-      'Mock summary';
 
   @override
   Set<LLMCapability> get supportedCapabilities => {
@@ -70,54 +69,6 @@ class MockProvider implements ChatCapability, ProviderCapabilities {
       supportedCapabilities.contains(capability);
 }
 
-// Mock factory for testing
-class MockProviderFactory implements LLMProviderFactory<ChatCapability> {
-  @override
-  String get providerId => 'mock';
-
-  @override
-  String get displayName => 'Mock Provider';
-
-  @override
-  String get description => 'A mock provider for testing';
-
-  @override
-  Set<LLMCapability> get supportedCapabilities => {
-        LLMCapability.chat,
-        LLMCapability.streaming,
-      };
-
-  @override
-  ChatCapability create(LLMConfig config) => MockProvider();
-
-  @override
-  bool validateConfig(LLMConfig config) => config.model.isNotEmpty;
-
-  @override
-  LLMConfig getDefaultConfig() => LLMConfig(
-        apiKey: 'test-key',
-        baseUrl: 'https://api.mock.com',
-        model: 'mock-model',
-      );
-
-  Map<String, dynamic> getConfigSchema() => {
-        'type': 'object',
-        'properties': {
-          'model': {'type': 'string'},
-        },
-        'required': ['model'],
-      };
-
-  LLMConfig transformConfig(LLMConfig config) => config;
-
-  Map<String, dynamic> getProviderInfo() => {
-        'id': providerId,
-        'name': displayName,
-        'description': description,
-        'capabilities': supportedCapabilities.map((c) => c.toString()).toList(),
-      };
-}
-
 void main() {
   group('Registry Tests', () {
     setUp(() {
@@ -127,7 +78,15 @@ void main() {
 
     group('LLMProviderRegistry', () {
       test('should register and retrieve providers', () {
-        final factory = MockProviderFactory();
+        final factory = MockProviderFactory<ChatCapability>(
+          providerId: 'mock',
+          supportedCapabilities: {
+            LLMCapability.chat,
+            LLMCapability.streaming,
+          },
+          create: (_) => _MockProvider(),
+          validate: (config) => config.model.isNotEmpty,
+        );
         LLMProviderRegistry.register(factory);
 
         final registeredProviders =
@@ -140,7 +99,11 @@ void main() {
       });
 
       test('should throw error when registering duplicate provider', () {
-        final factory = MockProviderFactory();
+        final factory = MockProviderFactory<ChatCapability>(
+          providerId: 'mock',
+          supportedCapabilities: {LLMCapability.chat},
+          create: (_) => _MockProvider(),
+        );
         LLMProviderRegistry.register(factory);
 
         expect(
@@ -150,8 +113,16 @@ void main() {
       });
 
       test('should allow replacing providers', () {
-        final factory1 = MockProviderFactory();
-        final factory2 = MockProviderFactory();
+        final factory1 = MockProviderFactory<ChatCapability>(
+          providerId: 'mock',
+          supportedCapabilities: {LLMCapability.chat},
+          create: (_) => _MockProvider(),
+        );
+        final factory2 = MockProviderFactory<ChatCapability>(
+          providerId: 'mock',
+          supportedCapabilities: {LLMCapability.chat},
+          create: (_) => _MockProvider(),
+        );
 
         LLMProviderRegistry.register(factory1);
         LLMProviderRegistry.registerOrReplace(factory2);
@@ -161,7 +132,14 @@ void main() {
       });
 
       test('should check capability support', () {
-        final factory = MockProviderFactory();
+        final factory = MockProviderFactory<ChatCapability>(
+          providerId: 'mock',
+          supportedCapabilities: {
+            LLMCapability.chat,
+            LLMCapability.streaming,
+          },
+          create: (_) => _MockProvider(),
+        );
         LLMProviderRegistry.register(factory);
 
         expect(
@@ -181,7 +159,11 @@ void main() {
       });
 
       test('should create provider instances', () {
-        final factory = MockProviderFactory();
+        final factory = MockProviderFactory<ChatCapability>(
+          providerId: 'mock',
+          supportedCapabilities: {LLMCapability.chat},
+          create: (_) => _MockProvider(),
+        );
         LLMProviderRegistry.register(factory);
 
         final config = LLMConfig(
@@ -191,7 +173,7 @@ void main() {
         );
 
         final provider = LLMProviderRegistry.createProvider('mock', config);
-        expect(provider, isA<MockProvider>());
+        expect(provider, isA<_MockProvider>());
       });
 
       test('should throw error for unknown provider', () {
@@ -208,7 +190,12 @@ void main() {
       });
 
       test('should validate config before creating provider', () {
-        final factory = MockProviderFactory();
+        final factory = MockProviderFactory<ChatCapability>(
+          providerId: 'mock',
+          supportedCapabilities: {LLMCapability.chat},
+          create: (_) => _MockProvider(),
+          validate: (config) => config.model.isNotEmpty,
+        );
         LLMProviderRegistry.register(factory);
 
         final invalidConfig = LLMConfig(
@@ -224,19 +211,34 @@ void main() {
       });
 
       test('should get provider info', () {
-        final factory = MockProviderFactory();
+        final factory = MockProviderFactory<ChatCapability>(
+          providerId: 'mock',
+          supportedCapabilities: {
+            LLMCapability.chat,
+            LLMCapability.streaming,
+          },
+          create: (_) => _MockProvider(),
+        );
         LLMProviderRegistry.register(factory);
 
         final info = LLMProviderRegistry.getProviderInfo('mock');
         expect(info, isNotNull);
         expect(info!.id, equals('mock'));
-        expect(info.displayName, equals('Mock Provider'));
-        expect(info.description, equals('A mock provider for testing'));
+        // Default displayName and description come from LLMProviderFactory.
+        expect(info.displayName, equals('mock'));
+        expect(info.description, equals('LLM provider: mock'));
         expect(info.supportedCapabilities, contains(LLMCapability.chat));
       });
 
       test('should get all provider info', () {
-        final factory = MockProviderFactory();
+        final factory = MockProviderFactory<ChatCapability>(
+          providerId: 'mock',
+          supportedCapabilities: {
+            LLMCapability.chat,
+            LLMCapability.streaming,
+          },
+          create: (_) => _MockProvider(),
+        );
         LLMProviderRegistry.register(factory);
 
         final providers = LLMProviderRegistry.getAllProviderInfo();
@@ -250,7 +252,14 @@ void main() {
       });
 
       test('should check capability support for providers', () {
-        final factory = MockProviderFactory();
+        final factory = MockProviderFactory<ChatCapability>(
+          providerId: 'mock',
+          supportedCapabilities: {
+            LLMCapability.chat,
+            LLMCapability.streaming,
+          },
+          create: (_) => _MockProvider(),
+        );
         LLMProviderRegistry.register(factory);
 
         // Get all providers and check their capabilities
@@ -269,7 +278,11 @@ void main() {
       });
 
       test('should clear registry', () {
-        final factory = MockProviderFactory();
+        final factory = MockProviderFactory<ChatCapability>(
+          providerId: 'mock',
+          supportedCapabilities: {LLMCapability.chat},
+          create: (_) => _MockProvider(),
+        );
         LLMProviderRegistry.register(factory);
 
         final beforeClear = LLMProviderRegistry.getRegisteredProviders();

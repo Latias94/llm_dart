@@ -3,7 +3,7 @@ name: Publish to pub.dev
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+' # tag-pattern on pub.dev: 'v{{version}}'
+      - 'v[0-9]+\.[0-9]+\.[0-9]+(-rc\.[0-9]+)?' # supports vX.Y.Z and vX.Y.Z-rc.N
 
 jobs:
   # Run tests before publishing
@@ -30,17 +30,154 @@ jobs:
 
   # Publish using the reusable workflow from dart-lang
   publish:
-    name: Publish to pub.dev
+    name: Publish main package to pub.dev
     needs: test
     permissions:
       id-token: write # Required for authentication using OIDC
     uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    secrets: inherit
+
+  publish-core:
+    name: Publish llm_dart_core
+    needs: test
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_core
+    secrets: inherit
+
+  publish-provider-utils:
+    name: Publish llm_dart_provider_utils
+    needs: publish-core
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_provider_utils
+    secrets: inherit
+
+  publish-openai-compatible:
+    name: Publish llm_dart_openai_compatible
+    needs: publish-provider-utils
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_openai_compatible
+    secrets: inherit
+
+  publish-openai:
+    name: Publish llm_dart_openai
+    needs: publish-provider-utils
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_openai
+    secrets: inherit
+
+  publish-anthropic:
+    name: Publish llm_dart_anthropic
+    needs: publish-provider-utils
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_anthropic
+    secrets: inherit
+
+  publish-google:
+    name: Publish llm_dart_google
+    needs: publish-provider-utils
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_google
+    secrets: inherit
+
+  publish-deepseek:
+    name: Publish llm_dart_deepseek
+    needs: publish-provider-utils
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_deepseek
+    secrets: inherit
+
+  publish-groq:
+    name: Publish llm_dart_groq
+    needs: publish-openai-compatible
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_groq
+    secrets: inherit
+
+  publish-ollama:
+    name: Publish llm_dart_ollama
+    needs: publish-provider-utils
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_ollama
+    secrets: inherit
+
+  publish-xai:
+    name: Publish llm_dart_xai
+    needs: publish-provider-utils
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_xai
+    secrets: inherit
+
+  publish-elevenlabs:
+    name: Publish llm_dart_elevenlabs
+    needs: publish-provider-utils
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_elevenlabs
+    secrets: inherit
+
+  publish-phind:
+    name: Publish llm_dart_phind
+    needs: publish-provider-utils
+    permissions:
+      id-token: write
+    uses: dart-lang/setup-dart/.github/workflows/publish.yml@v1
+    with:
+      working-directory: packages/llm_dart_phind
+    secrets: inherit
 
   # Create GitHub release
   github-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [test, publish]
+    needs:
+      [
+        test,
+        publish-core,
+        publish-provider-utils,
+        publish-openai-compatible,
+        publish-openai,
+        publish-anthropic,
+        publish-google,
+        publish-deepseek,
+        publish-groq,
+        publish-ollama,
+        publish-xai,
+        publish-elevenlabs,
+        publish-phind,
+        publish,
+      ]
     permissions:
       contents: write        # required for creating a release
     steps:

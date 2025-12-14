@@ -116,6 +116,16 @@ dart run 05_use_cases/batch_processor.dart --help
 dart run 05_use_cases/multimodal_app.dart --demo
 ```
 
+## Prompt Patterns in Examples
+
+- For new code, prefer prompt‑first modeling with `ChatPromptBuilder` + `ModelMessage`.
+- Multi‑modal or complex prompts (especially in provider‑specific examples such as Gemini audio/video) use:
+  - `ChatPromptBuilder` to build a structured `ModelMessage` with multiple parts.
+  - Model‑centric helpers such as `generateTextWithModel(model, promptMessages: [...])` to send them through the unified API.
+- Low-level examples use `ChatCapability` directly with `ModelMessage` inputs, but the recommended default is the `LanguageModel` helpers.
+
+This mirrors the internal content model (`ModelMessage` + `ChatContentPart`) and keeps advanced examples consistent across providers.
+
 ## Learning Path
 
 **Beginner**: Start with `quick_start.dart` → `provider_comparison.dart` → `chat_basics.dart`

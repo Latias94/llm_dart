@@ -19,34 +19,38 @@ void main() async {
   // Get API key
   final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
 
-  // Create AI provider
-  final provider = await ai()
+  // Create AI model
+  final model = await ai()
       .openai()
       .apiKey(apiKey)
       .model('gpt-4o-mini')
       .temperature(0.7)
       .maxTokens(500)
-      .build();
+      .buildLanguageModel();
 
   // Demonstrate different aspects of chat
-  await demonstrateBasicChat(provider);
-  await demonstrateMessageTypes(provider);
-  await demonstrateConversationHistory(provider);
-  await demonstrateResponseMetadata(provider);
-  await demonstrateContextManagement(provider);
+  await demonstrateBasicChat(model);
+  await demonstrateMessageTypes(model);
+  await demonstrateConversationHistory(model);
+  await demonstrateResponseMetadata(model);
+  await demonstrateContextManagement(model);
 
   print('\n✅ Chat basics completed!');
 }
 
 /// Demonstrate basic chat functionality
-Future<void> demonstrateBasicChat(ChatCapability provider) async {
+Future<void> demonstrateBasicChat(LanguageModel model) async {
   print('🔤 Basic Chat:\n');
 
   try {
     // Simple question and answer
-    final messages = [ChatMessage.user('What is the capital of Japan?')];
+    final prompt =
+        ChatPromptBuilder.user().text('What is the capital of Japan?').build();
 
-    final response = await provider.chat(messages);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   User: What is the capital of Japan?');
     print('   AI: ${response.text}');
@@ -57,29 +61,40 @@ Future<void> demonstrateBasicChat(ChatCapability provider) async {
 }
 
 /// Demonstrate different message types
-Future<void> demonstrateMessageTypes(ChatCapability provider) async {
+Future<void> demonstrateMessageTypes(LanguageModel model) async {
   print('📝 Message Types:\n');
 
   try {
     // Different message types in conversation
-    final messages = [
+    final prompts = <ModelMessage>[
       // System message - sets AI behavior
-      ChatMessage.system(
-          'You are a helpful math tutor. Explain concepts clearly and encourage learning.'),
+      ChatPromptBuilder.system()
+          .text(
+              'You are a helpful math tutor. Explain concepts clearly and encourage learning.')
+          .build(),
 
       // User message - user input
-      ChatMessage.user(
-          'I\'m struggling with algebra. Can you help me understand variables?'),
+      ChatPromptBuilder.user()
+          .text(
+              'I\'m struggling with algebra. Can you help me understand variables?')
+          .build(),
 
       // Assistant message - previous AI response (for context)
-      ChatMessage.assistant(
-          'Of course! Variables in algebra are like containers that hold unknown values. Think of them as boxes with labels like "x" or "y" that can contain different numbers.'),
+      ChatPromptBuilder.assistant()
+          .text(
+              'Of course! Variables in algebra are like containers that hold unknown values. Think of them as boxes with labels like "x" or "y" that can contain different numbers.')
+          .build(),
 
       // Follow-up user message
-      ChatMessage.user('Can you give me a simple example?'),
+      ChatPromptBuilder.user()
+          .text('Can you give me a simple example?')
+          .build(),
     ];
 
-    final response = await provider.chat(messages);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: prompts,
+    );
 
     print('   System: Math tutor personality set');
     print('   User: Asking about algebra variables');
@@ -93,31 +108,45 @@ Future<void> demonstrateMessageTypes(ChatCapability provider) async {
 }
 
 /// Demonstrate conversation history management
-Future<void> demonstrateConversationHistory(ChatCapability provider) async {
+Future<void> demonstrateConversationHistory(LanguageModel model) async {
   print('📚 Conversation History:\n');
 
   try {
     // Build conversation step by step
-    final conversation = <ChatMessage>[];
+    final conversation = <ModelMessage>[];
 
     // First exchange
-    conversation.add(ChatMessage.user('Hi! What\'s your name?'));
-    var response = await provider.chat(conversation);
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
+    conversation
+        .add(ChatPromptBuilder.user().text('Hi! What\'s your name?').build());
+    var response = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(conversation),
+    );
+    conversation
+        .add(ChatPromptBuilder.assistant().text(response.text ?? '').build());
     print('   User: Hi! What\'s your name?');
     print('   AI: ${response.text}');
 
     // Second exchange - AI remembers context
-    conversation.add(ChatMessage.user('What did I just ask you?'));
-    response = await provider.chat(conversation);
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
+    conversation
+        .add(ChatPromptBuilder.user().text('What did I just ask you?').build());
+    response = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(conversation),
+    );
+    conversation
+        .add(ChatPromptBuilder.assistant().text(response.text ?? '').build());
     print('   User: What did I just ask you?');
     print('   AI: ${response.text}');
 
     // Third exchange - testing memory
-    conversation
-        .add(ChatMessage.user('Can you summarize our conversation so far?'));
-    response = await provider.chat(conversation);
+    conversation.add(ChatPromptBuilder.user()
+        .text('Can you summarize our conversation so far?')
+        .build());
+    response = await generateTextWithModel(
+      model,
+      promptMessages: List<ModelMessage>.from(conversation),
+    );
     print('   User: Can you summarize our conversation so far?');
     print('   AI: ${response.text}');
 
@@ -128,15 +157,18 @@ Future<void> demonstrateConversationHistory(ChatCapability provider) async {
 }
 
 /// Demonstrate response metadata and usage statistics
-Future<void> demonstrateResponseMetadata(ChatCapability provider) async {
+Future<void> demonstrateResponseMetadata(LanguageModel model) async {
   print('📊 Response Metadata:\n');
 
   try {
-    final messages = [
-      ChatMessage.user('Explain quantum computing in exactly 100 words.')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('Explain quantum computing in exactly 100 words.')
+        .build();
 
-    final response = await provider.chat(messages);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
 
     print('   Question: Explain quantum computing in exactly 100 words.');
     print('   Response: ${response.text}');
@@ -171,51 +203,74 @@ Future<void> demonstrateResponseMetadata(ChatCapability provider) async {
 }
 
 /// Demonstrate context management strategies
-Future<void> demonstrateContextManagement(ChatCapability provider) async {
+Future<void> demonstrateContextManagement(LanguageModel model) async {
   print('🧠 Context Management:\n');
 
   try {
     // Strategy 1: Short context for focused responses
     print('   Strategy 1: Short Context');
-    final shortContext = [ChatMessage.user('What is AI?')];
-    var response = await provider.chat(shortContext);
+    final shortContext = [
+      ChatPromptBuilder.user().text('What is AI?').build(),
+    ];
+    var response = await generateTextWithModel(
+      model,
+      promptMessages: shortContext,
+    );
     print('      Response length: ${response.text?.length ?? 0} characters');
 
     // Strategy 2: Rich context for detailed responses
     print('\n   Strategy 2: Rich Context');
     final richContext = [
-      ChatMessage.system(
-          'You are an AI expert with deep knowledge of machine learning, neural networks, and AI history.'),
-      ChatMessage.user(
-          'I\'m a computer science student preparing for an exam.'),
-      ChatMessage.assistant(
-          'I\'d be happy to help you prepare! What specific topics would you like to review?'),
-      ChatMessage.user(
-          'What is AI? Please provide a comprehensive explanation suitable for an exam.'),
+      ChatPromptBuilder.system()
+          .text(
+              'You are an AI expert with deep knowledge of machine learning, neural networks, and AI history.')
+          .build(),
+      ChatPromptBuilder.user()
+          .text('I\'m a computer science student preparing for an exam.')
+          .build(),
+      ChatPromptBuilder.assistant()
+          .text(
+              'I\'d be happy to help you prepare! What specific topics would you like to review?')
+          .build(),
+      ChatPromptBuilder.user()
+          .text(
+              'What is AI? Please provide a comprehensive explanation suitable for an exam.')
+          .build(),
     ];
-    response = await provider.chat(richContext);
+    response = await generateTextWithModel(
+      model,
+      promptMessages: richContext,
+    );
     print('      Response length: ${response.text?.length ?? 0} characters');
 
     // Strategy 3: Context window management
     print('\n   Strategy 3: Context Window Management');
-    final longConversation = <ChatMessage>[];
+    final longConversation = <ModelMessage>[];
 
     // Simulate a long conversation
     for (int i = 1; i <= 5; i++) {
-      longConversation
-          .add(ChatMessage.user('Question $i: Tell me about topic $i'));
-      longConversation.add(ChatMessage.assistant(
-          'Response $i: Here is information about topic $i...'));
+      longConversation.add(ChatPromptBuilder.user()
+          .text('Question $i: Tell me about topic $i')
+          .build());
+      longConversation.add(ChatPromptBuilder.assistant()
+          .text('Response $i: Here is information about topic $i...')
+          .build());
     }
 
     // Add current question
-    longConversation
-        .add(ChatMessage.user('Summarize all the topics we\'ve discussed.'));
+    longConversation.add(ChatPromptBuilder.user()
+        .text('Summarize all the topics we\'ve discussed.')
+        .build());
 
     print('      Total messages in context: ${longConversation.length}');
-    response = await provider.chat(longConversation);
-    print(
-        '      AI can reference: ${response.text?.contains('topic') == true ? 'Previous topics' : 'Limited context'}');
+    response = await generateTextWithModel(
+      model,
+      promptMessages: longConversation,
+    );
+    final canReference = response.text?.contains('topic') == true
+        ? 'Previous topics'
+        : 'Limited context';
+    print('      AI can reference: $canReference');
 
     print('\n   💡 Context Management Tips:');
     print('      • Short context = Faster, cheaper, focused responses');

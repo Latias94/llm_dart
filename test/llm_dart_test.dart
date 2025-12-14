@@ -1,3 +1,5 @@
+// Sanity tests for the root llm_dart entry point.
+
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 
@@ -48,7 +50,6 @@ void main() {
           maxTokens: 1000,
           systemPrompt: 'You are a helpful assistant',
           timeout: Duration(seconds: 30),
-          stream: true,
           topP: 0.9,
           topK: 50,
           extensions: {'custom': 'value'},
@@ -116,7 +117,7 @@ void main() {
 
       test('model exports are available', () {
         // Test that model classes can be referenced
-        expect(ChatMessage, isA<Type>());
+        expect(ModelMessage, isA<Type>());
         expect(ToolCall, isA<Type>());
       });
 

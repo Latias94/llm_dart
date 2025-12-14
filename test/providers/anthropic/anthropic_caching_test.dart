@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import '../../test_utils/model_message_test_extensions.dart';
 
 /// Test suite for Anthropic prompt caching structure validation
 /// Tests comprehensive caching functionality according to official documentation

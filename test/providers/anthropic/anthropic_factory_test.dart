@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/factories/anthropic_factory.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 
 void main() {
   group('AnthropicProviderFactory Tests', () {
@@ -53,7 +53,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<AnthropicProvider>());
+        expect(provider, isA<anthropic.AnthropicProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -63,15 +63,15 @@ void main() {
           baseUrl: 'https://api.anthropic.com',
           model: 'claude-sonnet-4-20250514',
           extensions: {
-            'reasoning': true,
-            'thinkingBudgetTokens': 5000,
-            'interleavedThinking': false,
+            LLMConfigKeys.reasoning: true,
+            LLMConfigKeys.thinkingBudgetTokens: 5000,
+            LLMConfigKeys.interleavedThinking: false,
           },
         );
 
         final provider = factory.create(config);
 
-        expect(provider, isA<AnthropicProvider>());
+        expect(provider, isA<anthropic.AnthropicProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -89,15 +89,15 @@ void main() {
           stopSequences: ['STOP'],
           user: 'test-user',
           extensions: {
-            'reasoning': true,
-            'thinkingBudgetTokens': 3000,
-            'interleavedThinking': true,
+            LLMConfigKeys.reasoning: true,
+            LLMConfigKeys.thinkingBudgetTokens: 3000,
+            LLMConfigKeys.interleavedThinking: true,
           },
         );
 
         final provider = factory.create(config);
 
-        expect(provider, isA<AnthropicProvider>());
+        expect(provider, isA<anthropic.AnthropicProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -123,16 +123,15 @@ void main() {
 
     group('Default Configuration', () {
       test('should provide default configuration', () {
-        final defaultConfig = factory.getProviderDefaults();
+        final defaultConfig = factory.getDefaultConfig();
 
-        expect(defaultConfig, isNotEmpty);
-        expect(defaultConfig['model'], isNotNull);
-        expect(defaultConfig['baseUrl'], isNotNull);
+        expect(defaultConfig.model, isNotNull);
+        expect(defaultConfig.baseUrl, isNotNull);
       });
 
       test('should have valid default model', () {
-        final defaultConfig = factory.getProviderDefaults();
-        final model = defaultConfig['model'] as String?;
+        final defaultConfig = factory.getDefaultConfig();
+        final model = defaultConfig.model;
 
         expect(model, isNotNull);
         expect(model, isNotEmpty);
@@ -140,10 +139,10 @@ void main() {
       });
 
       test('should have valid default base URL', () {
-        final defaultConfig = factory.getProviderDefaults();
-        final baseUrl = defaultConfig['baseUrl'] as String?;
+        final defaultConfig = factory.getDefaultConfig();
+        final baseUrl = defaultConfig.baseUrl;
 
-        expect(baseUrl, isNotNull);
+        expect(baseUrl, isNotEmpty);
         expect(baseUrl, equals('https://api.anthropic.com/v1/'));
       });
     });

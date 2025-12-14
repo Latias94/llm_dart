@@ -97,41 +97,61 @@ final images = await imageProvider.generateImage(
 
 ### Anthropic Extended Thinking
 ```dart
-final provider = await ai().anthropic().apiKey('your-key')
-    .model('claude-sonnet-4-20250514').build();
+final model = await ai()
+    .anthropic()
+    .apiKey('your-key')
+    .model('claude-sonnet-4-20250514')
+    .buildLanguageModel();
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this logic puzzle step by step'),
-]);
+final result = await generateTextPromptWithModel(
+  model,
+  messages: [
+    ModelMessage.userText('Solve this logic puzzle step by step'),
+  ],
+);
 
 // Access Claude's thinking process
-if (response.thinking != null) {
-  print('Claude\'s reasoning: ${response.thinking}');
+if (result.thinking != null) {
+  print('Claude\'s reasoning: ${result.thinking}');
 }
 ```
 
 ### DeepSeek Reasoning
 ```dart
-final provider = await ai().deepseek().apiKey('your-key')
-    .model('deepseek-reasoner').build();
+final model = await ai()
+    .deepseek()
+    .apiKey('your-key')
+    .model('deepseek-reasoner')
+    .buildLanguageModel();
 
-final response = await provider.chat([
-  ChatMessage.user('Analyze this complex problem'),
-]);
+final result = await generateTextPromptWithModel(
+  model,
+  messages: [
+    ModelMessage.userText('Analyze this complex problem'),
+  ],
+);
 
 // View transparent thinking process
-print('AI thinking: ${response.thinking}');
+print('AI thinking: ${result.thinking}');
 ```
 
 ### XAI Live Search
 ```dart
-final provider = await ai().xai().apiKey('your-key')
-    .model('grok-beta').build();
+final model = await ai()
+    .xai()
+    .apiKey('your-key')
+    .model('grok-beta')
+    .buildLanguageModel();
 
-final response = await provider.chat([
-  ChatMessage.user('What are the latest AI developments this week?'),
-]);
+final result = await generateTextPromptWithModel(
+  model,
+  messages: [
+    ModelMessage.userText('What are the latest AI developments this week?'),
+  ],
+);
+
 // Grok automatically includes live search results
+print(result.text);
 ```
 
 ## Best Practices

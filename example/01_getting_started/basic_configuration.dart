@@ -38,15 +38,19 @@ Future<void> demonstrateTemperatureSettings(String apiKey) async {
 
   for (final temp in temperatures) {
     try {
-      final provider = await ai()
+      final model = await ai()
           .openai()
           .apiKey(apiKey)
           .model('gpt-4o-mini')
           .temperature(temp) // Key parameter: controls randomness
           .maxTokens(50)
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider.chat([ChatMessage.user(question)]);
+      final prompt = ChatPromptBuilder.user().text(question).build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
 
       print('   Temperature $temp: ${response.text}');
     } catch (e) {
@@ -69,15 +73,19 @@ Future<void> demonstrateTokenLimits(String apiKey) async {
 
   for (final limit in tokenLimits) {
     try {
-      final provider = await ai()
+      final model = await ai()
           .openai()
           .apiKey(apiKey)
           .model('gpt-4o-mini')
           .temperature(0.7)
           .maxTokens(limit) // Key parameter: controls response length
-          .build();
+          .buildLanguageModel();
 
-      final response = await provider.chat([ChatMessage.user(question)]);
+      final prompt = ChatPromptBuilder.user().text(question).build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
       final wordCount = response.text?.split(' ').length ?? 0;
 
       print('   Max Tokens $limit: $wordCount words');
@@ -120,8 +128,12 @@ Future<void> demonstrateSystemPrompts(String apiKey) async {
         builder.systemPrompt(systemPrompts[i]!);
       }
 
-      final provider = await builder.build();
-      final response = await provider.chat([ChatMessage.user(question)]);
+      final model = await builder.buildLanguageModel();
+      final prompt = ChatPromptBuilder.user().text(question).build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
 
       final promptDesc = systemPrompts[i] ?? 'No system prompt';
       print('   System: $promptDesc');
@@ -157,13 +169,17 @@ Future<void> demonstrateErrorHandling(String apiKey) async {
 /// Test invalid API key scenario
 Future<void> testInvalidApiKey() async {
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey('invalid-key') // Intentionally invalid
         .model('gpt-4o-mini')
-        .build();
+        .buildLanguageModel();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    final prompt = ChatPromptBuilder.user().text('Hello').build();
+    await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
     print('   ❌ Expected error but got success');
   } on AuthError catch (e) {
     print('   ✅ Caught AuthError: ${e.message}');
@@ -175,13 +191,17 @@ Future<void> testInvalidApiKey() async {
 /// Test invalid model scenario
 Future<void> testInvalidModel(String apiKey) async {
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('invalid-model-name') // Intentionally invalid
-        .build();
+        .buildLanguageModel();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    final prompt = ChatPromptBuilder.user().text('Hello').build();
+    await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
     print('   ❌ Expected error but got success');
   } on InvalidRequestError catch (e) {
     print('   ✅ Caught InvalidRequestError: ${e.message}');
@@ -193,14 +213,18 @@ Future<void> testInvalidModel(String apiKey) async {
 /// Test network timeout scenario
 Future<void> testNetworkTimeout(String apiKey) async {
   try {
-    final provider = await ai()
+    final model = await ai()
         .openai()
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(milliseconds: 1)) // Very short timeout
-        .build();
+        .buildLanguageModel();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    final prompt = ChatPromptBuilder.user().text('Hello').build();
+    await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+    );
     print('   ❌ Expected timeout but got success');
   } on TimeoutError catch (e) {
     print('   ✅ Caught TimeoutError: ${e.message}');
@@ -221,17 +245,22 @@ Future<void> demonstrateTimeoutSettings(String apiKey) async {
 
   for (final timeout in timeouts) {
     try {
-      final provider = await ai()
+      final model = await ai()
           .openai()
           .apiKey(apiKey)
           .model('gpt-4o-mini')
           .temperature(0.7)
           .timeout(timeout) // Key parameter: network timeout
-          .build();
+          .buildLanguageModel();
 
       final stopwatch = Stopwatch()..start();
-      await provider
-          .chat([ChatMessage.user('Explain quantum computing briefly.')]);
+      final prompt = ChatPromptBuilder.user()
+          .text('Explain quantum computing briefly.')
+          .build();
+      await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
       stopwatch.stop();
 
       print(

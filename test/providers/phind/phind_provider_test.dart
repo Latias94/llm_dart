@@ -9,7 +9,7 @@ void main() {
     setUp(() {
       config = const PhindConfig(
         apiKey: 'test-api-key',
-        baseUrl: 'https://https.extension.phind.com/agent/',
+        baseUrl: 'https://api.phind.com/v1/',
         model: 'Phind-70B',
         maxTokens: 1000,
         temperature: 0.7,
@@ -60,20 +60,8 @@ void main() {
         expect(provider.chat, isA<Function>());
       });
 
-      test('should have chatWithTools method', () {
-        expect(provider.chatWithTools, isA<Function>());
-      });
-
       test('should have chatStream method', () {
         expect(provider.chatStream, isA<Function>());
-      });
-
-      test('should have memoryContents method', () {
-        expect(provider.memoryContents, isA<Function>());
-      });
-
-      test('should have summarizeHistory method', () {
-        expect(provider.summarizeHistory, isA<Function>());
       });
     });
 
@@ -150,11 +138,6 @@ void main() {
 
       test('should not support tool calling in config', () {
         expect(provider.config.supportsToolCalling, isFalse);
-      });
-
-      test('should handle tool requests gracefully', () {
-        // Even though tools aren't supported, the method should exist
-        expect(provider.chatWithTools, isA<Function>());
       });
     });
 

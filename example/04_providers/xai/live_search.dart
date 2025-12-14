@@ -17,8 +17,8 @@ Future<void> main() async {
   print('🔍 xAI Grok Live Search Examples\n');
 
   // Initialize xAI provider
-  final xaiProvider = await initializeXAIProvider();
-  if (xaiProvider == null) {
+  final xaiModel = await initializeXAIProvider();
+  if (xaiModel == null) {
     print('❌ xAI provider not available. Please set XAI_API_KEY.');
     return;
   }
@@ -26,12 +26,12 @@ Future<void> main() async {
   print('🚀 Demonstrating xAI Live Search Capabilities...\n');
 
   // Demonstrate different live search scenarios
-  await demonstrateBasicLiveSearch(xaiProvider);
-  await demonstrateCurrentEventsQuery(xaiProvider);
-  await demonstrateFactCheckingWithSources(xaiProvider);
-  await demonstrateTrendingTopicsAnalysis(xaiProvider);
-  await demonstrateSearchEnhancedConversation(xaiProvider);
-  await demonstrateRealTimeDataRetrieval(xaiProvider);
+  await demonstrateBasicLiveSearch(xaiModel);
+  await demonstrateCurrentEventsQuery(xaiModel);
+  await demonstrateFactCheckingWithSources(xaiModel);
+  await demonstrateTrendingTopicsAnalysis(xaiModel);
+  await demonstrateSearchEnhancedConversation(xaiModel);
+  await demonstrateRealTimeDataRetrieval(xaiModel);
 
   print('✅ xAI live search examples completed!');
   print('💡 xAI Grok advantages:');
@@ -42,7 +42,7 @@ Future<void> main() async {
 }
 
 /// Initialize xAI provider with live search capabilities
-Future<ChatCapability?> initializeXAIProvider() async {
+Future<LanguageModel?> initializeXAIProvider() async {
   try {
     // Get xAI API key from environment variable
     final apiKey = Platform.environment['XAI_API_KEY'];
@@ -60,7 +60,7 @@ Future<ChatCapability?> initializeXAIProvider() async {
         .model('grok-3') // Use latest Grok-3 model for live search
         .temperature(0.7)
         .enableWebSearch() // Enable live search functionality
-        .build();
+        .buildLanguageModel();
   } catch (e) {
     print('⚠️  xAI provider initialization failed: $e');
     return null;
@@ -68,7 +68,7 @@ Future<ChatCapability?> initializeXAIProvider() async {
 }
 
 /// Demonstrate basic live search functionality
-Future<void> demonstrateBasicLiveSearch(ChatCapability provider) async {
+Future<void> demonstrateBasicLiveSearch(LanguageModel model) async {
   print('🔍 Basic Live Search:');
 
   final searchQueries = [
@@ -82,14 +82,17 @@ Future<void> demonstrateBasicLiveSearch(ChatCapability provider) async {
     print('   🔎 Query: "$query"');
 
     try {
-      // Enable live search for this specific request
-      // xAI Grok models have live search capabilities built-in
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
+      final prompt = ChatPromptBuilder.user().text(query).build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
 
-      if (response.text != null) {
-        print('   📝 Response: ${response.text!.substring(0, 150)}...');
+      final text = response.text ?? '';
+      if (text.isNotEmpty) {
+        final preview =
+            text.length > 150 ? '${text.substring(0, 150)}...' : text;
+        print('   📝 Response: $preview');
         print('   🔍 Live search results integrated in response');
       }
     } catch (e) {
@@ -101,7 +104,7 @@ Future<void> demonstrateBasicLiveSearch(ChatCapability provider) async {
 }
 
 /// Demonstrate current events and news queries
-Future<void> demonstrateCurrentEventsQuery(ChatCapability provider) async {
+Future<void> demonstrateCurrentEventsQuery(LanguageModel model) async {
   print('📰 Current Events & News:');
 
   final newsQueries = [
@@ -117,12 +120,17 @@ Future<void> demonstrateCurrentEventsQuery(ChatCapability provider) async {
 
     try {
       // xAI Grok models automatically prioritize recent news
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
+      final prompt = ChatPromptBuilder.user().text(query).build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
 
-      if (response.text != null) {
-        print('   📄 News Summary: ${response.text!.substring(0, 200)}...');
+      final text = response.text ?? '';
+      if (text.isNotEmpty) {
+        final preview =
+            text.length > 200 ? '${text.substring(0, 200)}...' : text;
+        print('   📄 News Summary: $preview');
         print('   📰 Recent news integrated automatically by Grok');
       }
     } catch (e) {
@@ -134,7 +142,7 @@ Future<void> demonstrateCurrentEventsQuery(ChatCapability provider) async {
 }
 
 /// Demonstrate fact-checking with live sources
-Future<void> demonstrateFactCheckingWithSources(ChatCapability provider) async {
+Future<void> demonstrateFactCheckingWithSources(LanguageModel model) async {
   print('✅ Fact-Checking with Live Sources:');
 
   final factCheckQueries = [
@@ -149,14 +157,21 @@ Future<void> demonstrateFactCheckingWithSources(ChatCapability provider) async {
 
     try {
       // Grok automatically provides fact-checking with reliable sources
-      final response = await provider.chat([
-        ChatMessage.system(
-            'You are a fact-checker. Verify claims using the most recent and reliable sources. Provide source citations.'),
-        ChatMessage.user(query),
-      ]);
+      final prompt = ChatPromptBuilder.user()
+          .text(
+              'You are a fact-checker. Verify claims using the most recent and reliable sources. Provide source citations.')
+          .text(query)
+          .build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
 
-      if (response.text != null) {
-        print('   ✅ Fact-Check Result: ${response.text!.substring(0, 180)}...');
+      final text = response.text ?? '';
+      if (text.isNotEmpty) {
+        final preview =
+            text.length > 180 ? '${text.substring(0, 180)}...' : text;
+        print('   ✅ Fact-Check Result: $preview');
         print('   📚 Sources automatically verified by Grok');
       }
     } catch (e) {
@@ -168,7 +183,7 @@ Future<void> demonstrateFactCheckingWithSources(ChatCapability provider) async {
 }
 
 /// Demonstrate trending topics analysis
-Future<void> demonstrateTrendingTopicsAnalysis(ChatCapability provider) async {
+Future<void> demonstrateTrendingTopicsAnalysis(LanguageModel model) async {
   print('📈 Trending Topics Analysis:');
 
   final trendingQueries = [
@@ -183,13 +198,17 @@ Future<void> demonstrateTrendingTopicsAnalysis(ChatCapability provider) async {
 
     try {
       // Grok automatically analyzes trending topics from multiple sources
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
+      final prompt = ChatPromptBuilder.user().text(query).build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
 
-      if (response.text != null) {
-        print(
-            '   📊 Trending Analysis: ${response.text!.substring(0, 160)}...');
+      final text = response.text ?? '';
+      if (text.isNotEmpty) {
+        final preview =
+            text.length > 160 ? '${text.substring(0, 160)}...' : text;
+        print('   📊 Trending Analysis: $preview');
         print('   📈 Trending data integrated by Grok');
       }
     } catch (e) {
@@ -201,8 +220,7 @@ Future<void> demonstrateTrendingTopicsAnalysis(ChatCapability provider) async {
 }
 
 /// Demonstrate search-enhanced conversation
-Future<void> demonstrateSearchEnhancedConversation(
-    ChatCapability provider) async {
+Future<void> demonstrateSearchEnhancedConversation(LanguageModel model) async {
   print('💬 Search-Enhanced Conversation:');
 
   // Simulate a conversation where live search enhances responses
@@ -222,7 +240,7 @@ Future<void> demonstrateSearchEnhancedConversation(
     },
   ];
 
-  final conversationHistory = <ChatMessage>[];
+  final conversationHistory = <ModelMessage>[];
 
   for (final turn in conversationFlow) {
     final userMessage = turn['user'] as String;
@@ -232,14 +250,25 @@ Future<void> demonstrateSearchEnhancedConversation(
     print('   🎯 Context: $context');
 
     try {
-      conversationHistory.add(ChatMessage.user(userMessage));
+      final userPrompt = ChatPromptBuilder.user()
+          .text(userMessage)
+          .text('(context: $context)')
+          .build();
+      conversationHistory.add(userPrompt);
 
       // Grok maintains conversation context and enhances with live search
-      final response = await provider.chat(conversationHistory);
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: List<ModelMessage>.from(conversationHistory),
+      );
 
-      if (response.text != null) {
-        print('   🤖 Grok: ${response.text!.substring(0, 200)}...');
-        conversationHistory.add(ChatMessage.assistant(response.text!));
+      final text = response.text ?? '';
+      if (text.isNotEmpty) {
+        final preview =
+            text.length > 200 ? '${text.substring(0, 200)}...' : text;
+        print('   🤖 Grok: $preview');
+        conversationHistory
+            .add(ChatPromptBuilder.assistant().text(text).build());
         print('   🔍 Search enhancement integrated automatically');
       }
     } catch (e) {
@@ -251,7 +280,7 @@ Future<void> demonstrateSearchEnhancedConversation(
 }
 
 /// Demonstrate real-time data retrieval
-Future<void> demonstrateRealTimeDataRetrieval(ChatCapability provider) async {
+Future<void> demonstrateRealTimeDataRetrieval(LanguageModel model) async {
   print('⏰ Real-Time Data Retrieval:');
 
   final realTimeQueries = [
@@ -267,12 +296,17 @@ Future<void> demonstrateRealTimeDataRetrieval(ChatCapability provider) async {
 
     try {
       // Grok automatically provides real-time data
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
+      final prompt = ChatPromptBuilder.user().text(query).build();
+      final response = await generateTextWithModel(
+        model,
+        promptMessages: [prompt],
+      );
 
-      if (response.text != null) {
-        print('   📊 Real-Time Data: ${response.text!.substring(0, 180)}...');
+      final text = response.text ?? '';
+      if (text.isNotEmpty) {
+        final preview =
+            text.length > 180 ? '${text.substring(0, 180)}...' : text;
+        print('   📊 Real-Time Data: $preview');
         print('   ⚡ Real-time data automatically integrated by Grok');
       }
     } catch (e) {

@@ -21,63 +21,62 @@ void main() async {
   // Get API key
   final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
 
-  // Create AI provider with enhanced capabilities
-  final provider = await ai()
+  // Create AI model with enhanced capabilities
+  final model = await ai()
       .openai()
       .apiKey(apiKey)
       .model('gpt-4o')
       .temperature(0.1)
       .maxTokens(1000)
-      .build();
+      .buildLanguageModel();
 
   // Demonstrate enhanced tool calling features
-  await demonstrateToolValidation(provider);
-  await demonstrateToolChoiceStrategies(provider);
-  await demonstrateNestedObjectStructures(provider);
-  await demonstrateStructuredOutputWithTools(provider);
+  await demonstrateToolValidation(model);
+  await demonstrateToolChoiceStrategies(model);
+  await demonstrateNestedObjectStructures(model);
+  await demonstrateStructuredOutputWithTools(model);
   await demonstrateProviderSpecificFeatures();
 
   print('\n✅ Enhanced tool calling completed!');
 }
 
 /// Demonstrate tool validation and error handling
-Future<void> demonstrateToolValidation(ChatCapability provider) async {
+Future<void> demonstrateToolValidation(LanguageModel model) async {
   print('🔍 Tool Validation and Error Handling:\n');
 
   try {
-    // Define a calculator tool with strict validation
-    final calculatorTool = Tool.function(
-      name: 'calculate',
-      description: 'Perform mathematical calculations with validation',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'expression': ParameterProperty(
-            propertyType: 'string',
-            description: 'Mathematical expression (e.g., "2 + 3 * 4")',
-          ),
-          'precision': ParameterProperty(
-            propertyType: 'integer',
-            description: 'Number of decimal places for result',
-          ),
-          'operation_type': ParameterProperty(
-            propertyType: 'string',
-            description: 'Type of mathematical operation',
-            enumList: ['arithmetic', 'algebraic', 'trigonometric'],
-          ),
-        },
-        required: ['expression'],
-      ),
-    );
+    // Define a calculator tool with strict validation using ToolBuilder
+    final calculatorTool = tool('calculate', (t) {
+      t
+        ..description('Perform mathematical calculations with validation')
+        ..stringParam(
+          'expression',
+          description: 'Mathematical expression (e.g., "2 + 3 * 4")',
+          required: true,
+        )
+        ..integerParam(
+          'precision',
+          description: 'Number of decimal places for result',
+        )
+        ..enumParam(
+          'operation_type',
+          description: 'Type of mathematical operation',
+          values: ['arithmetic', 'algebraic', 'trigonometric'],
+        );
+    });
 
-    final messages = [
-      ChatMessage.user('Calculate 15.7 * 8.3 with 2 decimal places precision')
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text('Calculate 15.7 * 8.3 with 2 decimal places precision')
+        .build();
 
     print('   User: Calculate 15.7 * 8.3 with 2 decimal places precision');
     print('   Available tools: calculate (with validation)');
 
-    final response = await provider.chatWithTools(messages, [calculatorTool]);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: [calculatorTool]),
+    );
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
       print('   🔧 Tool calls made:');
@@ -118,38 +117,28 @@ Future<void> demonstrateToolValidation(ChatCapability provider) async {
 }
 
 /// Demonstrate different tool choice strategies
-Future<void> demonstrateToolChoiceStrategies(ChatCapability provider) async {
+Future<void> demonstrateToolChoiceStrategies(LanguageModel model) async {
   print('🎯 Tool Choice Strategies:\n');
 
   final tools = [
-    Tool.function(
-      name: 'get_weather',
-      description: 'Get current weather information',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'location': ParameterProperty(
-            propertyType: 'string',
-            description: 'City and country',
-          ),
-        },
-        required: ['location'],
-      ),
-    ),
-    Tool.function(
-      name: 'get_time',
-      description: 'Get current time in timezone',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'timezone': ParameterProperty(
-            propertyType: 'string',
-            description: 'Timezone identifier',
-          ),
-        },
-        required: ['timezone'],
-      ),
-    ),
+    tool('get_weather', (t) {
+      t
+        ..description('Get current weather information')
+        ..stringParam(
+          'location',
+          description: 'City and country',
+          required: true,
+        );
+    }),
+    tool('get_time', (t) {
+      t
+        ..description('Get current time in timezone')
+        ..stringParam(
+          'timezone',
+          description: 'Timezone identifier',
+          required: true,
+        );
+    }),
   ];
 
   // Test different tool choice strategies
@@ -182,8 +171,7 @@ Future<void> demonstrateToolChoiceStrategies(ChatCapability provider) async {
 }
 
 /// Demonstrate structured outputs with tools
-Future<void> demonstrateStructuredOutputWithTools(
-    ChatCapability provider) async {
+Future<void> demonstrateStructuredOutputWithTools(LanguageModel model) async {
   print('📊 Structured Output with Tools:\n');
 
   try {
@@ -225,6 +213,32 @@ Future<void> demonstrateStructuredOutputWithTools(
     } catch (e) {
       print('   📋 Structured output validation: ❌ $e');
     }
+
+    // Example invocation with a simple analysis tool
+    final analysisTool = tool('analyze_impact', (t) {
+      t
+        ..description('Analyze the impact of a technology on productivity')
+        ..stringParam(
+          'topic',
+          description: 'Topic to analyze (e.g., "AI and software engineering")',
+          required: true,
+        );
+    });
+
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Analyze the impact of AI on software engineering productivity. Provide insights, metrics, and risks.')
+        .build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(
+        tools: [analysisTool],
+        jsonSchema: structuredFormat,
+      ),
+    );
+    print(
+        '   📝 Structured response preview: ${response.text?.substring(0, 120) ?? ''}...\n');
 
     print('   ✅ Structured output with tools completed\n');
   } catch (e) {
@@ -273,85 +287,87 @@ String _simulateCalculation(String expression, int precision) {
 }
 
 /// Demonstrate complex nested object structures in tool parameters
-Future<void> demonstrateNestedObjectStructures(ChatCapability provider) async {
+Future<void> demonstrateNestedObjectStructures(LanguageModel model) async {
   print('🏗️  Complex Nested Object Structures:\n');
 
   try {
     // Define a tool for processing orders with complex item structures
-    final processOrdersTool = Tool.function(
-      name: 'process_orders',
-      description: 'Process customer orders with complex item structures',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'orders': ParameterProperty(
-            propertyType: 'array',
-            description: 'Array of customer orders',
-            items: ParameterProperty(
-              propertyType: 'object',
-              description: 'Individual order object',
-              properties: {
-                'order_id': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Unique order identifier',
+    final processOrdersTool = tool('process_orders', (t) {
+      t
+        ..description('Process customer orders with complex item structures')
+        ..arrayParam(
+          'orders',
+          description: 'Array of customer orders',
+          required: true,
+          items: ParameterProperty(
+            propertyType: 'object',
+            description: 'Individual order object',
+            properties: {
+              'order_id': ParameterProperty(
+                propertyType: 'string',
+                description: 'Unique order identifier',
+              ),
+              'customer_name': ParameterProperty(
+                propertyType: 'string',
+                description: 'Customer full name',
+              ),
+              'items': ParameterProperty(
+                propertyType: 'array',
+                description: 'Array of items in the order',
+                items: ParameterProperty(
+                  propertyType: 'object',
+                  description: 'Individual item object',
+                  properties: {
+                    'product_name': ParameterProperty(
+                      propertyType: 'string',
+                      description: 'Name of the product',
+                    ),
+                    'quantity': ParameterProperty(
+                      propertyType: 'integer',
+                      description: 'Number of items ordered',
+                    ),
+                    'price': ParameterProperty(
+                      propertyType: 'number',
+                      description: 'Price per item in dollars',
+                    ),
+                    'category': ParameterProperty(
+                      propertyType: 'string',
+                      description: 'Product category',
+                      enumList: [
+                        'electronics',
+                        'clothing',
+                        'books',
+                        'home',
+                      ],
+                    ),
+                  },
+                  required: ['product_name', 'quantity', 'price'],
                 ),
-                'customer_name': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Customer full name',
-                ),
-                'items': ParameterProperty(
-                  propertyType: 'array',
-                  description: 'Array of items in the order',
-                  items: ParameterProperty(
-                    propertyType: 'object',
-                    description: 'Individual item object',
-                    properties: {
-                      'product_name': ParameterProperty(
-                        propertyType: 'string',
-                        description: 'Name of the product',
-                      ),
-                      'quantity': ParameterProperty(
-                        propertyType: 'integer',
-                        description: 'Number of items ordered',
-                      ),
-                      'price': ParameterProperty(
-                        propertyType: 'number',
-                        description: 'Price per item in dollars',
-                      ),
-                      'category': ParameterProperty(
-                        propertyType: 'string',
-                        description: 'Product category',
-                        enumList: ['electronics', 'clothing', 'books', 'home'],
-                      ),
-                    },
-                    required: ['product_name', 'quantity', 'price'],
-                  ),
-                ),
-                'total_amount': ParameterProperty(
-                  propertyType: 'number',
-                  description: 'Total order amount in dollars',
-                ),
-              },
-              required: ['order_id', 'customer_name', 'items'],
-            ),
+              ),
+              'total_amount': ParameterProperty(
+                propertyType: 'number',
+                description: 'Total order amount in dollars',
+              ),
+            },
+            required: ['order_id', 'customer_name', 'items'],
           ),
-        },
-        required: ['orders'],
-      ),
-    );
+        );
+    });
 
-    final messages = [
-      ChatMessage.user(
-        'Process order ORD001 for Alice Johnson: 2x Laptop at \$999 each (electronics), 1x T-shirt at \$25 (clothing). Total: \$2023. Use the process_orders tool.',
-      )
-    ];
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Process order ORD001 for Alice Johnson: 2x Laptop at \$999 each (electronics), 1x T-shirt at \$25 (clothing). Total: \$2023. Use the process_orders tool.')
+        .build();
 
     print('   User: Process order ORD001 for Alice Johnson...');
     print(
         '   Available tools: process_orders (with nested arrays and objects)');
 
-    final response =
-        await provider.chatWithTools(messages, [processOrdersTool]);
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: [processOrdersTool]),
+    );
 
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
       print('   🔧 AI tool calls:');

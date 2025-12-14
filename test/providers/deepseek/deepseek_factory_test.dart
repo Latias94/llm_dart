@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/factories/deepseek_factory.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek;
 
 void main() {
   group('DeepSeekProviderFactory Tests', () {
@@ -54,7 +54,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<DeepSeekProvider>());
+        expect(provider, isA<deepseek.DeepSeekProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -71,7 +71,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<DeepSeekProvider>());
+        expect(provider, isA<deepseek.DeepSeekProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -97,7 +97,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<DeepSeekProvider>());
+        expect(provider, isA<deepseek.DeepSeekProvider>());
         expect(provider, isA<ChatCapability>());
       });
 
@@ -240,7 +240,7 @@ void main() {
           },
         );
 
-        final provider = factory.create(llmConfig) as DeepSeekProvider;
+        final provider = factory.create(llmConfig) as deepseek.DeepSeekProvider;
         final config = provider.config;
 
         expect(config.apiKey, equals('test-key'));
@@ -266,7 +266,7 @@ void main() {
           extensions: {'customParam': 'customValue'},
         );
 
-        final provider = factory.create(llmConfig) as DeepSeekProvider;
+        final provider = factory.create(llmConfig) as deepseek.DeepSeekProvider;
         final config = provider.config;
 
         expect(

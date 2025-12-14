@@ -220,7 +220,7 @@ void main() {
       });
 
       test('should set voice', () {
-        final builder = LLMBuilder().voice('alloy');
+        final builder = LLMBuilder().openai((openai) => openai.voice('alloy'));
         expect(builder, isNotNull);
       });
 
@@ -432,17 +432,30 @@ void main() {
         );
 
         final builder = LLMBuilder()
-            .openai((openai) => openai.seed(12345).parallelToolCalls(true))
+            .openai((openai) =>
+                openai.seed(12345).parallelToolCalls(true).voice('alloy'))
             .apiKey('test-key')
             .model('gpt-4')
             .tools([tool])
             .toolChoice(AutoToolChoice())
             .reasoningEffort(ReasoningEffort.medium)
-            .voice('alloy')
             .responseFormat('json_object');
 
         expect(builder, isNotNull);
       });
+    });
+
+    test('use() should configure provider and model from identifier', () {
+      final builder = LLMBuilder().use('openai:gpt-4o');
+
+      expect(builder.currentConfig.model, equals('gpt-4o'));
+    });
+
+    test('use() should throw for invalid identifier format', () {
+      expect(
+        () => LLMBuilder().use('gpt-4o'),
+        throwsA(isA<ArgumentError>()),
+      );
     });
   });
 }

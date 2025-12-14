@@ -64,12 +64,17 @@ LLM Provider ◄──► llm_dart Tool System ◄──► MCP Client ◄──
 ### Debug Mode
 
 ```dart
-import 'package:logging/logging.dart';
+import 'package:llm_dart/llm_dart.dart';
 
-Logger.root.level = Level.ALL;
-Logger.root.onRecord.listen((record) {
-  print('${record.level.name}: ${record.time}: ${record.message}');
-});
+final model = await ai()
+    .openai()
+    .apiKey('YOUR_API_KEY')
+    .model('gpt-4o-mini')
+    .extension(
+      LLMConfigKeys.logger,
+      const ConsoleLLMLogger(name: 'llm_dart.mcp', includeTimestamp: true),
+    )
+    .buildLanguageModel();
 ```
 
 ## Use Cases
