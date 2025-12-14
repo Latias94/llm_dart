@@ -43,7 +43,8 @@ class OllamaProviderSettings {
 /// `DeepSeek` and implements [LanguageModelProviderFactory] and
 /// [EmbeddingModelProviderFactory] for easy integration with
 /// [createProviderRegistry].
-class Ollama implements LanguageModelProviderFactory, EmbeddingModelProviderFactory {
+class Ollama
+    implements LanguageModelProviderFactory, EmbeddingModelProviderFactory {
   final OllamaProviderSettings _settings;
   final String _baseUrl;
   final String _providerName;
@@ -145,4 +146,3 @@ Ollama createOllama({
     ),
   );
 }
-

@@ -5,7 +5,8 @@ void main() {
   group('Provider-specific builder shortcuts', () {
     test('LLMBuilder.extension() stores custom keys', () {
       final builder = LLMBuilder().extension('customKey', 'customValue');
-      expect(builder.currentConfig.getExtension<String>('customKey'), 'customValue');
+      expect(builder.currentConfig.getExtension<String>('customKey'),
+          'customValue');
     });
 
     test('openai builder sets OpenAI-related extensions', () {
@@ -24,7 +25,8 @@ void main() {
       expect(config.getExtension<double>(LLMConfigKeys.frequencyPenalty), 0.2);
       expect(config.getExtension<double>(LLMConfigKeys.presencePenalty), 0.1);
       expect(config.getExtension<int>(LLMConfigKeys.seed), 67890);
-      expect(config.getExtension<bool>(LLMConfigKeys.parallelToolCalls), isFalse);
+      expect(
+          config.getExtension<bool>(LLMConfigKeys.parallelToolCalls), isFalse);
       expect(config.getExtension<bool>(LLMConfigKeys.logprobs), isTrue);
       expect(config.getExtension<int>(LLMConfigKeys.topLogprobs), 3);
       expect(
@@ -42,8 +44,10 @@ void main() {
       );
 
       final config = builder.currentConfig;
-      expect(config.getExtension<int>(LLMConfigKeys.thinkingBudgetTokens), 2000);
-      expect(config.getExtension<bool>(LLMConfigKeys.interleavedThinking), isFalse);
+      expect(
+          config.getExtension<int>(LLMConfigKeys.thinkingBudgetTokens), 2000);
+      expect(config.getExtension<bool>(LLMConfigKeys.interleavedThinking),
+          isFalse);
       expect(
         config.getExtension<Map<String, dynamic>>(LLMConfigKeys.metadata),
         equals({'test': 'value'}),
@@ -73,4 +77,3 @@ void main() {
     });
   });
 }
-

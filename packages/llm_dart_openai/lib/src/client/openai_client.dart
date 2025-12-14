@@ -3,7 +3,6 @@ import 'dart:convert';
 // Core OpenAI HTTP client and message conversion utilities (prompt-first).
 
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
@@ -13,13 +12,16 @@ import '../http/openai_dio_strategy.dart';
 /// Core OpenAI HTTP client shared across all capability modules.
 class OpenAIClient {
   final OpenAIConfig config;
-  final Logger logger = Logger('OpenAIClient');
+  final LLMLogger logger;
   late final Dio dio;
 
   // Shared SSE line buffer used for streaming responses.
   final SSELineBuffer _sseLineBuffer = SSELineBuffer();
 
-  OpenAIClient(this.config) {
+  OpenAIClient(this.config)
+      : logger = config.originalConfig == null
+            ? const NoopLLMLogger()
+            : resolveLogger(config.originalConfig!) {
     dio = DioClientFactory.create(
       strategy: OpenAIDioStrategy(),
       config: config,
@@ -80,7 +82,7 @@ class OpenAIClient {
       try {
         final json = jsonDecode(data);
         if (json is! Map<String, dynamic>) {
-          logger.warning('SSE chunk is not a JSON object: $data');
+          logger.warning('SSE chunk is not a JSON object');
           continue;
         }
 
@@ -102,7 +104,7 @@ class OpenAIClient {
         results.add(json);
       } catch (e) {
         if (e is LLMError) rethrow;
-        logger.warning('Failed to parse SSE chunk JSON: $e, data: $data');
+        logger.warning('Failed to parse SSE chunk JSON: $e');
         continue;
       }
     }
@@ -131,10 +133,14 @@ class OpenAIClient {
     String endpoint,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing OpenAI API key');
     }
+
+    final effectiveHeaders =
+        headers == null ? null : HttpHeaderUtils.mergeDioHeaders(dio, headers);
 
     return HttpResponseHandler.postJson(
       dio,
@@ -142,6 +148,8 @@ class OpenAIClient {
       body,
       providerName: 'OpenAI',
       logger: logger,
+      options:
+          effectiveHeaders == null ? null : Options(headers: effectiveHeaders),
       cancelToken: cancelToken,
     );
   }
@@ -156,10 +164,7 @@ class OpenAIClient {
     }
 
     try {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI request: POST /$endpoint (form)');
-        logger.fine('OpenAI request headers: ${dio.options.headers}');
-      }
+      logger.fine('OpenAI request: POST /$endpoint (form)');
 
       final response = await dio.post(
         endpoint,
@@ -167,9 +172,7 @@ class OpenAIClient {
         cancelToken: cancelToken,
       );
 
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI HTTP status: ${response.statusCode}');
-      }
+      logger.fine('OpenAI HTTP status: ${response.statusCode}');
 
       if (response.statusCode != 200) {
         _handleErrorResponse(response, endpoint);
@@ -178,6 +181,7 @@ class OpenAIClient {
       return HttpResponseHandler.parseJsonResponse(
         response.data,
         providerName: 'OpenAI',
+        logger: logger,
       );
     } on DioException catch (e) {
       throw handleDioError(e);
@@ -203,9 +207,7 @@ class OpenAIClient {
         options: Options(responseType: ResponseType.bytes),
       );
 
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI HTTP status: ${response.statusCode}');
-      }
+      logger.fine('OpenAI HTTP status: ${response.statusCode}');
 
       if (response.statusCode != 200) {
         _handleErrorResponse(response, endpoint);
@@ -245,10 +247,7 @@ class OpenAIClient {
     }
 
     try {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI request: GET /$endpoint (bytes)');
-        logger.fine('OpenAI request headers: ${dio.options.headers}');
-      }
+      logger.fine('OpenAI request: GET /$endpoint (bytes)');
 
       final response = await dio.get(
         endpoint,
@@ -256,9 +255,7 @@ class OpenAIClient {
         cancelToken: cancelToken,
       );
 
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI HTTP status: ${response.statusCode}');
-      }
+      logger.fine('OpenAI HTTP status: ${response.statusCode}');
 
       if (response.statusCode != 200) {
         _handleErrorResponse(response, endpoint);
@@ -281,19 +278,14 @@ class OpenAIClient {
     }
 
     try {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI request: DELETE /$endpoint');
-        logger.fine('OpenAI request headers: ${dio.options.headers}');
-      }
+      logger.fine('OpenAI request: DELETE /$endpoint');
 
       final response = await dio.delete(
         endpoint,
         cancelToken: cancelToken,
       );
 
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI HTTP status: ${response.statusCode}');
-      }
+      logger.fine('OpenAI HTTP status: ${response.statusCode}');
 
       if (response.statusCode != 200) {
         _handleErrorResponse(response, endpoint);
@@ -311,6 +303,7 @@ class OpenAIClient {
     String endpoint,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async* {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing OpenAI API key');
@@ -319,10 +312,10 @@ class OpenAIClient {
     resetSSEBuffer();
 
     try {
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI request: POST /$endpoint (stream)');
-        logger.fine('OpenAI request headers: ${dio.options.headers}');
-      }
+      logger.fine('OpenAI request: POST /$endpoint (stream)');
+
+      final effectiveHeaders = HttpHeaderUtils.mergeDioHeaders(dio, headers);
+      effectiveHeaders['Accept'] = 'text/event-stream';
 
       final response = await dio.post(
         endpoint,
@@ -330,13 +323,11 @@ class OpenAIClient {
         cancelToken: cancelToken,
         options: Options(
           responseType: ResponseType.stream,
-          headers: {'Accept': 'text/event-stream'},
+          headers: effectiveHeaders,
         ),
       );
 
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI HTTP status: ${response.statusCode}');
-      }
+      logger.fine('OpenAI HTTP status: ${response.statusCode}');
 
       if (response.statusCode != 200) {
         _handleErrorResponse(response, endpoint);

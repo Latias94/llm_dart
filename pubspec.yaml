@@ -7,6 +7,20 @@ homepage: https://github.com/Latias94/llm_dart
 repository: https://github.com/Latias94/llm_dart
 issue_tracker: https://github.com/Latias94/llm_dart/issues
 
+workspace:
+  - packages/llm_dart_anthropic
+  - packages/llm_dart_core
+  - packages/llm_dart_deepseek
+  - packages/llm_dart_elevenlabs
+  - packages/llm_dart_google
+  - packages/llm_dart_groq
+  - packages/llm_dart_ollama
+  - packages/llm_dart_openai
+  - packages/llm_dart_openai_compatible
+  - packages/llm_dart_phind
+  - packages/llm_dart_provider_utils
+  - packages/llm_dart_xai
+
 topics:
   - ai
   - llms
@@ -17,7 +31,6 @@ environment:
 
 dependencies:
   dio: ^5.9.0
-  logging: ^1.2.0
   llm_dart_core: ^0.11.0-rc.1
   llm_dart_provider_utils: ^0.11.0-rc.1
   llm_dart_openai: ^0.11.0-rc.1
@@ -35,4 +48,14 @@ dev_dependencies:
   test: ^1.27.0
   mockito: ^5.4.0
   mcp_dart: ^1.0.2
+  melos: ^7.3.0
   lints: ^6.0.0
+
+melos:
+  scripts:
+    analyze:
+      run: dart analyze .
+      description: Run static analysis for the entire workspace.
+    test:
+      run: dart test
+      description: Run all tests for the workspace.

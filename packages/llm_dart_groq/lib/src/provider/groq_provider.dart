@@ -1,7 +1,7 @@
 // Groq provider implementation built on the OpenAI-compatible chat layer.
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+import 'package:llm_dart_openai_compatible/protocol.dart';
 
 import '../config/groq_config.dart';
 

@@ -2,15 +2,13 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
-import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// IO platform implementation for HTTP client adapter configuration.
 class HttpClientAdapterConfig {
-  static final Logger _logger = Logger('HttpClientAdapterConfig');
-
   /// Configure HTTP client adapter with proxy and SSL settings.
   static void configureHttpClientAdapter(Dio dio, LLMConfig config) {
+    final logger = resolveLogger(config);
     final proxyUrl = config.getExtension<String>(LLMConfigKeys.httpProxy);
     final bypassSSL =
         config.getExtension<bool>(LLMConfigKeys.bypassSSLVerification) ?? false;
@@ -21,13 +19,13 @@ class HttpClientAdapterConfig {
         bypassSSL ||
         (certificatePath != null && certificatePath.isNotEmpty)) {
       if (proxyUrl != null && proxyUrl.isNotEmpty) {
-        _logger.info('Configuring HTTP proxy: $proxyUrl');
+        logger.info('Configuring HTTP proxy: $proxyUrl');
       }
       if (bypassSSL) {
-        _logger.warning('⚠️ SSL certificate verification is disabled');
+        logger.warning('⚠️ SSL certificate verification is disabled');
       }
       if (certificatePath != null && certificatePath.isNotEmpty) {
-        _logger.info('Loading SSL certificate from: $certificatePath');
+        logger.info('Loading SSL certificate from: $certificatePath');
       }
 
       dio.httpClientAdapter = IOHttpClientAdapter(
@@ -43,14 +41,14 @@ class HttpClientAdapterConfig {
               if (certFile.existsSync()) {
                 context = SecurityContext(withTrustedRoots: true)
                   ..setTrustedCertificates(certificatePath);
-                _logger.info('SSL certificate loaded successfully');
+                logger.info('SSL certificate loaded successfully');
               } else {
-                _logger.warning(
+                logger.warning(
                   'SSL certificate file not found: $certificatePath',
                 );
               }
             } catch (e) {
-              _logger.severe('Failed to load SSL certificate: $e');
+              logger.severe('Failed to load SSL certificate: $e', e);
             }
           }
 

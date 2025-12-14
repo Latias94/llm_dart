@@ -1,8 +1,8 @@
 // OpenAI-compatible chat prompt tests verify prompt-first ModelMessage mapping
 // into the OpenAI-compatible request model.
 
-import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai_compatible/testing.dart';
 import 'package:test/test.dart';
 import 'openai_compatible_test_utils.dart';
 

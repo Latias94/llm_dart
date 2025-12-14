@@ -1,9 +1,18 @@
 library;
 
+// ===== Stable public API surface =====
+//
+// Keep exports focused on:
+// - provider config + Dio strategy + registry factory
+// - provider implementation (capabilities)
+// - public request/response models
+// - Vercel AI-style facade (`createElevenLabs`, `elevenlabs`, etc.)
+//
+// Low-level building blocks (HTTP client, internal capability modules) are
+// intentionally not exported. For repository tests and advanced internal use
+// cases, import `package:llm_dart_elevenlabs/testing.dart`.
 export 'src/config/elevenlabs_config.dart';
 export 'src/http/elevenlabs_dio_strategy.dart';
-export 'src/client/elevenlabs_client.dart';
-export 'src/audio/elevenlabs_audio.dart';
 export 'src/models/elevenlabs_models.dart';
 export 'src/provider/elevenlabs_provider.dart';
 export 'src/factory/elevenlabs_provider_factory.dart'
@@ -11,8 +20,4 @@ export 'src/factory/elevenlabs_provider_factory.dart'
 
 // Vercel AI-style facade exports (model-centric API).
 export 'src/facade/elevenlabs_facade.dart'
-    show
-        ElevenLabsProviderSettings,
-        ElevenLabs,
-        createElevenLabs,
-        elevenlabs;
+    show ElevenLabsProviderSettings, ElevenLabs, createElevenLabs, elevenlabs;

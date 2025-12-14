@@ -31,6 +31,7 @@ class OllamaChat implements ChatCapability {
       '/api/chat',
       body,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+      headers: options?.headers,
     );
     return _parseResponse(response);
   }
@@ -52,6 +53,7 @@ class OllamaChat implements ChatCapability {
       '/api/chat',
       body,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+      headers: options?.headers,
     );
 
     // Ollama streams NDJSON (one JSON object per line). We need to
@@ -125,6 +127,8 @@ class OllamaChat implements ChatCapability {
     final effectiveMaxTokens = options?.maxTokens ?? config.maxTokens;
     final effectiveTopP = options?.topP ?? config.topP;
     final effectiveTopK = options?.topK ?? config.topK;
+    final effectiveStopSequences =
+        options?.stopSequences ?? config.stopSequences;
 
     if (effectiveTemperature != null) {
       requestOptions['temperature'] = effectiveTemperature;
@@ -138,6 +142,9 @@ class OllamaChat implements ChatCapability {
     }
     if (effectiveTopK != null) {
       requestOptions['top_k'] = effectiveTopK;
+    }
+    if (effectiveStopSequences != null && effectiveStopSequences.isNotEmpty) {
+      requestOptions['stop'] = effectiveStopSequences;
     }
     if (config.numCtx != null) {
       requestOptions['num_ctx'] = config.numCtx;
@@ -171,14 +178,15 @@ class OllamaChat implements ChatCapability {
       body['think'] = true;
     }
 
-    final effectiveTools = options?.tools ?? tools ?? config.tools;
+    final effectiveTools = options?.resolveTools() ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = effectiveTools.map(_convertTool).toList();
     }
 
     // Structured output / JSON schema using native `format` parameter.
-    if (config.jsonSchema != null) {
-      final schema = config.jsonSchema!;
+    final effectiveSchema = options?.jsonSchema ?? config.jsonSchema;
+    if (effectiveSchema != null) {
+      final schema = effectiveSchema;
 
       if (schema.schema != null) {
         body['format'] = schema.schema;
@@ -267,7 +275,7 @@ class OllamaChat implements ChatCapability {
         // For URL-based media we currently fall back to a textual
         // placeholder. Native Ollama images require base64-encoded
         // image data, which is available only for FileContentPart.
-        buffer.writeln('[image] ${part.url}');
+        buffer.writeln('[url ${part.mime.mimeType}] ${part.url}');
       } else if (part is FileContentPart) {
         final mime = part.mime.mimeType;
         if (mime.startsWith('image/')) {

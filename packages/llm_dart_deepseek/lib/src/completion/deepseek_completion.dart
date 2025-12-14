@@ -22,6 +22,9 @@ class DeepSeekCompletion implements CompletionCapability {
 
   @override
   Future<CompletionResponse> complete(CompletionRequest request) async {
+    final effectiveStop = request.stop != null && request.stop!.isNotEmpty
+        ? request.stop
+        : config.stopSequences;
     final body = <String, dynamic>{
       'model': config.model,
       'prompt': request.prompt,
@@ -41,8 +44,8 @@ class DeepSeekCompletion implements CompletionCapability {
         'top_k': request.topK
       else if (config.topK != null)
         'top_k': config.topK,
-      if (request.stop != null && request.stop!.isNotEmpty)
-        'stop': request.stop,
+      if (effectiveStop != null && effectiveStop.isNotEmpty)
+        'stop': effectiveStop,
     };
 
     final json = await client.postJson(completionsEndpoint, body);
@@ -91,6 +94,8 @@ class DeepSeekCompletion implements CompletionCapability {
     double? topK,
     List<String>? stop,
   }) async {
+    final effectiveStop =
+        stop != null && stop.isNotEmpty ? stop : config.stopSequences;
     final body = <String, dynamic>{
       'model': config.model,
       'prompt': prefix,
@@ -111,7 +116,8 @@ class DeepSeekCompletion implements CompletionCapability {
         'top_k': topK
       else if (config.topK != null)
         'top_k': config.topK,
-      if (stop != null && stop.isNotEmpty) 'stop': stop,
+      if (effectiveStop != null && effectiveStop.isNotEmpty)
+        'stop': effectiveStop,
     };
 
     final json = await client.postJson(completionsEndpoint, body);

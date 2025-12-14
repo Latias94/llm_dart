@@ -1,7 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
-import 'package:llm_dart/providers/anthropic/request_builder.dart';
+import 'package:llm_dart_anthropic/testing.dart' as anthropic;
 
 void main() {
   group('anthropic.AnthropicConfig Tests', () {
@@ -202,9 +201,9 @@ void main() {
           model: 'claude-sonnet-4-20250514',
           temperature: 0.7,
           extensions: {
-            'reasoning': true,
-            'thinkingBudgetTokens': 3000,
-            'interleavedThinking': false,
+            LLMConfigKeys.reasoning: true,
+            LLMConfigKeys.thinkingBudgetTokens: 3000,
+            LLMConfigKeys.interleavedThinking: false,
           },
         );
 
@@ -254,7 +253,7 @@ void main() {
 
         final anthropicConfig =
             anthropic.AnthropicConfig.fromLLMConfig(llmConfig);
-        final builder = AnthropicRequestBuilder(anthropicConfig);
+        final builder = anthropic.AnthropicRequestBuilder(anthropicConfig);
 
         final webSearchTool = Tool.function(
           name: 'web_search',

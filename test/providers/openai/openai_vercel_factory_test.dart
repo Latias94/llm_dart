@@ -1,5 +1,4 @@
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/openai/responses_capability.dart';
 import 'package:test/test.dart';
 
 void main() {

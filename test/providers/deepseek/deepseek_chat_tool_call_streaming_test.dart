@@ -6,7 +6,7 @@
 library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek;
+import 'package:llm_dart_deepseek/testing.dart' as deepseek;
 import 'package:test/test.dart';
 import 'deepseek_test_utils.dart';
 

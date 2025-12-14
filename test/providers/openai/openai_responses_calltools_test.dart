@@ -1,5 +1,5 @@
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_impl;
+import 'package:llm_dart_openai/testing.dart' as openai_impl;
 import 'package:test/test.dart';
 
 import 'openai_test_utils.dart';

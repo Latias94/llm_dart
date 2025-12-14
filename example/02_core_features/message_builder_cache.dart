@@ -39,10 +39,8 @@ void main() async {
       MessageBuilder.user().text('What is quantum computing?').build();
 
   print('1. Basic message:');
-  final basicText = basicMessage.parts
-      .whereType<TextContentPart>()
-      .map((p) => p.text)
-      .join();
+  final basicText =
+      basicMessage.parts.whereType<TextContentPart>().map((p) => p.text).join();
   print('   Text: $basicText');
   print('   Has provider options: ${basicMessage.providerOptions.isNotEmpty}');
   print('');
@@ -84,10 +82,8 @@ void main() async {
       .build();
 
   print('3. Mixed message with short-term cache:');
-  final mixedText = mixedMessage.parts
-      .whereType<TextContentPart>()
-      .map((p) => p.text)
-      .join();
+  final mixedText =
+      mixedMessage.parts.whereType<TextContentPart>().map((p) => p.text).join();
   print('   Text: $mixedText');
   print('   Provider options: ${mixedMessage.providerOptions}');
   print('');
@@ -139,7 +135,8 @@ void main() async {
   for (int i = 0; i < conversation.length; i++) {
     final message = conversation[i];
     print('   Message ${i + 1} (${message.role}):');
-    final text = message.parts.whereType<TextContentPart>().map((p) => p.text).join();
+    final text =
+        message.parts.whereType<TextContentPart>().map((p) => p.text).join();
     print('     Text: ${text.replaceAll('\n', ' ').substring(0, 60)}...');
     print('     Cached: ${message.providerOptions.containsKey('anthropic')}');
   }
@@ -209,7 +206,8 @@ void main() async {
       .map((p) => p.text)
       .join();
   print('   Message text: $unifiedText');
-  print('   Provider options keys: ${unifiedMessage.providerOptions.keys.join(', ')}');
+  print(
+      '   Provider options keys: ${unifiedMessage.providerOptions.keys.join(', ')}');
   print(
       '   ✓ Cache configuration applies to subsequent content (tools in this case)');
   print('   ✓ More intuitive: .cache() applies to what comes after it');

@@ -2,14 +2,15 @@ name: llm_dart_groq
 description: Groq provider implementation for llm_dart built on top of the OpenAI-compatible protocol layer.
 version: 0.11.0-rc.1
 publish_to: none
+resolution: workspace
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
   llm_dart_core: ^0.11.0-rc.1
-  llm_dart_provider_utils: ^0.11.0-rc.1
   llm_dart_openai_compatible: ^0.11.0-rc.1
+  llm_dart_provider_utils: ^0.11.0-rc.1
 
 dev_dependencies:
   lints: ^6.0.0

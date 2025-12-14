@@ -257,5 +257,22 @@ void main() {
       expect(textDeltas, hasLength(1));
       expect(textDeltas.single.delta, equals('Hello'));
     });
+
+    test('propagates ErrorEvent as stream error', () async {
+      final source = Stream<ChatStreamEvent>.fromIterable([
+        const TextDeltaEvent('Hello'),
+        const ErrorEvent(GenericError('boom')),
+      ]);
+
+      await expectLater(
+        adaptStreamText(source),
+        emitsInOrder([
+          isA<StreamTextStart>(),
+          isA<StreamTextDelta>(),
+          isA<StreamTextEnd>(),
+          emitsError(isA<GenericError>()),
+        ]),
+      );
+    });
   });
 }

@@ -1,8 +1,8 @@
 // OpenAI-compatible structured output tests validate prompt-first ModelMessage
 // inputs and JSON schema request shaping.
 
-import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai_compatible/testing.dart';
 import 'package:test/test.dart';
 
 import 'openai_compatible_test_utils.dart';

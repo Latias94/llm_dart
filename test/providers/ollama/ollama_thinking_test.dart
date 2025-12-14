@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_ollama/testing.dart';
 
 void main() {
   group('OllamaThinking', () {
@@ -61,7 +62,7 @@ void main() {
         apiKey: 'test',
         baseUrl: 'http://localhost:11434',
         model: 'gpt-oss:latest',
-        extensions: {'reasoning': true},
+        extensions: {LLMConfigKeys.reasoning: true},
       );
 
       final ollamaConfig = OllamaConfig.fromLLMConfig(llmConfig);

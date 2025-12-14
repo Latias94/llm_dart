@@ -70,8 +70,39 @@ class ChatPromptBuilder {
   ///
   /// Providers that support URL-based files (such as Google Gemini
   /// via `fileData`) can map this to their native representation.
-  ChatPromptBuilder imageUrl(String url) {
-    _parts.add(UrlFileContentPart(url));
+  ChatPromptBuilder imageUrl(
+    String url, {
+    FileMime mime = const FileMime('image/*'),
+    String? filename,
+  }) {
+    _parts.add(
+      UrlFileContentPart(
+        url,
+        mime: mime,
+        filename: filename,
+      ),
+    );
+    return this;
+  }
+
+  /// Add a generic file by URL.
+  ///
+  /// This mirrors the Vercel AI SDK file part semantics: callers provide
+  /// the [mime] type and the remote URL. Provider support varies:
+  /// - Some providers can reference URLs directly (e.g. Google via `fileUri`)
+  /// - Others require uploading / inlining bytes
+  ChatPromptBuilder fileUrl(
+    String url, {
+    required FileMime mime,
+    String? filename,
+  }) {
+    _parts.add(
+      UrlFileContentPart(
+        url,
+        mime: mime,
+        filename: filename,
+      ),
+    );
     return this;
   }
 
@@ -94,12 +125,13 @@ class ChatPromptBuilder {
   ChatPromptBuilder audioUrl(
     String url, {
     FileMime mime = FileMime.mp3,
+    String? filename,
   }) {
     _parts.add(
-      FileContentPart(
-        mime,
-        const <int>[],
-        uri: url,
+      UrlFileContentPart(
+        url,
+        mime: mime,
+        filename: filename,
       ),
     );
     return this;
@@ -118,12 +150,13 @@ class ChatPromptBuilder {
   ChatPromptBuilder videoUrl(
     String url, {
     FileMime mime = FileMime.mp4,
+    String? filename,
   }) {
     _parts.add(
-      FileContentPart(
-        mime,
-        const <int>[],
-        uri: url,
+      UrlFileContentPart(
+        url,
+        mime: mime,
+        filename: filename,
       ),
     );
     return this;

@@ -5,8 +5,7 @@ import '../config/elevenlabs_config.dart';
 /// ElevenLabs-specific Dio strategy implementation
 ///
 /// Handles ElevenLabs' unique authentication using xi-api-key header.
-class ElevenLabsDioStrategy
-    extends BaseProviderDioStrategy<ElevenLabsConfig> {
+class ElevenLabsDioStrategy extends BaseProviderDioStrategy<ElevenLabsConfig> {
   @override
   String get providerName => 'ElevenLabs';
 

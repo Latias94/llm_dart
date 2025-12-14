@@ -23,6 +23,8 @@ class DeepSeekConfig implements ProviderHttpConfig {
   final int? topK;
   final List<Tool>? tools;
   final ToolChoice? toolChoice;
+  final List<String>? stopSequences;
+  final String? user;
 
   // DeepSeek-specific parameters
   final bool? logprobs;
@@ -46,6 +48,8 @@ class DeepSeekConfig implements ProviderHttpConfig {
     this.topK,
     this.tools,
     this.toolChoice,
+    this.stopSequences,
+    this.user,
     this.logprobs,
     this.topLogprobs,
     this.frequencyPenalty,
@@ -76,6 +80,8 @@ class DeepSeekConfig implements ProviderHttpConfig {
       topK: config.topK,
       tools: config.tools,
       toolChoice: config.toolChoice,
+      stopSequences: config.stopSequences,
+      user: config.user,
       // DeepSeek-specific parameters from extensions
       //
       // Prefer well-known keys from LLMConfigKeys for new code, while
@@ -144,6 +150,8 @@ class DeepSeekConfig implements ProviderHttpConfig {
     int? topK,
     List<Tool>? tools,
     ToolChoice? toolChoice,
+    List<String>? stopSequences,
+    String? user,
     bool? logprobs,
     int? topLogprobs,
     double? frequencyPenalty,
@@ -162,6 +170,8 @@ class DeepSeekConfig implements ProviderHttpConfig {
         topK: topK ?? this.topK,
         tools: tools ?? this.tools,
         toolChoice: toolChoice ?? this.toolChoice,
+        stopSequences: stopSequences ?? this.stopSequences,
+        user: user ?? this.user,
         logprobs: logprobs ?? this.logprobs,
         topLogprobs: topLogprobs ?? this.topLogprobs,
         frequencyPenalty: frequencyPenalty ?? this.frequencyPenalty,

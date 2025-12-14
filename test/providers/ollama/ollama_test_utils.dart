@@ -1,10 +1,11 @@
 import 'package:dio/dio.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_ollama/testing.dart';
 
 /// Capturing client for Ollama tests that records request bodies.
 class CapturingOllamaClient extends OllamaClient {
   Map<String, dynamic>? lastRequestBody;
   String? lastEndpoint;
+  Map<String, String>? lastHeaders;
 
   CapturingOllamaClient(super.config);
 
@@ -13,9 +14,11 @@ class CapturingOllamaClient extends OllamaClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     lastEndpoint = endpoint;
     lastRequestBody = data;
+    lastHeaders = headers;
 
     return {
       'message': {'role': 'assistant', 'content': 'ok'},

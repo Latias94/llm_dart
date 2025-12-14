@@ -1,26 +1,14 @@
 import 'dart:async';
 
-import 'package:logging/logging.dart';
 import 'package:llm_dart/llm_dart.dart';
 
 /// Example demonstrating the built-in chat logging middleware.
 ///
 /// This example shows how to:
-/// - Configure a Logger for llm_dart
+/// - Configure an LLMLogger for llm_dart (optional)
 /// - Attach the chat logging middleware to a provider/model
 /// - Run a simple chat and a streaming chat with logs enabled
 Future<void> main() async {
-  // Configure root logger to print to stdout.
-  Logger.root.level = Level.INFO;
-  Logger.root.onRecord.listen((record) {
-    // You can replace this with your own logging pipeline (e.g., to a file
-    // or observability backend).
-    // ignore: avoid_print
-    print(
-      '[${record.level.name}] ${record.loggerName}: ${record.message}',
-    );
-  });
-
   // Create a chat logging middleware with default options.
   // By default this logs provider/model, usage, warnings and metadata but
   // not full message content to avoid leaking sensitive data.
@@ -43,6 +31,12 @@ Future<void> main() async {
   final model = await ai()
       .openai()
       .apiKey('YOUR_OPENAI_API_KEY')
+      // If you don't pass `logger:` to createChatLoggingMiddleware, it will
+      // use the logger configured on the model (via LLMConfigKeys.logger).
+      .extension(
+        LLMConfigKeys.logger,
+        const ConsoleLLMLogger(name: 'llm_dart.chat'),
+      )
       .middlewares([loggingMiddleware])
       .model('gpt-4o-mini')
       .buildLanguageModel();

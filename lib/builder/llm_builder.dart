@@ -4,7 +4,7 @@
 import 'dart:math' as math;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import '../core/registry.dart';
+import '../src/builtin_providers.dart';
 import 'http_config.dart';
 
 part 'llm_builder_http_extensions.dart';
@@ -367,48 +367,9 @@ class LLMBuilder {
     return this;
   }
 
-  /// Sets voice for text-to-speech (OpenAI providers).
-  ///
-  /// This is an OpenAI-specific configuration. Prefer using:
-  /// `ai().openai((o) => o.voice(...))` instead.
-  @Deprecated(
-    'Use OpenAIBuilder.voice via '
-    'ai().openai((o) => o.voice(...)) instead.',
-  )
-  LLMBuilder voice(String voiceName) {
-    _config = _config.withExtension(LLMConfigKeys.voice, voiceName);
-    return this;
-  }
-
   /// Enables reasoning/thinking for supported providers (Anthropic, OpenAI o1, Ollama)
   LLMBuilder reasoning(bool enable) {
     _config = _config.withExtension(LLMConfigKeys.reasoning, enable);
-    return this;
-  }
-
-  /// Sets thinking budget tokens for Anthropic extended thinking.
-  ///
-  /// This is Anthropic-specific configuration. Prefer using:
-  /// `ai().anthropic((a) => a.thinkingBudgetTokens(...))` instead.
-  @Deprecated(
-    'Use AnthropicBuilder.thinkingBudgetTokens via '
-    'ai().anthropic((a) => a.thinkingBudgetTokens(...)) instead.',
-  )
-  LLMBuilder thinkingBudgetTokens(int tokens) {
-    _config = _config.withExtension(LLMConfigKeys.thinkingBudgetTokens, tokens);
-    return this;
-  }
-
-  /// Enables interleaved thinking for Anthropic (Claude 4 models only).
-  ///
-  /// This is Anthropic-specific configuration. Prefer using:
-  /// `ai().anthropic((a) => a.interleavedThinking(...))` instead.
-  @Deprecated(
-    'Use AnthropicBuilder.interleavedThinking via '
-    'ai().anthropic((a) => a.interleavedThinking(...)) instead.',
-  )
-  LLMBuilder interleavedThinking(bool enable) {
-    _config = _config.withExtension(LLMConfigKeys.interleavedThinking, enable);
     return this;
   }
 
@@ -655,10 +616,13 @@ class LLMBuilder {
   /// - Keep a stable reference to a configured model
   /// - Pass the model into helper functions that operate on [LanguageModel]
   /// - Decouple higher-level logic from concrete provider types
+  ///
+  /// If chat middlewares are configured on this builder, they will be applied
+  /// to the underlying [ChatCapability] used by the returned [LanguageModel].
   Future<LanguageModel> buildLanguageModel() async {
     _ensureChatCapable('LanguageModel building');
 
-    final provider = await build();
+    final provider = await buildWithMiddleware();
     final providerId = _providerId ?? 'unknown';
     final modelId = _config.model;
 

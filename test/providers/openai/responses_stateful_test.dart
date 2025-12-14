@@ -1,6 +1,5 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/openai/responses_capability.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 void main() {
@@ -15,7 +14,7 @@ void main() {
 
       final openaiProvider = provider as openai.OpenAIProvider;
       expect(openaiProvider.responses, isNotNull);
-      expect(openaiProvider.responses, isA<OpenAIResponses>());
+      expect(openaiProvider.responses, isA<openai.OpenAIResponsesCapability>());
     });
 
     test('should not have responses getter when useResponsesAPI is disabled',
@@ -37,7 +36,7 @@ void main() {
       final openaiProvider = provider as openai.OpenAIProvider;
       final responses = openaiProvider.responses!;
 
-      expect(responses, isA<OpenAIResponsesCapability>());
+      expect(responses, isA<openai.OpenAIResponsesCapability>());
       expect(responses, isA<ChatCapability>());
     });
 

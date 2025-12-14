@@ -1,7 +1,7 @@
 // OpenAI reasoning params tests validate reasoning-related request shaping.
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart_openai/testing.dart' as openai;
 import 'package:test/test.dart';
 import 'openai_test_utils.dart';
 

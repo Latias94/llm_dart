@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:logging/logging.dart';
 
 /// HTTP Configuration Example
 ///
@@ -15,12 +14,6 @@ import 'package:logging/logging.dart';
 /// Before running, set your OpenAI API key:
 /// export OPENAI_API_KEY="your-openai-key"
 Future<void> main() async {
-  // Configure logging to see HTTP request/response logs
-  Logger.root.level = Level.ALL;
-  Logger.root.onRecord.listen((record) {
-    print('${record.level.name}: ${record.time}: ${record.message}');
-  });
-
   print('🌐 HTTP Configuration Demo\n');
 
   // Get OpenAI API key from environment
@@ -361,9 +354,11 @@ Future<void> demonstrateConfigValidation() async {
       apiKey: 'test-key',
       timeout: Duration(seconds: 60),
     ).withExtensions({
-      'httpProxy': 'invalid-proxy-url', // This will trigger a warning
-      'bypassSSLVerification': true, // This will trigger a security warning
-      'connectionTimeout':
+      LLMConfigKeys.httpProxy:
+          'invalid-proxy-url', // This will trigger a warning
+      LLMConfigKeys.bypassSSLVerification:
+          true, // This will trigger a security warning
+      LLMConfigKeys.connectionTimeout:
           Duration(seconds: 30), // Different from global timeout
     });
 

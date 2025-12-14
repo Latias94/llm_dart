@@ -134,9 +134,11 @@ Future<void> demonstrateConvenienceMethod(String apiKey) async {
     ]);
     print('   💬 Response: ${response.text?.substring(0, 50) ?? 'No text'}...');
 
-    // Test response ID access
-    if (response is OpenAIResponsesResponse && response.responseId != null) {
-      print('   🆔 Response ID: ${response.responseId!.substring(0, 20)}...');
+    // Test response ID access (via metadata so examples stay decoupled from
+    // internal response types).
+    final responseId = response.metadata?['id'] as String?;
+    if (responseId != null && responseId.isNotEmpty) {
+      print('   🆔 Response ID: ${responseId.substring(0, 20)}...');
     }
   } catch (e) {
     print('   ❌ Error in convenience method: $e');

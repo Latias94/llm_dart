@@ -36,6 +36,7 @@ class OpenAIChat implements ChatCapability {
     final responseData = await client.postJson(
       chatEndpoint,
       requestBody,
+      headers: options?.headers,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
     return _parseResponse(responseData);
@@ -62,6 +63,7 @@ class OpenAIChat implements ChatCapability {
       final stream = client.postStreamRaw(
         chatEndpoint,
         requestBody,
+        headers: options?.headers,
         cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
       );
 
@@ -149,12 +151,14 @@ class OpenAIChat implements ChatCapability {
 
     // Forward reasoning effort directly; OpenAI ignores it for non-reasoning
     // chat models, but accepts it for reasoning-capable ones.
-    if (config.reasoningEffort != null) {
-      body['reasoning_effort'] = config.reasoningEffort!.value;
+    final effectiveReasoningEffort =
+        options?.reasoningEffort ?? config.reasoningEffort;
+    if (effectiveReasoningEffort != null) {
+      body['reasoning_effort'] = effectiveReasoningEffort.value;
     }
 
     // Add tools if provided
-    final effectiveTools = options?.tools ?? tools ?? config.tools;
+    final effectiveTools = options?.resolveTools() ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = effectiveTools.map((t) => t.toJson()).toList();
 
@@ -165,8 +169,9 @@ class OpenAIChat implements ChatCapability {
     }
 
     // Add structured output if configured
-    if (config.jsonSchema != null) {
-      final schema = config.jsonSchema!;
+    final effectiveJsonSchema = options?.jsonSchema ?? config.jsonSchema;
+    if (effectiveJsonSchema != null) {
+      final schema = effectiveJsonSchema;
       final responseFormat = <String, dynamic>{
         'type': 'json_schema',
         'json_schema': schema.toJson(),

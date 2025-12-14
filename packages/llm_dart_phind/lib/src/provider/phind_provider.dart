@@ -11,8 +11,7 @@ import '../config/phind_config.dart';
 /// This is the main provider class that implements the ChatCapability interface
 /// and delegates to specialized modules for different functionalities.
 /// Phind is specialized for coding tasks and development assistance.
-class PhindProvider
-    implements ChatCapability, ProviderCapabilities {
+class PhindProvider implements ChatCapability, ProviderCapabilities {
   final PhindConfig config;
   final PhindClient client;
 

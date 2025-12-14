@@ -102,4 +102,3 @@ extension LLMBuilderSearchExtensions on LLMBuilder {
     return extension(LLMConfigKeys.webSearchConfig, config);
   }
 }
-

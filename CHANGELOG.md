@@ -141,18 +141,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       - `llm_dart_openai_compatible` – OpenAI REST protocol for OpenAI-compatible providers.
   - The main `llm_dart` package now acts as an aggregation layer:
     - Keeps `ai()` / `LLMBuilder` / `LLMProviderRegistry` / unified models and capabilities.
-    - Re-exports provider facades and typedefs that point to the actual sub-package implementations.
-    - Existing imports such as `package:llm_dart/providers/openai/openai.dart` and `package:llm_dart/llm_dart.dart` remain valid.
+    - Re-exports provider sub-packages (OpenAI, Anthropic, Google, etc.).
+    - The legacy `package:llm_dart/providers/...` entrypoints have been removed.
+      Use `package:llm_dart/llm_dart.dart` (full bundle) or import a provider package directly
+      (e.g. `package:llm_dart_openai/llm_dart_openai.dart`).
 
-- **Provider split & typedef-based facades**
+- **Provider split & sub-package API**
   - OpenAI, Groq, DeepSeek, Google, Anthropic, Ollama, xAI, Phind, ElevenLabs providers have been split into their own sub-packages.
-  - Main package provider files (e.g., `lib/providers/openai/provider.dart`) now expose typedefs and thin facades:
-    - `typedef OpenAIProvider = openai.OpenAIProvider;`
-    - `typedef GroqProvider = groq.GroqProvider;`
-    - `typedef DeepSeekProvider = deepseek.DeepSeekProvider;`
-    - `typedef GoogleProvider = google.GoogleProvider;`, etc.
-  - Configuration types are also aliased to sub-package implementations:
-    - `OpenAIConfig`, `AnthropicConfig`, `GoogleConfig`, `DeepSeekConfig`, `GroqConfig`, `OllamaConfig`, `XAIConfig`, `ElevenLabsConfig`, `PhindConfig` now come from their respective sub-packages.
+  - Prefer importing:
+    - `package:llm_dart/llm_dart.dart` for the full bundle, or
+    - `package:llm_dart_<provider>/llm_dart_<provider>.dart` for provider-only usage.
+  - The legacy shim files under `lib/providers/**` have been removed.
   - Legacy helper functions like `createOpenAIProvider`, `createGroqProvider`, `createDeepSeekProvider`, etc. have been removed.
     - Use provider constructors (`OpenAIProvider(OpenAIConfig(...))`, etc.) when you need low-level access.
     - Prefer the model-centric facades (`createOpenAI(...)`, `createGroq(...)`, `createDeepSeek(...)`) for Vercel AI SDK-style usage.
@@ -634,7 +633,7 @@ In new code, prefer:
 
 - **Anthropic MCP Models**: Update imports and class references
   - **Before**: `import '../../models/chat_models.dart'; MCPServer(...)`
-  - **After**: `import 'package:llm_dart/providers/anthropic/mcp_models.dart'; AnthropicMCPServer(...)`
+  - **After**: `import 'package:llm_dart_anthropic/llm_dart_anthropic.dart'; AnthropicMCPServer(...)`
   - All MCP classes now have `Anthropic` prefix to distinguish from general MCP protocol
   - Update constructor calls: `MCPServer.url()` → `AnthropicMCPServer.url()`
 

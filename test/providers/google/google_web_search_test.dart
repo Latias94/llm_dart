@@ -2,6 +2,7 @@
 // request shaping for web search configuration.
 
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_google/testing.dart';
 import 'package:test/test.dart';
 import 'google_test_utils.dart';
 

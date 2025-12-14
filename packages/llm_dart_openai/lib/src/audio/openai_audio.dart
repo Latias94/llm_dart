@@ -150,6 +150,12 @@ class OpenAIAudio extends BaseAudioCapability {
         ),
       );
     } else if (request.filePath != null) {
+      if (!HttpConfigUtils.isAdvancedHttpSupported) {
+        throw const UnsupportedCapabilityError(
+          'File-path based audio transcription is not supported on this platform. '
+          'On web, pass audio bytes via transcribe(audio) / STTRequest.fromAudio(...).',
+        );
+      }
       formData.files.add(
         MapEntry('file', await MultipartFile.fromFile(request.filePath!)),
       );
@@ -351,6 +357,12 @@ class OpenAIAudio extends BaseAudioCapability {
         ),
       );
     } else if (request.filePath != null) {
+      if (!HttpConfigUtils.isAdvancedHttpSupported) {
+        throw const UnsupportedCapabilityError(
+          'File-path based audio translation is not supported on this platform. '
+          'On web, pass audio bytes via translate(audio) / AudioTranslationRequest.fromAudio(...).',
+        );
+      }
       formData.files.add(
         MapEntry('file', await MultipartFile.fromFile(request.filePath!)),
       );

@@ -1,17 +1,17 @@
 import 'llm_builder.dart';
 
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_impl;
+import 'package:llm_dart_google/llm_dart_google.dart' show GoogleTTSCapability;
 
-import '../providers/openai/builder.dart';
-import '../providers/anthropic/builder.dart';
-import '../providers/google/builder.dart';
-import '../providers/google/tts.dart';
-import '../providers/ollama/builder.dart';
-import '../providers/elevenlabs/builder.dart';
-import '../providers/openai/compatible/openrouter/builder.dart';
-import '../providers/xai/builder.dart';
-import '../providers/deepseek/builder.dart';
-import '../providers/phind/builder.dart';
+import 'providers/anthropic_builder.dart';
+import 'providers/deepseek_builder.dart';
+import 'providers/elevenlabs_builder.dart';
+import 'providers/google_builder.dart';
+import 'providers/ollama_builder.dart';
+import 'providers/openai_builder.dart';
+import 'providers/openrouter_builder.dart';
+import 'providers/phind_builder.dart';
+import 'providers/xai_builder.dart';
 
 /// Provider-specific convenience methods for [LLMBuilder].
 ///

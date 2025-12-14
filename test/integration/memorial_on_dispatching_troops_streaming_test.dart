@@ -1,7 +1,7 @@
 import 'dart:math';
 
 import 'package:test/test.dart';
-import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart_openai/testing.dart' as openai;
 
 /// Tests for streaming the complete "Memorial on Dispatching Troops" content
 ///

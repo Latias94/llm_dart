@@ -4,7 +4,6 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
-import 'package:logging/logging.dart';
 
 import '../client/phind_client.dart';
 import '../config/phind_config.dart';
@@ -54,14 +53,11 @@ class PhindChat implements ChatCapability {
         options: options,
       );
 
-      if (client.logger.isLoggable(Level.FINE)) {
-        client.logger.fine('Phind request payload: ${jsonEncode(requestBody)}');
-      }
-
       final responseData = await client.postJson(
         chatEndpoint,
         requestBody,
         cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+        headers: options?.headers,
       );
       return _parseResponse(responseData, warnings);
     } catch (e) {
@@ -88,16 +84,12 @@ class PhindChat implements ChatCapability {
         options: options,
       );
 
-      if (client.logger.isLoggable(Level.FINE)) {
-        client.logger
-            .fine('Phind stream request payload: ${jsonEncode(requestBody)}');
-      }
-
       // Create SSE stream
       final stream = client.postStreamRaw(
         chatEndpoint,
         requestBody,
         cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+        headers: options?.headers,
       );
 
       await for (final chunk in stream) {
@@ -160,8 +152,7 @@ class PhindChat implements ChatCapability {
           }
         } catch (e) {
           // Skip malformed JSON chunks
-          client.logger
-              .warning('Failed to parse stream JSON: $data, error: $e');
+          client.logger.warning('Failed to parse stream JSON: $e');
           continue;
         }
       }
@@ -210,7 +201,7 @@ class PhindChat implements ChatCapability {
         } else if (part is ReasoningContentPart) {
           buffer.writeln(part.text);
         } else if (part is UrlFileContentPart) {
-          buffer.writeln('[url] ${part.url}');
+          buffer.writeln('[url ${part.mime.mimeType}] ${part.url}');
         } else if (part is FileContentPart) {
           buffer.writeln('[file ${part.mime.mimeType}]');
         } else if (part is ToolCallContentPart) {

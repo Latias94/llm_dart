@@ -15,7 +15,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'httpProxy': 'http://proxy.example.com:8080',
+          LLMConfigKeys.httpProxy: 'http://proxy.example.com:8080',
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(
@@ -38,7 +38,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'httpProxy': 'http://user:pass@proxy.example.com:8080',
+          LLMConfigKeys.httpProxy: 'http://user:pass@proxy.example.com:8080',
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(
@@ -58,7 +58,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'httpProxy': 'https://proxy.example.com:8080',
+          LLMConfigKeys.httpProxy: 'https://proxy.example.com:8080',
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(
@@ -99,7 +99,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'bypassSSLVerification': true,
+          LLMConfigKeys.bypassSSLVerification: true,
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(
@@ -119,7 +119,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'sslCertificate': '/path/to/certificate.pem',
+          LLMConfigKeys.sslCertificate: '/path/to/certificate.pem',
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(
@@ -139,8 +139,8 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'bypassSSLVerification': false,
-          'sslCertificate': '/path/to/certificate.pem',
+          LLMConfigKeys.bypassSSLVerification: false,
+          LLMConfigKeys.sslCertificate: '/path/to/certificate.pem',
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(
@@ -181,9 +181,9 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'httpProxy': 'http://proxy.example.com:8080',
-          'bypassSSLVerification': true,
-          'sslCertificate': '/path/to/certificate.pem',
+          LLMConfigKeys.httpProxy: 'http://proxy.example.com:8080',
+          LLMConfigKeys.bypassSSLVerification: true,
+          LLMConfigKeys.sslCertificate: '/path/to/certificate.pem',
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(
@@ -204,14 +204,14 @@ void main() {
           model: 'test-model',
           timeout: Duration(seconds: 45),
         ).withExtensions({
-          'enableHttpLogging': true,
-          'httpProxy': 'http://proxy.example.com:8080',
-          'bypassSSLVerification': false,
-          'sslCertificate': '/path/to/certificate.pem',
-          'connectionTimeout': Duration(seconds: 30),
-          'receiveTimeout': Duration(seconds: 120),
-          'sendTimeout': Duration(seconds: 60),
-          'customHeaders': {
+          LLMConfigKeys.enableHttpLogging: true,
+          LLMConfigKeys.httpProxy: 'http://proxy.example.com:8080',
+          LLMConfigKeys.bypassSSLVerification: false,
+          LLMConfigKeys.sslCertificate: '/path/to/certificate.pem',
+          LLMConfigKeys.connectionTimeout: Duration(seconds: 30),
+          LLMConfigKeys.receiveTimeout: Duration(seconds: 120),
+          LLMConfigKeys.sendTimeout: Duration(seconds: 60),
+          LLMConfigKeys.customHeaders: {
             'X-Custom-Header': 'custom-value',
             'X-Client-Version': '1.0.0',
           },
@@ -254,7 +254,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'httpProxy': 'invalid-proxy-url',
+          LLMConfigKeys.httpProxy: 'invalid-proxy-url',
         });
 
         // Should not throw an exception during configuration
@@ -274,7 +274,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'httpProxy': '',
+          LLMConfigKeys.httpProxy: '',
         });
 
         // Should not throw an exception during configuration
@@ -294,7 +294,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'sslCertificate': '',
+          LLMConfigKeys.sslCertificate: '',
         });
 
         // Should not throw an exception during configuration
@@ -318,7 +318,8 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'enableHttpLogging': true, // This doesn't require adapter change
+          LLMConfigKeys.enableHttpLogging:
+              true, // This doesn't require adapter change
         });
 
         final dioWithoutHttpConfig = HttpConfigUtils.createConfiguredDio(
@@ -332,7 +333,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'httpProxy': 'http://proxy.example.com:8080',
+          LLMConfigKeys.httpProxy: 'http://proxy.example.com:8080',
         });
 
         final dioWithHttpConfig = HttpConfigUtils.createConfiguredDio(

@@ -44,7 +44,11 @@ class AnthropicRequestBuilder {
     LanguageModelCallOptions? options,
   }) {
     final processedData = _processMessagesFromPrompt(promptMessages);
-    final processedTools = _processToolsFromPrompt(promptMessages, tools);
+    // Per-call tools provided via [LanguageModelCallOptions] should take
+    // precedence over the legacy `tools` argument.
+    final effectiveTools = options?.resolveTools() ?? tools;
+    final processedTools =
+        _processToolsFromPrompt(promptMessages, effectiveTools);
 
     if (processedData.messages.isEmpty) {
       throw const InvalidRequestError(
@@ -84,8 +88,9 @@ class AnthropicRequestBuilder {
     };
 
     _addSystemContentFromPrompt(body, processedData);
-    _addTools(body, processedTools);
-    _addOptionalParameters(body);
+    final effectiveToolChoice = options?.toolChoice ?? config.toolChoice;
+    _addTools(body, processedTools, toolChoice: effectiveToolChoice);
+    _addOptionalParameters(body, options: options);
 
     return body;
   }
@@ -242,8 +247,10 @@ class AnthropicRequestBuilder {
           content,
         );
       } else if (part is UrlFileContentPart) {
-        final text = '[Image URL not supported by Anthropic. '
-            'Please upload the image directly: ${part.url}]';
+        final mimeType = part.mime.mimeType;
+        final text = '[URL-based files are not supported by Anthropic '
+            '(mime: $mimeType). Provide the file bytes via FileContentPart instead: '
+            '${part.url}]';
         content.add({
           'type': 'text',
           'text': text,
@@ -462,7 +469,11 @@ class AnthropicRequestBuilder {
     }
   }
 
-  void _addTools(Map<String, dynamic> body, ProcessedTools processedTools) {
+  void _addTools(
+    Map<String, dynamic> body,
+    ProcessedTools processedTools, {
+    ToolChoice? toolChoice,
+  }) {
     if (processedTools.tools.isNotEmpty) {
       final convertedTools =
           processedTools.tools.map((t) => convertTool(t)).toList();
@@ -473,28 +484,34 @@ class AnthropicRequestBuilder {
 
       body['tools'] = convertedTools;
 
-      if (config.toolChoice != null) {
-        body['tool_choice'] = _convertToolChoice(config.toolChoice!);
+      if (toolChoice != null) {
+        body['tool_choice'] = _convertToolChoice(toolChoice);
       }
     }
   }
 
-  void _addOptionalParameters(Map<String, dynamic> body) {
+  void _addOptionalParameters(
+    Map<String, dynamic> body, {
+    LanguageModelCallOptions? options,
+  }) {
     final thinkingEnabled = config.reasoning && config.supportsReasoning;
 
     // Sampling parameters are not supported when thinking is enabled on
     // reasoning-capable models. We only forward them for standard calls.
     if (!thinkingEnabled) {
-      if (config.temperature != null) {
-        body['temperature'] = config.temperature;
+      final effectiveTemperature = options?.temperature ?? config.temperature;
+      if (effectiveTemperature != null) {
+        body['temperature'] = effectiveTemperature;
       }
 
-      if (config.topP != null) {
-        body['top_p'] = config.topP;
+      final effectiveTopP = options?.topP ?? config.topP;
+      if (effectiveTopP != null) {
+        body['top_p'] = effectiveTopP;
       }
 
-      if (config.topK != null) {
-        body['top_k'] = config.topK;
+      final effectiveTopK = options?.topK ?? config.topK;
+      if (effectiveTopK != null) {
+        body['top_k'] = effectiveTopK;
       }
     }
 
@@ -510,23 +527,32 @@ class AnthropicRequestBuilder {
       body['thinking'] = thinkingConfig;
     }
 
-    if (config.stopSequences != null && config.stopSequences!.isNotEmpty) {
-      body['stop_sequences'] = config.stopSequences;
+    final effectiveStopSequences =
+        options?.stopSequences ?? config.stopSequences;
+    if (effectiveStopSequences != null && effectiveStopSequences.isNotEmpty) {
+      body['stop_sequences'] = effectiveStopSequences;
     }
 
-    if (config.serviceTier != null) {
-      body['service_tier'] = config.serviceTier!.value;
+    final effectiveServiceTier = options?.serviceTier ?? config.serviceTier;
+    if (effectiveServiceTier != null) {
+      body['service_tier'] = effectiveServiceTier.value;
     }
 
     final metadata = <String, dynamic>{};
-    if (config.user != null) {
-      metadata['user_id'] = config.user;
+    final effectiveUser = options?.user ?? config.user;
+    if (effectiveUser != null) {
+      metadata['user_id'] = effectiveUser;
     }
 
     final customMetadata =
         config.getExtension<Map<String, dynamic>>(LLMConfigKeys.metadata);
     if (customMetadata != null) {
       metadata.addAll(customMetadata);
+    }
+
+    final callMetadata = options?.metadata;
+    if (callMetadata != null) {
+      metadata.addAll(callMetadata);
     }
 
     if (metadata.isNotEmpty) {

@@ -9,8 +9,7 @@ extension LLMBuilderAudioExtensions on LLMBuilder {
   LLMBuilder audioQuality(String quality) =>
       extension(LLMConfigKeys.audioQuality, quality);
 
-  LLMBuilder sampleRate(int rate) =>
-      extension(LLMConfigKeys.sampleRate, rate);
+  LLMBuilder sampleRate(int rate) => extension(LLMConfigKeys.sampleRate, rate);
 
   LLMBuilder languageCode(String code) =>
       extension(LLMConfigKeys.languageCode, code);
@@ -34,11 +33,9 @@ extension LLMBuilderAudioExtensions on LLMBuilder {
   LLMBuilder previousText(String text) =>
       extension(LLMConfigKeys.previousText, text);
 
-  LLMBuilder nextText(String text) =>
-      extension(LLMConfigKeys.nextText, text);
+  LLMBuilder nextText(String text) => extension(LLMConfigKeys.nextText, text);
 
-  LLMBuilder audioSeed(int seed) =>
-      extension(LLMConfigKeys.audioSeed, seed);
+  LLMBuilder audioSeed(int seed) => extension(LLMConfigKeys.audioSeed, seed);
 
   LLMBuilder enableLogging(bool enabled) =>
       extension(LLMConfigKeys.enableLogging, enabled);
@@ -47,8 +44,7 @@ extension LLMBuilderAudioExtensions on LLMBuilder {
       extension(LLMConfigKeys.optimizeStreamingLatency, level);
 
   /// STT-specific configuration methods
-  LLMBuilder diarize(bool enabled) =>
-      extension(LLMConfigKeys.diarize, enabled);
+  LLMBuilder diarize(bool enabled) => extension(LLMConfigKeys.diarize, enabled);
 
   LLMBuilder numSpeakers(int count) =>
       extension(LLMConfigKeys.numSpeakers, count);
@@ -56,11 +52,9 @@ extension LLMBuilderAudioExtensions on LLMBuilder {
   LLMBuilder tagAudioEvents(bool enabled) =>
       extension(LLMConfigKeys.tagAudioEvents, enabled);
 
-  LLMBuilder webhook(bool enabled) =>
-      extension(LLMConfigKeys.webhook, enabled);
+  LLMBuilder webhook(bool enabled) => extension(LLMConfigKeys.webhook, enabled);
 
-  LLMBuilder prompt(String prompt) =>
-      extension(LLMConfigKeys.prompt, prompt);
+  LLMBuilder prompt(String prompt) => extension(LLMConfigKeys.prompt, prompt);
 
   LLMBuilder responseFormat(String format) =>
       extension(LLMConfigKeys.responseFormat, format);
@@ -68,4 +62,3 @@ extension LLMBuilderAudioExtensions on LLMBuilder {
   LLMBuilder cloudStorageUrl(String url) =>
       extension(LLMConfigKeys.cloudStorageUrl, url);
 }
-

@@ -2,7 +2,7 @@
 // request building.
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic_pkg;
+import 'package:llm_dart_anthropic/testing.dart' as anthropic_pkg;
 import 'package:test/test.dart';
 
 void main() {

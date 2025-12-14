@@ -1,6 +1,5 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/factories/elevenlabs_factory.dart';
 
 void main() {
   group('ElevenLabsProviderFactory Tests', () {

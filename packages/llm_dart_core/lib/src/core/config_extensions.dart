@@ -94,6 +94,7 @@ abstract final class LLMConfigKeys {
 
   // Provider-agnostic metadata container
   static const String metadata = 'metadata';
+  static const String logger = 'logger';
   static const String container = 'container';
   static const String mcpServers = 'mcpServers';
 

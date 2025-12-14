@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
@@ -40,7 +39,6 @@ class GoogleFile {
 /// This is a thin convenience layer around the low-level HTTP client.
 class GoogleFilesClient {
   final GoogleClient client;
-  final Logger logger = Logger('GoogleFilesClient');
 
   GoogleFilesClient(this.client);
 
@@ -88,10 +86,10 @@ class GoogleFilesClient {
       final fileData = response.data['file'] as Map<String, dynamic>;
       return GoogleFile.fromJson(fileData);
     } on DioException catch (e) {
-      logger.severe('Google Files upload failed: ${e.message}');
+      client.logger.severe('Google Files upload failed: ${e.message}', e);
       throw await DioErrorHandler.handleDioError(e, 'Google Files');
     } catch (e) {
-      logger.severe('Google Files upload error: $e');
+      client.logger.severe('Google Files upload error: $e', e);
       throw GenericError('File upload error: $e');
     }
   }

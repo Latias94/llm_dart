@@ -1,7 +1,5 @@
-import 'dart:convert';
-
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../config/ollama_config.dart';
@@ -10,10 +8,13 @@ import '../http/ollama_dio_strategy.dart';
 /// Core Ollama HTTP client for the sub-package.
 class OllamaClient {
   final OllamaConfig config;
-  final Logger logger = Logger('OllamaClient');
+  final LLMLogger logger;
   late final Dio dio;
 
-  OllamaClient(this.config) {
+  OllamaClient(this.config)
+      : logger = config.originalConfig == null
+            ? const NoopLLMLogger()
+            : resolveLogger(config.originalConfig!) {
     dio = DioClientFactory.create(
       strategy: OllamaDioStrategy(),
       config: config,
@@ -24,18 +25,25 @@ class OllamaClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     try {
       logger.fine('Ollama request: POST $endpoint');
+      final effectiveHeaders = headers == null
+          ? null
+          : HttpHeaderUtils.mergeDioHeaders(dio, headers);
       final response = await dio.post(
         endpoint,
         data: data,
         cancelToken: cancelToken,
+        options: effectiveHeaders == null
+            ? null
+            : Options(headers: effectiveHeaders),
       );
       logger.fine('Ollama HTTP status: ${response.statusCode}');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      logger.severe('HTTP request failed: ${e.message}');
+      logger.severe('HTTP request failed: ${e.message}', e);
       rethrow;
     }
   }
@@ -53,7 +61,7 @@ class OllamaClient {
       logger.fine('Ollama HTTP status: ${response.statusCode}');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      logger.severe('HTTP request failed: ${e.message}');
+      logger.severe('HTTP request failed: ${e.message}', e);
       rethrow;
     }
   }
@@ -73,7 +81,7 @@ class OllamaClient {
       logger.fine('Ollama HTTP status: ${response.statusCode}');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      logger.severe('HTTP request failed: ${e.message}');
+      logger.severe('HTTP request failed: ${e.message}', e);
       rethrow;
     }
   }
@@ -82,15 +90,22 @@ class OllamaClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async* {
     try {
-      logger.fine('Ollama streaming request payload: ${jsonEncode(data)}');
+      logger.fine('Ollama streaming request: POST $endpoint');
+      final effectiveHeaders = headers == null
+          ? null
+          : HttpHeaderUtils.mergeDioHeaders(dio, headers);
 
       final response = await dio.post(
         endpoint,
         data: data,
         cancelToken: cancelToken,
-        options: Options(responseType: ResponseType.stream),
+        options: Options(
+          responseType: ResponseType.stream,
+          headers: effectiveHeaders,
+        ),
       );
 
       logger.fine('Ollama streaming HTTP status: ${response.statusCode}');
@@ -122,7 +137,7 @@ class OllamaClient {
         yield remaining;
       }
     } on DioException catch (e) {
-      logger.severe('Stream request failed: ${e.message}');
+      logger.severe('Stream request failed: ${e.message}', e);
       rethrow;
     }
   }

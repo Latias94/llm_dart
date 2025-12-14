@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../client/google_client.dart';
@@ -9,15 +8,18 @@ import '../config/google_config.dart';
 class GoogleImages implements ImageGenerationCapability {
   final GoogleClient _client;
   final GoogleConfig _config;
-  final Logger _logger = Logger('GoogleImages');
+  final LLMLogger _logger;
 
-  GoogleImages(this._client, this._config);
+  GoogleImages(this._client, this._config)
+      : _logger = _config.originalConfig == null
+            ? const NoopLLMLogger()
+            : resolveLogger(_config.originalConfig!);
 
   @override
   Future<ImageGenerationResponse> generateImages(
     ImageGenerationRequest request,
   ) async {
-    _logger.info('Generating images with prompt: ${request.prompt}');
+    _logger.info('Generating images');
 
     if (_isImagenModel(request.model ?? _config.model)) {
       return _generateWithImagen(request);
@@ -50,7 +52,7 @@ class GoogleImages implements ImageGenerationCapability {
       final response = await _client.postJson(endpoint, requestData);
       return _parseImagenResponse(response, model);
     } catch (e) {
-      _logger.severe('Imagen generation failed: $e');
+      _logger.severe('Imagen generation failed: $e', e);
       rethrow;
     }
   }
@@ -88,7 +90,7 @@ class GoogleImages implements ImageGenerationCapability {
       final response = await _client.postJson(endpoint, requestData);
       return _parseGeminiResponse(response, model);
     } catch (e) {
-      _logger.severe('Gemini generation failed: $e');
+      _logger.severe('Gemini generation failed: $e', e);
       rethrow;
     }
   }

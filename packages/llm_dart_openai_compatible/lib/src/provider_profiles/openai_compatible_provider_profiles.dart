@@ -67,6 +67,81 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
   }
 }
 
+/// xAI-specific request body transformer for OpenAI-compatible interface.
+///
+/// This transformer maps the core [WebSearchConfig] abstraction to xAI's
+/// `search_parameters` payload for Grok models.
+class XAIRequestBodyTransformer implements RequestBodyTransformer {
+  const XAIRequestBodyTransformer();
+
+  @override
+  Map<String, dynamic> transform(
+    Map<String, dynamic> body,
+    LLMConfig config,
+    OpenAICompatibleProviderConfig providerConfig,
+  ) {
+    final transformedBody = Map<String, dynamic>.from(body);
+    _addSearchParameters(transformedBody, config);
+    return transformedBody;
+  }
+
+  void _addSearchParameters(Map<String, dynamic> body, LLMConfig config) {
+    final webSearchEnabled =
+        config.getExtension<bool>(LLMConfigKeys.webSearchEnabled) ?? false;
+    final liveSearch =
+        config.getExtension<bool>(LLMConfigKeys.liveSearch) ?? false;
+    final webSearchConfig =
+        config.getExtension<WebSearchConfig>(LLMConfigKeys.webSearchConfig);
+
+    if (!webSearchEnabled && !liveSearch && webSearchConfig == null) {
+      return;
+    }
+
+    final blockedDomains = webSearchConfig?.blockedDomains;
+    final sources = <Map<String, dynamic>>[];
+
+    void addSource(String type) {
+      sources.add({
+        'type': type,
+        if (blockedDomains != null && blockedDomains.isNotEmpty)
+          'excluded_websites': blockedDomains,
+      });
+    }
+
+    switch (webSearchConfig?.searchType) {
+      case WebSearchType.news:
+        addSource('news');
+        break;
+      case WebSearchType.combined:
+        addSource('web');
+        addSource('news');
+        break;
+      case WebSearchType.academic:
+        // xAI currently only supports `web` and `news` sources; fall back to web.
+        addSource('web');
+        break;
+      case WebSearchType.web:
+      default:
+        addSource('web');
+        break;
+    }
+
+    final searchParameters = <String, dynamic>{
+      if (webSearchConfig?.mode != null) 'mode': webSearchConfig!.mode,
+      if (webSearchConfig?.maxResults != null)
+        'max_search_results': webSearchConfig!.maxResults,
+      if (webSearchConfig?.fromDate != null)
+        'from_date': webSearchConfig!.fromDate,
+      if (webSearchConfig?.toDate != null) 'to_date': webSearchConfig!.toDate,
+      if (sources.isNotEmpty) 'sources': sources,
+    };
+
+    if (searchParameters.isNotEmpty) {
+      body['search_parameters'] = searchParameters;
+    }
+  }
+}
+
 /// Google-specific headers transformer for OpenAI-compatible interface.
 ///
 /// This transformer handles Google Gemini's specific headers when using
@@ -205,9 +280,11 @@ class OpenAICompatibleProviderProfiles {
       LLMCapability.streaming,
       LLMCapability.toolCalling,
       LLMCapability.reasoning,
+      LLMCapability.embedding,
     },
     supportsReasoningEffort: false,
     supportsStructuredOutput: true,
+    requestBodyTransformer: XAIRequestBodyTransformer(),
     modelConfigs: {
       'grok-3': ModelCapabilityConfig(
         supportsReasoning: false,

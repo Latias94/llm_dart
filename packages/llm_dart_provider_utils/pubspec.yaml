@@ -2,13 +2,13 @@ name: llm_dart_provider_utils
 description: Shared HTTP and provider utilities for llm_dart providers (Dio factory, error mapping, response handling).
 version: 0.11.0-rc.1
 publish_to: none
+resolution: workspace
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
   dio: ^5.9.0
-  logging: ^1.2.0
   llm_dart_core: ^0.11.0-rc.1
 
 dev_dependencies:

@@ -1,9 +1,10 @@
 import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
-import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart_anthropic/testing.dart' as anthropic;
+import 'package:llm_dart_openai/testing.dart' as openai;
 import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
+import 'package:llm_dart_xai/testing.dart' as xai_testing;
 
 void main() {
   group('Custom Dio Client Support Tests', () {
@@ -22,12 +23,13 @@ void main() {
           model: 'test-model',
           timeout: Duration(seconds: 60), // Should be ignored
         ).withExtensions({
-          'customDio': customDio,
-          'connectionTimeout': Duration(seconds: 30), // Should be ignored
-          'customHeaders': {
+          LLMConfigKeys.customDio: customDio,
+          LLMConfigKeys.connectionTimeout:
+              Duration(seconds: 30), // Should be ignored
+          LLMConfigKeys.customHeaders: {
             'X-Should-Be-Ignored': 'ignored'
           }, // Should be ignored
-          'enableHttpLogging': true, // Should be ignored
+          LLMConfigKeys.enableHttpLogging: true, // Should be ignored
         });
 
         // Test with Anthropic provider
@@ -54,9 +56,9 @@ void main() {
           model: 'test-model',
           timeout: Duration(seconds: 45),
         ).withExtensions({
-          'connectionTimeout': Duration(seconds: 30),
-          'customHeaders': {'X-Test': 'test-value'},
-          'enableHttpLogging': true,
+          LLMConfigKeys.connectionTimeout: Duration(seconds: 30),
+          LLMConfigKeys.customHeaders: {'X-Test': 'test-value'},
+          LLMConfigKeys.enableHttpLogging: true,
         });
 
         final anthropicConfig =
@@ -113,7 +115,7 @@ void main() {
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
         final anthropicConfig =
@@ -151,7 +153,7 @@ void main() {
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
         final anthropicConfig =
@@ -175,7 +177,7 @@ void main() {
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
         final anthropicConfig =
@@ -196,7 +198,7 @@ void main() {
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
         final anthropicConfig =
@@ -220,7 +222,7 @@ void main() {
           apiKey: 'test-key', // Should not override custom Authorization
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
         final anthropicConfig =
@@ -253,7 +255,7 @@ void main() {
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
         final anthropicConfig =
@@ -288,7 +290,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
         // Test with multiple providers
@@ -305,7 +307,7 @@ void main() {
         final openaiClient = openai.OpenAIClient(openaiConfig);
 
         final xaiConfig = xai.XAIConfig.fromLLMConfig(llmConfig);
-        final xaiClient = xai.XAIClient(xaiConfig);
+        final xaiClient = xai_testing.XAIClient(xaiConfig);
 
         // All should use the same custom Dio
         expect(anthropicClient.dio, equals(customDio));
@@ -338,7 +340,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
         // Create clients for different providers
@@ -371,7 +373,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customDio': null, // Explicitly null
+          LLMConfigKeys.customDio: null, // Explicitly null
         });
 
         final anthropicConfig =
@@ -398,7 +400,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customDio': customDio,
+          LLMConfigKeys.customDio: customDio,
         });
 
         final anthropicConfig =

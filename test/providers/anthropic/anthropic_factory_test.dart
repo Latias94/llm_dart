@@ -1,7 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
-import 'package:llm_dart/providers/factories/anthropic_factory.dart';
 
 void main() {
   group('AnthropicProviderFactory Tests', () {
@@ -64,9 +63,9 @@ void main() {
           baseUrl: 'https://api.anthropic.com',
           model: 'claude-sonnet-4-20250514',
           extensions: {
-            'reasoning': true,
-            'thinkingBudgetTokens': 5000,
-            'interleavedThinking': false,
+            LLMConfigKeys.reasoning: true,
+            LLMConfigKeys.thinkingBudgetTokens: 5000,
+            LLMConfigKeys.interleavedThinking: false,
           },
         );
 
@@ -90,9 +89,9 @@ void main() {
           stopSequences: ['STOP'],
           user: 'test-user',
           extensions: {
-            'reasoning': true,
-            'thinkingBudgetTokens': 3000,
-            'interleavedThinking': true,
+            LLMConfigKeys.reasoning: true,
+            LLMConfigKeys.thinkingBudgetTokens: 3000,
+            LLMConfigKeys.interleavedThinking: true,
           },
         );
 

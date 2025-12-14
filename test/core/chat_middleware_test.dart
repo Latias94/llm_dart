@@ -125,8 +125,8 @@ void main() {
         ),
       ]).buildWithMiddleware();
 
-      final response =
-          await provider.chat([ModelMessage.userText('base')]) as _TestChatResponse;
+      final response = await provider.chat([ModelMessage.userText('base')])
+          as _TestChatResponse;
 
       expect(transforms, ['t1', 't2']);
       expect(response.text, 'base|t1|t2');
@@ -149,8 +149,8 @@ void main() {
         ),
       ]).buildWithMiddleware();
 
-      final response =
-          await provider.chat([ModelMessage.userText('base')]) as _TestChatResponse;
+      final response = await provider.chat([ModelMessage.userText('base')])
+          as _TestChatResponse;
 
       // The outer middleware appears earlier in the list, so the final result
       // should be M1(M2(base)).

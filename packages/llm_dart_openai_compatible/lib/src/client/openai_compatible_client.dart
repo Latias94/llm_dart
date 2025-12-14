@@ -96,18 +96,22 @@ class OpenAICompatibleClient {
     String endpoint,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing API key for OpenAI-compatible provider');
     }
 
     try {
+      final effectiveHeaders = headers == null
+          ? _buildTransformedHeaders()
+          : {..._buildTransformedHeaders(), ...headers};
       return await HttpResponseHandler.postJson(
         dio,
         endpoint,
         body,
         providerName: config.providerId,
-        options: Options(headers: _buildTransformedHeaders()),
+        options: Options(headers: effectiveHeaders),
         cancelToken: cancelToken,
       );
     } on LLMError {
@@ -121,6 +125,7 @@ class OpenAICompatibleClient {
     String endpoint,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async* {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing API key for OpenAI-compatible provider');
@@ -129,16 +134,19 @@ class OpenAICompatibleClient {
     resetSSEBuffer();
 
     try {
+      final baseHeaders = {
+        ..._buildTransformedHeaders(),
+        'Accept': 'text/event-stream',
+      };
+      final effectiveHeaders =
+          headers == null ? baseHeaders : {...baseHeaders, ...headers};
       final response = await dio.post(
         endpoint,
         data: body,
         cancelToken: cancelToken,
         options: Options(
           responseType: ResponseType.stream,
-          headers: {
-            ..._buildTransformedHeaders(),
-            'Accept': 'text/event-stream',
-          },
+          headers: effectiveHeaders,
         ),
       );
 
@@ -178,16 +186,7 @@ class OpenAICompatibleClient {
   /// Build headers for this request, applying provider-specific transformers
   /// when available (e.g. Google Gemini OpenAI-compatible headers).
   Map<String, String> _buildTransformedHeaders() {
-    final baseHeaders = <String, String>{};
-
-    dio.options.headers.forEach((key, value) {
-      if (value == null) return;
-      if (value is String) {
-        baseHeaders[key] = value;
-      } else {
-        baseHeaders[key] = value.toString();
-      }
-    });
+    final baseHeaders = HttpHeaderUtils.mergeDioHeaders(dio);
 
     final providerConfig = _providerProfile;
     final transformer = providerConfig?.headersTransformer;

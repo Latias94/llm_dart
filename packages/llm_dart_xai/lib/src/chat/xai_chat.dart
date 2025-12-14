@@ -36,6 +36,7 @@ class XAIChat implements ChatCapability {
     final response = await client.postJson(
       chatEndpoint,
       body,
+      headers: options?.headers,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
     return XAIChatResponse(response);
@@ -64,6 +65,7 @@ class XAIChat implements ChatCapability {
       final stream = client.postStreamRaw(
         chatEndpoint,
         body,
+        headers: options?.headers,
         cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
       );
 
@@ -121,7 +123,7 @@ class XAIChat implements ChatCapability {
       body['top_k'] = effectiveTopK;
     }
 
-    final effectiveTools = options?.tools ?? tools ?? config.tools;
+    final effectiveTools = options?.resolveTools() ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = effectiveTools.map(_convertTool).toList();
 
@@ -131,14 +133,31 @@ class XAIChat implements ChatCapability {
       }
     }
 
+    final effectiveStopSequences =
+        options?.stopSequences ?? config.stopSequences;
+    if (effectiveStopSequences != null && effectiveStopSequences.isNotEmpty) {
+      body['stop'] = effectiveStopSequences;
+    }
+
+    final effectiveUser = options?.user ?? config.user;
+    if (effectiveUser != null) {
+      body['user'] = effectiveUser;
+    }
+
+    final effectiveServiceTier = options?.serviceTier ?? config.serviceTier;
+    if (effectiveServiceTier != null) {
+      body['service_tier'] = effectiveServiceTier.value;
+    }
+
     if (config.searchParameters != null) {
       // Align with xAI API: search_parameters
       body['search_parameters'] = config.searchParameters!.toJson();
     }
 
     // Structured output / JSON schema support
-    if (config.jsonSchema != null) {
-      body['response_format'] = config.jsonSchema!.toOpenAIResponseFormat();
+    final effectiveJsonSchema = options?.jsonSchema ?? config.jsonSchema;
+    if (effectiveJsonSchema != null) {
+      body['response_format'] = effectiveJsonSchema.toOpenAIResponseFormat();
     }
 
     return body;
@@ -253,10 +272,19 @@ class XAIChat implements ChatCapability {
           if (part.text.isEmpty) continue;
           contentArray.add({'type': 'text', 'text': part.text});
         } else if (part is UrlFileContentPart) {
-          contentArray.add({
-            'type': 'image_url',
-            'image_url': {'url': part.url},
-          });
+          final mimeType = part.mime.mimeType;
+          if (mimeType.startsWith('image/')) {
+            contentArray.add({
+              'type': 'image_url',
+              'image_url': {'url': part.url},
+            });
+          } else {
+            contentArray.add({
+              'type': 'text',
+              'text':
+                  '[Unsupported URL file type for xAI: $mimeType. Only image/* URLs are supported as image_url. ${part.url}]',
+            });
+          }
         } else if (part is FileContentPart) {
           _appendFilePartForPrompt(part, contentArray);
         }

@@ -1,13 +1,18 @@
 library;
 
+// ===== Stable public API surface =====
+//
+// Keep exports focused on:
+// - provider config + Dio strategy + registry factory
+// - provider implementation (capabilities)
+// - Vercel AI-style facade (`createDeepSeek`, `deepseek`, etc.)
+//
+// Low-level building blocks (HTTP client, request builders, internal models)
+// are intentionally not exported. For repository tests and advanced internal
+// use cases, import `package:llm_dart_deepseek/testing.dart`.
 export 'src/config/deepseek_config.dart';
-export 'src/client/deepseek_client.dart';
 export 'src/provider/deepseek_provider.dart';
-export 'src/chat/deepseek_chat.dart';
-export 'src/models/deepseek_models.dart';
 export 'src/http/deepseek_dio_strategy.dart';
-export 'src/error/deepseek_error_handler.dart';
-export 'src/completion/deepseek_completion.dart';
 export 'src/factory/deepseek_provider_factory.dart'
     show DeepSeekProviderFactory, registerDeepSeekProvider;
 

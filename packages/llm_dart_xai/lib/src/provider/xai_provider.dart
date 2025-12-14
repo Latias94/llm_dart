@@ -9,10 +9,7 @@ import '../config/search_parameters.dart';
 import '../embeddings/xai_embeddings.dart';
 
 class XAIProvider
-    implements
-        ChatCapability,
-        EmbeddingCapability,
-        ProviderCapabilities {
+    implements ChatCapability, EmbeddingCapability, ProviderCapabilities {
   final XAIClient _client;
   final XAIConfig config;
 

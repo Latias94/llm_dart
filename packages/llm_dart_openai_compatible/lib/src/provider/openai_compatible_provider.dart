@@ -71,20 +71,23 @@ class OpenAICompatibleProvider
       LLMCapability.streaming,
     };
 
-    if (config.tools != null && config.tools!.isNotEmpty) {
-      capabilities.add(LLMCapability.toolCalling);
-    }
-
-    if (config.reasoningEffort != null) {
-      capabilities.add(LLMCapability.reasoning);
-    }
-
     final profile =
         OpenAICompatibleProviderProfiles.getConfig(config.providerId);
-    if (profile != null &&
-        profile.supportedCapabilities.contains(LLMCapability.embedding)) {
-      capabilities.add(LLMCapability.embedding);
-      capabilities.add(LLMCapability.reranking);
+    if (profile != null) {
+      capabilities.addAll(profile.supportedCapabilities);
+
+      if (profile.supportedCapabilities.contains(LLMCapability.embedding)) {
+        capabilities.add(LLMCapability.reranking);
+      }
+    } else {
+      // Fallback to heuristics for unknown providers.
+      if (config.tools != null && config.tools!.isNotEmpty) {
+        capabilities.add(LLMCapability.toolCalling);
+      }
+
+      if (config.reasoningEffort != null) {
+        capabilities.add(LLMCapability.reasoning);
+      }
     }
 
     return capabilities;

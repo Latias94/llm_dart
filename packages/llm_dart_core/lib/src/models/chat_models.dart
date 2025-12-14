@@ -339,11 +339,18 @@ class FileContentPart extends ChatContentPart {
 }
 
 /// URL-based file or media content (e.g., remote images or documents).
+///
+/// This mirrors the Vercel AI SDK's "file part" concept where the payload
+/// is a URL and the [mime] communicates the intended media type.
 class UrlFileContentPart extends ChatContentPart {
   final String url;
+  final FileMime mime;
+  final String? filename;
 
   const UrlFileContentPart(
     this.url, {
+    this.mime = const FileMime('image/*'),
+    this.filename,
     super.providerOptions,
   });
 }

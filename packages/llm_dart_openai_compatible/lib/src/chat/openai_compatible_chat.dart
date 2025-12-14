@@ -48,6 +48,7 @@ class OpenAICompatibleChat implements ChatCapability {
     final responseData = await client.postJson(
       chatEndpoint,
       requestBody,
+      headers: options?.headers,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
     return _parseResponse(responseData);
@@ -73,6 +74,7 @@ class OpenAICompatibleChat implements ChatCapability {
       final stream = client.postStreamRaw(
         chatEndpoint,
         requestBody,
+        headers: options?.headers,
         cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
       );
 
@@ -129,11 +131,13 @@ class OpenAICompatibleChat implements ChatCapability {
       body['top_k'] = effectiveTopK;
     }
 
-    if (config.reasoningEffort != null) {
-      body['reasoning_effort'] = config.reasoningEffort!.value;
+    final effectiveReasoningEffort =
+        options?.reasoningEffort ?? config.reasoningEffort;
+    if (effectiveReasoningEffort != null) {
+      body['reasoning_effort'] = effectiveReasoningEffort.value;
     }
 
-    final effectiveTools = options?.tools ?? tools ?? config.tools;
+    final effectiveTools = options?.resolveTools() ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = effectiveTools.map((t) => t.toJson()).toList();
 
@@ -143,8 +147,9 @@ class OpenAICompatibleChat implements ChatCapability {
       }
     }
 
-    if (config.jsonSchema != null) {
-      final schema = config.jsonSchema!;
+    final effectiveJsonSchema = options?.jsonSchema ?? config.jsonSchema;
+    if (effectiveJsonSchema != null) {
+      final schema = effectiveJsonSchema;
       final responseFormat = <String, dynamic>{
         'type': 'json_schema',
         'json_schema': schema.toJson(),
@@ -183,7 +188,10 @@ class OpenAICompatibleChat implements ChatCapability {
     }
 
     // Apply provider-specific request body transformers (e.g. Google Gemini).
-    final transformedBody = _applyProviderRequestTransformers(body);
+    final transformedBody = _applyProviderRequestTransformers(
+      body,
+      options: options,
+    );
 
     final extraBody = transformedBody['extra_body'] as Map<String, dynamic>?;
     if (extraBody != null) {
@@ -200,8 +208,9 @@ class OpenAICompatibleChat implements ChatCapability {
   /// the provider profiles to adapt the OpenAI-compatible request body to
   /// provider-specific formats (e.g. Google Gemini thinking config).
   Map<String, dynamic> _applyProviderRequestTransformers(
-    Map<String, dynamic> body,
-  ) {
+    Map<String, dynamic> body, {
+    LanguageModelCallOptions? options,
+  }) {
     final originalConfig = config.originalConfig;
     if (originalConfig == null) {
       return body;
@@ -216,11 +225,16 @@ class OpenAICompatibleChat implements ChatCapability {
     }
 
     try {
-      return transformer.transform(
-        body,
-        originalConfig,
-        providerConfig,
-      );
+      var effectiveConfig = originalConfig;
+      final reasoningEffort = options?.reasoningEffort;
+      if (reasoningEffort != null) {
+        effectiveConfig = effectiveConfig.withExtension(
+          LLMConfigKeys.reasoningEffort,
+          reasoningEffort.value,
+        );
+      }
+
+      return transformer.transform(body, effectiveConfig, providerConfig);
     } catch (_) {
       // On any error, fall back to the unmodified body to avoid breaking calls.
       return body;
@@ -255,7 +269,7 @@ class OpenAICompatibleChat implements ChatCapability {
     }
 
     final warnings = <CallWarning>[];
-    final metadata = _buildMetadataForCall();
+    final metadata = _buildMetadataForCall(responseData);
 
     return _OpenAICompatibleChatResponse(
       responseData,
@@ -357,7 +371,7 @@ class OpenAICompatibleChat implements ChatCapability {
       final usage = json['usage'] as Map<String, dynamic>?;
       final thinkingContent =
           thinkingBuffer.isNotEmpty ? thinkingBuffer.toString() : null;
-      final metadata = _buildMetadataForCall();
+      final metadata = _buildMetadataForCall(json);
 
       final response = _OpenAICompatibleChatResponse(
         {
@@ -381,12 +395,21 @@ class OpenAICompatibleChat implements ChatCapability {
   }
 
   /// Build provider-agnostic metadata for this call.
-  Map<String, dynamic>? _buildMetadataForCall() {
+  Map<String, dynamic>? _buildMetadataForCall([
+    Map<String, dynamic>? responseData,
+  ]) {
+    final resolvedModel = (responseData?['model'] as String?) ?? config.model;
+
     return {
       // Align with core CallMetadata expectations:
       // use `provider` as the logical provider identifier.
       'provider': config.providerId,
-      'model': config.model,
+      'model': resolvedModel,
+      if (responseData?['id'] is String) 'id': responseData!['id'],
+      if (responseData?['citations'] is List) ...{
+        'hasCitations': (responseData!['citations'] as List).isNotEmpty,
+        'citations': responseData['citations'],
+      },
     };
   }
 }

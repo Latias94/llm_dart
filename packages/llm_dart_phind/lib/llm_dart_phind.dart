@@ -1,9 +1,17 @@
 library;
 
+// ===== Stable public API surface =====
+//
+// Keep exports focused on:
+// - provider config + Dio strategy + registry factory
+// - provider implementation (capabilities)
+// - Vercel AI-style facade (`createPhind`, `phind`, etc.)
+//
+// Low-level building blocks (HTTP client, chat prompt mapping, internal
+// response models) are intentionally not exported. For repository tests and
+// advanced internal use cases, import `package:llm_dart_phind/testing.dart`.
 export 'src/config/phind_config.dart';
 export 'src/http/phind_dio_strategy.dart';
-export 'src/client/phind_client.dart';
-export 'src/chat/phind_chat.dart';
 export 'src/provider/phind_provider.dart';
 export 'src/factory/phind_provider_factory.dart'
     show PhindProviderFactory, registerPhindProvider;

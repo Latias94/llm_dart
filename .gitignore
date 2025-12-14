@@ -4,8 +4,15 @@
 .dart_tool/
 .packages
 build/
+.DS_Store
 # If you're building an application, you may want to check-in your pubspec.lock
 pubspec.lock
+pubspec_overrides.yaml
+**/pubspec_overrides.yaml
+
+# IDE files
+.idea/
+*.iml
 
 # Directory created by dartdoc
 # If you don't generate documentation locally you can remove this line.
@@ -33,7 +40,3 @@ CLAUDE.md
 
 # Local reference repositories (not part of the Dart workspace)
 repo-ref/
-
-# Local documentation drafts (not committed yet)
-docs/
-api.md

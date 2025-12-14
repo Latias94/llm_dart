@@ -75,7 +75,8 @@ void main() {
       expect(config.getExtension<String>(LLMConfigKeys.audioQuality), 'high');
       expect(config.getExtension<int>(LLMConfigKeys.sampleRate), 48000);
       expect(config.getExtension<String>(LLMConfigKeys.languageCode), 'en-US');
-      expect(config.getExtension<bool>(LLMConfigKeys.includeTimestamps), isTrue);
+      expect(
+          config.getExtension<bool>(LLMConfigKeys.includeTimestamps), isTrue);
       expect(
         config.getExtension<String>(LLMConfigKeys.timestampGranularity),
         'segment',
@@ -83,4 +84,3 @@ void main() {
     });
   });
 }
-

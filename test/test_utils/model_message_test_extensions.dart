@@ -35,4 +35,3 @@ extension ModelMessageTestExtensions on ModelMessage {
     return value as T;
   }
 }
-

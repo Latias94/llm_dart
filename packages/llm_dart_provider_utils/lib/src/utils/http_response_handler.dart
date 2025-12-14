@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'http_error_handler.dart';
 
@@ -10,7 +9,7 @@ import 'http_error_handler.dart';
 /// This utility class provides consistent response handling across all
 /// AI providers, including proper error handling and response parsing.
 class HttpResponseHandler {
-  static final Logger _logger = Logger('HttpResponseHandler');
+  static const LLMLogger _fallbackLogger = NoopLLMLogger();
 
   /// Parse HTTP response data to Map\<String, dynamic\>
   ///
@@ -21,8 +20,10 @@ class HttpResponseHandler {
   static Map<String, dynamic> parseJsonResponse(
     dynamic responseData, {
     String? providerName,
+    LLMLogger? logger,
   }) {
     final provider = providerName ?? 'Unknown';
+    final log = logger ?? _fallbackLogger;
 
     try {
       // Handle direct JSON object
@@ -34,7 +35,7 @@ class HttpResponseHandler {
       if (responseData is String) {
         // Check if it's HTML (common error case)
         if (responseData.trim().startsWith('<')) {
-          _logger.severe('$provider API returned HTML instead of JSON');
+          log.severe('$provider API returned HTML instead of JSON');
           throw ResponseFormatError(
             '$provider API returned HTML page instead of JSON response. '
             'This usually indicates an incorrect API endpoint or authentication issue.',
@@ -58,7 +59,7 @@ class HttpResponseHandler {
             );
           }
         } on FormatException catch (e) {
-          _logger.severe('$provider API returned invalid JSON: ${e.message}');
+          log.severe('$provider API returned invalid JSON: ${e.message}', e);
           throw ResponseFormatError(
             '$provider API returned invalid JSON: ${e.message}',
             responseData.length > 500
@@ -79,7 +80,7 @@ class HttpResponseHandler {
       if (e is LLMError) {
         rethrow;
       }
-      _logger.severe('Unexpected error parsing $provider response: $e');
+      log.severe('Unexpected error parsing $provider response: $e', e);
       throw GenericError('Failed to parse $provider API response: $e');
     }
   }
@@ -93,19 +94,19 @@ class HttpResponseHandler {
     String endpoint,
     Map<String, dynamic> data, {
     String? providerName,
-    Logger? logger,
+    LLMLogger? logger,
+    bool logPayload = false,
     Map<String, dynamic>? queryParameters,
     Options? options,
     CancelToken? cancelToken,
   }) async {
     final provider = providerName ?? 'Unknown';
-    final log = logger ?? _logger;
+    final log = logger ?? _fallbackLogger;
 
     try {
-      // Log request if fine logging is enabled
-      if (log.isLoggable(Level.FINE)) {
-        log.fine('$provider request: POST $endpoint');
-        log.fine('$provider request payload: ${jsonEncode(data)}');
+      log.fine('$provider request: POST $endpoint');
+      if (logPayload) {
+        log.finer('$provider request payload: ${jsonEncode(data)}');
       }
 
       final response = await dio.post(
@@ -116,31 +117,34 @@ class HttpResponseHandler {
         cancelToken: cancelToken,
       );
 
-      if (log.isLoggable(Level.FINE)) {
-        log.fine('$provider HTTP status: ${response.statusCode}');
-      }
+      log.fine('$provider HTTP status: ${response.statusCode}');
 
-      // Check status code
-      if (response.statusCode != 200) {
-        log.severe('$provider API returned status ${response.statusCode}');
+      // Check status code (accept any 2xx response).
+      final statusCode = response.statusCode ?? 0;
+      if (statusCode < 200 || statusCode >= 300) {
+        log.severe('$provider API returned status $statusCode');
         throw DioException(
           requestOptions: response.requestOptions,
           response: response,
-          message: '$provider API returned status ${response.statusCode}',
+          message: '$provider API returned status $statusCode',
         );
       }
 
       // Parse response using unified handler
-      return parseJsonResponse(response.data, providerName: provider);
+      return parseJsonResponse(
+        response.data,
+        providerName: provider,
+        logger: log,
+      );
     } on DioException catch (e) {
-      log.severe('$provider HTTP request failed: ${e.message}');
+      log.severe('$provider HTTP request failed: ${e.message}', e);
       // Convert DioException to LLMError using centralized handler
       throw await DioErrorHandler.handleDioError(e, provider);
     } catch (e) {
       if (e is LLMError) {
         rethrow;
       }
-      log.severe('Unexpected error in $provider postJson: $e');
+      log.severe('Unexpected error in $provider postJson: $e', e);
       throw GenericError('Unexpected error: $e');
     }
   }
@@ -150,18 +154,16 @@ class HttpResponseHandler {
     Dio dio,
     String endpoint, {
     String? providerName,
-    Logger? logger,
+    LLMLogger? logger,
     Map<String, dynamic>? queryParameters,
     Options? options,
     CancelToken? cancelToken,
   }) async {
     final provider = providerName ?? 'Unknown';
-    final log = logger ?? _logger;
+    final log = logger ?? _fallbackLogger;
 
     try {
-      if (log.isLoggable(Level.FINE)) {
-        log.fine('$provider request: GET $endpoint');
-      }
+      log.fine('$provider request: GET $endpoint');
 
       final response = await dio.get(
         endpoint,
@@ -170,29 +172,32 @@ class HttpResponseHandler {
         cancelToken: cancelToken,
       );
 
-      if (log.isLoggable(Level.FINE)) {
-        log.fine('$provider HTTP status: ${response.statusCode}');
-      }
+      log.fine('$provider HTTP status: ${response.statusCode}');
 
-      if (response.statusCode != 200) {
-        log.severe('$provider API returned status ${response.statusCode}');
+      final statusCode = response.statusCode ?? 0;
+      if (statusCode < 200 || statusCode >= 300) {
+        log.severe('$provider API returned status $statusCode');
         throw DioException(
           requestOptions: response.requestOptions,
           response: response,
-          message: '$provider API returned status ${response.statusCode}',
+          message: '$provider API returned status $statusCode',
         );
       }
 
-      return parseJsonResponse(response.data, providerName: provider);
+      return parseJsonResponse(
+        response.data,
+        providerName: provider,
+        logger: log,
+      );
     } on DioException catch (e) {
-      log.severe('$provider HTTP GET request failed: ${e.message}');
+      log.severe('$provider HTTP GET request failed: ${e.message}', e);
       // Convert DioException to LLMError using centralized handler
       throw await DioErrorHandler.handleDioError(e, provider);
     } catch (e) {
       if (e is LLMError) {
         rethrow;
       }
-      log.severe('Unexpected error in $provider getJson: $e');
+      log.severe('Unexpected error in $provider getJson: $e', e);
       throw GenericError('Unexpected error: $e');
     }
   }

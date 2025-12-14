@@ -29,7 +29,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customHeaders': {
+          LLMConfigKeys.customHeaders: {
             'X-Custom-Header': 'custom-value',
             'User-Agent': 'TestApp/1.0',
           }
@@ -52,7 +52,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customHeaders': {
+          LLMConfigKeys.customHeaders: {
             'Authorization': 'Bearer custom-key',
           }
         });
@@ -74,9 +74,9 @@ void main() {
           model: 'test-model',
           timeout: Duration(seconds: 60),
         ).withExtensions({
-          'connectionTimeout': Duration(seconds: 30),
-          'receiveTimeout': Duration(minutes: 5),
-          'sendTimeout': Duration(seconds: 120),
+          LLMConfigKeys.connectionTimeout: Duration(seconds: 30),
+          LLMConfigKeys.receiveTimeout: Duration(minutes: 5),
+          LLMConfigKeys.sendTimeout: Duration(seconds: 120),
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(
@@ -115,7 +115,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'enableHttpLogging': true,
+          LLMConfigKeys.enableHttpLogging: true,
         });
 
         final dioWithLogging = HttpConfigUtils.createConfiguredDio(
@@ -147,7 +147,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'enableHttpLogging': false,
+          LLMConfigKeys.enableHttpLogging: false,
         });
 
         final configDefault = LLMConfig(
@@ -208,9 +208,9 @@ void main() {
           model: 'test-model',
           timeout: Duration(seconds: 60),
         ).withExtensions({
-          'connectionTimeout': Duration(seconds: 60),
-          'receiveTimeout': Duration(seconds: 60),
-          'httpProxy': 'http://proxy.example.com:8080',
+          LLMConfigKeys.connectionTimeout: Duration(seconds: 60),
+          LLMConfigKeys.receiveTimeout: Duration(seconds: 60),
+          LLMConfigKeys.httpProxy: 'http://proxy.example.com:8080',
         });
 
         expect(
@@ -245,7 +245,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'httpProxy': 'invalid-proxy-url',
+          LLMConfigKeys.httpProxy: 'invalid-proxy-url',
         });
 
         // Should not throw, but may log warnings
@@ -259,7 +259,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'bypassSSLVerification': true,
+          LLMConfigKeys.bypassSSLVerification: true,
         });
 
         // Should not throw, but may log warnings
@@ -276,7 +276,7 @@ void main() {
           model: 'test-model',
           timeout: Duration(seconds: 60),
         ).withExtensions({
-          'connectionTimeout': Duration(seconds: 30),
+          LLMConfigKeys.connectionTimeout: Duration(seconds: 30),
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(
@@ -316,7 +316,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customHeaders': {
+          LLMConfigKeys.customHeaders: {
             'X-Custom': 'custom-value',
             'User-Agent': 'CustomApp/1.0',
           }
@@ -343,7 +343,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'customHeaders': <String, String>{},
+          LLMConfigKeys.customHeaders: <String, String>{},
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(

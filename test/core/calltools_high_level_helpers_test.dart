@@ -8,8 +8,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('High-level callTools integration', () {
-    test('streamTextParts forwards callTools via LanguageModel path',
-        () async {
+    test('streamTextParts forwards callTools via LanguageModel path', () async {
       final factory = _TestChatProviderFactory();
       LLMProviderRegistry.registerOrReplace(factory);
 
@@ -176,8 +175,6 @@ class _TestChatProvider extends ChatCapability {
     // Emit a minimal completion so high-level helpers can complete.
     yield CompletionEvent(_TestChatResponse('ok'));
   }
-
-  
 }
 
 /// ChatCapability for structured output tests: streams a JSON object.
@@ -209,8 +206,6 @@ class _StructuredTestChatProvider extends ChatCapability {
     yield TextDeltaEvent(jsonText);
     yield CompletionEvent(_TestChatResponse(jsonText));
   }
-
-  
 }
 
 /// Provider factory for _TestChatProvider used in streamTextParts test.

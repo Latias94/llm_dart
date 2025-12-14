@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' show ToolResultTextPayload;
-import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart_openai/testing.dart' as openai;
 import 'package:test/test.dart';
 
 void main() {
@@ -53,7 +53,8 @@ void main() {
       final content = mapped['content'] as List;
       expect(content, hasLength(1));
       expect(content.first['type'], equals('image_url'));
-      expect(content.first['image_url']['url'], startsWith('data:image/png;base64,'));
+      expect(content.first['image_url']['url'],
+          startsWith('data:image/png;base64,'));
     });
 
     test('maps user text + image bytes to mixed parts (chat completions)', () {
@@ -70,7 +71,8 @@ void main() {
       expect(content[0]['type'], equals('text'));
       expect(content[0]['text'], equals('What is in this image?'));
       expect(content[1]['type'], equals('image_url'));
-      expect(content[1]['image_url']['url'], startsWith('data:image/png;base64,'));
+      expect(
+          content[1]['image_url']['url'], startsWith('data:image/png;base64,'));
     });
 
     test('maps user image url part (responses api)', () {
@@ -82,7 +84,8 @@ void main() {
         ],
       );
 
-      final mapped = responsesClient.buildApiMessagesFromPrompt([message]).single;
+      final mapped =
+          responsesClient.buildApiMessagesFromPrompt([message]).single;
       final content = mapped['content'] as List;
 
       expect(mapped['role'], equals('user'));
@@ -128,7 +131,8 @@ void main() {
       expect(mapped['tool_calls'], isA<List>());
       expect(mapped['tool_calls'], hasLength(1));
       expect(mapped['tool_calls'][0]['id'], equals('call_123'));
-      expect(mapped['tool_calls'][0]['function']['name'], equals('get_weather'));
+      expect(
+          mapped['tool_calls'][0]['function']['name'], equals('get_weather'));
     });
 
     test('maps tool results to role=tool messages', () {

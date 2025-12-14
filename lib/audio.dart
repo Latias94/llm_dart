@@ -59,6 +59,9 @@ Future<String> transcribe({
 ///
 /// This variant accepts a file path and uses the underlying audio
 /// provider's `transcribeFile(...)` convenience method.
+///
+/// Note: On web, file-path based transcription is typically not supported.
+/// Prefer [transcribe] with in-memory audio bytes.
 Future<String> transcribeFile({
   required String model,
   required String filePath,

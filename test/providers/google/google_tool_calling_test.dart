@@ -1,6 +1,7 @@
 // Google tool calling tests verify tool invocation and request shaping.
 
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_google/testing.dart';
 import 'package:test/test.dart';
 import 'google_test_utils.dart';
 

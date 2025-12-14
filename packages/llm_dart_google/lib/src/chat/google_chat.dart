@@ -47,6 +47,7 @@ class GoogleChat implements ChatCapability {
     final responseData = await client.postJson(
       _buildEndpoint(stream: false),
       requestBody,
+      headers: options?.headers,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
     return _parseResponse(responseData);
@@ -71,6 +72,7 @@ class GoogleChat implements ChatCapability {
     final stream = client.postStreamRaw(
       _buildEndpoint(stream: true),
       requestBody,
+      headers: options?.headers,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
 
@@ -394,15 +396,17 @@ class GoogleChat implements ChatCapability {
       generationConfig['seed'] = config.seed;
     }
 
-    if (config.reasoningEffort != null || config.includeThoughts == true) {
+    final effectiveReasoningEffort =
+        options?.reasoningEffort ?? config.reasoningEffort;
+    if (effectiveReasoningEffort != null || config.includeThoughts == true) {
       final thinkingConfig = <String, dynamic>{};
 
       if (config.includeThoughts == true) {
         thinkingConfig['includeThoughts'] = true;
       }
 
-      if (config.reasoningEffort != null) {
-        thinkingConfig['reasoningEffort'] = config.reasoningEffort!.value;
+      if (effectiveReasoningEffort != null) {
+        thinkingConfig['reasoningEffort'] = effectiveReasoningEffort.value;
       }
 
       if (config.thinkingBudgetTokens != null) {
@@ -427,10 +431,11 @@ class GoogleChat implements ChatCapability {
       generationConfig['responseMimeType'] = 'text/plain';
     }
 
-    if (config.jsonSchema?.schema != null &&
+    final effectiveJsonSchema = options?.jsonSchema ?? config.jsonSchema;
+    if (effectiveJsonSchema?.schema != null &&
         config.enableImageGeneration != true) {
       generationConfig['responseMimeType'] ??= 'application/json';
-      generationConfig['responseSchema'] = config.jsonSchema!.schema;
+      generationConfig['responseSchema'] = effectiveJsonSchema!.schema;
     }
 
     if (generationConfig.isNotEmpty) {
@@ -451,7 +456,13 @@ class GoogleChat implements ChatCapability {
     // tools (for example Google grounding tools) in a Vercel AI SDK-style
     // fashion. This mirrors the behavior of `google-prepare-tools.ts`.
     final callTools = options?.callTools;
-    if (callTools != null && callTools.isNotEmpty) {
+    if (callTools != null) {
+      if (callTools.isEmpty) {
+        // Explicitly configured tools for this call: none.
+        // Skip legacy tools + configured search/file tools to avoid mixing sources.
+        return body;
+      }
+
       final functionSpecs = <FunctionCallToolSpec>[];
       final providerSpecs = <ProviderDefinedToolSpec>[];
 
@@ -617,7 +628,7 @@ class GoogleChat implements ChatCapability {
       }
     }
 
-    final effectiveTools = options?.tools ?? tools ?? config.tools;
+    final effectiveTools = options?.resolveTools() ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = [
         {
@@ -826,9 +837,13 @@ class GoogleChat implements ChatCapability {
       } else if (part is FileContentPart) {
         _convertFilePart(part, parts);
       } else if (part is UrlFileContentPart) {
+        final mimeType = part.mime.mimeType;
+        final effectiveMimeType = mimeType == 'image/*'
+            ? _inferImageMimeTypeFromUrl(part.url)
+            : mimeType;
         parts.add({
           'fileData': {
-            'mimeType': _inferImageMimeTypeFromUrl(part.url),
+            'mimeType': effectiveMimeType,
             'fileUri': part.url,
           },
         });

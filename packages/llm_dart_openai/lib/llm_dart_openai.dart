@@ -5,22 +5,22 @@
 /// abstractions defined in `llm_dart_core`.
 library;
 
+// ===== Stable public API surface =====
+//
+// Keep exports focused on:
+// - provider config + registry factory
+// - provider implementation (capabilities)
+// - Vercel AI-style facade (`createOpenAI`, `openai`, etc.)
+// - Responses built-in tools + Responses capability interface
+//
+// Low-level building blocks (HTTP client, request builders, internal models)
+// are intentionally not exported. For repository tests and advanced internal
+// use cases, import `package:llm_dart_openai/testing.dart`.
 export 'src/config/openai_config.dart';
-export 'src/client/openai_client.dart';
-export 'src/provider/openai_provider.dart';
-export 'src/chat/openai_chat.dart';
-export 'src/embeddings/openai_embeddings.dart';
-export 'src/audio/openai_audio.dart';
-export 'src/completion/openai_completion.dart';
-export 'src/images/openai_images.dart';
-export 'src/files/openai_files.dart';
-export 'src/moderation/openai_moderation.dart';
 export 'src/tools/openai_builtin_tools.dart';
-export 'src/responses/openai_responses_capability.dart';
-export 'src/responses/openai_responses.dart';
-export 'src/models/openai_models.dart';
 export 'src/http/openai_dio_strategy.dart';
-export 'src/assistants/openai_assistants.dart';
+export 'src/provider/openai_provider.dart';
+export 'src/responses/openai_responses_capability.dart';
 export 'src/factory/openai_provider_factory.dart'
     show OpenAIProviderFactory, registerOpenAIProvider;
 

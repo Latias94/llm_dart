@@ -613,6 +613,16 @@ Stream<StreamTextPart> adaptStreamText(
         // be emitted once arguments become valid JSON, or never if the provider
         // never sends them.
       }
+    } else if (event is ErrorEvent) {
+      // Propagate provider-streamed errors instead of silently dropping them.
+      // Some provider implementations surface failures as ErrorEvent values
+      // rather than throwing from the underlying stream.
+      if (textStarted) {
+        yield StreamTextEnd(textId);
+        textStarted = false;
+      }
+
+      throw event.error;
     } else if (event is CompletionEvent) {
       final response = event.response;
 
@@ -1181,6 +1191,40 @@ class LanguageModelCallOptions {
     this.headers,
     this.metadata,
   });
+
+  /// Resolve function tools for providers that only accept a plain [Tool] list.
+  ///
+  /// When [callTools] is provided, it takes precedence over [tools]. If
+  /// [callTools] contains provider-defined tools, they cannot be represented as
+  /// plain function tools; in that case this returns an empty list to indicate
+  /// the call explicitly configured tools and should not fall back to any
+  /// config-level defaults.
+  List<Tool>? resolveTools() {
+    final callTools = this.callTools;
+    if (callTools != null) {
+      if (callTools.isEmpty) {
+        return const <Tool>[];
+      }
+
+      final hasProviderDefined = callTools.any(
+        (spec) => spec is ProviderDefinedToolSpec,
+      );
+      if (hasProviderDefined) {
+        return const <Tool>[];
+      }
+
+      final functionTools = <Tool>[];
+      for (final spec in callTools) {
+        if (spec is FunctionCallToolSpec) {
+          functionTools.add(spec.tool);
+        }
+      }
+
+      return functionTools;
+    }
+
+    return tools;
+  }
 }
 
 /// High-level language model interface used by helper functions.
@@ -1383,7 +1427,7 @@ class DefaultLanguageModel implements LanguageModel {
   }) async {
     final response = await _chat.chat(
       messages,
-      tools: null,
+      tools: options?.resolveTools(),
       options: options,
       cancelToken: cancelToken,
     );
@@ -1407,7 +1451,7 @@ class DefaultLanguageModel implements LanguageModel {
   }) {
     return _chat.chatStream(
       messages,
-      tools: null,
+      tools: options?.resolveTools(),
       options: options,
       cancelToken: cancelToken,
     );

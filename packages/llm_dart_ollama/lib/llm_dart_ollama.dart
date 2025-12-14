@@ -1,12 +1,19 @@
 library;
 
+// ===== Stable public API surface =====
+//
+// Keep exports focused on:
+// - provider config + Dio strategy + registry factory
+// - provider implementation (capabilities)
+// - high-level admin helper
+// - Vercel AI-style facade (`createOllama`, etc.)
+//
+// Low-level building blocks (HTTP client, chat/completion modules, internal
+// models) are intentionally not exported. For repository tests and advanced
+// internal use cases, import `package:llm_dart_ollama/testing.dart`.
 export 'src/config/ollama_config.dart';
-export 'src/client/ollama_client.dart';
 export 'src/http/ollama_dio_strategy.dart';
-export 'src/chat/ollama_chat.dart';
-export 'src/completion/ollama_completion.dart';
-export 'src/embeddings/ollama_embeddings.dart';
-export 'src/models/ollama_models.dart';
+export 'src/admin/ollama_admin.dart';
 export 'src/provider/ollama_provider.dart';
 export 'src/factory/ollama_provider_factory.dart'
     show OllamaProviderFactory, registerOllamaProvider;

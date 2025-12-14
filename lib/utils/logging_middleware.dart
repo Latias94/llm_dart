@@ -1,6 +1,5 @@
 // Chat logging middleware for prompt-first ModelMessage conversations.
 
-import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Configuration options for the built-in logging middlewares.
@@ -69,10 +68,8 @@ String _truncate(String value, int maxLength) {
 }
 
 String _safeMessagePreview(ModelMessage message, int maxLength) {
-  final text = message.parts
-      .whereType<TextContentPart>()
-      .map((p) => p.text)
-      .join('\n');
+  final text =
+      message.parts.whereType<TextContentPart>().map((p) => p.text).join('\n');
 
   final preview = text.isNotEmpty
       ? text
@@ -97,13 +94,12 @@ Map<String, dynamic>? _configMetadata(LLMConfig config) {
 /// (provider/model, usage, warnings, metadata) and can optionally
 /// include prompt/response/thinking content depending on [options].
 ChatMiddleware createChatLoggingMiddleware({
-  Logger? logger,
+  LLMLogger? logger,
   LoggingOptions options = const LoggingOptions(),
 }) {
-  final log = logger ?? Logger('LLMChatLoggingMiddleware');
-
   return ChatMiddleware(
     wrapChat: (next, ctx) async {
+      final log = logger ?? resolveLogger(ctx.config);
       if (options.logRequestInfo) {
         log.info(
           'chat request provider=${ctx.providerId} model=${ctx.model} '
@@ -177,6 +173,7 @@ ChatMiddleware createChatLoggingMiddleware({
       }
     },
     wrapStream: (next, ctx) async* {
+      final log = logger ?? resolveLogger(ctx.config);
       if (options.logRequestInfo) {
         log.info(
           'chatStream request provider=${ctx.providerId} model=${ctx.model} '
@@ -237,13 +234,12 @@ ChatMiddleware createChatLoggingMiddleware({
 /// (provider/model, input size) and can optionally include partial
 /// input text depending on [options].
 EmbeddingMiddleware createEmbeddingLoggingMiddleware({
-  Logger? logger,
+  LLMLogger? logger,
   LoggingOptions options = const LoggingOptions(),
 }) {
-  final log = logger ?? Logger('LLMEmbeddingLoggingMiddleware');
-
   return EmbeddingMiddleware(
     wrapEmbed: (next, ctx) async {
+      final log = logger ?? resolveLogger(ctx.config);
       if (options.logRequestInfo) {
         log.info(
           'embed request provider=${ctx.providerId} model=${ctx.model} '

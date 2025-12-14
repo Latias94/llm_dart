@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_google/testing.dart';
 
 /// Tests for Google provider thinking functionality
 ///

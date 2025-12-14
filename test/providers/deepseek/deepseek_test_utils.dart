@@ -1,10 +1,11 @@
 import 'package:dio/dio.dart';
-import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek;
+import 'package:llm_dart_deepseek/testing.dart' as deepseek;
 
 /// Capturing DeepSeek client used in tests to inspect JSON request bodies.
 class CapturingDeepSeekClient extends deepseek.DeepSeekClient {
   Map<String, dynamic>? lastRequestBody;
   String? lastEndpoint;
+  Map<String, String>? lastHeaders;
 
   CapturingDeepSeekClient(super.config);
 
@@ -13,9 +14,11 @@ class CapturingDeepSeekClient extends deepseek.DeepSeekClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     lastEndpoint = endpoint;
     lastRequestBody = data;
+    lastHeaders = headers;
 
     return {
       'choices': [
@@ -50,6 +53,7 @@ class FakeDeepSeekStreamClient extends deepseek.DeepSeekClient {
     String endpoint,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async* {
     for (final chunk in chunks) {
       yield chunk;

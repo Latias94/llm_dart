@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../config/deepseek_config.dart';
@@ -12,10 +12,13 @@ import '../http/deepseek_dio_strategy.dart';
 /// DeepSeek capability implementations can use.
 class DeepSeekClient {
   final DeepSeekConfig config;
-  final Logger logger = Logger('DeepSeekClient');
+  final LLMLogger logger;
   late final Dio dio;
 
-  DeepSeekClient(this.config) {
+  DeepSeekClient(this.config)
+      : logger = config.originalConfig == null
+            ? const NoopLLMLogger()
+            : resolveLogger(config.originalConfig!) {
     dio = DioClientFactory.create(
       strategy: DeepSeekDioStrategy(),
       config: config,
@@ -27,18 +30,23 @@ class DeepSeekClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     try {
+      final options = headers == null
+          ? null
+          : Options(headers: HttpHeaderUtils.mergeDioHeaders(dio, headers));
       return await HttpResponseHandler.postJson(
         dio,
         endpoint,
         data,
         providerName: 'DeepSeek',
         logger: logger,
+        options: options,
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
-      logger.severe('HTTP request failed: ${e.message}');
+      logger.severe('HTTP request failed: ${e.message}', e);
       throw await DeepSeekErrorHandler.handleDioError(e);
     }
   }
@@ -48,15 +56,18 @@ class DeepSeekClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async* {
     try {
+      final mergedHeaders = HttpHeaderUtils.mergeDioHeaders(dio, headers);
+      mergedHeaders['Accept'] = 'text/event-stream';
       final response = await dio.post(
         endpoint,
         data: data,
         cancelToken: cancelToken,
         options: Options(
           responseType: ResponseType.stream,
-          headers: {'Accept': 'text/event-stream'},
+          headers: mergedHeaders,
         ),
       );
 
@@ -87,7 +98,7 @@ class DeepSeekClient {
         yield remaining;
       }
     } on DioException catch (e) {
-      logger.severe('Stream request failed: ${e.message}');
+      logger.severe('Stream request failed: ${e.message}', e);
       throw await DeepSeekErrorHandler.handleDioError(e);
     }
   }

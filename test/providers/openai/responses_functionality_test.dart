@@ -10,14 +10,13 @@ library;
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
-import 'package:llm_dart/providers/openai/responses_capability.dart';
 
 void main() {
   group('OpenAI Responses API Functionality', () {
     // ========== Method Interface Tests ==========
     group('Method Interfaces', () {
       late openai.OpenAIProvider provider;
-      late OpenAIResponses responses;
+      late openai.OpenAIResponsesCapability responses;
 
       setUp(() async {
         provider = await ai()
@@ -61,18 +60,17 @@ void main() {
       });
 
       test('should implement OpenAIResponsesCapability interface', () {
-        expect(responses, isA<OpenAIResponsesCapability>());
+        expect(responses, isA<openai.OpenAIResponsesCapability>());
 
         // Test all OpenAIResponsesCapability methods exist without calling them
-        final capability = responses as OpenAIResponsesCapability;
-        expect(capability.chatWithTools, isA<Function>());
-        expect(capability.chatWithToolsBackground, isA<Function>());
-        expect(capability.getResponse, isA<Function>());
-        expect(capability.deleteResponse, isA<Function>());
-        expect(capability.cancelResponse, isA<Function>());
-        expect(capability.listInputItems, isA<Function>());
-        expect(capability.continueConversation, isA<Function>());
-        expect(capability.forkConversation, isA<Function>());
+        expect(responses.chatWithTools, isA<Function>());
+        expect(responses.chatWithToolsBackground, isA<Function>());
+        expect(responses.getResponse, isA<Function>());
+        expect(responses.deleteResponse, isA<Function>());
+        expect(responses.cancelResponse, isA<Function>());
+        expect(responses.listInputItems, isA<Function>());
+        expect(responses.continueConversation, isA<Function>());
+        expect(responses.forkConversation, isA<Function>());
       });
 
       test('should support extension methods', () {
@@ -86,7 +84,7 @@ void main() {
     // ========== Message Handling Tests ==========
     group('Message Handling', () {
       late openai.OpenAIProvider provider;
-      late OpenAIResponses responses;
+      late openai.OpenAIResponsesCapability responses;
 
       setUp(() async {
         provider = await ai()
@@ -158,7 +156,7 @@ void main() {
     // ========== Tool Handling Tests ==========
     group('Tool Handling', () {
       late openai.OpenAIProvider provider;
-      late OpenAIResponses responses;
+      late openai.OpenAIResponsesCapability responses;
 
       setUp(() async {
         provider = await ai()
@@ -220,8 +218,9 @@ void main() {
       });
 
       test('should handle multiple tools', () {
-        final messages =
-            [ModelMessage.userText('Help me with weather and time')];
+        final messages = [
+          ModelMessage.userText('Help me with weather and time')
+        ];
         final tools = [
           Tool.function(
             name: 'get_weather',
@@ -300,7 +299,7 @@ void main() {
     // ========== Response ID Handling Tests ==========
     group('Response ID Handling', () {
       late openai.OpenAIProvider provider;
-      late OpenAIResponses responses;
+      late openai.OpenAIResponsesCapability responses;
 
       setUp(() async {
         provider = await ai()
@@ -373,7 +372,7 @@ void main() {
     // ========== Streaming Tests ==========
     group('Streaming', () {
       late openai.OpenAIProvider provider;
-      late OpenAIResponses responses;
+      late openai.OpenAIResponsesCapability responses;
 
       setUp(() async {
         provider = await ai()

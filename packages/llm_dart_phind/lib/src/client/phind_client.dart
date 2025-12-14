@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
@@ -13,12 +12,14 @@ import '../http/phind_dio_strategy.dart';
 /// This module handles all HTTP communication with the Phind API.
 /// Phind has a unique API format that requires special handling.
 class PhindClient {
-  static final Logger _logger = Logger('PhindClient');
-
   final PhindConfig config;
+  final LLMLogger logger;
   late final Dio _dio;
 
-  PhindClient(this.config) {
+  PhindClient(this.config)
+      : logger = config.originalConfig == null
+            ? const NoopLLMLogger()
+            : resolveLogger(config.originalConfig!) {
     // Use unified Dio client factory with Phind-specific strategy
     _dio = DioClientFactory.create(
       strategy: PhindDioStrategy(),
@@ -26,27 +27,27 @@ class PhindClient {
     );
   }
 
-  /// Logger instance for debugging
-  Logger get logger => _logger;
-
   /// Make a POST request and return JSON response
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     try {
-      if (_logger.isLoggable(Level.FINE)) {
-        _logger.fine('Phind request payload: ${jsonEncode(data)}');
-      }
-
+      final effectiveHeaders = headers == null
+          ? null
+          : HttpHeaderUtils.mergeDioHeaders(_dio, headers);
       final response = await _dio.post(
         endpoint,
         data: data,
         cancelToken: cancelToken,
+        options: effectiveHeaders == null
+            ? null
+            : Options(headers: effectiveHeaders),
       );
 
-      _logger.info('Phind HTTP status: ${response.statusCode}');
+      logger.info('Phind HTTP status: ${response.statusCode}');
 
       if (response.statusCode != 200) {
         throw ProviderError(
@@ -71,6 +72,7 @@ class PhindClient {
         ]
       };
     } on DioException catch (e) {
+      logger.severe('Phind request failed: ${e.message}', e);
       throw await DioErrorHandler.handleDioError(e, 'Phind');
     }
   }
@@ -80,20 +82,23 @@ class PhindClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async* {
     try {
-      if (_logger.isLoggable(Level.FINE)) {
-        _logger.fine('Phind stream request payload: ${jsonEncode(data)}');
-      }
-
+      final effectiveHeaders = headers == null
+          ? null
+          : HttpHeaderUtils.mergeDioHeaders(_dio, headers);
       final response = await _dio.post(
         endpoint,
         data: data,
         cancelToken: cancelToken,
-        options: Options(responseType: ResponseType.stream),
+        options: Options(
+          responseType: ResponseType.stream,
+          headers: effectiveHeaders,
+        ),
       );
 
-      _logger.info('Phind stream HTTP status: ${response.statusCode}');
+      logger.info('Phind stream HTTP status: ${response.statusCode}');
 
       if (response.statusCode != 200) {
         throw ProviderError(
@@ -106,6 +111,7 @@ class PhindClient {
         yield chunk;
       }
     } on DioException catch (e) {
+      logger.severe('Phind stream request failed: ${e.message}', e);
       throw await DioErrorHandler.handleDioError(e, 'Phind');
     }
   }

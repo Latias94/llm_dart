@@ -129,6 +129,10 @@ export 'package:llm_dart_core/llm_dart_core.dart'
         // Model capability configuration
         ModelCapabilityConfig,
         LLMConfigKeys,
+        LLMLogger,
+        ConsoleLLMLogger,
+        NoopLLMLogger,
+        resolveLogger,
 
         // Cancellation helpers
         CancellationHelper,
@@ -253,36 +257,23 @@ export 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart'
         ProviderDefinedToolFactory,
         createProviderDefinedExecutableTool;
 
-// Core registry
-export 'core/registry.dart';
-export 'core/base_http_provider.dart';
-
-// Provider exports
-export 'providers/openai/openai.dart';
-export 'providers/anthropic/anthropic.dart';
-export 'providers/anthropic/client.dart';
-export 'providers/anthropic/models.dart';
-export 'providers/google/google.dart';
-export 'providers/google/tts.dart';
-export 'providers/deepseek/deepseek.dart';
-export 'providers/deepseek/client.dart';
-export 'providers/ollama/ollama.dart';
-export 'providers/xai/xai.dart';
-export 'providers/phind/phind.dart';
-export 'providers/groq/groq.dart';
-export 'providers/elevenlabs/elevenlabs.dart';
-
-// Factory exports
-export 'providers/factories/base_factory.dart';
+// Provider packages ("full bundle").
+export 'package:llm_dart_openai/llm_dart_openai.dart';
+export 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+export 'package:llm_dart_google/llm_dart_google.dart';
+export 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
+export 'package:llm_dart_ollama/llm_dart_ollama.dart';
+export 'package:llm_dart_xai/llm_dart_xai.dart';
+export 'package:llm_dart_groq/llm_dart_groq.dart';
+export 'package:llm_dart_phind/llm_dart_phind.dart';
+export 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
 
 // Builder exports
 export 'builder/llm_builder.dart';
 export 'builder/llm_builder_providers.dart';
 export 'builder/chat_prompt_builder.dart';
 export 'builder/http_config.dart';
-export 'builder/audio_config.dart';
-export 'builder/image_config.dart';
-export 'builder/provider_config.dart';
 
 // Utility exports
 //
@@ -297,10 +288,17 @@ export 'package:llm_dart_core/llm_dart_core.dart'
         RegistryStats,
         ProviderRegistryClient,
         createProviderRegistry,
+        LLMProviderFactory,
+        LLMProviderRegistry,
+        ProviderInfo,
         LanguageModelProviderFactory,
         EmbeddingModelProviderFactory,
         ImageModelProviderFactory,
-        SpeechModelProviderFactory;
+        SpeechModelProviderFactory,
+        BaseProviderFactory,
+        OpenAICompatibleBaseFactory,
+        LocalProviderFactory,
+        AudioProviderFactory;
 export 'utils/logging_middleware.dart';
 export 'utils/default_settings_middleware.dart';
 

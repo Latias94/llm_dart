@@ -52,6 +52,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     final responseData = await client.postJson(
       responsesEndpoint,
       requestBody,
+      headers: options?.headers,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
     );
     return _parseResponse(responseData);
@@ -70,7 +71,11 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       true,
       options: options,
     );
-    final responseData = await client.postJson(responsesEndpoint, requestBody);
+    final responseData = await client.postJson(
+      responsesEndpoint,
+      requestBody,
+      headers: options?.headers,
+    );
     return _parseResponse(responseData);
   }
 
@@ -96,6 +101,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       final stream = client.postStreamRaw(
         responsesEndpoint,
         requestBody,
+        headers: options?.headers,
         cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
       );
 
@@ -310,9 +316,11 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     if (effectiveTopK != null) body['top_k'] = effectiveTopK;
 
     // Only attach reasoning config for reasoning-capable models.
-    if (config.reasoningEffort != null && isReasoningModel) {
+    final effectiveReasoningEffort =
+        options?.reasoningEffort ?? config.reasoningEffort;
+    if (effectiveReasoningEffort != null && isReasoningModel) {
       body['reasoning'] = {
-        'effort': config.reasoningEffort!.value,
+        'effort': effectiveReasoningEffort.value,
       };
     }
 
@@ -322,7 +330,13 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     // [tools] list and allows callers to mix traditional function tools
     // with provider-defined tools (`openai.*`) for the Responses API.
     final callTools = options?.callTools;
-    if (callTools != null && callTools.isNotEmpty) {
+    if (callTools != null) {
+      if (callTools.isEmpty) {
+        // Explicitly configured tools for this call: none.
+        // Skip legacy tools + builtInTools to avoid mixing sources.
+        return body;
+      }
+
       final functionSpecs = <FunctionCallToolSpec>[];
       final providerSpecs = <ProviderDefinedToolSpec>[];
 
@@ -434,7 +448,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
 
     final allTools = <Map<String, dynamic>>[];
 
-    final effectiveTools = options?.tools ?? tools ?? config.tools;
+    final effectiveTools = options?.resolveTools() ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       allTools
           .addAll(effectiveTools.map((t) => _convertToolToResponsesFormat(t)));
@@ -455,8 +469,9 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       }
     }
 
-    if (config.jsonSchema != null) {
-      final schema = config.jsonSchema!;
+    final effectiveJsonSchema = options?.jsonSchema ?? config.jsonSchema;
+    if (effectiveJsonSchema != null) {
+      final schema = effectiveJsonSchema;
       final responseFormat = <String, dynamic>{
         'type': 'json_schema',
         'json_schema': schema.toJson(),

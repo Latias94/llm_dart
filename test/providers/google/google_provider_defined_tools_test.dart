@@ -7,6 +7,7 @@ import 'package:llm_dart/llm_dart.dart';
 import 'package:test/test.dart';
 
 import 'google_test_utils.dart';
+import 'package:llm_dart_google/testing.dart';
 
 void main() {
   group('Google provider-defined tools (callTools)', () {
@@ -219,6 +220,40 @@ void main() {
       final allowedNames =
           (functionCallingConfig['allowedFunctionNames'] as List?) ?? const [];
       expect(allowedNames, contains('get_weather'));
+    });
+
+    test('empty callTools disables tools and configured search tools',
+        () async {
+      final functionTool = Tool.function(
+        name: 'ping',
+        description: 'Ping tool',
+        parameters: ParametersSchema(
+          schemaType: 'object',
+          properties: const {},
+          required: const [],
+        ),
+      );
+
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-2.0-pro',
+        tools: [functionTool],
+        webSearchEnabled: true,
+      );
+
+      final client = CapturingGoogleClient(config);
+      final chat = GoogleChat(client, config);
+
+      final messages = [ModelMessage.userText('hello')];
+
+      final options = LanguageModelCallOptions(callTools: const []);
+
+      await chat.chat(messages, options: options);
+
+      final body = client.lastRequestBody;
+      expect(body, isNotNull);
+      expect(body!.containsKey('tools'), isFalse);
+      expect(body.containsKey('toolConfig'), isFalse);
     });
   });
 }

@@ -2,25 +2,22 @@ import 'package:dio/dio.dart';
 import 'package:test/test.dart';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart/providers/anthropic/config.dart';
-import 'package:llm_dart/providers/anthropic/dio_strategy.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart'
+    show AnthropicConfig, AnthropicDioStrategy;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
-import 'package:llm_dart/providers/openai/dio_strategy.dart';
-import 'package:llm_dart/providers/google/config.dart';
-import 'package:llm_dart/providers/google/dio_strategy.dart';
-import 'package:llm_dart/providers/xai/config.dart';
-import 'package:llm_dart/providers/xai/dio_strategy.dart';
-import 'package:llm_dart/providers/groq/config.dart';
-import 'package:llm_dart/providers/groq/dio_strategy.dart';
-import 'package:llm_dart/providers/deepseek/config.dart';
 import 'package:llm_dart_deepseek/llm_dart_deepseek.dart'
-    show DeepSeekDioStrategy;
-import 'package:llm_dart/providers/ollama/config.dart';
-import 'package:llm_dart/providers/ollama/dio_strategy.dart';
-import 'package:llm_dart/providers/phind/config.dart';
-import 'package:llm_dart/providers/phind/dio_strategy.dart';
-import 'package:llm_dart/providers/elevenlabs/config.dart';
-import 'package:llm_dart/providers/elevenlabs/dio_strategy.dart';
+    show DeepSeekConfig, DeepSeekDioStrategy;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart'
+    show ElevenLabsConfig, ElevenLabsDioStrategy;
+import 'package:llm_dart_google/llm_dart_google.dart'
+    show GoogleConfig, GoogleDioStrategy;
+import 'package:llm_dart_groq/llm_dart_groq.dart'
+    show GroqConfig, GroqDioStrategy;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart'
+    show OllamaConfig, OllamaDioStrategy;
+import 'package:llm_dart_phind/llm_dart_phind.dart'
+    show PhindConfig, PhindDioStrategy;
+import 'package:llm_dart_xai/llm_dart_xai.dart' show XAIConfig, XAIDioStrategy;
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
@@ -54,7 +51,7 @@ void main() {
       );
 
       final dio = DioClientFactory.create(
-        strategy: OpenAIDioStrategy(),
+        strategy: openai.OpenAIDioStrategy(),
         config: config,
       );
 
@@ -94,7 +91,7 @@ void main() {
         apiKey: 'test-key',
         model: 'claude-sonnet-4-20250514',
       ).withExtensions({
-        'customDio': customDio,
+        LLMConfigKeys.customDio: customDio,
       });
 
       final config = AnthropicConfig(
@@ -135,7 +132,7 @@ void main() {
         apiKey: 'test-key',
         model: 'claude-sonnet-4-20250514',
       ).withExtensions({
-        'customDio': customDio,
+        LLMConfigKeys.customDio: customDio,
       });
 
       final config = AnthropicConfig(
@@ -178,7 +175,7 @@ void main() {
         model: 'gpt-4',
       );
 
-      final strategy = OpenAIDioStrategy();
+      final strategy = openai.OpenAIDioStrategy();
       final headers = strategy.buildHeaders(config);
 
       expect(headers['Authorization'], equals('Bearer test-key'));
@@ -311,7 +308,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'customDio': customDio,
+        LLMConfigKeys.customDio: customDio,
       });
 
       // Test all provider strategies with custom Dio
@@ -321,7 +318,7 @@ void main() {
           'config': AnthropicConfig.fromLLMConfig(llmConfig)
         },
         {
-          'strategy': OpenAIDioStrategy(),
+          'strategy': openai.OpenAIDioStrategy(),
           'config': openai.OpenAIConfig(
               apiKey: 'test-key',
               baseUrl: 'https://api.example.com',
@@ -412,7 +409,7 @@ void main() {
           'config': AnthropicConfig.fromLLMConfig(llmConfig)
         },
         {
-          'strategy': OpenAIDioStrategy(),
+          'strategy': openai.OpenAIDioStrategy(),
           'config': openai.OpenAIConfig(
               apiKey: 'test-key',
               baseUrl: 'https://api.example.com',
@@ -505,7 +502,7 @@ void main() {
           }
         },
         {
-          'strategy': OpenAIDioStrategy(),
+          'strategy': openai.OpenAIDioStrategy(),
           'config': openai.OpenAIConfig(
               apiKey: 'test-key',
               baseUrl: 'https://api.example.com',

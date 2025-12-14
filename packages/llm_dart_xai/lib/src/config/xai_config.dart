@@ -20,6 +20,9 @@ class XAIConfig implements ProviderHttpConfig {
   final List<Tool>? tools;
   final ToolChoice? toolChoice;
   final StructuredOutputFormat? jsonSchema;
+  final List<String>? stopSequences;
+  final String? user;
+  final ServiceTier? serviceTier;
 
   final String? embeddingEncodingFormat;
   final int? embeddingDimensions;
@@ -42,6 +45,9 @@ class XAIConfig implements ProviderHttpConfig {
     this.tools,
     this.toolChoice,
     this.jsonSchema,
+    this.stopSequences,
+    this.user,
+    this.serviceTier,
     this.embeddingEncodingFormat,
     this.embeddingDimensions,
     this.searchParameters,
@@ -112,6 +118,9 @@ class XAIConfig implements ProviderHttpConfig {
       jsonSchema: config.getExtension<StructuredOutputFormat>(
         LLMConfigKeys.jsonSchema,
       ),
+      stopSequences: config.stopSequences,
+      user: config.user,
+      serviceTier: config.serviceTier,
       embeddingEncodingFormat: config.getExtension<String>(
         LLMConfigKeys.embeddingEncodingFormat,
       ),
@@ -163,6 +172,9 @@ class XAIConfig implements ProviderHttpConfig {
     List<Tool>? tools,
     ToolChoice? toolChoice,
     StructuredOutputFormat? jsonSchema,
+    List<String>? stopSequences,
+    String? user,
+    ServiceTier? serviceTier,
     String? embeddingEncodingFormat,
     int? embeddingDimensions,
     SearchParameters? searchParameters,
@@ -181,6 +193,9 @@ class XAIConfig implements ProviderHttpConfig {
       tools: tools ?? this.tools,
       toolChoice: toolChoice ?? this.toolChoice,
       jsonSchema: jsonSchema ?? this.jsonSchema,
+      stopSequences: stopSequences ?? this.stopSequences,
+      user: user ?? this.user,
+      serviceTier: serviceTier ?? this.serviceTier,
       embeddingEncodingFormat:
           embeddingEncodingFormat ?? this.embeddingEncodingFormat,
       embeddingDimensions: embeddingDimensions ?? this.embeddingDimensions,

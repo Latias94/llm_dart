@@ -17,7 +17,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'httpProxy': 'localhost:8888',
+        LLMConfigKeys.httpProxy: 'localhost:8888',
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -35,7 +35,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'bypassSSLVerification': true,
+        LLMConfigKeys.bypassSSLVerification: true,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -53,8 +53,8 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'httpProxy': 'localhost:8888',
-        'bypassSSLVerification': true,
+        LLMConfigKeys.httpProxy: 'localhost:8888',
+        LLMConfigKeys.bypassSSLVerification: true,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -74,7 +74,8 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'enableHttpLogging': true, // This doesn't require adapter change
+        LLMConfigKeys.enableHttpLogging:
+            true, // This doesn't require adapter change
       });
 
       final dioWithoutHttpConfig = HttpConfigUtils.createConfiguredDio(
@@ -88,7 +89,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'httpProxy': 'localhost:8888',
+        LLMConfigKeys.httpProxy: 'localhost:8888',
       });
 
       final dioWithHttpConfig = HttpConfigUtils.createConfiguredDio(
@@ -114,7 +115,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'sslCertificate': '/path/to/cert.pem',
+        LLMConfigKeys.sslCertificate: '/path/to/cert.pem',
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -132,14 +133,14 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'httpProxy': 'http://proxy.company.com:8080',
-        'bypassSSLVerification': false,
-        'sslCertificate': '/etc/ssl/corporate-cert.pem',
-        'enableHttpLogging': true,
-        'customHeaders': {
+        LLMConfigKeys.httpProxy: 'http://proxy.company.com:8080',
+        LLMConfigKeys.bypassSSLVerification: false,
+        LLMConfigKeys.sslCertificate: '/etc/ssl/corporate-cert.pem',
+        LLMConfigKeys.enableHttpLogging: true,
+        LLMConfigKeys.customHeaders: {
           'X-Corporate-ID': 'dept-123',
         },
-        'connectionTimeout': Duration(seconds: 30),
+        LLMConfigKeys.connectionTimeout: Duration(seconds: 30),
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -215,7 +216,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'httpProxy': '',
+          LLMConfigKeys.httpProxy: '',
         });
 
         // Empty proxy URL should not trigger custom adapter configuration
@@ -236,7 +237,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'sslCertificate': null,
+          LLMConfigKeys.sslCertificate: null,
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(
@@ -256,7 +257,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
         ).withExtensions({
-          'bypassSSLVerification': false,
+          LLMConfigKeys.bypassSSLVerification: false,
         });
 
         final dio = HttpConfigUtils.createConfiguredDio(

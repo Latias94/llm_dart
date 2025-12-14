@@ -1,10 +1,11 @@
 import 'package:dio/dio.dart';
-import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+import 'package:llm_dart_openai_compatible/testing.dart';
 
 /// Capturing client for OpenAI-compatible providers used in tests.
 class CapturingOpenAICompatibleClient extends OpenAICompatibleClient {
   Map<String, dynamic>? lastRequestBody;
   String? lastEndpoint;
+  Map<String, String>? lastHeaders;
 
   CapturingOpenAICompatibleClient(super.config);
 
@@ -13,9 +14,11 @@ class CapturingOpenAICompatibleClient extends OpenAICompatibleClient {
     String endpoint,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     lastEndpoint = endpoint;
     lastRequestBody = body;
+    lastHeaders = headers;
 
     return {
       'choices': [
@@ -33,6 +36,9 @@ class CapturingOpenAICompatibleClient extends OpenAICompatibleClient {
 /// Fake streaming client for OpenAI-compatible providers.
 class FakeOpenAICompatibleStreamClient extends OpenAICompatibleClient {
   final List<String> chunks;
+  Map<String, dynamic>? lastRequestBody;
+  String? lastEndpoint;
+  Map<String, String>? lastHeaders;
 
   FakeOpenAICompatibleStreamClient(
     super.config, {
@@ -44,7 +50,11 @@ class FakeOpenAICompatibleStreamClient extends OpenAICompatibleClient {
     String endpoint,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async* {
+    lastEndpoint = endpoint;
+    lastRequestBody = body;
+    lastHeaders = headers;
     for (final chunk in chunks) {
       yield chunk;
     }

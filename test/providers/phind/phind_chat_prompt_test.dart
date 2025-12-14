@@ -1,6 +1,7 @@
 // Phind chat prompt mapping tests validate prompt-first ModelMessage inputs.
 
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_phind/testing.dart';
 import 'package:test/test.dart';
 import 'phind_test_utils.dart';
 
@@ -45,6 +46,25 @@ void main() {
       );
 
       expect(body['user_input'], equals('Explain this code'));
+    });
+
+    test('forwards call options headers to the client', () async {
+      final config = PhindConfig(
+        apiKey: 'test-key',
+        model: 'phind-code-1',
+      );
+
+      final client = CapturingPhindClient(config);
+      final chat = PhindChat(client, config);
+
+      await chat.chat(
+        [ModelMessage.userText('Hello')],
+        options: const LanguageModelCallOptions(
+          headers: {'X-Test': '1'},
+        ),
+      );
+
+      expect(client.lastHeaders, equals({'X-Test': '1'}));
     });
   });
 }

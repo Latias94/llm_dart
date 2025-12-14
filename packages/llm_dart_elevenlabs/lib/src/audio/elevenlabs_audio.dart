@@ -440,6 +440,12 @@ class ElevenLabsAudio extends BaseAudioCapability {
     );
 
     try {
+      if (!HttpConfigUtils.isAdvancedHttpSupported) {
+        throw const UnsupportedCapabilityError(
+          'File-path based speech-to-text is not supported on this platform. '
+          'On web, pass audio bytes via transcribe(audio) / STTRequest.fromAudio(...).',
+        );
+      }
       // Build form data with all supported parameters
       final formDataMap = <String, dynamic>{
         'file': await MultipartFile.fromFile(filePath),

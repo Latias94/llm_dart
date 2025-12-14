@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/providers/anthropic/mcp_models.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 
 void main() {
   group('AnthropicMCPServer', () {

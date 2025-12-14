@@ -170,5 +170,4 @@ class AnthropicProvider
   Future<Map<String, bool>> deleteFiles(List<String> fileIds) async {
     return _files.deleteFiles(fileIds);
   }
-
 }

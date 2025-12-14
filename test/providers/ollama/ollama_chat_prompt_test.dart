@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' show ToolResultTextPayload;
+import 'package:llm_dart_ollama/testing.dart';
 import 'package:test/test.dart';
 import 'ollama_test_utils.dart';
 

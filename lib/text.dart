@@ -25,7 +25,7 @@ import 'builder/llm_builder.dart';
 /// For new code, prefer one of the following:
 /// - [promptMessages] with [ModelMessage], or
 /// - [generateTextPrompt] / [generateTextPromptWithModel].
-/// 
+///
 /// This helper is prompt-first and does not support the removed
 /// `ChatMessage` legacy model.
 Future<GenerateTextResult> generateText({

@@ -29,7 +29,18 @@ extension LLMBuilderHttpExtensions on LLMBuilder {
       extension(entry.key, entry.value);
     }
 
+    // Convenience: when HTTP logging is enabled, automatically provide a
+    // default logger implementation (unless the caller already provided one).
+    final enableHttpLogging =
+        httpSettings[LLMConfigKeys.enableHttpLogging] == true;
+    if (enableHttpLogging &&
+        currentConfig.getExtension<LLMLogger>(LLMConfigKeys.logger) == null) {
+      extension(
+        LLMConfigKeys.logger,
+        const ConsoleLLMLogger(name: 'llm_dart.http'),
+      );
+    }
+
     return this;
   }
 }
-

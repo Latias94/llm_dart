@@ -1,10 +1,11 @@
 import 'package:dio/dio.dart';
-import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
+import 'package:llm_dart_xai/testing.dart' as xai;
 
 /// Capturing XAI client used in tests to verify request bodies.
 class CapturingXAIClient extends xai.XAIClient {
   Map<String, dynamic>? lastRequestBody;
   String? lastEndpoint;
+  Map<String, String>? lastHeaders;
 
   CapturingXAIClient(super.config);
 
@@ -13,9 +14,11 @@ class CapturingXAIClient extends xai.XAIClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     lastEndpoint = endpoint;
     lastRequestBody = data;
+    lastHeaders = headers;
 
     // Minimal valid xAI-style response.
     return {

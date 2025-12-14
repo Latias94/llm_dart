@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../config/xai_config.dart';
@@ -7,10 +7,13 @@ import '../http/xai_dio_strategy.dart';
 
 class XAIClient {
   final XAIConfig config;
-  final Logger logger = Logger('XAIClient');
+  final LLMLogger logger;
   late final Dio dio;
 
-  XAIClient(this.config) {
+  XAIClient(this.config)
+      : logger = config.originalConfig == null
+            ? const NoopLLMLogger()
+            : resolveLogger(config.originalConfig!) {
     dio = DioClientFactory.create(
       strategy: XAIDioStrategy(),
       config: config,
@@ -21,6 +24,7 @@ class XAIClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     try {
       logger.fine('xAI request: POST $endpoint');
@@ -28,11 +32,14 @@ class XAIClient {
         endpoint,
         data: data,
         cancelToken: cancelToken,
+        options: headers == null
+            ? null
+            : Options(headers: HttpHeaderUtils.mergeDioHeaders(dio, headers)),
       );
       logger.fine('xAI HTTP status: ${response.statusCode}');
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      logger.severe('HTTP request failed: ${e.message}');
+      logger.severe('HTTP request failed: ${e.message}', e);
       rethrow;
     }
   }
@@ -41,13 +48,17 @@ class XAIClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async* {
     try {
       final response = await dio.post(
         endpoint,
         data: data,
         cancelToken: cancelToken,
-        options: Options(responseType: ResponseType.stream),
+        options: Options(
+          responseType: ResponseType.stream,
+          headers: HttpHeaderUtils.mergeDioHeaders(dio, headers),
+        ),
       );
 
       if (response.statusCode != 200) {
@@ -85,7 +96,7 @@ class XAIClient {
         yield remaining;
       }
     } on DioException catch (e) {
-      logger.severe('Stream request failed: ${e.message}');
+      logger.severe('Stream request failed: ${e.message}', e);
       rethrow;
     }
   }

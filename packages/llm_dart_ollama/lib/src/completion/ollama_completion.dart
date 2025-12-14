@@ -15,6 +15,9 @@ class OllamaCompletion implements CompletionCapability {
     final options = <String, dynamic>{};
 
     // Prefer request-level parameters over config-level defaults.
+    final effectiveStop = request.stop != null && request.stop!.isNotEmpty
+        ? request.stop
+        : config.stopSequences;
     final temperature = request.temperature ?? config.temperature;
     if (temperature != null) {
       options['temperature'] = temperature;
@@ -33,6 +36,9 @@ class OllamaCompletion implements CompletionCapability {
     final topK = request.topK ?? config.topK;
     if (topK != null) {
       options['top_k'] = topK;
+    }
+    if (effectiveStop != null && effectiveStop.isNotEmpty) {
+      options['stop'] = effectiveStop;
     }
 
     if (config.numCtx != null) {

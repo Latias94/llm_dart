@@ -81,9 +81,11 @@ void main() {
         expect(part.uri, equals('https://example.com/test.pdf'));
       });
 
-      test('UrlFileContentPart stores url', () {
+      test('UrlFileContentPart stores url and mime', () {
         const part = UrlFileContentPart('https://example.com/image.jpg');
         expect(part.url, equals('https://example.com/image.jpg'));
+        expect(part.mime, equals(const FileMime('image/*')));
+        expect(part.filename, isNull);
       });
 
       test('ToolCallContentPart stores tool call fields', () {

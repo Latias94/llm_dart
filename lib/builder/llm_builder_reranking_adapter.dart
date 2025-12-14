@@ -100,4 +100,3 @@ class _EmbeddingRerankingCapability implements RerankingCapability {
     );
   }
 }
-

@@ -2,13 +2,13 @@ name: llm_dart_phind
 description: Phind provider implementation for llm_dart (coding assistant).
 version: 0.11.0-rc.1
 publish_to: none
+resolution: workspace
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
   dio: ^5.9.0
-  logging: ^1.2.0
   llm_dart_core: ^0.11.0-rc.1
   llm_dart_provider_utils: ^0.11.0-rc.1
 

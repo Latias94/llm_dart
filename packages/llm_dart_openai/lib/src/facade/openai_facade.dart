@@ -283,8 +283,7 @@ class OpenAI
 /// with high-level helpers (`generateTextWithModel`) and also access the
 /// underlying Responses API features (background responses, lifecycle
 /// management, response chaining, etc.).
-class OpenAIResponsesModel
-    implements LanguageModel, OpenAIResponsesCapability {
+class OpenAIResponsesModel implements LanguageModel, OpenAIResponsesCapability {
   final DefaultLanguageModel _model;
   final OpenAIResponses _responses;
 

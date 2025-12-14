@@ -43,6 +43,7 @@ class AnthropicChat implements ChatCapability {
       chatEndpoint,
       requestBody,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+      headers: options?.headers,
     );
     return _parseResponse(responseData);
   }
@@ -67,6 +68,7 @@ class AnthropicChat implements ChatCapability {
       chatEndpoint,
       requestBody,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+      headers: options?.headers,
     );
 
     await for (final chunk in stream) {

@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
@@ -13,21 +12,20 @@ import '../http/elevenlabs_dio_strategy.dart';
 /// This module handles all HTTP communication with the ElevenLabs API.
 /// ElevenLabs provides text-to-speech and speech-to-text services.
 class ElevenLabsClient {
-  static final Logger _logger = Logger('ElevenLabsClient');
-
   final ElevenLabsConfig config;
+  final LLMLogger logger;
   late final Dio _dio;
 
-  ElevenLabsClient(this.config) {
+  ElevenLabsClient(this.config)
+      : logger = config.originalConfig == null
+            ? const NoopLLMLogger()
+            : resolveLogger(config.originalConfig!) {
     // Use unified Dio client factory with ElevenLabs-specific strategy
     _dio = DioClientFactory.create(
       strategy: ElevenLabsDioStrategy(),
       config: config,
     );
   }
-
-  /// Logger instance for debugging
-  Logger get logger => _logger;
 
   Dio get dio => _dio;
 

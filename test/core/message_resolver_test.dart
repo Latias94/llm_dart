@@ -54,7 +54,8 @@ void main() {
       expect(message.role, ChatRole.user);
       expect(message.parts, hasLength(1));
       expect(message.parts.first, isA<TextContentPart>());
-      expect((message.parts.first as TextContentPart).text, equals('Plain prompt'));
+      expect((message.parts.first as TextContentPart).text,
+          equals('Plain prompt'));
     });
 
     test('throws ArgumentError when no inputs are provided', () {
@@ -65,4 +66,3 @@ void main() {
     });
   });
 }
-

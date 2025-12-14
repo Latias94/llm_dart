@@ -27,7 +27,7 @@ extension LLMBuilderTextHelpers on LLMBuilder {
   }) async {
     _ensureChatCapable('text generation');
 
-    final provider = await build();
+    final provider = await buildWithMiddleware();
     final resolvedMessages = resolvePromptMessagesForTextGeneration(
       prompt: prompt,
       structuredPrompt: structuredPrompt,
@@ -36,7 +36,7 @@ extension LLMBuilderTextHelpers on LLMBuilder {
 
     final response = await provider.chat(
       resolvedMessages,
-      tools: options?.tools,
+      tools: options?.resolveTools(),
       options: options,
       cancelToken: cancelToken,
     );
@@ -69,7 +69,7 @@ extension LLMBuilderTextHelpers on LLMBuilder {
   }) async* {
     _ensureChatCapable('streaming text');
 
-    final provider = await build();
+    final provider = await buildWithMiddleware();
     final resolvedMessages = resolvePromptMessagesForTextGeneration(
       prompt: prompt,
       structuredPrompt: structuredPrompt,
@@ -78,7 +78,7 @@ extension LLMBuilderTextHelpers on LLMBuilder {
 
     yield* provider.chatStream(
       resolvedMessages,
-      tools: options?.tools,
+      tools: options?.resolveTools(),
       options: options,
       cancelToken: cancelToken,
     );

@@ -15,7 +15,8 @@ void main() {
         final config = HttpConfig().proxy('http://proxy.example.com:8080');
         final result = config.build();
 
-        expect(result['httpProxy'], equals('http://proxy.example.com:8080'));
+        expect(result[LLMConfigKeys.httpProxy],
+            equals('http://proxy.example.com:8080'));
       });
 
       test('should set custom headers', () {
@@ -26,14 +27,15 @@ void main() {
         final config = HttpConfig().headers(headers);
         final result = config.build();
 
-        expect(result['customHeaders'], equals(headers));
+        expect(result[LLMConfigKeys.customHeaders], equals(headers));
       });
 
       test('should set single header', () {
         final config = HttpConfig().header('X-Request-ID', 'test-123');
         final result = config.build();
 
-        expect(result['customHeaders'], equals({'X-Request-ID': 'test-123'}));
+        expect(result[LLMConfigKeys.customHeaders],
+            equals({'X-Request-ID': 'test-123'}));
       });
 
       test('should merge multiple headers', () {
@@ -42,7 +44,7 @@ void main() {
         final result = config.build();
 
         expect(
-            result['customHeaders'],
+            result[LLMConfigKeys.customHeaders],
             equals({
               'X-Header-1': 'value1',
               'X-Header-2': 'value2',
@@ -54,7 +56,8 @@ void main() {
             .headers({'X-Header': 'original'}).header('X-Header', 'updated');
         final result = config.build();
 
-        expect(result['customHeaders'], equals({'X-Header': 'updated'}));
+        expect(result[LLMConfigKeys.customHeaders],
+            equals({'X-Header': 'updated'}));
       });
     });
 
@@ -63,14 +66,15 @@ void main() {
         final config = HttpConfig().bypassSSLVerification(true);
         final result = config.build();
 
-        expect(result['bypassSSLVerification'], isTrue);
+        expect(result[LLMConfigKeys.bypassSSLVerification], isTrue);
       });
 
       test('should set SSL certificate path', () {
         final config = HttpConfig().sslCertificate('/path/to/cert.pem');
         final result = config.build();
 
-        expect(result['sslCertificate'], equals('/path/to/cert.pem'));
+        expect(
+            result[LLMConfigKeys.sslCertificate], equals('/path/to/cert.pem'));
       });
 
       test('should configure both SSL settings', () {
@@ -79,8 +83,9 @@ void main() {
             .sslCertificate('/path/to/cert.pem');
         final result = config.build();
 
-        expect(result['bypassSSLVerification'], isFalse);
-        expect(result['sslCertificate'], equals('/path/to/cert.pem'));
+        expect(result[LLMConfigKeys.bypassSSLVerification], isFalse);
+        expect(
+            result[LLMConfigKeys.sslCertificate], equals('/path/to/cert.pem'));
       });
     });
 
@@ -90,7 +95,7 @@ void main() {
         final config = HttpConfig().connectionTimeout(timeout);
         final result = config.build();
 
-        expect(result['connectionTimeout'], equals(timeout));
+        expect(result[LLMConfigKeys.connectionTimeout], equals(timeout));
       });
 
       test('should set receive timeout', () {
@@ -98,7 +103,7 @@ void main() {
         final config = HttpConfig().receiveTimeout(timeout);
         final result = config.build();
 
-        expect(result['receiveTimeout'], equals(timeout));
+        expect(result[LLMConfigKeys.receiveTimeout], equals(timeout));
       });
 
       test('should set send timeout', () {
@@ -106,7 +111,7 @@ void main() {
         final config = HttpConfig().sendTimeout(timeout);
         final result = config.build();
 
-        expect(result['sendTimeout'], equals(timeout));
+        expect(result[LLMConfigKeys.sendTimeout], equals(timeout));
       });
 
       test('should set all timeout configurations', () {
@@ -120,9 +125,10 @@ void main() {
             .sendTimeout(sendTimeout);
         final result = config.build();
 
-        expect(result['connectionTimeout'], equals(connectionTimeout));
-        expect(result['receiveTimeout'], equals(receiveTimeout));
-        expect(result['sendTimeout'], equals(sendTimeout));
+        expect(
+            result[LLMConfigKeys.connectionTimeout], equals(connectionTimeout));
+        expect(result[LLMConfigKeys.receiveTimeout], equals(receiveTimeout));
+        expect(result[LLMConfigKeys.sendTimeout], equals(sendTimeout));
       });
     });
 
@@ -131,14 +137,14 @@ void main() {
         final config = HttpConfig().enableLogging(true);
         final result = config.build();
 
-        expect(result['enableHttpLogging'], isTrue);
+        expect(result[LLMConfigKeys.enableHttpLogging], isTrue);
       });
 
       test('should disable logging', () {
         final config = HttpConfig().enableLogging(false);
         final result = config.build();
 
-        expect(result['enableHttpLogging'], isFalse);
+        expect(result[LLMConfigKeys.enableHttpLogging], isFalse);
       });
     });
 
@@ -158,19 +164,23 @@ void main() {
         expect(config, isNotNull);
 
         final result = config.build();
-        expect(result['httpProxy'], equals('http://proxy:8080'));
+        expect(result[LLMConfigKeys.httpProxy], equals('http://proxy:8080'));
         expect(
-            result['customHeaders'],
+            result[LLMConfigKeys.customHeaders],
             equals({
               'X-App': 'TestApp',
               'X-Version': '1.0',
             }));
-        expect(result['connectionTimeout'], equals(Duration(seconds: 30)));
-        expect(result['receiveTimeout'], equals(Duration(minutes: 2)));
-        expect(result['sendTimeout'], equals(Duration(seconds: 45)));
-        expect(result['bypassSSLVerification'], isFalse);
-        expect(result['sslCertificate'], equals('/path/to/cert.pem'));
-        expect(result['enableHttpLogging'], isTrue);
+        expect(result[LLMConfigKeys.connectionTimeout],
+            equals(Duration(seconds: 30)));
+        expect(
+            result[LLMConfigKeys.receiveTimeout], equals(Duration(minutes: 2)));
+        expect(
+            result[LLMConfigKeys.sendTimeout], equals(Duration(seconds: 45)));
+        expect(result[LLMConfigKeys.bypassSSLVerification], isFalse);
+        expect(
+            result[LLMConfigKeys.sslCertificate], equals('/path/to/cert.pem'));
+        expect(result[LLMConfigKeys.enableHttpLogging], isTrue);
       });
 
       test('should return new instance for each method call', () {
@@ -192,8 +202,8 @@ void main() {
         final result1 = config1.build();
         final result2 = config2.build();
 
-        expect(result1['httpProxy'], equals('http://proxy1:8080'));
-        expect(result2['httpProxy'], equals('http://proxy2:8080'));
+        expect(result1[LLMConfigKeys.httpProxy], equals('http://proxy1:8080'));
+        expect(result2[LLMConfigKeys.httpProxy], equals('http://proxy2:8080'));
       });
 
       test('should create independent configurations', () {
@@ -201,21 +211,24 @@ void main() {
             {'X-Base': 'base'}).connectionTimeout(Duration(seconds: 30));
 
         final config1 = HttpConfig()
-            .headers(baseConfig.build()['customHeaders'] ?? {})
-            .connectionTimeout(baseConfig.build()['connectionTimeout'])
+            .headers(baseConfig.build()[LLMConfigKeys.customHeaders] ?? {})
+            .connectionTimeout(
+                baseConfig.build()[LLMConfigKeys.connectionTimeout])
             .proxy('http://proxy1:8080');
 
         final config2 = HttpConfig()
-            .headers(baseConfig.build()['customHeaders'] ?? {})
-            .connectionTimeout(baseConfig.build()['connectionTimeout'])
+            .headers(baseConfig.build()[LLMConfigKeys.customHeaders] ?? {})
+            .connectionTimeout(
+                baseConfig.build()[LLMConfigKeys.connectionTimeout])
             .proxy('http://proxy2:8080');
 
         final result1 = config1.build();
         final result2 = config2.build();
 
-        expect(result1['httpProxy'], equals('http://proxy1:8080'));
-        expect(result2['httpProxy'], equals('http://proxy2:8080'));
-        expect(result1['customHeaders'], equals(result2['customHeaders']));
+        expect(result1[LLMConfigKeys.httpProxy], equals('http://proxy1:8080'));
+        expect(result2[LLMConfigKeys.httpProxy], equals('http://proxy2:8080'));
+        expect(result1[LLMConfigKeys.customHeaders],
+            equals(result2[LLMConfigKeys.customHeaders]));
       });
     });
 
@@ -228,8 +241,8 @@ void main() {
         final config = HttpConfig().dioClient(customDio);
         final result = config.build();
 
-        expect(result['customDio'], equals(customDio));
-        expect(result['customDio'], isA<Dio>());
+        expect(result[LLMConfigKeys.customDio], equals(customDio));
+        expect(result[LLMConfigKeys.customDio], isA<Dio>());
       });
 
       test('should preserve custom Dio configuration', () {
@@ -242,7 +255,7 @@ void main() {
         final config = HttpConfig().dioClient(customDio);
         final result = config.build();
 
-        final resultDio = result['customDio'] as Dio;
+        final resultDio = result[LLMConfigKeys.customDio] as Dio;
         expect(resultDio.options.baseUrl, equals('https://custom.example.com'));
         expect(resultDio.options.connectTimeout, equals(Duration(seconds: 25)));
         expect(resultDio.options.headers['Authorization'],
@@ -261,10 +274,11 @@ void main() {
             .enableLogging(true);
 
         final result = config.build();
-        expect(result['customDio'], equals(customDio));
-        expect(result['httpProxy'], equals('http://proxy:8080'));
-        expect(result['customHeaders'], equals({'X-App': 'TestApp'}));
-        expect(result['enableHttpLogging'], isTrue);
+        expect(result[LLMConfigKeys.customDio], equals(customDio));
+        expect(result[LLMConfigKeys.httpProxy], equals('http://proxy:8080'));
+        expect(
+            result[LLMConfigKeys.customHeaders], equals({'X-App': 'TestApp'}));
+        expect(result[LLMConfigKeys.enableHttpLogging], isTrue);
       });
 
       test('should override previous custom Dio', () {
@@ -277,7 +291,7 @@ void main() {
         final config = HttpConfig().dioClient(firstDio).dioClient(secondDio);
 
         final result = config.build();
-        final resultDio = result['customDio'] as Dio;
+        final resultDio = result[LLMConfigKeys.customDio] as Dio;
         expect(resultDio.options.baseUrl, equals('https://second.example.com'));
         expect(resultDio, equals(secondDio));
         expect(resultDio, isNot(equals(firstDio)));
@@ -289,7 +303,7 @@ void main() {
         final config = HttpConfig().headers({});
         final result = config.build();
 
-        expect(result['customHeaders'], equals({}));
+        expect(result[LLMConfigKeys.customHeaders], equals({}));
       });
 
       test('should handle null values gracefully', () {
@@ -297,10 +311,11 @@ void main() {
         final result = config.build();
 
         // Should not contain keys for unset values
-        expect(result.containsKey('httpProxy'), isFalse);
-        expect(result.containsKey('customHeaders'), isFalse);
-        expect(result.containsKey('bypassSSLVerification'), isFalse);
-        expect(result.containsKey('customDio'), isFalse);
+        expect(result.containsKey(LLMConfigKeys.httpProxy), isFalse);
+        expect(result.containsKey(LLMConfigKeys.customHeaders), isFalse);
+        expect(
+            result.containsKey(LLMConfigKeys.bypassSSLVerification), isFalse);
+        expect(result.containsKey(LLMConfigKeys.customDio), isFalse);
       });
 
       test('should handle zero duration timeouts', () {
@@ -310,9 +325,9 @@ void main() {
             .sendTimeout(Duration.zero);
         final result = config.build();
 
-        expect(result['connectionTimeout'], equals(Duration.zero));
-        expect(result['receiveTimeout'], equals(Duration.zero));
-        expect(result['sendTimeout'], equals(Duration.zero));
+        expect(result[LLMConfigKeys.connectionTimeout], equals(Duration.zero));
+        expect(result[LLMConfigKeys.receiveTimeout], equals(Duration.zero));
+        expect(result[LLMConfigKeys.sendTimeout], equals(Duration.zero));
       });
     });
   });

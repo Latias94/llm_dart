@@ -16,6 +16,7 @@ class OllamaConfig implements ProviderHttpConfig {
   final double? topP;
   final int? topK;
   final List<Tool>? tools;
+  final List<String>? stopSequences;
   final StructuredOutputFormat? jsonSchema;
 
   // Ollama-specific parameters
@@ -41,6 +42,7 @@ class OllamaConfig implements ProviderHttpConfig {
     this.topP,
     this.topK,
     this.tools,
+    this.stopSequences,
     this.jsonSchema,
     this.numCtx,
     this.numGpu,
@@ -67,6 +69,7 @@ class OllamaConfig implements ProviderHttpConfig {
       topP: config.topP,
       topK: config.topK,
       tools: config.tools,
+      stopSequences: config.stopSequences,
       jsonSchema: config.getExtension<StructuredOutputFormat>(
         LLMConfigKeys.jsonSchema,
       ),
@@ -163,6 +166,7 @@ class OllamaConfig implements ProviderHttpConfig {
     double? topP,
     int? topK,
     List<Tool>? tools,
+    List<String>? stopSequences,
     StructuredOutputFormat? jsonSchema,
     int? numCtx,
     int? numGpu,
@@ -184,6 +188,7 @@ class OllamaConfig implements ProviderHttpConfig {
       topP: topP ?? this.topP,
       topK: topK ?? this.topK,
       tools: tools ?? this.tools,
+      stopSequences: stopSequences ?? this.stopSequences,
       jsonSchema: jsonSchema ?? this.jsonSchema,
       numCtx: numCtx ?? this.numCtx,
       numGpu: numGpu ?? this.numGpu,

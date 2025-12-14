@@ -52,6 +52,7 @@ class DeepSeekChat implements ChatCapability {
       chatEndpoint,
       requestBody,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+      headers: options?.headers,
     );
 
     await for (final chunk in stream) {
@@ -81,6 +82,7 @@ class DeepSeekChat implements ChatCapability {
       chatEndpoint,
       requestBody,
       cancelToken: CancellationUtils.toDioCancelToken(cancelToken),
+      headers: options?.headers,
     );
     return _parseResponse(responseData, warnings);
   }
@@ -382,11 +384,24 @@ class DeepSeekChat implements ChatCapability {
       body['presence_penalty'] = config.presencePenalty;
     }
 
-    if (config.responseFormat != null) {
-      body['response_format'] = config.responseFormat;
+    final effectiveStopSequences =
+        options?.stopSequences ?? config.stopSequences;
+    if (effectiveStopSequences != null && effectiveStopSequences.isNotEmpty) {
+      body['stop'] = effectiveStopSequences;
     }
 
-    final effectiveTools = options?.tools ?? tools ?? config.tools;
+    final effectiveUser = options?.user ?? config.user;
+    if (effectiveUser != null && effectiveUser.isNotEmpty) {
+      body['user'] = effectiveUser;
+    }
+
+    final effectiveResponseFormat =
+        options?.jsonSchema?.toOpenAIResponseFormat() ?? config.responseFormat;
+    if (effectiveResponseFormat != null) {
+      body['response_format'] = effectiveResponseFormat;
+    }
+
+    final effectiveTools = options?.resolveTools() ?? tools ?? config.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = effectiveTools.map((t) => t.toJson()).toList();
 
@@ -439,7 +454,6 @@ class DeepSeekChat implements ChatCapability {
 
     return result;
   }
-
 }
 
 /// DeepSeek chat response implementation.

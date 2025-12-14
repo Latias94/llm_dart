@@ -140,6 +140,23 @@ class OpenAIMessageMapper {
             contentArray.add({'type': 'text', 'text': part.text});
           }
         } else if (part is UrlFileContentPart) {
+          final mimeType = part.mime.mimeType;
+          final isImage = mimeType.startsWith('image/');
+
+          // OpenAI chat-style inputs only support URL-based images.
+          // For non-image URLs, fall back to a textual hint to avoid
+          // sending invalid multi-modal payloads.
+          if (!isImage) {
+            final text = '[Unsupported URL file type for OpenAI: $mimeType. '
+                'Download and pass bytes via FileContentPart instead: ${part.url}]';
+            if (isResponsesApi) {
+              contentArray.add({'type': 'input_text', 'text': text});
+            } else {
+              contentArray.add({'type': 'text', 'text': text});
+            }
+            continue;
+          }
+
           if (isResponsesApi) {
             contentArray.add({
               'type': 'input_image',

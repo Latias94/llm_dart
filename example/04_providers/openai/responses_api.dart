@@ -148,10 +148,9 @@ Future<void> capabilityDetectionExample(String apiKey) async {
             _userMessages('Hello! This is a capability test.'),
           );
 
-          if (testResponse is OpenAIResponsesResponse) {
-            final responseId = testResponse.responseId;
-            print(
-                '   • Response ID: ${responseId?.substring(0, 20) ?? 'None'}...');
+          final responseId = testResponse.metadata?['id'] as String?;
+          if (responseId != null) {
+            print('   • Response ID: ${responseId.substring(0, 20)}...');
           }
         } else {
           print('❌ Responses API module not initialized');
@@ -493,15 +492,15 @@ Future<void> responseChainingExample(String apiKey) async {
     );
     print('First response: ${response1.text}\n');
 
-    // Extract response ID for chaining
-    if (response1 is OpenAIResponsesResponse && response1.responseId != null) {
-      print('Response ID: ${response1.responseId}');
+    // Extract response ID for chaining (via metadata)
+    final responseId = response1.metadata?['id'] as String?;
+    if (responseId != null && responseId.isNotEmpty) {
+      print('Response ID: $responseId');
 
       // Second request using previous response ID for chaining
       final provider2 = await ai()
-          .openai((openai) => openai
-              .useResponsesAPI()
-              .previousResponseId(response1.responseId!))
+          .openai((openai) =>
+              openai.useResponsesAPI().previousResponseId(responseId))
           .apiKey(apiKey)
           .model('gpt-4.1')
           .build();
@@ -539,14 +538,13 @@ Future<void> statefulConversationExample(String apiKey) async {
     );
     print('Response 1: ${response1.text?.substring(0, 100)}...\n');
 
-    // Get response ID for stateful continuation
-    String? responseId;
-    if (response1 is OpenAIResponsesResponse) {
-      responseId = response1.responseId;
+    // Get response ID for stateful continuation (via metadata)
+    final responseId = response1.metadata?['id'] as String?;
+    if (responseId != null && responseId.isNotEmpty) {
       print('Response ID: $responseId\n');
     }
 
-    if (responseId != null) {
+    if (responseId != null && responseId.isNotEmpty) {
       // Continue the conversation with state preservation
       final response2 = await responses.continueConversation(
         responseId,
@@ -597,13 +595,12 @@ Future<void> backgroundProcessingExample(String apiKey) async {
       null,
     );
 
-    String? responseId;
-    if (backgroundResponse is OpenAIResponsesResponse) {
-      responseId = backgroundResponse.responseId;
+    final responseId = backgroundResponse.metadata?['id'] as String?;
+    if (responseId != null && responseId.isNotEmpty) {
       print('Background task started with ID: $responseId\n');
     }
 
-    if (responseId != null) {
+    if (responseId != null && responseId.isNotEmpty) {
       // Check status periodically
       for (int i = 0; i < 3; i++) {
         await Future.delayed(Duration(seconds: 2));
@@ -658,12 +655,9 @@ Future<void> responseLifecycleExample(String apiKey) async {
     );
     print('Created response: ${response.text?.substring(0, 100)}...\n');
 
-    String? responseId;
-    if (response is OpenAIResponsesResponse) {
-      responseId = response.responseId;
-    }
+    final responseId = response.metadata?['id'] as String?;
 
-    if (responseId != null) {
+    if (responseId != null && responseId.isNotEmpty) {
       // Retrieve the response by ID
       try {
         final retrievedResponse = await responses.getResponse(responseId);

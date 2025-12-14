@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'http_client_adapter_stub.dart'
@@ -12,7 +11,7 @@ import 'http_client_adapter_stub.dart'
 /// `llm_dart_provider_utils`, and is re-exported by the main
 /// `llm_dart` package for backwards compatibility.
 class HttpConfigUtils {
-  static final Logger _logger = Logger('HttpConfigUtils');
+  static LLMLogger _loggerFor(LLMConfig config) => resolveLogger(config);
 
   /// Create a configured Dio instance with unified HTTP settings.
   static Dio createConfiguredDio({
@@ -21,6 +20,7 @@ class HttpConfigUtils {
     required LLMConfig config,
     Duration? defaultTimeout,
   }) {
+    final logger = _loggerFor(config);
     final options = BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: _getConnectionTimeout(config, defaultTimeout),
@@ -32,7 +32,7 @@ class HttpConfigUtils {
     final dio = Dio(options);
 
     _configureHttpClientAdapter(dio, config);
-    _configureLogging(dio, config);
+    _configureLogging(dio, config, logger);
     _configureCustomInterceptors(dio, config);
 
     return dio;
@@ -92,36 +92,36 @@ class HttpConfigUtils {
     HttpClientAdapterConfig.configureHttpClientAdapter(dio, config);
   }
 
-  static void _configureLogging(Dio dio, LLMConfig config) {
+  static void _configureLogging(Dio dio, LLMConfig config, LLMLogger logger) {
     final enableLogging =
         config.getExtension<bool>(LLMConfigKeys.enableHttpLogging) ?? false;
 
     if (!enableLogging) return;
 
-    _logger.info('Enabling HTTP request/response logging');
+    logger.info('Enabling HTTP request/response logging');
 
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          _logger.info('→ ${options.method} ${options.uri}');
-          _logger.fine('→ Headers: ${options.headers}');
+          logger.info('→ ${options.method} ${options.uri}');
+          logger.fine('→ Headers: ${options.headers}');
           if (options.data != null) {
-            _logger.fine('→ Data: ${options.data}');
+            logger.fine('→ Data: ${options.data}');
           }
           handler.next(options);
         },
         onResponse: (response, handler) {
-          _logger.info(
+          logger.info(
             '← ${response.statusCode} ${response.requestOptions.uri}',
           );
-          _logger.fine('← Headers: ${response.headers}');
+          logger.fine('← Headers: ${response.headers}');
           handler.next(response);
         },
         onError: (error, handler) {
-          _logger.severe(
+          logger.severe(
             '✗ ${error.requestOptions.method} ${error.requestOptions.uri}',
           );
-          _logger.severe('✗ Error: ${error.message}');
+          logger.severe('✗ Error: ${error.message}');
           handler.next(error);
         },
       ),
@@ -158,6 +158,7 @@ class HttpConfigUtils {
       HttpClientAdapterConfig.isAdvancedHttpSupported;
 
   static void validateHttpConfig(LLMConfig config) {
+    final logger = _loggerFor(config);
     final connectionTimeout =
         config.getExtension<Duration>(LLMConfigKeys.connectionTimeout);
     final receiveTimeout =
@@ -167,24 +168,24 @@ class HttpConfigUtils {
     if (connectionTimeout != null &&
         globalTimeout != null &&
         connectionTimeout != globalTimeout) {
-      _logger.warning('Connection timeout differs from global timeout');
+      logger.warning('Connection timeout differs from global timeout');
     }
 
     if (receiveTimeout != null &&
         globalTimeout != null &&
         receiveTimeout != globalTimeout) {
-      _logger.warning('Receive timeout differs from global timeout');
+      logger.warning('Receive timeout differs from global timeout');
     }
 
     final bypassSSL =
         config.getExtension<bool>(LLMConfigKeys.bypassSSLVerification) ?? false;
     if (bypassSSL) {
       if (isAdvancedHttpSupported) {
-        _logger.warning(
+        logger.warning(
           '⚠️ SSL verification is disabled - use only for development',
         );
       } else {
-        _logger.warning(
+        logger.warning(
           '⚠️ SSL verification bypass is not supported on this platform',
         );
       }
@@ -193,11 +194,11 @@ class HttpConfigUtils {
     final proxyUrl = config.getExtension<String>(LLMConfigKeys.httpProxy);
     if (proxyUrl != null) {
       if (!isAdvancedHttpSupported) {
-        _logger.warning(
+        logger.warning(
           '⚠️ HTTP proxy configuration is not supported on this platform',
         );
       } else if (!proxyUrl.startsWith('http')) {
-        _logger.warning(
+        logger.warning(
           'Proxy URL should start with http:// or https://',
         );
       }
@@ -206,7 +207,7 @@ class HttpConfigUtils {
     final certificatePath =
         config.getExtension<String>(LLMConfigKeys.sslCertificate);
     if (certificatePath != null && !isAdvancedHttpSupported) {
-      _logger.warning(
+      logger.warning(
         '⚠️ Custom SSL certificate loading is not supported on this platform',
       );
     }

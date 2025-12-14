@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../config/google_config.dart';
@@ -9,10 +9,13 @@ import '../utils/google_utf8_stream_decoder.dart';
 /// Core Google HTTP client shared across all capability modules (sub-package).
 class GoogleClient {
   final GoogleConfig config;
-  final Logger logger = Logger('GoogleClient');
+  final LLMLogger logger;
   late final Dio dio;
 
-  GoogleClient(this.config) {
+  GoogleClient(this.config)
+      : logger = config.originalConfig == null
+            ? const NoopLLMLogger()
+            : resolveLogger(config.originalConfig!) {
     dio = DioClientFactory.create(
       strategy: GoogleDioStrategy(),
       config: config,
@@ -41,7 +44,7 @@ class GoogleClient {
         cancelToken: cancelToken,
       );
     } on DioException catch (e) {
-      logger.severe('HTTP request failed: ${e.message}');
+      logger.severe('HTTP request failed: ${e.message}', e);
       rethrow;
     }
   }
@@ -50,16 +53,20 @@ class GoogleClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     try {
       final response = await dio.post(
         _getEndpointWithAuth(endpoint),
         data: data,
         cancelToken: cancelToken,
+        options: headers == null
+            ? null
+            : Options(headers: HttpHeaderUtils.mergeDioHeaders(dio, headers)),
       );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
-      logger.severe('HTTP request failed: ${e.message}');
+      logger.severe('HTTP request failed: ${e.message}', e);
       rethrow;
     }
   }
@@ -81,7 +88,7 @@ class GoogleClient {
       );
       yield response;
     } on DioException catch (e) {
-      logger.severe('Stream request failed: ${e.message}');
+      logger.severe('Stream request failed: ${e.message}', e);
       rethrow;
     }
   }
@@ -90,16 +97,19 @@ class GoogleClient {
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async* {
     try {
       final fullEndpoint = _getEndpointWithAuth(endpoint);
+      final effectiveHeaders = HttpHeaderUtils.mergeDioHeaders(dio, headers);
+      effectiveHeaders['Accept'] = 'application/json';
       final response = await dio.post(
         fullEndpoint,
         data: data,
         cancelToken: cancelToken,
         options: Options(
           responseType: ResponseType.stream,
-          headers: {'Accept': 'application/json'},
+          headers: effectiveHeaders,
         ),
       );
 
@@ -130,7 +140,7 @@ class GoogleClient {
         yield remaining;
       }
     } on DioException catch (e) {
-      logger.severe('Stream request failed: ${e.message}');
+      logger.severe('Stream request failed: ${e.message}', e);
       rethrow;
     }
   }

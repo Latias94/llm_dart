@@ -68,8 +68,8 @@ void main() {
       expect(config.getExtension<String>(LLMConfigKeys.imageSeed), '67890');
       expect(config.getExtension<int>(LLMConfigKeys.numInferenceSteps), 30);
       expect(config.getExtension<double>(LLMConfigKeys.guidanceScale), 8.0);
-      expect(config.getExtension<bool>(LLMConfigKeys.promptEnhancement), isTrue);
+      expect(
+          config.getExtension<bool>(LLMConfigKeys.promptEnhancement), isTrue);
     });
   });
 }
-

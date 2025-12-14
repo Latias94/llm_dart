@@ -81,6 +81,16 @@ Or install directly using:
 dart pub add llm_dart
 ```
 
+## Workspace Development (Contributors)
+
+This repository is a Dart Pub Workspace (with optional Melos scripts).
+
+```bash
+dart pub get
+dart run melos run analyze
+dart run melos run test
+```
+
 ## Quick Start
 
 ### Recommended Imports
@@ -104,10 +114,9 @@ The project is now modularized. For new code, we recommend:
 - Shared HTTP / provider utilities:
   - `import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';`
 
-The legacy wrapper paths
-`package:llm_dart/core/...` and `package:llm_dart/models/...`
-are now marked as **deprecated** and will be removed in a future major release.
-Please prefer the imports listed above for new code and refactors.
+The legacy wrapper paths (`package:llm_dart/core/...` and
+`package:llm_dart/models/...`) have been removed. Please prefer the
+package entrypoints listed above for new code and refactors.
 
 #### Legacy shims
 
@@ -118,6 +127,8 @@ If you are migrating from older versions, use prompt-first `ModelMessage` /
 ### Public API（稳定性约定）
 
 - 稳定入口：`package:llm_dart/llm_dart.dart`（全家桶）、`package:llm_dart_core/llm_dart_core.dart`、`package:llm_dart_provider_utils/llm_dart_provider_utils.dart`、以及各 provider 子包（例如 `package:llm_dart_openai/llm_dart_openai.dart`）。
+- 明确非稳定但“显式入口”：各 provider 的 `protocol.dart`（协议/低层构件），用于需要低层能力的场景；优先使用它而不是 `src/`。
+- 仓库测试专用入口：各 provider 的 `testing.dart`（导出稳定入口 + protocol），不建议在应用代码/示例中使用。
 - 不保证稳定：任何 `.../src/...` 的直接导入路径（内部实现细节，可能随时调整）。
 
 ### Usage Modes
@@ -131,6 +142,9 @@ Use the high-level builder and helpers. Providers are registered lazily
 behind the scenes via `registerBuiltinProviders()` when you first call
 `LLMBuilder.provider(...)` or the built-in shortcuts such as `.openai()`,
 `.anthropic()`, etc.
+
+Tip: To see HTTP logs (Dio request/response logging), enable it via:
+`http((http) => http.enableLogging(true))`.
 
 ```dart
 import 'package:llm_dart/llm_dart.dart';
@@ -157,6 +171,83 @@ Future<void> main() async {
   print(result.text);
 }
 ```
+
+##### Logging (Optional)
+
+`llm_dart` uses the dependency-free `LLMLogger` abstraction. You can either:
+
+1) Use the default console logger (automatically enabled when you call
+`http((http) => http.enableLogging(true))`), or inject your own:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+Future<void> main() async {
+  final model = await ai()
+      .openai()
+      .apiKey('your-openai-key')
+      .http((http) => http.enableLogging(true))
+      // Optional: override the default logger
+      .extension(
+        LLMConfigKeys.logger,
+        const ConsoleLLMLogger(name: 'my_app.llm'),
+      )
+      .model('gpt-4o-mini')
+      .buildLanguageModel();
+
+  final response = await model.generateText('Hello!');
+  print(response.text);
+}
+```
+
+2) Integrate with your own logging system by implementing `LLMLogger`:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+
+class MyLogger implements LLMLogger {
+  @override
+  void info(String message) => print('[INFO] $message');
+  @override
+  void fine(String message) => print('[FINE] $message');
+  @override
+  void finer(String message) => print('[FINER] $message');
+  @override
+  void warning(String message) => print('[WARN] $message');
+  @override
+  void severe(String message, [Object? error, StackTrace? stackTrace]) {
+    print('[ERROR] $message');
+    if (error != null) print('error: $error');
+    if (stackTrace != null) print(stackTrace);
+  }
+}
+```
+
+3) If your app already uses `package:logging`, keep it in *your app* and adapt:
+
+```dart
+import 'package:llm_dart/llm_dart.dart';
+import 'package:logging/logging.dart' as logging;
+
+class PackageLoggingLLMLogger implements LLMLogger {
+  final logging.Logger logger;
+  PackageLoggingLLMLogger(this.logger);
+
+  @override
+  void info(String message) => logger.info(message);
+  @override
+  void fine(String message) => logger.fine(message);
+  @override
+  void finer(String message) => logger.finer(message);
+  @override
+  void warning(String message) => logger.warning(message);
+  @override
+  void severe(String message, [Object? error, StackTrace? stackTrace]) =>
+      logger.severe(message, error, stackTrace);
+}
+```
+
+Note: You need to add `logging` to your own app's `pubspec.yaml` to use this.
 
 This mode is ideal when:
 

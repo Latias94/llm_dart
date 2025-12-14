@@ -3,6 +3,7 @@
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' show ToolResultTextPayload;
 import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
+import 'package:llm_dart_xai/testing.dart' as xai_testing;
 import 'package:test/test.dart';
 import 'xai_test_utils.dart';
 
@@ -16,7 +17,7 @@ void main() {
       );
 
       final client = CapturingXAIClient(config);
-      final chat = xai.XAIChat(client, config);
+      final chat = xai_testing.XAIChat(client, config);
 
       final messages = [ModelMessage.userText('Hello')];
 
@@ -51,7 +52,7 @@ void main() {
       );
 
       final client = CapturingXAIClient(config);
-      final chat = xai.XAIChat(client, config);
+      final chat = xai_testing.XAIChat(client, config);
 
       final imageMessage = ModelMessage(
         role: ChatRole.user,
@@ -130,7 +131,7 @@ void main() {
       );
 
       final client = CapturingXAIClient(config);
-      final chat = xai.XAIChat(client, config);
+      final chat = xai_testing.XAIChat(client, config);
 
       await chat.chat([ModelMessage.userText('Hello')]);
 
@@ -167,7 +168,7 @@ void main() {
       );
 
       final client = CapturingXAIClient(config);
-      final chat = xai.XAIChat(client, config);
+      final chat = xai_testing.XAIChat(client, config);
 
       await chat.chat([ModelMessage.userText('Hello')]);
 
@@ -222,7 +223,7 @@ void main() {
         'citations': ['https://example.com'],
       };
 
-      final response = xai.XAIChatResponse(rawResponse);
+      final response = xai_testing.XAIChatResponse(rawResponse);
 
       expect(response.text, equals('Hello'));
       expect(response.thinking, equals('Chain-of-thought reasoning'));

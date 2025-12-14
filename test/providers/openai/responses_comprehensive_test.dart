@@ -13,8 +13,7 @@ library;
 
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/openai/responses_capability.dart';
-import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart_openai/testing.dart' as openai;
 
 void main() {
   group('OpenAI Responses API Comprehensive Tests', () {
@@ -440,8 +439,8 @@ void main() {
 
         final openaiProvider = provider as openai.OpenAIProvider;
         expect(openaiProvider.responses, isNotNull);
-        expect(openaiProvider.responses, isA<OpenAIResponses>());
-        expect(openaiProvider.responses, isA<OpenAIResponsesCapability>());
+        expect(
+            openaiProvider.responses, isA<openai.OpenAIResponsesCapability>());
         expect(openaiProvider.responses, isA<ChatCapability>());
       });
 
@@ -470,7 +469,7 @@ void main() {
           final responses = openaiProvider.responses;
 
           expect(responses, isNotNull);
-          expect(responses, isA<OpenAIResponsesCapability>());
+          expect(responses, isA<openai.OpenAIResponsesCapability>());
 
           // Verify all required methods exist (without calling them to avoid API key requirements)
           final responsesInstance = responses!;

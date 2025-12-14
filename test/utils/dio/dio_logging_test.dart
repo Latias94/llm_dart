@@ -1,11 +1,42 @@
-import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:test/test.dart';
+
+enum _TestLogLevel { info, fine, finer, warning, severe }
+
+class _TestLogEntry {
+  final _TestLogLevel level;
+  final String message;
+
+  const _TestLogEntry(this.level, this.message);
+}
+
+class _TestLLMLogger implements LLMLogger {
+  final List<_TestLogEntry> entries = [];
+
+  @override
+  void fine(String message) =>
+      entries.add(_TestLogEntry(_TestLogLevel.fine, message));
+
+  @override
+  void finer(String message) =>
+      entries.add(_TestLogEntry(_TestLogLevel.finer, message));
+
+  @override
+  void info(String message) =>
+      entries.add(_TestLogEntry(_TestLogLevel.info, message));
+
+  @override
+  void severe(String message, [Object? error, StackTrace? stackTrace]) =>
+      entries.add(_TestLogEntry(_TestLogLevel.severe, message));
+
+  @override
+  void warning(String message) =>
+      entries.add(_TestLogEntry(_TestLogLevel.warning, message));
+}
 
 /// A fake HttpClientAdapter that always returns a successful 200 response.
 class _FakeSuccessAdapter implements HttpClientAdapter {
@@ -48,24 +79,14 @@ class _FakeErrorAdapter implements HttpClientAdapter {
 
 void main() {
   group('Dio HTTP Logging Tests', () {
-    late List<LogRecord> logRecords;
-    late StreamSubscription<LogRecord> logSubscription;
+    late _TestLLMLogger logger;
 
     setUp(() {
-      // Enable hierarchical logging to allow setting levels on non-root loggers
-      hierarchicalLoggingEnabled = true;
-
-      logRecords = [];
-      // Capture log records for testing
-      logSubscription = Logger('HttpConfigUtils').onRecord.listen((record) {
-        logRecords.add(record);
-      });
-      Logger('HttpConfigUtils').level = Level.ALL;
+      logger = _TestLLMLogger();
     });
 
     tearDown(() {
-      logSubscription.cancel();
-      logRecords.clear();
+      logger.entries.clear();
     });
 
     test('should add logging interceptor when enableHttpLogging is true', () {
@@ -74,7 +95,8 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'enableHttpLogging': true,
+        LLMConfigKeys.enableHttpLogging: true,
+        LLMConfigKeys.logger: logger,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -99,7 +121,8 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'enableHttpLogging': false,
+        LLMConfigKeys.enableHttpLogging: false,
+        LLMConfigKeys.logger: logger,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -140,7 +163,8 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'enableHttpLogging': true,
+        LLMConfigKeys.enableHttpLogging: true,
+        LLMConfigKeys.logger: logger,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -153,7 +177,7 @@ void main() {
       dio.httpClientAdapter = _FakeSuccessAdapter();
 
       // Clear any setup logs
-      logRecords.clear();
+      logger.entries.clear();
 
       try {
         // Make a test request to httpbin.org (a testing service)
@@ -163,13 +187,13 @@ void main() {
       }
 
       // Should have logged the request
-      final requestLogs = logRecords
+      final requestLogs = logger.entries
           .where((record) => record.message.contains('→ GET'))
           .toList();
       expect(requestLogs.length, greaterThan(0));
 
       // Should have logged headers
-      final headerLogs = logRecords
+      final headerLogs = logger.entries
           .where((record) => record.message.contains('→ Headers:'))
           .toList();
       expect(headerLogs.length, greaterThan(0));
@@ -181,7 +205,8 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'enableHttpLogging': true,
+        LLMConfigKeys.enableHttpLogging: true,
+        LLMConfigKeys.logger: logger,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -194,27 +219,28 @@ void main() {
       dio.httpClientAdapter = _FakeSuccessAdapter();
 
       // Clear any setup logs
-      logRecords.clear();
+      logger.entries.clear();
 
       try {
         // Make a test request to httpbin.org
         await dio.get('/get');
 
         // Should have logged the response
-        final responseLogs = logRecords
+        final responseLogs = logger.entries
             .where((record) => record.message.contains('← 200'))
             .toList();
         expect(responseLogs.length, greaterThan(0));
 
         // Should have logged response headers
-        final responseHeaderLogs = logRecords
+        final responseHeaderLogs = logger.entries
             .where((record) => record.message.contains('← Headers:'))
             .toList();
         expect(responseHeaderLogs.length, greaterThan(0));
       } catch (e) {
         // If the request fails, we should still have error logs
-        final errorLogs =
-            logRecords.where((record) => record.message.contains('✗')).toList();
+        final errorLogs = logger.entries
+            .where((record) => record.message.contains('✗'))
+            .toList();
         expect(errorLogs.length, greaterThan(0));
       }
     });
@@ -225,7 +251,8 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'enableHttpLogging': true,
+        LLMConfigKeys.enableHttpLogging: true,
+        LLMConfigKeys.logger: logger,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -238,7 +265,7 @@ void main() {
       dio.httpClientAdapter = _FakeErrorAdapter();
 
       // Clear any setup logs
-      logRecords.clear();
+      logger.entries.clear();
 
       try {
         // Make a request that should fail (404)
@@ -248,13 +275,13 @@ void main() {
       }
 
       // Should have logged the error
-      final errorLogs = logRecords
+      final errorLogs = logger.entries
           .where((record) => record.message.contains('✗ GET'))
           .toList();
       expect(errorLogs.length, greaterThan(0));
 
       // Should have logged error details
-      final errorDetailLogs = logRecords
+      final errorDetailLogs = logger.entries
           .where((record) => record.message.contains('✗ Error:'))
           .toList();
       expect(errorDetailLogs.length, greaterThan(0));
@@ -266,7 +293,8 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'enableHttpLogging': true,
+        LLMConfigKeys.enableHttpLogging: true,
+        LLMConfigKeys.logger: logger,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -279,7 +307,7 @@ void main() {
       dio.httpClientAdapter = _FakeSuccessAdapter();
 
       // Clear any setup logs
-      logRecords.clear();
+      logger.entries.clear();
 
       try {
         // Make a POST request with data
@@ -289,7 +317,7 @@ void main() {
       }
 
       // Should have logged the request data
-      final dataLogs = logRecords
+      final dataLogs = logger.entries
           .where((record) => record.message.contains('→ Data:'))
           .toList();
       expect(dataLogs.length, greaterThan(0));
@@ -307,7 +335,8 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'enableHttpLogging': true,
+        LLMConfigKeys.enableHttpLogging: true,
+        LLMConfigKeys.logger: logger,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -320,7 +349,7 @@ void main() {
       dio.httpClientAdapter = _FakeSuccessAdapter();
 
       // Clear any setup logs
-      logRecords.clear();
+      logger.entries.clear();
 
       try {
         await dio.get('/get');
@@ -329,13 +358,15 @@ void main() {
       }
 
       // Request/response URLs should be INFO level
-      final infoLogs =
-          logRecords.where((record) => record.level == Level.INFO).toList();
+      final infoLogs = logger.entries
+          .where((record) => record.level == _TestLogLevel.info)
+          .toList();
       expect(infoLogs.length, greaterThan(0));
 
       // Headers and data should be FINE level
-      final fineLogs =
-          logRecords.where((record) => record.level == Level.FINE).toList();
+      final fineLogs = logger.entries
+          .where((record) => record.level == _TestLogLevel.fine)
+          .toList();
       expect(fineLogs.length, greaterThan(0));
     });
   });

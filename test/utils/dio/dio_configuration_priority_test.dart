@@ -11,7 +11,8 @@ void main() {
         model: 'test-model',
         timeout: Duration(seconds: 45), // LLMConfig timeout
       ).withExtensions({
-        'connectionTimeout': Duration(seconds: 30), // Custom connection timeout
+        LLMConfigKeys.connectionTimeout:
+            Duration(seconds: 30), // Custom connection timeout
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -95,8 +96,10 @@ void main() {
         model: 'test-model',
         timeout: Duration(seconds: 45), // LLMConfig timeout
       ).withExtensions({
-        'connectionTimeout': Duration(seconds: 30), // Custom connection timeout
-        'receiveTimeout': Duration(seconds: 120), // Custom receive timeout
+        LLMConfigKeys.connectionTimeout:
+            Duration(seconds: 30), // Custom connection timeout
+        LLMConfigKeys.receiveTimeout:
+            Duration(seconds: 120), // Custom receive timeout
         // No custom send timeout - should use LLMConfig timeout
       });
 
@@ -121,7 +124,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'customHeaders': {
+        LLMConfigKeys.customHeaders: {
           'X-Custom-Header': 'custom-value',
           'X-Another-Header': 'another-value',
         },
@@ -149,7 +152,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'customHeaders': {
+        LLMConfigKeys.customHeaders: {
           'Content-Type': 'application/xml', // Override default
           'X-Custom-Header': 'custom-value',
         },
@@ -177,7 +180,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'customHeaders': <String, String>{}, // Empty map
+        LLMConfigKeys.customHeaders: <String, String>{}, // Empty map
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
@@ -225,14 +228,14 @@ void main() {
         model: 'test-model',
         timeout: Duration(seconds: 45),
       ).withExtensions({
-        'enableHttpLogging': true,
-        'connectionTimeout': Duration(seconds: 30),
-        'receiveTimeout': Duration(seconds: 120),
-        'customHeaders': {
+        LLMConfigKeys.enableHttpLogging: true,
+        LLMConfigKeys.connectionTimeout: Duration(seconds: 30),
+        LLMConfigKeys.receiveTimeout: Duration(seconds: 120),
+        LLMConfigKeys.customHeaders: {
           'X-Custom-Header': 'custom-value',
           'X-Client-Version': '1.0.0',
         },
-        'httpProxy': 'http://proxy.example.com:8080',
+        LLMConfigKeys.httpProxy: 'http://proxy.example.com:8080',
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(

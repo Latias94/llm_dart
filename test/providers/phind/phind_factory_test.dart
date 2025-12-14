@@ -1,6 +1,5 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/factories/phind_factory.dart';
 
 void main() {
   group('PhindProviderFactory Tests', () {

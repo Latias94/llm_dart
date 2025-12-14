@@ -1,11 +1,14 @@
 import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
-import 'package:llm_dart_deepseek/llm_dart_deepseek.dart' as deepseek;
+import 'package:llm_dart_anthropic/testing.dart' as anthropic;
+import 'package:llm_dart_deepseek/testing.dart' as deepseek;
 import 'package:llm_dart_xai/llm_dart_xai.dart' as xai;
-import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
-import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+import 'package:llm_dart_xai/testing.dart' as xai_testing;
+import 'package:llm_dart_google/testing.dart' as google_testing;
+import 'package:llm_dart_ollama/testing.dart' as ollama_testing;
+import 'package:llm_dart_openai/testing.dart' as openai;
+import 'package:llm_dart_openai_compatible/testing.dart';
 
 void main() {
   group('Provider Client Dio Configuration Tests', () {
@@ -17,10 +20,10 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
       ).withExtensions({
-        'enableHttpLogging': true,
-        'httpProxy': 'http://proxy.example.com:8080',
-        'customHeaders': {'X-Test': 'value'},
-        'connectionTimeout': Duration(seconds: 30),
+        LLMConfigKeys.enableHttpLogging: true,
+        LLMConfigKeys.httpProxy: 'http://proxy.example.com:8080',
+        LLMConfigKeys.customHeaders: {'X-Test': 'value'},
+        LLMConfigKeys.connectionTimeout: Duration(seconds: 30),
       });
     });
 
@@ -46,7 +49,7 @@ void main() {
           baseUrl: 'https://api.anthropic.com/v1/',
           model: 'claude-sonnet-4-20250514',
         );
-        final client = AnthropicClient(config);
+        final client = anthropic.AnthropicClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl,
@@ -118,7 +121,7 @@ void main() {
           baseUrl: 'https://api.deepseek.com/v1/',
           model: 'deepseek-chat',
         );
-        final client = DeepSeekClient(config);
+        final client = deepseek.DeepSeekClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(
@@ -167,7 +170,7 @@ void main() {
           'should use unified HTTP configuration when originalConfig is available',
           () {
         final config = xai.XAIConfig.fromLLMConfig(baseConfig);
-        final client = xai.XAIClient(config);
+        final client = xai_testing.XAIClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl, equals('https://api.example.com'));
@@ -184,7 +187,7 @@ void main() {
           baseUrl: 'https://api.x.ai/v1/',
           model: 'grok-3',
         );
-        final client = XAIClient(config);
+        final client = xai_testing.XAIClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl, equals('https://api.x.ai/v1/'));
@@ -199,7 +202,7 @@ void main() {
           'should use unified HTTP configuration when originalConfig is available',
           () {
         final config = GoogleConfig.fromLLMConfig(baseConfig);
-        final client = GoogleClient(config);
+        final client = google_testing.GoogleClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl, equals('https://api.example.com'));
@@ -216,7 +219,7 @@ void main() {
           baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
           model: 'gemini-1.5-flash',
         );
-        final client = GoogleClient(config);
+        final client = google_testing.GoogleClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl,
@@ -232,7 +235,7 @@ void main() {
           'should use unified HTTP configuration when originalConfig is available',
           () {
         final config = OllamaConfig.fromLLMConfig(baseConfig);
-        final client = OllamaClient(config);
+        final client = ollama_testing.OllamaClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl, equals('https://api.example.com'));
@@ -248,7 +251,7 @@ void main() {
           baseUrl: 'http://localhost:11434',
           model: 'llama3.2',
         );
-        final client = OllamaClient(config);
+        final client = ollama_testing.OllamaClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl, equals('http://localhost:11434'));

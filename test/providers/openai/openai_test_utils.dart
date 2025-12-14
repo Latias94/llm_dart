@@ -1,10 +1,11 @@
 import 'package:dio/dio.dart';
-import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart_openai/testing.dart' as openai;
 
 /// Test client that captures JSON request bodies instead of doing HTTP.
 class CapturingOpenAIClient extends openai.OpenAIClient {
   Map<String, dynamic>? lastBody;
   String? lastEndpoint;
+  Map<String, String>? lastHeaders;
 
   CapturingOpenAIClient(super.config);
 
@@ -13,9 +14,11 @@ class CapturingOpenAIClient extends openai.OpenAIClient {
     String endpoint,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async {
     lastEndpoint = endpoint;
     lastBody = Map<String, dynamic>.from(body);
+    lastHeaders = headers;
 
     // Return a minimal chat-style response to satisfy parsers.
     if (endpoint == 'chat/completions') {
@@ -53,6 +56,9 @@ class CapturingOpenAIClient extends openai.OpenAIClient {
 /// a real OpenAI SSE endpoint but keeps tests fully deterministic.
 class FakeOpenAIStreamClient extends openai.OpenAIClient {
   final List<String> chunks;
+  Map<String, dynamic>? lastBody;
+  String? lastEndpoint;
+  Map<String, String>? lastHeaders;
 
   FakeOpenAIStreamClient(
     super.config, {
@@ -64,7 +70,11 @@ class FakeOpenAIStreamClient extends openai.OpenAIClient {
     String endpoint,
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
+    Map<String, String>? headers,
   }) async* {
+    lastEndpoint = endpoint;
+    lastBody = Map<String, dynamic>.from(body);
+    lastHeaders = headers;
     for (final chunk in chunks) {
       yield chunk;
     }

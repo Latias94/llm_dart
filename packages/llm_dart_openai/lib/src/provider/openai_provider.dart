@@ -14,6 +14,7 @@ import '../images/openai_images.dart';
 import '../models/openai_models.dart';
 import '../moderation/openai_moderation.dart';
 import '../responses/openai_responses.dart';
+import '../responses/openai_responses_capability.dart';
 
 /// OpenAI Provider implementation for the llm_dart_openai subpackage.
 ///
@@ -46,7 +47,7 @@ class OpenAIProvider
   late final OpenAIModeration _moderation;
   late final OpenAICompletion _completion;
   late final OpenAIAssistants _assistants;
-  late final OpenAIResponses? _responses;
+  late final OpenAIResponsesCapability? _responses;
 
   OpenAIProvider(this.config) : _client = OpenAIClient(config) {
     _chat = OpenAIChat(_client, config);
@@ -99,9 +100,9 @@ class OpenAIProvider
     CancellationToken? cancelToken,
   }) {
     if (config.useResponsesAPI && _responses != null) {
-      return _responses.chat(
+      return _responses.chatWithTools(
         messages,
-        tools: tools,
+        tools,
         options: options,
         cancelToken: cancelToken,
       );
@@ -503,7 +504,7 @@ class OpenAIProvider
   }
 
   /// Access the OpenAI Responses API module when enabled.
-  OpenAIResponses? get responses => _responses;
+  OpenAIResponsesCapability? get responses => _responses;
 
   /// Get the underlying client for advanced usage.
   OpenAIClient get client => _client;

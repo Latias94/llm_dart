@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:llm_dart/llm_dart.dart'
-    hide GoogleClient, GoogleConfig, GoogleFilesClient;
+import 'package:llm_dart/llm_dart.dart' hide GoogleConfig, GoogleFilesClient;
 import 'package:llm_dart_google/llm_dart_google.dart'
-    show GoogleClient, GoogleConfig, GoogleFilesClient;
+    show GoogleConfig, GoogleFilesClient;
+import 'package:llm_dart_google/protocol.dart' show GoogleClient;
 
 /// Google Gemini Files API + File Search RAG example.
 ///
