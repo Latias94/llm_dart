@@ -1,26 +1,20 @@
-name: llm_dart
-description: A modular Dart library for AI provider interactions with unified interface for OpenAI, Anthropic, Google, DeepSeek, Ollama, xAI, Groq, ElevenLabs and more.
-version: 0.10.5
-license: MIT
-homepage: https://github.com/Latias94/llm_dart
+name: llm_dart_repo
+description: Monorepo tooling package for llm_dart (not published).
+version: 0.0.0
+publish_to: none
+
 repository: https://github.com/Latias94/llm_dart
 issue_tracker: https://github.com/Latias94/llm_dart/issues
-
-topics:
-  - ai
-  - llms
-  - nlp
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  dio: ^5.9.0
-  http_parser: ^4.1.2
-  logging: ^1.2.0
+  # Keep empty: this package exists only for tooling.
 
 dev_dependencies:
-  test: ^1.27.0
-  mockito: ^5.4.0
-  mcp_dart: ^0.6.3
+  # Melos v7+ relies on Dart pub workspaces (`workspace:` + `resolution: workspace`),
+  # which cannot be published to pub.dev as standalone packages. We keep this
+  # repo publishable by managing the monorepo with Melos v6 (override-based).
+  melos: ^6.3.2
   lints: ^6.0.0

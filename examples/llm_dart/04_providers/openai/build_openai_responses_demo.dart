@@ -1,0 +1,343 @@
+// ignore_for_file: avoid_print
+import 'dart:io';
+import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+
+/// 🚀 buildOpenAIResponses() Method Demo
+///
+/// This example demonstrates the new `buildOpenAIResponses()` convenience method
+/// that provides type-safe access to OpenAI Responses API features.
+///
+/// **Key Benefits:**
+/// - **Automatic Configuration**: Automatically enables Responses API
+/// - **Type Safety**: Returns properly typed OpenAIProvider
+/// - **Direct Access**: No need for casting or capability checking
+/// - **Error Prevention**: Validates Responses API initialization
+///
+/// **Usage Patterns:**
+/// ```dart
+/// // Traditional approach (manual configuration)
+/// final provider1 = await ai()
+///     .openai((openai) => openai.useResponsesAPI())
+///     .apiKey(apiKey)
+///     .model('gpt-4o')
+///     .build();
+///
+/// if (provider1.supports(LLMCapability.openaiResponses) && provider1 is OpenAIProvider) {
+///   final responsesAPI = (provider1 as OpenAIProvider).responses!;
+///   // Use responsesAPI...
+/// }
+///
+/// // New convenience approach
+/// final provider2 = await ai()
+///     .openai((openai) => openai.webSearchTool())
+///     .apiKey(apiKey)
+///     .model('gpt-4o')
+///     .buildOpenAIResponses();
+///
+/// // Direct access - no casting needed!
+/// final responsesAPI = provider2.responses!;
+/// ```
+///
+/// Before running, set your API key:
+/// export OPENAI_API_KEY="your-key"
+void main() async {
+  print('🚀 buildOpenAIResponses() Method Demo\n');
+
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null) {
+    print('❌ Please set OPENAI_API_KEY environment variable');
+    exit(1);
+  }
+
+  await demonstrateTraditionalApproach(apiKey);
+  await demonstrateConvenienceMethod(apiKey);
+  await demonstrateErrorHandling(apiKey);
+  await demonstrateCapabilityComparison(apiKey);
+  await demonstrateResponsesAgentPrompt(apiKey);
+
+  print('\n✅ buildOpenAIResponses() demo completed!');
+}
+
+/// Demonstrate traditional approach with manual configuration
+Future<void> demonstrateTraditionalApproach(String apiKey) async {
+  print('📋 Traditional Approach (Manual Configuration):\n');
+
+  try {
+    // Manual configuration with capability checking
+    final provider = await ai()
+        .openai((openai) => openai.useResponsesAPI().webSearchTool())
+        .apiKey(apiKey)
+        .model('gpt-4o')
+        .build();
+
+    print('   ✅ Provider created: ${provider.runtimeType}');
+
+    // Manual capability checking and casting
+    if (provider is ProviderCapabilities &&
+        (provider as ProviderCapabilities)
+            .supports(LLMCapability.openaiResponses) &&
+        provider is openai.OpenAIProvider) {
+      final openai.OpenAIProvider openaiProvider = provider;
+      final responsesAPI = openaiProvider.responses;
+
+      if (responsesAPI != null) {
+        print('   ✅ Responses API available after manual setup');
+
+        // Test basic functionality
+        final response = await responsesAPI.chat([
+          ModelMessage.userText('Hello from traditional approach!'),
+        ]);
+        print(
+            '   💬 Response: ${response.text?.substring(0, 50) ?? 'No text'}...');
+      } else {
+        print('   ❌ Responses API not available despite capability');
+      }
+    } else {
+      print('   ❌ Capability check failed');
+    }
+  } catch (e) {
+    print('   ❌ Error in traditional approach: $e');
+  }
+}
+
+/// Demonstrate the new convenience method
+Future<void> demonstrateConvenienceMethod(String apiKey) async {
+  print('\n🚀 New Convenience Method (buildOpenAIResponses):\n');
+
+  try {
+    // New convenience method - automatic configuration
+    final provider = await ai()
+        .openai((openai) => openai.webSearchTool())
+        .apiKey(apiKey)
+        .model('gpt-4o')
+        .buildOpenAIResponses();
+
+    print('   ✅ Provider created: ${provider.runtimeType}');
+    print('   ✅ Automatic Responses API configuration');
+    print('   ✅ Type-safe OpenAIProvider returned');
+
+    // Direct access - no casting needed!
+    final responsesAPI = provider.responses!;
+    print('   ✅ Direct access to Responses API');
+
+    // Verify capabilities
+    print('   📋 Capabilities:');
+    print(
+        '      • openaiResponses: ${provider.supports(LLMCapability.openaiResponses)}');
+    print('      • chat: ${provider.supports(LLMCapability.chat)}');
+    print('      • streaming: ${provider.supports(LLMCapability.streaming)}');
+
+    // Test basic functionality
+    final response = await responsesAPI.chat([
+      ModelMessage.userText('Hello from convenience method!'),
+    ]);
+    print('   💬 Response: ${response.text?.substring(0, 50) ?? 'No text'}...');
+
+    // Test response ID access (via metadata so examples stay decoupled from
+    // internal response types).
+    final responseId = response.metadata?['id'] as String?;
+    if (responseId != null && responseId.isNotEmpty) {
+      print('   🆔 Response ID: ${responseId.substring(0, 20)}...');
+    }
+  } catch (e) {
+    print('   ❌ Error in convenience method: $e');
+  }
+}
+
+/// Demonstrate error handling
+Future<void> demonstrateErrorHandling(String apiKey) async {
+  print('\n⚠️ Error Handling:\n');
+
+  // Test with non-OpenAI provider
+  try {
+    print('   Testing with non-OpenAI provider...');
+    await ai()
+        .anthropic()
+        .apiKey('dummy-key')
+        .model('claude-3-sonnet-20240229')
+        .buildOpenAIResponses();
+
+    print('   ❌ Should have thrown an error!');
+  } catch (e) {
+    print('   ✅ Correctly caught error: ${e.toString().substring(0, 80)}...');
+  }
+
+  // Test automatic enablement
+  try {
+    print('\n   Testing automatic Responses API enablement...');
+    final provider = await ai()
+        .openai() // No explicit useResponsesAPI() call
+        .apiKey(apiKey)
+        .model('gpt-4o')
+        .buildOpenAIResponses();
+
+    print('   ✅ Responses API automatically enabled');
+    print(
+        '   ✅ Provider supports openaiResponses: ${provider.supports(LLMCapability.openaiResponses)}');
+  } catch (e) {
+    print('   ❌ Error in automatic enablement: $e');
+  }
+}
+
+/// Compare capabilities between different build methods
+Future<void> demonstrateCapabilityComparison(String apiKey) async {
+  print('\n📊 Capability Comparison:\n');
+
+  try {
+    // Standard build
+    final standardProvider =
+        await ai().openai().apiKey(apiKey).model('gpt-4o-mini').build();
+
+    // Responses API build
+    final responsesProvider = await ai()
+        .openai()
+        .apiKey(apiKey)
+        .model('gpt-4o')
+        .buildOpenAIResponses();
+
+    print('   📋 Standard Provider Capabilities:');
+    _printCapabilities(standardProvider);
+
+    print('\n   📋 Responses Provider Capabilities:');
+    _printCapabilities(responsesProvider);
+
+    // Highlight the difference
+    final standardHasResponses = standardProvider is ProviderCapabilities &&
+        (standardProvider as ProviderCapabilities)
+            .supports(LLMCapability.openaiResponses);
+    final responsesHasResponses =
+        responsesProvider.supports(LLMCapability.openaiResponses);
+
+    print('\n   🔍 Key Difference:');
+    print('      • Standard build has openaiResponses: $standardHasResponses');
+    print(
+        '      • buildOpenAIResponses() has openaiResponses: $responsesHasResponses');
+
+    if (!standardHasResponses && responsesHasResponses) {
+      print('      ✅ buildOpenAIResponses() successfully adds the capability!');
+    }
+  } catch (e) {
+    print('   ❌ Error in capability comparison: $e');
+  }
+}
+
+/// Helper function to print provider capabilities
+void _printCapabilities(dynamic provider) {
+  if (provider is ProviderCapabilities) {
+    final capabilities = provider.supportedCapabilities.toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
+
+    for (final capability in capabilities) {
+      final icon = capability == LLMCapability.openaiResponses ? '🚀' : '✅';
+      print('      $icon ${capability.name}');
+    }
+
+    print('      📊 Total: ${capabilities.length} capabilities');
+  } else {
+    print('      ❌ Provider does not implement ProviderCapabilities');
+  }
+}
+
+/// Demonstrate using an OpenAI Responses-backed model with ToolLoopAgent
+/// and prompt-first ModelMessage conversations.
+Future<void> demonstrateResponsesAgentPrompt(String apiKey) async {
+  print('\n🤖 Responses API + ToolLoopAgent (prompt-first):\n');
+
+  try {
+    // 1) Build a prompt-first LanguageModel backed by the OpenAI Responses API.
+    //
+    // This mirrors the Vercel AI SDK pattern:
+    //   const openai = createOpenAI({ apiKey });
+    //   const model = openai.responses('gpt-4o');
+    final openaiFacade = createOpenAI(apiKey: apiKey);
+    final responsesModel = openaiFacade.responses('gpt-4o');
+
+    // 2) Define a simple web_search tool with schema + executor.
+    final tools = <String, ExecutableTool>{
+      'web_search': ExecutableTool(
+        schema: Tool.function(
+          name: 'web_search',
+          description: 'Search the web for up-to-date information.',
+          parameters: ParametersSchema(
+            schemaType: 'object',
+            properties: {
+              'query': ParameterProperty(
+                propertyType: 'string',
+                description: 'Search query',
+              ),
+            },
+            required: const ['query'],
+          ),
+        ),
+        execute: (args) async {
+          final query = args['query'] as String;
+          // In a real app, call your own search service or proxy here and
+          // return a structured JSON object.
+          return <String, dynamic>{
+            'results': 'Search results for: $query',
+          };
+        },
+      ),
+    };
+
+    // 3) Build a prompt-first conversation using ModelMessage.
+    final messages = <ModelMessage>[
+      ModelMessage.systemText(
+        'You are a research assistant. Use the web_search tool for '
+        'up-to-date information and cite your findings.',
+      ),
+      ModelMessage.userText(
+        'Using web_search, find recent news about Dart 3 performance '
+        'improvements and summarize them.',
+      ),
+    ];
+
+    // 4) Run the agent loop with ToolLoopAgent using the prompt-first API.
+    final result = await runAgentPromptText(
+      model: responsesModel,
+      promptMessages: messages,
+      tools: tools,
+      loopConfig: const ToolLoopConfig(
+        maxIterations: 4,
+        runToolsInParallel: true,
+      ),
+    );
+
+    print('   Final answer (Responses + Agent): ${result.text}');
+    print('   ✅ Responses-backed agent demonstration completed');
+  } catch (e) {
+    print('   ❌ Responses-backed agent demo failed: $e');
+  }
+}
+
+/// 🎯 Key Benefits Summary:
+///
+/// **buildOpenAIResponses() vs Traditional Approach:**
+///
+/// **Traditional:**
+/// ```dart
+/// final provider = await ai().openai((openai) => openai.useResponsesAPI()).build();
+/// if (provider.supports(LLMCapability.openaiResponses) && provider is OpenAIProvider) {
+///   final responsesAPI = (provider as OpenAIProvider).responses!;
+///   // Use responsesAPI...
+/// }
+/// ```
+///
+/// **New Convenience Method:**
+/// ```dart
+/// final provider = await ai().openai().buildOpenAIResponses();
+/// final responsesAPI = provider.responses!; // Direct access!
+/// ```
+///
+/// **Benefits:**
+/// 1. **Less Boilerplate**: No manual capability checking or casting
+/// 2. **Type Safety**: Guaranteed OpenAIProvider return type
+/// 3. **Automatic Configuration**: Enables Responses API automatically
+/// 4. **Error Prevention**: Validates initialization at build time
+/// 5. **Better DX**: Cleaner, more intuitive API
+///
+/// **When to Use:**
+/// - Use `buildOpenAIResponses()` when you specifically need Responses API features
+/// - Use `build()` for general OpenAI usage without Responses API
+/// - The method automatically handles the configuration complexity for you

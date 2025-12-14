@@ -4,8 +4,18 @@
 .dart_tool/
 .packages
 build/
+.DS_Store
 # If you're building an application, you may want to check-in your pubspec.lock
 pubspec.lock
+pubspec_overrides.yaml
+**/pubspec_overrides.yaml
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.code-workspace
+.history/
 
 # Directory created by dartdoc
 # If you don't generate documentation locally you can remove this line.
@@ -27,6 +37,17 @@ doc/api/
 .flutter-plugins-dependencies
 
 coverage/
+*.lcov
+lcov.info
+
+# Local dev env tools
+.direnv/
+.fvm/
+.tool-versions.local
+*.log
 
 # Claude Code configuration
 CLAUDE.md
+
+# Local reference repositories (not part of the Dart workspace)
+repo-ref/

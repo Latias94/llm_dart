@@ -5,19 +5,349 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0-rc.1] - 2025-11-14
+
+> Release candidate for the 0.11.0 line. This version introduces a multi-package refactor, provider-level split, and core observability enhancements while keeping public APIs backwards compatible.
+
+### Added
+
+- **Provider-defined tools (function + provider-defined union)**
+  - Added `CallToolSpec` union type in `llm_dart_core` to represent call-level tools:
+    - `FunctionCallToolSpec` wraps existing `Tool` instances (function tools).
+    - `ProviderDefinedToolSpec` describes provider-defined tools via a globally unique `id` (e.g. `google.google_search`, `xai.web_search`) and JSON `args`.
+  - Extended `LanguageModelCallOptions` with an optional `callTools` field:
+    - When `callTools` is provided, it takes precedence over the legacy `tools: List<Tool>` field.
+    - Existing code that only uses `tools` remains fully compatible.
+  - Re-exported `CallToolSpec`, `FunctionCallToolSpec`, and `ProviderDefinedToolSpec` from the root `llm_dart` package for convenience.
+
+- **Google provider-defined tools (Vercel AI SDK-style)**
+  - Added a `GoogleProviderDefinedTools` factory on `GoogleGenerativeAI`:
+    - `google.providerTools.googleSearch({ mode, dynamicThreshold })` → `ProviderDefinedToolSpec('google.google_search', ...)`.
+    - `google.providerTools.urlContext()` → `ProviderDefinedToolSpec('google.url_context')`.
+    - `google.providerTools.fileSearch({ fileSearchStoreNames, topK, metadataFilter })` → `ProviderDefinedToolSpec('google.file_search', ...)`.
+    - `google.providerTools.codeExecution()` → `ProviderDefinedToolSpec('google.code_execution')`.
+    - `google.providerTools.vertexRagStore({ ragCorpus, topK })` → `ProviderDefinedToolSpec('google.vertex_rag_store', ...)`.
+  - Extended `GoogleChat._buildRequestBodyFromPrompt` to interpret `LanguageModelCallOptions.callTools`:
+    - When provider-defined tools are present, they are mapped to native Gemini tools following the Vercel AI SDK semantics:
+      - `google.google_search` → `googleSearch` or `googleSearchRetrieval` (with `dynamicRetrievalConfig` when applicable).
+      - `google.url_context` → `urlContext` (Gemini 2.x only).
+      - `google.code_execution` → `codeExecution` (Gemini 2.x only).
+      - `google.file_search` → `fileSearch` (Gemini 2.5 only).
+      - `google.vertex_rag_store` → Vertex RAG Store retrieval configuration (Gemini 2.x only).
+    - When both function tools and provider-defined tools are present, provider-defined tools win and function tools are ignored (mirrors `google-prepare-tools.ts` behavior).
+    - When only function tools are present in `callTools`, they are treated equivalently to the legacy `tools: List<Tool>` path (functionDeclarations + toolConfig).
+
+- **Google tools facade enhancements**
+  - Expanded `GoogleTools` (schema helpers) to cover additional Gemini tools:
+    - `webSearch()` → unified `web_search` function tool schema with `{ query: string }`.
+    - `urlContext()` → `url_context` with an empty parameter object.
+    - `fileSearch()` → `file_search` with `fileSearchStoreNames`, `topK`, `metadataFilter`.
+    - `codeExecution()` → `code_execution` with `language` and `code` parameters.
+    - `vertexRagStore()` → `vertex_rag_store` with `ragCorpus` and `topK`.
+  - Added `GoogleGenerativeAI.webSearchTool(...)` convenience helper:
+    - Builds an `ExecutableTool` that uses the existing Google chat integration with `WebSearchConfig` / grounding metadata.
+    - Returns a JSON payload `{ query, answer, groundingMetadata?, urlContextMetadata? }`.
+
+- **xAI provider-defined tools helpers**
+  - Added `XAIProviderDefinedTools` on the `XAI` facade:
+    - `xai.providerTools.webSearch({ allowedDomains, excludedDomains, enableImageUnderstanding })` → `ProviderDefinedToolSpec('xai.web_search', ...)`.
+    - `xai.providerTools.xSearch({ allowedXHandles, excludedXHandles, fromDate, toDate, enableImageUnderstanding, enableVideoUnderstanding })` → `ProviderDefinedToolSpec('xai.x_search', ...)`.
+  - These specs mirror the Vercel AI SDK’s `xai.web_search` / `xai.x_search` provider-defined tools and are intended for future xAI Responses-style integrations. The existing `xai.webSearchTool(...)` executable helper remains the primary way to perform live search via the chat API.
+
+- **OpenAI Responses built-in tools expansion**
+  - Extended `llm_dart_openai` built-in tool support beyond web search / file search / computer use:
+    - Added `OpenAICodeInterpreterTool` for the `code_interpreter` Responses tool.
+    - Added `OpenAIImageGenerationTool` for the `image_generation` Responses tool.
+  - Updated the OpenAI facade `OpenAITools` to mirror the Vercel AI SDK `openai.tools` namespace:
+    - `openai.tools.codeInterpreter({ Map<String, dynamic>? parameters })`
+    - `openai.tools.imageGeneration({ String? model, Map<String, dynamic>? parameters })`
+  - Built-in tools are still attached via `OpenAI.responses(..., builtInTools: [...])` and serialized into the Responses `tools` array alongside function tools, so existing integrations remain fully compatible.
+
+- **High-level helpers: callTools integration**
+  - Updated top-level text helpers to recognize `LanguageModelCallOptions.callTools`:
+    - `generateText(...)` and `streamText(...)` now:
+      - Use `LLMBuilder` + `_applyCallOptions` for static config (apiKey, baseUrl, sampling parameters, etc.).
+      - When `options.callTools` is non-empty, they build a `LanguageModel` via `builder.buildLanguageModel()` and delegate to:
+        - `generateTextWithModel(...)` / `streamTextWithModel(...)` with the full `options` (including `callTools`), so providers like Google can honor provider-defined tools.
+      - When `callTools` is empty, they keep the previous behavior of calling `builder.generateText(...)` / `builder.streamText(...)` directly.
+
+- **High-level streaming parts API (`StreamTextPart`)**
+  - Introduced a provider-agnostic streaming representation in `llm_dart_core`:
+    - `StreamTextPart` sealed hierarchy for text, thinking, tool input (start/delta/end), final tool calls, and completion.
+    - `adaptStreamText(Stream<ChatStreamEvent>)` to convert low-level provider events into high-level parts.
+  - Exposed new helpers that mirror the Vercel AI SDK's `streamText` semantics:
+    - `LanguageModel.streamTextParts(...)` – high-level streaming API on top of any `LanguageModel`.
+    - `LLMBuilder.streamTextParts(...)` – builder-style streaming helper.
+    - Top-level `streamTextParts(...)` – one-off helper for `model: "provider:model"` identifiers.
+  - Existing low-level streaming API remains available:
+    - `streamText(...) -> Stream<ChatStreamEvent>` is still supported for advanced use cases and middlewares.
+    - New code should prefer `streamTextParts(...)` for most UI and application-level streaming scenarios.
+
+- **Provider registry client (Vercel AI SDK-style)**  
+  - Added `ProviderRegistryClient` and `createProviderRegistry` in `llm_dart` to mirror the `createProviderRegistry` pattern from the Vercel AI SDK:
+    - `createProviderRegistry({...})` accepts provider facades (OpenAI, GoogleGenerativeAI, DeepSeek, XAI, Ollama, etc.).
+    - `ProviderRegistryClient.languageModel('openai:gpt-4o')` returns a configured `LanguageModel`.
+    - `textEmbeddingModel('openai:text-embedding-3-small')`, `imageModel('google:gemini-1.5-flash')`, `speechModel('openai:gpt-4o-mini-tts')`, etc.
+  - Introduced lightweight factory interfaces for provider facades:
+    - `LanguageModelProviderFactory`, `EmbeddingModelProviderFactory`, `ImageModelProviderFactory`, `SpeechModelProviderFactory`.
+    - Implemented by: `OpenAI`, `GoogleGenerativeAI`, `DeepSeek`, `XAI`, and the new `Ollama` factory.
+  - Added focused tests:
+    - `test/utils/provider_registry_client_test.dart`
+    - `test/providers/ollama/ollama_registry_integration_test.dart`
+
+- **Ollama model factory (Vercel-style)**  
+  - Added an `Ollama` model factory in `lib/providers/ollama/ollama.dart`:
+    - `OllamaProviderSettings` for configuring `baseUrl`, `apiKey`, `timeout`, custom headers, and logical provider name.
+    - `Ollama.languageModel(modelId)` → wraps `OllamaProvider` as a `LanguageModel`.
+    - `Ollama.textEmbeddingModel(modelId)` → returns an `EmbeddingCapability` based on `OllamaProvider`.
+  - Added a top-level helper:
+    - `createOllama(...)` – Vercel-style entrypoint for Ollama models.
+  - Fully integrated with `createProviderRegistry`, so callers can do:
+    - `registry.languageModel('ollama:llama3.2')`
+    - `registry.textEmbeddingModel('ollama:nomic-embed-text')`
+
+- **Tool schema builder (`ToolBuilder` + `tool(...)`)**  
+  - Introduced a small DSL on top of `Tool` / `ParametersSchema` / `ParameterProperty` in `llm_dart_core`:
+    - `ToolBuilder` – fluent builder for function tools:
+      - `description(...)`
+      - `stringParam(...)`, `numberParam(...)`, `integerParam(...)`, `booleanParam(...)`
+      - `enumParam(...)` – string enum helper
+      - `arrayParam(...)` – arrays with `items: ParameterProperty`
+      - `objectParam(...)` – nested object parameters
+    - Top-level helper `tool(name, (builder) { ... })` to build `Tool` instances with a concise API.
+  - Re-exported from:
+    - `package:llm_dart_core/llm_dart_core.dart`
+    - `package:llm_dart/llm_dart.dart`
+  - Updated examples to demonstrate both the new DSL and the underlying schema types:
+    - `example/02_core_features/enhanced_tool_calling.dart`
+    - `example/02_core_features/tool_calling.dart` (shows `tool(...)` and equivalent `Tool.function + ParametersSchema` side-by-side for comparison).
+
+### Changed
+
+- **Multi-package architecture (Vercel AI SDK style)**  
+  - Introduced dedicated sub-packages under `packages/` for clearer layering and reusability:
+    - `llm_dart_core` – capabilities, `LLMConfig`, errors, and all shared models/DTOs.
+    - `llm_dart_provider_utils` – Dio client factory, HTTP error / response handling, HTTP configuration helpers.
+    - Provider sub-packages:
+      - `llm_dart_openai` – OpenAI (chat, embeddings, audio, images, files, moderation, Responses API).
+      - `llm_dart_anthropic` – Anthropic Claude (chat, models, files, MCP, caching).
+      - `llm_dart_google` – Google Gemini (chat, embeddings, images, TTS).
+      - `llm_dart_deepseek` – DeepSeek (chat, reasoning models, model listing).
+      - `llm_dart_groq` – Groq, built on the OpenAI-compatible protocol.
+      - `llm_dart_ollama` – Ollama (local models, completion, embeddings, model listing).
+      - `llm_dart_xai` – xAI Grok (chat, embeddings, live search).
+      - `llm_dart_elevenlabs` – ElevenLabs (TTS/STT).
+      - `llm_dart_phind` – Phind (coding assistant).
+      - `llm_dart_openai_compatible` – OpenAI REST protocol for OpenAI-compatible providers.
+  - The main `llm_dart` package now acts as an aggregation layer:
+    - Keeps `ai()` / `LLMBuilder` / `LLMProviderRegistry` / unified models and capabilities.
+    - Re-exports provider sub-packages (OpenAI, Anthropic, Google, etc.).
+    - The legacy `package:llm_dart/providers/...` entrypoints have been removed.
+      Use `package:llm_dart/llm_dart.dart` (full bundle) or import a provider package directly
+      (e.g. `package:llm_dart_openai/llm_dart_openai.dart`).
+
+- **Provider split & sub-package API**
+  - OpenAI, Groq, DeepSeek, Google, Anthropic, Ollama, xAI, Phind, ElevenLabs providers have been split into their own sub-packages.
+  - Prefer importing:
+    - `package:llm_dart/llm_dart.dart` for the full bundle, or
+    - `package:llm_dart_<provider>/llm_dart_<provider>.dart` for provider-only usage.
+  - The legacy shim files under `lib/providers/**` have been removed.
+  - Legacy helper functions like `createOpenAIProvider`, `createGroqProvider`, `createDeepSeekProvider`, etc. have been removed.
+    - Use provider constructors (`OpenAIProvider(OpenAIConfig(...))`, etc.) when you need low-level access.
+    - Prefer the model-centric facades (`createOpenAI(...)`, `createGroq(...)`, `createDeepSeek(...)`) for Vercel AI SDK-style usage.
+
+- **Configuration consolidation & fallbacks**
+  - All provider-specific defaulting logic for `baseUrl` / `model` has been centralized into `fromLLMConfig` or factory transforms:
+    - Example: `DeepSeekConfig.fromLLMConfig` now applies consistent fallbacks when `LLMConfig.baseUrl` / `model` are empty, using local defaults (`https://api.deepseek.com/v1/`, `deepseek-chat`).
+    - `GroqConfig.fromLLMConfig` mirrors the old `GroqConfig` behavior while building on top of `OpenAICompatibleConfig`.
+  - Provider configs now behave as “resolved config” objects:
+    - Values are determined once at factory time (from `LLMConfig` + extensions).
+    - Config classes expose provider-specific capabilities (e.g., `supportsReasoning`, `supportsVision`, `modelFamily`) as pure getters.
+  - HTTP timeout resolution is unified in `llm_dart_provider_utils`:
+    - `BaseProviderDioStrategy.getTimeout` now reads timeout from either the provider config or `originalConfig.timeout` (for OpenAI-compatible configs).
+
+- **HTTP configuration layering cleanup**
+  - Moved HTTP configuration utilities into `llm_dart_provider_utils` to avoid layering inversions:
+    - New files in provider-utils:
+      - `src/utils/http_client_adapter_stub.dart`
+      - `src/utils/http_client_adapter_io.dart`
+      - `src/utils/http_client_adapter_web.dart`
+      - `src/utils/http_config_utils.dart`
+    - `DioClientFactory` now depends on `HttpConfigUtils` from provider-utils instead of the main package.
+  - Main package now provides a backwards-compatible facade:
+    - `lib/utils/http_config_utils.dart` re-exports `HttpConfigUtils` from `llm_dart_provider_utils`.
+  - This ensures a clean dependency direction:
+    - `llm_dart_core` → `llm_dart_provider_utils` → provider sub-packages → main `llm_dart`.
+
+- **Core observability – call-level metadata & warnings**
+  - `ChatResponse` in `llm_dart_core` has been extended with:
+    - `List<CallWarning> get warnings`
+    - `Map<String, dynamic>? get metadata`
+  - Implementations updated to surface structured information:
+    - OpenAI Responses (both main and sub-package):
+      - `metadata` now includes `provider`, `id`, `model`, `status`, and `functionCallCount`.
+    - Anthropic:
+      - `metadata` includes `provider`, `id`, `model`, `stopReason`, `hasThinking`, `hasMcpToolUse`, `hasMcpToolResult`.
+    - DeepSeek:
+      - `metadata` includes provider/model/reasoning flags;
+      - `warnings` surfaces unsupported or no-op parameters for reasoning models (e.g., `logprobs`, `top_logprobs`, temperature/top_p on `deepseek-reasoner`).
+  - Existing code that does not use `warnings`/`metadata` remains fully compatible.
+
+- **Version alignment**
+  - All packages in the workspace have been aligned to the `0.11.0-rc.1` version:
+    - `llm_dart`, `llm_dart_core`, `llm_dart_provider_utils`, all provider sub-packages, and the OpenAI-compatible protocol package.
+
+- **Prompt-first message model (`ModelMessage`)**
+  - Introduced `ModelMessage` in `llm_dart_core` as the primary, provider‑agnostic message model built from `ChatContentPart` values.
+  - `ChatCapability` is now prompt-first and consumes `List<ModelMessage>` prompts directly:
+    - All built-in providers (OpenAI, Anthropic, DeepSeek, Google, Ollama, xAI, Phind, OpenAI-compatible) implement this prompt-first signature.
+    - Tool calling is configured via the `tools:` parameter on `chat(...)` / `chatStream(...)`.
+  - Extended high‑level helpers to accept prompt‑first inputs:
+    - `generateTextWithModel`, `streamTextWithModel`, `streamTextPartsWithModel`, `generateObjectWithModel` now accept `promptMessages: List<ModelMessage>`.
+    - Internally they resolve `prompt` / `structuredPrompt` / `promptMessages` into `List<ModelMessage>` and delegate to `LanguageModel.*WithOptions(...)`.
+  - Added prompt‑first Agent helpers:
+    - `runAgentPromptText`, `runAgentPromptTextWithSteps`, `runAgentPromptObject`, `runAgentPromptObjectWithSteps` accept `promptMessages: List<ModelMessage>` and pass them into `AgentInput.messages`.
+    - `ToolLoopAgent` is prompt-first and consumes `AgentInput.messages`.
+
+- **Dio strategy generics (type-safe HTTP configuration)**
+  - Updated `ProviderDioStrategy` and `BaseProviderDioStrategy` in `llm_dart_provider_utils` to be generic over `TConfig extends ProviderHttpConfig`:
+    - Each provider strategy now declares its concrete config type, e.g.:
+      - `OpenAIDioStrategy extends BaseProviderDioStrategy<OpenAIConfig>`.
+      - `GoogleDioStrategy extends BaseProviderDioStrategy<GoogleConfig>`.
+      - `DeepSeekDioStrategy extends BaseProviderDioStrategy<DeepSeekConfig>`.
+      - `AnthropicDioStrategy extends BaseProviderDioStrategy<AnthropicConfig>`.
+      - `OllamaDioStrategy extends BaseProviderDioStrategy<OllamaConfig>`.
+      - `XAIDioStrategy extends BaseProviderDioStrategy<XAIConfig>`.
+      - `ElevenLabsDioStrategy extends BaseProviderDioStrategy<ElevenLabsConfig>`.
+      - `_OpenAICompatibleDioStrategy extends BaseProviderDioStrategy<OpenAICompatibleConfig>`.
+      - `PhindDioStrategy extends BaseProviderDioStrategy<PhindConfig>`.
+      - `GroqDioStrategy extends BaseProviderDioStrategy<GroqConfig>`.
+  - `DioClientFactory.create` is now generic over the concrete `ProviderHttpConfig`:
+    - Signature changed from `create({ ProviderDioStrategy, ProviderHttpConfig })` to `create<TConfig extends ProviderHttpConfig>({ ProviderDioStrategy<TConfig>, TConfig })`.
+    - Call sites in provider clients (OpenAI, Anthropic, Google, DeepSeek, Ollama, xAI, ElevenLabs, Phind, OpenAI-compatible, Groq) remain source-compatible; the correct generic type is inferred from the config.
+  - Improved type-safety and IDE support:
+    - Strategy implementations now receive strongly-typed config objects instead of `dynamic`.
+    - Reduces the risk of accidentally mixing strategies and configs from different providers.
+
+### Migration Notes
+
+- For most users importing `package:llm_dart/llm_dart.dart`, no code changes are required:
+  - Provider types and helper functions remain available at their existing paths.
+  - The multi-package refactor is internal and should be transparent.
+- Advanced users who want to depend on specific provider sub-packages directly can now import:
+  - `package:llm_dart_core/llm_dart_core.dart`
+  - `package:llm_dart_provider_utils/llm_dart_provider_utils.dart`
+  - `package:llm_dart_openai/llm_dart_openai.dart`, etc.
+
+#### Migration Guide: from `ChatMessage` to `ModelMessage`
+
+`llm_dart` is fully prompt-first: conversations are represented by
+`ModelMessage` + `ChatContentPart`. Legacy `ChatMessage` shims have been removed.
+
+**1. Simple text prompts (prompt-first recommended)**
+
+Existing code:
+
+```dart
+final result = await generateTextWithModel(
+  model,
+  promptMessages: [ModelMessage(role: ChatRole.user, parts: [TextContentPart('Hello')])],
+);
+```
+
+Recommended prompt‑first style (optional for simple cases):
+
+```dart
+final messages = [
+  ModelMessage(
+    role: ChatRole.user,
+    parts: [TextContentPart('Hello')],
+  ),
+];
+
+final result = await generateTextWithModel(
+  model,
+  promptMessages: messages,
+);
+```
+
+**2. Multi‑modal / multi‑part prompts**
+
+Existing code:
+
+```dart
+final prompt = ChatPromptBuilder.user()
+    .text('Describe this image.')
+    .imageBytes(imageBytes, mime: ImageMime.png)
+    .build();
+
+final response = await provider.chat([prompt]);
+```
+
+Migration (prompt‑first, model‑centric):
+
+```dart
+final prompt = ChatPromptBuilder.user()
+    .text('Describe this image.')
+    .imageBytes(imageBytes, mime: ImageMime.png)
+    .build(); // returns ModelMessage
+
+final result = await generateTextWithModel(
+  model,
+  promptMessages: [prompt],
+);
+```
+
+**3. Tool loops / Agents**
+
+Prompt‑first Agent usage:
+
+```dart
+final promptMessages = [
+  ModelMessage(
+    role: ChatRole.user,
+    parts: [TextContentPart('Call tools to solve this task.')],
+  ),
+];
+
+final textResult = await runAgentPromptText(
+  model: model,
+  promptMessages: promptMessages,
+  tools: tools,
+);
+```
+
+In new code, prefer:
+
+- `ModelMessage` + `ChatContentPart` for prompt construction.
+- `promptMessages: [...]` in:
+  - `generateTextWithModel`
+  - `streamTextWithModel`
+  - `streamTextPartsWithModel`
+  - `generateObjectWithModel`
+  - `runAgentPromptText` / `runAgentPromptObject` (and their `WithSteps` variants).
+
+#### Internal data model changes (prompt-first)
+
+- The internal chat content model has been refactored to be **prompt-first** and multi-part:
+  - `ModelMessage` + `ChatContentPart` (text, files, reasoning, tool calls/results) is now the canonical representation.
+  - All built-in providers map their native APIs to this structured model and back.
+- A new `LanguageModel` abstraction has been added on top of provider-specific `ChatCapability` implementations:
+  - `DefaultLanguageModel` wraps any `ChatCapability` and exposes a consistent, provider-agnostic surface.
+  - High-level helpers (`generateTextWithModel`, `streamTextWithModel`, `runAgentPromptText`, etc.) all consume `LanguageModel` + `ModelMessage`.
+
 ## [0.10.5] - 2025-11-26
 
 ### Added
 
 - **Streaming Tool Call Aggregation Helper**: Added `ToolCallAggregator` utility to merge incremental `ToolCallDeltaEvent` chunks into complete tool calls (stable `id`, `function.name`, and full `function.arguments`) for streaming workflows.
   - Exported via `llm_dart.dart` so it can be used by applications that consume streaming tool calls.
-  - Updated examples (`example/02_core_features/tool_calling.dart`, `example/04_providers/openai/advanced_features.dart`, and `example/06_mcp_integration/http_examples/simple_stream_client.dart`) to use the aggregator when replaying streamed tool calls into follow-up requests.
+  - Updated examples (`examples/llm_dart/02_core_features/tool_calling.dart`, `examples/llm_dart/04_providers/openai/advanced_features.dart`, and `examples/06_mcp_integration/http_examples/simple_stream_client.dart`) to use the aggregator when replaying streamed tool calls into follow-up requests.
 
 ### Fixed
 
 - **OpenAI Chat Streaming Tool Calls**: Fixed missing tool call IDs when using streaming tool calls with the OpenAI Chat Completions API (by [@ibercovich](https://github.com/ibercovich) in [#27](https://github.com/Latias94/llm_dart/pull/27))
   - Track tool call IDs by `index` across streaming chunks so that each `ToolCallDeltaEvent` has a stable `toolCall.id`.
-
 ## [0.10.4] - 2025-11-19
 
 ### Fixed
@@ -103,7 +433,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated `dio` dependency from ^5.8.0 to ^5.9.0
 - Updated `test` dependency from ^1.25.15 to ^1.26.3
-- Updated `mcp_dart` dependency from ^0.5.1 to ^0.6.3
+- Updated `mcp_dart` dependency from ^0.5.1 to ^1.0.2 and aligned MCP integration examples with the new client/server modules
 
 ## [0.9.0] - 2025-8-8
 
@@ -301,7 +631,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Anthropic MCP Models**: Update imports and class references
   - **Before**: `import '../../models/chat_models.dart'; MCPServer(...)`
-  - **After**: `import 'package:llm_dart/providers/anthropic/mcp_models.dart'; AnthropicMCPServer(...)`
+  - **After**: `import 'package:llm_dart_anthropic/llm_dart_anthropic.dart'; AnthropicMCPServer(...)`
   - All MCP classes now have `Anthropic` prefix to distinguish from general MCP protocol
   - Update constructor calls: `MCPServer.url()` → `AnthropicMCPServer.url()`
 
@@ -474,11 +804,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Unified `FilePurpose` and `FileStatus` enums
   - Provider-agnostic file operations with format adaptation
 
-- **Provider Configuration Centralization**: Extracted default configurations
-  - New `ProviderDefaults` class with all provider endpoints and models
-  - `OpenAICompatibleDefaults` for OpenAI-compatible provider configurations
-  - Centralized capability definitions for all providers
-  - Eliminated configuration duplication across factory classes
+- **Provider Configuration Defaults**: defaults now live alongside each provider
+  - Factories return strongly typed `getDefaultConfig()` values
+  - Base URL/model are owned by provider modules to reduce duplication
+  - OpenAI-compatible profiles remain defined in their own package
 
 - **Unified Audio Capability Interface**: Revolutionary audio processing design
   - Single `AudioCapability` interface for all audio operations (TTS, STT, translation)
@@ -535,8 +864,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **OpenAI Compatible Provider**: Removed `OpenAICompatibleProvider` class
-  - Functionality replaced by convenience functions in modular implementation
-  - `createDeepSeekProvider()`, `createGroqProvider()`, etc. provide same functionality
+  - Functionality replaced by the OpenAI-compatible subpackage (`llm_dart_openai_compatible`)
+  - Use `OpenAICompatibleConfigs.*` or builder shortcuts like `ai().openRouter()` / `ai().groqOpenAI()` / `ai().deepseekOpenAI()`
   - Simplified architecture with better performance
 
 - **Legacy Provider Files**: Cleaned up deprecated implementations

@@ -1,0 +1,435 @@
+// ignore_for_file: avoid_print
+import 'dart:io';
+import 'dart:convert';
+import 'package:llm_dart/llm_dart.dart';
+
+/// 🔧 Enhanced Tool Calling - Advanced Tool Features
+///
+/// This example demonstrates the enhanced tool calling capabilities:
+/// - Tool validation and error handling
+/// - Tool choice strategies
+/// - Structured outputs with tools
+/// - Parallel tool execution
+/// - Provider-specific tool features
+/// - Complex nested object structures in tool parameters
+///
+/// Before running, set your API key:
+/// export OPENAI_API_KEY="your-key"
+void main() async {
+  print('🔧 Enhanced Tool Calling - Advanced Tool Features\n');
+
+  // Get API key
+  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+
+  // Create AI model with enhanced capabilities
+  final model = await ai()
+      .openai()
+      .apiKey(apiKey)
+      .model('gpt-4o')
+      .temperature(0.1)
+      .maxTokens(1000)
+      .buildLanguageModel();
+
+  // Demonstrate enhanced tool calling features
+  await demonstrateToolValidation(model);
+  await demonstrateToolChoiceStrategies(model);
+  await demonstrateNestedObjectStructures(model);
+  await demonstrateStructuredOutputWithTools(model);
+  await demonstrateProviderSpecificFeatures();
+
+  print('\n✅ Enhanced tool calling completed!');
+}
+
+/// Demonstrate tool validation and error handling
+Future<void> demonstrateToolValidation(LanguageModel model) async {
+  print('🔍 Tool Validation and Error Handling:\n');
+
+  try {
+    // Define a calculator tool with strict validation using ToolBuilder
+    final calculatorTool = tool('calculate', (t) {
+      t
+        ..description('Perform mathematical calculations with validation')
+        ..stringParam(
+          'expression',
+          description: 'Mathematical expression (e.g., "2 + 3 * 4")',
+          required: true,
+        )
+        ..integerParam(
+          'precision',
+          description: 'Number of decimal places for result',
+        )
+        ..enumParam(
+          'operation_type',
+          description: 'Type of mathematical operation',
+          values: ['arithmetic', 'algebraic', 'trigonometric'],
+        );
+    });
+
+    final prompt = ChatPromptBuilder.user()
+        .text('Calculate 15.7 * 8.3 with 2 decimal places precision')
+        .build();
+
+    print('   User: Calculate 15.7 * 8.3 with 2 decimal places precision');
+    print('   Available tools: calculate (with validation)');
+
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: [calculatorTool]),
+    );
+
+    if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
+      print('   🔧 Tool calls made:');
+
+      for (final toolCall in response.toolCalls!) {
+        print('      • Function: ${toolCall.function.name}');
+        print('      • Arguments: ${toolCall.function.arguments}');
+
+        // Validate tool call
+        try {
+          final isValid =
+              ToolValidator.validateToolCall(toolCall, calculatorTool);
+          print('      • Validation: ${isValid ? '✅ Valid' : '❌ Invalid'}');
+
+          // Simulate tool execution
+          final args =
+              jsonDecode(toolCall.function.arguments) as Map<String, dynamic>;
+          final expression = args['expression'] as String;
+          final precision = args['precision'] as int? ?? 2;
+
+          // Simple calculation simulation
+          final result = _simulateCalculation(expression, precision);
+          print('      • Result: $result');
+        } catch (e) {
+          if (e is ToolValidationError) {
+            print('      • Validation Error: ${e.message}');
+          } else {
+            print('      • Execution Error: $e');
+          }
+        }
+      }
+    }
+
+    print('   ✅ Tool validation completed\n');
+  } catch (e) {
+    print('   ❌ Tool validation failed: $e\n');
+  }
+}
+
+/// Demonstrate different tool choice strategies
+Future<void> demonstrateToolChoiceStrategies(LanguageModel model) async {
+  print('🎯 Tool Choice Strategies:\n');
+
+  final tools = [
+    tool('get_weather', (t) {
+      t
+        ..description('Get current weather information')
+        ..stringParam(
+          'location',
+          description: 'City and country',
+          required: true,
+        );
+    }),
+    tool('get_time', (t) {
+      t
+        ..description('Get current time in timezone')
+        ..stringParam(
+          'timezone',
+          description: 'Timezone identifier',
+          required: true,
+        );
+    }),
+  ];
+
+  // Test different tool choice strategies
+  final strategies = [
+    ('Auto', const AutoToolChoice()),
+    ('Required', const AnyToolChoice()),
+    ('Specific', const SpecificToolChoice('get_weather')),
+    ('None', const NoneToolChoice()),
+  ];
+
+  for (final (strategyName, toolChoice) in strategies) {
+    print('   Testing $strategyName tool choice:');
+
+    try {
+      // Validate tool choice
+      ToolValidator.validateToolChoice(toolChoice, tools);
+      print('      • Tool choice validation: ✅ Valid');
+
+      // Note: This would require EnhancedChatCapability implementation
+      print('      • Strategy: $strategyName');
+      print('      • Behavior: ${_describeToolChoiceBehavior(toolChoice)}');
+    } catch (e) {
+      print('      • Tool choice validation: ❌ $e');
+    }
+
+    print('');
+  }
+
+  print('   ✅ Tool choice strategies completed\n');
+}
+
+/// Demonstrate structured outputs with tools
+Future<void> demonstrateStructuredOutputWithTools(LanguageModel model) async {
+  print('📊 Structured Output with Tools:\n');
+
+  try {
+    // Define structured output format
+    final structuredFormat = StructuredOutputFormat(
+      name: 'analysis_result',
+      description: 'Structured analysis result with tool usage',
+      schema: {
+        'type': 'object',
+        'properties': {
+          'summary': {'type': 'string', 'description': 'Brief summary'},
+          'tools_used': {
+            'type': 'array',
+            'items': {'type': 'string'},
+            'description': 'List of tools used'
+          },
+          'confidence': {
+            'type': 'number',
+            'description': 'Confidence score 0-1'
+          },
+          'recommendations': {
+            'type': 'array',
+            'items': {'type': 'string'},
+            'description': 'List of recommendations'
+          },
+        },
+        'required': ['summary', 'tools_used', 'confidence'],
+      },
+      strict: true,
+    );
+
+    // Validate structured output format
+    try {
+      ToolValidator.validateStructuredOutput(structuredFormat);
+      print('   📋 Structured output validation: ✅ Valid');
+      print('   📋 Schema: ${structuredFormat.name}');
+      print(
+          '   📋 OpenAI format: ${structuredFormat.toOpenAIResponseFormat()}');
+    } catch (e) {
+      print('   📋 Structured output validation: ❌ $e');
+    }
+
+    // Example invocation with a simple analysis tool
+    final analysisTool = tool('analyze_impact', (t) {
+      t
+        ..description('Analyze the impact of a technology on productivity')
+        ..stringParam(
+          'topic',
+          description: 'Topic to analyze (e.g., "AI and software engineering")',
+          required: true,
+        );
+    });
+
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Analyze the impact of AI on software engineering productivity. Provide insights, metrics, and risks.')
+        .build();
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(
+        tools: [analysisTool],
+        jsonSchema: structuredFormat,
+      ),
+    );
+    print(
+        '   📝 Structured response preview: ${response.text?.substring(0, 120) ?? ''}...\n');
+
+    print('   ✅ Structured output with tools completed\n');
+  } catch (e) {
+    print('   ❌ Structured output failed: $e\n');
+  }
+}
+
+/// Demonstrate provider-specific tool features
+Future<void> demonstrateProviderSpecificFeatures() async {
+  print('🌐 Provider-Specific Tool Features:\n');
+
+  // Test tool choice format conversion
+  final toolChoice = const SpecificToolChoice('my_function');
+
+  print('   Tool Choice Format Conversion:');
+  print('      • OpenAI format: ${toolChoice.toOpenAIJson()}');
+  print('      • Anthropic format: ${toolChoice.toAnthropicJson()}');
+  print('      • xAI format: ${toolChoice.toXAIJson()}');
+
+  // Test parallel tool configuration
+  final parallelConfig = const ParallelToolConfig(
+    maxParallel: 3,
+    toolTimeout: Duration(seconds: 30),
+    continueOnError: true,
+  );
+
+  print('\n   Parallel Tool Configuration:');
+  print('      • Max parallel: ${parallelConfig.maxParallel}');
+  print('      • Timeout: ${parallelConfig.toolTimeout?.inSeconds}s');
+  print('      • Continue on error: ${parallelConfig.continueOnError}');
+  print('      • JSON: ${parallelConfig.toJson()}');
+
+  print('\n   ✅ Provider-specific features completed\n');
+}
+
+/// Simulate calculation for demonstration
+String _simulateCalculation(String expression, int precision) {
+  // This is a simple simulation - in real use, you'd implement proper calculation
+  try {
+    // For demo purposes, just return a formatted result
+    final result = 130.31; // Simulated result of 15.7 * 8.3
+    return result.toStringAsFixed(precision);
+  } catch (e) {
+    return 'Error: Invalid expression';
+  }
+}
+
+/// Demonstrate complex nested object structures in tool parameters
+Future<void> demonstrateNestedObjectStructures(LanguageModel model) async {
+  print('🏗️  Complex Nested Object Structures:\n');
+
+  try {
+    // Define a tool for processing orders with complex item structures
+    final processOrdersTool = tool('process_orders', (t) {
+      t
+        ..description('Process customer orders with complex item structures')
+        ..arrayParam(
+          'orders',
+          description: 'Array of customer orders',
+          required: true,
+          items: ParameterProperty(
+            propertyType: 'object',
+            description: 'Individual order object',
+            properties: {
+              'order_id': ParameterProperty(
+                propertyType: 'string',
+                description: 'Unique order identifier',
+              ),
+              'customer_name': ParameterProperty(
+                propertyType: 'string',
+                description: 'Customer full name',
+              ),
+              'items': ParameterProperty(
+                propertyType: 'array',
+                description: 'Array of items in the order',
+                items: ParameterProperty(
+                  propertyType: 'object',
+                  description: 'Individual item object',
+                  properties: {
+                    'product_name': ParameterProperty(
+                      propertyType: 'string',
+                      description: 'Name of the product',
+                    ),
+                    'quantity': ParameterProperty(
+                      propertyType: 'integer',
+                      description: 'Number of items ordered',
+                    ),
+                    'price': ParameterProperty(
+                      propertyType: 'number',
+                      description: 'Price per item in dollars',
+                    ),
+                    'category': ParameterProperty(
+                      propertyType: 'string',
+                      description: 'Product category',
+                      enumList: [
+                        'electronics',
+                        'clothing',
+                        'books',
+                        'home',
+                      ],
+                    ),
+                  },
+                  required: ['product_name', 'quantity', 'price'],
+                ),
+              ),
+              'total_amount': ParameterProperty(
+                propertyType: 'number',
+                description: 'Total order amount in dollars',
+              ),
+            },
+            required: ['order_id', 'customer_name', 'items'],
+          ),
+        );
+    });
+
+    final prompt = ChatPromptBuilder.user()
+        .text(
+            'Process order ORD001 for Alice Johnson: 2x Laptop at \$999 each (electronics), 1x T-shirt at \$25 (clothing). Total: \$2023. Use the process_orders tool.')
+        .build();
+
+    print('   User: Process order ORD001 for Alice Johnson...');
+    print(
+        '   Available tools: process_orders (with nested arrays and objects)');
+
+    final response = await generateTextWithModel(
+      model,
+      promptMessages: [prompt],
+      options: LanguageModelCallOptions(tools: [processOrdersTool]),
+    );
+
+    if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
+      print('   🔧 AI tool calls:');
+
+      for (final toolCall in response.toolCalls!) {
+        print('      • Function: ${toolCall.function.name}');
+        print('      • Arguments: ${toolCall.function.arguments}');
+
+        try {
+          final isValid =
+              ToolValidator.validateToolCall(toolCall, processOrdersTool);
+          print('      • Validation: ${isValid ? '✅ Valid' : '❌ Invalid'}');
+
+          final result = await _processOrders(toolCall);
+          print('      • Result: $result');
+        } catch (e) {
+          print('      • Validation Error: $e');
+        }
+      }
+
+      print('   ✅ Complex nested structures completed\n');
+    } else {
+      print('   ℹ️  AI chose not to use tools: ${response.text}\n');
+    }
+  } catch (e) {
+    print('   ❌ Error: $e\n');
+  }
+}
+
+/// Mock function to process orders
+Future<String> _processOrders(ToolCall toolCall) async {
+  try {
+    final args =
+        jsonDecode(toolCall.function.arguments) as Map<String, dynamic>;
+    final orders = args['orders'] as List;
+
+    double totalRevenue = 0;
+    int totalItems = 0;
+
+    for (final order in orders) {
+      final o = order as Map<String, dynamic>;
+      final items = o['items'] as List;
+
+      for (final item in items) {
+        final i = item as Map<String, dynamic>;
+        totalItems += i['quantity'] as int;
+        totalRevenue += (i['quantity'] as int) * (i['price'] as num);
+      }
+    }
+
+    return 'Processed ${orders.length} orders, $totalItems items, \$${totalRevenue.toStringAsFixed(2)} revenue';
+  } catch (e) {
+    return 'Error processing orders: $e';
+  }
+}
+
+/// Describe tool choice behavior
+String _describeToolChoiceBehavior(ToolChoice toolChoice) {
+  return switch (toolChoice) {
+    AutoToolChoice() => 'Model decides whether to use tools',
+    AnyToolChoice() => 'Model must use at least one tool',
+    SpecificToolChoice(toolName: final name) => 'Model must use tool: $name',
+    NoneToolChoice() => 'Model cannot use any tools',
+  };
+}
