@@ -188,6 +188,56 @@ class LLMProviderRegistry {
   }
 }
 
+/// Alias for [LLMProviderRegistry] with a clearer name.
+///
+/// This registry stores provider factories (constructors), not provider
+/// instances. For managing already-created providers at runtime, see
+/// `ProviderRegistry` / `ProviderInstanceRegistry` in `src/utils/provider_registry.dart`.
+abstract final class ProviderFactoryRegistry {
+  static void register<T extends Object>(LLMProviderFactory<T> factory) =>
+      LLMProviderRegistry.register(factory);
+
+  static void registerOrReplace<T extends Object>(
+          LLMProviderFactory<T> factory) =>
+      LLMProviderRegistry.registerOrReplace(factory);
+
+  static bool unregister(String providerId) =>
+      LLMProviderRegistry.unregister(providerId);
+
+  static LLMProviderFactory? getFactory(String providerId) =>
+      LLMProviderRegistry.getFactory(providerId);
+
+  static List<String> getRegisteredProviders() =>
+      LLMProviderRegistry.getRegisteredProviders();
+
+  static Map<String, LLMProviderFactory> getAllFactories() =>
+      LLMProviderRegistry.getAllFactories();
+
+  static bool isRegistered(String providerId) =>
+      LLMProviderRegistry.isRegistered(providerId);
+
+  static bool supportsCapability(String providerId, LLMCapability capability) =>
+      LLMProviderRegistry.supportsCapability(providerId, capability);
+
+  static List<String> getProvidersWithCapability(LLMCapability capability) =>
+      LLMProviderRegistry.getProvidersWithCapability(capability);
+
+  static ChatCapability createProvider(String providerId, LLMConfig config) =>
+      LLMProviderRegistry.createProvider(providerId, config);
+
+  static T createProviderTyped<T extends Object>(
+          String providerId, LLMConfig config) =>
+      LLMProviderRegistry.createProviderTyped(providerId, config);
+
+  static ProviderInfo? getProviderInfo(String providerId) =>
+      LLMProviderRegistry.getProviderInfo(providerId);
+
+  static List<ProviderInfo> getAllProviderInfo() =>
+      LLMProviderRegistry.getAllProviderInfo();
+
+  static void clear() => LLMProviderRegistry.clear();
+}
+
 /// Information about a registered provider.
 class ProviderInfo {
   /// Unique provider ID.

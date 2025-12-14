@@ -13,6 +13,9 @@ pubspec_overrides.yaml
 # IDE files
 .idea/
 *.iml
+.vscode/
+*.code-workspace
+.history/
 
 # Directory created by dartdoc
 # If you don't generate documentation locally you can remove this line.
@@ -34,6 +37,14 @@ doc/api/
 .flutter-plugins-dependencies
 
 coverage/
+*.lcov
+lcov.info
+
+# Local dev env tools
+.direnv/
+.fvm/
+.tool-versions.local
+*.log
 
 # Claude Code configuration
 CLAUDE.md

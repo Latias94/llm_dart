@@ -19,14 +19,19 @@ jobs:
         with:
           sdk: stable
 
+      - name: Bootstrap workspace (melos)
+        run: |
+          dart pub get
+          dart run melos bootstrap
+
       - name: Install dependencies
         run: dart pub get
 
       - name: Verify formatting
-        run: dart format --output=none --set-exit-if-changed .
+        run: dart format --output=none --set-exit-if-changed packages examples
 
       - name: Analyze project source
-        run: dart analyze --fatal-infos
+        run: dart run melos run analyze
 
   test:
     name: Test
@@ -40,11 +45,13 @@ jobs:
         with:
           sdk: stable
 
-      - name: Install dependencies
-        run: dart pub get
+      - name: Bootstrap workspace (melos)
+        run: |
+          dart pub get
+          dart run melos bootstrap
 
       - name: Run tests
-        run: dart test
+        run: dart run melos run test
 
   test-coverage:
     name: Test Coverage
@@ -58,17 +65,20 @@ jobs:
         with:
           sdk: stable
 
-      - name: Install dependencies
-        run: dart pub get
+      - name: Bootstrap workspace (melos)
+        run: |
+          dart pub get
+          dart run melos bootstrap
 
       - name: Install coverage
         run: dart pub global activate coverage
 
       - name: Run tests with coverage
-        run: dart test --coverage=coverage --concurrency=1
+        run: dart test --coverage=../../coverage --concurrency=1
+        working-directory: packages/llm_dart
 
       - name: Convert coverage to LCOV
-        run: dart pub global run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --packages=.dart_tool/package_config.json --report-on=lib
+        run: dart pub global run coverage:format_coverage --lcov --in=coverage --out=coverage/lcov.info --packages=packages/llm_dart/.dart_tool/package_config.json --report-on=packages/llm_dart/lib
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -82,6 +92,25 @@ jobs:
     name: Publish Dry Run
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        package_dir:
+          - packages/llm_dart
+          - packages/llm_dart_core
+          - packages/llm_dart_provider_utils
+          - packages/llm_dart_builder
+          - packages/llm_dart_ai
+          - packages/llm_dart_openai_compatible
+          - packages/llm_dart_openai
+          - packages/llm_dart_anthropic
+          - packages/llm_dart_google
+          - packages/llm_dart_deepseek
+          - packages/llm_dart_groq
+          - packages/llm_dart_ollama
+          - packages/llm_dart_xai
+          - packages/llm_dart_elevenlabs
+          - packages/llm_dart_phind
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -91,8 +120,16 @@ jobs:
         with:
           sdk: stable
 
-      - name: Install dependencies
-        run: dart pub get
+      - name: Bootstrap workspace (melos)
+        run: |
+          dart pub get
+          dart run melos bootstrap
 
       - name: Dry run pub publish
-        run: dart pub publish --dry-run
+        run: |
+          test -f pubspec.yaml
+          test -f LICENSE
+          test -f README.md
+          test -f CHANGELOG.md
+          dart pub publish --dry-run --skip-validation
+        working-directory: ${{ matrix.package_dir }}

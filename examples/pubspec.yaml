@@ -1,0 +1,24 @@
+name: llm_dart_examples
+description: Examples for the llm_dart monorepo (not published).
+version: 0.0.0
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  llm_dart:
+    path: ../packages/llm_dart
+  llm_dart_core:
+    path: ../packages/llm_dart_core
+  llm_dart_openai:
+    path: ../packages/llm_dart_openai
+  llm_dart_anthropic:
+    path: ../packages/llm_dart_anthropic
+  llm_dart_google:
+    path: ../packages/llm_dart_google
+  dio: ^5.9.0
+  mcp_dart: ^1.0.2
+
+dev_dependencies:
+  lints: ^6.0.0

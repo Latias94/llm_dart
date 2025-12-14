@@ -342,14 +342,12 @@ In new code, prefer:
 
 - **Streaming Tool Call Aggregation Helper**: Added `ToolCallAggregator` utility to merge incremental `ToolCallDeltaEvent` chunks into complete tool calls (stable `id`, `function.name`, and full `function.arguments`) for streaming workflows.
   - Exported via `llm_dart.dart` so it can be used by applications that consume streaming tool calls.
-  - Updated examples (`example/02_core_features/tool_calling.dart`, `example/04_providers/openai/advanced_features.dart`, and `example/06_mcp_integration/http_examples/simple_stream_client.dart`) to use the aggregator when replaying streamed tool calls into follow-up requests.
+  - Updated examples (`examples/llm_dart/02_core_features/tool_calling.dart`, `examples/llm_dart/04_providers/openai/advanced_features.dart`, and `examples/06_mcp_integration/http_examples/simple_stream_client.dart`) to use the aggregator when replaying streamed tool calls into follow-up requests.
 
 ### Fixed
 
 - **OpenAI Chat Streaming Tool Calls**: Fixed missing tool call IDs when using streaming tool calls with the OpenAI Chat Completions API (by [@ibercovich](https://github.com/ibercovich) in [#27](https://github.com/Latias94/llm_dart/pull/27))
   - Track tool call IDs by `index` across streaming chunks so that each `ToolCallDeltaEvent` has a stable `toolCall.id`.
->>>>>>> main
-
 ## [0.10.4] - 2025-11-19
 
 ### Fixed

@@ -1,61 +1,20 @@
-name: llm_dart
-description: A modular Dart library for AI provider interactions with unified interface for OpenAI, Anthropic, Google, DeepSeek, Ollama, xAI, Groq, ElevenLabs and more.
-version: 0.11.0-rc.1
+name: llm_dart_repo
+description: Monorepo tooling package for llm_dart (not published).
+version: 0.0.0
 publish_to: none
-license: MIT
-homepage: https://github.com/Latias94/llm_dart
+
 repository: https://github.com/Latias94/llm_dart
 issue_tracker: https://github.com/Latias94/llm_dart/issues
-
-workspace:
-  - packages/llm_dart_anthropic
-  - packages/llm_dart_core
-  - packages/llm_dart_deepseek
-  - packages/llm_dart_elevenlabs
-  - packages/llm_dart_google
-  - packages/llm_dart_groq
-  - packages/llm_dart_ollama
-  - packages/llm_dart_openai
-  - packages/llm_dart_openai_compatible
-  - packages/llm_dart_phind
-  - packages/llm_dart_provider_utils
-  - packages/llm_dart_xai
-
-topics:
-  - ai
-  - llms
-  - nlp
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  dio: ^5.9.0
-  llm_dart_core: ^0.11.0-rc.1
-  llm_dart_provider_utils: ^0.11.0-rc.1
-  llm_dart_openai: ^0.11.0-rc.1
-  llm_dart_openai_compatible: ^0.11.0-rc.1
-  llm_dart_groq: ^0.11.0-rc.1
-  llm_dart_deepseek: ^0.11.0-rc.1
-  llm_dart_google: ^0.11.0-rc.1
-  llm_dart_anthropic: ^0.11.0-rc.1
-  llm_dart_ollama: ^0.11.0-rc.1
-  llm_dart_xai: ^0.11.0-rc.1
-  llm_dart_elevenlabs: ^0.11.0-rc.1
-  llm_dart_phind: ^0.11.0-rc.1
+  # Keep empty: this package exists only for tooling.
 
 dev_dependencies:
-  test: ^1.27.0
-  mockito: ^5.4.0
-  mcp_dart: ^1.0.2
-  melos: ^7.3.0
+  # Melos v7+ relies on Dart pub workspaces (`workspace:` + `resolution: workspace`),
+  # which cannot be published to pub.dev as standalone packages. We keep this
+  # repo publishable by managing the monorepo with Melos v6 (override-based).
+  melos: ^6.3.2
   lints: ^6.0.0
-
-melos:
-  scripts:
-    analyze:
-      run: dart analyze .
-      description: Run static analysis for the entire workspace.
-    test:
-      run: dart test
-      description: Run all tests for the workspace.

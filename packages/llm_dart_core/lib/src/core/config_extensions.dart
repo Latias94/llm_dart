@@ -1,5 +1,8 @@
+import 'config.dart';
+import '../models/tool_models.dart' show StructuredOutputFormat;
+import 'web_search.dart' show WebSearchConfig, WebSearchLocation;
+
 /// Well-known extension keys used in [LLMConfig.extensions].
-///
 /// These keys form the "contract" between the high-level builder APIs
 /// (e.g. [LLMBuilder], HTTP helpers) and individual provider packages
 /// (OpenAI, Anthropic, Google, DeepSeek, xAI, Ollama, ElevenLabs).
@@ -131,4 +134,81 @@ abstract final class LLMConfigKeys {
   // xAI-specific extensions
   static const String searchParameters = 'searchParameters';
   static const String liveSearch = 'liveSearch';
+}
+
+/// Typed key for values stored in [LLMConfig.extensions].
+///
+/// This is an optional, additive API: existing string-based keys in
+/// [LLMConfigKeys] remain supported. Typed keys are useful when multiple
+/// packages share extension contracts and you want stronger type hints.
+final class LLMConfigKey<T> {
+  final String name;
+  const LLMConfigKey(this.name);
+
+  @override
+  String toString() => name;
+}
+
+/// Typed helpers for working with [LLMConfig.extensions].
+extension LLMConfigTypedExtensions on LLMConfig {
+  T? getKey<T>(LLMConfigKey<T> key) => getExtension<T>(key.name);
+
+  bool hasKey<T>(LLMConfigKey<T> key) => hasExtension(key.name);
+
+  LLMConfig withKey<T>(LLMConfigKey<T> key, T value) =>
+      withExtension(key.name, value);
+}
+
+/// A curated set of commonly used typed extension keys.
+///
+/// We keep this list intentionally small to avoid duplicating every key in
+/// [LLMConfigKeys]. Add more as cross-package contracts stabilize.
+abstract final class LLMConfigTypedKeys {
+  static const customHeaders = LLMConfigKey<Map<String, String>>(
+    LLMConfigKeys.customHeaders,
+  );
+
+  static const metadata = LLMConfigKey<Map<String, dynamic>>(
+    LLMConfigKeys.metadata,
+  );
+
+  static const reasoning = LLMConfigKey<bool>(
+    LLMConfigKeys.reasoning,
+  );
+
+  static const reasoningEffort = LLMConfigKey<String>(
+    LLMConfigKeys.reasoningEffort,
+  );
+
+  static const jsonSchema = LLMConfigKey<StructuredOutputFormat>(
+    LLMConfigKeys.jsonSchema,
+  );
+
+  static const webSearchEnabled = LLMConfigKey<bool>(
+    LLMConfigKeys.webSearchEnabled,
+  );
+
+  static const webSearchConfig = LLMConfigKey<WebSearchConfig>(
+    LLMConfigKeys.webSearchConfig,
+  );
+
+  static const webSearchLocation = LLMConfigKey<WebSearchLocation>(
+    LLMConfigKeys.webSearchLocation,
+  );
+
+  static const useResponsesAPI = LLMConfigKey<bool>(
+    LLMConfigKeys.useResponsesAPI,
+  );
+
+  static const previousResponseId = LLMConfigKey<String>(
+    LLMConfigKeys.previousResponseId,
+  );
+
+  static const logger = LLMConfigKey<dynamic>(
+    LLMConfigKeys.logger,
+  );
+
+  static const customDio = LLMConfigKey<dynamic>(
+    LLMConfigKeys.customDio,
+  );
 }

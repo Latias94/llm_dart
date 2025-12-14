@@ -14,17 +14,17 @@ A modular Dart library for AI provider interactions. This library provides a uni
 | I want to... | Go to |
 |--------------|-------|
 | **Get started** | [Quick Start](#quick-start) |
-| **Build a chatbot** | [Chatbot example](example/05_use_cases/chatbot.dart) |
-| **Compare providers** | [Provider comparison](example/01_getting_started/provider_comparison.dart) |
-| **Use streaming** | [Streaming example](example/02_core_features/streaming_chat.dart) |
-| **Cancel requests** | [Cancellation demo](example/02_core_features/cancellation_demo.dart) |
-| **Call functions** | [Tool calling](example/02_core_features/tool_calling.dart) |
-| **Search the web** | [Web search](example/02_core_features/web_search.dart) |
-| **Generate embeddings** | [Embeddings](example/02_core_features/embeddings.dart) |
-| **Moderate content** | [Content moderation](example/02_core_features/content_moderation.dart) |
-| **Access AI thinking** | [Reasoning models](example/03_advanced_features/reasoning_models.dart) |
-| **Use MCP tools** | [MCP integration](example/06_mcp_integration/) |
-| **Use local models** | [Ollama examples](example/04_providers/ollama/) |
+| **Build a chatbot** | [Chatbot example](examples/llm_dart/05_use_cases/chatbot.dart) |
+| **Compare providers** | [Provider comparison](examples/llm_dart/01_getting_started/provider_comparison.dart) |
+| **Use streaming** | [Streaming example](examples/llm_dart/02_core_features/streaming_chat.dart) |
+| **Cancel requests** | [Cancellation demo](examples/llm_dart/02_core_features/cancellation_demo.dart) |
+| **Call functions** | [Tool calling](examples/llm_dart/02_core_features/tool_calling.dart) |
+| **Search the web** | [Web search](examples/llm_dart/02_core_features/web_search.dart) |
+| **Generate embeddings** | [Embeddings](examples/llm_dart/02_core_features/embeddings.dart) |
+| **Moderate content** | [Content moderation](examples/llm_dart/02_core_features/content_moderation.dart) |
+| **Access AI thinking** | [Reasoning models](examples/llm_dart/03_advanced_features/reasoning_models.dart) |
+| **Use MCP tools** | [MCP integration](examples/06_mcp_integration/) |
+| **Use local models** | [Ollama examples](examples/llm_dart/04_providers/ollama/) |
 | **See production app** | [Yumcha](https://github.com/Latias94/yumcha) |
 
 ## Features
@@ -259,7 +259,7 @@ This mode is ideal when:
 
 For advanced scenarios, you can depend directly on `llm_dart_core` and one
 or more provider subpackages, and explicitly register factories in the
-global `LLMProviderRegistry`.
+global `ProviderFactoryRegistry` (alias of `LLMProviderRegistry`).
 
 ```dart
 import 'package:llm_dart_core/llm_dart_core.dart';
@@ -284,9 +284,9 @@ Future<void> main() async {
   );
 
   final openaiProvider =
-      LLMProviderRegistry.createProvider('openai', openaiConfig);
+      ProviderFactoryRegistry.createProvider('openai', openaiConfig);
   final anthropicProvider =
-      LLMProviderRegistry.createProvider('anthropic', anthropicConfig);
+      ProviderFactoryRegistry.createProvider('anthropic', anthropicConfig);
 
   // Wrap them as LanguageModel instances (Vercel-style).
   final openaiModel = DefaultLanguageModel(
@@ -303,16 +303,14 @@ Future<void> main() async {
     chat: anthropicProvider,
   );
 
-  // Use the same helpers on both models.
-  final result = await generateTextWithModel(
-    openaiModel,
-    prompt: 'OpenAI says hi',
-  );
+  // Use the same LanguageModel API on both models.
+  final result = await openaiModel.generateText([
+    ModelMessage.userText('OpenAI says hi'),
+  ]);
 
-  final result2 = await generateTextWithModel(
-    anthropicModel,
-    prompt: 'Anthropic says hi',
-  );
+  final result2 = await anthropicModel.generateText([
+    ModelMessage.userText('Anthropic says hi'),
+  ]);
 
   print(result.text);
   print(result2.text);
@@ -322,7 +320,7 @@ Future<void> main() async {
 This mode is useful when:
 
 - 你只想引入少量 provider，精确控制依赖和体积；
-- 你在做 SDK 封装或框架集成，需要直接操作 `LLMProviderRegistry`；
+- 你在做 SDK 封装或框架集成，需要直接操作 `ProviderFactoryRegistry`（或旧名 `LLMProviderRegistry`）；
 - 你希望与其他语言/平台共享 provider 配置和生命周期管理。
 
 ### Basic Usage
@@ -1606,7 +1604,7 @@ Future<void> main() async {
 
 **Supported operations**: `chat()`, `chatStream()`, `models()`, and all other provider operations.
 
-See [cancellation_demo.dart](example/02_core_features/cancellation_demo.dart) for comprehensive examples.
+See [cancellation_demo.dart](examples/llm_dart/02_core_features/cancellation_demo.dart) for comprehensive examples.
 
 ## Error Handling
 
@@ -1719,15 +1717,15 @@ The library includes an extensible provider registry system:
 
 ```dart
 // Check available providers
-final providers = LLMProviderRegistry.getRegisteredProviders();
+final providers = ProviderFactoryRegistry.getRegisteredProviders();
 print('Available: $providers'); // ['openai', 'anthropic', ...]
 
 // Check capabilities
-final supportsChat = LLMProviderRegistry.supportsCapability('openai', LLMCapability.chat);
+final supportsChat = ProviderFactoryRegistry.supportsCapability('openai', LLMCapability.chat);
 print('OpenAI supports chat: $supportsChat'); // true
 
 // Create providers dynamically
-final provider = LLMProviderRegistry.createProvider('openai', config);
+final provider = ProviderFactoryRegistry.createProvider('openai', config);
 ```
 
 ### Custom Providers
@@ -1750,7 +1748,7 @@ class MyCustomProviderFactory implements LLMProviderFactory<ChatCapability> {
 }
 
 // Register it
-LLMProviderRegistry.register(MyCustomProviderFactory());
+ProviderFactoryRegistry.register(MyCustomProviderFactory());
 
 // Use it
 final provider = await ai().provider('my_custom').build();
@@ -1891,21 +1889,21 @@ high-level helpers like `generateTextWithModel` or `runAgentPromptText`.
 
 See the [example directory](example) for comprehensive examples:
 
-**Getting Started**: [quick_start.dart](example/01_getting_started/quick_start.dart), [provider_comparison.dart](example/01_getting_started/provider_comparison.dart)
+**Getting Started**: [quick_start.dart](examples/llm_dart/01_getting_started/quick_start.dart), [provider_comparison.dart](examples/llm_dart/01_getting_started/provider_comparison.dart)
 
 **Core Features**:
 
-- [chat_basics.dart](example/02_core_features/chat_basics.dart), [streaming_chat.dart](example/02_core_features/streaming_chat.dart), [cancellation_demo.dart](example/02_core_features/cancellation_demo.dart)
-- [tool_calling.dart](example/02_core_features/tool_calling.dart), [enhanced_tool_calling.dart](example/02_core_features/enhanced_tool_calling.dart)
-- [web_search.dart](example/02_core_features/web_search.dart), [embeddings.dart](example/02_core_features/embeddings.dart)
-- [content_moderation.dart](example/02_core_features/content_moderation.dart), [audio_processing.dart](example/02_core_features/audio_processing.dart)
-- [image_generation.dart](example/02_core_features/image_generation.dart), [file_management.dart](example/02_core_features/file_management.dart)
+- [chat_basics.dart](examples/llm_dart/02_core_features/chat_basics.dart), [streaming_chat.dart](examples/llm_dart/02_core_features/streaming_chat.dart), [cancellation_demo.dart](examples/llm_dart/02_core_features/cancellation_demo.dart)
+- [tool_calling.dart](examples/llm_dart/02_core_features/tool_calling.dart), [enhanced_tool_calling.dart](examples/llm_dart/02_core_features/enhanced_tool_calling.dart)
+- [web_search.dart](examples/llm_dart/02_core_features/web_search.dart), [embeddings.dart](examples/llm_dart/02_core_features/embeddings.dart)
+- [content_moderation.dart](examples/llm_dart/02_core_features/content_moderation.dart), [audio_processing.dart](examples/llm_dart/02_core_features/audio_processing.dart)
+- [image_generation.dart](examples/llm_dart/02_core_features/image_generation.dart), [file_management.dart](examples/llm_dart/02_core_features/file_management.dart)
 
-**Advanced**: [reasoning_models.dart](example/03_advanced_features/reasoning_models.dart), [multi_modal.dart](example/03_advanced_features/multi_modal.dart), [semantic_search.dart](example/03_advanced_features/semantic_search.dart)
+**Advanced**: [reasoning_models.dart](examples/llm_dart/03_advanced_features/reasoning_models.dart), [multi_modal.dart](examples/llm_dart/03_advanced_features/multi_modal.dart), [semantic_search.dart](examples/llm_dart/03_advanced_features/semantic_search.dart)
 
-**MCP Integration**: [MCP examples](example/06_mcp_integration/) - Model Context Protocol for external tool access
+**MCP Integration**: [MCP examples](examples/06_mcp_integration/) - Model Context Protocol for external tool access
 
-**Use Cases**: [chatbot.dart](example/05_use_cases/chatbot.dart), [cli_tool.dart](example/05_use_cases/cli_tool.dart), [web_service.dart](example/05_use_cases/web_service.dart), [multimodal_app.dart](example/05_use_cases/multimodal_app.dart)
+**Use Cases**: [chatbot.dart](examples/llm_dart/05_use_cases/chatbot.dart), [cli_tool.dart](examples/llm_dart/05_use_cases/cli_tool.dart), [web_service.dart](examples/llm_dart/05_use_cases/web_service.dart), [multimodal_app.dart](examples/llm_dart/05_use_cases/multimodal_app.dart)
 
 **Production App**: [Yumcha](https://github.com/Latias94/yumcha) - Cross-platform AI chat app built with LLM Dart
 

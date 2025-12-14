@@ -1,0 +1,263 @@
+import 'llm_builder.dart';
+
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_impl;
+import 'package:llm_dart_google/llm_dart_google.dart' show GoogleTTSCapability;
+
+import '../src/builtin_providers.dart' show registerBuiltinProviders;
+
+import 'providers/anthropic_builder.dart';
+import 'providers/deepseek_builder.dart';
+import 'providers/elevenlabs_builder.dart';
+import 'providers/google_builder.dart';
+import 'providers/ollama_builder.dart';
+import 'providers/openai_builder.dart';
+import 'providers/openrouter_builder.dart';
+import 'providers/phind_builder.dart';
+import 'providers/xai_builder.dart';
+
+/// Provider-specific convenience methods for [LLMBuilder].
+///
+/// These methods are exposed as an extension on [LLMBuilder] to configure
+/// built-in providers:
+/// - `.openai((openai) => ...)`
+/// - `.anthropic((anthropic) => ...)`
+/// - `.google((google) => ...)`
+/// - `.ollama((ollama) => ...)`
+/// - `.elevenlabs((e) => ...)`
+/// and OpenAI-compatible providers:
+/// - `.deepseekOpenAI()`, `.googleOpenAI()`, `.xaiOpenAI()`, `.groqOpenAI()`,
+///   `.phindOpenAI()`, `.openRouter((openrouter) => ...)`
+///
+/// This keeps the core [LLMBuilder] neutral while concentrating
+/// provider-specific semantics in this extension.
+extension LLMBuilderProviderShortcuts on LLMBuilder {
+  /// Configure the OpenAI provider.
+  ///
+  /// Example:
+  /// ```dart
+  /// final model = await ai()
+  ///   .openai((openai) => openai.verbosity(Verbosity.high))
+  ///   .apiKey(apiKey)
+  ///   .model('gpt-4o')
+  ///   .buildLanguageModel();
+  /// ```
+  LLMBuilder openai([OpenAIBuilder Function(OpenAIBuilder)? configure]) {
+    registerBuiltinProviders();
+    provider('openai');
+    if (configure != null) {
+      final openaiBuilder = OpenAIBuilder(this);
+      configure(openaiBuilder);
+    }
+    return this;
+  }
+
+  /// Configure the Anthropic provider.
+  LLMBuilder anthropic(
+      [AnthropicBuilder Function(AnthropicBuilder)? configure]) {
+    registerBuiltinProviders();
+    provider('anthropic');
+    if (configure != null) {
+      final anthropicBuilder = AnthropicBuilder(this);
+      configure(anthropicBuilder);
+    }
+    return this;
+  }
+
+  /// Configure the Google (Gemini) provider.
+  LLMBuilder google([GoogleLLMBuilder Function(GoogleLLMBuilder)? configure]) {
+    registerBuiltinProviders();
+    provider('google');
+    if (configure != null) {
+      final googleBuilder = GoogleLLMBuilder(this);
+      configure(googleBuilder);
+    }
+    return this;
+  }
+
+  /// Configure the DeepSeek provider.
+  ///
+  /// Example:
+  /// ```dart
+  /// final provider = await ai()
+  ///   .deepseek((deepseek) => deepseek
+  ///     .logprobs(true)
+  ///     .topLogprobs(5))
+  ///   .apiKey(apiKey)
+  ///   .model('deepseek-chat')
+  ///   .build();
+  /// ```
+  LLMBuilder deepseek([DeepSeekBuilder Function(DeepSeekBuilder)? configure]) {
+    registerBuiltinProviders();
+    provider('deepseek');
+    if (configure != null) {
+      final deepseekBuilder = DeepSeekBuilder(this);
+      configure(deepseekBuilder);
+    }
+    return this;
+  }
+
+  /// Configure the Ollama provider.
+  LLMBuilder ollama([OllamaBuilder Function(OllamaBuilder)? configure]) {
+    registerBuiltinProviders();
+    provider('ollama');
+    if (configure != null) {
+      final ollamaBuilder = OllamaBuilder(this);
+      configure(ollamaBuilder);
+    }
+    return this;
+  }
+
+  /// Configure the xAI provider.
+  ///
+  /// Example:
+  /// ```dart
+  /// final provider = await ai()
+  ///   .xai((xai) => xai
+  ///     .liveSearch()
+  ///     .webSearch(maxResults: 5))
+  ///   .apiKey(apiKey)
+  ///   .model('grok-3')
+  ///   .build();
+  /// ```
+  LLMBuilder xai([XAIBuilder Function(XAIBuilder)? configure]) {
+    registerBuiltinProviders();
+    provider('xai');
+    if (configure != null) {
+      final xaiBuilder = XAIBuilder(this);
+      configure(xaiBuilder);
+    }
+    return this;
+  }
+
+  /// Configure the Phind provider.
+  ///
+  /// Example:
+  /// ```dart
+  /// final provider = await ai()
+  ///   .phind((phind) => phind.forCodingAssistant())
+  ///   .apiKey(apiKey)
+  ///   .build();
+  /// ```
+  LLMBuilder phind([PhindBuilder Function(PhindBuilder)? configure]) {
+    registerBuiltinProviders();
+    provider('phind');
+    if (configure != null) {
+      final phindBuilder = PhindBuilder(this);
+      configure(phindBuilder);
+    }
+    return this;
+  }
+
+  /// Configure the Groq provider.
+  LLMBuilder groq() {
+    registerBuiltinProviders();
+    return provider('groq');
+  }
+
+  /// Configure the ElevenLabs provider.
+  LLMBuilder elevenlabs(
+      [ElevenLabsBuilder Function(ElevenLabsBuilder)? configure]) {
+    registerBuiltinProviders();
+    provider('elevenlabs');
+    if (configure != null) {
+      final elevenLabsBuilder = ElevenLabsBuilder(this);
+      configure(elevenLabsBuilder);
+    }
+    return this;
+  }
+
+  // ===== OpenAI-compatible providers via OpenAI REST shape =====
+
+  /// Configure DeepSeek via its OpenAI-compatible endpoint.
+  LLMBuilder deepseekOpenAI() {
+    registerBuiltinProviders();
+    return provider('deepseek-openai');
+  }
+
+  /// Configure Google Gemini via its OpenAI-compatible endpoint.
+  LLMBuilder googleOpenAI() {
+    registerBuiltinProviders();
+    return provider('google-openai');
+  }
+
+  /// Configure xAI via its OpenAI-compatible endpoint.
+  LLMBuilder xaiOpenAI() {
+    registerBuiltinProviders();
+    return provider('xai-openai');
+  }
+
+  /// Configure Groq via its OpenAI-compatible endpoint.
+  LLMBuilder groqOpenAI() {
+    registerBuiltinProviders();
+    return provider('groq-openai');
+  }
+
+  /// Configure Phind via its OpenAI-compatible endpoint.
+  LLMBuilder phindOpenAI() {
+    registerBuiltinProviders();
+    return provider('phind-openai');
+  }
+
+  /// Configure OpenRouter via the OpenAI-compatible layer.
+  LLMBuilder openRouter(
+      [OpenRouterBuilder Function(OpenRouterBuilder)? configure]) {
+    registerBuiltinProviders();
+    provider('openrouter');
+    if (configure != null) {
+      final openRouterBuilder = OpenRouterBuilder(this);
+      configure(openRouterBuilder);
+    }
+    return this;
+  }
+
+  /// Configure GitHub Copilot as an OpenAI-compatible provider.
+  LLMBuilder githubCopilot() {
+    registerBuiltinProviders();
+    return provider('github-copilot');
+  }
+
+  /// Configure Together AI as an OpenAI-compatible provider.
+  LLMBuilder togetherAI() {
+    registerBuiltinProviders();
+    return provider('together-ai');
+  }
+
+  // ===== Advanced build helpers =====
+
+  /// Builds an OpenAI provider with Responses API enabled.
+  ///
+  /// This is a convenience method equivalent to:
+  /// - `.openai((o) => o.useResponsesAPI(...))`
+  /// - then constructing `openai_impl.OpenAIProvider` and ensuring
+  ///   that `responses` is initialized.
+  ///
+  /// Example:
+  /// ```dart
+  /// final provider = await ai()
+  ///     .openai((openai) => openai
+  ///         .webSearchTool()
+  ///         .fileSearchTool(vectorStoreIds: ['vs_123']))
+  ///     .apiKey(apiKey)
+  ///     .model('gpt-4o')
+  ///     .buildOpenAIResponses();
+  /// ```
+  Future<openai_impl.OpenAIProvider> buildOpenAIResponses() {
+    registerBuiltinProviders();
+    return OpenAIBuilder(this).buildOpenAIResponses();
+  }
+
+  /// Builds a Google provider with TTS capability.
+  ///
+  /// This is a convenience method that constructs a Google provider
+  /// implementing [GoogleTTSCapability]:
+  /// ```dart
+  /// final ttsProvider = await ai()
+  ///     .google((google) => google.ttsModel('gemini-2.5-flash-preview-tts'))
+  ///     .apiKey(apiKey)
+  ///     .buildGoogleTTS();
+  /// ```
+  Future<GoogleTTSCapability> buildGoogleTTS() {
+    registerBuiltinProviders();
+    return GoogleLLMBuilder(this).buildGoogleTTS();
+  }
+}

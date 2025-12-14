@@ -1721,7 +1721,8 @@ enum ChatOperationKind {
 /// current chat invocation, including provider/model identifiers,
 /// configuration, and the messages/tools involved in the call.
 class ChatCallContext {
-  /// Provider identifier as registered in the LLMProviderRegistry.
+  /// Provider identifier as registered in the provider factory registry
+  /// (see `ProviderFactoryRegistry` / `LLMProviderRegistry`).
   final String providerId;
 
   /// Model identifier for this call.
@@ -1940,7 +1941,8 @@ abstract class EmbeddingCapability {
 
 /// Context information for an embedding call executed through middleware.
 class EmbeddingCallContext {
-  /// Provider identifier as registered in the LLMProviderRegistry.
+  /// Provider identifier as registered in the provider factory registry
+  /// (see `ProviderFactoryRegistry` / `LLMProviderRegistry`).
   final String providerId;
 
   /// Model identifier for this call.

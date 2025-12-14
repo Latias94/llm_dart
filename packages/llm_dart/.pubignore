@@ -1,0 +1,13 @@
+# Publishing ignore rules for pub.dev.
+#
+# Pub uses `.pubignore` (when present) instead of `.gitignore` to determine the
+# set of files to publish.
+
+.dart_tool/
+pubspec.lock
+pubspec_overrides.yaml
+**/pubspec_overrides.yaml
+
+# Repository-only tests are not required for consumers.
+test/
+

@@ -30,7 +30,8 @@ abstract class SpeechModelProviderFactory {
 /// and their capabilities.
 ///
 /// This is a runtime provider registry, complementary to
-/// `LLMProviderRegistry` (factory registry). It is intended for
+/// `LLMProviderRegistry` / `ProviderFactoryRegistry` (factory registry).
+/// It is intended for
 /// managing provider instances and their capability matrix at the
 /// application layer.
 class ProviderRegistry {
@@ -209,6 +210,12 @@ class ProviderRegistry {
     );
   }
 }
+
+/// Alias for [ProviderRegistry] with a clearer name.
+///
+/// This class manages provider *instances* at runtime (not factories).
+/// Prefer this name when both registries are used in the same project.
+class ProviderInstanceRegistry extends ProviderRegistry {}
 
 /// Detailed provider info snapshot for diagnostics.
 class RegistryProviderInfo {
