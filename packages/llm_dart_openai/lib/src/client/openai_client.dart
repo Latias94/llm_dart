@@ -8,6 +8,7 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../config/openai_config.dart';
 import '../http/openai_dio_strategy.dart';
+import '../utils/openai_message_mapper.dart';
 
 /// Core OpenAI HTTP client shared across all capability modules.
 class OpenAIClient {

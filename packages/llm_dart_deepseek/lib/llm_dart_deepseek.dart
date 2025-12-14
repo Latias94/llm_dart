@@ -12,7 +12,6 @@ library;
 // use cases, import `package:llm_dart_deepseek/testing.dart`.
 export 'src/config/deepseek_config.dart';
 export 'src/provider/deepseek_provider.dart';
-export 'src/http/deepseek_dio_strategy.dart';
 export 'src/factory/deepseek_provider_factory.dart'
     show DeepSeekProviderFactory, registerDeepSeekProvider;
 

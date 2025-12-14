@@ -4,7 +4,6 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../config/google_config.dart';
 import '../http/google_dio_strategy.dart';
-import '../utils/google_utf8_stream_decoder.dart';
 
 /// Core Google HTTP client shared across all capability modules (sub-package).
 class GoogleClient {
@@ -126,7 +125,7 @@ class GoogleClient {
         );
       }
 
-      final decoder = GoogleUtf8StreamDecoder();
+      final decoder = Utf8StreamDecoder();
 
       await for (final chunk in stream) {
         final decoded = decoder.decode(chunk);

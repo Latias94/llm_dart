@@ -9,3 +9,4 @@ library;
 
 export 'src/client/elevenlabs_client.dart';
 export 'src/audio/elevenlabs_audio.dart';
+export 'src/http/elevenlabs_dio_strategy.dart';

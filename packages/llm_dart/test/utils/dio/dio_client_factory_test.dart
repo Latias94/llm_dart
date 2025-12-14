@@ -2,22 +2,20 @@ import 'package:dio/dio.dart';
 import 'package:test/test.dart';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_anthropic/llm_dart_anthropic.dart'
+import 'package:llm_dart_anthropic/testing.dart'
     show AnthropicConfig, AnthropicDioStrategy;
-import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
-import 'package:llm_dart_deepseek/llm_dart_deepseek.dart'
+import 'package:llm_dart_openai/testing.dart' as openai;
+import 'package:llm_dart_deepseek/testing.dart'
     show DeepSeekConfig, DeepSeekDioStrategy;
-import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart'
+import 'package:llm_dart_elevenlabs/testing.dart'
     show ElevenLabsConfig, ElevenLabsDioStrategy;
-import 'package:llm_dart_google/llm_dart_google.dart'
+import 'package:llm_dart_google/testing.dart'
     show GoogleConfig, GoogleDioStrategy;
-import 'package:llm_dart_groq/llm_dart_groq.dart'
-    show GroqConfig, GroqDioStrategy;
-import 'package:llm_dart_ollama/llm_dart_ollama.dart'
+import 'package:llm_dart_groq/testing.dart' show GroqConfig, GroqDioStrategy;
+import 'package:llm_dart_ollama/testing.dart'
     show OllamaConfig, OllamaDioStrategy;
-import 'package:llm_dart_phind/llm_dart_phind.dart'
-    show PhindConfig, PhindDioStrategy;
-import 'package:llm_dart_xai/llm_dart_xai.dart' show XAIConfig, XAIDioStrategy;
+import 'package:llm_dart_phind/testing.dart' show PhindConfig, PhindDioStrategy;
+import 'package:llm_dart_xai/testing.dart' show XAIConfig, XAIDioStrategy;
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {

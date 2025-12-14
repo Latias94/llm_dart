@@ -7,6 +7,7 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../client/openai_client.dart';
 import '../config/openai_config.dart';
+import '../config/openai_config_keys.dart';
 
 /// OpenAI Chat capability implementation
 ///
@@ -251,7 +252,7 @@ class OpenAIChat implements ChatCapability {
       body['top_logprobs'] = topLogprobs;
     }
 
-    final verbosity = config.getExtension<String>(LLMConfigKeys.verbosity);
+    final verbosity = config.getExtension<String>(OpenAIConfigKeys.verbosity);
     if (verbosity != null) {
       body['verbosity'] = verbosity;
     }

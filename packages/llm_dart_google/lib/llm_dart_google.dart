@@ -3,7 +3,7 @@ library;
 // ===== Stable public API surface =====
 //
 // Keep exports focused on:
-// - provider config + Dio strategy + registry factory
+// - provider config + registry factory
 // - provider implementation (capabilities)
 // - provider-specific high-level helper types (TTS + Files API helpers)
 // - Vercel AI-style facade (`createGoogleGenerativeAI`, `google`, etc.)
@@ -12,8 +12,8 @@ library;
 // capability modules) are intentionally not exported. For repository tests and
 // advanced internal use cases, import `package:llm_dart_google/testing.dart`.
 export 'src/config/google_config.dart';
+export 'src/config/google_config_keys.dart';
 export 'src/provider/google_provider.dart';
-export 'src/http/google_dio_strategy.dart';
 export 'src/tts/google_tts.dart'
     show
         GoogleTTSCapability,

@@ -76,10 +76,13 @@ dart pub add llm_dart
 
 ## Workspace Development (Contributors)
 
-This repository is a Dart Pub Workspace (with optional Melos scripts).
+This repository is a multi-package Dart monorepo (with optional Melos scripts).
+It intentionally does **not** use Dart Pub workspaces (`workspace:` /
+`resolution: workspace`) to keep each package publishable on pub.dev.
 
 ```bash
 dart pub get
+dart run melos bootstrap
 dart run melos run analyze
 dart run melos run test
 ```

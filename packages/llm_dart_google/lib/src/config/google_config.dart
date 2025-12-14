@@ -1,6 +1,7 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'google_file_search_config.dart';
+import 'google_config_keys.dart';
 
 const String _defaultBaseUrl =
     'https://generativelanguage.googleapis.com/v1beta/';
@@ -139,7 +140,7 @@ class GoogleConfig implements ProviderHttpConfig {
     final webSearchConfig =
         config.getExtension<WebSearchConfig>(LLMConfigKeys.webSearchConfig);
     final dynamic rawFileSearchConfig =
-        config.getExtension<dynamic>(LLMConfigKeys.googleFileSearchConfig);
+        config.getExtension<dynamic>(GoogleConfigKeys.googleFileSearchConfig);
 
     GoogleFileSearchConfig? fileSearchConfig;
     if (rawFileSearchConfig is GoogleFileSearchConfig) {
@@ -161,11 +162,11 @@ class GoogleConfig implements ProviderHttpConfig {
       }
     }
 
-    final codeExecutionEnabled =
-        config.getExtension<bool>(LLMConfigKeys.googleCodeExecutionEnabled) ==
-            true;
+    final codeExecutionEnabled = config
+            .getExtension<bool>(GoogleConfigKeys.googleCodeExecutionEnabled) ==
+        true;
     final urlContextEnabled =
-        config.getExtension<bool>(LLMConfigKeys.googleUrlContextEnabled) ==
+        config.getExtension<bool>(GoogleConfigKeys.googleUrlContextEnabled) ==
             true;
 
     return GoogleConfig(
@@ -194,20 +195,22 @@ class GoogleConfig implements ProviderHttpConfig {
           config.getExtension<int>(LLMConfigKeys.thinkingBudgetTokens),
       includeThoughts: config.getExtension<bool>(LLMConfigKeys.includeThoughts),
       enableImageGeneration:
-          config.getExtension<bool>(LLMConfigKeys.enableImageGeneration),
-      responseModalities:
-          config.getExtension<List<String>>(LLMConfigKeys.responseModalities),
-      safetySettings: config
-          .getExtension<List<SafetySetting>>(LLMConfigKeys.safetySettings),
+          config.getExtension<bool>(GoogleConfigKeys.enableImageGeneration),
+      responseModalities: config
+          .getExtension<List<String>>(GoogleConfigKeys.responseModalities),
+      safetySettings: config.getExtension<List<SafetySetting>>(
+        GoogleConfigKeys.safetySettings,
+      ),
       maxInlineDataSize:
-          config.getExtension<int>(LLMConfigKeys.maxInlineDataSize) ??
+          config.getExtension<int>(GoogleConfigKeys.maxInlineDataSize) ??
               20 * 1024 * 1024,
-      candidateCount: config.getExtension<int>(LLMConfigKeys.candidateCount),
+      candidateCount: config.getExtension<int>(GoogleConfigKeys.candidateCount),
       stopSequences:
           config.getExtension<List<String>>(LLMConfigKeys.stopSequences),
       embeddingTaskType:
-          config.getExtension<String>(LLMConfigKeys.embeddingTaskType),
-      embeddingTitle: config.getExtension<String>(LLMConfigKeys.embeddingTitle),
+          config.getExtension<String>(GoogleConfigKeys.embeddingTaskType),
+      embeddingTitle:
+          config.getExtension<String>(GoogleConfigKeys.embeddingTitle),
       embeddingDimensions:
           config.getExtension<int>(LLMConfigKeys.embeddingDimensions),
       webSearchConfig: webSearchConfig,

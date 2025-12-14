@@ -17,8 +17,8 @@ library;
 // are intentionally not exported. For repository tests and advanced internal
 // use cases, import `package:llm_dart_openai/testing.dart`.
 export 'src/config/openai_config.dart';
+export 'src/config/openai_config_keys.dart';
 export 'src/tools/openai_builtin_tools.dart';
-export 'src/http/openai_dio_strategy.dart';
 export 'src/provider/openai_provider.dart';
 export 'src/responses/openai_responses_capability.dart';
 export 'src/factory/openai_provider_factory.dart'

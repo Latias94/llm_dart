@@ -1,6 +1,9 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'search_parameters.dart';
+import 'xai_config_keys.dart';
+
+const Object _unset = Object();
 
 /// xAI provider configuration for the sub-package.
 class XAIConfig implements ProviderHttpConfig {
@@ -28,7 +31,6 @@ class XAIConfig implements ProviderHttpConfig {
   final int? embeddingDimensions;
 
   final SearchParameters? searchParameters;
-  final bool? liveSearch;
 
   final LLMConfig? _originalConfig;
 
@@ -51,16 +53,13 @@ class XAIConfig implements ProviderHttpConfig {
     this.embeddingEncodingFormat,
     this.embeddingDimensions,
     this.searchParameters,
-    this.liveSearch,
     LLMConfig? originalConfig,
   }) : _originalConfig = originalConfig;
 
   factory XAIConfig.fromLLMConfig(LLMConfig config) {
     SearchParameters? searchParams = config.getExtension<SearchParameters>(
-      LLMConfigKeys.searchParameters,
+      XAIConfigKeys.searchParameters,
     );
-    bool? liveSearchEnabled =
-        config.getExtension<bool>(LLMConfigKeys.liveSearch);
 
     // Prefer a structured WebSearchConfig (if provided) over the simple
     // webSearchEnabled flag. This allows callers like XAIBuilder.webSearch()
@@ -87,7 +86,6 @@ class XAIConfig implements ProviderHttpConfig {
           fromDate: webSearchConfig.fromDate as String?,
           toDate: webSearchConfig.toDate as String?,
         );
-        liveSearchEnabled = true;
       } catch (_) {
         // If structure doesn't match, ignore and fall back to other config.
       }
@@ -95,10 +93,7 @@ class XAIConfig implements ProviderHttpConfig {
 
     final webSearchEnabled =
         config.getExtension<bool>(LLMConfigKeys.webSearchEnabled);
-    if (webSearchEnabled == true &&
-        searchParams == null &&
-        liveSearchEnabled != true) {
-      liveSearchEnabled = true;
+    if (webSearchEnabled == true && searchParams == null) {
       searchParams = SearchParameters.webSearch();
     }
 
@@ -128,7 +123,6 @@ class XAIConfig implements ProviderHttpConfig {
         LLMConfigKeys.embeddingDimensions,
       ),
       searchParameters: searchParams,
-      liveSearch: liveSearchEnabled,
       originalConfig: config,
     );
   }
@@ -147,8 +141,7 @@ class XAIConfig implements ProviderHttpConfig {
 
   bool get supportsSearch => model.contains('grok');
 
-  bool get isLiveSearchEnabled =>
-      liveSearch == true || searchParameters != null;
+  bool get isLiveSearchEnabled => searchParameters != null;
 
   bool get supportsEmbeddings =>
       model.contains('embed') || model == 'text-embedding-ada-002';
@@ -177,9 +170,12 @@ class XAIConfig implements ProviderHttpConfig {
     ServiceTier? serviceTier,
     String? embeddingEncodingFormat,
     int? embeddingDimensions,
-    SearchParameters? searchParameters,
-    bool? liveSearch,
+    Object? searchParameters = _unset,
   }) {
+    final resolvedSearchParameters = identical(searchParameters, _unset)
+        ? this.searchParameters
+        : searchParameters as SearchParameters?;
+
     return XAIConfig(
       apiKey: apiKey ?? this.apiKey,
       baseUrl: baseUrl ?? this.baseUrl,
@@ -199,8 +195,7 @@ class XAIConfig implements ProviderHttpConfig {
       embeddingEncodingFormat:
           embeddingEncodingFormat ?? this.embeddingEncodingFormat,
       embeddingDimensions: embeddingDimensions ?? this.embeddingDimensions,
-      searchParameters: searchParameters ?? this.searchParameters,
-      liveSearch: liveSearch ?? this.liveSearch,
+      searchParameters: resolvedSearchParameters,
       originalConfig: _originalConfig,
     );
   }

@@ -156,6 +156,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Use provider constructors (`OpenAIProvider(OpenAIConfig(...))`, etc.) when you need low-level access.
     - Prefer the model-centric facades (`createOpenAI(...)`, `createGroq(...)`, `createDeepSeek(...)`) for Vercel AI SDK-style usage.
 
+- **Provider-specific config keys**
+  - Provider-specific `LLMConfig` extension keys were slimmed down in `llm_dart_core` and moved into provider packages:
+    - OpenAI: use `OpenAIConfigKeys.*` from `package:llm_dart_openai/llm_dart_openai.dart` (replaces `LLMConfigKeys.useResponsesAPI`, `previousResponseId`, `builtInTools`, and `verbosity`).
+    - Google: use `GoogleConfigKeys.*` from `package:llm_dart_google/llm_dart_google.dart` (replaces Google-only `LLMConfigKeys.*` entries).
+    - xAI: use `XAIConfigKeys.searchParameters` from `package:llm_dart_xai/llm_dart_xai.dart` (replaces `LLMConfigKeys.searchParameters`); `LLMConfigKeys.liveSearch` was removed and live search is enabled when `SearchParameters` is present (or via `LLMConfigKeys.webSearchEnabled`).
+
 - **Configuration consolidation & fallbacks**
   - All provider-specific defaulting logic for `baseUrl` / `model` has been centralized into `fromLLMConfig` or factory transforms:
     - Example: `DeepSeekConfig.fromLLMConfig` now applies consistent fallbacks when `LLMConfig.baseUrl` / `model` are empty, using local defaults (`https://api.deepseek.com/v1/`, `deepseek-chat`).

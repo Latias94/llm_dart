@@ -1,6 +1,7 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import '../tools/openai_builtin_tools.dart';
+import 'openai_config_keys.dart';
 
 /// Public defaults for OpenAI base URL and model.
 ///
@@ -133,11 +134,11 @@ class OpenAIConfig implements ProviderHttpConfig {
         LLMConfigKeys.embeddingDimensions,
       ),
       useResponsesAPI:
-          config.getExtension<bool>(LLMConfigKeys.useResponsesAPI) ?? false,
+          config.getExtension<bool>(OpenAIConfigKeys.useResponsesAPI) ?? false,
       previousResponseId:
-          config.getExtension<String>(LLMConfigKeys.previousResponseId),
+          config.getExtension<String>(OpenAIConfigKeys.previousResponseId),
       builtInTools: config.getExtension<List<OpenAIBuiltInTool>>(
-        LLMConfigKeys.builtInTools,
+        OpenAIConfigKeys.builtInTools,
       ),
       originalConfig: config,
     );

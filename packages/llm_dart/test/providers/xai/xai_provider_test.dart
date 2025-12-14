@@ -8,13 +8,13 @@ void main() {
     late xai.XAIConfig config;
 
     setUp(() {
-      config = const xai.XAIConfig(
+      config = xai.XAIConfig(
         apiKey: 'test-api-key',
         baseUrl: 'https://api.x.ai/v1/',
         model: 'grok-3',
         maxTokens: 1000,
         temperature: 0.7,
-        liveSearch: true,
+        searchParameters: xai.SearchParameters.webSearch(),
       );
       provider = xai.XAIProvider(config);
     });
@@ -124,7 +124,7 @@ void main() {
       });
 
       test('should not detect live search when disabled', () {
-        final noSearchConfig = config.copyWith(liveSearch: false);
+        final noSearchConfig = config.copyWith(searchParameters: null);
         final noSearchProvider = xai.XAIProvider(noSearchConfig);
 
         expect(noSearchProvider.config.isLiveSearchEnabled, isFalse);
@@ -199,7 +199,7 @@ void main() {
         expect(provider.config.model, equals('grok-3'));
         expect(provider.config.maxTokens, equals(1000));
         expect(provider.config.temperature, equals(0.7));
-        expect(provider.config.liveSearch, isTrue);
+        expect(provider.config.isLiveSearchEnabled, isTrue);
       });
 
       test('should handle embedding configuration', () {
@@ -241,10 +241,7 @@ void main() {
       });
 
       test('should handle missing search parameters gracefully', () {
-        final noSearchConfig = config.copyWith(
-          liveSearch: true,
-          searchParameters: null,
-        );
+        final noSearchConfig = config.copyWith(searchParameters: null);
 
         // Should not throw during initialization
         expect(() => xai.XAIProvider(noSearchConfig), returnsNormally);

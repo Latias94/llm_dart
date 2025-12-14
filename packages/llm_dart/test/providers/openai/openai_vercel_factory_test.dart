@@ -65,7 +65,7 @@ void main() {
 
       final config = model.config;
       final builtInTools = config
-          .getExtension<List<OpenAIBuiltInTool>>(LLMConfigKeys.builtInTools);
+          .getExtension<List<OpenAIBuiltInTool>>(OpenAIConfigKeys.builtInTools);
 
       expect(builtInTools, isNotNull);
       expect(builtInTools, hasLength(1));

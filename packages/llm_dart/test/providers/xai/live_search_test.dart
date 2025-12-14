@@ -16,7 +16,7 @@ void main() {
 
       // Access the internal config to verify live search is enabled
       final xaiProvider = provider as xai.XAIProvider;
-      expect(xaiProvider.config.liveSearch, isTrue);
+      expect(xaiProvider.config.isLiveSearchEnabled, isTrue);
       expect(xaiProvider.config.searchParameters, isNotNull);
       expect(xaiProvider.config.searchParameters!.mode, equals('auto'));
       expect(xaiProvider.config.searchParameters!.sources, isNotEmpty);
@@ -147,7 +147,6 @@ void main() {
       final config = xai.XAIConfig(
         apiKey: 'test-key',
         model: 'grok-3',
-        liveSearch: true,
         searchParameters: xai.SearchParameters.webSearch(maxResults: 5),
       );
 
@@ -155,7 +154,6 @@ void main() {
 
       // Use reflection or create a test method to access _buildRequestBody
       // For now, we'll test the config setup
-      expect(config.liveSearch, isTrue);
       expect(config.searchParameters, isNotNull);
       expect(config.isLiveSearchEnabled, isTrue);
     });
@@ -164,10 +162,8 @@ void main() {
       final config = xai.XAIConfig(
         apiKey: 'test-key',
         model: 'grok-3',
-        liveSearch: false,
       );
 
-      expect(config.liveSearch, isFalse);
       expect(config.searchParameters, isNull);
       expect(config.isLiveSearchEnabled, isFalse);
     });

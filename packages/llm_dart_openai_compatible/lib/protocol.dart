@@ -11,3 +11,4 @@ library;
 export 'src/client/openai_compatible_client.dart';
 export 'src/chat/openai_compatible_chat.dart';
 export 'src/embeddings/openai_compatible_embeddings.dart';
+export 'src/utils/openai_message_mapper.dart';

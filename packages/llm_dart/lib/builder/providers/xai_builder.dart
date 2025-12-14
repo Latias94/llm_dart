@@ -1,6 +1,7 @@
 import '../llm_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_xai/llm_dart_xai.dart' show SearchParameters;
+import 'package:llm_dart_xai/llm_dart_xai.dart'
+    show SearchParameters, XAIConfigKeys;
 
 /// xAI-specific LLM builder with provider-specific configuration methods.
 ///
@@ -19,8 +20,7 @@ class XAIBuilder {
   /// Enables or disables Live Search for xAI (Grok) models.
   ///
   /// When enabled, Grok can access real-time information from the web using
-  /// xAI's live search capabilities. This flag maps to the [LLMConfigKeys.liveSearch]
-  /// extension key and is interpreted by [XAIConfig.fromLLMConfig].
+  /// xAI's live search capabilities.
   ///
   /// Example:
   /// ```dart
@@ -31,13 +31,13 @@ class XAIBuilder {
   ///   .build();
   /// ```
   XAIBuilder liveSearch([bool enable = true]) {
-    _baseBuilder.extension(LLMConfigKeys.liveSearch, enable);
+    _baseBuilder.extension(LLMConfigKeys.webSearchEnabled, enable);
     return this;
   }
 
   /// Configures Live Search using xAI-native [SearchParameters].
   ///
-  /// This helper writes the given [parameters] into [LLMConfigKeys.searchParameters].
+  /// This helper writes the given [parameters] into [XAIConfigKeys.searchParameters].
   /// The xAI provider then maps these settings to its HTTP API via
   /// [XAIConfig.fromLLMConfig].
   ///
@@ -55,7 +55,7 @@ class XAIBuilder {
   ///   .build();
   /// ```
   XAIBuilder searchParameters(SearchParameters parameters) {
-    _baseBuilder.extension(LLMConfigKeys.searchParameters, parameters);
+    _baseBuilder.extension(XAIConfigKeys.searchParameters, parameters);
     return this;
   }
 

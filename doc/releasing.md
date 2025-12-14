@@ -1,6 +1,8 @@
 ## Releasing / Publishing (Monorepo)
 
-This repository is a Dart **Pub Workspace** with multiple packages under `packages/`.
+This repository is a multi-package Dart monorepo with multiple packages under `packages/`.
+It intentionally does **not** use Dart Pub workspaces (`workspace:` / `resolution: workspace`)
+to keep each package publishable on pub.dev.
 The root package (`llm_dart/`) is the **batteries-included** package, and the
 subpackages under `packages/` can be published independently for fine-grained
 dependency control.
@@ -10,6 +12,17 @@ dependency control.
 - Keep `llm_dart` as the “batteries-included” package.
 - Allow users to depend on individual provider packages (`llm_dart_openai`, `llm_dart_google`, …) without pulling the whole stack.
 - Avoid development-only dependency tricks (no committed `pubspec_overrides.yaml`, no `dependency_overrides` for workspace linking).
+
+### Workspace bootstrap (development only)
+
+For local development in this monorepo, use Melos to bootstrap path-linked dependencies:
+
+```bash
+dart pub get
+dart run melos bootstrap
+```
+
+This generates `pubspec_overrides.yaml` files locally (they are gitignored and must not be published).
 
 ### Before You Publish
 

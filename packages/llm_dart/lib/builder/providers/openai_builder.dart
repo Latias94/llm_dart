@@ -138,7 +138,7 @@ class OpenAIBuilder {
   ///     .build();
   /// ```
   OpenAIBuilder verbosity(Verbosity level) {
-    _baseBuilder.extension(LLMConfigKeys.verbosity, level.value);
+    _baseBuilder.extension(openai_impl.OpenAIConfigKeys.verbosity, level.value);
     return this;
   }
 
@@ -161,7 +161,7 @@ class OpenAIBuilder {
   ///     .build();
   /// ```
   OpenAIBuilder useResponsesAPI([bool use = true]) {
-    _baseBuilder.extension(LLMConfigKeys.useResponsesAPI, use);
+    _baseBuilder.extension(openai_impl.OpenAIConfigKeys.useResponsesAPI, use);
     return this;
   }
 
@@ -170,7 +170,10 @@ class OpenAIBuilder {
   /// Used with Responses API to maintain context across multiple API calls.
   /// This allows for multi-turn conversations with state preservation.
   OpenAIBuilder previousResponseId(String responseId) {
-    _baseBuilder.extension(LLMConfigKeys.previousResponseId, responseId);
+    _baseBuilder.extension(
+      openai_impl.OpenAIConfigKeys.previousResponseId,
+      responseId,
+    );
     return this;
   }
 
@@ -191,7 +194,7 @@ class OpenAIBuilder {
         location: location,
       ),
     );
-    _baseBuilder.extension(LLMConfigKeys.builtInTools, tools);
+    _baseBuilder.extension(openai_impl.OpenAIConfigKeys.builtInTools, tools);
     return this;
   }
 
@@ -217,7 +220,7 @@ class OpenAIBuilder {
       vectorStoreIds: vectorStoreIds,
       parameters: parameters,
     ));
-    _baseBuilder.extension(LLMConfigKeys.builtInTools, tools);
+    _baseBuilder.extension(openai_impl.OpenAIConfigKeys.builtInTools, tools);
     return this;
   }
 
@@ -251,7 +254,7 @@ class OpenAIBuilder {
       environment: environment,
       parameters: parameters,
     ));
-    _baseBuilder.extension(LLMConfigKeys.builtInTools, tools);
+    _baseBuilder.extension(openai_impl.OpenAIConfigKeys.builtInTools, tools);
     return this;
   }
 
@@ -259,7 +262,7 @@ class OpenAIBuilder {
   List<openai_impl.OpenAIBuiltInTool> _getBuiltInTools() {
     final existingTools = _baseBuilder.currentConfig
         .getExtension<List<openai_impl.OpenAIBuiltInTool>>(
-            LLMConfigKeys.builtInTools);
+            openai_impl.OpenAIConfigKeys.builtInTools);
     return existingTools != null
         ? List.from(existingTools)
         : <openai_impl.OpenAIBuiltInTool>[];
@@ -422,7 +425,7 @@ class OpenAIBuilder {
   Future<openai_impl.OpenAIProvider> buildOpenAIResponses() async {
     // Automatically enable Responses API if not already enabled
     final isResponsesAPIEnabled = _baseBuilder.currentConfig
-            .getExtension<bool>(LLMConfigKeys.useResponsesAPI) ??
+            .getExtension<bool>(openai_impl.OpenAIConfigKeys.useResponsesAPI) ??
         false;
     if (!isResponsesAPIEnabled) {
       useResponsesAPI(true);

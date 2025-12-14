@@ -65,7 +65,7 @@ void main() {
           baseUrl: 'https://api.x.ai/v1/',
           model: 'grok-3',
           extensions: {
-            LLMConfigKeys.liveSearch: true,
+            LLMConfigKeys.webSearchEnabled: true,
           },
         );
 
@@ -91,7 +91,7 @@ void main() {
           extensions: {
             LLMConfigKeys.embeddingEncodingFormat: 'float',
             LLMConfigKeys.embeddingDimensions: 1536,
-            LLMConfigKeys.liveSearch: true,
+            LLMConfigKeys.webSearchEnabled: true,
           },
         );
 
@@ -183,7 +183,6 @@ void main() {
           baseUrl: 'https://api.x.ai/v1/',
           model: 'grok-3',
           extensions: {
-            'liveSearch': true,
             'webSearchEnabled': true,
           },
         );

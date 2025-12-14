@@ -6,7 +6,6 @@
 library;
 
 export 'src/config/groq_config.dart';
-export 'src/http/groq_dio_strategy.dart';
 export 'src/provider/groq_provider.dart';
 export 'src/factory/groq_provider_factory.dart'
     show GroqProviderFactory, registerGroqProvider;

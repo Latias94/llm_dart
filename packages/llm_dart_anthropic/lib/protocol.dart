@@ -10,5 +10,6 @@ library;
 export 'src/chat/anthropic_chat.dart' show AnthropicChat;
 export 'src/client/anthropic_client.dart';
 export 'src/files/anthropic_files.dart';
+export 'src/http/anthropic_dio_strategy.dart';
 export 'src/models/anthropic_models.dart';
 export 'src/request/anthropic_request_builder.dart';

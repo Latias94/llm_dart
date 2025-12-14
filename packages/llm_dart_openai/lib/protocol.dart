@@ -9,4 +9,5 @@ library;
 
 export 'src/chat/openai_chat.dart';
 export 'src/client/openai_client.dart';
+export 'src/http/openai_dio_strategy.dart';
 export 'src/responses/openai_responses.dart';

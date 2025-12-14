@@ -11,4 +11,5 @@ export 'src/chat/deepseek_chat.dart';
 export 'src/client/deepseek_client.dart';
 export 'src/completion/deepseek_completion.dart';
 export 'src/error/deepseek_error_handler.dart';
+export 'src/http/deepseek_dio_strategy.dart';
 export 'src/models/deepseek_models.dart';

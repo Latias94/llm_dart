@@ -20,11 +20,6 @@ abstract final class LLMConfigKeys {
   static const String embeddingEncodingFormat = 'embeddingEncodingFormat';
   static const String embeddingDimensions = 'embeddingDimensions';
 
-  // OpenAI Responses API
-  static const String useResponsesAPI = 'useResponsesAPI';
-  static const String previousResponseId = 'previousResponseId';
-  static const String builtInTools = 'builtInTools';
-
   // Generic reasoning controls
   static const String reasoning = 'reasoning';
   static const String thinkingBudgetTokens = 'thinkingBudgetTokens';
@@ -92,9 +87,6 @@ abstract final class LLMConfigKeys {
   static const String logprobs = 'logprobs';
   static const String topLogprobs = 'topLogprobs';
 
-  // GPT-5 style verbosity control
-  static const String verbosity = 'verbosity';
-
   // Provider-agnostic metadata container
   static const String metadata = 'metadata';
   static const String logger = 'logger';
@@ -116,24 +108,6 @@ abstract final class LLMConfigKeys {
   static const String similarityBoost = 'similarityBoost';
   static const String style = 'style';
   static const String useSpeakerBoost = 'useSpeakerBoost';
-
-  // Google Gemini-specific extensions
-  static const String embeddingTaskType = 'embeddingTaskType';
-  static const String embeddingTitle = 'embeddingTitle';
-  static const String enableImageGeneration = 'enableImageGeneration';
-  static const String responseModalities = 'responseModalities';
-  static const String safetySettings = 'safetySettings';
-  static const String maxInlineDataSize = 'maxInlineDataSize';
-  static const String candidateCount = 'candidateCount';
-  static const String defaultVoiceName = 'defaultVoiceName';
-  static const String defaultSpeakerVoices = 'defaultSpeakerVoices';
-  static const String googleFileSearchConfig = 'googleFileSearchConfig';
-  static const String googleCodeExecutionEnabled = 'googleCodeExecutionEnabled';
-  static const String googleUrlContextEnabled = 'googleUrlContextEnabled';
-
-  // xAI-specific extensions
-  static const String searchParameters = 'searchParameters';
-  static const String liveSearch = 'liveSearch';
 }
 
 /// Typed key for values stored in [LLMConfig.extensions].
@@ -194,14 +168,6 @@ abstract final class LLMConfigTypedKeys {
 
   static const webSearchLocation = LLMConfigKey<WebSearchLocation>(
     LLMConfigKeys.webSearchLocation,
-  );
-
-  static const useResponsesAPI = LLMConfigKey<bool>(
-    LLMConfigKeys.useResponsesAPI,
-  );
-
-  static const previousResponseId = LLMConfigKey<String>(
-    LLMConfigKeys.previousResponseId,
   );
 
   static const logger = LLMConfigKey<dynamic>(

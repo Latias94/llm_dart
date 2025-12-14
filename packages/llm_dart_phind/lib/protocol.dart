@@ -9,3 +9,4 @@ library;
 
 export 'src/client/phind_client.dart';
 export 'src/chat/phind_chat.dart';
+export 'src/http/phind_dio_strategy.dart';

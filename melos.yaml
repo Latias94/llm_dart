@@ -5,6 +5,9 @@ packages:
   - examples
 
 scripts:
+  bootstrap:
+    run: dart run melos bootstrap
+    description: Bootstrap all packages (generates local pubspec_overrides.yaml for path linking).
   analyze:
     run: dart run melos exec --fail-fast -- dart analyze --fatal-infos .
     description: Run static analysis for all packages.

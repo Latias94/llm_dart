@@ -1,7 +1,7 @@
 import '../llm_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/llm_dart_google.dart'
-    show GoogleTTSCapability, SafetySetting;
+    show GoogleTTSCapability, SafetySetting, GoogleConfigKeys;
 
 /// Google-specific LLM builder with provider-specific configuration methods
 ///
@@ -30,7 +30,7 @@ class GoogleLLMBuilder {
   /// - 'FACT_VERIFICATION' - For fact checking
   /// - 'CODE_RETRIEVAL_QUERY' - For code search queries
   GoogleLLMBuilder embeddingTaskType(String taskType) {
-    _baseBuilder.extension(LLMConfigKeys.embeddingTaskType, taskType);
+    _baseBuilder.extension(GoogleConfigKeys.embeddingTaskType, taskType);
     return this;
   }
 
@@ -38,7 +38,7 @@ class GoogleLLMBuilder {
   ///
   /// Providing a title can improve embedding quality for retrieval tasks.
   GoogleLLMBuilder embeddingTitle(String title) {
-    _baseBuilder.extension(LLMConfigKeys.embeddingTitle, title);
+    _baseBuilder.extension(GoogleConfigKeys.embeddingTitle, title);
     return this;
   }
 
@@ -75,31 +75,31 @@ class GoogleLLMBuilder {
 
   /// Enables image generation capability
   GoogleLLMBuilder enableImageGeneration(bool enable) {
-    _baseBuilder.extension(LLMConfigKeys.enableImageGeneration, enable);
+    _baseBuilder.extension(GoogleConfigKeys.enableImageGeneration, enable);
     return this;
   }
 
   /// Sets response modalities (e.g., ['TEXT', 'IMAGE'])
   GoogleLLMBuilder responseModalities(List<String> modalities) {
-    _baseBuilder.extension(LLMConfigKeys.responseModalities, modalities);
+    _baseBuilder.extension(GoogleConfigKeys.responseModalities, modalities);
     return this;
   }
 
   /// Sets safety settings for content filtering
   GoogleLLMBuilder safetySettings(List<SafetySetting> settings) {
-    _baseBuilder.extension(LLMConfigKeys.safetySettings, settings);
+    _baseBuilder.extension(GoogleConfigKeys.safetySettings, settings);
     return this;
   }
 
   /// Sets maximum inline data size (default: 20MB)
   GoogleLLMBuilder maxInlineDataSize(int size) {
-    _baseBuilder.extension(LLMConfigKeys.maxInlineDataSize, size);
+    _baseBuilder.extension(GoogleConfigKeys.maxInlineDataSize, size);
     return this;
   }
 
   /// Sets candidate count for response generation
   GoogleLLMBuilder candidateCount(int count) {
-    _baseBuilder.extension(LLMConfigKeys.candidateCount, count);
+    _baseBuilder.extension(GoogleConfigKeys.candidateCount, count);
     return this;
   }
 
@@ -113,7 +113,7 @@ class GoogleLLMBuilder {
   /// support it (Gemini 2.x family).
   GoogleLLMBuilder enableCodeExecution([bool enable = true]) {
     _baseBuilder.extension(
-      LLMConfigKeys.googleCodeExecutionEnabled,
+      GoogleConfigKeys.googleCodeExecutionEnabled,
       enable,
     );
     return this;
@@ -123,7 +123,7 @@ class GoogleLLMBuilder {
   /// (Gemini 2.x family).
   GoogleLLMBuilder enableUrlContext([bool enable = true]) {
     _baseBuilder.extension(
-      LLMConfigKeys.googleUrlContextEnabled,
+      GoogleConfigKeys.googleUrlContextEnabled,
       enable,
     );
     return this;
@@ -158,7 +158,7 @@ class GoogleLLMBuilder {
       if (metadataFilter != null) 'metadataFilter': metadataFilter,
     };
     _baseBuilder.extension(
-      LLMConfigKeys.googleFileSearchConfig,
+      GoogleConfigKeys.googleFileSearchConfig,
       config,
     );
     return this;
@@ -320,7 +320,7 @@ class GoogleLLMBuilder {
     if (model != null) {
       ttsModel(model);
     }
-    _baseBuilder.extension(LLMConfigKeys.defaultVoiceName, voiceName);
+    _baseBuilder.extension(GoogleConfigKeys.defaultVoiceName, voiceName);
     return this;
   }
 
@@ -334,7 +334,7 @@ class GoogleLLMBuilder {
     }
     if (defaultSpeakerVoices != null) {
       _baseBuilder.extension(
-          LLMConfigKeys.defaultSpeakerVoices, defaultSpeakerVoices);
+          GoogleConfigKeys.defaultSpeakerVoices, defaultSpeakerVoices);
     }
     return this;
   }
@@ -347,7 +347,7 @@ class GoogleLLMBuilder {
 
   /// Configure TTS with specific voice
   GoogleLLMBuilder voice(String voiceName) {
-    _baseBuilder.extension(LLMConfigKeys.defaultVoiceName, voiceName);
+    _baseBuilder.extension(GoogleConfigKeys.defaultVoiceName, voiceName);
     return this;
   }
 }

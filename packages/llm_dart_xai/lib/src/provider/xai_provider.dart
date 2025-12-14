@@ -123,7 +123,6 @@ class XAIProvider
     String? embeddingEncodingFormat,
     int? embeddingDimensions,
     SearchParameters? searchParameters,
-    bool? liveSearch,
   }) {
     final newConfig = config.copyWith(
       apiKey: apiKey,
@@ -141,7 +140,6 @@ class XAIProvider
       embeddingEncodingFormat: embeddingEncodingFormat,
       embeddingDimensions: embeddingDimensions,
       searchParameters: searchParameters,
-      liveSearch: liveSearch,
     );
 
     return XAIProvider(newConfig);

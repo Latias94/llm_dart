@@ -5,19 +5,17 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 /// Helper for converting structured [ModelMessage] instances into
 /// OpenAI-style API message payloads.
 ///
-/// This logic is shared by the OpenAI and OpenAI-compatible providers
-/// so that:
-/// - Multi-part content (text, reasoning, files, URLs) is handled
-///   consistently.
+/// This logic is used by the OpenAI provider so that:
+/// - Multi-part content (text, reasoning, files, URLs) is handled consistently.
 /// - Tool calls and tool results are represented in a unified way.
-/// - Responses API vs. Chat Completions differences are controlled via
-///   the [isResponsesApi] flag.
+/// - Responses API vs. Chat Completions differences are controlled via the
+///   [isResponsesApi] flag.
 class OpenAIMessageMapper {
   /// Build API messages from the structured [promptMessages].
   ///
-  /// When [isResponsesApi] is true, content parts use the Responses API
-  /// shapes (`input_text`, `input_image`, `input_file`). Otherwise the
-  /// legacy Chat Completions shapes are used (`text`, `image_url`, `file`).
+  /// When [isResponsesApi] is true, content parts use the Responses API shapes
+  /// (`input_text`, `input_image`, `input_file`). Otherwise the legacy Chat
+  /// Completions shapes are used (`text`, `image_url`, `file`).
   static List<Map<String, dynamic>> buildApiMessagesFromPrompt(
     List<ModelMessage> promptMessages, {
     required bool isResponsesApi,

@@ -25,7 +25,7 @@ void main() {
         expect(config.embeddingEncodingFormat, isNull);
         expect(config.embeddingDimensions, isNull);
         expect(config.searchParameters, isNull);
-        expect(config.liveSearch, isNull);
+        expect(config.isLiveSearchEnabled, isFalse);
       });
 
       test('should create config with all parameters', () {
@@ -45,7 +45,6 @@ void main() {
           embeddingEncodingFormat: 'float',
           embeddingDimensions: 1536,
           searchParameters: searchParams,
-          liveSearch: true,
         );
 
         expect(config.apiKey, equals('test-api-key'));
@@ -62,7 +61,7 @@ void main() {
         expect(config.embeddingEncodingFormat, equals('float'));
         expect(config.embeddingDimensions, equals(1536));
         expect(config.searchParameters, equals(searchParams));
-        expect(config.liveSearch, isTrue);
+        expect(config.isLiveSearchEnabled, isTrue);
       });
     });
 
@@ -132,15 +131,6 @@ void main() {
     });
 
     group('Live Search Configuration', () {
-      test('should detect live search when explicitly enabled', () {
-        const config = xai.XAIConfig(
-          apiKey: 'test-key',
-          liveSearch: true,
-        );
-
-        expect(config.isLiveSearchEnabled, isTrue);
-      });
-
       test('should detect live search when search parameters are provided', () {
         final searchParams = xai.SearchParameters.webSearch();
         final config = xai.XAIConfig(
@@ -151,10 +141,9 @@ void main() {
         expect(config.isLiveSearchEnabled, isTrue);
       });
 
-      test('should not detect live search when disabled', () {
+      test('should not detect live search when not configured', () {
         const config = xai.XAIConfig(
           apiKey: 'test-key',
-          liveSearch: false,
         );
 
         expect(config.isLiveSearchEnabled, isFalse);
@@ -196,19 +185,18 @@ void main() {
           apiKey: 'original-key',
           model: 'grok-3',
           temperature: 0.5,
-          liveSearch: false,
         );
 
         final copied = original.copyWith(
           apiKey: 'new-key',
           temperature: 0.8,
-          liveSearch: true,
+          searchParameters: xai.SearchParameters.webSearch(),
         );
 
         expect(copied.apiKey, equals('new-key'));
         expect(copied.model, equals('grok-3')); // Unchanged
         expect(copied.temperature, equals(0.8));
-        expect(copied.liveSearch, isTrue);
+        expect(copied.isLiveSearchEnabled, isTrue);
       });
 
       test('should preserve original values when not specified', () {
@@ -220,7 +208,6 @@ void main() {
           temperature: 0.7,
           embeddingDimensions: 1536,
           searchParameters: searchParams,
-          liveSearch: true,
         );
 
         final copied = original.copyWith(temperature: 0.9);
@@ -230,7 +217,7 @@ void main() {
         expect(copied.maxTokens, equals(1000));
         expect(copied.embeddingDimensions, equals(1536));
         expect(copied.searchParameters, equals(searchParams));
-        expect(copied.liveSearch, isTrue);
+        expect(copied.isLiveSearchEnabled, isTrue);
         expect(copied.temperature, equals(0.9));
       });
     });
@@ -252,7 +239,7 @@ void main() {
           extensions: {
             LLMConfigKeys.embeddingEncodingFormat: 'float',
             LLMConfigKeys.embeddingDimensions: 1536,
-            LLMConfigKeys.liveSearch: true,
+            LLMConfigKeys.webSearchEnabled: true,
           },
         );
 
@@ -271,7 +258,8 @@ void main() {
         expect(xaiConfig.toolChoice, isA<ToolChoice>());
         expect(xaiConfig.embeddingEncodingFormat, equals('float'));
         expect(xaiConfig.embeddingDimensions, equals(1536));
-        expect(xaiConfig.liveSearch, isTrue);
+        expect(xaiConfig.isLiveSearchEnabled, isTrue);
+        expect(xaiConfig.searchParameters, isNotNull);
       });
 
       test('should access extensions from original config', () {
@@ -300,7 +288,6 @@ void main() {
 
         final xaiConfig = xai.XAIConfig.fromLLMConfig(llmConfig);
 
-        expect(xaiConfig.liveSearch, isTrue);
         expect(xaiConfig.searchParameters, isNotNull);
         expect(xaiConfig.isLiveSearchEnabled, isTrue);
       });

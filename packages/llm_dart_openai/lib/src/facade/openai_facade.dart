@@ -9,6 +9,7 @@ import '../images/openai_images.dart';
 import '../responses/openai_responses.dart';
 import '../responses/openai_responses_capability.dart';
 import '../tools/openai_builtin_tools.dart';
+import '../config/openai_config_keys.dart';
 
 /// OpenAI provider settings (Vercel AI-style).
 ///
@@ -259,12 +260,12 @@ class OpenAI
 
     if (useResponsesAPI) {
       baseConfig =
-          baseConfig.withExtension(LLMConfigKeys.useResponsesAPI, true);
+          baseConfig.withExtension(OpenAIConfigKeys.useResponsesAPI, true);
     }
 
     if (builtInTools != null && builtInTools.isNotEmpty) {
       baseConfig =
-          baseConfig.withExtension(LLMConfigKeys.builtInTools, builtInTools);
+          baseConfig.withExtension(OpenAIConfigKeys.builtInTools, builtInTools);
     }
 
     return OpenAIConfig.fromLLMConfig(baseConfig);

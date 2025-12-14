@@ -143,8 +143,6 @@ class XAI
           temperature: temperature,
           maxTokens: maxTokens,
           systemPrompt: systemPrompt,
-          // Enable live search with the provided search parameters
-          liveSearch: true,
           searchParameters:
               searchParameters ?? SearchParameters.webSearch(maxResults: null),
         );

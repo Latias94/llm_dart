@@ -88,12 +88,10 @@ class XAIRequestBodyTransformer implements RequestBodyTransformer {
   void _addSearchParameters(Map<String, dynamic> body, LLMConfig config) {
     final webSearchEnabled =
         config.getExtension<bool>(LLMConfigKeys.webSearchEnabled) ?? false;
-    final liveSearch =
-        config.getExtension<bool>(LLMConfigKeys.liveSearch) ?? false;
     final webSearchConfig =
         config.getExtension<WebSearchConfig>(LLMConfigKeys.webSearchConfig);
 
-    if (!webSearchEnabled && !liveSearch && webSearchConfig == null) {
+    if (!webSearchEnabled && webSearchConfig == null) {
       return;
     }
 

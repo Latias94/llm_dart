@@ -3,7 +3,7 @@ library;
 // ===== Stable public API surface =====
 //
 // Keep exports focused on:
-// - provider config + Dio strategy + registry factory
+// - provider config + registry factory
 // - provider implementation (capabilities)
 // - provider-defined tools and search parameter models
 // - Vercel AI-style facade (`createXAI`, `xai`, etc.)
@@ -12,8 +12,8 @@ library;
 // models) are intentionally not exported. For repository tests and advanced
 // internal use cases, import `package:llm_dart_xai/testing.dart`.
 export 'src/config/xai_config.dart';
+export 'src/config/xai_config_keys.dart';
 export 'src/config/search_parameters.dart';
-export 'src/http/xai_dio_strategy.dart';
 export 'src/provider/xai_provider.dart';
 export 'src/factory/xai_provider_factory.dart'
     show XAIProviderFactory, registerXAIProvider;
