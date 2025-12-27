@@ -6,7 +6,7 @@ import 'types.dart';
 
 /// Generate speech audio (TTS) using a provider-agnostic capability.
 Future<GenerateSpeechResult> generateSpeech({
-  required AudioCapability model,
+  required TextToSpeechCapability model,
   required TTSRequest request,
   CancelToken? cancelToken,
 }) async {
@@ -16,7 +16,7 @@ Future<GenerateSpeechResult> generateSpeech({
 
 /// Convenience helper to generate speech from plain text.
 Future<GenerateSpeechResult> generateSpeechFromText({
-  required AudioCapability model,
+  required TextToSpeechCapability model,
   required String text,
   String? voice,
   String? modelId,
@@ -41,7 +41,7 @@ Future<GenerateSpeechResult> generateSpeechFromText({
 
 /// Stream speech audio (TTS) as provider-agnostic audio stream events.
 Stream<AudioStreamEvent> streamSpeech({
-  required AudioCapability model,
+  required StreamingTextToSpeechCapability model,
   required TTSRequest request,
   CancelToken? cancelToken,
 }) {
@@ -50,7 +50,7 @@ Stream<AudioStreamEvent> streamSpeech({
 
 /// Convenience helper to stream speech from plain text.
 Stream<AudioStreamEvent> streamSpeechFromText({
-  required AudioCapability model,
+  required StreamingTextToSpeechCapability model,
   required String text,
   String? voice,
   String? modelId,

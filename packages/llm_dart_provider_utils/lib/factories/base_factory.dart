@@ -181,16 +181,15 @@ abstract class LocalProviderFactory<T extends ChatCapability>
   }
 }
 
-/// Specialized base factory for audio-only providers.
-abstract class AudioProviderFactory<T extends AudioCapability>
+/// Specialized base factory for text-to-speech (TTS) providers.
+abstract class TextToSpeechProviderFactory<T extends TextToSpeechCapability>
     extends BaseProviderFactory<T> {
   @override
   Set<LLMCapability> get supportedCapabilities => {
         LLMCapability.textToSpeech,
-        LLMCapability.speechToText,
       };
 
-  /// Audio providers typically need voice-related provider options.
+  /// TTS providers typically need voice-related provider options.
   Map<String, dynamic> getAudioConfigMap(LLMConfig config) {
     final baseMap = getBaseConfigMap(config);
     final pid = providerId;
@@ -209,4 +208,13 @@ abstract class AudioProviderFactory<T extends AudioCapability>
 
     return baseMap;
   }
+}
+
+/// Specialized base factory for speech-to-text (STT) providers.
+abstract class SpeechToTextProviderFactory<T extends SpeechToTextCapability>
+    extends BaseProviderFactory<T> {
+  @override
+  Set<LLMCapability> get supportedCapabilities => {
+        LLMCapability.speechToText,
+      };
 }

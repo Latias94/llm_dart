@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart' hide CancelToken;
 
-import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/cancellation.dart';
 import 'package:llm_dart_core/core/llm_error.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
@@ -12,7 +11,7 @@ import 'config.dart';
 ///
 /// This module handles model listing functionality for Ollama providers.
 /// Ollama supports listing available models through the /api/tags endpoint.
-class OllamaModels implements ModelListingCapability {
+class OllamaModels {
   final OllamaClient client;
   final OllamaConfig config;
 
@@ -20,7 +19,6 @@ class OllamaModels implements ModelListingCapability {
 
   String get modelsEndpoint => '/api/tags';
 
-  @override
   Future<List<AIModel>> models({CancelToken? cancelToken}) async {
     if (config.baseUrl.isEmpty) {
       throw const InvalidRequestError('Missing Ollama base URL');

@@ -6,7 +6,7 @@ import 'types.dart';
 
 /// Transcribe speech to text using a provider-agnostic capability.
 Future<TranscribeResult> transcribe({
-  required AudioCapability model,
+  required SpeechToTextCapability model,
   required STTRequest request,
   CancelToken? cancelToken,
 }) async {
@@ -16,7 +16,7 @@ Future<TranscribeResult> transcribe({
 
 /// Convenience helper to transcribe from audio bytes.
 Future<TranscribeResult> transcribeFromAudioBytes({
-  required AudioCapability model,
+  required SpeechToTextCapability model,
   required List<int> audioData,
   String? modelId,
   String? language,
@@ -41,7 +41,7 @@ Future<TranscribeResult> transcribeFromAudioBytes({
 
 /// Convenience helper to transcribe from a local file path.
 Future<TranscribeResult> transcribeFromFile({
-  required AudioCapability model,
+  required SpeechToTextCapability model,
   required String filePath,
   String? modelId,
   String? language,
@@ -66,7 +66,7 @@ Future<TranscribeResult> transcribeFromFile({
 
 /// Translate audio to English (when supported by the provider).
 Future<TranscribeResult> translateAudio({
-  required AudioCapability model,
+  required AudioTranslationCapability model,
   required AudioTranslationRequest request,
   CancelToken? cancelToken,
 }) async {

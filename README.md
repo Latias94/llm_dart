@@ -370,24 +370,29 @@ final queryEmbedding = await provider.embed(['AI research']);
 // Calculate cosine similarity with your embeddings
 ```
 
-### Content Moderation
+### Rerank
+
+`llm_dart_ai` provides a Vercel-style `rerank` task. If your provider doesn't
+offer a native rerank API, you can use the best-effort embedding fallback:
 
 ```dart
-// Moderate content for safety
-final provider = await ai()
+final embedder = await ai()
     .provider('openai')
     .apiKey('your-key')
-    .buildModeration();
+    .model('text-embedding-3-small')
+    .buildEmbedding();
 
-final result = await provider.moderate(
-  ModerationRequest(input: 'User generated content to check')
+final result = await rerankByEmbedding(
+  model: embedder,
+  query: 'best pizza in SF',
+  documents: const [
+    RerankDocument(text: '...'),
+    RerankDocument(text: '...'),
+  ],
+  topK: 5,
 );
 
-if (result.results.first.flagged) {
-  print('Content flagged for review');
-} else {
-  print('Content is safe');
-}
+print(result.results.first.index);
 ```
 
 ### Tool Calling
@@ -599,22 +604,18 @@ final embeddings = await provider.embed([
 ### ElevenLabs (Audio Processing)
 
 ```dart
-// Use buildAudio() for type-safe audio capability building
-final audioProvider = await ElevenLabsBuilder(
+// Use task-specific builders for type-safe capability building
+final ttsProvider = await ElevenLabsBuilder(
   ai().provider('elevenlabs').apiKey('your-elevenlabs-key'),
 )
     .voiceId('JBFqnCBsd6RMkjVDRZzb') // George voice
     .stability(0.7)
     .similarityBoost(0.9)
     .style(0.1)
-    .buildAudio(); // Type-safe audio capability building
-
-// Direct usage without type casting
-final features = audioProvider.supportedFeatures;
-print('Supports TTS: ${features.contains(AudioFeature.textToSpeech)}');
+    .buildSpeech(); // Guaranteed TextToSpeechCapability
 
 // Text to speech with advanced options
-final ttsResponse = await audioProvider.textToSpeech(TTSRequest(
+final ttsResponse = await ttsProvider.textToSpeech(TTSRequest(
   text: 'Hello world! This is ElevenLabs speaking.',
   voice: 'JBFqnCBsd6RMkjVDRZzb',
   model: 'eleven_multilingual_v2',
@@ -623,18 +624,20 @@ final ttsResponse = await audioProvider.textToSpeech(TTSRequest(
 ));
 await File('output.mp3').writeAsBytes(ttsResponse.audioData);
 
-// Speech to text (if supported)
-if (features.contains(AudioFeature.speechToText)) {
+// Convenience method (task-specific extension)
+final quickSpeech = await ttsProvider.speech('Quick TTS');
+
+// Optional: Speech-to-text is a separate capability
+try {
+  final sttProvider = await ai().provider('elevenlabs').apiKey('your-elevenlabs-key').buildTranscription();
   final audioData = await File('input.mp3').readAsBytes();
-  final sttResponse = await audioProvider.speechToText(
-    STTRequest.fromAudio(audioData, model: 'scribe_v1')
+  final sttResponse = await sttProvider.speechToText(
+    STTRequest.fromAudio(audioData, model: 'scribe_v1'),
   );
   print(sttResponse.text);
+} catch (_) {
+  // Not supported or not enabled.
 }
-
-// Convenience methods
-final quickSpeech = await audioProvider.speech('Quick TTS');
-final quickTranscription = await audioProvider.transcribeFile('audio.mp3');
 ```
 
 ## Request Cancellation
@@ -734,15 +737,10 @@ abstract class EmbeddingCapability {
   Future<List<List<double>>> embed(List<String> input);
 }
 
-abstract class ModerationCapability {
-  Future<ModerationResponse> moderate(ModerationRequest request);
-}
-
 // Providers implement only the capabilities they support
 class OpenAIProvider implements
     ChatCapability,
-    EmbeddingCapability,
-    ModerationCapability {
+    EmbeddingCapability {
   // Implementation
 }
 ```
@@ -752,26 +750,21 @@ class OpenAIProvider implements
 The library provides capability factory methods for compile-time type safety:
 
 ```dart
-// Old approach - runtime type casting
+// Old approach - runtime type casting (works only if the underlying instance supports it)
 final provider = await ai().provider('openai').apiKey(apiKey).build();
-if (provider is! AudioCapability) {
-  throw Exception('Audio not supported');
-}
-final audioProvider = provider as AudioCapability; // Runtime cast!
+final ttsProvider = provider as TextToSpeechCapability; // Runtime cast!
 
-// New approach - compile-time type safety
-final audioProvider = await ai().provider('openai').apiKey(apiKey).buildAudio();
-// Direct usage without type casting - guaranteed AudioCapability!
+// New approach - compile-time type safety (task-specific)
+final ttsProvider2 = await ai().provider('openai').apiKey(apiKey).buildSpeech();
 
 // Available factory methods:
-final chatProvider = await ai().provider('openai').build(); // Returns ChatCapability
-final audioProvider = await ai().provider('openai').buildAudio();
-final imageProvider = await ai().provider('openai').buildImageGeneration();
-final embeddingProvider = await ai().provider('openai').buildEmbedding();
-final fileProvider = await ai().provider('openai').buildFileManagement();
-final moderationProvider = await ai().provider('openai').buildModeration();
-final assistantProvider = await ai().provider('openai').buildAssistant();
-final modelProvider = await ai().provider('openai').buildModelListing();
+	final chatProvider = await ai().provider('openai').build(); // Returns ChatCapability
+	final ttsProvider3 = await ai().provider('openai').buildSpeech();
+	final sttProvider = await ai().provider('openai').buildTranscription();
+	final translationProvider = await ai().provider('openai').buildAudioTranslation();
+	final realtimeProvider = await ai().provider('openai').buildRealtimeAudio();
+	final imageProvider = await ai().provider('openai').buildImageGeneration();
+	final embeddingProvider = await ai().provider('openai').buildEmbedding();
 
 // Web search is enabled through configuration, not a separate capability
 // Example (OpenAI provider-native web search):
@@ -782,9 +775,9 @@ final webSearchProvider = await ai()
 
 // Clear error messages for unsupported capabilities
 try {
-  final audioProvider = await ai().provider('groq').buildAudio(); // Groq doesn't support audio
+  final ttsProvider = await ai().provider('groq').buildSpeech(); // Groq doesn't support TTS
 } catch (e) {
-  print(e); // UnsupportedCapabilityError: Provider "groq" does not support audio capabilities.
+  print(e); // UnsupportedCapabilityError
 }
 ```
 

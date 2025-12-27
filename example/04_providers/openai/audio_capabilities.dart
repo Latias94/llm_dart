@@ -1,83 +1,94 @@
 import 'dart:io';
 
 import 'package:llm_dart_builder/llm_dart_builder.dart';
-import 'package:llm_dart_core/core/capability.dart';
-import 'package:llm_dart_core/models/audio_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
-/// OpenAI Audio Capabilities Example
+/// OpenAI Audio Tasks Example
 ///
-/// This example demonstrates the unified AudioCapability interface
-/// with OpenAI's text-to-speech, speech-to-text, and audio translation features.
+/// This example demonstrates task-specific audio capabilities:
+/// - Text-to-Speech (TTS)
+/// - Speech-to-Text (STT)
+/// - Audio Translation
+///
+/// Note: Prefer task-level capabilities (TTS/STT/translation) to match the
+/// Vercel AI SDK style.
 Future<void> main() async {
   registerOpenAI();
 
-  // Get API key from environment
   final apiKey = Platform.environment['OPENAI_API_KEY'];
   if (apiKey == null || apiKey.isEmpty) {
     print('❌ Please set OPENAI_API_KEY environment variable');
     return;
   }
 
-  print('🤖 OpenAI Audio Capabilities Demo\n');
+  print('🤖 OpenAI Audio Tasks Demo\n');
 
-  final audioProvider = await LLMBuilder()
+  final ttsProvider = await LLMBuilder()
       .provider(openaiProviderId)
       .apiKey(apiKey)
       .model('gpt-4o')
-      .buildAudio();
+      .buildSpeech();
 
-  // Display supported features
-  await displaySupportedFeatures(audioProvider);
+  final sttBuilder = LLMBuilder()
+      .provider(openaiProviderId)
+      .apiKey(apiKey)
+      .model('whisper-1');
 
-  // Test Text-to-Speech
-  await testTextToSpeech(audioProvider);
+  final sttProvider = await sttBuilder.buildTranscription();
+  final translationProvider = await sttBuilder.buildAudioTranslation();
 
-  // Test Speech-to-Text
-  await testSpeechToText(audioProvider);
+  await displayCapabilities(ttsProvider, sttProvider, translationProvider);
+  await testTextToSpeech(ttsProvider);
+  await testSpeechToText(sttProvider);
+  await testAudioTranslation(translationProvider);
 
-  // Test Audio Translation
-  await testAudioTranslation(audioProvider);
-
-  print('✅ OpenAI audio capabilities demo completed!');
+  print('✅ OpenAI audio tasks demo completed!');
 }
 
-/// Display supported audio features
-Future<void> displaySupportedFeatures(AudioCapability provider) async {
-  print('🔍 Supported Audio Features:');
-  final features = provider.supportedFeatures;
+Future<void> displayCapabilities(
+  TextToSpeechCapability ttsProvider,
+  SpeechToTextCapability sttProvider,
+  AudioTranslationCapability translationProvider,
+) async {
+  print('🔍 Available Capabilities:');
+  print('   ✅ Text-to-Speech');
+  print('   ✅ Speech-to-Text');
+  print('   ✅ Audio Translation');
 
-  for (final feature in AudioFeature.values) {
-    final supported = features.contains(feature);
-    final icon = supported ? '✅' : '❌';
-    print('   $icon ${feature.name}');
+  final VoiceListingCapability? voiceListing =
+      ttsProvider is VoiceListingCapability
+          ? (ttsProvider as VoiceListingCapability)
+          : null;
+  if (voiceListing != null) {
+    try {
+      final voices = await voiceListing.getVoices();
+      print('   ✅ Voice listing (${voices.length} voices)');
+    } catch (_) {
+      print('   ⚠️ Voice listing (failed)');
+    }
+  } else {
+    print('   ⏭️ Voice listing (not exposed)');
   }
 
-  print('\n📋 Available Audio Formats:');
-  final formats = provider.getSupportedAudioFormats();
-  for (final format in formats) {
-    print('   • $format');
-  }
   print('');
 }
 
-/// Test Text-to-Speech functionality
-Future<void> testTextToSpeech(AudioCapability provider) async {
-  if (!provider.supportedFeatures.contains(AudioFeature.textToSpeech)) {
-    print('⏭️  Skipping TTS - not supported\n');
-    return;
-  }
-
+Future<void> testTextToSpeech(TextToSpeechCapability provider) async {
   print('🎵 Testing Text-to-Speech');
 
   try {
-    // Get available voices
-    final voices = await provider.getVoices();
-    print('   📢 Available voices: ${voices.map((v) => v.name).join(', ')}');
+    final VoiceListingCapability? voiceListing =
+        provider is VoiceListingCapability
+            ? (provider as VoiceListingCapability)
+            : null;
+    if (voiceListing != null) {
+      final voices = await voiceListing.getVoices();
+      print('   📢 Available voices: ${voices.map((v) => v.name).join(', ')}');
+    }
 
-    // Basic TTS
     print('   🔄 Generating basic speech...');
-    final basicTTS = await provider.textToSpeech(TTSRequest(
+    final basicTTS = await provider.textToSpeech(const TTSRequest(
       text: 'Hello! This is OpenAI text-to-speech in action.',
       voice: 'alloy',
       format: 'mp3',
@@ -88,9 +99,8 @@ Future<void> testTextToSpeech(AudioCapability provider) async {
     print(
         '   ✅ Basic TTS: ${basicTTS.audioData.length} bytes → openai_basic.mp3');
 
-    // Advanced TTS with instructions
     print('   🔄 Generating dramatic speech...');
-    final dramaticTTS = await provider.textToSpeech(TTSRequest(
+    final dramaticTTS = await provider.textToSpeech(const TTSRequest(
       text: 'Welcome to the future of artificial intelligence!',
       voice: 'nova',
       format: 'wav',
@@ -101,82 +111,55 @@ Future<void> testTextToSpeech(AudioCapability provider) async {
     await File('openai_dramatic.wav').writeAsBytes(dramaticTTS.audioData);
     print(
         '   ✅ Dramatic TTS: ${dramaticTTS.audioData.length} bytes → openai_dramatic.wav');
-
-    // Test convenience method
-    final quickSpeech =
-        await provider.speech('Quick test using convenience method');
-    await File('openai_quick.mp3').writeAsBytes(quickSpeech);
-    print('   ✅ Quick speech: ${quickSpeech.length} bytes → openai_quick.mp3');
   } catch (e) {
     print('   ❌ TTS failed: $e');
   }
+
   print('');
 }
 
-/// Test Speech-to-Text functionality
-Future<void> testSpeechToText(AudioCapability provider) async {
-  if (!provider.supportedFeatures.contains(AudioFeature.speechToText)) {
-    print('⏭️  Skipping STT - not supported\n');
-    return;
-  }
-
+Future<void> testSpeechToText(SpeechToTextCapability provider) async {
   print('🎤 Testing Speech-to-Text');
 
   try {
-    // Get supported languages
-    final languages = await provider.getSupportedLanguages();
-    print('   🌍 Supported languages: ${languages.length} languages');
-
-    // Test with generated audio file
     if (await File('openai_basic.mp3').exists()) {
-      print('   🔄 Transcribing generated audio...');
+      print('   🔄 Transcribing openai_basic.mp3...');
 
-      // Basic transcription
-      final basicSTT = await provider.speechToText(STTRequest.fromFile(
-        'openai_basic.mp3',
-        model: 'whisper-1',
-        includeWordTiming: true,
-        responseFormat: 'verbose_json',
-      ));
+      final transcription = await provider.speechToText(
+        STTRequest.fromFile(
+          'openai_basic.mp3',
+          model: 'whisper-1',
+          responseFormat: 'verbose_json',
+          includeWordTiming: true,
+        ),
+      );
 
-      print('   📝 Transcription: "${basicSTT.text}"');
-      print('   🌍 Detected language: ${basicSTT.language ?? "unknown"}');
-      print('   ⏱️  Duration: ${basicSTT.duration ?? "unknown"}s');
+      print('   📝 Transcription: "${transcription.text}"');
+      print('   🌍 Language: ${transcription.language ?? "unknown"}');
 
-      if (basicSTT.words != null && basicSTT.words!.isNotEmpty) {
-        print('   📊 Word timing (first 3 words):');
-        for (final word in basicSTT.words!.take(3)) {
+      final words = transcription.words;
+      if (words != null && words.isNotEmpty) {
+        print('   ⏱️  Word timing (first 3 words):');
+        for (final word in words.take(3)) {
           print('      "${word.word}" (${word.start}s - ${word.end}s)');
         }
       }
-
-      // Test convenience method
-      final quickTranscription =
-          await provider.transcribeFile('openai_basic.mp3');
-      print('   ✅ Quick transcription: "$quickTranscription"');
     } else {
-      print('   ⚠️  No audio file found for transcription test');
+      print('   ⚠️  No audio file found for transcription test (openai_basic.mp3)');
     }
   } catch (e) {
     print('   ❌ STT failed: $e');
   }
+
   print('');
 }
 
-/// Test Audio Translation functionality
-Future<void> testAudioTranslation(AudioCapability provider) async {
-  if (!provider.supportedFeatures.contains(AudioFeature.audioTranslation)) {
-    print('⏭️  Skipping audio translation - not supported\n');
-    return;
-  }
-
+Future<void> testAudioTranslation(AudioTranslationCapability provider) async {
   print('🌐 Testing Audio Translation');
 
   try {
-    // For demo purposes, we'll use the English audio file
-    // In practice, you'd use non-English audio
     if (await File('openai_basic.mp3').exists()) {
-      print('   🔄 Translating audio to English...');
+      print('   🔄 Translating openai_basic.mp3 to English...');
 
       final translation = await provider.translateAudio(
         AudioTranslationRequest.fromFile(
@@ -188,15 +171,12 @@ Future<void> testAudioTranslation(AudioCapability provider) async {
 
       print('   🌐 Translation: "${translation.text}"');
       print('   🌍 Target language: English (always)');
-
-      // Test convenience method
-      final quickTranslation = await provider.translateFile('openai_basic.mp3');
-      print('   ✅ Quick translation: "$quickTranslation"');
     } else {
-      print('   ⚠️  No audio file found for translation test');
+      print('   ⚠️  No audio file found for translation test (openai_basic.mp3)');
     }
   } catch (e) {
     print('   ❌ Audio translation failed: $e');
   }
+
   print('');
 }

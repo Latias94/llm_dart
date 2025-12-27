@@ -186,10 +186,11 @@ void main() {
         expect(provider.supports(LLMCapability.moderation), isTrue);
         expect(provider.supports(LLMCapability.assistants), isTrue);
 
-        // Test interface implementations
-        expect(provider, isA<FileManagementCapability>());
-        expect(provider, isA<ModerationCapability>());
-        expect(provider, isA<AssistantCapability>());
+        // These APIs are intentionally provider-specific (not part of the standard surface).
+        expect(provider.filesApi, isNotNull);
+        expect(provider.moderationApi, isNotNull);
+        expect(provider.assistantsApi, isNotNull);
+        expect(provider.modelsApi, isNotNull);
         expect(provider, isA<ProviderCapabilities>());
       });
     });

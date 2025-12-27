@@ -7,13 +7,12 @@ import 'config.dart';
 ///
 /// This module handles text completion functionality for OpenAI providers.
 /// Note: OpenAI has deprecated the completions endpoint in favor of chat completions.
-class OpenAICompletion implements CompletionCapability {
+class OpenAICompletion {
   final OpenAIClient client;
   final OpenAIConfig config;
 
   OpenAICompletion(this.client, this.config);
 
-  @override
   Future<CompletionResponse> complete(CompletionRequest request) async {
     // OpenAI doesn't have a separate completion endpoint in newer APIs
     // Convert to chat format for compatibility

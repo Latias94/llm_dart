@@ -19,9 +19,7 @@ class OllamaProvider
     implements
         ChatCapability,
         ChatStreamPartsCapability,
-        CompletionCapability,
         EmbeddingCapability,
-        ModelListingCapability,
         ProviderCapabilities {
   final OllamaClient _client;
   final OllamaConfig config;
@@ -88,7 +86,9 @@ class OllamaProvider
   }
 
   // Completion capability methods
-  @override
+  /// Provider-specific API (not part of the standard surface).
+  OllamaCompletion get completionApi => _completion;
+
   Future<CompletionResponse> complete(CompletionRequest request) async {
     return _completion.complete(request);
   }
@@ -103,7 +103,9 @@ class OllamaProvider
   }
 
   // Model listing capability methods
-  @override
+  /// Provider-specific API (not part of the standard surface).
+  OllamaModels get modelsApi => _models;
+
   Future<List<AIModel>> models({CancelToken? cancelToken}) async {
     return _models.models(cancelToken: cancelToken);
   }

@@ -107,7 +107,7 @@ LLM Dart coverage:
 - ✅ Embeddings
 - ✅ Provider-native web search tool injection (grounding)
 - 🟡 Image generation (model-dependent; enabled via provider options)
-- 🟡 Audio output / TTS via Gemini audio modality (exposed via provider-agnostic `AudioCapability`; requires a TTS-capable Gemini model)
+- 🟡 Audio output / TTS via Gemini audio modality (exposed via provider-agnostic `TextToSpeechCapability`; requires a TTS-capable Gemini model)
 - ⬜ Files API (upload/manage referenced files) as a first-class capability
 - ⬜ Cached contents / context caching endpoints as a first-class API
 - ⬜ Token counting endpoint parity (if/when supported in official API)

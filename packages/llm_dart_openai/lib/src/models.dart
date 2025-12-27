@@ -1,4 +1,3 @@
-import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/cancellation.dart';
 import 'package:llm_dart_core/core/llm_error.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
@@ -9,13 +8,12 @@ import 'config.dart';
 ///
 /// This module handles model listing and information retrieval
 /// for OpenAI providers.
-class OpenAIModels implements ModelListingCapability {
+class OpenAIModels {
   final OpenAIClient client;
   final OpenAIConfig config;
 
   OpenAIModels(this.client, this.config);
 
-  @override
   Future<List<AIModel>> models({CancelToken? cancelToken}) async {
     final responseData = await client.get('models', cancelToken: cancelToken);
 

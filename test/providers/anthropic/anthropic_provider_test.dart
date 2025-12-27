@@ -95,12 +95,9 @@ void main() {
         expect(provider, isA<ChatCapability>());
       });
 
-      test('should implement ModelListingCapability', () {
-        expect(provider, isA<ModelListingCapability>());
-      });
-
-      test('should implement FileManagementCapability', () {
-        expect(provider, isA<FileManagementCapability>());
+      test('should expose provider-specific APIs', () {
+        expect(provider.filesApi, isNotNull);
+        expect(provider.modelsApi, isNotNull);
       });
 
       test('should implement ProviderCapabilities', () {

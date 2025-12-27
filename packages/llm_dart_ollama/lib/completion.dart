@@ -10,7 +10,7 @@ import 'config.dart';
 ///
 /// This module handles completion functionality for Ollama providers.
 /// Ollama supports text completion through the /api/generate endpoint.
-class OllamaCompletion implements CompletionCapability {
+class OllamaCompletion {
   final OllamaClient client;
   final OllamaConfig config;
 
@@ -18,7 +18,6 @@ class OllamaCompletion implements CompletionCapability {
 
   String get completionEndpoint => '/api/generate';
 
-  @override
   Future<CompletionResponse> complete(CompletionRequest request) async {
     if (config.baseUrl.isEmpty) {
       throw const InvalidRequestError('Missing Ollama base URL');

@@ -35,7 +35,7 @@ void main(List<String> arguments) async {
 class MultimodalApp {
   late ChatCapability _chatProvider;
   ImageGenerationCapability? _imageProvider;
-  AudioCapability? _audioProvider;
+  TextToSpeechCapability? _speechProvider;
 
   bool _verbose = false;
 
@@ -164,16 +164,16 @@ EXAMPLES:
       }
 
       try {
-        _audioProvider = await LLMBuilder()
+        _speechProvider = await LLMBuilder()
             .provider(openaiProviderId)
             .apiKey(openaiKey)
-            .buildAudio();
+            .buildSpeech();
         if (_verbose) {
-          print('✅ Audio provider initialized (OpenAI Whisper)');
+          print('✅ Speech provider initialized (OpenAI TTS)');
         }
       } catch (e) {
         if (_verbose) {
-          print('⚠️ Audio processing not available: $e');
+          print('⚠️ Speech capability not available: $e');
         }
       }
 
@@ -459,10 +459,9 @@ EXAMPLES:
 
   /// Process audio text (simulated audio processing)
   Future<String> processAudioText(String text) async {
-    // In a real implementation, this would use _audioProvider for actual TTS/STT
-    if (_audioProvider != null) {
-      // Could use _audioProvider.textToSpeech() here for real audio processing
-      print('   🎵 Audio provider available for real processing');
+    // In a real implementation, this would use _speechProvider for real TTS/STT.
+    if (_speechProvider != null) {
+      print('   🎵 Speech capability available for real processing');
     }
 
     final messages = [

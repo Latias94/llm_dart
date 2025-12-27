@@ -4,7 +4,7 @@ import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
-/// Audio processing examples using AudioCapability interface
+/// Audio processing examples using task-specific capabilities
 ///
 /// This example demonstrates:
 /// - Text-to-speech conversion
@@ -22,13 +22,13 @@ Future<void> main() async {
   registerOpenAI();
 
   try {
-    final provider = await LLMBuilder()
-        .provider(openaiProviderId)
-        .apiKey(apiKey)
-        .buildAudio();
+    final builder = LLMBuilder().provider(openaiProviderId).apiKey(apiKey);
 
-    await demonstrateTextToSpeech(provider, 'OpenAI');
-    await demonstrateSpeechToText(provider, 'OpenAI');
+    final ttsProvider = await builder.buildSpeech();
+    final sttProvider = await builder.buildTranscription();
+
+    await demonstrateTextToSpeech(ttsProvider, 'OpenAI');
+    await demonstrateSpeechToText(sttProvider, 'OpenAI');
   } catch (e) {
     print('❌ Failed to initialize audio processing: $e');
   }
@@ -38,7 +38,7 @@ Future<void> main() async {
 
 /// Demonstrate text-to-speech functionality
 Future<void> demonstrateTextToSpeech(
-    AudioCapability provider, String providerName) async {
+    TextToSpeechCapability provider, String providerName) async {
   print('🗣️ Text-to-Speech ($providerName):\n');
 
   try {
@@ -67,7 +67,7 @@ Future<void> demonstrateTextToSpeech(
 
 /// Demonstrate speech-to-text functionality
 Future<void> demonstrateSpeechToText(
-    AudioCapability provider, String providerName) async {
+    SpeechToTextCapability provider, String providerName) async {
   print('🎤 Speech-to-Text ($providerName):\n');
 
   try {

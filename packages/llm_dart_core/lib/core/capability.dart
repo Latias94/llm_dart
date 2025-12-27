@@ -2,9 +2,7 @@ import '../models/chat_models.dart';
 import '../models/tool_models.dart';
 import '../models/audio_models.dart';
 import '../models/image_models.dart';
-import '../models/file_models.dart';
-import '../models/moderation_models.dart';
-import '../models/assistant_models.dart';
+import '../models/rerank_models.dart';
 import '../prompt/prompt.dart';
 import 'llm_error.dart';
 import 'cancellation.dart';
@@ -27,6 +25,9 @@ enum LLMCapability {
 
   /// Vector embeddings generation
   embedding,
+
+  /// Reranking (query + documents → ranked results)
+  rerank,
 
   /// Text-to-speech conversion
   textToSpeech,
@@ -121,42 +122,6 @@ enum LLMCapability {
   /// API surface (e.g. xAI), and LLM Dart may expose it under their provider
   /// ids as best-effort support.
   openaiResponses,
-}
-
-/// Audio features that providers can support
-enum AudioFeature {
-  /// Basic text-to-speech conversion
-  textToSpeech,
-
-  /// Streaming text-to-speech conversion
-  streamingTTS,
-
-  /// Basic speech-to-text conversion
-  speechToText,
-
-  /// Audio translation (speech to English text)
-  audioTranslation,
-
-  /// Real-time audio processing
-  realtimeProcessing,
-
-  /// Speaker diarization (identifying different speakers)
-  speakerDiarization,
-
-  /// Character-level timing information
-  characterTiming,
-
-  /// Audio event detection (laughter, applause, etc.)
-  audioEventDetection,
-
-  /// Voice cloning capabilities
-  voiceCloning,
-
-  /// Audio enhancement and noise reduction
-  audioEnhancement,
-
-  /// Multi-modal audio-visual processing
-  multimodalAudio,
 }
 
 /// Response from a chat provider
@@ -437,105 +402,70 @@ abstract class EmbeddingCapability {
   });
 }
 
-/// Unified audio processing capability interface
+/// Capability interface for reranking.
 ///
-/// This interface provides a single entry point for all audio-related functionality,
-/// including text-to-speech, speech-to-text, audio translation, and real-time processing.
-/// Use the `supportedFeatures` property to discover which features are available.
-abstract class AudioCapability {
-  // === Feature Discovery ===
+/// This models the "standard surface" task:
+/// query + documents → ranked results.
+abstract class RerankCapability {
+  Future<RerankResponse> rerank(
+    RerankRequest request, {
+    CancelToken? cancelToken,
+  });
+}
 
-  /// Get all audio features supported by this provider
-  Set<AudioFeature> get supportedFeatures;
-
-  // === Audio Generation (Text-to-Speech) ===
-
-  /// Convert text to speech with full configuration support
-  ///
-  /// [request] - The text-to-speech request
-  /// [cancelToken] - Optional token to cancel the request
-  ///
-  /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
+/// Task-specific capability: text-to-speech (TTS).
+abstract class TextToSpeechCapability {
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
     CancelToken? cancelToken,
-  }) {
-    throw UnsupportedError('Text-to-speech not supported by this provider');
-  }
+  });
+}
 
-  /// Convert text to speech with streaming output
-  ///
-  /// [request] - The text-to-speech request
-  /// [cancelToken] - Optional token to cancel the stream
-  ///
-  /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
+/// Optional task-specific capability: streaming text-to-speech.
+abstract class StreamingTextToSpeechCapability {
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
     CancelToken? cancelToken,
-  }) {
-    throw UnsupportedError(
-        'Streaming text-to-speech not supported by this provider');
-  }
+  });
+}
 
-  /// Get available voices for this provider
-  Future<List<VoiceInfo>> getVoices() {
-    throw UnsupportedError('Voice listing not supported by this provider');
-  }
+/// Optional task-specific capability: voice listing.
+abstract class VoiceListingCapability {
+  Future<List<VoiceInfo>> getVoices();
+}
 
-  // === Audio Understanding (Speech-to-Text) ===
-
-  /// Convert speech to text with full configuration support
-  ///
-  /// [request] - The speech-to-text request
-  /// [cancelToken] - Optional token to cancel the request
-  ///
-  /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
+/// Task-specific capability: speech-to-text (STT).
+abstract class SpeechToTextCapability {
   Future<STTResponse> speechToText(
     STTRequest request, {
     CancelToken? cancelToken,
-  }) {
-    throw UnsupportedError('Speech-to-text not supported by this provider');
-  }
+  });
+}
 
-  /// Translate audio to English text
-  ///
-  /// [request] - The audio translation request
-  /// [cancelToken] - Optional token to cancel the request
-  ///
-  /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
+/// Optional task-specific capability: audio translation (typically speech->English).
+abstract class AudioTranslationCapability {
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
     CancelToken? cancelToken,
-  }) {
-    throw UnsupportedError('Audio translation not supported by this provider');
-  }
+  });
+}
 
-  /// Get supported languages for transcription and translation
-  Future<List<LanguageInfo>> getSupportedLanguages() {
-    throw UnsupportedError('Language listing not supported by this provider');
-  }
+/// Optional task-specific capability: transcription language listing.
+abstract class TranscriptionLanguageListingCapability {
+  Future<List<LanguageInfo>> getSupportedLanguages();
+}
 
-  // === Real-time Audio Processing ===
+/// Optional task-specific capability: real-time audio sessions.
+abstract class RealtimeAudioCapability {
+  Future<RealtimeAudioSession> startRealtimeSession(RealtimeAudioConfig config);
+}
 
-  /// Create and start a real-time audio session
-  ///
-  /// Returns a session object for managing the real-time interaction.
-  /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
-  Future<RealtimeAudioSession> startRealtimeSession(
-      RealtimeAudioConfig config) {
-    throw UnsupportedError('Real-time audio not supported by this provider');
-  }
-
-  // === Metadata ===
-
-  /// Get supported input/output audio formats
-  List<String> getSupportedAudioFormats() {
-    return ['mp3', 'wav', 'ogg']; // Default formats
-  }
-
-  // === Convenience Methods ===
-
-  /// Simple text-to-speech conversion (convenience method)
+/// Convenience extensions for task-specific audio capabilities.
+///
+/// These helpers provide "quick path" ergonomics without requiring the
+/// legacy all-in-one audio interface.
+extension TextToSpeechConvenienceX on TextToSpeechCapability {
+  /// Convert plain text to audio bytes using default provider settings.
   Future<List<int>> speech(
     String text, {
     CancelToken? cancelToken,
@@ -546,91 +476,73 @@ abstract class AudioCapability {
     );
     return response.audioData;
   }
+}
 
-  /// Simple streaming text-to-speech conversion (convenience method)
-  Stream<List<int>> speechStream(String text) async* {
-    await for (final event in textToSpeechStream(TTSRequest(text: text))) {
+extension StreamingTextToSpeechConvenienceX on StreamingTextToSpeechCapability {
+  /// Stream audio bytes for the given text using default provider settings.
+  Stream<List<int>> speechStream(
+    String text, {
+    CancelToken? cancelToken,
+  }) async* {
+    await for (final event in textToSpeechStream(
+      TTSRequest(text: text),
+      cancelToken: cancelToken,
+    )) {
       if (event is AudioDataEvent) {
         yield event.data;
       }
     }
   }
+}
 
-  /// Simple audio transcription (convenience method)
-  Future<String> transcribe(List<int> audio) async {
-    final response = await speechToText(STTRequest.fromAudio(audio));
+extension SpeechToTextConvenienceX on SpeechToTextCapability {
+  /// Transcribe raw audio bytes to text using default provider settings.
+  Future<String> transcribe(
+    List<int> audioData, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await speechToText(
+      STTRequest.fromAudio(audioData),
+      cancelToken: cancelToken,
+    );
     return response.text;
   }
 
-  /// Simple file transcription (convenience method)
-  Future<String> transcribeFile(String filePath) async {
-    final response = await speechToText(STTRequest.fromFile(filePath));
-    return response.text;
-  }
-
-  /// Simple audio translation (convenience method)
-  Future<String> translate(List<int> audio) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromAudio(audio));
-    return response.text;
-  }
-
-  /// Simple file translation (convenience method)
-  Future<String> translateFile(String filePath) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromFile(filePath));
+  /// Transcribe an audio file to text using default provider settings.
+  Future<String> transcribeFile(
+    String filePath, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await speechToText(
+      STTRequest.fromFile(filePath),
+      cancelToken: cancelToken,
+    );
     return response.text;
   }
 }
 
-/// Base implementation of AudioCapability with convenience methods
-abstract class BaseAudioCapability implements AudioCapability {
-  // Convenience methods with default implementations
-
-  @override
-  Future<List<int>> speech(
-    String text, {
+extension AudioTranslationConvenienceX on AudioTranslationCapability {
+  /// Translate raw audio bytes to English text using default provider settings.
+  Future<String> translate(
+    List<int> audioData, {
     CancelToken? cancelToken,
   }) async {
-    final response = await textToSpeech(
-      TTSRequest(text: text),
+    final response = await translateAudio(
+      AudioTranslationRequest.fromAudio(audioData),
       cancelToken: cancelToken,
     );
-    return response.audioData;
-  }
-
-  @override
-  Stream<List<int>> speechStream(String text) async* {
-    await for (final event in textToSpeechStream(TTSRequest(text: text))) {
-      if (event is AudioDataEvent) {
-        yield event.data;
-      }
-    }
-  }
-
-  @override
-  Future<String> transcribe(List<int> audio) async {
-    final response = await speechToText(STTRequest.fromAudio(audio));
     return response.text;
   }
 
-  @override
-  Future<String> transcribeFile(String filePath) async {
-    final response = await speechToText(STTRequest.fromFile(filePath));
-    return response.text;
-  }
-
-  @override
-  Future<String> translate(List<int> audio) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromAudio(audio));
-    return response.text;
-  }
-
-  @override
-  Future<String> translateFile(String filePath) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromFile(filePath));
+  /// Translate an audio file to English text using default provider settings.
+  Future<String> translateFile(
+    String filePath, {
+    CancelToken? cancelToken,
+  }) async {
+    final response = await translateAudio(
+      AudioTranslationRequest.fromFile(filePath),
+      cancelToken: cancelToken,
+    );
     return response.text;
   }
 }
@@ -788,16 +700,6 @@ class RealtimeErrorEvent extends RealtimeAudioEvent {
   });
 }
 
-/// Capability interface for model listing
-abstract class ModelListingCapability {
-  /// Get available models from the provider
-  ///
-  /// [cancelToken] - Optional token to cancel the request
-  ///
-  /// Returns a list of available models or throws an LLMError
-  Future<List<AIModel>> models({CancelToken? cancelToken});
-}
-
 /// Capability interface for image generation
 ///
 /// Supports image generation, editing, and variation creation across different providers.
@@ -871,16 +773,6 @@ abstract class ImageGenerationCapability {
   }
 }
 
-/// Capability interface for text completion (non-chat)
-abstract class CompletionCapability {
-  /// Sends a completion request to generate text
-  ///
-  /// [request] - The completion request parameters
-  ///
-  /// Returns the generated completion text or throws an LLMError
-  Future<CompletionResponse> complete(CompletionRequest request);
-}
-
 /// Provider capability declaration interface
 ///
 /// This interface provides a high-level overview of provider capabilities
@@ -941,77 +833,12 @@ abstract class BasicLLMProvider
 abstract class EmbeddingLLMProvider
     implements ChatCapability, EmbeddingCapability, ProviderCapabilities {}
 
-/// LLM provider with voice capabilities
-abstract class VoiceLLMProvider
-    implements ChatCapability, AudioCapability, ProviderCapabilities {}
-
 /// Full-featured LLM provider with all common capabilities
 abstract class FullLLMProvider
     implements
         ChatCapability,
         EmbeddingCapability,
-        ModelListingCapability,
         ProviderCapabilities {}
-
-/// File management capability for uploading and managing files
-///
-/// This interface provides a unified API for file operations across different
-/// providers (OpenAI, Anthropic, etc.).
-abstract class FileManagementCapability {
-  /// Upload a file
-  ///
-  /// Uploads a file to the provider's storage. The file can then be
-  /// referenced in other API calls.
-  Future<FileObject> uploadFile(FileUploadRequest request);
-
-  /// List files
-  ///
-  /// Returns a paginated list of files. Supports both OpenAI-style
-  /// and Anthropic-style pagination parameters.
-  Future<FileListResponse> listFiles([FileListQuery? query]);
-
-  /// Retrieve file metadata
-  ///
-  /// Returns metadata for a specific file including size, type, and creation date.
-  Future<FileObject> retrieveFile(String fileId);
-
-  /// Delete a file
-  ///
-  /// Permanently deletes a file from the provider's storage.
-  Future<FileDeleteResponse> deleteFile(String fileId);
-
-  /// Get file content
-  ///
-  /// Downloads the raw content of a file as bytes.
-  Future<List<int>> getFileContent(String fileId);
-}
-
-/// Content moderation capability
-abstract class ModerationCapability {
-  /// Moderate content for policy violations
-  Future<ModerationResponse> moderate(ModerationRequest request);
-}
-
-/// Assistant management capability
-abstract class AssistantCapability {
-  /// Create an assistant
-  Future<Assistant> createAssistant(CreateAssistantRequest request);
-
-  /// List assistants
-  Future<ListAssistantsResponse> listAssistants([ListAssistantsQuery? query]);
-
-  /// Retrieve an assistant
-  Future<Assistant> retrieveAssistant(String assistantId);
-
-  /// Modify an assistant
-  Future<Assistant> modifyAssistant(
-    String assistantId,
-    ModifyAssistantRequest request,
-  );
-
-  /// Delete an assistant
-  Future<DeleteAssistantResponse> deleteAssistant(String assistantId);
-}
 
 /// Tool execution capability for providers that support client-side tool execution
 ///

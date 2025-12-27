@@ -36,13 +36,12 @@ class OpenAIProvider
     implements
         ChatCapability,
         EmbeddingCapability,
-        AudioCapability,
+        TextToSpeechCapability,
+        VoiceListingCapability,
+        SpeechToTextCapability,
+        AudioTranslationCapability,
+        TranscriptionLanguageListingCapability,
         ImageGenerationCapability,
-        FileManagementCapability,
-        ModelListingCapability,
-        ModerationCapability,
-        AssistantCapability,
-        CompletionCapability,
         ProviderCapabilities {
   final OpenAIClient _client;
   final OpenAIConfig config;
@@ -191,10 +190,7 @@ class OpenAIProvider
     return _embeddings.embed(input, cancelToken: cancelToken);
   }
 
-  // ========== AudioCapability (delegated to audio module) ==========
-
-  @override
-  Set<AudioFeature> get supportedFeatures => _audio.supportedFeatures;
+  // ========== Audio capabilities (delegated to audio module) ==========
 
   @override
   Future<TTSResponse> textToSpeech(
@@ -202,14 +198,6 @@ class OpenAIProvider
     CancelToken? cancelToken,
   }) async {
     return _audio.textToSpeech(request, cancelToken: cancelToken);
-  }
-
-  @override
-  Stream<AudioStreamEvent> textToSpeechStream(
-    TTSRequest request, {
-    CancelToken? cancelToken,
-  }) {
-    return _audio.textToSpeechStream(request, cancelToken: cancelToken);
   }
 
   @override
@@ -236,65 +224,6 @@ class OpenAIProvider
   @override
   Future<List<LanguageInfo>> getSupportedLanguages() async {
     return _audio.getSupportedLanguages();
-  }
-
-  @override
-  Future<RealtimeAudioSession> startRealtimeSession(
-      RealtimeAudioConfig config) async {
-    return _audio.startRealtimeSession(config);
-  }
-
-  @override
-  List<String> getSupportedAudioFormats() {
-    return _audio.getSupportedAudioFormats();
-  }
-
-  // AudioCapability convenience methods implementation
-  @override
-  Future<List<int>> speech(
-    String text, {
-    CancelToken? cancelToken,
-  }) async {
-    final response = await textToSpeech(
-      TTSRequest(text: text),
-      cancelToken: cancelToken,
-    );
-    return response.audioData;
-  }
-
-  @override
-  Stream<List<int>> speechStream(String text) async* {
-    await for (final event in textToSpeechStream(TTSRequest(text: text))) {
-      if (event is AudioDataEvent) {
-        yield event.data;
-      }
-    }
-  }
-
-  @override
-  Future<String> transcribe(List<int> audio) async {
-    final response = await speechToText(STTRequest.fromAudio(audio));
-    return response.text;
-  }
-
-  @override
-  Future<String> transcribeFile(String filePath) async {
-    final response = await speechToText(STTRequest.fromFile(filePath));
-    return response.text;
-  }
-
-  @override
-  Future<String> translate(List<int> audio) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromAudio(audio));
-    return response.text;
-  }
-
-  @override
-  Future<String> translateFile(String filePath) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromFile(filePath));
-    return response.text;
   }
 
   // ========== ImageGenerationCapability (delegated to images module) ==========
@@ -357,66 +286,51 @@ class OpenAIProvider
     );
   }
 
-  // ========== FileManagementCapability (delegated to files module) ==========
-
-  @override
+  // ========== Provider-specific: Files ==========
   Future<FileObject> uploadFile(FileUploadRequest request) async {
     return _files.uploadFile(request);
   }
 
-  @override
   Future<FileListResponse> listFiles([FileListQuery? query]) async {
     return _files.listFiles(query);
   }
 
-  @override
   Future<FileObject> retrieveFile(String fileId) async {
     return _files.retrieveFile(fileId);
   }
 
-  @override
   Future<FileDeleteResponse> deleteFile(String fileId) async {
     return _files.deleteFile(fileId);
   }
 
-  @override
   Future<List<int>> getFileContent(String fileId) async {
     return _files.getFileContent(fileId);
   }
 
-  // ========== ModelListingCapability (delegated to models module) ==========
-
-  @override
+  // ========== Provider-specific: Models ==========
   Future<List<AIModel>> models({CancelToken? cancelToken}) async {
     return _models.models(cancelToken: cancelToken);
   }
 
-  // ========== ModerationCapability (delegated to moderation module) ==========
-
-  @override
+  // ========== Provider-specific: Moderation ==========
   Future<ModerationResponse> moderate(ModerationRequest request) async {
     return _moderation.moderate(request);
   }
 
-  // ========== AssistantCapability (delegated to assistants module) ==========
-
-  @override
+  // ========== Provider-specific: Assistants ==========
   Future<Assistant> createAssistant(CreateAssistantRequest request) async {
     return _assistants.createAssistant(request);
   }
 
-  @override
   Future<ListAssistantsResponse> listAssistants(
       [ListAssistantsQuery? query]) async {
     return _assistants.listAssistants(query);
   }
 
-  @override
   Future<Assistant> retrieveAssistant(String assistantId) async {
     return _assistants.retrieveAssistant(assistantId);
   }
 
-  @override
   Future<Assistant> modifyAssistant(
     String assistantId,
     ModifyAssistantRequest request,
@@ -424,14 +338,11 @@ class OpenAIProvider
     return _assistants.modifyAssistant(assistantId, request);
   }
 
-  @override
   Future<DeleteAssistantResponse> deleteAssistant(String assistantId) async {
     return _assistants.deleteAssistant(assistantId);
   }
 
-  // ========== CompletionCapability (delegated to completion module) ==========
-
-  @override
+  // ========== Provider-specific: Completion ==========
   Future<CompletionResponse> complete(CompletionRequest request) async {
     return _completion.complete(request);
   }
@@ -440,6 +351,13 @@ class OpenAIProvider
 
   /// Get the underlying client for advanced usage
   OpenAIClient get client => _client;
+
+  /// Provider-specific APIs (not part of the standard surface).
+  OpenAIFiles get filesApi => _files;
+  OpenAIModels get modelsApi => _models;
+  OpenAIModeration get moderationApi => _moderation;
+  OpenAIAssistants get assistantsApi => _assistants;
+  OpenAICompletion get completionApi => _completion;
 
   /// Get the Responses API module (only available when useResponsesAPI is enabled)
   OpenAIResponses? get responses => _responses;

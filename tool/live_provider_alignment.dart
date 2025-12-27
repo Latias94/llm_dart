@@ -230,7 +230,7 @@ Future<List<_CheckResult>> _runProviderChecks(
 }) async {
   final redactor = _Redactor(secrets: apiKey == null ? const [] : [apiKey]);
   final checks = <_LiveCheck>[
-    ...?(() {
+    ...(() {
       if (spec.liveChecks.isNotEmpty) return spec.liveChecks;
       return const [_LiveCheck.generateText, _LiveCheck.streamText];
     })(),
@@ -479,10 +479,10 @@ Future<List<_CheckResult>> _runProviderChecks(
                 if (response is ChatResponseWithAssistantMessage) {
                   final assistant = response.assistantMessage;
                   // Protocol-internal: Anthropic-compatible providers preserve
-                  // full content blocks via ChatMessage.extensions.
-                  // ignore: deprecated_member_use
-                  final anthropic =
-                      assistant.getExtension<Map<String, dynamic>>('anthropic');
+                  // full content blocks for continuity across requests.
+                  final anthropic = assistant.getProtocolPayload<Map<String, dynamic>>(
+                    'anthropic',
+                  );
                   final blocks = anthropic?['contentBlocks'];
                   if (blocks is List) {
                     final types = blocks
@@ -527,11 +527,11 @@ Future<List<_CheckResult>> _runProviderChecks(
 
       case _LiveCheck.textToSpeech:
         await run('textToSpeech', () async {
-          if (model is! AudioCapability) {
+          if (model is! TextToSpeechCapability) {
             return const _CheckResult(
               name: 'textToSpeech',
               ok: false,
-              detail: 'not an AudioCapability',
+              detail: 'not a TextToSpeechCapability',
             );
           }
 
@@ -654,7 +654,7 @@ Future<Object> _buildProvider(_ProviderSpec spec,
   }
 
   if (spec.liveChecks.contains(_LiveCheck.textToSpeech)) {
-    return builder.buildAudio();
+    return builder.buildSpeech();
   }
 
   return builder.build();

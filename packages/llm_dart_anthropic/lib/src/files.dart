@@ -2,7 +2,6 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
-import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/models/file_models.dart';
 
 /// Anthropic-specific file object
@@ -180,7 +179,7 @@ class AnthropicFileListQuery {
 /// This module handles file upload, listing, retrieval, and deletion
 /// for Anthropic providers. Note that Anthropic's Files API is currently
 /// in beta and requires the `anthropic-beta: files-api-2025-04-14` header.
-class AnthropicFiles implements FileManagementCapability {
+class AnthropicFiles {
   final AnthropicClient client;
   final AnthropicConfig config;
 
@@ -192,7 +191,6 @@ class AnthropicFiles implements FileManagementCapability {
   ///
   /// Uploads a file to Anthropic's file storage. The file can then be
   /// referenced in messages for analysis or processing.
-  @override
   Future<FileObject> uploadFile(FileUploadRequest request) async {
     final formData = FormData();
 
@@ -210,7 +208,6 @@ class AnthropicFiles implements FileManagementCapability {
     return FileObject.fromAnthropic(responseData);
   }
 
-  @override
   Future<FileListResponse> listFiles([FileListQuery? query]) async {
     String endpoint = 'files';
 
@@ -233,7 +230,6 @@ class AnthropicFiles implements FileManagementCapability {
   /// **API Reference:** https://docs.anthropic.com/en/api/files-metadata
   ///
   /// Returns metadata for a specific file including size, type, and creation date.
-  @override
   Future<FileObject> retrieveFile(String fileId) async {
     final responseData = await client.getJson('files/$fileId');
     return FileObject.fromAnthropic(responseData);
@@ -244,7 +240,6 @@ class AnthropicFiles implements FileManagementCapability {
   /// **API Reference:** https://docs.anthropic.com/en/api/files-content
   ///
   /// Downloads the raw content of a file as bytes.
-  @override
   Future<List<int>> getFileContent(String fileId) async {
     return await client.getRaw('files/$fileId/content');
   }
@@ -255,7 +250,6 @@ class AnthropicFiles implements FileManagementCapability {
   ///
   /// Permanently deletes a file from the workspace.
   /// Returns true if successful, false otherwise.
-  @override
   Future<FileDeleteResponse> deleteFile(String fileId) async {
     try {
       await client.delete('files/$fileId');

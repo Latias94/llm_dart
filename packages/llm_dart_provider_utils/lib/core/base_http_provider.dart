@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:async';
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:logging/logging.dart';
@@ -12,6 +11,9 @@ import 'package:llm_dart_core/models/tool_models.dart';
 import '../utils/dio_cancellation.dart';
 import '../utils/dio_error_handler.dart';
 import '../utils/http_config_utils.dart';
+import '../utils/log_redactor.dart';
+import '../utils/log_utils.dart';
+import '../utils/utf8_stream_decoder.dart';
 
 /// Base class for HTTP-based LLM providers
 ///
@@ -73,16 +75,21 @@ abstract class BaseHttpProvider implements ChatCapability {
       // Optimized trace logging with condition check
       if (_logger.isLoggable(Level.FINEST)) {
         _logger.finest(
-            '$providerName request payload: ${jsonEncode(requestBody)}');
+          '$providerName request payload: ${LogUtils.jsonEncodeTruncated(requestBody)}',
+        );
       }
 
       // Log request headers and body for debugging
       if (_logger.isLoggable(Level.FINE)) {
         _logger.fine('$providerName request: POST $chatEndpoint');
-        _logger.fine('$providerName request headers: ${_dio.options.headers}');
+        _logger.fine(
+          '$providerName request headers: ${LogRedactor.redactHeaders(Map<String, dynamic>.from(_dio.options.headers))}',
+        );
       }
       if (_logger.isLoggable(Level.FINE)) {
-        _logger.fine('$providerName request body: ${jsonEncode(requestBody)}');
+        _logger.fine(
+          '$providerName request body: ${LogUtils.jsonEncodeTruncated(requestBody)}',
+        );
       }
 
       final response = await withDioCancelToken(
@@ -98,7 +105,10 @@ abstract class BaseHttpProvider implements ChatCapability {
 
       // Enhanced error handling with detailed information
       if (response.statusCode != 200) {
-        _handleHttpError(response.statusCode, response.data);
+        _handleHttpError(
+          statusCode: response.statusCode,
+          errorData: response.data,
+        );
       }
 
       final responseData = response.data;
@@ -113,6 +123,7 @@ abstract class BaseHttpProvider implements ChatCapability {
     } on DioException catch (e) {
       throw await handleDioError(e);
     } catch (e) {
+      if (e is LLMError) rethrow;
       throw GenericError('Unexpected error: $e');
     }
   }
@@ -129,18 +140,18 @@ abstract class BaseHttpProvider implements ChatCapability {
       // Optimized trace logging with condition check
       if (_logger.isLoggable(Level.FINEST)) {
         _logger.finest(
-            '$providerName stream request payload: ${jsonEncode(requestBody)}');
+            '$providerName stream request payload: ${LogUtils.jsonEncodeTruncated(requestBody)}');
       }
 
       // Log request headers and body for debugging
       if (_logger.isLoggable(Level.FINE)) {
         _logger.fine('$providerName stream request: POST $chatEndpoint');
         _logger.fine(
-            '$providerName stream request headers: ${_dio.options.headers}');
+            '$providerName stream request headers: ${LogRedactor.redactHeaders(Map<String, dynamic>.from(_dio.options.headers))}');
       }
       if (_logger.isLoggable(Level.FINE)) {
         _logger.fine(
-            '$providerName stream request body: ${jsonEncode(requestBody)}');
+            '$providerName stream request body: ${LogUtils.jsonEncodeTruncated(requestBody)}');
       }
 
       final response = await withDioCancelToken(
@@ -157,16 +168,25 @@ abstract class BaseHttpProvider implements ChatCapability {
 
       if (response.statusCode != 200) {
         yield ErrorEvent(
-          ProviderError(
-              '$providerName API returned status ${response.statusCode}'),
+          _mapHttpStatusToError(
+            providerName: providerName,
+            statusCode: response.statusCode,
+            errorData: null,
+          ),
         );
         return;
       }
 
       final stream = response.data as ResponseBody;
+      final decoder = Utf8StreamDecoder();
 
-      await for (final chunk in stream.stream.map(utf8.decode)) {
+      await for (final bytes in stream.stream) {
+        String? decodedChunk;
         try {
+          final chunk = decoder.decode(bytes);
+          decodedChunk = chunk;
+          if (chunk.isEmpty) continue;
+
           // Debug logging for Google provider
           if (providerName == 'Google') {
             _logger.fine('$providerName raw stream chunk: $chunk');
@@ -179,36 +199,128 @@ abstract class BaseHttpProvider implements ChatCapability {
         } catch (e) {
           // Skip malformed chunks but log them
           _logger.warning('Failed to parse stream chunk: $e');
-          _logger.warning('Raw chunk content: $chunk');
+          final chunk = decodedChunk ?? '';
+          final safeChunk = chunk.length > 4096
+              ? '${chunk.substring(0, 4096)}...[truncated]'
+              : chunk;
+          _logger.warning('Raw chunk content ($providerName): $safeChunk');
           continue;
+        }
+      }
+
+      final remaining = decoder.flush();
+      if (remaining.isNotEmpty) {
+        try {
+          final events = parseStreamEvents(remaining);
+          for (final event in events) {
+            yield event;
+          }
+        } catch (_) {
+          // Best-effort flush; ignore trailing decode/parse errors.
         }
       }
     } on DioException catch (e) {
       yield ErrorEvent(await handleDioError(e));
     } catch (e) {
+      if (e is LLMError) {
+        yield ErrorEvent(e);
+        return;
+      }
       yield ErrorEvent(GenericError('Unexpected error: $e'));
     }
   }
 
   /// Handle HTTP error responses with provider-specific error messages
-  void _handleHttpError(int? statusCode, dynamic errorData) {
-    if (statusCode == 401) {
-      throw AuthError('Invalid $providerName API key');
-    } else if (statusCode == 429) {
-      throw const ProviderError('Rate limit exceeded');
-    } else if (statusCode == 400) {
-      throw ResponseFormatError(
-        'Bad request - check your parameters',
-        errorData?.toString() ?? '',
-      );
-    } else if (statusCode == 500) {
-      throw ProviderError('$providerName server error');
-    } else {
-      throw ResponseFormatError(
-        '$providerName API returned error status: $statusCode',
-        errorData?.toString() ?? '',
+  void _handleHttpError({
+    required int? statusCode,
+    required dynamic errorData,
+  }) {
+    throw _mapHttpStatusToError(
+      providerName: providerName,
+      statusCode: statusCode,
+      errorData: errorData,
+    );
+  }
+
+  static LLMError _mapHttpStatusToError({
+    required String providerName,
+    required int? statusCode,
+    required dynamic errorData,
+  }) {
+    final detail = _extractErrorDetail(errorData);
+
+    if (statusCode == null) {
+      return HttpError('$providerName API returned an unknown HTTP status');
+    }
+
+    switch (statusCode) {
+      case 400:
+      case 422:
+        return InvalidRequestError(
+          detail == null ? 'Bad request - check your parameters' : 'Bad request - $detail',
+        );
+
+      case 401:
+      case 403:
+        return AuthError(detail ?? 'Invalid $providerName API key');
+
+      case 404:
+        return NotFoundError(
+          detail == null ? '$providerName API endpoint not found' : '$providerName API endpoint not found: $detail',
+        );
+
+      case 408:
+      case 504:
+        return TimeoutError(detail ?? '$providerName request timed out');
+
+      case 429:
+        return RateLimitError(detail ?? 'Rate limit exceeded');
+    }
+
+    if (statusCode >= 500 && statusCode <= 599) {
+      return ServerError(
+        detail ?? '$providerName server error',
+        statusCode: statusCode,
       );
     }
+
+    return HttpError(
+      detail == null
+          ? '$providerName API returned HTTP $statusCode'
+          : '$providerName API returned HTTP $statusCode: $detail',
+    );
+  }
+
+  static String? _extractErrorDetail(dynamic errorData) {
+    if (errorData == null) return null;
+
+    if (errorData is String) {
+      final trimmed = errorData.trim();
+      return trimmed.isEmpty ? null : LogUtils.truncate(trimmed);
+    }
+
+    if (errorData is Map<String, dynamic>) {
+      final error = errorData['error'];
+      if (error is Map<String, dynamic>) {
+        final msg = error['message'];
+        if (msg is String && msg.trim().isNotEmpty) {
+          return LogUtils.truncate(msg.trim());
+        }
+      }
+
+      final msg = errorData['message'];
+      if (msg is String && msg.trim().isNotEmpty) {
+        return LogUtils.truncate(msg.trim());
+      }
+
+      return LogUtils.truncate(errorData.toString());
+    }
+
+    if (errorData is Map) {
+      return LogUtils.truncate(errorData.toString());
+    }
+
+    return LogUtils.truncate(errorData.toString());
   }
 
   /// Handle Dio exceptions with consistent error mapping

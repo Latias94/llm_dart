@@ -75,7 +75,4 @@ class OpenRouterBuilder {
   }
 
   Future<ChatCapability> build() async => _baseBuilder.build();
-
-  Future<ModelListingCapability> buildModelListing() async =>
-      _baseBuilder.buildModelListing();
 }

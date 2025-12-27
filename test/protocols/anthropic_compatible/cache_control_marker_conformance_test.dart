@@ -35,7 +35,7 @@ void main() {
         role: ChatRole.user,
         messageType: const TextMessage(),
         content: '',
-        extensions: {
+        protocolPayloads: {
           'anthropic': {
             'contentBlocks': [
               {
@@ -91,7 +91,7 @@ void main() {
         role: ChatRole.system,
         messageType: const TextMessage(),
         content: '',
-        extensions: {
+        protocolPayloads: {
           'anthropic': {
             'contentBlocks': [
               {

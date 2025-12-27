@@ -35,7 +35,19 @@ class ElevenLabsBuilder {
     return this;
   }
 
-  Future<AudioCapability> build() async => _baseBuilder.buildAudio();
+  Future<TextToSpeechCapability> buildSpeech() async => _baseBuilder.buildSpeech();
 
-  Future<AudioCapability> buildAudio() async => _baseBuilder.buildAudio();
+  Future<StreamingTextToSpeechCapability> buildStreamingSpeech() async =>
+      _baseBuilder.buildStreamingSpeech();
+
+  Future<SpeechToTextCapability> buildTranscription() async =>
+      _baseBuilder.buildTranscription();
+
+  Future<AudioTranslationCapability> buildAudioTranslation() async =>
+      _baseBuilder.buildAudioTranslation();
+
+  Future<RealtimeAudioCapability> buildRealtimeAudio() async =>
+      _baseBuilder.buildRealtimeAudio();
+
+  Future<TextToSpeechCapability> build() async => buildSpeech();
 }

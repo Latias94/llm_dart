@@ -15,7 +15,6 @@ import 'models.dart';
 /// This provider implements multiple capability interfaces following the
 /// modular architecture pattern. It supports:
 /// - ChatCapability: Core chat functionality
-/// - ModelListingCapability: Model discovery and information
 ///
 /// **API Documentation:**
 /// - Messages API: https://platform.claude.com/docs/en/api/messages
@@ -31,8 +30,6 @@ class AnthropicProvider
         PromptChatCapability,
         ChatStreamPartsCapability,
         PromptChatStreamPartsCapability,
-        ModelListingCapability,
-        FileManagementCapability,
         ProviderCapabilities {
   final AnthropicClient _client;
   final AnthropicConfig config;
@@ -56,6 +53,10 @@ class AnthropicProvider
     _files = AnthropicFiles(_client, config);
     _models = AnthropicModels(_client, config);
   }
+
+  /// Provider-specific APIs (not part of the standard surface).
+  AnthropicFiles get filesApi => _files;
+  AnthropicModels get modelsApi => _models;
 
   @override
   Future<ChatResponse> chat(
@@ -159,7 +160,6 @@ class AnthropicProvider
     return supportedCapabilities.contains(capability);
   }
 
-  @override
   Future<List<AIModel>> models({CancelToken? cancelToken}) async {
     return _models.models(cancelToken: cancelToken);
   }
@@ -204,29 +204,23 @@ class AnthropicProvider
     return _chat.countTokens(messages, tools: tools);
   }
 
-  // ========== FileManagementCapability Implementation ==========
-
-  @override
+  // ========== Provider-specific: Files ==========
   Future<FileObject> uploadFile(FileUploadRequest request) async {
     return _files.uploadFile(request);
   }
 
-  @override
   Future<FileListResponse> listFiles([FileListQuery? query]) async {
     return _files.listFiles(query);
   }
 
-  @override
   Future<FileObject> retrieveFile(String fileId) async {
     return _files.retrieveFile(fileId);
   }
 
-  @override
   Future<FileDeleteResponse> deleteFile(String fileId) async {
     return _files.deleteFile(fileId);
   }
 
-  @override
   Future<List<int>> getFileContent(String fileId) async {
     return _files.getFileContent(fileId);
   }

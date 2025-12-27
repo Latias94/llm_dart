@@ -3,6 +3,7 @@ import 'package:llm_dart_core/core/llm_error.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_core/models/audio_models.dart';
 import 'package:llm_dart_core/models/image_models.dart';
+import 'package:llm_dart_core/models/rerank_models.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
 
 /// Result for a non-streaming text generation call.
@@ -172,4 +173,16 @@ class ToolApprovalRequiredError extends LLMError {
 
   @override
   String toString() => 'Tool approval required: $message';
+}
+
+/// Result for a rerank call.
+class RerankResult {
+  /// The raw rerank response.
+  final RerankResponse rawResponse;
+
+  const RerankResult({required this.rawResponse});
+
+  List<RerankResultItem> get results => rawResponse.results;
+  String? get model => rawResponse.model;
+  UsageInfo? get usage => rawResponse.usage;
 }

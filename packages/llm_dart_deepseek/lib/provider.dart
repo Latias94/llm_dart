@@ -17,7 +17,6 @@ class DeepSeekProvider
     implements
         ChatCapability,
         ChatStreamPartsCapability,
-        ModelListingCapability,
         ProviderCapabilities {
   final DeepSeekConfig config;
   final OpenAICompatibleConfig _openAIConfig;
@@ -94,7 +93,9 @@ class DeepSeekProvider
     return _chat.summarizeHistory(messages);
   }
 
-  @override
+  /// Provider-specific API (not part of the standard surface).
+  DeepSeekModels get modelsApi => _models;
+
   Future<List<AIModel>> models({CancelToken? cancelToken}) async {
     return _models.models(cancelToken: cancelToken);
   }

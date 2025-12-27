@@ -152,7 +152,7 @@ class LLMProviderRegistry {
   /// Create a chat-capable provider instance (legacy default).
   ///
   /// For non-chat providers, prefer building via capability factory methods
-  /// such as `LLMBuilder.buildAudio()` or call `createAnyProvider`.
+  /// such as `LLMBuilder.buildSpeech()`/`buildTranscription()` or call `createAnyProvider`.
   static ChatCapability createProvider(String providerId, LLMConfig config) {
     final provider = createAnyProvider(providerId, config);
     if (provider is! ChatCapability) {

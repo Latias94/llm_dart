@@ -11,6 +11,7 @@ class ElevenLabsDioStrategy extends BaseProviderDioStrategy {
   Map<String, String> buildHeaders(dynamic config) {
     final elevenLabsConfig = config as ElevenLabsConfig;
     return {
+      'Content-Type': 'application/json',
       'xi-api-key': elevenLabsConfig.apiKey,
     };
   }

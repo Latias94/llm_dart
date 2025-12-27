@@ -265,7 +265,7 @@ Future<void> voiceDiscoveryExample(GoogleTTSCapability ttsProvider) async {
   }
 
   // Get supported languages
-  final languages = await ttsProvider.getSupportedLanguages();
+  final languages = await ttsProvider.getSupportedTtsLanguageCodes();
   print('\n🌍 Supported languages (${languages.length} total):');
   print('   ${languages.take(10).join(', ')}...');
   print('');

@@ -228,25 +228,25 @@ class OpenAIBuilder {
 
   Future<ChatCapability> build() async => _baseBuilder.build();
 
-  Future<AudioCapability> buildAudio() async => _baseBuilder.buildAudio();
+  Future<TextToSpeechCapability> buildSpeech() async => _baseBuilder.buildSpeech();
+
+  Future<StreamingTextToSpeechCapability> buildStreamingSpeech() async =>
+      _baseBuilder.buildStreamingSpeech();
+
+  Future<SpeechToTextCapability> buildTranscription() async =>
+      _baseBuilder.buildTranscription();
+
+  Future<AudioTranslationCapability> buildAudioTranslation() async =>
+      _baseBuilder.buildAudioTranslation();
+
+  Future<RealtimeAudioCapability> buildRealtimeAudio() async =>
+      _baseBuilder.buildRealtimeAudio();
 
   Future<ImageGenerationCapability> buildImageGeneration() async =>
       _baseBuilder.buildImageGeneration();
 
   Future<EmbeddingCapability> buildEmbedding() async =>
       _baseBuilder.buildEmbedding();
-
-  Future<FileManagementCapability> buildFileManagement() async =>
-      _baseBuilder.buildFileManagement();
-
-  Future<ModerationCapability> buildModeration() async =>
-      _baseBuilder.buildModeration();
-
-  Future<AssistantCapability> buildAssistant() async =>
-      _baseBuilder.buildAssistant();
-
-  Future<ModelListingCapability> buildModelListing() async =>
-      _baseBuilder.buildModelListing();
 
   Future<OpenAIProvider> buildOpenAIResponses() async {
     final isResponsesAPIEnabled = _baseBuilder.currentConfig

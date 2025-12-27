@@ -10,7 +10,13 @@ import 'models.dart';
 import 'speech_to_speech.dart';
 
 /// ElevenLabs Provider implementation.
-class ElevenLabsProvider extends BaseAudioCapability {
+class ElevenLabsProvider
+    implements
+        TextToSpeechCapability,
+        StreamingTextToSpeechCapability,
+        VoiceListingCapability,
+        SpeechToTextCapability,
+        TranscriptionLanguageListingCapability {
   final ElevenLabsConfig config;
   final ElevenLabsClient client;
   late final ElevenLabsAudio audio;
@@ -26,9 +32,6 @@ class ElevenLabsProvider extends BaseAudioCapability {
   }
 
   String get providerName => 'ElevenLabs';
-
-  @override
-  Set<AudioFeature> get supportedFeatures => audio.supportedFeatures;
 
   @override
   Future<TTSResponse> textToSpeech(
@@ -60,25 +63,10 @@ class ElevenLabsProvider extends BaseAudioCapability {
   }
 
   @override
-  Future<STTResponse> translateAudio(
-    AudioTranslationRequest request, {
-    CancelToken? cancelToken,
-  }) async {
-    return audio.translateAudio(request, cancelToken: cancelToken);
-  }
-
-  @override
   Future<List<LanguageInfo>> getSupportedLanguages() async {
     return audio.getSupportedLanguages();
   }
 
-  @override
-  Future<RealtimeAudioSession> startRealtimeSession(
-      RealtimeAudioConfig config) async {
-    return audio.startRealtimeSession(config);
-  }
-
-  @override
   List<String> getSupportedAudioFormats() {
     return audio.getSupportedAudioFormats();
   }

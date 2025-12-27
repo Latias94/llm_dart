@@ -7,14 +7,8 @@ Essential functionality for building AI applications with LLM Dart.
 ### [capability_factory_methods.dart](capability_factory_methods.dart)
 Type-safe provider initialization using specialized build methods.
 
-### [assistants.dart](assistants.dart)
-AI assistants creation, management, and tool integration.
-
 ### [embeddings.dart](embeddings.dart)
 Text embeddings for semantic search and similarity analysis.
-
-### [file_management.dart](file_management.dart)
-File upload, download, and management for AI workflows.
 
 ### [chat_basics.dart](chat_basics.dart)
 Foundation of AI interactions - messages, context, and responses.
@@ -56,9 +50,7 @@ export GOOGLE_API_KEY="your-google-key"
 
 # Run core feature examples
 dart run capability_factory_methods.dart
-dart run assistants.dart
 dart run embeddings.dart
-dart run file_management.dart
 dart run chat_basics.dart
 dart run streaming_chat.dart
 dart run tool_calling.dart
@@ -68,15 +60,13 @@ dart run enhanced_tool_calling.dart
 ## Key Concepts
 
 ### Capability-Based Architecture
-- **Type Safety**: Use `build()` for chat, and specialized build methods (`buildAssistant()`, `buildEmbedding()`, etc.)
-- **Provider Abstraction**: Unified interface across different AI providers
+- **Type Safety**: Use `build()` for chat, and specialized build methods (`buildSpeech()`, `buildEmbedding()`, etc.)
+- **Standard Surface**: Only unify what maps cleanly across providers (Vercel-style tasks)
 - **Capability Detection**: Automatic feature detection and validation
 
 ### Core Capabilities
 - **Chat**: Messages, context, and response handling
-- **Assistants**: Persistent AI assistants with tools and memory
 - **Embeddings**: Vector representations for semantic search
-- **File Management**: Upload, download, and organize files for AI workflows
 - **Streaming**: Real-time response delivery
 - **Tools**: Function calling and execution
 - **Structured Output**: JSON schema validation
@@ -107,28 +97,6 @@ final result = await generateText(
 );
 
 print(result.text);
-```
-
-### Assistant with Tools
-```dart
-// Create assistant with tools
-final assistant = await provider.createAssistant(CreateAssistantRequest(
-  model: 'gpt-4',
-  name: 'Code Helper',
-  instructions: 'You are a helpful coding assistant.',
-  tools: [CodeInterpreterTool(), FileSearchTool()],
-));
-```
-
-### File Management
-```dart
-// Upload file for AI processing
-final fileBytes = await File('document.pdf').readAsBytes();
-final fileObject = await provider.uploadFile(FileUploadRequest(
-  file: Uint8List.fromList(fileBytes),
-  purpose: FilePurpose.assistants,
-  filename: 'document.pdf',
-));
 ```
 
 ### Embeddings for Search
@@ -190,7 +158,7 @@ final result = await generateText(
 ## Best Practices
 
 ### Type Safety
-- Use `build()` for chat, and specialized build methods (`buildAssistant()`, etc.)
+- Use `build()` for chat, and specialized build methods (`buildSpeech()`, `buildEmbedding()`, etc.)
 - Handle null values properly with null-aware operators (`?.`, `!`)
 - Use proper error handling with try-catch blocks
 

@@ -214,12 +214,12 @@ Future<void> testUnsupportedCapabilityError() async {
   print('   🚫 Testing Unsupported Capability Error:');
 
   try {
-    // Try to build audio capability with a provider that doesn't support it
+    // Try to build speech (TTS) capability with a provider that doesn't support it
     // Note: Using a fake API key to avoid actual API calls
     await LLMBuilder()
-        .provider(groqProviderId) // Groq doesn't support audio capabilities
+        .provider(groqProviderId) // Groq doesn't support speech (TTS)
         .apiKey('fake-key-for-testing')
-        .buildAudio(); // This should throw UnsupportedCapabilityError
+        .buildSpeech(); // This should throw UnsupportedCapabilityError
 
     print('      ❌ Expected UnsupportedCapabilityError but got success');
   } on UnsupportedCapabilityError catch (e) {
@@ -250,7 +250,7 @@ Future<void> testUnsupportedCapabilityError() async {
 
   print('      💡 Capability factory methods provide compile-time type safety');
   print(
-      '      🎯 Use buildAudio(), buildImageGeneration(), etc. for type-safe building');
+      '      🎯 Use buildSpeech(), buildTranscription(), buildImageGeneration(), etc. for type-safe building');
 }
 
 /// Demonstrate retry strategies

@@ -14,6 +14,14 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
 
 ### Breaking Changes
 
+- **Removed legacy audio surface**: removed `AudioCapability`, `AudioFeature`, and `LLMBuilder.buildAudio()`.
+  - Build task-specific capabilities instead: `buildSpeech()`, `buildStreamingSpeech()`, `buildTranscription()`, `buildAudioTranslation()`, `buildRealtimeAudio()`.
+  - Capability detection: use task interface checks (e.g. `provider is TextToSpeechCapability`) or `CapabilityUtils.getCapabilities(...)`.
+  - Convenience helpers: `speech()` / `transcribeFile()` / `translateFile()` now live on task interfaces via extensions (see `packages/llm_dart_core/lib/core/capability.dart`).
+- **Removed non-standard unified capabilities (Vercel-style narrowing)**: removed `FileManagementCapability`, `ModerationCapability`, `AssistantCapability`, `ModelListingCapability`, and `LLMBuilder.buildFileManagement()/buildModeration()/buildAssistant()/buildModelListing()`.
+  - Use provider-specific APIs instead (e.g. cast to `OpenAIProvider` and use `openai.filesApi` / `openai.moderationApi` / `openai.assistantsApi` / `openai.modelsApi`).
+- **Removed non-standard unified completion**: removed `CompletionCapability`.
+  - Use provider-specific completion APIs instead (e.g. `provider as OpenAIProvider`, then `openai.completionApi.complete(...)`).
 - **Phind removed from umbrella**: `llm_dart` no longer ships the Phind provider by default (no built-in registration, no exports, no docs/examples). If you still need Phind, depend on `llm_dart_phind` directly and call `registerPhind()` (see `docs/migrations/0.11.0-alpha.1.md`).
 - **Removed `phind-openai` preset provider id**: the legacy OpenAI-compatible preset id `phind-openai` is no longer provided. Use the standalone Phind provider id `phind` (via `llm_dart_phind`) if needed.
 - **OpenAI Responses isolation (Vercel-style)**: `llm_dart_openai_compatible` no longer models the OpenAI Responses API; Responses message conversion now lives in `llm_dart_openai` via `OpenAIResponsesMessageConverter` (see `docs/adp/0007-openai-responses-openai-only.md`).
@@ -23,6 +31,7 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
 - **Big refactor snapshot**: provider packages continue moving toward a Vercel AI SDK-style split (thin providers + protocol reuse + a stable “standard surface”).
 - **xAI Responses support**: new provider id `xai.responses` with streaming support.
 - **Anthropic prompt caching**: `providerOptions['anthropic']['cacheControl']` now applies reliably when using Prompt IR.
+- **Rerank task (Vercel-style)**: added `rerank` standard task API, plus `rerankByEmbedding` fallback for embedding-only providers.
 - **MiniMax (Anthropic-compatible) polish**: defaults and docs updated (including base URL guidance and trailing slash normalization).
 - **Local alignment tooling**: `tool/live_provider_alignment.dart` is more reliable for quick live smoke checks (including streaming delta detection).
 - **Migration guides**: see `docs/migrations/` for draft migration notes.
@@ -428,13 +437,13 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
   - Enhanced capability factory methods to support web search providers
 
 - **Capability Factory Methods**: Type-safe provider building with compile-time capability checking
-  - `buildAudio()` → `AudioCapability` - Build providers with audio capabilities
+  - `buildSpeech()` → `TextToSpeechCapability` - Build providers with text-to-speech
+  - `buildStreamingSpeech()` → `StreamingTextToSpeechCapability` - Build providers with streaming TTS
+  - `buildTranscription()` → `SpeechToTextCapability` - Build providers with speech-to-text
+  - `buildAudioTranslation()` → `AudioTranslationCapability` - Build providers with audio translation
+  - `buildRealtimeAudio()` → `RealtimeAudioCapability` - Build providers with realtime audio
   - `buildImageGeneration()` → `ImageGenerationCapability` - Build providers with image generation
   - `buildEmbedding()` → `EmbeddingCapability` - Build providers with embedding capabilities
-  - `buildFileManagement()` → `FileManagementCapability` - Build providers with file management
-  - `buildModeration()` → `ModerationCapability` - Build providers with moderation capabilities
-  - `buildAssistant()` → `AssistantCapability` - Build providers with assistant capabilities
-  - `buildModelListing()` → `ModelListingCapability` - Build providers with model listing
   - Eliminates runtime type casting and provides compile-time type safety
   - Clear error messages with `UnsupportedCapabilityError` when capabilities are not supported
   - Better IDE support and autocomplete for capability-specific methods
@@ -473,7 +482,7 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
   - Step-by-step learning path including web search integration
 
 - **Provider Examples**: Updated to use new capability factory methods
-  - `elevenlabs/audio_capabilities.dart` - Now uses `buildAudio()` for type-safe audio provider building
+  - `elevenlabs/audio_capabilities.dart` - Now uses `buildSpeech()` / `buildTranscription()` for task-specific audio capability building
   - `openai/image_generation.dart` - Now uses `buildImageGeneration()` for type-safe image provider building
   - Demonstrates migration from runtime type casting to compile-time type safety
 
@@ -508,12 +517,9 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
   - Batch operations: `deleteFiles()`, `getTotalStorageUsed()`
   - Beta API header support (`anthropic-beta: files-api-2025-04-14`)
 
-- **File Management API**: Cross-provider file operations
-  - `FileManagementCapability` interface for consistent file operations
-  - Universal `FileObject`, `FileUploadRequest`, `FileListResponse` models
-  - Support for both OpenAI and Anthropic file formats with automatic conversion
-  - Unified `FilePurpose` and `FileStatus` enums
-  - Provider-agnostic file operations with format adaptation
+- **File Management API**: Cross-provider file operations (historical)
+  - This unified capability interface was later removed in `0.11.0-alpha.1` (Vercel-style narrowing).
+  - Universal `FileObject`, `FileUploadRequest`, `FileListResponse` models remain for reuse in provider-specific APIs.
 
 - **Provider Configuration Centralization**: Extracted default configurations
   - New `ProviderDefaults` class with all provider endpoints and models
@@ -521,14 +527,10 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
   - Centralized capability definitions for all providers
   - Eliminated configuration duplication across factory classes
 
-- **Unified Audio Capability Interface**: Revolutionary audio processing design
-  - Single `AudioCapability` interface for all audio operations (TTS, STT, translation)
-  - Feature discovery system with `supportedFeatures` property for runtime capability detection
-  - `BaseAudioCapability` class providing default implementations for convenience methods
-  - Support for streaming TTS, real-time audio sessions, and advanced audio features
-  - Enhanced audio models with character-level timing, speaker diarization, and audio events
-  - Graceful degradation with `UnsupportedError` for unsupported features
-  - Cross-provider audio functionality comparison and benchmarking support
+- **Audio Capabilities**: Task-specific audio processing design
+  - Task interfaces: `TextToSpeechCapability`, `SpeechToTextCapability`, `AudioTranslationCapability`, `RealtimeAudioCapability`
+  - Support for streaming TTS, and advanced audio features via request/response models
+  - Convenience helpers are provided as task-level extensions (e.g. `ttsProvider.speech(...)`)
 
 - **DALL-E Image Generation Support**: Complete OpenAI image API implementation
   - Image generation, editing, and variations with DALL-E 2/3
@@ -562,8 +564,7 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
   - Better parameter validation and error handling
 
 - **Audio Capabilities**: Completely redesigned audio processing architecture
-  - Replaced separate `TextToSpeechCapability` and `SpeechToTextCapability` interfaces
-  - Unified all audio operations under single `AudioCapability` interface
+  - Task-specific capabilities for audio (TTS/STT/translation/realtime) instead of a single all-in-one interface
   - Enhanced audio models with advanced features (timing, diarization, events)
   - Improved OpenAI audio support with translation capabilities
   - Enhanced ElevenLabs audio support with streaming and real-time features
@@ -598,16 +599,12 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
   - More explicit and intuitive streaming control
 
 - **File Management**: Use unified file API for cross-provider compatibility
-  - OpenAI file operations remain unchanged
-  - Anthropic now supports file operations through `FileManagementCapability`
-  - Use universal file models for provider-agnostic code
+  - (Historical) This unified interface was later removed in `0.11.0-alpha.1` in favor of provider-specific APIs.
 
 - **Audio Capabilities**: Migrate to unified audio interface
-  - Replace `TextToSpeechCapability` and `SpeechToTextCapability` checks with `AudioCapability`
-  - Use `provider.supportedFeatures.contains(AudioFeature.textToSpeech)` for feature detection
-  - Audio translation now available through `translateAudio()` method (OpenAI only)
-  - Enhanced audio models support advanced features like character timing and speaker diarization
-  - Convenience methods (`speech()`, `transcribe()`, `translate()`) automatically available
+  - Build task-specific capabilities: `buildSpeech()` / `buildTranscription()` / `buildAudioTranslation()` / `buildRealtimeAudio()`
+  - Feature detection: use task interface checks (e.g. `provider is TextToSpeechCapability`)
+  - Convenience methods are provided via task-specific extensions (e.g. `ttsProvider.speech(...)`, `sttProvider.transcribeFile(...)`)
 
 - **Image Generation**: Enhanced capabilities with new features
   - New `editImage()` and `createVariation()` methods available for DALL-E 2

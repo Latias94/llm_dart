@@ -89,28 +89,38 @@ final images = await imageProvider.generateImage(
 ```dart
 registerOpenAI();
 
-final audioProvider = await LLMBuilder()
+final sttProvider = await LLMBuilder()
     .provider(openaiProviderId)
     .apiKey('your-key')
-    .buildAudio();
+    .model('whisper-1')
+    .buildTranscription();
 
 // Speech-to-text
-final transcription = await audioProvider.transcribeFile('audio.mp3');
+final transcription = await sttProvider.speechToText(
+  STTRequest.fromFile('audio.mp3', model: 'whisper-1'),
+);
 
 // Text-to-speech
-final audioData = await audioProvider.speech('Hello world');
+final ttsProvider = await LLMBuilder()
+    .provider(openaiProviderId)
+    .apiKey('your-key')
+    .model('gpt-4o')
+    .buildSpeech();
+final tts = await ttsProvider.textToSpeech(const TTSRequest(text: 'Hello world'));
+final audioData = tts.audioData;
 ```
 
 ### Assistants
 ```dart
 registerOpenAI();
 
-final assistantProvider = await LLMBuilder()
+final provider = await LLMBuilder()
     .provider(openaiProviderId)
     .apiKey('your-key')
-    .buildAssistant();
+    .build();
 
-final assistant = await assistantProvider.createAssistant(
+final openai = provider as OpenAIProvider;
+final assistant = await openai.assistantsApi.createAssistant(
   CreateAssistantRequest(
     model: 'gpt-4',
     name: 'Code Helper',

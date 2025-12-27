@@ -9,13 +9,13 @@ import 'package:llm_dart_openai/llm_dart_openai.dart';
 ///
 /// This example demonstrates the new capability factory methods that provide
 /// type-safe access to specific provider capabilities at build time:
-/// - buildAudio() - Returns AudioCapability directly
+/// - buildSpeech() - Returns TextToSpeechCapability directly
+/// - buildStreamingSpeech() - Returns StreamingTextToSpeechCapability directly
+/// - buildTranscription() - Returns SpeechToTextCapability directly
+/// - buildAudioTranslation() - Returns AudioTranslationCapability directly
+/// - buildRealtimeAudio() - Returns RealtimeAudioCapability directly
 /// - buildImageGeneration() - Returns ImageGenerationCapability directly
 /// - buildEmbedding() - Returns EmbeddingCapability directly
-/// - buildFileManagement() - Returns FileManagementCapability directly
-/// - buildModeration() - Returns ModerationCapability directly
-/// - buildAssistant() - Returns AssistantCapability directly
-/// - buildModelListing() - Returns ModelListingCapability directly
 ///
 /// Benefits:
 /// - Compile-time type safety
@@ -58,20 +58,20 @@ Future<void> demonstrateOldVsNewApproach() async {
   print('   ```dart');
   print(
       '   final provider = await LLMBuilder().provider(openaiProviderId).apiKey(apiKey).build();');
-  print('   if (provider is! AudioCapability) {');
+  print('   if (provider is! TextToSpeechCapability) {');
   print('     throw Exception("Not supported");');
   print('   }');
   print(
-      '   final audioProvider = provider as AudioCapability; // Runtime cast!');
-  print('   final voices = await audioProvider.getVoices();');
+      '   final tts = provider as TextToSpeechCapability; // Runtime cast!');
+  print('   final audio = await tts.textToSpeech(TTSRequest(text: "Hi"));');
   print('   ```');
   print('');
 
   print('   ✅ NEW APPROACH (compile-time type safety):');
   print('   ```dart');
   print(
-      '   final audioProvider = await LLMBuilder().provider(openaiProviderId).apiKey(apiKey).buildAudio();');
-  print('   final voices = await audioProvider.getVoices(); // Direct usage!');
+      '   final tts = await LLMBuilder().provider(openaiProviderId).apiKey(apiKey).buildSpeech();');
+  print('   final audio = await tts.textToSpeech(TTSRequest(text: "Hi"));');
   print('   ```');
   print('');
 
@@ -95,19 +95,22 @@ Future<void> demonstrateTypeSafeBuilding() async {
     print('   🤖 OpenAI Provider Capabilities:');
 
     try {
-      // Audio capability
-      print('      🎵 Building audio capability...');
+      // Speech (TTS) capability
+      print('      🎵 Building speech (TTS) capability...');
       final audioProvider = await LLMBuilder()
           .provider(openaiProviderId)
           .apiKey(openaiKey)
-          .buildAudio();
+          .buildSpeech();
 
-      print('         ✅ Audio provider built successfully');
+      print('         ✅ Speech provider built successfully');
       print('         Type: ${audioProvider.runtimeType}');
 
-      // Test audio functionality
-      final voices = await audioProvider.getVoices();
-      print('         🎭 Available voices: ${voices.length} voices');
+      // Test TTS functionality (minimal smoke check)
+      final ttsResponse = await audioProvider.textToSpeech(
+        const TTSRequest(text: 'Hello from LLM Dart'),
+      );
+      print(
+          '         🔊 Generated audio: ${ttsResponse.audioData.length} bytes');
 
       // Image generation capability
       print('      🖼️  Building image generation capability...');
@@ -139,18 +142,19 @@ Future<void> demonstrateTypeSafeBuilding() async {
       final embeddings = await embeddingProvider.embed(['Hello world']);
       print('         🔢 Generated embeddings: ${embeddings.length} vectors');
 
-      // Model listing capability
-      print('      📋 Building model listing capability...');
-      final modelProvider = await LLMBuilder()
+      // Model listing is provider-specific (Vercel-style: not part of standard surface)
+      print('      📋 Building provider (for model discovery)...');
+      final provider = await LLMBuilder()
           .provider(openaiProviderId)
           .apiKey(openaiKey)
-          .buildModelListing();
+          .build();
 
-      print('         ✅ Model listing provider built successfully');
-      print('         Type: ${modelProvider.runtimeType}');
+      final openai = provider as OpenAIProvider;
+      print('         ✅ OpenAI provider built successfully');
+      print('         Type: ${openai.runtimeType}');
 
       // Test model listing functionality
-      final models = await modelProvider.models();
+      final models = await openai.modelsApi.models();
       print('         🤖 Available models: ${models.length} models');
     } catch (e) {
       print('      ❌ OpenAI capability building failed: $e');
@@ -162,23 +166,27 @@ Future<void> demonstrateTypeSafeBuilding() async {
     print('   🎙️ ElevenLabs Provider Capabilities:');
 
     try {
-      // Audio capability (ElevenLabs specializes in audio)
-      print('      🎵 Building audio capability...');
-      final audioProvider = await LLMBuilder()
+      // Speech (TTS) capability (ElevenLabs specializes in TTS)
+      print('      🎵 Building speech (TTS) capability...');
+      final ttsProvider = await LLMBuilder()
           .provider(elevenLabsProviderId)
           .apiKey(elevenlabsKey)
           .providerOption('elevenlabs', 'voiceId', 'JBFqnCBsd6RMkjVDRZzb')
-          .buildAudio();
+          .buildSpeech();
 
-      print('         ✅ Audio provider built successfully');
-      print('         Type: ${audioProvider.runtimeType}');
+      print('         ✅ Speech provider built successfully');
+      print('         Type: ${ttsProvider.runtimeType}');
 
-      // Test audio functionality
-      final voices = await audioProvider.getVoices();
-      print('         🎭 Available voices: ${voices.length} voices');
-      if (voices.isNotEmpty) {
-        print(
-            '         Sample voices: ${voices.take(3).map((v) => v.name).join(', ')}');
+      // Voice listing is provider-specific; check opt-in capability.
+      if (ttsProvider is VoiceListingCapability) {
+        final voices = await (ttsProvider as VoiceListingCapability).getVoices();
+        print('         🎭 Available voices: ${voices.length} voices');
+        if (voices.isNotEmpty) {
+          print(
+              '         Sample voices: ${voices.take(3).map((v) => v.name).join(', ')}');
+        }
+      } else {
+        print('         🎭 Voice listing not supported by this provider');
       }
     } catch (e) {
       print('      ❌ ElevenLabs capability building failed: $e');
@@ -249,13 +257,13 @@ Future<void> demonstratePracticalUsage() async {
     // Example 1: Audio processing pipeline
     print('      🎵 Audio Processing Pipeline:');
     try {
-      final audioProvider = await LLMBuilder()
+      final ttsProvider = await LLMBuilder()
           .provider(openaiProviderId)
           .apiKey(openaiKey)
-          .buildAudio();
+          .buildSpeech();
 
       // Direct usage without type casting
-      final ttsResponse = await audioProvider.textToSpeech(TTSRequest(
+      final ttsResponse = await ttsProvider.textToSpeech(TTSRequest(
         text: 'Hello from the new capability factory methods!',
         voice: 'alloy',
         format: 'mp3',
@@ -289,16 +297,16 @@ Future<void> demonstratePracticalUsage() async {
       print('         ❌ Embedding generation failed: $e');
     }
 
-    // Example 3: Model discovery
+    // Example 3: Model discovery (provider-specific)
     print('      🔍 Model Discovery:');
     try {
-      final modelProvider = await LLMBuilder()
+      final provider = await LLMBuilder()
           .provider(openaiProviderId)
           .apiKey(openaiKey)
-          .buildModelListing();
+          .build();
 
-      // Direct usage without type casting
-      final models = await modelProvider.models();
+      final openai = provider as OpenAIProvider;
+      final models = await openai.modelsApi.models();
       final gptModels = models.where((m) => m.id.contains('gpt')).toList();
 
       print('         ✅ Found ${models.length} total models');
@@ -318,7 +326,8 @@ Future<void> demonstratePracticalUsage() async {
   }
 
   print('   💡 Key Benefits Demonstrated:');
-  print('      • No type casting required');
+  print('      • 标准任务无需 type casting');
+  print('      • Provider-specific API 需要显式 cast');
   print('      • Compile-time type safety');
   print('      • Clear error messages for unsupported capabilities');
   print('      • Cleaner, more maintainable code');

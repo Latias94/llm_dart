@@ -110,7 +110,11 @@ class _FakeImageModel extends ImageGenerationCapability {
   List<String> getSupportedFormats() => const ['url', 'b64_json'];
 }
 
-class _FakeAudioModel extends AudioCapability {
+class _FakeAudioModel
+    implements
+        TextToSpeechCapability,
+        StreamingTextToSpeechCapability,
+        SpeechToTextCapability {
   final TTSResponse ttsResponse;
   final STTResponse sttResponse;
   final List<AudioStreamEvent> streamEvents;
@@ -120,13 +124,6 @@ class _FakeAudioModel extends AudioCapability {
     required this.sttResponse,
     this.streamEvents = const [],
   });
-
-  @override
-  Set<AudioFeature> get supportedFeatures => {
-        AudioFeature.textToSpeech,
-        AudioFeature.speechToText,
-        AudioFeature.streamingTTS,
-      };
 
   @override
   Future<TTSResponse> textToSpeech(
@@ -389,7 +386,8 @@ void main() {
       expect(result.model, 'm');
     });
 
-    test('generateSpeech forwards to AudioCapability.textToSpeech', () async {
+    test('generateSpeech forwards to TextToSpeechCapability.textToSpeech',
+        () async {
       final model = _FakeAudioModel(
         ttsResponse: const TTSResponse(
           audioData: [1, 2, 3],
@@ -429,7 +427,7 @@ void main() {
       expect((events[2] as AudioDataEvent).isFinal, isTrue);
     });
 
-    test('transcribe forwards to AudioCapability.speechToText', () async {
+    test('transcribe forwards to SpeechToTextCapability.speechToText', () async {
       final model = _FakeAudioModel(
         ttsResponse: const TTSResponse(audioData: []),
         sttResponse: const STTResponse(text: 'hello'),

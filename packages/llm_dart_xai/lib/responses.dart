@@ -261,7 +261,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
 
             final parsed = finalResponseObject == null
                 ? null
-                : _parseResponse(finalResponseObject!);
+                : _parseResponse(finalResponseObject);
 
             final finishText = fullText.isNotEmpty
                 ? fullText.toString()

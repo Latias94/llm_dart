@@ -12,21 +12,17 @@ import 'config.dart';
 ///
 /// This module handles text-to-speech, speech-to-text, and audio translation
 /// functionality for OpenAI providers.
-class OpenAIAudio extends BaseAudioCapability {
+class OpenAIAudio
+    implements
+        TextToSpeechCapability,
+        VoiceListingCapability,
+        SpeechToTextCapability,
+        AudioTranslationCapability,
+        TranscriptionLanguageListingCapability {
   final OpenAIClient client;
   final OpenAIConfig config;
 
   OpenAIAudio(this.client, this.config);
-
-  // AudioCapability implementation
-
-  @override
-  Set<AudioFeature> get supportedFeatures => {
-        AudioFeature.textToSpeech,
-        AudioFeature.speechToText,
-        AudioFeature.audioTranslation,
-        // OpenAI doesn't support streaming TTS or real-time processing
-      };
 
   @override
   Future<TTSResponse> textToSpeech(
@@ -112,14 +108,6 @@ class OpenAIAudio extends BaseAudioCapability {
       VoiceInfo(id: 'verse', name: 'Verse', description: 'Poetic voice'),
     ];
   }
-
-  @override
-  List<String> getSupportedAudioFormats() {
-    // Reference: https://platform.openai.com/docs/api-reference/audio/createSpeech
-    return ProviderDefaults.openaiSupportedTTSFormats;
-  }
-
-  // SpeechToTextCapability implementation
 
   @override
   Future<STTResponse> speechToText(
@@ -387,19 +375,4 @@ class OpenAIAudio extends BaseAudioCapability {
     );
   }
 
-  // Unsupported features - throw UnsupportedError
-
-  @override
-  Stream<AudioStreamEvent> textToSpeechStream(
-    TTSRequest request, {
-    CancelToken? cancelToken,
-  }) {
-    throw UnsupportedError('OpenAI does not support streaming text-to-speech');
-  }
-
-  @override
-  Future<RealtimeAudioSession> startRealtimeSession(
-      RealtimeAudioConfig config) {
-    throw UnsupportedError('OpenAI does not support real-time audio sessions');
-  }
 }

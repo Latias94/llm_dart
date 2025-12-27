@@ -39,12 +39,6 @@ void main() {
     });
 
     group('Capability Support', () {
-      test('should have supported audio features', () {
-        final features = provider.supportedFeatures;
-        expect(features, isNotEmpty);
-        expect(features, isA<Set<AudioFeature>>());
-      });
-
       test('should support text-to-speech', () {
         expect(provider.config.supportsTextToSpeech, isTrue);
       });
@@ -63,8 +57,12 @@ void main() {
     });
 
     group('Interface Implementation', () {
-      test('should implement AudioCapability', () {
-        expect(provider, isA<AudioCapability>());
+      test('should implement task-specific audio capabilities', () {
+        expect(provider, isA<TextToSpeechCapability>());
+        expect(provider, isA<StreamingTextToSpeechCapability>());
+        expect(provider, isA<SpeechToTextCapability>());
+        expect(provider, isA<VoiceListingCapability>());
+        expect(provider, isA<TranscriptionLanguageListingCapability>());
       });
 
       test('should not implement ChatCapability', () {
@@ -85,10 +83,6 @@ void main() {
         expect(provider.speechToText, isA<Function>());
       });
 
-      test('should have translateAudio method', () {
-        expect(provider.translateAudio, isA<Function>());
-      });
-
       test('should have getVoices method', () {
         expect(provider.getVoices, isA<Function>());
       });
@@ -97,38 +91,18 @@ void main() {
         expect(provider.getSupportedLanguages, isA<Function>());
       });
 
-      test('should have startRealtimeSession method', () {
-        expect(provider.startRealtimeSession, isA<Function>());
-      });
-
       test('should have getSupportedAudioFormats method', () {
         expect(provider.getSupportedAudioFormats, isA<Function>());
       });
     });
 
-    group('Convenience Audio Methods', () {
-      test('should have speech method', () {
-        expect(provider.speech, isA<Function>());
+    group('Unsupported Capabilities', () {
+      test('should not implement audio translation capability', () {
+        expect(provider, isNot(isA<AudioTranslationCapability>()));
       });
 
-      test('should have speechStream method', () {
-        expect(provider.speechStream, isA<Function>());
-      });
-
-      test('should have transcribe method', () {
-        expect(provider.transcribe, isA<Function>());
-      });
-
-      test('should have transcribeFile method', () {
-        expect(provider.transcribeFile, isA<Function>());
-      });
-
-      test('should have translate method', () {
-        expect(provider.translate, isA<Function>());
-      });
-
-      test('should have translateFile method', () {
-        expect(provider.translateFile, isA<Function>());
+      test('should not implement realtime audio capability', () {
+        expect(provider, isNot(isA<RealtimeAudioCapability>()));
       });
     });
 

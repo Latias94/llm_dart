@@ -58,22 +58,22 @@ class _FakePromptToolModel extends ChatCapability
           role: ChatRole.assistant,
           messageType: const TextMessage(),
           content: '',
-          extensions: const {
-            'anthropic': {
-              'contentBlocks': [
-                {
-                  'type': 'thinking',
-                  'thinking': 'I should call the weather tool.',
-                  'signature': 'sig_1',
-                },
-                {
-                  'type': 'tool_use',
-                  'id': 'toolu_1',
-                  'name': 'get_weather',
-                  'input': {'location': 'SF'},
-                },
-              ],
-            },
+        ).withProtocolPayload(
+          'anthropic',
+          const {
+            'contentBlocks': [
+              {
+                'type': 'thinking',
+                'thinking': 'I should call the weather tool.',
+                'signature': 'sig_1',
+              },
+              {
+                'type': 'tool_use',
+                'id': 'toolu_1',
+                'name': 'get_weather',
+                'input': {'location': 'SF'},
+              },
+            ],
           },
         ),
       );

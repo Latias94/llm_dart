@@ -331,7 +331,7 @@ abstract class GoogleTTSCapability {
   /// Get supported language codes for Google TTS.
   ///
   /// This is intentionally named to avoid colliding with the provider-agnostic
-  /// `AudioCapability.getSupportedLanguages()` (STT/translation).
+  /// `TranscriptionLanguageListingCapability.getSupportedLanguages()` (STT/translation).
   Future<List<String>> getSupportedTtsLanguageCodes();
 
   /// Get predefined Google TTS voices

@@ -140,8 +140,9 @@ class MockLocalFactory extends LocalProviderFactory<ChatCapability> {
       };
 }
 
-// Mock audio provider factory
-class MockAudioFactory extends AudioProviderFactory<AudioCapability> {
+// Mock TTS provider factory
+class MockTextToSpeechFactory
+    extends TextToSpeechProviderFactory<TextToSpeechCapability> {
   @override
   String get providerId => 'mock-audio';
 
@@ -152,14 +153,8 @@ class MockAudioFactory extends AudioProviderFactory<AudioCapability> {
   String get description => 'A mock audio provider for testing';
 
   @override
-  Set<LLMCapability> get supportedCapabilities => {
-        LLMCapability.textToSpeech,
-        LLMCapability.speechToText,
-      };
-
-  @override
-  AudioCapability create(LLMConfig config) {
-    return MockAudioProvider();
+  TextToSpeechCapability create(LLMConfig config) {
+    return MockTextToSpeechProvider();
   }
 
   @override
@@ -169,12 +164,14 @@ class MockAudioFactory extends AudioProviderFactory<AudioCapability> {
       };
 }
 
-class MockAudioProvider extends AudioCapability {
+class MockTextToSpeechProvider implements TextToSpeechCapability {
   @override
-  Set<AudioFeature> get supportedFeatures => {
-        AudioFeature.textToSpeech,
-        AudioFeature.speechToText,
-      };
+  Future<TTSResponse> textToSpeech(
+    TTSRequest request, {
+    CancelToken? cancelToken,
+  }) async {
+    return const TTSResponse(audioData: [1, 2, 3], contentType: 'audio/mpeg');
+  }
 }
 
 void main() {
@@ -334,17 +331,17 @@ void main() {
       });
     });
 
-    group('AudioProviderFactory', () {
-      late MockAudioFactory factory;
+    group('TextToSpeechProviderFactory', () {
+      late MockTextToSpeechFactory factory;
 
       setUp(() {
-        factory = MockAudioFactory();
+        factory = MockTextToSpeechFactory();
       });
 
-      test('should have audio capabilities', () {
+      test('should have text-to-speech capability', () {
         final capabilities = factory.supportedCapabilities;
         expect(capabilities, contains(LLMCapability.textToSpeech));
-        expect(capabilities, contains(LLMCapability.speechToText));
+        expect(capabilities, isNot(contains(LLMCapability.speechToText)));
       });
 
       test('should require API key', () {

@@ -7,7 +7,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
-/// Real-time audio processing examples using AudioCapability
+/// Real-time audio processing examples using task-specific capabilities.
 ///
 /// This example demonstrates:
 /// - Real-time audio streaming
@@ -30,13 +30,6 @@ Future<void> main() async {
     return;
   }
 
-  // Check real-time capabilities
-  if (!audioProvider.supportedFeatures
-      .contains(AudioFeature.realtimeProcessing)) {
-    print('⚠️  Provider does not support real-time audio processing');
-    return;
-  }
-
   print('🚀 Starting Real-time Audio Examples...\n');
 
   // Demonstrate different real-time scenarios
@@ -56,9 +49,9 @@ Future<void> main() async {
 }
 
 /// Initialize audio provider for real-time processing
-Future<AudioCapability?> initializeAudioProvider() async {
+Future<RealtimeAudioCapability?> initializeAudioProvider() async {
   // Try providers that support real-time audio
-  final providers = <(String, Future<AudioCapability> Function())>[];
+  final providers = <(String, Future<RealtimeAudioCapability> Function())>[];
 
   final openaiKey = Platform.environment['OPENAI_API_KEY'];
   if (openaiKey != null && openaiKey.isNotEmpty) {
@@ -67,7 +60,7 @@ Future<AudioCapability?> initializeAudioProvider() async {
       () async => LLMBuilder()
           .provider(openaiProviderId)
           .apiKey(openaiKey)
-          .buildAudio(),
+          .buildRealtimeAudio(),
     ));
   }
 
@@ -78,7 +71,7 @@ Future<AudioCapability?> initializeAudioProvider() async {
       () async => LLMBuilder()
           .provider(elevenLabsProviderId)
           .apiKey(elevenlabsKey)
-          .buildAudio(),
+          .buildRealtimeAudio(),
     ));
   }
 
@@ -101,7 +94,7 @@ Future<AudioCapability?> initializeAudioProvider() async {
 }
 
 /// Demonstrate basic real-time audio session
-Future<void> demonstrateBasicRealtimeSession(AudioCapability provider) async {
+Future<void> demonstrateBasicRealtimeSession(RealtimeAudioCapability provider) async {
   print('🎙️ Basic Real-time Session:');
 
   try {
@@ -152,7 +145,7 @@ Future<void> demonstrateBasicRealtimeSession(AudioCapability provider) async {
 }
 
 /// Demonstrate voice activity detection
-Future<void> demonstrateVoiceActivityDetection(AudioCapability provider) async {
+Future<void> demonstrateVoiceActivityDetection(RealtimeAudioCapability provider) async {
   print('🗣️ Voice Activity Detection:');
 
   try {
@@ -209,7 +202,7 @@ Future<void> demonstrateVoiceActivityDetection(AudioCapability provider) async {
 }
 
 /// Demonstrate continuous conversation flow
-Future<void> demonstrateContinuousConversation(AudioCapability provider) async {
+Future<void> demonstrateContinuousConversation(RealtimeAudioCapability provider) async {
   print('💬 Continuous Conversation:');
 
   try {
@@ -276,7 +269,7 @@ Future<void> demonstrateContinuousConversation(AudioCapability provider) async {
 }
 
 /// Demonstrate audio preprocessing and enhancement
-Future<void> demonstrateAudioPreprocessing(AudioCapability provider) async {
+Future<void> demonstrateAudioPreprocessing(RealtimeAudioCapability provider) async {
   print('🔧 Audio Preprocessing:');
 
   try {
@@ -331,7 +324,7 @@ Future<void> demonstrateAudioPreprocessing(AudioCapability provider) async {
 }
 
 /// Demonstrate multi-modal audio interaction
-Future<void> demonstrateMultiModalInteraction(AudioCapability provider) async {
+Future<void> demonstrateMultiModalInteraction(RealtimeAudioCapability provider) async {
   print('🎭 Multi-modal Interaction:');
 
   try {
@@ -399,7 +392,7 @@ Future<void> demonstrateMultiModalInteraction(AudioCapability provider) async {
 }
 
 /// Demonstrate session management and reconnection
-Future<void> demonstrateSessionManagement(AudioCapability provider) async {
+Future<void> demonstrateSessionManagement(RealtimeAudioCapability provider) async {
   print('🔄 Session Management:');
 
   try {
@@ -586,7 +579,7 @@ class MultiModalProcessor {
 
 /// Session manager for handling connections
 class RealtimeSessionManager {
-  final AudioCapability _provider;
+  final RealtimeAudioCapability _provider;
   RealtimeAudioSession? _session;
   bool _isConnected = false;
 

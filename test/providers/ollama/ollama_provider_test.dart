@@ -76,16 +76,16 @@ void main() {
         expect(provider, isA<ChatCapability>());
       });
 
-      test('should implement CompletionCapability', () {
-        expect(provider, isA<CompletionCapability>());
+      test('should expose completion API', () {
+        expect(provider.completionApi, isNotNull);
       });
 
       test('should implement EmbeddingCapability', () {
         expect(provider, isA<EmbeddingCapability>());
       });
 
-      test('should implement ModelListingCapability', () {
-        expect(provider, isA<ModelListingCapability>());
+      test('should expose provider-specific APIs', () {
+        expect(provider.modelsApi, isNotNull);
       });
 
       test('should implement ProviderCapabilities', () {

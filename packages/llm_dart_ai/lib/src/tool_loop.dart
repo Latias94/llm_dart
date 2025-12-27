@@ -50,10 +50,9 @@ PromptMessage _promptMessageFromChatMessage(ChatMessage message) {
     parts.add(TextPart(effective));
   }
 
-  // Protocol-internal: preserve Anthropic-compatible tool_use blocks that may
-  // be stored in legacy `ChatMessage.extensions` for tool loop persistence.
-  // ignore: deprecated_member_use
-  final anthropic = message.extensions['anthropic'];
+  // Protocol-internal: preserve Anthropic-compatible tool_use blocks that must
+  // be persisted across requests for tool loop continuity.
+  final anthropic = message.getProtocolPayload('anthropic');
   if (anthropic is Map) {
     final contentBlocks = anthropic['contentBlocks'];
     if (contentBlocks is List) {

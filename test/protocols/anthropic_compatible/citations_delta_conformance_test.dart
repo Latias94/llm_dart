@@ -37,9 +37,9 @@ void main() {
       final response = finish.response as ChatResponseWithAssistantMessage;
       final assistant = response.assistantMessage;
 
-      // ignore: deprecated_member_use
-      final anthropic =
-          assistant.getExtension<Map<String, dynamic>>('anthropic');
+      final anthropic = assistant.getProtocolPayload<Map<String, dynamic>>(
+        'anthropic',
+      );
       final blocks = (anthropic?['contentBlocks'] as List?)?.cast<dynamic>();
       expect(blocks, isNotNull);
 
@@ -83,9 +83,9 @@ void main() {
       final response = completion.response as ChatResponseWithAssistantMessage;
       final assistant = response.assistantMessage;
 
-      // ignore: deprecated_member_use
-      final anthropic =
-          assistant.getExtension<Map<String, dynamic>>('anthropic');
+      final anthropic = assistant.getProtocolPayload<Map<String, dynamic>>(
+        'anthropic',
+      );
       final blocks = (anthropic?['contentBlocks'] as List?)?.cast<dynamic>();
       expect(blocks, isNotNull);
 

@@ -217,16 +217,19 @@ Future<void> demonstrateOpenAITextToSpeech(String apiKey) async {
   print('   🎵 Text-to-Speech (OpenAI):');
 
   try {
-    // Create OpenAI provider with audio capabilities
-    final audioProvider = await LLMBuilder()
+    // Create OpenAI provider with speech (TTS) capability
+    final ttsProvider = await LLMBuilder()
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('tts-1')
-        .buildAudio();
+        .buildSpeech();
 
-    // Get available voices
-    final voices = await audioProvider.getVoices();
-    print('      🎭 Available voices: ${voices.map((v) => v.name).join(', ')}');
+    // Voice listing is provider-specific; check opt-in capability.
+    if (ttsProvider is VoiceListingCapability) {
+      final voices = await (ttsProvider as VoiceListingCapability).getVoices();
+      print(
+          '      🎭 Available voices: ${voices.map((v) => v.name).join(', ')}');
+    }
 
     // Generate speech with OpenAI
     final text =
@@ -234,7 +237,7 @@ Future<void> demonstrateOpenAITextToSpeech(String apiKey) async {
     print('      📝 Text: "$text"');
     print('      🔄 Generating speech...');
 
-    final ttsResponse = await audioProvider.textToSpeech(TTSRequest(
+    final ttsResponse = await ttsProvider.textToSpeech(TTSRequest(
       text: text,
       voice: 'alloy',
       format: 'mp3',
@@ -259,16 +262,22 @@ Future<void> demonstrateSpeechToText(String apiKey) async {
   print('   🎤 Speech-to-Text (Whisper):');
 
   try {
-    // Create OpenAI provider with audio capabilities
-    final audioProvider = await LLMBuilder()
+    // Create an STT-capable provider
+    final transcriptionProvider = await LLMBuilder()
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('whisper-1')
-        .buildAudio();
+        .buildTranscription();
 
     // Get supported languages
-    final languages = await audioProvider.getSupportedLanguages();
-    print('      🌍 Supported languages: ${languages.length} languages');
+    final TranscriptionLanguageListingCapability? languageListing =
+        transcriptionProvider is TranscriptionLanguageListingCapability
+            ? (transcriptionProvider as TranscriptionLanguageListingCapability)
+            : null;
+    if (languageListing != null) {
+      final languages = await languageListing.getSupportedLanguages();
+      print('      🌍 Supported languages: ${languages.length} languages');
+    }
 
     // Check if we have a generated TTS file to transcribe
     final ttsFile = File('demo_tts.mp3');
@@ -277,7 +286,7 @@ Future<void> demonstrateSpeechToText(String apiKey) async {
 
       // Basic transcription
       final transcription =
-          await audioProvider.speechToText(STTRequest.fromFile(
+          await transcriptionProvider.speechToText(STTRequest.fromFile(
         'demo_tts.mp3',
         model: 'whisper-1',
         includeWordTiming: true,
@@ -295,11 +304,6 @@ Future<void> demonstrateSpeechToText(String apiKey) async {
           print('         "${word.word}" (${word.start}s - ${word.end}s)');
         }
       }
-
-      // Test convenience method
-      final quickTranscription =
-          await audioProvider.transcribeFile('demo_tts.mp3');
-      print('      ✅ Quick transcription: "$quickTranscription"');
     } else {
       print('      ⚠️  No audio file found for transcription test');
       print('      💡 Generate TTS audio first to test transcription');
@@ -316,17 +320,23 @@ Future<void> demonstrateTextToSpeech(String apiKey) async {
   print('\n   🔊 Text-to-Speech (ElevenLabs):');
 
   try {
-    // Create ElevenLabs provider with audio capabilities
-    final audioProvider = await LLMBuilder()
+    // Create a TTS-capable provider
+    final speechProvider = await LLMBuilder()
         .provider(elevenLabsProviderId)
         .apiKey(apiKey)
         .providerOption('elevenlabs', 'voiceId', 'JBFqnCBsd6RMkjVDRZzb')
-        .buildAudio();
+        .buildSpeech();
 
     // Get available voices
-    final voices = await audioProvider.getVoices();
-    print('      🎭 Available voices: ${voices.length} voices');
+    final VoiceListingCapability? voiceListing =
+        speechProvider is VoiceListingCapability
+            ? (speechProvider as VoiceListingCapability)
+            : null;
+    final voices = voiceListing == null
+        ? const <VoiceInfo>[]
+        : await voiceListing.getVoices();
     if (voices.isNotEmpty) {
+      print('      🎭 Available voices: ${voices.length} voices');
       print(
           '         First few: ${voices.take(3).map((v) => v.name).join(', ')}');
     }
@@ -337,7 +347,7 @@ Future<void> demonstrateTextToSpeech(String apiKey) async {
     print('      📝 Text: "$text"');
     print('      🔄 Generating speech...');
 
-    final ttsResponse = await audioProvider.textToSpeech(TTSRequest(
+    final ttsResponse = await speechProvider.textToSpeech(TTSRequest(
       text: text,
       voice: voices.isNotEmpty ? voices.first.id : null,
       model: 'eleven_multilingual_v2',
@@ -350,12 +360,12 @@ Future<void> demonstrateTextToSpeech(String apiKey) async {
     print('      🎵 Voice: ${ttsResponse.voice ?? "default"}');
     print('      🤖 Model: ${ttsResponse.model ?? "default"}');
 
-    // Test convenience method
-    final quickSpeech =
-        await audioProvider.speech('Quick test with ElevenLabs');
-    await File('demo_elevenlabs_quick.mp3').writeAsBytes(quickSpeech);
-    print(
-        '      ✅ Quick speech: ${quickSpeech.length} bytes → demo_elevenlabs_quick.mp3');
+    // Quick TTS
+    final quickResponse = await speechProvider.textToSpeech(
+      const TTSRequest(text: 'Quick test with ElevenLabs'),
+    );
+    await File('demo_elevenlabs_quick.mp3').writeAsBytes(quickResponse.audioData);
+    print('      ✅ Quick speech: ${quickResponse.audioData.length} bytes → demo_elevenlabs_quick.mp3');
 
     print('      ✅ Text-to-speech demonstration completed\n');
   } catch (e) {

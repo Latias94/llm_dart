@@ -21,7 +21,7 @@
 /// // Use any capability - same external API
 /// final response = await provider.chat(messages);
 /// final embeddings = await provider.embed(['text']);
-/// final audio = await provider.speech('Hello world');
+/// final tts = await provider.textToSpeech(const TTSRequest(text: 'Hello world'));
 /// ```
 library;
 

@@ -10,6 +10,7 @@ void main() {
         expect(capabilities, contains(LLMCapability.chat));
         expect(capabilities, contains(LLMCapability.streaming));
         expect(capabilities, contains(LLMCapability.embedding));
+        expect(capabilities, contains(LLMCapability.rerank));
         expect(capabilities, contains(LLMCapability.modelListing));
         expect(capabilities, contains(LLMCapability.toolCalling));
         expect(capabilities, contains(LLMCapability.reasoning));
@@ -28,24 +29,6 @@ void main() {
             equals('LLMCapability.streaming'));
         expect(LLMCapability.toolCalling.toString(),
             equals('LLMCapability.toolCalling'));
-      });
-    });
-
-    group('AudioFeature Enum', () {
-      test('should have all expected audio features', () {
-        final features = AudioFeature.values;
-
-        expect(features, contains(AudioFeature.textToSpeech));
-        expect(features, contains(AudioFeature.speechToText));
-        expect(features, contains(AudioFeature.audioTranslation));
-        expect(features, contains(AudioFeature.realtimeProcessing));
-        expect(features, contains(AudioFeature.voiceCloning));
-        expect(features, contains(AudioFeature.audioEnhancement));
-        expect(features, contains(AudioFeature.streamingTTS));
-        expect(features, contains(AudioFeature.speakerDiarization));
-        expect(features, contains(AudioFeature.characterTiming));
-        expect(features, contains(AudioFeature.audioEventDetection));
-        expect(features, contains(AudioFeature.multimodalAudio));
       });
     });
 

@@ -110,8 +110,7 @@ void registerAnthropicCompatibleToolLoopPersistenceConformanceTests({
       final assistantMessage =
           (first as ChatResponseWithAssistantMessage).assistantMessage;
 
-      // ignore: deprecated_member_use
-      final anthropicExt = assistantMessage.getExtension<Map<String, dynamic>>(
+      final anthropicExt = assistantMessage.getProtocolPayload<Map<String, dynamic>>(
         'anthropic',
       );
       expect(anthropicExt, isNotNull);

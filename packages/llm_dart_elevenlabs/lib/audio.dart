@@ -74,21 +74,17 @@ class ElevenLabsSTTResponse {
   }
 }
 
-class ElevenLabsAudio extends BaseAudioCapability {
+class ElevenLabsAudio
+    implements
+        TextToSpeechCapability,
+        StreamingTextToSpeechCapability,
+        VoiceListingCapability,
+        SpeechToTextCapability,
+        TranscriptionLanguageListingCapability {
   final ElevenLabsClient client;
   final ElevenLabsConfig config;
 
   ElevenLabsAudio(this.client, this.config);
-
-  @override
-  Set<AudioFeature> get supportedFeatures => {
-        AudioFeature.textToSpeech,
-        AudioFeature.speechToText,
-        AudioFeature.streamingTTS,
-        AudioFeature.speakerDiarization,
-        AudioFeature.characterTiming,
-        AudioFeature.audioEventDetection,
-      };
 
   @override
   Future<TTSResponse> textToSpeech(
@@ -214,7 +210,6 @@ class ElevenLabsAudio extends BaseAudioCapability {
     }).toList();
   }
 
-  @override
   List<String> getSupportedAudioFormats() {
     return config.supportedAudioFormats;
   }
@@ -508,19 +503,6 @@ class ElevenLabsAudio extends BaseAudioCapability {
     return voices.cast<Map<String, dynamic>>();
   }
 
-  @override
-  Future<STTResponse> translateAudio(
-    AudioTranslationRequest request, {
-    CancelToken? cancelToken,
-  }) {
-    throw UnsupportedError('ElevenLabs does not support audio translation');
-  }
-
-  @override
-  Future<RealtimeAudioSession> startRealtimeSession(
-      RealtimeAudioConfig config) {
-    throw UnsupportedError('Real-time audio session is not implemented');
-  }
 }
 
 String _resolveOutputFormat(TTSRequest request) {

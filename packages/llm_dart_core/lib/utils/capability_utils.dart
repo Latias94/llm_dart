@@ -107,27 +107,6 @@ class CapabilityUtils {
 
   // ========== Specific Capability Helpers ==========
 
-  static Future<R?> withFileManagement<R>(
-    dynamic provider,
-    Future<R> Function(FileManagementCapability) action,
-  ) async {
-    return await withCapability<FileManagementCapability, R>(provider, action);
-  }
-
-  static Future<R?> withModeration<R>(
-    dynamic provider,
-    Future<R> Function(ModerationCapability) action,
-  ) async {
-    return await withCapability<ModerationCapability, R>(provider, action);
-  }
-
-  static Future<R?> withAssistant<R>(
-    dynamic provider,
-    Future<R> Function(AssistantCapability) action,
-  ) async {
-    return await withCapability<AssistantCapability, R>(provider, action);
-  }
-
   // ========== Capability Discovery ==========
 
   /// Get all supported capabilities for a provider.
@@ -204,48 +183,29 @@ class CapabilityUtils {
     if (provider is EmbeddingCapability) {
       detected.add(LLMCapability.embedding);
     }
-    if (provider is CompletionCapability) {
-      detected.add(LLMCapability.completion);
-    }
 
+    if (provider is RerankCapability) {
+      detected.add(LLMCapability.rerank);
+    }
     if (provider is ImageGenerationCapability) {
       detected.add(LLMCapability.imageGeneration);
     }
 
-    if (provider is AudioCapability) {
-      try {
-        final features = provider.supportedFeatures;
-        if (features.contains(AudioFeature.textToSpeech)) {
-          detected.add(LLMCapability.textToSpeech);
-        }
-        if (features.contains(AudioFeature.streamingTTS)) {
-          detected.add(LLMCapability.streamingTextToSpeech);
-        }
-        if (features.contains(AudioFeature.speechToText)) {
-          detected.add(LLMCapability.speechToText);
-        }
-        if (features.contains(AudioFeature.audioTranslation)) {
-          detected.add(LLMCapability.audioTranslation);
-        }
-        if (features.contains(AudioFeature.realtimeProcessing)) {
-          detected.add(LLMCapability.realtimeAudio);
-        }
-      } catch (_) {
-        // If feature discovery fails, don't infer audio capabilities.
-      }
+    // Audio capabilities: infer support from implemented task interfaces.
+    if (provider is TextToSpeechCapability) {
+      detected.add(LLMCapability.textToSpeech);
     }
-
-    if (provider is FileManagementCapability) {
-      detected.add(LLMCapability.fileManagement);
+    if (provider is StreamingTextToSpeechCapability) {
+      detected.add(LLMCapability.streamingTextToSpeech);
     }
-    if (provider is ModerationCapability) {
-      detected.add(LLMCapability.moderation);
+    if (provider is SpeechToTextCapability) {
+      detected.add(LLMCapability.speechToText);
     }
-    if (provider is AssistantCapability) {
-      detected.add(LLMCapability.assistants);
+    if (provider is AudioTranslationCapability) {
+      detected.add(LLMCapability.audioTranslation);
     }
-    if (provider is ModelListingCapability) {
-      detected.add(LLMCapability.modelListing);
+    if (provider is RealtimeAudioCapability) {
+      detected.add(LLMCapability.realtimeAudio);
     }
     return detected;
   }

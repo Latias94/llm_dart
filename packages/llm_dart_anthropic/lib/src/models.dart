@@ -1,5 +1,4 @@
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
-import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/cancellation.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 
@@ -7,7 +6,7 @@ import 'package:llm_dart_core/models/chat_models.dart';
 ///
 /// This module handles model listing functionality for Anthropic providers.
 /// Reference: https://docs.anthropic.com/en/api/models-list
-class AnthropicModels implements ModelListingCapability {
+class AnthropicModels {
   final AnthropicClient client;
   final AnthropicConfig config;
 
@@ -15,7 +14,6 @@ class AnthropicModels implements ModelListingCapability {
 
   String get modelsEndpoint => 'models';
 
-  @override
   Future<List<AIModel>> models({CancelToken? cancelToken}) async {
     return listModels(cancelToken: cancelToken);
   }

@@ -85,9 +85,6 @@ class GoogleLLMBuilder {
   Future<EmbeddingCapability> buildEmbedding() async =>
       _baseBuilder.buildEmbedding();
 
-  Future<ModelListingCapability> buildModelListing() async =>
-      _baseBuilder.buildModelListing();
-
   Future<ImageGenerationCapability> buildImageGeneration() async =>
       _baseBuilder.buildImageGeneration();
 

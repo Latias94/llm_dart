@@ -327,11 +327,51 @@ class LLMBuilder {
   }
 
   // ========== Capability Factory Methods ==========
-  Future<AudioCapability> buildAudio() async {
+  Future<TextToSpeechCapability> buildSpeech() async {
     final provider = await _buildAny();
-    if (provider is! AudioCapability) {
+    if (provider is! TextToSpeechCapability) {
       throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support audio capabilities.',
+        'Provider "$_providerId" does not support text-to-speech capabilities.',
+      );
+    }
+    return provider;
+  }
+
+  Future<StreamingTextToSpeechCapability> buildStreamingSpeech() async {
+    final provider = await _buildAny();
+    if (provider is! StreamingTextToSpeechCapability) {
+      throw UnsupportedCapabilityError(
+        'Provider "$_providerId" does not support streaming text-to-speech capabilities.',
+      );
+    }
+    return provider;
+  }
+
+  Future<SpeechToTextCapability> buildTranscription() async {
+    final provider = await _buildAny();
+    if (provider is! SpeechToTextCapability) {
+      throw UnsupportedCapabilityError(
+        'Provider "$_providerId" does not support speech-to-text capabilities.',
+      );
+    }
+    return provider;
+  }
+
+  Future<AudioTranslationCapability> buildAudioTranslation() async {
+    final provider = await _buildAny();
+    if (provider is! AudioTranslationCapability) {
+      throw UnsupportedCapabilityError(
+        'Provider "$_providerId" does not support audio translation capabilities.',
+      );
+    }
+    return provider;
+  }
+
+  Future<RealtimeAudioCapability> buildRealtimeAudio() async {
+    final provider = await _buildAny();
+    if (provider is! RealtimeAudioCapability) {
+      throw UnsupportedCapabilityError(
+        'Provider "$_providerId" does not support realtime audio capabilities.',
       );
     }
     return provider;
@@ -357,41 +397,11 @@ class LLMBuilder {
     return provider;
   }
 
-  Future<FileManagementCapability> buildFileManagement() async {
+  Future<RerankCapability> buildRerank() async {
     final provider = await _buildAny();
-    if (provider is! FileManagementCapability) {
+    if (provider is! RerankCapability) {
       throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support file management capabilities.',
-      );
-    }
-    return provider;
-  }
-
-  Future<ModerationCapability> buildModeration() async {
-    final provider = await _buildAny();
-    if (provider is! ModerationCapability) {
-      throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support moderation capabilities.',
-      );
-    }
-    return provider;
-  }
-
-  Future<AssistantCapability> buildAssistant() async {
-    final provider = await _buildAny();
-    if (provider is! AssistantCapability) {
-      throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support assistant capabilities.',
-      );
-    }
-    return provider;
-  }
-
-  Future<ModelListingCapability> buildModelListing() async {
-    final provider = await _buildAny();
-    if (provider is! ModelListingCapability) {
-      throw UnsupportedCapabilityError(
-        'Provider "$_providerId" does not support model listing capabilities.',
+        'Provider "$_providerId" does not support rerank capabilities.',
       );
     }
     return provider;

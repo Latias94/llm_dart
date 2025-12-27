@@ -16,12 +16,15 @@ import 'tts.dart';
 ///
 /// This provider implements the ChatCapability, EmbeddingCapability, ImageGenerationCapability,
 /// and GoogleTTSCapability interfaces and delegates to specialized capability modules for different functionalities.
-class GoogleProvider extends BaseAudioCapability
+class GoogleProvider
     implements
         ChatCapability,
         ChatStreamPartsCapability,
         EmbeddingCapability,
         ImageGenerationCapability,
+        TextToSpeechCapability,
+        StreamingTextToSpeechCapability,
+        VoiceListingCapability,
         GoogleTTSCapability,
         ProviderCapabilities {
   final GoogleClient _client;
@@ -159,13 +162,7 @@ class GoogleProvider extends BaseAudioCapability
     );
   }
 
-  // ========== AudioCapability (provider-agnostic) ==========
-
-  @override
-  Set<AudioFeature> get supportedFeatures => const {
-        AudioFeature.textToSpeech,
-        AudioFeature.streamingTTS,
-      };
+  // ========== Task-specific audio capabilities ==========
 
   @override
   Future<TTSResponse> textToSpeech(
@@ -245,37 +242,10 @@ class GoogleProvider extends BaseAudioCapability
         .toList(growable: false);
   }
 
-  @override
   List<String> getSupportedAudioFormats() {
     // Gemini audio output is returned as inlineData with a mimeType.
     // We expose a conservative default here.
     return const ['pcm'];
-  }
-
-  @override
-  Future<STTResponse> speechToText(
-    STTRequest request, {
-    CancelToken? cancelToken,
-  }) {
-    throw UnsupportedError('Speech-to-text not supported by this provider');
-  }
-
-  @override
-  Future<STTResponse> translateAudio(
-    AudioTranslationRequest request, {
-    CancelToken? cancelToken,
-  }) {
-    throw UnsupportedError('Audio translation not supported by this provider');
-  }
-
-  @override
-  Future<List<LanguageInfo>> getSupportedLanguages() {
-    throw UnsupportedError('Language listing not supported by this provider');
-  }
-
-  @override
-  Future<RealtimeAudioSession> startRealtimeSession(RealtimeAudioConfig config) {
-    throw UnsupportedError('Real-time audio not supported by this provider');
   }
 
   // ========== GoogleTTSCapability ==========

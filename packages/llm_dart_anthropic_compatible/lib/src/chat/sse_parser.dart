@@ -468,55 +468,52 @@ class _AnthropicChatSseParser {
           break;
         }
 
-        if (index != null) {
-          final state = _activeToolCalls[index];
+        final state = _activeToolCalls[index];
 
+        client.logger.info(
+          'Looking up state for index $index: found=${state != null}, isComplete=${state?.isComplete}',
+        );
+
+        if (state != null && state.isComplete) {
+          final accumulatedInput = state.inputBuffer.toString();
           client.logger.info(
-            'Looking up state for index $index: found=${state != null}, isComplete=${state?.isComplete}',
+            'Tool use completed: ${state.name} (ID: ${state.id}, ${accumulatedInput.length} chars)',
           );
 
-          if (state != null && state.isComplete) {
-            final accumulatedInput = state.inputBuffer.toString();
-            client.logger.info(
-              'Tool use completed: ${state.name} (ID: ${state.id}, ${accumulatedInput.length} chars)',
-            );
-
-            // Preserve the tool_use block for assistant message continuity.
-            dynamic input;
-            try {
-              input = accumulatedInput.isEmpty
-                  ? <String, dynamic>{}
-                  : jsonDecode(accumulatedInput);
-            } catch (_) {
-              input = <String, dynamic>{};
-            }
-
-            _contentBlocks.add({
-              'type': 'tool_use',
-              'id': state.id,
-              'name': state.name,
-              'input': input,
-            });
-
-            final toolCall = _buildToolCall(
-              state,
-              toolNameMapping,
-              arguments: jsonEncode(input),
-            );
-            if (toolCall != null) {
-              client.logger
-                  .info('✅ Emitting ToolCallDeltaEvent for ${state.name}');
-              events.add(ToolCallDeltaEvent(toolCall));
-            }
-
-            _activeToolCalls.remove(index);
-          } else if (state != null) {
-            client.logger.warning(
-              'Tool use state incomplete for block $index: id=${state.id}, name=${state.name}',
-            );
-          } else {
-            client.logger.warning('No tool use state found for block $index');
+          // Preserve the tool_use block for assistant message continuity.
+          dynamic input;
+          try {
+            input = accumulatedInput.isEmpty
+                ? <String, dynamic>{}
+                : jsonDecode(accumulatedInput);
+          } catch (_) {
+            input = <String, dynamic>{};
           }
+
+          _contentBlocks.add({
+            'type': 'tool_use',
+            'id': state.id,
+            'name': state.name,
+            'input': input,
+          });
+
+          final toolCall = _buildToolCall(
+            state,
+            toolNameMapping,
+            arguments: jsonEncode(input),
+          );
+          if (toolCall != null) {
+            client.logger.info('✅ Emitting ToolCallDeltaEvent for ${state.name}');
+            events.add(ToolCallDeltaEvent(toolCall));
+          }
+
+          _activeToolCalls.remove(index);
+        } else if (state != null) {
+          client.logger.warning(
+            'Tool use state incomplete for block $index: id=${state.id}, name=${state.name}',
+          );
+        } else {
+          client.logger.warning('No tool use state found for block $index');
         }
 
         final pending = _pendingBlocks.remove(index);

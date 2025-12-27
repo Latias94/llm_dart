@@ -268,7 +268,7 @@ class AnthropicChatResponse implements ChatResponseWithAssistantMessage {
       role: ChatRole.assistant,
       messageType: const TextMessage(),
       content: '',
-      extensions: {
+      protocolPayloads: {
         'anthropic': {
           'contentBlocks': blocks,
         },

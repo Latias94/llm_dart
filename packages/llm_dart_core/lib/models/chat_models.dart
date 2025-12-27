@@ -346,14 +346,17 @@ class ChatMessage {
   /// provider-native content blocks or metadata through the legacy message
   /// model.
   ///
-  /// Prefer these public surfaces instead:
-  /// - `Prompt` IR (`llm_dart_ai`) for prompt composition (parts/messages).
-  /// - `providerOptions` for provider-only knobs (escape hatch).
+  /// App code should prefer:
+  /// - `Prompt` IR (`llm_dart_ai`) for prompt composition (parts/messages)
+  /// - `providerOptions` for provider-only knobs (escape hatch)
+  final Map<String, dynamic> protocolPayloads;
+
+  /// Legacy protocol payload alias (deprecated).
   @Deprecated(
     'ChatMessage.extensions is reserved for internal protocol adapters. '
-    'Prefer Prompt IR (llm_dart_ai) and ChatMessage.providerOptions.',
+    'Use ChatMessage.protocolPayloads / getProtocolPayload() instead.',
   )
-  final Map<String, dynamic> extensions;
+  Map<String, dynamic> get extensions => protocolPayloads;
 
   /// Provider-specific options for this message (namespaced).
   ///
@@ -361,27 +364,50 @@ class ChatMessage {
   /// layer, similar to Vercel AI SDK's `providerOptions`.
   final ProviderOptions providerOptions;
 
-  const ChatMessage({
+  ChatMessage({
     required this.role,
     required this.messageType,
     required this.content,
     this.name,
-    this.extensions = const {},
+    @Deprecated(
+      'ChatMessage.extensions is reserved for internal protocol adapters. '
+      'Use ChatMessage.protocolPayloads / getProtocolPayload() instead.',
+    )
+    Map<String, dynamic> extensions = const {},
+    Map<String, dynamic> protocolPayloads = const {},
     this.providerOptions = const {},
-  });
+  }) : protocolPayloads =
+            protocolPayloads.isNotEmpty ? protocolPayloads : extensions;
+
+  /// Protocol payload getter (internal).
+  T? getProtocolPayload<T>(String providerId) =>
+      protocolPayloads[providerId] as T?;
+
+  /// Returns a copy with protocol payload set (internal).
+  ChatMessage withProtocolPayload(String providerId, dynamic value) {
+    final updated = <String, dynamic>{...protocolPayloads, providerId: value};
+    return ChatMessage(
+      role: role,
+      messageType: messageType,
+      content: content,
+      name: name,
+      protocolPayloads: updated,
+      providerOptions: providerOptions,
+    );
+  }
 
   // Extension helpers (internal/legacy).
   @Deprecated(
     'ChatMessage.extensions is reserved for internal protocol adapters. '
     'Prefer Prompt IR (llm_dart_ai) and ChatMessage.providerOptions.',
   )
-  T? getExtension<T>(String key) => extensions[key] as T?;
+  T? getExtension<T>(String key) => protocolPayloads[key] as T?;
 
   @Deprecated(
     'ChatMessage.extensions is reserved for internal protocol adapters. '
     'Prefer Prompt IR (llm_dart_ai) and ChatMessage.providerOptions.',
   )
-  bool hasExtension(String key) => extensions.containsKey(key);
+  bool hasExtension(String key) => protocolPayloads.containsKey(key);
 
   @Deprecated(
     'ChatMessage.extensions is reserved for internal protocol adapters. '
@@ -392,7 +418,7 @@ class ChatMessage {
         messageType: messageType,
         content: content,
         name: name,
-        extensions: {...extensions, key: value},
+        protocolPayloads: {...protocolPayloads, key: value},
         providerOptions: providerOptions,
       );
 
@@ -410,9 +436,7 @@ class ChatMessage {
       messageType: messageType,
       content: content,
       name: name,
-      // Protocol-internal: preserve legacy extensions when copying.
-      // ignore: deprecated_member_use_from_same_package
-      extensions: extensions,
+      protocolPayloads: protocolPayloads,
       providerOptions: updated,
     );
   }

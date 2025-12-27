@@ -11,7 +11,6 @@ import 'package:llm_dart_openai/llm_dart_openai.dart';
 ///
 /// This example demonstrates how to cancel in-flight LLM requests:
 /// - Cancelling streaming chat responses
-/// - Cancelling list models requests
 /// - Handling cancellation errors gracefully
 /// - Using CancelToken for request control
 /// - Detecting and responding to cancellation
@@ -45,10 +44,6 @@ void main() async {
 
     // Demonstrate different cancellation scenarios
     await demonstrateStreamCancellation(provider);
-    if (provider is ModelListingCapability) {
-      await demonstrateListModelsCancellation(
-          provider as ModelListingCapability);
-    }
     await demonstrateMultipleRequestCancellation(provider);
     await demonstrateCancellationHandling(provider);
     await demonstrateCancellationTiming(provider);
@@ -146,46 +141,6 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
       print('   ❌ Stream cancellation test failed: $e\n');
     }
   }
-}
-
-/// Demonstrate cancelling a list models request
-Future<void> demonstrateListModelsCancellation(
-    ModelListingCapability provider) async {
-  print('📋 List Models Cancellation:\n');
-
-  try {
-    // Create a cancel token
-    final cancelToken = CancelToken();
-
-    print('   Requesting model list...');
-
-    // Start the request and cancel immediately
-    final requestFuture = provider.models(cancelToken: cancelToken);
-
-    // Cancel almost immediately (but give it a moment to start)
-    await Future.delayed(Duration(milliseconds: 10));
-    print('   🛑 Cancelling request...');
-    cancelToken.cancel('User cancelled model listing');
-
-    // Try to await the result
-    final models = await requestFuture;
-
-    // If we get here, the request completed before cancellation
-    print(
-        '   ⚠️  Request completed before cancellation: ${models.length} models');
-  } on CancelledError catch (e) {
-    print('   ✅ Caught CancelledError: ${e.message}');
-    print('   📝 List models request successfully cancelled');
-  } catch (e) {
-    if (CancellationHelper.isCancelled(e)) {
-      print(
-          '   ✅ Request cancelled: ${CancellationHelper.getCancellationReason(e)}');
-    } else {
-      print('   ❌ Unexpected error: $e');
-    }
-  }
-
-  print('   ✅ List models cancellation test completed\n');
 }
 
 /// Demonstrate cancelling multiple requests with one token

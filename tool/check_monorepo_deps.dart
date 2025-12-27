@@ -58,7 +58,7 @@ void main(List<String> args) {
     stderr.writeln(
       '- `llm_dart_core`: no workspace deps\n'
       '- `llm_dart_provider_utils`: only `llm_dart_core`\n'
-      '- `llm_dart_ai`: only `llm_dart_core`, `llm_dart_provider_utils`\n'
+      '- `llm_dart_ai`: only `llm_dart_core`\n'
       '- `llm_dart_builder`: only `llm_dart_core`\n'
       '- `*_compatible` protocol packages: only `llm_dart_core`, `llm_dart_provider_utils`\n'
       '- Provider packages: only `llm_dart_core`, `llm_dart_provider_utils`, and protocol packages\n'
@@ -148,7 +148,7 @@ Set<String>? _allowedInternalDepsFor({
   }
 
   if (packageName == 'llm_dart_ai') {
-    return const {'llm_dart_core', 'llm_dart_provider_utils'};
+    return const {'llm_dart_core'};
   }
 
   if (packageName == 'llm_dart_builder') {
@@ -170,4 +170,3 @@ String _relPath(String path) {
   }
   return path;
 }
-

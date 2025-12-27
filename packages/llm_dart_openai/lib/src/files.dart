@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
-import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/llm_error.dart';
 import 'package:llm_dart_core/models/file_models.dart';
 import 'client.dart';
@@ -12,13 +11,12 @@ import 'config.dart';
 ///
 /// This module handles file upload, listing, retrieval, and deletion
 /// for OpenAI providers.
-class OpenAIFiles implements FileManagementCapability {
+class OpenAIFiles {
   final OpenAIClient client;
   final OpenAIConfig config;
 
   OpenAIFiles(this.client, this.config);
 
-  @override
   Future<FileObject> uploadFile(FileUploadRequest request) async {
     final formData = FormData();
 
@@ -40,7 +38,6 @@ class OpenAIFiles implements FileManagementCapability {
     return FileObject.fromOpenAI(responseData);
   }
 
-  @override
   Future<FileListResponse> listFiles([FileListQuery? query]) async {
     String endpoint = 'files';
 
@@ -58,19 +55,16 @@ class OpenAIFiles implements FileManagementCapability {
     return FileListResponse.fromOpenAI(responseData);
   }
 
-  @override
   Future<FileObject> retrieveFile(String fileId) async {
     final responseData = await client.get('files/$fileId');
     return FileObject.fromOpenAI(responseData);
   }
 
-  @override
   Future<FileDeleteResponse> deleteFile(String fileId) async {
     final responseData = await client.delete('files/$fileId');
     return FileDeleteResponse.fromOpenAI(responseData);
   }
 
-  @override
   Future<List<int>> getFileContent(String fileId) async {
     return await client.getRaw('files/$fileId/content');
   }

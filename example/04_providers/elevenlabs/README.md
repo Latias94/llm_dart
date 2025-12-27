@@ -38,7 +38,7 @@ import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
 
 registerElevenLabs();
 
-final audioProvider = await LLMBuilder()
+final ttsProvider = await LLMBuilder()
     .provider(elevenLabsProviderId)
     .apiKey('your-key')
     .providerOptions('elevenlabs', {
@@ -46,9 +46,9 @@ final audioProvider = await LLMBuilder()
       'stability': 0.7,
       'similarityBoost': 0.9,
     })
-    .buildAudio();
+    .buildSpeech();
 
-final audioData = await audioProvider.textToSpeech(TTSRequest(
+final audioData = await ttsProvider.textToSpeech(TTSRequest(
   text: 'Welcome to ElevenLabs professional voice synthesis',
   voice: 'JBFqnCBsd6RMkjVDRZzb',
   model: 'eleven_multilingual_v2',

@@ -34,22 +34,22 @@ class _FakeToolModel extends ChatCapability {
           role: ChatRole.assistant,
           messageType: const TextMessage(),
           content: '',
-          extensions: const {
-            'anthropic': {
-              'contentBlocks': [
-                {
-                  'type': 'thinking',
-                  'thinking': 'I should call the weather tool.',
-                  'signature': 'sig_1',
-                },
-                {
-                  'type': 'tool_use',
-                  'id': 'toolu_1',
-                  'name': 'get_weather',
-                  'input': {'location': 'SF'},
-                },
-              ],
-            },
+        ).withProtocolPayload(
+          'anthropic',
+          {
+            'contentBlocks': [
+              {
+                'type': 'thinking',
+                'thinking': 'I should call the weather tool.',
+                'signature': 'sig_1',
+              },
+              {
+                'type': 'tool_use',
+                'id': 'toolu_1',
+                'name': 'get_weather',
+                'input': {'location': 'SF'},
+              },
+            ],
           },
         ),
       );
@@ -136,10 +136,8 @@ void main() {
         (m) => m.role == ChatRole.assistant,
         orElse: () => throw StateError('no assistant message persisted'),
       );
-      // ignore: deprecated_member_use
-      expect(persistedAssistant.extensions, contains('anthropic'));
-      // ignore: deprecated_member_use
-      final anthropic = persistedAssistant.getExtension('anthropic');
+      expect(persistedAssistant.protocolPayloads, contains('anthropic'));
+      final anthropic = persistedAssistant.getProtocolPayload('anthropic');
       expect(anthropic, isA<Map>());
       expect((anthropic as Map)['contentBlocks'], isA<List>());
 

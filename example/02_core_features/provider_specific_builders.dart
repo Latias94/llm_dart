@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
 import 'package:llm_dart_ollama/llm_dart_ollama.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
@@ -206,7 +207,7 @@ Future<void> demoElevenLabsBuilder(String? apiKey) async {
 
   try {
     // ElevenLabs with voice customization (providerOptions).
-    final audioProvider = await LLMBuilder()
+    final ttsProvider = await LLMBuilder()
         .provider(elevenLabsProviderId)
         .apiKey(apiKey)
         .providerOptions(elevenLabsProviderId, const {
@@ -215,11 +216,16 @@ Future<void> demoElevenLabsBuilder(String? apiKey) async {
       'similarityBoost': 0.8,
       'style': 0.2,
       'useSpeakerBoost': true,
-    }).buildAudio();
+    }).buildSpeech();
 
-    // Generate speech
-    final audioData = await audioProvider.speech(
-        'Welcome to the new provider-specific builder pattern in LLM Dart!');
+    // Generate speech (TTS)
+    final response = await ttsProvider.textToSpeech(
+      const TTSRequest(
+        text: 'Welcome to the new provider-specific builder pattern in LLM Dart!',
+        format: 'mp3',
+      ),
+    );
+    final audioData = response.audioData;
 
     print('   🔊 Generated audio: ${audioData.length} bytes');
     print('   💾 Audio saved to: elevenlabs_builder_demo.mp3\n');

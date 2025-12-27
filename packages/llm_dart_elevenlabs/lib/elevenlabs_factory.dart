@@ -23,7 +23,7 @@ void registerElevenLabs({bool replace = false}) {
   LLMProviderRegistry.register(factory);
 }
 
-class ElevenLabsProviderFactory extends BaseProviderFactory<AudioCapability> {
+class ElevenLabsProviderFactory extends BaseProviderFactory<ElevenLabsProvider> {
   @override
   String get providerId => elevenLabsProviderId;
 
@@ -42,7 +42,7 @@ class ElevenLabsProviderFactory extends BaseProviderFactory<AudioCapability> {
       };
 
   @override
-  AudioCapability create(LLMConfig config) {
+  ElevenLabsProvider create(LLMConfig config) {
     return createProviderSafely<ElevenLabsConfig>(
       config,
       () => _transformConfig(config),

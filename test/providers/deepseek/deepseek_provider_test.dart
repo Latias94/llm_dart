@@ -90,8 +90,8 @@ void main() {
         expect(provider, isA<ChatCapability>());
       });
 
-      test('should implement ModelListingCapability', () {
-        expect(provider, isA<ModelListingCapability>());
+      test('should expose provider-specific APIs', () {
+        expect(provider.modelsApi, isNotNull);
       });
 
       test('should implement ProviderCapabilities', () {
@@ -99,7 +99,6 @@ void main() {
       });
 
       test('should not implement unsupported capabilities', () {
-        expect(provider, isNot(isA<FileManagementCapability>()));
         expect(provider, isNot(isA<EmbeddingCapability>()));
         expect(provider, isNot(isA<ImageGenerationCapability>()));
       });

@@ -1,4 +1,3 @@
-import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/models/moderation_models.dart';
 import 'client.dart';
 import 'config.dart';
@@ -6,13 +5,12 @@ import 'config.dart';
 /// OpenAI Content Moderation capability implementation
 ///
 /// This module handles content moderation functionality for OpenAI providers.
-class OpenAIModeration implements ModerationCapability {
+class OpenAIModeration {
   final OpenAIClient client;
   final OpenAIConfig config;
 
   OpenAIModeration(this.client, this.config);
 
-  @override
   Future<ModerationResponse> moderate(ModerationRequest request) async {
     final requestBody = <String, dynamic>{
       'input': request.input,

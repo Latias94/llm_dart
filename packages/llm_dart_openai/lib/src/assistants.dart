@@ -1,4 +1,3 @@
-import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/models/assistant_models.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
 import 'client.dart';
@@ -8,20 +7,18 @@ import 'config.dart';
 ///
 /// This module handles assistant creation, management, and interaction
 /// for OpenAI providers.
-class OpenAIAssistants implements AssistantCapability {
+class OpenAIAssistants {
   final OpenAIClient client;
   final OpenAIConfig config;
 
   OpenAIAssistants(this.client, this.config);
 
-  @override
   Future<Assistant> createAssistant(CreateAssistantRequest request) async {
     final requestBody = request.toJson();
     final responseData = await client.postJson('assistants', requestBody);
     return Assistant.fromJson(responseData);
   }
 
-  @override
   Future<ListAssistantsResponse> listAssistants(
       [ListAssistantsQuery? query]) async {
     String endpoint = 'assistants';
@@ -45,13 +42,11 @@ class OpenAIAssistants implements AssistantCapability {
     return ListAssistantsResponse.fromJson(responseData);
   }
 
-  @override
   Future<Assistant> retrieveAssistant(String assistantId) async {
     final responseData = await client.get('assistants/$assistantId');
     return Assistant.fromJson(responseData);
   }
 
-  @override
   Future<Assistant> modifyAssistant(
     String assistantId,
     ModifyAssistantRequest request,
@@ -62,7 +57,6 @@ class OpenAIAssistants implements AssistantCapability {
     return Assistant.fromJson(responseData);
   }
 
-  @override
   Future<DeleteAssistantResponse> deleteAssistant(String assistantId) async {
     final responseData = await client.delete('assistants/$assistantId');
     return DeleteAssistantResponse.fromJson(responseData);

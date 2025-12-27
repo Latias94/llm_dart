@@ -129,10 +129,9 @@ void main() {
 
       final assistant =
           (response as ChatResponseWithAssistantMessage).assistantMessage;
-      // Protocol-internal: content blocks are preserved via ChatMessage.extensions.
-      // ignore: deprecated_member_use
-      final anthropic =
-          assistant.getExtension<Map<String, dynamic>>('anthropic');
+      final anthropic = assistant.getProtocolPayload<Map<String, dynamic>>(
+        'anthropic',
+      );
       final blocks = (anthropic?['contentBlocks'] as List?)?.cast<dynamic>();
       expect(blocks, isNotNull);
       expect(blocks!, hasLength(1));
@@ -200,9 +199,9 @@ void main() {
 
       final assistant =
           (response as ChatResponseWithAssistantMessage).assistantMessage;
-      // ignore: deprecated_member_use
-      final anthropic =
-          assistant.getExtension<Map<String, dynamic>>('anthropic');
+      final anthropic = assistant.getProtocolPayload<Map<String, dynamic>>(
+        'anthropic',
+      );
       final blocks = (anthropic?['contentBlocks'] as List?)?.cast<dynamic>();
       expect(blocks, isNotNull);
       expect(blocks!, hasLength(2));
@@ -268,9 +267,9 @@ void main() {
 
       final assistant =
           (response as ChatResponseWithAssistantMessage).assistantMessage;
-      // ignore: deprecated_member_use
-      final anthropic =
-          assistant.getExtension<Map<String, dynamic>>('anthropic');
+      final anthropic = assistant.getProtocolPayload<Map<String, dynamic>>(
+        'anthropic',
+      );
       final blocks = (anthropic?['contentBlocks'] as List?)?.cast<dynamic>();
       expect(blocks, isNotNull);
       expect(blocks!, hasLength(2));

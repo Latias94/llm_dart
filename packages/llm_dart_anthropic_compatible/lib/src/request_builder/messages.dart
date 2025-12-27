@@ -32,10 +32,9 @@ extension _AnthropicRequestBuilderMessages on AnthropicRequestBuilder {
   ) {
     final content = <Map<String, dynamic>>[];
 
-    // Protocol-internal: preserve legacy `ChatMessage.extensions` content blocks.
-    final anthropicData =
-        // ignore: deprecated_member_use
-        message.getExtension<Map<String, dynamic>>('anthropic');
+    final anthropicData = message.getProtocolPayload<Map<String, dynamic>>(
+      'anthropic',
+    );
 
     final cacheControlFromMessageOptions =
         _cacheControlFromProviderOptions(message.providerOptions);

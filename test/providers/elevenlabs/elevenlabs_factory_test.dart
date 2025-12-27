@@ -54,7 +54,7 @@ void main() {
         final provider = factory.create(config);
 
         expect(provider, isA<ElevenLabsProvider>());
-        expect(provider, isA<AudioCapability>());
+        expect(provider, isA<TextToSpeechCapability>());
       });
 
       test('should create provider with voice settings', () {
@@ -76,7 +76,7 @@ void main() {
         final provider = factory.create(config);
 
         expect(provider, isA<ElevenLabsProvider>());
-        expect(provider, isA<AudioCapability>());
+        expect(provider, isA<TextToSpeechCapability>());
       });
 
       test('should create provider with all supported parameters', () {
@@ -99,7 +99,7 @@ void main() {
         final provider = factory.create(config);
 
         expect(provider, isA<ElevenLabsProvider>());
-        expect(provider, isA<AudioCapability>());
+        expect(provider, isA<TextToSpeechCapability>());
       });
 
       test('should handle missing API key gracefully', () {
@@ -196,11 +196,11 @@ void main() {
 
     group('Provider Interface Compliance', () {
       test('should implement BaseProviderFactory', () {
-        expect(factory, isA<BaseProviderFactory<AudioCapability>>());
+        expect(factory, isA<BaseProviderFactory>());
       });
 
       test('should implement LLMProviderFactory', () {
-        expect(factory, isA<LLMProviderFactory<AudioCapability>>());
+        expect(factory, isA<LLMProviderFactory>());
       });
 
       test('should create providers that implement required interfaces', () {
@@ -212,7 +212,7 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<AudioCapability>());
+        expect(provider, isA<TextToSpeechCapability>());
         expect(provider, isNot(isA<ChatCapability>()));
       });
     });

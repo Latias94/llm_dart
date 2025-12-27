@@ -239,7 +239,7 @@ Future<void> demonstrateRiverpodPattern(AIService aiService) async {
 class AIService {
   ChatCapability? _chatProvider;
   ImageGenerationCapability? _imageProvider;
-  AudioCapability? _audioProvider;
+  TextToSpeechCapability? _speechProvider;
 
   bool _isInitialized = false;
 
@@ -273,12 +273,12 @@ class AIService {
 
       // Initialize audio provider (if available)
       try {
-        _audioProvider = await LLMBuilder()
+        _speechProvider = await LLMBuilder()
             .provider(openaiProviderId)
             .apiKey(apiKey)
-            .buildAudio();
+            .buildSpeech();
       } catch (_) {
-        _audioProvider = null;
+        _speechProvider = null;
       }
 
       _isInitialized = true;
@@ -300,8 +300,8 @@ class AIService {
   /// Get image provider
   ImageGenerationCapability? get imageProvider => _imageProvider;
 
-  /// Get audio provider
-  AudioCapability? get audioProvider => _audioProvider;
+  /// Get speech provider (TTS)
+  TextToSpeechCapability? get speechProvider => _speechProvider;
 
   /// Check if service is ready
   bool get isReady => _isInitialized;
@@ -416,9 +416,9 @@ class VoiceAssistantController {
 
   /// Initialize voice assistant
   Future<void> initialize() async {
-    final audioProvider = _aiService.audioProvider;
-    if (audioProvider == null) {
-      throw VoiceException('Audio capabilities not available');
+    final speechProvider = _aiService.speechProvider;
+    if (speechProvider == null) {
+      throw VoiceException('Text-to-speech capability not available');
     }
   }
 

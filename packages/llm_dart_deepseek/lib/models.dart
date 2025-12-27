@@ -1,4 +1,3 @@
-import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/cancellation.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
@@ -9,7 +8,7 @@ import 'config.dart';
 ///
 /// This module handles model listing functionality for DeepSeek providers.
 /// Reference: https://api-docs.deepseek.com/api/list-models
-class DeepSeekModels implements ModelListingCapability {
+class DeepSeekModels {
   final OpenAIClient client;
   final DeepSeekConfig config;
 
@@ -17,7 +16,6 @@ class DeepSeekModels implements ModelListingCapability {
 
   String get modelsEndpoint => 'models';
 
-  @override
   Future<List<AIModel>> models({CancelToken? cancelToken}) async {
     final responseData = await client.getJson(
       modelsEndpoint,
