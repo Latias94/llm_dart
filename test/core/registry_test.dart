@@ -18,6 +18,9 @@ class MockChatResponse implements ChatResponse {
 
   @override
   UsageInfo? get usage => null;
+
+  @override
+  Map<String, dynamic>? get providerMetadata => null;
 }
 
 // Mock provider for testing

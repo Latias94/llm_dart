@@ -55,41 +55,17 @@ void main() {
     });
 
     group('Model Support Detection', () {
-      test('should detect vision support for vision models', () {
-        const config = AnthropicConfig(
-          apiKey: 'test-key',
-          model: 'claude-3-5-sonnet-20241022',
-        );
-
-        expect(config.supportsVision, isTrue);
-      });
-
-      test('should detect reasoning support for known reasoning models', () {
-        const config = AnthropicConfig(
-          apiKey: 'test-key',
-          model: 'claude-sonnet-4-20250514',
-        );
-
-        expect(config.supportsReasoning, isTrue);
-      });
-
-      test('should detect interleaved thinking support for Claude 4', () {
-        const config = AnthropicConfig(
-          apiKey: 'test-key',
-          model: 'claude-sonnet-4-20250514',
-        );
-
-        expect(config.supportsInterleavedThinking, isTrue);
-      });
-
-      test('should not support reasoning for unknown models by default', () {
+      test('does not maintain per-model capability matrices', () {
         const config = AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-haiku-20240307',
         );
 
-        expect(config.supportsReasoning, isFalse);
-        expect(config.supportsInterleavedThinking, isFalse);
+        expect(config.supportsVision, isTrue);
+        expect(config.supportsToolCalling, isTrue);
+        expect(config.supportsReasoning, isTrue);
+        expect(config.supportsInterleavedThinking, isTrue);
+        expect(config.supportsPDF, isTrue);
       });
     });
 
@@ -105,54 +81,15 @@ void main() {
         expect(config.validateThinkingConfig(), isNull);
       });
 
-      test('should allow reasoning for any model when explicitly enabled', () {
+      test('does not enforce thinking budget constraints', () {
         const config = AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-haiku-20240307',
           reasoning: true,
+          thinkingBudgetTokens: 500, // would have been rejected previously
         );
 
-        // Validation is now permissive - trusts user configuration
-        final error = config.validateThinkingConfig();
-        expect(error, isNull);
-      });
-
-      test('should allow interleaved thinking when explicitly enabled', () {
-        const config = AnthropicConfig(
-          apiKey: 'test-key',
-          model: 'claude-3-5-sonnet-20241022',
-          interleavedThinking: true,
-        );
-
-        // Validation is now permissive - trusts user configuration
-        final error = config.validateThinkingConfig();
-        expect(error, isNull);
-      });
-
-      test('should reject excessive thinking budget', () {
-        const config = AnthropicConfig(
-          apiKey: 'test-key',
-          model: 'claude-sonnet-4-20250514',
-          reasoning: true,
-          thinkingBudgetTokens: 50000, // Too high
-        );
-
-        final error = config.validateThinkingConfig();
-        expect(error, isNotNull);
-        expect(error, contains('exceeds maximum'));
-      });
-
-      test('should reject too small thinking budget', () {
-        const config = AnthropicConfig(
-          apiKey: 'test-key',
-          model: 'claude-sonnet-4-20250514',
-          reasoning: true,
-          thinkingBudgetTokens: 500, // Too small
-        );
-
-        final error = config.validateThinkingConfig();
-        expect(error, isNotNull);
-        expect(error, contains('must be at least 1024'));
+        expect(config.validateThinkingConfig(), isNull);
       });
     });
 
@@ -199,10 +136,12 @@ void main() {
           baseUrl: 'https://api.anthropic.com',
           model: 'claude-sonnet-4-20250514',
           temperature: 0.7,
-          extensions: {
-            'reasoning': true,
-            'thinkingBudgetTokens': 3000,
-            'interleavedThinking': false,
+          providerOptions: const {
+            'anthropic': {
+              'reasoning': true,
+              'thinkingBudgetTokens': 3000,
+              'interleavedThinking': false,
+            },
           },
         );
 
@@ -216,18 +155,63 @@ void main() {
         expect(anthropicConfig.interleavedThinking, isFalse);
       });
 
-      test('should access extensions from original config', () {
+      test('should read cacheControl from providerOptions', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.anthropic.com',
-          model: 'claude-3-5-sonnet-20241022',
-          extensions: {'customParam': 'customValue'},
+          model: 'claude-sonnet-4-20250514',
+          providerOptions: const {
+            'anthropic': {
+              'cacheControl': {'type': 'ephemeral', 'ttl': '1h'},
+            },
+          },
         );
 
         final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
 
-        expect(anthropicConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(
+          anthropicConfig.cacheControl,
+          equals({'type': 'ephemeral', 'ttl': '1h'}),
+        );
+      });
+
+      test('should read extraBody/extraHeaders from providerOptions', () {
+        final llmConfig = LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.anthropic.com',
+          model: 'claude-sonnet-4-20250514',
+          providerOptions: const {
+            'anthropic': {
+              'extraBody': {'foo': 'bar'},
+              'extraHeaders': {'x-test': '1'},
+            },
+          },
+        );
+
+        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+
+        expect(anthropicConfig.extraBody, equals({'foo': 'bar'}));
+        expect(anthropicConfig.extraHeaders, equals({'x-test': '1'}));
+      });
+
+      test('should preserve transportOptions via original config', () {
+        final llmConfig = LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.anthropic.com',
+          model: 'claude-3-5-sonnet-20241022',
+          transportOptions: const {
+            'customHeaders': {'X-Test': 'customValue'},
+          },
+        );
+
+        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+
+        expect(anthropicConfig.originalConfig, isNotNull);
+        expect(
+          anthropicConfig.originalConfig!
+              .getTransportOption<Map<String, String>>('customHeaders'),
+          equals({'X-Test': 'customValue'}),
+        );
       });
     });
 
@@ -242,13 +226,13 @@ void main() {
         expect(config.maxThinkingBudgetTokens, equals(32000));
       });
 
-      test('should return zero for non-reasoning models', () {
+      test('does not vary max thinking budget by model', () {
         const config = AnthropicConfig(
           apiKey: 'test-key',
           model: 'claude-3-haiku-20240307',
         );
 
-        expect(config.maxThinkingBudgetTokens, equals(0));
+        expect(config.maxThinkingBudgetTokens, equals(32000));
       });
     });
   });

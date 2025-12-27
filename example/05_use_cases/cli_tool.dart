@@ -1,6 +1,12 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 💻 CLI Tool Integration - Command-line AI Assistant
 ///
@@ -154,8 +160,9 @@ ENVIRONMENT VARIABLES:
     if (_verbose) {
       print('🔧 Initializing $_provider provider with model $_model...');
     }
-
-    final builder = ai();
+    registerOpenAI();
+    registerGroq();
+    registerAnthropic();
 
     switch (_provider.toLowerCase()) {
       case 'openai':
@@ -163,8 +170,8 @@ ENVIRONMENT VARIABLES:
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('OPENAI_API_KEY environment variable not set');
         }
-        return await builder
-            .openai()
+        return await LLMBuilder()
+            .provider(openaiProviderId)
             .apiKey(apiKey)
             .model(_model)
             .temperature(_temperature)
@@ -176,8 +183,8 @@ ENVIRONMENT VARIABLES:
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('GROQ_API_KEY environment variable not set');
         }
-        return await builder
-            .groq()
+        return await LLMBuilder()
+            .provider(groqProviderId)
             .apiKey(apiKey)
             .model(_model)
             .temperature(_temperature)
@@ -189,8 +196,8 @@ ENVIRONMENT VARIABLES:
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('ANTHROPIC_API_KEY environment variable not set');
         }
-        return await builder
-            .anthropic()
+        return await LLMBuilder()
+            .provider(anthropicProviderId)
             .apiKey(apiKey)
             .model(_model)
             .temperature(_temperature)
@@ -314,7 +321,7 @@ ENVIRONMENT VARIABLES:
     }
 
     final stopwatch = Stopwatch()..start();
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     stopwatch.stop();
 
     if (_verbose) {
@@ -344,25 +351,25 @@ ENVIRONMENT VARIABLES:
 
     final responseBuffer = StringBuffer();
 
-    await for (final event in provider.chatStream(messages)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamText(model: provider, messages: messages)) {
+      switch (part) {
+        case TextDeltaPart(delta: final delta):
           stdout.write(delta);
           responseBuffer.write(delta);
           break;
-        case CompletionEvent(response: final response):
+        case FinishPart(result: final result):
           print('\n');
-          if (_verbose && response.usage != null) {
-            final usage = response.usage!;
+          if (_verbose && result.usage != null) {
+            final usage = result.usage!;
             print('📊 Usage: ${usage.totalTokens} tokens');
           }
           break;
-        case ErrorEvent(error: final error):
+        case ErrorPart(error: final error):
           printError('\nStreaming error: $error');
           break;
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
-          // Handle other event types if needed
+        case ThinkingDeltaPart():
+        case ToolCallDeltaPart():
+          // Ignore for this demo.
           break;
       }
     }

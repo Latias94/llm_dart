@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/factories/xai_factory.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('XAIProviderFactory Tests', () {
@@ -64,8 +64,10 @@ void main() {
           apiKey: 'test-api-key',
           baseUrl: 'https://api.x.ai/v1/',
           model: 'grok-3',
-          extensions: {
-            'liveSearch': true,
+          providerOptions: const {
+            'xai': {
+              'liveSearch': true,
+            },
           },
         );
 
@@ -88,10 +90,12 @@ void main() {
           topK: 50,
           tools: [],
           toolChoice: const AutoToolChoice(),
-          extensions: {
-            'embeddingEncodingFormat': 'float',
-            'embeddingDimensions': 1536,
-            'liveSearch': true,
+          providerOptions: const {
+            'xai': {
+              'liveSearch': true,
+              'embeddingEncodingFormat': 'float',
+              'embeddingDimensions': 1536,
+            },
           },
         );
 
@@ -178,14 +182,16 @@ void main() {
         expect(factory.validateConfig(config), isFalse);
       });
 
-      test('should accept config with search extensions', () {
+      test('should accept config with search providerOptions', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
           baseUrl: 'https://api.x.ai/v1/',
           model: 'grok-3',
-          extensions: {
-            'liveSearch': true,
-            'webSearchEnabled': true,
+          providerOptions: const {
+            'xai': {
+              'liveSearch': true,
+              'webSearchEnabled': true,
+            },
           },
         );
 

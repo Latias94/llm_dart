@@ -1,6 +1,12 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Layered HTTP Configuration Example
 ///
@@ -17,6 +23,10 @@ import 'package:llm_dart/llm_dart.dart';
 /// export DEEPSEEK_API_KEY="your-deepseek-key"
 Future<void> main() async {
   print('🏗️  Layered HTTP Configuration Demo\n');
+
+  registerOpenAI();
+  registerAnthropic();
+  registerDeepSeek();
 
   // Get API keys from environment
   final apiKeys = {
@@ -64,8 +74,8 @@ Future<void> demonstrateBasicLayeredConfig(String openaiApiKey) async {
 
   try {
     // Clean, organized HTTP configuration
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
         .http((http) => http
@@ -74,12 +84,16 @@ Future<void> demonstrateBasicLayeredConfig(String openaiApiKey) async {
             .enableLogging(true))
         .build();
 
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This uses the new layered HTTP configuration.'),
-    ]);
+    final result = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user(
+            'Hello! This uses the new layered HTTP configuration.'),
+      ],
+    );
 
     print('   ✅ Layered HTTP configuration successful');
-    print('   📝 Response: ${response.text}\n');
+    print('   📝 Response: ${result.text}\n');
   } catch (e) {
     print('   ❌ Layered HTTP configuration failed: $e\n');
   }
@@ -91,8 +105,8 @@ Future<void> demonstrateAdvancedLayeredConfig(String anthropicApiKey) async {
 
   try {
     // Complex HTTP configuration with multiple settings
-    final provider = await ai()
-        .anthropic()
+    final provider = await LLMBuilder()
+        .provider(anthropicProviderId)
         .apiKey(anthropicApiKey)
         .model('claude-3-5-haiku-20241022')
         .http((http) => http
@@ -117,14 +131,18 @@ Future<void> demonstrateAdvancedLayeredConfig(String anthropicApiKey) async {
             )
         .build();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Hello! This uses advanced layered HTTP configuration with multiple settings.'),
-    ]);
+    final result = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user(
+          'Hello! This uses advanced layered HTTP configuration with multiple settings.',
+        ),
+      ],
+    );
 
     print('   ✅ Advanced layered configuration successful');
     print('   📝 All HTTP settings applied cleanly');
-    print('   📝 Response: ${response.text}\n');
+    print('   📝 Response: ${result.text}\n');
   } catch (e) {
     print('   ❌ Advanced layered configuration failed: $e\n');
   }
@@ -191,8 +209,8 @@ Future<void> demonstrateCustomDioClient(String anthropicApiKey) async {
     ));
 
     // Use custom Dio with the provider
-    final provider = await ai()
-        .anthropic()
+    final provider = await LLMBuilder()
+        .provider(anthropicProviderId)
         .apiKey(anthropicApiKey)
         .model('claude-3-5-haiku-20241022')
         .http((http) => http
@@ -205,13 +223,17 @@ Future<void> demonstrateCustomDioClient(String anthropicApiKey) async {
     print('   📝 Priority: Custom Dio > HTTP config > Provider defaults');
     print('   📝 Making request with custom Dio client...\n');
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Hello! This request uses a custom Dio client with advanced monitoring and retry logic.'),
-    ]);
+    final result = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user(
+          'Hello! This request uses a custom Dio client with advanced monitoring and retry logic.',
+        ),
+      ],
+    );
 
     print('   ✅ Custom Dio client demonstration successful');
-    print('   📝 Response: ${response.text}\n');
+    print('   📝 Response: ${result.text}\n');
 
     // Show the benefits
     print('   🎯 Benefits of Custom Dio Client:');
@@ -232,8 +254,8 @@ Future<void> demonstrateTimeoutPriorityInLayeredConfig(
 
   try {
     // Example: Global timeout with HTTP-specific overrides
-    final provider = await ai()
-        .deepseek()
+    final provider = await LLMBuilder()
+        .provider(deepseekProviderId)
         .apiKey(deepseekApiKey)
         .model('deepseek-chat')
         .timeout(Duration(minutes: 2)) // Global timeout: 2 minutes
@@ -246,14 +268,18 @@ Future<void> demonstrateTimeoutPriorityInLayeredConfig(
             .enableLogging(false))
         .build();
 
-    final response = await provider.chat([
-      ChatMessage.user('This demonstrates timeout priority in layered config!'),
-    ]);
+    final result = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user(
+            'This demonstrates timeout priority in layered config!'),
+      ],
+    );
 
     print('   ✅ Timeout priority demonstration successful');
     print('   📝 Final timeouts: connection=15s, receive=5min, send=2min');
     print('   📝 Priority: HTTP-specific > Global > Provider defaults');
-    print('   📝 Response: ${response.text}\n');
+    print('   📝 Response: ${result.text}\n');
   } catch (e) {
     print('   ❌ Timeout priority demonstration failed: $e\n');
   }

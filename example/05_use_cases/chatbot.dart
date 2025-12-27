@@ -1,6 +1,10 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
 
 /// 🤖 Complete Chatbot Implementation
 ///
@@ -17,8 +21,13 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('🤖 Complete Chatbot Implementation\n');
 
-  // Get API key
-  final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
+  registerGroq();
+
+  final apiKey = Platform.environment['GROQ_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('⚠️  Skipped: Please set GROQ_API_KEY environment variable');
+    return;
+  }
 
   // Create chatbot instance
   final chatbot = Chatbot(
@@ -91,8 +100,8 @@ class Chatbot {
   /// Initialize the chatbot
   Future<void> initialize() async {
     try {
-      _ai = await ai()
-          .groq()
+      _ai = await LLMBuilder()
+          .provider(groqProviderId)
           .apiKey(apiKey)
           .model('llama-3.1-8b-instant')
           .temperature(_getTemperatureForPersonality())
@@ -115,28 +124,31 @@ class Chatbot {
       // Get AI response with streaming
       final responseBuffer = StringBuffer();
 
-      await for (final event in _ai.chatStream(_getContextMessages())) {
-        switch (event) {
-          case TextDeltaEvent(delta: final delta):
+      await for (final part in streamText(
+        model: _ai,
+        messages: _getContextMessages(),
+      )) {
+        switch (part) {
+          case TextDeltaPart(delta: final delta):
             stdout.write(delta);
             responseBuffer.write(delta);
             break;
 
-          case CompletionEvent(response: final response):
+          case FinishPart(result: final result):
             // Add complete response to history
             _addToHistory(ChatMessage.assistant(responseBuffer.toString()));
 
             // Log usage statistics
-            if (response.usage != null) {
-              _logUsage(response.usage!);
+            if (result.usage != null) {
+              _logUsage(result.usage!);
             }
             break;
 
-          case ErrorEvent(error: final error):
+          case ErrorPart(error: final error):
             throw Exception('Stream error: $error');
 
-          case ThinkingDeltaEvent():
-          case ToolCallDeltaEvent():
+          case ThinkingDeltaPart():
+          case ToolCallDeltaPart():
             // Handle other event types
             break;
         }
@@ -160,11 +172,10 @@ class Chatbot {
         ChatMessage.user(userInput),
       ];
 
-      final response = await _ai.chat(simpleMessages);
+      final response = await generateText(model: _ai, messages: simpleMessages);
       print(response.text ?? 'Sorry, I couldn\'t generate a response.');
 
       // Add to history if successful
-      _addToHistory(ChatMessage.user(userInput));
       _addToHistory(ChatMessage.assistant(response.text ?? ''));
     } catch (fallbackError) {
       // Fallback 2: Generic error response
@@ -263,7 +274,8 @@ class Chatbot {
         ..._conversationHistory.where((m) => m.role != ChatRole.system),
       ];
 
-      final response = await _ai.chat(summaryMessages);
+      final response =
+          await generateText(model: _ai, messages: summaryMessages);
       return response.text ?? 'Unable to generate summary.';
     } catch (e) {
       return 'Error generating summary: $e';

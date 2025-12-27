@@ -1,6 +1,5 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/factories/deepseek_factory.dart';
 
 void main() {
   group('DeepSeekProviderFactory Tests', () {
@@ -31,6 +30,8 @@ void main() {
         expect(capabilities, contains(LLMCapability.streaming));
         expect(capabilities, contains(LLMCapability.toolCalling));
         expect(capabilities, contains(LLMCapability.reasoning));
+        expect(capabilities, contains(LLMCapability.vision));
+        expect(capabilities, contains(LLMCapability.modelListing));
       });
 
       test('should not support unsupported capabilities', () {
@@ -40,7 +41,6 @@ void main() {
         expect(capabilities, isNot(contains(LLMCapability.imageGeneration)));
         expect(capabilities, isNot(contains(LLMCapability.textToSpeech)));
         expect(capabilities, isNot(contains(LLMCapability.fileManagement)));
-        expect(capabilities, isNot(contains(LLMCapability.vision)));
       });
     });
 
@@ -63,9 +63,11 @@ void main() {
           apiKey: 'test-api-key',
           baseUrl: 'https://api.deepseek.com/v1/',
           model: 'deepseek-reasoner',
-          extensions: {
-            'logprobs': true,
-            'top_logprobs': 5,
+          providerOptions: const {
+            'deepseek': {
+              'logprobs': true,
+              'topLogprobs': 5,
+            },
           },
         );
 
@@ -86,12 +88,14 @@ void main() {
           timeout: const Duration(seconds: 30),
           topP: 0.9,
           topK: 50,
-          extensions: {
-            'logprobs': true,
-            'top_logprobs': 3,
-            'frequency_penalty': 0.1,
-            'presence_penalty': 0.2,
-            'response_format': {'type': 'json_object'},
+          providerOptions: const {
+            'deepseek': {
+              'logprobs': true,
+              'topLogprobs': 3,
+              'frequencyPenalty': 0.1,
+              'presencePenalty': 0.2,
+              'responseFormat': {'type': 'json_object'},
+            },
           },
         );
 
@@ -186,14 +190,16 @@ void main() {
         expect(factory.validateConfig(config), isTrue);
       });
 
-      test('should accept config with extensions', () {
+      test('should accept config with provider options', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
           baseUrl: 'https://api.deepseek.com/v1/',
           model: 'deepseek-chat',
-          extensions: {
-            'logprobs': true,
-            'frequency_penalty': 0.1,
+          providerOptions: const {
+            'deepseek': {
+              'logprobs': true,
+              'frequencyPenalty': 0.1,
+            },
           },
         );
 
@@ -232,11 +238,13 @@ void main() {
           timeout: const Duration(seconds: 45),
           topP: 0.95,
           topK: 40,
-          extensions: {
-            'logprobs': true,
-            'top_logprobs': 5,
-            'frequency_penalty': 0.2,
-            'presence_penalty': 0.3,
+          providerOptions: const {
+            'deepseek': {
+              'logprobs': true,
+              'topLogprobs': 5,
+              'frequencyPenalty': 0.2,
+              'presencePenalty': 0.3,
+            },
           },
         );
 
@@ -263,14 +271,21 @@ void main() {
           apiKey: 'test-key',
           baseUrl: 'https://api.deepseek.com/v1/',
           model: 'deepseek-chat',
-          extensions: {'customParam': 'customValue'},
+          transportOptions: const {
+            'customHeaders': {'X-Test': 'customValue'},
+          },
         );
 
         final provider = factory.create(llmConfig) as DeepSeekProvider;
         final config = provider.config;
 
+        expect(config.originalConfig, isNotNull);
         expect(
-            config.getExtension<String>('customParam'), equals('customValue'));
+          config.originalConfig!.getTransportOption<Map<String, String>>(
+            'customHeaders',
+          ),
+          equals({'X-Test': 'customValue'}),
+        );
       });
     });
 

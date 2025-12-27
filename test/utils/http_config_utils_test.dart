@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('HttpConfigUtils Tests', () {
@@ -28,7 +29,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'customHeaders': {
             'X-Custom-Header': 'custom-value',
             'User-Agent': 'TestApp/1.0',
@@ -51,7 +52,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'customHeaders': {
             'Authorization': 'Bearer custom-key',
           }
@@ -73,7 +74,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
           timeout: Duration(seconds: 60),
-        ).withExtensions({
+        ).withTransportOptions({
           'connectionTimeout': Duration(seconds: 30),
           'receiveTimeout': Duration(minutes: 5),
           'sendTimeout': Duration(seconds: 120),
@@ -114,7 +115,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'enableHttpLogging': true,
         });
 
@@ -146,7 +147,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'enableHttpLogging': false,
         });
 
@@ -207,7 +208,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
           timeout: Duration(seconds: 60),
-        ).withExtensions({
+        ).withTransportOptions({
           'connectionTimeout': Duration(seconds: 60),
           'receiveTimeout': Duration(seconds: 60),
           'httpProxy': 'http://proxy.example.com:8080',
@@ -217,7 +218,7 @@ void main() {
             () => HttpConfigUtils.validateHttpConfig(config), returnsNormally);
       });
 
-      test('should handle configuration without extensions', () {
+      test('should handle configuration without transportOptions', () {
         final config = LLMConfig(
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
@@ -228,12 +229,12 @@ void main() {
             () => HttpConfigUtils.validateHttpConfig(config), returnsNormally);
       });
 
-      test('should handle empty extensions', () {
+      test('should handle empty transportOptions', () {
         final config = LLMConfig(
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({});
+        ).withTransportOptions({});
 
         expect(
             () => HttpConfigUtils.validateHttpConfig(config), returnsNormally);
@@ -244,7 +245,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'httpProxy': 'invalid-proxy-url',
         });
 
@@ -258,7 +259,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'bypassSSLVerification': true,
         });
 
@@ -275,7 +276,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
           timeout: Duration(seconds: 60),
-        ).withExtensions({
+        ).withTransportOptions({
           'connectionTimeout': Duration(seconds: 30),
         });
 
@@ -310,12 +311,37 @@ void main() {
     });
 
     group('Header Merging Logic', () {
+      test('transportOptions take precedence when merging', () {
+        final config = LLMConfig(
+          baseUrl: 'https://api.example.com',
+          apiKey: 'test-key',
+          model: 'test-model',
+        ).withTransportOptions({
+          'customHeaders': {
+            'Authorization': 'Bearer first',
+          }
+        }).withTransportOptions({
+          'customHeaders': {
+            'Authorization': 'Bearer transport',
+          }
+        });
+
+        final dio = HttpConfigUtils.createConfiguredDio(
+          baseUrl: 'https://api.example.com/v1',
+          defaultHeaders: {'Authorization': 'Bearer default'},
+          config: config,
+        );
+
+        expect(
+            dio.options.headers['Authorization'], equals('Bearer transport'));
+      });
+
       test('should merge headers correctly', () {
         final config = LLMConfig(
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'customHeaders': {
             'X-Custom': 'custom-value',
             'User-Agent': 'CustomApp/1.0',
@@ -342,7 +368,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'customHeaders': <String, String>{},
         });
 

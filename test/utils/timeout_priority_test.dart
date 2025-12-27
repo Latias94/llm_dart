@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('Timeout Priority Tests', () {
@@ -9,7 +10,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
         timeout: Duration(minutes: 2), // Global timeout
-      ).withExtensions({
+      ).withTransportOptions({
         'connectionTimeout': Duration(seconds: 30), // HTTP-specific timeout
       });
 
@@ -94,7 +95,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
         timeout: Duration(minutes: 2), // Global timeout
-      ).withExtensions({
+      ).withTransportOptions({
         'connectionTimeout': Duration(seconds: 15), // Override connection
         'receiveTimeout': Duration(minutes: 5), // Override receive
         // sendTimeout not specified, should use global
@@ -122,7 +123,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
         timeout: Duration(minutes: 2), // Global timeout
-      ).withExtensions({
+      ).withTransportOptions({
         'connectionTimeout': Duration(seconds: 20), // Highest priority
         // receiveTimeout not set - will use global
         // sendTimeout not set - will use global
@@ -206,7 +207,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
           timeout: Duration.zero, // Zero global timeout
-        ).withExtensions({
+        ).withTransportOptions({
           'connectionTimeout': Duration.zero, // Zero HTTP timeout
         });
 
@@ -227,7 +228,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
           timeout: Duration(hours: 1), // Large global timeout
-        ).withExtensions({
+        ).withTransportOptions({
           'receiveTimeout': Duration(hours: 2), // Even larger HTTP timeout
         });
 

@@ -1,5 +1,10 @@
+import 'dart:io';
 import 'dart:math';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Advanced semantic search implementation using embeddings
 ///
@@ -12,6 +17,9 @@ import 'package:llm_dart/llm_dart.dart';
 /// - Performance optimization techniques
 Future<void> main() async {
   print('🔍 Semantic Search Engine Examples\n');
+
+  registerOpenAI();
+  registerGoogle();
 
   // Initialize embedding provider
   final embeddingProvider = await initializeEmbeddingProvider();
@@ -43,30 +51,33 @@ Future<void> main() async {
 /// Initialize embedding provider
 Future<EmbeddingCapability?> initializeEmbeddingProvider() async {
   // Try different providers in order of preference
-  final providers = [
-    (
+  final providers = <(String, Future<EmbeddingCapability> Function())>[];
+
+  final openaiKey = Platform.environment['OPENAI_API_KEY'];
+  if (openaiKey != null && openaiKey.isNotEmpty) {
+    providers.add((
       'OpenAI',
-      () async {
-        final apiKey = 'your-openai-key'; // Replace with actual key
-        return await ai()
-            .openai()
-            .apiKey(apiKey)
-            .model('text-embedding-3-small')
-            .buildEmbedding();
-      }
-    ),
-    (
+      () async => LLMBuilder()
+          .provider(openaiProviderId)
+          .apiKey(openaiKey)
+          .model('text-embedding-3-small')
+          .buildEmbedding(),
+    ));
+  }
+
+  final googleKey = Platform.environment['GOOGLE_API_KEY'];
+  if (googleKey != null && googleKey.isNotEmpty) {
+    providers.add((
       'Google',
-      () async {
-        final apiKey = 'your-google-key'; // Replace with actual key
-        return await ai()
-            .google()
-            .apiKey(apiKey)
-            .model('text-embedding-004')
-            .buildEmbedding();
-      }
-    ),
-  ];
+      () async => LLMBuilder()
+          .provider(googleProviderId)
+          .apiKey(googleKey)
+          .model('text-embedding-004')
+          .buildEmbedding(),
+    ));
+  }
+
+  if (providers.isEmpty) return null;
 
   for (final (name, factory) in providers) {
     try {

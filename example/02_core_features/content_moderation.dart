@@ -1,5 +1,8 @@
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Content moderation examples using ModerationCapability interface
 ///
@@ -16,8 +19,13 @@ Future<void> main() async {
     return;
   }
 
+  registerOpenAI();
+
   try {
-    final provider = await ai().openai().apiKey(apiKey).buildModeration();
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey(apiKey)
+        .buildModeration();
 
     await demonstrateBasicModeration(provider, 'OpenAI');
     await demonstrateBatchModeration(provider, 'OpenAI');

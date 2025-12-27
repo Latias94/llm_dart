@@ -1,7 +1,12 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:convert';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 /// 🔧 Enhanced Tool Calling - Advanced Tool Features
 ///
@@ -19,11 +24,17 @@ void main() async {
   print('🔧 Enhanced Tool Calling - Advanced Tool Features\n');
 
   // Get API key
-  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('❌ Please set OPENAI_API_KEY environment variable');
+    return;
+  }
+
+  registerOpenAI();
 
   // Create AI provider with enhanced capabilities
-  final provider = await ai()
-      .openai()
+  final provider = await LLMBuilder()
+      .provider(openaiProviderId)
       .apiKey(apiKey)
       .model('gpt-4o')
       .temperature(0.1)
@@ -70,19 +81,25 @@ Future<void> demonstrateToolValidation(ChatCapability provider) async {
       ),
     );
 
-    final messages = [
-      ChatMessage.user('Calculate 15.7 * 8.3 with 2 decimal places precision')
-    ];
-
     print('   User: Calculate 15.7 * 8.3 with 2 decimal places precision');
     print('   Available tools: calculate (with validation)');
 
-    final response = await provider.chatWithTools(messages, [calculatorTool]);
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.user(
+            'Calculate 15.7 * 8.3 with 2 decimal places precision',
+          ),
+        ],
+      ),
+      tools: [calculatorTool],
+    );
 
-    if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
+    if (result.toolCalls != null && result.toolCalls!.isNotEmpty) {
       print('   🔧 Tool calls made:');
 
-      for (final toolCall in response.toolCalls!) {
+      for (final toolCall in result.toolCalls!) {
         print('      • Function: ${toolCall.function.name}');
         print('      • Arguments: ${toolCall.function.arguments}');
 
@@ -340,23 +357,26 @@ Future<void> demonstrateNestedObjectStructures(ChatCapability provider) async {
       ),
     );
 
-    final messages = [
-      ChatMessage.user(
-        'Process order ORD001 for Alice Johnson: 2x Laptop at \$999 each (electronics), 1x T-shirt at \$25 (clothing). Total: \$2023. Use the process_orders tool.',
-      )
-    ];
-
     print('   User: Process order ORD001 for Alice Johnson...');
     print(
         '   Available tools: process_orders (with nested arrays and objects)');
 
-    final response =
-        await provider.chatWithTools(messages, [processOrdersTool]);
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.user(
+            'Process order ORD001 for Alice Johnson: 2x Laptop at \$999 each (electronics), 1x T-shirt at \$25 (clothing). Total: \$2023. Use the process_orders tool.',
+          ),
+        ],
+      ),
+      tools: [processOrdersTool],
+    );
 
-    if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
+    if (result.toolCalls != null && result.toolCalls!.isNotEmpty) {
       print('   🔧 AI tool calls:');
 
-      for (final toolCall in response.toolCalls!) {
+      for (final toolCall in result.toolCalls!) {
         print('      • Function: ${toolCall.function.name}');
         print('      • Arguments: ${toolCall.function.arguments}');
 
@@ -374,7 +394,7 @@ Future<void> demonstrateNestedObjectStructures(ChatCapability provider) async {
 
       print('   ✅ Complex nested structures completed\n');
     } else {
-      print('   ℹ️  AI chose not to use tools: ${response.text}\n');
+      print('   ℹ️  AI chose not to use tools: ${result.text}\n');
     }
   } catch (e) {
     print('   ❌ Error: $e\n');

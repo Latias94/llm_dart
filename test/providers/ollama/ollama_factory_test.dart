@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/factories/ollama_factory.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('OllamaProviderFactory Tests', () {
@@ -29,9 +29,12 @@ void main() {
 
         expect(capabilities, contains(LLMCapability.chat));
         expect(capabilities, contains(LLMCapability.streaming));
+        expect(capabilities, contains(LLMCapability.completion));
         expect(capabilities, contains(LLMCapability.embedding));
         expect(capabilities, contains(LLMCapability.modelListing));
         expect(capabilities, contains(LLMCapability.reasoning));
+        expect(capabilities, contains(LLMCapability.toolCalling));
+        expect(capabilities, contains(LLMCapability.vision));
       });
 
       test('should not support unsupported capabilities', () {
@@ -40,9 +43,6 @@ void main() {
         expect(capabilities, isNot(contains(LLMCapability.imageGeneration)));
         expect(capabilities, isNot(contains(LLMCapability.textToSpeech)));
         expect(capabilities, isNot(contains(LLMCapability.speechToText)));
-        expect(capabilities, isNot(contains(LLMCapability.toolCalling)));
-        expect(capabilities, isNot(contains(LLMCapability.vision)));
-        // Note: reasoning is now supported by Ollama as of v0.9.0
       });
     });
 
@@ -83,14 +83,16 @@ void main() {
           topP: 0.9,
           topK: 50,
           tools: [],
-          extensions: {
-            'numCtx': 4096,
-            'numGpu': 2,
-            'numThread': 8,
-            'numa': true,
-            'numBatch': 512,
-            'keepAlive': '10m',
-            'raw': false,
+          providerOptions: const {
+            'ollama': {
+              'numCtx': 4096,
+              'numGpu': 2,
+              'numThread': 8,
+              'numa': true,
+              'numBatch': 512,
+              'keepAlive': '10m',
+              'raw': false,
+            },
           },
         );
 
@@ -181,14 +183,16 @@ void main() {
         expect(factory.validateConfig(config), isTrue);
       });
 
-      test('should validate config with Ollama extensions', () {
+      test('should validate config with Ollama provider options', () {
         final config = LLMConfig(
           baseUrl: 'http://localhost:11434/',
           model: 'llama3.1:8b',
-          extensions: {
-            'numCtx': 4096,
-            'numGpu': 2,
-            'keepAlive': '5m',
+          providerOptions: const {
+            'ollama': {
+              'numCtx': 4096,
+              'numGpu': 2,
+              'keepAlive': '5m',
+            },
           },
         );
 

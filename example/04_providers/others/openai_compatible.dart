@@ -1,515 +1,387 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 
 /// 🔗 OpenAI-Compatible Providers - Unified Interface Demo
 ///
-/// This example demonstrates all OpenAI-compatible providers:
-/// - DeepSeek (OpenAI-compatible interface)
-/// - Groq (ultra-fast inference)
-/// - xAI Grok (reasoning capabilities)
-/// - OpenRouter (multi-model access)
-/// - GitHub Copilot (coding assistance)
-/// - Together AI (open source models)
+/// This example demonstrates OpenAI-compatible providers shipped in
+/// `llm_dart_openai_compatible`, which offers pre-configured providers
+/// that share an OpenAI-style API surface (chat/stream/tools/embeddings).
 ///
-/// Before running, set your API keys:
-/// export DEEPSEEK_API_KEY="your-deepseek-api-key"
-/// export GROQ_API_KEY="your-groq-api-key"
-/// export XAI_API_KEY="your-xai-api-key"
-/// export OPENROUTER_API_KEY="your-openrouter-api-key"
-/// export GITHUB_COPILOT_API_KEY="your-github-copilot-api-key"
-/// export TOGETHER_API_KEY="your-together-ai-api-key"
+/// Supported (in this repo):
+/// - DeepSeek (`deepseek-openai`)
+/// - Groq (`groq-openai`)
+/// - xAI (`xai-openai`)
+/// - Google Gemini OpenAI compat (`google-openai`)
+/// - OpenRouter (`openrouter`)
+///
+/// Before running, set the API keys you want to try:
+/// export DEEPSEEK_API_KEY="..."
+/// export GROQ_API_KEY="..."
+/// export XAI_API_KEY="..."
+/// export GOOGLE_API_KEY="..."
+/// export OPENROUTER_API_KEY="..."
 void main() async {
   print('🔗 OpenAI-Compatible Providers - Unified Interface Demo\n');
 
-  // Get API keys from environment
-  final apiKeys = {
-    'deepseek': Platform.environment['DEEPSEEK_API_KEY'] ?? 'sk-TESTKEY',
-    'groq': Platform.environment['GROQ_API_KEY'] ?? 'gsk_TESTKEY',
-    'xai': Platform.environment['XAI_API_KEY'] ?? 'xai-TESTKEY',
-    'openrouter': Platform.environment['OPENROUTER_API_KEY'] ?? 'or-TESTKEY',
-    'copilot': Platform.environment['GITHUB_COPILOT_API_KEY'] ?? 'ghu_TESTKEY',
-    'together': Platform.environment['TOGETHER_API_KEY'] ?? 'together-TESTKEY',
-  };
+  registerOpenAICompatibleProviders();
 
-  // Demonstrate all OpenAI-compatible providers
-  await demonstrateAllProviders(apiKeys);
-  await demonstrateProviderComparison(apiKeys);
-  await demonstrateSpecializedUseCases(apiKeys);
-  await demonstrateBestPractices(apiKeys);
+  await demonstrateAllProviders();
+  await demonstrateProviderComparison();
+  await demonstrateSpecializedUseCases();
+  await demonstrateBestPractices();
 
   print('\n✅ OpenAI-compatible providers demo completed!');
 }
 
-/// Demonstrate all OpenAI-compatible providers
-Future<void> demonstrateAllProviders(Map<String, String> apiKeys) async {
-  print('🚀 All OpenAI-Compatible Providers:\n');
+class _ProviderSpec {
+  final String providerId;
+  final String displayName;
+  final String envVar;
+  final String defaultModel;
 
-  final providers = [
-    {
-      'name': 'DeepSeek',
-      'method': 'deepseekOpenAI',
-      'model': 'deepseek-chat',
-      'key': apiKeys['deepseek']!,
-      'description': 'Cost-effective with reasoning capabilities'
-    },
-    {
-      'name': 'Groq',
-      'method': 'groqOpenAI',
-      'model': 'llama-3.3-70b-versatile',
-      'key': apiKeys['groq']!,
-      'description': 'Ultra-fast inference speeds'
-    },
-    {
-      'name': 'xAI Grok',
-      'method': 'xaiOpenAI',
-      'model': 'grok-3',
-      'key': apiKeys['xai']!,
-      'description': 'Real-time info with personality'
-    },
-    {
-      'name': 'OpenRouter',
-      'method': 'openRouter',
-      'model': 'openai/gpt-4',
-      'key': apiKeys['openrouter']!,
-      'description': 'Access to multiple AI models'
-    },
-    {
-      'name': 'GitHub Copilot',
-      'method': 'githubCopilot',
-      'model': 'gpt-4',
-      'key': apiKeys['copilot']!,
-      'description': 'Specialized for coding tasks'
-    },
-    {
-      'name': 'Together AI',
-      'method': 'togetherAI',
-      'model': 'meta-llama/Llama-3-70b-chat-hf',
-      'key': apiKeys['together']!,
-      'description': 'Open source model platform'
-    },
-  ];
+  const _ProviderSpec({
+    required this.providerId,
+    required this.displayName,
+    required this.envVar,
+    required this.defaultModel,
+  });
+}
+
+const _providers = <_ProviderSpec>[
+  _ProviderSpec(
+    providerId: 'deepseek-openai',
+    displayName: 'DeepSeek (OpenAI-compatible)',
+    envVar: 'DEEPSEEK_API_KEY',
+    defaultModel: 'deepseek-chat',
+  ),
+  _ProviderSpec(
+    providerId: 'groq-openai',
+    displayName: 'Groq (OpenAI-compatible)',
+    envVar: 'GROQ_API_KEY',
+    defaultModel: 'llama-3.3-70b-versatile',
+  ),
+  _ProviderSpec(
+    providerId: 'xai-openai',
+    displayName: 'xAI (OpenAI-compatible)',
+    envVar: 'XAI_API_KEY',
+    defaultModel: 'grok-3',
+  ),
+  _ProviderSpec(
+    providerId: 'google-openai',
+    displayName: 'Google Gemini (OpenAI-compatible)',
+    envVar: 'GOOGLE_API_KEY',
+    defaultModel: 'gemini-2.0-flash',
+  ),
+  _ProviderSpec(
+    providerId: 'openrouter',
+    displayName: 'OpenRouter',
+    envVar: 'OPENROUTER_API_KEY',
+    defaultModel: 'openai/gpt-4',
+  ),
+];
+
+_ProviderSpec? _byId(String providerId) {
+  for (final spec in _providers) {
+    if (spec.providerId == providerId) return spec;
+  }
+  return null;
+}
+
+String? _env(String name) => Platform.environment[name];
+
+Future<ChatCapability?> _buildChatProvider(
+  _ProviderSpec spec, {
+  String? model,
+  double? temperature,
+  int? maxTokens,
+  bool? reasoning,
+  String? systemPrompt,
+}) async {
+  final apiKey = _env(spec.envVar);
+  if (apiKey == null || apiKey.isEmpty) return null;
+
+  final builder = LLMBuilder()
+      .provider(spec.providerId)
+      .apiKey(apiKey)
+      .model(model ?? spec.defaultModel);
+
+  if (temperature != null) builder.temperature(temperature);
+  if (maxTokens != null) builder.maxTokens(maxTokens);
+  if (reasoning != null) builder.reasoning(reasoning);
+  if (systemPrompt != null) builder.systemPrompt(systemPrompt);
+
+  return builder.build();
+}
+
+Prompt _prompt(String text, {String? system}) => Prompt(
+      messages: [
+        if (system != null && system.isNotEmpty) PromptMessage.system(system),
+        PromptMessage.user(text),
+      ],
+    );
+
+Future<void> demonstrateAllProviders() async {
+  print('🚀 All OpenAI-Compatible Providers:\n');
 
   final question = 'What are the benefits of using AI in software development?';
 
-  for (final provider in providers) {
-    try {
-      print('   ${provider['name']}: ${provider['description']}');
+  for (final provider in _providers) {
+    final instance = await _buildChatProvider(
+      provider,
+      temperature: 0.7,
+      maxTokens: 200,
+    );
 
-      // Create provider using the appropriate method
-      late final dynamic providerInstance;
-      switch (provider['method']) {
-        case 'deepseekOpenAI':
-          providerInstance = await ai()
-              .deepseekOpenAI()
-              .apiKey(provider['key']!)
-              .model(provider['model']!)
-              .temperature(0.7)
-              .maxTokens(200)
-              .build();
-          break;
-        case 'groqOpenAI':
-          providerInstance = await ai()
-              .groqOpenAI()
-              .apiKey(provider['key']!)
-              .model(provider['model']!)
-              .temperature(0.7)
-              .maxTokens(200)
-              .build();
-          break;
-        case 'xaiOpenAI':
-          providerInstance = await ai()
-              .xaiOpenAI()
-              .apiKey(provider['key']!)
-              .model(provider['model']!)
-              .temperature(0.7)
-              .maxTokens(200)
-              .build();
-          break;
-        case 'openRouter':
-          providerInstance = await ai()
-              .openRouter()
-              .apiKey(provider['key']!)
-              .model(provider['model']!)
-              .temperature(0.7)
-              .maxTokens(200)
-              .build();
-          break;
-        case 'githubCopilot':
-          providerInstance = await ai()
-              .githubCopilot()
-              .apiKey(provider['key']!)
-              .model(provider['model']!)
-              .temperature(0.7)
-              .maxTokens(200)
-              .build();
-          break;
-        case 'togetherAI':
-          providerInstance = await ai()
-              .togetherAI()
-              .apiKey(provider['key']!)
-              .model(provider['model']!)
-              .temperature(0.7)
-              .maxTokens(200)
-              .build();
-          break;
-      }
-
-      final stopwatch = Stopwatch()..start();
-      final response =
-          await providerInstance.chat([ChatMessage.user(question)]);
-      stopwatch.stop();
-
-      print('      Response: ${response.text?.substring(0, 100)}...');
-      print('      Time: ${stopwatch.elapsedMilliseconds}ms');
-
-      if (response.usage != null) {
-        print('      Tokens: ${response.usage!.totalTokens}');
-      }
-      print('');
-    } catch (e) {
-      print('      ❌ Error: $e\n');
+    if (instance == null) {
+      print(
+          '   ${provider.displayName}: Skipped (missing ${provider.envVar})\n');
+      continue;
     }
+
+    final stopwatch = Stopwatch()..start();
+    final result = await generateText(
+      model: instance,
+      promptIr: _prompt(question),
+    );
+    stopwatch.stop();
+
+    final text = result.text ?? '';
+    final preview = text.length > 140 ? '${text.substring(0, 140)}...' : text;
+
+    print('   ${provider.displayName}');
+    print('      Model: ${provider.defaultModel}');
+    print('      Time: ${stopwatch.elapsedMilliseconds}ms');
+    print('      Response: $preview\n');
   }
 
   print('   ✅ All providers demonstration completed\n');
 }
 
-/// Compare providers for specific tasks
-Future<void> demonstrateProviderComparison(Map<String, String> apiKeys) async {
+Future<void> demonstrateProviderComparison() async {
   print('⚖️  Provider Comparison:\n');
 
   final tasks = [
-    {
-      'name': 'Coding Task',
-      'prompt': 'Write a Python function to calculate factorial recursively.',
-      'providers': ['deepseekOpenAI', 'groqOpenAI', 'githubCopilot']
-    },
-    {
-      'name': 'Creative Writing',
-      'prompt': 'Write a short story about a robot learning to paint.',
-      'providers': ['xaiOpenAI', 'openRouter', 'togetherAI']
-    },
+    (
+      name: 'Short answer',
+      prompt: 'Explain what embeddings are in one paragraph.',
+      providers: ['google-openai', 'deepseek-openai', 'groq-openai'],
+    ),
+    (
+      name: 'Creative writing',
+      prompt: 'Write a short story about a robot learning to paint.',
+      providers: ['xai-openai', 'openrouter'],
+    ),
   ];
 
   for (final task in tasks) {
-    print('   ${task['name']}: "${task['prompt']}"');
-    print('');
+    print('   ${task.name}: "${task.prompt}"\n');
 
-    for (final providerMethod in task['providers'] as List<String>) {
+    for (final providerId in task.providers) {
+      final spec = _byId(providerId);
+      if (spec == null) continue;
+
+      final instance = await _buildChatProvider(
+        spec,
+        temperature: 0.6,
+        maxTokens: 180,
+      );
+
+      if (instance == null) {
+        print('      ${spec.displayName}: Skipped (missing ${spec.envVar})');
+        continue;
+      }
+
       try {
-        late final dynamic provider;
-        late final String providerName;
+        final result = await generateText(
+          model: instance,
+          promptIr: _prompt(task.prompt),
+        );
 
-        switch (providerMethod) {
-          case 'deepseekOpenAI':
-            provider = await ai()
-                .deepseekOpenAI()
-                .apiKey(apiKeys['deepseek']!)
-                .model('deepseek-chat')
-                .temperature(0.3)
-                .maxTokens(150)
-                .build();
-            providerName = 'DeepSeek';
-            break;
-          case 'groqOpenAI':
-            provider = await ai()
-                .groqOpenAI()
-                .apiKey(apiKeys['groq']!)
-                .model('llama-3.3-70b-versatile')
-                .temperature(0.3)
-                .maxTokens(150)
-                .build();
-            providerName = 'Groq';
-            break;
-          case 'githubCopilot':
-            provider = await ai()
-                .githubCopilot()
-                .apiKey(apiKeys['copilot']!)
-                .model('gpt-4')
-                .temperature(0.3)
-                .maxTokens(150)
-                .build();
-            providerName = 'GitHub Copilot';
-            break;
-          case 'xaiOpenAI':
-            provider = await ai()
-                .xaiOpenAI()
-                .apiKey(apiKeys['xai']!)
-                .model('grok-3')
-                .temperature(0.8)
-                .maxTokens(150)
-                .build();
-            providerName = 'xAI Grok';
-            break;
-          case 'openRouter':
-            provider = await ai()
-                .openRouter()
-                .apiKey(apiKeys['openrouter']!)
-                .model('openai/gpt-4')
-                .temperature(0.8)
-                .maxTokens(150)
-                .build();
-            providerName = 'OpenRouter';
-            break;
-          case 'togetherAI':
-            provider = await ai()
-                .togetherAI()
-                .apiKey(apiKeys['together']!)
-                .model('meta-llama/Llama-3-70b-chat-hf')
-                .temperature(0.8)
-                .maxTokens(150)
-                .build();
-            providerName = 'Together AI';
-            break;
-          default:
-            continue;
-        }
-
-        final response =
-            await provider.chat([ChatMessage.user(task['prompt'] as String)]);
-        print('      $providerName: ${response.text}');
-        print('');
+        final text = result.text ?? '';
+        final preview =
+            text.length > 120 ? '${text.substring(0, 120)}...' : text;
+        print('      ${spec.displayName}: $preview');
       } catch (e) {
-        print('      $providerMethod: Error - $e');
-        print('');
+        print('      ${spec.displayName}: Error - $e');
       }
     }
+
     print('');
   }
 
   print('   ✅ Provider comparison completed\n');
 }
 
-/// Demonstrate specialized use cases
-Future<void> demonstrateSpecializedUseCases(Map<String, String> apiKeys) async {
+Future<void> demonstrateSpecializedUseCases() async {
   print('🎯 Specialized Use Cases:\n');
 
-  // Fast inference with Groq
-  print('   Fast Inference (Groq):');
-  try {
-    final groq = await ai()
-        .groqOpenAI()
-        .apiKey(apiKeys['groq']!)
-        .model('llama-3.3-70b-versatile')
-        .temperature(0.5)
-        .maxTokens(100)
-        .build();
-
-    final stopwatch = Stopwatch()..start();
-    final response = await groq
-        .chat([ChatMessage.user('Quickly explain what is machine learning?')]);
-    stopwatch.stop();
-
-    print('      Response: ${response.text}');
-    print('      Speed: ${stopwatch.elapsedMilliseconds}ms (Ultra-fast!)');
-  } catch (e) {
-    print('      Error: $e');
-  }
-
-  // Reasoning with DeepSeek
-  print('\n   Complex Reasoning (DeepSeek):');
-  try {
-    final deepseek = await ai()
-        .deepseekOpenAI()
-        .apiKey(apiKeys['deepseek']!)
-        .model('deepseek-reasoner')
-        .temperature(0.1)
-        .maxTokens(300)
-        .reasoning(true)
-        .build();
-
-    final response = await deepseek.chat([
-      ChatMessage.user(
-          'If a train travels 120 km in 1.5 hours, and then 80 km in 45 minutes, what is the average speed for the entire journey?')
-    ]);
-
-    print('      Response: ${response.text}');
-    if (response.thinking != null) {
-      print('      Thinking: ${response.thinking?.substring(0, 100)}...');
+  // Fast inference (Groq)
+  {
+    final spec = _byId('groq-openai');
+    if (spec != null) {
+      print('   Fast inference (${spec.displayName}):');
+      final provider = await _buildChatProvider(
+        spec,
+        temperature: 0.4,
+        maxTokens: 100,
+      );
+      if (provider == null) {
+        print('      Skipped (missing ${spec.envVar})\n');
+      } else {
+        final stopwatch = Stopwatch()..start();
+        final result = await generateText(
+          model: provider,
+          promptIr: _prompt('Quickly explain what machine learning is.'),
+        );
+        stopwatch.stop();
+        print('      Time: ${stopwatch.elapsedMilliseconds}ms');
+        print('      Response: ${result.text}\n');
+      }
     }
-  } catch (e) {
-    print('      Error: $e');
   }
 
-  // Coding with GitHub Copilot
-  print('\n   Coding Assistance (GitHub Copilot):');
-  try {
-    final copilot = await ai()
-        .githubCopilot()
-        .apiKey(apiKeys['copilot']!)
-        .model('gpt-4')
-        .temperature(0.2)
-        .maxTokens(200)
-        .systemPrompt(
-            'You are a helpful coding assistant. Provide clean, well-commented code.')
-        .build();
-
-    final response = await copilot.chat([
-      ChatMessage.user(
-          'Create a simple HTTP server in Dart that responds with "Hello World"')
-    ]);
-
-    print('      Response: ${response.text}');
-  } catch (e) {
-    print('      Error: $e');
+  // Reasoning-ish use case (DeepSeek)
+  {
+    final spec = _byId('deepseek-openai');
+    if (spec != null) {
+      print('   Complex reasoning (${spec.displayName}):');
+      final provider = await _buildChatProvider(
+        spec,
+        model: 'deepseek-reasoner',
+        temperature: 0.2,
+        maxTokens: 260,
+        reasoning: true,
+      );
+      if (provider == null) {
+        print('      Skipped (missing ${spec.envVar})\n');
+      } else {
+        final result = await generateText(
+          model: provider,
+          promptIr: _prompt(
+            'If a train travels 120 km in 1.5 hours, and then 80 km in 45 minutes, '
+            'what is the average speed for the entire journey?',
+          ),
+        );
+        print('      Response: ${result.text}\n');
+      }
+    }
   }
 
-  // Multi-model access with OpenRouter
-  print('\n   Multi-Model Access (OpenRouter):');
-  try {
-    final openrouter = await ai()
-        .openRouter()
-        .apiKey(apiKeys['openrouter']!)
-        .model('anthropic/claude-3-sonnet')
-        .temperature(0.7)
-        .maxTokens(150)
-        .build();
-
-    final response = await openrouter.chat([
-      ChatMessage.user(
-          'Explain the difference between AI, ML, and Deep Learning')
-    ]);
-
-    print('      Response (Claude via OpenRouter): ${response.text}');
-  } catch (e) {
-    print('      Error: $e');
+  // Coding assistant-ish (Groq)
+  {
+    final spec = _byId('groq-openai');
+    if (spec != null) {
+      print('   Coding assistance (${spec.displayName}):');
+      final provider = await _buildChatProvider(
+        spec,
+        temperature: 0.2,
+        maxTokens: 220,
+        systemPrompt:
+            'You are a helpful coding assistant. Provide clean, minimal code.',
+      );
+      if (provider == null) {
+        print('      Skipped (missing ${spec.envVar})\n');
+      } else {
+        final result = await generateText(
+          model: provider,
+          promptIr: _prompt(
+            'Create a simple HTTP server in Dart that responds with "Hello World".',
+          ),
+        );
+        print('      Response: ${result.text}\n');
+      }
+    }
   }
 
-  print('\n   ✅ Specialized use cases completed\n');
+  // Multi-model access (OpenRouter)
+  {
+    final spec = _byId('openrouter');
+    if (spec != null) {
+      print('   Multi-model access (${spec.displayName}):');
+      final provider = await _buildChatProvider(
+        spec,
+        model: 'anthropic/claude-3-sonnet',
+        temperature: 0.7,
+        maxTokens: 180,
+      );
+      if (provider == null) {
+        print('      Skipped (missing ${spec.envVar})\n');
+      } else {
+        final result = await generateText(
+          model: provider,
+          promptIr: _prompt(
+            'Explain the difference between AI, ML, and Deep Learning.',
+          ),
+        );
+        print('      Response: ${result.text}\n');
+      }
+    }
+  }
+
+  print('   ✅ Specialized use cases completed\n');
 }
 
-/// Demonstrate best practices
-Future<void> demonstrateBestPractices(Map<String, String> apiKeys) async {
+Future<void> demonstrateBestPractices() async {
   print('🏆 Best Practices:\n');
 
   // Error handling
-  print('   Error Handling:');
+  print('   Error handling:');
   try {
-    final provider = await ai()
-        .deepseekOpenAI()
+    final provider = await LLMBuilder()
+        .provider('deepseek-openai')
         .apiKey('invalid-key')
         .model('deepseek-chat')
         .build();
 
-    await provider.chat([ChatMessage.user('Test')]);
+    await generateText(model: provider, promptIr: _prompt('Test'));
+    print('      ⚠️  Unexpected: request succeeded with invalid key');
   } on AuthError catch (e) {
-    print('      ✅ Properly caught AuthError: ${e.message}');
+    print('      ✅ Caught AuthError: ${e.message}');
   } catch (e) {
     print('      ⚠️  Unexpected error type: $e');
   }
 
-  // Provider fallback strategy
-  print('\n   Provider Fallback Strategy:');
-  final fallbackProviders = [
-    () => ai()
-        .groqOpenAI()
-        .apiKey(apiKeys['groq']!)
-        .model('llama-3.3-70b-versatile'),
-    () => ai()
-        .deepseekOpenAI()
-        .apiKey(apiKeys['deepseek']!)
-        .model('deepseek-chat'),
-    () => ai()
-        .openRouter()
-        .apiKey(apiKeys['openrouter']!)
-        .model('openai/gpt-3.5-turbo'),
-  ];
+  // Fallback strategy
+  print('\n   Fallback strategy:');
+  final fallbackOrder = ['groq-openai', 'deepseek-openai', 'openrouter'];
+  var succeeded = false;
 
-  for (int i = 0; i < fallbackProviders.length; i++) {
-    try {
-      final provider = await fallbackProviders[i]().build();
-      await provider.chat([ChatMessage.user('Test fallback')]);
-      print('      ✅ Successfully used fallback provider ${i + 1}');
-      break;
-    } catch (e) {
-      print('      ⚠️  Fallback provider ${i + 1} failed: $e');
+  for (final providerId in fallbackOrder) {
+    final spec = _byId(providerId);
+    if (spec == null) continue;
+
+    final provider = await _buildChatProvider(
+      spec,
+      temperature: 0.3,
+      maxTokens: 80,
+    );
+
+    if (provider == null) {
+      print('      ${spec.displayName}: Skipped (missing ${spec.envVar})');
       continue;
     }
-  }
 
-  // Configuration optimization
-  print('\n   Configuration Optimization:');
-  final optimizedConfigs = {
-    'Fast responses': () => ai()
-        .groqOpenAI()
-        .apiKey(apiKeys['groq']!)
-        .temperature(0.3)
-        .maxTokens(100),
-    'Creative writing': () => ai()
-        .xaiOpenAI()
-        .apiKey(apiKeys['xai']!)
-        .temperature(0.9)
-        .maxTokens(500),
-    'Code generation': () => ai()
-        .githubCopilot()
-        .apiKey(apiKeys['copilot']!)
-        .temperature(0.1)
-        .maxTokens(300),
-    'Cost-effective': () => ai()
-        .deepseekOpenAI()
-        .apiKey(apiKeys['deepseek']!)
-        .temperature(0.7)
-        .maxTokens(200),
-  };
-
-  for (final entry in optimizedConfigs.entries) {
     try {
-      await entry.value().build();
-      print('      ✅ ${entry.key}: Configuration ready');
+      await generateText(
+        model: provider,
+        promptIr: _prompt('Return the word "ok".'),
+      );
+      print('      ✅ Selected: ${spec.displayName}');
+      succeeded = true;
+      break;
     } catch (e) {
-      print('      ❌ ${entry.key}: Configuration failed - $e');
+      print('      ${spec.displayName}: Failed - $e');
     }
   }
 
-  print('\n   💡 Best Practices Summary:');
-  print('      • Implement proper error handling for all providers');
-  print('      • Use fallback strategies for reliability');
-  print('      • Choose providers based on specific use cases:');
-  print('        - Groq: Speed-critical applications');
-  print('        - DeepSeek: Cost-effective with reasoning');
-  print('        - GitHub Copilot: Coding assistance');
-  print('        - OpenRouter: Model variety and comparison');
-  print('        - xAI: Real-time info and personality');
-  print('        - Together AI: Open source model access');
-  print('      • Optimize configurations for each task type');
-  print('      • Monitor usage and costs across providers');
-  print('   ✅ Best practices demonstration completed\n');
-}
+  if (!succeeded) {
+    print('      ❌ No fallback providers available (missing API keys)');
+  }
 
-/// 🎯 Key OpenAI-Compatible Providers Summary:
-///
-/// Provider Strengths:
-/// - DeepSeek: Cost-effective, reasoning capabilities, OpenAI compatibility
-/// - Groq: Ultra-fast inference, excellent for real-time applications
-/// - xAI Grok: Real-time information, personality, reasoning
-/// - OpenRouter: Multi-model access, provider comparison, flexibility
-/// - GitHub Copilot: Specialized for coding, integrated development
-/// - Together AI: Open source models, community-driven, cost-effective
-///
-/// Usage Patterns:
-/// - All use the same OpenAI-compatible interface
-/// - Easy to switch between providers
-/// - Consistent API across different backends
-/// - Unified error handling and response format
-///
-/// Selection Criteria:
-/// - Speed: Groq > Others
-/// - Cost: DeepSeek, Together AI > OpenRouter > Others
-/// - Reasoning: DeepSeek, xAI > Others
-/// - Coding: GitHub Copilot > DeepSeek > Others
-/// - Variety: OpenRouter > Others
-/// - Open Source: Together AI > Others
-///
-/// Best Use Cases:
-/// - Multi-provider applications with fallback
-/// - Cost optimization through provider selection
-/// - Performance optimization for different tasks
-/// - A/B testing different AI providers
-/// - Specialized workflows (coding, reasoning, etc.)
-///
-/// Next Steps:
-/// - Explore individual provider examples for advanced features
-/// - Implement provider selection logic in your applications
-/// - Monitor performance and costs across providers
-/// - Consider hybrid approaches using multiple providers
+  print('\n   ✅ Best practices demonstration completed\n');
+}

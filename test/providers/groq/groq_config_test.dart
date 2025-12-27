@@ -52,58 +52,22 @@ void main() {
     });
 
     group('Model Support Detection', () {
-      test('should detect vision support for vision models', () {
-        const config = GroqConfig(
-          apiKey: 'test-key',
-          model: 'llama-3.2-11b-vision-preview',
-        );
+      test('should not maintain a model capability matrix', () {
+        final models = [
+          'llama-3.2-11b-vision-preview',
+          'llava-v1.5-7b-4096-preview',
+          'llama-3.3-70b-versatile',
+          'llama-3.1-8b-base',
+          'unknown-model',
+        ];
 
-        expect(config.supportsVision, isTrue);
-      });
-
-      test('should detect vision support for llava models', () {
-        const config = GroqConfig(
-          apiKey: 'test-key',
-          model: 'llava-v1.5-7b-4096-preview',
-        );
-
-        expect(config.supportsVision, isTrue);
-      });
-
-      test('should not support vision for regular models', () {
-        const config = GroqConfig(
-          apiKey: 'test-key',
-          model: 'llama-3.3-70b-versatile',
-        );
-
-        expect(config.supportsVision, isFalse);
-      });
-
-      test('should support tool calling for most models', () {
-        const config = GroqConfig(
-          apiKey: 'test-key',
-          model: 'llama-3.3-70b-versatile',
-        );
-
-        expect(config.supportsToolCalling, isTrue);
-      });
-
-      test('should not support tool calling for base models', () {
-        const config = GroqConfig(
-          apiKey: 'test-key',
-          model: 'llama-3.1-8b-base',
-        );
-
-        expect(config.supportsToolCalling, isFalse);
-      });
-
-      test('should not support reasoning', () {
-        const config = GroqConfig(
-          apiKey: 'test-key',
-          model: 'llama-3.3-70b-versatile',
-        );
-
-        expect(config.supportsReasoning, isFalse);
+        for (final model in models) {
+          final config = GroqConfig(apiKey: 'test-key', model: model);
+          expect(config.supportsVision, isTrue);
+          expect(config.supportsToolCalling, isTrue);
+          expect(config.supportsParallelToolCalling, isTrue);
+          expect(config.supportsReasoning, isTrue);
+        }
       });
 
       test('should be speed optimized', () {
@@ -117,49 +81,19 @@ void main() {
     });
 
     group('Model Family Detection', () {
-      test('should detect Llama family', () {
-        const config = GroqConfig(
-          apiKey: 'test-key',
-          model: 'llama-3.3-70b-versatile',
-        );
+      test('should not maintain a model family matrix', () {
+        final models = [
+          'llama-3.3-70b-versatile',
+          'mixtral-8x7b-32768',
+          'gemma-7b-it',
+          'whisper-large-v3',
+          'unknown-model',
+        ];
 
-        expect(config.modelFamily, equals('Llama'));
-      });
-
-      test('should detect Mixtral family', () {
-        const config = GroqConfig(
-          apiKey: 'test-key',
-          model: 'mixtral-8x7b-32768',
-        );
-
-        expect(config.modelFamily, equals('Mixtral'));
-      });
-
-      test('should detect Gemma family', () {
-        const config = GroqConfig(
-          apiKey: 'test-key',
-          model: 'gemma-7b-it',
-        );
-
-        expect(config.modelFamily, equals('Gemma'));
-      });
-
-      test('should detect Whisper family', () {
-        const config = GroqConfig(
-          apiKey: 'test-key',
-          model: 'whisper-large-v3',
-        );
-
-        expect(config.modelFamily, equals('Whisper'));
-      });
-
-      test('should return Unknown for unrecognized models', () {
-        const config = GroqConfig(
-          apiKey: 'test-key',
-          model: 'unknown-model',
-        );
-
-        expect(config.modelFamily, equals('Unknown'));
+        for (final model in models) {
+          final config = GroqConfig(apiKey: 'test-key', model: model);
+          expect(config.modelFamily, equals('Groq'));
+        }
       });
     });
 
@@ -231,18 +165,24 @@ void main() {
         expect(groqConfig.toolChoice, isA<ToolChoice>());
       });
 
-      test('should access extensions from original config', () {
+      test('should preserve transportOptions via original config', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.groq.com/openai/v1/',
           model: 'llama-3.3-70b-versatile',
-          extensions: {'customParam': 'customValue'},
+          transportOptions: const {
+            'customHeaders': {'X-Test': 'customValue'},
+          },
         );
 
         final groqConfig = GroqConfig.fromLLMConfig(llmConfig);
 
-        expect(groqConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(groqConfig.originalConfig, isNotNull);
+        expect(
+          groqConfig.originalConfig!
+              .getTransportOption<Map<String, String>>('customHeaders'),
+          equals({'X-Test': 'customValue'}),
+        );
       });
     });
   });

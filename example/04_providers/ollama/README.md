@@ -48,50 +48,67 @@ dart run thinking_example.dart
 
 ### Local Model Configuration
 ```dart
-final provider = await ai().ollama()
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_ollama/llm_dart_ollama.dart';
+
+registerOllama();
+
+final provider = await LLMBuilder()
+    .provider(ollamaProviderId)
     .baseUrl('http://localhost:11434')
     .model('llama3.2')
-    .numGpu(1)           // GPU acceleration
-    .numThread(8)        // CPU threads
+    .providerOption('ollama', 'numGpu', 1) // GPU acceleration
+    .providerOption('ollama', 'numThread', 8) // CPU threads
     .build();
 
-final response = await provider.chat([
-  ChatMessage.user('Explain quantum computing'),
-]);
+final result = await generateText(
+  model: provider,
+  messages: [ChatMessage.user('Explain quantum computing')],
+);
 
 // All processing happens locally
-print('Local response: ${response.text}');
+print('Local response: ${result.text}');
 ```
 
 ### Privacy-Focused Setup
 ```dart
 // Completely offline operation
-final provider = await ai().ollama()
+final provider = await LLMBuilder()
+    .provider(ollamaProviderId)
     .baseUrl('http://localhost:11434')
-    .model('phi3')       // Lightweight model
+    .model('phi3') // Lightweight model
     .build();
 
 // No data leaves your machine
-final response = await provider.chat([
-  ChatMessage.user('Analyze this sensitive document'),
-]);
+final result = await generateText(
+  model: provider,
+  messages: [ChatMessage.user('Analyze this sensitive document')],
+);
+
+print(result.text);
 ```
 
 ### Reasoning Models
 ```dart
 // Local reasoning with thinking process
-final provider = await ai().ollama()
+final provider = await LLMBuilder()
+    .provider(ollamaProviderId)
     .baseUrl('http://localhost:11434')
     .model('gpt-oss:latest') // Reasoning model
-    .reasoning(true)         // Enable reasoning process
+    .reasoning(true) // Enable reasoning process
     .build();
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this step by step: What is 15 * 23 + 7 * 11?'),
-]);
+final result = await generateText(
+  model: provider,
+  messages: [
+    ChatMessage.user('Solve this step by step: What is 15 * 23 + 7 * 11?'),
+  ],
+);
 
-print('Thinking: ${response.thinking}');
-print('Answer: ${response.text}');
+print('Thinking: ${result.thinking}');
+print('Answer: ${result.text}');
 ```
 
 ## Next Steps

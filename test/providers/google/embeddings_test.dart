@@ -1,7 +1,7 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/core/capability.dart';
-import 'package:llm_dart/core/llm_error.dart';
-import 'package:llm_dart/providers/google/google.dart';
+import 'package:llm_dart_core/core/capability.dart';
+import 'package:llm_dart_core/core/llm_error.dart';
+import 'package:llm_dart_google/google.dart';
 
 void main() {
   group('GoogleEmbeddings', () {
@@ -168,7 +168,7 @@ void main() {
         expect(provider, isA<EmbeddingCapability>());
       });
 
-      test('should support embedding capability when model supports it', () {
+      test('should report embedding capability optimistically', () {
         final embeddingConfig = const GoogleConfig(
           apiKey: 'test-key',
           model: 'text-embedding-004',
@@ -180,17 +180,16 @@ void main() {
             isTrue);
       });
 
-      test('should not support embedding capability for non-embedding models',
-          () {
+      test('should not maintain a model capability matrix', () {
         final chatConfig = const GoogleConfig(
           apiKey: 'test-key',
           model: 'gemini-1.5-flash',
         );
         final provider = GoogleProvider(chatConfig);
 
-        expect(provider.supports(LLMCapability.embedding), isFalse);
+        expect(provider.supports(LLMCapability.embedding), isTrue);
         expect(provider.supportedCapabilities.contains(LLMCapability.embedding),
-            isFalse);
+            isTrue);
       });
     });
 

@@ -64,7 +64,10 @@ dart run multimodal_app.dart --demo
 ### Interactive Chatbot
 ```dart
 final chatbot = Chatbot(
-  provider: await ai().openai().apiKey('your-key').build(),
+  provider: await LLMBuilder()
+      .provider(openaiProviderId)
+      .apiKey('your-key')
+      .build(),
   personality: 'helpful and friendly assistant',
   maxContextLength: 4000,
 );
@@ -77,8 +80,14 @@ await chatbot.start();
 ```dart
 final cliTool = CliTool(
   providers: {
-    'openai': await ai().openai().apiKey('key').build(),
-    'anthropic': await ai().anthropic().apiKey('key').build(),
+    'openai': await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey('key')
+        .build(),
+    'anthropic': await LLMBuilder()
+        .provider(anthropicProviderId)
+        .apiKey('key')
+        .build(),
   },
 );
 
@@ -89,7 +98,10 @@ await cliTool.run(args);
 ### Web Service
 ```dart
 final webService = WebService(
-  provider: await ai().groq().apiKey('your-key').build(),
+  provider: await LLMBuilder()
+      .provider(groqProviderId)
+      .apiKey('your-key')
+      .build(),
   authMiddleware: JwtAuthMiddleware(),
   rateLimiter: RateLimiter(requestsPerMinute: 60),
 );

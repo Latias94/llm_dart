@@ -1,6 +1,10 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart';
 
 /// 🚀 X.AI Grok Integration - Real-Time AI with Personality
 ///
@@ -15,8 +19,13 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('🚀 X.AI Grok Integration - Real-Time AI with Personality\n');
 
-  // Get API key
-  final apiKey = Platform.environment['XAI_API_KEY'] ?? 'xai-TESTKEY';
+  registerXAI();
+
+  final apiKey = Platform.environment['XAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('⚠️  Skipped: Please set XAI_API_KEY environment variable');
+    return;
+  }
 
   // Demonstrate Grok's unique capabilities
   await demonstrateBasicGrok(apiKey);
@@ -33,8 +42,8 @@ Future<void> demonstrateBasicGrok(String apiKey) async {
   print('🤖 Basic Grok Functionality:\n');
 
   try {
-    final provider = await ai()
-        .xai()
+    final provider = await LLMBuilder()
+        .provider(xaiProviderId)
         .apiKey(apiKey)
         .model('grok-3')
         .temperature(0.7)
@@ -43,19 +52,25 @@ Future<void> demonstrateBasicGrok(String apiKey) async {
 
     // Test basic conversation
     print('   Basic Conversation:');
-    var response = await provider.chat([
-      ChatMessage.user('Hello Grok! Tell me something interesting about AI.')
-    ]);
+    var response = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user('Hello Grok! Tell me something interesting about AI.')
+      ],
+    );
     print('      User: Hello Grok! Tell me something interesting about AI.');
     print('      Grok: ${response.text}\n');
 
     // Test with system prompt
     print('   With System Prompt:');
-    response = await provider.chat([
-      ChatMessage.system(
-          'You are Grok, a witty AI assistant with a sense of humor.'),
-      ChatMessage.user('Explain quantum computing like I\'m 5 years old.')
-    ]);
+    response = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.system(
+            'You are Grok, a witty AI assistant with a sense of humor.'),
+        ChatMessage.user('Explain quantum computing like I\'m 5 years old.')
+      ],
+    );
     print('      System: You are Grok, a witty AI assistant...');
     print('      User: Explain quantum computing like I\'m 5 years old.');
     print('      Grok: ${response.text}');
@@ -75,8 +90,8 @@ Future<void> demonstratePersonalityFeatures(String apiKey) async {
   print('😄 Personality Features:\n');
 
   try {
-    final provider = await ai()
-        .xai()
+    final provider = await LLMBuilder()
+        .provider(xaiProviderId)
         .apiKey(apiKey)
         .model('grok-3')
         .temperature(0.8) // Higher for more personality
@@ -93,11 +108,14 @@ Future<void> demonstratePersonalityFeatures(String apiKey) async {
     for (final test in personalityTests) {
       print('   Testing: $test');
 
-      final response = await provider.chat([
-        ChatMessage.system(
-            'Be witty, engaging, and show your personality. Don\'t be afraid to be humorous or opinionated.'),
-        ChatMessage.user(test)
-      ]);
+      final response = await generateText(
+        model: provider,
+        messages: [
+          ChatMessage.system(
+              'Be witty, engaging, and show your personality. Don\'t be afraid to be humorous or opinionated.'),
+          ChatMessage.user(test)
+        ],
+      );
 
       print('      Grok: ${response.text}\n');
     }
@@ -118,8 +136,8 @@ Future<void> demonstrateRealTimeInformation(String apiKey) async {
   print('🌐 Real-Time Information:\n');
 
   try {
-    final provider = await ai()
-        .xai()
+    final provider = await LLMBuilder()
+        .provider(xaiProviderId)
         .apiKey(apiKey)
         .model('grok-3')
         .temperature(0.3) // Lower for factual information
@@ -136,11 +154,14 @@ Future<void> demonstrateRealTimeInformation(String apiKey) async {
     for (final query in realTimeQueries) {
       print('   Query: $query');
 
-      final response = await provider.chat([
-        ChatMessage.system(
-            'Provide current, up-to-date information. If you\'re not sure about recent events, be honest about your knowledge cutoff.'),
-        ChatMessage.user(query)
-      ]);
+      final response = await generateText(
+        model: provider,
+        messages: [
+          ChatMessage.system(
+              'Provide current, up-to-date information. If you\'re not sure about recent events, be honest about your knowledge cutoff.'),
+          ChatMessage.user(query)
+        ],
+      );
 
       print('      Grok: ${response.text}\n');
     }
@@ -161,8 +182,8 @@ Future<void> demonstrateConversationalStyle(String apiKey) async {
   print('💬 Conversational Style:\n');
 
   try {
-    final provider = await ai()
-        .xai()
+    final provider = await LLMBuilder()
+        .provider(xaiProviderId)
         .apiKey(apiKey)
         .model('grok-3')
         .temperature(0.7)
@@ -177,7 +198,7 @@ Future<void> demonstrateConversationalStyle(String apiKey) async {
       ChatMessage.user('I\'m thinking about learning to code. Any advice?'),
     ];
 
-    var response = await provider.chat(conversation);
+    var response = await generateText(model: provider, messages: conversation);
     print('      User: I\'m thinking about learning to code. Any advice?');
     print('      Grok: ${response.text}\n');
 
@@ -186,7 +207,7 @@ Future<void> demonstrateConversationalStyle(String apiKey) async {
     conversation.add(ChatMessage.user(
         'I\'m particularly interested in AI and machine learning.'));
 
-    response = await provider.chat(conversation);
+    response = await generateText(model: provider, messages: conversation);
     print(
         '      User: I\'m particularly interested in AI and machine learning.');
     print('      Grok: ${response.text}\n');
@@ -196,7 +217,7 @@ Future<void> demonstrateConversationalStyle(String apiKey) async {
     conversation.add(
         ChatMessage.user('What programming language should I start with?'));
 
-    response = await provider.chat(conversation);
+    response = await generateText(model: provider, messages: conversation);
     print('      User: What programming language should I start with?');
     print('      Grok: ${response.text}');
 
@@ -218,13 +239,13 @@ Future<void> demonstrateBestPractices(String apiKey) async {
   // Error handling
   print('   Error Handling:');
   try {
-    final provider = await ai()
-        .xai()
+    final provider = await LLMBuilder()
+        .provider(xaiProviderId)
         .apiKey('invalid-key') // Intentionally invalid
         .model('grok-3')
         .build();
 
-    await provider.chat([ChatMessage.user('Test')]);
+    await generateText(model: provider, messages: [ChatMessage.user('Test')]);
   } on AuthError catch (e) {
     print('      ✅ Properly caught AuthError: ${e.message}');
   } catch (e) {
@@ -234,8 +255,8 @@ Future<void> demonstrateBestPractices(String apiKey) async {
   // Optimal configuration
   print('\n   Optimal Configuration:');
   try {
-    final optimizedProvider = await ai()
-        .xai()
+    final optimizedProvider = await LLMBuilder()
+        .provider(xaiProviderId)
         .apiKey(apiKey)
         .model('grok-3')
         .temperature(0.7) // Balanced creativity
@@ -244,9 +265,12 @@ Future<void> demonstrateBestPractices(String apiKey) async {
         .timeout(Duration(seconds: 30))
         .build();
 
-    final response = await optimizedProvider.chat([
-      ChatMessage.user('Give me a creative solution to reduce plastic waste.')
-    ]);
+    final response = await generateText(
+      model: optimizedProvider,
+      messages: [
+        ChatMessage.user('Give me a creative solution to reduce plastic waste.')
+      ],
+    );
 
     print('      ✅ Optimized response: ${response.text?.substring(0, 150)}...');
   } catch (e) {
@@ -256,8 +280,8 @@ Future<void> demonstrateBestPractices(String apiKey) async {
   // Streaming for better UX
   print('\n   Streaming for Better UX:');
   try {
-    final streamProvider = await ai()
-        .xai()
+    final streamProvider = await LLMBuilder()
+        .provider(xaiProviderId)
         .apiKey(apiKey)
         .model('grok-3')
         .temperature(0.7)
@@ -266,20 +290,26 @@ Future<void> demonstrateBestPractices(String apiKey) async {
     print('      Question: Write a short poem about technology.');
     print('      Grok (streaming): ');
 
-    await for (final event in streamProvider.chatStream(
-        [ChatMessage.user('Write a short poem about technology.')])) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamText(
+      model: streamProvider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.user('Write a short poem about technology.'),
+        ],
+      ),
+    )) {
+      switch (part) {
+        case TextDeltaPart(delta: final delta):
           stdout.write(delta);
           break;
-        case CompletionEvent():
+        case FinishPart():
           print('\n      ✅ Streaming completed');
           break;
-        case ErrorEvent(error: final error):
+        case ErrorPart(error: final error):
           print('\n      ❌ Stream error: $error');
           break;
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
+        case ThinkingDeltaPart():
+        case ToolCallDeltaPart():
           // Handle other event types
           break;
       }

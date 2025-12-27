@@ -59,15 +59,8 @@ void main() {
         expect(builder, isNotNull);
       });
 
-      test('should add extension', () {
-        final builder = LLMBuilder().extension('custom', 'value');
-        expect(builder, isNotNull);
-      });
-
-      test('should add multiple extensions', () {
-        final builder = LLMBuilder()
-            .extension('key1', 'value1')
-            .extension('key2', 'value2');
+      test('should set provider option after selection', () {
+        final builder = LLMBuilder().openai().option('custom', 'value');
         expect(builder, isNotNull);
       });
     });
@@ -223,21 +216,6 @@ void main() {
         final builder = LLMBuilder().voice('alloy');
         expect(builder, isNotNull);
       });
-
-      test('should set response format', () {
-        final builder = LLMBuilder().responseFormat('json_object');
-        expect(builder, isNotNull);
-      });
-
-      test('should set JSON response format', () {
-        final builder = LLMBuilder().responseFormat('json_object');
-        expect(builder, isNotNull);
-      });
-
-      test('should set text response format', () {
-        final builder = LLMBuilder().responseFormat('text');
-        expect(builder, isNotNull);
-      });
     });
 
     group('Provider-Specific Builder Configuration', () {
@@ -281,9 +259,9 @@ void main() {
       });
 
       test('should configure OpenRouter with callback', () {
-        final builder = LLMBuilder().openRouter((openrouter) => openrouter
-            .webSearch(maxResults: 5, searchPrompt: 'Focus on recent research')
-            .useOnlineShortcut(true));
+        final builder = LLMBuilder().openRouter((openrouter) =>
+            openrouter.webSearch(
+                maxResults: 5, searchPrompt: 'Focus on recent research'));
         expect(builder, isNotNull);
       });
 
@@ -415,7 +393,7 @@ void main() {
             .topK(50)
             .user('test-user')
             .serviceTier(ServiceTier.auto)
-            .extension('custom', 'value');
+            .option('custom', 'value');
 
         expect(builder, isNotNull);
       });
@@ -439,7 +417,7 @@ void main() {
             .toolChoice(AutoToolChoice())
             .reasoningEffort(ReasoningEffort.medium)
             .voice('alloy')
-            .responseFormat('json_object');
+            .option('responseFormat', 'json_object');
 
         expect(builder, isNotNull);
       });

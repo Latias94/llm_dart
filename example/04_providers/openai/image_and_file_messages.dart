@@ -18,7 +18,11 @@
 library;
 
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 void main() async {
   print('=== OpenAI Image and File Messages Examples ===\n');
@@ -30,6 +34,8 @@ void main() async {
     print('Skipping API examples...\n');
     return;
   }
+
+  registerOpenAI();
 
   // Example 1: Image URL with Chat Completions API
   await imageUrlChatCompletionsExample(apiKey);
@@ -57,8 +63,8 @@ Future<void> imageUrlChatCompletionsExample(String apiKey) async {
   print('--- Example 1: Image URL with Chat Completions API ---');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
@@ -76,7 +82,7 @@ Future<void> imageUrlChatCompletionsExample(String apiKey) async {
     ];
 
     print('Sending image URL with text prompt...');
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('Response: ${response.text}\n');
   } catch (e) {
     print('Error: $e\n');
@@ -88,11 +94,12 @@ Future<void> imageUrlResponsesAPIExample(String apiKey) async {
   print('--- Example 2: Image URL with Responses API ---');
 
   try {
-    final provider = await ai()
-        .openai((openai) => openai.useResponsesAPI())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
+        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     // Same API - the library handles format differences automatically
@@ -106,7 +113,7 @@ Future<void> imageUrlResponsesAPIExample(String apiKey) async {
     ];
 
     print('Sending image URL with Responses API...');
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('Response: ${response.text}\n');
   } catch (e) {
     print('Error: $e\n');
@@ -127,8 +134,8 @@ Future<void> base64ImageExample(String apiKey) async {
       return;
     }
 
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
@@ -150,7 +157,7 @@ Future<void> base64ImageExample(String apiKey) async {
     ];
 
     print('Sending base64 encoded image...');
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('Response: ${response.text}\n');
   } catch (e) {
     print('Error: $e\n');
@@ -162,8 +169,8 @@ Future<void> mixedContentExample(String apiKey) async {
   print('--- Example 4: Mixed Content (Text + Image) ---');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
@@ -182,7 +189,7 @@ Future<void> mixedContentExample(String apiKey) async {
     ];
 
     print('Sending image with detailed question...');
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('Response: ${response.text}\n');
   } catch (e) {
     print('Error: $e\n');
@@ -202,8 +209,8 @@ Future<void> fileMessageExample(String apiKey) async {
       return;
     }
 
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
@@ -224,7 +231,7 @@ Future<void> fileMessageExample(String apiKey) async {
     ];
 
     print('Sending PDF file...');
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('Response: ${response.text}\n');
   } catch (e) {
     print('Error: $e\n');
@@ -256,12 +263,13 @@ Technical Details:
       print('Created sample.txt for demonstration');
     }
 
-    final provider = await ai()
-        .openai((openai) => openai.useResponsesAPI())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
         .maxTokens(300)
+        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     // Read file
@@ -279,7 +287,7 @@ Technical Details:
     ];
 
     print('Sending file with Responses API...');
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('Response: ${response.text}\n');
   } catch (e) {
     print('Error: $e\n');

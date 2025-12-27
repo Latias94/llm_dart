@@ -43,11 +43,8 @@ void main() {
         expect(provider.supports(LLMCapability.liveSearch), isTrue);
       });
 
-      test('should support vision for vision models', () {
-        final visionConfig = config.copyWith(model: 'grok-vision-beta');
-        final visionProvider = XAIProvider(visionConfig);
-
-        expect(visionProvider.supports(LLMCapability.vision), isTrue);
+      test('should report vision optimistically', () {
+        expect(provider.supports(LLMCapability.vision), isTrue);
       });
 
       test('should not support unsupported capabilities', () {
@@ -112,14 +109,14 @@ void main() {
 
     group('Provider Properties', () {
       test('should return correct model family', () {
-        expect(provider.config.modelFamily, equals('Grok'));
+        expect(provider.config.modelFamily, equals('xAI'));
       });
 
       test('should return correct model family for embedding models', () {
         final embedConfig = config.copyWith(model: 'text-embedding-ada-002');
         final embedProvider = XAIProvider(embedConfig);
 
-        expect(embedProvider.config.modelFamily, equals('Embedding'));
+        expect(embedProvider.config.modelFamily, equals('xAI'));
       });
 
       test('should support search for Grok models', () {
@@ -147,7 +144,7 @@ void main() {
         expect(provider.config.supportsReasoning, isTrue);
         expect(provider.config.supportsSearch, isTrue);
         expect(provider.config.supportsToolCalling, isTrue);
-        expect(provider.config.modelFamily, equals('Grok'));
+        expect(provider.config.modelFamily, equals('xAI'));
       });
 
       test('should handle vision models correctly', () {
@@ -156,7 +153,7 @@ void main() {
 
         expect(visionProvider.config.supportsVision, isTrue);
         expect(visionProvider.supports(LLMCapability.vision), isTrue);
-        expect(visionProvider.config.modelFamily, equals('Grok'));
+        expect(visionProvider.config.modelFamily, equals('xAI'));
       });
 
       test('should handle embedding models correctly', () {
@@ -165,7 +162,7 @@ void main() {
 
         expect(embedProvider.config.supportsEmbeddings, isTrue);
         expect(embedProvider.supports(LLMCapability.embedding), isTrue);
-        expect(embedProvider.config.modelFamily, equals('Embedding'));
+        expect(embedProvider.config.modelFamily, equals('xAI'));
       });
     });
 

@@ -1,6 +1,10 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_ollama/llm_dart_ollama.dart';
 
 /// 🚀 Ollama Advanced Features - Performance & Optimization
 ///
@@ -21,6 +25,8 @@ import 'package:llm_dart/llm_dart.dart';
 /// export OLLAMA_BASE_URL="http://localhost:11434"
 void main() async {
   print('🚀 Ollama Advanced Features - Performance & Optimization\n');
+
+  registerOllama();
 
   // Get Ollama base URL (defaults to localhost)
   final baseUrl =
@@ -43,21 +49,27 @@ Future<void> demonstratePerformanceOptimization(String baseUrl) async {
   try {
     // High-performance configuration with GPU acceleration
     print('   High-Performance Configuration:');
-    final highPerfProvider = await ai()
-        .ollama((ollama) => ollama
-            .numCtx(4096) // Large context window
-            .numGpu(1) // Use GPU acceleration
-            .numThread(8) // Use 8 CPU threads
-            .numa(false) // Disable NUMA for better performance
-            .numBatch(512)) // Larger batch size
+    final highPerfProvider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl(baseUrl)
         .model('llama3.2')
         .temperature(0.7)
+        .providerConfig(
+          (p) => p
+              .ollama()
+              .numCtx(4096) // Large context window
+              .numGpu(1) // Use GPU acceleration
+              .numThread(8) // Use 8 CPU threads
+              .numa(false) // Disable NUMA for better performance
+              .numBatch(512), // Larger batch size
+        )
         .build();
 
     final stopwatch = Stopwatch()..start();
-    final response = await highPerfProvider
-        .chat([ChatMessage.user('Explain quantum computing in 3 sentences.')]);
+    final response = await generateText(
+      model: highPerfProvider,
+      messages: [ChatMessage.user('Explain quantum computing in 3 sentences.')],
+    );
     stopwatch.stop();
 
     print('      Response: ${response.text}');
@@ -65,20 +77,26 @@ Future<void> demonstratePerformanceOptimization(String baseUrl) async {
 
     // Memory-efficient configuration
     print('   Memory-Efficient Configuration:');
-    final memoryEfficientProvider = await ai()
-        .ollama((ollama) => ollama
-            .numCtx(2048) // Smaller context window
-            .numGpu(0) // CPU only
-            .numThread(4) // Fewer threads
-            .numBatch(128)) // Smaller batch size
+    final memoryEfficientProvider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl(baseUrl)
         .model('llama3.2')
         .temperature(0.7)
+        .providerConfig(
+          (p) => p
+              .ollama()
+              .numCtx(2048) // Smaller context window
+              .numGpu(0) // CPU only
+              .numThread(4) // Fewer threads
+              .numBatch(128), // Smaller batch size
+        )
         .build();
 
     final stopwatch2 = Stopwatch()..start();
-    final response2 = await memoryEfficientProvider
-        .chat([ChatMessage.user('What is machine learning?')]);
+    final response2 = await generateText(
+      model: memoryEfficientProvider,
+      messages: [ChatMessage.user('What is machine learning?')],
+    );
     stopwatch2.stop();
 
     print('      Response: ${response2.text}');
@@ -96,12 +114,16 @@ Future<void> demonstrateContextManagement(String baseUrl) async {
 
   try {
     // Long context configuration
-    final longContextProvider = await ai()
-        .ollama((ollama) => ollama
-            .numCtx(8192) // Large context window
-            .keepAlive('10m')) // Keep model in memory longer
+    final longContextProvider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl(baseUrl)
         .model('llama3.2')
+        .providerConfig(
+          (p) => p
+              .ollama()
+              .numCtx(8192) // Large context window
+              .keepAlive('10m'), // Keep model in memory longer
+        )
         .build();
 
     // Build a long conversation
@@ -110,19 +132,22 @@ Future<void> demonstrateContextManagement(String baseUrl) async {
       ChatMessage.user('I\'m planning a trip to Japan. What should I know?'),
     ];
 
-    var response = await longContextProvider.chat(conversation);
+    var response =
+        await generateText(model: longContextProvider, messages: conversation);
     conversation.add(ChatMessage.assistant(response.text ?? ''));
     print('   Assistant: ${response.text?.substring(0, 100)}...\n');
 
     // Continue conversation with context
     conversation.add(ChatMessage.user('What about the best time to visit?'));
-    response = await longContextProvider.chat(conversation);
+    response =
+        await generateText(model: longContextProvider, messages: conversation);
     conversation.add(ChatMessage.assistant(response.text ?? ''));
     print('   Assistant: ${response.text?.substring(0, 100)}...\n');
 
     // Add more context
     conversation.add(ChatMessage.user('And what about food recommendations?'));
-    response = await longContextProvider.chat(conversation);
+    response =
+        await generateText(model: longContextProvider, messages: conversation);
     print('   Assistant: ${response.text?.substring(0, 100)}...\n');
 
     print('   💡 Context Tips:');
@@ -141,8 +166,8 @@ Future<void> demonstrateStructuredOutput(String baseUrl) async {
 
   try {
     // Configure for JSON output
-    final structuredProvider = await ai()
-        .ollama()
+    final structuredProvider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl(baseUrl)
         .model('llama3.2')
         .temperature(0.1) // Lower temperature for consistent structure
@@ -168,10 +193,13 @@ Future<void> demonstrateStructuredOutput(String baseUrl) async {
         ))
         .build();
 
-    final response = await structuredProvider.chat([
-      ChatMessage.user(
-          'Review this product: "Wireless headphones with 30-hour battery life, noise cancellation, and comfortable fit. Price: \$150."')
-    ]);
+    final response = await generateText(
+      model: structuredProvider,
+      messages: [
+        ChatMessage.user(
+            'Review this product: "Wireless headphones with 30-hour battery life, noise cancellation, and comfortable fit. Price: \$150."')
+      ],
+    );
 
     print('   Structured Review:');
     print('   ${response.text}');
@@ -189,25 +217,32 @@ Future<void> demonstrateModelMemoryManagement(String baseUrl) async {
   try {
     // Short-lived model (unloads quickly)
     print('   Short-lived model configuration:');
-    final shortLivedProvider = await ai()
-        .ollama((ollama) => ollama.keepAlive('30s')) // Unload after 30 seconds
+    final shortLivedProvider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl(baseUrl)
         .model('llama3.2')
-        .build();
+        .providerConfig((p) => p.ollama().keepAlive('30s'))
+        .build(); // Unload after 30 seconds
 
-    await shortLivedProvider.chat([ChatMessage.user('Hello!')]);
+    await generateText(
+      model: shortLivedProvider,
+      messages: [ChatMessage.user('Hello!')],
+    );
     print('      ✅ Model will unload in 30 seconds');
 
     // Long-lived model (stays in memory)
     print('   Long-lived model configuration:');
-    final longLivedProvider = await ai()
-        .ollama((ollama) =>
-            ollama.keepAlive('30m')) // Keep in memory for 30 minutes
+    final longLivedProvider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl(baseUrl)
         .model('llama3.2')
-        .build();
+        .providerConfig((p) => p.ollama().keepAlive('30m'))
+        .build(); // Keep in memory for 30 minutes
 
-    await longLivedProvider.chat([ChatMessage.user('Hello!')]);
+    await generateText(
+      model: longLivedProvider,
+      messages: [ChatMessage.user('Hello!')],
+    );
     print('      ✅ Model will stay loaded for 30 minutes');
 
     print('   💡 Memory Management Tips:');
@@ -247,15 +282,17 @@ Future<void> demonstrateToolCalling(String baseUrl) async {
       ),
     );
 
-    final toolProvider = await ai()
-        .ollama()
+    final toolProvider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl(baseUrl)
         .model('llama3.2') // Ensure model supports tool calling
         .temperature(0.1)
         .tools([weatherTool]).build();
 
-    final response = await toolProvider
-        .chat([ChatMessage.user('What\'s the weather like in Tokyo?')]);
+    final response = await generateText(
+      model: toolProvider,
+      messages: [ChatMessage.user('What\'s the weather like in Tokyo?')],
+    );
 
     print('   Tool Response:');
     if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {

@@ -1,7 +1,10 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// 🟣 Anthropic File Handling - File Management and Document Processing
 ///
@@ -21,7 +24,11 @@ void main() async {
       '🟣 Anthropic File Handling - File Management and Document Processing\n');
 
   // Get API key
-  final apiKey = Platform.environment['ANTHROPIC_API_KEY'] ?? 'sk-ant-TESTKEY';
+  final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('❌ Please set ANTHROPIC_API_KEY environment variable');
+    exit(1);
+  }
 
   // Demonstrate file management capabilities
   await demonstrateFileManagement(apiKey);
@@ -186,27 +193,37 @@ from 3.2 to 4.7 out of 5.
     // Read and process the file
     final fileData = await File(filename).readAsBytes();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please analyze this project report and provide insights:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: fileData,
-        content: 'Project report for analysis',
-      ),
-      ChatMessage.user('''
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              const TextPart(
+                'Please analyze this project report and provide insights:',
+              ),
+              FilePart(
+                mime: FileMime.txt,
+                data: fileData,
+                text: 'Project report for analysis',
+              ),
+              const TextPart('''
 Based on this report, please:
 1. Summarize the key achievements
 2. Identify potential risks or concerns
 3. Suggest next steps for improvement
 4. Rate the project success (1-10) with justification
 '''),
-    ]);
+            ],
+          ),
+        ],
+      ),
+    );
 
     print('      ✅ File processed successfully');
     print('      File size: ${fileData.length} bytes');
-    print('      Analysis: ${response.text}');
+    print('      Analysis: ${result.text}');
 
     // Clean up
     await File(filename).delete();
@@ -241,31 +258,41 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
     if (await imageFile.exists()) {
       final imageData = await imageFile.readAsBytes();
 
-      final response = await provider.chat([
-        ChatMessage.user(
-            'Please analyze this image and describe what you see:'),
-        ChatMessage.file(
-          role: ChatRole.user,
-          mime: FileMime.png,
-          data: imageData,
-          content: 'Chart or diagram for analysis',
-        ),
-        ChatMessage.user('''
+      final result = await generateText(
+        model: provider,
+        promptIr: Prompt(
+          messages: [
+            PromptMessage(
+              role: ChatRole.user,
+              parts: [
+                const TextPart(
+                  'Please analyze this image and describe what you see:',
+                ),
+                FilePart(
+                  mime: FileMime.png,
+                  data: imageData,
+                  text: 'Chart or diagram for analysis',
+                ),
+                const TextPart('''
 Please provide:
 1. A detailed description of the image
 2. Any data or trends you can identify
 3. Insights or conclusions you can draw
 4. Suggestions for improvement if applicable
 '''),
-      ]);
+              ],
+            ),
+          ],
+        ),
+      );
 
       print('      ✅ Image analyzed successfully');
       print('      Image size: ${imageData.length} bytes');
-      print('      Analysis: ${response.text}');
+      print('      Analysis: ${result.text}');
     } else {
       print('      ℹ️  No sample image found. Here\'s how to analyze images:');
       print('      1. Load image file as bytes');
-      print('      2. Create ChatMessage.file with appropriate MIME type');
+      print('      2. Add a FilePart/ImagePart with the appropriate MIME type');
       print('      3. Include descriptive prompts for analysis');
       print('      4. Claude can analyze charts, diagrams, photos, etc.');
     }
@@ -325,16 +352,22 @@ advantages and operational improvements for modern businesses.
     // Simulate PDF processing
     final pdfBytes = Uint8List.fromList(pdfContent.codeUnits);
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please analyze this research paper and provide a comprehensive review:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.pdf,
-        data: pdfBytes,
-        content: 'Research paper on AI impact in business',
-      ),
-      ChatMessage.user('''
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              const TextPart(
+                'Please analyze this research paper and provide a comprehensive review:',
+              ),
+              FilePart(
+                mime: FileMime.pdf,
+                data: pdfBytes,
+                text: 'Research paper on AI impact in business',
+              ),
+              const TextPart('''
 Please provide:
 1. A concise summary of the paper's main findings
 2. Critical analysis of the methodology
@@ -342,11 +375,15 @@ Please provide:
 4. Suggestions for future research directions
 5. Overall quality rating (1-10) with justification
 '''),
-    ]);
+            ],
+          ),
+        ],
+      ),
+    );
 
     print('      ✅ PDF content processed successfully');
     print('      Content size: ${pdfBytes.length} bytes');
-    print('      Analysis: ${response.text}');
+    print('      Analysis: ${result.text}');
 
     print('   ✅ PDF processing demonstration completed\n');
   } catch (e) {
@@ -403,28 +440,32 @@ Q3 Sales Report:
     final file2Data = await File('q2_report.txt').readAsBytes();
     final file3Data = await File('q3_report.txt').readAsBytes();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please analyze these quarterly sales reports and provide insights:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: file1Data,
-        content: 'Q1 Sales Report',
-      ),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: file2Data,
-        content: 'Q2 Sales Report',
-      ),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: file3Data,
-        content: 'Q3 Sales Report',
-      ),
-      ChatMessage.user('''
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              const TextPart(
+                'Please analyze these quarterly sales reports and provide insights:',
+              ),
+              FilePart(
+                mime: FileMime.txt,
+                data: file1Data,
+                text: 'Q1 Sales Report',
+              ),
+              FilePart(
+                mime: FileMime.txt,
+                data: file2Data,
+                text: 'Q2 Sales Report',
+              ),
+              FilePart(
+                mime: FileMime.txt,
+                data: file3Data,
+                text: 'Q3 Sales Report',
+              ),
+              const TextPart('''
 Based on these three quarterly reports, please:
 1. Identify trends across the quarters
 2. Analyze product performance patterns
@@ -432,13 +473,17 @@ Based on these three quarterly reports, please:
 4. Predict Q4 performance
 5. Recommend strategic actions
 '''),
-    ]);
+            ],
+          ),
+        ],
+      ),
+    );
 
     print('      ✅ Multi-file analysis completed');
     print('      Files processed: 3');
     print(
         '      Total data: ${file1Data.length + file2Data.length + file3Data.length} bytes');
-    print('      Analysis: ${response.text}');
+    print('      Analysis: ${result.text}');
 
     // Clean up
     await File('q1_report.txt').delete();
@@ -494,22 +539,27 @@ Company Policy: Remote Work Guidelines
     final v1Data = await File('policy_v1.txt').readAsBytes();
     final v2Data = await File('policy_v2.txt').readAsBytes();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please compare these two versions of our remote work policy:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: v1Data,
-        content: 'Remote Work Policy - Version 1',
-      ),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: v2Data,
-        content: 'Remote Work Policy - Version 2',
-      ),
-      ChatMessage.user('''
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              const TextPart(
+                'Please compare these two versions of our remote work policy:',
+              ),
+              FilePart(
+                mime: FileMime.txt,
+                data: v1Data,
+                text: 'Remote Work Policy - Version 1',
+              ),
+              FilePart(
+                mime: FileMime.txt,
+                data: v2Data,
+                text: 'Remote Work Policy - Version 2',
+              ),
+              const TextPart('''
 Please provide:
 1. Key differences between the versions
 2. Analysis of which changes are improvements
@@ -517,11 +567,15 @@ Please provide:
 4. Recommendations for further refinements
 5. Overall assessment of the policy evolution
 '''),
-    ]);
+            ],
+          ),
+        ],
+      ),
+    );
 
     print('      ✅ Document comparison completed');
     print('      Documents compared: 2 versions');
-    print('      Analysis: ${response.text}');
+    print('      Analysis: ${result.text}');
 
     // Clean up
     await File('policy_v1.txt').delete();

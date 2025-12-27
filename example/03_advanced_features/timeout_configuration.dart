@@ -1,5 +1,9 @@
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Example demonstrating the timeout configuration hierarchy
 ///
@@ -10,6 +14,8 @@ void main() async {
     print('Please set OPENAI_API_KEY environment variable');
     return;
   }
+
+  registerOpenAI();
 
   print('🕐 Timeout Configuration Examples\n');
 
@@ -40,17 +46,19 @@ Future<void> example1GlobalTimeoutOnly(String apiKey) async {
   print('   Result: connection=2min, receive=2min, send=2min\n');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(minutes: 2)) // Global timeout for all operations
         .build();
 
-    final response = await provider
-        .chat([ChatMessage.user('Hello! Please respond briefly.')]);
+    final result = await generateText(
+      model: provider,
+      messages: [ChatMessage.user('Hello! Please respond briefly.')],
+    );
 
-    print('   ✅ Success: ${response.text}\n');
+    print('   ✅ Success: ${result.text}\n');
   } catch (e) {
     print('   ❌ Error: $e\n');
   }
@@ -64,8 +72,8 @@ Future<void> example2HttpTimeoutsOnly(String apiKey) async {
   print('   Result: connection=30s, receive=5min, send=1min\n');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .http((http) => http
@@ -74,10 +82,14 @@ Future<void> example2HttpTimeoutsOnly(String apiKey) async {
             .sendTimeout(Duration(minutes: 1))) // Medium send time
         .build();
 
-    final response = await provider
-        .chat([ChatMessage.user('Explain quantum computing in one sentence.')]);
+    final result = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user('Explain quantum computing in one sentence.'),
+      ],
+    );
 
-    print('   ✅ Success: ${response.text}\n');
+    print('   ✅ Success: ${result.text}\n');
   } catch (e) {
     print('   ❌ Error: $e\n');
   }
@@ -91,8 +103,8 @@ Future<void> example3MixedConfiguration(String apiKey) async {
   print('   Result: connection=2min, receive=10min, send=2min\n');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(minutes: 2)) // Global default: 2 minutes
@@ -100,10 +112,14 @@ Future<void> example3MixedConfiguration(String apiKey) async {
             Duration(minutes: 10))) // Override only receive timeout
         .build();
 
-    final response = await provider
-        .chat([ChatMessage.user('What are the benefits of renewable energy?')]);
+    final result = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user('What are the benefits of renewable energy?'),
+      ],
+    );
 
-    print('   ✅ Success: ${response.text}\n');
+    print('   ✅ Success: ${result.text}\n');
   } catch (e) {
     print('   ❌ Error: $e\n');
   }
@@ -117,8 +133,8 @@ Future<void> example4EnterpriseScenario(String apiKey) async {
   print('   Result: All timeouts extended for corporate network\n');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(minutes: 5)) // Conservative global timeout
@@ -134,12 +150,15 @@ Future<void> example4EnterpriseScenario(String apiKey) async {
             }).enableLogging(false)) // Disabled in production
         .build();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Summarize the latest AI trends for our quarterly report.')
-    ]);
+    final result = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user(
+            'Summarize the latest AI trends for our quarterly report.'),
+      ],
+    );
 
-    print('   ✅ Success: ${response.text}\n');
+    print('   ✅ Success: ${result.text}\n');
   } catch (e) {
     print('   ❌ Error: $e\n');
   }
@@ -153,8 +172,8 @@ Future<void> example5DevelopmentScenario(String apiKey) async {
   print('   Result: Quick feedback for development\n');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(seconds: 30)) // Fast global timeout
@@ -167,10 +186,12 @@ Future<void> example5DevelopmentScenario(String apiKey) async {
             }).enableLogging(true)) // Enabled for debugging
         .build();
 
-    final response = await provider
-        .chat([ChatMessage.user('Test message for development.')]);
+    final result = await generateText(
+      model: provider,
+      messages: [ChatMessage.user('Test message for development.')],
+    );
 
-    print('   ✅ Success: ${response.text}\n');
+    print('   ✅ Success: ${result.text}\n');
   } catch (e) {
     print('   ❌ Error: $e\n');
   }

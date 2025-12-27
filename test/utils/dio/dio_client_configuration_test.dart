@@ -11,7 +11,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'enableHttpLogging': true,
         'httpProxy': 'http://proxy.example.com:8080',
         'customHeaders': {'X-Test': 'value'},
@@ -95,8 +95,12 @@ void main() {
       test(
           'should use unified HTTP configuration when originalConfig is available',
           () {
-        final config = DeepSeekConfig.fromLLMConfig(baseConfig);
-        final client = DeepSeekClient(config);
+        final config = OpenAICompatibleConfig.fromLLMConfig(
+          baseConfig,
+          providerId: 'deepseek',
+          providerName: 'DeepSeek',
+        );
+        final client = OpenAIClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl, equals('https://api.example.com'));
@@ -108,12 +112,14 @@ void main() {
       });
 
       test('should fall back to simple Dio when originalConfig is null', () {
-        final config = DeepSeekConfig(
+        final config = OpenAICompatibleConfig(
+          providerId: 'deepseek',
+          providerName: 'DeepSeek',
           apiKey: 'test-key',
           baseUrl: 'https://api.deepseek.com/v1/',
           model: 'deepseek-chat',
         );
-        final client = DeepSeekClient(config);
+        final client = OpenAIClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(
@@ -128,8 +134,12 @@ void main() {
       test(
           'should use unified HTTP configuration when originalConfig is available',
           () {
-        final config = GroqConfig.fromLLMConfig(baseConfig);
-        final client = GroqClient(config);
+        final config = OpenAICompatibleConfig.fromLLMConfig(
+          baseConfig,
+          providerId: 'groq',
+          providerName: 'Groq',
+        );
+        final client = OpenAIClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl, equals('https://api.example.com'));
@@ -141,12 +151,14 @@ void main() {
       });
 
       test('should fall back to simple Dio when originalConfig is null', () {
-        final config = GroqConfig(
+        final config = OpenAICompatibleConfig(
+          providerId: 'groq',
+          providerName: 'Groq',
           apiKey: 'test-key',
           baseUrl: 'https://api.groq.com/openai/v1/',
           model: 'llama-3.3-70b-versatile',
         );
-        final client = GroqClient(config);
+        final client = OpenAIClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl,
@@ -161,8 +173,12 @@ void main() {
       test(
           'should use unified HTTP configuration when originalConfig is available',
           () {
-        final config = XAIConfig.fromLLMConfig(baseConfig);
-        final client = XAIClient(config);
+        final config = OpenAICompatibleConfig.fromLLMConfig(
+          baseConfig,
+          providerId: 'xai',
+          providerName: 'xAI',
+        );
+        final client = OpenAIClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl, equals('https://api.example.com'));
@@ -174,12 +190,14 @@ void main() {
       });
 
       test('should fall back to simple Dio when originalConfig is null', () {
-        final config = XAIConfig(
+        final config = OpenAICompatibleConfig(
+          providerId: 'xai',
+          providerName: 'xAI',
           apiKey: 'test-key',
           baseUrl: 'https://api.x.ai/v1/',
           model: 'grok-3',
         );
-        final client = XAIClient(config);
+        final client = OpenAIClient(config);
 
         expect(client.dio, isA<Dio>());
         expect(client.dio.options.baseUrl, equals('https://api.x.ai/v1/'));

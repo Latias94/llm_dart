@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/factories/groq_factory.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('GroqProviderFactory Tests', () {
@@ -30,13 +30,13 @@ void main() {
         expect(capabilities, contains(LLMCapability.chat));
         expect(capabilities, contains(LLMCapability.streaming));
         expect(capabilities, contains(LLMCapability.toolCalling));
+        expect(capabilities, contains(LLMCapability.vision));
+        expect(capabilities, contains(LLMCapability.reasoning));
       });
 
       test('should not support unsupported capabilities', () {
         final capabilities = factory.supportedCapabilities;
 
-        expect(capabilities, isNot(contains(LLMCapability.vision)));
-        expect(capabilities, isNot(contains(LLMCapability.reasoning)));
         expect(capabilities, isNot(contains(LLMCapability.embedding)));
         expect(capabilities, isNot(contains(LLMCapability.imageGeneration)));
         expect(capabilities, isNot(contains(LLMCapability.textToSpeech)));

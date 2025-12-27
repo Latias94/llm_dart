@@ -58,12 +58,12 @@ void main() {
 
       test('should support voice cloning', () {
         const config = ElevenLabsConfig(apiKey: 'test-key');
-        expect(config.supportsVoiceCloning, isTrue);
+        expect(config.supportsVoiceCloning, isFalse);
       });
 
       test('should support real-time streaming', () {
         const config = ElevenLabsConfig(apiKey: 'test-key');
-        expect(config.supportsRealTimeStreaming, isTrue);
+        expect(config.supportsRealTimeStreaming, isFalse);
       });
     });
 
@@ -189,12 +189,14 @@ void main() {
           baseUrl: 'https://api.elevenlabs.io/v1/',
           model: 'eleven_multilingual_v2',
           timeout: const Duration(seconds: 30),
-          extensions: {
-            'voiceId': 'test-voice',
-            'stability': 0.5,
-            'similarityBoost': 0.8,
-            'style': 0.3,
-            'useSpeakerBoost': true,
+          providerOptions: const {
+            'elevenlabs': {
+              'voiceId': 'test-voice',
+              'stability': 0.5,
+              'similarityBoost': 0.8,
+              'style': 0.3,
+              'useSpeakerBoost': true,
+            },
           },
         );
 
@@ -212,18 +214,24 @@ void main() {
         expect(elevenLabsConfig.useSpeakerBoost, isTrue);
       });
 
-      test('should access extensions from original config', () {
+      test('should preserve transportOptions via original config', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.elevenlabs.io/v1/',
           model: 'eleven_multilingual_v2',
-          extensions: {'customParam': 'customValue'},
+          transportOptions: const {
+            'customHeaders': {'X-Test': 'customValue'},
+          },
         );
 
         final elevenLabsConfig = ElevenLabsConfig.fromLLMConfig(llmConfig);
 
-        expect(elevenLabsConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(elevenLabsConfig.originalConfig, isNotNull);
+        expect(
+          elevenLabsConfig.originalConfig!
+              .getTransportOption<Map<String, String>>('customHeaders'),
+          equals({'X-Test': 'customValue'}),
+        );
       });
     });
   });

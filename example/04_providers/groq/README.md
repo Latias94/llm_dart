@@ -27,16 +27,38 @@ dart run fast_inference.dart
 
 ### Speed-Optimized Streaming
 ```dart
-final provider = await ai().groq().apiKey('your-key')
-    .model('llama-3.1-8b-instant').build();
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
+
+registerGroq();
+
+final provider = await LLMBuilder()
+    .provider(groqProviderId)
+    .apiKey('your-key')
+    .model('llama-3.1-8b-instant')
+    .build();
 
 final stopwatch = Stopwatch()..start();
 
-await for (final event in provider.chatStream([
-  ChatMessage.user('Generate a quick story'),
-])) {
-  if (event is TextDeltaEvent) {
-    print('Token: ${event.delta} (${stopwatch.elapsedMilliseconds}ms)');
+await for (final part in streamText(
+  model: provider,
+  messages: [
+    ChatMessage.user('Generate a quick story'),
+  ],
+)) {
+  switch (part) {
+    case TextDeltaPart(delta: final delta):
+      print('Token: $delta (${stopwatch.elapsedMilliseconds}ms)');
+      break;
+    case FinishPart():
+      break;
+    case ErrorPart(error: final error):
+      print('Error: $error');
+      break;
+    default:
+      break;
   }
 }
 ```

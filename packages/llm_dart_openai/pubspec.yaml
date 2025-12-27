@@ -1,0 +1,21 @@
+name: llm_dart_openai
+description: OpenAI provider for llm_dart.
+version: 0.11.0-alpha.1
+homepage: https://github.com/Latias94/llm_dart
+repository: https://github.com/Latias94/llm_dart
+issue_tracker: https://github.com/Latias94/llm_dart/issues
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  dio: ^5.9.0
+  http_parser: ^4.1.2
+  logging: ^1.2.0
+  llm_dart_core: ^0.11.0-alpha.1
+  llm_dart_openai_compatible: ^0.11.0-alpha.1
+  llm_dart_provider_utils: ^0.11.0-alpha.1
+
+dev_dependencies:
+  test: ^1.27.0
+  lints: ^6.0.0

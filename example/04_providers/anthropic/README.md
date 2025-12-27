@@ -7,6 +7,9 @@ Claude's advanced reasoning capabilities and safety-focused design.
 ### [extended_thinking.dart](extended_thinking.dart)
 Access Claude's step-by-step reasoning process.
 
+### [tool_use_interleaved_thinking_stream.dart](tool_use_interleaved_thinking_stream.dart)
+Prompt IR + local tool loop, streamed as `LLMStreamPart`s.
+
 ### [file_handling.dart](file_handling.dart)
 Advanced document processing and analysis.
 
@@ -20,6 +23,7 @@ export ANTHROPIC_API_KEY="your-anthropic-api-key"
 
 # Run Anthropic-specific examples
 dart run extended_thinking.dart
+dart run tool_use_interleaved_thinking_stream.dart
 dart run file_handling.dart
 dart run mcp_connector.dart
 ```
@@ -45,23 +49,34 @@ dart run mcp_connector.dart
 
 ### Extended Thinking
 ```dart
-final provider = await ai().anthropic().apiKey('your-key')
-    .model('claude-sonnet-4-20250514').build();
+registerAnthropic();
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this logic puzzle step by step'),
-]);
+final model = await LLMBuilder()
+    .provider(anthropicProviderId)
+    .apiKey('your-key')
+    .model('claude-sonnet-4-20250514')
+    .providerOptions(anthropicProviderId, const {
+      'reasoning': true,
+      'thinkingBudgetTokens': 1024,
+    })
+    .build();
 
-// Access Claude's thinking process
-if (response.thinking != null) {
-  print('Claude\'s reasoning: ${response.thinking}');
+final result = await generateText(
+  model: model,
+  promptIr: Prompt(messages: [PromptMessage.user('Solve this logic puzzle step by step')]),
+);
+
+if (result.thinking != null) {
+  print("Claude's reasoning: ${result.thinking}");
 }
 ```
 
 ### File Processing
 ```dart
-final provider = await ai().anthropic().apiKey('your-key')
-    .buildFileManagement();
+final provider = createAnthropicProvider(
+  apiKey: 'your-key',
+  model: 'claude-sonnet-4-20250514',
+);
 
 // Upload and analyze document
 final fileObject = await provider.uploadFile(FileUploadRequest(
@@ -69,29 +84,45 @@ final fileObject = await provider.uploadFile(FileUploadRequest(
   purpose: FilePurpose.assistants,
 ));
 
-final analysis = await provider.chat([
-  ChatMessage.user('Analyze this document: ${fileObject.id}'),
-]);
+final analysis = await generateText(
+  model: provider,
+  promptIr: Prompt(
+    messages: [
+      PromptMessage(
+        role: ChatRole.user,
+        parts: [
+          const TextPart('Analyze this document:'),
+          FilePart(mime: FileMime.pdf, data: documentBytes),
+        ],
+      ),
+    ],
+  ),
+);
 ```
 
 ### MCP Connector
 ```dart
-final provider = await ai()
-    .anthropic((anthropic) => anthropic
-        .mcpServers([
-          AnthropicMCPServer.url(
-            name: 'file-server',
-            url: 'https://example.com/mcp',
-            authorizationToken: 'your-oauth-token',
-          ),
-        ]))
+registerAnthropic();
+
+final model = await LLMBuilder()
+    .provider(anthropicProviderId)
     .apiKey('your-key')
     .model('claude-sonnet-4-20250514')
+    .providerOptions(anthropicProviderId, {
+      'mcpServers': [
+        AnthropicMCPServer.url(
+          name: 'file-server',
+          url: 'https://example.com/mcp',
+          authorizationToken: 'your-oauth-token',
+        ).toJson(),
+      ],
+    })
     .build();
 
-final response = await provider.chat([
-  ChatMessage.user('Use the file server to read my documents'),
-]);
+final response = await generateText(
+  model: model,
+  promptIr: Prompt(messages: [PromptMessage.user('Use the file server to read my documents')]),
+);
 ```
 
 ## Next Steps

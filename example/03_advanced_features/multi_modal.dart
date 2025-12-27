@@ -1,6 +1,12 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 🖼️ Multi-modal Processing - Images, Audio, and Files
 ///
@@ -17,19 +23,30 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('🖼️ Multi-modal Processing - Images, Audio, and Files\n');
 
+  registerOpenAI();
+  registerAnthropic();
+  registerElevenLabs();
+
   // Get API keys
-  final openaiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
-  final anthropicKey =
-      Platform.environment['ANTHROPIC_API_KEY'] ?? 'sk-ant-TESTKEY';
-  final elevenlabsKey =
-      Platform.environment['ELEVENLABS_API_KEY'] ?? 'el-TESTKEY';
+  final openaiKey = Platform.environment['OPENAI_API_KEY'];
+  final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
+  final elevenlabsKey = Platform.environment['ELEVENLABS_API_KEY'];
 
   // Demonstrate different multi-modal scenarios
-  await demonstrateImageAnalysis(openaiKey);
-  await demonstrateImageGeneration(openaiKey);
-  await demonstrateAudioProcessing(openaiKey, elevenlabsKey);
-  await demonstrateDocumentProcessing(anthropicKey);
-  await demonstrateMultiModalConversation(openaiKey);
+  if (openaiKey != null && openaiKey.isNotEmpty) {
+    await demonstrateImageAnalysis(openaiKey);
+    await demonstrateImageGeneration(openaiKey);
+    await demonstrateAudioProcessing(openaiKey, elevenlabsKey);
+    await demonstrateMultiModalConversation(openaiKey);
+  } else {
+    print('⚠️  Skipped OpenAI demos: set OPENAI_API_KEY');
+  }
+
+  if (anthropicKey != null && anthropicKey.isNotEmpty) {
+    await demonstrateDocumentProcessing(anthropicKey);
+  } else {
+    print('⚠️  Skipped Anthropic demo: set ANTHROPIC_API_KEY');
+  }
 
   print('\n✅ Multi-modal processing completed!');
 }
@@ -40,8 +57,8 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
 
   try {
     // Create vision-capable provider
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o') // Vision-capable model
         .temperature(0.7)
@@ -63,7 +80,7 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
       )
     ];
 
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('   🤖 AI Analysis: ${response.text}');
 
     // Follow-up question about the image
@@ -71,7 +88,7 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
     messages.add(ChatMessage.user(
         'What time of day do you think this photo was taken?'));
 
-    final followUp = await provider.chat(messages);
+    final followUp = await generateText(model: provider, messages: messages);
     print('   🤖 Follow-up: ${followUp.text}');
 
     print('   ✅ Image analysis successful\n');
@@ -85,20 +102,11 @@ Future<void> demonstrateImageGeneration(String apiKey) async {
   print('🎨 Image Generation:\n');
 
   try {
-    // Create provider with image generation capabilities
-    final provider = await ai()
-        .openai()
+    final imageProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
-        .model('dall-e-3') // Use DALL-E 3 for high-quality images
-        .build();
-
-    // Check if provider supports image generation
-    if (provider is! ImageGenerationCapability) {
-      print('   ❌ Provider does not support image generation');
-      return;
-    }
-
-    final imageProvider = provider as ImageGenerationCapability;
+        .model('dall-e-3')
+        .buildImageGeneration();
 
     // Example 1: Basic image generation
     print('   🖼️  Basic Generation:');
@@ -147,11 +155,11 @@ Future<void> demonstrateImageGeneration(String apiKey) async {
 
     // Example 3: Multiple images with DALL-E 2
     print('\n   🔢 Multiple Images (DALL-E 2):');
-    final multiProvider = await ai()
-        .openai()
+    final multiProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
-        .model('dall-e-2') // DALL-E 2 supports multiple images
-        .build() as ImageGenerationCapability;
+        .model('dall-e-2')
+        .buildImageGeneration();
 
     final multiImages = await multiProvider.generateImage(
       prompt: 'A cute robot assistant helping with daily tasks, cartoon style',
@@ -187,7 +195,7 @@ Future<void> demonstrateImageGeneration(String apiKey) async {
 
 /// Demonstrate audio processing
 Future<void> demonstrateAudioProcessing(
-    String openaiKey, String elevenlabsKey) async {
+    String openaiKey, String? elevenlabsKey) async {
   print('🎵 Audio Processing:\n');
 
   // First generate TTS with OpenAI for later transcription
@@ -197,7 +205,11 @@ Future<void> demonstrateAudioProcessing(
   await demonstrateSpeechToText(openaiKey);
 
   // Text-to-speech with ElevenLabs
-  await demonstrateTextToSpeech(elevenlabsKey);
+  if (elevenlabsKey != null && elevenlabsKey.isNotEmpty) {
+    await demonstrateTextToSpeech(elevenlabsKey);
+  } else {
+    print('   ⚠️  Skipped ElevenLabs TTS: set ELEVENLABS_API_KEY');
+  }
 }
 
 /// Demonstrate OpenAI text-to-speech
@@ -206,15 +218,11 @@ Future<void> demonstrateOpenAITextToSpeech(String apiKey) async {
 
   try {
     // Create OpenAI provider with audio capabilities
-    final provider = await ai().openai().apiKey(apiKey).model('tts-1').build();
-
-    // Check if provider supports audio capabilities
-    if (provider is! AudioCapability) {
-      print('      ❌ Provider does not support audio capabilities');
-      return;
-    }
-
-    final audioProvider = provider as AudioCapability;
+    final audioProvider = await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey(apiKey)
+        .model('tts-1')
+        .buildAudio();
 
     // Get available voices
     final voices = await audioProvider.getVoices();
@@ -252,16 +260,11 @@ Future<void> demonstrateSpeechToText(String apiKey) async {
 
   try {
     // Create OpenAI provider with audio capabilities
-    final provider =
-        await ai().openai().apiKey(apiKey).model('whisper-1').build();
-
-    // Check if provider supports audio capabilities
-    if (provider is! AudioCapability) {
-      print('      ❌ Provider does not support audio capabilities');
-      return;
-    }
-
-    final audioProvider = provider as AudioCapability;
+    final audioProvider = await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey(apiKey)
+        .model('whisper-1')
+        .buildAudio();
 
     // Get supported languages
     final languages = await audioProvider.getSupportedLanguages();
@@ -314,19 +317,11 @@ Future<void> demonstrateTextToSpeech(String apiKey) async {
 
   try {
     // Create ElevenLabs provider with audio capabilities
-    final provider = await ai()
-        .elevenlabs((elevenlabs) =>
-            elevenlabs.voiceId('JBFqnCBsd6RMkjVDRZzb')) // Default voice
+    final audioProvider = await LLMBuilder()
+        .provider(elevenLabsProviderId)
         .apiKey(apiKey)
-        .build();
-
-    // Check if provider supports audio capabilities
-    if (provider is! AudioCapability) {
-      print('      ❌ Provider does not support audio capabilities');
-      return;
-    }
-
-    final audioProvider = provider as AudioCapability;
+        .providerOption('elevenlabs', 'voiceId', 'JBFqnCBsd6RMkjVDRZzb')
+        .buildAudio();
 
     // Get available voices
     final voices = await audioProvider.getVoices();
@@ -374,8 +369,8 @@ Future<void> demonstrateDocumentProcessing(String apiKey) async {
 
   try {
     // Create provider for document analysis
-    final provider = await ai()
-        .anthropic()
+    final provider = await LLMBuilder()
+        .provider(anthropicProviderId)
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.3)
@@ -415,7 +410,7 @@ Recommendations:
           'Please analyze this quarterly report and provide key insights:\n\n$documentContent'),
     ];
 
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('   🤖 Document Analysis: ${response.text}');
 
     // Follow-up analysis
@@ -423,7 +418,7 @@ Recommendations:
     messages.add(ChatMessage.user(
         'What are the top 3 priorities for the next quarter based on this report?'));
 
-    final priorities = await provider.chat(messages);
+    final priorities = await generateText(model: provider, messages: messages);
     print('\n   🎯 Priority Analysis: ${priorities.text}');
 
     print('   ✅ Document processing successful\n');
@@ -438,8 +433,8 @@ Future<void> demonstrateMultiModalConversation(String apiKey) async {
 
   try {
     // Create vision-capable provider
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
@@ -451,7 +446,7 @@ Future<void> demonstrateMultiModalConversation(String apiKey) async {
       ChatMessage.user('I\'m planning a garden. Can you help me choose plants?')
     ];
 
-    var response = await provider.chat(messages);
+    var response = await generateText(model: provider, messages: messages);
     print('   User: I\'m planning a garden. Can you help me choose plants?');
     print('   🤖 AI: ${response.text}\n');
 
@@ -464,7 +459,7 @@ Future<void> demonstrateMultiModalConversation(String apiKey) async {
           'Here\'s a photo of my backyard. What do you think would work well here?',
     ));
 
-    response = await provider.chat(messages);
+    response = await generateText(model: provider, messages: messages);
     print('   User: [Shares backyard photo] What would work well here?');
     print('   🤖 AI: ${response.text}\n');
 
@@ -473,7 +468,7 @@ Future<void> demonstrateMultiModalConversation(String apiKey) async {
     messages.add(ChatMessage.user(
         'I prefer low-maintenance plants. Any specific recommendations?'));
 
-    response = await provider.chat(messages);
+    response = await generateText(model: provider, messages: messages);
     print(
         '   User: I prefer low-maintenance plants. Any specific recommendations?');
     print('   🤖 AI: ${response.text}');

@@ -1,6 +1,9 @@
 import 'dart:io';
 
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Example demonstrating GPT-5 specific features
 ///
@@ -15,6 +18,8 @@ Future<void> main() async {
     print('Please set OPENAI_API_KEY environment variable');
     return;
   }
+
+  registerOpenAI();
 
   print('=== GPT-5 Features Demo ===\n');
 
@@ -36,29 +41,33 @@ Future<void> demonstrateVerbosity(String apiKey) async {
 
   // Low verbosity - terse response
   print('\n🔹 Low Verbosity (terse):');
-  final lowProvider = await ai()
-      .openai((openai) => openai.verbosity(Verbosity.low))
+  final lowProvider = await LLMBuilder()
+      .provider(openaiProviderId)
       .apiKey(apiKey)
       .model('gpt-5.1')
+      .providerOption('openai', 'verbosity', Verbosity.low.value)
       .build();
 
-  final lowResponse = await lowProvider.chat([
-    ChatMessage.user(question),
-  ]);
+  final lowResponse = await generateText(
+    model: lowProvider,
+    promptIr: Prompt(messages: [PromptMessage.user(question)]),
+  );
   print(lowResponse.text ?? 'No response');
 
   // High verbosity - detailed response
   print('\n🔹 High Verbosity (detailed):');
-  final highProvider = await ai()
-      .openai((openai) => openai.verbosity(Verbosity.high))
+  final highProvider = await LLMBuilder()
+      .provider(openaiProviderId)
       .apiKey(apiKey)
       .model('gpt-5.1')
-      .timeout(Duration(minutes: 5)) // Longer timeout for high verbosity
+      .timeout(const Duration(minutes: 5))
+      .providerOption('openai', 'verbosity', Verbosity.high.value)
       .build();
 
-  final highResponse = await highProvider.chat([
-    ChatMessage.user(question),
-  ]);
+  final highResponse = await generateText(
+    model: highProvider,
+    promptIr: Prompt(messages: [PromptMessage.user(question)]),
+  );
   print(highResponse.text ?? 'No response');
 
   print('\n${'=' * 50}\n');
@@ -68,17 +77,22 @@ Future<void> demonstrateVerbosity(String apiKey) async {
 Future<void> demonstrateMinimalReasoning(String apiKey) async {
   print('--- Minimal Reasoning Effort ---');
 
-  final provider = await ai()
-      .openai()
+  final provider = await LLMBuilder()
+      .provider(openaiProviderId)
       .apiKey(apiKey)
       .model('gpt-5-mini')
-      .reasoningEffort(ReasoningEffort.minimal) // New minimal option
+      .reasoningEffort(ReasoningEffort.minimal)
       .build();
 
   print('🔹 Quick math problem with minimal reasoning:');
-  final response = await provider.chat([
-    ChatMessage.user('What is 15 * 23? Just give me the answer.'),
-  ]);
+  final response = await generateText(
+    model: provider,
+    promptIr: Prompt(
+      messages: [
+        PromptMessage.user('What is 15 * 23? Just give me the answer.'),
+      ],
+    ),
+  );
 
   print('Response: ${response.text ?? 'No response'}');
   print('Usage: ${response.usage}');
@@ -96,12 +110,17 @@ Future<void> compareModelVariants(String apiKey) async {
   for (final model in models) {
     print('\n🔹 Model: $model');
 
-    final provider = await ai().openai().apiKey(apiKey).model(model).build();
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey(apiKey)
+        .model(model)
+        .build();
 
     try {
-      final response = await provider.chat([
-        ChatMessage.user(question),
-      ]);
+      final response = await generateText(
+        model: provider,
+        promptIr: Prompt(messages: [PromptMessage.user(question)]),
+      );
 
       print('Response: ${response.text ?? 'No response'}');
       if (response.usage != null) {

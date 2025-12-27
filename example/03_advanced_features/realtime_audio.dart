@@ -1,6 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Real-time audio processing examples using AudioCapability
 ///
@@ -14,6 +19,9 @@ import 'package:llm_dart/llm_dart.dart';
 /// - Session management and reconnection
 Future<void> main() async {
   print('🎤 Real-time Audio Processing Examples\n');
+
+  registerOpenAI();
+  registerElevenLabs();
 
   // Initialize audio provider
   final audioProvider = await initializeAudioProvider();
@@ -50,23 +58,34 @@ Future<void> main() async {
 /// Initialize audio provider for real-time processing
 Future<AudioCapability?> initializeAudioProvider() async {
   // Try providers that support real-time audio
-  final providers = [
-    (
+  final providers = <(String, Future<AudioCapability> Function())>[];
+
+  final openaiKey = Platform.environment['OPENAI_API_KEY'];
+  if (openaiKey != null && openaiKey.isNotEmpty) {
+    providers.add((
       'OpenAI',
-      () async {
-        return await ai().openai().apiKey('your-openai-key').buildAudio();
-      }
-    ),
-    (
+      () async => LLMBuilder()
+          .provider(openaiProviderId)
+          .apiKey(openaiKey)
+          .buildAudio(),
+    ));
+  }
+
+  final elevenlabsKey = Platform.environment['ELEVENLABS_API_KEY'];
+  if (elevenlabsKey != null && elevenlabsKey.isNotEmpty) {
+    providers.add((
       'ElevenLabs',
-      () async {
-        return await ai()
-            .elevenlabs()
-            .apiKey('your-elevenlabs-key')
-            .buildAudio();
-      }
-    ),
-  ];
+      () async => LLMBuilder()
+          .provider(elevenLabsProviderId)
+          .apiKey(elevenlabsKey)
+          .buildAudio(),
+    ));
+  }
+
+  if (providers.isEmpty) {
+    print('⚠️  Set OPENAI_API_KEY and/or ELEVENLABS_API_KEY');
+    return null;
+  }
 
   for (final (name, factory) in providers) {
     try {

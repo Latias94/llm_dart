@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'dart:math' as math;
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_google/llm_dart_google.dart';
 
 /// Google Embeddings Examples
 ///
@@ -11,11 +14,11 @@ import 'package:llm_dart/llm_dart.dart';
 Future<void> main() async {
   print('🔢 Google Embeddings Examples\n');
 
-  // Replace with your actual Google API key
-  const apiKey = 'your-google-api-key';
+  registerGoogle();
 
-  if (apiKey == 'your-google-api-key') {
-    print('⚠️  Please set your Google API key in the example');
+  final apiKey = Platform.environment['GOOGLE_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('⚠️  Skipped: Please set GOOGLE_API_KEY environment variable');
     return;
   }
 
@@ -32,8 +35,8 @@ Future<void> demonstrateBasicEmbeddings(String apiKey) async {
   print('📊 Basic Embeddings:');
 
   try {
-    final provider = await ai()
-        .google()
+    final provider = await LLMBuilder()
+        .provider(googleProviderId)
         .apiKey(apiKey)
         .model('text-embedding-004')
         .buildEmbedding();
@@ -66,8 +69,8 @@ Future<void> demonstrateBatchEmbeddings(String apiKey) async {
   print('📦 Batch Processing:');
 
   try {
-    final provider = await ai()
-        .google()
+    final provider = await LLMBuilder()
+        .provider(googleProviderId)
         .apiKey(apiKey)
         .model('text-embedding-004')
         .buildEmbedding();
@@ -95,8 +98,8 @@ Future<void> demonstrateBatchEmbeddings(String apiKey) async {
         allValues.map((v) => (v - mean) * (v - mean)).reduce((a, b) => a + b) /
             allValues.length;
 
-    print(
-        '   📈 Statistics: mean=${mean.toStringAsFixed(4)}, std=${(variance.sqrt()).toStringAsFixed(4)}');
+    print('   📈 Statistics: mean=${mean.toStringAsFixed(4)}, '
+        'std=${math.sqrt(variance).toStringAsFixed(4)}');
   } catch (e) {
     print('   ❌ Batch processing failed: $e');
   }
@@ -110,12 +113,12 @@ Future<void> demonstrateEmbeddingParameters(String apiKey) async {
 
   try {
     // Using task type for better embeddings
-    final provider = await ai()
-        .google((google) => google
-            .embeddingTaskType('SEMANTIC_SIMILARITY')
-            .embeddingDimensions(512)) // Reduced dimensions
+    final provider = await LLMBuilder()
+        .provider(googleProviderId)
         .apiKey(apiKey)
         .model('text-embedding-004')
+        .option('embeddingTaskType', 'SEMANTIC_SIMILARITY')
+        .option('embeddingDimensions', 512) // Reduced dimensions
         .buildEmbedding();
 
     final embeddings = await provider.embed([
@@ -127,12 +130,12 @@ Future<void> demonstrateEmbeddingParameters(String apiKey) async {
     print('   📏 Reduced dimensions: ${embeddings.first.length}');
 
     // For retrieval tasks
-    final retrievalProvider = await ai()
-        .google((google) => google
-            .embeddingTaskType('RETRIEVAL_DOCUMENT')
-            .embeddingTitle('Technical Documentation'))
+    final retrievalProvider = await LLMBuilder()
+        .provider(googleProviderId)
         .apiKey(apiKey)
         .model('text-embedding-004')
+        .option('embeddingTaskType', 'RETRIEVAL_DOCUMENT')
+        .option('embeddingTitle', 'Technical Documentation')
         .buildEmbedding();
 
     final docEmbeddings = await retrievalProvider.embed([
@@ -153,10 +156,11 @@ Future<void> demonstrateSemanticSimilarity(String apiKey) async {
   print('🎯 Semantic Similarity:');
 
   try {
-    final provider = await ai()
-        .google((google) => google.embeddingTaskType('SEMANTIC_SIMILARITY'))
+    final provider = await LLMBuilder()
+        .provider(googleProviderId)
         .apiKey(apiKey)
         .model('text-embedding-004')
+        .option('embeddingTaskType', 'SEMANTIC_SIMILARITY')
         .buildEmbedding();
 
     final texts = [

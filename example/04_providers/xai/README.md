@@ -32,28 +32,47 @@ dart run live_search.dart
 
 ### Live Search Query
 ```dart
-final provider = await ai().xai().apiKey('your-key')
-    .model('grok-3').build();
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart';
 
-final response = await provider.chat([
-  ChatMessage.user('What are the latest AI developments this week?'),
-]);
+registerXAI();
+
+final provider = await LLMBuilder()
+    .provider(xaiProviderId)
+    .apiKey('your-key')
+    .model('grok-3')
+    .option('liveSearch', true)
+    .build();
+
+final result = await generateText(
+  model: provider,
+  messages: [ChatMessage.user('What are the latest AI developments this week?')],
+);
 
 // Grok automatically includes live search results
-print('Current info: ${response.text}');
+print('Current info: ${result.text}');
+print(result.providerMetadata);
 ```
 
 ### Real-time Data Access
 ```dart
-final provider = await ai().xai().apiKey('your-key')
-    .model('grok-3').build();
+final provider = await LLMBuilder()
+    .provider(xaiProviderId)
+    .apiKey('your-key')
+    .model('grok-3')
+    .option('liveSearch', true)
+    .build();
 
-final response = await provider.chat([
-  ChatMessage.user('Current Bitcoin price and market trends'),
-]);
+final result = await generateText(
+  model: provider,
+  messages: [ChatMessage.user('Current Bitcoin price and market trends')],
+);
 
 // Live financial data integrated automatically
-print('Live data: ${response.text}');
+print('Live data: ${result.text}');
+print(result.providerMetadata);
 ```
 
 ## Next Steps

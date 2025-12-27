@@ -1,5 +1,11 @@
+import 'dart:io';
 import 'dart:math';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_ollama/llm_dart_ollama.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Comprehensive embeddings examples using the unified EmbeddingCapability interface
 ///
@@ -13,21 +19,45 @@ import 'package:llm_dart/llm_dart.dart';
 Future<void> main() async {
   print('🔢 Vector Embeddings Examples\n');
 
-  // Example with multiple providers that support embeddings
-  final providers = [
-    (
+  registerOpenAI();
+  registerGoogle();
+  registerOllama();
+
+  // Example with multiple providers that support embeddings.
+  final providers = <(String, LLMBuilder Function())>[];
+
+  final openaiKey = Platform.environment['OPENAI_API_KEY'];
+  if (openaiKey != null && openaiKey.isNotEmpty) {
+    providers.add((
       'OpenAI',
-      () => ai()
-          .openai()
-          .apiKey('your-openai-key')
-          .model('text-embedding-3-small')
-    ),
-    (
+      () => LLMBuilder()
+          .provider(openaiProviderId)
+          .apiKey(openaiKey)
+          .model('text-embedding-3-small'),
+    ));
+  }
+
+  final googleKey = Platform.environment['GOOGLE_API_KEY'];
+  if (googleKey != null && googleKey.isNotEmpty) {
+    providers.add((
       'Google',
-      () => ai().google().apiKey('your-google-key').model('text-embedding-004')
-    ),
-    ('Ollama', () => ai().ollama().model('nomic-embed-text')),
-  ];
+      () => LLMBuilder()
+          .provider(googleProviderId)
+          .apiKey(googleKey)
+          .model('text-embedding-004'),
+    ));
+  }
+
+  providers.add((
+    'Ollama',
+    () => LLMBuilder().provider(ollamaProviderId).model('nomic-embed-text'),
+  ));
+
+  if (providers.isEmpty) {
+    print('❌ No embeddings-capable providers configured.');
+    print('   Set OPENAI_API_KEY and/or GOOGLE_API_KEY.');
+    return;
+  }
 
   for (final (name, builderFactory) in providers) {
     print('📊 Testing $name Embeddings:');

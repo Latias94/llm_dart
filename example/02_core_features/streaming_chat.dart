@@ -1,13 +1,19 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 🌊 Streaming Chat - Real-time Response Streaming
 ///
 /// This example demonstrates how to handle real-time streaming responses:
-/// - Processing stream events as they arrive
+/// - Processing stream parts as they arrive (recommended: `llm_dart_ai`)
 /// - Building responsive user interfaces
-/// - Handling different event types
+/// - Handling different part types
 /// - Error recovery and stream management
 ///
 /// Before running, set your API key:
@@ -16,12 +22,20 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('🌊 Streaming Chat - Real-time Response Streaming\n');
 
+  registerGroq();
+  registerAnthropic();
+  registerOpenAI();
+
   // Get API key
-  final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
+  final apiKey = Platform.environment['GROQ_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('❌ Please set GROQ_API_KEY environment variable');
+    return;
+  }
 
   // Create AI provider (Groq is great for streaming due to speed)
-  final provider = await ai()
-      .groq()
+  final provider = await LLMBuilder()
+      .provider(groqProviderId)
       .apiKey(apiKey)
       .model('llama-3.1-8b-instant')
       .temperature(0.7)
@@ -43,30 +57,35 @@ Future<void> demonstrateBasicStreaming(ChatCapability provider) async {
   print('⚡ Basic Streaming:\n');
 
   try {
-    final messages = [
-      ChatMessage.user('Count from 1 to 10 and explain each number briefly.')
-    ];
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user(
+          'Count from 1 to 10 and explain each number briefly.',
+        ),
+      ],
+    );
 
     print('   User: Count from 1 to 10 and explain each number briefly.');
     print('   AI: ');
 
-    // Stream the response
-    await for (final event in provider.chatStream(messages)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
-          // Print each text chunk as it arrives
+    // Stream the response (recommended: llm_dart_ai task API)
+    await for (final part in streamText(
+      model: provider,
+      promptIr: prompt,
+    )) {
+      switch (part) {
+        case TextDeltaPart(delta: final delta):
           stdout.write(delta);
           break;
-        case CompletionEvent():
-          // Stream completed
+        case FinishPart():
           print('\n   ✅ Basic streaming successful\n');
           break;
-        case ErrorEvent(error: final error):
+        case ErrorPart(error: final error):
           print('\n   ❌ Stream error: $error\n');
           break;
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
-          // Handle other event types
+        case ThinkingDeltaPart():
+        case ToolCallDeltaPart():
+          // Ignore for basic demo.
           break;
       }
     }
@@ -75,46 +94,72 @@ Future<void> demonstrateBasicStreaming(ChatCapability provider) async {
   }
 }
 
-/// Demonstrate different stream event types
+/// Demonstrate different streaming part types
 Future<void> demonstrateStreamEventTypes(ChatCapability provider) async {
-  print('📡 Stream Event Types:\n');
+  print('📡 Stream Part Types:\n');
 
   try {
-    final messages = [
-      ChatMessage.user('Write a short poem about programming.')
-    ];
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user('Write a short poem about programming.'),
+      ],
+    );
 
     print('   User: Write a short poem about programming.');
-    print('   Processing events:\n');
+    print('   Processing parts:\n');
 
     var textChunks = 0;
     var totalText = '';
 
-    await for (final event in provider.chatStream(messages)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamChatParts(
+      model: provider,
+      promptIr: prompt,
+    )) {
+      switch (part) {
+        case LLMTextDeltaPart(:final delta):
           textChunks++;
           totalText += delta;
           print('   📝 Text chunk $textChunks: "$delta"');
           break;
 
-        case ThinkingDeltaEvent(delta: final delta):
+        case LLMReasoningDeltaPart(:final delta):
           print('   🧠 Thinking: $delta');
           break;
 
-        case ToolCallDeltaEvent(toolCall: final toolCall):
-          print('   🔧 Tool call: ${toolCall.function.name}');
+        case LLMToolCallStartPart(:final toolCall):
+          print('   🔧 Tool call started: ${toolCall.function.name}');
           break;
 
-        case CompletionEvent(response: final response):
-          print('\n   🏁 Completion event received');
+        case LLMToolCallDeltaPart(:final toolCall):
+          print(
+            '   🔧 Tool call delta: ${toolCall.function.name} '
+            '(args+=${toolCall.function.arguments.length} chars)',
+          );
+          break;
+
+        case LLMProviderMetadataPart(:final providerMetadata):
+          print(
+              '   🧾 Provider metadata keys: ${providerMetadata.keys.toList()}');
+          break;
+
+        case LLMFinishPart(:final response):
+          print('\n   🏁 Finish part received');
           if (response.usage != null) {
             print('   📊 Usage: ${response.usage!.totalTokens} tokens');
           }
           break;
 
-        case ErrorEvent(error: final error):
-          print('   ❌ Error event: $error');
+        case LLMErrorPart(:final error):
+          print('   ❌ Error part: $error');
+          break;
+
+        case LLMTextStartPart():
+        case LLMTextEndPart():
+        case LLMReasoningStartPart():
+        case LLMReasoningEndPart():
+        case LLMToolCallEndPart():
+        case LLMToolResultPart():
+          // Ignore for this demo.
           break;
       }
     }
@@ -122,9 +167,9 @@ Future<void> demonstrateStreamEventTypes(ChatCapability provider) async {
     print('\n   📈 Stream Statistics:');
     print('      • Total text chunks: $textChunks');
     print('      • Final text length: ${totalText.length} characters');
-    print('   ✅ Event types demonstration successful\n');
+    print('   ✅ Part types demonstration successful\n');
   } catch (e) {
-    print('   ❌ Event types demonstration failed: $e\n');
+    print('   ❌ Part types demonstration failed: $e\n');
   }
 }
 
@@ -138,44 +183,49 @@ Future<void> demonstrateStreamingWithThinking(ChatCapability provider) async {
     ChatCapability thinkingProvider = provider;
 
     if (anthropicKey != null && anthropicKey.isNotEmpty) {
-      thinkingProvider = await ai()
-          .anthropic()
+      thinkingProvider = await LLMBuilder()
+          .provider(anthropicProviderId)
           .apiKey(anthropicKey)
           .model('claude-3-5-haiku-20241022')
           .temperature(0.7)
           .build();
     }
 
-    final messages = [
-      ChatMessage.user('Solve this step by step: What is 15% of 240?')
-    ];
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user('Solve this step by step: What is 15% of 240?'),
+      ],
+    );
 
     print('   User: Solve this step by step: What is 15% of 240?');
     print('   Processing with thinking:\n');
 
     var hasThinking = false;
 
-    await for (final event in thinkingProvider.chatStream(messages)) {
-      switch (event) {
-        case ThinkingDeltaEvent(delta: final delta):
+    await for (final part in streamText(
+      model: thinkingProvider,
+      promptIr: prompt,
+    )) {
+      switch (part) {
+        case ThinkingDeltaPart(delta: final delta):
           hasThinking = true;
           print('   🧠 Thinking: $delta');
           break;
 
-        case TextDeltaEvent(delta: final delta):
+        case TextDeltaPart(delta: final delta):
           stdout.write(delta);
           break;
 
-        case CompletionEvent():
+        case FinishPart():
           print('\n');
           break;
 
-        case ErrorEvent(error: final error):
+        case ErrorPart(error: final error):
           print('   ❌ Error: $error');
           break;
 
-        case ToolCallDeltaEvent():
-          // Handle tool calls if needed
+        case ToolCallDeltaPart():
+          // Ignore for this demo.
           break;
       }
     }
@@ -199,36 +249,41 @@ Future<void> demonstrateStreamErrorHandling(ChatCapability provider) async {
 
   try {
     // Create a provider with invalid settings to trigger errors
-    final invalidProvider = await ai()
-        .openai()
+    final invalidProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey('invalid-key') // Invalid API key
         .model('gpt-4o-mini')
         .build();
 
-    final messages = [
-      ChatMessage.user('This should fail due to invalid API key.')
-    ];
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user('This should fail due to invalid API key.'),
+      ],
+    );
 
     print('   Testing error handling with invalid API key...');
 
-    await for (final event in invalidProvider.chatStream(messages)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamText(
+      model: invalidProvider,
+      promptIr: prompt,
+    )) {
+      switch (part) {
+        case TextDeltaPart(delta: final delta):
           print('   📝 Unexpected text: $delta');
           break;
 
-        case ErrorEvent(error: final error):
+        case ErrorPart(error: final error):
           print('   ✅ Caught error in stream: ${error.runtimeType}');
-          print('   📝 Error message: ${error.toString()}');
+          print('   📝 Error message: $error');
           break;
 
-        case CompletionEvent():
+        case FinishPart():
           print('   ❌ Unexpected completion');
           break;
 
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
-          // Handle other event types
+        case ThinkingDeltaPart():
+        case ToolCallDeltaPart():
+          // Ignore for this demo.
           break;
       }
     }
@@ -239,7 +294,7 @@ Future<void> demonstrateStreamErrorHandling(ChatCapability provider) async {
 
   print('\n   💡 Error Handling Best Practices:');
   print('      • Always wrap stream processing in try-catch');
-  print('      • Handle ErrorEvent within the stream');
+  print('      • Handle ErrorPart within the stream');
   print('      • Implement retry logic for transient errors');
   print('      • Provide user feedback for stream interruptions');
   print('   ✅ Error handling demonstration completed\n');
@@ -250,10 +305,13 @@ Future<void> demonstrateStreamPerformance(ChatCapability provider) async {
   print('🚀 Stream Performance:\n');
 
   try {
-    final messages = [
-      ChatMessage.user(
-          'Write a detailed explanation of machine learning in 200 words.')
-    ];
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user(
+          'Write a detailed explanation of machine learning in 200 words.',
+        ),
+      ],
+    );
 
     print(
         '   User: Write a detailed explanation of machine learning in 200 words.');
@@ -265,9 +323,12 @@ Future<void> demonstrateStreamPerformance(ChatCapability provider) async {
     var totalChars = 0;
     final chunkTimes = <int>[];
 
-    await for (final event in provider.chatStream(messages)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamText(
+      model: provider,
+      promptIr: prompt,
+    )) {
+      switch (part) {
+        case TextDeltaPart(delta: final delta):
           chunkCount++;
           totalChars += delta.length;
 
@@ -279,17 +340,17 @@ Future<void> demonstrateStreamPerformance(ChatCapability provider) async {
           chunkTimes.add(stopwatch.elapsedMilliseconds);
           break;
 
-        case CompletionEvent():
+        case FinishPart():
           stopwatch.stop();
           break;
 
-        case ErrorEvent(error: final error):
+        case ErrorPart(error: final error):
           print('   ❌ Performance test error: $error');
           return;
 
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
-          // Handle other event types
+        case ThinkingDeltaPart():
+        case ToolCallDeltaPart():
+          // Ignore for this demo.
           break;
       }
     }
@@ -323,12 +384,9 @@ Future<void> demonstrateStreamPerformance(ChatCapability provider) async {
 
 /// 🎯 Key Streaming Concepts Summary:
 ///
-/// Stream Events:
-/// - TextDeltaEvent: Incremental text content
-/// - ThinkingDeltaEvent: AI reasoning process (some models)
-/// - ToolCallDeltaEvent: Function calls (when using tools)
-/// - CompletionEvent: Stream completion with metadata
-/// - ErrorEvent: Error handling within stream
+/// Recommended stream surface (Vercel-style):
+/// - `streamText`: stable legacy-friendly parts (`TextDeltaPart`, `FinishPart`, ...)
+/// - `streamChatParts`: richer parts with block boundaries + provider metadata
 ///
 /// Benefits:
 /// - Reduced perceived latency

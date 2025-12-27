@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/core/config.dart';
-import 'package:llm_dart/utils/http_config_utils.dart';
+import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('Dio Configuration Priority Tests', () {
@@ -10,7 +10,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
         timeout: Duration(seconds: 45), // LLMConfig timeout
-      ).withExtensions({
+      ).withTransportOptions({
         'connectionTimeout': Duration(seconds: 30), // Custom connection timeout
       });
 
@@ -94,7 +94,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
         timeout: Duration(seconds: 45), // LLMConfig timeout
-      ).withExtensions({
+      ).withTransportOptions({
         'connectionTimeout': Duration(seconds: 30), // Custom connection timeout
         'receiveTimeout': Duration(seconds: 120), // Custom receive timeout
         // No custom send timeout - should use LLMConfig timeout
@@ -120,7 +120,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'customHeaders': {
           'X-Custom-Header': 'custom-value',
           'X-Another-Header': 'another-value',
@@ -148,7 +148,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'customHeaders': {
           'Content-Type': 'application/xml', // Override default
           'X-Custom-Header': 'custom-value',
@@ -176,7 +176,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'customHeaders': <String, String>{}, // Empty map
       });
 
@@ -224,7 +224,7 @@ void main() {
         apiKey: 'test-key',
         model: 'test-model',
         timeout: Duration(seconds: 45),
-      ).withExtensions({
+      ).withTransportOptions({
         'enableHttpLogging': true,
         'connectionTimeout': Duration(seconds: 30),
         'receiveTimeout': Duration(seconds: 120),

@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 // Mock ChatResponse implementation
 class MockChatResponse implements ChatResponse {
@@ -29,6 +30,9 @@ class MockChatResponse implements ChatResponse {
 
   @override
   UsageInfo? get usage => _usage;
+
+  @override
+  Map<String, dynamic>? get providerMetadata => null;
 }
 
 // Mock factory for testing base functionality
@@ -137,7 +141,7 @@ class MockLocalFactory extends LocalProviderFactory<ChatCapability> {
 }
 
 // Mock audio provider factory
-class MockAudioFactory extends AudioProviderFactory<ChatCapability> {
+class MockAudioFactory extends AudioProviderFactory<AudioCapability> {
   @override
   String get providerId => 'mock-audio';
 
@@ -154,14 +158,22 @@ class MockAudioFactory extends AudioProviderFactory<ChatCapability> {
       };
 
   @override
-  ChatCapability create(LLMConfig config) {
-    return MockProvider();
+  AudioCapability create(LLMConfig config) {
+    return MockAudioProvider();
   }
 
   @override
   Map<String, dynamic> getProviderDefaults() => {
         'model': 'audio-model',
         'baseUrl': 'https://api.audio.com',
+      };
+}
+
+class MockAudioProvider extends AudioCapability {
+  @override
+  Set<AudioFeature> get supportedFeatures => {
+        AudioFeature.textToSpeech,
+        AudioFeature.speechToText,
       };
 }
 

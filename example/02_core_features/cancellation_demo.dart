@@ -1,7 +1,11 @@
 // ignore_for_file: avoid_print
 import 'dart:async';
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 🛑 Cancellation Demo - Request Cancellation Support
 ///
@@ -17,6 +21,8 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('🛑 Cancellation Demo - Request Cancellation Support\n');
 
+  registerOpenAI();
+
   // Get API key
   final apiKey = Platform.environment['OPENAI_API_KEY'];
 
@@ -29,8 +35,8 @@ void main() async {
 
   try {
     // Create AI provider
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
@@ -63,12 +69,15 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
     // Create a cancel token
     final cancelToken = CancelToken();
 
-    final messages = [
-      ChatMessage.user(
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user(
           'Write a very long essay about the history of computers, '
           'starting from the abacus and covering at least 50 different '
-          'milestones in computing history.')
-    ];
+          'milestones in computing history.',
+        ),
+      ],
+    );
 
     print('   User: Write a very long essay about computers...');
     print('   AI: ');
@@ -77,12 +86,15 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
     var charCount = 0;
     var firstTokenReceived = false;
 
-    // Start streaming
+    // Start streaming (recommended: llm_dart_ai task API)
     final streamFuture = () async {
-      await for (final event
-          in provider.chatStream(messages, cancelToken: cancelToken)) {
-        switch (event) {
-          case TextDeltaEvent(delta: final delta):
+      await for (final part in streamText(
+        model: provider,
+        promptIr: prompt,
+        cancelToken: cancelToken,
+      )) {
+        switch (part) {
+          case TextDeltaPart(delta: final delta):
             chunkCount++;
             charCount += delta.length;
             stdout.write(delta);
@@ -95,11 +107,11 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
             }
             break;
 
-          case CompletionEvent():
+          case FinishPart():
             print('\n   ⚠️  Stream completed without cancellation');
             break;
 
-          case ErrorEvent(error: final error):
+          case ErrorPart(error: final error):
             if (CancellationHelper.isCancelled(error)) {
               print('   ✅ Stream cancelled via ErrorEvent');
             } else {
@@ -107,9 +119,9 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
             }
             break;
 
-          case ThinkingDeltaEvent():
-          case ToolCallDeltaEvent():
-            // Handle other event types
+          case ThinkingDeltaPart():
+          case ToolCallDeltaPart():
+            // Ignore for this demo.
             break;
         }
       }
@@ -188,18 +200,23 @@ Future<void> demonstrateMultipleRequestCancellation(
     print('   Starting multiple requests with shared token...');
 
     // Start multiple requests with the same token
-    final request1 = provider.chat(
-      [ChatMessage.user('What is 2+2?')],
+    final request1 = generateText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user('What is 2+2?')]),
       cancelToken: sharedToken,
     );
 
-    final request2 = provider.chat(
-      [ChatMessage.user('What is the capital of France?')],
+    final request2 = generateText(
+      model: provider,
+      promptIr: Prompt(
+          messages: [PromptMessage.user('What is the capital of France?')]),
       cancelToken: sharedToken,
     );
 
-    final request3 = provider.chat(
-      [ChatMessage.user('Write a haiku about coding.')],
+    final request3 = generateText(
+      model: provider,
+      promptIr:
+          Prompt(messages: [PromptMessage.user('Write a haiku about coding.')]),
       cancelToken: sharedToken,
     );
 
@@ -242,8 +259,9 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
   print('   Test 1: Using CancellationHelper.isCancelled()');
   try {
     final cancelToken = CancelToken();
-    final requestFuture = provider.chat(
-      [ChatMessage.user('Hello')],
+    final requestFuture = generateText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user('Hello')]),
       cancelToken: cancelToken,
     );
 
@@ -265,8 +283,9 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
   print('\n   Test 2: Using CancelledError catch');
   try {
     final cancelToken = CancelToken();
-    final requestFuture = provider.chat(
-      [ChatMessage.user('Hello again')],
+    final requestFuture = generateText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user('Hello again')]),
       cancelToken: cancelToken,
     );
 
@@ -290,8 +309,9 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
   // Test cancellation error
   try {
     final cancelToken = CancelToken();
-    final future = provider.chat(
-      [ChatMessage.user('Test')],
+    final future = generateText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user('Test')]),
       cancelToken: cancelToken,
     );
     cancelToken.cancel();
@@ -304,9 +324,15 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
 
   // Test other error type (invalid API key)
   try {
-    final invalidProvider =
-        await ai().openai().apiKey('sk-invalid').model('gpt-4o-mini').build();
-    await invalidProvider.chat([ChatMessage.user('Test')]);
+    final invalidProvider = await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey('sk-invalid')
+        .model('gpt-4o-mini')
+        .build();
+    await generateText(
+      model: invalidProvider,
+      promptIr: Prompt(messages: [PromptMessage.user('Test')]),
+    );
   } catch (e) {
     final isCancelled = CancellationHelper.isCancelled(e);
     print(
@@ -326,8 +352,10 @@ Future<void> demonstrateCancellationTiming(ChatCapability provider) async {
     final cancelToken = CancelToken();
     cancelToken.cancel('Pre-cancelled');
 
-    final response = await provider.chat(
-      [ChatMessage.user('This should not execute')],
+    final response = await generateText(
+      model: provider,
+      promptIr:
+          Prompt(messages: [PromptMessage.user('This should not execute')]),
       cancelToken: cancelToken,
     );
 
@@ -347,8 +375,13 @@ Future<void> demonstrateCancellationTiming(ChatCapability provider) async {
   try {
     final cancelToken = CancelToken();
 
-    final requestFuture = provider.chat(
-      [ChatMessage.user('Count from 1 to 1000 with explanations.')],
+    final requestFuture = generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.user('Count from 1 to 1000 with explanations.'),
+        ],
+      ),
       cancelToken: cancelToken,
     );
 

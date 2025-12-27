@@ -1,1 +1,8 @@
 include: package:lints/recommended.yaml
+
+analyzer:
+  exclude:
+    # Documentation/provider templates are not meant to be analyzed as source.
+    - docs/templates/**
+    # Reference repos are vendored for comparison and are not part of this package.
+    - repo-ref/**

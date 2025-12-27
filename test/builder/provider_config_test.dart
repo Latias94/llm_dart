@@ -251,5 +251,31 @@ void main() {
       expect(result['numCtx'], equals(4096));
       expect(result['custom'], equals('value'));
     });
+
+    group('LLMBuilder Integration', () {
+      test('providerConfig() merges into providerOptions for current provider',
+          () {
+        final builder = LLMBuilder()
+            .provider('ollama')
+            .providerConfig((p) => p.numCtx(4096).keepAlive('5m'));
+
+        expect(
+          builder.currentConfig.getProviderOption<int>('ollama', 'numCtx'),
+          equals(4096),
+        );
+        expect(
+          builder.currentConfig
+              .getProviderOption<String>('ollama', 'keepAlive'),
+          equals('5m'),
+        );
+      });
+
+      test('providerConfig() throws when provider not selected', () {
+        expect(
+          () => LLMBuilder().providerConfig((p) => p.numCtx(4096)),
+          throwsA(isA<Exception>()),
+        );
+      });
+    });
   });
 }

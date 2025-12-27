@@ -1,5 +1,8 @@
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
 
 /// ElevenLabs Audio Capabilities Example
 ///
@@ -18,16 +21,19 @@ Future<void> main() async {
 
   print('🎙️ ElevenLabs Audio Capabilities Demo\n');
 
+  registerElevenLabs();
+
   // Create ElevenLabs provider with high-quality voice settings using buildAudio()
   // This provides compile-time type safety and eliminates runtime type casting
-  final audioProvider = await ai()
-      .elevenlabs((elevenlabs) => elevenlabs
-          .voiceId('JBFqnCBsd6RMkjVDRZzb') // High-quality voice
-          .stability(0.5)
-          .similarityBoost(0.75)
-          .style(0.2))
+  final audioProvider = await LLMBuilder()
+      .provider(elevenLabsProviderId)
       .apiKey(apiKey)
-      .buildAudio(); // Type-safe audio capability building
+      .providerOptions(elevenLabsProviderId, const {
+    'voiceId': 'JBFqnCBsd6RMkjVDRZzb', // High-quality voice
+    'stability': 0.5,
+    'similarityBoost': 0.75,
+    'style': 0.2,
+  }).buildAudio(); // Type-safe audio capability building
 
   // Display supported features
   await displaySupportedFeatures(audioProvider);

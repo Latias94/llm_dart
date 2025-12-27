@@ -1,5 +1,7 @@
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// OpenAI Image Generation Example
 ///
@@ -15,6 +17,8 @@ Future<void> main() async {
     print('❌ Please set OPENAI_API_KEY environment variable');
     return;
   }
+
+  registerOpenAI();
 
   print('🎨 OpenAI Image Generation Demo\n');
 
@@ -35,11 +39,11 @@ Future<void> testDALLE3Generation(String apiKey) async {
   try {
     // Create OpenAI provider for DALL-E 3 using buildImageGeneration()
     // This provides compile-time type safety and eliminates runtime type casting
-    final imageProvider = await ai()
-        .openai()
+    final imageProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('dall-e-3')
-        .buildImageGeneration(); // Type-safe image generation capability building
+        .buildImageGeneration();
 
     // Display capabilities
     print('   🔍 Supported sizes: ${imageProvider.getSupportedSizes()}');
@@ -105,11 +109,11 @@ Future<void> testDALLE2Generation(String apiKey) async {
 
   try {
     // Create OpenAI provider for DALL-E 2 using buildImageGeneration()
-    final imageProvider = await ai()
-        .openai()
+    final imageProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('dall-e-2')
-        .buildImageGeneration(); // Type-safe image generation capability building
+        .buildImageGeneration();
 
     // Example: Multiple images with DALL-E 2
     print('   🔢 Multiple Images Generation:');
@@ -141,11 +145,11 @@ Future<void> testImageEditing(String apiKey) async {
 
   try {
     // Create provider for image editing using buildImageGeneration()
-    final imageProvider = await ai()
-        .openai()
+    final imageProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
-        .model('dall-e-2') // Only DALL-E 2 supports editing
-        .buildImageGeneration(); // Type-safe image generation capability building
+        .model('dall-e-2')
+        .buildImageGeneration();
 
     if (!imageProvider.supportsImageEditing) {
       print('   ⏭️  Skipping - image editing not supported');
@@ -170,11 +174,11 @@ Future<void> testImageVariations(String apiKey) async {
 
   try {
     // Create provider for image variations using buildImageGeneration()
-    final imageProvider = await ai()
-        .openai()
+    final imageProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
-        .model('dall-e-2') // Only DALL-E 2 supports variations
-        .buildImageGeneration(); // Type-safe image generation capability building
+        .model('dall-e-2')
+        .buildImageGeneration();
 
     if (!imageProvider.supportsImageVariations) {
       print('   ⏭️  Skipping - image variations not supported');

@@ -48,10 +48,9 @@ void main() {
           maxTokens: 1000,
           systemPrompt: 'You are a helpful assistant',
           timeout: Duration(seconds: 30),
-          stream: true,
           topP: 0.9,
           topK: 50,
-          extensions: {'custom': 'value'},
+          providerOptions: const {'custom': 'value'},
         );
 
         expect(provider, isNotNull);
@@ -71,31 +70,31 @@ void main() {
           timeout: null,
           topP: null,
           topK: null,
-          extensions: null,
+          providerOptions: null,
         );
 
         expect(provider, isNotNull);
         expect(provider.toString(), contains('OpenAIProvider'));
       });
 
-      test('handles empty extensions map', () async {
+      test('handles empty providerOptions map', () async {
         final provider = await createProvider(
           providerId: 'openai',
           apiKey: 'test-key',
           model: 'gpt-3.5-turbo',
-          extensions: {},
+          providerOptions: {},
         );
 
         expect(provider, isNotNull);
         expect(provider.toString(), contains('OpenAIProvider'));
       });
 
-      test('handles multiple extensions', () async {
+      test('handles multiple providerOptions', () async {
         final provider = await createProvider(
           providerId: 'openai',
           apiKey: 'test-key',
           model: 'gpt-3.5-turbo',
-          extensions: {
+          providerOptions: {
             'ext1': 'value1',
             'ext2': 'value2',
             'ext3': {'nested': 'value'},

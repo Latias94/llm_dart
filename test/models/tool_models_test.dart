@@ -179,6 +179,40 @@ void main() {
       });
     });
 
+    group('ProviderTool', () {
+      test('should infer provider id from stable id', () {
+        const tool = ProviderTool(id: 'openai.web_search_preview');
+        expect(tool.inferredProviderId, equals('openai'));
+      });
+
+      test('should serialize to JSON correctly', () {
+        const tool = ProviderTool(
+          id: 'openai.file_search',
+          options: {
+            'vectorStoreIds': ['vs_123']
+          },
+        );
+
+        final json = tool.toJson();
+        expect(json['id'], equals('openai.file_search'));
+        expect(
+            json['options'],
+            equals({
+              'vectorStoreIds': ['vs_123']
+            }));
+      });
+
+      test('should deserialize from JSON correctly', () {
+        final tool = ProviderTool.fromJson({
+          'id': 'anthropic.web_search_20250305',
+          'options': {'maxUses': 3},
+        });
+
+        expect(tool.id, equals('anthropic.web_search_20250305'));
+        expect(tool.options, equals({'maxUses': 3}));
+      });
+    });
+
     group('ToolChoice Classes', () {
       test('AutoToolChoice should serialize correctly', () {
         const choice = AutoToolChoice();

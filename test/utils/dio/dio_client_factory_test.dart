@@ -1,26 +1,18 @@
 import 'package:dio/dio.dart';
 import 'package:test/test.dart';
 
-import 'package:llm_dart/core/config.dart';
-import 'package:llm_dart/providers/anthropic/config.dart';
-import 'package:llm_dart/providers/anthropic/dio_strategy.dart';
-import 'package:llm_dart/providers/openai/config.dart';
-import 'package:llm_dart/providers/openai/dio_strategy.dart';
-import 'package:llm_dart/providers/google/config.dart';
-import 'package:llm_dart/providers/google/dio_strategy.dart';
-import 'package:llm_dart/providers/xai/config.dart';
-import 'package:llm_dart/providers/xai/dio_strategy.dart';
-import 'package:llm_dart/providers/groq/config.dart';
-import 'package:llm_dart/providers/groq/dio_strategy.dart';
-import 'package:llm_dart/providers/deepseek/config.dart';
-import 'package:llm_dart/providers/deepseek/dio_strategy.dart';
-import 'package:llm_dart/providers/ollama/config.dart';
-import 'package:llm_dart/providers/ollama/dio_strategy.dart';
-import 'package:llm_dart/providers/phind/config.dart';
-import 'package:llm_dart/providers/phind/dio_strategy.dart';
-import 'package:llm_dart/providers/elevenlabs/config.dart';
-import 'package:llm_dart/providers/elevenlabs/dio_strategy.dart';
-import 'package:llm_dart/utils/dio_client_factory.dart';
+import 'package:llm_dart_anthropic_compatible/config.dart';
+import 'package:llm_dart_anthropic_compatible/dio_strategy.dart';
+import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_elevenlabs/config.dart';
+import 'package:llm_dart_elevenlabs/dio_strategy.dart';
+import 'package:llm_dart_google/config.dart';
+import 'package:llm_dart_google/dio_strategy.dart';
+import 'package:llm_dart_ollama/config.dart';
+import 'package:llm_dart_ollama/dio_strategy.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('DioClientFactory', () {
@@ -92,7 +84,7 @@ void main() {
         baseUrl: 'https://api.anthropic.com/v1/',
         apiKey: 'test-key',
         model: 'claude-sonnet-4-20250514',
-      ).withExtensions({
+      ).withTransportOptions({
         'customDio': customDio,
       });
 
@@ -133,7 +125,7 @@ void main() {
         baseUrl: 'https://api.anthropic.com/v1/',
         apiKey: 'test-key',
         model: 'claude-sonnet-4-20250514',
-      ).withExtensions({
+      ).withTransportOptions({
         'customDio': customDio,
       });
 
@@ -199,42 +191,32 @@ void main() {
       expect(headers.containsKey('Authorization'), isFalse);
     });
 
-    test('XAIDioStrategy should build correct headers', () {
-      final config = XAIConfig(
+    test('xAI should use standard OpenAI-compatible headers', () {
+      final config = OpenAICompatibleConfig(
+        providerId: 'xai',
+        providerName: 'xAI',
         baseUrl: 'https://api.x.ai/v1/',
         apiKey: 'test-key',
         model: 'grok-3',
       );
 
-      final strategy = XAIDioStrategy();
+      final strategy = OpenAIDioStrategy(providerName: 'xAI');
       final headers = strategy.buildHeaders(config);
 
       expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
     });
 
-    test('GroqDioStrategy should build correct headers', () {
-      final config = GroqConfig(
+    test('Groq should use standard OpenAI-compatible headers', () {
+      final config = OpenAICompatibleConfig(
+        providerId: 'groq',
+        providerName: 'Groq',
         baseUrl: 'https://api.groq.com/openai/v1/',
         apiKey: 'test-key',
         model: 'llama-3.3-70b-versatile',
       );
 
-      final strategy = GroqDioStrategy();
-      final headers = strategy.buildHeaders(config);
-
-      expect(headers['Authorization'], equals('Bearer test-key'));
-      expect(headers['Content-Type'], equals('application/json'));
-    });
-
-    test('DeepSeekDioStrategy should build correct headers', () {
-      final config = DeepSeekConfig(
-        baseUrl: 'https://api.deepseek.com/v1/',
-        apiKey: 'test-key',
-        model: 'deepseek-chat',
-      );
-
-      final strategy = DeepSeekDioStrategy();
+      final strategy = OpenAIDioStrategy(providerName: 'Groq');
       final headers = strategy.buildHeaders(config);
 
       expect(headers['Authorization'], equals('Bearer test-key'));
@@ -269,20 +251,20 @@ void main() {
       expect(headers['Content-Type'], equals('application/json'));
     });
 
-    test('PhindDioStrategy should build correct headers', () {
-      final config = PhindConfig(
+    test('Phind should use standard OpenAI-compatible headers', () {
+      final config = OpenAICompatibleConfig(
+        providerId: 'phind',
+        providerName: 'Phind',
         apiKey: 'test-key',
         baseUrl: 'https://api.phind.com/v1/',
         model: 'Phind-70B',
       );
 
-      final strategy = PhindDioStrategy();
+      final strategy = OpenAIDioStrategy(providerName: 'Phind');
       final headers = strategy.buildHeaders(config);
 
-      expect(headers['User-Agent'], equals(''));
+      expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
-      expect(headers['Accept'], equals('*/*'));
-      expect(headers['Accept-Encoding'], equals('Identity'));
     });
 
     test('ElevenLabsDioStrategy should build correct headers', () {
@@ -309,7 +291,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'customDio': customDio,
       });
 
@@ -336,28 +318,28 @@ void main() {
               originalConfig: llmConfig)
         },
         {
-          'strategy': XAIDioStrategy(),
-          'config': XAIConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'strategy': OpenAIDioStrategy(providerName: 'xAI'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'xai',
+            providerName: 'xAI',
+          )
         },
         {
-          'strategy': GroqDioStrategy(),
-          'config': GroqConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'strategy': OpenAIDioStrategy(providerName: 'Groq'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'groq',
+            providerName: 'Groq',
+          )
         },
         {
-          'strategy': DeepSeekDioStrategy(),
-          'config': DeepSeekConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'strategy': OpenAIDioStrategy(providerName: 'DeepSeek'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'deepseek',
+            providerName: 'DeepSeek',
+          )
         },
         {
           'strategy': OllamaDioStrategy(),
@@ -368,8 +350,12 @@ void main() {
               originalConfig: llmConfig)
         },
         {
-          'strategy': PhindDioStrategy(),
-          'config': PhindConfig.fromLLMConfig(llmConfig)
+          'strategy': OpenAIDioStrategy(providerName: 'Phind'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'phind',
+            providerName: 'Phind',
+          )
         },
         {
           'strategy': ElevenLabsDioStrategy(),
@@ -425,28 +411,28 @@ void main() {
               originalConfig: llmConfig)
         },
         {
-          'strategy': XAIDioStrategy(),
-          'config': XAIConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'strategy': OpenAIDioStrategy(providerName: 'xAI'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'xai',
+            providerName: 'xAI',
+          )
         },
         {
-          'strategy': GroqDioStrategy(),
-          'config': GroqConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'strategy': OpenAIDioStrategy(providerName: 'Groq'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'groq',
+            providerName: 'Groq',
+          )
         },
         {
-          'strategy': DeepSeekDioStrategy(),
-          'config': DeepSeekConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'strategy': OpenAIDioStrategy(providerName: 'DeepSeek'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'deepseek',
+            providerName: 'DeepSeek',
+          )
         },
         {
           'strategy': OllamaDioStrategy(),
@@ -457,8 +443,12 @@ void main() {
               originalConfig: llmConfig)
         },
         {
-          'strategy': PhindDioStrategy(),
-          'config': PhindConfig.fromLLMConfig(llmConfig)
+          'strategy': OpenAIDioStrategy(providerName: 'Phind'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'phind',
+            providerName: 'Phind',
+          )
         },
         {
           'strategy': ElevenLabsDioStrategy(),
@@ -511,36 +501,40 @@ void main() {
           'expectedHeaders': {'Authorization': 'Bearer test-key'}
         },
         {
-          'strategy': XAIDioStrategy(),
-          'config': XAIConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig),
+          'strategy': OpenAIDioStrategy(providerName: 'xAI'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'xai',
+            providerName: 'xAI',
+          ),
           'expectedHeaders': {'Authorization': 'Bearer test-key'}
         },
         {
-          'strategy': GroqDioStrategy(),
-          'config': GroqConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig),
+          'strategy': OpenAIDioStrategy(providerName: 'Groq'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'groq',
+            providerName: 'Groq',
+          ),
           'expectedHeaders': {'Authorization': 'Bearer test-key'}
         },
         {
-          'strategy': DeepSeekDioStrategy(),
-          'config': DeepSeekConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig),
+          'strategy': OpenAIDioStrategy(providerName: 'DeepSeek'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'deepseek',
+            providerName: 'DeepSeek',
+          ),
           'expectedHeaders': {'Authorization': 'Bearer test-key'}
         },
         {
-          'strategy': PhindDioStrategy(),
-          'config': PhindConfig.fromLLMConfig(llmConfig),
-          'expectedHeaders': {'User-Agent': '', 'Accept': '*/*'}
+          'strategy': OpenAIDioStrategy(providerName: 'Phind'),
+          'config': OpenAICompatibleConfig.fromLLMConfig(
+            llmConfig,
+            providerId: 'phind',
+            providerName: 'Phind',
+          ),
+          'expectedHeaders': {'Authorization': 'Bearer test-key'}
         },
         {
           'strategy': ElevenLabsDioStrategy(),

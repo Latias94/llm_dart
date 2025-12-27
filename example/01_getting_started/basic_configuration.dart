@@ -1,6 +1,10 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 🔧 Basic Configuration - Learn important configuration parameters
 ///
@@ -16,7 +20,13 @@ void main() async {
   print('🔧 Basic Configuration Guide\n');
 
   // Get API key (using OpenAI as example, but works with any provider)
-  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('❌ Please set OPENAI_API_KEY environment variable');
+    return;
+  }
+
+  registerOpenAI();
 
   // Demonstrate different configuration aspects
   await demonstrateTemperatureSettings(apiKey);
@@ -38,17 +48,20 @@ Future<void> demonstrateTemperatureSettings(String apiKey) async {
 
   for (final temp in temperatures) {
     try {
-      final provider = await ai()
-          .openai()
+      final provider = await LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(apiKey)
           .model('gpt-4o-mini')
           .temperature(temp) // Key parameter: controls randomness
           .maxTokens(50)
           .build();
 
-      final response = await provider.chat([ChatMessage.user(question)]);
+      final result = await generateText(
+        model: provider,
+        promptIr: Prompt(messages: [PromptMessage.user(question)]),
+      );
 
-      print('   Temperature $temp: ${response.text}');
+      print('   Temperature $temp: ${result.text}');
     } catch (e) {
       print('   Temperature $temp: Error - $e');
     }
@@ -69,19 +82,22 @@ Future<void> demonstrateTokenLimits(String apiKey) async {
 
   for (final limit in tokenLimits) {
     try {
-      final provider = await ai()
-          .openai()
+      final provider = await LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(apiKey)
           .model('gpt-4o-mini')
           .temperature(0.7)
           .maxTokens(limit) // Key parameter: controls response length
           .build();
 
-      final response = await provider.chat([ChatMessage.user(question)]);
-      final wordCount = response.text?.split(' ').length ?? 0;
+      final result = await generateText(
+        model: provider,
+        promptIr: Prompt(messages: [PromptMessage.user(question)]),
+      );
+      final wordCount = result.text?.split(' ').length ?? 0;
 
       print('   Max Tokens $limit: $wordCount words');
-      print('   Response: ${response.text}\n');
+      print('   Response: ${result.text}\n');
     } catch (e) {
       print('   Max Tokens $limit: Error - $e\n');
     }
@@ -108,8 +124,8 @@ Future<void> demonstrateSystemPrompts(String apiKey) async {
 
   for (int i = 0; i < systemPrompts.length; i++) {
     try {
-      final builder = ai()
-          .openai()
+      final builder = LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(apiKey)
           .model('gpt-4o-mini')
           .temperature(0.7)
@@ -121,11 +137,14 @@ Future<void> demonstrateSystemPrompts(String apiKey) async {
       }
 
       final provider = await builder.build();
-      final response = await provider.chat([ChatMessage.user(question)]);
+      final result = await generateText(
+        model: provider,
+        promptIr: Prompt(messages: [PromptMessage.user(question)]),
+      );
 
       final promptDesc = systemPrompts[i] ?? 'No system prompt';
       print('   System: $promptDesc');
-      print('   Response: ${response.text}\n');
+      print('   Response: ${result.text}\n');
     } catch (e) {
       print('   System prompt ${i + 1}: Error - $e\n');
     }
@@ -157,13 +176,16 @@ Future<void> demonstrateErrorHandling(String apiKey) async {
 /// Test invalid API key scenario
 Future<void> testInvalidApiKey() async {
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey('invalid-key') // Intentionally invalid
         .model('gpt-4o-mini')
         .build();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    await generateText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user('Hello')]),
+    );
     print('   ❌ Expected error but got success');
   } on AuthError catch (e) {
     print('   ✅ Caught AuthError: ${e.message}');
@@ -175,13 +197,16 @@ Future<void> testInvalidApiKey() async {
 /// Test invalid model scenario
 Future<void> testInvalidModel(String apiKey) async {
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('invalid-model-name') // Intentionally invalid
         .build();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    await generateText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user('Hello')]),
+    );
     print('   ❌ Expected error but got success');
   } on InvalidRequestError catch (e) {
     print('   ✅ Caught InvalidRequestError: ${e.message}');
@@ -193,14 +218,17 @@ Future<void> testInvalidModel(String apiKey) async {
 /// Test network timeout scenario
 Future<void> testNetworkTimeout(String apiKey) async {
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(milliseconds: 1)) // Very short timeout
         .build();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    await generateText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user('Hello')]),
+    );
     print('   ❌ Expected timeout but got success');
   } on TimeoutError catch (e) {
     print('   ✅ Caught TimeoutError: ${e.message}');
@@ -221,8 +249,8 @@ Future<void> demonstrateTimeoutSettings(String apiKey) async {
 
   for (final timeout in timeouts) {
     try {
-      final provider = await ai()
-          .openai()
+      final provider = await LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(apiKey)
           .model('gpt-4o-mini')
           .temperature(0.7)
@@ -230,8 +258,12 @@ Future<void> demonstrateTimeoutSettings(String apiKey) async {
           .build();
 
       final stopwatch = Stopwatch()..start();
-      await provider
-          .chat([ChatMessage.user('Explain quantum computing briefly.')]);
+      await generateText(
+        model: provider,
+        promptIr: Prompt(
+          messages: [PromptMessage.user('Explain quantum computing briefly.')],
+        ),
+      );
       stopwatch.stop();
 
       print(

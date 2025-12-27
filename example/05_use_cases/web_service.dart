@@ -1,7 +1,11 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:convert';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
 
 /// 🌐 Web Service Integration - HTTP API with AI
 ///
@@ -72,10 +76,15 @@ class AIWebService {
 
   /// Initialize AI provider
   Future<void> _initializeAI() async {
-    final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
+    registerGroq();
 
-    _aiProvider = await ai()
-        .groq()
+    final apiKey = Platform.environment['GROQ_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('GROQ_API_KEY environment variable not set');
+    }
+
+    _aiProvider = await LLMBuilder()
+        .provider(groqProviderId)
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.7)
@@ -164,7 +173,8 @@ class AIWebService {
 
       // Get AI response
       final stopwatch = Stopwatch()..start();
-      final response = await _aiProvider.chat(messages);
+      final response =
+          await generateText(model: _aiProvider, messages: messages);
       stopwatch.stop();
 
       // Send response
@@ -246,7 +256,8 @@ class AIWebService {
       ];
 
       final stopwatch = Stopwatch()..start();
-      final response = await _aiProvider.chat(messages);
+      final response =
+          await generateText(model: _aiProvider, messages: messages);
       stopwatch.stop();
 
       final responseData = {
@@ -273,8 +284,10 @@ class AIWebService {
 
     try {
       // Test AI provider
-      final testResponse = await _aiProvider
-          .chat([ChatMessage.user('Health check - respond with OK')]);
+      final testResponse = await generateText(
+        model: _aiProvider,
+        messages: [ChatMessage.user('Health check - respond with OK')],
+      );
 
       final healthData = {
         'status': 'healthy',

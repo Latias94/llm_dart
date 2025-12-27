@@ -1,6 +1,12 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 🧠 Reasoning Models - AI Thinking Processes
 ///
@@ -17,11 +23,19 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('🧠 Reasoning Models - AI Thinking Processes\n');
 
+  registerDeepSeek();
+  registerOpenAI();
+  registerAnthropic();
+
   // Get API keys
-  final deepseekKey = Platform.environment['DEEPSEEK_API_KEY'] ?? 'sk-TESTKEY';
-  final openaiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
-  final anthropicKey =
-      Platform.environment['ANTHROPIC_API_KEY'] ?? 'sk-ant-TESTKEY';
+  final deepseekKey = Platform.environment['DEEPSEEK_API_KEY'];
+  final openaiKey = Platform.environment['OPENAI_API_KEY'];
+  final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
+
+  if (deepseekKey == null || deepseekKey.isEmpty) {
+    print('❌ Please set DEEPSEEK_API_KEY environment variable');
+    return;
+  }
 
   // Demonstrate different reasoning scenarios using DeepSeek
   await demonstrateBasicReasoning(deepseekKey);
@@ -39,8 +53,8 @@ Future<void> demonstrateBasicReasoning(String apiKey) async {
 
   try {
     // Create DeepSeek reasoning model
-    final reasoningProvider = await ai()
-        .deepseek()
+    final reasoningProvider = await LLMBuilder()
+        .provider(deepseekProviderId)
         .apiKey(apiKey)
         .model('deepseek-reasoner') // DeepSeek reasoning model
         .temperature(0.7)
@@ -56,7 +70,10 @@ Show your reasoning step by step.
 
     print('   Problem: $problem');
 
-    final response = await reasoningProvider.chat([ChatMessage.user(problem)]);
+    final response = await generateText(
+      model: reasoningProvider,
+      messages: [ChatMessage.user(problem)],
+    );
 
     print('   🤖 AI Response: ${response.text}');
 
@@ -93,8 +110,8 @@ Future<void> demonstrateComplexProblemSolving(String apiKey) async {
 
   try {
     // Create DeepSeek reasoning model for complex problems
-    final reasoningProvider = await ai()
-        .deepseek()
+    final reasoningProvider = await LLMBuilder()
+        .provider(deepseekProviderId)
         .apiKey(apiKey)
         .model('deepseek-reasoner')
         .temperature(0.8)
@@ -117,8 +134,10 @@ Include estimated costs and explain your reasoning.
     print(
         '   Complex Problem: Planning a dinner party with multiple constraints');
 
-    final response =
-        await reasoningProvider.chat([ChatMessage.user(complexProblem)]);
+    final response = await generateText(
+      model: reasoningProvider,
+      messages: [ChatMessage.user(complexProblem)],
+    );
 
     print('   🤖 AI Solution: ${response.text}');
 
@@ -176,8 +195,8 @@ Future<void> demonstrateStreamingReasoning(String apiKey) async {
 
   try {
     // Create DeepSeek reasoning model for streaming
-    final reasoningProvider = await ai()
-        .deepseek()
+    final reasoningProvider = await LLMBuilder()
+        .provider(deepseekProviderId)
         .apiKey(apiKey)
         .model('deepseek-reasoner')
         .temperature(0.7)
@@ -194,17 +213,19 @@ Future<void> demonstrateStreamingReasoning(String apiKey) async {
     var responseContent = StringBuffer();
     var isThinking = true;
 
-    // Send streaming chat request and handle events
-    await for (final event
-        in reasoningProvider.chatStream([ChatMessage.user(problem)])) {
-      switch (event) {
-        case ThinkingDeltaEvent(delta: final delta):
+    // Stream text and handle thinking + final answer parts
+    await for (final part in streamText(
+      model: reasoningProvider,
+      promptIr: Prompt(messages: [PromptMessage.user(problem)]),
+    )) {
+      switch (part) {
+        case ThinkingDeltaPart(delta: final delta):
           // Collect thinking/reasoning content
           thinkingContent.write(delta);
           stdout.write(
               '\x1B[90m$delta\x1B[0m'); // Gray color for thinking content, no newline
           break;
-        case TextDeltaEvent(delta: final delta):
+        case TextDeltaPart(delta: final delta):
           // This is the actual response after thinking
           if (isThinking) {
             print('\n\n   🎯 Final Answer:');
@@ -213,22 +234,21 @@ Future<void> demonstrateStreamingReasoning(String apiKey) async {
           responseContent.write(delta);
           stdout.write(delta); // No newline for continuous text
           break;
-        case ToolCallDeltaEvent(toolCall: final toolCall):
+        case ToolCallDeltaPart(toolCall: final toolCall):
           // Handle tool call events (if supported)
           print('\n   [Tool Call: ${toolCall.function.name}]');
           break;
-        case CompletionEvent(response: final response):
-          // Handle completion
+        case FinishPart(result: final result):
           print('\n\n✅ Streaming reasoning completed!');
 
-          if (response.usage != null) {
-            final usage = response.usage!;
+          if (result.usage != null) {
+            final usage = result.usage!;
             print(
               '\n📊 Usage: ${usage.promptTokens} prompt + ${usage.completionTokens} completion = ${usage.totalTokens} total tokens',
             );
           }
           break;
-        case ErrorEvent(error: final error):
+        case ErrorPart(error: final error):
           // Handle errors
           print('\n❌ Stream error: $error');
           break;
@@ -252,7 +272,7 @@ Future<void> demonstrateStreamingReasoning(String apiKey) async {
 
 /// Compare reasoning vs standard models
 Future<void> demonstrateReasoningComparison(
-    String deepseekKey, String openaiKey, String anthropicKey) async {
+    String deepseekKey, String? openaiKey, String? anthropicKey) async {
   print('⚖️  Reasoning vs Standard Model Comparison:\n');
 
   final mathProblem = '''
@@ -266,10 +286,18 @@ and finally 40 mph for 30 minutes, what is the total distance traveled?
   await testDeepSeekReasoningModel(deepseekKey, mathProblem);
 
   // Test with standard model (OpenAI)
-  await testStandardModel(openaiKey, mathProblem);
+  if (openaiKey != null && openaiKey.isNotEmpty) {
+    await testStandardModel(openaiKey, mathProblem);
+  } else {
+    print('\n   ⚠️  Skipped OpenAI comparison: set OPENAI_API_KEY');
+  }
 
   // Test with Anthropic (which has built-in reasoning)
-  await testAnthropicModel(anthropicKey, mathProblem);
+  if (anthropicKey != null && anthropicKey.isNotEmpty) {
+    await testAnthropicModel(anthropicKey, mathProblem);
+  } else {
+    print('\n   ⚠️  Skipped Anthropic comparison: set ANTHROPIC_API_KEY');
+  }
 
   print('   💡 Comparison Insights:');
   print('      • DeepSeek R1: Shows detailed thinking process');
@@ -281,15 +309,18 @@ and finally 40 mph for 30 minutes, what is the total distance traveled?
 /// Test DeepSeek reasoning model
 Future<void> testDeepSeekReasoningModel(String apiKey, String problem) async {
   try {
-    final reasoningProvider = await ai()
-        .deepseek()
+    final reasoningProvider = await LLMBuilder()
+        .provider(deepseekProviderId)
         .apiKey(apiKey)
         .model('deepseek-r1') // DeepSeek reasoning model
         .temperature(0.7)
         .build();
 
     final stopwatch = Stopwatch()..start();
-    final response = await reasoningProvider.chat([ChatMessage.user(problem)]);
+    final response = await generateText(
+      model: reasoningProvider,
+      messages: [ChatMessage.user(problem)],
+    );
     stopwatch.stop();
 
     print('\n   🧠 DeepSeek Reasoning Model (deepseek-r1):');
@@ -313,15 +344,18 @@ Future<void> testDeepSeekReasoningModel(String apiKey, String problem) async {
 /// Test standard model
 Future<void> testStandardModel(String apiKey, String problem) async {
   try {
-    final standardProvider = await ai()
-        .openai()
+    final standardProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini') // Standard model
         .temperature(0.3)
         .build();
 
     final stopwatch = Stopwatch()..start();
-    final response = await standardProvider.chat([ChatMessage.user(problem)]);
+    final response = await generateText(
+      model: standardProvider,
+      messages: [ChatMessage.user(problem)],
+    );
     stopwatch.stop();
 
     print('\n   📊 Standard Model (gpt-4o-mini):');
@@ -340,15 +374,18 @@ Future<void> testStandardModel(String apiKey, String problem) async {
 /// Test Anthropic model
 Future<void> testAnthropicModel(String apiKey, String problem) async {
   try {
-    final anthropicProvider = await ai()
-        .anthropic()
+    final anthropicProvider = await LLMBuilder()
+        .provider(anthropicProviderId)
         .apiKey(apiKey)
         .model('claude-3-5-haiku-20241022')
         .temperature(0.3)
         .build();
 
     final stopwatch = Stopwatch()..start();
-    final response = await anthropicProvider.chat([ChatMessage.user(problem)]);
+    final response = await generateText(
+      model: anthropicProvider,
+      messages: [ChatMessage.user(problem)],
+    );
     stopwatch.stop();
 
     print('\n   🎭 Anthropic Model (Claude):');
@@ -369,8 +406,8 @@ Future<void> demonstrateThinkingProcessAnalysis(String apiKey) async {
   print('🔬 Thinking Process Analysis with DeepSeek R1:\n');
 
   try {
-    final deepseekProvider = await ai()
-        .deepseek()
+    final deepseekProvider = await LLMBuilder()
+        .provider(deepseekProviderId)
         .apiKey(apiKey)
         .model('deepseek-r1')
         .temperature(0.7)
@@ -392,8 +429,10 @@ What are the top 3 priorities to address, and why?
 
     print('   Business Problem: Coffee shop losing customers');
 
-    final response =
-        await deepseekProvider.chat([ChatMessage.user(analyticalProblem)]);
+    final response = await generateText(
+      model: deepseekProvider,
+      messages: [ChatMessage.user(analyticalProblem)],
+    );
 
     print('   🤖 AI Analysis: ${response.text}');
 

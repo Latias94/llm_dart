@@ -15,6 +15,17 @@ void main() {
         final json = tool.toJson();
 
         expect(json['type'], equals('web_search_preview'));
+        expect(json.containsKey('search_context_size'), isFalse);
+      });
+
+      test('should serialize search_context_size when provided', () {
+        const tool = OpenAIWebSearchTool(
+          searchContextSize: OpenAIWebSearchContextSize.high,
+        );
+        final json = tool.toJson();
+
+        expect(json['type'], equals('web_search_preview'));
+        expect(json['search_context_size'], equals('high'));
       });
 
       test('should create via factory method', () {
@@ -27,14 +38,21 @@ void main() {
       test('should have correct equality and hashCode', () {
         const tool1 = OpenAIWebSearchTool();
         const tool2 = OpenAIWebSearchTool();
+        const tool3 = OpenAIWebSearchTool(
+          searchContextSize: OpenAIWebSearchContextSize.high,
+        );
 
         expect(tool1, equals(tool2));
         expect(tool1.hashCode, equals(tool2.hashCode));
+        expect(tool1, isNot(equals(tool3)));
       });
 
       test('should have correct toString', () {
         const tool = OpenAIWebSearchTool();
-        expect(tool.toString(), equals('OpenAIWebSearchTool()'));
+        expect(
+          tool.toString(),
+          equals('OpenAIWebSearchTool(searchContextSize: null)'),
+        );
       });
     });
 

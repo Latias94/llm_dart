@@ -5,6 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.11.0-alpha.1] - Not Released
+
+Fearless refactor snapshot.
+Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
+
+### Breaking Changes
+
+- **Phind removed from umbrella**: `llm_dart` no longer ships the Phind provider by default (no built-in registration, no exports, no docs/examples). If you still need Phind, depend on `llm_dart_phind` directly and call `registerPhind()` (see `docs/migrations/0.11.0-alpha.1.md`).
+- **Removed `phind-openai` preset provider id**: the legacy OpenAI-compatible preset id `phind-openai` is no longer provided. Use the standalone Phind provider id `phind` (via `llm_dart_phind`) if needed.
+- **OpenAI Responses isolation (Vercel-style)**: `llm_dart_openai_compatible` no longer models the OpenAI Responses API; Responses message conversion now lives in `llm_dart_openai` via `OpenAIResponsesMessageConverter` (see `docs/adp/0007-openai-responses-openai-only.md`).
+
+### Highlights
+
+- **Big refactor snapshot**: provider packages continue moving toward a Vercel AI SDK-style split (thin providers + protocol reuse + a stable “standard surface”).
+- **xAI Responses support**: new provider id `xai.responses` with streaming support.
+- **Anthropic prompt caching**: `providerOptions['anthropic']['cacheControl']` now applies reliably when using Prompt IR.
+- **MiniMax (Anthropic-compatible) polish**: defaults and docs updated (including base URL guidance and trailing slash normalization).
+- **Local alignment tooling**: `tool/live_provider_alignment.dart` is more reliable for quick live smoke checks (including streaming delta detection).
+- **Migration guides**: see `docs/migrations/` for draft migration notes.
+
+### Changed
+
+- **MiniMax Anthropic-compatible defaults updated**: `minimaxDefaultModel` now matches MiniMax docs (`MiniMax-M2.1`), and MiniMax base URL constants now consistently include a trailing slash (e.g. `https://api.minimax.io/anthropic/v1/`).
+- **Docs**: added `docs/providers/minimax.md` as the MiniMax (Anthropic-compatible) usage guide.
+- **Live alignment tool**: improved streaming delta detection and tuned MiniMax smoke defaults (more reliable `streamText` checks).
+
+### Fixed
+
+- **Anthropic Prompt IR caching**: config-level default `providerOptions['anthropic']['cacheControl']` is now applied during Prompt IR compilation.
+
+### Added
+
+- **xAI Responses (Vercel-style)**: added provider id `xai.responses` with streaming parts support and offline fixture replays.
+
+### Internal
+
+- Added offline conformance tests for Anthropic prompt caching precedence and `providerMetadata` cache usage token surfacing.
+- Added a monorepo dependency direction guardrail via `tool/check_monorepo_deps.dart` (see `docs/adp/0008-monorepo-dependency-direction.md`).
+
 ## [0.10.5] - 2025-11-26
 
 ### Added

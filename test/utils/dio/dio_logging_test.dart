@@ -1,30 +1,87 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
-import 'package:llm_dart/core/config.dart';
-import 'package:llm_dart/utils/http_config_utils.dart';
+import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+class _FakeHttpClientAdapter implements HttpClientAdapter {
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    final path = options.path;
+    final method = options.method.toUpperCase();
+
+    if (method == 'GET' && path == '/get') {
+      return ResponseBody.fromString(
+        jsonEncode({'ok': true}),
+        200,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
+
+    if (method == 'POST' && path == '/post') {
+      return ResponseBody.fromString(
+        jsonEncode({'ok': true}),
+        200,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
+
+    if (method == 'GET' && path == '/status/404') {
+      return ResponseBody.fromString(
+        jsonEncode({'error': 'not found'}),
+        404,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
+
+    return ResponseBody.fromString(
+      jsonEncode({'error': 'unhandled'}),
+      500,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
+}
 
 void main() {
   group('Dio HTTP Logging Tests', () {
     late List<LogRecord> logRecords;
     late StreamSubscription<LogRecord> logSubscription;
+    late Level previousRootLevel;
 
     setUp(() {
-      // Enable hierarchical logging to allow setting levels on non-root loggers
-      hierarchicalLoggingEnabled = true;
-
       logRecords = [];
       // Capture log records for testing
-      logSubscription = Logger('HttpConfigUtils').onRecord.listen((record) {
-        logRecords.add(record);
+      logSubscription = Logger.root.onRecord.listen((record) {
+        if (record.loggerName == 'HttpConfigUtils') {
+          logRecords.add(record);
+        }
       });
-      Logger('HttpConfigUtils').level = Level.ALL;
+
+      previousRootLevel = Logger.root.level;
+      Logger.root.level = Level.ALL;
     });
 
-    tearDown(() {
-      logSubscription.cancel();
+    tearDown(() async {
+      Logger.root.level = previousRootLevel;
+      await logSubscription.cancel();
       logRecords.clear();
     });
 
@@ -33,7 +90,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'enableHttpLogging': true,
       });
 
@@ -58,7 +115,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'enableHttpLogging': false,
       });
 
@@ -99,15 +156,16 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'enableHttpLogging': true,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
-        baseUrl: 'https://httpbin.org',
+        baseUrl: 'https://example.com',
         defaultHeaders: {'Authorization': 'Bearer test-key'},
         config: config,
       );
+      dio.httpClientAdapter = _FakeHttpClientAdapter();
 
       // Clear any setup logs
       logRecords.clear();
@@ -137,15 +195,16 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'enableHttpLogging': true,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
-        baseUrl: 'https://httpbin.org',
+        baseUrl: 'https://example.com',
         defaultHeaders: {'Authorization': 'Bearer test-key'},
         config: config,
       );
+      dio.httpClientAdapter = _FakeHttpClientAdapter();
 
       // Clear any setup logs
       logRecords.clear();
@@ -178,15 +237,16 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'enableHttpLogging': true,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
-        baseUrl: 'https://httpbin.org',
+        baseUrl: 'https://example.com',
         defaultHeaders: {'Authorization': 'Bearer test-key'},
         config: config,
       );
+      dio.httpClientAdapter = _FakeHttpClientAdapter();
 
       // Clear any setup logs
       logRecords.clear();
@@ -216,15 +276,16 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'enableHttpLogging': true,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
-        baseUrl: 'https://httpbin.org',
+        baseUrl: 'https://example.com',
         defaultHeaders: {'Authorization': 'Bearer test-key'},
         config: config,
       );
+      dio.httpClientAdapter = _FakeHttpClientAdapter();
 
       // Clear any setup logs
       logRecords.clear();
@@ -254,15 +315,16 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'enableHttpLogging': true,
       });
 
       final dio = HttpConfigUtils.createConfiguredDio(
-        baseUrl: 'https://httpbin.org',
+        baseUrl: 'https://example.com',
         defaultHeaders: {'Authorization': 'Bearer test-key'},
         config: config,
       );
+      dio.httpClientAdapter = _FakeHttpClientAdapter();
 
       // Clear any setup logs
       logRecords.clear();

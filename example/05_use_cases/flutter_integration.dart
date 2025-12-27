@@ -1,5 +1,10 @@
 import 'dart:async';
-import 'package:llm_dart/llm_dart.dart';
+import 'dart:io';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Flutter integration examples for LLM Dart library
 ///
@@ -241,21 +246,39 @@ class AIService {
   /// Initialize AI providers
   Future<void> initialize() async {
     try {
+      registerOpenAI();
+
+      final apiKey = Platform.environment['OPENAI_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        throw AIServiceException('OPENAI_API_KEY environment variable not set');
+      }
+
       // Initialize chat provider
-      _chatProvider = await ai()
-          .openai()
-          .apiKey('your-api-key')
-          .model('gpt-3.5-turbo')
+      _chatProvider = await LLMBuilder()
+          .provider(openaiProviderId)
+          .apiKey(apiKey)
+          .model('gpt-4o-mini')
           .build();
 
       // Initialize image provider (if available)
-      if (_chatProvider is ImageGenerationCapability) {
-        _imageProvider = _chatProvider as ImageGenerationCapability;
+      try {
+        _imageProvider = await LLMBuilder()
+            .provider(openaiProviderId)
+            .apiKey(apiKey)
+            .model('gpt-image-1')
+            .buildImageGeneration();
+      } catch (_) {
+        _imageProvider = null;
       }
 
       // Initialize audio provider (if available)
-      if (_chatProvider is AudioCapability) {
-        _audioProvider = _chatProvider as AudioCapability;
+      try {
+        _audioProvider = await LLMBuilder()
+            .provider(openaiProviderId)
+            .apiKey(apiKey)
+            .buildAudio();
+      } catch (_) {
+        _audioProvider = null;
       }
 
       _isInitialized = true;
@@ -309,7 +332,8 @@ class ChatController {
       _messageController.add(userMessage);
 
       // Get AI response
-      final response = await _aiService.chatProvider.chat(_messages);
+      final response = await generateText(
+          model: _aiService.chatProvider, messages: _messages);
 
       // Add AI response
       if (response.text != null) {
@@ -405,9 +429,10 @@ class VoiceAssistantController {
       print('      🎤 Processing voice input...');
 
       // Get text response from AI
-      final response = await _aiService.chatProvider.chat([
-        ChatMessage.user(command),
-      ]);
+      final response = await generateText(
+        model: _aiService.chatProvider,
+        messages: [ChatMessage.user(command)],
+      );
 
       // Convert response to speech (simulated)
       if (response.text != null) {

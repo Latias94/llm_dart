@@ -45,6 +45,9 @@ import 'integration/http_configuration_integration_test.dart'
 // Feature tests
 import 'models/enhanced_array_tools_test.dart' as enhanced_array_tools_tests;
 
+// Task API tests
+import 'ai/llm_dart_ai_test.dart' as ai_task_tests;
+
 // Provider tests
 import 'providers/factories/base_factory_test.dart' as factory_tests;
 
@@ -117,6 +120,10 @@ void main() {
 
     group('Feature Tests', () {
       enhanced_array_tools_tests.main();
+    });
+
+    group('Task API Tests', () {
+      ai_task_tests.main();
     });
 
     group('Provider Tests', () {

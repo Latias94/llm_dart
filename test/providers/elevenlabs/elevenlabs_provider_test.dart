@@ -39,14 +39,6 @@ void main() {
     });
 
     group('Capability Support', () {
-      test('should support audio capabilities', () {
-        expect(provider.supportsCapability(AudioCapability), isTrue);
-      });
-
-      test('should not support chat capabilities', () {
-        expect(provider.supportsCapability(ChatCapability), isFalse);
-      });
-
       test('should have supported audio features', () {
         final features = provider.supportedFeatures;
         expect(features, isNotEmpty);
@@ -62,11 +54,11 @@ void main() {
       });
 
       test('should support voice cloning', () {
-        expect(provider.config.supportsVoiceCloning, isTrue);
+        expect(provider.config.supportsVoiceCloning, isFalse);
       });
 
       test('should support real-time streaming', () {
-        expect(provider.config.supportsRealTimeStreaming, isTrue);
+        expect(provider.config.supportsRealTimeStreaming, isFalse);
       });
     });
 
@@ -75,8 +67,8 @@ void main() {
         expect(provider, isA<AudioCapability>());
       });
 
-      test('should implement ChatCapability (but not support it)', () {
-        expect(provider, isA<ChatCapability>());
+      test('should not implement ChatCapability', () {
+        expect(provider, isNot(isA<ChatCapability>()));
       });
     });
 
@@ -140,41 +132,9 @@ void main() {
       });
     });
 
-    group('Chat Methods (Unsupported)', () {
-      test('should throw error for chat method', () async {
-        expect(
-          () => provider.chat([]),
-          throwsA(isA<ProviderError>()),
-        );
-      });
-
-      test('should throw error for chatWithTools method', () async {
-        expect(
-          () => provider.chatWithTools([], null),
-          throwsA(isA<ProviderError>()),
-        );
-      });
-
-      test('should throw error for summarizeHistory method', () async {
-        expect(
-          () => provider.summarizeHistory([]),
-          throwsA(isA<ProviderError>()),
-        );
-      });
-
-      test('should return null for memoryContents method', () async {
-        final result = await provider.memoryContents();
-        expect(result, isNull);
-      });
-
-      test('should emit error for chatStream method', () async {
-        final stream = provider.chatStream([]);
-        await expectLater(
-          stream,
-          emitsInOrder([
-            isA<ErrorEvent>(),
-          ]),
-        );
+    group('Chat Methods', () {
+      test('should not expose chat capability', () {
+        expect(provider, isNot(isA<ChatCapability>()));
       });
     });
 
@@ -194,11 +154,10 @@ void main() {
 
         expect(info['provider'], equals('ElevenLabs'));
         expect(info['baseUrl'], equals(config.baseUrl));
-        expect(info['supportsChat'], isFalse);
         expect(info['supportsTextToSpeech'], isTrue);
         expect(info['supportsSpeechToText'], isTrue);
-        expect(info['supportsVoiceCloning'], isTrue);
-        expect(info['supportsRealTimeStreaming'], isTrue);
+        expect(info['supportsVoiceCloning'], isFalse);
+        expect(info['supportsRealTimeStreaming'], isFalse);
         expect(info['defaultVoiceId'], isNotNull);
         expect(info['defaultTTSModel'], isNotNull);
         expect(info['defaultSTTModel'], isNotNull);

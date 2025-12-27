@@ -1,6 +1,11 @@
 import 'dart:async';
 import 'dart:collection';
-import 'package:llm_dart/llm_dart.dart';
+import 'dart:io';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Advanced batch processing examples for LLM operations
 ///
@@ -14,6 +19,8 @@ import 'package:llm_dart/llm_dart.dart';
 /// - Cost optimization techniques
 Future<void> main() async {
   print('📦 Batch Processing Examples\n');
+
+  registerOpenAI();
 
   // Initialize provider for batch processing
   final provider = await initializeBatchProvider();
@@ -44,10 +51,15 @@ Future<void> main() async {
 /// Initialize provider for batch processing
 Future<ChatCapability?> initializeBatchProvider() async {
   try {
-    // Use a provider suitable for batch processing
-    return await ai()
-        .openai()
-        .apiKey('your-openai-key')
+    final apiKey = Platform.environment['OPENAI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      print('⚠️  Skipped: set OPENAI_API_KEY to run this example');
+      return null;
+    }
+
+    return await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey(apiKey)
         .model('gpt-3.5-turbo')
         .temperature(0.7)
         .build();
@@ -517,7 +529,8 @@ class BatchProcessor {
           throw Exception('Simulated failure for testing');
         }
 
-        final response = await _provider.chat([ChatMessage.user(task.prompt)]);
+        final response =
+            await generateText(model: _provider, prompt: task.prompt);
         final processingTime = DateTime.now().difference(startTime);
 
         return BatchResult(

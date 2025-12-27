@@ -18,7 +18,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
           timeout: Duration(seconds: 60), // Should be ignored
-        ).withExtensions({
+        ).withTransportOptions({
           'customDio': customDio,
           'connectionTimeout': Duration(seconds: 30), // Should be ignored
           'customHeaders': {
@@ -49,7 +49,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
           timeout: Duration(seconds: 45),
-        ).withExtensions({
+        ).withTransportOptions({
           'connectionTimeout': Duration(seconds: 30),
           'customHeaders': {'X-Test': 'test-value'},
           'enableHttpLogging': true,
@@ -107,7 +107,7 @@ void main() {
           baseUrl: 'https://api.anthropic.com/v1/',
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
-        ).withExtensions({
+        ).withTransportOptions({
           'customDio': customDio,
         });
 
@@ -144,7 +144,7 @@ void main() {
           baseUrl: 'https://api.anthropic.com/v1/',
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
-        ).withExtensions({
+        ).withTransportOptions({
           'customDio': customDio,
         });
 
@@ -167,7 +167,7 @@ void main() {
           baseUrl: 'https://api.anthropic.com/v1/',
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
-        ).withExtensions({
+        ).withTransportOptions({
           'customDio': customDio,
         });
 
@@ -187,7 +187,7 @@ void main() {
           baseUrl: 'https://api.anthropic.com/v1/', // Should be ignored
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
-        ).withExtensions({
+        ).withTransportOptions({
           'customDio': customDio,
         });
 
@@ -210,7 +210,7 @@ void main() {
           baseUrl: 'https://api.anthropic.com/v1/',
           apiKey: 'test-key', // Should not override custom Authorization
           model: 'claude-sonnet-4-20250514',
-        ).withExtensions({
+        ).withTransportOptions({
           'customDio': customDio,
         });
 
@@ -242,7 +242,7 @@ void main() {
           baseUrl: 'https://api.anthropic.com/v1/',
           apiKey: 'test-key',
           model: 'claude-sonnet-4-20250514',
-        ).withExtensions({
+        ).withTransportOptions({
           'customDio': customDio,
         });
 
@@ -276,7 +276,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'customDio': customDio,
         });
 
@@ -292,8 +292,12 @@ void main() {
         );
         final openaiClient = OpenAIClient(openaiConfig);
 
-        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
-        final xaiClient = XAIClient(xaiConfig);
+        final xaiConfig = OpenAICompatibleConfig.fromLLMConfig(
+          llmConfig,
+          providerId: 'xai',
+          providerName: 'xAI',
+        );
+        final xaiClient = OpenAIClient(xaiConfig);
 
         // All should use the same custom Dio
         expect(anthropicClient.dio, equals(customDio));
@@ -325,7 +329,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'customDio': customDio,
         });
 
@@ -357,7 +361,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'customDio': null, // Explicitly null
         });
 
@@ -382,7 +386,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'customDio': customDio,
         });
 

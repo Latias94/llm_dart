@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'dio_proxy_test_stub.dart'
     if (dart.library.io) 'dio_proxy_test_io.dart'
     if (dart.library.html) 'dio_proxy_test_web.dart';
@@ -16,7 +17,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'httpProxy': 'localhost:8888',
       });
 
@@ -34,7 +35,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'bypassSSLVerification': true,
       });
 
@@ -52,7 +53,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'httpProxy': 'localhost:8888',
         'bypassSSLVerification': true,
       });
@@ -73,7 +74,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'enableHttpLogging': true, // This doesn't require adapter change
       });
 
@@ -87,7 +88,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'httpProxy': 'localhost:8888',
       });
 
@@ -113,7 +114,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'sslCertificate': '/path/to/cert.pem',
       });
 
@@ -131,7 +132,7 @@ void main() {
         baseUrl: 'https://api.example.com',
         apiKey: 'test-key',
         model: 'test-model',
-      ).withExtensions({
+      ).withTransportOptions({
         'httpProxy': 'http://proxy.company.com:8080',
         'bypassSSLVerification': false,
         'sslCertificate': '/etc/ssl/corporate-cert.pem',
@@ -214,7 +215,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'httpProxy': '',
         });
 
@@ -235,7 +236,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'sslCertificate': null,
         });
 
@@ -255,7 +256,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'bypassSSLVerification': false,
         });
 

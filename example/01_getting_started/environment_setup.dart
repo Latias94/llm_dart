@@ -1,5 +1,9 @@
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Environment setup and configuration examples
 ///
@@ -12,6 +16,9 @@ import 'package:llm_dart/llm_dart.dart';
 /// - Error handling for configuration issues
 Future<void> main() async {
   print('⚙️ Environment Setup Examples\n');
+
+  registerOpenAI();
+  registerAnthropic();
 
   // Demonstrate different configuration approaches
   await demonstrateEnvironmentVariables();
@@ -67,8 +74,11 @@ Future<void> demonstrateEnvironmentVariables() async {
     // OpenAI example
     final openaiKey = Platform.environment['OPENAI_API_KEY'];
     if (openaiKey != null) {
-      final openaiProvider =
-          await ai().openai().apiKey(openaiKey).model('gpt-3.5-turbo').build();
+      final openaiProvider = await LLMBuilder()
+          .provider(openaiProviderId)
+          .apiKey(openaiKey)
+          .model('gpt-3.5-turbo')
+          .build();
       print(
           '      ✅ OpenAI provider configured (${openaiProvider.runtimeType})');
     } else {
@@ -78,8 +88,8 @@ Future<void> demonstrateEnvironmentVariables() async {
     // Anthropic example
     final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
     if (anthropicKey != null) {
-      final anthropicProvider = await ai()
-          .anthropic()
+      final anthropicProvider = await LLMBuilder()
+          .provider(anthropicProviderId)
           .apiKey(anthropicKey)
           .model('claude-3-sonnet-20240229')
           .build();
@@ -521,8 +531,8 @@ Future<ChatCapability?> createProviderForEnvironment(String environment) async {
 
   final config = EnvironmentConfig.forEnvironment(environment);
 
-  return await ai()
-      .openai()
+  return await LLMBuilder()
+      .provider(openaiProviderId)
       .apiKey(apiKey)
       .model(environment == 'production' ? 'gpt-4' : 'gpt-3.5-turbo')
       .timeout(config.timeout)

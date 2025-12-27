@@ -3,7 +3,11 @@ import 'dart:collection';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:async';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
 
 /// 📊 Batch Processing Tool - Large-scale Data Processing
 ///
@@ -154,10 +158,15 @@ OUTPUT FORMAT (JSONL):
 
   /// Initialize AI provider
   Future<void> initializeAI() async {
-    final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
+    registerGroq();
 
-    _aiProvider = await ai()
-        .groq()
+    final apiKey = Platform.environment['GROQ_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      throw Exception('GROQ_API_KEY environment variable not set');
+    }
+
+    _aiProvider = await LLMBuilder()
+        .provider(groqProviderId)
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.3)
@@ -341,7 +350,7 @@ class DataProcessor {
       ChatMessage.user(text),
     ];
 
-    final response = await aiProvider.chat(messages);
+    final response = await generateText(model: aiProvider, messages: messages);
     return response.text ?? 'No response generated';
   }
 

@@ -32,10 +32,20 @@ dart run audio_capabilities.dart
 
 ### Voice Synthesis
 ```dart
-final audioProvider = await ai().elevenlabs().apiKey('your-key')
-    .voiceId('JBFqnCBsd6RMkjVDRZzb')
-    .stability(0.7)
-    .similarityBoost(0.9)
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
+
+registerElevenLabs();
+
+final audioProvider = await LLMBuilder()
+    .provider(elevenLabsProviderId)
+    .apiKey('your-key')
+    .providerOptions('elevenlabs', {
+      'voiceId': 'JBFqnCBsd6RMkjVDRZzb',
+      'stability': 0.7,
+      'similarityBoost': 0.9,
+    })
     .buildAudio();
 
 final audioData = await audioProvider.textToSpeech(TTSRequest(

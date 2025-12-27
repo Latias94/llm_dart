@@ -7,7 +7,6 @@ library;
 
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/openai/responses_capability.dart';
 
 void main() {
   group('OpenAI Responses API Functionality', () {
@@ -73,10 +72,17 @@ void main() {
       });
 
       test('should support extension methods', () {
-        // Test convenience methods from extensions exist without calling them
-        expect(responses.chat, isA<Function>());
-        expect(responses.chatBackground, isA<Function>());
-        expect(responses.responseExists, isA<Function>());
+        // Extension methods can't be torn off (they are not instance members),
+        // so validate them via a small fake implementation.
+        final fake = _FakeOpenAIResponsesCapability();
+
+        expect(fake.chat, isA<Function>());
+        expect(fake.chatBackground, isA<Function>());
+
+        expect(
+          () async => fake.responseExists('resp_missing'),
+          returnsNormally,
+        );
       });
     });
 
@@ -426,4 +432,105 @@ void main() {
       });
     });
   });
+}
+
+class _FakeChatResponse implements ChatResponse {
+  @override
+  final String? text;
+
+  const _FakeChatResponse({this.text});
+
+  @override
+  List<ToolCall>? get toolCalls => null;
+
+  @override
+  String? get thinking => null;
+
+  @override
+  UsageInfo? get usage => null;
+
+  @override
+  Map<String, dynamic>? get providerMetadata => null;
+}
+
+class _FakeOpenAIResponsesCapability implements OpenAIResponsesCapability {
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools,
+  ) async {
+    return _FakeChatResponse(text: messages.map((m) => m.content).join('\n'));
+  }
+
+  @override
+  Future<ChatResponse> chatWithToolsBackground(
+    List<ChatMessage> messages,
+    List<Tool>? tools,
+  ) async {
+    return _FakeChatResponse(text: 'background');
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+  }) async* {
+    yield const TextDeltaEvent('delta');
+    yield const CompletionEvent(_FakeChatResponse(text: 'done'));
+  }
+
+  @override
+  Future<ChatResponse> getResponse(
+    String responseId, {
+    List<String>? include,
+    int? startingAfter,
+    bool stream = false,
+  }) async {
+    throw StateError('not found');
+  }
+
+  @override
+  Future<bool> deleteResponse(String responseId) async => true;
+
+  @override
+  Future<ChatResponse> cancelResponse(String responseId) async =>
+      const _FakeChatResponse(text: 'cancelled');
+
+  @override
+  Future<ResponseInputItemsList> listInputItems(
+    String responseId, {
+    String? after,
+    String? before,
+    List<String>? include,
+    int limit = 20,
+    String order = 'desc',
+  }) async {
+    return ResponseInputItemsList(
+      object: 'list',
+      data: const [],
+      firstId: null,
+      lastId: null,
+      hasMore: false,
+    );
+  }
+
+  @override
+  Future<ChatResponse> continueConversation(
+    String previousResponseId,
+    List<ChatMessage> newMessages, {
+    List<Tool>? tools,
+    bool background = false,
+  }) async {
+    return _FakeChatResponse(text: 'continued');
+  }
+
+  @override
+  Future<ChatResponse> forkConversation(
+    String fromResponseId,
+    List<ChatMessage> newMessages, {
+    List<Tool>? tools,
+    bool background = false,
+  }) async {
+    return _FakeChatResponse(text: 'forked');
+  }
 }

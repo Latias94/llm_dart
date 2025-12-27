@@ -1,6 +1,10 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 💬 Chat Basics - Foundation of AI Interactions
 ///
@@ -17,11 +21,17 @@ void main() async {
   print('💬 Chat Basics - Foundation of AI Interactions\n');
 
   // Get API key
-  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('❌ Please set OPENAI_API_KEY environment variable');
+    return;
+  }
+
+  registerOpenAI();
 
   // Create AI provider
-  final provider = await ai()
-      .openai()
+  final provider = await LLMBuilder()
+      .provider(openaiProviderId)
       .apiKey(apiKey)
       .model('gpt-4o-mini')
       .temperature(0.7)
@@ -44,12 +54,14 @@ Future<void> demonstrateBasicChat(ChatCapability provider) async {
 
   try {
     // Simple question and answer
-    final messages = [ChatMessage.user('What is the capital of Japan?')];
-
-    final response = await provider.chat(messages);
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(
+          messages: [PromptMessage.user('What is the capital of Japan?')]),
+    );
 
     print('   User: What is the capital of Japan?');
-    print('   AI: ${response.text}');
+    print('   AI: ${result.text}');
     print('   ✅ Basic chat successful\n');
   } catch (e) {
     print('   ❌ Basic chat failed: $e\n');
@@ -62,30 +74,29 @@ Future<void> demonstrateMessageTypes(ChatCapability provider) async {
 
   try {
     // Different message types in conversation
-    final messages = [
-      // System message - sets AI behavior
-      ChatMessage.system(
-          'You are a helpful math tutor. Explain concepts clearly and encourage learning.'),
-
-      // User message - user input
-      ChatMessage.user(
-          'I\'m struggling with algebra. Can you help me understand variables?'),
-
-      // Assistant message - previous AI response (for context)
-      ChatMessage.assistant(
-          'Of course! Variables in algebra are like containers that hold unknown values. Think of them as boxes with labels like "x" or "y" that can contain different numbers.'),
-
-      // Follow-up user message
-      ChatMessage.user('Can you give me a simple example?'),
-    ];
-
-    final response = await provider.chat(messages);
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.system(
+            'You are a helpful math tutor. Explain concepts clearly and encourage learning.',
+          ),
+          PromptMessage.user(
+            'I\'m struggling with algebra. Can you help me understand variables?',
+          ),
+          PromptMessage.assistant(
+            'Of course! Variables in algebra are like containers that hold unknown values. Think of them as boxes with labels like "x" or "y" that can contain different numbers.',
+          ),
+          PromptMessage.user('Can you give me a simple example?'),
+        ],
+      ),
+    );
 
     print('   System: Math tutor personality set');
     print('   User: Asking about algebra variables');
     print('   Assistant: Previous explanation about variables');
     print('   User: Requesting an example');
-    print('   AI: ${response.text}');
+    print('   AI: ${result.text}');
     print('   ✅ Message types demonstration successful\n');
   } catch (e) {
     print('   ❌ Message types failed: $e\n');
@@ -98,26 +109,35 @@ Future<void> demonstrateConversationHistory(ChatCapability provider) async {
 
   try {
     // Build conversation step by step
-    final conversation = <ChatMessage>[];
+    final conversation = <PromptMessage>[];
 
     // First exchange
-    conversation.add(ChatMessage.user('Hi! What\'s your name?'));
-    var response = await provider.chat(conversation);
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
+    conversation.add(PromptMessage.user('Hi! What\'s your name?'));
+    var response = await generateText(
+      model: provider,
+      promptIr: Prompt(messages: conversation),
+    );
+    conversation.add(PromptMessage.assistant(response.text ?? ''));
     print('   User: Hi! What\'s your name?');
     print('   AI: ${response.text}');
 
     // Second exchange - AI remembers context
-    conversation.add(ChatMessage.user('What did I just ask you?'));
-    response = await provider.chat(conversation);
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
+    conversation.add(PromptMessage.user('What did I just ask you?'));
+    response = await generateText(
+      model: provider,
+      promptIr: Prompt(messages: conversation),
+    );
+    conversation.add(PromptMessage.assistant(response.text ?? ''));
     print('   User: What did I just ask you?');
     print('   AI: ${response.text}');
 
     // Third exchange - testing memory
     conversation
-        .add(ChatMessage.user('Can you summarize our conversation so far?'));
-    response = await provider.chat(conversation);
+        .add(PromptMessage.user('Can you summarize our conversation so far?'));
+    response = await generateText(
+      model: provider,
+      promptIr: Prompt(messages: conversation),
+    );
     print('   User: Can you summarize our conversation so far?');
     print('   AI: ${response.text}');
 
@@ -132,11 +152,14 @@ Future<void> demonstrateResponseMetadata(ChatCapability provider) async {
   print('📊 Response Metadata:\n');
 
   try {
-    final messages = [
-      ChatMessage.user('Explain quantum computing in exactly 100 words.')
-    ];
-
-    final response = await provider.chat(messages);
+    final response = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.user('Explain quantum computing in exactly 100 words.')
+        ],
+      ),
+    );
 
     print('   Question: Explain quantum computing in exactly 100 words.');
     print('   Response: ${response.text}');
@@ -177,43 +200,56 @@ Future<void> demonstrateContextManagement(ChatCapability provider) async {
   try {
     // Strategy 1: Short context for focused responses
     print('   Strategy 1: Short Context');
-    final shortContext = [ChatMessage.user('What is AI?')];
-    var response = await provider.chat(shortContext);
+    var response = await generateText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user('What is AI?')]),
+    );
     print('      Response length: ${response.text?.length ?? 0} characters');
 
     // Strategy 2: Rich context for detailed responses
     print('\n   Strategy 2: Rich Context');
-    final richContext = [
-      ChatMessage.system(
-          'You are an AI expert with deep knowledge of machine learning, neural networks, and AI history.'),
-      ChatMessage.user(
-          'I\'m a computer science student preparing for an exam.'),
-      ChatMessage.assistant(
-          'I\'d be happy to help you prepare! What specific topics would you like to review?'),
-      ChatMessage.user(
-          'What is AI? Please provide a comprehensive explanation suitable for an exam.'),
-    ];
-    response = await provider.chat(richContext);
+    response = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.system(
+            'You are an AI expert with deep knowledge of machine learning, neural networks, and AI history.',
+          ),
+          PromptMessage.user(
+            'I\'m a computer science student preparing for an exam.',
+          ),
+          PromptMessage.assistant(
+            'I\'d be happy to help you prepare! What specific topics would you like to review?',
+          ),
+          PromptMessage.user(
+            'What is AI? Please provide a comprehensive explanation suitable for an exam.',
+          ),
+        ],
+      ),
+    );
     print('      Response length: ${response.text?.length ?? 0} characters');
 
     // Strategy 3: Context window management
     print('\n   Strategy 3: Context Window Management');
-    final longConversation = <ChatMessage>[];
+    final longConversation = <PromptMessage>[];
 
     // Simulate a long conversation
     for (int i = 1; i <= 5; i++) {
       longConversation
-          .add(ChatMessage.user('Question $i: Tell me about topic $i'));
-      longConversation.add(ChatMessage.assistant(
+          .add(PromptMessage.user('Question $i: Tell me about topic $i'));
+      longConversation.add(PromptMessage.assistant(
           'Response $i: Here is information about topic $i...'));
     }
 
     // Add current question
     longConversation
-        .add(ChatMessage.user('Summarize all the topics we\'ve discussed.'));
+        .add(PromptMessage.user('Summarize all the topics we\'ve discussed.'));
 
     print('      Total messages in context: ${longConversation.length}');
-    response = await provider.chat(longConversation);
+    response = await generateText(
+      model: provider,
+      promptIr: Prompt(messages: longConversation),
+    );
     print(
         '      AI can reference: ${response.text?.contains('topic') == true ? 'Previous topics' : 'Limited context'}');
 

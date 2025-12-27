@@ -1,7 +1,12 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:async';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// ⚡ Performance Optimization - Speed and Efficiency
 ///
@@ -17,16 +22,28 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('⚡ Performance Optimization - Speed and Efficiency\n');
 
+  registerOpenAI();
+  registerGroq();
+
   // Get API keys
-  final openaiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
-  final groqKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
+  final openaiKey = Platform.environment['OPENAI_API_KEY'];
+  final groqKey = Platform.environment['GROQ_API_KEY'];
 
   // Demonstrate different optimization techniques
-  await demonstrateCachingStrategies(openaiKey);
-  await demonstrateParallelProcessing(openaiKey);
-  await demonstrateStreamingOptimization(groqKey);
-  await demonstrateBatchProcessing(openaiKey);
-  await demonstrateMemoryOptimization(openaiKey);
+  if (openaiKey != null && openaiKey.isNotEmpty) {
+    await demonstrateCachingStrategies(openaiKey);
+    await demonstrateParallelProcessing(openaiKey);
+    await demonstrateBatchProcessing(openaiKey);
+    await demonstrateMemoryOptimization(openaiKey);
+  } else {
+    print('⚠️  Skipped OpenAI demos: set OPENAI_API_KEY');
+  }
+
+  if (groqKey != null && groqKey.isNotEmpty) {
+    await demonstrateStreamingOptimization(groqKey);
+  } else {
+    print('⚠️  Skipped Groq streaming demo: set GROQ_API_KEY');
+  }
 
   print('\n✅ Performance optimization completed!');
   print('📖 Explore ../04_providers/ for provider-specific optimizations');
@@ -38,8 +55,8 @@ Future<void> demonstrateCachingStrategies(String apiKey) async {
 
   try {
     // Create provider
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.3) // Lower temperature for more consistent responses
@@ -70,7 +87,10 @@ Future<void> demonstrateCachingStrategies(String apiKey) async {
         response = cache[question]!;
         fromCache = true;
       } else {
-        final aiResponse = await provider.chat([ChatMessage.user(question)]);
+        final aiResponse = await generateText(
+          model: provider,
+          messages: [ChatMessage.user(question)],
+        );
         response = aiResponse.text ?? 'No response';
         cache[question] = response;
       }
@@ -101,8 +121,8 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
 
   try {
     // Create provider
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
@@ -122,7 +142,8 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
     final sequentialStopwatch = Stopwatch()..start();
 
     for (final question in questions) {
-      await provider.chat([ChatMessage.user(question)]);
+      await generateText(
+          model: provider, messages: [ChatMessage.user(question)]);
       print('      ✓ ${question.substring(0, 30)}...');
     }
 
@@ -134,7 +155,8 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
     final parallelStopwatch = Stopwatch()..start();
 
     final futures = questions
-        .map((question) => provider.chat([ChatMessage.user(question)]))
+        .map((question) => generateText(
+            model: provider, messages: [ChatMessage.user(question)]))
         .toList();
 
     await Future.wait(futures);
@@ -167,8 +189,8 @@ Future<void> demonstrateStreamingOptimization(String apiKey) async {
 
   try {
     // Create fast provider (Groq for speed)
-    final provider = await ai()
-        .groq()
+    final provider = await LLMBuilder()
+        .provider(groqProviderId)
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.7)
@@ -180,7 +202,8 @@ Future<void> demonstrateStreamingOptimization(String apiKey) async {
     // Regular response
     print('   Regular Response:');
     final regularStopwatch = Stopwatch()..start();
-    final response = await provider.chat([ChatMessage.user(question)]);
+    final response = await generateText(
+        model: provider, messages: [ChatMessage.user(question)]);
     regularStopwatch.stop();
 
     print('      Total time: ${regularStopwatch.elapsedMilliseconds}ms');
@@ -195,10 +218,12 @@ Future<void> demonstrateStreamingOptimization(String apiKey) async {
     var chunkCount = 0;
     final responseBuffer = StringBuffer();
 
-    await for (final event
-        in provider.chatStream([ChatMessage.user(question)])) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamText(
+      model: provider,
+      messages: [ChatMessage.user(question)],
+    )) {
+      switch (part) {
+        case TextDeltaPart(delta: final delta):
           chunkCount++;
           responseBuffer.write(delta);
 
@@ -208,16 +233,16 @@ Future<void> demonstrateStreamingOptimization(String apiKey) async {
           }
           break;
 
-        case CompletionEvent():
+        case FinishPart():
           streamStopwatch.stop();
           break;
 
-        case ErrorEvent(error: final error):
+        case ErrorPart(error: final error):
           print('      Error: $error');
           return;
 
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
+        case ThinkingDeltaPart():
+        case ToolCallDeltaPart():
           break;
       }
     }
@@ -255,8 +280,8 @@ Future<void> demonstrateBatchProcessing(String apiKey) async {
 
   try {
     // Create provider
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.3)
@@ -285,8 +310,10 @@ Future<void> demonstrateBatchProcessing(String apiKey) async {
       final batchStopwatch = Stopwatch()..start();
 
       // Process batch in parallel
-      final batchFutures =
-          batch.map((item) => provider.chat([ChatMessage.user(item)])).toList();
+      final batchFutures = batch
+          .map((item) =>
+              generateText(model: provider, messages: [ChatMessage.user(item)]))
+          .toList();
 
       final batchResponses = await Future.wait(batchFutures);
       batchStopwatch.stop();
@@ -328,8 +355,8 @@ Future<void> demonstrateMemoryOptimization(String apiKey) async {
 
   try {
     // Create provider
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
@@ -347,7 +374,8 @@ Future<void> demonstrateMemoryOptimization(String apiKey) async {
       conversation.add(ChatMessage.user('Message $i: Tell me about topic $i'));
 
       // Get AI response
-      final response = await provider.chat(conversation);
+      final response =
+          await generateText(model: provider, messages: conversation);
 
       // Add AI response
       conversation.add(ChatMessage.assistant(response.text ?? ''));
@@ -373,24 +401,27 @@ Future<void> demonstrateMemoryOptimization(String apiKey) async {
 
     var totalChars = 0;
 
-    await for (final event in provider.chatStream([
-      ChatMessage.user('Write a detailed explanation of quantum computing.')
-    ])) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamText(
+      model: provider,
+      messages: [
+        ChatMessage.user('Write a detailed explanation of quantum computing.')
+      ],
+    )) {
+      switch (part) {
+        case TextDeltaPart(delta: final delta):
           totalChars += delta.length;
           // In real app, process chunk immediately instead of accumulating
           print(
               '      Processed chunk: ${delta.length} chars (total: $totalChars)');
           break;
 
-        case CompletionEvent():
+        case FinishPart():
           print('      Streaming completed');
           break;
 
-        case ErrorEvent():
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
+        case ErrorPart():
+        case ThinkingDeltaPart():
+        case ToolCallDeltaPart():
           break;
       }
     }

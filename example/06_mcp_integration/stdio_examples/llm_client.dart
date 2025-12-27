@@ -1,7 +1,11 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:convert';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'package:mcp_dart/mcp_dart.dart' hide Tool;
 
 /// stdio LLM Integration - AI Agents with stdio MCP Tools
@@ -20,11 +24,12 @@ import 'package:mcp_dart/mcp_dart.dart' hide Tool;
 void main() async {
   print('🤖 stdio LLM Integration - AI Agents with Real stdio MCP Tools\n');
 
-  // Get API key
-  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
-  if (apiKey == 'sk-TESTKEY') {
-    print(
-        '⚠️  Warning: Using test API key. Set OPENAI_API_KEY for real usage.\n');
+  registerOpenAI();
+
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('⚠️  Skipped: Please set OPENAI_API_KEY environment variable');
+    return;
   }
 
   await demonstrateBasicStdioIntegration(apiKey);
@@ -42,8 +47,8 @@ Future<void> demonstrateBasicStdioIntegration(String apiKey) async {
   Client? mcpClient;
   try {
     // Create LLM provider
-    final llmProvider = await ai()
-        .openai()
+    final llmProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
@@ -110,7 +115,8 @@ Future<void> demonstrateBasicStdioIntegration(String apiKey) async {
         ChatMessage.toolResult(results: toolResultCalls),
       ];
 
-      final finalResponse = await llmProvider.chat(finalMessages);
+      final finalResponse =
+          await generateText(model: llmProvider, messages: finalMessages);
       print('   📝 LLM Final Response: ${finalResponse.text}');
     } else {
       print('   📝 LLM Response: ${response.text}');
@@ -129,8 +135,8 @@ Future<void> demonstrateStdioCalculationWorkflow(String apiKey) async {
 
   Client? mcpClient;
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.3)
@@ -197,7 +203,8 @@ Future<void> demonstrateStdioCalculationWorkflow(String apiKey) async {
         ChatMessage.toolResult(results: toolResultCalls),
       ];
 
-      final finalResponse = await provider.chat(finalMessages);
+      final finalResponse =
+          await generateText(model: provider, messages: finalMessages);
       print('   📝 Final Response: ${finalResponse.text}');
     } else {
       print('   📝 Final Response: ${response.text}');
@@ -216,8 +223,8 @@ Future<void> demonstrateStdioMultiToolWorkflow(String apiKey) async {
 
   Client? mcpClient;
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.2)
@@ -283,7 +290,8 @@ Future<void> demonstrateStdioMultiToolWorkflow(String apiKey) async {
         ChatMessage.toolResult(results: toolResultCalls),
       ];
 
-      final finalResponse = await provider.chat(finalMessages);
+      final finalResponse =
+          await generateText(model: provider, messages: finalMessages);
       print('   📝 Final Response: ${finalResponse.text}');
     } else {
       print('   📝 Final Response: ${response.text}');

@@ -1,6 +1,9 @@
 import 'dart:io';
 import 'dart:convert';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_google/llm_dart_google.dart';
 
 /// Google Image Generation Examples
 ///
@@ -18,6 +21,8 @@ import 'package:llm_dart/llm_dart.dart';
 /// Reference: https://ai.google.dev/gemini-api/docs/image-generation
 Future<void> main() async {
   print('🎨 Google Image Generation Examples\n');
+
+  registerGoogle();
 
   final apiKey = Platform.environment['GOOGLE_API_KEY'];
   if (apiKey == null) {
@@ -44,13 +49,12 @@ Future<void> demonstrateGeminiImageGeneration(String apiKey) async {
 
   try {
     // Create Google provider for Gemini image generation
-    final imageProvider = await ai()
-        .google((google) => google
-            .enableImageGeneration(true)
-            .responseModalities(['TEXT', 'IMAGE']))
+    final imageProvider = await LLMBuilder()
+        .provider(googleProviderId)
         .apiKey(apiKey)
         .model('gemini-2.0-flash-preview-image-generation')
-        .buildImageGeneration();
+        .option('enableImageGeneration', true)
+        .option('responseModalities', ['TEXT', 'IMAGE']).buildImageGeneration();
 
     print('   📋 Provider capabilities:');
     print('      Supported sizes: ${imageProvider.getSupportedSizes()}');
@@ -97,8 +101,8 @@ Future<void> demonstrateImagenGeneration(String apiKey) async {
 
   try {
     // Create Google provider for Imagen 3
-    final imageProvider = await ai()
-        .google()
+    final imageProvider = await LLMBuilder()
+        .provider(googleProviderId)
         .apiKey(apiKey)
         .model('imagen-3.0-generate-002')
         .buildImageGeneration();
@@ -143,13 +147,12 @@ Future<void> demonstrateImageEditing(String apiKey) async {
 
   try {
     // First, generate a base image
-    final imageProvider = await ai()
-        .google((google) => google
-            .enableImageGeneration(true)
-            .responseModalities(['TEXT', 'IMAGE']))
+    final imageProvider = await LLMBuilder()
+        .provider(googleProviderId)
         .apiKey(apiKey)
         .model('gemini-2.0-flash-preview-image-generation')
-        .buildImageGeneration();
+        .option('enableImageGeneration', true)
+        .option('responseModalities', ['TEXT', 'IMAGE']).buildImageGeneration();
 
     print('   🎨 Generating base image...');
     final basePrompt = 'A simple cartoon cat sitting on a chair';

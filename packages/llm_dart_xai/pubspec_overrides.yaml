@@ -1,0 +1,9 @@
+dependency_overrides:
+  llm_dart_builder:
+    path: ../llm_dart_builder
+  llm_dart_core:
+    path: ../llm_dart_core
+  llm_dart_openai_compatible:
+    path: ../llm_dart_openai_compatible
+  llm_dart_provider_utils:
+    path: ../llm_dart_provider_utils

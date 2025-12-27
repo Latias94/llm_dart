@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_google/llm_dart_google.dart';
 
 /// Example demonstrating Google's native text-to-speech capabilities
 ///
@@ -106,12 +108,20 @@ void main() async {
   print('🎤 Google TTS Example\n');
 
   try {
+    registerGoogle();
+
     // Build Google TTS provider
-    final ttsProvider = await ai()
-        .google((google) =>
-            google.ttsModel('gemini-2.5-flash-preview-tts').enableAudioOutput())
+    final provider = await LLMBuilder()
+        .provider(googleProviderId)
         .apiKey(apiKey)
-        .buildGoogleTTS();
+        .model('gemini-2.5-flash-preview-tts')
+        .build();
+
+    if (provider is! GoogleTTSCapability) {
+      throw StateError('Built provider does not support Google TTS.');
+    }
+
+    final ttsProvider = provider as GoogleTTSCapability;
 
     // Example 1: Single-speaker TTS
     await singleSpeakerExample(ttsProvider);

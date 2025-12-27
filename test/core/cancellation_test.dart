@@ -1,6 +1,5 @@
-import 'package:dio/dio.dart';
-import 'package:llm_dart/core/cancellation.dart';
-import 'package:llm_dart/core/llm_error.dart';
+import 'package:llm_dart_core/core/cancellation.dart';
+import 'package:llm_dart_core/core/llm_error.dart';
 import 'package:test/test.dart';
 
 /// Tests for cancellation support
@@ -41,22 +40,6 @@ void main() {
       expect(CancellationHelper.isCancelled(error), isTrue);
     });
 
-    test('isCancelled detects DioException cancellation errors', () {
-      final error = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.cancel,
-      );
-      expect(CancellationHelper.isCancelled(error), isTrue);
-    });
-
-    test('isCancelled returns false for non-cancel errors', () {
-      final error = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.connectionTimeout,
-      );
-      expect(CancellationHelper.isCancelled(error), isFalse);
-    });
-
     test('isCancelled returns false for non-DioException errors', () {
       final error = Exception('Some other error');
       expect(CancellationHelper.isCancelled(error), isFalse);
@@ -70,25 +53,8 @@ void main() {
       );
     });
 
-    test('getCancellationReason extracts reason from DioException cancel error',
-        () {
-      final error = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.cancel,
-        message: 'User cancelled',
-      );
-      expect(
-        CancellationHelper.getCancellationReason(error),
-        equals('User cancelled'),
-      );
-    });
-
     test('getCancellationReason returns null for non-cancel errors', () {
-      final error = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.connectionTimeout,
-        message: 'Timeout',
-      );
+      final error = Exception('Timeout');
       expect(CancellationHelper.getCancellationReason(error), isNull);
     });
 
@@ -147,18 +113,14 @@ void main() {
       expect(token2.isCancelled, isFalse);
     });
 
-    test('CancelToken.isCancel static method works', () {
-      final cancelError = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.cancel,
-      );
-      final otherError = DioException(
-        requestOptions: RequestOptions(path: '/test'),
-        type: DioExceptionType.badResponse,
-      );
+    test('addListener is invoked on cancel', () {
+      final token = CancelToken();
+      Object? reason;
 
-      expect(CancelToken.isCancel(cancelError), isTrue);
-      expect(CancelToken.isCancel(otherError), isFalse);
+      token.addListener((r) => reason = r);
+      token.cancel('bye');
+
+      expect(reason, equals('bye'));
     });
   });
 }

@@ -1,7 +1,7 @@
 import 'package:test/test.dart';
 import 'package:dio/dio.dart';
-import 'package:llm_dart/core/config.dart';
-import 'package:llm_dart/utils/http_config_utils.dart';
+import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'dio_proxy_test_stub.dart'
     if (dart.library.io) 'dio_proxy_test_io.dart'
     if (dart.library.html) 'dio_proxy_test_web.dart';
@@ -14,7 +14,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'httpProxy': 'http://proxy.example.com:8080',
         });
 
@@ -37,7 +37,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'httpProxy': 'http://user:pass@proxy.example.com:8080',
         });
 
@@ -57,7 +57,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'httpProxy': 'https://proxy.example.com:8080',
         });
 
@@ -98,7 +98,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'bypassSSLVerification': true,
         });
 
@@ -118,7 +118,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'sslCertificate': '/path/to/certificate.pem',
         });
 
@@ -138,7 +138,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'bypassSSLVerification': false,
           'sslCertificate': '/path/to/certificate.pem',
         });
@@ -180,7 +180,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'httpProxy': 'http://proxy.example.com:8080',
           'bypassSSLVerification': true,
           'sslCertificate': '/path/to/certificate.pem',
@@ -203,7 +203,7 @@ void main() {
           apiKey: 'test-key',
           model: 'test-model',
           timeout: Duration(seconds: 45),
-        ).withExtensions({
+        ).withTransportOptions({
           'enableHttpLogging': true,
           'httpProxy': 'http://proxy.example.com:8080',
           'bypassSSLVerification': false,
@@ -253,7 +253,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'httpProxy': 'invalid-proxy-url',
         });
 
@@ -273,7 +273,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'httpProxy': '',
         });
 
@@ -293,7 +293,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'sslCertificate': '',
         });
 
@@ -317,7 +317,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'enableHttpLogging': true, // This doesn't require adapter change
         });
 
@@ -331,7 +331,7 @@ void main() {
           baseUrl: 'https://api.example.com',
           apiKey: 'test-key',
           model: 'test-model',
-        ).withExtensions({
+        ).withTransportOptions({
           'httpProxy': 'http://proxy.example.com:8080',
         });
 

@@ -22,6 +22,9 @@ Foundation of AI interactions - messages, context, and responses.
 ### [streaming_chat.dart](streaming_chat.dart)
 Real-time response streaming for better user experience.
 
+### [stream_parts.dart](stream_parts.dart)
+Vercel-style stream parts (`streamChatParts`) and metadata boundaries.
+
 ### [cancellation_demo.dart](cancellation_demo.dart)
 Request cancellation support for chat, streaming, and API operations.
 
@@ -65,7 +68,7 @@ dart run enhanced_tool_calling.dart
 ## Key Concepts
 
 ### Capability-Based Architecture
-- **Type Safety**: Use specialized build methods (`buildChat()`, `buildAssistant()`, `buildEmbedding()`)
+- **Type Safety**: Use `build()` for chat, and specialized build methods (`buildAssistant()`, `buildEmbedding()`, etc.)
 - **Provider Abstraction**: Unified interface across different AI providers
 - **Capability Detection**: Automatic feature detection and validation
 
@@ -83,14 +86,27 @@ dart run enhanced_tool_calling.dart
 
 ### Basic Chat
 ```dart
-// Type-safe provider initialization
-final provider = await ai().openai().apiKey('your-key').buildChat();
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
-// Simple conversation
-final response = await provider.chat([
-  ChatMessage.user('Hello, how are you?'),
-]);
-print(response.text);
+registerOpenAI();
+
+final provider = await LLMBuilder()
+    .provider(openaiProviderId)
+    .apiKey('your-key')
+    .build();
+
+final result = await generateText(
+  model: provider,
+  promptIr: Prompt(
+    messages: [
+      PromptMessage.user('Hello, how are you?'),
+    ],
+  ),
+);
+
+print(result.text);
 ```
 
 ### Assistant with Tools
@@ -129,25 +145,52 @@ final embeddings = await provider.embed([
 **⚠️ ANTHROPIC ONLY**: Caching features are currently only supported by Anthropic providers.
 
 ```dart
-// Message-level caching
-final systemMessage = MessageBuilder.system()
-    .text('You are a helpful AI assistant.')
-    .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
-    .text('Here is a large document that will be cached...')
-    .build();
+final cacheControl = {
+  'type': 'ephemeral',
+  'ttl': '1h',
+};
 
-// Tool-level caching (unified approach)
-final message = MessageBuilder.system()
-    .tools([tool1, tool2, tool3])
-    .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
-    .text('Use these tools to help users.')
-    .build();
+// Message-level caching (provider escape hatch)
+final prompt = Prompt(
+  messages: [
+    PromptMessage.system(
+      'You are a helpful AI assistant.',
+      providerOptions: {
+        'anthropic': {'cacheControl': cacheControl},
+      },
+    ),
+    PromptMessage.system(
+      'Here is a large document that will be cached...',
+      providerOptions: {
+        'anthropic': {'cacheControl': cacheControl},
+      },
+    ),
+    PromptMessage.user('Summarize the document.'),
+  ],
+);
+
+// Tool-level caching: set cacheControl on any message, and pass `tools`
+final result = await generateText(
+  model: anthropicProvider,
+  promptIr: Prompt(
+    messages: [
+      PromptMessage.system(
+        'Use the provided tools to help the user.',
+        providerOptions: {
+          'anthropic': {'cacheControl': cacheControl},
+        },
+      ),
+      PromptMessage.user('Find the best approach and explain it.'),
+    ],
+  ),
+  tools: [tool1, tool2, tool3],
+);
 ```
 
 ## Best Practices
 
 ### Type Safety
-- Always use specialized build methods (`buildChat()`, `buildAssistant()`, etc.)
+- Use `build()` for chat, and specialized build methods (`buildAssistant()`, etc.)
 - Handle null values properly with null-aware operators (`?.`, `!`)
 - Use proper error handling with try-catch blocks
 

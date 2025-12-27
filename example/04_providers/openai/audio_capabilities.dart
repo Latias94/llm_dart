@@ -1,30 +1,31 @@
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/core/capability.dart';
+import 'package:llm_dart_core/models/audio_models.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// OpenAI Audio Capabilities Example
 ///
 /// This example demonstrates the unified AudioCapability interface
 /// with OpenAI's text-to-speech, speech-to-text, and audio translation features.
 Future<void> main() async {
+  registerOpenAI();
+
   // Get API key from environment
   final apiKey = Platform.environment['OPENAI_API_KEY'];
-  if (apiKey == null) {
+  if (apiKey == null || apiKey.isEmpty) {
     print('❌ Please set OPENAI_API_KEY environment variable');
     return;
   }
 
   print('🤖 OpenAI Audio Capabilities Demo\n');
 
-  // Create OpenAI provider
-  final provider = await ai().openai().apiKey(apiKey).model('gpt-4o').build();
-
-  // Check if provider supports audio capabilities
-  if (provider is! AudioCapability) {
-    print('❌ Provider does not support audio capabilities');
-    return;
-  }
-
-  final audioProvider = provider as AudioCapability;
+  final audioProvider = await LLMBuilder()
+      .provider(openaiProviderId)
+      .apiKey(apiKey)
+      .model('gpt-4o')
+      .buildAudio();
 
   // Display supported features
   await displaySupportedFeatures(audioProvider);

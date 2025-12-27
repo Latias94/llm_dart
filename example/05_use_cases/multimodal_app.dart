@@ -1,6 +1,11 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 🎭 Multimodal Application - Text, Image, and Audio Processing
 ///
@@ -112,10 +117,16 @@ EXAMPLES:
     print('🔧 Initializing multimodal AI providers...');
 
     try {
+      registerGroq();
+      registerOpenAI();
+
       // Initialize chat provider (Groq for fast text processing)
-      final groqKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
-      _chatProvider = await ai()
-          .groq()
+      final groqKey = Platform.environment['GROQ_API_KEY'];
+      if (groqKey == null || groqKey.isEmpty) {
+        throw Exception('GROQ_API_KEY environment variable not set');
+      }
+      _chatProvider = await LLMBuilder()
+          .provider(groqProviderId)
           .apiKey(groqKey)
           .model('llama-3.1-8b-instant')
           .temperature(0.7)
@@ -127,12 +138,19 @@ EXAMPLES:
       }
 
       // Initialize OpenAI for image and audio capabilities
-      final openaiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+      final openaiKey = Platform.environment['OPENAI_API_KEY'];
+      if (openaiKey == null || openaiKey.isEmpty) {
+        if (_verbose) {
+          print('⚠️ OpenAI features skipped (missing OPENAI_API_KEY)');
+        }
+        print('🎉 Chat provider initialized successfully!\n');
+        return;
+      }
 
       // Use capability factory methods for type-safe initialization
       try {
-        _imageProvider = await ai()
-            .openai()
+        _imageProvider = await LLMBuilder()
+            .provider(openaiProviderId)
             .apiKey(openaiKey)
             .model('dall-e-3')
             .buildImageGeneration();
@@ -146,7 +164,10 @@ EXAMPLES:
       }
 
       try {
-        _audioProvider = await ai().openai().apiKey(openaiKey).buildAudio();
+        _audioProvider = await LLMBuilder()
+            .provider(openaiProviderId)
+            .apiKey(openaiKey)
+            .buildAudio();
         if (_verbose) {
           print('✅ Audio provider initialized (OpenAI Whisper)');
         }
@@ -381,7 +402,8 @@ EXAMPLES:
       ChatMessage.user(text),
     ];
 
-    final response = await _chatProvider.chat(messages);
+    final response =
+        await generateText(model: _chatProvider, messages: messages);
     return response.text ?? 'Analysis not available';
   }
 
@@ -393,7 +415,8 @@ EXAMPLES:
       ChatMessage.user(prompt),
     ];
 
-    final response = await _chatProvider.chat(messages);
+    final response =
+        await generateText(model: _chatProvider, messages: messages);
     return response.text ?? 'Content generation failed';
   }
 
@@ -429,7 +452,8 @@ EXAMPLES:
       ChatMessage.user(textContent),
     ];
 
-    final response = await _chatProvider.chat(messages);
+    final response =
+        await generateText(model: _chatProvider, messages: messages);
     return response.text ?? 'A generic illustration';
   }
 
@@ -447,7 +471,8 @@ EXAMPLES:
       ChatMessage.user(text),
     ];
 
-    final response = await _chatProvider.chat(messages);
+    final response =
+        await generateText(model: _chatProvider, messages: messages);
     return response.text ?? 'Audio processing not available';
   }
 
@@ -459,7 +484,8 @@ EXAMPLES:
       ChatMessage.user(textContent),
     ];
 
-    final response = await _chatProvider.chat(messages);
+    final response =
+        await generateText(model: _chatProvider, messages: messages);
     return response.text ?? 'Audio script generation failed';
   }
 }

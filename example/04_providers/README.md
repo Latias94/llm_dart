@@ -51,11 +51,7 @@ dart run xai/live_search.dart
 - **DALL-E**: Advanced image generation and editing
 - **Whisper**: Professional audio transcription
 - **GPT-4 Vision**: Image analysis and understanding
-
-### OpenAI Unique Capabilities
-- **DALL-E**: Advanced image generation and editing
-- **Whisper**: Professional audio transcription
-- **Assistants API**: Persistent AI assistants with tools
+- **Responses API**: Provider-native tools (web search, file search, computer use)
 
 ### Anthropic Unique Capabilities
 - **Extended Thinking**: Access to Claude's reasoning process
@@ -86,8 +82,17 @@ dart run xai/live_search.dart
 
 ### OpenAI Image Generation
 ```dart
-final imageProvider = await ai().openai().apiKey('your-key')
-    .model('dall-e-3').buildImageGeneration();
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+registerOpenAI();
+
+final imageProvider = await LLMBuilder()
+    .provider(openaiProviderId)
+    .apiKey('your-key')
+    .model('dall-e-3')
+    .buildImageGeneration();
 
 final images = await imageProvider.generateImage(
   prompt: 'A futuristic cityscape at sunset',
@@ -97,41 +102,78 @@ final images = await imageProvider.generateImage(
 
 ### Anthropic Extended Thinking
 ```dart
-final provider = await ai().anthropic().apiKey('your-key')
-    .model('claude-sonnet-4-20250514').build();
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this logic puzzle step by step'),
-]);
+registerAnthropic();
+
+final provider = await LLMBuilder()
+    .provider(anthropicProviderId)
+    .apiKey('your-key')
+    .model('claude-sonnet-4-20250514')
+    .option('reasoning', true)
+    .build();
+
+final result = await generateText(
+  model: provider,
+  messages: [ChatMessage.user('Solve this logic puzzle step by step')],
+);
 
 // Access Claude's thinking process
-if (response.thinking != null) {
-  print('Claude\'s reasoning: ${response.thinking}');
+if (result.thinking != null) {
+  print('Claude\'s reasoning: ${result.thinking}');
 }
 ```
 
 ### DeepSeek Reasoning
 ```dart
-final provider = await ai().deepseek().apiKey('your-key')
-    .model('deepseek-reasoner').build();
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
 
-final response = await provider.chat([
-  ChatMessage.user('Analyze this complex problem'),
-]);
+registerDeepSeek();
+
+final provider = await LLMBuilder()
+    .provider(deepseekProviderId)
+    .apiKey('your-key')
+    .model('deepseek-reasoner')
+    .build();
+
+final result = await generateText(
+  model: provider,
+  messages: [ChatMessage.user('Analyze this complex problem')],
+);
 
 // View transparent thinking process
-print('AI thinking: ${response.thinking}');
+print('AI thinking: ${result.thinking}');
 ```
 
 ### XAI Live Search
 ```dart
-final provider = await ai().xai().apiKey('your-key')
-    .model('grok-beta').build();
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart';
 
-final response = await provider.chat([
-  ChatMessage.user('What are the latest AI developments this week?'),
-]);
-// Grok automatically includes live search results
+registerXAI();
+
+final provider = await LLMBuilder()
+    .provider(xaiProviderId)
+    .apiKey('your-key')
+    .model('grok-beta')
+    .option('liveSearch', true)
+    .build();
+
+final result = await generateText(
+  model: provider,
+  messages: [ChatMessage.user('What are the latest AI developments this week?')],
+);
+
+print(result.text);
+print(result.providerMetadata);
 ```
 
 ## Best Practices

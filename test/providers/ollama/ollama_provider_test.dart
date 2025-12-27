@@ -40,24 +40,15 @@ void main() {
       });
 
       test('should support tool calling for compatible models', () {
-        final toolConfig = config.copyWith(model: 'llama3.1:8b');
-        final toolProvider = OllamaProvider(toolConfig);
-
-        expect(toolProvider.supports(LLMCapability.toolCalling), isTrue);
+        expect(provider.supports(LLMCapability.toolCalling), isTrue);
       });
 
-      test('should support vision for vision models', () {
-        final visionConfig = config.copyWith(model: 'llava:7b');
-        final visionProvider = OllamaProvider(visionConfig);
-
-        expect(visionProvider.supports(LLMCapability.vision), isTrue);
+      test('should report vision optimistically', () {
+        expect(provider.supports(LLMCapability.vision), isTrue);
       });
 
-      test('should support reasoning for reasoning models', () {
-        final reasoningConfig = config.copyWith(model: 'qwen2.5:7b');
-        final reasoningProvider = OllamaProvider(reasoningConfig);
-
-        expect(reasoningProvider.supports(LLMCapability.reasoning), isTrue);
+      test('should report reasoning optimistically', () {
+        expect(provider.supports(LLMCapability.reasoning), isTrue);
       });
 
       test('should not support unsupported capabilities', () {
@@ -74,8 +65,9 @@ void main() {
         expect(capabilities, contains(LLMCapability.completion));
         expect(capabilities, contains(LLMCapability.embedding));
         expect(capabilities, contains(LLMCapability.modelListing));
-        expect(capabilities,
-            contains(LLMCapability.toolCalling)); // llama3.1 supports tools
+        expect(capabilities, contains(LLMCapability.toolCalling));
+        expect(capabilities, contains(LLMCapability.vision));
+        expect(capabilities, contains(LLMCapability.reasoning));
       });
     });
 
@@ -143,49 +135,7 @@ void main() {
 
     group('Provider Properties', () {
       test('should return correct model family', () {
-        expect(provider.modelFamily, equals('Llama'));
-      });
-
-      test('should return correct model family for Mistral', () {
-        final mistralConfig = config.copyWith(model: 'mistral:7b');
-        final mistralProvider = OllamaProvider(mistralConfig);
-
-        expect(mistralProvider.modelFamily, equals('Mistral'));
-      });
-
-      test('should return correct model family for Qwen', () {
-        final qwenConfig = config.copyWith(model: 'qwen2:7b');
-        final qwenProvider = OllamaProvider(qwenConfig);
-
-        expect(qwenProvider.modelFamily, equals('Qwen'));
-      });
-
-      test('should return correct model family for Phi', () {
-        final phiConfig = config.copyWith(model: 'phi3:3.8b');
-        final phiProvider = OllamaProvider(phiConfig);
-
-        expect(phiProvider.modelFamily, equals('Phi'));
-      });
-
-      test('should return correct model family for Gemma', () {
-        final gemmaConfig = config.copyWith(model: 'gemma2:9b');
-        final gemmaProvider = OllamaProvider(gemmaConfig);
-
-        expect(gemmaProvider.modelFamily, equals('Gemma'));
-      });
-
-      test('should return correct model family for Code Llama', () {
-        final codeConfig = config.copyWith(model: 'codellama:7b');
-        final codeProvider = OllamaProvider(codeConfig);
-
-        expect(codeProvider.modelFamily, equals('Code Llama'));
-      });
-
-      test('should return correct model family for LLaVA', () {
-        final llavaConfig = config.copyWith(model: 'llava:7b');
-        final llavaProvider = OllamaProvider(llavaConfig);
-
-        expect(llavaProvider.modelFamily, equals('LLaVA'));
+        expect(provider.modelFamily, equals('Ollama'));
       });
 
       test('should detect local deployment', () {
@@ -206,8 +156,8 @@ void main() {
         expect(embedProvider.supportsEmbeddings, isTrue);
       });
 
-      test('should not detect embeddings support for chat models', () {
-        expect(provider.supportsEmbeddings, isFalse);
+      test('should not maintain an embedding model matrix', () {
+        expect(provider.supportsEmbeddings, isTrue);
       });
     });
 
@@ -218,7 +168,7 @@ void main() {
 
         expect(visionProvider.config.supportsVision, isTrue);
         expect(visionProvider.supports(LLMCapability.vision), isTrue);
-        expect(visionProvider.modelFamily, equals('LLaVA'));
+        expect(visionProvider.modelFamily, equals('Ollama'));
       });
 
       test('should handle embedding models correctly', () {
@@ -235,7 +185,7 @@ void main() {
         final codeProvider = OllamaProvider(codeConfig);
 
         expect(codeProvider.config.supportsCodeGeneration, isTrue);
-        expect(codeProvider.modelFamily, equals('Code Llama'));
+        expect(codeProvider.modelFamily, equals('Ollama'));
       });
 
       test('should handle reasoning models correctly', () {

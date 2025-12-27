@@ -1,25 +1,32 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
 
-/// 🚀 buildOpenAIResponses() Method Demo
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+/// 🚀 OpenAI Responses API Provider Build Demo
 ///
-/// This example demonstrates the new `buildOpenAIResponses()` convenience method
-/// that provides type-safe access to OpenAI Responses API features.
+/// This example demonstrates how to build an OpenAI provider configured for the
+/// Responses API using only subpackages.
 ///
 /// **Key Benefits:**
-/// - **Automatic Configuration**: Automatically enables Responses API
-/// - **Type Safety**: Returns properly typed OpenAIProvider
-/// - **Direct Access**: No need for casting or capability checking
-/// - **Error Prevention**: Validates Responses API initialization
+/// - **Explicit Configuration**: Enable Responses API via `providerOptions`
+/// - **Type Safety**: Cast the built provider to `OpenAIProvider`
+/// - **Provider-native tools**: Configure built-in tools via `providerTools`
 ///
 /// **Usage Patterns:**
 /// ```dart
 /// // Traditional approach (manual configuration)
-/// final provider1 = await ai()
-///     .openai((openai) => openai.useResponsesAPI())
+/// registerOpenAI();
+///
+/// final provider1 = await LLMBuilder()
+///     .provider(openaiProviderId)
 ///     .apiKey(apiKey)
 ///     .model('gpt-4o')
+///     .providerOption('openai', 'useResponsesAPI', true)
+///     .providerTool(OpenAIProviderTools.webSearch())
 ///     .build();
 ///
 /// if (provider1.supports(LLMCapability.openaiResponses) && provider1 is OpenAIProvider) {
@@ -27,21 +34,14 @@ import 'package:llm_dart/llm_dart.dart';
 ///   // Use responsesAPI...
 /// }
 ///
-/// // New convenience approach
-/// final provider2 = await ai()
-///     .openai((openai) => openai.webSearchTool())
-///     .apiKey(apiKey)
-///     .model('gpt-4o')
-///     .buildOpenAIResponses();
-///
-/// // Direct access - no casting needed!
-/// final responsesAPI = provider2.responses!;
+/// final openaiProvider = provider1 as OpenAIProvider;
+/// final responsesAPI = openaiProvider.responses!;
 /// ```
 ///
 /// Before running, set your API key:
 /// export OPENAI_API_KEY="your-key"
 void main() async {
-  print('🚀 buildOpenAIResponses() Method Demo\n');
+  print('🚀 OpenAI Responses API Provider Build Demo\n');
 
   final apiKey = Platform.environment['OPENAI_API_KEY'];
   if (apiKey == null) {
@@ -49,12 +49,15 @@ void main() async {
     exit(1);
   }
 
+  registerOpenAI();
+  registerAnthropic();
+
   await demonstrateTraditionalApproach(apiKey);
   await demonstrateConvenienceMethod(apiKey);
   await demonstrateErrorHandling(apiKey);
   await demonstrateCapabilityComparison(apiKey);
 
-  print('\n✅ buildOpenAIResponses() demo completed!');
+  print('\n✅ OpenAI Responses build demo completed!');
 }
 
 /// Demonstrate traditional approach with manual configuration
@@ -63,10 +66,12 @@ Future<void> demonstrateTraditionalApproach(String apiKey) async {
 
   try {
     // Manual configuration with capability checking
-    final provider = await ai()
-        .openai((openai) => openai.useResponsesAPI().webSearchTool())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
+        .providerOption('openai', 'useResponsesAPI', true)
+        .providerTool(OpenAIProviderTools.webSearch())
         .build();
 
     print('   ✅ Provider created: ${provider.runtimeType}');
@@ -99,32 +104,34 @@ Future<void> demonstrateTraditionalApproach(String apiKey) async {
   }
 }
 
-/// Demonstrate the new convenience method
+/// Demonstrate typed access with an explicit cast
 Future<void> demonstrateConvenienceMethod(String apiKey) async {
-  print('\n🚀 New Convenience Method (buildOpenAIResponses):\n');
+  print('\n🚀 Typed Access (cast to OpenAIProvider):\n');
 
   try {
-    // New convenience method - automatic configuration
-    final provider = await ai()
-        .openai((openai) => openai.webSearchTool())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
-        .buildOpenAIResponses();
+        .providerOption('openai', 'useResponsesAPI', true)
+        .providerTool(OpenAIProviderTools.webSearch())
+        .build();
+    final openaiProvider = provider as OpenAIProvider;
 
     print('   ✅ Provider created: ${provider.runtimeType}');
-    print('   ✅ Automatic Responses API configuration');
-    print('   ✅ Type-safe OpenAIProvider returned');
+    print('   ✅ Responses API enabled via providerOptions');
+    print('   ✅ OpenAIProvider obtained via cast');
 
-    // Direct access - no casting needed!
-    final responsesAPI = provider.responses!;
+    final responsesAPI = openaiProvider.responses!;
     print('   ✅ Direct access to Responses API');
 
     // Verify capabilities
     print('   📋 Capabilities:');
     print(
-        '      • openaiResponses: ${provider.supports(LLMCapability.openaiResponses)}');
-    print('      • chat: ${provider.supports(LLMCapability.chat)}');
-    print('      • streaming: ${provider.supports(LLMCapability.streaming)}');
+        '      • openaiResponses: ${openaiProvider.supports(LLMCapability.openaiResponses)}');
+    print('      • chat: ${openaiProvider.supports(LLMCapability.chat)}');
+    print(
+        '      • streaming: ${openaiProvider.supports(LLMCapability.streaming)}');
 
     // Test basic functionality
     final response = await responsesAPI.chat([
@@ -148,29 +155,33 @@ Future<void> demonstrateErrorHandling(String apiKey) async {
   // Test with non-OpenAI provider
   try {
     print('   Testing with non-OpenAI provider...');
-    await ai()
-        .anthropic()
+    final provider = await LLMBuilder()
+        .provider(anthropicProviderId)
         .apiKey('dummy-key')
         .model('claude-3-sonnet-20240229')
-        .buildOpenAIResponses();
+        .build();
+    // ignore: unused_local_variable
+    final openaiProvider = provider as OpenAIProvider;
 
     print('   ❌ Should have thrown an error!');
   } catch (e) {
     print('   ✅ Correctly caught error: ${e.toString().substring(0, 80)}...');
   }
 
-  // Test automatic enablement
+  // Test enablement
   try {
-    print('\n   Testing automatic Responses API enablement...');
-    final provider = await ai()
-        .openai() // No explicit useResponsesAPI() call
+    print('\n   Testing Responses API enablement...');
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
-        .buildOpenAIResponses();
+        .providerOption('openai', 'useResponsesAPI', true)
+        .build();
+    final openaiProvider = provider as OpenAIProvider;
 
-    print('   ✅ Responses API automatically enabled');
+    print('   ✅ Responses API enabled');
     print(
-        '   ✅ Provider supports openaiResponses: ${provider.supports(LLMCapability.openaiResponses)}');
+        '   ✅ Provider supports openaiResponses: ${openaiProvider.supports(LLMCapability.openaiResponses)}');
   } catch (e) {
     print('   ❌ Error in automatic enablement: $e');
   }
@@ -182,15 +193,18 @@ Future<void> demonstrateCapabilityComparison(String apiKey) async {
 
   try {
     // Standard build
-    final standardProvider =
-        await ai().openai().apiKey(apiKey).model('gpt-4o-mini').build();
+    final standardProvider = await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey(apiKey)
+        .model('gpt-4o-mini')
+        .build();
 
-    // Responses API build
-    final responsesProvider = await ai()
-        .openai()
+    final responsesProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
-        .buildOpenAIResponses();
+        .providerOption('openai', 'useResponsesAPI', true)
+        .build();
 
     print('   📋 Standard Provider Capabilities:');
     _printCapabilities(standardProvider);
@@ -202,16 +216,17 @@ Future<void> demonstrateCapabilityComparison(String apiKey) async {
     final standardHasResponses = standardProvider is ProviderCapabilities &&
         (standardProvider as ProviderCapabilities)
             .supports(LLMCapability.openaiResponses);
-    final responsesHasResponses =
-        responsesProvider.supports(LLMCapability.openaiResponses);
+    final responsesHasResponses = responsesProvider is ProviderCapabilities &&
+        (responsesProvider as ProviderCapabilities)
+            .supports(LLMCapability.openaiResponses);
 
     print('\n   🔍 Key Difference:');
     print('      • Standard build has openaiResponses: $standardHasResponses');
     print(
-        '      • buildOpenAIResponses() has openaiResponses: $responsesHasResponses');
+        '      • Responses-enabled build has openaiResponses: $responsesHasResponses');
 
     if (!standardHasResponses && responsesHasResponses) {
-      print('      ✅ buildOpenAIResponses() successfully adds the capability!');
+      print('      ✅ Enabling Responses API adds the capability!');
     }
   } catch (e) {
     print('   ❌ Error in capability comparison: $e');
@@ -237,31 +252,23 @@ void _printCapabilities(dynamic provider) {
 
 /// 🎯 Key Benefits Summary:
 ///
-/// **buildOpenAIResponses() vs Traditional Approach:**
+/// **Subpackage-friendly Responses API configuration**
 ///
-/// **Traditional:**
 /// ```dart
-/// final provider = await ai().openai((openai) => openai.useResponsesAPI()).build();
-/// if (provider.supports(LLMCapability.openaiResponses) && provider is OpenAIProvider) {
-///   final responsesAPI = (provider as OpenAIProvider).responses!;
-///   // Use responsesAPI...
-/// }
-/// ```
+/// final provider = await LLMBuilder()
+///     .provider(openaiProviderId)
+///     .apiKey(apiKey)
+///     .model('gpt-4o')
+///     .providerOption('openai', 'useResponsesAPI', true)
+///     .providerTool(OpenAIProviderTools.webSearch())
+///     .build();
 ///
-/// **New Convenience Method:**
-/// ```dart
-/// final provider = await ai().openai().buildOpenAIResponses();
-/// final responsesAPI = provider.responses!; // Direct access!
+/// final openaiProvider = provider as OpenAIProvider;
+/// final responsesAPI = openaiProvider.responses!;
+/// // Use responsesAPI...
 /// ```
 ///
 /// **Benefits:**
-/// 1. **Less Boilerplate**: No manual capability checking or casting
-/// 2. **Type Safety**: Guaranteed OpenAIProvider return type
-/// 3. **Automatic Configuration**: Enables Responses API automatically
-/// 4. **Error Prevention**: Validates initialization at build time
-/// 5. **Better DX**: Cleaner, more intuitive API
-///
-/// **When to Use:**
-/// - Use `buildOpenAIResponses()` when you specifically need Responses API features
-/// - Use `build()` for general OpenAI usage without Responses API
-/// - The method automatically handles the configuration complexity for you
+/// 1. **Explicit**: Enables Responses API via `providerOptions`.
+/// 2. **Typed tools**: Configures built-ins via `providerTools` catalogs.
+/// 3. **Composable**: Works with subpackages without pulling the umbrella package.

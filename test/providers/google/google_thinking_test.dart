@@ -145,39 +145,19 @@ void main() {
       expect(emptyPartsResponse.text, isNull);
     });
 
-    test('GoogleConfig correctly identifies thinking-capable models', () {
-      // Test Gemini 2.5 models
-      final gemini25Flash = GoogleConfig(
-        apiKey: 'test',
-        model: 'gemini-2.5-flash',
-      );
-      expect(gemini25Flash.supportsReasoning, isTrue);
+    test('GoogleConfig does not maintain a model capability matrix', () {
+      final models = [
+        'gemini-2.5-flash',
+        'gemini-2.5-pro',
+        'gemini-2.5-flash-lite-preview',
+        'gemini-2.0-flash-thinking-exp',
+        'gemini-1.5-flash',
+      ];
 
-      final gemini25Pro = GoogleConfig(
-        apiKey: 'test',
-        model: 'gemini-2.5-pro',
-      );
-      expect(gemini25Pro.supportsReasoning, isTrue);
-
-      final gemini25FlashLite = GoogleConfig(
-        apiKey: 'test',
-        model: 'gemini-2.5-flash-lite-preview',
-      );
-      expect(gemini25FlashLite.supportsReasoning, isTrue);
-
-      // Test thinking models
-      final thinkingModel = GoogleConfig(
-        apiKey: 'test',
-        model: 'gemini-2.0-flash-thinking-exp',
-      );
-      expect(thinkingModel.supportsReasoning, isTrue);
-
-      // Test non-thinking models
-      final gemini15Flash = GoogleConfig(
-        apiKey: 'test',
-        model: 'gemini-1.5-flash',
-      );
-      expect(gemini15Flash.supportsReasoning, isFalse);
+      for (final model in models) {
+        final config = GoogleConfig(apiKey: 'test', model: model);
+        expect(config.supportsReasoning, isTrue);
+      }
     });
 
     test('toString includes thinking content when present', () {

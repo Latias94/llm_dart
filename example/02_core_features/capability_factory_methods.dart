@@ -1,5 +1,9 @@
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 🏭 Capability Factory Methods - Type-Safe Provider Building
 ///
@@ -25,6 +29,9 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('🏭 Capability Factory Methods - Type-Safe Provider Building\n');
 
+  registerOpenAI();
+  registerElevenLabs();
+
   // Demonstrate old vs new approach
   await demonstrateOldVsNewApproach();
 
@@ -49,7 +56,8 @@ Future<void> demonstrateOldVsNewApproach() async {
 
   print('   🚨 OLD APPROACH (runtime type casting):');
   print('   ```dart');
-  print('   final provider = await ai().openai().apiKey(apiKey).build();');
+  print(
+      '   final provider = await LLMBuilder().provider(openaiProviderId).apiKey(apiKey).build();');
   print('   if (provider is! AudioCapability) {');
   print('     throw Exception("Not supported");');
   print('   }');
@@ -62,7 +70,7 @@ Future<void> demonstrateOldVsNewApproach() async {
   print('   ✅ NEW APPROACH (compile-time type safety):');
   print('   ```dart');
   print(
-      '   final audioProvider = await ai().openai().apiKey(apiKey).buildAudio();');
+      '   final audioProvider = await LLMBuilder().provider(openaiProviderId).apiKey(apiKey).buildAudio();');
   print('   final voices = await audioProvider.getVoices(); // Direct usage!');
   print('   ```');
   print('');
@@ -89,7 +97,10 @@ Future<void> demonstrateTypeSafeBuilding() async {
     try {
       // Audio capability
       print('      🎵 Building audio capability...');
-      final audioProvider = await ai().openai().apiKey(openaiKey).buildAudio();
+      final audioProvider = await LLMBuilder()
+          .provider(openaiProviderId)
+          .apiKey(openaiKey)
+          .buildAudio();
 
       print('         ✅ Audio provider built successfully');
       print('         Type: ${audioProvider.runtimeType}');
@@ -100,8 +111,8 @@ Future<void> demonstrateTypeSafeBuilding() async {
 
       // Image generation capability
       print('      🖼️  Building image generation capability...');
-      final imageProvider = await ai()
-          .openai()
+      final imageProvider = await LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(openaiKey)
           .model('dall-e-3')
           .buildImageGeneration();
@@ -115,8 +126,8 @@ Future<void> demonstrateTypeSafeBuilding() async {
 
       // Embedding capability
       print('      📊 Building embedding capability...');
-      final embeddingProvider = await ai()
-          .openai()
+      final embeddingProvider = await LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(openaiKey)
           .model('text-embedding-3-small')
           .buildEmbedding();
@@ -130,8 +141,10 @@ Future<void> demonstrateTypeSafeBuilding() async {
 
       // Model listing capability
       print('      📋 Building model listing capability...');
-      final modelProvider =
-          await ai().openai().apiKey(openaiKey).buildModelListing();
+      final modelProvider = await LLMBuilder()
+          .provider(openaiProviderId)
+          .apiKey(openaiKey)
+          .buildModelListing();
 
       print('         ✅ Model listing provider built successfully');
       print('         Type: ${modelProvider.runtimeType}');
@@ -151,10 +164,10 @@ Future<void> demonstrateTypeSafeBuilding() async {
     try {
       // Audio capability (ElevenLabs specializes in audio)
       print('      🎵 Building audio capability...');
-      final audioProvider = await ai()
-          .elevenlabs(
-              (elevenlabs) => elevenlabs.voiceId('JBFqnCBsd6RMkjVDRZzb'))
+      final audioProvider = await LLMBuilder()
+          .provider(elevenLabsProviderId)
           .apiKey(elevenlabsKey)
+          .providerOption('elevenlabs', 'voiceId', 'JBFqnCBsd6RMkjVDRZzb')
           .buildAudio();
 
       print('         ✅ Audio provider built successfully');
@@ -192,7 +205,10 @@ Future<void> demonstrateErrorHandling() async {
     // Try to build image generation with ElevenLabs (should fail)
     try {
       print('      🖼️  Attempting to build image generation...');
-      await ai().elevenlabs().apiKey(elevenlabsKey).buildImageGeneration();
+      await LLMBuilder()
+          .provider(elevenLabsProviderId)
+          .apiKey(elevenlabsKey)
+          .buildImageGeneration();
 
       print('         ❌ This should not succeed!');
     } catch (e) {
@@ -203,7 +219,10 @@ Future<void> demonstrateErrorHandling() async {
     // Try to build embedding with ElevenLabs (should fail)
     try {
       print('      📊 Attempting to build embedding...');
-      await ai().elevenlabs().apiKey(elevenlabsKey).buildEmbedding();
+      await LLMBuilder()
+          .provider(elevenLabsProviderId)
+          .apiKey(elevenlabsKey)
+          .buildEmbedding();
 
       print('         ❌ This should not succeed!');
     } catch (e) {
@@ -230,7 +249,10 @@ Future<void> demonstratePracticalUsage() async {
     // Example 1: Audio processing pipeline
     print('      🎵 Audio Processing Pipeline:');
     try {
-      final audioProvider = await ai().openai().apiKey(openaiKey).buildAudio();
+      final audioProvider = await LLMBuilder()
+          .provider(openaiProviderId)
+          .apiKey(openaiKey)
+          .buildAudio();
 
       // Direct usage without type casting
       final ttsResponse = await audioProvider.textToSpeech(TTSRequest(
@@ -248,8 +270,8 @@ Future<void> demonstratePracticalUsage() async {
     // Example 2: Embedding similarity search
     print('      📊 Embedding Similarity Search:');
     try {
-      final embeddingProvider = await ai()
-          .openai()
+      final embeddingProvider = await LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(openaiKey)
           .model('text-embedding-3-small')
           .buildEmbedding();
@@ -270,8 +292,10 @@ Future<void> demonstratePracticalUsage() async {
     // Example 3: Model discovery
     print('      🔍 Model Discovery:');
     try {
-      final modelProvider =
-          await ai().openai().apiKey(openaiKey).buildModelListing();
+      final modelProvider = await LLMBuilder()
+          .provider(openaiProviderId)
+          .apiKey(openaiKey)
+          .buildModelListing();
 
       // Direct usage without type casting
       final models = await modelProvider.models();

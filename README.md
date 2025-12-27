@@ -7,7 +7,13 @@
 [![CI](https://github.com/Latias94/llm_dart/actions/workflows/ci.yml/badge.svg)](https://github.com/Latias94/llm_dart/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Latias94/llm_dart/branch/main/graph/badge.svg)](https://codecov.io/gh/Latias94/llm_dart)
 
-A modular Dart library for AI provider interactions. This library provides a unified interface for interacting with different AI providers using Dio for HTTP requests.
+A modular Dart library for AI provider interactions.
+
+Recommended mental model (Vercel AI SDK style):
+
+- Use `llm_dart_ai` task APIs as the stable, provider-agnostic surface.
+- Use `providerOptions` / `providerTools` / `providerMetadata` as escape hatches.
+- Keep provider-specific innovation out of the “standard” surface.
 
 ## Quick Navigation
 
@@ -25,14 +31,15 @@ A modular Dart library for AI provider interactions. This library provides a uni
 | **Access AI thinking** | [Reasoning models](example/03_advanced_features/reasoning_models.dart) |
 | **Use MCP tools** | [MCP integration](example/06_mcp_integration/) |
 | **Use local models** | [Ollama examples](example/04_providers/ollama/) |
+| **Configure HTTP/proxy** | [HTTP configuration](example/03_advanced_features/http_configuration.dart) |
 | **See production app** | [Yumcha](https://github.com/Latias94/yumcha) |
 
 ## Features
 
 - **Multi-provider support**: OpenAI, Anthropic, Google, DeepSeek, Groq, Ollama, xAI, ElevenLabs
-- **OpenAI Responses API**: Stateful conversations with built-in tools (web search, file search, computer use)
+- **OpenAI Responses API (OpenAI-only)**: Stateful conversations with built-in tools (web search, file search, computer use)
 - **Thinking process access**: Model reasoning for Claude, DeepSeek, Gemini, Ollama
-- **Unified capabilities**: Chat, streaming, tools, audio, images, files, web search, embeddings
+- **Unified tasks (recommended)**: `generateText`, `streamText`, `streamChatParts`, `generateObject`, `embed`, `generateImage`, `generateSpeech`, `transcribe`, tool loops
 - **Request cancellation**: Cancel in-flight requests for chat, streaming, and API operations
 - **MCP integration**: Model Context Protocol for external tool access
 - **Content moderation**: Built-in safety and content filtering
@@ -42,31 +49,33 @@ A modular Dart library for AI provider interactions. This library provides a uni
 
 ## Supported Providers
 
-| Provider | Chat | Streaming | Tools | Thinking | Audio | Image | Files | Web Search | Embeddings | Moderation | Notes |
-|----------|------|-----------|-------|----------|-------|-------|-------|------------|------------|------------|-------|
-| OpenAI | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | GPT models, DALL-E, o1 reasoning |
-| Anthropic | ✅ | ✅ | ✅ | 🧠 | ❌ | ✅ | ✅ | ✅ | ❌ | ❌ | Claude models with thinking |
-| Google | ✅ | ✅ | ✅ | 🧠 | ✅ | ✅ | ❌ | ✅ | ✅ | ❌ | Gemini models with reasoning |
-| DeepSeek | ✅ | ✅ | ✅ | 🧠 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | DeepSeek reasoning models |
-| Groq | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | Ultra-fast inference |
-| Ollama | ✅ | ✅ | ✅ | 🧠 | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | Local models, privacy-focused |
-| xAI | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | Grok models with web search |
-| ElevenLabs | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | Advanced voice synthesis |
+This repository ships as a monorepo split into multiple packages. You can use
+the umbrella `llm_dart` package (all-in-one) or pick subpackages.
 
-- **🧠 Thinking Process Support**: Access to model's reasoning and thought processes
-- **🎵 Audio Support**: Text-to-speech, speech-to-text, and audio processing
-- **🖼️ Image Support**: Image generation, editing, and multi-modal processing
-- **📁 File Support**: File upload, management, and processing capabilities
-- **🔍 Web Search**: Real-time web search across multiple providers
-- **🧮 Embeddings**: Text embeddings for semantic search and similarity
+Built-in packages (high-level):
+
+- Standard providers (Vercel-style): `llm_dart_openai`, `llm_dart_anthropic`, `llm_dart_google`
+- Protocol reuse layers: `llm_dart_openai_compatible`, `llm_dart_anthropic_compatible`
+- Additional providers (built on protocol reuse or provider-specific APIs): `llm_dart_deepseek`, `llm_dart_groq`, `llm_dart_xai`, `llm_dart_minimax`, `llm_dart_ollama`, `llm_dart_elevenlabs`
+
+Notes:
+
+- Feature availability varies by provider/model and can change over time.
+- `llm_dart` does not try to maintain a complete “unsupported matrix”.
+- Prefer `providerOptions` / `providerTools` / `providerMetadata` for
+  provider-only features.
 
 ## Installation
 
-Add this to your `pubspec.yaml`:
+### Recommended (Vercel-style split): `llm_dart_ai` + provider package(s)
+
+Pick the provider packages you need and keep the dependency footprint small:
 
 ```yaml
 dependencies:
-  llm_dart: ^0.9.0
+  llm_dart_ai: ^0.10.5
+  llm_dart_builder: ^0.10.5
+  llm_dart_anthropic: ^0.10.5
 ```
 
 Then run:
@@ -78,52 +87,103 @@ dart pub get
 Or install directly using:
 
 ```bash
+dart pub add llm_dart_ai llm_dart_builder llm_dart_anthropic
+```
+
+### All-in-one umbrella (optional)
+
+If you prefer a single dependency that re-exports everything:
+
+```bash
 dart pub add llm_dart
 ```
 
 ## Quick Start
 
-### Basic Usage
+### Basic Usage (recommended: task APIs)
+
+```dart
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+
+void main() async {
+  registerAnthropic(); // required when using subpackages
+
+  final model = await LLMBuilder()
+      .provider(anthropicProviderId)
+      .apiKey('your-api-key')
+      .model('claude-sonnet-4-20250514')
+      .build();
+
+  final prompt = Prompt(messages: [
+    PromptMessage.user('Hello, world!'),
+  ]);
+
+  final result = await generateText(model: model, promptIr: prompt);
+
+  print(result.text);
+  print(result.providerMetadata); // optional provider-specific metadata
+}
+```
+
+### Umbrella convenience (optional)
+
+If you depend on `llm_dart`, it auto-registers built-in providers via `ai()`:
 
 ```dart
 import 'package:llm_dart/llm_dart.dart';
 
 void main() async {
-  // Method 1: Using the new ai() builder with provider methods
-  final provider = await ai()
-      .openai()
+  final model = await ai()
+      .provider('anthropic')
       .apiKey('your-api-key')
-      .model('gpt-4')
-      .temperature(0.7)
+      .model('claude-sonnet-4-20250514')
       .build();
 
-  // Method 2: Using provider() with string ID (extensible)
-  final provider2 = await ai()
-      .provider('openai')
-      .apiKey('your-api-key')
-      .model('gpt-4')
-      .temperature(0.7)
-      .build();
-
-  // Method 3: Using convenience function
-  final directProvider = await createProvider(
-    providerId: 'openai',
-    apiKey: 'your-api-key',
-    model: 'gpt-4',
-    temperature: 0.7,
+  final result = await generateText(
+    model: model,
+    promptIr: Prompt(messages: [PromptMessage.user('Hello!')]),
   );
 
-  // Simple chat
-  final messages = [ChatMessage.user('Hello, world!')];
-  final response = await provider.chat(messages);
-  print(response.text);
-
-  // Access thinking process (for supported models)
-  if (response.thinking != null) {
-    print('Model thinking: ${response.thinking}');
-  }
+  print(result.text);
 }
 ```
+
+### Pick subpackages (example: MiniMax)
+
+For a minimal dependency footprint, depend on only the packages you need:
+
+```bash
+dart pub add llm_dart_minimax llm_dart_builder llm_dart_ai
+```
+
+```dart
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_minimax/llm_dart_minimax.dart';
+
+Future<void> main() async {
+  registerMinimax(); // required for subpackage users
+
+  final model = await LLMBuilder()
+      .provider(minimaxProviderId)
+      .apiKey('MINIMAX_API_KEY')
+      .baseUrl(minimaxAnthropicV1BaseUrl)
+      .model(minimaxDefaultModel)
+      .build();
+
+  final prompt = Prompt(messages: [
+    PromptMessage.user('Hello from MiniMax!'),
+  ]);
+
+  final result = await generateText(model: model, promptIr: prompt);
+
+  print(result.text);
+}
+```
+
+MiniMax guide: [docs/providers/minimax.md](docs/providers/minimax.md)
 
 ### Streaming with DeepSeek Reasoning
 
@@ -131,39 +191,53 @@ void main() async {
 import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
 
-// Create DeepSeek provider for streaming with thinking
+// Create DeepSeek provider for streaming with thinking.
 final provider = await ai()
-    .deepseek()
+    .provider('deepseek')
     .apiKey('your-deepseek-key')
     .model('deepseek-reasoner')
     .temperature(0.7)
     .build();
 
-final messages = [ChatMessage.user('What is 15 + 27? Show your work.')];
+final prompt = Prompt(messages: [
+  PromptMessage.user('What is 15 + 27? Show your work.'),
+]);
 
-// Stream with real-time thinking process
-await for (final event in provider.chatStream(messages)) {
-  switch (event) {
-    case ThinkingDeltaEvent(delta: final delta):
-      // Show AI's thinking process in gray
+// Recommended: stream via llm_dart_ai task APIs (provider-agnostic).
+await for (final part in streamText(model: provider, promptIr: prompt)) {
+  switch (part) {
+    case ThinkingDeltaPart(delta: final delta):
       stdout.write('\x1B[90m$delta\x1B[0m');
-      break;
-    case TextDeltaEvent(delta: final delta):
-      // Show final answer
+    case TextDeltaPart(delta: final delta):
       stdout.write(delta);
-      break;
-    case CompletionEvent(response: final response):
-      print('\n✅ Completed');
-      if (response.usage != null) {
-        print('Tokens: ${response.usage!.totalTokens}');
+    case ToolCallDeltaPart(toolCall: final toolCall):
+      stdout.writeln('\n[tool] ${toolCall.function.name}');
+    case FinishPart(result: final result):
+      stdout.writeln('\n✅ Completed');
+      if (result.usage != null) {
+        stdout.writeln('Tokens: ${result.usage!.totalTokens}');
       }
-      break;
-    case ErrorEvent(error: final error):
-      print('Error: $error');
-      break;
+    case ErrorPart(error: final error):
+      stdout.writeln('Error: $error');
   }
 }
 ```
+
+## Migration notes (monorepo split refactors)
+
+The monorepo is being refactored to better match a Vercel AI SDK-style split.
+Key changes are recorded in `CHANGELOG.md` and architecture docs:
+
+- `docs/refactor_vision.md`
+- `docs/llm_dart_architecture.md`
+- `docs/standard_surface.md`
+- `docs/migrations/0.11.0-alpha.1.md`
+
+Recent highlights:
+
+- **Cancellation**: use `CancelToken` from `llm_dart` / `llm_dart_core` (no Dio type leaks).
+- **HTTP config**: prefer `LLMConfig.transportOptions` (and `LLMBuilder.http((h) => ...)`).
+- **Advanced Dio utilities**: import from `llm_dart_provider_utils` (not from `llm_dart`).
 
 ### 🧠 Thinking Process Access
 
@@ -172,73 +246,116 @@ Access the model's internal reasoning and thought processes:
 ```dart
 // Claude with thinking
 final claudeProvider = await ai()
-    .anthropic()
+    .provider('anthropic')
     .apiKey('your-anthropic-key')
     .model('claude-sonnet-4-20250514')
     .build();
 
-final messages = [
-  ChatMessage.user('Solve this step by step: What is 15% of 240?')
-];
+final prompt = Prompt(messages: [
+  PromptMessage.user('Solve this step by step: What is 15% of 240?'),
+]);
 
-final response = await claudeProvider.chat(messages);
+final result =
+    await generateText(model: claudeProvider, promptIr: prompt);
 
 // Access the final answer
-print('Answer: ${response.text}');
+print('Answer: ${result.text}');
 
 // Access the thinking process
-if (response.thinking != null) {
+if (result.thinking != null) {
   print('Claude\'s thinking process:');
-  print(response.thinking);
+  print(result.thinking);
 }
 
 // DeepSeek with reasoning
 final deepseekProvider = await ai()
-    .deepseek()
+    .provider('deepseek')
     .apiKey('your-deepseek-key')
     .model('deepseek-reasoner')
     .temperature(0.7)
     .build();
 
-final reasoningResponse = await deepseekProvider.chat(messages);
-print('DeepSeek reasoning: ${reasoningResponse.thinking}');
+final reasoningResult =
+    await generateText(model: deepseekProvider, promptIr: prompt);
+print('DeepSeek reasoning: ${reasoningResult.thinking}');
 ```
 
 ### Web Search
 
 ```dart
-// Enable web search across providers
-final provider = await ai()
-    .xai()
-    .apiKey('your-xai-key')
-    .model('grok-3')
-    .enableWebSearch()
-    .build();
+// Web search is provider-native and varies by provider.
+// Prefer provider tools / provider-specific options (Vercel-style).
 
-final response = await provider.chat([
-  ChatMessage.user('What are the latest AI developments this week?')
-]);
-print(response.text);
-
-// Provider-specific configurations
-final anthropicProvider = await ai()
-    .anthropic()
-    .apiKey('your-key')
-    .webSearch(
-      mode: 'web_search_20250305', // specify Claude's web search type
-      maxUses: 3,
-      allowedDomains: ['wikipedia.org', 'arxiv.org'],
-      location: WebSearchLocation.sanFrancisco(),
+// OpenAI: Responses API built-in tool (provider-executed)
+final openaiProvider = await ai()
+    .provider('openai')
+    .apiKey('your-openai-key')
+    .providerTool(
+      OpenAIProviderTools.webSearch(
+        contextSize: OpenAIWebSearchContextSize.medium,
+      ),
     )
     .build();
+
+final openaiPrompt = Prompt(messages: [
+  PromptMessage.user('What are the latest AI developments this week?'),
+]);
+final openaiResult =
+    await generateText(model: openaiProvider, promptIr: openaiPrompt);
+print(openaiResult.text);
+
+// Anthropic: server tool (provider-executed)
+final anthropicProvider = await ai()
+    .provider('anthropic')
+    .apiKey('your-anthropic-key')
+    .providerTool(
+      AnthropicProviderTools.webSearch(
+        toolType: 'web_search_20250305',
+        options: AnthropicWebSearchToolOptions(
+          maxUses: 3,
+          allowedDomains: ['wikipedia.org', 'arxiv.org'],
+          userLocation: AnthropicUserLocation(
+            city: 'San Francisco',
+            region: 'California',
+            country: 'US',
+            timezone: 'America/Los_Angeles',
+          ),
+        ),
+      ),
+    )
+    .build();
+
+// xAI: parameter-based search (provider-specific)
+final xaiProvider = await ai()
+    .provider('xai')
+    .apiKey('your-xai-key')
+    .model('grok-3')
+    .providerOptions('xai', {
+      'liveSearch': true,
+      'searchParameters': SearchParameters.webSearch(maxResults: 5).toJson(),
+    })
+    .build();
+
+final xaiPrompt = Prompt(messages: [
+  PromptMessage.user('What is the current stock price of NVIDIA?'),
+]);
+final xaiResult =
+    await generateText(model: xaiProvider, promptIr: xaiPrompt);
+print(xaiResult.text);
 ```
+
+Notes:
+
+- Web search is intentionally treated as a provider-native tool where supported.
+- Some providers (e.g. MiniMax Anthropic-compatible) do not support provider-native web search yet; implement a local `FunctionTool` in your app or see `example/04_providers/minimax/local_web_search_tool_loop.dart`.
+- `LLMBuilder.enableWebSearch()` / `LLMBuilder.webSearch(...)` have been removed; use `providerTools` / provider-specific `providerOptions` instead.
 
 ### Embeddings
 
 ```dart
 // Generate embeddings for semantic search
 final provider = await ai()
-    .openai()
+    .provider('openai')
     .apiKey('your-key')
     .buildEmbedding();
 
@@ -258,7 +375,7 @@ final queryEmbedding = await provider.embed(['AI research']);
 ```dart
 // Moderate content for safety
 final provider = await ai()
-    .openai()
+    .provider('openai')
     .apiKey('your-key')
     .buildModeration();
 
@@ -312,22 +429,23 @@ final provider = await createProvider(
   apiKey: 'sk-...',
   model: 'gpt-4',
   temperature: 0.7,
-  extensions: {'reasoningEffort': 'medium'}, // For reasoning models
+  providerOptions: {'reasoningEffort': 'medium'}, // For reasoning models
 );
 ```
 
 #### Responses API (Stateful Conversations)
 
-OpenAI's new Responses API provides stateful conversation management with built-in tools:
+OpenAI's new Responses API provides stateful conversation management with built-in tools.
+This is **OpenAI-only** (implemented in `llm_dart_openai`), and is intentionally
+not part of the `llm_dart_openai_compatible` baseline.
 
 ```dart
-final provider = await ai()
-    .openai((openai) => openai
-        .useResponsesAPI()
-        .webSearchTool()
-        .fileSearchTool(vectorStoreIds: ['vs_123']))
-    .apiKey('your-key')
-    .model('gpt-4o')
+final provider = await OpenAIBuilder(
+  ai().provider('openai').apiKey('your-key').model('gpt-4o'),
+)
+    .useResponsesAPI()
+    .webSearchTool()
+    .fileSearchTool(vectorStoreIds: ['vs_123'])
     .build();
 
 // Cast to access stateful features
@@ -335,19 +453,27 @@ final responsesProvider = provider as OpenAIProvider;
 final responses = responsesProvider.responses!;
 
 // Stateful conversation with automatic context preservation
-final response1 = await responses.chat([
-  ChatMessage.user('My name is Alice. Tell me about quantum computing'),
-]);
+final response1 = await responses.chat(
+  Prompt(messages: [
+    PromptMessage.user('My name is Alice. Tell me about quantum computing'),
+  ]).toChatMessages(),
+);
 
 final responseId = (response1 as OpenAIResponsesResponse).responseId;
-final response2 = await responses.continueConversation(responseId!, [
-  ChatMessage.user('Remember my name and explain it simply'),
-]);
+final response2 = await responses.continueConversation(
+  responseId!,
+  Prompt(messages: [
+    PromptMessage.user('Remember my name and explain it simply'),
+  ]).toChatMessages(),
+);
 
 // Background processing for long tasks
-final backgroundTask = await responses.chatWithToolsBackground([
-  ChatMessage.user('Write a detailed research report'),
-], null);
+final backgroundTask = await responses.chatWithToolsBackground(
+  Prompt(messages: [
+    PromptMessage.user('Write a detailed research report'),
+  ]).toChatMessages(),
+  null,
+);
 
 // Response lifecycle management
 await responses.getResponse('resp_123');
@@ -359,19 +485,20 @@ await responses.cancelResponse('resp_123');
 
 ```dart
 final provider = await ai()
-    .anthropic()
+    .provider('anthropic')
     .apiKey('sk-ant-...')
     .model('claude-sonnet-4-20250514')
     .build();
 
-final response = await provider.chat([
-  ChatMessage.user('Explain quantum computing step by step')
+final prompt = Prompt(messages: [
+  PromptMessage.user('Explain quantum computing step by step'),
 ]);
+final result = await generateText(model: provider, promptIr: prompt);
 
 // Access Claude's thinking process
-print('Final answer: ${response.text}');
-if (response.thinking != null) {
-  print('Claude\'s reasoning: ${response.thinking}');
+print('Final answer: ${result.text}');
+if (result.thinking != null) {
+  print('Claude\'s reasoning: ${result.thinking}');
 }
 ```
 
@@ -379,19 +506,20 @@ if (response.thinking != null) {
 
 ```dart
 final provider = await ai()
-    .deepseek()
+    .provider('deepseek')
     .apiKey('your-deepseek-key')
     .model('deepseek-reasoner')
     .build();
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this logic puzzle step by step')
+final prompt = Prompt(messages: [
+  PromptMessage.user('Solve this logic puzzle step by step'),
 ]);
+final result = await generateText(model: provider, promptIr: prompt);
 
 // Access DeepSeek's reasoning process
-print('Solution: ${response.text}');
-if (response.thinking != null) {
-  print('DeepSeek\'s reasoning: ${response.thinking}');
+print('Solution: ${result.text}');
+if (result.thinking != null) {
+  print('DeepSeek\'s reasoning: ${result.thinking}');
 }
 ```
 
@@ -400,19 +528,20 @@ if (response.thinking != null) {
 ```dart
 // Ollama with thinking enabled
 final provider = await ai()
-    .ollama()
+    .provider('ollama')
     .baseUrl('http://localhost:11434')
     .model('gpt-oss:latest') // Reasoning model
     .reasoning(true)         // Enable reasoning process
     .build();
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this math problem step by step: 15 * 23 + 7')
+final prompt = Prompt(messages: [
+  PromptMessage.user('Solve this math problem step by step: 15 * 23 + 7'),
 ]);
+final result = await generateText(model: provider, promptIr: prompt);
 
 // Access Ollama's thinking process
-if (response.thinking != null) {
-  print('Ollama\'s reasoning: ${response.thinking}');
+if (result.thinking != null) {
+  print('Ollama\'s reasoning: ${result.thinking}');
 }
 ```
 
@@ -420,25 +549,33 @@ if (response.thinking != null) {
 
 ```dart
 final provider = await ai()
-    .xai()
+    .provider('xai')
     .apiKey('your-xai-key')
     .model('grok-3')
-    .enableWebSearch()
+    .providerOptions('xai', {
+      'liveSearch': true,
+      'searchParameters': SearchParameters.webSearch(maxResults: 5).toJson(),
+    })
     .build();
 
 // Real-time web search
-final response = await provider.chat([
-  ChatMessage.user('What is the current stock price of NVIDIA?')
+final prompt = Prompt(messages: [
+  PromptMessage.user('What is the current stock price of NVIDIA?'),
 ]);
+final result = await generateText(model: provider, promptIr: prompt);
+print(result.text);
 
 // News search with date filtering
 final newsProvider = await ai()
-    .xai()
+    .provider('xai')
     .apiKey('your-xai-key')
-    .newsSearch(
-      maxResults: 5,
-      fromDate: '2024-12-01',
-    )
+    .providerOptions('xai', {
+      'liveSearch': true,
+      'searchParameters': SearchParameters.news(
+        maxResults: 5,
+        fromDate: '2024-12-01',
+      ).toJson(),
+    })
     .build();
 ```
 
@@ -446,7 +583,7 @@ final newsProvider = await ai()
 
 ```dart
 final provider = await ai()
-    .google()
+    .provider('google')
     .apiKey('your-google-key')
     .model('gemini-2.0-flash-exp')
     .buildEmbedding();
@@ -463,9 +600,9 @@ final embeddings = await provider.embed([
 
 ```dart
 // Use buildAudio() for type-safe audio capability building
-final audioProvider = await ai()
-    .elevenlabs()
-    .apiKey('your-elevenlabs-key')
+final audioProvider = await ElevenLabsBuilder(
+  ai().provider('elevenlabs').apiKey('your-elevenlabs-key'),
+)
     .voiceId('JBFqnCBsd6RMkjVDRZzb') // George voice
     .stability(0.7)
     .similarityBoost(0.9)
@@ -510,11 +647,13 @@ import 'package:llm_dart/llm_dart.dart';
 // Create a cancel token
 final cancelToken = CancelToken();
 
+final prompt = Prompt(messages: [
+  PromptMessage.user('Write a very long essay...'),
+]);
+
 // Start a long-running request
-final responseFuture = provider.chat(
-  [ChatMessage.user('Write a very long essay...')],
-  cancelToken: cancelToken,
-);
+final responseFuture =
+    generateText(model: provider, promptIr: prompt, cancelToken: cancelToken);
 
 // Cancel it later (e.g., user navigates away)
 cancelToken.cancel('User cancelled');
@@ -531,19 +670,26 @@ try {
 }
 
 // Cancel streaming responses
-await for (final event in provider.chatStream(messages, cancelToken: cancelToken)) {
-  switch (event) {
-    case TextDeltaEvent(delta: final delta):
+await for (final part in streamText(
+  model: provider,
+  promptIr: prompt,
+  cancelToken: cancelToken,
+)) {
+  switch (part) {
+    case TextDeltaPart(delta: final delta):
       print(delta);
       // Cancel after first token
       cancelToken.cancel('Got enough data');
       break;
-    case ErrorEvent(error: final error):
+    case ErrorPart(error: final error):
       if (CancellationHelper.isCancelled(error)) {
         print('Stream cancelled');
       }
       break;
-    // ... other events
+    case FinishPart():
+    case ThinkingDeltaPart():
+    case ToolCallDeltaPart():
+      break;
   }
 }
 ```
@@ -588,11 +734,6 @@ abstract class EmbeddingCapability {
   Future<List<List<double>>> embed(List<String> input);
 }
 
-abstract class WebSearchCapability {
-  // Web search is integrated into chat - no separate methods needed
-  // Providers handle search automatically when enabled
-}
-
 abstract class ModerationCapability {
   Future<ModerationResponse> moderate(ModerationRequest request);
 }
@@ -601,7 +742,6 @@ abstract class ModerationCapability {
 class OpenAIProvider implements
     ChatCapability,
     EmbeddingCapability,
-    WebSearchCapability,
     ModerationCapability {
   // Implementation
 }
@@ -613,34 +753,38 @@ The library provides capability factory methods for compile-time type safety:
 
 ```dart
 // Old approach - runtime type casting
-final provider = await ai().openai().apiKey(apiKey).build();
+final provider = await ai().provider('openai').apiKey(apiKey).build();
 if (provider is! AudioCapability) {
   throw Exception('Audio not supported');
 }
 final audioProvider = provider as AudioCapability; // Runtime cast!
 
 // New approach - compile-time type safety
-final audioProvider = await ai().openai().apiKey(apiKey).buildAudio();
+final audioProvider = await ai().provider('openai').apiKey(apiKey).buildAudio();
 // Direct usage without type casting - guaranteed AudioCapability!
 
 // Available factory methods:
-final chatProvider = await ai().openai().build(); // Returns ChatCapability
-final audioProvider = await ai().openai().buildAudio();
-final imageProvider = await ai().openai().buildImageGeneration();
-final embeddingProvider = await ai().openai().buildEmbedding();
-final fileProvider = await ai().openai().buildFileManagement();
-final moderationProvider = await ai().openai().buildModeration();
-final assistantProvider = await ai().openai().buildAssistant();
-final modelProvider = await ai().openai().buildModelListing();
+final chatProvider = await ai().provider('openai').build(); // Returns ChatCapability
+final audioProvider = await ai().provider('openai').buildAudio();
+final imageProvider = await ai().provider('openai').buildImageGeneration();
+final embeddingProvider = await ai().provider('openai').buildEmbedding();
+final fileProvider = await ai().provider('openai').buildFileManagement();
+final moderationProvider = await ai().provider('openai').buildModeration();
+final assistantProvider = await ai().provider('openai').buildAssistant();
+final modelProvider = await ai().provider('openai').buildModelListing();
 
 // Web search is enabled through configuration, not a separate capability
-final webSearchProvider = await ai().openai().enableWebSearch().build();
+// Example (OpenAI provider-native web search):
+final webSearchProvider = await ai()
+    .provider('openai')
+    .providerTool(OpenAIProviderTools.webSearch())
+    .build();
 
 // Clear error messages for unsupported capabilities
 try {
-  final audioProvider = await ai().groq().buildAudio(); // Groq doesn't support audio
+  final audioProvider = await ai().provider('groq').buildAudio(); // Groq doesn't support audio
 } catch (e) {
-  print(e); // UnsupportedCapabilityError: Provider "groq" does not support audio capabilities. Supported providers: OpenAI, ElevenLabs
+  print(e); // UnsupportedCapabilityError: Provider "groq" does not support audio capabilities.
 }
 ```
 
@@ -700,17 +844,18 @@ All providers support common configuration options:
 - `timeout`: Request timeout
 - `topP`, `topK`: Sampling parameters
 
-### Provider-Specific Extensions
+### Provider-Specific Options
 
-Use the extension system for provider-specific features:
+Provider-specific features are configured via namespaced `providerOptions`
+(recommended) or provider-native `providerTools`.
 
 ```dart
 final provider = await ai()
-    .openai()
+    .provider('openai')
     .apiKey('your-key')
     .model('gpt-4')
     .reasoningEffort(ReasoningEffort.high)  // OpenAI-specific
-    .extension('voice', 'alloy')           // OpenAI TTS voice
+    .voice('alloy')                        // OpenAI TTS voice
     .build();
 ```
 

@@ -1,5 +1,10 @@
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:logging/logging.dart';
 
 /// HTTP Configuration Example
@@ -21,6 +26,8 @@ Future<void> main() async {
   });
 
   print('🌐 HTTP Configuration Demo\n');
+
+  registerOpenAI();
 
   // Get OpenAI API key from environment
   final openaiApiKey = Platform.environment['OPENAI_API_KEY'];
@@ -53,19 +60,23 @@ Future<void> demonstrateBasicHttpConfig(String apiKey) async {
 
   try {
     // Create provider with basic HTTP settings
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(seconds: 30))
         .build();
 
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This is a test with basic HTTP configuration.'),
-    ]);
+    final result = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user(
+            'Hello! This is a test with basic HTTP configuration.'),
+      ],
+    );
 
     print('   ✅ Basic HTTP configuration successful');
-    print('   📝 Response: ${response.text}\n');
+    print('   📝 Response: ${result.text}\n');
   } catch (e) {
     print('   ❌ Basic HTTP configuration failed: $e\n');
   }
@@ -80,8 +91,8 @@ Future<void> demonstrateProxyConfiguration(String apiKey) async {
   try {
     // Note: This example shows the API usage. In practice, you would
     // need a real proxy server for this to work.
-    await ai()
-        .openai()
+    await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .http((http) => http.proxy('http://proxy.company.com:8080'))
@@ -100,8 +111,8 @@ Future<void> demonstrateCustomHeaders(String openaiApiKey) async {
   print('📋 Custom Headers Configuration (OpenAI):\n');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
         .http((http) => http.headers({
@@ -111,12 +122,15 @@ Future<void> demonstrateCustomHeaders(String openaiApiKey) async {
             }).header('X-Additional-Header', 'additional-value'))
         .build();
 
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This request includes custom headers.'),
-    ]);
+    final result = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user('Hello! This request includes custom headers.')
+      ],
+    );
 
     print('   ✅ Custom headers configuration successful');
-    print('   📝 Response: ${response.text}\n');
+    print('   📝 Response: ${result.text}\n');
   } catch (e) {
     print('   ❌ Custom headers configuration failed: $e\n');
   }
@@ -130,8 +144,8 @@ Future<void> demonstrateSSLConfiguration(String openaiApiKey) async {
 
   try {
     // Example with SSL verification bypass (for development only)
-    await ai()
-        .openai()
+    await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
         .http((http) =>
@@ -146,8 +160,8 @@ Future<void> demonstrateSSLConfiguration(String openaiApiKey) async {
 
   try {
     // Example with custom SSL certificate
-    await ai()
-        .openai()
+    await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
         .http((http) => http.sslCertificate('/path/to/custom/certificate.pem'))
@@ -167,23 +181,24 @@ Future<void> demonstrateTimeoutConfiguration(String openaiApiKey) async {
   try {
     // Example 1: Global timeout only
     print('   📝 Example 1: Global timeout only');
-    final provider1 = await ai()
-        .openai()
+    final provider1 = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(minutes: 1)) // Global timeout for all operations
         .build();
 
-    final response1 = await provider1.chat([
-      ChatMessage.user('Hello! This uses global timeout.'),
-    ]);
+    final result1 = await generateText(
+      model: provider1,
+      messages: [ChatMessage.user('Hello! This uses global timeout.')],
+    );
     print('   ✅ Global timeout: connection=1m, receive=1m, send=1m');
-    print('   📝 Response: ${response1.text}\n');
+    print('   📝 Response: ${result1.text}\n');
 
     // Example 2: Mixed configuration (global + HTTP overrides)
     print('   📝 Example 2: Mixed configuration (global + HTTP overrides)');
-    final provider2 = await ai()
-        .openai()
+    final provider2 = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(minutes: 2)) // Global default: 2 minutes
@@ -194,12 +209,15 @@ Future<void> demonstrateTimeoutConfiguration(String openaiApiKey) async {
         // sendTimeout will use global timeout (2 minutes)
         .build();
 
-    final response2 = await provider2.chat([
-      ChatMessage.user('Hello! This uses mixed timeout configuration.'),
-    ]);
+    final result2 = await generateText(
+      model: provider2,
+      messages: [
+        ChatMessage.user('Hello! This uses mixed timeout configuration.'),
+      ],
+    );
     print('   ✅ Mixed timeouts: connection=15s, receive=3m, send=2m');
     print('   📝 Priority: HTTP-specific > Global > Provider defaults');
-    print('   📝 Response: ${response2.text}\n');
+    print('   📝 Response: ${result2.text}\n');
   } catch (e) {
     print('   ❌ Timeout configuration failed: $e\n');
   }
@@ -210,8 +228,8 @@ Future<void> demonstrateLoggingConfiguration(String openaiApiKey) async {
   print('📊 HTTP Logging Configuration (OpenAI):\n');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
         .http((http) => http.enableLogging(true))
@@ -221,12 +239,13 @@ Future<void> demonstrateLoggingConfiguration(String openaiApiKey) async {
     print('   📝 All HTTP requests and responses will be logged');
     print('   📝 Making a test request...\n');
 
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This request will be logged.'),
-    ]);
+    final result = await generateText(
+      model: provider,
+      messages: [ChatMessage.user('Hello! This request will be logged.')],
+    );
 
     print('   ✅ Request completed with logging');
-    print('   📝 Response: ${response.text}\n');
+    print('   📝 Response: ${result.text}\n');
   } catch (e) {
     print('   ❌ Logging configuration failed: $e\n');
   }
@@ -237,8 +256,8 @@ Future<void> demonstrateComprehensiveConfig(String openaiApiKey) async {
   print('🎯 Comprehensive HTTP Configuration (OpenAI):\n');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(openaiApiKey)
         .model('gpt-4o-mini')
         // HTTP configuration using the new layered approach
@@ -255,14 +274,18 @@ Future<void> demonstrateComprehensiveConfig(String openaiApiKey) async {
         .maxTokens(1000)
         .build();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Hello! This request uses comprehensive HTTP configuration.'),
-    ]);
+    final result = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user(
+          'Hello! This request uses comprehensive HTTP configuration.',
+        ),
+      ],
+    );
 
     print('   ✅ Comprehensive configuration successful');
     print('   📝 All HTTP settings applied successfully');
-    print('   📝 Response: ${response.text}\n');
+    print('   📝 Response: ${result.text}\n');
   } catch (e) {
     print('   ❌ Comprehensive configuration failed: $e\n');
   }
@@ -279,7 +302,7 @@ Future<void> demonstrateConfigValidation() async {
       model: 'gpt-4o-mini',
       apiKey: 'test-key',
       timeout: Duration(seconds: 60),
-    ).withExtensions({
+    ).withTransportOptions({
       'httpProxy': 'invalid-proxy-url', // This will trigger a warning
       'bypassSSLVerification': true, // This will trigger a security warning
       'connectionTimeout':

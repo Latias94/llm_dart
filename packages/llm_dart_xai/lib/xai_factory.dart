@@ -1,0 +1,106 @@
+library;
+
+import 'package:llm_dart_core/core/capability.dart';
+import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_core/core/provider_defaults.dart';
+import 'package:llm_dart_core/core/registry.dart';
+import 'package:llm_dart_provider_utils/factories/base_factory.dart';
+
+import 'xai.dart';
+
+const String xaiProviderId = 'xai';
+const String xaiResponsesProviderId = 'xai.responses';
+
+void registerXAI({bool replace = false}) {
+  if (!replace &&
+      LLMProviderRegistry.isRegistered(xaiProviderId) &&
+      LLMProviderRegistry.isRegistered(xaiResponsesProviderId)) {
+    return;
+  }
+
+  final factory = XAIProviderFactory();
+  final responsesFactory = XAIResponsesProviderFactory();
+  if (replace) {
+    LLMProviderRegistry.registerOrReplace(factory);
+    LLMProviderRegistry.registerOrReplace(responsesFactory);
+    return;
+  }
+  LLMProviderRegistry.register(factory);
+  LLMProviderRegistry.register(responsesFactory);
+}
+
+/// Factory for creating xAI provider instances.
+class XAIProviderFactory extends BaseProviderFactory<ChatCapability> {
+  @override
+  String get providerId => xaiProviderId;
+
+  @override
+  String get displayName => 'xAI (Grok)';
+
+  @override
+  String get description =>
+      'xAI Grok models with search and reasoning capabilities';
+
+  @override
+  Set<LLMCapability> get supportedCapabilities => {
+        LLMCapability.chat,
+        LLMCapability.streaming,
+        LLMCapability.toolCalling,
+        LLMCapability.reasoning,
+        LLMCapability.liveSearch,
+        LLMCapability.embedding,
+        LLMCapability.vision,
+      };
+
+  @override
+  ChatCapability create(LLMConfig config) {
+    return createProviderSafely<XAIConfig>(
+      config,
+      () => _transformConfig(config),
+      (xaiConfig) => XAIProvider(xaiConfig),
+    );
+  }
+
+  @override
+  Map<String, dynamic> getProviderDefaults() {
+    return ProviderDefaults.getDefaults(xaiProviderId);
+  }
+
+  XAIConfig _transformConfig(LLMConfig config) {
+    return XAIConfig.fromLLMConfig(config);
+  }
+}
+
+/// Factory for creating xAI Responses provider instances.
+class XAIResponsesProviderFactory extends BaseProviderFactory<ChatCapability> {
+  @override
+  String get providerId => xaiResponsesProviderId;
+
+  @override
+  String get displayName => 'xAI (Responses)';
+
+  @override
+  String get description =>
+      'xAI Grok models via the Responses API (agentic tools)';
+
+  @override
+  Set<LLMCapability> get supportedCapabilities => {
+        LLMCapability.chat,
+        LLMCapability.streaming,
+        LLMCapability.toolCalling,
+        LLMCapability.reasoning,
+        LLMCapability.liveSearch,
+        LLMCapability.openaiResponses,
+        LLMCapability.vision,
+      };
+
+  @override
+  ChatCapability create(LLMConfig config) {
+    return XAIResponsesProvider(config);
+  }
+
+  @override
+  Map<String, dynamic> getProviderDefaults() {
+    return ProviderDefaults.getDefaults(xaiResponsesProviderId);
+  }
+}

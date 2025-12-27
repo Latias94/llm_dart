@@ -69,90 +69,28 @@ void main() {
     });
 
     group('Model Support Detection', () {
-      test('should detect vision support for vision models', () {
-        const config = OllamaConfig(model: 'llava:7b');
-        expect(config.supportsVision, isTrue);
-      });
+      test('should not maintain a model capability matrix', () {
+        final configs = [
+          const OllamaConfig(model: 'llava:7b'),
+          const OllamaConfig(model: 'minicpm-v:8b'),
+          const OllamaConfig(model: 'moondream:1.8b'),
+          const OllamaConfig(model: 'llama3.2:3b'),
+          const OllamaConfig(model: 'qwen2.5:7b'),
+          const OllamaConfig(model: 'llama3-think:8b'),
+          const OllamaConfig(model: 'mistral:7b'),
+          const OllamaConfig(model: 'phi3:3.8b'),
+          const OllamaConfig(model: 'nomic-embed-text:v1.5'),
+          const OllamaConfig(model: 'codellama:7b'),
+          const OllamaConfig(model: 'unknown-model:1b'),
+        ];
 
-      test('should detect vision support for minicpm models', () {
-        const config = OllamaConfig(model: 'minicpm-v:8b');
-        expect(config.supportsVision, isTrue);
-      });
-
-      test('should detect vision support for moondream models', () {
-        const config = OllamaConfig(model: 'moondream:1.8b');
-        expect(config.supportsVision, isTrue);
-      });
-
-      test('should not support vision for regular models', () {
-        const config = OllamaConfig(model: 'llama3.2:3b');
-        expect(config.supportsVision, isFalse);
-      });
-
-      test('should detect reasoning support for reasoning models', () {
-        const config = OllamaConfig(model: 'qwen2.5:7b');
-        expect(config.supportsReasoning, isTrue);
-      });
-
-      test('should detect reasoning support for thinking models', () {
-        const config = OllamaConfig(model: 'llama3-think:8b');
-        expect(config.supportsReasoning, isTrue);
-      });
-
-      test('should not support reasoning for regular models', () {
-        const config = OllamaConfig(model: 'llama3.2:3b');
-        expect(config.supportsReasoning, isFalse);
-      });
-
-      test('should detect tool calling support for llama3 models', () {
-        const config = OllamaConfig(model: 'llama3.1:8b');
-        expect(config.supportsToolCalling, isTrue);
-      });
-
-      test('should detect tool calling support for mistral models', () {
-        const config = OllamaConfig(model: 'mistral:7b');
-        expect(config.supportsToolCalling, isTrue);
-      });
-
-      test('should detect tool calling support for qwen models', () {
-        const config = OllamaConfig(model: 'qwen2:7b');
-        expect(config.supportsToolCalling, isTrue);
-      });
-
-      test('should detect tool calling support for phi3 models', () {
-        const config = OllamaConfig(model: 'phi3:3.8b');
-        expect(config.supportsToolCalling, isTrue);
-      });
-
-      test('should detect embeddings support for embedding models', () {
-        const config = OllamaConfig(model: 'nomic-embed-text:v1.5');
-        expect(config.supportsEmbeddings, isTrue);
-      });
-
-      test('should detect embeddings support for mxbai models', () {
-        const config = OllamaConfig(model: 'mxbai-embed-large:v1');
-        expect(config.supportsEmbeddings, isTrue);
-      });
-
-      test('should detect code generation support for codellama models', () {
-        const config = OllamaConfig(model: 'codellama:7b');
-        expect(config.supportsCodeGeneration, isTrue);
-      });
-
-      test('should detect code generation support for codegemma models', () {
-        const config = OllamaConfig(model: 'codegemma:7b');
-        expect(config.supportsCodeGeneration, isTrue);
-      });
-
-      test('should detect code generation support for starcoder models', () {
-        const config = OllamaConfig(model: 'starcoder2:3b');
-        expect(config.supportsCodeGeneration, isTrue);
-      });
-
-      test('should detect code generation support for deepseek-coder models',
-          () {
-        const config = OllamaConfig(model: 'deepseek-coder:6.7b');
-        expect(config.supportsCodeGeneration, isTrue);
+        for (final config in configs) {
+          expect(config.supportsVision, isTrue);
+          expect(config.supportsReasoning, isTrue);
+          expect(config.supportsToolCalling, isTrue);
+          expect(config.supportsEmbeddings, isTrue);
+          expect(config.supportsCodeGeneration, isTrue);
+        }
       });
     });
 
@@ -179,44 +117,22 @@ void main() {
     });
 
     group('Model Family Detection', () {
-      test('should detect Llama family', () {
-        const config = OllamaConfig(model: 'llama3.2:3b');
-        expect(config.modelFamily, equals('Llama'));
-      });
+      test('should not maintain a model family matrix', () {
+        final models = [
+          'llama3.2:3b',
+          'mistral:7b',
+          'qwen2:7b',
+          'phi3:3.8b',
+          'gemma2:9b',
+          'codellama:7b',
+          'llava:7b',
+          'unknown-model:1b',
+        ];
 
-      test('should detect Mistral family', () {
-        const config = OllamaConfig(model: 'mistral:7b');
-        expect(config.modelFamily, equals('Mistral'));
-      });
-
-      test('should detect Qwen family', () {
-        const config = OllamaConfig(model: 'qwen2:7b');
-        expect(config.modelFamily, equals('Qwen'));
-      });
-
-      test('should detect Phi family', () {
-        const config = OllamaConfig(model: 'phi3:3.8b');
-        expect(config.modelFamily, equals('Phi'));
-      });
-
-      test('should detect Gemma family', () {
-        const config = OllamaConfig(model: 'gemma2:9b');
-        expect(config.modelFamily, equals('Gemma'));
-      });
-
-      test('should detect Code Llama family', () {
-        const config = OllamaConfig(model: 'codellama:7b');
-        expect(config.modelFamily, equals('Code Llama'));
-      });
-
-      test('should detect LLaVA family', () {
-        const config = OllamaConfig(model: 'llava:7b');
-        expect(config.modelFamily, equals('LLaVA'));
-      });
-
-      test('should return Unknown for unrecognized models', () {
-        const config = OllamaConfig(model: 'unknown-model:1b');
-        expect(config.modelFamily, equals('Unknown'));
+        for (final model in models) {
+          final config = OllamaConfig(model: model);
+          expect(config.modelFamily, equals('Ollama'));
+        }
       });
     });
 
@@ -274,14 +190,16 @@ void main() {
           topP: 0.9,
           topK: 50,
           tools: [],
-          extensions: {
-            'numCtx': 4096,
-            'numGpu': 2,
-            'numThread': 8,
-            'numa': true,
-            'numBatch': 512,
-            'keepAlive': '10m',
-            'raw': false,
+          providerOptions: const {
+            'ollama': {
+              'numCtx': 4096,
+              'numGpu': 2,
+              'numThread': 8,
+              'numa': true,
+              'numBatch': 512,
+              'keepAlive': '10m',
+              'raw': false,
+            },
           },
         );
 
@@ -306,17 +224,23 @@ void main() {
         expect(ollamaConfig.raw, isFalse);
       });
 
-      test('should access extensions from original config', () {
+      test('should preserve transportOptions via original config', () {
         final llmConfig = LLMConfig(
           baseUrl: 'http://localhost:11434',
           model: 'llama3.2:3b',
-          extensions: {'customParam': 'customValue'},
+          transportOptions: const {
+            'customHeaders': {'X-Test': 'customValue'},
+          },
         );
 
         final ollamaConfig = OllamaConfig.fromLLMConfig(llmConfig);
 
-        expect(ollamaConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(ollamaConfig.originalConfig, isNotNull);
+        expect(
+          ollamaConfig.originalConfig!
+              .getTransportOption<Map<String, String>>('customHeaders'),
+          equals({'X-Test': 'customValue'}),
+        );
       });
     });
   });

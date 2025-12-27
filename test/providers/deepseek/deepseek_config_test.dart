@@ -50,37 +50,19 @@ void main() {
     });
 
     group('Model Support Detection', () {
-      test('should detect reasoning support for reasoning models', () {
-        const config = DeepSeekConfig(
-          apiKey: 'test-key',
-          model: 'deepseek-reasoner',
-        );
+      test('should not maintain a model capability matrix', () {
+        final configs = [
+          const DeepSeekConfig(apiKey: 'test-key', model: 'deepseek-chat'),
+          const DeepSeekConfig(apiKey: 'test-key', model: 'deepseek-reasoner'),
+          const DeepSeekConfig(apiKey: 'test-key', model: 'unknown-model'),
+        ];
 
-        expect(config.supportsReasoning, isTrue);
-      });
-
-      test('should not support reasoning for non-reasoning models', () {
-        const config = DeepSeekConfig(
-          apiKey: 'test-key',
-          model: 'deepseek-chat',
-        );
-
-        expect(config.supportsReasoning, isFalse);
-      });
-
-      test('should not support vision for any models', () {
-        const chatConfig = DeepSeekConfig(
-          apiKey: 'test-key',
-          model: 'deepseek-chat',
-        );
-
-        const reasonerConfig = DeepSeekConfig(
-          apiKey: 'test-key',
-          model: 'deepseek-reasoner',
-        );
-
-        expect(chatConfig.supportsVision, isFalse);
-        expect(reasonerConfig.supportsVision, isFalse);
+        for (final config in configs) {
+          expect(config.supportsReasoning, isTrue);
+          expect(config.supportsVision, isTrue);
+          expect(config.supportsToolCalling, isTrue);
+          expect(config.supportsCodeGeneration, isTrue);
+        }
       });
     });
 
@@ -155,17 +137,19 @@ void main() {
         expect(deepseekConfig.maxTokens, equals(1500));
       });
 
-      test('should extract DeepSeek-specific extensions', () {
+      test('should extract DeepSeek-specific provider options', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.deepseek.com/v1/',
           model: 'deepseek-chat',
-          extensions: {
-            'logprobs': true,
-            'top_logprobs': 3,
-            'frequency_penalty': 0.15,
-            'presence_penalty': 0.25,
-            'response_format': {'type': 'json_object'},
+          providerOptions: const {
+            'deepseek': {
+              'logprobs': true,
+              'topLogprobs': 3,
+              'frequencyPenalty': 0.15,
+              'presencePenalty': 0.25,
+              'responseFormat': {'type': 'json_object'},
+            },
           },
         );
 
@@ -178,21 +162,27 @@ void main() {
         expect(deepseekConfig.responseFormat, equals({'type': 'json_object'}));
       });
 
-      test('should access extensions from original config', () {
+      test('should preserve transportOptions via original config', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.deepseek.com/v1/',
           model: 'deepseek-chat',
-          extensions: {'customParam': 'customValue'},
+          transportOptions: const {
+            'customHeaders': {'X-Test': 'customValue'},
+          },
         );
 
         final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
 
-        expect(deepseekConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(deepseekConfig.originalConfig, isNotNull);
+        expect(
+          deepseekConfig.originalConfig!
+              .getTransportOption<Map<String, String>>('customHeaders'),
+          equals({'X-Test': 'customValue'}),
+        );
       });
 
-      test('should handle missing extensions gracefully', () {
+      test('should handle missing provider options gracefully', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.deepseek.com/v1/',

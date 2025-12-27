@@ -44,15 +44,12 @@ void main() {
         expect(provider.supports(LLMCapability.modelListing), isTrue);
       });
 
-      test('should support reasoning for reasoning models', () {
-        final reasoningConfig = config.copyWith(model: 'deepseek-reasoner');
-        final reasoningProvider = DeepSeekProvider(reasoningConfig);
-
-        expect(reasoningProvider.supports(LLMCapability.reasoning), isTrue);
+      test('should report reasoning optimistically', () {
+        expect(provider.supports(LLMCapability.reasoning), isTrue);
       });
 
-      test('should not support reasoning for non-reasoning models', () {
-        expect(provider.supports(LLMCapability.reasoning), isFalse);
+      test('should report vision optimistically', () {
+        expect(provider.supports(LLMCapability.vision), isTrue);
       });
 
       test('should not support unsupported capabilities', () {
@@ -60,7 +57,6 @@ void main() {
         expect(provider.supports(LLMCapability.imageGeneration), isFalse);
         expect(provider.supports(LLMCapability.textToSpeech), isFalse);
         expect(provider.supports(LLMCapability.fileManagement), isFalse);
-        expect(provider.supports(LLMCapability.vision), isFalse);
       });
 
       test('should return correct supported capabilities set', () {
@@ -70,15 +66,22 @@ void main() {
         expect(capabilities, contains(LLMCapability.streaming));
         expect(capabilities, contains(LLMCapability.toolCalling));
         expect(capabilities, contains(LLMCapability.modelListing));
-        expect(capabilities, isNot(contains(LLMCapability.reasoning)));
+        expect(capabilities, contains(LLMCapability.reasoning));
+        expect(capabilities, contains(LLMCapability.vision));
       });
 
-      test('should include reasoning in capabilities for reasoning models', () {
-        final reasoningConfig = config.copyWith(model: 'deepseek-reasoner');
-        final reasoningProvider = DeepSeekProvider(reasoningConfig);
+      test('should not maintain a per-model capability matrix', () {
+        final configs = [
+          config.copyWith(model: 'deepseek-chat'),
+          config.copyWith(model: 'deepseek-reasoner'),
+          config.copyWith(model: 'unknown-model'),
+        ];
 
-        final capabilities = reasoningProvider.supportedCapabilities;
-        expect(capabilities, contains(LLMCapability.reasoning));
+        for (final cfg in configs) {
+          final p = DeepSeekProvider(cfg);
+          expect(p.supports(LLMCapability.reasoning), isTrue);
+          expect(p.supports(LLMCapability.vision), isTrue);
+        }
       });
     });
 
@@ -179,16 +182,18 @@ void main() {
         expect(factoryProvider.config.temperature, equals(0.7));
       });
 
-      test('should handle extensions from LLMConfig', () {
+      test('should handle provider options from LLMConfig', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.deepseek.com/v1/',
           model: 'deepseek-chat',
-          extensions: {
-            'logprobs': true,
-            'top_logprobs': 5,
-            'frequency_penalty': 0.1,
-            'presence_penalty': 0.2,
+          providerOptions: const {
+            'deepseek': {
+              'logprobs': true,
+              'topLogprobs': 5,
+              'frequencyPenalty': 0.1,
+              'presencePenalty': 0.2,
+            },
           },
         );
 

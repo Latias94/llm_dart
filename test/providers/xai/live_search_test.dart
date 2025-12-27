@@ -3,13 +3,15 @@ import 'package:llm_dart/llm_dart.dart';
 
 void main() {
   group('xAI Live Search Tests', () {
-    test('should enable live search with enableWebSearch()', () async {
+    test('should enable live search via providerOptions', () async {
       final provider = await ai()
           .xai()
           .apiKey('test-key')
           .model('grok-3')
-          .enableWebSearch()
-          .build();
+          .providerOptions('xai', {
+        'liveSearch': true,
+        'searchParameters': SearchParameters.webSearch().toJson(),
+      }).build();
 
       expect(provider, isA<XAIProvider>());
 
@@ -28,12 +30,14 @@ void main() {
           .xai()
           .apiKey('test-key')
           .model('grok-3')
-          .newsSearch(
-            maxResults: 5,
-            fromDate: '2024-01-01',
-            toDate: '2024-12-31',
-          )
-          .build();
+          .providerOptions('xai', {
+        'liveSearch': true,
+        'searchParameters': SearchParameters.newsSearch(
+          maxResults: 5,
+          fromDate: '2024-01-01',
+          toDate: '2024-12-31',
+        ).toJson(),
+      }).build();
 
       final xaiProvider = provider as XAIProvider;
       expect(xaiProvider.config.searchParameters, isNotNull);
@@ -50,12 +54,14 @@ void main() {
           .xai()
           .apiKey('test-key')
           .model('grok-3')
-          .webSearch(
-            maxResults: 10,
-            blockedDomains: ['spam.com', 'ads.com'],
-            mode: 'always',
-          )
-          .build();
+          .providerOptions('xai', {
+        'liveSearch': true,
+        'searchParameters': SearchParameters.webSearch(
+          mode: 'always',
+          maxResults: 10,
+          excludedWebsites: ['spam.com', 'ads.com'],
+        ).toJson(),
+      }).build();
 
       final xaiProvider = provider as XAIProvider;
       expect(xaiProvider.config.searchParameters, isNotNull);

@@ -1,6 +1,10 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
 
 /// Groq Fast Inference - Ultra-Speed AI Demonstration
 ///
@@ -11,7 +15,13 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('Groq Fast Inference Demo\n');
 
-  final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
+  final apiKey = Platform.environment['GROQ_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('❌ Please set GROQ_API_KEY environment variable');
+    return;
+  }
+
+  registerGroq();
 
   await demonstrateSpeedBenchmark(apiKey);
   await demonstrateStreamingSpeed(apiKey);
@@ -25,8 +35,8 @@ Future<void> demonstrateSpeedBenchmark(String apiKey) async {
   print('Speed Benchmark - Groq\'s Key Advantage\n');
 
   try {
-    final provider = await ai()
-        .groq()
+    final provider = await LLMBuilder()
+        .provider(groqProviderId)
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant') // Fastest model
         .temperature(0.7)
@@ -47,7 +57,10 @@ Future<void> demonstrateSpeedBenchmark(String apiKey) async {
 
     for (int i = 0; i < testQuestions.length; i++) {
       final stopwatch = Stopwatch()..start();
-      await provider.chat([ChatMessage.user(testQuestions[i])]);
+      await generateText(
+        model: provider,
+        messages: [ChatMessage.user(testQuestions[i])],
+      );
       stopwatch.stop();
 
       times.add(stopwatch.elapsedMilliseconds);
@@ -80,8 +93,8 @@ Future<void> demonstrateStreamingSpeed(String apiKey) async {
   print('Streaming Speed - Real-time Performance\n');
 
   try {
-    final provider = await ai()
-        .groq()
+    final provider = await LLMBuilder()
+        .provider(groqProviderId)
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.7)
@@ -96,10 +109,12 @@ Future<void> demonstrateStreamingSpeed(String apiKey) async {
     var firstChunkTime = 0;
     var chunkCount = 0;
 
-    await for (final event
-        in provider.chatStream([ChatMessage.user(question)])) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user(question)]),
+    )) {
+      switch (part) {
+        case TextDeltaPart(delta: final delta):
           chunkCount++;
           if (firstChunkTime == 0) {
             firstChunkTime = stopwatch.elapsedMilliseconds;
@@ -107,16 +122,17 @@ Future<void> demonstrateStreamingSpeed(String apiKey) async {
           stdout.write(delta);
           break;
 
-        case CompletionEvent():
+        case FinishPart():
           stopwatch.stop();
           print('\n');
           break;
 
-        case ErrorEvent(error: final error):
+        case ErrorPart(error: final error):
           print('\nStreaming error: $error');
           return;
 
-        default:
+        case ThinkingDeltaPart():
+        case ToolCallDeltaPart():
           break;
       }
     }
@@ -136,8 +152,8 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
   print('Parallel Processing - High Throughput\n');
 
   try {
-    final provider = await ai()
-        .groq()
+    final provider = await LLMBuilder()
+        .provider(groqProviderId)
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.7)
@@ -157,8 +173,10 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
     final stopwatch = Stopwatch()..start();
 
     // Process all questions simultaneously
-    final futures =
-        questions.map((q) => provider.chat([ChatMessage.user(q)])).toList();
+    final futures = questions
+        .map((q) =>
+            generateText(model: provider, messages: [ChatMessage.user(q)]))
+        .toList();
     final responses = await Future.wait(futures);
 
     stopwatch.stop();

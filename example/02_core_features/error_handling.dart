@@ -1,7 +1,12 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:async';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 🛡️ Error Handling - Production-Ready Error Management
 ///
@@ -18,12 +23,19 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('🛡️ Error Handling - Production-Ready Error Management\n');
 
+  registerOpenAI();
+  registerGroq();
+
   // Get API key
-  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('❌ Please set OPENAI_API_KEY environment variable');
+    return;
+  }
 
   // Create AI provider
-  final provider = await ai()
-      .openai()
+  final provider = await LLMBuilder()
+      .provider(openaiProviderId)
       .apiKey(apiKey)
       .model('gpt-4o-mini')
       .temperature(0.7)
@@ -38,6 +50,16 @@ void main() async {
   await demonstrateMonitoringAndLogging(provider);
 
   print('\n✅ Error handling completed!');
+}
+
+Future<ChatResponse> _chat(ChatCapability model, String prompt) async {
+  final result = await generateText(
+    model: model,
+    promptIr: Prompt(
+      messages: [PromptMessage.user(prompt)],
+    ),
+  );
+  return result.rawResponse;
 }
 
 /// Demonstrate different error types
@@ -70,13 +92,13 @@ Future<void> testAuthenticationError() async {
   print('   🔐 Testing Authentication Error:');
 
   try {
-    final invalidAi = await ai()
-        .openai()
+    final invalidAi = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey('invalid-key-12345')
         .model('gpt-4o-mini')
         .build();
 
-    await invalidAi.chat([ChatMessage.user('Hello')]);
+    await _chat(invalidAi, 'Hello');
     print('      ❌ Expected authentication error but got success');
   } on AuthError catch (e) {
     print('      ✅ Caught AuthError: ${e.message}');
@@ -104,13 +126,19 @@ Future<void> testInvalidRequestError() async {
   print('   📝 Testing Invalid Request Error:');
 
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY')
+    final apiKey = Platform.environment['OPENAI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      print('      ⚠️  Skipped: set OPENAI_API_KEY to run this test');
+      return;
+    }
+
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey(apiKey)
         .model('invalid-model-name-xyz')
         .build();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    await _chat(provider, 'Hello');
     print('      ❌ Expected invalid request error but got success');
   } on InvalidRequestError catch (e) {
     print('      ✅ Caught InvalidRequestError: ${e.message}');
@@ -132,14 +160,14 @@ Future<void> testNetworkError() async {
   print('   🌐 Testing Network Error:');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey('sk-test')
         .baseUrl('https://invalid-domain-12345.com/v1/')
         .model('gpt-4o-mini')
         .build();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    await _chat(provider, 'Hello');
     print('      ❌ Expected network error but got success');
   } on HttpError catch (e) {
     print('      ✅ Caught HttpError: ${e.message}');
@@ -158,14 +186,20 @@ Future<void> testTimeoutError() async {
   print('   ⏰ Testing Timeout Error:');
 
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY')
+    final apiKey = Platform.environment['OPENAI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      print('      ⚠️  Skipped: set OPENAI_API_KEY to run this test');
+      return;
+    }
+
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey(apiKey)
         .model('gpt-4o-mini')
         .timeout(Duration(milliseconds: 1)) // Very short timeout
         .build();
 
-    await provider.chat([ChatMessage.user('Hello')]);
+    await _chat(provider, 'Hello');
     print('      ❌ Expected timeout error but got success');
   } on TimeoutError catch (e) {
     print('      ✅ Caught TimeoutError: ${e.message}');
@@ -182,8 +216,8 @@ Future<void> testUnsupportedCapabilityError() async {
   try {
     // Try to build audio capability with a provider that doesn't support it
     // Note: Using a fake API key to avoid actual API calls
-    await ai()
-        .groq() // Groq doesn't support audio capabilities
+    await LLMBuilder()
+        .provider(groqProviderId) // Groq doesn't support audio capabilities
         .apiKey('fake-key-for-testing')
         .buildAudio(); // This should throw UnsupportedCapabilityError
 
@@ -201,8 +235,8 @@ Future<void> testUnsupportedCapabilityError() async {
   // Test another unsupported capability
   try {
     // Try to build image generation with a provider that doesn't support it
-    await ai()
-        .groq() // Groq doesn't support image generation
+    await LLMBuilder()
+        .provider(groqProviderId) // Groq doesn't support image generation
         .apiKey('fake-key-for-testing')
         .buildImageGeneration(); // This should throw UnsupportedCapabilityError
 
@@ -251,7 +285,7 @@ Future<void> testExponentialBackoff(ChatCapability ai) async {
       if (DateTime.now().millisecond % 3 != 0) {
         throw Exception('Simulated intermittent failure');
       }
-      return await ai.chat([ChatMessage.user('Hello')]);
+      return await _chat(ai, 'Hello');
     });
 
     final text = result.text ?? '';
@@ -274,7 +308,7 @@ Future<void> testLinearBackoff(ChatCapability ai) async {
 
   try {
     final result = await retryHandler.execute(() async {
-      return await ai.chat([ChatMessage.user('What is 2+2?')]);
+      return await _chat(ai, 'What is 2+2?');
     });
 
     print('      ✅ Success: ${result.text}');
@@ -294,7 +328,7 @@ Future<void> testImmediateRetry(ChatCapability ai) async {
 
   try {
     final result = await retryHandler.execute(() async {
-      return await ai.chat([ChatMessage.user('Hello again!')]);
+      return await _chat(ai, 'Hello again!');
     });
 
     final text = result.text ?? '';
@@ -310,7 +344,7 @@ Future<void> demonstrateGracefulDegradation(ChatCapability ai) async {
   print('🎭 Graceful Degradation:\n');
 
   final fallbackHandler = FallbackHandler([
-    () => ai.chat([ChatMessage.user('What is the weather like?')]),
+    () => _chat(ai, 'What is the weather like?'),
     () => _fallbackToSimpleResponse(),
     () => _fallbackToStaticResponse(),
   ]);
@@ -342,7 +376,7 @@ Future<void> demonstrateCircuitBreaker(ChatCapability ai) async {
         if (i <= 2) {
           throw Exception('Simulated service failure');
         }
-        return await ai.chat([ChatMessage.user('Hello $i')]);
+        return await _chat(ai, 'Hello $i');
       });
 
       final text = result.text ?? '';
@@ -365,7 +399,7 @@ Future<void> demonstrateMonitoringAndLogging(ChatCapability ai) async {
   try {
     // Monitor a successful call
     await monitor.trackCall('chat_request', () async {
-      return await ai.chat([ChatMessage.user('Successful request')]);
+      return await _chat(ai, 'Successful request');
     });
   } catch (e) {
     print('   ⚠️  Monitoring error during successful call: $e');
@@ -591,6 +625,9 @@ class SimpleChatResponse implements ChatResponse {
 
   @override
   List<ToolCall>? get toolCalls => null;
+
+  @override
+  Map<String, dynamic>? get providerMetadata => null;
 }
 
 /// 🎯 Key Error Handling Concepts Summary:

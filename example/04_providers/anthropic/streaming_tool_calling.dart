@@ -1,50 +1,53 @@
 // ignore_for_file: avoid_print
 import 'dart:convert';
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
 
-/// 🌊 Anthropic Streaming Tool Calling
-///
-/// This example demonstrates Anthropic's streaming tool use capability:
-/// - Real-time tool call detection during streaming
-/// - Handling multiple tool calls in one response
-/// - Complex tool parameters with nested objects
-///
-/// Before running, set your API key:
-/// export ANTHROPIC_API_KEY="your-key"
-void main() async {
-  print('🌊 Anthropic Streaming Tool Calling\n');
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
-  // Get API key
+/// Anthropic streaming tool calling (Prompt IR + `llm_dart_ai`).
+///
+/// Demonstrates:
+/// - Streaming tool call detection as `LLMStreamPart`s
+/// - Aggregating tool call deltas into complete `ToolCall`s
+/// - Multiple tool calls and nested tool parameters
+///
+/// Setup:
+/// - `export ANTHROPIC_API_KEY="your-key"`
+Future<void> main() async {
+  print('Anthropic Streaming Tool Calling\n');
+
   final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (apiKey == null || apiKey.isEmpty) {
-    print('❌ Error: ANTHROPIC_API_KEY environment variable not set');
-    print('   Please set it with: export ANTHROPIC_API_KEY="your-key"');
+    print('Error: ANTHROPIC_API_KEY environment variable not set');
+    print('Please set it with: export ANTHROPIC_API_KEY="your-key"');
     exit(1);
   }
 
-  // Create Anthropic provider
-  final provider = await ai()
-      .anthropic()
+  registerAnthropic();
+
+  final provider = await LLMBuilder()
+      .provider(anthropicProviderId)
       .apiKey(apiKey)
       .model('claude-sonnet-4-20250514')
       .temperature(0.1)
       .maxTokens(1000)
       .build();
 
-  print('✅ Provider created: Claude Sonnet 4\n');
+  print('Provider created: Claude Sonnet 4\n');
 
-  // Demonstrate different streaming tool scenarios
   await demonstrateBasicStreamingTool(provider);
   await demonstrateMultipleToolsStreaming(provider);
   await demonstrateComplexParametersStreaming(provider);
 
-  print('\n✅ All streaming tool calling examples completed!');
+  print('\nAll streaming tool calling examples completed!');
 }
 
 /// Demonstrate basic streaming tool call
 Future<void> demonstrateBasicStreamingTool(ChatCapability provider) async {
-  print('🔧 Basic Streaming Tool Call:\n');
+  print('Basic Streaming Tool Call:\n');
 
   try {
     final tools = [
@@ -69,63 +72,82 @@ Future<void> demonstrateBasicStreamingTool(ChatCapability provider) async {
       ),
     ];
 
-    final messages = [
-      ChatMessage.user('What is the weather like in Tokyo? Use celsius.')
-    ];
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user('What is the weather like in Tokyo? Use celsius.'),
+      ],
+    );
 
     print('   User: What is the weather like in Tokyo? Use celsius.');
     print('   Available tools: get_weather');
     print('   Streaming response:\n');
 
-    var toolCallsDetected = <ToolCall>[];
-    var textContent = StringBuffer();
+    final toolCallIds = <String>{};
+    final aggregator = ToolCallAggregator();
+    final textContent = StringBuffer();
 
-    await for (final event in provider.chatStream(messages, tools: tools)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamChatParts(
+      model: provider,
+      promptIr: prompt,
+      tools: tools,
+    )) {
+      switch (part) {
+        case LLMTextDeltaPart(delta: final delta):
           textContent.write(delta);
           stdout.write(delta);
           break;
 
-        case ToolCallDeltaEvent(toolCall: final toolCall):
-          toolCallsDetected.add(toolCall);
-          print('\n   🔧 Tool Call Detected!');
+        case LLMToolCallStartPart(toolCall: final toolCall):
+          toolCallIds.add(toolCall.id);
+          aggregator.addDelta(toolCall);
+          print('\n   Tool Call Detected!');
           print('      Tool: ${toolCall.function.name}');
           print('      ID: ${toolCall.id}');
-          final args = jsonDecode(toolCall.function.arguments);
-          print('      Arguments: $args');
           break;
 
-        case CompletionEvent():
-          print('\n   ✅ Stream completed');
+        case LLMToolCallDeltaPart(toolCall: final toolCall):
+          aggregator.addDelta(toolCall);
           break;
 
-        case ErrorEvent(error: final error):
-          print('\n   ❌ Error: $error');
+        case LLMFinishPart():
+          print('\n   Stream completed');
           break;
 
-        case ThinkingDeltaEvent():
-          // Ignore thinking events for this example
+        case LLMErrorPart(error: final error):
+          print('\n   Error: $error');
+          break;
+
+        default:
           break;
       }
     }
 
+    final completedToolCalls = aggregator.completedCalls;
+
     print('\n   Results:');
-    print('      Tool calls detected: ${toolCallsDetected.length}');
-    if (toolCallsDetected.isNotEmpty) {
-      print('      ✅ Streaming tool call working correctly!');
+    print('      Tool calls detected: ${toolCallIds.length}');
+    if (completedToolCalls.isNotEmpty) {
+      print('      Streaming tool call working correctly!');
+      for (final toolCall in completedToolCalls) {
+        try {
+          final args = jsonDecode(toolCall.function.arguments);
+          print('      Arguments: $args');
+        } catch (_) {
+          print('      Arguments (raw): ${toolCall.function.arguments}');
+        }
+      }
     } else {
-      print('      ⚠️  No tool calls detected');
+      print('      No tool calls detected');
     }
     print('');
   } catch (e) {
-    print('   ❌ Error: $e\n');
+    print('   Error: $e\n');
   }
 }
 
 /// Demonstrate multiple tools in streaming
 Future<void> demonstrateMultipleToolsStreaming(ChatCapability provider) async {
-  print('🔧 Multiple Tools Streaming:\n');
+  print('Multiple Tools Streaming:\n');
 
   try {
     final tools = [
@@ -159,62 +181,84 @@ Future<void> demonstrateMultipleToolsStreaming(ChatCapability provider) async {
       ),
     ];
 
-    final messages = [
-      ChatMessage.user(
-          'What is the weather in Paris and what time is it in Tokyo?')
-    ];
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user(
+          'What is the weather in Paris and what time is it in Tokyo?',
+        ),
+      ],
+    );
 
     print(
         '   User: What is the weather in Paris and what time is it in Tokyo?');
     print('   Available tools: get_weather, get_time');
     print('   Streaming response:\n');
 
-    var toolCallsDetected = <ToolCall>[];
+    final toolCallIds = <String>{};
+    final aggregator = ToolCallAggregator();
 
-    await for (final event in provider.chatStream(messages, tools: tools)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamChatParts(
+      model: provider,
+      promptIr: prompt,
+      tools: tools,
+    )) {
+      switch (part) {
+        case LLMTextDeltaPart(delta: final delta):
           stdout.write(delta);
           break;
 
-        case ToolCallDeltaEvent(toolCall: final toolCall):
-          toolCallsDetected.add(toolCall);
-          print('\n   🔧 Tool Call #${toolCallsDetected.length} Detected!');
+        case LLMToolCallStartPart(toolCall: final toolCall):
+          toolCallIds.add(toolCall.id);
+          aggregator.addDelta(toolCall);
+          print('\n   Tool Call #${toolCallIds.length} Detected!');
           print('      Tool: ${toolCall.function.name}');
-          final args = jsonDecode(toolCall.function.arguments);
-          print('      Arguments: $args');
           break;
 
-        case CompletionEvent():
-          print('\n   ✅ Stream completed');
+        case LLMToolCallDeltaPart(toolCall: final toolCall):
+          aggregator.addDelta(toolCall);
           break;
 
-        case ErrorEvent(error: final error):
-          print('\n   ❌ Error: $error');
+        case LLMFinishPart():
+          print('\n   Stream completed');
           break;
 
-        case ThinkingDeltaEvent():
+        case LLMErrorPart(error: final error):
+          print('\n   Error: $error');
+          break;
+
+        default:
           break;
       }
     }
 
+    final completedToolCalls = aggregator.completedCalls;
+
     print('\n   Results:');
-    print('      Tool calls detected: ${toolCallsDetected.length}');
-    if (toolCallsDetected.length >= 2) {
-      print('      ✅ Multiple tool calls working correctly!');
+    print('      Tool calls detected: ${toolCallIds.length}');
+    if (completedToolCalls.length >= 2) {
+      print('      Multiple tool calls working correctly!');
+      for (final toolCall in completedToolCalls) {
+        try {
+          final args = jsonDecode(toolCall.function.arguments);
+          print('      ${toolCall.function.name} args: $args');
+        } catch (_) {
+          print(
+              '      ${toolCall.function.name} args (raw): ${toolCall.function.arguments}');
+        }
+      }
     } else {
-      print('      ⚠️  Expected 2 tool calls, got ${toolCallsDetected.length}');
+      print('      Expected 2 tool calls, got ${completedToolCalls.length}');
     }
     print('');
   } catch (e) {
-    print('   ❌ Error: $e\n');
+    print('   Error: $e\n');
   }
 }
 
 /// Demonstrate complex parameters in streaming
 Future<void> demonstrateComplexParametersStreaming(
     ChatCapability provider) async {
-  print('🔧 Complex Parameters Streaming:\n');
+  print('Complex Parameters Streaming:\n');
 
   try {
     final tools = [
@@ -256,55 +300,76 @@ Future<void> demonstrateComplexParametersStreaming(
       ),
     ];
 
-    final messages = [
-      ChatMessage.user(
-          'Create a meeting titled "Team Sync" with attendees alice@example.com and bob@example.com at Conference Room A')
-    ];
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user(
+          'Create a meeting titled "Team Sync" with attendees alice@example.com and bob@example.com at Conference Room A',
+        ),
+      ],
+    );
 
     print(
         '   User: Create a meeting titled "Team Sync" with attendees alice@example.com and bob@example.com');
     print('   Available tools: create_event');
     print('   Streaming response:\n');
 
-    var toolCallsDetected = <ToolCall>[];
+    final toolCallIds = <String>{};
+    final aggregator = ToolCallAggregator();
 
-    await for (final event in provider.chatStream(messages, tools: tools)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamChatParts(
+      model: provider,
+      promptIr: prompt,
+      tools: tools,
+    )) {
+      switch (part) {
+        case LLMTextDeltaPart(delta: final delta):
           stdout.write(delta);
           break;
 
-        case ToolCallDeltaEvent(toolCall: final toolCall):
-          toolCallsDetected.add(toolCall);
-          print('\n   🔧 Tool Call Detected!');
+        case LLMToolCallStartPart(toolCall: final toolCall):
+          toolCallIds.add(toolCall.id);
+          aggregator.addDelta(toolCall);
+          print('\n   Tool Call Detected!');
           print('      Tool: ${toolCall.function.name}');
-          final args = jsonDecode(toolCall.function.arguments);
-          print('      Arguments (formatted):');
-          print('      ${JsonEncoder.withIndent('  ').convert(args)}');
           break;
 
-        case CompletionEvent():
-          print('\n   ✅ Stream completed');
+        case LLMToolCallDeltaPart(toolCall: final toolCall):
+          aggregator.addDelta(toolCall);
           break;
 
-        case ErrorEvent(error: final error):
-          print('\n   ❌ Error: $error');
+        case LLMFinishPart():
+          print('\n   Stream completed');
           break;
 
-        case ThinkingDeltaEvent():
+        case LLMErrorPart(error: final error):
+          print('\n   Error: $error');
+          break;
+
+        default:
           break;
       }
     }
 
+    final completedToolCalls = aggregator.completedCalls;
+
     print('\n   Results:');
-    print('      Tool calls detected: ${toolCallsDetected.length}');
-    if (toolCallsDetected.isNotEmpty) {
-      print('      ✅ Complex parameters working correctly!');
+    print('      Tool calls detected: ${toolCallIds.length}');
+    if (completedToolCalls.isNotEmpty) {
+      print('      Complex parameters working correctly!');
+      for (final toolCall in completedToolCalls) {
+        try {
+          final args = jsonDecode(toolCall.function.arguments);
+          print('      Arguments (formatted):');
+          print('      ${JsonEncoder.withIndent('  ').convert(args)}');
+        } catch (_) {
+          print('      Arguments (raw): ${toolCall.function.arguments}');
+        }
+      }
     } else {
-      print('      ⚠️  No tool calls detected');
+      print('      No tool calls detected');
     }
     print('');
   } catch (e) {
-    print('   ❌ Error: $e\n');
+    print('   Error: $e\n');
   }
 }

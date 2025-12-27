@@ -1,6 +1,11 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 🔍 Capability Detection - Discover Provider Features
 ///
@@ -38,6 +43,10 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('🔍 Capability Detection - Discover Provider Features\n');
 
+  registerOpenAI();
+  registerAnthropic();
+  registerGroq();
+
   // Create multiple providers for comparison
   final providers = await createProviders();
 
@@ -58,8 +67,11 @@ Future<Map<String, ProviderCapabilities>> createProviders() async {
   final openaiKey = Platform.environment['OPENAI_API_KEY'];
   if (openaiKey != null) {
     try {
-      final openai =
-          await ai().openai().apiKey(openaiKey).model('gpt-4o-mini').build();
+      final openai = await LLMBuilder()
+          .provider(openaiProviderId)
+          .apiKey(openaiKey)
+          .model('gpt-4o-mini')
+          .build();
       if (openai is ProviderCapabilities) {
         providers['OpenAI Standard'] = openai as ProviderCapabilities;
       }
@@ -69,10 +81,12 @@ Future<Map<String, ProviderCapabilities>> createProviders() async {
 
     // OpenAI provider with Responses API (manual configuration)
     try {
-      final openaiResponses = await ai()
-          .openai((openai) => openai.useResponsesAPI().webSearchTool())
+      final openaiResponses = await LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(openaiKey)
           .model('gpt-4o')
+          .providerOption('openai', 'useResponsesAPI', true)
+          .providerTool(OpenAIProviderTools.webSearch())
           .build();
       if (openaiResponses is ProviderCapabilities) {
         providers['OpenAI Responses (Manual)'] =
@@ -82,14 +96,18 @@ Future<Map<String, ProviderCapabilities>> createProviders() async {
       print('⚠️  Failed to create OpenAI Responses provider: $e');
     }
 
-    // OpenAI provider with Responses API (using buildOpenAIResponses)
+    // OpenAI provider with Responses API (typed access via cast)
     try {
-      final openaiResponsesAuto = await ai()
-          .openai((openai) => openai.webSearchTool())
+      final provider = await LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(openaiKey)
           .model('gpt-4o')
-          .buildOpenAIResponses();
-      providers['OpenAI Responses (Auto)'] = openaiResponsesAuto;
+          .providerOption('openai', 'useResponsesAPI', true)
+          .providerTool(OpenAIProviderTools.webSearch())
+          .build();
+      final openaiProvider = provider as OpenAIProvider;
+      providers['OpenAI Responses (Typed)'] =
+          openaiProvider as ProviderCapabilities;
     } catch (e) {
       print('⚠️  Failed to create OpenAI Responses auto provider: $e');
     }
@@ -99,8 +117,8 @@ Future<Map<String, ProviderCapabilities>> createProviders() async {
   final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (anthropicKey != null) {
     try {
-      final anthropic = await ai()
-          .anthropic()
+      final anthropic = await LLMBuilder()
+          .provider(anthropicProviderId)
           .apiKey(anthropicKey)
           .model('claude-3-5-haiku-20241022')
           .build();
@@ -116,8 +134,8 @@ Future<Map<String, ProviderCapabilities>> createProviders() async {
   final groqKey = Platform.environment['GROQ_API_KEY'];
   if (groqKey != null) {
     try {
-      final groq = await ai()
-          .groq()
+      final groq = await LLMBuilder()
+          .provider(groqProviderId)
           .apiKey(groqKey)
           .model('llama-3.1-8b-instant')
           .build();
@@ -311,10 +329,10 @@ Future<void> demonstrateCapabilityValidation(
 
     if (provider.supports(LLMCapability.streaming)) {
       print(
-          '      ✅ Streaming capability available - can use chatStream() method');
+          '      ✅ Streaming capability available - can use streamText()/streamChatParts()');
     } else {
       print(
-          '      ❌ Streaming capability not available - avoid chatStream() method');
+          '      ❌ Streaming capability not available - avoid streamText()/streamChatParts()');
     }
 
     if (provider.supports(LLMCapability.toolCalling)) {

@@ -5,61 +5,41 @@
 /// extensible
 library;
 
-// Core exports
-export 'core/capability.dart';
-export 'core/cancellation.dart';
-export 'core/llm_error.dart';
-export 'core/config.dart';
-export 'core/registry.dart';
-export 'core/base_http_provider.dart';
-export 'core/openai_compatible_configs.dart';
-export 'core/tool_validator.dart';
-export 'core/web_search.dart';
+// Core exports (standard surface + shared models)
+export 'package:llm_dart_core/llm_dart_core.dart';
 
-// Model exports
-export 'models/chat_models.dart';
-export 'models/tool_models.dart';
-export 'models/audio_models.dart';
-export 'models/image_models.dart';
-export 'models/file_models.dart';
-export 'models/moderation_models.dart';
-export 'models/assistant_models.dart';
-
-// Provider exports
-export 'providers/openai/openai.dart'
-    hide createDeepSeekProvider, createGroqProvider;
-export 'providers/anthropic/anthropic.dart';
-export 'providers/anthropic/models.dart';
-export 'providers/google/google.dart';
-export 'providers/google/tts.dart';
-export 'providers/deepseek/deepseek.dart';
-export 'providers/ollama/ollama.dart';
-export 'providers/xai/xai.dart';
-export 'providers/phind/phind.dart';
-export 'providers/groq/groq.dart';
-export 'providers/elevenlabs/elevenlabs.dart';
-
-// Factory exports
-export 'providers/factories/base_factory.dart';
+// Task APIs (Vercel-style)
+export 'package:llm_dart_ai/llm_dart_ai.dart';
 
 // Builder exports
-export 'builder/llm_builder.dart';
-export 'builder/http_config.dart';
-export 'builder/audio_config.dart';
-export 'builder/image_config.dart';
-export 'builder/provider_config.dart';
+export 'package:llm_dart_builder/llm_dart_builder.dart';
 
-// Utility exports
-export 'utils/config_utils.dart';
-export 'utils/capability_utils.dart';
-export 'utils/provider_registry.dart';
-export 'utils/utf8_stream_decoder.dart';
-export 'utils/http_config_utils.dart';
-export 'utils/tool_call_aggregator.dart';
+// Provider exports (all-in-one umbrella)
+export 'package:llm_dart_openai/llm_dart_openai.dart'
+    hide createDeepSeekProvider, createGroqProvider;
+export 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+export 'package:llm_dart_google/llm_dart_google.dart';
+export 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
+export 'package:llm_dart_ollama/llm_dart_ollama.dart';
+export 'package:llm_dart_xai/llm_dart_xai.dart';
+export 'package:llm_dart_groq/llm_dart_groq.dart';
+export 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
+export 'package:llm_dart_minimax/llm_dart_minimax.dart';
+
+// Umbrella-only builder conveniences (do not live in provider subpackages)
+export 'src/anthropic_builder.dart';
+export 'src/builtin_llm_builder_extensions.dart';
+export 'src/openai_builder.dart';
+export 'src/openrouter_builder.dart';
+export 'src/google_llm_builder.dart';
+export 'src/ollama_builder.dart';
+export 'src/elevenlabs_builder.dart';
 
 // Convenience functions for creating providers
-import 'builder/llm_builder.dart';
-import 'core/capability.dart';
+import 'builtins/builtin_provider_registry.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/core/capability.dart';
 
 /// Create a new LLM builder instance
 ///
@@ -68,12 +48,15 @@ import 'core/capability.dart';
 /// Example:
 /// ```dart
 /// final provider = await ai()
-///     .openai()
+///     .provider('openai')
 ///     .apiKey('your-key')
-///     .model('gpt-4')
+///     .model('gpt-4o')
 ///     .build();
 /// ```
-LLMBuilder ai() => LLMBuilder();
+LLMBuilder ai() {
+  BuiltinProviderRegistry.ensureRegistered();
+  return LLMBuilder();
+}
 
 /// Create a provider with the given configuration
 ///
@@ -85,6 +68,9 @@ LLMBuilder ai() => LLMBuilder();
 ///   providerId: 'openai',
 ///   apiKey: 'your-key',
 ///   model: 'gpt-4',
+///   providerOptions: {
+///     'frequencyPenalty': 0.3,
+///   },
 /// );
 /// ```
 Future<ChatCapability> createProvider({
@@ -96,11 +82,11 @@ Future<ChatCapability> createProvider({
   int? maxTokens,
   String? systemPrompt,
   Duration? timeout,
-  bool stream = false,
   double? topP,
   int? topK,
-  Map<String, dynamic>? extensions,
+  Map<String, dynamic>? providerOptions,
 }) async {
+  BuiltinProviderRegistry.ensureRegistered();
   var builder = LLMBuilder().provider(providerId).apiKey(apiKey).model(model);
 
   if (baseUrl != null) builder = builder.baseUrl(baseUrl);
@@ -111,11 +97,9 @@ Future<ChatCapability> createProvider({
   if (topP != null) builder = builder.topP(topP);
   if (topK != null) builder = builder.topK(topK);
 
-  // Add extensions if provided
-  if (extensions != null) {
-    for (final entry in extensions.entries) {
-      builder = builder.extension(entry.key, entry.value);
-    }
+  // Add providerOptions if provided
+  if (providerOptions != null) {
+    builder = builder.providerOptions(providerId, providerOptions);
   }
 
   return await builder.build();

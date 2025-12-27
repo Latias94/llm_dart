@@ -1,0 +1,5 @@
+dependency_overrides:
+  llm_dart_core:
+    path: ../llm_dart_core
+  llm_dart_provider_utils:
+    path: ../llm_dart_provider_utils

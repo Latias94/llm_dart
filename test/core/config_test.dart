@@ -16,7 +16,8 @@ void main() {
         expect(config.model, equals('test-model'));
         expect(config.maxTokens, isNull);
         expect(config.temperature, isNull);
-        expect(config.extensions, isEmpty);
+        expect(config.transportOptions, isEmpty);
+        expect(config.providerOptions, isEmpty);
       });
 
       test('should create with all parameters', () {
@@ -47,7 +48,9 @@ void main() {
           stopSequences: ['STOP'],
           user: 'test-user',
           serviceTier: ServiceTier.auto,
-          extensions: {'custom': 'value'},
+          providerOptions: {
+            'openai': {'reasoningEffort': 'medium'},
+          },
         );
 
         expect(config.apiKey, equals('test-key'));
@@ -64,7 +67,12 @@ void main() {
         expect(config.stopSequences, equals(['STOP']));
         expect(config.user, equals('test-user'));
         expect(config.serviceTier, equals(ServiceTier.auto));
-        expect(config.extensions, equals({'custom': 'value'}));
+        expect(config.transportOptions, isEmpty);
+        expect(
+            config.providerOptions,
+            equals({
+              'openai': {'reasoningEffort': 'medium'}
+            }));
       });
 
       test('should copy with modifications', () {
@@ -101,7 +109,9 @@ void main() {
           stopSequences: ['STOP'],
           user: 'test-user',
           serviceTier: ServiceTier.auto,
-          extensions: {'custom': 'value'},
+          providerOptions: {
+            'openai': {'reasoningEffort': 'medium'},
+          },
         );
 
         final json = config.toJson();
@@ -117,7 +127,11 @@ void main() {
         expect(json['stopSequences'], equals(['STOP']));
         expect(json['user'], equals('test-user'));
         expect(json['serviceTier'], equals('auto'));
-        expect(json['extensions'], equals({'custom': 'value'}));
+        expect(
+            json['providerOptions'],
+            equals({
+              'openai': {'reasoningEffort': 'medium'}
+            }));
       });
 
       test('should handle null values in JSON serialization', () {
@@ -131,38 +145,52 @@ void main() {
         expect(json.containsKey('maxTokens'), isFalse);
         expect(json.containsKey('temperature'), isFalse);
         expect(json.containsKey('systemPrompt'), isFalse);
-        expect(json['extensions'], isEmpty);
-      });
-    });
-
-    group('ModelCapabilityConfig', () {
-      test('should create with default values', () {
-        final config = ModelCapabilityConfig();
-
-        expect(config.supportsReasoning, isFalse);
-        expect(config.supportsVision, isFalse);
-        expect(config.supportsToolCalling, isTrue); // Default is true
-        expect(config.maxContextLength, isNull);
-        expect(config.disableTemperature, isFalse);
-        expect(config.disableTopP, isFalse);
+        expect(json['transportOptions'], isEmpty);
+        expect(json['providerOptions'], isEmpty);
       });
 
-      test('should create with custom values', () {
-        final config = ModelCapabilityConfig(
-          supportsReasoning: true,
-          supportsVision: true,
-          supportsToolCalling: true,
-          maxContextLength: 32768,
-          disableTemperature: true,
-          disableTopP: true,
+      test('should parse providerOptions from JSON', () {
+        final config = LLMConfig.fromJson({
+          'apiKey': 'test-key',
+          'baseUrl': 'https://api.test.com',
+          'model': 'test-model',
+          'providerOptions': {
+            'anthropic': {
+              'cacheControl': {'type': 'ephemeral'}
+            },
+          },
+        });
+
+        expect(
+            config.getProviderOption<Map<String, dynamic>>(
+                'anthropic', 'cacheControl'),
+            equals({'type': 'ephemeral'}));
+      });
+
+      test('should serialize and parse providerTools', () {
+        final config = LLMConfig(
+          baseUrl: 'https://api.test.com',
+          model: 'test-model',
+          providerTools: const [
+            ProviderTool(
+              id: 'openai.web_search_preview',
+              options: {'searchContextSize': 'medium'},
+            ),
+          ],
         );
 
-        expect(config.supportsReasoning, isTrue);
-        expect(config.supportsVision, isTrue);
-        expect(config.supportsToolCalling, isTrue);
-        expect(config.maxContextLength, equals(32768));
-        expect(config.disableTemperature, isTrue);
-        expect(config.disableTopP, isTrue);
+        final json = config.toJson();
+        expect(json['providerTools'], isA<List>());
+        expect((json['providerTools'] as List).length, equals(1));
+
+        final roundTrip = LLMConfig.fromJson(json);
+        expect(roundTrip.providerTools, isNotNull);
+        expect(roundTrip.providerTools!.single.id,
+            equals('openai.web_search_preview'));
+        expect(
+          roundTrip.providerTools!.single.options,
+          equals({'searchContextSize': 'medium'}),
+        );
       });
     });
   });

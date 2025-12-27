@@ -39,7 +39,7 @@ void main() {
       }
     });
 
-    test('OllamaConfig should not recognize non-reasoning models', () {
+    test('OllamaConfig should not maintain a reasoning model matrix', () {
       final configs = [
         OllamaConfig(model: 'llama3.2'),
         OllamaConfig(model: 'mistral'),
@@ -47,8 +47,7 @@ void main() {
       ];
 
       for (final config in configs) {
-        expect(config.supportsReasoning, isFalse,
-            reason: 'Model ${config.model} should not support reasoning');
+        expect(config.supportsReasoning, isTrue);
       }
     });
 
@@ -73,12 +72,17 @@ void main() {
       expect(provider, isA<OllamaProvider>());
     });
 
-    test('OllamaConfig.fromLLMConfig should handle reasoning extension', () {
+    test('OllamaConfig.fromLLMConfig should handle reasoning provider option',
+        () {
       final llmConfig = LLMConfig(
         apiKey: 'test',
         baseUrl: 'http://localhost:11434',
         model: 'gpt-oss:latest',
-        extensions: {'reasoning': true},
+        providerOptions: const {
+          'ollama': {
+            'reasoning': true,
+          },
+        },
       );
 
       final ollamaConfig = OllamaConfig.fromLLMConfig(llmConfig);

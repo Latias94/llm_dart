@@ -1,6 +1,10 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_ollama/llm_dart_ollama.dart';
 
 /// 🦙 Ollama Thinking - Local Reasoning with Open Models
 ///
@@ -17,6 +21,8 @@ import 'package:llm_dart/llm_dart.dart';
 void main() async {
   print('🦙 Ollama Thinking - Local Reasoning with Open Models\n');
 
+  registerOllama();
+
   // Demonstrate various Ollama thinking capabilities
   await demonstrateBasicThinking();
   await demonstrateMathematicalReasoning();
@@ -32,8 +38,8 @@ Future<void> demonstrateBasicThinking() async {
   print('🧠 Basic Thinking Process:\n');
 
   try {
-    final provider = await ai()
-        .ollama()
+    final provider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl('http://localhost:11434')
         .model('gpt-oss:latest')
         .reasoning(true)
@@ -41,13 +47,16 @@ Future<void> demonstrateBasicThinking() async {
         .maxTokens(1000)
         .build();
 
-    final response = await provider.chat([
-      ChatMessage.user('''
+    final response = await generateText(
+      model: provider,
+      messages: [
+        ChatMessage.user('''
 I have 3 red balls, 2 blue balls, and 5 green balls in a bag.
 If I randomly pick 3 balls without replacement, what's the probability
 that I get exactly one ball of each color?
 ''')
-    ]);
+      ],
+    );
 
     print('   Problem: Probability calculation with colored balls');
     print('   Model: gpt-oss:latest (local reasoning model)');
@@ -87,8 +96,8 @@ Future<void> demonstrateMathematicalReasoning() async {
   print('🔢 Mathematical Reasoning:\n');
 
   try {
-    final provider = await ai()
-        .ollama()
+    final provider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl('http://localhost:11434')
         .model('gpt-oss:latest')
         .reasoning(true)
@@ -107,7 +116,8 @@ What is the growth pattern, and what will be the revenue in Month 6?
 Show your work step by step.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(mathProblem)]);
+    final response = await generateText(
+        model: provider, messages: [ChatMessage.user(mathProblem)]);
 
     print('   Problem: Revenue pattern analysis and prediction');
 
@@ -140,8 +150,8 @@ Future<void> demonstrateStreamingThinking() async {
   print('🌊 Streaming Thinking Process:\n');
 
   try {
-    final provider = await ai()
-        .ollama()
+    final provider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl('http://localhost:11434')
         .model('gpt-oss:latest')
         .reasoning(true)
@@ -156,22 +166,27 @@ Future<void> demonstrateStreamingThinking() async {
     var responseContent = StringBuffer();
     var isThinking = true;
 
-    await for (final event in provider.chatStream([
-      ChatMessage.user('''
+    await for (final part in streamText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.user('''
 Four people need to cross a bridge at night. They have one flashlight.
 The bridge can hold only two people at a time. They must walk together
 when crossing. Person A takes 1 minute, B takes 2 minutes, C takes 5 minutes,
 and D takes 10 minutes. When two people cross together, they walk at the
 slower person's pace. What's the minimum time to get everyone across?
 ''')
-    ])) {
-      switch (event) {
-        case ThinkingDeltaEvent(delta: final delta):
+        ],
+      ),
+    )) {
+      switch (part) {
+        case ThinkingDeltaPart(delta: final delta):
           thinkingContent.write(delta);
           // Print thinking in gray color
           stdout.write('\x1B[90m$delta\x1B[0m');
           break;
-        case TextDeltaEvent(delta: final delta):
+        case TextDeltaPart(delta: final delta):
           if (isThinking) {
             print('\n\n   🎯 Ollama\'s Final Answer:');
             print('   ${'-' * 40}');
@@ -180,22 +195,21 @@ slower person's pace. What's the minimum time to get everyone across?
           responseContent.write(delta);
           stdout.write(delta);
           break;
-        case CompletionEvent(response: final response):
+        case FinishPart(result: final result):
           print('\n   ${'-' * 40}');
           print('\n   ✅ Streaming thinking completed!');
 
-          if (response.usage != null) {
-            print('   📊 Usage: ${response.usage!.totalTokens} tokens');
+          if (result.usage != null) {
+            print('   📊 Usage: ${result.usage!.totalTokens} tokens');
           }
 
           print('   🧠 Thinking length: ${thinkingContent.length} characters');
           print('   📝 Response length: ${responseContent.length} characters');
           break;
-        case ErrorEvent(error: final error):
+        case ErrorPart(error: final error):
           print('\n   ❌ Stream error: $error');
           break;
-        case ToolCallDeltaEvent():
-          // Handle tool call events if needed
+        case ToolCallDeltaPart():
           break;
       }
     }
@@ -211,8 +225,8 @@ Future<void> demonstrateLogicalPuzzle() async {
   print('🧩 Logical Puzzle Solving:\n');
 
   try {
-    final provider = await ai()
-        .ollama()
+    final provider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl('http://localhost:11434')
         .model('gpt-oss:latest')
         .reasoning(true)
@@ -226,7 +240,8 @@ You have a balance scale and can use it exactly 3 times.
 How do you identify the fake coin? Describe your strategy step by step.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(logicPuzzle)]);
+    final response = await generateText(
+        model: provider, messages: [ChatMessage.user(logicPuzzle)]);
 
     print('   Puzzle: Classic 12-coin balance scale problem');
 
@@ -285,8 +300,8 @@ of getting heads on the 11th flip? Explain your reasoning.
     print('   Testing model: $model');
 
     try {
-      final provider = await ai()
-          .ollama()
+      final provider = await LLMBuilder()
+          .provider(ollamaProviderId)
           .baseUrl('http://localhost:11434')
           .model(model)
           .reasoning(true)
@@ -294,7 +309,10 @@ of getting heads on the 11th flip? Explain your reasoning.
           .maxTokens(800)
           .build();
 
-      final response = await provider.chat([ChatMessage.user(testProblem)]);
+      final response = await generateText(
+        model: provider,
+        messages: [ChatMessage.user(testProblem)],
+      );
 
       if (response.thinking != null && response.thinking!.isNotEmpty) {
         print('   ✅ Thinking capability: Available');

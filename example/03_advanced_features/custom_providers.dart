@@ -1,7 +1,8 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:math';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// 🔧 Custom Providers - Build Your Own AI Providers
 ///
@@ -512,11 +513,15 @@ class MockChatResponse implements ChatResponse {
   @override
   final List<ToolCall>? toolCalls;
 
+  @override
+  final Map<String, dynamic>? providerMetadata;
+
   MockChatResponse({
     required this.text,
     this.usage,
     this.thinking,
     this.toolCalls,
+    this.providerMetadata,
   });
 }
 

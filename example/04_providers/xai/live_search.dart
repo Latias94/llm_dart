@@ -1,5 +1,9 @@
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart';
 
 /// xAI Grok Live Search Examples
 ///
@@ -15,6 +19,8 @@ import 'package:llm_dart/llm_dart.dart';
 /// For general chat examples, see: example/02_core_features/chat_completion.dart
 Future<void> main() async {
   print('🔍 xAI Grok Live Search Examples\n');
+
+  registerXAI();
 
   // Initialize xAI provider
   final xaiProvider = await initializeXAIProvider();
@@ -54,13 +60,16 @@ Future<ChatCapability?> initializeXAIProvider() async {
       return null;
     }
 
-    return await ai()
-        .xai()
+    return await LLMBuilder()
+        .provider(xaiProviderId)
         .apiKey(apiKey)
         .model('grok-3') // Use latest Grok-3 model for live search
         .temperature(0.7)
-        .enableWebSearch() // Enable live search functionality
-        .build();
+        // Prefer providerOptions escape hatch for xAI live search.
+        .providerOptions('xai', {
+      'liveSearch': true,
+      'searchParameters': SearchParameters.webSearch().toJson(),
+    }).build();
   } catch (e) {
     print('⚠️  xAI provider initialization failed: $e');
     return null;
@@ -84,9 +93,10 @@ Future<void> demonstrateBasicLiveSearch(ChatCapability provider) async {
     try {
       // Enable live search for this specific request
       // xAI Grok models have live search capabilities built-in
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
+      final response = await generateText(
+        model: provider,
+        messages: [ChatMessage.user(query)],
+      );
 
       if (response.text != null) {
         print('   📝 Response: ${response.text!.substring(0, 150)}...');
@@ -117,9 +127,10 @@ Future<void> demonstrateCurrentEventsQuery(ChatCapability provider) async {
 
     try {
       // xAI Grok models automatically prioritize recent news
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
+      final response = await generateText(
+        model: provider,
+        messages: [ChatMessage.user(query)],
+      );
 
       if (response.text != null) {
         print('   📄 News Summary: ${response.text!.substring(0, 200)}...');
@@ -149,11 +160,14 @@ Future<void> demonstrateFactCheckingWithSources(ChatCapability provider) async {
 
     try {
       // Grok automatically provides fact-checking with reliable sources
-      final response = await provider.chat([
-        ChatMessage.system(
-            'You are a fact-checker. Verify claims using the most recent and reliable sources. Provide source citations.'),
-        ChatMessage.user(query),
-      ]);
+      final response = await generateText(
+        model: provider,
+        messages: [
+          ChatMessage.system(
+              'You are a fact-checker. Verify claims using the most recent and reliable sources. Provide source citations.'),
+          ChatMessage.user(query),
+        ],
+      );
 
       if (response.text != null) {
         print('   ✅ Fact-Check Result: ${response.text!.substring(0, 180)}...');
@@ -183,9 +197,10 @@ Future<void> demonstrateTrendingTopicsAnalysis(ChatCapability provider) async {
 
     try {
       // Grok automatically analyzes trending topics from multiple sources
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
+      final response = await generateText(
+        model: provider,
+        messages: [ChatMessage.user(query)],
+      );
 
       if (response.text != null) {
         print(
@@ -235,7 +250,10 @@ Future<void> demonstrateSearchEnhancedConversation(
       conversationHistory.add(ChatMessage.user(userMessage));
 
       // Grok maintains conversation context and enhances with live search
-      final response = await provider.chat(conversationHistory);
+      final response = await generateText(
+        model: provider,
+        messages: conversationHistory,
+      );
 
       if (response.text != null) {
         print('   🤖 Grok: ${response.text!.substring(0, 200)}...');
@@ -267,9 +285,10 @@ Future<void> demonstrateRealTimeDataRetrieval(ChatCapability provider) async {
 
     try {
       // Grok automatically provides real-time data
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
+      final response = await generateText(
+        model: provider,
+        messages: [ChatMessage.user(query)],
+      );
 
       if (response.text != null) {
         print('   📊 Real-Time Data: ${response.text!.substring(0, 180)}...');

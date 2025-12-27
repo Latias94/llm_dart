@@ -66,7 +66,7 @@ void main() {
     });
 
     group('Model Support Detection', () {
-      test('should detect reasoning support for Grok models', () {
+      test('should not maintain a model capability matrix (reasoning)', () {
         const config = XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
@@ -75,7 +75,7 @@ void main() {
         expect(config.supportsReasoning, isTrue);
       });
 
-      test('should detect vision support for vision models', () {
+      test('should not maintain a model capability matrix (vision)', () {
         const config = XAIConfig(
           apiKey: 'test-key',
           model: 'grok-vision-beta',
@@ -84,16 +84,16 @@ void main() {
         expect(config.supportsVision, isTrue);
       });
 
-      test('should not support vision for regular models', () {
+      test('should report vision optimistically for regular models', () {
         const config = XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
         );
 
-        expect(config.supportsVision, isFalse);
+        expect(config.supportsVision, isTrue);
       });
 
-      test('should support tool calling', () {
+      test('should not maintain a model capability matrix (tool calling)', () {
         const config = XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
@@ -102,7 +102,7 @@ void main() {
         expect(config.supportsToolCalling, isTrue);
       });
 
-      test('should detect search support for Grok models', () {
+      test('should not maintain a model capability matrix (search)', () {
         const config = XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
@@ -111,7 +111,7 @@ void main() {
         expect(config.supportsSearch, isTrue);
       });
 
-      test('should detect embeddings support for embedding models', () {
+      test('should report embeddings optimistically for embedding models', () {
         const config = XAIConfig(
           apiKey: 'test-key',
           model: 'text-embedding-ada-002',
@@ -120,13 +120,13 @@ void main() {
         expect(config.supportsEmbeddings, isTrue);
       });
 
-      test('should not support embeddings for chat models', () {
+      test('should report embeddings optimistically for chat models', () {
         const config = XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
         );
 
-        expect(config.supportsEmbeddings, isFalse);
+        expect(config.supportsEmbeddings, isTrue);
       });
     });
 
@@ -161,31 +161,31 @@ void main() {
     });
 
     group('Model Family Detection', () {
-      test('should detect Grok family', () {
+      test('should not maintain a model family matrix', () {
         const config = XAIConfig(
           apiKey: 'test-key',
           model: 'grok-3',
         );
 
-        expect(config.modelFamily, equals('Grok'));
+        expect(config.modelFamily, equals('xAI'));
       });
 
-      test('should detect Embedding family', () {
+      test('should not maintain a model family matrix (embedding model)', () {
         const config = XAIConfig(
           apiKey: 'test-key',
           model: 'text-embedding-ada-002',
         );
 
-        expect(config.modelFamily, equals('Embedding'));
+        expect(config.modelFamily, equals('xAI'));
       });
 
-      test('should return Unknown for unrecognized models', () {
+      test('should not maintain a model family matrix (unknown model)', () {
         const config = XAIConfig(
           apiKey: 'test-key',
           model: 'unknown-model',
         );
 
-        expect(config.modelFamily, equals('Unknown'));
+        expect(config.modelFamily, equals('xAI'));
       });
     });
 
@@ -248,10 +248,12 @@ void main() {
           topK: 50,
           tools: [],
           toolChoice: AutoToolChoice(),
-          extensions: {
-            'embeddingEncodingFormat': 'float',
-            'embeddingDimensions': 1536,
-            'liveSearch': true,
+          providerOptions: const {
+            'xai': {
+              'liveSearch': true,
+              'embeddingEncodingFormat': 'float',
+              'embeddingDimensions': 1536,
+            },
           },
         );
 
@@ -273,27 +275,36 @@ void main() {
         expect(xaiConfig.liveSearch, isTrue);
       });
 
-      test('should access extensions from original config', () {
+      test('should preserve transportOptions via original config', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.x.ai/v1/',
           model: 'grok-3',
-          extensions: {'customParam': 'customValue'},
+          transportOptions: const {
+            'customHeaders': {'X-Test': 'customValue'},
+          },
         );
 
         final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
 
-        expect(xaiConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(xaiConfig.originalConfig, isNotNull);
+        expect(
+          xaiConfig.originalConfig!
+              .getTransportOption<Map<String, String>>('customHeaders'),
+          equals({'X-Test': 'customValue'}),
+        );
       });
 
-      test('should enable live search from webSearchEnabled flag', () {
+      test('should enable live search from providerOptions.webSearchEnabled',
+          () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.x.ai/v1/',
           model: 'grok-3',
-          extensions: {
-            'webSearchEnabled': true,
+          providerOptions: const {
+            'xai': {
+              'webSearchEnabled': true,
+            },
           },
         );
 
@@ -302,6 +313,80 @@ void main() {
         expect(xaiConfig.liveSearch, isTrue);
         expect(xaiConfig.searchParameters, isNotNull);
         expect(xaiConfig.isLiveSearchEnabled, isTrue);
+      });
+
+      test('should convert providerOptions.webSearch to searchParameters', () {
+        final llmConfig = LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.x.ai/v1/',
+          model: 'grok-3',
+          providerOptions: const {
+            'xai': {
+              'webSearch': {
+                'enabled': true,
+                'mode': 'always',
+                'max_results': 7,
+                'blocked_domains': ['spam.com'],
+                'search_type': 'news',
+              },
+            },
+          },
+        );
+
+        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
+
+        expect(xaiConfig.liveSearch, isTrue);
+        expect(xaiConfig.searchParameters, isNotNull);
+        expect(xaiConfig.searchParameters!.mode, equals('always'));
+        expect(xaiConfig.searchParameters!.maxSearchResults, equals(7));
+        expect(xaiConfig.searchParameters!.sources, isNotNull);
+        expect(xaiConfig.searchParameters!.sources, hasLength(1));
+        expect(xaiConfig.searchParameters!.sources!.single.sourceType,
+            equals('news'));
+        expect(
+          xaiConfig.searchParameters!.sources!.single.excludedWebsites,
+          contains('spam.com'),
+        );
+      });
+
+      test('should parse providerOptions.searchParameters JSON', () {
+        final llmConfig = LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.x.ai/v1/',
+          model: 'grok-3',
+          providerOptions: const {
+            'xai': {
+              'liveSearch': true,
+              'searchParameters': {
+                'mode': 'auto',
+                'max_search_results': 5,
+                'sources': [
+                  {
+                    'type': 'web',
+                    'excluded_websites': ['example.com']
+                  }
+                ],
+              },
+            },
+          },
+        );
+
+        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
+
+        expect(xaiConfig.liveSearch, isTrue);
+        expect(xaiConfig.searchParameters, isNotNull);
+        expect(xaiConfig.searchParameters!.mode, equals('auto'));
+        expect(xaiConfig.searchParameters!.maxSearchResults, equals(5));
+        expect(xaiConfig.searchParameters!.sources, isNotNull);
+        expect(xaiConfig.searchParameters!.sources, hasLength(1));
+        expect(
+          xaiConfig.searchParameters!.sources!.single.sourceType,
+          equals('web'),
+        );
+        expect(
+          xaiConfig.searchParameters!.sources!.single.excludedWebsites,
+          contains('example.com'),
+        );
       });
     });
   });

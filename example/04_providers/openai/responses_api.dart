@@ -3,45 +3,33 @@
 /// This example shows how to use the Responses API with built-in tools
 /// like web search, file search, and computer use.
 ///
-/// ## Two Ways to Build OpenAI Responses API Providers:
+/// ## Building OpenAI Responses API providers
 ///
-/// ### Method 1: Traditional approach with capability detection
+/// OpenAI Responses API is enabled via namespaced `providerOptions`:
+/// (OpenAI-only; not part of `llm_dart_openai_compatible`)
+///
 /// ```dart
-/// final provider = await ai()
-///     .openai((openai) => openai.useResponsesAPI())
+/// registerOpenAI();
+///
+/// final provider = await LLMBuilder()
+///     .provider(openaiProviderId)
 ///     .apiKey(apiKey)
 ///     .model('gpt-4o')
+///     .providerOption('openai', 'useResponsesAPI', true)
+///     .providerTool(OpenAIProviderTools.webSearch())
 ///     .build();
 ///
-/// // Requires type checking and casting
-/// if (provider is ProviderCapabilities &&
-///     (provider as ProviderCapabilities).supports(LLMCapability.openaiResponses) &&
-///     provider is OpenAIProvider) {
-///   final responses = (provider as OpenAIProvider).responses!;
-///   // Use responses...
-/// }
+/// final openaiProvider = provider as OpenAIProvider;
+/// final responses = openaiProvider.responses!;
 /// ```
-///
-/// ### Method 2: Direct approach with buildOpenAIResponses() (Recommended)
-/// ```dart
-/// final provider = await ai()
-///     .openai((openai) => openai.webSearchTool())
-///     .apiKey(apiKey)
-///     .model('gpt-4o')
-///     .buildOpenAIResponses();
-///
-/// // Direct access - no type checking needed!
-/// final responses = provider.responses!;
-/// // Use responses...
-/// ```
-///
-/// The `buildOpenAIResponses()` method automatically enables the Responses API
-/// and returns a properly typed OpenAIProvider, eliminating the need for
-/// capability detection and type casting.
 library;
 
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 void main() async {
   print('=== OpenAI Responses API Examples ===\n');
@@ -53,6 +41,8 @@ void main() async {
     print('Skipping API examples...\n');
     return;
   }
+
+  registerOpenAI();
 
   // Example 0: Capability detection for type-safe usage
   await capabilityDetectionExample(apiKey);
@@ -97,8 +87,11 @@ Future<void> capabilityDetectionExample(String apiKey) async {
 
   try {
     // Create standard OpenAI provider (without Responses API)
-    final standardProvider =
-        await ai().openai().apiKey(apiKey).model('gpt-4o-mini').build();
+    final standardProvider = await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey(apiKey)
+        .model('gpt-4o-mini')
+        .build();
 
     print('Standard Provider Capabilities:');
     if (standardProvider is ProviderCapabilities) {
@@ -106,10 +99,12 @@ Future<void> capabilityDetectionExample(String apiKey) async {
     }
 
     // Create OpenAI provider with Responses API enabled
-    final responsesProvider = await ai()
-        .openai((openai) => openai.useResponsesAPI().webSearchTool())
+    final responsesProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
+        .providerOption('openai', 'useResponsesAPI', true)
+        .providerTool(OpenAIProviderTools.webSearch())
         .build();
 
     print('\nResponses API Provider Capabilities:');
@@ -152,14 +147,17 @@ Future<void> capabilityDetectionExample(String apiKey) async {
         print('❌ Provider is not OpenAIProvider type');
       }
 
-      // Demonstrate buildOpenAIResponses() convenience method
-      print('\n🚀 Using buildOpenAIResponses() convenience method:');
+      // Demonstrate typed access via cast
+      print('\n🚀 Typed access via cast:');
       try {
-        final autoProvider = await ai()
-            .openai((openai) => openai.webSearchTool())
+        final provider = await LLMBuilder()
+            .provider(openaiProviderId)
             .apiKey(apiKey)
             .model('gpt-4o')
-            .buildOpenAIResponses();
+            .providerOption('openai', 'useResponsesAPI', true)
+            .providerTool(OpenAIProviderTools.webSearch())
+            .build();
+        final autoProvider = provider as OpenAIProvider;
 
         print('✅ Auto-configured OpenAI Responses provider created');
         print('   • Type: ${autoProvider.runtimeType}');
@@ -168,19 +166,19 @@ Future<void> capabilityDetectionExample(String apiKey) async {
         print(
             '   • Supports openaiResponses capability: ${autoProvider.supports(LLMCapability.openaiResponses)}');
 
-        // Direct access without casting
         final directAPI = autoProvider.responses!;
         final quickTest = await directAPI.chat([
-          ChatMessage.user('Quick test of buildOpenAIResponses()'),
+          ChatMessage.user('Quick test of Responses API configuration'),
         ]);
         print(
             '   • Quick test response: ${quickTest.text?.substring(0, 50) ?? 'No text'}...');
       } catch (e) {
-        print('❌ Error with buildOpenAIResponses(): $e');
+        print('❌ Error creating typed Responses provider: $e');
       }
     } else {
       print('❌ OpenAI Responses API capability not available');
-      print('💡 Enable with: .openai((openai) => openai.useResponsesAPI())');
+      print(
+          "💡 Enable with: .providerOption('openai', 'useResponsesAPI', true)");
     }
 
     print('');
@@ -207,11 +205,12 @@ Future<void> basicResponsesAPIExample(String apiKey) async {
   print('--- Example 1: Basic Responses API ---');
 
   try {
-    final provider = await ai()
-        .openai((openai) => openai.useResponsesAPI())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
         .temperature(0.7)
+        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     final messages = [
@@ -219,11 +218,11 @@ Future<void> basicResponsesAPIExample(String apiKey) async {
           'Explain the difference between Responses API and Chat Completions API'),
     ];
 
-    final response = await provider.chat(messages);
-    print('Response: ${response.text}\n');
+    final result = await generateText(model: provider, messages: messages);
+    print('Response: ${result.text}\n');
 
-    if (response.thinking != null) {
-      print('Thinking: ${response.thinking}\n');
+    if (result.thinking != null) {
+      print('Thinking: ${result.thinking}\n');
     }
   } catch (e) {
     print('Error in basic example: $e\n');
@@ -236,10 +235,12 @@ Future<void> webSearchExample(String apiKey) async {
   print('--- Example 2: Web Search ---');
 
   try {
-    final provider = await ai()
-        .openai((openai) => openai.useResponsesAPI().webSearchTool())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
+        .providerOption('openai', 'useResponsesAPI', true)
+        .providerTool(OpenAIProviderTools.webSearch())
         .build();
 
     final messages = [
@@ -247,7 +248,7 @@ Future<void> webSearchExample(String apiKey) async {
           'What are the latest developments in AI from this week?'),
     ];
 
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('Response with web search: ${response.text}\n');
   } catch (e) {
     print('Error in web search example: $e\n');
@@ -259,10 +260,11 @@ Future<void> functionCallingExample(String apiKey) async {
   print('--- Example 4: Function Calling ---');
 
   try {
-    final provider = await ai()
-        .openai((openai) => openai.useResponsesAPI())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
+        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     // Define a simple weather function
@@ -314,12 +316,13 @@ Future<void> reasoningExample(String apiKey) async {
   print('--- Example 5: Reasoning with o-series models ---');
 
   try {
-    final provider = await ai()
-        .openai((openai) => openai.useResponsesAPI())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
-        .model('o3-mini') // Use o-series model for reasoning
+        .model('o3-mini')
         .reasoningEffort(ReasoningEffort.high)
         .maxTokens(2000)
+        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     final messages = [
@@ -327,7 +330,7 @@ Future<void> reasoningExample(String apiKey) async {
           'How much wood would a woodchuck chuck if a woodchuck could chuck wood? Please think through this step by step.'),
     ];
 
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('Response: ${response.text}\n');
 
     if (response.thinking != null) {
@@ -357,15 +360,17 @@ Future<void> fileSearchExample(String apiKey) async {
   try {
     // Note: You would need to create vector stores first
     // This is just an example of the API usage
-    final provider = await ai()
-        .openai((openai) => openai.useResponsesAPI().fileSearchTool(
-              vectorStoreIds: [
-                'vs_example123'
-              ], // Replace with actual vector store IDs
-              parameters: {'max_num_results': 20},
-            ))
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
+        .providerOption('openai', 'useResponsesAPI', true)
+        .providerTool(
+          OpenAIProviderTools.fileSearch(
+            vectorStoreIds: const ['vs_example123'],
+            parameters: const {'max_num_results': 20},
+          ),
+        )
         .build();
 
     final messages = [
@@ -373,7 +378,7 @@ Future<void> fileSearchExample(String apiKey) async {
           'Search for information about machine learning in the uploaded documents'),
     ];
 
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('Response with file search: ${response.text}\n');
   } catch (e) {
     print('Error in file search example (expected if no vector stores): $e\n');
@@ -385,13 +390,17 @@ Future<void> multipleToolsExample(String apiKey) async {
   print('--- Example 6: Multiple Built-in Tools ---');
 
   try {
-    final provider = await ai()
-        .openai((openai) => openai
-            .useResponsesAPI()
-            .webSearchTool()
-            .fileSearchTool(vectorStoreIds: ['vs_example123']))
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
+        .providerOption('openai', 'useResponsesAPI', true)
+        .providerTool(OpenAIProviderTools.webSearch())
+        .providerTool(
+          OpenAIProviderTools.fileSearch(
+            vectorStoreIds: const ['vs_example123'],
+          ),
+        )
         .build();
 
     final messages = [
@@ -399,7 +408,7 @@ Future<void> multipleToolsExample(String apiKey) async {
           'Compare recent AI news with information from my documents about AI trends'),
     ];
 
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('Response with multiple tools: ${response.text}\n');
   } catch (e) {
     print('Error in multiple tools example: $e\n');
@@ -411,10 +420,12 @@ Future<void> streamingExample(String apiKey) async {
   print('--- Example 5: Streaming ---');
 
   try {
-    final provider = await ai()
-        .openai((openai) => openai.useResponsesAPI().webSearchTool())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
+        .providerOption('openai', 'useResponsesAPI', true)
+        .providerTool(OpenAIProviderTools.webSearch())
         .build();
 
     final messages = [
@@ -422,22 +433,27 @@ Future<void> streamingExample(String apiKey) async {
     ];
 
     print('Streaming response:');
-    await for (final event in provider.chatStream(messages)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part
+        in streamChatParts(model: provider, messages: messages)) {
+      switch (part) {
+        case LLMTextDeltaPart(delta: final delta):
           stdout.write(delta);
           break;
-        case ThinkingDeltaEvent():
-          // Thinking content (if any)
+        case LLMReasoningDeltaPart():
           break;
-        case ToolCallDeltaEvent():
-          print('\n[Tool call in progress...]');
+        case LLMToolCallStartPart(toolCall: final toolCall):
+          print('\n[Tool call started: ${toolCall.function.name}]');
           break;
-        case CompletionEvent():
+        case LLMToolCallDeltaPart():
+        case LLMToolCallEndPart():
+          break;
+        case LLMFinishPart():
           print('\n[Stream completed]');
           break;
-        case ErrorEvent():
+        case LLMErrorPart():
           print('\n[Error occurred]');
+          break;
+        default:
           break;
       }
     }
@@ -453,23 +469,23 @@ Future<void> computerUseExample(String apiKey) async {
   print('--- Example 6: Computer Use ---');
 
   try {
-    final provider = await ai()
-        .openai((openai) => openai
-            .useResponsesAPI()
-            .computerUseTool(
-              displayWidth: 1024,
-              displayHeight: 768,
-              environment: 'browser',
-            ))
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('computer-use-preview')
+        .providerOption('openai', 'useResponsesAPI', true)
+        .providerTool(OpenAIProviderTools.computerUse(
+          displayWidth: 1024,
+          displayHeight: 768,
+          environment: 'browser',
+        ))
         .build();
 
     final messages = [
       ChatMessage.user('Help me search for information about Dart programming'),
     ];
 
-    final response = await provider.chat(messages);
+    final response = await generateText(model: provider, messages: messages);
     print('Response with computer use: ${response.text}\n');
   } catch (e) {
     print('Error in computer use example: $e\n');
@@ -483,30 +499,32 @@ Future<void> responseChainingExample(String apiKey) async {
 
   try {
     // First request
-    final provider1 = await ai()
-        .openai((openai) => openai.useResponsesAPI())
+    final provider1 = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
+        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     final messages1 = [
       ChatMessage.user('Start a story about a robot learning to paint'),
     ];
 
-    final response1 = await provider1.chat(messages1);
-    print('First response: ${response1.text}\n');
+    final result1 = await generateText(model: provider1, messages: messages1);
+    final response1 = result1.rawResponse;
+    print('First response: ${result1.text}\n');
 
     // Extract response ID for chaining
     if (response1 is OpenAIResponsesResponse && response1.responseId != null) {
       print('Response ID: ${response1.responseId}');
 
       // Second request using previous response ID for chaining
-      final provider2 = await ai()
-          .openai((openai) => openai
-              .useResponsesAPI()
-              .previousResponseId(response1.responseId!))
+      final provider2 = await LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(apiKey)
           .model('gpt-4.1')
+          .providerOption('openai', 'useResponsesAPI', true)
+          .providerOption('openai', 'previousResponseId', response1.responseId!)
           .build();
 
       final messages2 = [
@@ -514,8 +532,8 @@ Future<void> responseChainingExample(String apiKey) async {
             'Continue the story with the robot discovering colors'),
       ];
 
-      final response2 = await provider2.chat(messages2);
-      print('Chained response: ${response2.text}\n');
+      final result2 = await generateText(model: provider2, messages: messages2);
+      print('Chained response: ${result2.text}\n');
     } else {
       print('Response chaining not available (no response ID found)\n');
     }
@@ -529,15 +547,16 @@ Future<void> statefulConversationExample(String apiKey) async {
   print('--- Example 9: Stateful Conversation Management ---');
 
   try {
-    // Using buildOpenAIResponses() for direct access - no casting needed!
-    final provider = await ai()
-        .openai((openai) => openai.webSearchTool())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
-        .buildOpenAIResponses();
+        .providerOption('openai', 'useResponsesAPI', true)
+        .providerTool(OpenAIProviderTools.webSearch())
+        .build();
+    final openaiProvider = provider as OpenAIProvider;
 
-    // Direct access to Responses API without type checking
-    final responses = provider.responses!;
+    final responses = openaiProvider.responses!;
 
     // Start a conversation
     final response1 = await responses.chat([
@@ -582,15 +601,16 @@ Future<void> backgroundProcessingExample(String apiKey) async {
   print('--- Example 10: Background Processing ---');
 
   try {
-    // Using buildOpenAIResponses() for direct access - no casting needed!
-    final provider = await ai()
-        .openai((openai) => openai.webSearchTool())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
-        .buildOpenAIResponses();
+        .providerOption('openai', 'useResponsesAPI', true)
+        .providerTool(OpenAIProviderTools.webSearch())
+        .build();
+    final openaiProvider = provider as OpenAIProvider;
 
-    // Direct access to Responses API
-    final responses = provider.responses!;
+    final responses = openaiProvider.responses!;
 
     // Start a background task
     print('Starting background processing...');
@@ -643,15 +663,16 @@ Future<void> responseLifecycleExample(String apiKey) async {
   print('--- Example 11: Response Lifecycle Management ---');
 
   try {
-    // Using buildOpenAIResponses() for direct access - no casting needed!
-    final provider = await ai()
-        .openai((openai) => openai.webSearchTool())
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
-        .buildOpenAIResponses();
+        .providerOption('openai', 'useResponsesAPI', true)
+        .providerTool(OpenAIProviderTools.webSearch())
+        .build();
+    final openaiProvider = provider as OpenAIProvider;
 
-    // Direct access to Responses API
-    final responses = provider.responses!;
+    final responses = openaiProvider.responses!;
 
     // Create a response
     final response = await responses.chat([

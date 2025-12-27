@@ -83,31 +83,58 @@ dart run performance_optimization.dart
 ### Reasoning with DeepSeek R1
 ```dart
 // Access AI thinking process
-final provider = await ai().deepseek().apiKey('your-key')
-    .model('deepseek-reasoner').build();
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this step by step: 15 + 27 * 3'),
-]);
+registerDeepSeek();
+
+final provider = await LLMBuilder()
+    .provider(deepseekProviderId)
+    .apiKey('your-key')
+    .model('deepseek-reasoner')
+    .build();
+
+final result = await generateText(
+  model: provider,
+  messages: [ChatMessage.user('Solve this step by step: 15 + 27 * 3')],
+);
 
 // Access thinking process
-if (response.thinking != null) {
-  print('AI Thinking: ${response.thinking}');
+if (result.thinking != null) {
+  print('AI Thinking: ${result.thinking}');
 }
-print('Answer: ${response.text}');
+print('Answer: ${result.text}');
 ```
 
 ### Multi-modal Processing
 ```dart
 // Process image with text
-final provider = await ai().openai().apiKey('your-key').build();
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
-final response = await provider.chat([
-  ChatMessage.user([
-    ChatMessageContent.text('What do you see in this image?'),
-    ChatMessageContent.image('data:image/jpeg;base64,...'),
-  ]),
-]);
+registerOpenAI();
+
+final provider = await LLMBuilder()
+    .provider(openaiProviderId)
+    .apiKey('your-key')
+    .build();
+
+final result = await generateText(
+  model: provider,
+  messages: [
+    ChatMessage.imageUrl(
+      role: ChatRole.user,
+      url: 'https://example.com/image.jpg',
+      content: 'What do you see in this image?',
+    ),
+  ],
+);
+
+print(result.text);
 ```
 
 ### Batch Processing
@@ -136,8 +163,13 @@ for (final result in results) {
 ### HTTP Configuration (Layered Approach)
 ```dart
 // Clean, organized HTTP configuration
-final provider = await ai()
-    .openai()
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+registerOpenAI();
+
+final provider = await LLMBuilder()
+    .provider(openaiProviderId)
     .apiKey('your-key')
     .http((http) => http
         .proxy('http://proxy.company.com:8080')
@@ -163,8 +195,13 @@ customDio.interceptors.add(InterceptorsWrapper(
 ));
 
 // Use custom Dio (highest priority)
-final provider = await ai()
-    .anthropic()
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+
+registerAnthropic();
+
+final provider = await LLMBuilder()
+    .provider(anthropicProviderId)
     .apiKey('your-key')
     .http((http) => http
         .dioClient(customDio)  // Takes priority over other HTTP settings
@@ -175,8 +212,13 @@ final provider = await ai()
 ### Timeout Configuration (Priority Hierarchy)
 ```dart
 // Global timeout with HTTP-specific overrides
-final provider = await ai()
-    .openai()
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+registerOpenAI();
+
+final provider = await LLMBuilder()
+    .provider(openaiProviderId)
     .apiKey('your-key')
     .timeout(Duration(minutes: 2))     // Global default: 2 minutes
     .http((http) => http

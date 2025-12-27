@@ -36,16 +36,12 @@ void main() {
         expect(provider.supports(LLMCapability.toolCalling), isTrue);
       });
 
-      test('should support vision for vision models', () {
-        final visionConfig =
-            config.copyWith(model: 'llama-3.2-11b-vision-preview');
-        final visionProvider = GroqProvider(visionConfig);
-
-        expect(visionProvider.supports(LLMCapability.vision), isTrue);
+      test('should report vision optimistically', () {
+        expect(provider.supports(LLMCapability.vision), isTrue);
       });
 
-      test('should not support reasoning', () {
-        expect(provider.supports(LLMCapability.reasoning), isFalse);
+      test('should report reasoning optimistically', () {
+        expect(provider.supports(LLMCapability.reasoning), isTrue);
       });
 
       test('should not support unsupported capabilities', () {
@@ -61,18 +57,8 @@ void main() {
         expect(capabilities, contains(LLMCapability.chat));
         expect(capabilities, contains(LLMCapability.streaming));
         expect(capabilities, contains(LLMCapability.toolCalling));
-        expect(capabilities,
-            isNot(contains(LLMCapability.vision))); // Regular model
-        expect(capabilities, isNot(contains(LLMCapability.reasoning)));
-      });
-
-      test('should include vision capability for vision models', () {
-        final visionConfig =
-            config.copyWith(model: 'llava-v1.5-7b-4096-preview');
-        final visionProvider = GroqProvider(visionConfig);
-        final capabilities = visionProvider.supportedCapabilities;
-
         expect(capabilities, contains(LLMCapability.vision));
+        expect(capabilities, contains(LLMCapability.reasoning));
       });
     });
 
@@ -110,28 +96,7 @@ void main() {
 
     group('Provider Properties', () {
       test('should return correct model family', () {
-        expect(provider.modelFamily, equals('Llama'));
-      });
-
-      test('should return correct model family for Mixtral', () {
-        final mixtralConfig = config.copyWith(model: 'mixtral-8x7b-32768');
-        final mixtralProvider = GroqProvider(mixtralConfig);
-
-        expect(mixtralProvider.modelFamily, equals('Mixtral'));
-      });
-
-      test('should return correct model family for Gemma', () {
-        final gemmaConfig = config.copyWith(model: 'gemma-7b-it');
-        final gemmaProvider = GroqProvider(gemmaConfig);
-
-        expect(gemmaProvider.modelFamily, equals('Gemma'));
-      });
-
-      test('should return correct model family for Whisper', () {
-        final whisperConfig = config.copyWith(model: 'whisper-large-v3');
-        final whisperProvider = GroqProvider(whisperConfig);
-
-        expect(whisperProvider.modelFamily, equals('Whisper'));
+        expect(provider.modelFamily, equals('Groq'));
       });
 
       test('should be speed optimized', () {
@@ -140,29 +105,21 @@ void main() {
     });
 
     group('Model-Specific Behavior', () {
-      test('should handle Llama models correctly', () {
-        final llamaConfig = config.copyWith(model: 'llama-3.1-8b-instant');
-        final llamaProvider = GroqProvider(llamaConfig);
+      test('should not maintain a per-model capability matrix', () {
+        final models = [
+          'llama-3.1-8b-instant',
+          'llama-3.1-8b-base',
+          'llama-3.2-11b-vision-preview',
+          'unknown-model',
+        ];
 
-        expect(llamaProvider.modelFamily, equals('Llama'));
-        expect(llamaProvider.supports(LLMCapability.chat), isTrue);
-        expect(llamaProvider.supports(LLMCapability.toolCalling), isTrue);
-      });
-
-      test('should handle base models correctly', () {
-        final baseConfig = config.copyWith(model: 'llama-3.1-8b-base');
-        final baseProvider = GroqProvider(baseConfig);
-
-        expect(baseProvider.config.supportsToolCalling, isFalse);
-      });
-
-      test('should handle vision models correctly', () {
-        final visionConfig =
-            config.copyWith(model: 'llama-3.2-11b-vision-preview');
-        final visionProvider = GroqProvider(visionConfig);
-
-        expect(visionProvider.config.supportsVision, isTrue);
-        expect(visionProvider.supports(LLMCapability.vision), isTrue);
+        for (final model in models) {
+          final p = GroqProvider(config.copyWith(model: model));
+          expect(p.supports(LLMCapability.toolCalling), isTrue);
+          expect(p.supports(LLMCapability.vision), isTrue);
+          expect(p.supports(LLMCapability.reasoning), isTrue);
+          expect(p.modelFamily, equals('Groq'));
+        }
       });
     });
 

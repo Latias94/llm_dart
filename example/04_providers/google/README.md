@@ -20,11 +20,13 @@ Google provides high-quality text embedding models accessible through the Gemini
 ### Basic Usage
 
 ```dart
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_google/llm_dart_google.dart';
 
 // Create embedding provider
-final provider = await ai()
-    .google()
+registerGoogle();
+final provider = await LLMBuilder()
+    .provider(googleProviderId)
     .apiKey('your-google-api-key')
     .model('text-embedding-004')
     .buildEmbedding();
@@ -46,11 +48,11 @@ Google embedding API supports various task-specific parameters:
 #### Task Type
 
 ```dart
-final provider = await ai()
-    .google((google) => google
-        .embeddingTaskType('SEMANTIC_SIMILARITY'))
+final provider = await LLMBuilder()
+    .provider(googleProviderId)
     .apiKey(apiKey)
     .model('text-embedding-004')
+    .option('embeddingTaskType', 'SEMANTIC_SIMILARITY')
     .buildEmbedding();
 ```
 
@@ -68,23 +70,23 @@ Supported task types:
 #### Document Title (for RETRIEVAL_DOCUMENT only)
 
 ```dart
-final provider = await ai()
-    .google((google) => google
-        .embeddingTaskType('RETRIEVAL_DOCUMENT')
-        .embeddingTitle('Technical Documentation'))
+final provider = await LLMBuilder()
+    .provider(googleProviderId)
     .apiKey(apiKey)
     .model('text-embedding-004')
+    .option('embeddingTaskType', 'RETRIEVAL_DOCUMENT')
+    .option('embeddingTitle', 'Technical Documentation')
     .buildEmbedding();
 ```
 
 #### Output Dimensions
 
 ```dart
-final provider = await ai()
-    .google((google) => google
-        .embeddingDimensions(512))  // Reduce dimensions
+final provider = await LLMBuilder()
+    .provider(googleProviderId)
     .apiKey(apiKey)
     .model('text-embedding-004')
+    .option('embeddingDimensions', 512) // Reduce dimensions
     .buildEmbedding();
 ```
 
@@ -97,12 +99,12 @@ final provider = createGoogleEmbeddingProvider(
 );
 
 // Use custom parameters and Google configuration
-final customProvider = await ai()
-    .google((google) => google
-        .embeddingTaskType('SEMANTIC_SIMILARITY')
-        .embeddingDimensions(768))
+final customProvider = await LLMBuilder()
+    .provider(googleProviderId)
     .apiKey('your-api-key')
     .model('text-embedding-004')
+    .option('embeddingTaskType', 'SEMANTIC_SIMILARITY')
+    .option('embeddingDimensions', 768)
     .buildEmbedding();
 ```
 
@@ -207,15 +209,17 @@ Google provides two image generation approaches accessible through the Gemini AP
 Gemini 2.0 Flash Preview supports conversational image generation, capable of generating and editing images.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_google/llm_dart_google.dart';
 
 // Create Gemini image generation provider
-final imageProvider = await ai()
-    .google((google) => google
-        .enableImageGeneration(true)
-        .responseModalities(['TEXT', 'IMAGE']))
+registerGoogle();
+final imageProvider = await LLMBuilder()
+    .provider(googleProviderId)
     .apiKey('your-google-api-key')
     .model('gemini-2.0-flash-preview-image-generation')
+    .option('enableImageGeneration', true)
+    .option('responseModalities', ['TEXT', 'IMAGE'])
     .buildImageGeneration();
 
 // Generate images
@@ -240,8 +244,8 @@ Imagen 3 is a dedicated image generation model providing higher quality image ge
 
 ```dart
 // Create Imagen 3 provider
-final imageProvider = await ai()
-    .google()
+final imageProvider = await LLMBuilder()
+    .provider(googleProviderId)
     .apiKey('your-google-api-key')
     .model('imagen-3.0-generate-002')
     .buildImageGeneration();
@@ -307,14 +311,17 @@ Google's native text-to-speech capabilities using Gemini 2.5 models provide cont
 ### Basic Usage
 
 ```dart
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_google/llm_dart_google.dart';
 
 // Build Google TTS provider
-final ttsProvider = await ai()
-    .google((google) => google
-        .ttsModel('gemini-2.5-flash-preview-tts'))
+registerGoogle();
+final provider = await LLMBuilder()
+    .provider(googleProviderId)
     .apiKey(apiKey)
-    .buildGoogleTTS();
+    .model('gemini-2.5-flash-preview-tts')
+    .build();
+final ttsProvider = provider as GoogleTTSCapability;
 
 // Single-speaker TTS
 final response = await ttsProvider.generateSpeech(

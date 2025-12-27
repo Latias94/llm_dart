@@ -1,6 +1,10 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 🔵 OpenAI Advanced Features - Reasoning, Function Calling, and Assistants
 ///
@@ -16,7 +20,13 @@ void main() async {
   print('🔵 OpenAI Advanced Features - Reasoning and Tools\n');
 
   // Get API key
-  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('❌ Please set OPENAI_API_KEY environment variable');
+    exit(1);
+  }
+
+  registerOpenAI();
 
   // Demonstrate advanced OpenAI features
   await demonstrateReasoningModels(apiKey);
@@ -49,27 +59,32 @@ Show your reasoning step by step.
     try {
       print('   Testing ${model['name']}: ${model['description']}');
 
-      final provider = await ai()
-          .openai()
+      final provider = await LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(apiKey)
           .model(model['name']!)
-          .reasoning(true) // Enable reasoning
           .reasoningEffort(ReasoningEffort.medium)
           .maxTokens(2000)
-          .timeout(Duration(seconds: 120)) // Longer timeout for reasoning
+          .timeout(const Duration(seconds: 120)) // Longer timeout for reasoning
           .build();
 
       final stopwatch = Stopwatch()..start();
-      final response = await provider.chat([ChatMessage.user(complexProblem)]);
+      final response = await generateText(
+        model: provider,
+        promptIr: Prompt(messages: [PromptMessage.user(complexProblem)]),
+      );
       stopwatch.stop();
 
       print('      Problem: Chickens and rabbits puzzle');
       print('      Time: ${stopwatch.elapsedMilliseconds}ms');
 
-      if (response.thinking != null) {
+      if (response.thinking != null && response.thinking!.isNotEmpty) {
         print(
             '      Thinking process: ${response.thinking!.length} characters');
-        print('      Reasoning: ${response.thinking!.substring(0, 200)}...');
+        final thinking = response.thinking!;
+        final preview = thinking.substring(
+            0, thinking.length < 200 ? thinking.length : 200);
+        print('      Reasoning: $preview...');
       }
 
       print('      Final answer: ${response.text}');
@@ -96,8 +111,8 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
   print('🔧 Function Calling:\n');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-5.1')
         .temperature(0.3)
@@ -183,7 +198,8 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
       }
 
       // Continue conversation with tool results
-      final finalResponse = await provider.chat(conversation);
+      final finalResponse =
+          await generateText(model: provider, messages: conversation);
 
       print('      Final response: ${finalResponse.text}');
     } else {
@@ -201,23 +217,31 @@ Future<void> demonstrateAssistantsAPI(String apiKey) async {
   print('🤖 Assistants API:\n');
 
   try {
-    final provider =
-        await ai().openai().apiKey(apiKey).model('gpt-5.1').build();
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
+        .apiKey(apiKey)
+        .model('gpt-5.1')
+        .build();
 
     print('   Note: Assistants API requires OpenAI-specific implementation');
     print(
         '   For now, demonstrating basic conversation with assistant-like behavior...');
 
-    final response = await provider.chat([
-      ChatMessage.system('''
+    final response = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.system('''
 You are a patient and helpful math tutor. When solving problems:
 1. Break down the problem into steps
 2. Explain each step clearly
 3. Show all calculations
 4. Verify the answer
 '''),
-      ChatMessage.user('Solve this quadratic equation: 2x² + 5x - 3 = 0'),
-    ]);
+          PromptMessage.user('Solve this quadratic equation: 2x² + 5x - 3 = 0'),
+        ],
+      ),
+    );
 
     print('      Math Tutor Response:');
     print('      ${response.text}');
@@ -235,22 +259,27 @@ Future<void> demonstrateAdvancedConfiguration(String apiKey) async {
   // Structured output
   print('   Structured Output:');
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-5.1')
         .temperature(0.1)
         .build();
 
-    final response = await provider.chat([
-      ChatMessage.user('''
+    final response = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.user('''
 Extract information from this text and return it in JSON format:
 "John Smith, age 30, works as a software engineer at TechCorp. 
 He lives in San Francisco and has 5 years of experience."
 
 Return JSON with fields: name, age, job, company, location, experience_years
-''')
-    ]);
+'''),
+        ],
+      ),
+    );
 
     print('      Structured response: ${response.text}');
   } catch (e) {
@@ -260,23 +289,28 @@ Return JSON with fields: name, age, job, company, location, experience_years
   // Advanced parameters
   print('\n   Advanced Parameters:');
   try {
-    final advancedProvider = await ai()
-        .openai()
+    final advancedProvider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-5.1')
         .temperature(0.7)
         .topP(0.9)
-        .extension('frequencyPenalty', 0.1)
-        .extension('presencePenalty', 0.1)
+        .providerConfig((p) => p
+            .frequencyPenalty(0.1)
+            .presencePenalty(0.1)
+            .seed(42)
+            .logitBias({'50256': -100.0}))
         .maxTokens(500)
-        .extension('seed', 42) // For reproducible outputs
-        .extension('logitBias', {
-      '50256': -100.0,
-    }) // Bias against specific tokens
         .build();
 
-    final response = await advancedProvider
-        .chat([ChatMessage.user('Write a creative short story about AI.')]);
+    final response = await generateText(
+      model: advancedProvider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.user('Write a creative short story about AI.'),
+        ],
+      ),
+    );
 
     final fullText = response.text ?? '';
     final previewLength = fullText.length < 200 ? fullText.length : 200;
@@ -302,132 +336,74 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
   print('🌊 Advanced Streaming:\n');
 
   try {
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-5.1')
         .temperature(0.7)
         .build();
 
-    print('   Streaming with function calls (two-pass flow)...');
+    print('   Streaming with locally executed tools (tool loop)...');
 
-    final weatherTool = Tool.function(
-      name: 'get_weather',
-      description: 'Get weather information',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'location': ParameterProperty(
-            propertyType: 'string',
-            description: 'City name',
-          ),
+    final toolSet = ToolSet([
+      functionTool(
+        name: 'get_weather',
+        description: 'Get weather information',
+        parameters: ParametersSchema(
+          schemaType: 'object',
+          properties: {
+            'location': ParameterProperty(
+              propertyType: 'string',
+              description: 'City name',
+            ),
+          },
+          required: ['location'],
+        ),
+        handler: (toolCall, {cancelToken}) async {
+          return {
+            'temperature': 22,
+            'condition': 'sunny',
+            'humidity': 65,
+            'toolCallId': toolCall.id,
+          };
         },
-        required: ['location'],
       ),
-    );
+    ]);
 
     const question =
         'Tell me about the weather in Paris and write a short poem about it.';
 
-    final tools = [weatherTool];
-    final messages = [ChatMessage.user(question)];
-
-    // First pass: stream planning + tool calls
-    final planningText = StringBuffer();
-    final streamedToolCalls = <ToolCall>[];
-    final aggregator = ToolCallAggregator();
-    var toolCallsDetected = false;
-
-    await for (final event in provider.chatStream(messages, tools: tools)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
-          planningText.write(delta);
-          stdout.write(delta);
-          break;
-        case ToolCallDeltaEvent(toolCall: final call):
-          if (!toolCallsDetected) {
-            print('\n\n🔧 Tool call detected in stream');
-            toolCallsDetected = true;
-          }
-          streamedToolCalls.add(call);
-          aggregator.addDelta(call);
-          break;
-        case CompletionEvent(response: final response):
-          print('\n\n✅ First streaming pass completed');
-          if (response.usage != null) {
-            print('   Tokens used: ${response.usage!.totalTokens}');
-          }
-          break;
-        case ErrorEvent(error: final error):
-          print('\n❌ Stream error: $error');
-          break;
-        case ThinkingDeltaEvent():
-          // Handle thinking events if needed
-          break;
-      }
-    }
-
-    final completedToolCalls = aggregator.completedCalls;
-
-    print('\n   First pass text length: ${planningText.length} characters');
-    print('   Tool calls (stream deltas): ${streamedToolCalls.length}');
-    print('   Tool calls (aggregated): ${completedToolCalls.length}');
-
-    if (completedToolCalls.isEmpty) {
-      print('   ℹ️  Model did not call tools during streaming\n');
-      print('   ✅ Advanced streaming demonstration completed\n');
-      return;
-    }
-
-    // Simulate tool execution based on streamed tool calls
-    final conversation = <ChatMessage>[
-      ChatMessage.user(question),
-      ChatMessage.toolUse(
-        toolCalls: completedToolCalls,
-        content: planningText.toString(),
-      ),
-    ];
-
-    for (final toolCall in completedToolCalls) {
-      String result;
-      if (toolCall.function.name == 'get_weather') {
-        result = '{"temperature": 22, "condition": "sunny", "humidity": 65}';
-      } else {
-        result = '{"error": "Unknown function"}';
-      }
-
-      conversation.add(ChatMessage.toolResult(
-        results: [toolCall],
-        content: result,
-      ));
-    }
-
-    // Second pass: stream final answer with tool results
-    print('\n   Streaming final answer with tool results...');
+    final prompt = Prompt(messages: [PromptMessage.user(question)]);
 
     final finalText = StringBuffer();
 
-    await for (final event in provider.chatStream(conversation)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part in streamToolLoopPartsWithToolSet(
+      model: provider,
+      promptIr: prompt,
+      toolSet: toolSet,
+      maxSteps: 5,
+    )) {
+      switch (part) {
+        case LLMTextDeltaPart(delta: final delta):
           finalText.write(delta);
           stdout.write(delta);
           break;
-        case ToolCallDeltaEvent():
-          // In the second pass we expect the model to use the tool results
-          // directly and not call tools again, so we ignore extra tool calls.
+        case LLMToolCallStartPart(toolCall: final toolCall):
+          print('\n\n🔧 Tool call started: ${toolCall.function.name}');
           break;
-        case CompletionEvent(response: final response):
-          print('\n\n✅ Second streaming pass completed');
+        case LLMToolResultPart(result: final result):
+          print('\n\n🧰 Tool result: ${result.content}');
+          break;
+        case LLMFinishPart(response: final response):
+          print('\n\n✅ Streaming completed');
           if (response.usage != null) {
             print('   Tokens used: ${response.usage!.totalTokens}');
           }
           break;
-        case ErrorEvent(error: final error):
+        case LLMErrorPart(error: final error):
           print('\n❌ Stream error: $error');
           break;
-        case ThinkingDeltaEvent():
-          // Handle thinking events if needed
+        default:
           break;
       }
     }

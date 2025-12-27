@@ -33,24 +33,49 @@ dart run xai_grok.dart
 
 ### Specialized Integrations
 - **OpenRouter**: Access to multiple models through one API
-- **GitHub Copilot**: Coding assistance integration
-- **Together AI**: Open source model access
+- **Google (OpenAI-compatible)**: Gemini models via OpenAI-compatible API
 
 ## Usage Examples
 
 ### Provider Fallback Strategy
 ```dart
+import 'dart:io';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+
+registerOpenAICompatibleProviders();
+
+Future<ChatCapability?> tryBuild(
+  String providerId,
+  String envVar, {
+  required String model,
+}) async {
+  final apiKey = Platform.environment[envVar];
+  if (apiKey == null || apiKey.isEmpty) return null;
+  return LLMBuilder().provider(providerId).apiKey(apiKey).model(model).build();
+}
+
 final providers = [
-  () => ai().groqOpenAI().apiKey('groq-key').model('llama-3.3-70b-versatile'),
-  () => ai().deepseekOpenAI().apiKey('deepseek-key').model('deepseek-chat'),
-  () => ai().openRouter().apiKey('openrouter-key').model('openai/gpt-3.5-turbo'),
+  () => tryBuild('groq-openai', 'GROQ_API_KEY', model: 'llama-3.3-70b-versatile'),
+  () => tryBuild('deepseek-openai', 'DEEPSEEK_API_KEY', model: 'deepseek-chat'),
+  () => tryBuild('openrouter', 'OPENROUTER_API_KEY', model: 'openai/gpt-3.5-turbo'),
 ];
 
 for (final providerBuilder in providers) {
   try {
-    final provider = await providerBuilder().build();
-    final response = await provider.chat([ChatMessage.user('Test')]);
-    print('Success: ${response.text}');
+    final provider = await providerBuilder();
+    if (provider == null) {
+      print('Provider skipped (missing API key)');
+      continue;
+    }
+    final result = await generateText(
+      model: provider,
+      messages: [ChatMessage.user('Test')],
+    );
+    print('Success: ${result.text}');
     break;
   } catch (e) {
     print('Provider failed, trying next...');

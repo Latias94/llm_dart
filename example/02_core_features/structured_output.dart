@@ -1,13 +1,17 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:convert';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 📊 Structured Output - JSON Schema and Data Validation
 ///
 /// This example demonstrates how to get structured data from AI:
-/// - Defining JSON schemas for responses
-/// - Data validation and type safety
+/// - Defining tool-call schemas for responses (Vercel-style `generateObject`)
+/// - Type safety via parsing into Dart classes
 /// - Complex nested structures
 /// - Error handling for malformed data
 ///
@@ -18,11 +22,17 @@ void main() async {
   print('📊 Structured Output - JSON Schema and Data Validation\n');
 
   // Get API key
-  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('❌ Please set OPENAI_API_KEY environment variable');
+    return;
+  }
+
+  registerOpenAI();
 
   // Create AI provider
-  final provider = await ai()
-      .openai()
+  final provider = await LLMBuilder()
+      .provider(openaiProviderId)
       .apiKey(apiKey)
       .model('gpt-4.1-mini')
       .temperature(0.3) // Lower temperature for more consistent structure
@@ -43,48 +53,67 @@ Future<void> demonstrateBasicStructuredOutput(ChatCapability provider) async {
   print('📋 Basic Structured Output:\n');
 
   try {
-    final messages = [
-      ChatMessage.system('''
-Extract person information and return as JSON. Use this exact format:
-{
-  "name": "full name",
-  "age": number,
-  "email": "email address",
-  "occupation": "job title",
-  "skills": ["skill1", "skill2"]
-}
-Return only the JSON data, no other text.
-'''),
-      ChatMessage.user('''
-Extract information about this person:
-"John Smith is a 32-year-old software engineer at TechCorp.
-He has experience in Python, JavaScript, and cloud computing.
-You can reach him at john.smith@email.com"
-'''),
-    ];
+    final personSchema = ParametersSchema(
+      schemaType: 'object',
+      properties: {
+        'name': ParameterProperty(
+          propertyType: 'string',
+          description: 'Full name',
+        ),
+        'age': ParameterProperty(
+          propertyType: 'integer',
+          description: 'Age in years',
+        ),
+        'email': ParameterProperty(
+          propertyType: 'string',
+          description: 'Email address',
+        ),
+        'occupation': ParameterProperty(
+          propertyType: 'string',
+          description: 'Job title / occupation',
+        ),
+        'skills': ParameterProperty(
+          propertyType: 'array',
+          description: 'List of skills',
+          items: const ParameterProperty(
+            propertyType: 'string',
+            description: 'Skill name',
+          ),
+        ),
+      },
+      required: ['name', 'age', 'email', 'occupation', 'skills'],
+    );
 
     print('   User: Extract person information from text');
 
-    final response = await provider.chat(messages);
-    final jsonText = response.text ?? '';
+    final result = await generateObject(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.system(
+            'Extract the person information from the user text.',
+          ),
+          PromptMessage.user(
+            'John Smith is a 32-year-old software engineer at TechCorp. '
+            'He has experience in Python, JavaScript, and cloud computing. '
+            'You can reach him at john.smith@email.com',
+          ),
+        ],
+      ),
+      schema: personSchema,
+      toolName: 'extract_person',
+      toolDescription: 'Extract person information from text.',
+    );
 
-    print('   🤖 AI Response: $jsonText');
+    print('   🤖 Object: ${jsonEncode(result.object)}');
 
-    // Parse and validate JSON
-    try {
-      final cleanedJson = attemptJsonFix(jsonText);
-      final personData = jsonDecode(cleanedJson) as Map<String, dynamic>;
-      final person = Person.fromJson(personData);
-
-      print('   ✅ Parsed successfully:');
-      print('      Name: ${person.name}');
-      print('      Age: ${person.age}');
-      print('      Email: ${person.email}');
-      print('      Occupation: ${person.occupation}');
-      print('      Skills: ${person.skills.join(', ')}');
-    } catch (e) {
-      print('   ❌ JSON parsing failed: $e');
-    }
+    final person = Person.fromJson(result.object);
+    print('   ✅ Parsed successfully:');
+    print('      Name: ${person.name}');
+    print('      Age: ${person.age}');
+    print('      Email: ${person.email}');
+    print('      Occupation: ${person.occupation}');
+    print('      Skills: ${person.skills.join(', ')}');
 
     print('   ✅ Basic structured output successful\n');
   } catch (e) {
@@ -97,90 +126,133 @@ Future<void> demonstrateComplexStructures(ChatCapability provider) async {
   print('🏗️  Complex Nested Structures:\n');
 
   try {
-    final companySchema = {
-      "type": "object",
-      "properties": {
-        "company": {
-          "type": "object",
-          "properties": {
-            "name": {"type": "string"},
-            "founded": {"type": "integer"},
-            "industry": {"type": "string"},
-            "headquarters": {
-              "type": "object",
-              "properties": {
-                "city": {"type": "string"},
-                "country": {"type": "string"}
-              }
-            }
-          }
-        },
-        "employees": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": {"type": "string"},
-              "position": {"type": "string"},
-              "department": {"type": "string"},
-              "salary": {"type": "number"}
-            }
-          }
-        },
-        "financial": {
-          "type": "object",
-          "properties": {
-            "revenue": {"type": "number"},
-            "profit": {"type": "number"},
-            "currency": {"type": "string"}
-          }
-        }
-      }
-    };
-
-    final messages = [
-      ChatMessage.system('''
-Extract company information and return as JSON following this schema:
-${jsonEncode(companySchema)}
-Only return valid JSON.
-'''),
-      ChatMessage.user('''
-Create a fictional tech company with the following details:
-- Company name: InnovateTech
-- Founded in 2018
-- Software industry
-- Headquarters in San Francisco, USA
-- 3 employees: CEO Alice Johnson (\$150,000), CTO Bob Wilson (\$130,000), Developer Carol Davis (\$90,000)
-- Revenue: \$2.5M, Profit: \$500K (USD)
-'''),
-    ];
+    final companySchema = ParametersSchema(
+      schemaType: 'object',
+      properties: {
+        'company': ParameterProperty(
+          propertyType: 'object',
+          description: 'Company information',
+          properties: {
+            'name': const ParameterProperty(
+              propertyType: 'string',
+              description: 'Company name',
+            ),
+            'founded': const ParameterProperty(
+              propertyType: 'integer',
+              description: 'Year founded',
+            ),
+            'industry': const ParameterProperty(
+              propertyType: 'string',
+              description: 'Industry',
+            ),
+            'headquarters': ParameterProperty(
+              propertyType: 'object',
+              description: 'Headquarters',
+              properties: {
+                'city': const ParameterProperty(
+                  propertyType: 'string',
+                  description: 'City',
+                ),
+                'country': const ParameterProperty(
+                  propertyType: 'string',
+                  description: 'Country',
+                ),
+              },
+              required: const ['city', 'country'],
+            ),
+          },
+          required: const ['name', 'founded', 'industry', 'headquarters'],
+        ),
+        'employees': ParameterProperty(
+          propertyType: 'array',
+          description: 'Employee list',
+          items: ParameterProperty(
+            propertyType: 'object',
+            description: 'Employee',
+            properties: {
+              'name': const ParameterProperty(
+                propertyType: 'string',
+                description: 'Employee name',
+              ),
+              'position': const ParameterProperty(
+                propertyType: 'string',
+                description: 'Role / position',
+              ),
+              'department': const ParameterProperty(
+                propertyType: 'string',
+                description: 'Department',
+              ),
+              'salary': const ParameterProperty(
+                propertyType: 'number',
+                description: 'Salary in USD',
+              ),
+            },
+            required: const ['name', 'position', 'department', 'salary'],
+          ),
+        ),
+        'financial': ParameterProperty(
+          propertyType: 'object',
+          description: 'Financial metrics',
+          properties: {
+            'revenue': const ParameterProperty(
+              propertyType: 'number',
+              description: 'Annual revenue',
+            ),
+            'profit': const ParameterProperty(
+              propertyType: 'number',
+              description: 'Annual profit',
+            ),
+            'currency': const ParameterProperty(
+              propertyType: 'string',
+              description: 'Currency code (e.g., USD)',
+            ),
+          },
+          required: const ['revenue', 'profit', 'currency'],
+        ),
+      },
+      required: const ['company', 'employees', 'financial'],
+    );
 
     print('   User: Create fictional company data structure');
 
-    final response = await provider.chat(messages);
-    final jsonText = response.text ?? '';
+    final result = await generateObject(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.system(
+            'Create a fictional company object from the user request.',
+          ),
+          PromptMessage.user(
+            'Create a fictional tech company:\n'
+            '- Company name: InnovateTech\n'
+            '- Founded in 2018\n'
+            '- Software industry\n'
+            '- Headquarters in San Francisco, USA\n'
+            '- 3 employees: CEO Alice Johnson (salary 150000 USD), CTO Bob Wilson (salary 130000 USD), Developer Carol Davis (salary 90000 USD)\n'
+            '- Revenue: 2.5M, Profit: 500K (USD)\n',
+          ),
+        ],
+      ),
+      schema: companySchema,
+      toolName: 'create_company',
+      toolDescription: 'Return the fictional company object.',
+    );
 
-    print('   🤖 AI Response: $jsonText');
+    print('   🤖 Object: ${jsonEncode(result.object)}');
 
-    try {
-      final companyData = jsonDecode(jsonText) as Map<String, dynamic>;
-      final company = Company.fromJson(companyData);
+    final company = Company.fromJson(result.object);
+    print('   ✅ Parsed complex structure:');
+    print(
+        '      Company: ${company.company.name} (${company.company.founded})');
+    print(
+        '      Location: ${company.company.headquarters.city}, ${company.company.headquarters.country}');
+    print('      Employees: ${company.employees.length}');
+    print(
+        '      Revenue: ${company.financial.currency} ${company.financial.revenue}');
 
-      print('   ✅ Parsed complex structure:');
+    for (final employee in company.employees) {
       print(
-          '      Company: ${company.company.name} (${company.company.founded})');
-      print(
-          '      Location: ${company.company.headquarters.city}, ${company.company.headquarters.country}');
-      print('      Employees: ${company.employees.length}');
-      print(
-          '      Revenue: ${company.financial.currency} ${company.financial.revenue}');
-
-      for (final employee in company.employees) {
-        print(
-            '        • ${employee.name} - ${employee.position} (\$${employee.salary})');
-      }
-    } catch (e) {
-      print('   ❌ Complex structure parsing failed: $e');
+          '        • ${employee.name} - ${employee.position} (\$${employee.salary})');
     }
 
     print('   ✅ Complex structures demonstration successful\n');
@@ -194,25 +266,47 @@ Future<void> demonstrateDataValidation(ChatCapability provider) async {
   print('✅ Data Validation:\n');
 
   try {
-    final productSchema = {
-      "type": "object",
-      "properties": {
-        "name": {"type": "string", "minLength": 1},
-        "price": {"type": "number", "minimum": 0},
-        "category": {
-          "type": "string",
-          "enum": ["electronics", "clothing", "books", "home", "sports"]
-        },
-        "inStock": {"type": "boolean"},
-        "rating": {"type": "number", "minimum": 0, "maximum": 5},
-        "tags": {
-          "type": "array",
-          "items": {"type": "string"},
-          "maxItems": 5
-        }
+    final productSchema = ParametersSchema(
+      schemaType: 'object',
+      properties: {
+        'name': const ParameterProperty(
+          propertyType: 'string',
+          description: 'Product name',
+        ),
+        'price': const ParameterProperty(
+          propertyType: 'number',
+          description: 'Price as a positive number',
+        ),
+        'category': ParameterProperty(
+          propertyType: 'string',
+          description: 'Product category',
+          enumList: const [
+            'electronics',
+            'clothing',
+            'books',
+            'home',
+            'sports'
+          ],
+        ),
+        'inStock': const ParameterProperty(
+          propertyType: 'boolean',
+          description: 'Whether the product is in stock',
+        ),
+        'rating': const ParameterProperty(
+          propertyType: 'number',
+          description: 'Rating from 0 to 5',
+        ),
+        'tags': ParameterProperty(
+          propertyType: 'array',
+          description: 'Optional tag list (best-effort)',
+          items: const ParameterProperty(
+            propertyType: 'string',
+            description: 'Tag',
+          ),
+        ),
       },
-      "required": ["name", "price", "category", "inStock"]
-    };
+      required: const ['name', 'price', 'category', 'inStock'],
+    );
 
     final testCases = [
       'Laptop computer, \$999, electronics category, in stock, 4.5 stars',
@@ -223,21 +317,22 @@ Future<void> demonstrateDataValidation(ChatCapability provider) async {
     for (int i = 0; i < testCases.length; i++) {
       print('   Test Case ${i + 1}: ${testCases[i]}');
 
-      final messages = [
-        ChatMessage.system('''
-Extract product information as JSON following this schema:
-${jsonEncode(productSchema)}
-Ensure all validation rules are followed. Only return valid JSON.
-'''),
-        ChatMessage.user('Extract product info: ${testCases[i]}'),
-      ];
-
-      final response = await provider.chat(messages);
-      final jsonText = response.text ?? '';
-
       try {
-        final productData = jsonDecode(jsonText) as Map<String, dynamic>;
-        final product = Product.fromJson(productData);
+        final result = await generateObject(
+          model: provider,
+          promptIr: Prompt(
+            messages: [
+              PromptMessage.system(
+                'Extract product information from the user text.',
+              ),
+              PromptMessage.user('Extract product info: ${testCases[i]}'),
+            ],
+          ),
+          schema: productSchema,
+          toolName: 'extract_product',
+          toolDescription: 'Extract product information as a JSON object.',
+        );
+        final product = Product.fromJson(result.object);
 
         // Validate the product
         final validationErrors = validateProduct(product);
@@ -247,8 +342,10 @@ Ensure all validation rules are followed. Only return valid JSON.
         } else {
           print('      ❌ Validation errors: ${validationErrors.join(', ')}');
         }
+      } on InvalidRequestError catch (e) {
+        print('      ❌ Schema validation failed: ${e.message}');
       } catch (e) {
-        print('      ❌ JSON parsing failed: $e');
+        print('      ❌ Unexpected error: $e');
       }
 
       print('');
@@ -265,78 +362,65 @@ Future<void> demonstrateErrorHandling(ChatCapability provider) async {
   print('🛡️  Error Handling for Malformed Data:\n');
 
   try {
-    final messages = [
-      ChatMessage.system('''
-Return a JSON object with user information. 
-Include: name, age, email, preferences (array of strings).
-Only return valid JSON.
-'''),
-      ChatMessage.user(
-          'Create user data for someone who likes pizza and movies'),
-    ];
+    final userSchema = ParametersSchema(
+      schemaType: 'object',
+      properties: {
+        'name': const ParameterProperty(
+          propertyType: 'string',
+          description: 'User name',
+        ),
+        'age': const ParameterProperty(
+          propertyType: 'integer',
+          description: 'Age in years',
+        ),
+        'email': const ParameterProperty(
+          propertyType: 'string',
+          description: 'Email address',
+        ),
+        'preferences': ParameterProperty(
+          propertyType: 'array',
+          description: 'Array of preference strings',
+          items: const ParameterProperty(
+            propertyType: 'string',
+            description: 'Preference',
+          ),
+        ),
+      },
+      required: const ['name', 'age', 'email', 'preferences'],
+    );
 
     print('   User: Create user data with preferences');
 
-    final response = await provider.chat(messages);
-    final jsonText = response.text ?? '';
+    try {
+      final result = await generateObject(
+        model: provider,
+        promptIr: Prompt(
+          messages: [
+            PromptMessage.system(
+              'Extract user info from the prompt. If preferences are present, return them as an array of strings.',
+            ),
+            PromptMessage.user(
+              'Create user data for someone who likes pizza and movies. '
+              'IMPORTANT: Return preferences as a single comma-separated string (not an array).',
+            ),
+          ],
+        ),
+        schema: userSchema,
+        toolName: 'create_user',
+        toolDescription: 'Create a user object.',
+      );
 
-    print('   🤖 Raw response: $jsonText');
-
-    // Attempt to parse with error handling
-    final result = parseJsonSafely(jsonText);
-
-    if (result.success) {
-      print('   ✅ Successfully parsed JSON:');
-      print('      Data: ${result.data}');
-    } else {
-      print('   ❌ JSON parsing failed: ${result.error}');
-      print('   🔧 Attempting to fix...');
-
-      // Try to fix common JSON issues
-      final fixedJson = attemptJsonFix(jsonText);
-      final fixedResult = parseJsonSafely(fixedJson);
-
-      if (fixedResult.success) {
-        print('   ✅ Fixed and parsed successfully: ${fixedResult.data}');
-      } else {
-        print('   ❌ Could not fix JSON: ${fixedResult.error}');
-      }
+      print('   ✅ Object: ${jsonEncode(result.object)}');
+    } on InvalidRequestError catch (e) {
+      print('   ❌ Schema validation failed: ${e.message}');
+      print(
+          '   💡 Fix: align prompt instructions with the schema (array vs string).');
     }
 
     print('   ✅ Error handling demonstration successful\n');
   } catch (e) {
     print('   ❌ Error handling demonstration failed: $e\n');
   }
-}
-
-/// Parse JSON safely with error handling
-ParseResult parseJsonSafely(String jsonText) {
-  try {
-    final data = jsonDecode(jsonText);
-    return ParseResult(success: true, data: data);
-  } catch (e) {
-    return ParseResult(success: false, error: e.toString());
-  }
-}
-
-/// Attempt to fix common JSON issues
-String attemptJsonFix(String jsonText) {
-  var fixed = jsonText.trim();
-
-  // Remove markdown code blocks
-  fixed = fixed.replaceAll(RegExp(r'```json\s*'), '');
-  fixed = fixed.replaceAll(RegExp(r'```\s*$'), '');
-  fixed = fixed.replaceAll(RegExp(r'```'), '');
-
-  // Remove extra text before/after JSON
-  final jsonStart = fixed.indexOf('{');
-  final jsonEnd = fixed.lastIndexOf('}');
-
-  if (jsonStart != -1 && jsonEnd != -1 && jsonEnd > jsonStart) {
-    fixed = fixed.substring(jsonStart, jsonEnd + 1);
-  }
-
-  return fixed;
 }
 
 /// Validate product data
@@ -528,14 +612,6 @@ class Product {
       tags: (json['tags'] as List<dynamic>?)?.cast<String>() ?? [],
     );
   }
-}
-
-class ParseResult {
-  final bool success;
-  final dynamic data;
-  final String? error;
-
-  ParseResult({required this.success, this.data, this.error});
 }
 
 /// 🎯 Key Structured Output Concepts Summary:

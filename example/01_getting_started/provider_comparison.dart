@@ -1,6 +1,14 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
+import 'package:llm_dart_ollama/llm_dart_ollama.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 🔍 Provider Comparison - Help you choose the best AI provider
 ///
@@ -17,6 +25,12 @@ import 'package:llm_dart/llm_dart.dart';
 /// export DEEPSEEK_API_KEY="your-key"
 void main() async {
   print('🔍 AI Provider Comparison Test\n');
+
+  registerOpenAI();
+  registerAnthropic();
+  registerGroq();
+  registerDeepSeek();
+  registerOllama();
 
   // Test question - shows basic capabilities while highlighting differences
   final testQuestion =
@@ -54,13 +68,18 @@ Future<Map<String, ChatCapability?>> createProviders() async {
 
   // OpenAI
   try {
-    final openaiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
-    providers['OpenAI'] = await ai()
-        .openai()
-        .apiKey(openaiKey)
-        .model('gpt-4o-mini')
-        .temperature(0.7)
-        .build();
+    final openaiKey = Platform.environment['OPENAI_API_KEY'];
+    if (openaiKey == null || openaiKey.isEmpty) {
+      providers['OpenAI'] = null;
+      print('⚠️  OpenAI skipped: set OPENAI_API_KEY');
+    } else {
+      providers['OpenAI'] = await LLMBuilder()
+          .provider(openaiProviderId)
+          .apiKey(openaiKey)
+          .model('gpt-4o-mini')
+          .temperature(0.7)
+          .build();
+    }
   } catch (e) {
     providers['OpenAI'] = null;
     print('⚠️  OpenAI creation failed: $e');
@@ -68,14 +87,18 @@ Future<Map<String, ChatCapability?>> createProviders() async {
 
   // Anthropic Claude
   try {
-    final anthropicKey =
-        Platform.environment['ANTHROPIC_API_KEY'] ?? 'sk-ant-TESTKEY';
-    providers['Anthropic'] = await ai()
-        .anthropic()
-        .apiKey(anthropicKey)
-        .model('claude-3-5-haiku-20241022')
-        .temperature(0.7)
-        .build();
+    final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
+    if (anthropicKey == null || anthropicKey.isEmpty) {
+      providers['Anthropic'] = null;
+      print('⚠️  Anthropic skipped: set ANTHROPIC_API_KEY');
+    } else {
+      providers['Anthropic'] = await LLMBuilder()
+          .provider(anthropicProviderId)
+          .apiKey(anthropicKey)
+          .model('claude-3-5-haiku-20241022')
+          .temperature(0.7)
+          .build();
+    }
   } catch (e) {
     providers['Anthropic'] = null;
     print('⚠️  Anthropic creation failed: $e');
@@ -83,13 +106,18 @@ Future<Map<String, ChatCapability?>> createProviders() async {
 
   // Groq
   try {
-    final groqKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
-    providers['Groq'] = await ai()
-        .groq()
-        .apiKey(groqKey)
-        .model('llama-3.1-8b-instant')
-        .temperature(0.7)
-        .build();
+    final groqKey = Platform.environment['GROQ_API_KEY'];
+    if (groqKey == null || groqKey.isEmpty) {
+      providers['Groq'] = null;
+      print('⚠️  Groq skipped: set GROQ_API_KEY');
+    } else {
+      providers['Groq'] = await LLMBuilder()
+          .provider(groqProviderId)
+          .apiKey(groqKey)
+          .model('llama-3.1-8b-instant')
+          .temperature(0.7)
+          .build();
+    }
   } catch (e) {
     providers['Groq'] = null;
     print('⚠️  Groq creation failed: $e');
@@ -97,14 +125,18 @@ Future<Map<String, ChatCapability?>> createProviders() async {
 
   // DeepSeek
   try {
-    final deepseekKey =
-        Platform.environment['DEEPSEEK_API_KEY'] ?? 'sk-TESTKEY';
-    providers['DeepSeek'] = await ai()
-        .deepseek()
-        .apiKey(deepseekKey)
-        .model('deepseek-chat')
-        .temperature(0.7)
-        .build();
+    final deepseekKey = Platform.environment['DEEPSEEK_API_KEY'];
+    if (deepseekKey == null || deepseekKey.isEmpty) {
+      providers['DeepSeek'] = null;
+      print('⚠️  DeepSeek skipped: set DEEPSEEK_API_KEY');
+    } else {
+      providers['DeepSeek'] = await LLMBuilder()
+          .provider(deepseekProviderId)
+          .apiKey(deepseekKey)
+          .model('deepseek-chat')
+          .temperature(0.7)
+          .build();
+    }
   } catch (e) {
     providers['DeepSeek'] = null;
     print('⚠️  DeepSeek creation failed: $e');
@@ -112,8 +144,8 @@ Future<Map<String, ChatCapability?>> createProviders() async {
 
   // Ollama
   try {
-    providers['Ollama'] = await ai()
-        .ollama()
+    providers['Ollama'] = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl('http://localhost:11434')
         .model('llama3.2')
         .temperature(0.7)
@@ -132,18 +164,18 @@ Future<ProviderResult> testProvider(
   final stopwatch = Stopwatch()..start();
 
   try {
-    final messages = [ChatMessage.user(question)];
-    final response = await provider.chat(messages);
+    final prompt = Prompt(messages: [PromptMessage.user(question)]);
+    final result = await generateText(model: provider, promptIr: prompt);
 
     stopwatch.stop();
 
     return ProviderResult(
       name: name,
       success: true,
-      response: response.text ?? 'No response',
+      response: result.text ?? 'No response',
       responseTime: stopwatch.elapsedMilliseconds,
-      usage: response.usage,
-      thinking: response.thinking,
+      usage: result.usage,
+      thinking: result.thinking,
     );
   } catch (e) {
     stopwatch.stop();

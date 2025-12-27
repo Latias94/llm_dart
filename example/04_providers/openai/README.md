@@ -17,7 +17,7 @@ Assistants API and specialized model features.
 OpenAI's new Responses API with built-in tools like web search, file search, and computer use.
 
 ### [build_openai_responses_demo.dart](build_openai_responses_demo.dart)
-Type-safe `buildOpenAIResponses()` convenience method for automatic Responses API configuration.
+Subpackage-friendly demo for configuring the Responses API via `providerOptions` / `providerTools`.
 
 ### [gpt5_features.dart](gpt5_features.dart)
 GPT-5 specific features including verbosity control, minimal reasoning, and model variants.
@@ -71,8 +71,13 @@ dart run gpt5_features.dart
 
 ### Image Generation
 ```dart
-final imageProvider = await ai().openai().apiKey('your-key')
-    .model('dall-e-3').buildImageGeneration();
+registerOpenAI();
+
+final imageProvider = await LLMBuilder()
+    .provider(openaiProviderId)
+    .apiKey('your-key')
+    .model('dall-e-3')
+    .buildImageGeneration();
 
 final images = await imageProvider.generateImage(
   prompt: 'A futuristic cityscape',
@@ -82,7 +87,11 @@ final images = await imageProvider.generateImage(
 
 ### Audio Processing
 ```dart
-final audioProvider = await ai().openai().apiKey('your-key')
+registerOpenAI();
+
+final audioProvider = await LLMBuilder()
+    .provider(openaiProviderId)
+    .apiKey('your-key')
     .buildAudio();
 
 // Speech-to-text
@@ -94,7 +103,11 @@ final audioData = await audioProvider.speech('Hello world');
 
 ### Assistants
 ```dart
-final assistantProvider = await ai().openai().apiKey('your-key')
+registerOpenAI();
+
+final assistantProvider = await LLMBuilder()
+    .provider(openaiProviderId)
+    .apiKey('your-key')
     .buildAssistant();
 
 final assistant = await assistantProvider.createAssistant(
@@ -108,18 +121,21 @@ final assistant = await assistantProvider.createAssistant(
 
 ### GPT-5 Features
 ```dart
+registerOpenAI();
+
 // Verbosity control
-final provider = await ai()
-    .openai((openai) => openai.verbosity(Verbosity.high))
+final provider = await LLMBuilder()
+    .provider(openaiProviderId)
     .apiKey('your-key')
-    .model('gpt-5.1') // Recommended latest GPT-5 family model
+    .model('gpt-5.1')
+    .providerOption('openai', 'verbosity', Verbosity.high.value)
     .build();
 
 // Minimal reasoning for faster responses
-final fastProvider = await ai()
-    .openai()
+final fastProvider = await LLMBuilder()
+    .provider(openaiProviderId)
     .apiKey('your-key')
-    .model('gpt-5-mini') // Cost-efficient GPT-5 family variant
+    .model('gpt-5-mini')
     .reasoningEffort(ReasoningEffort.minimal)
     .build();
 ```
@@ -131,35 +147,35 @@ The Responses API is OpenAI's new stateful API that combines the simplicity of C
 #### Basic Usage
 
 ```dart
-// Traditional approach
-final provider = await ai()
-    .openai((openai) => openai
-        .useResponsesAPI()
-        .webSearchTool()
-        .fileSearchTool(vectorStoreIds: ['vs_123']))
-    .apiKey('your-key')
-    .model('gpt-5-mini') // Recommended cost-efficient GPT-5 family model
-    .build();
+registerOpenAI();
 
-// New convenience method (recommended)
-final provider = await ai()
-    .openai((openai) => openai
-        .webSearchTool()
-        .fileSearchTool(vectorStoreIds: ['vs_123']))
+final provider = await LLMBuilder()
+    .provider(openaiProviderId)
     .apiKey('your-key')
-    .model('gpt-5-mini') // Recommended cost-efficient GPT-5 family model
-    .buildOpenAIResponses(); // Automatically enables Responses API
+    .model('gpt-5-mini')
+    .providerOption('openai', 'useResponsesAPI', true)
+    .providerTools([
+      OpenAIProviderTools.webSearch(),
+      OpenAIProviderTools.fileSearch(vectorStoreIds: ['vs_123']),
+    ])
+    .build();
 ```
 
 #### Stateful Conversations
 
 ```dart
-// Using buildOpenAIResponses() - no casting needed!
-final provider = await ai().openai().apiKey('your-key')
-    .model('gpt-5-mini').buildOpenAIResponses();
+registerOpenAI();
+
+final provider = await LLMBuilder()
+    .provider(openaiProviderId)
+    .apiKey('your-key')
+    .model('gpt-5-mini')
+    .providerOption('openai', 'useResponsesAPI', true)
+    .build();
+final openaiProvider = provider as OpenAIProvider;
 
 // Direct access to Responses API
-final responses = provider.responses!;
+final responses = openaiProvider.responses!;
 
 // Create initial response
 final response1 = await responses.chat([
@@ -200,10 +216,6 @@ await responses.deleteResponse('resp_123');
 
 // Cancel background response
 await responses.cancelResponse('resp_123');
-
-final response = await provider.chat([
-  ChatMessage.user('Search for recent AI developments'),
-]);
 ```
 
 ## Next Steps

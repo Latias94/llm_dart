@@ -72,6 +72,7 @@ Practical examples for the LLM Dart library, organized by learning path and use 
 | Ollama | Local models | [ollama/](04_providers/ollama/) |
 | ElevenLabs | Voice synthesis | [elevenlabs/](04_providers/elevenlabs/) |
 | xAI | Live search, Grok | [xai/](04_providers/xai/) |
+| MiniMax | Anthropic-compatible (M2) | [minimax/](04_providers/minimax/) |
 | Others | OpenAI-compatible | [others/](04_providers/others/) |
 
 ### Use Cases
@@ -134,4 +135,4 @@ dart run 05_use_cases/multimodal_app.dart --demo
 
 - [Main Documentation](../README.md)
 - [API Reference](https://pub.dev/documentation/llm_dart/)
-- [GitHub Issues](https://github.com/your-repo/llm_dart/issues)
+- [GitHub Issues](https://github.com/Latias94/llm_dart/issues)

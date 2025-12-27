@@ -266,7 +266,10 @@ void main() {
             .http((http) => http
                 .headers({'X-Search-Enabled': 'true'}).receiveTimeout(
                     Duration(minutes: 5)))
-            .enableWebSearch();
+            .providerOptions('xai', {
+          'liveSearch': true,
+          'searchParameters': SearchParameters.webSearch().toJson(),
+        });
 
         expect(builder, isNotNull);
       });

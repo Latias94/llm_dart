@@ -1,6 +1,11 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_ollama/llm_dart_ollama.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// 📋 Model Listing - Explore Available Models
 ///
@@ -17,6 +22,10 @@ import 'package:llm_dart/llm_dart.dart';
 /// export OLLAMA_BASE_URL="http://localhost:11434" (if using Ollama)
 void main() async {
   print('📋 Model Listing - Explore Available Models\n');
+
+  registerOpenAI();
+  registerAnthropic();
+  registerOllama();
 
   // Create providers that support model listing
   final providers = await createModelListingProviders();
@@ -39,8 +48,8 @@ Future<Map<String, ModelListingCapability>>
   final openaiKey = Platform.environment['OPENAI_API_KEY'];
   if (openaiKey != null) {
     try {
-      final openai = await ai()
-          .openai()
+      final openai = await LLMBuilder()
+          .provider(openaiProviderId)
           .apiKey(openaiKey)
           .model('gpt-4o-mini')
           .buildModelListing();
@@ -59,8 +68,8 @@ Future<Map<String, ModelListingCapability>>
   final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (anthropicKey != null) {
     try {
-      final anthropic = await ai()
-          .anthropic()
+      final anthropic = await LLMBuilder()
+          .provider(anthropicProviderId)
           .apiKey(anthropicKey)
           .model('claude-3-5-haiku-20241022')
           .buildModelListing();
@@ -79,8 +88,8 @@ Future<Map<String, ModelListingCapability>>
   final ollamaUrl =
       Platform.environment['OLLAMA_BASE_URL'] ?? 'http://localhost:11434';
   try {
-    final ollama = await ai()
-        .ollama()
+    final ollama = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl(ollamaUrl)
         .model('llama3.2')
         .buildModelListing();

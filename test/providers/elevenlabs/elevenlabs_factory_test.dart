@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/factories/elevenlabs_factory.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('ElevenLabsProviderFactory Tests', () {
@@ -28,6 +28,7 @@ void main() {
         final capabilities = factory.supportedCapabilities;
 
         expect(capabilities, contains(LLMCapability.textToSpeech));
+        expect(capabilities, contains(LLMCapability.streamingTextToSpeech));
         expect(capabilities, contains(LLMCapability.speechToText));
       });
 
@@ -61,12 +62,14 @@ void main() {
           apiKey: 'test-api-key',
           baseUrl: 'https://api.elevenlabs.io/v1/',
           model: 'eleven_multilingual_v2',
-          extensions: {
-            'voiceId': 'test-voice-id',
-            'stability': 0.5,
-            'similarityBoost': 0.8,
-            'style': 0.3,
-            'useSpeakerBoost': true,
+          providerOptions: const {
+            'elevenlabs': {
+              'voiceId': 'test-voice-id',
+              'stability': 0.5,
+              'similarityBoost': 0.8,
+              'style': 0.3,
+              'useSpeakerBoost': true,
+            },
           },
         );
 
@@ -82,12 +85,14 @@ void main() {
           baseUrl: 'https://custom.api.com',
           model: 'eleven_multilingual_v2',
           timeout: const Duration(seconds: 30),
-          extensions: {
-            'voiceId': 'custom-voice',
-            'stability': 0.6,
-            'similarityBoost': 0.9,
-            'style': 0.4,
-            'useSpeakerBoost': false,
+          providerOptions: const {
+            'elevenlabs': {
+              'voiceId': 'custom-voice',
+              'stability': 0.6,
+              'similarityBoost': 0.9,
+              'style': 0.4,
+              'useSpeakerBoost': false,
+            },
           },
         );
 
@@ -171,15 +176,17 @@ void main() {
         expect(factory.validateConfig(config), isFalse);
       });
 
-      test('should accept config with voice extensions', () {
+      test('should accept config with voice provider options', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
           baseUrl: 'https://api.elevenlabs.io/v1/',
           model: 'eleven_multilingual_v2',
-          extensions: {
-            'voiceId': 'test-voice',
-            'stability': 0.5,
-            'similarityBoost': 0.8,
+          providerOptions: const {
+            'elevenlabs': {
+              'voiceId': 'test-voice',
+              'stability': 0.5,
+              'similarityBoost': 0.8,
+            },
           },
         );
 
@@ -189,11 +196,11 @@ void main() {
 
     group('Provider Interface Compliance', () {
       test('should implement BaseProviderFactory', () {
-        expect(factory, isA<BaseProviderFactory<ChatCapability>>());
+        expect(factory, isA<BaseProviderFactory<AudioCapability>>());
       });
 
       test('should implement LLMProviderFactory', () {
-        expect(factory, isA<LLMProviderFactory<ChatCapability>>());
+        expect(factory, isA<LLMProviderFactory<AudioCapability>>());
       });
 
       test('should create providers that implement required interfaces', () {
@@ -205,8 +212,8 @@ void main() {
 
         final provider = factory.create(config);
 
-        expect(provider, isA<ChatCapability>());
         expect(provider, isA<AudioCapability>());
+        expect(provider, isNot(isA<ChatCapability>()));
       });
     });
 
@@ -238,9 +245,11 @@ void main() {
           apiKey: 'test-api-key',
           baseUrl: 'https://api.elevenlabs.io/v1/',
           model: 'eleven_multilingual_v2',
-          extensions: {
-            'stability': 2.0, // Invalid value (should be 0-1)
-            'similarityBoost': -0.5, // Invalid value (should be 0-1)
+          providerOptions: const {
+            'elevenlabs': {
+              'stability': 2.0, // Invalid value (should be 0-1)
+              'similarityBoost': -0.5, // Invalid value (should be 0-1)
+            },
           },
         );
 

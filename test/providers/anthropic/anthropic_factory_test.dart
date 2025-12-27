@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart/providers/factories/anthropic_factory.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('AnthropicProviderFactory Tests', () {
@@ -62,10 +62,12 @@ void main() {
           apiKey: 'test-api-key',
           baseUrl: 'https://api.anthropic.com',
           model: 'claude-sonnet-4-20250514',
-          extensions: {
-            'reasoning': true,
-            'thinkingBudgetTokens': 5000,
-            'interleavedThinking': false,
+          providerOptions: const {
+            'anthropic': {
+              'reasoning': true,
+              'thinkingBudgetTokens': 5000,
+              'interleavedThinking': false,
+            },
           },
         );
 
@@ -88,10 +90,12 @@ void main() {
           topK: 50,
           stopSequences: ['STOP'],
           user: 'test-user',
-          extensions: {
-            'reasoning': true,
-            'thinkingBudgetTokens': 3000,
-            'interleavedThinking': true,
+          providerOptions: const {
+            'anthropic': {
+              'reasoning': true,
+              'thinkingBudgetTokens': 3000,
+              'interleavedThinking': true,
+            },
           },
         );
 
@@ -178,14 +182,16 @@ void main() {
         expect(factory.validateConfig(config), isFalse);
       });
 
-      test('should accept config with reasoning extensions', () {
+      test('should accept config with reasoning providerOptions', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
           baseUrl: 'https://api.anthropic.com',
           model: 'claude-sonnet-4-20250514',
-          extensions: {
-            'reasoning': true,
-            'thinkingBudgetTokens': 5000,
+          providerOptions: const {
+            'anthropic': {
+              'reasoning': true,
+              'thinkingBudgetTokens': 5000,
+            },
           },
         );
 

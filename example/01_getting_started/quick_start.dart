@@ -1,6 +1,11 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_groq/llm_dart_groq.dart';
+import 'package:llm_dart_ollama/llm_dart_ollama.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Quick Start - Basic LLM Dart usage
 ///
@@ -9,6 +14,10 @@ import 'package:llm_dart/llm_dart.dart';
 /// export GROQ_API_KEY="your-key"
 void main() async {
   print('LLM Dart Quick Start\n');
+
+  registerOpenAI();
+  registerGroq();
+  registerOllama();
 
   await quickStartWithOpenAI();
   await quickStartWithGroq();
@@ -21,22 +30,28 @@ Future<void> quickStartWithOpenAI() async {
   print('Method 1: OpenAI');
 
   try {
-    final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+    final apiKey = Platform.environment['OPENAI_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      print('   ⚠️  Skipped: Please set OPENAI_API_KEY environment variable\n');
+      return;
+    }
 
-    final provider = await ai()
-        .openai()
+    final provider = await LLMBuilder()
+        .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .temperature(0.7)
         .build();
 
-    final messages = [
-      ChatMessage.user('Hello! Please introduce yourself in one sentence.')
-    ];
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user('Hello! Please introduce yourself in one sentence.'),
+      ],
+    );
 
-    final response = await provider.chat(messages);
+    final result = await generateText(model: provider, promptIr: prompt);
 
-    print('   AI Reply: ${response.text}');
+    print('   AI Reply: ${result.text}');
     print('   ✅ Success\n');
   } catch (e) {
     print('   ❌ Failed: $e');
@@ -48,22 +63,30 @@ Future<void> quickStartWithGroq() async {
   print('Method 2: Groq (fast)');
 
   try {
-    final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
+    final apiKey = Platform.environment['GROQ_API_KEY'];
+    if (apiKey == null || apiKey.isEmpty) {
+      print('   ⚠️  Skipped: Please set GROQ_API_KEY environment variable\n');
+      return;
+    }
 
-    final provider = await ai()
-        .groq()
+    final provider = await LLMBuilder()
+        .provider(groqProviderId)
         .apiKey(apiKey)
         .model('llama-3.1-8b-instant')
         .temperature(0.7)
         .build();
 
-    final messages = [
-      ChatMessage.user('What is the capital of France? Answer in one sentence.')
-    ];
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user(
+          'What is the capital of France? Answer in one sentence.',
+        ),
+      ],
+    );
 
-    final response = await provider.chat(messages);
+    final result = await generateText(model: provider, promptIr: prompt);
 
-    print('   AI Reply: ${response.text}');
+    print('   AI Reply: ${result.text}');
     print('   ✅ Success\n');
   } catch (e) {
     print('   ❌ Failed: $e');
@@ -75,20 +98,22 @@ Future<void> quickStartWithOllama() async {
   print('Method 3: Ollama (local)');
 
   try {
-    final provider = await ai()
-        .ollama()
+    final provider = await LLMBuilder()
+        .provider(ollamaProviderId)
         .baseUrl('http://localhost:11434')
         .model('llama3.2')
         .temperature(0.7)
         .build();
 
-    final messages = [
-      ChatMessage.user('Hello! Introduce yourself in one sentence.')
-    ];
+    final prompt = Prompt(
+      messages: [
+        PromptMessage.user('Hello! Introduce yourself in one sentence.'),
+      ],
+    );
 
-    final response = await provider.chat(messages);
+    final result = await generateText(model: provider, promptIr: prompt);
 
-    print('   AI Reply: ${response.text}');
+    print('   AI Reply: ${result.text}');
     print('   ✅ Success\n');
   } catch (e) {
     print('   ❌ Failed: $e');
@@ -100,15 +125,15 @@ Future<void> quickStartWithOllama() async {
 /// Key Points:
 ///
 /// Provider creation:
-/// - ai().openai() / ai().groq() / ai().ollama()
-/// - ai().provider('provider-name')
-/// - createProvider() convenience function
+/// - `LLMBuilder().provider(providerId)`
+/// - providers must be registered (e.g. `registerOpenAI()`)
 ///
 /// Configuration:
 /// - apiKey, model, temperature, maxTokens
 ///
 /// Messages:
-/// - ChatMessage.user() / .system() / .assistant()
+/// - Prompt/parts (recommended): `PromptMessage.*` / `PromptPart`
+/// - Legacy: `ChatMessage.user()` / `.system()` / `.assistant()`
 ///
 /// Response:
 /// - response.text, response.usage, response.thinking

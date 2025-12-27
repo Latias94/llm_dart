@@ -1,4 +1,8 @@
-import 'package:llm_dart/llm_dart.dart';
+import 'dart:io';
+
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Comprehensive assistants examples using the unified AssistantCapability interface
 ///
@@ -12,11 +16,24 @@ import 'package:llm_dart/llm_dart.dart';
 Future<void> main() async {
   print('🤖 AI Assistants Examples\n');
 
-  // Example with providers that support assistants
-  final providers = [
-    ('OpenAI', () => ai().openai().apiKey('your-openai-key')),
-    // Add other providers that support assistants
-  ];
+  registerOpenAI();
+
+  // Example with providers that support assistants.
+  final providers = <(String, LLMBuilder Function())>[];
+
+  final openaiKey = Platform.environment['OPENAI_API_KEY'];
+  if (openaiKey != null && openaiKey.isNotEmpty) {
+    providers.add((
+      'OpenAI',
+      () => LLMBuilder().provider(openaiProviderId).apiKey(openaiKey),
+    ));
+  }
+
+  if (providers.isEmpty) {
+    print('❌ No assistants-capable providers configured.');
+    print('   Set OPENAI_API_KEY to run this example.');
+    return;
+  }
 
   for (final (name, builderFactory) in providers) {
     print('🔧 Testing $name Assistants:');

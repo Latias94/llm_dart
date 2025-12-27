@@ -1,0 +1,19 @@
+name: llm_dart
+
+packages:
+  - .
+  - packages/**
+
+ignore:
+  - repo-ref/**
+
+scripts:
+  format:
+    run: dart format .
+    description: Format Dart files in the workspace.
+  test:
+    run: dart test -j 1
+    description: Run repository tests (root package).
+  deps:
+    run: dart run tool/check_monorepo_deps.dart
+    description: Verify monorepo dependency direction rules.

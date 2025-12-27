@@ -1,6 +1,9 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
 
 /// 🟣 Anthropic Extended Thinking - Access Claude's Reasoning Process
 ///
@@ -16,7 +19,13 @@ void main() async {
   print('🟣 Anthropic Extended Thinking - Claude\'s Reasoning Process\n');
 
   // Get API key
-  final apiKey = Platform.environment['ANTHROPIC_API_KEY'] ?? 'sk-ant-TESTKEY';
+  final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('❌ Please set ANTHROPIC_API_KEY environment variable');
+    exit(1);
+  }
+
+  registerAnthropic();
 
   // Demonstrate Claude's thinking capabilities
   await demonstrateBasicThinking(apiKey);
@@ -34,38 +43,47 @@ Future<void> demonstrateBasicThinking(String apiKey) async {
 
   try {
     // Use Claude Sonnet 4 for thinking capabilities
-    final provider = await ai()
-        .anthropic()
+    final provider = await LLMBuilder()
+        .provider(anthropicProviderId)
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.3) // Lower for more focused thinking
         .maxTokens(1500)
-        .build();
+        .providerOptions(anthropicProviderId, const {
+      'reasoning': true,
+      'interleavedThinking': true,
+      'thinkingBudgetTokens': 1024,
+    }).build();
 
-    final response = await provider.chat([
-      ChatMessage.user('''
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.user('''
 I have a 3-gallon jug and a 5-gallon jug. I need to measure exactly 4 gallons of water.
 How can I do this? Please show your thinking process step by step.
-''')
-    ]);
+'''),
+        ],
+      ),
+    );
 
     print(
         '   Problem: Water jug puzzle (3-gallon and 5-gallon jugs, measure 4 gallons)');
     print('   Model: claude-sonnet-4-20250514');
 
     // Show the thinking process if available
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
+    if (result.thinking != null && result.thinking!.isNotEmpty) {
       print('\n   🧠 Claude\'s Thinking Process:');
       print('   ${'-' * 50}');
-      print('   ${response.thinking}');
+      print('   ${result.thinking}');
       print('   ${'-' * 50}');
     }
 
     print('\n   🎯 Final Answer:');
-    print('   ${response.text}');
+    print('   ${result.text}');
 
-    if (response.usage != null) {
-      print('\n   📊 Usage: ${response.usage!.totalTokens} tokens');
+    if (result.usage?.totalTokens != null) {
+      print('\n   📊 Usage: ${result.usage!.totalTokens} tokens');
     }
 
     print('   ✅ Basic thinking demonstration completed\n');
@@ -79,13 +97,17 @@ Future<void> demonstrateComplexReasoning(String apiKey) async {
   print('🔬 Complex Reasoning:\n');
 
   try {
-    final provider = await ai()
-        .anthropic()
+    final provider = await LLMBuilder()
+        .provider(anthropicProviderId)
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.2) // Even lower for analytical tasks
         .maxTokens(2000)
-        .build();
+        .providerOptions(anthropicProviderId, const {
+      'reasoning': true,
+      'interleavedThinking': true,
+      'thinkingBudgetTokens': 1536,
+    }).build();
 
     final complexProblem = '''
 A company is considering two investment options:
@@ -98,15 +120,18 @@ Assuming a discount rate of 8%, which option is better?
 Please show all calculations and reasoning.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(complexProblem)]);
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user(complexProblem)]),
+    );
 
     print('   Problem: Investment analysis with NPV calculations');
 
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
+    if (result.thinking != null && result.thinking!.isNotEmpty) {
       print('\n   🧠 Claude\'s Analytical Process:');
       print('   ${'-' * 60}');
       // Show first part of thinking to avoid too much output
-      final thinking = response.thinking!;
+      final thinking = result.thinking!;
       if (thinking.length > 500) {
         print('   ${thinking.substring(0, 500)}...');
         print(
@@ -118,7 +143,7 @@ Please show all calculations and reasoning.
     }
 
     print('\n   🎯 Final Analysis:');
-    print('   ${response.text}');
+    print('   ${result.text}');
 
     print('   ✅ Complex reasoning demonstration completed\n');
   } catch (e) {
@@ -131,13 +156,17 @@ Future<void> demonstrateStreamingThinking(String apiKey) async {
   print('🌊 Streaming Thinking Process:\n');
 
   try {
-    final provider = await ai()
-        .anthropic()
+    final provider = await LLMBuilder()
+        .provider(anthropicProviderId)
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.4)
         .maxTokens(1500)
-        .build();
+        .providerOptions(anthropicProviderId, const {
+      'reasoning': true,
+      'interleavedThinking': true,
+      'thinkingBudgetTokens': 1024,
+    }).build();
 
     print('   Problem: Logic puzzle with real-time thinking');
     print('   Watching Claude think in real-time...\n');
@@ -146,8 +175,11 @@ Future<void> demonstrateStreamingThinking(String apiKey) async {
     var responseContent = StringBuffer();
     var isThinking = true;
 
-    await for (final event in provider.chatStream([
-      ChatMessage.user('''
+    await for (final part in streamChatParts(
+      model: provider,
+      promptIr: Prompt(
+        messages: [
+          PromptMessage.user('''
 Five friends (Alice, Bob, Carol, David, Eve) are sitting in a row.
 - Alice is not at either end
 - Bob is somewhere to the left of Carol
@@ -155,15 +187,17 @@ Five friends (Alice, Bob, Carol, David, Eve) are sitting in a row.
 - Carol is not next to Alice
 
 What is the seating arrangement? Show your reasoning.
-''')
-    ])) {
-      switch (event) {
-        case ThinkingDeltaEvent(delta: final delta):
+'''),
+        ],
+      ),
+    )) {
+      switch (part) {
+        case LLMReasoningDeltaPart(delta: final delta):
           thinkingContent.write(delta);
           // Print thinking in gray color
           stdout.write('\x1B[90m$delta\x1B[0m');
           break;
-        case TextDeltaEvent(delta: final delta):
+        case LLMTextDeltaPart(delta: final delta):
           if (isThinking) {
             print('\n\n   🎯 Claude\'s Final Answer:');
             print('   ${'-' * 40}');
@@ -172,22 +206,22 @@ What is the seating arrangement? Show your reasoning.
           responseContent.write(delta);
           stdout.write(delta);
           break;
-        case CompletionEvent(response: final response):
+        case LLMFinishPart(response: final response):
           print('\n   ${'-' * 40}');
           print('\n   ✅ Streaming thinking completed!');
 
-          if (response.usage != null) {
-            print('   📊 Usage: ${response.usage!.totalTokens} tokens');
+          final usage = response.usage;
+          if (usage?.totalTokens != null) {
+            print('   📊 Usage: ${usage!.totalTokens} tokens');
           }
 
           print('   🧠 Thinking length: ${thinkingContent.length} characters');
           print('   📝 Response length: ${responseContent.length} characters');
           break;
-        case ErrorEvent(error: final error):
+        case LLMErrorPart(error: final error):
           print('\n   ❌ Stream error: $error');
           break;
-        case ToolCallDeltaEvent():
-          // Handle tool call events if needed
+        default:
           break;
       }
     }
@@ -203,13 +237,17 @@ Future<void> demonstrateEthicalReasoning(String apiKey) async {
   print('⚖️  Ethical Reasoning:\n');
 
   try {
-    final provider = await ai()
-        .anthropic()
+    final provider = await LLMBuilder()
+        .provider(anthropicProviderId)
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.3)
         .maxTokens(1500)
-        .build();
+        .providerOptions(anthropicProviderId, const {
+      'reasoning': true,
+      'interleavedThinking': true,
+      'thinkingBudgetTokens': 1024,
+    }).build();
 
     final ethicalDilemma = '''
 A self-driving car's AI must make a split-second decision:
@@ -221,15 +259,18 @@ What should the AI decide? Consider multiple ethical frameworks
 and show your reasoning process.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(ethicalDilemma)]);
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user(ethicalDilemma)]),
+    );
 
     print('   Dilemma: Autonomous vehicle ethical decision making');
 
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
+    if (result.thinking != null && result.thinking!.isNotEmpty) {
       print('\n   🧠 Claude\'s Ethical Reasoning:');
       print('   ${'-' * 50}');
       // Show key parts of ethical thinking
-      final thinking = response.thinking!;
+      final thinking = result.thinking!;
       final lines = thinking.split('\n');
       var importantLines = <String>[];
 
@@ -259,7 +300,7 @@ and show your reasoning process.
     }
 
     print('\n   🎯 Ethical Analysis:');
-    print('   ${response.text}');
+    print('   ${result.text}');
 
     print('   ✅ Ethical reasoning demonstration completed\n');
   } catch (e) {
@@ -272,13 +313,17 @@ Future<void> demonstrateComparativeAnalysis(String apiKey) async {
   print('📊 Comparative Analysis:\n');
 
   try {
-    final provider = await ai()
-        .anthropic()
+    final provider = await LLMBuilder()
+        .provider(anthropicProviderId)
         .apiKey(apiKey)
         .model('claude-sonnet-4-20250514')
         .temperature(0.3)
         .maxTokens(2000)
-        .build();
+        .providerOptions(anthropicProviderId, const {
+      'reasoning': true,
+      'interleavedThinking': true,
+      'thinkingBudgetTokens': 1536,
+    }).build();
 
     final analysisTask = '''
 Compare and contrast three programming paradigms:
@@ -295,16 +340,19 @@ For each paradigm, analyze:
 Provide a comprehensive comparison with examples.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(analysisTask)]);
+    final result = await generateText(
+      model: provider,
+      promptIr: Prompt(messages: [PromptMessage.user(analysisTask)]),
+    );
 
     print('   Task: Programming paradigms comparative analysis');
 
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
+    if (result.thinking != null && result.thinking!.isNotEmpty) {
       print('\n   🧠 Claude\'s Analytical Process:');
       print('   ${'-' * 55}');
 
       // Extract key analytical points
-      final thinking = response.thinking!;
+      final thinking = result.thinking!;
       final sections = thinking.split('\n\n');
       var analyticalSections = <String>[];
 
@@ -336,7 +384,7 @@ Provide a comprehensive comparison with examples.
 
     print('\n   🎯 Comparative Analysis:');
     // Show first part of the analysis
-    final analysisText = response.text ?? '';
+    final analysisText = result.text ?? '';
     if (analysisText.length > 800) {
       print('   ${analysisText.substring(0, 800)}...');
       print(
@@ -346,7 +394,7 @@ Provide a comprehensive comparison with examples.
     }
 
     print('\n   💡 Analysis Quality Indicators:');
-    final text = response.text?.toLowerCase() ?? '';
+    final text = result.text?.toLowerCase() ?? '';
     print(
         '      • Structured comparison: ${text.contains('compare') ? '✅' : '❌'}');
     print('      • Examples provided: ${text.contains('example') ? '✅' : '❌'}');

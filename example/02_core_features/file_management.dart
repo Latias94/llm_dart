@@ -1,6 +1,10 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 /// Comprehensive file management examples using the unified FileManagementCapability interface
 ///
@@ -14,11 +18,32 @@ import 'package:llm_dart/llm_dart.dart';
 Future<void> main() async {
   print('📁 File Management Examples\n');
 
-  // Example with providers that support file management
-  final providers = [
-    ('OpenAI', () => ai().openai().apiKey('your-openai-key')),
-    ('Anthropic', () => ai().anthropic().apiKey('your-anthropic-key')),
-  ];
+  registerOpenAI();
+  registerAnthropic();
+
+  final providers = <(String, LLMBuilder Function())>[];
+
+  final openaiKey = Platform.environment['OPENAI_API_KEY'];
+  if (openaiKey != null && openaiKey.isNotEmpty) {
+    providers.add((
+      'OpenAI',
+      () => LLMBuilder().provider(openaiProviderId).apiKey(openaiKey),
+    ));
+  }
+
+  final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
+  if (anthropicKey != null && anthropicKey.isNotEmpty) {
+    providers.add((
+      'Anthropic',
+      () => LLMBuilder().provider(anthropicProviderId).apiKey(anthropicKey),
+    ));
+  }
+
+  if (providers.isEmpty) {
+    print('❌ No file-management-capable providers configured.');
+    print('   Set OPENAI_API_KEY and/or ANTHROPIC_API_KEY.');
+    return;
+  }
 
   for (final (name, builderFactory) in providers) {
     print('📂 Testing $name File Management:');

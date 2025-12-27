@@ -5,24 +5,14 @@ import 'dart:typed_data';
 void main() {
   group('OpenAI Message Conversion Tests', () {
     late OpenAIClient client;
-    late OpenAIClient responsesClient;
 
     setUp(() {
       // Client for Chat Completions API (default)
       final config = OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4o',
-        useResponsesAPI: false,
       );
       client = OpenAIClient(config);
-
-      // Client for Responses API
-      final responsesConfig = OpenAIConfig(
-        apiKey: 'test-key',
-        model: 'gpt-4o',
-        useResponsesAPI: true,
-      );
-      responsesClient = OpenAIClient(responsesConfig);
     });
 
     group('TextMessage Conversion', () {
@@ -128,7 +118,7 @@ void main() {
           data: imageData,
         );
 
-        final result = responsesClient.convertMessage(message);
+        final result = OpenAIResponsesMessageConverter.convertMessage(message);
 
         expect(result['role'], equals('user'));
         expect(result['content'], isA<List>());
@@ -149,7 +139,7 @@ void main() {
           content: 'Describe this image',
         );
 
-        final result = responsesClient.convertMessage(message);
+        final result = OpenAIResponsesMessageConverter.convertMessage(message);
 
         expect(result['role'], equals('user'));
         expect(result['content'], isA<List>());
@@ -222,7 +212,7 @@ void main() {
           url: imageUrl,
         );
 
-        final result = responsesClient.convertMessage(message);
+        final result = OpenAIResponsesMessageConverter.convertMessage(message);
 
         expect(result['role'], equals('user'));
         expect(result['content'], isA<List>());
@@ -241,7 +231,7 @@ void main() {
           content: 'What do you see?',
         );
 
-        final result = responsesClient.convertMessage(message);
+        final result = OpenAIResponsesMessageConverter.convertMessage(message);
 
         expect(result['role'], equals('user'));
         expect(result['content'], isA<List>());
@@ -335,7 +325,7 @@ void main() {
           data: fileData,
         );
 
-        final result = responsesClient.convertMessage(message);
+        final result = OpenAIResponsesMessageConverter.convertMessage(message);
 
         expect(result['role'], equals('user'));
         expect(result['content'], isA<List>());
@@ -355,7 +345,7 @@ void main() {
           content: 'Summarize this document',
         );
 
-        final result = responsesClient.convertMessage(message);
+        final result = OpenAIResponsesMessageConverter.convertMessage(message);
 
         expect(result['role'], equals('user'));
         expect(result['content'], isA<List>());

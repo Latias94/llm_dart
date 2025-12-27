@@ -1,0 +1,19 @@
+name: llm_dart_acme
+description: Acme provider for llm_dart (Anthropic-compatible template).
+version: 0.0.0
+homepage: https://github.com/Latias94/llm_dart
+repository: https://github.com/Latias94/llm_dart
+issue_tracker: https://github.com/Latias94/llm_dart/issues
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  llm_dart_core: ^0.10.5
+  llm_dart_provider_utils: ^0.10.5
+  llm_dart_anthropic_compatible: ^0.10.5
+
+dev_dependencies:
+  test: ^1.27.0
+  lints: ^6.0.0
+
