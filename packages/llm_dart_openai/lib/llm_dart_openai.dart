@@ -2,5 +2,5 @@
 library;
 
 export 'defaults.dart';
-export 'src/factory.dart';
-export 'src/openai.dart';
+export 'openai.dart';
+export 'openai_factory.dart';

@@ -72,6 +72,10 @@ Provider-by-provider alignment tracker:
 - **Umbrella exports avoid Dio by default**:
   - `package:llm_dart/llm_dart.dart` no longer exports Dio-specific helpers like `HttpConfigUtils` / `BaseHttpProvider`.
   - Import advanced transport utilities from `package:llm_dart_provider_utils/llm_dart_provider_utils.dart`.
+- **Provider package entrypoints are standardized (Vercel-style)**:
+  - Each provider package exposes a stable `<provider>.dart` entrypoint (e.g. `package:llm_dart_openai/openai.dart`) plus the default `package:llm_dart_openai/llm_dart_openai.dart`.
+  - Factory/registration APIs are exposed via `<provider>_factory.dart` (e.g. `openai_factory.dart`, `google_factory.dart`) and re-exported by the default entrypoint.
+  - Avoid importing from `package:*/*/src/*` paths; use the public entrypoints instead.
 
 - **Legacy umbrella shims removed**:
   - Removed subpath imports like `package:llm_dart/core/*`, `package:llm_dart/models/*`, `package:llm_dart/providers/**`, `package:llm_dart/builder/*`.

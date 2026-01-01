@@ -2,8 +2,5 @@
 library;
 
 export 'defaults.dart';
-export 'src/anthropic.dart';
-export 'src/factory.dart';
-export 'src/files.dart';
-export 'src/models.dart';
-export 'src/provider.dart';
+export 'anthropic.dart';
+export 'anthropic_factory.dart';
