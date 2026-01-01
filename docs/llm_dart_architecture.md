@@ -99,8 +99,8 @@ Provider-by-provider alignment tracker:
 
 - **Publish-ready internal dependencies (monorepo hygiene)**:
   - All internal package dependencies are now expressed as **version constraints** (no `path:` in any `pubspec.yaml`), so each subpackage (and the `llm_dart` suite) can be published.
-  - Local development uses `pubspec_overrides.yaml` at the repo root to resolve internal packages via local paths (not published).
-  - `melos.yaml` is added to support optional workspace workflows (bootstrap/versioning/publishing).
+  - Local development uses Dart pub workspaces (`workspace:` at repo root + `resolution: workspace` in members) to resolve internal packages via local paths.
+  - `melos.yaml` remains optional tooling for scripts/versioning/publishing workflows.
 
 - **Protocol reuse layer (Anthropic-compatible)**:
   - `packages/llm_dart_anthropic_compatible` created and now hosts reusable:

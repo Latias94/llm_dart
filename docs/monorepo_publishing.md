@@ -28,39 +28,22 @@ This ensures every package can be published independently.
 
 ---
 
-## 2) Local development: use `pubspec_overrides.yaml` (not published)
+## 2) Local development: Dart pub workspaces
 
-For local development in this repo, the root package uses `pubspec_overrides.yaml`
-to redirect internal dependencies to local paths:
+For local development in this repo, we use Dart pub workspaces:
 
-- `pubspec_overrides.yaml` (repo root)
+- The repo root `pubspec.yaml` declares the workspace members via `workspace:`.
+- Each workspace member package includes `resolution: workspace` in its `pubspec.yaml`.
 
-Notes:
-
-- `pubspec_overrides.yaml` is **not** published to pub.dev.
-- This keeps local development fast and consistent while preserving publishability.
-
-This repo also includes `pubspec_overrides.yaml` in each `packages/llm_dart_*`
-subpackage so `dart pub get` works from within subpackage directories during
-development (these override files are not published).
+This keeps all `pubspec.yaml` files publishable (no `path:` deps), while still
+linking internal packages from source during development.
 
 ---
 
-## 3) Optional: workspace tooling with Melos
+## 3) Optional tooling: Melos
 
-This repo includes `melos.yaml` so maintainers can use `melos` for:
-
-- bootstrapping local overrides across all packages
-- running scripts across packages
-- versioning and publishing workflows (if adopted later)
-
-This repo does not require `melos` for end users.
-
-Common commands (maintainers):
-
-- `melos bootstrap`
-- `melos run test`
-- `melos run format`
+This repo includes `melos.yaml` for optional scripting/versioning workflows,
+but it is not required for dependency linking (pub workspaces already handle that).
 
 ---
 

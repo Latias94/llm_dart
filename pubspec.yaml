@@ -14,6 +14,24 @@ topics:
 environment:
   sdk: '>=3.5.0 <4.0.0'
 
+workspace:
+  - packages/llm_dart_ai
+  - packages/llm_dart_anthropic
+  - packages/llm_dart_anthropic_compatible
+  - packages/llm_dart_builder
+  - packages/llm_dart_core
+  - packages/llm_dart_deepseek
+  - packages/llm_dart_elevenlabs
+  - packages/llm_dart_google
+  - packages/llm_dart_groq
+  - packages/llm_dart_minimax
+  - packages/llm_dart_ollama
+  - packages/llm_dart_openai
+  - packages/llm_dart_openai_compatible
+  - packages/llm_dart_phind
+  - packages/llm_dart_provider_utils
+  - packages/llm_dart_xai
+
 dependencies:
   llm_dart_builder: ^0.11.0-alpha.1
   llm_dart_core: ^0.11.0-alpha.1

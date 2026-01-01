@@ -1,3 +1,0 @@
-dependency_overrides:
-  llm_dart_core:
-    path: ../llm_dart_core

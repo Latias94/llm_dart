@@ -27,12 +27,14 @@ the pattern used by `llm_dart_minimax`.
    - Copy `docs/templates/anthropic_compatible_provider/ROOT_TESTS/test/providers/acme/`
    - Paste to `test/providers/<providerId>/`
 4. Wire it into the monorepo (optional but recommended):
-   - Root `pubspec_overrides.yaml`: add a `dependency_overrides` entry for the new package path
    - Root `pubspec.yaml`: add the dependency if the umbrella should include it
+   - Root `pubspec.yaml`: add `packages/llm_dart_<providerId>` to `workspace:` so pub links the package locally
+   - `packages/llm_dart_<providerId>/pubspec.yaml`: add `resolution: workspace` (required for workspace members)
    - Umbrella registration:
      - `lib/builtins/builtin_provider_registry.dart`: call `register<ProviderName>()`
      - `lib/src/builtin_llm_builder_extensions.dart`: add `LLMBuilder.<providerId>()`
      - `lib/llm_dart.dart`: export the provider package
+   - Run `dart pub get` at the repo root (workspace) to update local linking
 5. Run tests:
    - `dart test -j 1`
 

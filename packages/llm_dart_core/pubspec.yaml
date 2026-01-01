@@ -8,6 +8,8 @@ issue_tracker: https://github.com/Latias94/llm_dart/issues
 environment:
   sdk: '>=3.5.0 <4.0.0'
 
+resolution: workspace
+
 dependencies:
   # Intentionally no HTTP client dependency.
   # Providers/protocol packages depend on Dio via llm_dart_provider_utils.

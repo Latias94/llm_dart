@@ -8,6 +8,8 @@ issue_tracker: https://github.com/Latias94/llm_dart/issues
 environment:
   sdk: '>=3.5.0 <4.0.0'
 
+resolution: workspace
+
 dependencies:
   dio: ^5.9.0
   logging: ^1.2.0
