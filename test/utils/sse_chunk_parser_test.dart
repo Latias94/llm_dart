@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 
-import 'package:llm_dart_provider_utils/utils/sse_chunk_parser.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('SseChunkParser', () {

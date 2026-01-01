@@ -2,7 +2,7 @@ import 'package:test/test.dart';
 
 import 'package:llm_dart_anthropic_compatible/config.dart';
 import 'package:llm_dart_anthropic_compatible/dio_strategy.dart';
-import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_elevenlabs/config.dart';
 import 'package:llm_dart_elevenlabs/dio_strategy.dart';
 import 'package:llm_dart_google/config.dart';

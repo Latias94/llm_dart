@@ -1,7 +1,6 @@
 import 'dart:async';
 
-import 'package:llm_dart_core/core/cancellation.dart';
-import 'package:llm_dart_core/models/chat_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// A handler for executing a tool call locally.
 typedef ToolCallHandler = FutureOr<Object?> Function(

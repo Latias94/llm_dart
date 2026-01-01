@@ -33,7 +33,7 @@
 /// ```
 library;
 
-import 'package:llm_dart_core/models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'config.dart';
 import 'provider.dart';
 

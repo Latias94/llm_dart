@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/core/capability.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// OpenAI-compatible provider configuration (no per-model matrices).
 ///

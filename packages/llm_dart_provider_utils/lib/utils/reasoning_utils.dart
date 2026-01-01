@@ -2,7 +2,7 @@
 /// This matches the logic from the TypeScript implementation
 library;
 
-import 'package:llm_dart_core/models/chat_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Result of reasoning detection
 class ReasoningDetectionResult {

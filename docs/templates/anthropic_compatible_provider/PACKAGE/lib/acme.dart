@@ -1,8 +1,7 @@
 library;
 
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
-import 'package:llm_dart_core/core/capability.dart';
-import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'acme_chat.dart';
 

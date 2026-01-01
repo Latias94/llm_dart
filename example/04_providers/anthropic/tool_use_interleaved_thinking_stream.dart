@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
-import 'package:llm_dart_core/models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Anthropic (Claude) tool use + interleaved thinking example.
 ///

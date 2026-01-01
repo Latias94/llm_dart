@@ -38,7 +38,7 @@ export 'src/elevenlabs_builder.dart';
 // Convenience functions for creating providers
 import 'builtins/builtin_provider_registry.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
-import 'package:llm_dart_core/core/capability.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Create a new LLM builder instance
 ///

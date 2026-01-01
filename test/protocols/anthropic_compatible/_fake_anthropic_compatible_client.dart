@@ -1,5 +1,5 @@
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
-import 'package:llm_dart_core/core/cancellation.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 class FakeAnthropicCompatibleClient extends AnthropicClient {
   final List<String> chunks;

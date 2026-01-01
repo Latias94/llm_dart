@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
-import 'package:llm_dart_core/models/file_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Anthropic-specific file object
 ///

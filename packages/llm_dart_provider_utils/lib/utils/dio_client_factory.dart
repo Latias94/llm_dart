@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import '../core/base_http_provider.dart';
-import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Strategy interface for provider-specific Dio configuration
 ///

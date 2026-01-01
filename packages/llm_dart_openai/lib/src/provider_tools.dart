@@ -1,6 +1,6 @@
 library;
 
-import 'package:llm_dart_core/models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'web_search_context_size.dart';
 

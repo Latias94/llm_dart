@@ -1,10 +1,7 @@
 import 'dart:convert';
 
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
-import 'package:llm_dart_core/core/capability.dart';
-import 'package:llm_dart_core/core/cancellation.dart';
-import 'package:llm_dart_core/core/stream_parts.dart';
-import 'package:llm_dart_core/models/chat_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
 
 class _FakeOpenAIClient extends OpenAIClient {

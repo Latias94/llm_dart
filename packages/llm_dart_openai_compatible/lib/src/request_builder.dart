@@ -1,5 +1,4 @@
-import 'package:llm_dart_core/models/chat_models.dart';
-import 'package:llm_dart_core/models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'client.dart';

@@ -1,8 +1,6 @@
 library;
 
-import 'package:llm_dart_core/core/capability.dart';
-import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/registry.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'defaults.dart';

@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
-import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'http_client_adapter_stub.dart'
     if (dart.library.io) 'http_client_adapter_io.dart'
     if (dart.library.html) 'http_client_adapter_web.dart';

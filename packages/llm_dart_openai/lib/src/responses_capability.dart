@@ -8,10 +8,7 @@
 /// yet support similar stateful conversation APIs.
 library;
 
-import 'package:llm_dart_core/core/capability.dart';
-import 'package:llm_dart_core/models/chat_models.dart';
-import 'package:llm_dart_core/models/responses_models.dart';
-import 'package:llm_dart_core/models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// OpenAI-specific capability interface for stateful Responses API
 ///

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 
-import 'package:llm_dart_core/core/llm_error.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Dio error handler utility for consistent error handling across providers.
 ///

@@ -3,9 +3,7 @@ import 'dart:convert';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:http_parser/http_parser.dart';
 
-import 'package:llm_dart_core/core/capability.dart';
-import 'package:llm_dart_core/core/llm_error.dart';
-import 'package:llm_dart_core/models/image_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'client.dart';
 import 'config.dart';
 import '../defaults.dart';

@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
-import 'package:llm_dart_core/models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_minimax/llm_dart_minimax.dart';
 
 /// MiniMax M2 (Anthropic-compatible) tool use + interleaved thinking example.

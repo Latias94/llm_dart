@@ -1,6 +1,5 @@
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
-import 'package:llm_dart_core/models/chat_models.dart';
-import 'package:llm_dart_core/prompt/prompt.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
 
 void main() {

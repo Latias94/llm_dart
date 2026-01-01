@@ -1,11 +1,5 @@
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
-import 'package:llm_dart_core/core/capability.dart';
-import 'package:llm_dart_core/core/cancellation.dart';
-import 'package:llm_dart_core/core/stream_parts.dart';
-import 'package:llm_dart_core/models/chat_models.dart';
-import 'package:llm_dart_core/models/file_models.dart';
-import 'package:llm_dart_core/models/tool_models.dart';
-import 'package:llm_dart_core/prompt/prompt.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'files.dart';
 import 'models.dart';

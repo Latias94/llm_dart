@@ -8,6 +8,7 @@ export 'core/capability.dart';
 export 'core/cancellation.dart';
 export 'core/config.dart';
 export 'core/llm_error.dart';
+export 'core/provider_options.dart';
 export 'core/registry.dart';
 export 'core/stream_parts.dart';
 

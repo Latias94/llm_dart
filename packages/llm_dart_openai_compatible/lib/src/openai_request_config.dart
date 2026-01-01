@@ -1,6 +1,4 @@
-import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/models/chat_models.dart';
-import 'package:llm_dart_core/models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Shared config surface required to talk to an OpenAI-style HTTP API.
 ///

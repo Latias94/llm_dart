@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:logging/logging.dart';
 
-import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// IO platform implementation for HTTP client adapter configuration
 class HttpClientAdapterConfig {

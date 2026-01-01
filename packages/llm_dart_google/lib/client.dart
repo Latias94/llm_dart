@@ -1,5 +1,5 @@
-import 'package:llm_dart_core/core/cancellation.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
 

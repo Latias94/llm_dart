@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'defaults.dart';
 
 /// ElevenLabs provider configuration.

@@ -1,6 +1,4 @@
-import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_options.dart';
-import 'package:llm_dart_core/models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'defaults.dart';
 

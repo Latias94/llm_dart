@@ -1,5 +1,5 @@
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
-import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_minimax/llm_dart_minimax.dart';
 
 import '../../protocols/anthropic_compatible/streaming_tool_use_conformance.dart';

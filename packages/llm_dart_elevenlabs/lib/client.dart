@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:llm_dart_core/core/cancellation.dart';
-import 'package:llm_dart_core/core/llm_error.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'config.dart';

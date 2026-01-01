@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:llm_dart_core/models/chat_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// OpenAI-only: convert `ChatMessage` into the Responses API `input` shape.
 ///

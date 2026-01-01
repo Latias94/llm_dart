@@ -1,6 +1,6 @@
 library;
 
-import 'package:llm_dart_core/models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'web_fetch_tool_options.dart';
 import 'web_search_tool_options.dart';

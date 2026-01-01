@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart' as dio;
-import 'package:llm_dart_core/core/cancellation.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 class DioCancelTokenBinding {
   final dio.CancelToken? dioCancelToken;

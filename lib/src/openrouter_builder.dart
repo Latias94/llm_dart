@@ -1,5 +1,5 @@
 import 'package:llm_dart_builder/llm_dart_builder.dart';
-import 'package:llm_dart_core/core/capability.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// OpenRouter-specific LLM builder with provider-specific configuration methods.
 ///

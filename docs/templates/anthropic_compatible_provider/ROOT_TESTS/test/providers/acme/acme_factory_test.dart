@@ -1,7 +1,7 @@
 import 'package:test/test.dart';
 import 'package:llm_dart_acme/llm_dart_acme.dart';
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
-import 'package:llm_dart_core/core/config.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 void main() {
   group('AcmeProviderFactory', () {

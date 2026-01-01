@@ -3,8 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:logging/logging.dart';
 
-import 'package:llm_dart_core/core/cancellation.dart';
-import 'package:llm_dart_core/core/llm_error.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'dio_cancellation.dart';
 import 'dio_error_handler.dart';
 

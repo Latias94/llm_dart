@@ -1,7 +1,5 @@
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
-import 'package:llm_dart_core/core/capability.dart';
-import 'package:llm_dart_core/models/chat_models.dart';
-import 'package:llm_dart_core/models/tool_models.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
 
 import '_fake_anthropic_compatible_json_client.dart';
