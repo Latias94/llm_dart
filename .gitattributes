@@ -1,6 +1,7 @@
 # Keep line endings consistent across platforms (avoid noisy CRLF/LF diffs).
-* text=auto eol=lf
+* text=auto
 
 *.bat text eol=crlf
 *.cmd text eol=crlf
 
+.gitattributes text eol=lf
