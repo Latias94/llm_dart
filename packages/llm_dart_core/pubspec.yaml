@@ -12,7 +12,8 @@ resolution: workspace
 
 dependencies:
   # Intentionally no HTTP client dependency.
-  # Providers/protocol packages depend on Dio via llm_dart_provider_utils.
+  # Providers/protocol packages use Dio (directly or via shared utilities),
+  # but core must remain provider/transport-agnostic.
 
 dev_dependencies:
   test: ^1.27.0

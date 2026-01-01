@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 
+import 'package:dio/dio.dart';
 import 'package:llm_dart_anthropic_compatible/config.dart';
 import 'package:llm_dart_anthropic_compatible/dio_strategy.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';

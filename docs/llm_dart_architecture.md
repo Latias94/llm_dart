@@ -233,7 +233,7 @@ Provider-by-provider alignment tracker:
 
 - **HTTP error handling cleanup**:
   - `DioErrorHandler` moved from `llm_dart_core` to `llm_dart_provider_utils` (core no longer imports Dio for error mapping).
-  - Umbrella `llm_dart` continues to re-export `DioErrorHandler` for compatibility.
+  - `DioErrorHandler` is intentionally **not** re-exported by the umbrella `llm_dart` package to keep the default surface provider/HTTP-agnostic.
 
 - **Provider-specific web search tool options (Anthropic)**:
   - Added `AnthropicWebSearchToolOptions` in `llm_dart_anthropic_compatible` to match Anthropic server tool option shapes (Vercel-style: provider-specific options).

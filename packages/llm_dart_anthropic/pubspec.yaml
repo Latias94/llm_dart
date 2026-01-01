@@ -11,6 +11,7 @@ environment:
 resolution: workspace
 
 dependencies:
+  dio: ^5.9.0
   llm_dart_core: ^0.11.0-alpha.1
   llm_dart_provider_utils: ^0.11.0-alpha.1
   llm_dart_anthropic_compatible: ^0.11.0-alpha.1
