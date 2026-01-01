@@ -1,1 +1,1 @@
-export 'package:llm_dart_openai_compatible/src/chat.dart';
+export 'package:llm_dart_openai_compatible/chat.dart';

@@ -15,8 +15,7 @@ export 'package:llm_dart_ai/llm_dart_ai.dart';
 export 'package:llm_dart_builder/llm_dart_builder.dart';
 
 // Provider exports (all-in-one umbrella)
-export 'package:llm_dart_openai/llm_dart_openai.dart'
-    hide createDeepSeekProvider, createGroqProvider;
+export 'package:llm_dart_openai/llm_dart_openai.dart';
 export 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 export 'package:llm_dart_google/llm_dart_google.dart';
