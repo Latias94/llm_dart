@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, dev]
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, dev]
 
 jobs:
   analyze:
@@ -24,6 +24,9 @@ jobs:
 
       - name: Check monorepo dependency rules
         run: dart run tool/check_monorepo_deps.dart
+
+      - name: Check public export boundaries
+        run: dart run tool/check_public_exports.dart
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .

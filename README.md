@@ -14,6 +14,7 @@ Recommended mental model (Vercel AI SDK style):
 - Use `llm_dart_ai` task APIs as the stable, provider-agnostic surface.
 - Use `providerOptions` / `providerTools` / `providerMetadata` as escape hatches.
 - Keep provider-specific innovation out of the “standard” surface.
+- See `docs/stability.md` for the stability tiers (Tier 1/2/3).
 
 ## Quick Navigation
 

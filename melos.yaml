@@ -17,3 +17,6 @@ scripts:
   deps:
     run: dart run tool/check_monorepo_deps.dart
     description: Verify monorepo dependency direction rules.
+  exports:
+    run: dart run tool/check_public_exports.dart
+    description: Verify public export boundary rules.
