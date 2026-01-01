@@ -101,7 +101,8 @@ Future<RerankResult> rerankByEmbedding({
       : math.min(topK, scored.length);
 
   return RerankResult(
-    rawResponse: RerankResponse(results: scored.take(k).toList(growable: false)),
+    rawResponse:
+        RerankResponse(results: scored.take(k).toList(growable: false)),
   );
 }
 

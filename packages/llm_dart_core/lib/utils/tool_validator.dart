@@ -321,4 +321,3 @@ class ToolValidator {
     return errors;
   }
 }
-

@@ -4,6 +4,7 @@
 /// wire format.
 library;
 
+export 'defaults.dart';
 export 'base_url.dart';
 export 'chat.dart';
 export 'client.dart';

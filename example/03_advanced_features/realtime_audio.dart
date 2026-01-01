@@ -94,7 +94,8 @@ Future<RealtimeAudioCapability?> initializeAudioProvider() async {
 }
 
 /// Demonstrate basic real-time audio session
-Future<void> demonstrateBasicRealtimeSession(RealtimeAudioCapability provider) async {
+Future<void> demonstrateBasicRealtimeSession(
+    RealtimeAudioCapability provider) async {
   print('🎙️ Basic Real-time Session:');
 
   try {
@@ -145,7 +146,8 @@ Future<void> demonstrateBasicRealtimeSession(RealtimeAudioCapability provider) a
 }
 
 /// Demonstrate voice activity detection
-Future<void> demonstrateVoiceActivityDetection(RealtimeAudioCapability provider) async {
+Future<void> demonstrateVoiceActivityDetection(
+    RealtimeAudioCapability provider) async {
   print('🗣️ Voice Activity Detection:');
 
   try {
@@ -202,7 +204,8 @@ Future<void> demonstrateVoiceActivityDetection(RealtimeAudioCapability provider)
 }
 
 /// Demonstrate continuous conversation flow
-Future<void> demonstrateContinuousConversation(RealtimeAudioCapability provider) async {
+Future<void> demonstrateContinuousConversation(
+    RealtimeAudioCapability provider) async {
   print('💬 Continuous Conversation:');
 
   try {
@@ -269,7 +272,8 @@ Future<void> demonstrateContinuousConversation(RealtimeAudioCapability provider)
 }
 
 /// Demonstrate audio preprocessing and enhancement
-Future<void> demonstrateAudioPreprocessing(RealtimeAudioCapability provider) async {
+Future<void> demonstrateAudioPreprocessing(
+    RealtimeAudioCapability provider) async {
   print('🔧 Audio Preprocessing:');
 
   try {
@@ -324,7 +328,8 @@ Future<void> demonstrateAudioPreprocessing(RealtimeAudioCapability provider) asy
 }
 
 /// Demonstrate multi-modal audio interaction
-Future<void> demonstrateMultiModalInteraction(RealtimeAudioCapability provider) async {
+Future<void> demonstrateMultiModalInteraction(
+    RealtimeAudioCapability provider) async {
   print('🎭 Multi-modal Interaction:');
 
   try {
@@ -392,7 +397,8 @@ Future<void> demonstrateMultiModalInteraction(RealtimeAudioCapability provider) 
 }
 
 /// Demonstrate session management and reconnection
-Future<void> demonstrateSessionManagement(RealtimeAudioCapability provider) async {
+Future<void> demonstrateSessionManagement(
+    RealtimeAudioCapability provider) async {
   print('🔄 Session Management:');
 
   try {

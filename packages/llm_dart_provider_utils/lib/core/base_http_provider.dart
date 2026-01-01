@@ -257,7 +257,9 @@ abstract class BaseHttpProvider implements ChatCapability {
       case 400:
       case 422:
         return InvalidRequestError(
-          detail == null ? 'Bad request - check your parameters' : 'Bad request - $detail',
+          detail == null
+              ? 'Bad request - check your parameters'
+              : 'Bad request - $detail',
         );
 
       case 401:
@@ -266,7 +268,9 @@ abstract class BaseHttpProvider implements ChatCapability {
 
       case 404:
         return NotFoundError(
-          detail == null ? '$providerName API endpoint not found' : '$providerName API endpoint not found: $detail',
+          detail == null
+              ? '$providerName API endpoint not found'
+              : '$providerName API endpoint not found: $detail',
         );
 
       case 408:

@@ -25,9 +25,9 @@
 /// ```
 library;
 
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'config.dart';
 import 'provider.dart';
+import '../defaults.dart';
 
 // Core exports
 export 'config.dart';
@@ -54,8 +54,8 @@ export 'web_search_context_size.dart';
 /// Create an OpenAI provider with default settings
 OpenAIProvider createOpenAIProvider({
   required String apiKey,
-  String model = ProviderDefaults.openaiDefaultModel,
-  String baseUrl = ProviderDefaults.openaiBaseUrl,
+  String model = openaiDefaultModel,
+  String baseUrl = openaiBaseUrl,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,

@@ -1,6 +1,7 @@
 /// llm_dart_openai_compatible
 library;
 
+export 'defaults.dart';
 export 'src/openai_compatible_configs.dart';
 export 'src/openai_compatible_factory.dart';
 export 'src/openai_compatible_config.dart';

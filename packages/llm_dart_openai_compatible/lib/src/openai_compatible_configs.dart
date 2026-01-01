@@ -1,5 +1,5 @@
 import 'package:llm_dart_core/core/capability.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
+import '../defaults.dart';
 
 import 'openai_compatible_provider_config.dart';
 
@@ -22,8 +22,8 @@ class OpenAICompatibleConfigs {
     providerId: 'deepseek-openai',
     displayName: 'DeepSeek (OpenAI-compatible)',
     description: 'DeepSeek AI models using OpenAI-compatible interface',
-    defaultBaseUrl: ProviderDefaults.deepseekBaseUrl,
-    defaultModel: ProviderDefaults.deepseekDefaultModel,
+    defaultBaseUrl: deepseekBaseUrl,
+    defaultModel: deepseekDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
@@ -33,8 +33,8 @@ class OpenAICompatibleConfigs {
     providerId: 'google-openai',
     displayName: 'Google Gemini (OpenAI-compatible)',
     description: 'Google Gemini models using OpenAI-compatible interface',
-    defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
-    defaultModel: 'gemini-2.0-flash',
+    defaultBaseUrl: googleOpenAIBaseUrl,
+    defaultModel: googleOpenAIDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
@@ -44,8 +44,8 @@ class OpenAICompatibleConfigs {
     providerId: 'xai-openai',
     displayName: 'xAI Grok (OpenAI-compatible)',
     description: 'xAI Grok models using OpenAI-compatible interface',
-    defaultBaseUrl: ProviderDefaults.xaiBaseUrl,
-    defaultModel: ProviderDefaults.xaiDefaultModel,
+    defaultBaseUrl: xaiBaseUrl,
+    defaultModel: xaiDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
@@ -56,8 +56,8 @@ class OpenAICompatibleConfigs {
     displayName: 'Groq (OpenAI-compatible)',
     description:
         'Groq AI models using OpenAI-compatible interface for ultra-fast inference',
-    defaultBaseUrl: ProviderDefaults.groqBaseUrl,
-    defaultModel: ProviderDefaults.groqDefaultModel,
+    defaultBaseUrl: groqBaseUrl,
+    defaultModel: groqDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
@@ -67,8 +67,8 @@ class OpenAICompatibleConfigs {
     providerId: 'openrouter',
     displayName: 'OpenRouter',
     description: 'OpenRouter unified API for multiple AI models',
-    defaultBaseUrl: ProviderDefaults.openRouterBaseUrl,
-    defaultModel: ProviderDefaults.openRouterDefaultModel,
+    defaultBaseUrl: openRouterBaseUrl,
+    defaultModel: openRouterDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 

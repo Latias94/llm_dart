@@ -835,10 +835,7 @@ abstract class EmbeddingLLMProvider
 
 /// Full-featured LLM provider with all common capabilities
 abstract class FullLLMProvider
-    implements
-        ChatCapability,
-        EmbeddingCapability,
-        ProviderCapabilities {}
+    implements ChatCapability, EmbeddingCapability, ProviderCapabilities {}
 
 /// Tool execution capability for providers that support client-side tool execution
 ///

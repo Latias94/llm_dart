@@ -1,11 +1,11 @@
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/core/provider_options.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
 import 'mcp_models.dart';
 import 'web_fetch_tool_options.dart';
 import 'web_search_tool_options.dart';
+import 'defaults.dart';
 
 /// Anthropic provider configuration
 ///
@@ -110,8 +110,8 @@ class AnthropicConfig {
 
   const AnthropicConfig({
     required this.apiKey,
-    this.baseUrl = ProviderDefaults.anthropicBaseUrl,
-    this.model = ProviderDefaults.anthropicDefaultModel,
+    this.baseUrl = anthropicBaseUrl,
+    this.model = anthropicDefaultModel,
     this.providerId = 'anthropic',
     this.extraBody,
     this.extraHeaders,

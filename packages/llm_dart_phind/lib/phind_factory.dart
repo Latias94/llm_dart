@@ -2,10 +2,10 @@ library;
 
 import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/core/registry.dart';
 import 'package:llm_dart_provider_utils/factories/base_factory.dart';
 
+import 'defaults.dart';
 import 'phind.dart';
 
 const String phindProviderId = 'phind';
@@ -49,7 +49,10 @@ class PhindProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults(phindProviderId);
+    return {
+      'baseUrl': phindBaseUrl,
+      'model': phindDefaultModel,
+    };
   }
 
   PhindConfig _transformConfig(LLMConfig config) {

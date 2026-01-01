@@ -364,8 +364,10 @@ Future<void> demonstrateTextToSpeech(String apiKey) async {
     final quickResponse = await speechProvider.textToSpeech(
       const TTSRequest(text: 'Quick test with ElevenLabs'),
     );
-    await File('demo_elevenlabs_quick.mp3').writeAsBytes(quickResponse.audioData);
-    print('      ✅ Quick speech: ${quickResponse.audioData.length} bytes → demo_elevenlabs_quick.mp3');
+    await File('demo_elevenlabs_quick.mp3')
+        .writeAsBytes(quickResponse.audioData);
+    print(
+        '      ✅ Quick speech: ${quickResponse.audioData.length} bytes → demo_elevenlabs_quick.mp3');
 
     print('      ✅ Text-to-speech demonstration completed\n');
   } catch (e) {

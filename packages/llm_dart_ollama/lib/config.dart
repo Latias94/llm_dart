@@ -1,7 +1,8 @@
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/core/provider_options.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
+
+import 'defaults.dart';
 
 /// Ollama provider configuration
 ///
@@ -35,9 +36,9 @@ class OllamaConfig {
   final LLMConfig? _originalConfig;
 
   const OllamaConfig({
-    this.baseUrl = ProviderDefaults.ollamaBaseUrl,
+    this.baseUrl = ollamaBaseUrl,
     this.apiKey,
-    this.model = ProviderDefaults.ollamaDefaultModel,
+    this.model = ollamaDefaultModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,

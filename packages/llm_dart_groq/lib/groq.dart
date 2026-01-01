@@ -1,10 +1,10 @@
 /// Modular Groq Provider.
 library;
 
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
 
 import 'config.dart';
+import 'defaults.dart';
 import 'provider.dart';
 
 export 'config.dart';
@@ -26,8 +26,8 @@ GroqProvider createGroqProvider({
 }) {
   final config = GroqConfig(
     apiKey: apiKey,
-    model: model ?? ProviderDefaults.groqDefaultModel,
-    baseUrl: baseUrl ?? ProviderDefaults.groqBaseUrl,
+    model: model ?? groqDefaultModel,
+    baseUrl: baseUrl ?? groqBaseUrl,
     maxTokens: maxTokens,
     temperature: temperature,
     systemPrompt: systemPrompt,

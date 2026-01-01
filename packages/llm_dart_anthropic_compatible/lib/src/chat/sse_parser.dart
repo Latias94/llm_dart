@@ -503,7 +503,8 @@ class _AnthropicChatSseParser {
             arguments: jsonEncode(input),
           );
           if (toolCall != null) {
-            client.logger.info('✅ Emitting ToolCallDeltaEvent for ${state.name}');
+            client.logger
+                .info('✅ Emitting ToolCallDeltaEvent for ${state.name}');
             events.add(ToolCallDeltaEvent(toolCall));
           }
 

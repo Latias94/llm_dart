@@ -14,9 +14,8 @@ void main(List<String> args) {
 
   final workspace = _discoverWorkspacePackages(rootDir, packagesDir);
 
-  final protocolPackages = workspace.keys
-      .where((name) => name.endsWith('_compatible'))
-      .toSet();
+  final protocolPackages =
+      workspace.keys.where((name) => name.endsWith('_compatible')).toSet();
 
   final errors = <String>[];
 
@@ -38,8 +37,8 @@ void main(List<String> args) {
       continue; // umbrella package (or future free-form package)
     }
 
-    final violations =
-        internalDeps.difference(allowedInternalDeps).toList()..sort();
+    final violations = internalDeps.difference(allowedInternalDeps).toList()
+      ..sort();
 
     if (violations.isNotEmpty) {
       errors.add(

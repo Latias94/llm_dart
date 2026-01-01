@@ -14,10 +14,7 @@ import 'models.dart';
 /// DeepSeek is an OpenAI-compatible API surface. This provider is intentionally
 /// thin and delegates protocol behavior to `llm_dart_openai_compatible`.
 class DeepSeekProvider
-    implements
-        ChatCapability,
-        ChatStreamPartsCapability,
-        ProviderCapabilities {
+    implements ChatCapability, ChatStreamPartsCapability, ProviderCapabilities {
   final DeepSeekConfig config;
   final OpenAICompatibleConfig _openAIConfig;
   final OpenAIClient _client;

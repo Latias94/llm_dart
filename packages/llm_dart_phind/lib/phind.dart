@@ -15,7 +15,7 @@
 /// ```
 library;
 
-import 'package:llm_dart_core/core/provider_defaults.dart';
+import 'defaults.dart';
 
 import 'config.dart';
 import 'provider.dart';
@@ -25,8 +25,8 @@ export 'provider.dart';
 
 PhindProvider createPhindProvider({
   required String apiKey,
-  String model = 'Phind-70B',
-  String baseUrl = ProviderDefaults.phindBaseUrl,
+  String model = phindDefaultModel,
+  String baseUrl = phindBaseUrl,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,

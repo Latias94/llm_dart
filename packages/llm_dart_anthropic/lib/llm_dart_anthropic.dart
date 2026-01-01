@@ -1,6 +1,7 @@
 /// llm_dart_anthropic
 library;
 
+export 'defaults.dart';
 export 'src/anthropic.dart';
 export 'src/factory.dart';
 export 'src/files.dart';

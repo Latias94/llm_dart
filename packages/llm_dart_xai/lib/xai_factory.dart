@@ -2,10 +2,10 @@ library;
 
 import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/core/registry.dart';
 import 'package:llm_dart_provider_utils/factories/base_factory.dart';
 
+import 'defaults.dart';
 import 'xai.dart';
 
 const String xaiProviderId = 'xai';
@@ -63,7 +63,10 @@ class XAIProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults(xaiProviderId);
+    return {
+      'baseUrl': xaiBaseUrl,
+      'model': xaiDefaultModel,
+    };
   }
 
   XAIConfig _transformConfig(LLMConfig config) {
@@ -101,6 +104,9 @@ class XAIResponsesProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults(xaiResponsesProviderId);
+    return {
+      'baseUrl': xaiBaseUrl,
+      'model': xaiDefaultModel,
+    };
   }
 }

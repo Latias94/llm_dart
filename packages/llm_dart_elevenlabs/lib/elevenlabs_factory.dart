@@ -2,10 +2,10 @@ library;
 
 import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/core/registry.dart';
 import 'package:llm_dart_provider_utils/factories/base_factory.dart';
 
+import 'defaults.dart';
 import 'config.dart';
 import 'provider.dart';
 
@@ -23,7 +23,8 @@ void registerElevenLabs({bool replace = false}) {
   LLMProviderRegistry.register(factory);
 }
 
-class ElevenLabsProviderFactory extends BaseProviderFactory<ElevenLabsProvider> {
+class ElevenLabsProviderFactory
+    extends BaseProviderFactory<ElevenLabsProvider> {
   @override
   String get providerId => elevenLabsProviderId;
 
@@ -52,7 +53,14 @@ class ElevenLabsProviderFactory extends BaseProviderFactory<ElevenLabsProvider> 
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults(elevenLabsProviderId);
+    return {
+      'baseUrl': elevenLabsBaseUrl,
+      'model': elevenLabsDefaultTTSModel, // Use TTS model as default model
+      'voiceId': elevenLabsDefaultVoiceId,
+      'ttsModel': elevenLabsDefaultTTSModel,
+      'sttModel': elevenLabsDefaultSTTModel,
+      'supportedAudioFormats': elevenLabsSupportedAudioFormats,
+    };
   }
 
   ElevenLabsConfig _transformConfig(LLMConfig config) {

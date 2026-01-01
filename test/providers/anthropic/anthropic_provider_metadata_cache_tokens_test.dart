@@ -3,7 +3,8 @@ import 'package:llm_dart/llm_dart.dart';
 
 void main() {
   group('Anthropic providerMetadata prompt caching usage', () {
-    test('surfaces cache_creation_input_tokens and cache_read_input_tokens', () {
+    test('surfaces cache_creation_input_tokens and cache_read_input_tokens',
+        () {
       final response = AnthropicChatResponse(
         const {
           'id': 'msg_123',
@@ -33,4 +34,3 @@ void main() {
     });
   });
 }
-

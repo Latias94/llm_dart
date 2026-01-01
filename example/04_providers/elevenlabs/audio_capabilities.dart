@@ -231,7 +231,8 @@ Future<void> testSpeechToText(SpeechToTextCapability provider) async {
 
       print('   📝 Transcription: "${advancedSTT.text}"');
       print('   🌍 Language: ${advancedSTT.language ?? "unknown"}');
-      print('   📊 Confidence: ${advancedSTT.languageProbability ?? "unknown"}');
+      print(
+          '   📊 Confidence: ${advancedSTT.languageProbability ?? "unknown"}');
 
       final words = advancedSTT.words;
       if (words != null && words.isNotEmpty) {
@@ -240,14 +241,16 @@ Future<void> testSpeechToText(SpeechToTextCapability provider) async {
           if (word is EnhancedWordTiming) {
             final speaker =
                 word.speakerId != null ? ' [${word.speakerId}]' : '';
-            print('      "${word.word}"$speaker (${word.start}s - ${word.end}s)');
+            print(
+                '      "${word.word}"$speaker (${word.start}s - ${word.end}s)');
           } else {
             print('      "${word.word}" (${word.start}s - ${word.end}s)');
           }
         }
       }
     } else {
-      print('   ⚠️  No audio file found for transcription test (elevenlabs_quality.mp3)');
+      print(
+          '   ⚠️  No audio file found for transcription test (elevenlabs_quality.mp3)');
     }
   } catch (e) {
     print('   ❌ STT failed: $e');

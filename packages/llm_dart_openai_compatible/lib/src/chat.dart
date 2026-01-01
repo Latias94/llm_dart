@@ -654,7 +654,6 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
     _thinkingBuffer.clear();
     _toolCallIds.clear();
   }
-
 }
 
 class _ToolCallAccum {

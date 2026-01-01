@@ -1,6 +1,5 @@
 import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/core/registry.dart';
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
 import 'package:llm_dart_provider_utils/factories/base_factory.dart';
@@ -68,6 +67,9 @@ class AnthropicProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults(providerId);
+    return {
+      'baseUrl': anthropicBaseUrl,
+      'model': anthropicDefaultModel,
+    };
   }
 }

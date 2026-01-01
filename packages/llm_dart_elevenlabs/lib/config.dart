@@ -1,5 +1,5 @@
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
+import 'defaults.dart';
 
 /// ElevenLabs provider configuration.
 class ElevenLabsConfig {
@@ -17,7 +17,7 @@ class ElevenLabsConfig {
 
   const ElevenLabsConfig({
     required this.apiKey,
-    this.baseUrl = ProviderDefaults.elevenLabsBaseUrl,
+    this.baseUrl = elevenLabsBaseUrl,
     this.voiceId,
     this.model,
     this.timeout,
@@ -59,16 +59,13 @@ class ElevenLabsConfig {
   // implement a realtime session transport in this provider.
   bool get supportsRealTimeStreaming => false;
 
-  String get defaultVoiceId =>
-      voiceId ?? ProviderDefaults.elevenLabsDefaultVoiceId;
+  String get defaultVoiceId => voiceId ?? elevenLabsDefaultVoiceId;
 
-  String get defaultTTSModel =>
-      model ?? ProviderDefaults.elevenLabsDefaultTTSModel;
+  String get defaultTTSModel => model ?? elevenLabsDefaultTTSModel;
 
-  String get defaultSTTModel => ProviderDefaults.elevenLabsDefaultSTTModel;
+  String get defaultSTTModel => elevenLabsDefaultSTTModel;
 
-  List<String> get supportedAudioFormats =>
-      ProviderDefaults.elevenLabsSupportedAudioFormats;
+  List<String> get supportedAudioFormats => elevenLabsSupportedAudioFormats;
 
   Map<String, dynamic> get voiceSettings => {
         if (stability != null) 'stability': stability,

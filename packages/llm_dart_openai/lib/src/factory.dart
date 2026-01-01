@@ -1,13 +1,13 @@
 import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/config.dart';
 import 'package:llm_dart_core/core/llm_error.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/core/provider_options.dart';
 import 'package:llm_dart_core/core/registry.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
 import 'package:llm_dart_provider_utils/factories/base_factory.dart';
 
+import '../defaults.dart';
 import 'openai.dart';
 
 /// OpenAI provider id used in the core registry.
@@ -73,7 +73,10 @@ class OpenAIProviderFactory
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults(openaiProviderId);
+    return {
+      'baseUrl': openaiBaseUrl,
+      'model': openaiDefaultModel,
+    };
   }
 
   /// Transform unified config to OpenAI-specific config.

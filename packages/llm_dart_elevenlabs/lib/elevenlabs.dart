@@ -3,7 +3,7 @@
 /// ElevenLabs specializes in text-to-speech and speech-to-text services.
 library;
 
-import 'package:llm_dart_core/core/provider_defaults.dart';
+import 'defaults.dart';
 
 import 'config.dart';
 import 'provider.dart';
@@ -19,7 +19,7 @@ export 'speech_to_speech.dart';
 
 ElevenLabsProvider createElevenLabsProvider({
   required String apiKey,
-  String baseUrl = ProviderDefaults.elevenLabsBaseUrl,
+  String baseUrl = elevenLabsBaseUrl,
   String? voiceId,
   String? model,
   Duration? timeout,
@@ -45,8 +45,8 @@ ElevenLabsProvider createElevenLabsProvider({
 
 ElevenLabsProvider createElevenLabsTTSProvider({
   required String apiKey,
-  String voiceId = ProviderDefaults.elevenLabsDefaultVoiceId,
-  String model = ProviderDefaults.elevenLabsDefaultTTSModel,
+  String voiceId = elevenLabsDefaultVoiceId,
+  String model = elevenLabsDefaultTTSModel,
   double stability = 0.5,
   double similarityBoost = 0.75,
   double style = 0.0,
@@ -67,7 +67,7 @@ ElevenLabsProvider createElevenLabsTTSProvider({
 
 ElevenLabsProvider createElevenLabsSTTProvider({
   required String apiKey,
-  String model = ProviderDefaults.elevenLabsDefaultSTTModel,
+  String model = elevenLabsDefaultSTTModel,
 }) {
   final config = ElevenLabsConfig(
     apiKey: apiKey,
@@ -80,7 +80,7 @@ ElevenLabsProvider createElevenLabsSTTProvider({
 ElevenLabsProvider createElevenLabsCustomVoiceProvider({
   required String apiKey,
   required String voiceId,
-  String model = ProviderDefaults.elevenLabsDefaultTTSModel,
+  String model = elevenLabsDefaultTTSModel,
   double stability = 0.5,
   double similarityBoost = 0.75,
   double style = 0.0,
@@ -101,7 +101,7 @@ ElevenLabsProvider createElevenLabsCustomVoiceProvider({
 
 ElevenLabsProvider createElevenLabsStreamingProvider({
   required String apiKey,
-  String voiceId = ProviderDefaults.elevenLabsDefaultVoiceId,
+  String voiceId = elevenLabsDefaultVoiceId,
   String model = 'eleven_turbo_v2',
   double stability = 0.5,
   double similarityBoost = 0.75,

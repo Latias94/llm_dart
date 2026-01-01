@@ -30,10 +30,8 @@ Future<void> main() async {
       .model('gpt-4o')
       .buildSpeech();
 
-  final sttBuilder = LLMBuilder()
-      .provider(openaiProviderId)
-      .apiKey(apiKey)
-      .model('whisper-1');
+  final sttBuilder =
+      LLMBuilder().provider(openaiProviderId).apiKey(apiKey).model('whisper-1');
 
   final sttProvider = await sttBuilder.buildTranscription();
   final translationProvider = await sttBuilder.buildAudioTranslation();
@@ -145,7 +143,8 @@ Future<void> testSpeechToText(SpeechToTextCapability provider) async {
         }
       }
     } else {
-      print('   ⚠️  No audio file found for transcription test (openai_basic.mp3)');
+      print(
+          '   ⚠️  No audio file found for transcription test (openai_basic.mp3)');
     }
   } catch (e) {
     print('   ❌ STT failed: $e');
@@ -172,7 +171,8 @@ Future<void> testAudioTranslation(AudioTranslationCapability provider) async {
       print('   🌐 Translation: "${translation.text}"');
       print('   🌍 Target language: English (always)');
     } else {
-      print('   ⚠️  No audio file found for translation test (openai_basic.mp3)');
+      print(
+          '   ⚠️  No audio file found for translation test (openai_basic.mp3)');
     }
   } catch (e) {
     print('   ❌ Audio translation failed: $e');

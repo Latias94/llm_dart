@@ -1,6 +1,7 @@
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
+
+import 'defaults.dart';
 
 /// Groq provider configuration.
 class GroqConfig {
@@ -21,8 +22,8 @@ class GroqConfig {
 
   const GroqConfig({
     required this.apiKey,
-    this.baseUrl = ProviderDefaults.groqBaseUrl,
-    this.model = ProviderDefaults.groqDefaultModel,
+    this.baseUrl = groqBaseUrl,
+    this.model = groqDefaultModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,

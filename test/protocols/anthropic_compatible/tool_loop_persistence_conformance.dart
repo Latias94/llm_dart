@@ -110,7 +110,8 @@ void registerAnthropicCompatibleToolLoopPersistenceConformanceTests({
       final assistantMessage =
           (first as ChatResponseWithAssistantMessage).assistantMessage;
 
-      final anthropicExt = assistantMessage.getProtocolPayload<Map<String, dynamic>>(
+      final anthropicExt =
+          assistantMessage.getProtocolPayload<Map<String, dynamic>>(
         'anthropic',
       );
       expect(anthropicExt, isNotNull);

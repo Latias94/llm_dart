@@ -43,7 +43,7 @@ Future<void> main(List<String> args) async {
       envVars: const ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'],
       baseUrlEnvVars: const ['ANTHROPIC_BASE_URL'],
       modelEnvVars: const ['ANTHROPIC_MODEL'],
-      defaultModel: ProviderDefaults.anthropicDefaultModel,
+      defaultModel: anthropicDefaultModel,
     ),
     _ProviderSpec(
       providerId: 'google',
@@ -480,7 +480,8 @@ Future<List<_CheckResult>> _runProviderChecks(
                   final assistant = response.assistantMessage;
                   // Protocol-internal: Anthropic-compatible providers preserve
                   // full content blocks for continuity across requests.
-                  final anthropic = assistant.getProtocolPayload<Map<String, dynamic>>(
+                  final anthropic =
+                      assistant.getProtocolPayload<Map<String, dynamic>>(
                     'anthropic',
                   );
                   final blocks = anthropic?['contentBlocks'];
@@ -605,7 +606,8 @@ Future<List<_CheckResult>> _runProviderChecks(
             ),
           );
 
-          final ok = alignment.words.isNotEmpty && alignment.characters.isNotEmpty;
+          final ok =
+              alignment.words.isNotEmpty && alignment.characters.isNotEmpty;
           return _CheckResult(
             name: 'elevenLabsForcedAlignment',
             ok: ok,

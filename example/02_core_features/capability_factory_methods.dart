@@ -61,8 +61,7 @@ Future<void> demonstrateOldVsNewApproach() async {
   print('   if (provider is! TextToSpeechCapability) {');
   print('     throw Exception("Not supported");');
   print('   }');
-  print(
-      '   final tts = provider as TextToSpeechCapability; // Runtime cast!');
+  print('   final tts = provider as TextToSpeechCapability; // Runtime cast!');
   print('   final audio = await tts.textToSpeech(TTSRequest(text: "Hi"));');
   print('   ```');
   print('');
@@ -179,7 +178,8 @@ Future<void> demonstrateTypeSafeBuilding() async {
 
       // Voice listing is provider-specific; check opt-in capability.
       if (ttsProvider is VoiceListingCapability) {
-        final voices = await (ttsProvider as VoiceListingCapability).getVoices();
+        final voices =
+            await (ttsProvider as VoiceListingCapability).getVoices();
         print('         🎭 Available voices: ${voices.length} voices');
         if (voices.isNotEmpty) {
           print(

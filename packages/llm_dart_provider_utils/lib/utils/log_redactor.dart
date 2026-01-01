@@ -33,4 +33,3 @@ class LogRedactor {
     return out;
   }
 }
-

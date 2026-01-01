@@ -1,8 +1,8 @@
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
 
+import '../defaults.dart';
 import 'openai_request_config.dart';
 
 /// Generic OpenAI-compatible configuration.
@@ -118,9 +118,8 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
       providerName: providerName ?? providerId,
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
-      model: config.model.isEmpty
-          ? ProviderDefaults.openaiDefaultModel
-          : config.model,
+      model:
+          config.model.isEmpty ? openaiCompatibleFallbackModel : config.model,
       extraBody: config.getProviderOption<Map<String, dynamic>>(
         providerId,
         'extraBody',

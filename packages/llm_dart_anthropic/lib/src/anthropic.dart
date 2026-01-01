@@ -2,7 +2,6 @@
 library;
 
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 
 import 'provider.dart';
 
@@ -32,8 +31,8 @@ AnthropicProvider createAnthropicProvider({
 }) {
   final config = AnthropicConfig(
     apiKey: apiKey,
-    model: model ?? ProviderDefaults.anthropicDefaultModel,
-    baseUrl: baseUrl ?? ProviderDefaults.anthropicBaseUrl,
+    model: model ?? anthropicDefaultModel,
+    baseUrl: baseUrl ?? anthropicBaseUrl,
     maxTokens: maxTokens,
     temperature: temperature,
     systemPrompt: systemPrompt,

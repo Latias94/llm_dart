@@ -1,6 +1,7 @@
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
+
+import 'defaults.dart';
 
 /// Phind provider configuration.
 class PhindConfig {
@@ -21,8 +22,8 @@ class PhindConfig {
 
   const PhindConfig({
     required this.apiKey,
-    this.baseUrl = ProviderDefaults.phindBaseUrl,
-    this.model = ProviderDefaults.phindDefaultModel,
+    this.baseUrl = phindBaseUrl,
+    this.model = phindDefaultModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,

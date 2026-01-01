@@ -35,7 +35,8 @@ class ElevenLabsBuilder {
     return this;
   }
 
-  Future<TextToSpeechCapability> buildSpeech() async => _baseBuilder.buildSpeech();
+  Future<TextToSpeechCapability> buildSpeech() async =>
+      _baseBuilder.buildSpeech();
 
   Future<StreamingTextToSpeechCapability> buildStreamingSpeech() async =>
       _baseBuilder.buildStreamingSpeech();

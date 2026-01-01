@@ -221,7 +221,8 @@ Future<void> demoElevenLabsBuilder(String? apiKey) async {
     // Generate speech (TTS)
     final response = await ttsProvider.textToSpeech(
       const TTSRequest(
-        text: 'Welcome to the new provider-specific builder pattern in LLM Dart!',
+        text:
+            'Welcome to the new provider-specific builder pattern in LLM Dart!',
         format: 'mp3',
       ),
     );

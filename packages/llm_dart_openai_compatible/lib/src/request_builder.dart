@@ -110,9 +110,8 @@ class OpenAIRequestBuilder {
     final effectiveUser = userFromOptions ?? config.user;
     if (effectiveUser != null) body['user'] = effectiveUser;
 
-    final serviceTierFromOptions = isGroq
-        ? config.getProviderOption<String>('serviceTier')
-        : null;
+    final serviceTierFromOptions =
+        isGroq ? config.getProviderOption<String>('serviceTier') : null;
     if (serviceTierFromOptions != null) {
       body['service_tier'] = serviceTierFromOptions;
     } else if (config.serviceTier != null) {

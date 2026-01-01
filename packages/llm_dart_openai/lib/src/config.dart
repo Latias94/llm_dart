@@ -1,10 +1,10 @@
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart'
     show OpenAIRequestConfig;
 import 'builtin_tools.dart';
+import '../defaults.dart';
 
 /// OpenAI provider configuration
 ///
@@ -77,8 +77,8 @@ class OpenAIConfig implements OpenAIRequestConfig {
 
   const OpenAIConfig({
     required this.apiKey,
-    this.baseUrl = ProviderDefaults.openaiBaseUrl,
-    this.model = ProviderDefaults.openaiDefaultModel,
+    this.baseUrl = openaiBaseUrl,
+    this.model = openaiDefaultModel,
     this.extraBody,
     this.extraHeaders,
     this.maxTokens,

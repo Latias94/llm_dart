@@ -3,10 +3,10 @@ import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/cancellation.dart';
 import 'package:llm_dart_core/core/llm_error.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/models/audio_models.dart';
 import 'client.dart';
 import 'config.dart';
+import '../defaults.dart';
 
 /// OpenAI Audio capabilities implementation
 ///
@@ -35,9 +35,9 @@ class OpenAIAudio
     }
 
     final requestBody = <String, dynamic>{
-      'model': request.model ?? ProviderDefaults.openaiDefaultTTSModel,
+      'model': request.model ?? openaiDefaultTTSModel,
       'input': request.text,
-      'voice': request.voice ?? ProviderDefaults.openaiDefaultVoice,
+      'voice': request.voice ?? openaiDefaultVoice,
       if (request.format != null) 'response_format': request.format,
       if (request.speed != null) 'speed': request.speed,
     };
@@ -139,8 +139,8 @@ class OpenAIAudio
       );
     }
 
-    formData.fields.add(MapEntry(
-        'model', request.model ?? ProviderDefaults.openaiDefaultSTTModel));
+    formData.fields
+        .add(MapEntry('model', request.model ?? openaiDefaultSTTModel));
     if (request.language != null) {
       formData.fields.add(MapEntry('language', request.language!));
     }
@@ -344,8 +344,8 @@ class OpenAIAudio
       );
     }
 
-    formData.fields.add(MapEntry(
-        'model', request.model ?? ProviderDefaults.openaiDefaultSTTModel));
+    formData.fields
+        .add(MapEntry('model', request.model ?? openaiDefaultSTTModel));
     if (request.prompt != null) {
       formData.fields.add(MapEntry('prompt', request.prompt!));
     }
@@ -374,5 +374,4 @@ class OpenAIAudio
       usage: null,
     );
   }
-
 }

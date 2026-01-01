@@ -2,10 +2,10 @@ library;
 
 import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/core/registry.dart';
 import 'package:llm_dart_provider_utils/factories/base_factory.dart';
 
+import 'defaults.dart';
 import 'deepseek.dart';
 
 /// DeepSeek provider id used in the core registry.
@@ -59,7 +59,10 @@ class DeepSeekProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults(deepseekProviderId);
+    return {
+      'baseUrl': deepseekBaseUrl,
+      'model': deepseekDefaultModel,
+    };
   }
 
   /// Transform unified config to DeepSeek-specific config.

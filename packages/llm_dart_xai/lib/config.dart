@@ -1,7 +1,8 @@
 import 'package:llm_dart_core/core/config.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/core/provider_options.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
+
+import 'defaults.dart';
 
 /// Search source configuration for search parameters.
 class SearchSource {
@@ -198,8 +199,8 @@ class XAIConfig {
 
   const XAIConfig({
     required this.apiKey,
-    this.baseUrl = ProviderDefaults.xaiBaseUrl,
-    this.model = ProviderDefaults.xaiDefaultModel,
+    this.baseUrl = xaiBaseUrl,
+    this.model = xaiDefaultModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,

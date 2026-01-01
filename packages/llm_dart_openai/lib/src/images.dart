@@ -5,10 +5,10 @@ import 'package:http_parser/http_parser.dart';
 
 import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/llm_error.dart';
-import 'package:llm_dart_core/core/provider_defaults.dart';
 import 'package:llm_dart_core/models/image_models.dart';
 import 'client.dart';
 import 'config.dart';
+import '../defaults.dart';
 
 /// OpenAI Image Generation capability implementation
 ///
@@ -170,12 +170,12 @@ class OpenAIImages implements ImageGenerationCapability {
 
   @override
   List<String> getSupportedSizes() {
-    return ProviderDefaults.openaiSupportedImageSizes;
+    return openaiSupportedImageSizes;
   }
 
   @override
   List<String> getSupportedFormats() {
-    return ProviderDefaults.openaiSupportedImageFormats;
+    return openaiSupportedImageFormats;
   }
 
   @override

@@ -427,7 +427,8 @@ void main() {
       expect((events[2] as AudioDataEvent).isFinal, isTrue);
     });
 
-    test('transcribe forwards to SpeechToTextCapability.speechToText', () async {
+    test('transcribe forwards to SpeechToTextCapability.speechToText',
+        () async {
       final model = _FakeAudioModel(
         ttsResponse: const TTSResponse(audioData: []),
         sttResponse: const STTResponse(text: 'hello'),
