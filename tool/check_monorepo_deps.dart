@@ -134,6 +134,9 @@ Set<String>? _allowedInternalDepsFor({
   required String packageName,
   required Set<String> protocolPackages,
 }) {
+  if (packageName == 'llm_dart_workspace') {
+    return null; // workspace root (tooling only)
+  }
   if (packageName == 'llm_dart') {
     return null; // unrestricted umbrella
   }

@@ -2,7 +2,7 @@
 
 This repo is a Dart monorepo that ships:
 
-- A convenient “suite” package: `llm_dart`
+- A convenient “suite” package: `llm_dart` (in `packages/llm_dart`)
 - Many pick-and-choose subpackages: `packages/llm_dart_*`
 
 The primary constraint is **publishability**:
@@ -21,7 +21,7 @@ All internal dependencies use version constraints:
 
 This applies to:
 
-- `pubspec.yaml` at the repo root (`llm_dart`)
+- `packages/llm_dart/pubspec.yaml` (the umbrella suite)
 - All `packages/llm_dart_*` packages
 
 This ensures every package can be published independently.

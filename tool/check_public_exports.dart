@@ -56,6 +56,7 @@ void main(List<String> args) {
 
 bool _isProviderPackage(String packageName) {
   if (!packageName.startsWith('llm_dart_')) return false;
+  if (packageName == 'llm_dart_workspace') return false;
   if (packageName == 'llm_dart') return false;
   if (packageName == 'llm_dart_core') return false;
   if (packageName == 'llm_dart_ai') return false;
