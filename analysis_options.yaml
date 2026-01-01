@@ -6,3 +6,8 @@ analyzer:
     - docs/templates/**
     # Reference repos are vendored for comparison and are not part of this package.
     - repo-ref/**
+
+linter:
+  rules:
+    # Disallow importing another package's implementation details (anything under `lib/src/`).
+    implementation_imports: true
