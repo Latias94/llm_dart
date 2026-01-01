@@ -72,6 +72,28 @@ class OpenAICompatibleConfigs {
     supportedCapabilities: _bestEffortCapabilities,
   );
 
+  /// GitHub Copilot Chat configuration using OpenAI-compatible interface.
+  static const OpenAICompatibleProviderConfig githubCopilot =
+      OpenAICompatibleProviderConfig(
+    providerId: 'github-copilot',
+    displayName: 'GitHub Copilot',
+    description: 'GitHub Copilot Chat via an OpenAI-compatible endpoint',
+    defaultBaseUrl: githubCopilotBaseUrl,
+    defaultModel: githubCopilotDefaultModel,
+    supportedCapabilities: _bestEffortCapabilities,
+  );
+
+  /// Together AI configuration using OpenAI-compatible interface.
+  static const OpenAICompatibleProviderConfig togetherAI =
+      OpenAICompatibleProviderConfig(
+    providerId: 'together-ai',
+    displayName: 'Together AI',
+    description: 'Together AI models via an OpenAI-compatible endpoint',
+    defaultBaseUrl: togetherAIBaseUrl,
+    defaultModel: togetherAIDefaultModel,
+    supportedCapabilities: _bestEffortCapabilities,
+  );
+
   /// Get all available OpenAI-compatible configurations
   static List<OpenAICompatibleProviderConfig> getAllConfigs() {
     return [
@@ -80,6 +102,8 @@ class OpenAICompatibleConfigs {
       xai,
       groq,
       openRouter,
+      githubCopilot,
+      togetherAI,
     ];
   }
 
@@ -96,6 +120,10 @@ class OpenAICompatibleConfigs {
         return groq;
       case 'openrouter':
         return openRouter;
+      case 'github-copilot':
+        return githubCopilot;
+      case 'together-ai':
+        return togetherAI;
       default:
         return null;
     }

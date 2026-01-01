@@ -82,28 +82,38 @@ extension BuiltinProviderBuilders on LLMBuilder {
 
   // OpenAI-compatible providers
   LLMBuilder deepseekOpenAI() {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'deepseek-openai',
+    );
     return provider('deepseek-openai');
   }
 
   LLMBuilder googleOpenAI() {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'google-openai',
+    );
     return provider('google-openai');
   }
 
   LLMBuilder xaiOpenAI() {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'xai-openai',
+    );
     return provider('xai-openai');
   }
 
   LLMBuilder groqOpenAI() {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'groq-openai',
+    );
     return provider('groq-openai');
   }
 
   LLMBuilder openRouter(
       [OpenRouterBuilder Function(OpenRouterBuilder)? configure]) {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'openrouter',
+    );
     provider('openrouter');
     if (configure != null) {
       configure(OpenRouterBuilder(this));
@@ -112,12 +122,16 @@ extension BuiltinProviderBuilders on LLMBuilder {
   }
 
   LLMBuilder githubCopilot() {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'github-copilot',
+    );
     return provider('github-copilot');
   }
 
   LLMBuilder togetherAI() {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'together-ai',
+    );
     return provider('together-ai');
   }
 }

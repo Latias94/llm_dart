@@ -24,6 +24,7 @@ Provider-by-provider alignment tracker:
   - Umbrella registration moved to `BuiltinProviderRegistry` (`llm_dart` entrypoints call `ensureRegistered()`).
   - Standard provider set is explicitly defined (Vercel-style): OpenAI, Anthropic, Google (Gemini).
     - Umbrella provides `BuiltinProviderRegistry.registerStandard()` / `ensureStandardRegistered()` in addition to `registerAll()` / `ensureRegistered()`.
+  - Umbrella registration policy is documented in `docs/umbrella_policy.md`.
 
 - **Examples migrated to task APIs (Vercel-style)**:
   - Examples now prefer `llm_dart_ai` streaming/task APIs (`streamText` / `streamChatParts` / `streamToolLoopPartsWithToolSet`) instead of calling `provider.chatStream(...)` directly.
@@ -32,7 +33,7 @@ Provider-by-provider alignment tracker:
   - `ai()` remains a legacy convenience in the umbrella package (auto-registers built-in providers via `BuiltinProviderRegistry`).
 
 - **OpenAI-compatible examples cleaned up**:
-  - `example/04_providers/others/openai_compatible.dart` now reflects only the OpenAI-compatible providers shipped in this repo (`deepseek-openai`, `groq-openai`, `xai-openai`, `google-openai`, `openrouter`).
+  - `example/04_providers/others/openai_compatible.dart` now reflects the primary OpenAI-compatible presets we smoke test in this repo (`deepseek-openai`, `groq-openai`, `xai-openai`, `google-openai`, `openrouter`).
 
 - **Namespaced provider options (Vercel-style)**:
   - `LLMConfig.providerOptions` added (namespaced JSON-like map).

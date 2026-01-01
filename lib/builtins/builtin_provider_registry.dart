@@ -22,6 +22,8 @@ class BuiltinProviderRegistry {
   static bool _isRegistered(String providerId) =>
       LLMProviderRegistry.isRegistered(providerId);
 
+  static const String _openRouterProviderId = 'openrouter';
+
   /// Ensure the Vercel-style "standard" providers are registered.
   ///
   /// In `llm_dart`, "standard" means the first-party providers we align with
@@ -49,13 +51,33 @@ class BuiltinProviderRegistry {
         _isRegistered('ollama') &&
         _isRegistered('google') &&
         _isRegistered('xai') &&
+        _isRegistered('xai.responses') &&
         _isRegistered('groq') &&
         _isRegistered('elevenlabs') &&
         _isRegistered('minimax') &&
-        _isRegistered('openrouter')) {
+        _isRegistered(_openRouterProviderId)) {
       return;
     }
     registerAll();
+  }
+
+  /// Ensure a specific OpenAI-compatible preset provider is registered.
+  ///
+  /// `llm_dart` treats OpenAI-compatible presets as opt-in because some of them
+  /// are duplicates of first-party provider packages (e.g. `deepseek` vs
+  /// `deepseek-openai`).
+  ///
+  /// The umbrella package still ships helper builders for these presets; those
+  /// helpers call this method so the provider id is available on demand.
+  static void ensureOpenAICompatibleProviderRegistered(
+    String providerId, {
+    bool replace = false,
+  }) {
+    try {
+      registerOpenAICompatibleProvider(providerId, replace: replace);
+    } catch (e) {
+      _logger.warning('Failed to register OpenAI-compatible provider: $e');
+    }
   }
 
   /// Register the "standard" provider set (OpenAI, Anthropic, Google).
@@ -82,12 +104,18 @@ class BuiltinProviderRegistry {
       registerElevenLabs();
       registerMinimax();
 
-      registerOpenAICompatibleProviders();
+      // Register OpenRouter by default because the umbrella package provides
+      // first-class OpenRouter helpers (see `OpenRouterBuilder`).
+      //
+      // Other OpenAI-compatible presets are opt-in to avoid silently registering
+      // duplicate provider ids (e.g. `deepseek` vs `deepseek-openai`).
+      registerOpenAICompatibleProvider(_openRouterProviderId);
     } catch (e) {
       _logger.warning('Failed to register built-in providers: $e');
     }
   }
 
-  // OpenAI-compatible providers are registered via `registerOpenAICompatibleProviders()`
-  // to keep the umbrella registry thin and allow subpackage-only usage.
+  // OpenAI-compatible presets can still be registered explicitly via:
+  // - `registerOpenAICompatibleProviders()` (all presets), or
+  // - `registerOpenAICompatibleProvider(id)` (a single preset).
 }

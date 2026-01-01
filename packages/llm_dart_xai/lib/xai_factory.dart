@@ -10,21 +10,28 @@ const String xaiProviderId = 'xai';
 const String xaiResponsesProviderId = 'xai.responses';
 
 void registerXAI({bool replace = false}) {
-  if (!replace &&
-      LLMProviderRegistry.isRegistered(xaiProviderId) &&
-      LLMProviderRegistry.isRegistered(xaiResponsesProviderId)) {
-    return;
-  }
-
   final factory = XAIProviderFactory();
   final responsesFactory = XAIResponsesProviderFactory();
+
+  final hasXai = LLMProviderRegistry.isRegistered(xaiProviderId);
+  final hasResponses =
+      LLMProviderRegistry.isRegistered(xaiResponsesProviderId);
+
+  if (!replace && hasXai && hasResponses) return;
+
   if (replace) {
     LLMProviderRegistry.registerOrReplace(factory);
     LLMProviderRegistry.registerOrReplace(responsesFactory);
     return;
   }
-  LLMProviderRegistry.register(factory);
-  LLMProviderRegistry.register(responsesFactory);
+
+  if (!hasXai) {
+    LLMProviderRegistry.register(factory);
+  }
+
+  if (!hasResponses) {
+    LLMProviderRegistry.register(responsesFactory);
+  }
 }
 
 /// Factory for creating xAI provider instances.
