@@ -1,6 +1,9 @@
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai/builtin_tools.dart';
+import 'package:llm_dart_openai/provider_tools.dart';
+import 'package:llm_dart_openai/web_search_context_size.dart';
 
 /// OpenAI-specific LLM builder with provider-specific configuration methods.
 ///

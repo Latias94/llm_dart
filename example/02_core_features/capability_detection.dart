@@ -6,6 +6,7 @@ import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_groq/llm_dart_groq.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai/provider_tools.dart';
 
 /// 🔍 Capability Detection - Discover Provider Features
 ///

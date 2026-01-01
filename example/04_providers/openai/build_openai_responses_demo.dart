@@ -5,6 +5,7 @@ import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai/responses.dart';
 
 /// 🚀 OpenAI Responses API Provider Build Demo
 ///

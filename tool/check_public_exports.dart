@@ -115,8 +115,19 @@ List<String> _checkProviderEntrypoints(String packageName, Directory packageDir)
 
     final exports = _extractExports(file.readAsStringSync());
 
+    final forbiddenEntrypointExports = _forbiddenEntrypointExportsFor(
+      packageName,
+    );
+
     for (final target in exports) {
       final normalized = target.replaceAll('\\', '/');
+
+      if (forbiddenEntrypointExports.contains(normalized)) {
+        errors.add(
+          '$packageName must not export "$normalized" from its entrypoints '
+          '(found in ${_relPath(file.path)})',
+        );
+      }
 
       if (_isLowLevelHttpExport(normalized)) {
         errors.add(
@@ -135,6 +146,27 @@ List<String> _checkProviderEntrypoints(String packageName, Directory packageDir)
   }
 
   return errors;
+}
+
+Set<String> _forbiddenEntrypointExportsFor(String packageName) {
+  if (packageName == 'llm_dart_openai') {
+    // Keep OpenAI's main entrypoints task-first and push advanced endpoint
+    // wrappers to opt-in imports.
+    return const {
+      'assistants.dart',
+      'responses.dart',
+      'responses_capability.dart',
+      'responses_message_converter.dart',
+      'builtin_tools.dart',
+      'provider_tools.dart',
+      'web_search_context_size.dart',
+      'files.dart',
+      'models.dart',
+      'moderation.dart',
+      'completion.dart',
+    };
+  }
+  return const {};
 }
 
 bool _isLowLevelHttpExport(String normalizedTarget) {
@@ -210,4 +242,3 @@ String _relPath(String path) {
   }
   return path;
 }
-

@@ -6,6 +6,8 @@ import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai/provider_tools.dart';
+import 'package:llm_dart_openai/web_search_context_size.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:llm_dart_xai/llm_dart_xai.dart';
 

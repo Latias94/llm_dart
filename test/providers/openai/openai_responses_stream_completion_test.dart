@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
+import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:test/test.dart';
 
 void main() {
@@ -20,7 +21,7 @@ void main() {
         'data: [DONE]\n',
       ]);
 
-      final responses = openai_client.OpenAIResponses(client, config);
+      final responses = openai_responses.OpenAIResponses(client, config);
       final events =
           await responses.chatStream([ChatMessage.user('test')]).toList();
 
@@ -55,7 +56,7 @@ void main() {
         'data: [DONE]\n',
       ]);
 
-      final responses = openai_client.OpenAIResponses(client, config);
+      final responses = openai_responses.OpenAIResponses(client, config);
       final events =
           await responses.chatStream([ChatMessage.user('test')]).toList();
 

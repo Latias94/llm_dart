@@ -57,4 +57,3 @@ and pin versions accordingly.
   from their main provider entrypoints.
 - Provider packages must keep low-level HTTP utilities opt-in (not exported from
   `<provider>.dart`).
-

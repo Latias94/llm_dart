@@ -30,6 +30,7 @@ import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai/responses.dart';
 
 void main() async {
   print('=== OpenAI Responses API Examples ===\n');
