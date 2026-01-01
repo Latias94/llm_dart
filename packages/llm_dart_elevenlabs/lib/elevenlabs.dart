@@ -9,9 +9,7 @@ import 'config.dart';
 import 'provider.dart';
 
 export 'audio.dart';
-export 'client.dart';
 export 'config.dart';
-export 'dio_strategy.dart';
 export 'forced_alignment.dart';
 export 'models.dart';
 export 'provider.dart';

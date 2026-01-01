@@ -1,4 +1,5 @@
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_google/client.dart';
 import 'package:test/test.dart';
 
 class _CapturingGoogleClient extends GoogleClient {

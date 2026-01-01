@@ -39,7 +39,6 @@ import 'provider.dart';
 
 // Core exports
 export 'config.dart';
-export 'client.dart';
 export 'provider.dart';
 
 // Capability modules

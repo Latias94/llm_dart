@@ -29,7 +29,6 @@ import 'provider.dart';
 
 // Core exports
 export 'config.dart';
-export 'client.dart';
 export 'provider.dart';
 
 // Capability modules
@@ -37,7 +36,6 @@ export 'chat.dart';
 export 'embeddings.dart';
 export 'images.dart';
 export 'tts.dart';
-export 'dio_strategy.dart';
 export 'provider_tools.dart';
 export 'web_search_tool_options.dart';
 

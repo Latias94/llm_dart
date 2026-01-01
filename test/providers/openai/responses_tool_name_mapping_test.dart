@@ -94,7 +94,7 @@ void main() {
   });
 }
 
-class _CapturingOpenAIClient extends openai_client.OpenAIClient {
+class _CapturingOpenAIClient extends OpenAIClient {
   final Map<String, dynamic> _response;
   Map<String, dynamic>? lastBody;
 

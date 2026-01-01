@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/google.dart';
+import 'package:llm_dart_google/client.dart';
 
 void main() {
   group('GoogleEmbeddings', () {

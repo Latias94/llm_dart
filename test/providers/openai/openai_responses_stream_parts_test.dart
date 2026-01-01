@@ -45,7 +45,7 @@ void main() {
   });
 }
 
-class _FakeOpenAIClient extends openai_client.OpenAIClient {
+class _FakeOpenAIClient extends OpenAIClient {
   final List<String> _chunks;
 
   _FakeOpenAIClient(super.config, this._chunks);

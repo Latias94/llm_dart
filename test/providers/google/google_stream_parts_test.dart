@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_google/client.dart';
 import 'package:test/test.dart';
 
 class _FakeGoogleClient extends GoogleClient {

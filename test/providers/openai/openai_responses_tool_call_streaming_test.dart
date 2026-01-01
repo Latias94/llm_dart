@@ -64,7 +64,7 @@ void main() {
 }
 
 /// Fake OpenAIClient that returns a synthetic SSE stream for testing Responses API.
-class _FakeOpenAIClient extends openai_client.OpenAIClient {
+class _FakeOpenAIClient extends OpenAIClient {
   _FakeOpenAIClient(super.config);
 
   @override

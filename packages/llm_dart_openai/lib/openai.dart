@@ -12,7 +12,6 @@ import 'defaults.dart';
 
 // Core exports
 export 'config.dart';
-export 'client.dart';
 export 'provider.dart';
 
 // Capability modules
@@ -37,7 +36,6 @@ export 'provider_tools.dart';
 export 'web_search_context_size.dart';
 
 // HTTP strategy (shared with OpenAI-compatible reuse)
-export 'dio_strategy.dart';
 
 /// Create an OpenAI provider with default settings.
 OpenAIProvider createOpenAIProvider({

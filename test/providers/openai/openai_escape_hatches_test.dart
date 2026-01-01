@@ -60,13 +60,13 @@ void main() {
         extraHeaders: const {'x-test': '1'},
       );
 
-      final client = openai_client.OpenAIClient(config);
+      final client = OpenAIClient(config);
       expect(client.dio.options.headers['x-test'], equals('1'));
     });
   });
 }
 
-class _CapturingOpenAIClient extends openai_client.OpenAIClient {
+class _CapturingOpenAIClient extends OpenAIClient {
   Map<String, dynamic>? lastBody;
 
   _CapturingOpenAIClient(super.config);
