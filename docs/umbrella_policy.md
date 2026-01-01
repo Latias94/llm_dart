@@ -26,6 +26,7 @@ Notes:
 
 - `llm_dart_provider_utils` is intentionally **not** re-exported by the umbrella to keep the default surface provider/transport-agnostic.
 - `llm_dart_phind` is a standalone package and is not shipped by the umbrella by default.
+- Provider packages should not re-export protocol reuse layers; depend on the protocol packages directly when you need protocol-level types.
 
 ## 2) Registration policy
 
@@ -70,4 +71,3 @@ If you only want the Vercel-style “standard provider set”, call:
 
 - For “pick subpackages” users: prefer `llm_dart_ai` + `llm_dart_builder` + provider package(s) and call `register*()` explicitly.
 - For “all-in-one” users: use `llm_dart`, rely on automatic registration, and treat provider-specific features as escape hatches via `providerOptions` / `providerTools` / `providerMetadata`.
-

@@ -1,12 +1,10 @@
 /// Anthropic provider package entrypoint.
 library;
 
-import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
+import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart'
+    show AnthropicConfig, anthropicBaseUrl, anthropicDefaultModel;
 
 import 'provider.dart';
-
-// Re-export Anthropic Messages protocol layer for convenience.
-export 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
 
 // Provider modules
 export 'provider.dart';

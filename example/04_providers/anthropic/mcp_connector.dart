@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 
 /// Anthropic MCP Connector Example
