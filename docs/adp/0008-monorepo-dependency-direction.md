@@ -29,7 +29,7 @@ Adopt and enforce the following dependency direction rules:
 
 1) `llm_dart_core` depends on **no workspace packages**
 2) `llm_dart_provider_utils` depends only on `llm_dart_core`
-3) `llm_dart_ai` depends only on `llm_dart_core` + `llm_dart_provider_utils`
+3) `llm_dart_ai` depends only on `llm_dart_core`
 4) `llm_dart_builder` depends only on `llm_dart_core`
 5) Protocol reuse packages (`*_compatible`) depend only on:
    - `llm_dart_core`
