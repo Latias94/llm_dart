@@ -2,7 +2,6 @@ import 'dart:io';
 
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/models/tool_models.dart';

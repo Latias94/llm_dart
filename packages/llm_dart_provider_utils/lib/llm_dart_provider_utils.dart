@@ -4,6 +4,9 @@
 /// packages.
 library;
 
+export 'package:dio/dio.dart' hide CancelToken;
+export 'package:logging/logging.dart';
+
 export 'core/base_http_provider.dart';
 export 'core/tool_validator.dart';
 

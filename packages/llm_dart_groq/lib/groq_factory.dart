@@ -3,7 +3,7 @@ library;
 import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/config.dart';
 import 'package:llm_dart_core/core/registry.dart';
-import 'package:llm_dart_provider_utils/factories/base_factory.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'defaults.dart';
 import 'groq.dart';

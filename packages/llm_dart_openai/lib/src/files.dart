@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:dio/dio.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'package:llm_dart_core/core/llm_error.dart';
 import 'package:llm_dart_core/models/file_models.dart';

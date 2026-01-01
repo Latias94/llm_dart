@@ -1,7 +1,7 @@
 /// Anthropic-compatible base URL helpers.
 library;
 
-import 'package:llm_dart_provider_utils/utils/config_utils.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 /// Normalize an Anthropic-compatible base URL to ensure it ends with `/v1/`.
 ///

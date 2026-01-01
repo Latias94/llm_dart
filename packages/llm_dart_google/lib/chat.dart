@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart' hide CancelToken;
-
 import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/cancellation.dart';
 import 'package:llm_dart_core/core/stream_parts.dart';

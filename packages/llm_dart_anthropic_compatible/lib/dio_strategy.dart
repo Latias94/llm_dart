@@ -1,6 +1,4 @@
-import 'package:dio/dio.dart';
-import 'package:llm_dart_provider_utils/utils/config_utils.dart';
-import 'package:llm_dart_provider_utils/utils/dio_client_factory.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'config.dart';
 
 /// Anthropic-specific Dio strategy implementation

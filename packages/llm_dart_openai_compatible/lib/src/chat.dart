@@ -6,7 +6,7 @@ import 'package:llm_dart_core/core/stream_parts.dart';
 import 'package:llm_dart_core/core/llm_error.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
-import 'package:llm_dart_provider_utils/utils/reasoning_utils.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'client.dart';
 import 'openai_request_config.dart';
 import 'request_builder.dart';

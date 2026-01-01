@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:http_parser/http_parser.dart';
 
 import 'package:llm_dart_core/core/capability.dart';

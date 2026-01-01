@@ -5,7 +5,7 @@ import 'package:llm_dart_core/core/provider_options.dart';
 import 'package:llm_dart_core/core/registry.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
-import 'package:llm_dart_provider_utils/factories/base_factory.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../defaults.dart';
 import 'openai.dart';

@@ -1,15 +1,12 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart' hide CancelToken;
-
 import 'package:llm_dart_core/core/capability.dart';
 import 'package:llm_dart_core/core/cancellation.dart';
 import 'package:llm_dart_core/core/stream_parts.dart';
 import 'package:llm_dart_core/core/llm_error.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
-import 'package:llm_dart_provider_utils/utils/dio_error_handler.dart';
-import 'package:llm_dart_provider_utils/utils/jsonl_chunk_parser.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'client.dart';
 import 'config.dart';
 
