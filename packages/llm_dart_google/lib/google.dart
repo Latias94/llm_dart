@@ -36,8 +36,10 @@ export 'chat.dart';
 export 'embeddings.dart';
 export 'images.dart';
 export 'tts.dart';
-export 'provider_tools.dart';
-export 'web_search_tool_options.dart';
+//
+// Advanced, provider-native tools are opt-in:
+// - `package:llm_dart_google/provider_tools.dart`
+// - `package:llm_dart_google/web_search_tool_options.dart`
 
 /// Create a Google provider with default configuration
 GoogleProvider createGoogleProvider({

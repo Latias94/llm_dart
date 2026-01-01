@@ -1,6 +1,8 @@
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_google/provider_tools.dart';
+import 'package:llm_dart_google/web_search_tool_options.dart';
 
 /// Google-specific LLM builder with provider-specific configuration methods.
 ///

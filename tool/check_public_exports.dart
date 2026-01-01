@@ -166,6 +166,25 @@ Set<String> _forbiddenEntrypointExportsFor(String packageName) {
       'completion.dart',
     };
   }
+  if (packageName == 'llm_dart_google') {
+    // Keep Google entrypoints task-first; provider-native tool helpers are opt-in.
+    return const {
+      'provider_tools.dart',
+      'web_search_tool_options.dart',
+    };
+  }
+  if (packageName == 'llm_dart_anthropic') {
+    return const {'files.dart', 'models.dart'};
+  }
+  if (packageName == 'llm_dart_deepseek') {
+    return const {'models.dart'};
+  }
+  if (packageName == 'llm_dart_ollama') {
+    return const {'completion.dart', 'models.dart'};
+  }
+  if (packageName == 'llm_dart_elevenlabs') {
+    return const {'forced_alignment.dart', 'speech_to_speech.dart'};
+  }
   return const {};
 }
 

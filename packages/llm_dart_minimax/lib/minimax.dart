@@ -7,6 +7,7 @@ import 'minimax_models.dart';
 import 'provider.dart';
 
 export 'minimax_models.dart';
+export 'provider.dart';
 
 /// MiniMax Anthropic-compatible base URL (international).
 ///

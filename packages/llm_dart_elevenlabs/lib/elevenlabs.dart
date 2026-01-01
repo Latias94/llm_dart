@@ -10,10 +10,12 @@ import 'provider.dart';
 
 export 'audio.dart';
 export 'config.dart';
-export 'forced_alignment.dart';
 export 'models.dart';
 export 'provider.dart';
-export 'speech_to_speech.dart';
+//
+// Advanced endpoint wrappers are opt-in:
+// - `package:llm_dart_elevenlabs/forced_alignment.dart`
+// - `package:llm_dart_elevenlabs/speech_to_speech.dart`
 
 ElevenLabsProvider createElevenLabsProvider({
   required String apiKey,

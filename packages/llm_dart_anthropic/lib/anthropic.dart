@@ -8,8 +8,10 @@ import 'provider.dart';
 
 // Provider modules
 export 'provider.dart';
-export 'files.dart';
-export 'models.dart';
+//
+// Advanced endpoint wrappers are opt-in:
+// - `package:llm_dart_anthropic/files.dart`
+// - `package:llm_dart_anthropic/models.dart`
 
 /// Create an Anthropic provider with default configuration.
 AnthropicProvider createAnthropicProvider({

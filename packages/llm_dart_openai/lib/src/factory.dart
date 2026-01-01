@@ -2,7 +2,10 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import '../defaults.dart';
-import 'openai.dart';
+import '../builtin_tools.dart';
+import '../config.dart';
+import '../provider.dart';
+import '../web_search_context_size.dart';
 
 /// OpenAI provider id used in the core registry.
 const String openaiProviderId = 'openai';

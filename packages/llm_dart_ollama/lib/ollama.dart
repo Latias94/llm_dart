@@ -43,9 +43,11 @@ export 'provider.dart';
 
 // Capability modules
 export 'chat.dart';
-export 'completion.dart';
 export 'embeddings.dart';
-export 'models.dart';
+//
+// Advanced endpoint wrappers are opt-in:
+// - `package:llm_dart_ollama/completion.dart`
+// - `package:llm_dart_ollama/models.dart`
 
 /// Create an Ollama provider with default configuration
 OllamaProvider createOllamaProvider({

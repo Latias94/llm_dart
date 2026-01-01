@@ -25,8 +25,8 @@ import 'provider.dart';
 // Core exports
 export 'config.dart';
 export 'provider.dart';
-
-export 'models.dart';
+// Advanced endpoint wrappers are opt-in:
+// - `package:llm_dart_deepseek/models.dart`
 
 /// Create a DeepSeek provider with default configuration
 DeepSeekProvider createDeepSeekProvider({

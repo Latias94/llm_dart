@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_elevenlabs/speech_to_speech.dart';
 
 void main() {
   group('ElevenLabs Speech-to-speech', () {

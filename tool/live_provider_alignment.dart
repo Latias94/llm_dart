@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_elevenlabs/forced_alignment.dart';
+import 'package:llm_dart_elevenlabs/speech_to_speech.dart';
 
 /// Live (network) smoke checks for provider alignment.
 ///

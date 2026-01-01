@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_elevenlabs/forced_alignment.dart';
 
 void main() {
   group('ElevenLabs Forced Alignment', () {

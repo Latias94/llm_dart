@@ -5,7 +5,6 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'minimax.dart';
-import 'provider.dart';
 
 /// MiniMax provider id used in the core registry.
 const String minimaxProviderId = 'minimax';
