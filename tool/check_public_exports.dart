@@ -25,6 +25,11 @@ void main(List<String> args) {
       continue;
     }
 
+    if (packageName == 'llm_dart_openai_compatible') {
+      errors.addAll(_checkOpenAICompatiblePublicSurface(packageDir));
+      continue;
+    }
+
     if (_isProviderPackage(packageName)) {
       errors.addAll(_checkProviderEntrypoints(packageName, packageDir));
     }
@@ -142,6 +147,35 @@ List<String> _checkProviderEntrypoints(String packageName, Directory packageDir)
           'export "$normalized" found in ${_relPath(file.path)}',
         );
       }
+    }
+  }
+
+  return errors;
+}
+
+List<String> _checkOpenAICompatiblePublicSurface(Directory packageDir) {
+  final errors = <String>[];
+
+  final entrypoint = File(
+    '${packageDir.path}/lib/llm_dart_openai_compatible.dart',
+  );
+  if (!entrypoint.existsSync()) {
+    errors.add(
+      'llm_dart_openai_compatible missing entrypoint: ${_relPath(entrypoint.path)}',
+    );
+    return errors;
+  }
+
+  final exports = _extractExports(entrypoint.readAsStringSync());
+  const forbidden = {'client.dart', 'dio_strategy.dart'};
+
+  for (final target in exports) {
+    final normalized = target.replaceAll('\\', '/');
+    if (forbidden.contains(normalized)) {
+      errors.add(
+        'llm_dart_openai_compatible must keep low-level HTTP utilities opt-in: '
+        'export "$normalized" found in ${_relPath(entrypoint.path)}',
+      );
     }
   }
 

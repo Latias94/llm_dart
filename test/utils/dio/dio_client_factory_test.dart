@@ -12,6 +12,7 @@ import 'package:llm_dart_ollama/config.dart';
 import 'package:llm_dart_ollama/dio_strategy.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+import 'package:llm_dart_openai_compatible/dio_strategy.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
 
