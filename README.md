@@ -73,9 +73,9 @@ Pick the provider packages you need and keep the dependency footprint small:
 
 ```yaml
 dependencies:
-  llm_dart_ai: ^0.10.5
-  llm_dart_builder: ^0.10.5
-  llm_dart_anthropic: ^0.10.5
+  llm_dart_ai: ^0.11.0-alpha.1
+  llm_dart_builder: ^0.11.0-alpha.1
+  llm_dart_anthropic: ^0.11.0-alpha.1
 ```
 
 Then run:

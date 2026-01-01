@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- **Provider defaults moved out of `llm_dart_core`**: `ProviderDefaults` and `OpenAICompatibleDefaults` are removed from core to keep it provider-agnostic.
+  - Import provider defaults from the relevant package instead, e.g. `package:llm_dart_openai/defaults.dart`, `package:llm_dart_anthropic_compatible/defaults.dart`, `package:llm_dart_openai_compatible/defaults.dart`.
+
 ## [0.11.0-alpha.1] - Not Released
 
 Fearless refactor snapshot.
