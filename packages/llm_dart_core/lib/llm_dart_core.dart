@@ -17,14 +17,12 @@ export 'utils/provider_registry.dart';
 export 'utils/tool_call_aggregator.dart';
 export 'utils/tool_validator.dart';
 
-export 'models/assistant_models.dart';
 export 'models/audio_models.dart';
 export 'models/chat_models.dart';
 export 'models/file_models.dart';
 export 'models/image_models.dart';
 export 'models/moderation_models.dart';
 export 'models/rerank_models.dart';
-export 'models/responses_models.dart';
 export 'models/tool_models.dart';
 
 export 'prompt/prompt.dart';

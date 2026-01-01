@@ -9,6 +9,7 @@
 library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'models/responses_models.dart';
 
 /// OpenAI-specific capability interface for stateful Responses API
 ///

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'tool_models.dart';
+import 'package:llm_dart_core/models/tool_models.dart';
 
 /// Assistant tool types
 enum AssistantToolType {

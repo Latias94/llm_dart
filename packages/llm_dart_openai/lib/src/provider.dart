@@ -9,6 +9,7 @@ import 'files.dart';
 import 'models.dart';
 import 'moderation.dart';
 import 'assistants.dart';
+import 'models/assistant_models.dart';
 import 'completion.dart';
 import 'responses.dart';
 

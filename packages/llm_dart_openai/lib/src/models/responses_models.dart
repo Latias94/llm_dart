@@ -1,4 +1,6 @@
-/// Models for OpenAI Responses API
+/// Models for OpenAI Responses API.
+///
+/// Note: These models are OpenAI-specific and live in `llm_dart_openai`.
 library;
 
 /// Response input items list for Responses API

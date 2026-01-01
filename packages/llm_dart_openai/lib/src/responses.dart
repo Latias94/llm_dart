@@ -5,6 +5,7 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'client.dart';
 import 'builtin_tools.dart';
 import 'config.dart';
+import 'models/responses_models.dart';
 import 'responses_capability.dart';
 import 'responses_message_converter.dart';
 
