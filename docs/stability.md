@@ -65,6 +65,15 @@ imports that are intentionally kept out of the recommended provider entrypoints:
 - `llm_dart_anthropic_compatible`
   - `package:llm_dart_anthropic_compatible/client.dart`
   - `package:llm_dart_anthropic_compatible/dio_strategy.dart`
+- OpenAI-compatible providers (wrappers)
+  - `package:llm_dart_deepseek/client.dart`
+  - `package:llm_dart_deepseek/dio_strategy.dart`
+  - `package:llm_dart_groq/client.dart`
+  - `package:llm_dart_groq/dio_strategy.dart`
+  - `package:llm_dart_phind/client.dart`
+  - `package:llm_dart_phind/dio_strategy.dart`
+  - `package:llm_dart_xai/client.dart`
+  - `package:llm_dart_xai/dio_strategy.dart`
 - `llm_dart_google`
   - `package:llm_dart_google/client.dart`
   - `package:llm_dart_google/dio_strategy.dart`
@@ -76,6 +85,11 @@ imports that are intentionally kept out of the recommended provider entrypoints:
   - `package:llm_dart_elevenlabs/dio_strategy.dart`
 - `llm_dart_xai`
   - `package:llm_dart_xai/responses.dart` (provider-native Responses API adapter)
+- `llm_dart_anthropic` / `llm_dart_minimax`
+  - `package:llm_dart_anthropic/client.dart`
+  - `package:llm_dart_anthropic/dio_strategy.dart`
+  - `package:llm_dart_minimax/client.dart`
+  - `package:llm_dart_minimax/dio_strategy.dart`
 
 ## Design rules (enforced)
 
