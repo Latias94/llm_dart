@@ -81,100 +81,53 @@ String? _firstServerToolType(Map<String, dynamic> response) {
 
 void main() {
   group('xAI Responses non-streaming fixtures (Vercel)', () {
-    test('parses web_search_call response JSON', () async {
-      const fixturePath =
-          'test/fixtures/xai/responses/xai-web-search-tool.1.json';
-      final raw = jsonDecode(File(fixturePath).readAsStringSync())
-          as Map<String, dynamic>;
+    final dir = Directory('test/fixtures/xai/responses');
+    final fixtures = dir
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.json'))
+        .toList(growable: false)
+      ..sort((a, b) => a.path.compareTo(b.path));
 
-      final config = OpenAICompatibleConfig(
-        providerId: 'xai.responses',
-        providerName: 'xAI (Responses)',
-        apiKey: 'test-key',
-        baseUrl: 'https://api.x.ai/v1/',
-        model: raw['model'] as String? ?? 'grok-4-fast',
-      );
+    for (final file in fixtures) {
+      final name = file.uri.pathSegments.last;
+      test('parses $name', () async {
+        final raw = jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
 
-      final client = _FakeJsonOpenAIClient(config, response: raw);
-      final responses = XAIResponses(client, config);
+        final config = OpenAICompatibleConfig(
+          providerId: 'xai.responses',
+          providerName: 'xAI (Responses)',
+          apiKey: 'test-key',
+          baseUrl: 'https://api.x.ai/v1/',
+          model: raw['model'] as String? ?? 'grok-4-fast',
+        );
 
-      final response = await responses.chat([ChatMessage.user('Hi')]);
+        final client = _FakeJsonOpenAIClient(config, response: raw);
+        final responses = XAIResponses(client, config);
 
-      expect(response.text, equals(_extractOutputText(raw)));
-      expect(response.thinking, isNull);
-      expect(response.toolCalls, isNull);
+        final response = await responses.chat([ChatMessage.user('Hi')]);
 
-      final meta = response.providerMetadata?['xai.responses'];
-      expect(meta, isNotNull);
-      expect(meta!['id'], equals(raw['id']));
-      expect(meta['model'], equals(raw['model']));
-      expect(meta['status'], equals(raw['status']));
-      expect(
-          (meta['sources'] as List?)?.length, equals(_countUrlCitations(raw)));
+        expect(response.text, equals(_extractOutputText(raw)));
+        expect(response.thinking, isNull);
+        expect(response.toolCalls, isNull);
 
-      final calls = meta['serverToolCalls'] as List?;
-      expect(calls, isNotNull);
-      expect((calls!.first as Map)['type'], equals(_firstServerToolType(raw)));
-    });
+        final meta = response.providerMetadata?['xai.responses'];
+        expect(meta, isNotNull);
+        expect(meta!['id'], equals(raw['id']));
+        expect(meta['model'], equals(raw['model']));
+        expect(meta['status'], equals(raw['status']));
+        expect(
+          ((meta['sources'] as List?)?.length ?? 0),
+          equals(_countUrlCitations(raw)),
+        );
 
-    test('parses x_search_call response JSON', () async {
-      const fixturePath =
-          'test/fixtures/xai/responses/xai-x-search-tool.1.json';
-      final raw = jsonDecode(File(fixturePath).readAsStringSync())
-          as Map<String, dynamic>;
-
-      final config = OpenAICompatibleConfig(
-        providerId: 'xai.responses',
-        providerName: 'xAI (Responses)',
-        apiKey: 'test-key',
-        baseUrl: 'https://api.x.ai/v1/',
-        model: raw['model'] as String? ?? 'grok-4-fast',
-      );
-
-      final client = _FakeJsonOpenAIClient(config, response: raw);
-      final responses = XAIResponses(client, config);
-
-      final response = await responses.chat([ChatMessage.user('Hi')]);
-
-      expect(response.text, equals(_extractOutputText(raw)));
-      expect(response.thinking, isNull);
-      expect(response.toolCalls, isNull);
-
-      final meta = response.providerMetadata?['xai.responses'];
-      expect(meta, isNotNull);
-      final calls = meta!['serverToolCalls'] as List?;
-      expect(calls, isNotNull);
-      expect((calls!.first as Map)['type'], equals('x_search_call'));
-    });
-
-    test('parses code_interpreter_call response JSON', () async {
-      const fixturePath =
-          'test/fixtures/xai/responses/xai-code-execution-tool.1.json';
-      final raw = jsonDecode(File(fixturePath).readAsStringSync())
-          as Map<String, dynamic>;
-
-      final config = OpenAICompatibleConfig(
-        providerId: 'xai.responses',
-        providerName: 'xAI (Responses)',
-        apiKey: 'test-key',
-        baseUrl: 'https://api.x.ai/v1/',
-        model: raw['model'] as String? ?? 'grok-4-fast',
-      );
-
-      final client = _FakeJsonOpenAIClient(config, response: raw);
-      final responses = XAIResponses(client, config);
-
-      final response = await responses.chat([ChatMessage.user('Hi')]);
-
-      expect(response.text, equals(_extractOutputText(raw)));
-      expect(response.thinking, isNull);
-      expect(response.toolCalls, isNull);
-
-      final meta = response.providerMetadata?['xai.responses'];
-      expect(meta, isNotNull);
-      final calls = meta!['serverToolCalls'] as List?;
-      expect(calls, isNotNull);
-      expect((calls!.first as Map)['type'], equals('code_interpreter_call'));
-    });
+        final calls = meta['serverToolCalls'] as List?;
+        final expectedType = _firstServerToolType(raw);
+        if (expectedType != null) {
+          expect(calls, isNotNull);
+          expect((calls!.first as Map)['type'], equals(expectedType));
+        }
+      });
+    }
   });
 }

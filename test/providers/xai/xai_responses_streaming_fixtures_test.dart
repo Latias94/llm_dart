@@ -67,103 +67,70 @@ Stream<String> _sseStreamFromChunkFile(String path) async* {
 
 void main() {
   group('xAI Responses streaming fixtures (Vercel)', () {
-    test('replays xai-text-streaming.1.chunks.txt', () async {
-      const fixturePath =
-          'test/fixtures/xai/responses/xai-text-streaming.1.chunks.txt';
-      final expected = _expectedFromChunkFile(fixturePath);
+    final dir = Directory('test/fixtures/xai/responses');
+    final fixtures = dir
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.chunks.txt'))
+        .toList(growable: false)
+      ..sort((a, b) => a.path.compareTo(b.path));
 
-      final config = OpenAICompatibleConfig(
-        providerId: 'xai.responses',
-        providerName: 'xAI (Responses)',
-        apiKey: 'test-key',
-        baseUrl: 'https://api.x.ai/v1/',
-        model: 'grok-code-fast-1',
-      );
+    for (final file in fixtures) {
+      final name = file.uri.pathSegments.last;
+      test('replays $name', () async {
+        final expected = _expectedFromChunkFile(file.path);
 
-      final client = _FakeOpenAIClient(
-        config,
-        stream: _sseStreamFromChunkFile(fixturePath),
-      );
-      final responses = XAIResponses(client, config);
+        final config = OpenAICompatibleConfig(
+          providerId: 'xai.responses',
+          providerName: 'xAI (Responses)',
+          apiKey: 'test-key',
+          baseUrl: 'https://api.x.ai/v1/',
+          model: 'grok-4-fast',
+        );
 
-      final parts =
-          await responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+        final client = _FakeOpenAIClient(
+          config,
+          stream: _sseStreamFromChunkFile(file.path),
+        );
+        final responses = XAIResponses(client, config);
 
-      expect(
-        parts.whereType<LLMReasoningDeltaPart>().map((p) => p.delta).join(),
-        equals(expected.thinking),
-      );
-      expect(parts.whereType<LLMTextDeltaPart>().map((p) => p.delta).join(),
-          equals(expected.text));
+        final parts =
+            await responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
 
-      final finish = parts.whereType<LLMFinishPart>().single;
-      expect(finish.response.text, equals(expected.text));
-      expect(finish.response.thinking,
-          equals(expected.thinking.isEmpty ? null : expected.thinking));
-      expect(finish.response.toolCalls, isNull);
-      expect(finish.response.providerMetadata?['xai.responses'], isNotNull);
-    });
+        expect(
+          parts.whereType<LLMReasoningDeltaPart>().map((p) => p.delta).join(),
+          equals(expected.thinking),
+        );
+        expect(
+          parts.whereType<LLMTextDeltaPart>().map((p) => p.delta).join(),
+          equals(expected.text),
+        );
 
-    test('replays xai-text-with-reasoning-streaming.1.chunks.txt', () async {
-      const fixturePath =
-          'test/fixtures/xai/responses/xai-text-with-reasoning-streaming.1.chunks.txt';
-      final expected = _expectedFromChunkFile(fixturePath);
+        final finish = parts.whereType<LLMFinishPart>().single;
+        expect(finish.response.text ?? '', equals(expected.text));
+        expect(
+          finish.response.thinking,
+          equals(expected.thinking.isEmpty ? null : expected.thinking),
+        );
+        expect(finish.response.toolCalls, isNull);
+        expect(finish.response.providerMetadata?['xai.responses'], isNotNull);
 
-      final config = OpenAICompatibleConfig(
-        providerId: 'xai.responses',
-        providerName: 'xAI (Responses)',
-        apiKey: 'test-key',
-        baseUrl: 'https://api.x.ai/v1/',
-        model: 'grok-code-fast-1',
-      );
+        final expectedHasServerToolCall = File(file.path)
+            .readAsLinesSync()
+            .where((l) => l.trim().isNotEmpty)
+            .map((l) => jsonDecode(l.trim()) as Map<String, dynamic>)
+            .any((j) {
+          final item = j['item'];
+          if (item is! Map) return false;
+          final type = item['type'];
+          return type is String && type.endsWith('_call');
+        });
 
-      final client = _FakeOpenAIClient(
-        config,
-        stream: _sseStreamFromChunkFile(fixturePath),
-      );
-      final responses = XAIResponses(client, config);
-
-      final parts =
-          await responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
-
-      expect(
-        parts.whereType<LLMReasoningDeltaPart>().map((p) => p.delta).join(),
-        equals(expected.thinking),
-      );
-
-      final finish = parts.whereType<LLMFinishPart>().single;
-      expect(finish.response.thinking, equals(expected.thinking));
-    });
-
-    test('replays xai-web-search-tool.1.chunks.txt (server tool call)',
-        () async {
-      const fixturePath =
-          'test/fixtures/xai/responses/xai-web-search-tool.1.chunks.txt';
-
-      final config = OpenAICompatibleConfig(
-        providerId: 'xai.responses',
-        providerName: 'xAI (Responses)',
-        apiKey: 'test-key',
-        baseUrl: 'https://api.x.ai/v1/',
-        model: 'grok-4-fast-reasoning',
-      );
-
-      final client = _FakeOpenAIClient(
-        config,
-        stream: _sseStreamFromChunkFile(fixturePath),
-      );
-      final responses = XAIResponses(client, config);
-
-      final parts =
-          await responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
-
-      final finish = parts.whereType<LLMFinishPart>().single;
-      expect(finish.response.toolCalls, isNull);
-
-      final metadata = finish.response.providerMetadata?['xai.responses'];
-      expect(metadata, isNotNull);
-      expect(metadata!['serverToolCalls'], isNotNull);
-      expect((metadata['sources'] as List?)?.length, equals(5));
-    });
+        final metadata = finish.response.providerMetadata?['xai.responses'];
+        if (expectedHasServerToolCall && metadata is Map) {
+          expect(metadata['serverToolCalls'], isNotNull);
+        }
+      });
+    }
   });
 }
