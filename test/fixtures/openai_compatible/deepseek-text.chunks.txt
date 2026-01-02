@@ -1,0 +1,4 @@
+{"id":"chatcmpl_deepseek_text_1","model":"deepseek-chat","system_fingerprint":"fp_deepseek_1","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}]}
+{"id":"chatcmpl_deepseek_text_1","model":"deepseek-chat","system_fingerprint":"fp_deepseek_1","choices":[{"index":0,"delta":{"content":" world"},"finish_reason":null}]}
+{"id":"chatcmpl_deepseek_text_1","model":"deepseek-chat","system_fingerprint":"fp_deepseek_1","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":3,"completion_tokens":7,"total_tokens":10}}
+

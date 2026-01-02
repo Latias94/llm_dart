@@ -69,7 +69,7 @@ void main() {
   group('xAI Responses streaming fixtures (Vercel)', () {
     test('replays xai-text-streaming.1.chunks.txt', () async {
       const fixturePath =
-          'repo-ref/ai/packages/xai/src/responses/__fixtures__/xai-text-streaming.1.chunks.txt';
+          'test/fixtures/xai/responses/xai-text-streaming.1.chunks.txt';
       final expected = _expectedFromChunkFile(fixturePath);
 
       final config = OpenAICompatibleConfig(
@@ -106,7 +106,7 @@ void main() {
 
     test('replays xai-text-with-reasoning-streaming.1.chunks.txt', () async {
       const fixturePath =
-          'repo-ref/ai/packages/xai/src/responses/__fixtures__/xai-text-with-reasoning-streaming.1.chunks.txt';
+          'test/fixtures/xai/responses/xai-text-with-reasoning-streaming.1.chunks.txt';
       final expected = _expectedFromChunkFile(fixturePath);
 
       final config = OpenAICompatibleConfig(
@@ -138,7 +138,7 @@ void main() {
     test('replays xai-web-search-tool.1.chunks.txt (server tool call)',
         () async {
       const fixturePath =
-          'repo-ref/ai/packages/xai/src/responses/__fixtures__/xai-web-search-tool.1.chunks.txt';
+          'test/fixtures/xai/responses/xai-web-search-tool.1.chunks.txt';
 
       final config = OpenAICompatibleConfig(
         providerId: 'xai.responses',

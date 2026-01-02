@@ -194,7 +194,7 @@ void main() {
   group('OpenAI-compatible streaming fixtures (DeepSeek, Vercel)', () {
     test('replays deepseek-text.chunks.txt', () async {
       const fixturePath =
-          'repo-ref/ai/packages/deepseek/src/chat/__fixtures__/deepseek-text.chunks.txt';
+          'test/fixtures/openai_compatible/deepseek-text.chunks.txt';
       final expected = _expectedFromChunkFile(fixturePath);
 
       final config = OpenAICompatibleConfig(
@@ -239,7 +239,7 @@ void main() {
 
     test('replays deepseek-reasoning.chunks.txt', () async {
       const fixturePath =
-          'repo-ref/ai/packages/deepseek/src/chat/__fixtures__/deepseek-reasoning.chunks.txt';
+          'test/fixtures/openai_compatible/deepseek-reasoning.chunks.txt';
       final expected = _expectedFromChunkFile(fixturePath);
 
       final config = OpenAICompatibleConfig(
@@ -275,7 +275,7 @@ void main() {
 
     test('replays deepseek-tool-call.chunks.txt', () async {
       const fixturePath =
-          'repo-ref/ai/packages/deepseek/src/chat/__fixtures__/deepseek-tool-call.chunks.txt';
+          'test/fixtures/openai_compatible/deepseek-tool-call.chunks.txt';
       final expected = _expectedFromChunkFile(fixturePath);
 
       final config = OpenAICompatibleConfig(

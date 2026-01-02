@@ -1,0 +1,6 @@
+{"id":"chatcmpl_deepseek_tool_1","model":"deepseek-reasoner","system_fingerprint":"fp_deepseek_3","choices":[{"index":0,"delta":{"reasoning_content":"Need to call a tool."},"finish_reason":null}]}
+{"id":"chatcmpl_deepseek_tool_1","model":"deepseek-reasoner","system_fingerprint":"fp_deepseek_3","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"web_search","arguments":"{"}}]},"finish_reason":null}]}
+{"id":"chatcmpl_deepseek_tool_1","model":"deepseek-reasoner","system_fingerprint":"fp_deepseek_3","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\\\"query\\\":\\\"llm_dart\\\""}}]},"finish_reason":null}]}
+{"id":"chatcmpl_deepseek_tool_1","model":"deepseek-reasoner","system_fingerprint":"fp_deepseek_3","choices":[{"index":0,"delta":{"tool_calls":[{"index":0,"function":{"arguments":"}"}}]},"finish_reason":null}]}
+{"id":"chatcmpl_deepseek_tool_1","model":"deepseek-reasoner","system_fingerprint":"fp_deepseek_3","choices":[{"index":0,"delta":{},"finish_reason":"tool_calls"}],"usage":{"prompt_tokens":7,"completion_tokens":13,"total_tokens":20}}
+

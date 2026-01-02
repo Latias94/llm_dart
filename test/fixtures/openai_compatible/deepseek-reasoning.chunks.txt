@@ -1,0 +1,5 @@
+{"id":"chatcmpl_deepseek_reason_1","model":"deepseek-reasoner","system_fingerprint":"fp_deepseek_2","choices":[{"index":0,"delta":{"reasoning_content":"Think step 1. "},"finish_reason":null}]}
+{"id":"chatcmpl_deepseek_reason_1","model":"deepseek-reasoner","system_fingerprint":"fp_deepseek_2","choices":[{"index":0,"delta":{"reasoning_content":"Think step 2."},"finish_reason":null}]}
+{"id":"chatcmpl_deepseek_reason_1","model":"deepseek-reasoner","system_fingerprint":"fp_deepseek_2","choices":[{"index":0,"delta":{"content":"Answer."},"finish_reason":null}]}
+{"id":"chatcmpl_deepseek_reason_1","model":"deepseek-reasoner","system_fingerprint":"fp_deepseek_2","choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":5,"completion_tokens":15,"total_tokens":20}}
+

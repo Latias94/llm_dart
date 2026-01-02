@@ -1,0 +1,4 @@
+{"type":"response.reasoning_summary_text.delta","delta":"Because "}
+{"type":"response.reasoning_summary_text.delta","delta":"reasons."}
+{"type":"response.completed","response":{"id":"resp_xai_reason_1","model":"grok-code-fast-1","status":"completed","output":[{"type":"reasoning","summary":[{"type":"summary_text","text":"Because reasons."}]},{"type":"message","id":"msg_1","role":"assistant","content":[{"type":"output_text","text":"OK"}]}]},"usage":{"input_tokens":4,"output_tokens":3,"total_tokens":7}}
+

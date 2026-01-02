@@ -1,0 +1,3 @@
+{"type":"response.output_text.delta","delta":"Searching..."}
+{"type":"response.completed","response":{"id":"resp_xai_web_search_1","model":"grok-4-fast-reasoning","status":"completed","output":[{"type":"web_search_call","id":"call_web_search_1","status":"completed"},{"type":"message","id":"msg_1","role":"assistant","content":[{"type":"output_text","text":"Done.","annotations":[{"type":"url_citation","url":"https://example.com/1"},{"type":"url_citation","url":"https://example.com/2"},{"type":"url_citation","url":"https://example.com/3"},{"type":"url_citation","url":"https://example.com/4"},{"type":"url_citation","url":"https://example.com/5"}]}]}]},"usage":{"input_tokens":5,"output_tokens":5,"total_tokens":10}}
+
