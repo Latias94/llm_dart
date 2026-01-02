@@ -152,6 +152,25 @@ List<String> _checkProviderEntrypoints(
     }
   }
 
+  // Guard rail: provider `defaults.dart` must not expose protocol-layer package
+  // names (e.g. `export 'package:llm_dart_openai_compatible/defaults.dart'`).
+  //
+  // Providers may still *depend on* compatible layers internally, but the
+  // public surface should not leak these package paths.
+  final defaultsFile = File('${packageDir.path}/lib/defaults.dart');
+  if (defaultsFile.existsSync()) {
+    final exports = _extractExports(defaultsFile.readAsStringSync());
+    for (final target in exports) {
+      final normalized = target.replaceAll('\\', '/');
+      if (_isProtocolReuseExport(normalized)) {
+        errors.add(
+          '$packageName must not re-export protocol reuse layers from '
+          'defaults.dart: export "$normalized" found in ${_relPath(defaultsFile.path)}',
+        );
+      }
+    }
+  }
+
   return errors;
 }
 
