@@ -28,6 +28,9 @@ jobs:
       - name: Check public export boundaries
         run: dart run tool/check_public_exports.dart
 
+      - name: Check provider public surface (Tier 2)
+        run: dart run tool/check_provider_surface.dart
+
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 
