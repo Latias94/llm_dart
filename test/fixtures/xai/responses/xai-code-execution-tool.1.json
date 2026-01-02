@@ -1,0 +1,23 @@
+{
+  "id": "resp_code_interpreter_1",
+  "model": "grok-4-fast",
+  "status": "completed",
+  "output": [
+    {
+      "type": "code_interpreter_call",
+      "id": "call_code_1",
+      "status": "completed",
+      "code": "print(1 + 1)",
+      "output_text": "2"
+    },
+    {
+      "type": "message",
+      "id": "msg_1",
+      "role": "assistant",
+      "content": [
+        { "type": "output_text", "text": "2" }
+      ]
+    }
+  ]
+}
+

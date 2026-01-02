@@ -1,0 +1,31 @@
+{
+  "id": "resp_web_search_1",
+  "model": "grok-4-fast",
+  "status": "completed",
+  "output": [
+    {
+      "type": "web_search_call",
+      "id": "call_web_search_1",
+      "status": "completed",
+      "query": "llm_dart",
+      "results": [
+        { "title": "llm_dart", "url": "https://example.com/llm_dart" }
+      ]
+    },
+    {
+      "type": "message",
+      "id": "msg_1",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Here are the results.",
+          "annotations": [
+            { "type": "url_citation", "url": "https://example.com/llm_dart" }
+          ]
+        }
+      ]
+    }
+  ]
+}
+

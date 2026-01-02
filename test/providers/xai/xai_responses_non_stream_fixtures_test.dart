@@ -83,7 +83,7 @@ void main() {
   group('xAI Responses non-streaming fixtures (Vercel)', () {
     test('parses web_search_call response JSON', () async {
       const fixturePath =
-          'repo-ref/ai/packages/xai/src/responses/__fixtures__/xai-web-search-tool.1.json';
+          'test/fixtures/xai/responses/xai-web-search-tool.1.json';
       final raw = jsonDecode(File(fixturePath).readAsStringSync())
           as Map<String, dynamic>;
 
@@ -119,7 +119,7 @@ void main() {
 
     test('parses x_search_call response JSON', () async {
       const fixturePath =
-          'repo-ref/ai/packages/xai/src/responses/__fixtures__/xai-x-search-tool.1.json';
+          'test/fixtures/xai/responses/xai-x-search-tool.1.json';
       final raw = jsonDecode(File(fixturePath).readAsStringSync())
           as Map<String, dynamic>;
 
@@ -149,7 +149,7 @@ void main() {
 
     test('parses code_interpreter_call response JSON', () async {
       const fixturePath =
-          'repo-ref/ai/packages/xai/src/responses/__fixtures__/xai-code-execution-tool.1.json';
+          'test/fixtures/xai/responses/xai-code-execution-tool.1.json';
       final raw = jsonDecode(File(fixturePath).readAsStringSync())
           as Map<String, dynamic>;
 

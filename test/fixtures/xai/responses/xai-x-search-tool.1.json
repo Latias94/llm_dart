@@ -1,0 +1,25 @@
+{
+  "id": "resp_x_search_1",
+  "model": "grok-4-fast",
+  "status": "completed",
+  "output": [
+    {
+      "type": "x_search_call",
+      "id": "call_x_search_1",
+      "status": "completed",
+      "query": "grok",
+      "results": [
+        { "title": "xAI", "url": "https://example.com/xai" }
+      ]
+    },
+    {
+      "type": "message",
+      "id": "msg_1",
+      "role": "assistant",
+      "content": [
+        { "type": "output_text", "text": "Done." }
+      ]
+    }
+  ]
+}
+
