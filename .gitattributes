@@ -1,7 +1,15 @@
 # Keep line endings consistent across platforms (avoid noisy CRLF/LF diffs).
-* text=auto
+* text=auto eol=lf
 
 *.bat text eol=crlf
 *.cmd text eol=crlf
 
 .gitattributes text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
