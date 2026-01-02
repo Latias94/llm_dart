@@ -1376,6 +1376,44 @@ class OpenAIResponsesResponse implements ChatResponse {
     return calls.isEmpty ? null : calls;
   }
 
+  List<Map<String, dynamic>>? _extractServerToolCalls() {
+    final output = _rawResponse['output'] as List?;
+    if (output == null) return null;
+
+    final calls = <Map<String, dynamic>>[];
+
+    for (final item in output) {
+      if (item is! Map<String, dynamic>) continue;
+      final type = item['type'];
+      if (type is! String) continue;
+
+      // Messages and reasoning are handled separately; `function_call` is mapped
+      // to `toolCalls`.
+      if (type == 'message' || type == 'reasoning' || type == 'function_call') {
+        continue;
+      }
+
+      final id = item['id'];
+      final status = item['status'];
+      final name = item['name'];
+      final args = item['arguments'];
+
+      final call = <String, dynamic>{
+        'type': type,
+        if (id != null) 'id': id,
+        if (status != null) 'status': status,
+        if (name != null) 'name': name,
+        if (args != null) 'arguments': args,
+      };
+
+      if (call.isNotEmpty) {
+        calls.add(call);
+      }
+    }
+
+    return calls.isEmpty ? null : calls;
+  }
+
   List<dynamic>? _extractOutputTextAnnotations() {
     final output = _rawResponse['output'] as List?;
     final annotations = <dynamic>[];
@@ -1514,6 +1552,7 @@ class OpenAIResponsesResponse implements ChatResponse {
     final id = _rawResponse['id'];
     final model = _rawResponse['model'];
 
+    final serverToolCalls = _extractServerToolCalls();
     final fileSearchCalls = _extractFileSearchCalls();
     final computerCalls = _extractComputerCalls();
     final webSearchCalls = _extractWebSearchCalls();
@@ -1521,6 +1560,7 @@ class OpenAIResponsesResponse implements ChatResponse {
 
     if (id == null &&
         model == null &&
+        serverToolCalls == null &&
         fileSearchCalls == null &&
         computerCalls == null &&
         webSearchCalls == null &&
@@ -1532,6 +1572,7 @@ class OpenAIResponsesResponse implements ChatResponse {
       'openai': {
         if (id != null) 'id': id,
         if (model != null) 'model': model,
+        if (serverToolCalls != null) 'serverToolCalls': serverToolCalls,
         if (fileSearchCalls != null) 'fileSearchCalls': fileSearchCalls,
         if (computerCalls != null) 'computerCalls': computerCalls,
         if (webSearchCalls != null) 'webSearchCalls': webSearchCalls,
