@@ -51,8 +51,6 @@ void main() {
         expect(provider.supports(LLMCapability.chat), isTrue);
         expect(provider.supports(LLMCapability.streaming), isTrue);
         expect(provider.supports(LLMCapability.toolCalling), isTrue);
-        expect(provider.supports(LLMCapability.modelListing), isTrue);
-        expect(provider.supports(LLMCapability.fileManagement), isTrue);
       });
 
       test('should support vision for vision models', () {
@@ -84,8 +82,6 @@ void main() {
         expect(capabilities, contains(LLMCapability.chat));
         expect(capabilities, contains(LLMCapability.streaming));
         expect(capabilities, contains(LLMCapability.toolCalling));
-        expect(capabilities, contains(LLMCapability.modelListing));
-        expect(capabilities, contains(LLMCapability.fileManagement));
         expect(capabilities, contains(LLMCapability.vision));
       });
     });
@@ -93,11 +89,6 @@ void main() {
     group('Interface Implementation', () {
       test('should implement ChatCapability', () {
         expect(provider, isA<ChatCapability>());
-      });
-
-      test('should expose provider-specific APIs', () {
-        expect(provider.filesApi, isNotNull);
-        expect(provider.modelsApi, isNotNull);
       });
 
       test('should implement ProviderCapabilities', () {
@@ -124,46 +115,6 @@ void main() {
 
       test('should have summarizeHistory method', () {
         expect(provider.summarizeHistory, isA<Function>());
-      });
-
-      test('should have countTokens method', () {
-        expect(provider.countTokens, isA<Function>());
-      });
-    });
-
-    group('File Management Methods', () {
-      test('should have uploadFile method', () {
-        expect(provider.uploadFile, isA<Function>());
-      });
-
-      test('should have listFiles method', () {
-        expect(provider.listFiles, isA<Function>());
-      });
-
-      test('should have retrieveFile method', () {
-        expect(provider.retrieveFile, isA<Function>());
-      });
-
-      test('should have deleteFile method', () {
-        expect(provider.deleteFile, isA<Function>());
-      });
-
-      test('should have getFileContent method', () {
-        expect(provider.getFileContent, isA<Function>());
-      });
-
-      test('should have uploadFileFromBytes method', () {
-        expect(provider.uploadFileFromBytes, isA<Function>());
-      });
-
-      test('should have fileExists method', () {
-        expect(provider.fileExists, isA<Function>());
-      });
-    });
-
-    group('Model Listing Methods', () {
-      test('should have models method', () {
-        expect(provider.models, isA<Function>());
       });
     });
   });

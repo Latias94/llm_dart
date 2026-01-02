@@ -5,12 +5,6 @@ import 'chat.dart';
 import 'embeddings.dart';
 import 'audio.dart';
 import 'images.dart';
-import 'files.dart';
-import 'models.dart';
-import 'moderation.dart';
-import 'assistants.dart';
-import 'models/assistant_models.dart';
-import 'completion.dart';
 import 'responses.dart';
 
 /// OpenAI Provider implementation
@@ -44,11 +38,6 @@ class OpenAIProvider
   late final OpenAIEmbeddings _embeddings;
   late final OpenAIAudio _audio;
   late final OpenAIImages _images;
-  late final OpenAIFiles _files;
-  late final OpenAIModels _models;
-  late final OpenAIModeration _moderation;
-  late final OpenAIAssistants _assistants;
-  late final OpenAICompletion _completion;
   late final OpenAIResponses? _responses;
 
   OpenAIProvider(this.config) : _client = OpenAIClient(config) {
@@ -57,11 +46,6 @@ class OpenAIProvider
     _embeddings = OpenAIEmbeddings(_client, config);
     _audio = OpenAIAudio(_client, config);
     _images = OpenAIImages(_client, config);
-    _files = OpenAIFiles(_client, config);
-    _models = OpenAIModels(_client, config);
-    _moderation = OpenAIModeration(_client, config);
-    _assistants = OpenAIAssistants(_client, config);
-    _completion = OpenAICompletion(_client, config);
 
     // Initialize Responses API module if enabled
     if (config.useResponsesAPI) {
@@ -88,11 +72,6 @@ class OpenAIProvider
       LLMCapability.reasoning,
       LLMCapability.vision,
       LLMCapability.imageGeneration,
-      LLMCapability.fileManagement,
-      LLMCapability.moderation,
-      LLMCapability.assistants,
-      LLMCapability.completion,
-      LLMCapability.modelListing,
     };
 
     // Add OpenAI Responses API capability if enabled
@@ -278,82 +257,6 @@ class OpenAIProvider
       promptEnhancement: promptEnhancement,
     );
   }
-
-  // ========== Provider-specific: Files ==========
-  Future<FileObject> uploadFile(FileUploadRequest request) async {
-    return _files.uploadFile(request);
-  }
-
-  Future<FileListResponse> listFiles([FileListQuery? query]) async {
-    return _files.listFiles(query);
-  }
-
-  Future<FileObject> retrieveFile(String fileId) async {
-    return _files.retrieveFile(fileId);
-  }
-
-  Future<FileDeleteResponse> deleteFile(String fileId) async {
-    return _files.deleteFile(fileId);
-  }
-
-  Future<List<int>> getFileContent(String fileId) async {
-    return _files.getFileContent(fileId);
-  }
-
-  // ========== Provider-specific: Models ==========
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
-    return _models.models(cancelToken: cancelToken);
-  }
-
-  // ========== Provider-specific: Moderation ==========
-  Future<ModerationResponse> moderate(ModerationRequest request) async {
-    return _moderation.moderate(request);
-  }
-
-  // ========== Provider-specific: Assistants ==========
-  Future<Assistant> createAssistant(CreateAssistantRequest request) async {
-    return _assistants.createAssistant(request);
-  }
-
-  Future<ListAssistantsResponse> listAssistants(
-      [ListAssistantsQuery? query]) async {
-    return _assistants.listAssistants(query);
-  }
-
-  Future<Assistant> retrieveAssistant(String assistantId) async {
-    return _assistants.retrieveAssistant(assistantId);
-  }
-
-  Future<Assistant> modifyAssistant(
-    String assistantId,
-    ModifyAssistantRequest request,
-  ) async {
-    return _assistants.modifyAssistant(assistantId, request);
-  }
-
-  Future<DeleteAssistantResponse> deleteAssistant(String assistantId) async {
-    return _assistants.deleteAssistant(assistantId);
-  }
-
-  // ========== Provider-specific: Completion ==========
-  Future<CompletionResponse> complete(CompletionRequest request) async {
-    return _completion.complete(request);
-  }
-
-  // ========== Additional Helper Methods ==========
-
-  /// Get the underlying client for advanced usage
-  OpenAIClient get client => _client;
-
-  /// Provider-specific APIs (not part of the standard surface).
-  OpenAIFiles get filesApi => _files;
-  OpenAIModels get modelsApi => _models;
-  OpenAIModeration get moderationApi => _moderation;
-  OpenAIAssistants get assistantsApi => _assistants;
-  OpenAICompletion get completionApi => _completion;
-
-  /// Get the Responses API module (only available when useResponsesAPI is enabled)
-  OpenAIResponses? get responses => _responses;
 
   /// Get embedding dimensions for the configured model
   Future<int> getEmbeddingDimensions() async {

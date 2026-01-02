@@ -266,8 +266,8 @@ class OpenAIBuilder {
           'Expected OpenAIProvider but got ${provider.runtimeType}.');
     }
 
-    if (provider.responses == null) {
-      throw StateError('OpenAI Responses API not properly initialized.');
+    if (!provider.supports(LLMCapability.openaiResponses)) {
+      throw StateError('OpenAI Responses API not enabled.');
     }
 
     return provider;

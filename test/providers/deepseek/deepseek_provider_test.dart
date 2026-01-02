@@ -41,7 +41,6 @@ void main() {
         expect(provider.supports(LLMCapability.chat), isTrue);
         expect(provider.supports(LLMCapability.streaming), isTrue);
         expect(provider.supports(LLMCapability.toolCalling), isTrue);
-        expect(provider.supports(LLMCapability.modelListing), isTrue);
       });
 
       test('should report reasoning optimistically', () {
@@ -65,7 +64,6 @@ void main() {
         expect(capabilities, contains(LLMCapability.chat));
         expect(capabilities, contains(LLMCapability.streaming));
         expect(capabilities, contains(LLMCapability.toolCalling));
-        expect(capabilities, contains(LLMCapability.modelListing));
         expect(capabilities, contains(LLMCapability.reasoning));
         expect(capabilities, contains(LLMCapability.vision));
       });
@@ -88,10 +86,6 @@ void main() {
     group('Interface Implementation', () {
       test('should implement ChatCapability', () {
         expect(provider, isA<ChatCapability>());
-      });
-
-      test('should expose provider-specific APIs', () {
-        expect(provider.modelsApi, isNotNull);
       });
 
       test('should implement ProviderCapabilities', () {
@@ -123,12 +117,6 @@ void main() {
 
       test('should have summarizeHistory method', () {
         expect(provider.summarizeHistory, isA<Function>());
-      });
-    });
-
-    group('Model Listing Methods', () {
-      test('should have models method', () {
-        expect(provider.models, isA<Function>());
       });
     });
 

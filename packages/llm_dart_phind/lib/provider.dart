@@ -36,8 +36,6 @@ class PhindProvider
 
   String get providerName => 'Phind';
 
-  OpenAIClient get client => _client;
-
   @override
   Set<LLMCapability> get supportedCapabilities => {
         LLMCapability.chat,

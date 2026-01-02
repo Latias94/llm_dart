@@ -5,6 +5,7 @@ import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai/client.dart';
 import 'package:llm_dart_openai/responses.dart';
 
 /// 🚀 OpenAI Responses API Provider Build Demo
@@ -83,7 +84,11 @@ Future<void> demonstrateTraditionalApproach(String apiKey) async {
             .supports(LLMCapability.openaiResponses) &&
         provider is OpenAIProvider) {
       final openaiProvider = provider;
-      final responsesAPI = openaiProvider.responses;
+      // ignore: unnecessary_nullable_for_final_variable_declarations
+      final OpenAIResponses? responsesAPI = OpenAIResponses(
+        OpenAIClient(openaiProvider.config),
+        openaiProvider.config,
+      );
 
       if (responsesAPI != null) {
         print('   ✅ Responses API available after manual setup');
@@ -123,7 +128,10 @@ Future<void> demonstrateConvenienceMethod(String apiKey) async {
     print('   ✅ Responses API enabled via providerOptions');
     print('   ✅ OpenAIProvider obtained via cast');
 
-    final responsesAPI = openaiProvider.responses!;
+    final responsesAPI = OpenAIResponses(
+      OpenAIClient(openaiProvider.config),
+      openaiProvider.config,
+    );
     print('   ✅ Direct access to Responses API');
 
     // Verify capabilities

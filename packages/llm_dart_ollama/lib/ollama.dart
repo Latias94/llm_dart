@@ -22,14 +22,12 @@
 /// // Use chat capability
 /// final response = await provider.chat(messages);
 ///
-/// // Use completion capability
-/// final completion = await provider.complete(CompletionRequest(prompt: 'Hello'));
-///
 /// // Use embeddings capability
 /// final embeddings = await provider.embed(['text to embed']);
 ///
-/// // List available models
-/// final models = await provider.models();
+/// // Opt-in endpoint wrappers (Tier 3):
+/// // - `package:llm_dart_ollama/completion.dart`
+/// // - `package:llm_dart_ollama/models.dart`
 /// ```
 library;
 

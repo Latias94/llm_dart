@@ -34,9 +34,7 @@ void main() {
       test('should support core capabilities', () {
         expect(provider.supports(LLMCapability.chat), isTrue);
         expect(provider.supports(LLMCapability.streaming), isTrue);
-        expect(provider.supports(LLMCapability.completion), isTrue);
         expect(provider.supports(LLMCapability.embedding), isTrue);
-        expect(provider.supports(LLMCapability.modelListing), isTrue);
       });
 
       test('should support tool calling for compatible models', () {
@@ -62,9 +60,7 @@ void main() {
 
         expect(capabilities, contains(LLMCapability.chat));
         expect(capabilities, contains(LLMCapability.streaming));
-        expect(capabilities, contains(LLMCapability.completion));
         expect(capabilities, contains(LLMCapability.embedding));
-        expect(capabilities, contains(LLMCapability.modelListing));
         expect(capabilities, contains(LLMCapability.toolCalling));
         expect(capabilities, contains(LLMCapability.vision));
         expect(capabilities, contains(LLMCapability.reasoning));
@@ -76,16 +72,8 @@ void main() {
         expect(provider, isA<ChatCapability>());
       });
 
-      test('should expose completion API', () {
-        expect(provider.completionApi, isNotNull);
-      });
-
       test('should implement EmbeddingCapability', () {
         expect(provider, isA<EmbeddingCapability>());
-      });
-
-      test('should expose provider-specific APIs', () {
-        expect(provider.modelsApi, isNotNull);
       });
 
       test('should implement ProviderCapabilities', () {
@@ -115,21 +103,9 @@ void main() {
       });
     });
 
-    group('Completion Methods', () {
-      test('should have complete method', () {
-        expect(provider.complete, isA<Function>());
-      });
-    });
-
     group('Embedding Methods', () {
       test('should have embed method', () {
         expect(provider.embed, isA<Function>());
-      });
-    });
-
-    group('Model Listing Methods', () {
-      test('should have models method', () {
-        expect(provider.models, isA<Function>());
       });
     });
 

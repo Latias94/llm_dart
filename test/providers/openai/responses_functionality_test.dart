@@ -8,6 +8,7 @@ library;
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_openai/responses.dart';
+import 'package:llm_dart_openai/client.dart';
 
 void main() {
   group('OpenAI Responses API Functionality', () {
@@ -23,7 +24,8 @@ void main() {
             .model('gpt-4o')
             .build() as OpenAIProvider;
 
-        responses = provider.responses!;
+        responses =
+            OpenAIResponses(OpenAIClient(provider.config), provider.config);
       });
 
       test('should have all required OpenAIResponsesCapability methods', () {
@@ -99,7 +101,8 @@ void main() {
             .model('gpt-4o')
             .build() as OpenAIProvider;
 
-        responses = provider.responses!;
+        responses =
+            OpenAIResponses(OpenAIClient(provider.config), provider.config);
       });
 
       test('should handle empty message list', () {
@@ -171,7 +174,8 @@ void main() {
             .model('gpt-4o')
             .build() as OpenAIProvider;
 
-        responses = provider.responses!;
+        responses =
+            OpenAIResponses(OpenAIClient(provider.config), provider.config);
       });
 
       test('should handle null tools', () {
@@ -312,7 +316,8 @@ void main() {
             .model('gpt-4o')
             .build() as OpenAIProvider;
 
-        responses = provider.responses!;
+        responses =
+            OpenAIResponses(OpenAIClient(provider.config), provider.config);
       });
 
       test('should handle valid response IDs', () {
@@ -385,7 +390,8 @@ void main() {
             .model('gpt-4o')
             .build() as OpenAIProvider;
 
-        responses = provider.responses!;
+        responses =
+            OpenAIResponses(OpenAIClient(provider.config), provider.config);
       });
 
       test('should handle streaming with empty messages', () {

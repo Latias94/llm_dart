@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_elevenlabs/client.dart';
 import 'package:llm_dart_elevenlabs/forced_alignment.dart';
 import 'package:llm_dart_elevenlabs/speech_to_speech.dart';
 
@@ -569,7 +570,9 @@ Future<List<_CheckResult>> _runProviderChecks(
           final seedAudio = await model.textToSpeech(
             const TTSRequest(text: 'hello'),
           );
-          final converted = await model.convertSpeechToSpeech(
+          final client = ElevenLabsClient(model.config);
+          final api = ElevenLabsSpeechToSpeech(client, model.config);
+          final converted = await api.convert(
             SpeechToSpeechRequest(
               audioData: seedAudio.audioData,
             ),
@@ -601,7 +604,9 @@ Future<List<_CheckResult>> _runProviderChecks(
             const TTSRequest(text: text),
           );
 
-          final alignment = await model.createForcedAlignment(
+          final client = ElevenLabsClient(model.config);
+          final api = ElevenLabsForcedAlignment(client, model.config);
+          final alignment = await api.create(
             ForcedAlignmentRequest(
               audioData: seedAudio.audioData,
               text: text,

@@ -342,22 +342,6 @@ void main() {
                 .supports(LLMCapability.openaiResponses),
             isFalse);
       });
-
-      test('should handle responses getter consistency', () async {
-        final provider = await ai()
-            .openai((openai) => openai.useResponsesAPI())
-            .apiKey('test-key')
-            .model('gpt-4o')
-            .build();
-
-        final openaiProvider = provider as OpenAIProvider;
-        final responses1 = openaiProvider.responses;
-        final responses2 = openaiProvider.responses;
-
-        // Should return the same instance
-        expect(identical(responses1, responses2), isTrue);
-        expect(responses1, isNotNull);
-      });
     });
   });
 }

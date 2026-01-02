@@ -31,7 +31,6 @@ void main() {
         expect(capabilities, contains(LLMCapability.toolCalling));
         expect(capabilities, contains(LLMCapability.reasoning));
         expect(capabilities, contains(LLMCapability.vision));
-        expect(capabilities, contains(LLMCapability.modelListing));
       });
 
       test('should not support unsupported capabilities', () {

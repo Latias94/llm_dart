@@ -111,9 +111,12 @@ enum LLMCapability {
   /// **Usage:**
   /// ```dart
   /// if (provider.supports(LLMCapability.openaiResponses)) {
-  ///   final openaiProvider = provider as OpenAIProvider;
-  ///   final responsesAPI = openaiProvider.responses;
-  ///   // Use advanced Responses API features
+  ///   // The provider may route standard `chat(...)` calls through the
+  ///   // Responses API when enabled via provider-specific configuration.
+  ///   //
+  ///   // For protocol-level access (create/get/delete responses, built-in tools,
+  ///   // etc), opt into the provider's Tier 3 subpath library.
+  ///   // Example: `package:llm_dart_openai/responses.dart`.
   /// }
   /// ```
   ///

@@ -43,8 +43,6 @@ class AnthropicProviderFactory extends BaseProviderFactory<ChatCapability> {
         LLMCapability.toolCalling,
         LLMCapability.reasoning,
         LLMCapability.vision,
-        LLMCapability.modelListing,
-        LLMCapability.fileManagement,
       };
 
   @override

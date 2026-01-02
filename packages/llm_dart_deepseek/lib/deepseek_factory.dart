@@ -43,7 +43,6 @@ class DeepSeekProviderFactory extends BaseProviderFactory<ChatCapability> {
         LLMCapability.toolCalling,
         LLMCapability.reasoning,
         LLMCapability.vision,
-        LLMCapability.modelListing,
       };
 
   @override

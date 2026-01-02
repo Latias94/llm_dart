@@ -3,6 +3,9 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_anthropic/client.dart';
+import 'package:llm_dart_anthropic/dio_strategy.dart';
+import 'package:llm_dart_anthropic/files.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
@@ -51,6 +54,14 @@ Future<void> demonstrateFileManagement(String apiKey) async {
       model: 'claude-sonnet-4-20250514',
     );
 
+    final filesConfig = provider.config.copyWith(
+      extraHeaders: const {'anthropic-beta': 'files-api-2025-04-14'},
+    );
+    final filesApi = AnthropicFiles(
+      AnthropicClient(filesConfig, strategy: AnthropicDioStrategy()),
+      filesConfig,
+    );
+
     // Example 1: Upload a text file
     print('   === Uploading a text file ===');
     final textContent = 'Hello, this is a test file for Anthropic Files API!';
@@ -61,7 +72,7 @@ Future<void> demonstrateFileManagement(String apiKey) async {
       filename: 'test.txt',
     );
 
-    final uploadedFile = await provider.uploadFile(uploadRequest);
+    final uploadedFile = await filesApi.uploadFile(uploadRequest);
     print('      Uploaded file: ${uploadedFile.filename}');
     print('      File ID: ${uploadedFile.id}');
     print('      Size: ${uploadedFile.sizeBytes} bytes');
@@ -74,7 +85,7 @@ Future<void> demonstrateFileManagement(String apiKey) async {
     final jsonContent = '{"message": "Hello from JSON file"}';
     final jsonBytes = jsonContent.codeUnits;
 
-    final autoFile = await provider.uploadFileFromBytes(
+    final autoFile = await filesApi.uploadFileFromBytes(
       jsonBytes,
       filename: 'data.json',
     );
@@ -82,7 +93,7 @@ Future<void> demonstrateFileManagement(String apiKey) async {
 
     // Example 3: List all files
     print('\n   === Listing all files ===');
-    final fileList = await provider.listFiles();
+    final fileList = await filesApi.listFiles();
     print('      Total files: ${fileList.data.length}');
     print('      Has more: ${fileList.hasMore}');
 
@@ -98,7 +109,7 @@ Future<void> demonstrateFileManagement(String apiKey) async {
       // afterId: 'some-file-id',   // For pagination
     );
 
-    final paginatedList = await provider.listFiles(paginatedQuery);
+    final paginatedList = await filesApi.listFiles(paginatedQuery);
     print('      Paginated results: ${paginatedList.data.length} files');
     if (paginatedList.firstId != null) {
       print('      First ID: ${paginatedList.firstId}');
@@ -109,7 +120,7 @@ Future<void> demonstrateFileManagement(String apiKey) async {
 
     // Example 5: Get file metadata
     print('\n   === Getting file metadata ===');
-    final metadata = await provider.retrieveFile(uploadedFile.id);
+    final metadata = await filesApi.retrieveFile(uploadedFile.id);
     print('      File metadata for ${metadata.filename}:');
     print('      - ID: ${metadata.id}');
     print('      - Size: ${metadata.sizeBytes} bytes');
@@ -118,25 +129,25 @@ Future<void> demonstrateFileManagement(String apiKey) async {
 
     // Example 6: Download file content
     print('\n   === Downloading file content ===');
-    final downloadedBytes = await provider.getFileContent(uploadedFile.id);
+    final downloadedBytes = await filesApi.getFileContent(uploadedFile.id);
     final downloadedText = String.fromCharCodes(downloadedBytes);
     print('      Downloaded content: $downloadedText');
 
     // Example 7: Check if file exists
     print('\n   === Checking file existence ===');
-    final exists = await provider.fileExists(uploadedFile.id);
+    final exists = await filesApi.fileExists(uploadedFile.id);
     print('      File exists: $exists');
 
-    final nonExistentExists = await provider.fileExists('non-existent-id');
+    final nonExistentExists = await filesApi.fileExists('non-existent-id');
     print('      Non-existent file exists: $nonExistentExists');
 
     // Example 8: Delete files
     print('\n   === Deleting files ===');
-    final deleteResult1 = await provider.deleteFile(uploadedFile.id);
+    final deleteResult1 = await filesApi.deleteFile(uploadedFile.id);
     print(
         '      Delete ${uploadedFile.filename}: ${deleteResult1.deleted ? "Success" : "Failed"}');
 
-    final deleteResult2 = await provider.deleteFile(autoFile.id);
+    final deleteResult2 = await filesApi.deleteFile(autoFile.id);
     print(
         '      Delete ${autoFile.filename}: ${deleteResult2.deleted ? "Success" : "Failed"}');
 

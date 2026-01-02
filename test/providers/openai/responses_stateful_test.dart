@@ -1,11 +1,11 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_openai/responses.dart';
+import 'package:llm_dart_openai/client.dart';
 
 void main() {
   group('OpenAI Responses API Stateful Features', () {
-    test('should have responses getter when useResponsesAPI is enabled',
-        () async {
+    test('should report Responses capability when enabled', () async {
       final provider = await ai()
           .openai((openai) => openai.useResponsesAPI())
           .apiKey('test-key')
@@ -13,17 +13,19 @@ void main() {
           .build();
 
       final openaiProvider = provider as OpenAIProvider;
-      expect(openaiProvider.responses, isNotNull);
-      expect(openaiProvider.responses, isA<OpenAIResponses>());
+      expect(openaiProvider.supports(LLMCapability.openaiResponses), isTrue);
+
+      final responses = OpenAIResponses(
+          OpenAIClient(openaiProvider.config), openaiProvider.config);
+      expect(responses, isA<OpenAIResponses>());
     });
 
-    test('should not have responses getter when useResponsesAPI is disabled',
-        () async {
+    test('should not report Responses capability when disabled', () async {
       final provider =
           await ai().openai().apiKey('test-key').model('gpt-4o').build();
 
       final openaiProvider = provider as OpenAIProvider;
-      expect(openaiProvider.responses, isNull);
+      expect(openaiProvider.supports(LLMCapability.openaiResponses), isFalse);
     });
 
     test('should implement OpenAIResponsesCapability interface', () async {
@@ -34,7 +36,8 @@ void main() {
           .build();
 
       final openaiProvider = provider as OpenAIProvider;
-      final responses = openaiProvider.responses!;
+      final responses = OpenAIResponses(
+          OpenAIClient(openaiProvider.config), openaiProvider.config);
 
       expect(responses, isA<OpenAIResponsesCapability>());
       expect(responses, isA<ChatCapability>());
@@ -49,7 +52,8 @@ void main() {
           .build();
 
       final openaiProvider = provider as OpenAIProvider;
-      final responses = openaiProvider.responses!;
+      final responses = OpenAIResponses(
+          OpenAIClient(openaiProvider.config), openaiProvider.config);
 
       // Check that all methods exist (without calling them to avoid API key requirements)
       expect(responses.chatWithTools, isA<Function>());
@@ -70,7 +74,8 @@ void main() {
           .build();
 
       final openaiProvider = provider as OpenAIProvider;
-      final responses = openaiProvider.responses!;
+      final responses = OpenAIResponses(
+          OpenAIClient(openaiProvider.config), openaiProvider.config);
 
       // Check that basic methods exist (without calling them to avoid API key requirements)
       expect(responses.chat, isA<Function>());

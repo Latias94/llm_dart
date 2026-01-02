@@ -3,9 +3,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'audio.dart';
 import 'client.dart';
 import 'config.dart';
-import 'forced_alignment.dart';
 import 'models.dart';
-import 'speech_to_speech.dart';
 
 /// ElevenLabs Provider implementation.
 class ElevenLabsProvider
@@ -16,17 +14,13 @@ class ElevenLabsProvider
         SpeechToTextCapability,
         TranscriptionLanguageListingCapability {
   final ElevenLabsConfig config;
-  final ElevenLabsClient client;
+  final ElevenLabsClient _client;
   late final ElevenLabsAudio audio;
   late final ElevenLabsModels models;
-  late final ElevenLabsSpeechToSpeech speechToSpeech;
-  late final ElevenLabsForcedAlignment forcedAlignment;
 
-  ElevenLabsProvider(this.config) : client = ElevenLabsClient(config) {
-    audio = ElevenLabsAudio(client, config);
-    models = ElevenLabsModels(client, config);
-    speechToSpeech = ElevenLabsSpeechToSpeech(client, config);
-    forcedAlignment = ElevenLabsForcedAlignment(client, config);
+  ElevenLabsProvider(this.config) : _client = ElevenLabsClient(config) {
+    audio = ElevenLabsAudio(_client, config);
+    models = ElevenLabsModels(_client, config);
   }
 
   String get providerName => 'ElevenLabs';
@@ -75,36 +69,6 @@ class ElevenLabsProvider
 
   Future<Map<String, dynamic>> getUserInfo() async {
     return models.getUserInfo();
-  }
-
-  /// ElevenLabs speech-to-speech (voice conversion).
-  ///
-  /// Official API: `POST /v1/speech-to-speech/{voice_id}`
-  Future<SpeechToSpeechResponse> convertSpeechToSpeech(
-    SpeechToSpeechRequest request, {
-    CancelToken? cancelToken,
-  }) {
-    return speechToSpeech.convert(request, cancelToken: cancelToken);
-  }
-
-  /// ElevenLabs speech-to-speech streaming.
-  ///
-  /// Official API: `POST /v1/speech-to-speech/{voice_id}/stream`
-  Stream<AudioStreamEvent> convertSpeechToSpeechStream(
-    SpeechToSpeechRequest request, {
-    CancelToken? cancelToken,
-  }) {
-    return speechToSpeech.convertStream(request, cancelToken: cancelToken);
-  }
-
-  /// Create forced alignment for an audio file + transcript.
-  ///
-  /// Official API: `POST /v1/forced-alignment`
-  Future<ForcedAlignmentResponse> createForcedAlignment(
-    ForcedAlignmentRequest request, {
-    CancelToken? cancelToken,
-  }) {
-    return forcedAlignment.create(request, cancelToken: cancelToken);
   }
 
   ElevenLabsProvider copyWith({

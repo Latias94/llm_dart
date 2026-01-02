@@ -1,5 +1,7 @@
 import 'package:test/test.dart';
 import 'package:llm_dart_minimax/llm_dart_minimax.dart';
+import 'package:llm_dart_anthropic_compatible/client.dart';
+import 'package:llm_dart_anthropic_compatible/dio_strategy.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 void main() {
@@ -49,16 +51,20 @@ void main() {
       );
 
       final minimax = provider as MinimaxProvider;
+      final client = AnthropicClient(
+        minimax.config,
+        strategy: AnthropicDioStrategy(providerName: 'MiniMax'),
+      );
       expect(
         minimax.config.baseUrl,
         equals('https://api.minimax.io/anthropic/v1/'),
       );
       expect(
-        minimax.client.dio.options.headers['x-api-key'],
+        client.dio.options.headers['x-api-key'],
         equals('test-key'),
       );
       expect(
-        minimax.client.dio.options.headers['anthropic-version'],
+        client.dio.options.headers['anthropic-version'],
         equals('2023-06-01'),
       );
       expect(
@@ -67,7 +73,7 @@ void main() {
       );
       expect(minimax.config.extraBody, equals({'foo': 'bar'}));
       expect(minimax.config.extraHeaders, equals({'x-test': '1'}));
-      expect(minimax.client.dio.options.headers['x-test'], equals('1'));
+      expect(client.dio.options.headers['x-test'], equals('1'));
     });
   });
 }

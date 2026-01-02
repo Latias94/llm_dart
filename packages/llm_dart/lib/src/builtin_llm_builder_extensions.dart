@@ -156,8 +156,8 @@ extension BuiltinProviderBuildHelpers on LLMBuilder {
     final provider = await build();
     final openaiProvider = provider as OpenAIProvider;
 
-    if (openaiProvider.responses == null) {
-      throw StateError('OpenAI Responses API not properly initialized. '
+    if (!openaiProvider.supports(LLMCapability.openaiResponses)) {
+      throw StateError('OpenAI Responses API not enabled. '
           'This should not happen when using buildOpenAIResponses().');
     }
 

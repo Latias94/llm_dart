@@ -1,6 +1,11 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_openai/assistants.dart';
+import 'package:llm_dart_openai/client.dart';
+import 'package:llm_dart_openai/files.dart';
+import 'package:llm_dart_openai/models.dart';
+import 'package:llm_dart_openai/moderation.dart';
+import 'package:llm_dart_openai/completion.dart';
 import 'dart:typed_data';
 
 void main() {
@@ -174,24 +179,22 @@ void main() {
         expect(capabilities.contains(LLMCapability.embedding), isTrue);
         expect(capabilities.contains(LLMCapability.textToSpeech), isTrue);
         expect(capabilities.contains(LLMCapability.speechToText), isTrue);
-        expect(capabilities.contains(LLMCapability.modelListing), isTrue);
         expect(capabilities.contains(LLMCapability.imageGeneration), isTrue);
-        expect(capabilities.contains(LLMCapability.fileManagement), isTrue);
-        expect(capabilities.contains(LLMCapability.moderation), isTrue);
-        expect(capabilities.contains(LLMCapability.assistants), isTrue);
       });
 
       test('Provider should implement capability interfaces', () {
-        // Test that provider supports the capabilities through the supports method
-        expect(provider.supports(LLMCapability.fileManagement), isTrue);
-        expect(provider.supports(LLMCapability.moderation), isTrue);
-        expect(provider.supports(LLMCapability.assistants), isTrue);
+        // Tier 2 surface: provider-agnostic capabilities only.
+        expect(provider.supports(LLMCapability.fileManagement), isFalse);
+        expect(provider.supports(LLMCapability.moderation), isFalse);
+        expect(provider.supports(LLMCapability.assistants), isFalse);
 
-        // These APIs are intentionally provider-specific (not part of the standard surface).
-        expect(provider.filesApi, isNotNull);
-        expect(provider.moderationApi, isNotNull);
-        expect(provider.assistantsApi, isNotNull);
-        expect(provider.modelsApi, isNotNull);
+        // Tier 3 surface: endpoint-level wrappers are opt-in.
+        final client = OpenAIClient(provider.config);
+        expect(OpenAIFiles(client, provider.config), isNotNull);
+        expect(OpenAIModels(client, provider.config), isNotNull);
+        expect(OpenAIModeration(client, provider.config), isNotNull);
+        expect(OpenAIAssistants(client, provider.config), isNotNull);
+        expect(OpenAICompletion(client, provider.config), isNotNull);
         expect(provider, isA<ProviderCapabilities>());
       });
     });

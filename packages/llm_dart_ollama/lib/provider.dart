@@ -2,9 +2,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'client.dart';
 import 'config.dart';
 import 'chat.dart';
-import 'completion.dart';
 import 'embeddings.dart';
-import 'models.dart';
 
 /// Ollama provider implementation
 ///
@@ -22,16 +20,12 @@ class OllamaProvider
 
   // Capability modules
   late final OllamaChat _chat;
-  late final OllamaCompletion _completion;
   late final OllamaEmbeddings _embeddings;
-  late final OllamaModels _models;
 
   OllamaProvider(this.config) : _client = OllamaClient(config) {
     // Initialize capability modules
     _chat = OllamaChat(_client, config);
-    _completion = OllamaCompletion(_client, config);
     _embeddings = OllamaEmbeddings(_client, config);
-    _models = OllamaModels(_client, config);
   }
 
   // Chat capability methods
@@ -81,14 +75,6 @@ class OllamaProvider
     return _chat.summarizeHistory(messages);
   }
 
-  // Completion capability methods
-  /// Provider-specific API (not part of the standard surface).
-  OllamaCompletion get completionApi => _completion;
-
-  Future<CompletionResponse> complete(CompletionRequest request) async {
-    return _completion.complete(request);
-  }
-
   // Embedding capability methods
   @override
   Future<List<List<double>>> embed(
@@ -96,14 +82,6 @@ class OllamaProvider
     CancelToken? cancelToken,
   }) async {
     return _embeddings.embed(input, cancelToken: cancelToken);
-  }
-
-  // Model listing capability methods
-  /// Provider-specific API (not part of the standard surface).
-  OllamaModels get modelsApi => _models;
-
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
-    return _models.models(cancelToken: cancelToken);
   }
 
   /// Get provider name
@@ -115,9 +93,7 @@ class OllamaProvider
   Set<LLMCapability> get supportedCapabilities => {
         LLMCapability.chat,
         LLMCapability.streaming,
-        LLMCapability.completion,
         LLMCapability.embedding,
-        LLMCapability.modelListing,
         // Intentionally optimistic: do not maintain a model capability matrix.
         LLMCapability.toolCalling,
         LLMCapability.vision,

@@ -29,9 +29,7 @@ void main() {
 
         expect(capabilities, contains(LLMCapability.chat));
         expect(capabilities, contains(LLMCapability.streaming));
-        expect(capabilities, contains(LLMCapability.completion));
         expect(capabilities, contains(LLMCapability.embedding));
-        expect(capabilities, contains(LLMCapability.modelListing));
         expect(capabilities, contains(LLMCapability.reasoning));
         expect(capabilities, contains(LLMCapability.toolCalling));
         expect(capabilities, contains(LLMCapability.vision));

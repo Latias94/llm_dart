@@ -34,9 +34,7 @@ class OllamaProviderFactory extends LocalProviderFactory<ChatCapability> {
   Set<LLMCapability> get supportedCapabilities => {
         LLMCapability.chat,
         LLMCapability.streaming,
-        LLMCapability.completion,
         LLMCapability.embedding,
-        LLMCapability.modelListing,
         LLMCapability.reasoning,
         LLMCapability.toolCalling,
         LLMCapability.vision,

@@ -34,8 +34,6 @@ class XAIProvider
     );
   }
 
-  OpenAIClient get client => _client;
-
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {

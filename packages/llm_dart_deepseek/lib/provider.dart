@@ -3,7 +3,6 @@ import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:llm_dart_openai_compatible/client.dart';
 
 import 'config.dart';
-import 'models.dart';
 
 /// DeepSeek provider implementation
 ///
@@ -16,7 +15,6 @@ class DeepSeekProvider
   final OpenAIClient _client;
 
   late final OpenAICompatibleChatProvider _chat;
-  late final DeepSeekModels _models;
 
   factory DeepSeekProvider(DeepSeekConfig config) {
     final openAIConfig = _toOpenAICompatibleConfig(config);
@@ -34,7 +32,6 @@ class DeepSeekProvider
       _openAIConfig,
       supportedCapabilities,
     );
-    _models = DeepSeekModels(_client, config);
   }
 
   @override
@@ -86,13 +83,6 @@ class DeepSeekProvider
     return _chat.summarizeHistory(messages);
   }
 
-  /// Provider-specific API (not part of the standard surface).
-  DeepSeekModels get modelsApi => _models;
-
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
-    return _models.models(cancelToken: cancelToken);
-  }
-
   /// Get provider name
   String get providerName => 'DeepSeek';
 
@@ -103,7 +93,6 @@ class DeepSeekProvider
         LLMCapability.chat,
         LLMCapability.streaming,
         LLMCapability.toolCalling,
-        LLMCapability.modelListing,
         // Intentionally optimistic: do not maintain a model capability matrix.
         LLMCapability.vision,
         LLMCapability.reasoning,

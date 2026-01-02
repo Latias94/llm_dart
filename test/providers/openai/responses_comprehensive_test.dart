@@ -14,6 +14,7 @@ library;
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_openai/responses.dart';
+import 'package:llm_dart_openai/client.dart';
 
 void main() {
   group('OpenAI Responses API Comprehensive Tests', () {
@@ -202,7 +203,7 @@ void main() {
         final openaiProvider = provider as OpenAIProvider;
         expect(openaiProvider.config.useResponsesAPI, isTrue);
         expect(openaiProvider.config.builtInTools, hasLength(2));
-        expect(openaiProvider.responses, isNotNull);
+        expect(openaiProvider.supports(LLMCapability.openaiResponses), isTrue);
       });
 
       test('should accumulate multiple built-in tools', () async {
@@ -251,7 +252,6 @@ void main() {
             .buildOpenAIResponses();
 
         expect(provider, isA<OpenAIProvider>());
-        expect(provider.responses, isNotNull);
         expect(provider.config.useResponsesAPI, isTrue);
         expect(provider.supports(LLMCapability.openaiResponses), isTrue);
       });
@@ -429,8 +429,7 @@ void main() {
             isFalse);
       });
 
-      test('should provide responses getter when capability is enabled',
-          () async {
+      test('should allow Responses opt-in wrapper when enabled', () async {
         final provider = await ai()
             .openai((openai) => openai.useResponsesAPI())
             .apiKey('test-key')
@@ -438,19 +437,22 @@ void main() {
             .build();
 
         final openaiProvider = provider as OpenAIProvider;
-        expect(openaiProvider.responses, isNotNull);
-        expect(openaiProvider.responses, isA<OpenAIResponses>());
-        expect(openaiProvider.responses, isA<OpenAIResponsesCapability>());
-        expect(openaiProvider.responses, isA<ChatCapability>());
+        expect(openaiProvider.supports(LLMCapability.openaiResponses), isTrue);
+
+        final responses = OpenAIResponses(
+            OpenAIClient(openaiProvider.config), openaiProvider.config);
+        expect(responses, isA<OpenAIResponses>());
+        expect(responses, isA<OpenAIResponsesCapability>());
+        expect(responses, isA<ChatCapability>());
       });
 
-      test('should not provide responses getter when capability is disabled',
+      test('should not report openaiResponses capability when disabled',
           () async {
         final provider =
             await ai().openai().apiKey('test-key').model('gpt-4o').build();
 
         final openaiProvider = provider as OpenAIProvider;
-        expect(openaiProvider.responses, isNull);
+        expect(openaiProvider.supports(LLMCapability.openaiResponses), isFalse);
       });
 
       test('should support type-safe capability checking', () async {
@@ -466,21 +468,21 @@ void main() {
                 .supports(LLMCapability.openaiResponses) &&
             provider is OpenAIProvider) {
           final openaiProvider = provider;
-          final responses = openaiProvider.responses;
-
-          expect(responses, isNotNull);
+          final responses = OpenAIResponses(
+            OpenAIClient(openaiProvider.config),
+            openaiProvider.config,
+          );
           expect(responses, isA<OpenAIResponsesCapability>());
 
           // Verify all required methods exist (without calling them to avoid API key requirements)
-          final responsesInstance = responses!;
-          expect(responsesInstance.chatWithTools, isA<Function>());
-          expect(responsesInstance.chatWithToolsBackground, isA<Function>());
-          expect(responsesInstance.getResponse, isA<Function>());
-          expect(responsesInstance.deleteResponse, isA<Function>());
-          expect(responsesInstance.cancelResponse, isA<Function>());
-          expect(responsesInstance.listInputItems, isA<Function>());
-          expect(responsesInstance.continueConversation, isA<Function>());
-          expect(responsesInstance.forkConversation, isA<Function>());
+          expect(responses.chatWithTools, isA<Function>());
+          expect(responses.chatWithToolsBackground, isA<Function>());
+          expect(responses.getResponse, isA<Function>());
+          expect(responses.deleteResponse, isA<Function>());
+          expect(responses.cancelResponse, isA<Function>());
+          expect(responses.listInputItems, isA<Function>());
+          expect(responses.continueConversation, isA<Function>());
+          expect(responses.forkConversation, isA<Function>());
         } else {
           fail('Provider should support OpenAI Responses capability');
         }

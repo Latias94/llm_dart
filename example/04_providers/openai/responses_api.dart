@@ -30,6 +30,7 @@ import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai/client.dart';
 import 'package:llm_dart_openai/responses.dart';
 
 void main() async {
@@ -123,7 +124,11 @@ Future<void> capabilityDetectionExample(String apiKey) async {
 
       // Safe casting to OpenAI provider
       if (responsesProvider is OpenAIProvider) {
-        final responsesAPI = responsesProvider.responses;
+        // ignore: unnecessary_nullable_for_final_variable_declarations
+        final OpenAIResponses? responsesAPI = OpenAIResponses(
+          OpenAIClient(responsesProvider.config),
+          responsesProvider.config,
+        );
         if (responsesAPI != null) {
           print('✅ Responses API module available');
           print('   • Stateful conversations: Available');
@@ -163,11 +168,14 @@ Future<void> capabilityDetectionExample(String apiKey) async {
         print('✅ Auto-configured OpenAI Responses provider created');
         print('   • Type: ${autoProvider.runtimeType}');
         print(
-            '   • Responses API: ${autoProvider.responses != null ? 'Available' : 'Not Available'}');
+            '   • Responses API: ${autoProvider.supports(LLMCapability.openaiResponses) ? 'Available' : 'Not Available'}');
         print(
             '   • Supports openaiResponses capability: ${autoProvider.supports(LLMCapability.openaiResponses)}');
 
-        final directAPI = autoProvider.responses!;
+        final directAPI = OpenAIResponses(
+          OpenAIClient(autoProvider.config),
+          autoProvider.config,
+        );
         final quickTest = await directAPI.chat([
           ChatMessage.user('Quick test of Responses API configuration'),
         ]);
@@ -557,7 +565,10 @@ Future<void> statefulConversationExample(String apiKey) async {
         .build();
     final openaiProvider = provider as OpenAIProvider;
 
-    final responses = openaiProvider.responses!;
+    final responses = OpenAIResponses(
+      OpenAIClient(openaiProvider.config),
+      openaiProvider.config,
+    );
 
     // Start a conversation
     final response1 = await responses.chat([
@@ -611,7 +622,10 @@ Future<void> backgroundProcessingExample(String apiKey) async {
         .build();
     final openaiProvider = provider as OpenAIProvider;
 
-    final responses = openaiProvider.responses!;
+    final responses = OpenAIResponses(
+      OpenAIClient(openaiProvider.config),
+      openaiProvider.config,
+    );
 
     // Start a background task
     print('Starting background processing...');
@@ -673,7 +687,10 @@ Future<void> responseLifecycleExample(String apiKey) async {
         .build();
     final openaiProvider = provider as OpenAIProvider;
 
-    final responses = openaiProvider.responses!;
+    final responses = OpenAIResponses(
+      OpenAIClient(openaiProvider.config),
+      openaiProvider.config,
+    );
 
     // Create a response
     final response = await responses.chat([

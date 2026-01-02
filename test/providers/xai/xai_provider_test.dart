@@ -24,10 +24,6 @@ void main() {
         expect(provider.config, equals(config));
         expect(provider.providerName, equals('xAI'));
       });
-
-      test('should initialize client', () {
-        expect(provider.client, isNotNull);
-      });
     });
 
     group('Capability Support', () {

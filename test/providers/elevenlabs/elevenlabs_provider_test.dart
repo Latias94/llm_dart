@@ -32,10 +32,6 @@ void main() {
       test('should initialize models module', () {
         expect(provider.models, isNotNull);
       });
-
-      test('should initialize client', () {
-        expect(provider.client, isNotNull);
-      });
     });
 
     group('Capability Support', () {

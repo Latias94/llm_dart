@@ -43,7 +43,6 @@ class OpenAIProviderFactory
         LLMCapability.chat,
         LLMCapability.streaming,
         LLMCapability.embedding,
-        LLMCapability.modelListing,
         LLMCapability.toolCalling,
         LLMCapability.reasoning,
         LLMCapability.vision,
@@ -51,10 +50,6 @@ class OpenAIProviderFactory
         LLMCapability.speechToText,
         LLMCapability.audioTranslation,
         LLMCapability.imageGeneration,
-        LLMCapability.fileManagement,
-        LLMCapability.moderation,
-        LLMCapability.assistants,
-        LLMCapability.completion,
         // Best-effort: can be enabled via providerOptions['openai']['useResponsesAPI'].
         LLMCapability.openaiResponses,
       };

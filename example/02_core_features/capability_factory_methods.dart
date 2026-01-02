@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
+import 'package:llm_dart_openai/client.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai/models.dart';
 
 /// 🏭 Capability Factory Methods - Type-Safe Provider Building
 ///
@@ -153,7 +155,9 @@ Future<void> demonstrateTypeSafeBuilding() async {
       print('         Type: ${openai.runtimeType}');
 
       // Test model listing functionality
-      final models = await openai.modelsApi.models();
+      final modelsApi =
+          OpenAIModels(OpenAIClient(openai.config), openai.config);
+      final models = await modelsApi.models();
       print('         🤖 Available models: ${models.length} models');
     } catch (e) {
       print('      ❌ OpenAI capability building failed: $e');
@@ -306,7 +310,9 @@ Future<void> demonstratePracticalUsage() async {
           .build();
 
       final openai = provider as OpenAIProvider;
-      final models = await openai.modelsApi.models();
+      final modelsApi =
+          OpenAIModels(OpenAIClient(openai.config), openai.config);
+      final models = await modelsApi.models();
       final gptModels = models.where((m) => m.id.contains('gpt')).toList();
 
       print('         ✅ Found ${models.length} total models');
