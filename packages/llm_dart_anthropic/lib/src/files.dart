@@ -2,7 +2,8 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart' hide CancelToken;
 
-import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
+import 'package:llm_dart_anthropic_compatible/client.dart';
+import 'package:llm_dart_anthropic_compatible/config.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Anthropic-specific file object

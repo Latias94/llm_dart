@@ -1,3 +1,9 @@
+/// (Tier 3 / opt-in) Low-level Google HTTP client.
+///
+/// This library powers the provider implementation but is intentionally not
+/// part of the recommended provider entrypoints.
+library;
+
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';

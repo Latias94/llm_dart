@@ -50,6 +50,11 @@ Future<void> main() async {
 - The recommended “standard surface” is `package:llm_dart_ai` task APIs; provider methods are the low-level capability interface.
 - Gemini grounding/web search is a provider-native tool and should be configured via `providerTools` (preferred) or `providerOptions['google']`.
 
+## API stability
+
+- Recommended entrypoint (Tier 2): `package:llm_dart_google/llm_dart_google.dart` (or `package:llm_dart_google/google.dart`).
+- Opt-in advanced modules (Tier 3): `package:llm_dart_google/client.dart`, `package:llm_dart_google/dio_strategy.dart`, `package:llm_dart_google/provider_tools.dart`, `package:llm_dart_google/web_search_tool_options.dart`.
+
 See also:
 
 - `../../docs/provider_tools_catalog.md`

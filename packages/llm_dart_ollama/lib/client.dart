@@ -1,3 +1,9 @@
+/// (Tier 3 / opt-in) Low-level Ollama HTTP client.
+///
+/// This library powers the provider implementation but is intentionally not
+/// part of the recommended provider entrypoints.
+library;
+
 import 'dart:convert';
 
 import 'package:dio/dio.dart' hide CancelToken;

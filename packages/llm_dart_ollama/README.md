@@ -18,3 +18,8 @@ void main() {
 }
 ```
 
+## API stability
+
+- Recommended entrypoint (Tier 2): `package:llm_dart_ollama/llm_dart_ollama.dart` (or `package:llm_dart_ollama/ollama.dart`).
+- Opt-in advanced modules (Tier 3): `package:llm_dart_ollama/client.dart`, `package:llm_dart_ollama/dio_strategy.dart`.
+

@@ -1,3 +1,9 @@
+/// (Tier 3 / opt-in) Anthropic-compatible Dio strategy used by `llm_dart_provider_utils`.
+///
+/// This library powers `llm_dart_anthropic_compatible`, but is intentionally not
+/// exported from the recommended entrypoint.
+library;
+
 import 'package:dio/dio.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'config.dart';

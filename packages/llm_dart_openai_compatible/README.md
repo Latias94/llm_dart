@@ -2,6 +2,9 @@
 
 OpenAI-compatible provider configs and factories for `llm_dart`.
 
+This package is a Tier 3 (opt-in) protocol layer: it is intended for advanced
+users and provider authors.
+
 This package exists to reuse a single “wire protocol” implementation across
 multiple providers that speak an OpenAI-compatible API.
 

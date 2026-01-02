@@ -1,4 +1,4 @@
-import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
+import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 class FakeAnthropicCompatibleJsonClient extends AnthropicClient {

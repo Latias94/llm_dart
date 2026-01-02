@@ -55,7 +55,8 @@ Compatible providers (e.g. MiniMax) should be implemented as thin wrappers:
 
 - Use `AnthropicConfig.fromLLMConfig(..., providerOptionsNamespace: '<providerId>')`
   to read namespaced options (fallback to `anthropic`).
-- Use `AnthropicClient` + `AnthropicChat` for the protocol implementation.
+- Use `AnthropicClient` (opt-in: `package:llm_dart_anthropic_compatible/client.dart`) +
+  `AnthropicChat` for the protocol implementation.
 - Do **not** enforce provider-specific constraints or “support matrices” in the SDK.
   Requests are forwarded best-effort and the provider API is the source of truth.
   If a provider rejects a feature, it should return an API error.

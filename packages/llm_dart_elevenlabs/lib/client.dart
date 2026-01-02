@@ -1,3 +1,9 @@
+/// (Tier 3 / opt-in) Low-level ElevenLabs HTTP client.
+///
+/// This library powers the provider implementation but is intentionally not
+/// part of the recommended provider entrypoints.
+library;
+
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart' hide CancelToken;

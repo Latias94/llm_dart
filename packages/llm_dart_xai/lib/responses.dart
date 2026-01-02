@@ -9,7 +9,7 @@ class _FunctionCallAccum {
   String arguments = '';
 }
 
-/// xAI Responses API implementation (`POST /v1/responses`).
+/// (Tier 3 / opt-in) xAI Responses API implementation (`POST /v1/responses`).
 ///
 /// This mirrors the event stream shape used by the OpenAI Responses API
 /// (`response.output_text.delta`, `response.reasoning_summary_text.delta`, etc),

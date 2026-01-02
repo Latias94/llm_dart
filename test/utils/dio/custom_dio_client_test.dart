@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:llm_dart_openai/client.dart';
 import 'package:llm_dart_openai_compatible/client.dart';
 

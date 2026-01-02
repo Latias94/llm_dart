@@ -1,4 +1,7 @@
-import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
+import 'package:llm_dart_anthropic_compatible/client.dart';
+import 'package:llm_dart_anthropic_compatible/config.dart';
+import 'package:llm_dart_anthropic_compatible/dio_strategy.dart';
+import 'package:llm_dart_anthropic_compatible/provider.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// MiniMax provider implementation (Anthropic-compatible).

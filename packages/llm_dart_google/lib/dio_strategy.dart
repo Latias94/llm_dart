@@ -1,3 +1,9 @@
+/// (Tier 3 / opt-in) Google Dio strategy used by `llm_dart_provider_utils`.
+///
+/// This library is intentionally not part of the recommended provider
+/// entrypoints.
+library;
+
 import 'package:dio/dio.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'config.dart';

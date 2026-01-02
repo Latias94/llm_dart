@@ -34,6 +34,11 @@ MiniMax's Anthropic-compatible interface currently:
   between turns for function calling continuity (LLM Dart's `runToolLoop*` does
   this automatically)
 
+## API stability
+
+- Recommended entrypoint (Tier 2): `package:llm_dart_minimax/llm_dart_minimax.dart` (or `package:llm_dart_minimax/minimax.dart`).
+- Under the hood, MiniMax reuses `llm_dart_anthropic_compatible` (Tier 3 protocol layer); low-level transport types remain opt-in via subpaths like `package:llm_dart_anthropic_compatible/client.dart`.
+
 ## Install
 
 ```bash

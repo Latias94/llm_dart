@@ -49,6 +49,34 @@ These APIs are considered implementation details and are not guaranteed stable:
 If you need Tier 3 APIs, import them explicitly via subpath libraries (opt-in),
 and pin versions accordingly.
 
+## Opt-in subpath libraries (Tier 3) index
+
+This list is non-exhaustive, but highlights the most common "escape hatch"
+imports that are intentionally kept out of the recommended provider entrypoints:
+
+- `llm_dart_openai`
+  - `package:llm_dart_openai/assistants.dart`
+  - `package:llm_dart_openai/responses.dart`
+  - `package:llm_dart_openai/client.dart`
+  - `package:llm_dart_openai/dio_strategy.dart`
+- `llm_dart_openai_compatible`
+  - `package:llm_dart_openai_compatible/client.dart`
+  - `package:llm_dart_openai_compatible/dio_strategy.dart`
+- `llm_dart_anthropic_compatible`
+  - `package:llm_dart_anthropic_compatible/client.dart`
+  - `package:llm_dart_anthropic_compatible/dio_strategy.dart`
+- `llm_dart_google`
+  - `package:llm_dart_google/client.dart`
+  - `package:llm_dart_google/dio_strategy.dart`
+- `llm_dart_ollama`
+  - `package:llm_dart_ollama/client.dart`
+  - `package:llm_dart_ollama/dio_strategy.dart`
+- `llm_dart_elevenlabs`
+  - `package:llm_dart_elevenlabs/client.dart`
+  - `package:llm_dart_elevenlabs/dio_strategy.dart`
+- `llm_dart_xai`
+  - `package:llm_dart_xai/responses.dart` (provider-native Responses API adapter)
+
 ## Design rules (enforced)
 
 - `llm_dart_core` must remain provider-agnostic (no OpenAI-only models shipped

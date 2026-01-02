@@ -54,6 +54,12 @@ Future<void> main() async {
 - The recommended “standard surface” is `package:llm_dart_ai` task APIs; provider methods are the low-level capability interface.
 - Anthropic web search / web fetch are provider-native tools and should be configured via `providerTools` (preferred) or `providerOptions['anthropic']`.
 
+## API stability
+
+- Recommended entrypoint (Tier 2): `package:llm_dart_anthropic/llm_dart_anthropic.dart` (or `package:llm_dart_anthropic/anthropic.dart`).
+- Opt-in advanced modules (Tier 3): endpoint wrappers like `package:llm_dart_anthropic/files.dart` and `package:llm_dart_anthropic/models.dart`.
+- Low-level transport types are provided by `llm_dart_anthropic_compatible` and are Tier 3 opt-in (e.g. `package:llm_dart_anthropic_compatible/client.dart`, `package:llm_dart_anthropic_compatible/dio_strategy.dart`).
+
 See also:
 
 - `../../docs/provider_tools_catalog.md`

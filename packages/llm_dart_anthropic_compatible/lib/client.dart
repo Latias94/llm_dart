@@ -1,3 +1,9 @@
+/// (Tier 3 / opt-in) Low-level Anthropic-compatible HTTP client.
+///
+/// This library powers `llm_dart_anthropic_compatible`, but is intentionally not
+/// exported from the recommended entrypoint.
+library;
+
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
