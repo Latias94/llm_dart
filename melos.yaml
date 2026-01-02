@@ -1,7 +1,6 @@
 name: llm_dart
 
 packages:
-  - .
   - packages/**
 
 ignore:
@@ -20,3 +19,9 @@ scripts:
   exports:
     run: dart run tool/check_public_exports.dart
     description: Verify public export boundary rules.
+  version:set-all:
+    run: dart run tool/bump_version.dart set-all
+    description: Set all package versions and internal dependency constraints (pass -- --version X.Y.Z).
+  version:set:
+    run: dart run tool/bump_version.dart set
+    description: Set a single package version (pass -- --package name --version X.Y.Z).
