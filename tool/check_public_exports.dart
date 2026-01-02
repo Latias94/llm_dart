@@ -221,6 +221,11 @@ Set<String> _forbiddenEntrypointExportsFor(String packageName) {
   if (packageName == 'llm_dart_elevenlabs') {
     return const {'forced_alignment.dart', 'speech_to_speech.dart'};
   }
+  if (packageName == 'llm_dart_xai') {
+    // Keep xAI's main entrypoints task-first and require explicit opt-in for
+    // the provider-native `/responses` adapter.
+    return const {'responses.dart', 'responses_provider.dart'};
+  }
   return const {};
 }
 
