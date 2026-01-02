@@ -55,38 +55,3 @@ DeepSeekProvider createDeepSeekProvider({
 
   return DeepSeekProvider(config);
 }
-
-/// Create a DeepSeek provider for chat
-DeepSeekProvider createDeepSeekChatProvider({
-  required String apiKey,
-  String model = 'deepseek-chat',
-  String? systemPrompt,
-  double? temperature,
-  int? maxTokens,
-}) {
-  return createDeepSeekProvider(
-    apiKey: apiKey,
-    model: model,
-    systemPrompt: systemPrompt,
-    temperature: temperature,
-    maxTokens: maxTokens,
-  );
-}
-
-/// Create a DeepSeek provider for reasoning tasks
-/// Uses the deepseek-reasoner model which supports reasoning/thinking
-DeepSeekProvider createDeepSeekReasoningProvider({
-  required String apiKey,
-  String model = 'deepseek-reasoner',
-  String? systemPrompt,
-  double? temperature,
-  int? maxTokens,
-}) {
-  return createDeepSeekProvider(
-    apiKey: apiKey,
-    model: model,
-    systemPrompt: systemPrompt,
-    temperature: temperature,
-    maxTokens: maxTokens,
-  );
-}

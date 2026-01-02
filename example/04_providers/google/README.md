@@ -90,12 +90,13 @@ final provider = await LLMBuilder()
     .buildEmbedding();
 ```
 
-### Convenience Factory Functions
+### Convenience Constructor
 
 ```dart
-// Create embedding provider with default settings
-final provider = createGoogleEmbeddingProvider(
+// Create an embedding-focused provider configuration
+final provider = createGoogleProvider(
   apiKey: 'your-api-key',
+  model: 'text-embedding-004',
 );
 
 // Use custom parameters and Google configuration

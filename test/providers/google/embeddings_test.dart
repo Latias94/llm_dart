@@ -193,20 +193,9 @@ void main() {
       });
     });
 
-    group('Factory Functions', () {
-      test('should create Google embedding provider with correct defaults', () {
-        final provider = createGoogleEmbeddingProvider(
-          apiKey: 'test-key',
-        );
-
-        expect(provider.config.apiKey, 'test-key');
-        expect(provider.config.model, 'text-embedding-004');
-        expect(provider, isA<EmbeddingCapability>());
-      });
-
-      test('should create Google embedding provider with custom parameters',
-          () {
-        final provider = createGoogleEmbeddingProvider(
+    group('Factory Function', () {
+      test('createGoogleProvider should forward embedding fields', () {
+        final provider = createGoogleProvider(
           apiKey: 'test-key',
           model: 'custom-embedding-model',
           embeddingTaskType: 'CLASSIFICATION',
@@ -216,6 +205,7 @@ void main() {
         expect(provider.config.model, 'custom-embedding-model');
         expect(provider.config.embeddingTaskType, 'CLASSIFICATION');
         expect(provider.config.embeddingDimensions, 1024);
+        expect(provider, isA<EmbeddingCapability>());
       });
     });
   });

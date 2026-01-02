@@ -51,12 +51,12 @@ void main() {
       }
     });
 
-    test(
-        'createOllamaReasoningProvider should create provider with thinking enabled',
+    test('createOllamaProvider should create provider with thinking enabled',
         () {
-      final provider = createOllamaReasoningProvider(
+      final provider = createOllamaProvider(
         baseUrl: 'http://localhost:11434',
         model: 'gpt-oss:latest',
+        reasoning: true,
       );
 
       expect(provider, isA<OllamaProvider>());

@@ -31,30 +31,6 @@ const String minimaxiAnthropicBaseUrl = 'https://api.minimaxi.com/anthropic/';
 const String minimaxiAnthropicV1BaseUrl =
     'https://api.minimaxi.com/anthropic/v1/';
 
-/// Vercel-style alias for creating an Anthropic-compatible MiniMax provider.
-///
-/// Note: This package currently only supports the Anthropic-compatible API
-/// format. An OpenAI-compatible mode (like Vercel's `minimaxOpenAI`) may be
-/// added later as a separate provider id/package.
-MinimaxProvider createMinimax({
-  required String apiKey,
-  String model = minimaxDefaultModel,
-  String baseUrl = minimaxAnthropicV1BaseUrl,
-  int? maxTokens,
-  double? temperature,
-  String? systemPrompt,
-  Duration? timeout,
-}) =>
-    createMinimaxProvider(
-      apiKey: apiKey,
-      model: model,
-      baseUrl: baseUrl,
-      maxTokens: maxTokens,
-      temperature: temperature,
-      systemPrompt: systemPrompt,
-      timeout: timeout,
-    );
-
 /// Create a MiniMax chat provider using the Anthropic-compatible Messages API.
 MinimaxProvider createMinimaxProvider({
   required String apiKey,

@@ -47,38 +47,3 @@ AnthropicProvider createAnthropicProvider({
 
   return AnthropicProvider(config);
 }
-
-/// Create an Anthropic provider for chat.
-AnthropicProvider createAnthropicChatProvider({
-  required String apiKey,
-  String model = 'claude-sonnet-4-20250514',
-  String? systemPrompt,
-  double? temperature,
-  int? maxTokens,
-}) {
-  return createAnthropicProvider(
-    apiKey: apiKey,
-    model: model,
-    systemPrompt: systemPrompt,
-    temperature: temperature,
-    maxTokens: maxTokens,
-  );
-}
-
-/// Create an Anthropic provider for reasoning tasks.
-AnthropicProvider createAnthropicReasoningProvider({
-  required String apiKey,
-  String model = 'claude-sonnet-4-20250514',
-  String? systemPrompt,
-  int? thinkingBudgetTokens,
-  bool interleavedThinking = false,
-}) {
-  return createAnthropicProvider(
-    apiKey: apiKey,
-    model: model,
-    systemPrompt: systemPrompt,
-    reasoning: true,
-    thinkingBudgetTokens: thinkingBudgetTokens,
-    interleavedThinking: interleavedThinking,
-  );
-}

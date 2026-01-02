@@ -139,12 +139,15 @@ void main() {
       expect(json.containsKey('excluded_websites'), isFalse);
     });
 
-    test('should create live search provider with convenience function', () {
-      final provider = createXAILiveSearchProvider(
+    test('should configure live search via createXAIProvider', () {
+      final provider = createXAIProvider(
         apiKey: 'test-key',
         model: 'grok-3',
-        maxSearchResults: 7,
-        excludedWebsites: ['blocked.com'],
+        liveSearch: true,
+        searchParameters: SearchParameters.webSearch(
+          maxResults: 7,
+          excludedWebsites: ['blocked.com'],
+        ),
       );
 
       expect(provider.config.liveSearch, isTrue);
@@ -154,13 +157,17 @@ void main() {
           contains('blocked.com'));
     });
 
-    test('should create search provider with convenience function', () {
-      final provider = createXAISearchProvider(
+    test('should configure search parameters via createXAIProvider', () {
+      final provider = createXAIProvider(
         apiKey: 'test-key',
         model: 'grok-3',
-        searchMode: 'always',
-        maxSearchResults: 15,
-        fromDate: '2024-06-01',
+        liveSearch: true,
+        searchParameters: SearchParameters(
+          mode: 'always',
+          sources: const [SearchSource(sourceType: 'web')],
+          maxSearchResults: 15,
+          fromDate: '2024-06-01',
+        ),
       );
 
       expect(provider.config.liveSearch, isTrue);
