@@ -1,0 +1,55 @@
+{
+  "id": "resp_123",
+  "object": "response",
+  "model": "gpt-4.1-mini",
+  "output": [
+    {
+      "type": "web_search_call",
+      "id": "ws_1",
+      "status": "completed",
+      "action": {
+        "type": "open_page",
+        "url": "https://example.com",
+        "sources": [
+          {
+            "type": "url",
+            "url": "https://example.com",
+            "title": "Example Domain"
+          }
+        ]
+      }
+    },
+    {
+      "type": "function_call",
+      "id": "fc_1",
+      "call_id": "call_abc",
+      "name": "get_weather",
+      "arguments": "{\"city\":\"Beijing\"}"
+    },
+    {
+      "type": "message",
+      "id": "msg_1",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Hello",
+          "annotations": [
+            {
+              "type": "url_citation",
+              "url": "https://example.com",
+              "title": "Example Domain",
+              "start_index": 0,
+              "end_index": 5
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 1,
+    "output_tokens": 2,
+    "total_tokens": 3
+  }
+}
