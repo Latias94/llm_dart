@@ -1,16 +1,11 @@
 /// Modular xAI Provider.
 library;
 
-import 'package:llm_dart_core/llm_dart_core.dart';
-
 import 'config.dart';
 import 'provider.dart';
-import 'responses_provider.dart';
 
 export 'config.dart';
 export 'provider.dart';
-export 'responses.dart';
-export 'responses_provider.dart';
 
 XAIProvider createXAIProvider({
   required String apiKey,
@@ -110,33 +105,4 @@ XAIProvider createGrokVisionProvider({
   );
 
   return XAIProvider(config);
-}
-
-XAIResponsesProvider createXAIResponsesProvider({
-  required String apiKey,
-  String model = 'grok-4-fast',
-  String baseUrl = 'https://api.x.ai/v1/',
-  double? temperature,
-  int? maxTokens,
-  String? systemPrompt,
-  bool? store,
-  String? previousResponseId,
-}) {
-  final llmConfig = LLMConfig(
-    apiKey: apiKey,
-    baseUrl: baseUrl,
-    model: model,
-    maxTokens: maxTokens,
-    temperature: temperature,
-    systemPrompt: systemPrompt,
-    providerOptions: {
-      'xai.responses': {
-        if (store != null) 'store': store,
-        if (previousResponseId != null)
-          'previousResponseId': previousResponseId,
-      },
-    },
-  );
-
-  return XAIResponsesProvider(llmConfig);
 }

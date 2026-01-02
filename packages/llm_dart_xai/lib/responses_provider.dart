@@ -98,3 +98,36 @@ class XAIResponsesProvider
   bool supports(LLMCapability capability) =>
       supportedCapabilities.contains(capability);
 }
+
+/// Convenience constructor for the xAI Responses provider (`xai.responses`).
+///
+/// This is intentionally Tier 3 / opt-in: import via
+/// `package:llm_dart_xai/responses_provider.dart`.
+XAIResponsesProvider createXAIResponsesProvider({
+  required String apiKey,
+  String model = 'grok-4-fast',
+  String baseUrl = 'https://api.x.ai/v1/',
+  double? temperature,
+  int? maxTokens,
+  String? systemPrompt,
+  bool? store,
+  String? previousResponseId,
+}) {
+  final llmConfig = LLMConfig(
+    apiKey: apiKey,
+    baseUrl: baseUrl,
+    model: model,
+    maxTokens: maxTokens,
+    temperature: temperature,
+    systemPrompt: systemPrompt,
+    providerOptions: {
+      'xai.responses': {
+        if (store != null) 'store': store,
+        if (previousResponseId != null)
+          'previousResponseId': previousResponseId,
+      },
+    },
+  );
+
+  return XAIResponsesProvider(llmConfig);
+}
