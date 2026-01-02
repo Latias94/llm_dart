@@ -107,7 +107,8 @@ List<String> _checkCorePublicSurface(Directory packageDir) {
   return errors;
 }
 
-List<String> _checkProviderEntrypoints(String packageName, Directory packageDir) {
+List<String> _checkProviderEntrypoints(
+    String packageName, Directory packageDir) {
   final errors = <String>[];
 
   final shortName = packageName.substring('llm_dart_'.length);

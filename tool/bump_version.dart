@@ -24,91 +24,94 @@ void main(List<String> args) {
   final flags = _parseArgs(args.skip(1).toList());
 
   switch (command) {
-    case 'set-all': {
-      final version = flags.string('version');
-      if (version == null || version.isEmpty) {
-        stderr.writeln('Missing required flag: --version');
-        exitCode = 2;
+    case 'set-all':
+      {
+        final version = flags.string('version');
+        if (version == null || version.isEmpty) {
+          stderr.writeln('Missing required flag: --version');
+          exitCode = 2;
+          return;
+        }
+
+        final updateConstraints =
+            flags.boolFlag('update-constraints', defaultValue: true);
+
+        final packages = _discoverPackages(Directory.current);
+        if (packages.isEmpty) {
+          stderr.writeln('No packages found under `packages/`.');
+          exitCode = 2;
+          return;
+        }
+
+        final packageNames = packages.map((p) => p.name).toSet();
+
+        for (final pkg in packages) {
+          final pubspec = pkg.pubspec;
+          final original = pubspec.readAsStringSync();
+          final updated = _setVersionInPubspec(
+            original,
+            version: version,
+            updateInternalConstraints: updateConstraints,
+            internalPackageNames: packageNames,
+          );
+          if (updated != original) {
+            pubspec.writeAsStringSync(updated);
+          }
+        }
+
+        stdout.writeln(
+          'Updated ${packages.length} packages to version $version'
+          '${updateConstraints ? ' (constraints updated)' : ''}.',
+        );
         return;
       }
+    case 'set':
+      {
+        final packageName = flags.string('package');
+        final version = flags.string('version');
+        if (packageName == null || packageName.isEmpty) {
+          stderr.writeln('Missing required flag: --package');
+          exitCode = 2;
+          return;
+        }
+        if (version == null || version.isEmpty) {
+          stderr.writeln('Missing required flag: --version');
+          exitCode = 2;
+          return;
+        }
 
-      final updateConstraints =
-          flags.boolFlag('update-constraints', defaultValue: true);
+        final packages = _discoverPackages(Directory.current);
+        final pkg = packages.where((p) => p.name == packageName).firstOrNull;
+        if (pkg == null) {
+          stderr.writeln(
+            'Package not found: $packageName (expected in `packages/<name>/pubspec.yaml`).',
+          );
+          exitCode = 2;
+          return;
+        }
 
-      final packages = _discoverPackages(Directory.current);
-      if (packages.isEmpty) {
-        stderr.writeln('No packages found under `packages/`.');
-        exitCode = 2;
-        return;
-      }
-
-      final packageNames = packages.map((p) => p.name).toSet();
-
-      for (final pkg in packages) {
         final pubspec = pkg.pubspec;
         final original = pubspec.readAsStringSync();
         final updated = _setVersionInPubspec(
           original,
           version: version,
-          updateInternalConstraints: updateConstraints,
-          internalPackageNames: packageNames,
+          updateInternalConstraints: false,
+          internalPackageNames: const {},
         );
         if (updated != original) {
           pubspec.writeAsStringSync(updated);
         }
-      }
 
-      stdout.writeln(
-        'Updated ${packages.length} packages to version $version'
-        '${updateConstraints ? ' (constraints updated)' : ''}.',
-      );
-      return;
-    }
-    case 'set': {
-      final packageName = flags.string('package');
-      final version = flags.string('version');
-      if (packageName == null || packageName.isEmpty) {
-        stderr.writeln('Missing required flag: --package');
+        stdout.writeln('Updated $packageName to version $version.');
+        return;
+      }
+    default:
+      {
+        stderr.writeln('Unknown command: $command');
+        _printUsage();
         exitCode = 2;
         return;
       }
-      if (version == null || version.isEmpty) {
-        stderr.writeln('Missing required flag: --version');
-        exitCode = 2;
-        return;
-      }
-
-      final packages = _discoverPackages(Directory.current);
-      final pkg = packages.where((p) => p.name == packageName).firstOrNull;
-      if (pkg == null) {
-        stderr.writeln(
-          'Package not found: $packageName (expected in `packages/<name>/pubspec.yaml`).',
-        );
-        exitCode = 2;
-        return;
-      }
-
-      final pubspec = pkg.pubspec;
-      final original = pubspec.readAsStringSync();
-      final updated = _setVersionInPubspec(
-        original,
-        version: version,
-        updateInternalConstraints: false,
-        internalPackageNames: const {},
-      );
-      if (updated != original) {
-        pubspec.writeAsStringSync(updated);
-      }
-
-      stdout.writeln('Updated $packageName to version $version.');
-      return;
-    }
-    default: {
-      stderr.writeln('Unknown command: $command');
-      _printUsage();
-      exitCode = 2;
-      return;
-    }
   }
 }
 

@@ -14,8 +14,7 @@ void registerXAI({bool replace = false}) {
   final responsesFactory = XAIResponsesProviderFactory();
 
   final hasXai = LLMProviderRegistry.isRegistered(xaiProviderId);
-  final hasResponses =
-      LLMProviderRegistry.isRegistered(xaiResponsesProviderId);
+  final hasResponses = LLMProviderRegistry.isRegistered(xaiResponsesProviderId);
 
   if (!replace && hasXai && hasResponses) return;
 
