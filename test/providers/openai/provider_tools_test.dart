@@ -12,6 +12,24 @@ void main() {
       expect(tool.options['search_context_size'], equals('high'));
     });
 
+    test('webSearchFull creates ProviderTool with stable id', () {
+      final tool = OpenAIProviderTools.webSearchFull(
+        allowedDomains: const ['example.com'],
+        externalWebAccess: true,
+        contextSize: OpenAIWebSearchContextSize.low,
+        userLocation: const {'country': 'US'},
+      );
+
+      expect(tool.id, equals('openai.web_search'));
+      expect(
+        (tool.options['filters'] as Map)['allowed_domains'],
+        equals(['example.com']),
+      );
+      expect(tool.options['external_web_access'], isTrue);
+      expect(tool.options['search_context_size'], equals('low'));
+      expect(tool.options['user_location'], equals(const {'country': 'US'}));
+    });
+
     test('fileSearch creates ProviderTool with stable id', () {
       final tool = OpenAIProviderTools.fileSearch(
         vectorStoreIds: const ['vs_123'],
@@ -36,6 +54,43 @@ void main() {
       expect(tool.options['display_height'], equals(768));
       expect(tool.options['environment'], equals('browser'));
       expect(tool.options['timeout'], equals(30));
+    });
+
+    test('codeInterpreter creates ProviderTool with stable id', () {
+      final tool = OpenAIProviderTools.codeInterpreter(
+        container: {
+          'type': 'auto',
+          'file_ids': ['file_1']
+        },
+      );
+
+      expect(tool.id, equals('openai.code_interpreter'));
+      expect(tool.options['container'], isA<Map>());
+    });
+
+    test('imageGeneration creates ProviderTool with stable id', () {
+      final tool = OpenAIProviderTools.imageGeneration(parameters: const {
+        'size': '1024x1024',
+      });
+
+      expect(tool.id, equals('openai.image_generation'));
+      expect(tool.options['size'], equals('1024x1024'));
+    });
+
+    test('mcp creates ProviderTool with stable id', () {
+      final tool = OpenAIProviderTools.mcp(parameters: const {
+        'server_label': 'test',
+      });
+
+      expect(tool.id, equals('openai.mcp'));
+      expect(tool.options['server_label'], equals('test'));
+    });
+
+    test('shell/localShell/applyPatch create ProviderTools with stable ids',
+        () {
+      expect(OpenAIProviderTools.shell().id, equals('openai.shell'));
+      expect(OpenAIProviderTools.localShell().id, equals('openai.local_shell'));
+      expect(OpenAIProviderTools.applyPatch().id, equals('openai.apply_patch'));
     });
   });
 }

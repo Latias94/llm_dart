@@ -106,15 +106,20 @@ class OpenAIProviderFactory
 
     final providerTools = config.providerTools;
     ProviderTool? webSearchProviderTool;
+    String? webSearchProviderToolId;
     if (providerTools != null) {
       for (final t in providerTools) {
-        if (t.id == 'openai.web_search_preview') {
+        if (t.id == 'openai.web_search' ||
+            t.id == 'openai.web_search_preview') {
           webSearchProviderTool = t;
+          webSearchProviderToolId = t.id;
           break;
         }
       }
     }
     final hasProviderToolWebSearch = webSearchProviderTool != null;
+    final hasProviderToolWebSearchFull =
+        webSearchProviderToolId == 'openai.web_search';
     final providerToolContextSize =
         _parseProviderToolWebSearchContextSize(webSearchProviderTool);
 
@@ -155,17 +160,27 @@ class OpenAIProviderFactory
 
       final tools = List<OpenAIBuiltInTool>.from(builtInTools ?? const []);
       final hasWebSearchTool = tools.any(
-        (t) => t.type == OpenAIBuiltInToolType.webSearch,
+        (t) =>
+            t.type == OpenAIBuiltInToolType.webSearch ||
+            t.type == OpenAIBuiltInToolType.webSearchFull,
       );
 
       if (!hasWebSearchTool) {
-        tools.add(
-          OpenAIBuiltInTools.webSearch(
+        if (hasProviderToolWebSearchFull) {
+          tools.add(OpenAIBuiltInTools.webSearchFull(
             contextSize: providerToolContextSize ??
                 legacyProviderOptionContextSize ??
                 OpenAIWebSearchContextSize.medium,
-          ),
-        );
+          ));
+        } else {
+          tools.add(
+            OpenAIBuiltInTools.webSearch(
+              contextSize: providerToolContextSize ??
+                  legacyProviderOptionContextSize ??
+                  OpenAIWebSearchContextSize.medium,
+            ),
+          );
+        }
       }
 
       builtInTools = tools.isEmpty ? null : tools;
@@ -433,6 +448,47 @@ class OpenAIProviderFactory
           result.add(OpenAIBuiltInTools.webSearch(contextSize: contextSize));
           break;
 
+        case 'web_search':
+          OpenAIWebSearchContextSize? contextSize;
+          final rawContextSize = map['search_context_size'];
+          if (rawContextSize is String) {
+            contextSize = OpenAIWebSearchContextSize.tryParse(rawContextSize);
+          }
+
+          final filters = map['filters'];
+          List<String>? allowedDomains;
+          if (filters is Map && filters['allowed_domains'] is List) {
+            allowedDomains = (filters['allowed_domains'] as List)
+                .whereType<String>()
+                .toList();
+          }
+
+          final userLocation = map['user_location'];
+          final userLocationMap = userLocation is Map<String, dynamic>
+              ? userLocation
+              : userLocation is Map
+                  ? Map<String, dynamic>.from(userLocation)
+                  : null;
+
+          final parameters = Map<String, dynamic>.from(map)
+            ..remove('type')
+            ..remove('search_context_size')
+            ..remove('external_web_access')
+            ..remove('filters')
+            ..remove('user_location');
+
+          result.add(
+            OpenAIBuiltInTools.webSearchFull(
+              allowedDomains:
+                  allowedDomains?.isEmpty == true ? null : allowedDomains,
+              externalWebAccess: map['external_web_access'] as bool?,
+              contextSize: contextSize,
+              userLocation: userLocationMap,
+              parameters: parameters.isEmpty ? null : parameters,
+            ),
+          );
+          break;
+
         case 'file_search':
           final vectorStoreIds =
               (map['vector_store_ids'] as List?)?.whereType<String>().toList();
@@ -475,6 +531,47 @@ class OpenAIProviderFactory
             ),
           );
           break;
+
+        case 'code_interpreter':
+          final container = map['container'];
+          final parameters = Map<String, dynamic>.from(map)
+            ..remove('type')
+            ..remove('container');
+          result.add(
+            OpenAIBuiltInTools.codeInterpreter(
+              container: container,
+              parameters: parameters.isEmpty ? null : parameters,
+            ),
+          );
+          break;
+
+        case 'image_generation':
+          final parameters = Map<String, dynamic>.from(map)..remove('type');
+          result.add(
+            OpenAIBuiltInTools.imageGeneration(
+              parameters: parameters.isEmpty ? null : parameters,
+            ),
+          );
+          break;
+
+        case 'mcp':
+          final parameters = Map<String, dynamic>.from(map)..remove('type');
+          result.add(OpenAIBuiltInTools.mcp(
+            parameters: parameters.isEmpty ? null : parameters,
+          ));
+          break;
+
+        case 'apply_patch':
+          result.add(OpenAIBuiltInTools.applyPatch());
+          break;
+
+        case 'shell':
+          result.add(OpenAIBuiltInTools.shell());
+          break;
+
+        case 'local_shell':
+          result.add(OpenAIBuiltInTools.localShell());
+          break;
       }
     }
 
@@ -501,6 +598,55 @@ class OpenAIProviderFactory
           result.add(
             OpenAIBuiltInTools.webSearch(
               contextSize: contextSize ?? OpenAIWebSearchContextSize.medium,
+            ),
+          );
+          break;
+
+        case 'openai.web_search':
+          OpenAIWebSearchContextSize? contextSize;
+          final rawContextSize = tool.options['search_context_size'] ??
+              tool.options['searchContextSize'] ??
+              tool.options['contextSize'];
+          if (rawContextSize is String) {
+            contextSize = OpenAIWebSearchContextSize.tryParse(rawContextSize);
+          }
+
+          final filters = tool.options['filters'];
+          List<String>? allowedDomains;
+          if (filters is Map && filters['allowed_domains'] is List) {
+            allowedDomains = (filters['allowed_domains'] as List)
+                .whereType<String>()
+                .toList();
+          }
+
+          final userLocation =
+              tool.options['user_location'] ?? tool.options['userLocation'];
+          final userLocationMap = userLocation is Map<String, dynamic>
+              ? userLocation
+              : userLocation is Map
+                  ? Map<String, dynamic>.from(userLocation)
+                  : null;
+
+          final parameters = Map<String, dynamic>.from(tool.options);
+          parameters.remove('filters');
+          parameters.remove('external_web_access');
+          parameters.remove('externalWebAccess');
+          parameters.remove('search_context_size');
+          parameters.remove('searchContextSize');
+          parameters.remove('contextSize');
+          parameters.remove('user_location');
+          parameters.remove('userLocation');
+
+          result.add(
+            OpenAIBuiltInTools.webSearchFull(
+              allowedDomains:
+                  allowedDomains?.isEmpty == true ? null : allowedDomains,
+              externalWebAccess:
+                  (tool.options['external_web_access'] as bool?) ??
+                      (tool.options['externalWebAccess'] as bool?),
+              contextSize: contextSize,
+              userLocation: userLocationMap,
+              parameters: parameters.isEmpty ? null : parameters,
             ),
           );
           break;
@@ -583,6 +729,44 @@ class OpenAIProviderFactory
               parameters: parameters.isEmpty ? null : parameters,
             ),
           );
+          break;
+
+        case 'openai.code_interpreter':
+          final container = tool.options['container'];
+          final parameters = Map<String, dynamic>.from(tool.options)
+            ..remove('container');
+          result.add(
+            OpenAIBuiltInTools.codeInterpreter(
+              container: container,
+              parameters: parameters.isEmpty ? null : parameters,
+            ),
+          );
+          break;
+
+        case 'openai.image_generation':
+          result.add(
+            OpenAIBuiltInTools.imageGeneration(
+              parameters: tool.options.isEmpty ? null : tool.options,
+            ),
+          );
+          break;
+
+        case 'openai.mcp':
+          result.add(OpenAIBuiltInTools.mcp(
+            parameters: tool.options.isEmpty ? null : tool.options,
+          ));
+          break;
+
+        case 'openai.apply_patch':
+          result.add(OpenAIBuiltInTools.applyPatch());
+          break;
+
+        case 'openai.shell':
+          result.add(OpenAIBuiltInTools.shell());
+          break;
+
+        case 'openai.local_shell':
+          result.add(OpenAIBuiltInTools.localShell());
           break;
       }
     }

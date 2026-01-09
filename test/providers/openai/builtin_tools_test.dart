@@ -57,6 +57,25 @@ void main() {
       });
     });
 
+    group('OpenAIWebSearchFullTool', () {
+      test('should serialize to JSON correctly', () {
+        const tool = OpenAIWebSearchFullTool(
+          allowedDomains: ['example.com'],
+          externalWebAccess: true,
+          searchContextSize: OpenAIWebSearchContextSize.high,
+          userLocation: {'country': 'US'},
+        );
+
+        final json = tool.toJson();
+        expect(json['type'], equals('web_search'));
+        expect((json['filters'] as Map)['allowed_domains'],
+            equals(['example.com']));
+        expect(json['external_web_access'], isTrue);
+        expect(json['search_context_size'], equals('high'));
+        expect(json['user_location'], equals(const {'country': 'US'}));
+      });
+    });
+
     group('OpenAIFileSearchTool', () {
       test('should create file search tool with default values', () {
         const tool = OpenAIFileSearchTool();
@@ -241,10 +260,44 @@ void main() {
       test('should have correct enum values', () {
         expect(
             OpenAIBuiltInToolType.webSearch.toString(), contains('webSearch'));
+        expect(OpenAIBuiltInToolType.webSearchFull.toString(),
+            contains('webSearchFull'));
         expect(OpenAIBuiltInToolType.fileSearch.toString(),
             contains('fileSearch'));
         expect(OpenAIBuiltInToolType.computerUse.toString(),
             contains('computerUse'));
+      });
+    });
+
+    group('Additional Built-in Tools', () {
+      test('code interpreter serializes optional container', () {
+        const tool = OpenAICodeInterpreterTool(container: 'container_1');
+        final json = tool.toJson();
+        expect(json['type'], equals('code_interpreter'));
+        expect(json['container'], equals('container_1'));
+      });
+
+      test('image generation serializes parameters', () {
+        const tool =
+            OpenAIImageGenerationTool(parameters: {'size': '1024x1024'});
+        final json = tool.toJson();
+        expect(json['type'], equals('image_generation'));
+        expect(json['size'], equals('1024x1024'));
+      });
+
+      test('mcp serializes parameters', () {
+        const tool = OpenAIMCPTool(parameters: {'server_label': 'test'});
+        final json = tool.toJson();
+        expect(json['type'], equals('mcp'));
+        expect(json['server_label'], equals('test'));
+      });
+
+      test('apply_patch/shell/local_shell serialize as type-only tools', () {
+        expect(const OpenAIApplyPatchTool().toJson(),
+            equals({'type': 'apply_patch'}));
+        expect(const OpenAIShellTool().toJson(), equals({'type': 'shell'}));
+        expect(const OpenAILocalShellTool().toJson(),
+            equals({'type': 'local_shell'}));
       });
     });
 

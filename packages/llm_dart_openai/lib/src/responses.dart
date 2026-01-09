@@ -791,15 +791,19 @@ class OpenAIResponses
       include.addAll(rawInclude.whereType<String>());
     }
 
-    final hasWebSearchTool = config.builtInTools?.any(
-          (t) => t.type == OpenAIBuiltInToolType.webSearch,
+    final builtInTools = config.builtInTools;
+
+    final hasWebSearchTool = builtInTools?.any(
+          (t) =>
+              t.type == OpenAIBuiltInToolType.webSearch ||
+              t.type == OpenAIBuiltInToolType.webSearchFull,
         ) ??
         false;
     if (hasWebSearchTool) {
       include.add('web_search_call.action.sources');
     }
 
-    final hasFileSearchTool = config.builtInTools?.any(
+    final hasFileSearchTool = builtInTools?.any(
           (t) => t.type == OpenAIBuiltInToolType.fileSearch,
         ) ??
         false;
@@ -807,12 +811,20 @@ class OpenAIResponses
       include.add('file_search_call.results');
     }
 
-    final hasComputerUseTool = config.builtInTools?.any(
+    final hasComputerUseTool = builtInTools?.any(
           (t) => t.type == OpenAIBuiltInToolType.computerUse,
         ) ??
         false;
     if (hasComputerUseTool) {
       include.add('computer_call_output.output.image_url');
+    }
+
+    final hasCodeInterpreterTool = builtInTools?.any(
+          (t) => t.type == OpenAIBuiltInToolType.codeInterpreter,
+        ) ??
+        false;
+    if (hasCodeInterpreterTool) {
+      include.add('code_interpreter_call.outputs');
     }
 
     if (include.isNotEmpty) {
@@ -1497,22 +1509,10 @@ class OpenAIResponsesResponse implements ChatResponse {
         continue;
       }
 
-      final id = item['id'];
-      final status = item['status'];
-      final name = item['name'];
-      final args = item['arguments'];
-
-      final call = <String, dynamic>{
-        'type': type,
-        if (id != null) 'id': id,
-        if (status != null) 'status': status,
-        if (name != null) 'name': name,
-        if (args != null) 'arguments': args,
-      };
-
-      if (call.isNotEmpty) {
-        calls.add(call);
-      }
+      // Keep the full item payload so provider-native tools (e.g. web search,
+      // code interpreter, mcp) can be inspected without losing tool-specific
+      // fields.
+      calls.add(Map<String, dynamic>.from(item));
     }
 
     return calls.isEmpty ? null : calls;

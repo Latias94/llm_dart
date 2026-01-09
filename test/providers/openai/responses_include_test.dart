@@ -108,6 +108,37 @@ void main() {
       );
     });
 
+    test('should auto-include code interpreter outputs when tool present',
+        () async {
+      final originalConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1/',
+        model: 'gpt-4o',
+        providerOptions: const {},
+      );
+
+      final config = openai_client.OpenAIConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1/',
+        model: 'gpt-4o',
+        useResponsesAPI: true,
+        builtInTools: [OpenAIBuiltInTools.codeInterpreter()],
+        originalConfig: originalConfig,
+      );
+
+      final client = _CapturingOpenAIClient(config);
+      final responses = openai_responses.OpenAIResponses(client, config);
+
+      await responses.chat([ChatMessage.user('test')]);
+
+      expect(client.lastBody, isNotNull);
+      expect(client.lastBody!['include'], isA<List>());
+      expect(
+        (client.lastBody!['include'] as List).cast<String>(),
+        contains('code_interpreter_call.outputs'),
+      );
+    });
+
     test('should merge providerOptions include with auto web search include',
         () async {
       final originalConfig = LLMConfig(
