@@ -10,10 +10,12 @@ import 'model_path.dart';
 class _GoogleBuiltRequest {
   final Map<String, dynamic> body;
   final ToolNameMapping toolNameMapping;
+  final List<Map<String, dynamic>> toolWarnings;
 
   const _GoogleBuiltRequest({
     required this.body,
     required this.toolNameMapping,
+    required this.toolWarnings,
   });
 }
 
@@ -83,10 +85,17 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       toolNameMapping: toolNameMapping,
       cancelToken: cancelToken,
     );
+    final toolWarnings = <Map<String, dynamic>>[];
     return _GoogleBuiltRequest(
       body: _buildRequestBody(
-          preparedMessages, effectiveTools, stream, toolNameMapping),
+        preparedMessages,
+        effectiveTools,
+        stream,
+        toolNameMapping,
+        toolWarnings: toolWarnings,
+      ),
       toolNameMapping: toolNameMapping,
+      toolWarnings: List<Map<String, dynamic>>.unmodifiable(toolWarnings),
     );
   }
 
@@ -102,7 +111,11 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       built.body,
       cancelToken: cancelToken,
     );
-    return _parseResponse(responseData, built.toolNameMapping);
+    return _parseResponse(
+      responseData,
+      built.toolNameMapping,
+      toolWarnings: built.toolWarnings,
+    );
   }
 
   @override
@@ -126,7 +139,11 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     );
 
     await for (final chunk in stream) {
-      final events = _parseStreamEvents(chunk, built.toolNameMapping);
+      final events = _parseStreamEvents(
+        chunk,
+        built.toolNameMapping,
+        toolWarnings: built.toolWarnings,
+      );
       for (final event in events) {
         yield event;
       }
@@ -144,6 +161,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         await _buildRequestAsync(messages, effectiveTools, true, cancelToken);
     final requestBody = built.body;
     final toolNameMapping = built.toolNameMapping;
+    final toolWarnings = built.toolWarnings;
 
     var streamBuffer = '';
     final nameCounts = <String, int>{};
@@ -386,7 +404,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
               },
             ],
             if (usageMetadata != null) 'usageMetadata': usageMetadata,
-          }, toolNameMapping);
+          }, toolNameMapping: toolNameMapping, toolWarnings: toolWarnings);
 
           final metadata = response.providerMetadata;
           if (metadata != null && metadata.isNotEmpty) {
@@ -416,7 +434,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         },
       ],
       if (usageMetadata != null) 'usageMetadata': usageMetadata,
-    }, toolNameMapping);
+    }, toolNameMapping: toolNameMapping, toolWarnings: toolWarnings);
     final metadata = response.providerMetadata;
     if (metadata != null && metadata.isNotEmpty) {
       yield LLMProviderMetadataPart(metadata);
@@ -587,21 +605,27 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   /// Parse response from Google API
   GoogleChatResponse _parseResponse(
     Map<String, dynamic> responseData,
-    ToolNameMapping toolNameMapping,
-  ) {
+    ToolNameMapping toolNameMapping, {
+    List<Map<String, dynamic>> toolWarnings = const [],
+  }) {
     // Check for Google API errors first
     if (responseData.containsKey('error')) {
       throw _handleGoogleApiError(responseData);
     }
 
-    return GoogleChatResponse(responseData, toolNameMapping);
+    return GoogleChatResponse(
+      responseData,
+      toolNameMapping: toolNameMapping,
+      toolWarnings: toolWarnings,
+    );
   }
 
   /// Parse stream events from JSON array chunks
   List<ChatStreamEvent> _parseStreamEvents(
     String chunk,
-    ToolNameMapping toolNameMapping,
-  ) {
+    ToolNameMapping toolNameMapping, {
+    List<Map<String, dynamic>> toolWarnings = const [],
+  }) {
     final events = <ChatStreamEvent>[];
 
     // Google's streaming format returns a JSON array: [{...}, {...}, {...}]
@@ -644,7 +668,11 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         try {
           // Try to parse the accumulated JSON
           final json = jsonDecode(jsonAccumulator) as Map<String, dynamic>;
-          final streamEvents = _parseStreamEvent(json, toolNameMapping);
+          final streamEvents = _parseStreamEvent(
+            json,
+            toolNameMapping,
+            toolWarnings: toolWarnings,
+          );
           if (streamEvents != null) {
             events.add(streamEvents);
           }
@@ -674,8 +702,9 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   /// Parse individual stream event
   ChatStreamEvent? _parseStreamEvent(
     Map<String, dynamic> json,
-    ToolNameMapping toolNameMapping,
-  ) {
+    ToolNameMapping toolNameMapping, {
+    List<Map<String, dynamic>> toolWarnings = const [],
+  }) {
     final candidates = json['candidates'] as List?;
     if (candidates == null || candidates.isEmpty) return null;
 
@@ -745,7 +774,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       final response = GoogleChatResponse({
         'candidates': [],
         'usageMetadata': usage,
-      }, toolNameMapping);
+      }, toolNameMapping: toolNameMapping, toolWarnings: toolWarnings);
       return CompletionEvent(response);
     }
 
@@ -757,8 +786,9 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     List<ChatMessage> messages,
     List<Tool>? tools,
     bool stream,
-    ToolNameMapping toolNameMapping,
-  ) {
+    ToolNameMapping toolNameMapping, {
+    required List<Map<String, dynamic>> toolWarnings,
+  }) {
     final contents = <Map<String, dynamic>>[];
 
     final systemInstructionParts = <Map<String, dynamic>>[];
@@ -810,7 +840,13 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       }
     }
 
-    final body = _buildBodyWithConfig(contents, tools, stream, toolNameMapping);
+    final body = _buildBodyWithConfig(
+      contents,
+      tools,
+      stream,
+      toolNameMapping,
+      toolWarnings: toolWarnings,
+    );
     if (!_isGemmaModel() && systemInstructionParts.isNotEmpty) {
       body['systemInstruction'] = {
         'parts': systemInstructionParts,
@@ -824,8 +860,9 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     List<Map<String, dynamic>> contents,
     List<Tool>? tools,
     bool isStreaming,
-    ToolNameMapping toolNameMapping,
-  ) {
+    ToolNameMapping toolNameMapping, {
+    required List<Map<String, dynamic>> toolWarnings,
+  }) {
     final body = <String, dynamic>{'contents': contents};
 
     // Add generation config if needed
@@ -917,6 +954,21 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
     // Add tools if provided
     final effectiveTools = tools ?? config.tools;
+    final providerToolsEnabled =
+        (config.originalConfig?.providerTools ?? const <ProviderTool>[])
+            .any(_isProviderToolEnabled);
+    final hasProviderDefinedTools =
+        providerToolsEnabled || config.webSearchEnabled;
+
+    if (effectiveTools != null &&
+        effectiveTools.isNotEmpty &&
+        hasProviderDefinedTools) {
+      toolWarnings.add({
+        'type': 'unsupported',
+        'feature': 'combination of function and provider-defined tools',
+      });
+    }
+
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = <Map<String, dynamic>>[
         {
@@ -928,9 +980,6 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
       // Add tool choice configuration
       final effectiveToolChoice = config.toolChoice;
-      final providerToolsEnabled =
-          (config.originalConfig?.providerTools ?? const <ProviderTool>[])
-              .any(_isProviderToolEnabled);
       final shouldSendToolConfig =
           !providerToolsEnabled && !config.webSearchEnabled;
 
@@ -940,16 +989,16 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
           effectiveTools,
           toolNameMapping,
         );
-      } else if (effectiveToolChoice != null && !shouldSendToolConfig) {
-        client.logger.warning(
-          'Ignoring toolChoice because provider-native tools are enabled.',
-        );
       }
     }
 
     final providerTools = config.originalConfig?.providerTools;
     if (providerTools != null && providerTools.isNotEmpty) {
-      _addProviderToolsToBody(body, providerTools: providerTools);
+      _addProviderToolsToBody(
+        body,
+        providerTools: providerTools,
+        toolWarnings: toolWarnings,
+      );
     }
 
     if (config.webSearchEnabled) {
@@ -1021,6 +1070,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   void _addProviderToolsToBody(
     Map<String, dynamic> body, {
     required List<ProviderTool> providerTools,
+    required List<Map<String, dynamic>> toolWarnings,
   }) {
     final enabled = providerTools.where(_isProviderToolEnabled);
     if (enabled.isEmpty) return;
@@ -1030,30 +1080,51 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
     for (final tool in enabled) {
       Map<String, dynamic>? entry;
+      String? warningDetails;
 
       switch (tool.id) {
         case 'google.code_execution':
-          if (!isGemini2OrNewer) break;
+          if (!isGemini2OrNewer) {
+            warningDetails =
+                'The code execution tools is not supported with other Gemini models than Gemini 2.';
+            break;
+          }
           entry = <String, dynamic>{'codeExecution': <String, dynamic>{}};
           break;
 
         case 'google.url_context':
-          if (!isGemini2OrNewer) break;
+          if (!isGemini2OrNewer) {
+            warningDetails =
+                'The URL context tool is not supported with other Gemini models than Gemini 2.';
+            break;
+          }
           entry = <String, dynamic>{'urlContext': <String, dynamic>{}};
           break;
 
         case 'google.enterprise_web_search':
-          if (!isGemini2OrNewer) break;
+          if (!isGemini2OrNewer) {
+            warningDetails =
+                'Enterprise Web Search requires Gemini 2.0 or newer.';
+            break;
+          }
           entry = <String, dynamic>{'enterpriseWebSearch': <String, dynamic>{}};
           break;
 
         case 'google.google_maps':
-          if (!isGemini2OrNewer) break;
+          if (!isGemini2OrNewer) {
+            warningDetails =
+                'The Google Maps grounding tool is not supported with Gemini models other than Gemini 2 or newer.';
+            break;
+          }
           entry = <String, dynamic>{'googleMaps': <String, dynamic>{}};
           break;
 
         case 'google.file_search':
-          if (!supportsFileSearch) break;
+          if (!supportsFileSearch) {
+            warningDetails =
+                'The file search tool is only supported with Gemini 2.5 models and Gemini 3 models.';
+            break;
+          }
           entry = <String, dynamic>{
             'fileSearch': <String, dynamic>{
               ...tool.options,
@@ -1062,12 +1133,21 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
           break;
 
         case 'google.vertex_rag_store':
-          if (!isGemini2OrNewer) break;
+          if (!isGemini2OrNewer) {
+            warningDetails =
+                'The RAG store tool is not supported with other Gemini models than Gemini 2.';
+            break;
+          }
           final ragCorpus = tool.options['ragCorpus'];
           if (ragCorpus is! String || ragCorpus.isEmpty) {
             client.logger.warning(
               'google.vertex_rag_store is enabled but options.ragCorpus is missing.',
             );
+            toolWarnings.add({
+              'type': 'unsupported',
+              'feature': 'provider-defined tool google.vertex_rag_store',
+              'details': 'Missing required option: ragCorpus.',
+            });
             break;
           }
           final topK = tool.options['topK'];
@@ -1085,7 +1165,11 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       }
 
       if (entry == null) {
-        client.logger.warning('Unsupported provider tool: ${tool.id}');
+        toolWarnings.add({
+          'type': 'unsupported',
+          'feature': 'provider-defined tool ${tool.id}',
+          if (warningDetails != null) 'details': warningDetails,
+        });
         continue;
       }
 
@@ -1481,8 +1565,14 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 class GoogleChatResponse implements ChatResponse {
   final Map<String, dynamic> _rawResponse;
   final ToolNameMapping? _toolNameMapping;
+  final List<Map<String, dynamic>> _toolWarnings;
 
-  GoogleChatResponse(this._rawResponse, [this._toolNameMapping]);
+  GoogleChatResponse(
+    this._rawResponse, {
+    ToolNameMapping? toolNameMapping,
+    List<Map<String, dynamic>> toolWarnings = const [],
+  })  : _toolNameMapping = toolNameMapping,
+        _toolWarnings = List<Map<String, dynamic>>.unmodifiable(toolWarnings);
 
   @override
   String? get text {
@@ -1559,19 +1649,21 @@ class GoogleChatResponse implements ChatResponse {
       usageMetadata = null;
     }
 
-    if (modelVersion == null &&
-        finishReason == null &&
-        safetyRatings == null &&
-        promptFeedback == null &&
-        usageMetadata == null) {
-      return null;
-    }
+    final hasAnyMetadata = modelVersion != null ||
+        finishReason != null ||
+        safetyRatings != null ||
+        promptFeedback != null ||
+        usageMetadata != null ||
+        _toolWarnings.isNotEmpty;
+
+    if (!hasAnyMetadata) return null;
 
     return {
       'google': {
         if (modelVersion != null) 'model': modelVersion,
         if (finishReason != null) 'finishReason': finishReason,
         if (finishReason != null) 'stopReason': finishReason,
+        if (_toolWarnings.isNotEmpty) 'toolWarnings': _toolWarnings,
         if (usageMetadata != null)
           'usage': {
             if (usageMetadata['promptTokenCount'] != null)
