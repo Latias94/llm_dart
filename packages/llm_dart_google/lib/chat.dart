@@ -5,6 +5,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'client.dart';
 import 'config.dart';
+import 'model_path.dart';
 
 class _GoogleBuiltRequest {
   final Map<String, dynamic> body;
@@ -63,10 +64,11 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
   GoogleChat(this.client, this.config);
 
-  String get _chatEndpoint => 'models/${config.model}:generateContent';
+  String get _chatEndpoint =>
+      '${googleModelPath(config.model)}:generateContent';
 
   String get _chatStreamEndpoint =>
-      'models/${config.model}:streamGenerateContent';
+      '${googleModelPath(config.model)}:streamGenerateContent';
 
   Future<_GoogleBuiltRequest> _buildRequestAsync(
     List<ChatMessage> messages,
@@ -1045,7 +1047,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     String role;
     switch (message.messageType) {
       case ToolResultMessage():
-        role = 'function';
+        role = 'user';
         break;
       default:
         role = message.role == ChatRole.user ? 'user' : 'model';

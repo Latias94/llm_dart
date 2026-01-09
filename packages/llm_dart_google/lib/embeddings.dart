@@ -3,6 +3,7 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'client.dart';
 import 'config.dart';
+import 'model_path.dart';
 
 /// Google Embeddings capability implementation
 ///
@@ -15,9 +16,10 @@ class GoogleEmbeddings implements EmbeddingCapability {
 
   GoogleEmbeddings(this.client, this.config);
 
-  String get embeddingEndpoint => 'models/${config.model}:embedContent';
+  String get embeddingEndpoint =>
+      '${googleModelPath(config.model)}:embedContent';
   String get batchEmbeddingEndpoint =>
-      'models/${config.model}:batchEmbedContents';
+      '${googleModelPath(config.model)}:batchEmbedContents';
 
   @override
   Future<List<List<double>>> embed(
@@ -85,7 +87,7 @@ class GoogleEmbeddings implements EmbeddingCapability {
   Map<String, dynamic> _buildBatchEmbeddingRequest(List<String> input) {
     final requests = input.map((text) {
       final request = <String, dynamic>{
-        'model': 'models/${config.model}',
+        'model': googleModelPath(config.model),
         'content': {
           'parts': [
             {'text': text}

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'client.dart';
 import 'config.dart';
+import 'model_path.dart';
 
 // ========== Google TTS Models ==========
 
@@ -420,7 +421,7 @@ class GoogleTTS implements GoogleTTSCapability {
       final model = request.model ?? _config.model;
 
       final response = await _client.post(
-        'models/$model:generateContent',
+        '${googleModelPath(model)}:generateContent',
         data: requestBody,
       );
 
@@ -441,7 +442,7 @@ class GoogleTTS implements GoogleTTSCapability {
       final model = request.model ?? _config.model;
 
       final stream = _client.postStream(
-        'models/$model:streamGenerateContent',
+        '${googleModelPath(model)}:streamGenerateContent',
         data: requestBody,
       );
 

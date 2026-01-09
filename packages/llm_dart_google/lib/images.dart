@@ -5,6 +5,7 @@ import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'client.dart';
 import 'config.dart';
+import 'model_path.dart';
 
 /// Google Images capability implementation
 ///
@@ -78,7 +79,7 @@ class GoogleImages implements ImageGenerationCapability {
     ImageGenerationRequest request,
   ) async {
     final model = request.model ?? _config.model;
-    final endpoint = 'models/$model:generateContent';
+    final endpoint = '${googleModelPath(model)}:generateContent';
 
     var imageConfig = {
       if (request.size != null)
@@ -198,7 +199,7 @@ class GoogleImages implements ImageGenerationCapability {
   Future<ImageGenerationResponse> editImage(ImageEditRequest request) async {
     // Google supports image editing through Gemini conversational approach
     final model = _config.model;
-    final endpoint = 'models/$model:generateContent';
+    final endpoint = '${googleModelPath(model)}:generateContent';
 
     Map<String, dynamic>? imagePart;
     if (request.image.data != null) {
@@ -261,7 +262,7 @@ class GoogleImages implements ImageGenerationCapability {
     // Google doesn't have a direct variation API, but we can simulate it
     // by asking Gemini to create variations of the provided image
     final model = _config.model;
-    final endpoint = 'models/$model:generateContent';
+    final endpoint = '${googleModelPath(model)}:generateContent';
 
     Map<String, dynamic>? imagePart;
     if (request.image.data != null) {

@@ -65,6 +65,7 @@ void main() {
       expect(contents, isNotEmpty);
 
       final message = contents!.first as Map;
+      expect(message['role'], 'user');
       final parts = message['parts'] as List;
       final functionResponse = (parts.single as Map)['functionResponse'] as Map;
       final response = functionResponse['response'] as Map;
