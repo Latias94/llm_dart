@@ -12,12 +12,7 @@ import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 /// `llm_dart_openai_compatible`, which offers pre-configured providers
 /// that share an OpenAI-style API surface (chat/stream/tools/embeddings).
 ///
-/// Supported (in this repo):
-/// - DeepSeek (`deepseek-openai`)
-/// - Groq (`groq-openai`)
-/// - xAI (`xai-openai`)
-/// - Google Gemini OpenAI compat (`google-openai`)
-/// - OpenRouter (`openrouter`)
+/// The supported preset list is sourced from `OpenAICompatibleConfigs`.
 ///
 /// Before running, set the API keys you want to try:
 /// export DEEPSEEK_API_KEY="..."
@@ -25,6 +20,8 @@ import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 /// export XAI_API_KEY="..."
 /// export GOOGLE_API_KEY="..."
 /// export OPENROUTER_API_KEY="..."
+/// export GITHUB_COPILOT_API_KEY="..."
+/// export TOGETHER_API_KEY="..."
 void main() async {
   print('🔗 OpenAI-Compatible Providers - Unified Interface Demo\n');
 
@@ -52,41 +49,31 @@ class _ProviderSpec {
   });
 }
 
-const _providers = <_ProviderSpec>[
-  _ProviderSpec(
-    providerId: 'deepseek-openai',
-    displayName: 'DeepSeek (OpenAI-compatible)',
-    envVar: 'DEEPSEEK_API_KEY',
-    defaultModel: 'deepseek-chat',
-  ),
-  _ProviderSpec(
-    providerId: 'groq-openai',
-    displayName: 'Groq (OpenAI-compatible)',
-    envVar: 'GROQ_API_KEY',
-    defaultModel: 'llama-3.3-70b-versatile',
-  ),
-  _ProviderSpec(
-    providerId: 'xai-openai',
-    displayName: 'xAI (OpenAI-compatible)',
-    envVar: 'XAI_API_KEY',
-    defaultModel: 'grok-3',
-  ),
-  _ProviderSpec(
-    providerId: 'google-openai',
-    displayName: 'Google Gemini (OpenAI-compatible)',
-    envVar: 'GOOGLE_API_KEY',
-    defaultModel: 'gemini-2.0-flash',
-  ),
-  _ProviderSpec(
-    providerId: 'openrouter',
-    displayName: 'OpenRouter',
-    envVar: 'OPENROUTER_API_KEY',
-    defaultModel: 'openai/gpt-4',
-  ),
-];
+const _envVarByProviderId = <String, String>{
+  'deepseek-openai': 'DEEPSEEK_API_KEY',
+  'groq-openai': 'GROQ_API_KEY',
+  'xai-openai': 'XAI_API_KEY',
+  'google-openai': 'GOOGLE_API_KEY',
+  'openrouter': 'OPENROUTER_API_KEY',
+  'github-copilot': 'GITHUB_COPILOT_API_KEY',
+  'together-ai': 'TOGETHER_API_KEY',
+};
+
+List<_ProviderSpec> _providers() {
+  return OpenAICompatibleConfigs.getAllConfigs().map((c) {
+    final envVar = _envVarByProviderId[c.providerId] ??
+        '${c.providerId.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]+'), '_')}_API_KEY';
+    return _ProviderSpec(
+      providerId: c.providerId,
+      displayName: c.displayName,
+      envVar: envVar,
+      defaultModel: c.defaultModel,
+    );
+  }).toList(growable: false);
+}
 
 _ProviderSpec? _byId(String providerId) {
-  for (final spec in _providers) {
+  for (final spec in _providers()) {
     if (spec.providerId == providerId) return spec;
   }
   return null;
@@ -130,7 +117,7 @@ Future<void> demonstrateAllProviders() async {
 
   final question = 'What are the benefits of using AI in software development?';
 
-  for (final provider in _providers) {
+  for (final provider in _providers()) {
     final instance = await _buildChatProvider(
       provider,
       temperature: 0.7,
