@@ -1633,6 +1633,8 @@ class GoogleChatResponse implements ChatResponse {
 
     final finishReason = firstCandidate?['finishReason'] as String?;
     final safetyRatings = firstCandidate?['safetyRatings'];
+    final groundingMetadata = firstCandidate?['groundingMetadata'];
+    final urlContextMetadata = firstCandidate?['urlContextMetadata'];
     final promptFeedback = _rawResponse['promptFeedback'];
 
     final rawUsageMetadata = _rawResponse['usageMetadata'];
@@ -1648,6 +1650,8 @@ class GoogleChatResponse implements ChatResponse {
     final hasAnyMetadata = modelVersion != null ||
         finishReason != null ||
         safetyRatings != null ||
+        groundingMetadata != null ||
+        urlContextMetadata != null ||
         promptFeedback != null ||
         usageMetadata != null ||
         _toolWarnings.isNotEmpty;
@@ -1670,8 +1674,11 @@ class GoogleChatResponse implements ChatResponse {
           if (usageMetadata['thoughtsTokenCount'] != null)
             'reasoningTokens': usageMetadata['thoughtsTokenCount'],
         },
+      if (usageMetadata != null) 'usageMetadata': usageMetadata,
       if (promptFeedback != null) 'promptFeedback': promptFeedback,
       if (safetyRatings != null) 'safetyRatings': safetyRatings,
+      if (groundingMetadata != null) 'groundingMetadata': groundingMetadata,
+      if (urlContextMetadata != null) 'urlContextMetadata': urlContextMetadata,
     };
 
     return {
