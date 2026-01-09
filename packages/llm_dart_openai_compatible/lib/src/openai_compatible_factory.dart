@@ -46,6 +46,26 @@ bool registerOpenAICompatibleProvider(
   return true;
 }
 
+/// Register a custom OpenAI-compatible provider configuration.
+///
+/// This mirrors Vercel AI SDK's `createOpenAICompatible({ name, baseURL, ... })`
+/// idea: callers can supply their own base URL, headers, and query params via
+/// [LLMConfig] + `providerOptions`, without requiring this package to ship a
+/// pre-defined preset.
+void registerCustomOpenAICompatibleProvider(
+  OpenAICompatibleProviderConfig config, {
+  bool replace = false,
+}) {
+  final factory = OpenAICompatibleProviderFactory(config);
+  if (!replace && LLMProviderRegistry.isRegistered(factory.providerId)) return;
+
+  if (replace) {
+    LLMProviderRegistry.registerOrReplace(factory);
+  } else {
+    LLMProviderRegistry.register(factory);
+  }
+}
+
 /// Generic factory for creating OpenAI-compatible provider instances
 ///
 /// This factory can create providers for any service that offers an OpenAI-compatible API,
@@ -74,6 +94,9 @@ class OpenAICompatibleProviderFactory
 
   @override
   Set<LLMCapability> get supportedCapabilities => _bestEffortCapabilities;
+
+  @override
+  bool get requiresApiKey => false;
 
   @override
   ChatCapability create(LLMConfig config) {

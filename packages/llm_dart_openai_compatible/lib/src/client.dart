@@ -32,6 +32,49 @@ class OpenAIClient {
     );
   }
 
+  Map<String, dynamic>? _getDefaultQueryParameters() {
+    final original = config.originalConfig;
+    if (original == null) return null;
+
+    final effectiveProviderId = providerId;
+    final rawGlobal = readProviderOptionMap(
+          original.providerOptions,
+          'openai-compatible',
+          'queryParams',
+        ) ??
+        readProviderOptionMap(
+          original.providerOptions,
+          'openai-compatible',
+          'queryParameters',
+        );
+    final rawProvider = readProviderOptionMap(
+          original.providerOptions,
+          effectiveProviderId,
+          'queryParams',
+        ) ??
+        readProviderOptionMap(
+          original.providerOptions,
+          effectiveProviderId,
+          'queryParameters',
+        );
+
+    final raw = <String, dynamic>{
+      ...?rawGlobal,
+      ...?rawProvider,
+    };
+
+    if (raw.isEmpty) return null;
+
+    final result = <String, dynamic>{};
+    for (final entry in raw.entries) {
+      if (entry.key.trim().isEmpty) continue;
+      final value = entry.value;
+      if (value == null) continue;
+      result[entry.key] = value.toString();
+    }
+    return result.isEmpty ? null : result;
+  }
+
   /// Get provider ID based on base URL for provider-specific behavior
   String get providerId {
     final configured = config.providerId.trim();
@@ -276,10 +319,6 @@ class OpenAIClient {
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
   }) async {
-    if (config.apiKey.isEmpty) {
-      throw AuthError('Missing ${config.providerName} API key');
-    }
-
     try {
       // Optimized logging with condition check
       if (logger.isLoggable(Level.FINE)) {
@@ -293,6 +332,7 @@ class OpenAIClient {
         (dioToken) => dio.post(
           endpoint,
           data: body,
+          queryParameters: _getDefaultQueryParameters(),
           cancelToken: dioToken,
         ),
       );
@@ -324,10 +364,6 @@ class OpenAIClient {
     Map<String, dynamic>? queryParameters,
     CancelToken? cancelToken,
   }) async {
-    if (config.apiKey.isEmpty) {
-      throw AuthError('Missing ${config.providerName} API key');
-    }
-
     try {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine('${config.providerName} request: GET /$endpoint');
@@ -335,11 +371,17 @@ class OpenAIClient {
             '${config.providerName} request headers: ${dio.options.headers}');
       }
 
+      final mergedQueryParameters = <String, dynamic>{
+        ...?_getDefaultQueryParameters(),
+        ...?queryParameters,
+      };
+
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.get(
           endpoint,
-          queryParameters: queryParameters,
+          queryParameters:
+              mergedQueryParameters.isEmpty ? null : mergedQueryParameters,
           cancelToken: dioToken,
         ),
       );
@@ -370,10 +412,6 @@ class OpenAIClient {
     FormData formData, {
     CancelToken? cancelToken,
   }) async {
-    if (config.apiKey.isEmpty) {
-      throw AuthError('Missing ${config.providerName} API key');
-    }
-
     try {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine('${config.providerName} request: POST /$endpoint (form)');
@@ -386,6 +424,7 @@ class OpenAIClient {
         (dioToken) => dio.post(
           endpoint,
           data: formData,
+          queryParameters: _getDefaultQueryParameters(),
           cancelToken: dioToken,
         ),
       );
@@ -413,16 +452,13 @@ class OpenAIClient {
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
   }) async {
-    if (config.apiKey.isEmpty) {
-      throw AuthError('Missing ${config.providerName} API key');
-    }
-
     try {
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.post(
           endpoint,
           data: body,
+          queryParameters: _getDefaultQueryParameters(),
           cancelToken: dioToken,
           options: Options(responseType: ResponseType.bytes),
         ),
@@ -445,10 +481,6 @@ class OpenAIClient {
     String endpoint, {
     CancelToken? cancelToken,
   }) async {
-    if (config.apiKey.isEmpty) {
-      throw AuthError('Missing ${config.providerName} API key');
-    }
-
     try {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine('${config.providerName} request: GET /$endpoint');
@@ -458,7 +490,11 @@ class OpenAIClient {
 
       final response = await withDioCancelToken(
         cancelToken,
-        (dioToken) => dio.get(endpoint, cancelToken: dioToken),
+        (dioToken) => dio.get(
+          endpoint,
+          queryParameters: _getDefaultQueryParameters(),
+          cancelToken: dioToken,
+        ),
       );
 
       if (logger.isLoggable(Level.FINE)) {
@@ -483,15 +519,12 @@ class OpenAIClient {
     String endpoint, {
     CancelToken? cancelToken,
   }) async {
-    if (config.apiKey.isEmpty) {
-      throw AuthError('Missing ${config.providerName} API key');
-    }
-
     try {
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.get(
           endpoint,
+          queryParameters: _getDefaultQueryParameters(),
           options: Options(responseType: ResponseType.bytes),
           cancelToken: dioToken,
         ),
@@ -514,10 +547,6 @@ class OpenAIClient {
     String endpoint, {
     CancelToken? cancelToken,
   }) async {
-    if (config.apiKey.isEmpty) {
-      throw AuthError('Missing ${config.providerName} API key');
-    }
-
     try {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine('${config.providerName} request: DELETE /$endpoint');
@@ -527,7 +556,11 @@ class OpenAIClient {
 
       final response = await withDioCancelToken(
         cancelToken,
-        (dioToken) => dio.delete(endpoint, cancelToken: dioToken),
+        (dioToken) => dio.delete(
+          endpoint,
+          queryParameters: _getDefaultQueryParameters(),
+          cancelToken: dioToken,
+        ),
       );
 
       if (logger.isLoggable(Level.FINE)) {
@@ -553,10 +586,6 @@ class OpenAIClient {
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
   }) async* {
-    if (config.apiKey.isEmpty) {
-      throw AuthError('Missing ${config.providerName} API key');
-    }
-
     // Reset SSE buffer for new stream
     resetSSEBuffer();
 
@@ -572,6 +601,7 @@ class OpenAIClient {
         (dioToken) => dio.post(
           endpoint,
           data: body,
+          queryParameters: _getDefaultQueryParameters(),
           cancelToken: dioToken,
           options: Options(
             responseType: ResponseType.stream,

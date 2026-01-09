@@ -17,7 +17,12 @@ abstract class OpenAIRequestConfig {
   /// Examples: `OpenAI`, `Groq`, `OpenRouter`.
   String get providerName;
 
-  String get apiKey;
+  /// Optional API key for authenticating requests.
+  ///
+  /// OpenAI-compatible endpoints may be deployed without authentication (e.g.
+  /// local gateways) or may rely on custom headers. When null/empty, the client
+  /// should omit auth headers and let the server decide.
+  String? get apiKey;
   String get baseUrl;
   String get model;
 

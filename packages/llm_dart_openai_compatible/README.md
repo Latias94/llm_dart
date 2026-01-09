@@ -27,3 +27,15 @@ import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_openai_compatible/dio_strategy.dart';
 ```
 
+## Provider options
+
+This package reads provider-specific options from `LLMConfig.providerOptions[providerId]`:
+
+- `headers` / `extraHeaders`: additional HTTP headers (merged; later keys win)
+- `queryParams`: additional URL query parameters appended to all requests
+- `includeUsage`: when streaming, adds `stream_options.include_usage=true`
+- `supportsStructuredOutputs`: when `false`, downgrades JSON schema outputs to `{"type":"json_object"}`
+
+Note: `apiKey` is optional for OpenAI-compatible endpoints. If omitted, auth
+headers are not added and the server decides whether the request is allowed.
+

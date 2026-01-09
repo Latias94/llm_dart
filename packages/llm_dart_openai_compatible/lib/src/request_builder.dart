@@ -39,6 +39,12 @@ class OpenAIRequestBuilder {
       'stream': stream,
     };
 
+    final includeUsage = config.getProviderOption<bool>('includeUsage') ??
+        config.getProviderOption<bool>('include_usage');
+    if (stream && includeUsage == true) {
+      body['stream_options'] = const {'include_usage': true};
+    }
+
     body.addAll(
       ReasoningUtils.getMaxTokensParams(
         model: config.model,
@@ -70,11 +76,14 @@ class OpenAIRequestBuilder {
     }
 
     if (config.jsonSchema != null) {
+      final supportsStructuredOutputs =
+          config.getProviderOption<bool>('supportsStructuredOutputs') ?? true;
+
       final structuredOutputs = isGroq
           ? (config.getProviderOption<bool>('structuredOutputs') ?? true)
           : true;
 
-      if (!structuredOutputs && isGroq) {
+      if ((!structuredOutputs && isGroq) || !supportsStructuredOutputs) {
         body['response_format'] = const {'type': 'json_object'};
       } else {
         final schema = config.jsonSchema!;

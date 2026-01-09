@@ -21,12 +21,20 @@ class OpenAIDioStrategy extends BaseProviderDioStrategy {
         providerId == 'azure-openai' ||
         providerId.startsWith('azure.');
 
-    final headers = isAzure
-        ? ConfigUtils.buildHeaders(
-            apiKey: openaiConfig.apiKey,
-            authHeaderName: 'api-key',
-          )
-        : ConfigUtils.buildOpenAIHeaders(openaiConfig.apiKey);
+    final apiKey = openaiConfig.apiKey?.trim();
+
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+
+    if (apiKey != null && apiKey.isNotEmpty) {
+      if (isAzure) {
+        headers['api-key'] = apiKey;
+      } else {
+        headers['Authorization'] = 'Bearer $apiKey';
+      }
+    }
+
     final extra = openaiConfig.extraHeaders;
     if (extra != null && extra.isNotEmpty) {
       headers.addAll(extra);
