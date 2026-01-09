@@ -13,16 +13,10 @@ const String openaiCompatibleFallbackModel = 'gpt-4o';
 // from this protocol package to avoid confusing users about the recommended
 // integration path.
 
-// OpenRouter (OpenAI-compatible).
-const String openRouterBaseUrl = 'https://openrouter.ai/api/v1/';
-const String openRouterDefaultModel = 'openai/gpt-4';
-
-// Convenience endpoints used by the umbrella builder extensions.
-const String githubCopilotBaseUrl = 'https://api.githubcopilot.com/';
-const String githubCopilotDefaultModel = 'gpt-4';
-
-const String togetherAIBaseUrl = 'https://api.together.xyz/v1/';
-const String togetherAIDefaultModel = 'meta-llama/Llama-3-70b-chat-hf';
+// OpenAI-compatible presets:
+// - Preset-only endpoints (OpenRouter/Copilot/Together) are kept internal to
+//   the preset config file to avoid leaking preset constants into the public
+//   protocol surface.
 
 // OpenAI-compatible media defaults (shared by OpenAI-style endpoints).
 //

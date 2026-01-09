@@ -20,12 +20,6 @@ export 'package:llm_dart_openai/llm_dart_openai.dart';
 export 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart'
     hide
         openaiCompatibleFallbackModel,
-        openRouterBaseUrl,
-        openRouterDefaultModel,
-        githubCopilotBaseUrl,
-        githubCopilotDefaultModel,
-        togetherAIBaseUrl,
-        togetherAIDefaultModel,
         openaiStyleDefaultTTSModel,
         openaiStyleDefaultSTTModel,
         openaiStyleDefaultVoice,

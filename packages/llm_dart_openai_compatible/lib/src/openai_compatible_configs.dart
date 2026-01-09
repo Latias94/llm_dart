@@ -16,6 +16,15 @@ const String _googleOpenAIBaseUrl =
     'https://generativelanguage.googleapis.com/v1beta/openai/';
 const String _googleOpenAIDefaultModel = 'gemini-2.0-flash';
 
+const String _openRouterBaseUrl = 'https://openrouter.ai/api/v1/';
+const String _openRouterDefaultModel = 'openai/gpt-4';
+
+const String _githubCopilotBaseUrl = 'https://api.githubcopilot.com/';
+const String _githubCopilotDefaultModel = 'gpt-4';
+
+const String _togetherAIBaseUrl = 'https://api.together.xyz/v1/';
+const String _togetherAIDefaultModel = 'meta-llama/Llama-3-70b-chat-hf';
+
 /// Pre-configured OpenAI-compatible provider configurations
 ///
 /// This file contains configurations for popular AI providers that offer
@@ -80,8 +89,8 @@ class OpenAICompatibleConfigs {
     providerId: 'openrouter',
     displayName: 'OpenRouter',
     description: 'OpenRouter unified API for multiple AI models',
-    defaultBaseUrl: openRouterBaseUrl,
-    defaultModel: openRouterDefaultModel,
+    defaultBaseUrl: _openRouterBaseUrl,
+    defaultModel: _openRouterDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
@@ -91,8 +100,8 @@ class OpenAICompatibleConfigs {
     providerId: 'github-copilot',
     displayName: 'GitHub Copilot',
     description: 'GitHub Copilot Chat via an OpenAI-compatible endpoint',
-    defaultBaseUrl: githubCopilotBaseUrl,
-    defaultModel: githubCopilotDefaultModel,
+    defaultBaseUrl: _githubCopilotBaseUrl,
+    defaultModel: _githubCopilotDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
@@ -102,8 +111,8 @@ class OpenAICompatibleConfigs {
     providerId: 'together-ai',
     displayName: 'Together AI',
     description: 'Together AI models via an OpenAI-compatible endpoint',
-    defaultBaseUrl: togetherAIBaseUrl,
-    defaultModel: togetherAIDefaultModel,
+    defaultBaseUrl: _togetherAIBaseUrl,
+    defaultModel: _togetherAIDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
