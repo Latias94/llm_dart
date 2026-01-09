@@ -65,7 +65,7 @@ class OpenAIRequestBuilder {
 
       final effectiveToolChoice = config.toolChoice;
       if (effectiveToolChoice != null) {
-        body['tool_choice'] = effectiveToolChoice.toJson();
+        body['tool_choice'] = _convertToolChoice(effectiveToolChoice);
       }
     }
 
@@ -213,5 +213,19 @@ class OpenAIRequestBuilder {
     }
 
     return body;
+  }
+
+  /// OpenAI-compatible `tool_choice` expects:
+  /// - string values for `auto` / `none` / `required`
+  /// - object values for specific function tool selection
+  ///
+  /// This matches Vercel AI SDK behavior for Chat Completions.
+  dynamic _convertToolChoice(ToolChoice toolChoice) {
+    return switch (toolChoice) {
+      AutoToolChoice() => 'auto',
+      NoneToolChoice() => 'none',
+      AnyToolChoice() => 'required',
+      SpecificToolChoice() => toolChoice.toJson(),
+    };
   }
 }

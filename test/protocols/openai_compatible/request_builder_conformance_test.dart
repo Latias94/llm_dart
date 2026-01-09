@@ -5,6 +5,16 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAI-compatible request builder conformance', () {
+    Tool _tool(String name) => Tool.function(
+          name: name,
+          description: 'tool',
+          parameters: const ParametersSchema(
+            schemaType: 'object',
+            properties: {},
+            required: [],
+          ),
+        );
+
     test('injects config.systemPrompt when no system message exists', () {
       final llmConfig = LLMConfig(
         apiKey: 'k',
@@ -65,6 +75,83 @@ void main() {
           messages.whereType<Map>().where((m) => m['role'] == 'system').length;
       expect(systemCount, equals(1));
       expect((messages.first as Map)['content'], equals('sys2'));
+    });
+
+    test('serializes tool_choice as strings for auto/none/required', () {
+      final llmConfig = LLMConfig(
+        apiKey: 'k',
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'gpt-4o',
+        toolChoice: const AutoToolChoice(),
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'deepseek',
+        providerName: 'DeepSeek',
+      );
+
+      final client = OpenAIClient(config);
+      final builder = OpenAIRequestBuilder(config);
+
+      final bodyAuto = builder.buildChatCompletionsRequestBody(
+        client,
+        messages: [ChatMessage.user('hi')],
+        tools: [_tool('t')],
+        stream: false,
+      );
+      expect(bodyAuto['tool_choice'], equals('auto'));
+
+      final configNone = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig.copyWith(toolChoice: const NoneToolChoice()),
+        providerId: 'deepseek',
+        providerName: 'DeepSeek',
+      );
+      final bodyNone = OpenAIRequestBuilder(configNone).buildChatCompletionsRequestBody(
+        OpenAIClient(configNone),
+        messages: [ChatMessage.user('hi')],
+        tools: [_tool('t')],
+        stream: false,
+      );
+      expect(bodyNone['tool_choice'], equals('none'));
+
+      final configReq = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig.copyWith(toolChoice: const AnyToolChoice()),
+        providerId: 'deepseek',
+        providerName: 'DeepSeek',
+      );
+      final bodyReq = OpenAIRequestBuilder(configReq).buildChatCompletionsRequestBody(
+        OpenAIClient(configReq),
+        messages: [ChatMessage.user('hi')],
+        tools: [_tool('t')],
+        stream: false,
+      );
+      expect(bodyReq['tool_choice'], equals('required'));
+    });
+
+    test('keeps object tool_choice for specific function selection', () {
+      final llmConfig = LLMConfig(
+        apiKey: 'k',
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'gpt-4o',
+        toolChoice: const SpecificToolChoice('myTool'),
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'deepseek',
+        providerName: 'DeepSeek',
+      );
+
+      final body = OpenAIRequestBuilder(config).buildChatCompletionsRequestBody(
+        OpenAIClient(config),
+        messages: [ChatMessage.user('hi')],
+        tools: [_tool('myTool')],
+        stream: false,
+      );
+
+      expect(body['tool_choice'], isA<Map>());
+      expect((body['tool_choice'] as Map)['type'], equals('function'));
     });
 
     test('extraBody overrides standard fields (escape hatch wins)', () {

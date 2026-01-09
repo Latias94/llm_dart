@@ -742,10 +742,10 @@ class OpenAIResponses
     final allTools = <Map<String, dynamic>>[];
 
     // Add function tools (convert to Responses API format)
-    final effectiveTools = tools ?? config.tools;
-    if (effectiveTools != null && effectiveTools.isNotEmpty) {
+    final functionTools = tools ?? config.tools;
+    if (functionTools != null && functionTools.isNotEmpty) {
       allTools.addAll(
-        effectiveTools.map(
+        functionTools.map(
           (t) => _convertToolToResponsesFormat(t, toolNameMapping),
         ),
       );
@@ -759,26 +759,22 @@ class OpenAIResponses
     if (allTools.isNotEmpty) {
       body['tools'] = allTools;
 
-      // Add tool choice if configured (only for function tools)
+      // Add tool choice if configured.
+      //
+      // Vercel AI SDK serializes `tool_choice` as:
+      // - strings for `auto` / `none` / `required`
+      // - objects for specific tool selection
       final effectiveToolChoice = config.toolChoice;
-      if (effectiveToolChoice != null &&
-          effectiveTools != null &&
-          effectiveTools.isNotEmpty) {
-        final toolChoiceJson = effectiveToolChoice.toJson();
-        if (effectiveToolChoice is SpecificToolChoice) {
-          final function = toolChoiceJson['function'];
-          if (function is Map) {
-            final originalName =
-                function['name'] is String ? function['name'] as String : '';
-            final requestName =
-                toolNameMapping.requestNameForFunction(originalName);
-            toolChoiceJson['function'] = {
-              ...Map<String, dynamic>.from(function),
-              'name': requestName,
-            };
-          }
+      if (effectiveToolChoice != null) {
+        final toolChoiceValue = _convertToolChoiceForResponses(
+          effectiveToolChoice,
+          functionTools: functionTools,
+          builtInTools: config.builtInTools,
+          toolNameMapping: toolNameMapping,
+        );
+        if (toolChoiceValue != null) {
+          body['tool_choice'] = toolChoiceValue;
         }
-        body['tool_choice'] = toolChoiceJson;
       }
     }
 
@@ -907,6 +903,65 @@ class OpenAIResponses
     }
 
     return body;
+  }
+
+  dynamic _convertToolChoiceForResponses(
+    ToolChoice toolChoice, {
+    required List<Tool>? functionTools,
+    required List<OpenAIBuiltInTool>? builtInTools,
+    required ToolNameMapping toolNameMapping,
+  }) {
+    return switch (toolChoice) {
+      AutoToolChoice() => 'auto',
+      NoneToolChoice() => 'none',
+      AnyToolChoice() => 'required',
+      SpecificToolChoice(toolName: final toolName) =>
+        _convertSpecificToolChoiceForResponses(
+          toolName,
+          functionTools: functionTools,
+          builtInTools: builtInTools,
+          toolNameMapping: toolNameMapping,
+        ),
+    };
+  }
+
+  Map<String, dynamic>? _convertSpecificToolChoiceForResponses(
+    String toolName, {
+    required List<Tool>? functionTools,
+    required List<OpenAIBuiltInTool>? builtInTools,
+    required ToolNameMapping toolNameMapping,
+  }) {
+    final functionToolNames =
+        (functionTools ?? const <Tool>[]).map((t) => t.function.name).toSet();
+
+    // Prefer matching original function tool names (supports collision-safe
+    // rewriting via ToolNameMapping).
+    if (functionToolNames.contains(toolName)) {
+      return {
+        'type': 'function',
+        'name': toolNameMapping.requestNameForFunction(toolName),
+      };
+    }
+
+    // If the caller did not configure function tools but did configure an
+    // OpenAI built-in tool, allow selecting it by the built-in `type` name.
+    final builtInTypes = (builtInTools ?? const <OpenAIBuiltInTool>[])
+        .map((t) => t.toJson()['type'])
+        .whereType<String>()
+        .toSet();
+    if (builtInTypes.contains(toolName)) {
+      return {'type': toolName};
+    }
+
+    // Fallback: treat the provided name as a request tool name. This enables
+    // advanced callers to target collision-rewritten function tool names (e.g.
+    // `tool__1`) without requiring a new public API surface.
+    if (functionToolNames.isNotEmpty) {
+      return {'type': 'function', 'name': toolName};
+    }
+
+    // No tools matched; omit `tool_choice` to avoid invalid requests.
+    return null;
   }
 
   /// Parse non-streaming response

@@ -53,10 +53,7 @@ void main() {
       final toolChoice =
           client.lastBody!['tool_choice'] as Map<String, dynamic>;
       expect(toolChoice['type'], equals('function'));
-      expect(
-        (toolChoice['function'] as Map<String, dynamic>)['name'],
-        equals('web_search_preview__1'),
-      );
+      expect(toolChoice['name'], equals('web_search_preview__1'));
     });
 
     test('maps function_call names back to original tool names', () async {
