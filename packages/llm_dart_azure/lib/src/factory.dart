@@ -78,6 +78,12 @@ class AzureOpenAIProviderFactory
           'apiVersion',
         ) ??
         azureDefaultApiVersion;
+    final useResponsesAPI = readProviderOption<bool>(
+          providerOptions,
+          providerId,
+          'useResponsesAPI',
+        ) ??
+        true;
     final useDeploymentBasedUrls = readProviderOption<bool>(
           providerOptions,
           providerId,
@@ -117,7 +123,7 @@ class AzureOpenAIProviderFactory
       user: config.user,
       serviceTier: config.serviceTier,
       builtInTools: builtInTools,
-      useResponsesAPI: true,
+      useResponsesAPI: useResponsesAPI,
       originalConfig: config,
     );
   }

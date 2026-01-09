@@ -5,6 +5,7 @@ import 'package:llm_dart_builder/llm_dart_builder.dart';
 
 import '../builtins/builtin_provider_registry.dart';
 import 'anthropic_builder.dart';
+import 'azure_builder.dart';
 import 'elevenlabs_builder.dart';
 import 'google_llm_builder.dart';
 import 'ollama_builder.dart';
@@ -13,6 +14,15 @@ import 'openrouter_builder.dart';
 
 /// Convenience methods for built-in providers.
 extension BuiltinProviderBuilders on LLMBuilder {
+  LLMBuilder azure([AzureBuilder Function(AzureBuilder)? configure]) {
+    BuiltinProviderRegistry.ensureRegistered();
+    provider('azure');
+    if (configure != null) {
+      configure(AzureBuilder(this));
+    }
+    return this;
+  }
+
   LLMBuilder openai([OpenAIBuilder Function(OpenAIBuilder)? configure]) {
     BuiltinProviderRegistry.ensureRegistered();
     provider('openai');
