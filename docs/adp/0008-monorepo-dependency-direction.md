@@ -40,6 +40,19 @@ Adopt and enforce the following dependency direction rules:
    - protocol reuse packages (`*_compatible`)
 7) Umbrella package `llm_dart` is unrestricted (it re-exports everything)
 
+Exception (explicit allowlist):
+
+- Some provider variants may depend on another provider package **only for
+  internal reuse**, mirroring Vercel AI SDK patterns like:
+  - `@ai-sdk/google-vertex` → `@ai-sdk/google/internal`
+  - `@ai-sdk/azure` → `@ai-sdk/openai/internal`
+  - `@ai-sdk/amazon-bedrock` → `@ai-sdk/anthropic/internal`
+- In `llm_dart`, such exceptions must be **explicitly allowlisted** in
+  `tool/check_monorepo_deps.dart` to avoid accidental provider→provider
+  coupling.
+- Current allowlisted cases:
+  - `llm_dart_google_vertex` → `llm_dart_google`
+
 Enforcement:
 
 - Add `tool/check_monorepo_deps.dart` and run it in CI.

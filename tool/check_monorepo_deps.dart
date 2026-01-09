@@ -2,6 +2,13 @@ import 'dart:io';
 
 import 'package:yaml/yaml.dart';
 
+final _providerToProviderExceptions = <String, Set<String>>{
+  // AI SDK parity: `@ai-sdk/google-vertex` reuses `@ai-sdk/google/internal`.
+  // We allow `llm_dart_google_vertex` to reuse `llm_dart_google` internals until
+  // we have a dedicated shared Google Generative AI protocol package.
+  'llm_dart_google_vertex': {'llm_dart_google'},
+};
+
 void main(List<String> args) {
   final rootDir = Directory.current;
   final packagesDir = Directory('${rootDir.path}/packages');
@@ -161,21 +168,15 @@ Set<String>? _allowedInternalDepsFor({
     return const {'llm_dart_core', 'llm_dart_provider_utils'};
   }
 
-  // Temporary exception: `llm_dart_google_vertex` currently reuses the
-  // implementation from `llm_dart_google` to keep package granularity aligned
-  // with Vercel AI SDK. Once we extract a shared Google Generative AI protocol
-  // package, this dependency should be removed and this exception deleted.
-  if (packageName == 'llm_dart_google_vertex') {
-    return {
-      'llm_dart_core',
-      'llm_dart_provider_utils',
-      'llm_dart_google',
-      ...protocolPackages,
-    };
-  }
+  final extraAllowed = _providerToProviderExceptions[packageName] ?? const {};
 
   // Provider packages: allow core + provider_utils + protocol reuse packages.
-  return {'llm_dart_core', 'llm_dart_provider_utils', ...protocolPackages};
+  return {
+    'llm_dart_core',
+    'llm_dart_provider_utils',
+    ...protocolPackages,
+    ...extraAllowed,
+  };
 }
 
 String _relPath(String path) {
