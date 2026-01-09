@@ -6,6 +6,36 @@ import '../../utils/fakes/fakes.dart';
 
 void main() {
   group('Google systemInstruction', () {
+    test('stores system messages in systemInstruction (AI SDK parity)',
+        () async {
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
+        model: 'gemini-1.5-flash',
+      );
+
+      final config =
+          GoogleConfig.fromLLMConfig(llmConfig).copyWith(stream: true);
+      final client = FakeGoogleClient(config);
+      final chat = GoogleChat(client, config);
+
+      await chat.chatStreamParts([ChatMessage.system('SYS')],
+          tools: const []).toList();
+
+      final systemInstruction = client.lastBody?['systemInstruction'];
+      expect(systemInstruction, isA<Map>());
+      expect(
+        (systemInstruction as Map)['parts'],
+        equals([
+          {'text': 'SYS'},
+        ]),
+      );
+
+      final contents = client.lastBody?['contents'];
+      expect(contents, isA<List>());
+      expect((contents as List), isEmpty);
+    });
+
     test('uses config.systemPrompt as systemInstruction', () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',
@@ -190,6 +220,29 @@ void main() {
       expect(first['role'], 'user');
       final parts = first['parts'] as List;
       expect((parts.first as Map)['text'], 'MSG_SYS1\n\nMSG_SYS2\n\n');
+    });
+
+    test('omits systemInstruction for Gemma models with system prompt only',
+        () async {
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
+        model: 'gemma-3-12b-it',
+      );
+
+      final config =
+          GoogleConfig.fromLLMConfig(llmConfig).copyWith(stream: true);
+      final client = FakeGoogleClient(config);
+      final chat = GoogleChat(client, config);
+
+      await chat.chatStreamParts([ChatMessage.system('SYS')],
+          tools: const []).toList();
+
+      expect(client.lastBody?.containsKey('systemInstruction'), isFalse);
+
+      final contents = client.lastBody?['contents'];
+      expect(contents, isA<List>());
+      expect((contents as List), isEmpty);
     });
 
     test('omits systemInstruction when no system prompt is provided', () async {
