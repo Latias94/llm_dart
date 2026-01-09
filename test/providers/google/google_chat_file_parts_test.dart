@@ -35,6 +35,25 @@ class _CapturingGoogleClient extends GoogleClient {
   }
 }
 
+class _UploadingGoogleChat extends GoogleChat {
+  final GoogleFile? uploadedFile;
+
+  _UploadingGoogleChat(
+    super.client,
+    super.config, {
+    required this.uploadedFile,
+  });
+
+  @override
+  Future<GoogleFile?> getOrUploadFile({
+    required List<int> data,
+    required String mimeType,
+    required String displayName,
+  }) async {
+    return uploadedFile;
+  }
+}
+
 void main() {
   group('GoogleChat file/image parts', () {
     test('encodes FileMessage as inlineData when within maxInlineDataSize',
@@ -104,7 +123,7 @@ void main() {
     });
 
     test(
-        'throws InvalidRequestError when FileMessage exceeds maxInlineDataSize',
+        'uploads and encodes FileMessage as fileData when exceeding maxInlineDataSize',
         () async {
       final config = GoogleConfig(
         apiKey: 'test-key',
@@ -113,7 +132,52 @@ void main() {
       );
 
       final client = _CapturingGoogleClient(config);
-      final chat = GoogleChat(client, config);
+      final chat = _UploadingGoogleChat(
+        client,
+        config,
+        uploadedFile: const GoogleFile(
+          name: 'files/123',
+          displayName: 'x',
+          mimeType: 'application/pdf',
+          sizeBytes: 4,
+          state: 'ACTIVE',
+          uri: 'https://example.com/files/123',
+        ),
+      );
+
+      await chat.chatWithTools(
+        [
+          ChatMessage.file(
+            role: ChatRole.user,
+            mime: FileMime.pdf,
+            data: const [1, 2, 3, 4],
+          ),
+        ],
+        null,
+      );
+
+      final contents = client.lastBody?['contents'] as List?;
+      expect(contents, isNotNull);
+      expect(contents, hasLength(1));
+
+      final parts = (contents!.single as Map)['parts'] as List;
+      expect(parts, hasLength(1));
+
+      final fileData = (parts.single as Map)['fileData'] as Map;
+      expect(fileData['fileUri'], equals('https://example.com/files/123'));
+      expect(fileData['mimeType'], equals('application/pdf'));
+    });
+
+    test('throws InvalidRequestError when upload fails for large FileMessage',
+        () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-1.5-flash',
+        maxInlineDataSize: 3,
+      );
+
+      final client = _CapturingGoogleClient(config);
+      final chat = _UploadingGoogleChat(client, config, uploadedFile: null);
 
       expect(
         () => chat.chatWithTools(

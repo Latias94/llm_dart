@@ -68,16 +68,20 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   String get _chatStreamEndpoint =>
       'models/${config.model}:streamGenerateContent';
 
-  _GoogleBuiltRequest _buildRequest(
+  Future<_GoogleBuiltRequest> _buildRequestAsync(
     List<ChatMessage> messages,
     List<Tool>? tools,
     bool stream,
-  ) {
+  ) async {
     final effectiveTools = tools ?? config.tools;
     final toolNameMapping = _createToolNameMapping(effectiveTools);
+    final preparedMessages = await _prepareMessages(
+      messages,
+      toolNameMapping: toolNameMapping,
+    );
     return _GoogleBuiltRequest(
-      body:
-          _buildRequestBody(messages, effectiveTools, stream, toolNameMapping),
+      body: _buildRequestBody(
+          preparedMessages, effectiveTools, stream, toolNameMapping),
       toolNameMapping: toolNameMapping,
     );
   }
@@ -88,7 +92,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     List<Tool>? tools, {
     CancelToken? cancelToken,
   }) async {
-    final built = _buildRequest(messages, tools, false);
+    final built = await _buildRequestAsync(messages, tools, false);
     final responseData = await client.postJson(
       _chatEndpoint,
       built.body,
@@ -107,7 +111,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     _resetStreamState();
 
     final effectiveTools = tools ?? config.tools;
-    final built = _buildRequest(messages, effectiveTools, true);
+    final built = await _buildRequestAsync(messages, effectiveTools, true);
 
     // Create JSON array stream
     final stream = client.postStreamRaw(
@@ -131,7 +135,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     CancelToken? cancelToken,
   }) async* {
     final effectiveTools = tools ?? config.tools;
-    final built = _buildRequest(messages, effectiveTools, true);
+    final built = await _buildRequestAsync(messages, effectiveTools, true);
     final requestBody = built.body;
     final toolNameMapping = built.toolNameMapping;
 
@@ -989,6 +993,22 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         });
         break;
       case FileMessage(mime: final mime, data: final data):
+        final uploaded = message.getProtocolPayload<Map<String, dynamic>>(
+          'google',
+        );
+        final fileUri = uploaded?['fileUri'] as String?;
+        final uploadedMimeType = uploaded?['mimeType'] as String?;
+
+        if (fileUri != null && fileUri.isNotEmpty) {
+          parts.add({
+            'fileData': {
+              'fileUri': fileUri,
+              'mimeType': uploadedMimeType ?? mime.mimeType,
+            },
+          });
+          break;
+        }
+
         if (data.length > config.maxInlineDataSize) {
           throw InvalidRequestError(
             'File too large for Google inlineData: ${data.length} bytes '
@@ -1053,6 +1073,87 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       'role': role,
       'parts': parts,
     };
+  }
+
+  Future<List<ChatMessage>> _prepareMessages(
+    List<ChatMessage> messages, {
+    required ToolNameMapping toolNameMapping,
+  }) async {
+    final prepared = <ChatMessage>[];
+
+    for (var i = 0; i < messages.length; i++) {
+      final message = messages[i];
+
+      if (message.messageType
+          case FileMessage(mime: final mime, data: final data)) {
+        if (data.length > config.maxInlineDataSize) {
+          final displayName =
+              _defaultUploadDisplayName(mimeType: mime.mimeType, data: data);
+          final uploaded = await getOrUploadFile(
+            data: data,
+            mimeType: mime.mimeType,
+            displayName: displayName,
+          );
+
+          if (uploaded == null) {
+            throw InvalidRequestError(
+              'File too large for Google inlineData and upload failed: '
+              '${data.length} bytes (maxInlineDataSize=${config.maxInlineDataSize}).',
+            );
+          }
+
+          final uri = uploaded.uri ?? uploaded.name;
+          if (uri == null || uri.isEmpty) {
+            throw ProviderError(
+              'Google file upload returned no uri/name for displayName="$displayName".',
+            );
+          }
+
+          prepared.add(
+            ChatMessage(
+              role: message.role,
+              messageType: message.messageType,
+              content: message.content,
+              name: message.name,
+              protocolPayloads: {
+                ...message.protocolPayloads,
+                'google': {
+                  'fileUri': uri,
+                  'mimeType': mime.mimeType,
+                },
+              },
+              providerOptions: message.providerOptions,
+            ),
+          );
+          continue;
+        }
+      }
+
+      prepared.add(message);
+    }
+
+    return prepared;
+  }
+
+  String _defaultUploadDisplayName({
+    required String mimeType,
+    required List<int> data,
+  }) {
+    final ext = _guessFileExtensionFromMimeType(mimeType);
+    final sample =
+        data.take(8).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+    final suffix = sample.isEmpty ? '${data.length}' : '${data.length}_$sample';
+    return 'llm_dart_$suffix.$ext';
+  }
+
+  String _guessFileExtensionFromMimeType(String mimeType) {
+    final lower = mimeType.toLowerCase();
+    final slash = lower.indexOf('/');
+    if (slash == -1 || slash == lower.length - 1) return 'bin';
+    final subtype = lower.substring(slash + 1);
+    if (subtype.contains('+json')) return 'json';
+    if (subtype == 'plain') return 'txt';
+    return subtype;
   }
 
   static String? _guessImageMimeTypeFromUrl(String url) {
