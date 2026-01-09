@@ -7,6 +7,8 @@ import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_xai/responses.dart';
 import 'package:test/test.dart';
 
+import '../../utils/fixture_replay.dart';
+
 class _FakeOpenAIClient extends OpenAIClient {
   final Stream<String> _stream;
 
@@ -25,46 +27,6 @@ class _FakeOpenAIClient extends OpenAIClient {
   }
 }
 
-Stream<String> _sseStreamFromChunkFile(String path) async* {
-  final lines = File(path)
-      .readAsLinesSync()
-      .map((l) => l.trim())
-      .where((l) => l.isNotEmpty)
-      .toList(growable: false);
-
-  for (final line in lines) {
-    yield 'data: $line\n\n';
-  }
-}
-
-({String text, String thinking}) _expectedFromChunkFile(String path) {
-  final text = StringBuffer();
-  final thinking = StringBuffer();
-
-  final lines = File(path)
-      .readAsLinesSync()
-      .map((l) => l.trim())
-      .where((l) => l.isNotEmpty)
-      .toList(growable: false);
-
-  for (final line in lines) {
-    final json = jsonDecode(line) as Map<String, dynamic>;
-    final type = json['type'] as String?;
-
-    if (type == 'response.output_text.delta') {
-      final delta = json['delta'] as String?;
-      if (delta != null) text.write(delta);
-    }
-
-    if (type == 'response.reasoning_summary_text.delta') {
-      final delta = json['delta'] as String?;
-      if (delta != null) thinking.write(delta);
-    }
-  }
-
-  return (text: text.toString(), thinking: thinking.toString());
-}
-
 void main() {
   group('xAI Responses streaming fixtures (Vercel)', () {
     final dir = Directory('test/fixtures/xai/responses');
@@ -78,7 +40,8 @@ void main() {
     for (final file in fixtures) {
       final name = file.uri.pathSegments.last;
       test('replays $name', () async {
-        final expected = _expectedFromChunkFile(file.path);
+        final expected =
+            expectedOpenAIResponsesTextThinkingFromChunkFile(file.path);
 
         final config = OpenAICompatibleConfig(
           providerId: 'xai.responses',
@@ -90,7 +53,7 @@ void main() {
 
         final client = _FakeOpenAIClient(
           config,
-          stream: _sseStreamFromChunkFile(file.path),
+          stream: sseStreamFromChunkFile(file.path),
         );
         final responses = XAIResponses(client, config);
 

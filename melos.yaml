@@ -22,6 +22,12 @@ scripts:
   surface:
     run: dart run tool/check_provider_surface.dart
     description: Verify Tier 2 provider surface boundary rules.
+  fixtures:check:
+    run: dart run tool/sync_vercel_fixtures.dart --check
+    description: Verify Vercel AI SDK fixtures are synced (repo-ref/ai -> test/fixtures).
+  fixtures:sync:
+    run: dart run tool/sync_vercel_fixtures.dart --write
+    description: Sync Vercel AI SDK fixtures into test/fixtures (never deletes).
   version:set-all:
     run: dart run tool/bump_version.dart set-all
     description: Set all package versions and internal dependency constraints (pass -- --version X.Y.Z).

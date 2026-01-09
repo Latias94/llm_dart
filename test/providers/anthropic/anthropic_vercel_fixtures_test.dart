@@ -5,6 +5,8 @@ import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:test/test.dart';
 
+import '../../utils/fixture_replay.dart';
+
 class _FakeJsonAnthropicClient extends AnthropicClient {
   final Map<String, dynamic> _response;
 
@@ -39,125 +41,6 @@ class _FakeStreamAnthropicClient extends AnthropicClient {
   }) {
     return _stream;
   }
-}
-
-Stream<String> _sseStreamFromLines(Iterable<String> lines) async* {
-  for (final line in lines) {
-    yield 'data: $line\n\n';
-  }
-}
-
-List<Stream<String>> _sseStreamsFromChunkFile(String path) {
-  final lines = File(path)
-      .readAsLinesSync()
-      .map((l) => l.trim())
-      .where((l) => l.isNotEmpty)
-      .toList(growable: false);
-
-  final sessions = <List<String>>[];
-  var current = <String>[];
-
-  for (final line in lines) {
-    current.add(line);
-
-    final json = jsonDecode(line);
-    if (json is Map<String, dynamic> && json['type'] == 'message_stop') {
-      sessions.add(current);
-      current = <String>[];
-    }
-  }
-
-  if (current.isNotEmpty) {
-    sessions.add(current);
-  }
-
-  return sessions.map(_sseStreamFromLines).toList(growable: false);
-}
-
-({String text, String thinking}) _expectedFromChunkFile(String path) {
-  final textBlocks = <String>[];
-  final thinkingBlocks = <String>[];
-
-  final blockTypes = <int, String>{};
-  final textBuffers = <int, StringBuffer>{};
-  final thinkingBuffers = <int, StringBuffer>{};
-
-  final lines = File(path)
-      .readAsLinesSync()
-      .map((l) => l.trim())
-      .where((l) => l.isNotEmpty)
-      .toList(growable: false);
-
-  for (final line in lines) {
-    final json = jsonDecode(line) as Map<String, dynamic>;
-    final type = json['type'] as String?;
-
-    if (type == 'content_block_start') {
-      final index = json['index'] as int?;
-      final block = json['content_block'];
-      if (index == null || block is! Map) continue;
-
-      final blockType = block['type'];
-      if (blockType is! String) continue;
-      blockTypes[index] = blockType;
-
-      if (blockType == 'text') {
-        textBuffers[index] = StringBuffer();
-      } else if (blockType == 'thinking') {
-        thinkingBuffers[index] = StringBuffer();
-      } else if (blockType == 'redacted_thinking') {
-        // Mirrors `AnthropicChatResponse.thinking`.
-        thinkingBlocks
-            .add('[Redacted thinking content - encrypted for safety]');
-      }
-
-      continue;
-    }
-
-    if (type == 'content_block_delta') {
-      final index = json['index'] as int?;
-      final delta = json['delta'];
-      if (index == null || delta is! Map) continue;
-
-      final deltaType = delta['type'];
-      if (deltaType == 'text_delta') {
-        final t = delta['text'];
-        if (t is String) {
-          (textBuffers[index] ??= StringBuffer()).write(t);
-        }
-      }
-      if (deltaType == 'thinking_delta') {
-        final t = delta['thinking'];
-        if (t is String) {
-          (thinkingBuffers[index] ??= StringBuffer()).write(t);
-        }
-      }
-      continue;
-    }
-
-    if (type == 'content_block_stop') {
-      final index = json['index'] as int?;
-      if (index == null) continue;
-
-      final blockType = blockTypes[index];
-      if (blockType == 'text') {
-        final text = textBuffers[index]?.toString() ?? '';
-        if (text.isNotEmpty) textBlocks.add(text);
-      } else if (blockType == 'thinking') {
-        final thinking = thinkingBuffers[index]?.toString() ?? '';
-        if (thinking.isNotEmpty) thinkingBlocks.add(thinking);
-      }
-
-      blockTypes.remove(index);
-      textBuffers.remove(index);
-      thinkingBuffers.remove(index);
-    }
-  }
-
-  return (
-    text: textBlocks.join('\n'),
-    thinking: thinkingBlocks.join('\n\n'),
-  );
 }
 
 void main() {
@@ -210,8 +93,12 @@ void main() {
       for (final file in chunkFixtures) {
         final name = file.uri.pathSegments.last;
         test('replays $name', () async {
-          final expected = _expectedFromChunkFile(file.path);
-          final streams = _sseStreamsFromChunkFile(file.path);
+          final expected =
+              expectedAnthropicTextThinkingFromChunkFile(file.path);
+          final streams = sseStreamsFromChunkFileSplitByTerminalEvent(
+            file.path,
+            isTerminalEvent: isAnthropicMessagesTerminalEvent,
+          );
 
           final config = AnthropicConfig(
             providerId: 'anthropic',

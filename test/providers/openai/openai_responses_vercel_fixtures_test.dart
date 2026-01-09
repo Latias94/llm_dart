@@ -7,6 +7,8 @@ import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
 import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:test/test.dart';
 
+import '../../utils/fixture_replay.dart';
+
 class _FakeJsonOpenAIClient extends OpenAIClient {
   final Map<String, dynamic> _response;
 
@@ -41,76 +43,6 @@ class _FakeStreamOpenAIClient extends OpenAIClient {
   }) {
     return _stream;
   }
-}
-
-Stream<String> _sseStreamFromLines(Iterable<String> lines) async* {
-  for (final line in lines) {
-    yield 'data: $line\n\n';
-  }
-}
-
-List<Stream<String>> _sseStreamsFromChunkFile(String path) {
-  final lines = File(path)
-      .readAsLinesSync()
-      .map((l) => l.trim())
-      .where((l) => l.isNotEmpty)
-      .toList(growable: false);
-
-  final sessions = <List<String>>[];
-  var current = <String>[];
-
-  bool isTerminalEvent(String? type) =>
-      type == 'response.completed' ||
-      type == 'response.failed' ||
-      type == 'response.cancelled' ||
-      type == 'response.incomplete';
-
-  for (final line in lines) {
-    current.add(line);
-
-    final json = jsonDecode(line);
-    if (json is Map<String, dynamic>) {
-      final type = json['type'] as String?;
-      if (isTerminalEvent(type)) {
-        sessions.add(current);
-        current = <String>[];
-      }
-    }
-  }
-
-  if (current.isNotEmpty) {
-    sessions.add(current);
-  }
-
-  return sessions.map(_sseStreamFromLines).toList(growable: false);
-}
-
-({String text, String thinking}) _expectedFromChunkFile(String path) {
-  final text = StringBuffer();
-  final thinking = StringBuffer();
-
-  final lines = File(path)
-      .readAsLinesSync()
-      .map((l) => l.trim())
-      .where((l) => l.isNotEmpty)
-      .toList(growable: false);
-
-  for (final line in lines) {
-    final json = jsonDecode(line) as Map<String, dynamic>;
-    final type = json['type'] as String?;
-
-    if (type == 'response.output_text.delta') {
-      final delta = json['delta'] as String?;
-      if (delta != null) text.write(delta);
-    }
-
-    if (type == 'response.reasoning_summary_text.delta') {
-      final delta = json['delta'] as String?;
-      if (delta != null) thinking.write(delta);
-    }
-  }
-
-  return (text: text.toString(), thinking: thinking.toString());
 }
 
 void main() {
@@ -224,8 +156,12 @@ void main() {
       for (final file in chunkFixtures) {
         final name = file.uri.pathSegments.last;
         test('replays $name', () async {
-          final expected = _expectedFromChunkFile(file.path);
-          final streams = _sseStreamsFromChunkFile(file.path);
+          final expected =
+              expectedOpenAIResponsesTextThinkingFromChunkFile(file.path);
+          final streams = sseStreamsFromChunkFileSplitByTerminalEvent(
+            file.path,
+            isTerminalEvent: isOpenAIResponsesTerminalEvent,
+          );
 
           final config = openai_client.OpenAIConfig(
             apiKey: 'test-key',

@@ -6,6 +6,8 @@ import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
 
+import '../../utils/fixture_replay.dart';
+
 class _FakeOpenAIClient extends OpenAIClient {
   final Stream<String> _stream;
 
@@ -21,22 +23,6 @@ class _FakeOpenAIClient extends OpenAIClient {
     CancelToken? cancelToken,
   }) {
     return _stream;
-  }
-}
-
-Stream<String> _sseStreamFromChunkFile(String path) async* {
-  final lines = File(path)
-      .readAsLinesSync()
-      .map((l) => l.trim())
-      .where((l) => l.isNotEmpty)
-      .toList(growable: false);
-
-  for (final line in lines) {
-    if (line.startsWith('data:')) {
-      yield '$line\n\n';
-      continue;
-    }
-    yield 'data: $line\n\n';
   }
 }
 
@@ -99,7 +85,7 @@ _ExpectedFromChunks _expectedFromChunkFile(String path) {
       .toList(growable: false);
 
   for (final line in lines) {
-    final json = jsonDecode(line) as Map<String, dynamic>;
+    final json = jsonDecode(stripSseDataPrefix(line)) as Map<String, dynamic>;
 
     id ??= json['id'] as String?;
     model ??= json['model'] as String?;
@@ -207,7 +193,7 @@ void main() {
 
       final client = _FakeOpenAIClient(
         config,
-        stream: _sseStreamFromChunkFile(fixturePath),
+        stream: sseStreamFromChunkFile(fixturePath),
       );
       final chat = OpenAIChat(client, config);
 
@@ -252,7 +238,7 @@ void main() {
 
       final client = _FakeOpenAIClient(
         config,
-        stream: _sseStreamFromChunkFile(fixturePath),
+        stream: sseStreamFromChunkFile(fixturePath),
       );
       final chat = OpenAIChat(client, config);
 
@@ -288,7 +274,7 @@ void main() {
 
       final client = _FakeOpenAIClient(
         config,
-        stream: _sseStreamFromChunkFile(fixturePath),
+        stream: sseStreamFromChunkFile(fixturePath),
       );
       final chat = OpenAIChat(client, config);
 
