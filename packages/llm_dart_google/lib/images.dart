@@ -29,6 +29,20 @@ class GoogleImages implements ImageGenerationCapability {
 
   GoogleImages(this._client, this._config);
 
+  Map<String, dynamic> _buildProviderMetadata(
+    String endpoint, {
+    required String model,
+  }) {
+    final payload = <String, dynamic>{
+      'model': model,
+      'endpoint': endpoint,
+    };
+    return {
+      'google': payload,
+      'google.image': payload,
+    };
+  }
+
   @override
   Future<ImageGenerationResponse> generateImages(
     ImageGenerationRequest request,
@@ -67,7 +81,11 @@ class GoogleImages implements ImageGenerationCapability {
 
     try {
       final response = await _client.postJson(endpoint, requestData);
-      return _parseImagenResponse(response, model);
+      return _parseImagenResponse(
+        response,
+        model,
+        providerMetadata: _buildProviderMetadata(endpoint, model: model),
+      );
     } catch (e) {
       _logger.severe('Imagen generation failed: $e');
       rethrow;
@@ -112,7 +130,11 @@ class GoogleImages implements ImageGenerationCapability {
 
     try {
       final response = await _client.postJson(endpoint, requestData);
-      return _parseGeminiResponse(response, model);
+      return _parseGeminiResponse(
+        response,
+        model,
+        providerMetadata: _buildProviderMetadata(endpoint, model: model),
+      );
     } catch (e) {
       _logger.severe('Gemini generation failed: $e');
       rethrow;
@@ -122,8 +144,9 @@ class GoogleImages implements ImageGenerationCapability {
   /// Parse Imagen API response
   ImageGenerationResponse _parseImagenResponse(
     Map<String, dynamic> response,
-    String model,
-  ) {
+    String model, {
+    Map<String, dynamic>? providerMetadata,
+  }) {
     final predictions = response['predictions'] as List? ?? [];
     final images = <GeneratedImage>[];
 
@@ -143,14 +166,16 @@ class GoogleImages implements ImageGenerationCapability {
     return ImageGenerationResponse(
       images: images,
       model: model,
+      providerMetadata: providerMetadata,
     );
   }
 
   /// Parse Gemini API response
   ImageGenerationResponse _parseGeminiResponse(
     Map<String, dynamic> response,
-    String model,
-  ) {
+    String model, {
+    Map<String, dynamic>? providerMetadata,
+  }) {
     final candidates = response['candidates'] as List? ?? [];
     final images = <GeneratedImage>[];
     String? revisedPrompt;
@@ -192,6 +217,7 @@ class GoogleImages implements ImageGenerationCapability {
       images: images,
       model: model,
       revisedPrompt: revisedPrompt,
+      providerMetadata: providerMetadata,
     );
   }
 
@@ -248,7 +274,11 @@ class GoogleImages implements ImageGenerationCapability {
 
     try {
       final response = await _client.postJson(endpoint, requestData);
-      return _parseGeminiResponse(response, model);
+      return _parseGeminiResponse(
+        response,
+        model,
+        providerMetadata: _buildProviderMetadata(endpoint, model: model),
+      );
     } catch (e) {
       _logger.severe('Google image editing failed: $e');
       rethrow;
@@ -314,7 +344,11 @@ class GoogleImages implements ImageGenerationCapability {
 
     try {
       final response = await _client.postJson(endpoint, requestData);
-      return _parseGeminiResponse(response, model);
+      return _parseGeminiResponse(
+        response,
+        model,
+        providerMetadata: _buildProviderMetadata(endpoint, model: model),
+      );
     } catch (e) {
       _logger.severe('Google image variation failed: $e');
       rethrow;

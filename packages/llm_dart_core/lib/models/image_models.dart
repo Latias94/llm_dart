@@ -108,11 +108,18 @@ class ImageGenerationResponse {
   /// Usage information if available
   final UsageInfo? usage;
 
+  /// Provider-specific metadata for the response (optional).
+  ///
+  /// Recommended shape: a provider-id namespaced map, e.g.
+  /// `{'openai.image': {'model': 'gpt-image-1', 'endpoint': 'images/generations'}}`.
+  final Map<String, dynamic>? providerMetadata;
+
   const ImageGenerationResponse({
     required this.images,
     this.model,
     this.revisedPrompt,
     this.usage,
+    this.providerMetadata,
   });
 
   Map<String, dynamic> toJson() => {
@@ -120,6 +127,7 @@ class ImageGenerationResponse {
         if (model != null) 'model': model,
         if (revisedPrompt != null) 'revised_prompt': revisedPrompt,
         if (usage != null) 'usage': usage!.toJson(),
+        if (providerMetadata != null) 'provider_metadata': providerMetadata,
       };
 
   factory ImageGenerationResponse.fromJson(Map<String, dynamic> json) =>
@@ -132,6 +140,11 @@ class ImageGenerationResponse {
         usage: json['usage'] != null
             ? UsageInfo.fromJson(json['usage'] as Map<String, dynamic>)
             : null,
+        providerMetadata: json['provider_metadata'] is Map
+            ? Map<String, dynamic>.from(json['provider_metadata'] as Map)
+            : (json['providerMetadata'] is Map
+                ? Map<String, dynamic>.from(json['providerMetadata'] as Map)
+                : null),
       );
 }
 

@@ -23,6 +23,24 @@ class OpenAIStyleAudio
 
   OpenAIStyleAudio(this.client, this.config);
 
+  Map<String, dynamic> _buildProviderMetadata(
+    String endpoint, {
+    String? model,
+    required String capability,
+  }) {
+    final trimmed = config.providerId.trim();
+    final providerId = trimmed.isEmpty ? 'openai' : trimmed;
+    final alias = '$providerId.$capability';
+    final payload = <String, dynamic>{
+      if (model != null) 'model': model,
+      'endpoint': endpoint,
+    };
+    return {
+      providerId: payload,
+      alias: payload,
+    };
+  }
+
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
@@ -32,8 +50,9 @@ class OpenAIStyleAudio
       throw const InvalidRequestError('Text input cannot be empty');
     }
 
+    final modelUsed = request.model ?? openaiStyleDefaultTTSModel;
     final requestBody = <String, dynamic>{
-      'model': request.model ?? openaiStyleDefaultTTSModel,
+      'model': modelUsed,
       'input': request.text,
       'voice': request.voice ?? openaiStyleDefaultVoice,
       if (request.format != null) 'response_format': request.format,
@@ -77,10 +96,15 @@ class OpenAIStyleAudio
       audioData: audioData,
       contentType: contentType,
       voice: request.voice,
-      model: request.model,
+      model: modelUsed,
       duration: null,
       sampleRate: null,
       usage: null,
+      providerMetadata: _buildProviderMetadata(
+        'audio/speech',
+        model: modelUsed,
+        capability: 'speech',
+      ),
     );
   }
 
@@ -160,7 +184,11 @@ class OpenAIStyleAudio
       cancelToken: cancelToken,
     );
 
-    return _parseSttResponse(responseData);
+    return _parseSttResponse(
+      responseData,
+      endpoint: 'audio/transcriptions',
+      modelUsed: request.model ?? openaiStyleDefaultSTTModel,
+    );
   }
 
   @override
@@ -215,10 +243,18 @@ class OpenAIStyleAudio
       cancelToken: cancelToken,
     );
 
-    return _parseSttResponse(responseData);
+    return _parseSttResponse(
+      responseData,
+      endpoint: 'audio/translations',
+      modelUsed: request.model ?? openaiStyleDefaultSTTModel,
+    );
   }
 
-  STTResponse _parseSttResponse(Map<String, dynamic> responseData) {
+  STTResponse _parseSttResponse(
+    Map<String, dynamic> responseData, {
+    required String endpoint,
+    required String modelUsed,
+  }) {
     final text = responseData['text'] as String?;
     if (text == null) {
       throw ResponseFormatError(
@@ -227,6 +263,9 @@ class OpenAIStyleAudio
       );
     }
 
+    final model = responseData['model'];
+    final modelId = model is String ? model : modelUsed;
+
     return STTResponse(
       text: text,
       language: null,
@@ -234,6 +273,12 @@ class OpenAIStyleAudio
       segments: null,
       words: null,
       usage: null,
+      model: modelId,
+      providerMetadata: _buildProviderMetadata(
+        endpoint,
+        model: modelId,
+        capability: 'transcription',
+      ),
     );
   }
 

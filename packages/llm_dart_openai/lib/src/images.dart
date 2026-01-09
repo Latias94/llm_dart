@@ -17,12 +17,27 @@ class OpenAIImages implements ImageGenerationCapability {
 
   OpenAIImages(this.client, this.config);
 
+  Map<String, dynamic> _buildProviderMetadata(
+    String endpoint, {
+    required String model,
+  }) {
+    final payload = <String, dynamic>{
+      'model': model,
+      'endpoint': endpoint,
+    };
+    return {
+      config.providerId: payload,
+      '${config.providerId}.image': payload,
+    };
+  }
+
   @override
   Future<ImageGenerationResponse> generateImages(
     ImageGenerationRequest request,
   ) async {
+    final modelUsed = request.model ?? config.model;
     final requestBody = <String, dynamic>{
-      'model': request.model ?? config.model,
+      'model': modelUsed,
       'prompt': request.prompt,
       if (request.negativePrompt != null)
         'negative_prompt': request.negativePrompt,
@@ -92,9 +107,13 @@ class OpenAIImages implements ImageGenerationCapability {
 
       return ImageGenerationResponse(
         images: images,
-        model: request.model ?? config.model,
+        model: modelUsed,
         revisedPrompt: images.isNotEmpty ? images.first.revisedPrompt : null,
         usage: null, // OpenAI doesn't provide usage info for image generation
+        providerMetadata: _buildProviderMetadata(
+          'images/generations',
+          model: modelUsed,
+        ),
       );
     } catch (e) {
       if (e is LLMError) rethrow;
@@ -107,6 +126,7 @@ class OpenAIImages implements ImageGenerationCapability {
 
   @override
   Future<ImageGenerationResponse> editImage(ImageEditRequest request) async {
+    final modelUsed = request.model ?? config.model;
     // Prepare multipart form data for image editing
     final formData = <String, dynamic>{
       'prompt': request.prompt,
@@ -136,12 +156,20 @@ class OpenAIImages implements ImageGenerationCapability {
     }
 
     final responseData = await _postMultipartForm('images/edits', formData);
-    return _parseImageResponse(responseData, request.model);
+    return _parseImageResponse(
+      responseData,
+      request.model,
+      providerMetadata: _buildProviderMetadata(
+        'images/edits',
+        model: modelUsed,
+      ),
+    );
   }
 
   @override
   Future<ImageGenerationResponse> createVariation(
       ImageVariationRequest request) async {
+    final modelUsed = request.model ?? config.model;
     // Prepare multipart form data for image variation
     final formData = <String, dynamic>{
       if (request.model != null) 'model': request.model,
@@ -163,7 +191,14 @@ class OpenAIImages implements ImageGenerationCapability {
 
     final responseData =
         await _postMultipartForm('images/variations', formData);
-    return _parseImageResponse(responseData, request.model);
+    return _parseImageResponse(
+      responseData,
+      request.model,
+      providerMetadata: _buildProviderMetadata(
+        'images/variations',
+        model: modelUsed,
+      ),
+    );
   }
 
   @override
@@ -247,8 +282,9 @@ class OpenAIImages implements ImageGenerationCapability {
   /// Helper method to parse image generation response
   ImageGenerationResponse _parseImageResponse(
     Map<String, dynamic> responseData,
-    String? model,
-  ) {
+    String? model, {
+    Map<String, dynamic>? providerMetadata,
+  }) {
     final data = responseData['data'] as List?;
     if (data == null) {
       throw ResponseFormatError(
@@ -303,6 +339,7 @@ class OpenAIImages implements ImageGenerationCapability {
         model: model ?? config.model,
         revisedPrompt: images.isNotEmpty ? images.first.revisedPrompt : null,
         usage: null, // OpenAI doesn't provide usage info for image generation
+        providerMetadata: providerMetadata,
       );
     } catch (e) {
       if (e is LLMError) rethrow;

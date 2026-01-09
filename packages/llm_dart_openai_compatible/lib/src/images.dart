@@ -19,6 +19,22 @@ class OpenAIStyleImages implements ImageGenerationCapability {
 
   OpenAIStyleImages(this.client, this.config);
 
+  Map<String, dynamic> _buildProviderMetadata(
+    String endpoint, {
+    String? model,
+  }) {
+    final providerId =
+        config.providerId.trim().isEmpty ? 'openai' : config.providerId.trim();
+    final payload = <String, dynamic>{
+      if (model != null) 'model': model,
+      'endpoint': endpoint,
+    };
+    return {
+      providerId: payload,
+      '$providerId.image': payload,
+    };
+  }
+
   @override
   Future<ImageGenerationResponse> generateImages(
     ImageGenerationRequest request,
@@ -95,6 +111,10 @@ class OpenAIStyleImages implements ImageGenerationCapability {
         model: request.model ?? config.model,
         revisedPrompt: images.isNotEmpty ? images.first.revisedPrompt : null,
         usage: null,
+        providerMetadata: _buildProviderMetadata(
+          'images/generations',
+          model: request.model ?? config.model,
+        ),
       );
     } catch (e) {
       if (e is LLMError) rethrow;
@@ -132,7 +152,14 @@ class OpenAIStyleImages implements ImageGenerationCapability {
     }
 
     final responseData = await _postMultipartForm('images/edits', formData);
-    return _parseImageResponse(responseData, request.model);
+    return _parseImageResponse(
+      responseData,
+      request.model,
+      providerMetadata: _buildProviderMetadata(
+        'images/edits',
+        model: request.model ?? config.model,
+      ),
+    );
   }
 
   @override
@@ -158,7 +185,14 @@ class OpenAIStyleImages implements ImageGenerationCapability {
 
     final responseData =
         await _postMultipartForm('images/variations', formData);
-    return _parseImageResponse(responseData, request.model);
+    return _parseImageResponse(
+      responseData,
+      request.model,
+      providerMetadata: _buildProviderMetadata(
+        'images/variations',
+        model: request.model ?? config.model,
+      ),
+    );
   }
 
   @override
@@ -238,8 +272,9 @@ class OpenAIStyleImages implements ImageGenerationCapability {
 
   ImageGenerationResponse _parseImageResponse(
     Map<String, dynamic> responseData,
-    String? model,
-  ) {
+    String? model, {
+    Map<String, dynamic>? providerMetadata,
+  }) {
     final data = responseData['data'] as List?;
     if (data == null) {
       throw ResponseFormatError(
@@ -292,6 +327,7 @@ class OpenAIStyleImages implements ImageGenerationCapability {
         model: model ?? config.model,
         revisedPrompt: images.isNotEmpty ? images.first.revisedPrompt : null,
         usage: null,
+        providerMetadata: providerMetadata,
       );
     } catch (e) {
       if (e is LLMError) rethrow;

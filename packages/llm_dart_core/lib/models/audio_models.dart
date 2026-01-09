@@ -366,6 +366,12 @@ class TTSResponse {
   /// Request ID for continuity (ElevenLabs specific)
   final String? requestId;
 
+  /// Provider-specific metadata for the response (optional).
+  ///
+  /// Recommended shape: a provider-id namespaced map, e.g.
+  /// `{'openai.speech': {'model': 'tts-1', 'endpoint': 'audio/speech'}}`.
+  final Map<String, dynamic>? providerMetadata;
+
   const TTSResponse({
     required this.audioData,
     this.contentType,
@@ -377,6 +383,7 @@ class TTSResponse {
     this.alignment,
     this.normalizedAlignment,
     this.requestId,
+    this.providerMetadata,
   });
 
   Map<String, dynamic> toJson() => {
@@ -391,6 +398,7 @@ class TTSResponse {
         if (normalizedAlignment != null)
           'normalized_alignment': normalizedAlignment!.toJson(),
         if (requestId != null) 'request_id': requestId,
+        if (providerMetadata != null) 'provider_metadata': providerMetadata,
       };
 
   factory TTSResponse.fromJson(Map<String, dynamic> json) => TTSResponse(
@@ -411,6 +419,11 @@ class TTSResponse {
                 json['normalized_alignment'] as Map<String, dynamic>)
             : null,
         requestId: json['request_id'] as String?,
+        providerMetadata: json['provider_metadata'] is Map
+            ? Map<String, dynamic>.from(json['provider_metadata'] as Map)
+            : (json['providerMetadata'] is Map
+                ? Map<String, dynamic>.from(json['providerMetadata'] as Map)
+                : null),
       );
 }
 
@@ -673,6 +686,12 @@ class STTResponse {
   /// Additional formats (ElevenLabs specific)
   final Map<String, dynamic>? additionalFormats;
 
+  /// Provider-specific metadata for the response (optional).
+  ///
+  /// Recommended shape: a provider-id namespaced map, e.g.
+  /// `{'openai.transcription': {'model': 'whisper-1', 'endpoint': 'audio/transcriptions'}}`.
+  final Map<String, dynamic>? providerMetadata;
+
   const STTResponse({
     required this.text,
     this.language,
@@ -684,6 +703,7 @@ class STTResponse {
     this.usage,
     this.languageProbability,
     this.additionalFormats,
+    this.providerMetadata,
   });
 
   Map<String, dynamic> toJson() => {
@@ -699,6 +719,7 @@ class STTResponse {
         if (languageProbability != null)
           'language_probability': languageProbability,
         if (additionalFormats != null) 'additional_formats': additionalFormats,
+        if (providerMetadata != null) 'provider_metadata': providerMetadata,
       };
 
   factory STTResponse.fromJson(Map<String, dynamic> json) => STTResponse(
@@ -723,6 +744,11 @@ class STTResponse {
             : null,
         languageProbability: json['language_probability'] as double?,
         additionalFormats: json['additional_formats'] as Map<String, dynamic>?,
+        providerMetadata: json['provider_metadata'] is Map
+            ? Map<String, dynamic>.from(json['provider_metadata'] as Map)
+            : (json['providerMetadata'] is Map
+                ? Map<String, dynamic>.from(json['providerMetadata'] as Map)
+                : null),
       );
 }
 

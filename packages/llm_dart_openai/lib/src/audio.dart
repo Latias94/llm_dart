@@ -21,6 +21,21 @@ class OpenAIAudio
 
   OpenAIAudio(this.client, this.config);
 
+  Map<String, dynamic> _buildProviderMetadata(
+    String endpoint, {
+    required String capability,
+    required String model,
+  }) {
+    final payload = <String, dynamic>{
+      'model': model,
+      'endpoint': endpoint,
+    };
+    return {
+      config.providerId: payload,
+      '${config.providerId}.$capability': payload,
+    };
+  }
+
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
@@ -31,8 +46,9 @@ class OpenAIAudio
       throw const InvalidRequestError('Text input cannot be empty');
     }
 
+    final modelUsed = request.model ?? openaiDefaultTTSModel;
     final requestBody = <String, dynamic>{
-      'model': request.model ?? openaiDefaultTTSModel,
+      'model': modelUsed,
       'input': request.text,
       'voice': request.voice ?? openaiDefaultVoice,
       if (request.format != null) 'response_format': request.format,
@@ -76,10 +92,15 @@ class OpenAIAudio
       audioData: audioData,
       contentType: contentType,
       voice: request.voice,
-      model: request.model,
+      model: modelUsed,
       duration: null, // OpenAI doesn't provide duration
       sampleRate: null, // OpenAI doesn't provide sample rate
       usage: null,
+      providerMetadata: _buildProviderMetadata(
+        'audio/speech',
+        capability: 'speech',
+        model: modelUsed,
+      ),
     );
   }
 
@@ -118,6 +139,7 @@ class OpenAIAudio
       );
     }
 
+    final modelUsed = request.model ?? openaiDefaultSTTModel;
     final formData = FormData();
 
     if (request.audioData != null) {
@@ -136,8 +158,7 @@ class OpenAIAudio
       );
     }
 
-    formData.fields
-        .add(MapEntry('model', request.model ?? openaiDefaultSTTModel));
+    formData.fields.add(MapEntry('model', modelUsed));
     if (request.language != null) {
       formData.fields.add(MapEntry('language', request.language!));
     }
@@ -197,9 +218,14 @@ class OpenAIAudio
       language: responseData['language'] as String?,
       confidence: null, // OpenAI doesn't provide overall confidence
       words: words,
-      model: request.model,
+      model: modelUsed,
       duration: responseData['duration'] as double?,
       usage: null,
+      providerMetadata: _buildProviderMetadata(
+        'audio/transcriptions',
+        capability: 'transcription',
+        model: modelUsed,
+      ),
     );
   }
 
@@ -323,6 +349,7 @@ class OpenAIAudio
       );
     }
 
+    final modelUsed = request.model ?? openaiDefaultSTTModel;
     final formData = FormData();
 
     if (request.audioData != null) {
@@ -341,8 +368,7 @@ class OpenAIAudio
       );
     }
 
-    formData.fields
-        .add(MapEntry('model', request.model ?? openaiDefaultSTTModel));
+    formData.fields.add(MapEntry('model', modelUsed));
     if (request.prompt != null) {
       formData.fields.add(MapEntry('prompt', request.prompt!));
     }
@@ -366,9 +392,14 @@ class OpenAIAudio
       language: 'en', // Translations are always to English
       confidence: null,
       words: null, // Translation doesn't provide word timing
-      model: request.model,
+      model: modelUsed,
       duration: responseData['duration'] as double?,
       usage: null,
+      providerMetadata: _buildProviderMetadata(
+        'audio/translations',
+        capability: 'transcription',
+        model: modelUsed,
+      ),
     );
   }
 }

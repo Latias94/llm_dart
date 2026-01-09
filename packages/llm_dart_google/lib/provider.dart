@@ -4,6 +4,7 @@ import 'config.dart';
 import 'chat.dart';
 import 'embeddings.dart';
 import 'images.dart';
+import 'model_path.dart';
 import 'tts.dart';
 
 /// Google provider implementation
@@ -30,7 +31,10 @@ class GoogleProvider
   late final GoogleImages _images;
   late final GoogleTTS _tts;
 
-  GoogleProvider(this.config) : _client = GoogleClient(config) {
+  GoogleProvider(
+    this.config, {
+    GoogleClient? client,
+  }) : _client = client ?? GoogleClient(config) {
     // Initialize capability modules
     _chat = GoogleChat(_client, config);
     _embeddings = GoogleEmbeddings(_client, config);
@@ -174,6 +178,18 @@ class GoogleProvider
       ),
     );
 
+    final endpoint = '${googleModelPath(model)}:generateContent';
+    final providerMetadata = <String, dynamic>{
+      'google': {
+        'model': model,
+        'endpoint': endpoint,
+      },
+      'google.speech': {
+        'model': model,
+        'endpoint': endpoint,
+      },
+    };
+
     return TTSResponse(
       audioData: response.audioData,
       contentType: response.contentType,
@@ -182,6 +198,7 @@ class GoogleProvider
       usage: response.usage,
       duration: null,
       sampleRate: null,
+      providerMetadata: providerMetadata,
     );
   }
 
