@@ -230,6 +230,35 @@ class OpenAIResponses
             continue;
           }
 
+          // OpenAI Responses: encrypted reasoning comes as a summary stream.
+          // We map it to `thinking` (same as other reasoning deltas).
+          if (eventType == 'response.reasoning_summary_text.delta') {
+            final delta = json['delta'] as String?;
+            if (delta == null || delta.isEmpty) continue;
+
+            if (!inThinking) {
+              inThinking = true;
+              yield const LLMReasoningStartPart();
+            }
+            _thinkingBuffer.write(delta);
+            yield LLMReasoningDeltaPart(delta);
+            continue;
+          }
+
+          if (eventType == 'response.reasoning_summary_text.done') {
+            final text = json['text'] as String?;
+            if (text != null) {
+              if (!inThinking) {
+                inThinking = true;
+                yield const LLMReasoningStartPart();
+              }
+              _thinkingBuffer
+                ..clear()
+                ..write(text);
+            }
+            continue;
+          }
+
           if (eventType == 'response.output_text.delta') {
             final delta = json['delta'] as String?;
             if (delta == null || delta.isEmpty) continue;
@@ -1051,6 +1080,25 @@ class OpenAIResponses
       if (text != null) {
         _outputTextBuffer.clear();
         _outputTextBuffer.write(text);
+      }
+      return events;
+    }
+
+    if (eventType == 'response.reasoning_summary_text.delta') {
+      final delta = json['delta'] as String?;
+      if (delta != null && delta.isNotEmpty) {
+        thinkingBuffer.write(delta);
+        events.add(ThinkingDeltaEvent(delta));
+      }
+      return events;
+    }
+
+    if (eventType == 'response.reasoning_summary_text.done') {
+      final text = json['text'] as String?;
+      if (text != null) {
+        thinkingBuffer
+          ..clear()
+          ..write(text);
       }
       return events;
     }
