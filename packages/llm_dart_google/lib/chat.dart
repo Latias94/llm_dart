@@ -325,6 +325,14 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
                         .originalFunctionNameForRequestName(requestName) ??
                     requestName;
                 final id = nextToolCallId(name);
+                final thoughtSignature = part['thoughtSignature'];
+                final providerOptions = thoughtSignature == null
+                    ? const <String, Map<String, dynamic>>{}
+                    : <String, Map<String, dynamic>>{
+                        'google': {
+                          'thoughtSignature': thoughtSignature.toString(),
+                        },
+                      };
                 final toolCall = ToolCall(
                   id: id,
                   callType: 'function',
@@ -332,6 +340,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
                     name: name,
                     arguments: jsonEncode(args),
                   ),
+                  providerOptions: providerOptions,
                 );
                 startedToolCalls.add(id);
                 functionCallParts.add({
@@ -761,6 +770,13 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
           id: 'call_$name',
           callType: 'function',
           function: FunctionCall(name: name, arguments: jsonEncode(args)),
+          providerOptions: part['thoughtSignature'] == null
+              ? const <String, Map<String, dynamic>>{}
+              : <String, Map<String, dynamic>>{
+                  'google': {
+                    'thoughtSignature': part['thoughtSignature'].toString(),
+                  },
+                },
         );
 
         return ToolCallDeltaEvent(toolCall);
@@ -1720,11 +1736,19 @@ class GoogleChatResponse implements ChatResponse {
         nameCounts[name] = count + 1;
         final id = count == 0 ? 'call_$name' : 'call_${name}_$count';
 
+        final thoughtSignature = part['thoughtSignature'];
         functionCalls.add(
           ToolCall(
             id: id,
             callType: 'function',
             function: FunctionCall(name: name, arguments: jsonEncode(args)),
+            providerOptions: thoughtSignature == null
+                ? const <String, Map<String, dynamic>>{}
+                : <String, Map<String, dynamic>>{
+                    'google': {
+                      'thoughtSignature': thoughtSignature.toString(),
+                    },
+                  },
           ),
         );
       }
