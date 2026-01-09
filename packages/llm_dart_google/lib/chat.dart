@@ -72,12 +72,14 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     List<ChatMessage> messages,
     List<Tool>? tools,
     bool stream,
+    CancelToken? cancelToken,
   ) async {
     final effectiveTools = tools ?? config.tools;
     final toolNameMapping = _createToolNameMapping(effectiveTools);
     final preparedMessages = await _prepareMessages(
       messages,
       toolNameMapping: toolNameMapping,
+      cancelToken: cancelToken,
     );
     return _GoogleBuiltRequest(
       body: _buildRequestBody(
@@ -92,7 +94,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     List<Tool>? tools, {
     CancelToken? cancelToken,
   }) async {
-    final built = await _buildRequestAsync(messages, tools, false);
+    final built = await _buildRequestAsync(messages, tools, false, cancelToken);
     final responseData = await client.postJson(
       _chatEndpoint,
       built.body,
@@ -111,7 +113,8 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     _resetStreamState();
 
     final effectiveTools = tools ?? config.tools;
-    final built = await _buildRequestAsync(messages, effectiveTools, true);
+    final built =
+        await _buildRequestAsync(messages, effectiveTools, true, cancelToken);
 
     // Create JSON array stream
     final stream = client.postStreamRaw(
@@ -135,7 +138,8 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     CancelToken? cancelToken,
   }) async* {
     final effectiveTools = tools ?? config.tools;
-    final built = await _buildRequestAsync(messages, effectiveTools, true);
+    final built =
+        await _buildRequestAsync(messages, effectiveTools, true, cancelToken);
     final requestBody = built.body;
     final toolNameMapping = built.toolNameMapping;
 
@@ -453,6 +457,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     required List<int> data,
     required String mimeType,
     required String displayName,
+    CancelToken? cancelToken,
   }) async {
     try {
       // Create file metadata
@@ -472,13 +477,18 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         ),
       });
 
-      final response = await client.dio.post(
-        'upload/v1beta/files?key=${config.apiKey}',
-        data: formData,
-        options: Options(
-          headers: {
-            'X-Goog-Upload-Protocol': 'multipart',
-          },
+      final uri = _buildUploadUri();
+      final response = await withDioCancelToken(
+        cancelToken,
+        (dioToken) => client.dio.postUri(
+          uri,
+          data: formData,
+          options: Options(
+            headers: {
+              'X-Goog-Upload-Protocol': 'multipart',
+            },
+          ),
+          cancelToken: dioToken,
         ),
       );
 
@@ -508,6 +518,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     required List<int> data,
     required String mimeType,
     required String displayName,
+    CancelToken? cancelToken,
   }) async {
     final cacheKey = '${displayName}_${data.length}_$mimeType';
 
@@ -523,6 +534,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         data: data,
         mimeType: mimeType,
         displayName: displayName,
+        cancelToken: cancelToken,
       );
     } catch (e) {
       client.logger.warning('File upload failed: $e');
@@ -747,25 +759,62 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   ) {
     final contents = <Map<String, dynamic>>[];
 
-    // Add system message if configured
-    if (config.systemPrompt != null) {
-      contents.add({
-        'role': 'user',
-        'parts': [
-          {'text': config.systemPrompt},
-        ],
-      });
-    }
+    final systemInstructionParts = <Map<String, dynamic>>[];
 
     // Convert messages to Google format
+    var systemMessagesAllowed = true;
     for (final message in messages) {
-      // Skip system messages as they are handled separately
-      if (message.role == ChatRole.system) continue;
+      if (message.role == ChatRole.system) {
+        if (!systemMessagesAllowed) {
+          throw const InvalidRequestError(
+            'Google system messages are only supported at the beginning of the conversation.',
+          );
+        }
+        if (message.messageType is! TextMessage) {
+          throw const InvalidRequestError(
+            'Google system messages must be plain text.',
+          );
+        }
+        if (message.content.trim().isNotEmpty) {
+          systemInstructionParts.add({'text': message.content});
+        }
+        continue;
+      }
+
+      systemMessagesAllowed = false;
 
       contents.add(_convertMessage(message, toolNameMapping));
     }
 
-    return _buildBodyWithConfig(contents, tools, stream, toolNameMapping);
+    // Prefer explicit system messages over config.systemPrompt.
+    if (systemInstructionParts.isEmpty &&
+        config.systemPrompt != null &&
+        config.systemPrompt!.trim().isNotEmpty) {
+      systemInstructionParts.add({'text': config.systemPrompt});
+    }
+
+    if (_isGemmaModel() &&
+        systemInstructionParts.isNotEmpty &&
+        contents.isNotEmpty &&
+        contents.first['role'] == 'user') {
+      final systemText = systemInstructionParts
+          .map((p) => p['text'])
+          .whereType<String>()
+          .join('\n\n');
+
+      final firstParts = contents.first['parts'];
+      if (firstParts is List) {
+        firstParts.insert(0, {'text': '$systemText\n\n'});
+      }
+    }
+
+    final body = _buildBodyWithConfig(contents, tools, stream, toolNameMapping);
+    if (!_isGemmaModel() && systemInstructionParts.isNotEmpty) {
+      body['systemInstruction'] = {
+        'parts': systemInstructionParts,
+      };
+    }
+    return body;
   }
 
   /// Create request body with configuration
@@ -963,6 +1012,28 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         isLatest;
   }
 
+  bool _isGemmaModel() {
+    final lower = config.model.toLowerCase();
+    return lower.startsWith('gemma-');
+  }
+
+  Uri _buildUploadUri() {
+    final base = Uri.parse(config.baseUrl);
+
+    final baseSegments = List<String>.from(base.pathSegments);
+    while (baseSegments.isNotEmpty && baseSegments.last.isEmpty) {
+      baseSegments.removeLast();
+    }
+    if (baseSegments.isNotEmpty && baseSegments.last == 'v1beta') {
+      baseSegments.removeLast();
+    }
+
+    return base.replace(
+      pathSegments: [...baseSegments, 'upload', 'v1beta', 'files'],
+      queryParameters: {'key': config.apiKey},
+    );
+  }
+
   /// Convert ChatMessage to Google format
   Map<String, dynamic> _convertMessage(
     ChatMessage message,
@@ -1056,12 +1127,19 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         for (final result in results) {
           final requestName =
               toolNameMapping.requestNameForFunction(result.function.name);
+          final raw = result.function.arguments;
+          Object content;
+          try {
+            content = jsonDecode(raw);
+          } catch (_) {
+            content = raw;
+          }
           parts.add({
             'functionResponse': {
               'name': requestName,
               'response': {
                 'name': requestName,
-                'content': jsonDecode(result.function.arguments),
+                'content': content,
               },
             },
           });
@@ -1078,6 +1156,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   Future<List<ChatMessage>> _prepareMessages(
     List<ChatMessage> messages, {
     required ToolNameMapping toolNameMapping,
+    CancelToken? cancelToken,
   }) async {
     final prepared = <ChatMessage>[];
 
@@ -1093,6 +1172,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
             data: data,
             mimeType: mime.mimeType,
             displayName: displayName,
+            cancelToken: cancelToken,
           );
 
           if (uploaded == null) {

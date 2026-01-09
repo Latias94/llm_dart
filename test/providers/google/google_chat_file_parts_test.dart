@@ -49,6 +49,7 @@ class _UploadingGoogleChat extends GoogleChat {
     required List<int> data,
     required String mimeType,
     required String displayName,
+    CancelToken? cancelToken,
   }) async {
     return uploadedFile;
   }
