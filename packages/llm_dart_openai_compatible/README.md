@@ -15,6 +15,13 @@ When a first-party provider package exists, prefer it over the OpenAI-compatible
 presets. The presets are best-effort and intended for OpenAI-compatible gateways
 or when you must use a specific provider's OpenAI-flavored endpoint.
 
+## Custom providers
+
+To integrate an OpenAI-compatible gateway (LM Studio / LiteLLM / proxies), you
+can register your own provider id:
+
+- Example: `example/04_providers/others/openai_compatible_custom_providers.dart`
+
 ## Imports
 
 The recommended entrypoint is:
