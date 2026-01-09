@@ -13,11 +13,11 @@ import 'openai_request_config.dart';
 /// - `POST /images/generations`
 /// - `POST /images/edits`
 /// - `POST /images/variations`
-class OpenAIImages implements ImageGenerationCapability {
+class OpenAIStyleImages implements ImageGenerationCapability {
   final OpenAIClient client;
   final OpenAIRequestConfig config;
 
-  OpenAIImages(this.client, this.config);
+  OpenAIStyleImages(this.client, this.config);
 
   @override
   Future<ImageGenerationResponse> generateImages(
@@ -163,12 +163,12 @@ class OpenAIImages implements ImageGenerationCapability {
 
   @override
   List<String> getSupportedSizes() {
-    return openaiSupportedImageSizes;
+    return openaiStyleSupportedImageSizes;
   }
 
   @override
   List<String> getSupportedFormats() {
-    return openaiSupportedImageFormats;
+    return openaiStyleSupportedImageFormats;
   }
 
   @override
@@ -302,4 +302,3 @@ class OpenAIImages implements ImageGenerationCapability {
     }
   }
 }
-

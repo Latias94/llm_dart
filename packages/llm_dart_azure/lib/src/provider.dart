@@ -26,19 +26,20 @@ class AzureOpenAIProvider
   late final OpenAIChat _chat;
   late final OpenAIEmbeddings _embeddings;
   late final OpenAIResponses _responses;
-  late final OpenAIImages _images;
-  late final OpenAIAudio _audio;
+  late final OpenAIStyleImages _images;
+  late final OpenAIStyleAudio _audio;
 
   AzureOpenAIProvider(this.config) : _client = OpenAIClient(config) {
     _chat = OpenAIChat(_client, config);
     _embeddings = OpenAIEmbeddings(_client, config);
     _responses = OpenAIResponses(_client, config);
-    _images = OpenAIImages(_client, config);
-    _audio = OpenAIAudio(_client, config);
+    _images = OpenAIStyleImages(_client, config);
+    _audio = OpenAIStyleAudio(_client, config);
   }
 
   @override
-  Set<LLMCapability> get supportedCapabilities => {
+  Set<LLMCapability> get supportedCapabilities {
+    final capabilities = <LLMCapability>{
         LLMCapability.chat,
         LLMCapability.streaming,
         LLMCapability.embedding,
@@ -49,8 +50,14 @@ class AzureOpenAIProvider
         LLMCapability.textToSpeech,
         LLMCapability.speechToText,
         LLMCapability.audioTranslation,
-        LLMCapability.openaiResponses,
       };
+
+    if (config.useResponsesAPI) {
+      capabilities.add(LLMCapability.openaiResponses);
+    }
+
+    return capabilities;
+  }
 
   @override
   bool supports(LLMCapability capability) =>

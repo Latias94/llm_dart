@@ -11,7 +11,7 @@ import 'openai_request_config.dart';
 /// - `POST /audio/speech`
 /// - `POST /audio/transcriptions`
 /// - `POST /audio/translations`
-class OpenAIAudio
+class OpenAIStyleAudio
     implements
         TextToSpeechCapability,
         VoiceListingCapability,
@@ -21,7 +21,7 @@ class OpenAIAudio
   final OpenAIClient client;
   final OpenAIRequestConfig config;
 
-  OpenAIAudio(this.client, this.config);
+  OpenAIStyleAudio(this.client, this.config);
 
   @override
   Future<TTSResponse> textToSpeech(
@@ -33,9 +33,9 @@ class OpenAIAudio
     }
 
     final requestBody = <String, dynamic>{
-      'model': request.model ?? openaiDefaultTTSModel,
+      'model': request.model ?? openaiStyleDefaultTTSModel,
       'input': request.text,
-      'voice': request.voice ?? openaiDefaultVoice,
+      'voice': request.voice ?? openaiStyleDefaultVoice,
       if (request.format != null) 'response_format': request.format,
       if (request.speed != null) 'speed': request.speed,
     };
@@ -135,7 +135,7 @@ class OpenAIAudio
     }
 
     formData.fields.add(
-      MapEntry('model', request.model ?? openaiDefaultSTTModel),
+      MapEntry('model', request.model ?? openaiStyleDefaultSTTModel),
     );
     if (request.language != null) {
       formData.fields.add(MapEntry('language', request.language!));
@@ -193,7 +193,7 @@ class OpenAIAudio
     }
 
     formData.fields.add(
-      MapEntry('model', request.model ?? openaiDefaultSTTModel),
+      MapEntry('model', request.model ?? openaiStyleDefaultSTTModel),
     );
     if (request.prompt != null) {
       formData.fields.add(MapEntry('prompt', request.prompt!));

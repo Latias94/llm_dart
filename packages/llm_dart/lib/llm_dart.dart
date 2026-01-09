@@ -26,17 +26,7 @@ export 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart'
         xaiBaseUrl,
         xaiDefaultModel,
         phindBaseUrl,
-        phindDefaultModel,
-        openaiDefaultTTSModel,
-        openaiDefaultSTTModel,
-        openaiDefaultVoice,
-        openaiSupportedVoices,
-        openaiSupportedTTSFormats,
-        openaiSupportedSTTFormats,
-        openaiSupportedImageSizes,
-        openaiSupportedImageFormats,
-        OpenAIAudio,
-        OpenAIImages;
+        phindDefaultModel;
 export 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart'
     hide anthropicBaseUrl, anthropicDefaultModel;
 export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';

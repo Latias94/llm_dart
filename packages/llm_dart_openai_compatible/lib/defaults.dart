@@ -37,12 +37,15 @@ const String togetherAIBaseUrl = 'https://api.together.xyz/v1/';
 const String togetherAIDefaultModel = 'meta-llama/Llama-3-70b-chat-hf';
 
 // OpenAI-compatible media defaults (shared by OpenAI-style endpoints).
-const String openaiDefaultTTSModel = 'tts-1';
-const String openaiDefaultSTTModel = 'whisper-1';
-const String openaiDefaultVoice = 'alloy';
+//
+// Note: These are intentionally prefixed with `openaiStyle*` to avoid symbol
+// collisions with the dedicated `llm_dart_openai` provider package defaults.
+const String openaiStyleDefaultTTSModel = 'tts-1';
+const String openaiStyleDefaultSTTModel = 'whisper-1';
+const String openaiStyleDefaultVoice = 'alloy';
 
 // Supported voices (OpenAI-style TTS).
-const List<String> openaiSupportedVoices = [
+const List<String> openaiStyleSupportedVoices = [
   'alloy',
   'ash',
   'ballad',
@@ -57,7 +60,7 @@ const List<String> openaiSupportedVoices = [
 ];
 
 // Supported audio formats for TTS output.
-const List<String> openaiSupportedTTSFormats = [
+const List<String> openaiStyleSupportedTTSFormats = [
   'mp3',
   'opus',
   'aac',
@@ -67,7 +70,7 @@ const List<String> openaiSupportedTTSFormats = [
 ];
 
 // Supported audio formats for STT input.
-const List<String> openaiSupportedSTTFormats = [
+const List<String> openaiStyleSupportedSTTFormats = [
   'flac',
   'm4a',
   'mp3',
@@ -81,7 +84,7 @@ const List<String> openaiSupportedSTTFormats = [
 ];
 
 // Supported image sizes (OpenAI-style image generation).
-const List<String> openaiSupportedImageSizes = [
+const List<String> openaiStyleSupportedImageSizes = [
   '256x256',
   '512x512',
   '1024x1024',
@@ -90,7 +93,7 @@ const List<String> openaiSupportedImageSizes = [
 ];
 
 // Supported image formats (OpenAI-style image generation).
-const List<String> openaiSupportedImageFormats = [
+const List<String> openaiStyleSupportedImageFormats = [
   'url',
   'b64_json',
 ];
