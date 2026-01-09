@@ -76,6 +76,48 @@ void main() {
 
       expect(headersLower.containsKey('authorization'), isFalse);
       expect(headersLower['x-test'], equals('1'));
+      expect(headersLower['user-agent'], equals('llm_dart/openai-compatible'));
+    });
+
+    test('allows overriding default user-agent header', () async {
+      final llmConfig = LLMConfig(
+        apiKey: null,
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'gpt-4o',
+        providerOptions: const {
+          'openai-compatible': {
+            'headers': {
+              'User-Agent': 'my-agent/1.0',
+            },
+          },
+        },
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'openai-compatible',
+        providerName: 'OpenAI-compatible',
+      );
+
+      final client = OpenAIClient(config);
+      final adapter = _CapturingHttpClientAdapter();
+      client.dio.httpClientAdapter = adapter;
+
+      await client.postJson('chat/completions', {
+        'model': 'gpt-4o',
+        'messages': const [],
+        'stream': false,
+      });
+
+      final options = adapter.lastOptions;
+      expect(options, isNotNull);
+
+      final headersLower = <String, String>{};
+      for (final entry in options!.headers.entries) {
+        headersLower[entry.key.toLowerCase()] = entry.value.toString();
+      }
+
+      expect(headersLower['user-agent'], equals('my-agent/1.0'));
     });
 
     test('appends queryParams to request URLs', () async {
@@ -111,6 +153,36 @@ void main() {
       final options = adapter.lastOptions;
       expect(options, isNotNull);
       expect(options!.uri.queryParameters['foo'], equals('bar'));
+    });
+
+    test('does not append query string when queryParams is not specified',
+        () async {
+      final llmConfig = LLMConfig(
+        apiKey: null,
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'gpt-4o',
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'openai-compatible',
+        providerName: 'OpenAI-compatible',
+      );
+
+      final client = OpenAIClient(config);
+      final adapter = _CapturingHttpClientAdapter();
+      client.dio.httpClientAdapter = adapter;
+
+      await client.postJson('chat/completions', {
+        'model': 'gpt-4o',
+        'messages': const [],
+        'stream': false,
+      });
+
+      final options = adapter.lastOptions;
+      expect(options, isNotNull);
+      expect(options!.uri.queryParameters, isEmpty);
+      expect(options.uri.toString().contains('?'), isFalse);
     });
 
     test('includeUsage adds stream_options.include_usage=true for streaming',
