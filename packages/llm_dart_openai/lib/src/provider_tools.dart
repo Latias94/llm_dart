@@ -12,7 +12,7 @@ import 'web_search_context_size.dart';
 /// Stable ids follow the Vercel-style convention:
 /// - `openai.web_search_preview`
 /// - `openai.file_search`
-/// - `openai.computer_use_preview`
+/// - `openai.computer_use`
 class OpenAIProviderTools {
   static const String _prefix = 'openai.';
 
@@ -46,7 +46,7 @@ class OpenAIProviderTools {
     Map<String, dynamic>? parameters,
   }) {
     return ProviderTool(
-      id: '${_prefix}computer_use_preview',
+      id: '${_prefix}computer_use',
       options: {
         'display_width': displayWidth,
         'display_height': displayHeight,

@@ -31,7 +31,7 @@ void main() {
         parameters: const {'timeout': 30},
       );
 
-      expect(tool.id, equals('openai.computer_use_preview'));
+      expect(tool.id, equals('openai.computer_use'));
       expect(tool.options['display_width'], equals(1024));
       expect(tool.options['display_height'], equals(768));
       expect(tool.options['environment'], equals('browser'));

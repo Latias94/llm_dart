@@ -538,7 +538,8 @@ class OpenAIProviderFactory
           );
           break;
 
-        case 'openai.computer_use_preview':
+        case 'openai.computer_use':
+        case 'openai.computer_use_preview': // legacy alias
           final displayWidth = (tool.options['displayWidth'] as int?) ??
               (tool.options['display_width'] as int?);
           final displayHeight = (tool.options['displayHeight'] as int?) ??
@@ -549,7 +550,7 @@ class OpenAIProviderFactory
               displayHeight == null ||
               environment == null) {
             throw const InvalidRequestError(
-              'OpenAI computer use requires ProviderTool(id: "openai.computer_use_preview") '
+              'OpenAI computer use requires ProviderTool(id: "openai.computer_use") '
               'to include displayWidth, displayHeight, and environment in options.',
             );
           }

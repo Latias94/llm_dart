@@ -37,7 +37,7 @@ void main() {
       expect(builder.currentConfig.providerTools, isNotNull);
       expect(
         builder.currentConfig.providerTools!.map((t) => t.id).toList(),
-        contains('openai.computer_use_preview'),
+        contains('openai.computer_use'),
       );
     });
   });
