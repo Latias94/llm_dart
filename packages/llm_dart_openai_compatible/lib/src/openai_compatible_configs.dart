@@ -3,6 +3,19 @@ import '../defaults.dart';
 
 import 'openai_compatible_provider_config.dart';
 
+const String _deepseekOpenAIBaseUrl = 'https://api.deepseek.com/v1/';
+const String _deepseekOpenAIDefaultModel = 'deepseek-chat';
+
+const String _groqOpenAIBaseUrl = 'https://api.groq.com/openai/v1/';
+const String _groqOpenAIDefaultModel = 'llama-3.3-70b-versatile';
+
+const String _xaiOpenAIBaseUrl = 'https://api.x.ai/v1/';
+const String _xaiOpenAIDefaultModel = 'grok-3';
+
+const String _googleOpenAIBaseUrl =
+    'https://generativelanguage.googleapis.com/v1beta/openai/';
+const String _googleOpenAIDefaultModel = 'gemini-2.0-flash';
+
 /// Pre-configured OpenAI-compatible provider configurations
 ///
 /// This file contains configurations for popular AI providers that offer
@@ -22,8 +35,8 @@ class OpenAICompatibleConfigs {
     providerId: 'deepseek-openai',
     displayName: 'DeepSeek (OpenAI-compatible)',
     description: 'DeepSeek AI models using OpenAI-compatible interface',
-    defaultBaseUrl: deepseekBaseUrl,
-    defaultModel: deepseekDefaultModel,
+    defaultBaseUrl: _deepseekOpenAIBaseUrl,
+    defaultModel: _deepseekOpenAIDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
@@ -33,8 +46,8 @@ class OpenAICompatibleConfigs {
     providerId: 'google-openai',
     displayName: 'Google Gemini (OpenAI-compatible)',
     description: 'Google Gemini models using OpenAI-compatible interface',
-    defaultBaseUrl: googleOpenAIBaseUrl,
-    defaultModel: googleOpenAIDefaultModel,
+    defaultBaseUrl: _googleOpenAIBaseUrl,
+    defaultModel: _googleOpenAIDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
@@ -44,8 +57,8 @@ class OpenAICompatibleConfigs {
     providerId: 'xai-openai',
     displayName: 'xAI Grok (OpenAI-compatible)',
     description: 'xAI Grok models using OpenAI-compatible interface',
-    defaultBaseUrl: xaiBaseUrl,
-    defaultModel: xaiDefaultModel,
+    defaultBaseUrl: _xaiOpenAIBaseUrl,
+    defaultModel: _xaiOpenAIDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
@@ -56,8 +69,8 @@ class OpenAICompatibleConfigs {
     displayName: 'Groq (OpenAI-compatible)',
     description:
         'Groq AI models using OpenAI-compatible interface for ultra-fast inference',
-    defaultBaseUrl: groqBaseUrl,
-    defaultModel: groqDefaultModel,
+    defaultBaseUrl: _groqOpenAIBaseUrl,
+    defaultModel: _groqOpenAIDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
