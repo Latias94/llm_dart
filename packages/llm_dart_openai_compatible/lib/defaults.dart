@@ -16,9 +16,6 @@ const String groqDefaultModel = 'llama-3.3-70b-versatile';
 const String xaiBaseUrl = 'https://api.x.ai/v1/';
 const String xaiDefaultModel = 'grok-3';
 
-const String phindBaseUrl = 'https://api.phind.com/v1/';
-const String phindDefaultModel = 'Phind-70B';
-
 // OpenRouter (OpenAI-compatible).
 const String openRouterBaseUrl = 'https://openrouter.ai/api/v1/';
 const String openRouterDefaultModel = 'openai/gpt-4';

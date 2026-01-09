@@ -1,7 +1,8 @@
 /// Phind defaults (OpenAI-compatible).
 ///
-/// Duplicated here (instead of re-exporting `llm_dart_openai_compatible`) to
-/// keep provider packages from leaking protocol-layer package names.
+/// These defaults intentionally live in the provider package (instead of the
+/// protocol layer) to avoid confusing "OpenAI-compatible presets" with
+/// first-party provider packages.
 library;
 
 const String phindBaseUrl = 'https://api.phind.com/v1/';

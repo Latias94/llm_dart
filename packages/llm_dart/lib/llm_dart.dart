@@ -24,9 +24,7 @@ export 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart'
         groqBaseUrl,
         groqDefaultModel,
         xaiBaseUrl,
-        xaiDefaultModel,
-        phindBaseUrl,
-        phindDefaultModel;
+        xaiDefaultModel;
 export 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart'
     hide anthropicBaseUrl, anthropicDefaultModel;
 export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
