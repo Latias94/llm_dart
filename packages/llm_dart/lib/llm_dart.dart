@@ -31,6 +31,7 @@ export 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart
     hide anthropicBaseUrl, anthropicDefaultModel;
 export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 export 'package:llm_dart_google/llm_dart_google.dart';
+export 'package:llm_dart_google_vertex/llm_dart_google_vertex.dart';
 export 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
 export 'package:llm_dart_ollama/llm_dart_ollama.dart';
 export 'package:llm_dart_xai/llm_dart_xai.dart';

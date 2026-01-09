@@ -16,6 +16,7 @@ workspace:
   - packages/llm_dart_deepseek
   - packages/llm_dart_elevenlabs
   - packages/llm_dart_google
+  - packages/llm_dart_google_vertex
   - packages/llm_dart_groq
   - packages/llm_dart_minimax
   - packages/llm_dart_ollama
@@ -38,6 +39,7 @@ dev_dependencies:
   llm_dart_anthropic_compatible: ^0.11.0-alpha.1
   llm_dart_anthropic: ^0.11.0-alpha.1
   llm_dart_google: ^0.11.0-alpha.1
+  llm_dart_google_vertex: ^0.11.0-alpha.1
   llm_dart_deepseek: ^0.11.0-alpha.1
   llm_dart_ollama: ^0.11.0-alpha.1
   llm_dart_xai: ^0.11.0-alpha.1

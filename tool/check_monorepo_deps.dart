@@ -161,6 +161,19 @@ Set<String>? _allowedInternalDepsFor({
     return const {'llm_dart_core', 'llm_dart_provider_utils'};
   }
 
+  // Temporary exception: `llm_dart_google_vertex` currently reuses the
+  // implementation from `llm_dart_google` to keep package granularity aligned
+  // with Vercel AI SDK. Once we extract a shared Google Generative AI protocol
+  // package, this dependency should be removed and this exception deleted.
+  if (packageName == 'llm_dart_google_vertex') {
+    return {
+      'llm_dart_core',
+      'llm_dart_provider_utils',
+      'llm_dart_google',
+      ...protocolPackages,
+    };
+  }
+
   // Provider packages: allow core + provider_utils + protocol reuse packages.
   return {'llm_dart_core', 'llm_dart_provider_utils', ...protocolPackages};
 }

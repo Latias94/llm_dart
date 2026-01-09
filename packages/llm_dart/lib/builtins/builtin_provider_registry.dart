@@ -4,6 +4,7 @@ import 'package:llm_dart_azure/llm_dart_azure.dart';
 import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
 import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_google_vertex/llm_dart_google_vertex.dart';
 import 'package:llm_dart_groq/llm_dart_groq.dart';
 import 'package:llm_dart_minimax/llm_dart_minimax.dart';
 import 'package:llm_dart_ollama/llm_dart_ollama.dart';
@@ -52,6 +53,7 @@ class BuiltinProviderRegistry {
         _isRegistered('deepseek') &&
         _isRegistered('ollama') &&
         _isRegistered('google') &&
+        _isRegistered('google-vertex') &&
         _isRegistered('xai') &&
         _isRegistered('xai.responses') &&
         _isRegistered('groq') &&
@@ -102,6 +104,7 @@ class BuiltinProviderRegistry {
       registerDeepSeek();
       registerOllama();
       registerGoogle();
+      registerGoogleVertex();
       registerXAI();
       registerGroq();
       registerElevenLabs();
