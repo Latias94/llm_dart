@@ -1,6 +1,14 @@
 import 'package:dio/dio.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'openai_compatible_config.dart';
 import 'openai_request_config.dart';
+
+const String _defaultOpenAICompatibleUserAgent = 'llm_dart/openai-compatible';
+
+bool _hasHeaderIgnoreCase(Map<String, String> headers, String headerName) {
+  final needle = headerName.toLowerCase();
+  return headers.keys.any((k) => k.toLowerCase() == needle);
+}
 
 /// OpenAI-specific Dio strategy implementation
 ///
@@ -38,6 +46,11 @@ class OpenAIDioStrategy extends BaseProviderDioStrategy {
     final extra = openaiConfig.extraHeaders;
     if (extra != null && extra.isNotEmpty) {
       headers.addAll(extra);
+    }
+
+    if (openaiConfig is OpenAICompatibleConfig &&
+        !_hasHeaderIgnoreCase(headers, 'user-agent')) {
+      headers['User-Agent'] = _defaultOpenAICompatibleUserAgent;
     }
     return headers;
   }

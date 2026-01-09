@@ -207,6 +207,7 @@ void main() {
 
       expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
+      expect(headers['User-Agent'], equals('llm_dart/openai-compatible'));
     });
 
     test('Groq should use standard OpenAI-compatible headers', () {
@@ -257,7 +258,8 @@ void main() {
 
       final last = adapter.lastOptions;
       expect(last, isNotNull);
-      expect(last!.uri.queryParameters['api-version'], equals('2024-10-01-preview'));
+      expect(last!.uri.queryParameters['api-version'],
+          equals('2024-10-01-preview'));
     });
 
     test('OllamaDioStrategy should build correct headers', () {
