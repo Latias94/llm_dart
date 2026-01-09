@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_openai/client.dart';
-import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
-import 'package:llm_dart_openai/responses.dart' as openai_responses;
+import 'package:llm_dart_azure/config.dart';
+import 'package:llm_dart_openai_compatible/client.dart';
+import 'package:llm_dart_openai_compatible/responses.dart' as openai_responses;
 import 'package:test/test.dart';
 
 import '../../utils/fixture_replay.dart';
@@ -118,7 +118,7 @@ void main() {
             return;
           }
 
-          final config = openai_client.OpenAIConfig(
+          final config = AzureOpenAIConfig(
             apiKey: 'test-key',
             baseUrl: 'https://example.azure.com/openai/',
             model: raw['model'] as String? ?? 'gpt-4.1-mini',
@@ -136,7 +136,7 @@ void main() {
           final output = raw['output'] as List;
 
           final meta =
-              response.providerMetadata?['openai'] as Map<String, dynamic>?;
+              response.providerMetadata?['azure'] as Map<String, dynamic>?;
           expect(meta, isNotNull);
 
           if (output.any((i) => i is Map && i['type'] == 'web_search_call')) {
@@ -181,7 +181,7 @@ void main() {
           final streams =
               sessionLines.map(sseStreamFromJsonLines).toList(growable: false);
 
-          final config = openai_client.OpenAIConfig(
+          final config = AzureOpenAIConfig(
             apiKey: 'test-key',
             baseUrl: 'https://example.azure.com/openai/',
             model: 'gpt-4.1-mini',
@@ -210,9 +210,8 @@ void main() {
               if (finishParts.isEmpty) continue;
               final finish = finishParts.last;
 
-              final meta =
-                  finish.response.providerMetadata?['openai'] as Map? ??
-                      const {};
+              final meta = finish.response.providerMetadata?['azure'] as Map? ??
+                  const {};
               final openaiMeta = meta is Map<String, dynamic>
                   ? meta
                   : Map<String, dynamic>.from(meta as Map);
@@ -274,7 +273,7 @@ void main() {
 
           final lastMeta = finishes.isEmpty
               ? null
-              : finishes.last.response.providerMetadata?['openai'];
+              : finishes.last.response.providerMetadata?['azure'];
           if (lastMeta is Map) {
             expect(lastMeta['id'], isNotNull);
             expect(lastMeta['model'], isNotNull);

@@ -10,6 +10,7 @@ workspace:
   - packages/llm_dart_ai
   - packages/llm_dart_anthropic
   - packages/llm_dart_anthropic_compatible
+  - packages/llm_dart_azure
   - packages/llm_dart_builder
   - packages/llm_dart_core
   - packages/llm_dart_deepseek
@@ -31,6 +32,7 @@ dev_dependencies:
   llm_dart_builder: ^0.11.0-alpha.1
   llm_dart_core: ^0.11.0-alpha.1
   llm_dart_provider_utils: ^0.11.0-alpha.1
+  llm_dart_azure: ^0.11.0-alpha.1
   llm_dart_openai: ^0.11.0-alpha.1
   llm_dart_openai_compatible: ^0.11.0-alpha.1
   llm_dart_anthropic_compatible: ^0.11.0-alpha.1

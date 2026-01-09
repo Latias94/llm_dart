@@ -1,5 +1,6 @@
 import 'package:logging/logging.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_azure/llm_dart_azure.dart';
 import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
 import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
@@ -46,6 +47,7 @@ class BuiltinProviderRegistry {
   /// while still allowing low-level users to manage the registry manually.
   static void ensureRegistered() {
     if (_isRegistered('openai') &&
+        _isRegistered('azure') &&
         _isRegistered('anthropic') &&
         _isRegistered('deepseek') &&
         _isRegistered('ollama') &&
@@ -95,6 +97,7 @@ class BuiltinProviderRegistry {
   static void registerAll() {
     try {
       registerOpenAI();
+      registerAzure();
       registerAnthropic();
       registerDeepSeek();
       registerOllama();
