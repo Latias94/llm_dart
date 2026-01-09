@@ -130,9 +130,13 @@ class DioClientFactory {
     ProviderDioStrategy strategy,
     dynamic config,
   ) {
+    final dynamic rawModel = config.model;
+    final model =
+        rawModel is String && rawModel.trim().isNotEmpty ? rawModel : 'unknown';
+
     return LLMConfig(
       baseUrl: strategy.getBaseUrl(config),
-      model: config.model,
+      model: model,
       apiKey: config.apiKey,
       timeout: strategy.getTimeout(config),
     );

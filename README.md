@@ -26,6 +26,7 @@ Recommended mental model (Vercel AI SDK style):
 | **Use streaming** | [Streaming example](example/02_core_features/streaming_chat.dart) |
 | **Cancel requests** | [Cancellation demo](example/02_core_features/cancellation_demo.dart) |
 | **Call functions** | [Tool calling](example/02_core_features/tool_calling.dart) |
+| **Read providerMetadata** | [providerMetadata conventions](docs/provider_metadata.md) |
 | **Search the web** | [Web search](example/02_core_features/web_search.dart) |
 | **Generate embeddings** | [Embeddings](example/02_core_features/embeddings.dart) |
 | **Moderate content** | [Content moderation](example/02_core_features/content_moderation.dart) |

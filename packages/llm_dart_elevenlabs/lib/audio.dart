@@ -83,15 +83,36 @@ class ElevenLabsAudio
 
   ElevenLabsAudio(this.client, this.config);
 
+  Map<String, dynamic> _buildProviderMetadata(
+    String endpoint, {
+    required String capability,
+    required String model,
+    String? voice,
+  }) {
+    final payload = <String, dynamic>{
+      'model': model,
+      'endpoint': endpoint,
+      if (voice != null) 'voice': voice,
+    };
+
+    return {
+      config.providerId: payload,
+      '${config.providerId}.$capability': payload,
+    };
+  }
+
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
     CancelToken? cancelToken,
   }) async {
+    final voiceUsed = request.voice ?? config.defaultVoiceId;
+    final modelUsed = request.model ?? config.defaultTTSModel;
+
     final response = await _textToSpeechInternal(
       request.text,
-      voiceId: request.voice,
-      model: request.model,
+      voiceId: voiceUsed,
+      model: modelUsed,
       languageCode: request.languageCode,
       seed: request.seed,
       previousText: request.previousText,
@@ -108,11 +129,17 @@ class ElevenLabsAudio
     return TTSResponse(
       audioData: response.audioData,
       contentType: response.contentType,
-      voice: request.voice,
-      model: request.model,
+      voice: voiceUsed,
+      model: modelUsed,
       duration: null,
       sampleRate: null,
       usage: null,
+      providerMetadata: _buildProviderMetadata(
+        'text-to-speech/$voiceUsed',
+        capability: 'speech',
+        model: modelUsed,
+        voice: voiceUsed,
+      ),
     );
   }
 
@@ -217,11 +244,12 @@ class ElevenLabsAudio
     CancelToken? cancelToken,
   }) async {
     late ElevenLabsSTTResponse response;
+    final modelUsed = request.model ?? config.defaultSTTModel;
 
     if (request.audioData != null) {
       response = await _speechToTextInternal(
         Uint8List.fromList(request.audioData!),
-        model: request.model,
+        model: modelUsed,
         languageCode: request.language,
         tagAudioEvents: request.tagAudioEvents,
         numSpeakers: request.numSpeakers,
@@ -234,7 +262,7 @@ class ElevenLabsAudio
     } else if (request.filePath != null) {
       response = await _speechToTextFromFileInternal(
         request.filePath!,
-        model: request.model,
+        model: modelUsed,
         languageCode: request.language,
         tagAudioEvents: request.tagAudioEvents,
         numSpeakers: request.numSpeakers,
@@ -261,10 +289,15 @@ class ElevenLabsAudio
                 confidence: null,
               ))
           .toList(),
-      model: request.model,
+      model: modelUsed,
       duration: null,
       usage: null,
       additionalFormats: response.additionalFormats,
+      providerMetadata: _buildProviderMetadata(
+        'speech-to-text',
+        capability: 'transcription',
+        model: modelUsed,
+      ),
     );
   }
 

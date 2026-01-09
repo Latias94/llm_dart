@@ -5,6 +5,7 @@ import 'defaults.dart';
 class ElevenLabsConfig {
   final String apiKey;
   final String baseUrl;
+  final String providerId;
   final String? voiceId;
   final String? model;
   final Duration? timeout;
@@ -18,6 +19,7 @@ class ElevenLabsConfig {
   const ElevenLabsConfig({
     required this.apiKey,
     this.baseUrl = elevenLabsBaseUrl,
+    this.providerId = elevenLabsProviderId,
     this.voiceId,
     this.model,
     this.timeout,
@@ -32,6 +34,7 @@ class ElevenLabsConfig {
     return ElevenLabsConfig(
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
+      providerId: elevenLabsProviderId,
       model: config.model,
       timeout: config.timeout,
       voiceId: config.getProviderOption<String>('elevenlabs', 'voiceId'),
@@ -77,6 +80,7 @@ class ElevenLabsConfig {
   ElevenLabsConfig copyWith({
     String? apiKey,
     String? baseUrl,
+    String? providerId,
     String? voiceId,
     String? model,
     Duration? timeout,
@@ -88,6 +92,7 @@ class ElevenLabsConfig {
       ElevenLabsConfig(
         apiKey: apiKey ?? this.apiKey,
         baseUrl: baseUrl ?? this.baseUrl,
+        providerId: providerId ?? this.providerId,
         voiceId: voiceId ?? this.voiceId,
         model: model ?? this.model,
         timeout: timeout ?? this.timeout,

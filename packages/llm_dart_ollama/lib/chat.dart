@@ -675,22 +675,24 @@ class OllamaChatResponse implements ChatResponse {
       usage = null;
     }
 
+    final payload = {
+      if (model != null) 'model': model,
+      if (createdAt != null) 'createdAt': createdAt,
+      if (doneReason != null) 'doneReason': doneReason,
+      if (doneReason != null) 'finishReason': doneReason,
+      if (usage != null) 'usage': usage,
+      if (totalDuration != null) 'totalDuration': totalDuration,
+      if (loadDuration != null) 'loadDuration': loadDuration,
+      if (promptEvalCount != null) 'promptEvalCount': promptEvalCount,
+      if (promptEvalDuration != null) 'promptEvalDuration': promptEvalDuration,
+      if (evalCount != null) 'evalCount': evalCount,
+      if (evalDuration != null) 'evalDuration': evalDuration,
+      if (context != null) 'context': context,
+    };
+
     return {
-      'ollama': {
-        if (model != null) 'model': model,
-        if (createdAt != null) 'createdAt': createdAt,
-        if (doneReason != null) 'doneReason': doneReason,
-        if (doneReason != null) 'finishReason': doneReason,
-        if (usage != null) 'usage': usage,
-        if (totalDuration != null) 'totalDuration': totalDuration,
-        if (loadDuration != null) 'loadDuration': loadDuration,
-        if (promptEvalCount != null) 'promptEvalCount': promptEvalCount,
-        if (promptEvalDuration != null)
-          'promptEvalDuration': promptEvalDuration,
-        if (evalCount != null) 'evalCount': evalCount,
-        if (evalDuration != null) 'evalDuration': evalDuration,
-        if (context != null) 'context': context,
-      },
+      'ollama': payload,
+      'ollama.chat': payload,
     };
   }
 

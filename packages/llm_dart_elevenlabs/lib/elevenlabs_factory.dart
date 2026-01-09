@@ -7,8 +7,6 @@ import 'defaults.dart';
 import 'config.dart';
 import 'provider.dart';
 
-const String elevenLabsProviderId = 'elevenlabs';
-
 void registerElevenLabs({bool replace = false}) {
   if (!replace && LLMProviderRegistry.isRegistered(elevenLabsProviderId)) {
     return;
