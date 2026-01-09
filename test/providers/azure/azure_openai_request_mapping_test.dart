@@ -61,6 +61,38 @@ void main() {
         ttsRequest.uri.queryParameters['api-version'],
         equals('2024-10-01-preview'),
       );
+
+      await provider.speechToText(
+        const STTRequest(audioData: [1, 2, 3]),
+      );
+
+      final sttRequest = adapter.lastRequest;
+      expect(sttRequest, isNotNull);
+      expect(sttRequest!.method.toUpperCase(), equals('POST'));
+      expect(
+        sttRequest.uri.toString(),
+        contains('/openai/v1/audio/transcriptions'),
+      );
+      expect(
+        sttRequest.uri.queryParameters['api-version'],
+        equals('2024-10-01-preview'),
+      );
+
+      await provider.translateAudio(
+        const AudioTranslationRequest(audioData: [1, 2, 3]),
+      );
+
+      final translationRequest = adapter.lastRequest;
+      expect(translationRequest, isNotNull);
+      expect(translationRequest!.method.toUpperCase(), equals('POST'));
+      expect(
+        translationRequest.uri.toString(),
+        contains('/openai/v1/audio/translations'),
+      );
+      expect(
+        translationRequest.uri.queryParameters['api-version'],
+        equals('2024-10-01-preview'),
+      );
     });
 
     test('deployment-based URL: images include deployments/{deployment}', () async {
@@ -90,6 +122,40 @@ void main() {
       expect(
         req!.uri.toString(),
         contains('/openai/deployments/deployment_1/images/generations'),
+      );
+      expect(
+        req.uri.queryParameters['api-version'],
+        equals('2024-10-01-preview'),
+      );
+    });
+
+    test('deployment-based URL: audio includes deployments/{deployment}', () async {
+      final adapter = _CapturingHttpClientAdapter();
+      final customDio = Dio()..httpClientAdapter = adapter;
+
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://example.openai.azure.com/openai',
+        model: 'deployment_1',
+      )
+          .withProviderOptions('azure', {
+            'apiVersion': '2024-10-01-preview',
+            'useDeploymentBasedUrls': true,
+          })
+          .withTransportOptions({'customDio': customDio});
+
+      final factory = AzureOpenAIProviderFactory();
+      final provider = factory.create(llmConfig) as AzureOpenAIProvider;
+
+      await provider.textToSpeech(
+        const TTSRequest(text: 'hello'),
+      );
+
+      final req = adapter.lastRequest;
+      expect(req, isNotNull);
+      expect(
+        req!.uri.toString(),
+        contains('/openai/deployments/deployment_1/audio/speech'),
       );
       expect(
         req.uri.queryParameters['api-version'],
