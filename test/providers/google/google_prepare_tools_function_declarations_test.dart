@@ -2,21 +2,7 @@ import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_google/client.dart';
 import 'package:test/test.dart';
 
-class _CapturingGoogleClient extends GoogleClient {
-  Map<String, dynamic>? lastBody;
-
-  _CapturingGoogleClient(super.config);
-
-  @override
-  Stream<String> postStreamRaw(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) {
-    lastBody = data;
-    return Stream<String>.empty();
-  }
-}
+import '../../utils/fakes/fakes.dart';
 
 void main() {
   group('Google functionDeclarations request shaping (AI SDK parity)', () {
@@ -29,7 +15,7 @@ void main() {
 
       final config =
           GoogleConfig.fromLLMConfig(llmConfig).copyWith(stream: true);
-      final client = _CapturingGoogleClient(config);
+      final client = FakeGoogleClient(config);
       final chat = GoogleChat(client, config);
 
       await chat.chatStreamParts(
@@ -73,7 +59,7 @@ void main() {
 
       final config =
           GoogleConfig.fromLLMConfig(llmConfig).copyWith(stream: true);
-      final client = _CapturingGoogleClient(config);
+      final client = FakeGoogleClient(config);
       final chat = GoogleChat(client, config);
 
       await chat.chatStreamParts(

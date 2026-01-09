@@ -1,37 +1,10 @@
 import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_google/client.dart';
 import 'package:llm_dart_google/images.dart';
 import 'package:test/test.dart';
 
-class _CapturingGoogleClient extends GoogleClient {
-  final Map<String, Map<String, dynamic>> _responsesByEndpoint;
-
-  String? lastEndpoint;
-  Map<String, dynamic>? lastBody;
-
-  _CapturingGoogleClient(
-    super.config, {
-    required Map<String, Map<String, dynamic>> responsesByEndpoint,
-  }) : _responsesByEndpoint = responsesByEndpoint;
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastBody = data;
-
-    final response = _responsesByEndpoint[endpoint];
-    if (response == null) {
-      throw StateError('No fake response registered for endpoint: $endpoint');
-    }
-    return response;
-  }
-}
+import '../../utils/fakes/fakes.dart';
 
 void main() {
   group('GoogleImages', () {
@@ -48,7 +21,7 @@ void main() {
       final pngBytes1 = <int>[1, 2, 3, 4];
       final pngBytes2 = <int>[5, 6, 7, 8];
 
-      final client = _CapturingGoogleClient(
+      final client = FakeGoogleClient(
         config,
         responsesByEndpoint: {
           endpoint: {
@@ -116,7 +89,7 @@ void main() {
       final endpoint = 'models/$model:generateContent';
       final webpBytes = <int>[9, 10, 11];
 
-      final client = _CapturingGoogleClient(
+      final client = FakeGoogleClient(
         config,
         responsesByEndpoint: {
           endpoint: {
@@ -199,7 +172,7 @@ void main() {
       final inputBytes = <int>[1, 1, 2, 3];
       final outputBytes = <int>[7, 7, 8];
 
-      final client = _CapturingGoogleClient(
+      final client = FakeGoogleClient(
         config,
         responsesByEndpoint: {
           endpoint: {
@@ -276,7 +249,7 @@ void main() {
       final inputBytes = <int>[4, 5, 6];
       final outputBytes = <int>[7, 8, 9];
 
-      final client = _CapturingGoogleClient(
+      final client = FakeGoogleClient(
         config,
         responsesByEndpoint: {
           endpoint: {
@@ -338,7 +311,7 @@ void main() {
     test('editImage throws when ImageInput has no data or url', () async {
       final config =
           GoogleConfig(apiKey: 'test-key', model: 'gemini-1.5-flash');
-      final client = _CapturingGoogleClient(config, responsesByEndpoint: {});
+      final client = FakeGoogleClient(config);
       final images = GoogleImages(client, config);
 
       expect(
@@ -355,7 +328,7 @@ void main() {
     test('createVariation throws when ImageInput has no data or url', () async {
       final config =
           GoogleConfig(apiKey: 'test-key', model: 'gemini-1.5-flash');
-      final client = _CapturingGoogleClient(config, responsesByEndpoint: {});
+      final client = FakeGoogleClient(config);
       final images = GoogleImages(client, config);
 
       expect(
@@ -376,7 +349,7 @@ void main() {
       final endpoint = 'models/$model:generateContent';
       final pngBytes = <int>[0, 1, 2];
 
-      final client = _CapturingGoogleClient(
+      final client = FakeGoogleClient(
         config,
         responsesByEndpoint: {
           endpoint: {

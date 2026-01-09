@@ -5,6 +5,8 @@ import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:llm_dart_openai/client.dart';
 import 'package:test/test.dart';
 
+import '../../utils/fakes/fakes.dart';
+
 void main() {
   group('OpenAI Responses ToolNameMapping', () {
     Tool functionToolNamed(String name) {
@@ -30,8 +32,8 @@ void main() {
         toolChoice: const SpecificToolChoice('web_search_preview'),
       );
 
-      final client =
-          _CapturingOpenAIClient(config, response: const <String, dynamic>{});
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = const <String, dynamic>{};
       final responses = openai_responses.OpenAIResponses(client, config);
 
       await responses.chatWithTools(
@@ -39,7 +41,7 @@ void main() {
         [functionToolNamed('web_search_preview')],
       );
 
-      final tools = (client.lastBody!['tools'] as List).cast<Map>();
+      final tools = (client.lastJsonBody!['tools'] as List).cast<Map>();
       expect(
         tools.where((t) => t['type'] == 'web_search_preview'),
         hasLength(1),
@@ -51,7 +53,7 @@ void main() {
       expect(functionTools.single['name'], equals('web_search_preview__1'));
 
       final toolChoice =
-          client.lastBody!['tool_choice'] as Map<String, dynamic>;
+          client.lastJsonBody!['tool_choice'] as Map<String, dynamic>;
       expect(toolChoice['type'], equals('function'));
       expect(toolChoice['name'], equals('web_search_preview__1'));
     });
@@ -65,9 +67,8 @@ void main() {
         builtInTools: const [OpenAIWebSearchTool()],
       );
 
-      final client = _CapturingOpenAIClient(
-        config,
-        response: const <String, dynamic>{
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = const <String, dynamic>{
           'output': [
             {
               'type': 'function_call',
@@ -76,8 +77,7 @@ void main() {
               'arguments': '{}',
             }
           ],
-        },
-      );
+        };
 
       final responses = openai_responses.OpenAIResponses(client, config);
 
@@ -92,22 +92,4 @@ void main() {
       expect(toolCalls!.single.function.name, equals('web_search_preview'));
     });
   });
-}
-
-class _CapturingOpenAIClient extends OpenAIClient {
-  final Map<String, dynamic> _response;
-  Map<String, dynamic>? lastBody;
-
-  _CapturingOpenAIClient(super.config, {required Map<String, dynamic> response})
-      : _response = response;
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    lastBody = body;
-    return _response;
-  }
 }

@@ -5,6 +5,8 @@ import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:llm_dart_openai/client.dart';
 import 'package:test/test.dart';
 
+import '../../utils/fakes/fakes.dart';
+
 void main() {
   group('OpenAI Responses API include options', () {
     test('should auto-include web search sources when web search tool present',
@@ -25,15 +27,15 @@ void main() {
         originalConfig: originalConfig,
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       final responses = openai_responses.OpenAIResponses(client, config);
 
       await responses.chat([ChatMessage.user('test')]);
 
-      expect(client.lastBody, isNotNull);
-      expect(client.lastBody!['include'], isA<List>());
+      expect(client.lastJsonBody, isNotNull);
+      expect(client.lastJsonBody!['include'], isA<List>());
       expect(
-        (client.lastBody!['include'] as List).cast<String>(),
+        (client.lastJsonBody!['include'] as List).cast<String>(),
         contains('web_search_call.action.sources'),
       );
     });
@@ -57,15 +59,15 @@ void main() {
         originalConfig: originalConfig,
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       final responses = openai_responses.OpenAIResponses(client, config);
 
       await responses.chat([ChatMessage.user('test')]);
 
-      expect(client.lastBody, isNotNull);
-      expect(client.lastBody!['include'], isA<List>());
+      expect(client.lastJsonBody, isNotNull);
+      expect(client.lastJsonBody!['include'], isA<List>());
       expect(
-        (client.lastBody!['include'] as List).cast<String>(),
+        (client.lastJsonBody!['include'] as List).cast<String>(),
         contains('file_search_call.results'),
       );
     });
@@ -95,15 +97,15 @@ void main() {
         originalConfig: originalConfig,
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       final responses = openai_responses.OpenAIResponses(client, config);
 
       await responses.chat([ChatMessage.user('test')]);
 
-      expect(client.lastBody, isNotNull);
-      expect(client.lastBody!['include'], isA<List>());
+      expect(client.lastJsonBody, isNotNull);
+      expect(client.lastJsonBody!['include'], isA<List>());
       expect(
-        (client.lastBody!['include'] as List).cast<String>(),
+        (client.lastJsonBody!['include'] as List).cast<String>(),
         contains('computer_call_output.output.image_url'),
       );
     });
@@ -126,15 +128,15 @@ void main() {
         originalConfig: originalConfig,
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       final responses = openai_responses.OpenAIResponses(client, config);
 
       await responses.chat([ChatMessage.user('test')]);
 
-      expect(client.lastBody, isNotNull);
-      expect(client.lastBody!['include'], isA<List>());
+      expect(client.lastJsonBody, isNotNull);
+      expect(client.lastJsonBody!['include'], isA<List>());
       expect(
-        (client.lastBody!['include'] as List).cast<String>(),
+        (client.lastJsonBody!['include'] as List).cast<String>(),
         contains('code_interpreter_call.outputs'),
       );
     });
@@ -164,12 +166,12 @@ void main() {
         originalConfig: originalConfig,
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       final responses = openai_responses.OpenAIResponses(client, config);
 
       await responses.chat([ChatMessage.user('test')]);
 
-      final include = (client.lastBody!['include'] as List).cast<String>();
+      final include = (client.lastJsonBody!['include'] as List).cast<String>();
       expect(include, contains('message.output_text.logprobs'));
       expect(include, contains('web_search_call.action.sources'));
       expect(include.toSet().length, equals(include.length));
@@ -196,31 +198,15 @@ void main() {
         originalConfig: originalConfig,
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       final responses = openai_responses.OpenAIResponses(client, config);
 
       await responses.chat([ChatMessage.user('test')]);
 
       expect(
-        (client.lastBody!['include'] as List).cast<String>(),
+        (client.lastJsonBody!['include'] as List).cast<String>(),
         equals(['message.output_text.logprobs']),
       );
     });
   });
-}
-
-class _CapturingOpenAIClient extends OpenAIClient {
-  Map<String, dynamic>? lastBody;
-
-  _CapturingOpenAIClient(super.config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    lastBody = body;
-    return {};
-  }
 }

@@ -4,6 +4,8 @@ import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:llm_dart_openai/client.dart';
 import 'package:test/test.dart';
 
+import '../../utils/fakes/fakes.dart';
+
 void main() {
   group('OpenAI escape hatches (extraBody/extraHeaders)', () {
     test('factory reads extraBody/extraHeaders from providerOptions', () async {
@@ -44,14 +46,14 @@ void main() {
         extraBody: const {'temperature': 0.123, 'foo': 'bar'},
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       final responses = openai_responses.OpenAIResponses(client, config);
 
       await responses.chat([ChatMessage.user('test')]);
 
-      expect(client.lastBody, isNotNull);
-      expect(client.lastBody!['temperature'], equals(0.123));
-      expect(client.lastBody!['foo'], equals('bar'));
+      expect(client.lastJsonBody, isNotNull);
+      expect(client.lastJsonBody!['temperature'], equals(0.123));
+      expect(client.lastJsonBody!['foo'], equals('bar'));
     });
 
     test('OpenAIClient injects extraHeaders into Dio headers', () {
@@ -66,20 +68,4 @@ void main() {
       expect(client.dio.options.headers['x-test'], equals('1'));
     });
   });
-}
-
-class _CapturingOpenAIClient extends OpenAIClient {
-  Map<String, dynamic>? lastBody;
-
-  _CapturingOpenAIClient(super.config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    lastBody = body;
-    return {};
-  }
 }

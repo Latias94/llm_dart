@@ -5,6 +5,8 @@ import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
 import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:test/test.dart';
 
+import '../../utils/fakes/fakes.dart';
+
 void main() {
   group('OpenAI Responses provider-native tools request mapping', () {
     test('serializes built-in tools into tools[]', () async {
@@ -28,12 +30,12 @@ void main() {
         ],
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       final responses = openai_responses.OpenAIResponses(client, config);
 
       await responses.chat([ChatMessage.user('hi')]);
 
-      final tools = (client.lastBody?['tools'] as List).cast<Map>();
+      final tools = (client.lastJsonBody?['tools'] as List).cast<Map>();
       final types = tools.map((t) => t['type']).toList();
 
       expect(
@@ -71,20 +73,4 @@ void main() {
       expect(mcp['server_label'], equals('test'));
     });
   });
-}
-
-class _CapturingOpenAIClient extends OpenAIClient {
-  Map<String, dynamic>? lastBody;
-
-  _CapturingOpenAIClient(super.config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    lastBody = body;
-    return const <String, dynamic>{};
-  }
 }

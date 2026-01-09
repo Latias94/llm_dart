@@ -4,32 +4,7 @@ import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_xai/responses.dart';
 import 'package:test/test.dart';
 
-class _CapturingOpenAIClient extends OpenAIClient {
-  Map<String, dynamic>? lastBody;
-  String? lastEndpoint;
-
-  _CapturingOpenAIClient(super.config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastBody = body;
-    return const {
-      'object': 'response',
-      'status': 'completed',
-      'output': [],
-      'usage': {
-        'input_tokens': 0,
-        'output_tokens': 0,
-        'total_tokens': 0,
-      },
-    };
-  }
-}
+import '../../utils/fakes/fakes.dart';
 
 void main() {
   group('xAI Responses request builder', () {
@@ -66,13 +41,23 @@ void main() {
         providerName: 'xAI (Responses)',
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = const {
+          'object': 'response',
+          'status': 'completed',
+          'output': [],
+          'usage': {
+            'input_tokens': 0,
+            'output_tokens': 0,
+            'total_tokens': 0,
+          },
+        };
       final responses = XAIResponses(client, config);
 
       await responses.chat([ChatMessage.user('Hi')]);
 
       expect(client.lastEndpoint, equals('responses'));
-      final body = client.lastBody;
+      final body = client.lastJsonBody;
       expect(body, isNotNull);
       expect(body!['model'], equals('grok-4-fast'));
       expect(body['stream'], isFalse);
@@ -123,13 +108,23 @@ void main() {
         providerName: 'xAI (Responses)',
       );
 
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = const {
+          'object': 'response',
+          'status': 'completed',
+          'output': [],
+          'usage': {
+            'input_tokens': 0,
+            'output_tokens': 0,
+            'total_tokens': 0,
+          },
+        };
       final responses = XAIResponses(client, config);
 
       await responses.chatWithTools([ChatMessage.user('Hi')], null);
 
       final tools =
-          (client.lastBody?['tools'] as List?)?.whereType<Map>().toList();
+          (client.lastJsonBody?['tools'] as List?)?.whereType<Map>().toList();
       expect(tools, isNotNull);
 
       final fn = tools!.firstWhere((t) => t['type'] == 'function');

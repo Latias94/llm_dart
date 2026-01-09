@@ -5,6 +5,8 @@ import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
 import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:test/test.dart';
 
+import '../../utils/fakes/fakes.dart';
+
 void main() {
   Tool toolNamed(String name, {bool? strict}) {
     return Tool.function(
@@ -27,16 +29,14 @@ void main() {
         model: 'gpt-4o',
       );
 
-      final client = _CapturingOpenAIClient(
-        config,
-        response: const {
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = const {
           'choices': [
             {
               'message': {'role': 'assistant', 'content': 'ok'}
             }
           ],
-        },
-      );
+        };
       final chat = OpenAIChat(client, config);
 
       await chat.chatWithTools(
@@ -48,14 +48,14 @@ void main() {
         ],
       );
 
-      final tools = (client.lastBody?['tools'] as List).cast<Map>();
+      final tools = (client.lastJsonBody?['tools'] as List).cast<Map>();
       expect(tools, hasLength(3));
 
       Map<String, dynamic> functionOf(String toolName) => tools
           .cast<Map>()
           .map((e) => e.cast<String, dynamic>())
-          .firstWhere((t) => (t['function'] as Map)['name'] == toolName)[
-              'function']
+          .firstWhere(
+              (t) => (t['function'] as Map)['name'] == toolName)['function']
           .cast<String, dynamic>();
 
       expect(functionOf('strictTrue')['strict'], isTrue);
@@ -73,10 +73,8 @@ void main() {
         useResponsesAPI: true,
       );
 
-      final client = _CapturingOpenAIClient(
-        config,
-        response: const <String, dynamic>{},
-      );
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = const <String, dynamic>{};
       final responses = openai_responses.OpenAIResponses(client, config);
 
       await responses.chatWithTools(
@@ -88,7 +86,7 @@ void main() {
         ],
       );
 
-      final tools = (client.lastBody?['tools'] as List).cast<Map>();
+      final tools = (client.lastJsonBody?['tools'] as List).cast<Map>();
       expect(tools, hasLength(3));
 
       Map<String, dynamic> toolDef(String name) => tools
@@ -103,22 +101,3 @@ void main() {
     });
   });
 }
-
-class _CapturingOpenAIClient extends OpenAIClient {
-  final Map<String, dynamic> _response;
-  Map<String, dynamic>? lastBody;
-
-  _CapturingOpenAIClient(super.config, {required Map<String, dynamic> response})
-      : _response = response;
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    lastBody = body;
-    return _response;
-  }
-}
-

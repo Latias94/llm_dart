@@ -3,34 +3,7 @@ import 'package:llm_dart_google/chat.dart';
 import 'package:llm_dart_google/client.dart';
 import 'package:test/test.dart';
 
-class _CapturingGoogleClient extends GoogleClient {
-  Map<String, dynamic>? lastBody;
-
-  _CapturingGoogleClient(super.config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) async {
-    lastBody = data;
-
-    return {
-      'modelVersion': config.model,
-      'candidates': [
-        {
-          'content': {
-            'parts': [
-              {'text': '{"ok":true}'}
-            ],
-          },
-          'finishReason': 'STOP',
-        },
-      ],
-    };
-  }
-}
+import '../../utils/fakes/fakes.dart';
 
 void main() {
   group('Google structured output request shaping', () {
@@ -55,7 +28,22 @@ void main() {
         ),
       );
 
-      final client = _CapturingGoogleClient(config);
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': '{"ok":true}'}
+                ],
+              },
+              'finishReason': 'STOP',
+            },
+          ],
+        },
+      );
       final chat = GoogleChat(client, config);
 
       await chat.chatWithTools([ChatMessage.user('Return JSON')], null);

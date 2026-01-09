@@ -2,38 +2,9 @@ import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_google/chat.dart';
-import 'package:llm_dart_google/client.dart';
 import 'package:test/test.dart';
 
-class _CapturingGoogleClient extends GoogleClient {
-  String? lastEndpoint;
-  Map<String, dynamic>? lastBody;
-
-  _CapturingGoogleClient(super.config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastBody = data;
-
-    return {
-      'modelVersion': config.model,
-      'candidates': [
-        {
-          'content': {
-            'parts': [
-              {'text': 'ok'}
-            ],
-          },
-        },
-      ],
-    };
-  }
-}
+import '../../utils/fakes/fakes.dart';
 
 class _UploadingGoogleChat extends GoogleChat {
   final GoogleFile? uploadedFile;
@@ -66,7 +37,21 @@ void main() {
       );
 
       final bytes = <int>[1, 2, 3, 4];
-      final client = _CapturingGoogleClient(config);
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
       final chat = GoogleChat(client, config);
 
       await chat.chatWithTools(
@@ -98,7 +83,21 @@ void main() {
         model: 'gemini-1.5-flash',
       );
 
-      final client = _CapturingGoogleClient(config);
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
       final chat = GoogleChat(client, config);
 
       await chat.chatWithTools(
@@ -132,7 +131,21 @@ void main() {
         maxInlineDataSize: 3,
       );
 
-      final client = _CapturingGoogleClient(config);
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
       final chat = _UploadingGoogleChat(
         client,
         config,
@@ -177,7 +190,21 @@ void main() {
         maxInlineDataSize: 3,
       );
 
-      final client = _CapturingGoogleClient(config);
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
       final chat = _UploadingGoogleChat(client, config, uploadedFile: null);
 
       expect(

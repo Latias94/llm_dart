@@ -11,6 +11,11 @@ class FakeGoogleClient extends GoogleClient {
   /// Fake JSON responses keyed by endpoint.
   final Map<String, Map<String, dynamic>> responsesByEndpoint;
 
+  /// Fallback JSON response returned when `responsesByEndpoint` has no entry.
+  ///
+  /// When null, missing responses throw to catch incomplete test setup.
+  final Map<String, dynamic>? defaultJsonResponse;
+
   /// Fake raw stream returned from `postStreamRaw`.
   Stream<String> streamResponse = const Stream<String>.empty();
 
@@ -20,6 +25,7 @@ class FakeGoogleClient extends GoogleClient {
   FakeGoogleClient(
     super.config, {
     Map<String, Map<String, dynamic>>? responsesByEndpoint,
+    this.defaultJsonResponse,
   }) : responsesByEndpoint = responsesByEndpoint ?? const {};
 
   @override
@@ -33,6 +39,8 @@ class FakeGoogleClient extends GoogleClient {
 
     final response = responsesByEndpoint[endpoint];
     if (response == null) {
+      final fallback = defaultJsonResponse;
+      if (fallback != null) return fallback;
       throw StateError('No fake response registered for endpoint: $endpoint');
     }
     return response;

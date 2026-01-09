@@ -2,42 +2,7 @@ import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_google/client.dart';
 import 'package:test/test.dart';
 
-class _CapturingGoogleClient extends GoogleClient {
-  String? lastEndpoint;
-  Map<String, dynamic>? lastBody;
-
-  _CapturingGoogleClient(super.config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastBody = data;
-
-    if (endpoint.endsWith(':embedContent')) {
-      return {
-        'embedding': {
-          'values': [0.1, 0.2],
-        },
-      };
-    }
-
-    return {
-      'candidates': [
-        {
-          'content': {
-            'parts': [
-              {'text': 'ok'}
-            ],
-          },
-        },
-      ],
-    };
-  }
-}
+import '../../utils/fakes/fakes.dart';
 
 void main() {
   group('Google model path normalization (AI SDK parity)', () {
@@ -46,7 +11,20 @@ void main() {
         apiKey: 'test-key',
         model: 'models/gemini-1.5-flash',
       );
-      final client = _CapturingGoogleClient(config);
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
       final chat = GoogleChat(client, config);
 
       await chat.chat([ChatMessage.user('hi')]);
@@ -58,7 +36,20 @@ void main() {
         apiKey: 'test-key',
         model: 'tunedModels/my-model',
       );
-      final client = _CapturingGoogleClient(config);
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
       final chat = GoogleChat(client, config);
 
       await chat.chat([ChatMessage.user('hi')]);
@@ -71,11 +62,32 @@ void main() {
         apiKey: 'test-key',
         model: 'models/text-embedding-004',
       );
-      final client = _CapturingGoogleClient(config);
+      final embedEndpoint = 'models/text-embedding-004:embedContent';
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+        responsesByEndpoint: {
+          embedEndpoint: {
+            'embedding': {
+              'values': [0.1, 0.2],
+            },
+          },
+        },
+      );
       final embeddings = GoogleEmbeddings(client, config);
 
       await embeddings.embed(['hi']);
-      expect(client.lastEndpoint, 'models/text-embedding-004:embedContent');
+      expect(client.lastEndpoint, embedEndpoint);
     });
   });
 }

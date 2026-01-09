@@ -3,29 +3,7 @@ import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:test/test.dart';
 
-class _CapturingOpenAIClient extends OpenAIClient {
-  String? lastEndpoint;
-  Map<String, dynamic>? lastBody;
-
-  _CapturingOpenAIClient(super.config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastBody = body;
-    return {
-      'choices': [
-        {
-          'message': {'content': 'ok'},
-        }
-      ],
-    };
-  }
-}
+import '../../utils/fakes/fakes.dart';
 
 void main() {
   group('Groq providerOptions request body (OpenAI-compatible)', () {
@@ -63,12 +41,19 @@ void main() {
         providerId: 'groq',
         providerName: 'Groq',
       );
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'choices': [
+            {
+              'message': {'content': 'ok'},
+            }
+          ],
+        };
       final chat = OpenAIChat(client, config);
 
       await chat.chat([ChatMessage.user('hi')]);
 
-      final body = client.lastBody;
+      final body = client.lastJsonBody;
       expect(body, isNotNull);
       expect(body!['reasoning_format'], equals('parsed'));
       expect(body['reasoning_effort'], equals('default'));
@@ -107,12 +92,19 @@ void main() {
         providerId: 'groq',
         providerName: 'Groq',
       );
-      final client = _CapturingOpenAIClient(config);
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'choices': [
+            {
+              'message': {'content': 'ok'},
+            }
+          ],
+        };
       final chat = OpenAIChat(client, config);
 
       await chat.chat([ChatMessage.user('hi')]);
 
-      final body = client.lastBody;
+      final body = client.lastJsonBody;
       expect(body, isNotNull);
 
       final responseFormat = body!['response_format'] as Map<String, dynamic>?;
