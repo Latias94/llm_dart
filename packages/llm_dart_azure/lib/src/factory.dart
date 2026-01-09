@@ -39,6 +39,10 @@ class AzureOpenAIProviderFactory
         LLMCapability.toolCalling,
         LLMCapability.reasoning,
         LLMCapability.vision,
+        LLMCapability.imageGeneration,
+        LLMCapability.textToSpeech,
+        LLMCapability.speechToText,
+        LLMCapability.audioTranslation,
         LLMCapability.openaiResponses,
       };
 
