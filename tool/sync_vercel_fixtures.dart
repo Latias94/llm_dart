@@ -21,6 +21,11 @@ void main(List<String> args) {
       targetDir: Directory('test/fixtures/openai/responses'),
     ),
     _Mapping(
+      id: 'azure-responses',
+      sourceDir: Directory('repo-ref/ai/packages/azure/src/__fixtures__'),
+      targetDir: Directory('test/fixtures/azure/responses'),
+    ),
+    _Mapping(
       id: 'openai-chat',
       sourceDir: Directory('repo-ref/ai/packages/openai/src/chat/__fixtures__'),
       targetDir: Directory('test/fixtures/openai/chat'),
