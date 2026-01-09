@@ -81,7 +81,8 @@ class GoogleImages implements ImageGenerationCapability {
     final endpoint = 'models/$model:generateContent';
 
     var imageConfig = {
-      if (request.size != null) 'aspectRatio': request.size!,
+      if (request.size != null)
+        'aspectRatio': _normalizeAspectRatio(request.size!),
     };
 
     final requestData = {
@@ -420,6 +421,18 @@ class GoogleImages implements ImageGenerationCapability {
         }
         return '1:1'; // Default to square
     }
+  }
+
+  /// Normalize an aspect ratio for Google image APIs.
+  ///
+  /// Google imageConfig expects aspect ratios like `1:1`, `16:9`, etc.
+  /// For convenience, we accept common pixel sizes like `1024x1024` and
+  /// convert them to the closest supported aspect ratio.
+  String _normalizeAspectRatio(String sizeOrRatio) {
+    final value = sizeOrRatio.trim();
+    if (value.contains(':')) return value;
+    if (value.contains('x')) return _convertSizeToAspectRatio(value);
+    return value;
   }
 
   /// Extract format from MIME type

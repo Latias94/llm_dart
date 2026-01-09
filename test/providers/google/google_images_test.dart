@@ -132,7 +132,7 @@ void main() {
         const ImageGenerationRequest(
           prompt: 'A futuristic city skyline at sunset',
           count: 1,
-          size: '1:1',
+          size: '1024x1024',
         ),
       );
 
