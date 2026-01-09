@@ -13,6 +13,9 @@ scripts:
   test:
     run: dart test -j 1
     description: Run repository tests (root package).
+  metadata:check:
+    run: dart run tool/run_metadata_tests.dart
+    description: Run focused providerMetadata/alias tests.
   deps:
     run: dart run tool/check_monorepo_deps.dart
     description: Verify monorepo dependency direction rules.
