@@ -11,6 +11,10 @@ multiple providers that speak an OpenAI-compatible API.
 Most users should depend on a concrete provider package (e.g. `llm_dart_groq`,
 `llm_dart_xai`, `llm_dart_deepseek`) rather than this package directly.
 
+When a first-party provider package exists, prefer it over the OpenAI-compatible
+presets. The presets are best-effort and intended for OpenAI-compatible gateways
+or when you must use a specific provider's OpenAI-flavored endpoint.
+
 ## Imports
 
 The recommended entrypoint is:

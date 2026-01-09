@@ -91,6 +91,10 @@ extension BuiltinProviderBuilders on LLMBuilder {
   }
 
   // OpenAI-compatible providers
+  @Deprecated(
+    'Prefer the first-party DeepSeek provider (`LLMBuilder.deepseek()` / providerId `deepseek`). '
+    'Use `deepseek-openai` only when you must target an OpenAI-compatible endpoint.',
+  )
   LLMBuilder deepseekOpenAI() {
     BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
       'deepseek-openai',
@@ -98,6 +102,10 @@ extension BuiltinProviderBuilders on LLMBuilder {
     return provider('deepseek-openai');
   }
 
+  @Deprecated(
+    'Prefer the native Google provider (`LLMBuilder.google()` / providerId `google`). '
+    'Use `google-openai` only when you must target an OpenAI-compatible endpoint.',
+  )
   LLMBuilder googleOpenAI() {
     BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
       'google-openai',
@@ -105,6 +113,10 @@ extension BuiltinProviderBuilders on LLMBuilder {
     return provider('google-openai');
   }
 
+  @Deprecated(
+    'Prefer the first-party xAI provider (`LLMBuilder.xai()` / providerId `xai`). '
+    'Use `xai-openai` only when you must target an OpenAI-compatible endpoint.',
+  )
   LLMBuilder xaiOpenAI() {
     BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
       'xai-openai',
@@ -112,6 +124,10 @@ extension BuiltinProviderBuilders on LLMBuilder {
     return provider('xai-openai');
   }
 
+  @Deprecated(
+    'Prefer the first-party Groq provider (`LLMBuilder.groq()` / providerId `groq`). '
+    'Use `groq-openai` only when you must target an OpenAI-compatible endpoint.',
+  )
   LLMBuilder groqOpenAI() {
     BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
       'groq-openai',
