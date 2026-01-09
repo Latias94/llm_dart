@@ -1,47 +1,14 @@
-import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_openai/client.dart';
 import 'package:llm_dart_openai/openai.dart';
 import 'package:test/test.dart';
 
-class _FakeOpenAIClient extends OpenAIClient {
-  String? lastEndpoint;
-  Map<String, dynamic>? lastJsonBody;
-  FormData? lastFormData;
-
-  Map<String, dynamic> jsonResponse = const {};
-  Map<String, dynamic> formResponse = const {};
-
-  _FakeOpenAIClient(super.config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastJsonBody = body;
-    return jsonResponse;
-  }
-
-  @override
-  Future<Map<String, dynamic>> postForm(
-    String endpoint,
-    FormData formData, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastFormData = formData;
-    return formResponse;
-  }
-}
+import '../../utils/fakes/openai_fake_client.dart';
 
 void main() {
   group('OpenAI images providerMetadata', () {
     test('generateImages attaches openai + openai.image metadata', () async {
       final config = OpenAIConfig(apiKey: 'test-key', model: 'gpt-image-1');
-      final client = _FakeOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       client.jsonResponse = const {
         'data': [
           {
@@ -75,7 +42,7 @@ void main() {
 
     test('editImage attaches openai + openai.image metadata', () async {
       final config = OpenAIConfig(apiKey: 'test-key', model: 'gpt-image-1');
-      final client = _FakeOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       client.formResponse = const {
         'data': [
           {
@@ -112,7 +79,7 @@ void main() {
 
     test('createVariation attaches openai + openai.image metadata', () async {
       final config = OpenAIConfig(apiKey: 'test-key', model: 'gpt-image-1');
-      final client = _FakeOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       client.formResponse = const {
         'data': [
           {

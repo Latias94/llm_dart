@@ -1,26 +1,9 @@
 import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_google/client.dart';
 import 'package:test/test.dart';
 
-class _FakeGoogleClient extends GoogleClient {
-  final Stream<String> _stream;
-
-  _FakeGoogleClient(
-    super.config, {
-    required Stream<String> stream,
-  }) : _stream = stream;
-
-  @override
-  Stream<String> postStreamRaw(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) {
-    return _stream;
-  }
-}
+import '../../utils/fakes/google_fake_client.dart';
 
 void main() {
   group('Google chatStreamParts (Gemini JSON array stream)', () {
@@ -85,10 +68,8 @@ void main() {
         '\n]\n',
       ];
 
-      final client = _FakeGoogleClient(
-        config,
-        stream: Stream<String>.fromIterable(chunks),
-      );
+      final client = FakeGoogleClient(config);
+      client.streamResponse = Stream<String>.fromIterable(chunks);
       final chat = GoogleChat(client, config);
 
       final parts = await chat

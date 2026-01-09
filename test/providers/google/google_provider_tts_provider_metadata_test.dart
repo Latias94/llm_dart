@@ -2,57 +2,10 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_google/client.dart';
 import 'package:llm_dart_google/google.dart';
 import 'package:test/test.dart';
 
-class _FakeGoogleClient extends GoogleClient {
-  String? lastEndpoint;
-  dynamic lastBody;
-
-  _FakeGoogleClient(super.config);
-
-  @override
-  Future<Response> post(
-    String endpoint, {
-    dynamic data,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastBody = data;
-
-    final responseData = <String, dynamic>{
-      'candidates': [
-        {
-          'content': {
-            'parts': [
-              {
-                'inlineData': {
-                  'data': base64Encode(const [1, 2, 3]),
-                  'mimeType': 'audio/pcm',
-                }
-              }
-            ]
-          }
-        }
-      ],
-      'usageMetadata': {
-        'promptTokenCount': 1,
-        'candidatesTokenCount': 1,
-        'totalTokenCount': 2,
-      },
-      'modelVersion': 'gemini-2.5-flash-preview-tts',
-    };
-
-    return Response(
-      requestOptions: RequestOptions(path: endpoint),
-      statusCode: 200,
-      data: responseData,
-    );
-  }
-}
+import '../../utils/fakes/google_fake_client.dart';
 
 void main() {
   group('GoogleProvider textToSpeech providerMetadata', () {
@@ -63,7 +16,34 @@ void main() {
         model: 'gemini-2.5-flash-preview-tts',
       );
 
-      final client = _FakeGoogleClient(config);
+      final client = FakeGoogleClient(config);
+      client.postResponse = Response(
+        requestOptions: RequestOptions(
+            path: 'models/gemini-2.5-flash-preview-tts:generateContent'),
+        statusCode: 200,
+        data: <String, dynamic>{
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {
+                    'inlineData': {
+                      'data': base64Encode(const [1, 2, 3]),
+                      'mimeType': 'audio/pcm',
+                    }
+                  }
+                ]
+              }
+            }
+          ],
+          'usageMetadata': {
+            'promptTokenCount': 1,
+            'candidatesTokenCount': 1,
+            'totalTokenCount': 2,
+          },
+          'modelVersion': 'gemini-2.5-flash-preview-tts',
+        },
+      );
       final provider = GoogleProvider(config, client: client);
 
       final response = await provider.textToSpeech(

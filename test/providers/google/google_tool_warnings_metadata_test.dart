@@ -1,29 +1,7 @@
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_google/client.dart';
 import 'package:test/test.dart';
 
-class _FakeGoogleClient extends GoogleClient {
-  _FakeGoogleClient(super.config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) async {
-    return {
-      'candidates': [
-        {
-          'content': {
-            'parts': [
-              {'text': 'ok'}
-            ],
-          },
-        },
-      ],
-    };
-  }
-}
+import '../../utils/fakes/google_fake_client.dart';
 
 void main() {
   group('Google toolWarnings providerMetadata (AI SDK parity)', () {
@@ -41,7 +19,23 @@ void main() {
       );
 
       final config = GoogleConfig.fromLLMConfig(llmConfig);
-      final client = _FakeGoogleClient(config);
+      final endpoint = 'models/${config.model}:generateContent';
+      final client = FakeGoogleClient(
+        config,
+        responsesByEndpoint: {
+          endpoint: {
+            'candidates': [
+              {
+                'content': {
+                  'parts': [
+                    {'text': 'ok'}
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      );
       final chat = GoogleChat(client, config);
 
       final response = await chat.chatWithTools(
@@ -86,7 +80,23 @@ void main() {
       );
 
       final config = GoogleConfig.fromLLMConfig(llmConfig);
-      final client = _FakeGoogleClient(config);
+      final endpoint = 'models/${config.model}:generateContent';
+      final client = FakeGoogleClient(
+        config,
+        responsesByEndpoint: {
+          endpoint: {
+            'candidates': [
+              {
+                'content': {
+                  'parts': [
+                    {'text': 'ok'}
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      );
       final chat = GoogleChat(client, config);
 
       final response = await chat.chatWithTools(

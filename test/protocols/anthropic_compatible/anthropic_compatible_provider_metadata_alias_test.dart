@@ -1,28 +1,8 @@
-import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
 import 'package:test/test.dart';
 
-class _FakeAnthropicClient extends AnthropicClient {
-  String? lastEndpoint;
-  Map<String, dynamic>? lastBody;
-
-  Map<String, dynamic> response = const {};
-
-  _FakeAnthropicClient(super.config);
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastBody = data;
-    return response;
-  }
-}
+import '../../utils/fakes/anthropic_fake_client.dart';
 
 void main() {
   group('Anthropic-compatible providerMetadata alias', () {
@@ -33,7 +13,7 @@ void main() {
         providerId: 'anthropic',
       );
 
-      final client = _FakeAnthropicClient(config);
+      final client = FakeAnthropicClient(config);
       client.response = const {
         'id': 'msg_123',
         'model': 'claude-3-5-sonnet-latest',

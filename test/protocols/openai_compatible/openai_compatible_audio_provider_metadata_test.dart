@@ -1,41 +1,8 @@
-import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:test/test.dart';
 
-class _FakeOpenAIClient extends OpenAIClient {
-  String? lastEndpoint;
-  Map<String, dynamic>? lastJsonBody;
-  FormData? lastFormData;
-
-  Map<String, dynamic> formResponse = const {'text': 'hello'};
-  List<int> rawResponse = const [1, 2, 3];
-
-  _FakeOpenAIClient(super.config);
-
-  @override
-  Future<List<int>> postRaw(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastJsonBody = body;
-    return rawResponse;
-  }
-
-  @override
-  Future<Map<String, dynamic>> postForm(
-    String endpoint,
-    FormData formData, {
-    CancelToken? cancelToken,
-  }) async {
-    lastEndpoint = endpoint;
-    lastFormData = formData;
-    return formResponse;
-  }
-}
+import '../../utils/fakes/openai_fake_client.dart';
 
 void main() {
   group('OpenAI-compatible audio providerMetadata', () {
@@ -48,7 +15,7 @@ void main() {
         model: 'gpt-4o',
       );
 
-      final client = _FakeOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       final audio = OpenAIStyleAudio(client, config);
 
       final resp = await audio.textToSpeech(const TTSRequest(text: 'hi'));
@@ -81,7 +48,7 @@ void main() {
         model: 'gpt-4o',
       );
 
-      final client = _FakeOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       client.formResponse = const {'text': 'hello'};
 
       final audio = OpenAIStyleAudio(client, config);
@@ -119,7 +86,7 @@ void main() {
         model: 'gpt-4o',
       );
 
-      final client = _FakeOpenAIClient(config);
+      final client = FakeOpenAIClient(config);
       client.formResponse = const {'text': 'hello'};
 
       final audio = OpenAIStyleAudio(client, config);

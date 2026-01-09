@@ -1,26 +1,9 @@
 import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:test/test.dart';
 
-class _FakeOpenAIClient extends OpenAIClient {
-  final Stream<String> _stream;
-
-  _FakeOpenAIClient(
-    super.config, {
-    required Stream<String> stream,
-  }) : _stream = stream;
-
-  @override
-  Stream<String> postStreamRaw(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) {
-    return _stream;
-  }
-}
+import '../../utils/fakes/openai_fake_client.dart';
 
 String _sseData(Map<String, dynamic> json) => 'data: ${jsonEncode(json)}\n\n';
 
@@ -128,10 +111,8 @@ void main() {
         'data: [DONE]\n\n',
       ];
 
-      final client = _FakeOpenAIClient(
-        config,
-        stream: Stream<String>.fromIterable(chunks),
-      );
+      final client = FakeOpenAIClient(config)
+        ..streamResponse = Stream<String>.fromIterable(chunks);
       final chat = OpenAIChat(client, config);
 
       final parts = await chat.chatStreamParts(
