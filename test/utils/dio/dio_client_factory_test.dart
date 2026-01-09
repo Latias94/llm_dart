@@ -10,6 +10,7 @@ import 'package:llm_dart_google/config.dart';
 import 'package:llm_dart_google/dio_strategy.dart';
 import 'package:llm_dart_ollama/config.dart';
 import 'package:llm_dart_ollama/dio_strategy.dart';
+import 'package:llm_dart_azure/config.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:llm_dart_openai_compatible/dio_strategy.dart';
@@ -222,6 +223,41 @@ void main() {
 
       expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
+    });
+
+    test('Azure OpenAI should use api-key header', () {
+      final config = AzureOpenAIConfig(
+        baseUrl: 'https://example.openai.azure.com/openai/v1/',
+        apiKey: 'test-key',
+        model: 'gpt-4o',
+        apiVersion: '2024-10-01-preview',
+      );
+
+      final strategy = OpenAIDioStrategy(providerName: 'Azure OpenAI');
+      final headers = strategy.buildHeaders(config);
+
+      expect(headers['api-key'], equals('test-key'));
+      expect(headers.containsKey('Authorization'), isFalse);
+    });
+
+    test('Azure OpenAI should attach api-version query parameter', () async {
+      final config = AzureOpenAIConfig(
+        baseUrl: 'https://example.openai.azure.com/openai/v1/',
+        apiKey: 'test-key',
+        model: 'gpt-4o',
+        apiVersion: '2024-10-01-preview',
+      );
+
+      final strategy = OpenAIDioStrategy(providerName: 'Azure OpenAI');
+      final dio = DioClientFactory.create(strategy: strategy, config: config);
+      final adapter = _CapturingHttpClientAdapter();
+      dio.httpClientAdapter = adapter;
+
+      await dio.get('/responses');
+
+      final last = adapter.lastOptions;
+      expect(last, isNotNull);
+      expect(last!.uri.queryParameters['api-version'], equals('2024-10-01-preview'));
     });
 
     test('OllamaDioStrategy should build correct headers', () {
@@ -563,4 +599,27 @@ void main() {
       }
     });
   });
+}
+
+class _CapturingHttpClientAdapter implements HttpClientAdapter {
+  RequestOptions? lastOptions;
+
+  @override
+  void close({bool force = false}) {}
+
+  @override
+  Future<ResponseBody> fetch(
+    RequestOptions options,
+    Stream<List<int>>? requestStream,
+    Future<void>? cancelFuture,
+  ) async {
+    lastOptions = options;
+    return ResponseBody.fromString(
+      '{"ok": true}',
+      200,
+      headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      },
+    );
+  }
 }
