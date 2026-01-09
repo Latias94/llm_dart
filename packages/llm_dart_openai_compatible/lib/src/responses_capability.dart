@@ -4,8 +4,7 @@
 /// stateful conversation management, background processing, and
 /// response lifecycle management.
 ///
-/// Note: This is currently OpenAI-specific as other providers don't
-/// yet support similar stateful conversation APIs.
+/// Note: This is an OpenAI-style surface. Azure OpenAI also supports it.
 library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';

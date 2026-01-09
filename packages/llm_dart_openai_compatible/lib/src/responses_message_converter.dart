@@ -2,11 +2,11 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
-/// OpenAI-only: convert `ChatMessage` into the Responses API `input` shape.
+/// Convert `ChatMessage` into the Responses API `input` shape.
 ///
-/// This intentionally lives in `llm_dart_openai` (not `llm_dart_openai_compatible`)
-/// because the Responses API is OpenAI-specific and should not expand the
-/// OpenAI-compatible baseline surface.
+/// This lives in `llm_dart_openai_compatible` so both the OpenAI and Azure
+/// OpenAI provider packages can reuse the same request mapping without
+/// provider-to-provider dependencies.
 class OpenAIResponsesMessageConverter {
   static Map<String, dynamic> convertMessage(ChatMessage message) {
     final result = <String, dynamic>{'role': message.role.name};

@@ -2,7 +2,7 @@ library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
-import 'web_search_context_size.dart';
+import 'package:llm_dart_openai_compatible/web_search_context_size.dart';
 
 /// Typed factories for OpenAI provider-native tools (Responses API built-ins).
 ///

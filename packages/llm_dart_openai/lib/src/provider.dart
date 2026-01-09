@@ -5,7 +5,7 @@ import 'chat.dart';
 import 'embeddings.dart';
 import 'audio.dart';
 import 'images.dart';
-import 'responses.dart';
+import 'package:llm_dart_openai_compatible/responses.dart';
 
 /// OpenAI Provider implementation
 ///

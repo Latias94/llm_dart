@@ -1,14 +1,16 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart'
+import 'package:llm_dart_openai_compatible/openai_request_config.dart'
     show OpenAIRequestConfig;
-import 'builtin_tools.dart';
+import 'package:llm_dart_openai_compatible/openai_responses_config.dart'
+    show OpenAIResponsesConfig;
+import 'package:llm_dart_openai_compatible/builtin_tools.dart';
 import '../defaults.dart';
 
 /// OpenAI provider configuration
 ///
 /// This class contains all configuration options for the OpenAI providers.
 /// It's extracted from the main provider to improve modularity and reusability.
-class OpenAIConfig implements OpenAIRequestConfig {
+class OpenAIConfig implements OpenAIRequestConfig, OpenAIResponsesConfig {
   @override
   String get providerId => 'openai';
 

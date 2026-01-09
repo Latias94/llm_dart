@@ -4,8 +4,8 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'client.dart';
 import 'builtin_tools.dart';
-import 'config.dart';
 import 'models/responses_models.dart';
+import 'openai_responses_config.dart';
 import 'responses_capability.dart';
 import 'responses_message_converter.dart';
 
@@ -30,7 +30,7 @@ class OpenAIResponses
         OpenAIResponsesCapability,
         ChatStreamPartsCapability {
   final OpenAIClient client;
-  final OpenAIConfig config;
+  final OpenAIResponsesConfig config;
 
   // State tracking for stream processing
   bool _hasReasoningContent = false;
@@ -141,6 +141,7 @@ class OpenAIResponses
           _buildPartialResponse(),
           thinkingContent,
           builtRequest.toolNameMapping,
+          config.providerId,
         );
         yield CompletionEvent(response);
       }
@@ -199,8 +200,12 @@ class OpenAIResponses
             }
 
             if (eventType == 'response.output_item.done') {
-              final metadata = OpenAIResponsesResponse(_buildPartialResponse())
-                  .providerMetadata;
+              final metadata = OpenAIResponsesResponse(
+                _buildPartialResponse(),
+                null,
+                null,
+                config.providerId,
+              ).providerMetadata;
               if (metadata != null && metadata.isNotEmpty) {
                 yield LLMProviderMetadataPart(metadata);
               }
@@ -212,8 +217,12 @@ class OpenAIResponses
             final annotation = json['annotation'];
             if (annotation != null) {
               _outputTextAnnotations.add(annotation);
-              final metadata = OpenAIResponsesResponse(_buildPartialResponse())
-                  .providerMetadata;
+              final metadata = OpenAIResponsesResponse(
+                _buildPartialResponse(),
+                null,
+                null,
+                config.providerId,
+              ).providerMetadata;
               if (metadata != null && metadata.isNotEmpty) {
                 yield LLMProviderMetadataPart(metadata);
               }
@@ -402,6 +411,7 @@ class OpenAIResponses
               _buildPartialResponse(),
               thinkingContent,
               toolNameMapping,
+              config.providerId,
             );
 
             if (inText) {
@@ -433,6 +443,7 @@ class OpenAIResponses
           _buildPartialResponse(),
           thinkingContent,
           toolNameMapping,
+          config.providerId,
         );
 
         if (inText) {
@@ -613,13 +624,13 @@ class OpenAIResponses
     List<Tool>? tools,
     bool background = false,
   }) async {
-    // Create a new config with the previous response ID
-    final updatedConfig =
-        config.copyWith(previousResponseId: previousResponseId);
-    final tempResponses = OpenAIResponses(client, updatedConfig);
-
-    final builtRequest =
-        tempResponses._buildRequest(newMessages, tools, false, background);
+    final builtRequest = _buildRequest(
+      newMessages,
+      tools,
+      false,
+      background,
+      previousResponseId: previousResponseId,
+    );
     final responseData =
         await client.postJson(responsesEndpoint, builtRequest.body);
     return _parseResponse(
@@ -648,8 +659,9 @@ class OpenAIResponses
     List<ChatMessage> messages,
     List<Tool>? tools,
     bool stream,
-    bool background,
-  ) {
+    bool background, {
+    String? previousResponseId,
+  }) {
     final effectiveTools = tools ?? config.tools;
     final toolNameMapping = _createToolNameMapping(effectiveTools);
     final body = _buildRequestBody(
@@ -658,6 +670,7 @@ class OpenAIResponses
       stream,
       background,
       toolNameMapping,
+      previousResponseId: previousResponseId,
     );
 
     return _OpenAIResponsesBuiltRequest(
@@ -691,8 +704,9 @@ class OpenAIResponses
     List<Tool>? tools,
     bool stream,
     bool background,
-    ToolNameMapping toolNameMapping,
-  ) {
+    ToolNameMapping toolNameMapping, {
+    String? previousResponseId,
+  }) {
     // Convert messages to Responses API format.
     final apiMessages =
         OpenAIResponsesMessageConverter.buildInputMessages(messages);
@@ -713,8 +727,11 @@ class OpenAIResponses
     };
 
     // Add previous response ID for chaining
-    if (config.previousResponseId != null) {
-      body['previous_response_id'] = config.previousResponseId;
+    final effectivePreviousResponseId =
+        previousResponseId ?? config.previousResponseId;
+    if (effectivePreviousResponseId != null &&
+        effectivePreviousResponseId.isNotEmpty) {
+      body['previous_response_id'] = effectivePreviousResponseId;
     }
 
     // Add optional parameters using reasoning utils
@@ -790,8 +807,8 @@ class OpenAIResponses
     // `webSearchCalls[*].sources` reliably.
     final include = <String>[];
 
-    final rawInclude =
-        config.originalConfig?.getProviderOption<dynamic>('openai', 'include');
+    final rawInclude = config.originalConfig
+        ?.getProviderOption<dynamic>(config.providerId, 'include');
     if (rawInclude is List) {
       include.addAll(rawInclude.whereType<String>());
     }
@@ -1022,7 +1039,11 @@ class OpenAIResponses
     }
 
     return OpenAIResponsesResponse(
-        responseData, thinkingContent, toolNameMapping);
+      responseData,
+      thinkingContent,
+      toolNameMapping,
+      config.providerId,
+    );
   }
 
   /// Parse streaming events
@@ -1212,8 +1233,12 @@ class OpenAIResponses
         final thinkingContent =
             thinkingBuffer.isNotEmpty ? thinkingBuffer.toString() : null;
 
-        final completionResponse =
-            OpenAIResponsesResponse(response, thinkingContent, toolNameMapping);
+        final completionResponse = OpenAIResponsesResponse(
+          response,
+          thinkingContent,
+          toolNameMapping,
+          config.providerId,
+        );
         events.add(CompletionEvent(completionResponse));
 
         // Reset state after completion
@@ -1364,6 +1389,7 @@ class OpenAIResponses
             : partialResponse,
         thinkingContent,
         toolNameMapping,
+        config.providerId,
       );
 
       events.add(CompletionEvent(response));
@@ -1399,12 +1425,14 @@ class OpenAIResponsesResponse implements ChatResponse {
   final Map<String, dynamic> _rawResponse;
   final String? _thinkingContent;
   final ToolNameMapping? _toolNameMapping;
+  final String _providerId;
 
   OpenAIResponsesResponse(
     this._rawResponse, [
     this._thinkingContent,
     this._toolNameMapping,
-  ]);
+    String providerId = 'openai',
+  ]) : _providerId = providerId;
 
   List<Map<String, dynamic>>? _extractFileSearchCalls() {
     final output = _rawResponse['output'] as List?;
@@ -1735,7 +1763,7 @@ class OpenAIResponsesResponse implements ChatResponse {
     }
 
     return {
-      'openai': {
+      _providerId: {
         if (id != null) 'id': id,
         if (model != null) 'model': model,
         if (serverToolCalls != null) 'serverToolCalls': serverToolCalls,
