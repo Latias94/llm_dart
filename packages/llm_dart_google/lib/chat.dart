@@ -928,35 +928,28 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
       // Add tool choice configuration
       final effectiveToolChoice = config.toolChoice;
-      if (effectiveToolChoice != null) {
-        body['tool_config'] = _convertToolChoice(
+      final providerToolsEnabled =
+          (config.originalConfig?.providerTools ?? const <ProviderTool>[])
+              .any(_isProviderToolEnabled);
+      final shouldSendToolConfig =
+          !providerToolsEnabled && !config.webSearchEnabled;
+
+      if (effectiveToolChoice != null && shouldSendToolConfig) {
+        body['toolConfig'] = _convertToolChoice(
           effectiveToolChoice,
           effectiveTools,
           toolNameMapping,
         );
+      } else if (effectiveToolChoice != null && !shouldSendToolConfig) {
+        client.logger.warning(
+          'Ignoring toolChoice because provider-native tools are enabled.',
+        );
       }
     }
 
-    final supportsGemini2OrNewer = _isGemini2OrNewerModel();
     final providerTools = config.originalConfig?.providerTools;
-    if (supportsGemini2OrNewer &&
-        providerTools != null &&
-        providerTools.isNotEmpty) {
-      final enabledIds = providerTools.map((t) => t.id).toSet();
-
-      if (enabledIds.contains('google.code_execution')) {
-        body['tools'] ??= [];
-        (body['tools'] as List).add(<String, dynamic>{
-          'codeExecution': <String, dynamic>{},
-        });
-      }
-
-      if (enabledIds.contains('google.url_context')) {
-        body['tools'] ??= [];
-        (body['tools'] as List).add(<String, dynamic>{
-          'urlContext': <String, dynamic>{},
-        });
-      }
+    if (providerTools != null && providerTools.isNotEmpty) {
+      _addProviderToolsToBody(body, providerTools: providerTools);
     }
 
     if (config.webSearchEnabled) {
@@ -984,8 +977,9 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       };
     }
 
+    final supportsDynamicRetrieval = _supportsDynamicRetrieval();
     final options = config.webSearchToolOptions;
-    final dynamicConfig = options == null
+    final dynamicConfig = options == null || !supportsDynamicRetrieval
         ? null
         : <String, dynamic>{
             if (options.mode != null) 'mode': options.mode!.apiValue,
@@ -1012,6 +1006,98 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     return modelId.contains('gemini-2') ||
         modelId.contains('gemini-3') ||
         isLatest;
+  }
+
+  bool _supportsDynamicRetrieval() {
+    final modelId = config.model;
+    return modelId.contains('gemini-1.5-flash') && !modelId.contains('-8b');
+  }
+
+  bool _supportsFileSearch() {
+    final modelId = config.model;
+    return modelId.contains('gemini-2.5') || modelId.contains('gemini-3');
+  }
+
+  void _addProviderToolsToBody(
+    Map<String, dynamic> body, {
+    required List<ProviderTool> providerTools,
+  }) {
+    final enabled = providerTools.where(_isProviderToolEnabled);
+    if (enabled.isEmpty) return;
+
+    final isGemini2OrNewer = _isGemini2OrNewerModel();
+    final supportsFileSearch = _supportsFileSearch();
+
+    for (final tool in enabled) {
+      Map<String, dynamic>? entry;
+
+      switch (tool.id) {
+        case 'google.code_execution':
+          if (!isGemini2OrNewer) break;
+          entry = <String, dynamic>{'codeExecution': <String, dynamic>{}};
+          break;
+
+        case 'google.url_context':
+          if (!isGemini2OrNewer) break;
+          entry = <String, dynamic>{'urlContext': <String, dynamic>{}};
+          break;
+
+        case 'google.enterprise_web_search':
+          if (!isGemini2OrNewer) break;
+          entry = <String, dynamic>{'enterpriseWebSearch': <String, dynamic>{}};
+          break;
+
+        case 'google.google_maps':
+          if (!isGemini2OrNewer) break;
+          entry = <String, dynamic>{'googleMaps': <String, dynamic>{}};
+          break;
+
+        case 'google.file_search':
+          if (!supportsFileSearch) break;
+          entry = <String, dynamic>{
+            'fileSearch': <String, dynamic>{
+              ...tool.options,
+            }..remove('enabled'),
+          };
+          break;
+
+        case 'google.vertex_rag_store':
+          if (!isGemini2OrNewer) break;
+          final ragCorpus = tool.options['ragCorpus'];
+          if (ragCorpus is! String || ragCorpus.isEmpty) {
+            client.logger.warning(
+              'google.vertex_rag_store is enabled but options.ragCorpus is missing.',
+            );
+            break;
+          }
+          final topK = tool.options['topK'];
+          entry = <String, dynamic>{
+            'retrieval': <String, dynamic>{
+              'vertex_rag_store': <String, dynamic>{
+                'rag_resources': <String, dynamic>{
+                  'rag_corpus': ragCorpus,
+                },
+                if (topK is num) 'similarity_top_k': topK,
+              },
+            },
+          };
+          break;
+      }
+
+      if (entry == null) {
+        client.logger.warning('Unsupported provider tool: ${tool.id}');
+        continue;
+      }
+
+      body['tools'] ??= <Map<String, dynamic>>[];
+      (body['tools'] as List).add(entry);
+    }
+  }
+
+  bool _isProviderToolEnabled(ProviderTool tool) {
+    final enabled = tool.options['enabled'];
+    if (enabled is bool) return enabled;
+    return true;
   }
 
   bool _isGemmaModel() {
@@ -1300,13 +1386,13 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     switch (toolChoice) {
       case AutoToolChoice():
         return {
-          'function_calling_config': {
+          'functionCallingConfig': {
             'mode': 'AUTO',
           },
         };
       case AnyToolChoice():
         return {
-          'function_calling_config': {
+          'functionCallingConfig': {
             'mode': 'ANY',
           },
         };
@@ -1318,21 +1404,21 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
               'Tool "$toolName" specified in SpecificToolChoice not found in available tools');
           // Fall back to AUTO mode if tool not found
           return {
-            'function_calling_config': {
+            'functionCallingConfig': {
               'mode': 'AUTO',
             },
           };
         }
         final requestName = toolNameMapping.requestNameForFunction(toolName);
         return {
-          'function_calling_config': {
+          'functionCallingConfig': {
             'mode': 'ANY',
-            'allowed_function_names': [requestName],
+            'allowedFunctionNames': [requestName],
           },
         };
       case NoneToolChoice():
         return {
-          'function_calling_config': {
+          'functionCallingConfig': {
             'mode': 'NONE',
           },
         };
@@ -1352,9 +1438,11 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
     final providerTools =
         config.originalConfig?.providerTools ?? const <ProviderTool>[];
+    final enabledIds =
+        providerTools.where(_isProviderToolEnabled).map((t) => t.id).toSet();
     final supportsGemini2OrNewer = _isGemini2OrNewerModel();
+
     if (supportsGemini2OrNewer) {
-      final enabledIds = providerTools.map((t) => t.id).toSet();
       if (enabledIds.contains('google.code_execution')) {
         providerToolRequestNamesById['google.code_execution'] =
             'code_execution';
@@ -1362,6 +1450,21 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       if (enabledIds.contains('google.url_context')) {
         providerToolRequestNamesById['google.url_context'] = 'url_context';
       }
+      if (enabledIds.contains('google.enterprise_web_search')) {
+        providerToolRequestNamesById['google.enterprise_web_search'] =
+            'enterprise_web_search';
+      }
+      if (enabledIds.contains('google.google_maps')) {
+        providerToolRequestNamesById['google.google_maps'] = 'google_maps';
+      }
+      if (enabledIds.contains('google.vertex_rag_store')) {
+        providerToolRequestNamesById['google.vertex_rag_store'] =
+            'vertex_rag_store';
+      }
+    }
+
+    if (_supportsFileSearch() && enabledIds.contains('google.file_search')) {
+      providerToolRequestNamesById['google.file_search'] = 'file_search';
     }
 
     return createToolNameMapping(
