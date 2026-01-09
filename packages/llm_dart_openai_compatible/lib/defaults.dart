@@ -35,3 +35,62 @@ const String githubCopilotDefaultModel = 'gpt-4';
 
 const String togetherAIBaseUrl = 'https://api.together.xyz/v1/';
 const String togetherAIDefaultModel = 'meta-llama/Llama-3-70b-chat-hf';
+
+// OpenAI-compatible media defaults (shared by OpenAI-style endpoints).
+const String openaiDefaultTTSModel = 'tts-1';
+const String openaiDefaultSTTModel = 'whisper-1';
+const String openaiDefaultVoice = 'alloy';
+
+// Supported voices (OpenAI-style TTS).
+const List<String> openaiSupportedVoices = [
+  'alloy',
+  'ash',
+  'ballad',
+  'coral',
+  'echo',
+  'fable',
+  'nova',
+  'onyx',
+  'sage',
+  'shimmer',
+  'verse',
+];
+
+// Supported audio formats for TTS output.
+const List<String> openaiSupportedTTSFormats = [
+  'mp3',
+  'opus',
+  'aac',
+  'flac',
+  'wav',
+  'pcm',
+];
+
+// Supported audio formats for STT input.
+const List<String> openaiSupportedSTTFormats = [
+  'flac',
+  'm4a',
+  'mp3',
+  'mp4',
+  'mpeg',
+  'mpga',
+  'oga',
+  'ogg',
+  'wav',
+  'webm',
+];
+
+// Supported image sizes (OpenAI-style image generation).
+const List<String> openaiSupportedImageSizes = [
+  '256x256',
+  '512x512',
+  '1024x1024',
+  '1792x1024',
+  '1024x1792',
+];
+
+// Supported image formats (OpenAI-style image generation).
+const List<String> openaiSupportedImageFormats = [
+  'url',
+  'b64_json',
+];

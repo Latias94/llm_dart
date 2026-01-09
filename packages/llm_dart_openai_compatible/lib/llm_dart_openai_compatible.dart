@@ -10,6 +10,8 @@ export 'openai_request_config.dart';
 export 'request_builder.dart';
 export 'chat.dart';
 export 'embeddings.dart';
+export 'audio.dart';
+export 'images.dart';
 export 'provider.dart';
 
 // Low-level HTTP utilities are opt-in:
