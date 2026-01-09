@@ -84,35 +84,41 @@ class AnthropicChatResponse implements ChatResponseWithAssistantMessage {
       serverToolUse = null;
     }
 
-    final providerId = _providerId ?? 'anthropic';
+    final rawProviderId = _providerId?.trim();
+    final providerId = rawProviderId != null && rawProviderId.isNotEmpty
+        ? rawProviderId
+        : 'anthropic';
+    final payload = <String, dynamic>{
+      if (id != null) 'id': id,
+      if (model != null) 'model': model,
+      if (stopReason != null) 'stopReason': stopReason,
+      if (stopReason != null) 'finishReason': stopReason,
+      if (usage != null)
+        'usage': {
+          if (usage['input_tokens'] != null)
+            'inputTokens': usage['input_tokens'],
+          if (usage['output_tokens'] != null)
+            'outputTokens': usage['output_tokens'],
+          if (usage['cache_creation_input_tokens'] != null)
+            'cacheCreationInputTokens': usage['cache_creation_input_tokens'],
+          if (usage['cache_read_input_tokens'] != null)
+            'cacheReadInputTokens': usage['cache_read_input_tokens'],
+          if (usage['service_tier'] != null)
+            'serviceTier': usage['service_tier'],
+          if (serverToolUse != null)
+            'serverToolUse': {
+              if (serverToolUse['web_search_requests'] != null)
+                'webSearchRequests': serverToolUse['web_search_requests'],
+              if (serverToolUse['web_fetch_requests'] != null)
+                'webFetchRequests': serverToolUse['web_fetch_requests'],
+            },
+        },
+      if (container != null) 'container': container,
+    };
+
     return {
-      providerId: {
-        if (id != null) 'id': id,
-        if (model != null) 'model': model,
-        if (stopReason != null) 'stopReason': stopReason,
-        if (stopReason != null) 'finishReason': stopReason,
-        if (usage != null)
-          'usage': {
-            if (usage['input_tokens'] != null)
-              'inputTokens': usage['input_tokens'],
-            if (usage['output_tokens'] != null)
-              'outputTokens': usage['output_tokens'],
-            if (usage['cache_creation_input_tokens'] != null)
-              'cacheCreationInputTokens': usage['cache_creation_input_tokens'],
-            if (usage['cache_read_input_tokens'] != null)
-              'cacheReadInputTokens': usage['cache_read_input_tokens'],
-            if (usage['service_tier'] != null)
-              'serviceTier': usage['service_tier'],
-            if (serverToolUse != null)
-              'serverToolUse': {
-                if (serverToolUse['web_search_requests'] != null)
-                  'webSearchRequests': serverToolUse['web_search_requests'],
-                if (serverToolUse['web_fetch_requests'] != null)
-                  'webFetchRequests': serverToolUse['web_fetch_requests'],
-              },
-          },
-        if (container != null) 'container': container,
-      },
+      providerId: payload,
+      '$providerId.messages': payload,
     };
   }
 

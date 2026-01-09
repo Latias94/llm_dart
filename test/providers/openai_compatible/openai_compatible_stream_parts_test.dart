@@ -172,6 +172,8 @@ void main() {
       expect(metadata!['deepseek']['id'], equals('chatcmpl_123'));
       expect(metadata['deepseek']['model'], equals('gpt-4o'));
       expect(metadata['deepseek']['systemFingerprint'], equals('fp_1'));
+      expect(metadata.containsKey('deepseek.chat'), isTrue);
+      expect(metadata['deepseek.chat'], equals(metadata['deepseek']));
     });
   });
 }

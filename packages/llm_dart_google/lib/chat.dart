@@ -1654,26 +1654,31 @@ class GoogleChatResponse implements ChatResponse {
 
     if (!hasAnyMetadata) return null;
 
+    final payload = <String, dynamic>{
+      if (modelVersion != null) 'model': modelVersion,
+      if (finishReason != null) 'finishReason': finishReason,
+      if (finishReason != null) 'stopReason': finishReason,
+      if (_toolWarnings.isNotEmpty) 'toolWarnings': _toolWarnings,
+      if (usageMetadata != null)
+        'usage': {
+          if (usageMetadata['promptTokenCount'] != null)
+            'promptTokens': usageMetadata['promptTokenCount'],
+          if (usageMetadata['candidatesTokenCount'] != null)
+            'completionTokens': usageMetadata['candidatesTokenCount'],
+          if (usageMetadata['totalTokenCount'] != null)
+            'totalTokens': usageMetadata['totalTokenCount'],
+          if (usageMetadata['thoughtsTokenCount'] != null)
+            'reasoningTokens': usageMetadata['thoughtsTokenCount'],
+        },
+      if (promptFeedback != null) 'promptFeedback': promptFeedback,
+      if (safetyRatings != null) 'safetyRatings': safetyRatings,
+    };
+
     return {
-      'google': {
-        if (modelVersion != null) 'model': modelVersion,
-        if (finishReason != null) 'finishReason': finishReason,
-        if (finishReason != null) 'stopReason': finishReason,
-        if (_toolWarnings.isNotEmpty) 'toolWarnings': _toolWarnings,
-        if (usageMetadata != null)
-          'usage': {
-            if (usageMetadata['promptTokenCount'] != null)
-              'promptTokens': usageMetadata['promptTokenCount'],
-            if (usageMetadata['candidatesTokenCount'] != null)
-              'completionTokens': usageMetadata['candidatesTokenCount'],
-            if (usageMetadata['totalTokenCount'] != null)
-              'totalTokens': usageMetadata['totalTokenCount'],
-            if (usageMetadata['thoughtsTokenCount'] != null)
-              'reasoningTokens': usageMetadata['thoughtsTokenCount'],
-          },
-        if (promptFeedback != null) 'promptFeedback': promptFeedback,
-        if (safetyRatings != null) 'safetyRatings': safetyRatings,
-      },
+      'google': payload,
+      'google.chat': payload,
+      // AI SDK default provider name for Google Generative AI.
+      'google.generative-ai': payload,
     };
   }
 

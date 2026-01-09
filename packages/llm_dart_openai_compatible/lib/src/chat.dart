@@ -741,14 +741,19 @@ class OpenAIChatResponse implements ChatResponse {
       return null;
     }
 
-    final providerId = _providerId ?? 'openai';
+    final rawProviderId = _providerId?.trim();
+    final providerId = rawProviderId != null && rawProviderId.isNotEmpty
+        ? rawProviderId
+        : 'openai';
+    final payload = <String, dynamic>{
+      if (id != null) 'id': id,
+      if (model != null) 'model': model,
+      if (systemFingerprint != null) 'systemFingerprint': systemFingerprint,
+      if (finishReason != null) 'finishReason': finishReason,
+    };
     return {
-      providerId: {
-        if (id != null) 'id': id,
-        if (model != null) 'model': model,
-        if (systemFingerprint != null) 'systemFingerprint': systemFingerprint,
-        if (finishReason != null) 'finishReason': finishReason,
-      },
+      providerId: payload,
+      '$providerId.chat': payload,
     };
   }
 
