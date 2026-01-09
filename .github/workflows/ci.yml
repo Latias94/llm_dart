@@ -31,6 +31,9 @@ jobs:
       - name: Check provider public surface (Tier 2)
         run: dart run tool/check_provider_surface.dart
 
+      - name: Verify Vercel AI SDK fixtures are synced
+        run: dart run tool/sync_vercel_fixtures.dart --check
+
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 
@@ -53,7 +56,7 @@ jobs:
         run: dart pub get
 
       - name: Run tests
-        run: dart test
+        run: dart test -j 1
 
   test-coverage:
     name: Test Coverage
