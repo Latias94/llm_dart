@@ -66,6 +66,8 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
   GoogleChat(this.client, this.config);
 
+  String get _providerOptionsName => config.providerOptionsName;
+
   String get _chatEndpoint =>
       '${googleModelPath(config.model)}:generateContent';
 
@@ -329,7 +331,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
                 final providerOptions = thoughtSignature == null
                     ? const <String, Map<String, dynamic>>{}
                     : <String, Map<String, dynamic>>{
-                        'google': {
+                        _providerOptionsName: {
                           'thoughtSignature': thoughtSignature.toString(),
                         },
                       };
@@ -413,7 +415,10 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
               },
             ],
             if (usageMetadata != null) 'usageMetadata': usageMetadata,
-          }, toolNameMapping: toolNameMapping, toolWarnings: toolWarnings);
+          },
+              toolNameMapping: toolNameMapping,
+              toolWarnings: toolWarnings,
+              providerOptionsName: _providerOptionsName);
 
           final metadata = response.providerMetadata;
           if (metadata != null && metadata.isNotEmpty) {
@@ -443,7 +448,10 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         },
       ],
       if (usageMetadata != null) 'usageMetadata': usageMetadata,
-    }, toolNameMapping: toolNameMapping, toolWarnings: toolWarnings);
+    },
+        toolNameMapping: toolNameMapping,
+        toolWarnings: toolWarnings,
+        providerOptionsName: _providerOptionsName);
     final metadata = response.providerMetadata;
     if (metadata != null && metadata.isNotEmpty) {
       yield LLMProviderMetadataPart(metadata);
@@ -626,6 +634,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       responseData,
       toolNameMapping: toolNameMapping,
       toolWarnings: toolWarnings,
+      providerOptionsName: _providerOptionsName,
     );
   }
 
@@ -773,7 +782,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
           providerOptions: part['thoughtSignature'] == null
               ? const <String, Map<String, dynamic>>{}
               : <String, Map<String, dynamic>>{
-                  'google': {
+                  _providerOptionsName: {
                     'thoughtSignature': part['thoughtSignature'].toString(),
                   },
                 },
@@ -790,7 +799,10 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       final response = GoogleChatResponse({
         'candidates': [],
         'usageMetadata': usage,
-      }, toolNameMapping: toolNameMapping, toolWarnings: toolWarnings);
+      },
+          toolNameMapping: toolNameMapping,
+          toolWarnings: toolWarnings,
+          providerOptionsName: _providerOptionsName);
       return CompletionEvent(response);
     }
 
@@ -1578,13 +1590,16 @@ class GoogleChatResponse implements ChatResponse {
   final Map<String, dynamic> _rawResponse;
   final ToolNameMapping? _toolNameMapping;
   final List<Map<String, dynamic>> _toolWarnings;
+  final String _providerOptionsName;
 
   GoogleChatResponse(
     this._rawResponse, {
     ToolNameMapping? toolNameMapping,
     List<Map<String, dynamic>> toolWarnings = const [],
+    String providerOptionsName = 'google',
   })  : _toolNameMapping = toolNameMapping,
-        _toolWarnings = List<Map<String, dynamic>>.unmodifiable(toolWarnings);
+        _toolWarnings = List<Map<String, dynamic>>.unmodifiable(toolWarnings),
+        _providerOptionsName = providerOptionsName;
 
   @override
   String? get text {
@@ -1697,12 +1712,18 @@ class GoogleChatResponse implements ChatResponse {
       if (urlContextMetadata != null) 'urlContextMetadata': urlContextMetadata,
     };
 
-    return {
-      'google': payload,
-      'google.chat': payload,
-      // AI SDK default provider name for Google Generative AI.
-      'google.generative-ai': payload,
+    final baseKey = _providerOptionsName;
+    final metadata = <String, dynamic>{
+      baseKey: payload,
+      '$baseKey.chat': payload,
     };
+
+    // AI SDK default provider name for Google Generative AI (Gemini API only).
+    if (baseKey == 'google') {
+      metadata['google.generative-ai'] = payload;
+    }
+
+    return metadata;
   }
 
   @override
@@ -1745,7 +1766,7 @@ class GoogleChatResponse implements ChatResponse {
             providerOptions: thoughtSignature == null
                 ? const <String, Map<String, dynamic>>{}
                 : <String, Map<String, dynamic>>{
-                    'google': {
+                    _providerOptionsName: {
                       'thoughtSignature': thoughtSignature.toString(),
                     },
                   },

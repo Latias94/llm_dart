@@ -54,6 +54,16 @@ class SafetySetting {
 /// This class contains all configuration options for the Google providers.
 /// It's extracted from the main provider to improve modularity and reusability.
 class GoogleConfig {
+  /// Provider options namespace name used for `providerMetadata` and per-part
+  /// `providerOptions` propagation.
+  ///
+  /// Default: `google` (Google AI / Gemini API).
+  ///
+  /// This exists to support Vercel AI SDK parity where the same internal
+  /// message/part mapping is shared across Google AI and Vertex AI, but the
+  /// metadata namespace differs (`google` vs `vertex`).
+  final String providerOptionsName;
+
   final String apiKey;
   final String baseUrl;
   final String model;
@@ -100,6 +110,7 @@ class GoogleConfig {
   final LLMConfig? _originalConfig;
 
   const GoogleConfig({
+    this.providerOptionsName = 'google',
     required this.apiKey,
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/',
     this.model = 'gemini-1.5-flash',
@@ -131,8 +142,11 @@ class GoogleConfig {
   }) : _originalConfig = originalConfig;
 
   /// Create GoogleConfig from unified LLMConfig
-  factory GoogleConfig.fromLLMConfig(LLMConfig config) {
-    const providerId = 'google';
+  factory GoogleConfig.fromLLMConfig(
+    LLMConfig config, {
+    String providerId = 'google',
+    String providerOptionsName = 'google',
+  }) {
     final providerOptions = config.providerOptions;
 
     final webSearchEnabledFromProviderOptions = readProviderOption<bool>(
@@ -186,6 +200,7 @@ class GoogleConfig {
     );
 
     return GoogleConfig(
+      providerOptionsName: providerOptionsName,
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
       model: config.model,
@@ -385,6 +400,7 @@ class GoogleConfig {
       ];
 
   GoogleConfig copyWith({
+    String? providerOptionsName,
     String? apiKey,
     String? baseUrl,
     String? model,
@@ -414,6 +430,7 @@ class GoogleConfig {
     int? embeddingDimensions,
   }) =>
       GoogleConfig(
+        providerOptionsName: providerOptionsName ?? this.providerOptionsName,
         apiKey: apiKey ?? this.apiKey,
         baseUrl: baseUrl ?? this.baseUrl,
         model: model ?? this.model,
