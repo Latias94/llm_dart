@@ -960,35 +960,31 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     final hasProviderDefinedTools =
         providerToolsEnabled || config.webSearchEnabled;
 
-    if (effectiveTools != null &&
-        effectiveTools.isNotEmpty &&
-        hasProviderDefinedTools) {
-      toolWarnings.add({
-        'type': 'unsupported',
-        'feature': 'combination of function and provider-defined tools',
-      });
-    }
+    if (hasProviderDefinedTools) {
+      if (effectiveTools != null && effectiveTools.isNotEmpty) {
+        toolWarnings.add({
+          'type': 'unsupported',
+          'feature': 'combination of function and provider-defined tools',
+        });
+      }
+    } else {
+      if (effectiveTools != null && effectiveTools.isNotEmpty) {
+        body['tools'] = <Map<String, dynamic>>[
+          {
+            'functionDeclarations': effectiveTools
+                .map((t) => _convertFunctionTool(t, toolNameMapping))
+                .toList(),
+          },
+        ];
 
-    if (effectiveTools != null && effectiveTools.isNotEmpty) {
-      body['tools'] = <Map<String, dynamic>>[
-        {
-          'functionDeclarations': effectiveTools
-              .map((t) => _convertFunctionTool(t, toolNameMapping))
-              .toList(),
-        },
-      ];
-
-      // Add tool choice configuration
-      final effectiveToolChoice = config.toolChoice;
-      final shouldSendToolConfig =
-          !providerToolsEnabled && !config.webSearchEnabled;
-
-      if (effectiveToolChoice != null && shouldSendToolConfig) {
-        body['toolConfig'] = _convertToolChoice(
-          effectiveToolChoice,
-          effectiveTools,
-          toolNameMapping,
-        );
+        final effectiveToolChoice = config.toolChoice;
+        if (effectiveToolChoice != null) {
+          body['toolConfig'] = _convertToolChoice(
+            effectiveToolChoice,
+            effectiveTools,
+            toolNameMapping,
+          );
+        }
       }
     }
 

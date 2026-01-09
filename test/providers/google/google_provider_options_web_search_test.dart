@@ -130,8 +130,7 @@ void main() {
       expect(hasGoogleSearchBuiltIn, isFalse);
     });
 
-    test(
-        'rewrites colliding function tool name when provider-native web search is enabled',
+    test('ignores function tools when provider-native web search is enabled',
         () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',
@@ -172,17 +171,9 @@ void main() {
           list.any((t) => t is Map && t.containsKey('googleSearchRetrieval'));
       expect(hasGoogleSearchBuiltIn, isTrue);
 
-      final functionDeclarations = list
-          .whereType<Map>()
-          .map((m) => Map<String, dynamic>.from(m))
-          .where((m) => m['functionDeclarations'] is List)
-          .expand((m) => (m['functionDeclarations'] as List))
-          .whereType<Map>()
-          .map((m) => m['name'])
-          .whereType<String>()
-          .toList();
-
-      expect(functionDeclarations, contains('google_search__1'));
+      final hasFunctionDeclarations =
+          list.any((t) => t is Map && t.containsKey('functionDeclarations'));
+      expect(hasFunctionDeclarations, isFalse);
     });
 
     test(
@@ -213,8 +204,7 @@ void main() {
       expect(hasGoogleSearch, isTrue);
     });
 
-    test(
-        'rewrites colliding function tool name when providerTools enables web search',
+    test('ignores function tools when providerTools enables web search',
         () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',
@@ -253,17 +243,9 @@ void main() {
           list.any((t) => t is Map && t.containsKey('googleSearchRetrieval'));
       expect(hasGoogleSearchBuiltIn, isTrue);
 
-      final functionDeclarations = list
-          .whereType<Map>()
-          .map((m) => Map<String, dynamic>.from(m))
-          .where((m) => m['functionDeclarations'] is List)
-          .expand((m) => (m['functionDeclarations'] as List))
-          .whereType<Map>()
-          .map((m) => m['name'])
-          .whereType<String>()
-          .toList();
-
-      expect(functionDeclarations, contains('google_search__1'));
+      final hasFunctionDeclarations =
+          list.any((t) => t is Map && t.containsKey('functionDeclarations'));
+      expect(hasFunctionDeclarations, isFalse);
     });
 
     test(
@@ -376,8 +358,7 @@ void main() {
       expect(map.any((m) => m.containsKey('urlContext')), isTrue);
     });
 
-    test(
-        'rewrites colliding function tool name when google.code_execution is enabled',
+    test('ignores function tools when google.code_execution is enabled',
         () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',
@@ -412,17 +393,13 @@ void main() {
       expect(tools, isA<List>());
       final list = tools as List;
 
-      final functionDeclarations = list
-          .whereType<Map>()
-          .map((m) => Map<String, dynamic>.from(m))
-          .where((m) => m['functionDeclarations'] is List)
-          .expand((m) => (m['functionDeclarations'] as List))
-          .whereType<Map>()
-          .map((m) => m['name'])
-          .whereType<String>()
-          .toList();
+      final hasCodeExecutionBuiltIn =
+          list.any((t) => t is Map && t.containsKey('codeExecution'));
+      expect(hasCodeExecutionBuiltIn, isTrue);
 
-      expect(functionDeclarations, contains('code_execution__1'));
+      final hasFunctionDeclarations =
+          list.any((t) => t is Map && t.containsKey('functionDeclarations'));
+      expect(hasFunctionDeclarations, isFalse);
     });
   });
 }
