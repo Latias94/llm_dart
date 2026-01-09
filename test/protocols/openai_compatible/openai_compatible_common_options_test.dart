@@ -6,6 +6,35 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAI-compatible common options parity', () {
+    test('githubCopilotBaseUrl is a base URL (not an endpoint)', () async {
+      final llmConfig = LLMConfig(
+        apiKey: null,
+        baseUrl: githubCopilotBaseUrl,
+        model: githubCopilotDefaultModel,
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'github-copilot',
+        providerName: 'GitHub Copilot',
+      );
+
+      final client = OpenAIClient(config);
+      final adapter = _CapturingHttpClientAdapter();
+      client.dio.httpClientAdapter = adapter;
+
+      await client.postJson('chat/completions', {
+        'model': githubCopilotDefaultModel,
+        'messages': const [],
+        'stream': false,
+      });
+
+      final options = adapter.lastOptions;
+      expect(options, isNotNull);
+      expect(options!.uri.toString(),
+          equals('https://api.githubcopilot.com/chat/completions'));
+    });
+
     test('allows keyless requests and merges custom headers', () async {
       final llmConfig = LLMConfig(
         apiKey: null,

@@ -29,8 +29,7 @@ const String googleOpenAIBaseUrl =
 const String googleOpenAIDefaultModel = 'gemini-2.0-flash';
 
 // Convenience endpoints used by the umbrella builder extensions.
-const String githubCopilotBaseUrl =
-    'https://api.githubcopilot.com/chat/completions';
+const String githubCopilotBaseUrl = 'https://api.githubcopilot.com/';
 const String githubCopilotDefaultModel = 'gpt-4';
 
 const String togetherAIBaseUrl = 'https://api.together.xyz/v1/';
