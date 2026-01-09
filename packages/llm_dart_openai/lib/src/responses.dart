@@ -1492,6 +1492,20 @@ class OpenAIResponsesResponse implements ChatResponse {
     return calls.isEmpty ? null : calls;
   }
 
+  List<Map<String, dynamic>>? _extractOutputItemsByType(String expectedType) {
+    final output = _rawResponse['output'] as List?;
+    if (output == null) return null;
+
+    final items = <Map<String, dynamic>>[];
+    for (final item in output) {
+      if (item is! Map<String, dynamic>) continue;
+      if (item['type'] != expectedType) continue;
+      items.add(Map<String, dynamic>.from(item));
+    }
+
+    return items.isEmpty ? null : items;
+  }
+
   List<Map<String, dynamic>>? _extractServerToolCalls() {
     final output = _rawResponse['output'] as List?;
     if (output == null) return null;
@@ -1662,13 +1676,45 @@ class OpenAIResponsesResponse implements ChatResponse {
     final webSearchCalls = _extractWebSearchCalls();
     final annotations = _extractOutputTextAnnotations();
 
+    final codeInterpreterCalls =
+        _extractOutputItemsByType('code_interpreter_call');
+    final imageGenerationCalls =
+        _extractOutputItemsByType('image_generation_call');
+
+    final mcpCalls = _extractOutputItemsByType('mcp_call');
+    final mcpListTools = _extractOutputItemsByType('mcp_list_tools');
+    final mcpApprovalRequests =
+        _extractOutputItemsByType('mcp_approval_request');
+
+    final shellCalls = _extractOutputItemsByType('shell_call');
+    final shellCallOutputs = _extractOutputItemsByType('shell_call_output');
+
+    final localShellCalls = _extractOutputItemsByType('local_shell_call');
+    final localShellCallOutputs =
+        _extractOutputItemsByType('local_shell_call_output');
+
+    final applyPatchCalls = _extractOutputItemsByType('apply_patch_call');
+    final applyPatchCallOutputs =
+        _extractOutputItemsByType('apply_patch_call_output');
+
     if (id == null &&
         model == null &&
         serverToolCalls == null &&
         fileSearchCalls == null &&
         computerCalls == null &&
         webSearchCalls == null &&
-        annotations == null) {
+        annotations == null &&
+        codeInterpreterCalls == null &&
+        imageGenerationCalls == null &&
+        mcpCalls == null &&
+        mcpListTools == null &&
+        mcpApprovalRequests == null &&
+        shellCalls == null &&
+        shellCallOutputs == null &&
+        localShellCalls == null &&
+        localShellCallOutputs == null &&
+        applyPatchCalls == null &&
+        applyPatchCallOutputs == null) {
       return null;
     }
 
@@ -1681,6 +1727,22 @@ class OpenAIResponsesResponse implements ChatResponse {
         if (computerCalls != null) 'computerCalls': computerCalls,
         if (webSearchCalls != null) 'webSearchCalls': webSearchCalls,
         if (annotations != null) 'annotations': annotations,
+        if (codeInterpreterCalls != null)
+          'codeInterpreterCalls': codeInterpreterCalls,
+        if (imageGenerationCalls != null)
+          'imageGenerationCalls': imageGenerationCalls,
+        if (mcpCalls != null) 'mcpCalls': mcpCalls,
+        if (mcpListTools != null) 'mcpListTools': mcpListTools,
+        if (mcpApprovalRequests != null)
+          'mcpApprovalRequests': mcpApprovalRequests,
+        if (shellCalls != null) 'shellCalls': shellCalls,
+        if (shellCallOutputs != null) 'shellCallOutputs': shellCallOutputs,
+        if (localShellCalls != null) 'localShellCalls': localShellCalls,
+        if (localShellCallOutputs != null)
+          'localShellCallOutputs': localShellCallOutputs,
+        if (applyPatchCalls != null) 'applyPatchCalls': applyPatchCalls,
+        if (applyPatchCallOutputs != null)
+          'applyPatchCallOutputs': applyPatchCallOutputs,
       },
     };
   }
