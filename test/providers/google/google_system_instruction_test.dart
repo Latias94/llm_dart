@@ -173,6 +173,39 @@ void main() {
       expect((parts.first as Map)['text'], 'SYS\n\n');
     });
 
+    test('prepends system messages for Gemma models (AI SDK parity)', () async {
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
+        model: 'gemma-3-12b-it',
+        systemPrompt: 'CONFIG_SYS',
+      );
+
+      final config =
+          GoogleConfig.fromLLMConfig(llmConfig).copyWith(stream: true);
+      final client = _CapturingGoogleClient(config);
+      final chat = GoogleChat(client, config);
+
+      await chat.chatStreamParts(
+        [
+          ChatMessage.system('MSG_SYS1'),
+          ChatMessage.system('MSG_SYS2'),
+          ChatMessage.user('hi'),
+        ],
+        tools: const [],
+      ).toList();
+
+      expect(client.lastBody?.containsKey('systemInstruction'), isFalse);
+
+      final contents = client.lastBody?['contents'] as List?;
+      expect(contents, isNotNull);
+      expect(contents, isNotEmpty);
+      final first = contents!.first as Map;
+      expect(first['role'], 'user');
+      final parts = first['parts'] as List;
+      expect((parts.first as Map)['text'], 'MSG_SYS1\n\nMSG_SYS2\n\n');
+    });
+
     test('omits systemInstruction when no system prompt is provided', () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',

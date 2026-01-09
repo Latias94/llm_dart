@@ -89,6 +89,18 @@ void main() {
       expect(response.images.first.format, equals('png'));
       expect(response.images.first.data, equals(pngBytes1));
       expect(response.images.last.data, equals(pngBytes2));
+
+      final meta = response.providerMetadata;
+      expect(meta, isNotNull);
+      expect(meta!.containsKey('google'), isTrue);
+      expect(meta.containsKey('google.image'), isTrue);
+      expect(
+        meta['google.image'],
+        equals({
+          'model': model,
+          'endpoint': endpoint,
+        }),
+      );
     });
 
     test('generateImages uses Gemini API for non-Imagen models', () async {
@@ -161,6 +173,18 @@ void main() {
       expect(response.images.single.data, equals(webpBytes));
       expect(
           response.images.single.revisedPrompt, equals('Revised prompt text'));
+
+      final meta = response.providerMetadata;
+      expect(meta, isNotNull);
+      expect(meta!.containsKey('google'), isTrue);
+      expect(meta.containsKey('google.image'), isTrue);
+      expect(
+        meta['google.image'],
+        equals({
+          'model': model,
+          'endpoint': endpoint,
+        }),
+      );
     });
 
     test('editImage sends inlineData and parses Gemini image response',
@@ -226,6 +250,89 @@ void main() {
       expect(response.images, hasLength(1));
       expect(response.images.single.format, equals('png'));
       expect(response.images.single.data, equals(outputBytes));
+
+      final meta = response.providerMetadata;
+      expect(meta, isNotNull);
+      expect(meta!.containsKey('google'), isTrue);
+      expect(meta.containsKey('google.image'), isTrue);
+      expect(
+        meta['google.image'],
+        equals({
+          'model': model,
+          'endpoint': endpoint,
+        }),
+      );
+    });
+
+    test('createVariation sends inlineData and parses Gemini image response',
+        () async {
+      const model = 'gemini-2.0-flash-preview-image-generation';
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: model,
+      );
+
+      final endpoint = 'models/$model:generateContent';
+      final inputBytes = <int>[4, 5, 6];
+      final outputBytes = <int>[7, 8, 9];
+
+      final client = _CapturingGoogleClient(
+        config,
+        responsesByEndpoint: {
+          endpoint: {
+            'candidates': [
+              {
+                'content': {
+                  'parts': [
+                    {
+                      'inlineData': {
+                        'mimeType': 'image/png',
+                        'data': base64Encode(outputBytes),
+                      }
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        },
+      );
+
+      final images = GoogleImages(client, config);
+      final response = await images.createVariation(
+        ImageVariationRequest(
+          image: ImageInput.fromBytes(inputBytes, format: 'png'),
+          count: 1,
+        ),
+      );
+
+      expect(client.lastEndpoint, equals(endpoint));
+
+      final body = client.lastBody!;
+      final contents = body['contents'] as List;
+      final parts = ((contents.single as Map)['parts'] as List);
+      expect((parts.first as Map)['text'], isA<String>());
+
+      final imagePart = parts[1] as Map;
+      final inlineData = imagePart['inlineData'] as Map;
+      expect(inlineData['mimeType'], equals('image/png'));
+      expect(inlineData['data'], equals(base64Encode(inputBytes)));
+
+      expect(response.images, hasLength(1));
+      expect(response.images.single.format, equals('png'));
+      expect(response.images.single.data, equals(outputBytes));
+
+      final meta = response.providerMetadata;
+      expect(meta, isNotNull);
+      expect(meta!.containsKey('google'), isTrue);
+      expect(meta.containsKey('google.image'), isTrue);
+      expect(
+        meta['google.image'],
+        equals({
+          'model': model,
+          'endpoint': endpoint,
+        }),
+      );
     });
 
     test('editImage throws when ImageInput has no data or url', () async {
