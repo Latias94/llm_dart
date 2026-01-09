@@ -5,6 +5,7 @@ import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_openai_compatible/embeddings.dart';
 import 'package:llm_dart_openai_compatible/images.dart';
 import 'package:llm_dart_openai_compatible/responses.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'config.dart';
 
@@ -43,17 +44,17 @@ class AzureOpenAIProvider
   @override
   Set<LLMCapability> get supportedCapabilities {
     final capabilities = <LLMCapability>{
-        LLMCapability.chat,
-        LLMCapability.streaming,
-        LLMCapability.embedding,
-        LLMCapability.toolCalling,
-        LLMCapability.reasoning,
-        LLMCapability.vision,
-        LLMCapability.imageGeneration,
-        LLMCapability.textToSpeech,
-        LLMCapability.speechToText,
-        LLMCapability.audioTranslation,
-      };
+      LLMCapability.chat,
+      LLMCapability.streaming,
+      LLMCapability.embedding,
+      LLMCapability.toolCalling,
+      LLMCapability.reasoning,
+      LLMCapability.vision,
+      LLMCapability.imageGeneration,
+      LLMCapability.textToSpeech,
+      LLMCapability.speechToText,
+      LLMCapability.audioTranslation,
+    };
 
     if (config.useResponsesAPI) {
       capabilities.add(LLMCapability.openaiResponses);
@@ -72,7 +73,8 @@ class AzureOpenAIProvider
     CancelToken? cancelToken,
   }) async {
     if (config.useResponsesAPI) {
-      final response = await _responses.chat(messages, cancelToken: cancelToken);
+      final response =
+          await _responses.chat(messages, cancelToken: cancelToken);
       return _wrapResponseWithProviderMetadataAlias(
         response,
         baseKey: config.providerId,
@@ -208,7 +210,8 @@ class AzureOpenAIProvider
   }
 
   @override
-  Future<ImageGenerationResponse> createVariation(ImageVariationRequest request) {
+  Future<ImageGenerationResponse> createVariation(
+      ImageVariationRequest request) {
     return _images.createVariation(request);
   }
 
@@ -289,14 +292,7 @@ ChatResponse _wrapResponseWithProviderMetadataAlias(
   required String baseKey,
   required String aliasKey,
 }) {
-  if (response is ChatResponseWithAssistantMessage) {
-    return _ChatResponseWithAssistantMessageAliasedProviderMetadata(
-      response,
-      baseKey: baseKey,
-      aliasKey: aliasKey,
-    );
-  }
-  return _ChatResponseAliasedProviderMetadata(
+  return wrapChatResponseWithProviderMetadataAlias(
     response,
     baseKey: baseKey,
     aliasKey: aliasKey,
@@ -307,121 +303,22 @@ Stream<ChatStreamEvent> _wrapChatStreamWithProviderMetadataAlias(
   Stream<ChatStreamEvent> stream, {
   required String baseKey,
   required String aliasKey,
-}) async* {
-  await for (final event in stream) {
-    switch (event) {
-      case CompletionEvent(response: final response):
-        yield CompletionEvent(
-          _wrapResponseWithProviderMetadataAlias(
-            response,
-            baseKey: baseKey,
-            aliasKey: aliasKey,
-          ),
-        );
-      default:
-        yield event;
-    }
-  }
+}) {
+  return wrapChatStreamWithProviderMetadataAlias(
+    stream,
+    baseKey: baseKey,
+    aliasKey: aliasKey,
+  );
 }
 
 Stream<LLMStreamPart> _wrapStreamPartsWithProviderMetadataAlias(
   Stream<LLMStreamPart> stream, {
   required String baseKey,
   required String aliasKey,
-}) async* {
-  await for (final part in stream) {
-    switch (part) {
-      case LLMProviderMetadataPart(providerMetadata: final providerMetadata):
-        yield LLMProviderMetadataPart(
-          _withProviderMetadataAlias(
-            providerMetadata,
-            baseKey: baseKey,
-            aliasKey: aliasKey,
-          ),
-        );
-      case LLMFinishPart(response: final response):
-        yield LLMFinishPart(
-          _wrapResponseWithProviderMetadataAlias(
-            response,
-            baseKey: baseKey,
-            aliasKey: aliasKey,
-          ),
-        );
-      default:
-        yield part;
-    }
-  }
-}
-
-Map<String, dynamic> _withProviderMetadataAlias(
-  Map<String, dynamic> providerMetadata, {
-  required String baseKey,
-  required String aliasKey,
 }) {
-  if (providerMetadata.containsKey(aliasKey)) return providerMetadata;
-
-  final copy = Map<String, dynamic>.from(providerMetadata);
-
-  dynamic payload;
-  if (copy.containsKey(baseKey)) {
-    payload = copy[baseKey];
-  } else if (copy.length == 1) {
-    payload = copy.values.first;
-  }
-
-  if (payload != null) {
-    copy[aliasKey] = payload;
-  }
-
-  return copy;
-}
-
-class _ChatResponseAliasedProviderMetadata implements ChatResponse {
-  final ChatResponse _inner;
-  final String baseKey;
-  final String aliasKey;
-
-  _ChatResponseAliasedProviderMetadata(
-    this._inner, {
-    required this.baseKey,
-    required this.aliasKey,
-  });
-
-  @override
-  String? get text => _inner.text;
-
-  @override
-  List<ToolCall>? get toolCalls => _inner.toolCalls;
-
-  @override
-  String? get thinking => _inner.thinking;
-
-  @override
-  UsageInfo? get usage => _inner.usage;
-
-  @override
-  Map<String, dynamic>? get providerMetadata {
-    final meta = _inner.providerMetadata;
-    if (meta == null) return null;
-    return _withProviderMetadataAlias(
-      meta,
-      baseKey: baseKey,
-      aliasKey: aliasKey,
-    );
-  }
-}
-
-class _ChatResponseWithAssistantMessageAliasedProviderMetadata
-    extends _ChatResponseAliasedProviderMetadata
-    implements ChatResponseWithAssistantMessage {
-  final ChatResponseWithAssistantMessage _innerWithMessage;
-
-  _ChatResponseWithAssistantMessageAliasedProviderMetadata(
-    this._innerWithMessage, {
-    required String baseKey,
-    required String aliasKey,
-  }) : super(_innerWithMessage, baseKey: baseKey, aliasKey: aliasKey);
-
-  @override
-  ChatMessage get assistantMessage => _innerWithMessage.assistantMessage;
+  return wrapStreamPartsWithProviderMetadataAlias(
+    stream,
+    baseKey: baseKey,
+    aliasKey: aliasKey,
+  );
 }

@@ -21,6 +21,7 @@ export 'utils/http_response_handler.dart';
 export 'utils/jsonl_chunk_parser.dart';
 export 'utils/log_redactor.dart';
 export 'utils/log_utils.dart';
+export 'utils/provider_metadata_alias.dart';
 export 'utils/reasoning_utils.dart';
 export 'utils/sse_line_buffer.dart';
 export 'utils/sse_chunk_parser.dart';
