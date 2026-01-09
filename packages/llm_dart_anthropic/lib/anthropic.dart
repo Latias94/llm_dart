@@ -2,9 +2,10 @@
 library;
 
 import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart'
-    show AnthropicConfig, anthropicBaseUrl, anthropicDefaultModel;
+    show AnthropicConfig;
 
 import 'provider.dart';
+import 'defaults.dart';
 
 // Provider modules
 export 'provider.dart';

@@ -1,7 +1,9 @@
-import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
+import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart'
+    show AnthropicConfig;
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
+import '../defaults.dart';
 import 'provider.dart';
 
 /// Anthropic provider id used in the core registry.

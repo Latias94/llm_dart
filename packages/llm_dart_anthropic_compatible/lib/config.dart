@@ -2,7 +2,9 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'mcp_models.dart';
 import 'web_fetch_tool_options.dart';
 import 'web_search_tool_options.dart';
-import 'defaults.dart';
+
+const String _anthropicBaseUrl = 'https://api.anthropic.com/v1/';
+const String _anthropicDefaultModel = 'claude-sonnet-4-20250514';
 
 /// Anthropic provider configuration
 ///
@@ -107,8 +109,8 @@ class AnthropicConfig {
 
   const AnthropicConfig({
     required this.apiKey,
-    this.baseUrl = anthropicBaseUrl,
-    this.model = anthropicDefaultModel,
+    this.baseUrl = _anthropicBaseUrl,
+    this.model = _anthropicDefaultModel,
     this.providerId = 'anthropic',
     this.extraBody,
     this.extraHeaders,
