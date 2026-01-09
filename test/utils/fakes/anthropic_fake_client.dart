@@ -7,6 +7,7 @@ class FakeAnthropicClient extends AnthropicClient {
   Map<String, dynamic>? lastBody;
 
   Map<String, dynamic> response = const {};
+  Stream<String> streamResponse = const Stream<String>.empty();
 
   FakeAnthropicClient(super.config);
 
@@ -19,5 +20,16 @@ class FakeAnthropicClient extends AnthropicClient {
     lastEndpoint = endpoint;
     lastBody = data;
     return response;
+  }
+
+  @override
+  Stream<String> postStreamRaw(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) {
+    lastEndpoint = endpoint;
+    lastBody = data;
+    return streamResponse;
   }
 }

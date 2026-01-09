@@ -3,29 +3,12 @@ import 'dart:io';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
-import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_xai/responses.dart';
 import 'package:test/test.dart';
 
 import '../../utils/fixture_replay.dart';
 
-class _FakeOpenAIClient extends OpenAIClient {
-  final Stream<String> _stream;
-
-  _FakeOpenAIClient(
-    super.config, {
-    required Stream<String> stream,
-  }) : _stream = stream;
-
-  @override
-  Stream<String> postStreamRaw(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) {
-    return _stream;
-  }
-}
+import '../../utils/fakes/fakes.dart';
 
 void main() {
   group('xAI Responses streaming fixtures (Vercel)', () {
@@ -51,10 +34,8 @@ void main() {
           model: 'grok-4-fast',
         );
 
-        final client = _FakeOpenAIClient(
-          config,
-          stream: sseStreamFromChunkFile(file.path),
-        );
+        final client = FakeOpenAIClient(config)
+          ..streamResponse = sseStreamFromChunkFile(file.path);
         final responses = XAIResponses(client, config);
 
         final parts =

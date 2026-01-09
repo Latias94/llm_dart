@@ -6,6 +6,7 @@ import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:test/test.dart';
 
 import '../../utils/fixture_replay.dart';
+import '../../utils/fakes/fakes.dart';
 
 bool _sessionHasContentBlockType(List<String> sessionLines, String blockType) {
   for (final line in sessionLines) {
@@ -126,42 +127,6 @@ Map<String, int>? _sessionServerToolUseCounts(List<String> sessionLines) {
   return (name: name!, input: startInput ?? const {});
 }
 
-class _FakeJsonAnthropicClient extends AnthropicClient {
-  final Map<String, dynamic> _response;
-
-  _FakeJsonAnthropicClient(
-    super.config, {
-    required Map<String, dynamic> response,
-  }) : _response = response;
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) async {
-    return _response;
-  }
-}
-
-class _FakeStreamAnthropicClient extends AnthropicClient {
-  final Stream<String> _stream;
-
-  _FakeStreamAnthropicClient(
-    super.config, {
-    required Stream<String> stream,
-  }) : _stream = stream;
-
-  @override
-  Stream<String> postStreamRaw(
-    String endpoint,
-    Map<String, dynamic> data, {
-    CancelToken? cancelToken,
-  }) {
-    return _stream;
-  }
-}
-
 void main() {
   group('Anthropic fixtures (Vercel)', () {
     final dir = Directory('test/fixtures/anthropic/messages');
@@ -199,7 +164,7 @@ void main() {
             baseUrl: 'https://api.anthropic.com/v1/',
           );
 
-          final client = _FakeJsonAnthropicClient(config, response: raw);
+          final client = FakeAnthropicClient(config)..response = raw;
           final chat = AnthropicChat(client, config);
 
           final response = await chat.chat([ChatMessage.user('Hi')]);
@@ -295,7 +260,7 @@ void main() {
               sessionIndex < streams.length;
               sessionIndex++) {
             final stream = streams[sessionIndex];
-            final client = _FakeStreamAnthropicClient(config, stream: stream);
+            final client = FakeAnthropicClient(config)..streamResponse = stream;
             final chat = AnthropicChat(client, config);
 
             final parts =

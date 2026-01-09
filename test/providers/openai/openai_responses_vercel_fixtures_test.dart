@@ -2,48 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_openai/client.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
 import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:test/test.dart';
 
 import '../../utils/fixture_replay.dart';
-
-class _FakeJsonOpenAIClient extends OpenAIClient {
-  final Map<String, dynamic> _response;
-
-  _FakeJsonOpenAIClient(
-    super.config, {
-    required Map<String, dynamic> response,
-  }) : _response = response;
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    return _response;
-  }
-}
-
-class _FakeStreamOpenAIClient extends OpenAIClient {
-  final Stream<String> _stream;
-
-  _FakeStreamOpenAIClient(
-    super.config, {
-    required Stream<String> stream,
-  }) : _stream = stream;
-
-  @override
-  Stream<String> postStreamRaw(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) {
-    return _stream;
-  }
-}
+import '../../utils/fakes/fakes.dart';
 
 bool _sessionHasOutputItemType(List<String> sessionLines, String itemType) {
   for (final line in sessionLines) {
@@ -119,7 +83,7 @@ void main() {
             useResponsesAPI: true,
           );
 
-          final client = _FakeJsonOpenAIClient(config, response: raw);
+          final client = FakeOpenAIClient(config)..jsonResponse = raw;
           final responses = openai_responses.OpenAIResponses(client, config);
 
           expect(
@@ -142,7 +106,7 @@ void main() {
             useResponsesAPI: true,
           );
 
-          final client = _FakeJsonOpenAIClient(config, response: raw);
+          final client = FakeOpenAIClient(config)..jsonResponse = raw;
           final responses = openai_responses.OpenAIResponses(client, config);
 
           final response =
@@ -218,7 +182,7 @@ void main() {
               sessionIndex < streams.length;
               sessionIndex++) {
             final stream = streams[sessionIndex];
-            final client = _FakeStreamOpenAIClient(config, stream: stream);
+            final client = FakeOpenAIClient(config)..streamResponse = stream;
             final responses = openai_responses.OpenAIResponses(client, config);
 
             try {

@@ -2,27 +2,10 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
-import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_xai/responses.dart';
 import 'package:test/test.dart';
 
-class _FakeOpenAIClient extends OpenAIClient {
-  final Stream<String> _stream;
-
-  _FakeOpenAIClient(
-    super.config, {
-    required Stream<String> stream,
-  }) : _stream = stream;
-
-  @override
-  Stream<String> postStreamRaw(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) {
-    return _stream;
-  }
-}
+import '../../utils/fakes/fakes.dart';
 
 String _sseData(Map<String, dynamic> json) => 'data: ${jsonEncode(json)}\n\n';
 
@@ -120,10 +103,8 @@ void main() {
         }),
       ];
 
-      final client = _FakeOpenAIClient(
-        config,
-        stream: Stream<String>.fromIterable(chunks),
-      );
+      final client = FakeOpenAIClient(config)
+        ..streamResponse = Stream<String>.fromIterable(chunks);
       final responses = XAIResponses(client, config);
 
       final parts =
@@ -200,10 +181,8 @@ void main() {
         }),
       ];
 
-      final client = _FakeOpenAIClient(
-        config,
-        stream: Stream<String>.fromIterable(chunks),
-      );
+      final client = FakeOpenAIClient(config)
+        ..streamResponse = Stream<String>.fromIterable(chunks);
       final responses = XAIResponses(client, config);
 
       final parts =
@@ -277,10 +256,8 @@ void main() {
         }),
       ];
 
-      final client = _FakeOpenAIClient(
-        config,
-        stream: Stream<String>.fromIterable(chunks),
-      );
+      final client = FakeOpenAIClient(config)
+        ..streamResponse = Stream<String>.fromIterable(chunks);
       final responses = XAIResponses(client, config);
 
       final parts =

@@ -3,27 +3,10 @@ import 'dart:io';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
-import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_xai/responses.dart';
 import 'package:test/test.dart';
 
-class _FakeJsonOpenAIClient extends OpenAIClient {
-  final Map<String, dynamic> _response;
-
-  _FakeJsonOpenAIClient(
-    super.config, {
-    required Map<String, dynamic> response,
-  }) : _response = response;
-
-  @override
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    CancelToken? cancelToken,
-  }) async {
-    return _response;
-  }
-}
+import '../../utils/fakes/fakes.dart';
 
 String _extractOutputText(Map<String, dynamic> response) {
   final output = response['output'] as List?;
@@ -102,7 +85,7 @@ void main() {
           model: raw['model'] as String? ?? 'grok-4-fast',
         );
 
-        final client = _FakeJsonOpenAIClient(config, response: raw);
+        final client = FakeOpenAIClient(config)..jsonResponse = raw;
         final responses = XAIResponses(client, config);
 
         final response = await responses.chat([ChatMessage.user('Hi')]);
