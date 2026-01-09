@@ -43,10 +43,10 @@ This also updates internal dependency constraints to `^0.12.0`.
 
 ## Melos scripts (optional)
 
-You can run the same commands via Melos:
+You can run the same commands via Melos (either globally installed `melos`, or
+the pinned workspace dependency via `dart run melos`):
 
 ```bash
-melos run version:set-all -- --version 0.12.0
-melos run version:set -- --package llm_dart_openai --version 0.11.1
+dart run melos run version:set-all -- --version 0.12.0
+dart run melos run version:set -- --package llm_dart_openai --version 0.11.1
 ```
-

@@ -45,6 +45,14 @@ linking internal packages from source during development.
 This repo includes `melos.yaml` for optional scripting/versioning workflows,
 but it is not required for dependency linking (pub workspaces already handle that).
 
+Melos is pinned as a dev dependency in the repo root, so you can run it without a
+global install via:
+
+```bash
+dart run melos --version
+dart run melos run test
+```
+
 ---
 
 ## 4) Publishing checklist
