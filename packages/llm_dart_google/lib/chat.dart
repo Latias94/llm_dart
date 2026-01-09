@@ -1337,13 +1337,16 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   Map<String, dynamic> _convertTool(Tool tool) {
     try {
       final schema = tool.function.parameters.toJson();
+      final hasEmptyObjectSchema = schema['type'] == 'object' &&
+          (schema['properties'] is Map) &&
+          (schema['properties'] as Map).isEmpty &&
+          (schema['required'] is List) &&
+          (schema['required'] as List).isEmpty;
 
       return {
         'name': tool.function.name,
-        'description': tool.function.description.isNotEmpty
-            ? tool.function.description
-            : 'No description provided',
-        'parameters': schema,
+        'description': tool.function.description,
+        if (!hasEmptyObjectSchema) 'parameters': schema,
       };
     } catch (e) {
       client.logger.warning('Failed to convert tool ${tool.function.name}: $e');
