@@ -1361,6 +1361,7 @@ class OpenAIResponses
       'name': requestName,
       'description': tool.function.description,
       'parameters': tool.function.parameters.toJson(),
+      if (tool.strict != null) 'strict': tool.strict,
     };
   }
 }

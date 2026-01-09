@@ -174,13 +174,40 @@ class AnthropicRequestBuilder {
         inputSchema['properties'] = <String, dynamic>{};
       }
 
-      return {
+      final result = <String, dynamic>{
         'name': tool.function.name,
         'description': tool.function.description.isNotEmpty
             ? tool.function.description
             : 'No description provided',
         'input_schema': inputSchema,
       };
+
+      if (tool.strict != null) {
+        result['strict'] = tool.strict;
+      }
+
+      final examples = tool.inputExamples;
+      if (examples != null && examples.isNotEmpty) {
+        result['input_examples'] = examples;
+      }
+
+      final anthropicOptions = tool.providerOptions['anthropic'];
+      if (anthropicOptions is Map<String, dynamic>) {
+        final deferLoading = anthropicOptions['deferLoading'];
+        if (deferLoading is bool) {
+          result['defer_loading'] = deferLoading;
+        }
+
+        final allowedCallers = anthropicOptions['allowedCallers'];
+        if (allowedCallers is List) {
+          final callers = allowedCallers.whereType<String>().toList();
+          if (callers.isNotEmpty) {
+            result['allowed_callers'] = callers;
+          }
+        }
+      }
+
+      return result;
     } on InvalidRequestError {
       rethrow;
     } catch (e) {

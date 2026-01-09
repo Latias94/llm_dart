@@ -110,6 +110,16 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
       betaFeatures.add('web-fetch-2025-09-10');
     }
 
+    // Structured outputs + advanced tool use are beta-gated and are driven by
+    // request payload shape (tools definitions).
+    if (_requestUsesStructuredOutputs(requestData)) {
+      betaFeatures.add('structured-outputs-2025-11-13');
+    }
+
+    if (_requestUsesAdvancedToolUse(requestData)) {
+      betaFeatures.add('advanced-tool-use-2025-11-20');
+    }
+
     // Add beta header if any features are enabled
     if (betaFeatures.isNotEmpty) {
       headers['anthropic-beta'] = betaFeatures.join(',');
@@ -133,6 +143,24 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
       for (final v in value) {
         if (_containsCacheControlKey(v)) return true;
       }
+    }
+    return false;
+  }
+
+  static bool _requestUsesStructuredOutputs(dynamic data) =>
+      _toolsContainKey(data, 'strict');
+
+  static bool _requestUsesAdvancedToolUse(dynamic data) =>
+      _toolsContainKey(data, 'input_examples') ||
+      _toolsContainKey(data, 'allowed_callers') ||
+      _toolsContainKey(data, 'defer_loading');
+
+  static bool _toolsContainKey(dynamic data, String key) {
+    if (data is! Map) return false;
+    final tools = data['tools'];
+    if (tools is! List) return false;
+    for (final tool in tools) {
+      if (tool is Map && tool.containsKey(key)) return true;
     }
     return false;
   }

@@ -1,3 +1,5 @@
+import '../core/provider_options.dart';
+
 /// Represents a parameter in a function tool
 class ParameterProperty {
   /// The type of the parameter (e.g. "string", "number", "array", etc)
@@ -201,24 +203,99 @@ class Tool {
   /// The function definition if this is a function tool
   final FunctionTool function;
 
-  const Tool({required this.toolType, required this.function});
+  /// Optional strict mode hint (provider-dependent).
+  ///
+  /// - OpenAI: forwarded as `function.strict` (Chat Completions) or `strict`
+  ///   (Responses API) when supported.
+  /// - Anthropic: forwarded as `strict` for structured outputs (beta-gated).
+  final bool? strict;
+
+  /// Optional tool input examples (provider-dependent).
+  ///
+  /// Anthropic supports `input_examples` (beta-gated).
+  final List<Map<String, dynamic>>? inputExamples;
+
+  /// Optional provider-specific tool options (provider-dependent).
+  ///
+  /// This mirrors Vercel AI SDK where tool definitions can carry namespaced
+  /// provider options (e.g. `providerOptions.anthropic.allowedCallers`).
+  final ProviderOptions providerOptions;
+
+  const Tool({
+    required this.toolType,
+    required this.function,
+    this.strict,
+    this.inputExamples,
+    this.providerOptions = const {},
+  });
 
   Map<String, dynamic> toJson() => {
         'type': toolType,
-        'function': function.toJson(),
+        'function': {
+          ...function.toJson(),
+          if (strict != null) 'strict': strict,
+        },
       };
 
-  factory Tool.fromJson(Map<String, dynamic> json) => Tool(
-        toolType: json['type'] as String,
-        function:
-            FunctionTool.fromJson(json['function'] as Map<String, dynamic>),
-      );
+  factory Tool.fromJson(Map<String, dynamic> json) {
+    final functionRaw = json['function'];
+    final functionMap = functionRaw is Map<String, dynamic>
+        ? functionRaw
+        : functionRaw is Map
+            ? Map<String, dynamic>.from(functionRaw)
+            : const <String, dynamic>{};
+
+    final strict = functionMap['strict'];
+
+    List<Map<String, dynamic>>? parseExamples(dynamic raw) {
+      if (raw is! List) return null;
+      final result = <Map<String, dynamic>>[];
+      for (final item in raw) {
+        if (item is Map<String, dynamic>) {
+          result.add(item);
+        } else if (item is Map) {
+          result.add(Map<String, dynamic>.from(item));
+        }
+      }
+      return result.isEmpty ? null : result;
+    }
+
+    ProviderOptions parseProviderOptions(dynamic raw) {
+      if (raw is ProviderOptions) return raw;
+      if (raw is! Map) return const {};
+      final result = <String, Map<String, dynamic>>{};
+      for (final entry in raw.entries) {
+        final key = entry.key;
+        if (key is! String) continue;
+        final value = entry.value;
+        if (value is Map<String, dynamic>) {
+          result[key] = value;
+        } else if (value is Map) {
+          result[key] = Map<String, dynamic>.from(value);
+        }
+      }
+      return result.isEmpty ? const {} : result;
+    }
+
+    return Tool(
+      toolType: json['type'] as String,
+      function: FunctionTool.fromJson(functionMap),
+      strict: strict is bool ? strict : null,
+      inputExamples: parseExamples(
+        json['inputExamples'] ?? json['input_examples'],
+      ),
+      providerOptions: parseProviderOptions(json['providerOptions']),
+    );
+  }
 
   /// Create a function tool
   factory Tool.function({
     required String name,
     required String description,
     required ParametersSchema parameters,
+    bool? strict,
+    List<Map<String, dynamic>>? inputExamples,
+    ProviderOptions providerOptions = const {},
   }) =>
       Tool(
         toolType: 'function',
@@ -227,6 +304,9 @@ class Tool {
           description: description,
           parameters: parameters,
         ),
+        strict: strict,
+        inputExamples: inputExamples,
+        providerOptions: providerOptions,
       );
 }
 
