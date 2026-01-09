@@ -172,5 +172,23 @@ void main() {
       final parts = first['parts'] as List;
       expect((parts.first as Map)['text'], 'SYS\n\n');
     });
+
+    test('omits systemInstruction when no system prompt is provided', () async {
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
+        model: 'gemini-1.5-flash',
+      );
+
+      final config =
+          GoogleConfig.fromLLMConfig(llmConfig).copyWith(stream: true);
+      final client = _CapturingGoogleClient(config);
+      final chat = GoogleChat(client, config);
+
+      await chat
+          .chatStreamParts([ChatMessage.user('hi')], tools: const []).toList();
+
+      expect(client.lastBody?.containsKey('systemInstruction'), isFalse);
+    });
   });
 }
