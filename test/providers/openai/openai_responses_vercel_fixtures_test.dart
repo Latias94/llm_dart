@@ -45,6 +45,43 @@ class _FakeStreamOpenAIClient extends OpenAIClient {
   }
 }
 
+bool _sessionHasOutputItemType(List<String> sessionLines, String itemType) {
+  for (final line in sessionLines) {
+    final decoded = jsonDecode(line);
+    if (decoded is! Map<String, dynamic>) continue;
+
+    final type = decoded['type'];
+
+    if (type == 'response.output_item.added' ||
+        type == 'response.output_item.done') {
+      final item = decoded['item'];
+      if (item is Map && item['type'] == itemType) return true;
+    }
+
+    if (type == 'response.completed') {
+      final response = decoded['response'];
+      if (response is! Map) continue;
+
+      final output = response['output'];
+      if (output is! List) continue;
+
+      if (output.any((o) => o is Map && o['type'] == itemType)) return true;
+    }
+  }
+  return false;
+}
+
+void _expectMetaContainsOutputItemType(
+  Map<String, dynamic> meta,
+  String key,
+  String itemType,
+) {
+  final calls = meta[key] as List?;
+  expect(calls, isNotNull);
+  expect(calls, isNotEmpty);
+  expect((calls!.first as Map)['type'], equals(itemType));
+}
+
 void main() {
   group('OpenAI Responses fixtures (Vercel)', () {
     final dir = Directory('test/fixtures/openai/responses');
@@ -158,10 +195,12 @@ void main() {
         test('replays $name', () async {
           final expected =
               expectedOpenAIResponsesTextThinkingFromChunkFile(file.path);
-          final streams = sseStreamsFromChunkFileSplitByTerminalEvent(
-            file.path,
+          final sessionLines = splitJsonLinesIntoSessions(
+            readFixtureLines(file.path),
             isTerminalEvent: isOpenAIResponsesTerminalEvent,
           );
+          final streams =
+              sessionLines.map(sseStreamFromJsonLines).toList(growable: false);
 
           final config = openai_client.OpenAIConfig(
             apiKey: 'test-key',
@@ -175,7 +214,10 @@ void main() {
           final finishes = <LLMFinishPart>[];
           final errors = <LLMErrorPart>[];
 
-          for (final stream in streams) {
+          for (var sessionIndex = 0;
+              sessionIndex < streams.length;
+              sessionIndex++) {
+            final stream = streams[sessionIndex];
             final client = _FakeStreamOpenAIClient(config, stream: stream);
             final responses = openai_responses.OpenAIResponses(client, config);
 
@@ -184,6 +226,100 @@ void main() {
                   .chatStreamParts([ChatMessage.user('Hi')]).toList();
               finishes.addAll(parts.whereType<LLMFinishPart>());
               errors.addAll(parts.whereType<LLMErrorPart>());
+
+              final finishParts = parts.whereType<LLMFinishPart>().toList();
+              if (finishParts.isEmpty) continue;
+              final finish = finishParts.last;
+
+              final meta =
+                  finish.response.providerMetadata?['openai'] as Map? ??
+                      const {};
+              final openaiMeta = meta is Map<String, dynamic>
+                  ? meta
+                  : Map<String, dynamic>.from(meta as Map);
+
+              final lines = sessionLines[sessionIndex];
+
+              if (_sessionHasOutputItemType(lines, 'code_interpreter_call')) {
+                _expectMetaContainsOutputItemType(
+                  openaiMeta,
+                  'codeInterpreterCalls',
+                  'code_interpreter_call',
+                );
+              }
+              if (_sessionHasOutputItemType(lines, 'image_generation_call')) {
+                _expectMetaContainsOutputItemType(
+                  openaiMeta,
+                  'imageGenerationCalls',
+                  'image_generation_call',
+                );
+              }
+              if (_sessionHasOutputItemType(lines, 'apply_patch_call')) {
+                _expectMetaContainsOutputItemType(
+                  openaiMeta,
+                  'applyPatchCalls',
+                  'apply_patch_call',
+                );
+              }
+              if (_sessionHasOutputItemType(lines, 'apply_patch_call_output')) {
+                _expectMetaContainsOutputItemType(
+                  openaiMeta,
+                  'applyPatchCallOutputs',
+                  'apply_patch_call_output',
+                );
+              }
+              if (_sessionHasOutputItemType(lines, 'shell_call')) {
+                _expectMetaContainsOutputItemType(
+                  openaiMeta,
+                  'shellCalls',
+                  'shell_call',
+                );
+              }
+              if (_sessionHasOutputItemType(lines, 'shell_call_output')) {
+                _expectMetaContainsOutputItemType(
+                  openaiMeta,
+                  'shellCallOutputs',
+                  'shell_call_output',
+                );
+              }
+              if (_sessionHasOutputItemType(lines, 'local_shell_call')) {
+                _expectMetaContainsOutputItemType(
+                  openaiMeta,
+                  'localShellCalls',
+                  'local_shell_call',
+                );
+              }
+              if (_sessionHasOutputItemType(
+                lines,
+                'local_shell_call_output',
+              )) {
+                _expectMetaContainsOutputItemType(
+                  openaiMeta,
+                  'localShellCallOutputs',
+                  'local_shell_call_output',
+                );
+              }
+              if (_sessionHasOutputItemType(lines, 'mcp_call')) {
+                _expectMetaContainsOutputItemType(
+                  openaiMeta,
+                  'mcpCalls',
+                  'mcp_call',
+                );
+              }
+              if (_sessionHasOutputItemType(lines, 'mcp_list_tools')) {
+                _expectMetaContainsOutputItemType(
+                  openaiMeta,
+                  'mcpListTools',
+                  'mcp_list_tools',
+                );
+              }
+              if (_sessionHasOutputItemType(lines, 'mcp_approval_request')) {
+                _expectMetaContainsOutputItemType(
+                  openaiMeta,
+                  'mcpApprovalRequests',
+                  'mcp_approval_request',
+                );
+              }
             } catch (e) {
               errors.add(LLMErrorPart(GenericError('Stream error: $e')));
             }

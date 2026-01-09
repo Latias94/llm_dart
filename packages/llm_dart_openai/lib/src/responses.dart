@@ -391,6 +391,11 @@ class OpenAIResponses
           if (eventType == 'response.completed') {
             didFinish = true;
 
+            final completedResponse = json['response'];
+            if (completedResponse is Map) {
+              _captureResponseObject(completedResponse);
+            }
+
             final thinkingContent =
                 _thinkingBuffer.isNotEmpty ? _thinkingBuffer.toString() : null;
             final response = OpenAIResponsesResponse(
@@ -1345,10 +1350,21 @@ class OpenAIResponses
       final thinkingContent =
           thinkingBuffer.isNotEmpty ? thinkingBuffer.toString() : null;
 
-      final response = OpenAIResponsesResponse({
-        'output_text': '',
-        if (usage != null) 'usage': usage,
-      }, thinkingContent, toolNameMapping);
+      final partialResponse = _buildPartialResponse();
+      if (usage != null) {
+        partialResponse['usage'] = usage;
+      }
+
+      final response = OpenAIResponsesResponse(
+        partialResponse.isEmpty
+            ? {
+                'output_text': '',
+                if (usage != null) 'usage': usage,
+              }
+            : partialResponse,
+        thinkingContent,
+        toolNameMapping,
+      );
 
       events.add(CompletionEvent(response));
 
