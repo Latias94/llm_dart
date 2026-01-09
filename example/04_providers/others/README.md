@@ -7,6 +7,9 @@ OpenAI-compatible providers and specialized integrations.
 ### [openai_compatible.dart](openai_compatible.dart)
 Unified interface for multiple OpenAI-compatible providers.
 
+### [openai_compatible_custom_providers.dart](openai_compatible_custom_providers.dart)
+Register a custom OpenAI-compatible provider id (LM Studio / LiteLLM / gateways).
+
 ### [xai_grok.dart](xai_grok.dart)
 X.AI Grok integration and configuration.
 
@@ -21,6 +24,7 @@ export OPENROUTER_API_KEY="your-openrouter-key"
 
 # Run provider integration examples
 dart run openai_compatible.dart
+dart run openai_compatible_custom_providers.dart
 dart run xai_grok.dart
 ```
 
