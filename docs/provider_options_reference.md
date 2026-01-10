@@ -404,6 +404,5 @@ Structured output:
 
 - `jsonSchema`: `StructuredOutputFormat`
 
-<!-- Phind support has been removed from the umbrella package (`llm_dart`).
-     Keep using the OpenAI-compatible escape hatches for providers that are
-     still shipped. -->
+<!-- Phind provider has been removed from this repository. Keep using the
+     OpenAI-compatible escape hatches for providers that are still shipped. -->

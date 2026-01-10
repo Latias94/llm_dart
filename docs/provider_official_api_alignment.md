@@ -17,7 +17,7 @@ Notes:
 ## Scope
 
 - Included: providers shipped in this repo (`docs/providers/README.md`)
-- Excluded: providers not supported in the umbrella package (e.g. Phind)
+- Excluded: providers not supported in the umbrella package
 
 ## Legend
 

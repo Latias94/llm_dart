@@ -212,4 +212,4 @@ Recent high-signal changes:
 - Groq provider is now a thin OpenAI-compatible wrapper; chat/streaming is handled by `llm_dart_openai_compatible`.
 - DeepSeek provider is now a thin OpenAI-compatible wrapper; chat/streaming is handled by `llm_dart_openai_compatible`.
 - xAI provider is now a thin OpenAI-compatible wrapper; live search request mapping is handled by `llm_dart_openai_compatible`.
-- Phind provider package exists as a thin OpenAI-compatible wrapper, but it is no longer shipped in the umbrella `llm_dart` package by default.
+- Phind provider package has been removed from this repository.

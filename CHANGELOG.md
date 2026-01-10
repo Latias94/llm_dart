@@ -27,8 +27,8 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
   - Use provider-specific APIs instead (e.g. cast to `OpenAIProvider` and use `openai.filesApi` / `openai.moderationApi` / `openai.assistantsApi` / `openai.modelsApi`).
 - **Removed non-standard unified completion**: removed `CompletionCapability`.
   - Use provider-specific completion APIs instead (e.g. `provider as OpenAIProvider`, then `openai.completionApi.complete(...)`).
-- **Phind removed from umbrella**: `llm_dart` no longer ships the Phind provider by default (no built-in registration, no exports, no docs/examples). If you still need Phind, depend on `llm_dart_phind` directly and call `registerPhind()` (see `docs/migrations/0.11.0-alpha.1.md`).
-- **Removed `phind-openai` preset provider id**: the legacy OpenAI-compatible preset id `phind-openai` is no longer provided. Use the standalone Phind provider id `phind` (via `llm_dart_phind`) if needed.
+- **Phind removed**: the Phind provider package has been removed from this repository.
+- **Removed `phind-openai` preset provider id**: the legacy OpenAI-compatible preset id `phind-openai` is no longer provided.
 - **OpenAI Responses isolation (Vercel-style)**: `llm_dart_openai_compatible` no longer models the OpenAI Responses API; Responses message conversion now lives in `llm_dart_openai` via `OpenAIResponsesMessageConverter` (see `docs/adp/0007-openai-responses-openai-only.md`).
 
 ### Highlights

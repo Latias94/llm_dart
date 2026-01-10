@@ -22,7 +22,6 @@ workspace:
   - packages/llm_dart_ollama
   - packages/llm_dart_openai
   - packages/llm_dart_openai_compatible
-  - packages/llm_dart_phind
   - packages/llm_dart_provider_utils
   - packages/llm_dart_xai
 

@@ -70,8 +70,6 @@ imports that are intentionally kept out of the recommended provider entrypoints:
   - `package:llm_dart_deepseek/dio_strategy.dart`
   - `package:llm_dart_groq/client.dart`
   - `package:llm_dart_groq/dio_strategy.dart`
-  - `package:llm_dart_phind/client.dart`
-  - `package:llm_dart_phind/dio_strategy.dart`
   - `package:llm_dart_xai/client.dart`
   - `package:llm_dart_xai/dio_strategy.dart`
 - `llm_dart_google`

@@ -25,7 +25,7 @@ This document defines what the umbrella package exports and what it registers by
 Notes:
 
 - `llm_dart_provider_utils` is intentionally **not** re-exported by the umbrella to keep the default surface provider/transport-agnostic.
-- `llm_dart_phind` is a standalone package and is not shipped by the umbrella by default.
+- Phind is not shipped (provider removed from this repository).
 - Provider packages should not re-export protocol reuse layers; depend on the protocol packages directly when you need protocol-level types.
 - Provider packages also keep low-level HTTP implementation details opt-in:
   - If you need a provider's internal HTTP client or Dio strategy, import it via a subpath

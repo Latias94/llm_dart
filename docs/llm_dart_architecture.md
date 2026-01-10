@@ -98,7 +98,7 @@ Provider-by-provider alignment tracker:
   - `packages/llm_dart_groq` created: Groq provider moved here and exposes `registerGroq()`; implementation reuses the OpenAI-compatible protocol layer.
   - `packages/llm_dart_google` created: Google (Gemini) provider moved here (chat/stream/tools + embeddings + images + TTS) and exposes `registerGoogle()`; `BuiltinProviderRegistry` calls `registerGoogle()`.
   - `packages/llm_dart_ollama` created: Ollama provider moved here (chat/stream/tools + embeddings + completion API + model listing) and exposes `registerOllama()`; `BuiltinProviderRegistry` calls `registerOllama()`.
-  - `packages/llm_dart_phind` exists as a standalone package, but it is no longer shipped in the umbrella `llm_dart` package by default.
+  - Phind provider package has been removed from this repository.
   - `packages/llm_dart_elevenlabs` created: ElevenLabs provider moved here and exposes `registerElevenLabs()`.
     - Streaming TTS implemented via ElevenLabs `/text-to-speech/{voice_id}/stream` route and surfaced as `textToSpeechStream`.
 
@@ -644,7 +644,7 @@ Actions:
 1. Create `llm_dart_openai_compatible` with:
    - Shared client, request builder, SSE parser, tool mapping.
    - Support for “provider overrides” via `providerOptions`.
-2. Migrate “OpenAI-compatible providers” to reuse it (xAI/Groq/DeepSeek/Phind…).
+2. Migrate “OpenAI-compatible providers” to reuse it (xAI/Groq/DeepSeek…).
 
 Deliverables:
 

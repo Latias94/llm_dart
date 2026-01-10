@@ -343,16 +343,16 @@ void main() {
           equals(defaultUserAgentHeaderValueForProvider('ollama')));
     });
 
-    test('Phind should use standard OpenAI-compatible headers', () {
+    test('OpenAI-compatible providers should use standard headers', () {
       final config = OpenAICompatibleConfig(
-        providerId: 'phind',
-        providerName: 'Phind',
+        providerId: 'acme',
+        providerName: 'Acme',
         apiKey: 'test-key',
-        baseUrl: 'https://api.phind.com/v1/',
-        model: 'Phind-70B',
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'acme-model',
       );
 
-      final strategy = OpenAIDioStrategy(providerName: 'Phind');
+      final strategy = OpenAIDioStrategy(providerName: 'Acme');
       final headers = strategy.buildHeaders(config);
 
       expect(headers['Authorization'], equals('Bearer test-key'));
@@ -444,11 +444,11 @@ void main() {
               originalConfig: llmConfig)
         },
         {
-          'strategy': OpenAIDioStrategy(providerName: 'Phind'),
+          'strategy': OpenAIDioStrategy(providerName: 'Acme'),
           'config': OpenAICompatibleConfig.fromLLMConfig(
             llmConfig,
-            providerId: 'phind',
-            providerName: 'Phind',
+            providerId: 'acme',
+            providerName: 'Acme',
           )
         },
         {
@@ -537,11 +537,11 @@ void main() {
               originalConfig: llmConfig)
         },
         {
-          'strategy': OpenAIDioStrategy(providerName: 'Phind'),
+          'strategy': OpenAIDioStrategy(providerName: 'Acme'),
           'config': OpenAICompatibleConfig.fromLLMConfig(
             llmConfig,
-            providerId: 'phind',
-            providerName: 'Phind',
+            providerId: 'acme',
+            providerName: 'Acme',
           )
         },
         {
@@ -622,11 +622,11 @@ void main() {
           'expectedHeaders': {'Authorization': 'Bearer test-key'}
         },
         {
-          'strategy': OpenAIDioStrategy(providerName: 'Phind'),
+          'strategy': OpenAIDioStrategy(providerName: 'Acme'),
           'config': OpenAICompatibleConfig.fromLLMConfig(
             llmConfig,
-            providerId: 'phind',
-            providerName: 'Phind',
+            providerId: 'acme',
+            providerName: 'Acme',
           ),
           'expectedHeaders': {'Authorization': 'Bearer test-key'}
         },
