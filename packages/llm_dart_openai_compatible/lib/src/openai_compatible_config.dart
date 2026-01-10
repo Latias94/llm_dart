@@ -24,6 +24,9 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
   final String model;
 
   @override
+  final String? endpointPrefix;
+
+  @override
   final Map<String, dynamic>? extraBody;
 
   @override
@@ -85,6 +88,7 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
     this.apiKey,
     required this.baseUrl,
     required this.model,
+    this.endpointPrefix,
     this.extraBody,
     this.extraHeaders,
     this.maxTokens,
@@ -110,6 +114,7 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
     LLMConfig config, {
     required String providerId,
     String? providerName,
+    String? defaultEndpointPrefix,
   }) {
     final rawGlobalHeaders = readProviderOptionMap(
           config.providerOptions,
@@ -163,6 +168,24 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
       mergedHeaders = result.isEmpty ? null : result;
     }
 
+    final rawGlobalEndpointPrefix = readProviderOption<String>(
+            config.providerOptions, 'openai-compatible', 'endpointPrefix') ??
+        readProviderOption<String>(
+            config.providerOptions, 'openai-compatible', 'pathPrefix') ??
+        readProviderOption<String>(
+            config.providerOptions, 'openai-compatible', 'endpoint_prefix');
+    final rawProviderEndpointPrefix = readProviderOption<String>(
+            config.providerOptions, providerId, 'endpointPrefix') ??
+        readProviderOption<String>(
+            config.providerOptions, providerId, 'pathPrefix') ??
+        readProviderOption<String>(
+            config.providerOptions, providerId, 'endpoint_prefix');
+
+    final resolvedEndpointPrefix = (rawProviderEndpointPrefix ??
+            rawGlobalEndpointPrefix ??
+            defaultEndpointPrefix)
+        ?.trim();
+
     return OpenAICompatibleConfig(
       providerId: providerId,
       providerName: providerName ?? providerId,
@@ -170,6 +193,10 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
       baseUrl: config.baseUrl,
       model:
           config.model.isEmpty ? openaiCompatibleFallbackModel : config.model,
+      endpointPrefix:
+          resolvedEndpointPrefix != null && resolvedEndpointPrefix.isNotEmpty
+              ? resolvedEndpointPrefix
+              : null,
       extraBody: config.getProviderOption<Map<String, dynamic>>(
         providerId,
         'extraBody',

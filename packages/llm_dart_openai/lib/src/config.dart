@@ -25,6 +25,9 @@ class OpenAIConfig implements OpenAIRequestConfig, OpenAIResponsesConfig {
   final String model;
 
   @override
+  String? get endpointPrefix => null;
+
+  @override
   final Map<String, dynamic>? extraBody;
 
   @override

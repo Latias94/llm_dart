@@ -44,6 +44,7 @@ This package reads provider-specific options from `LLMConfig.providerOptions[pro
 
 - `headers` / `extraHeaders`: additional HTTP headers (merged; later keys win)
 - `queryParams`: additional URL query parameters appended to all requests
+- `endpointPrefix`: optional path prefix inserted before every endpoint (e.g. `openai` for DeepInfra)
 - `includeUsage`: when streaming, adds `stream_options.include_usage=true`
 - `supportsStructuredOutputs`: when `false`, downgrades JSON schema outputs to `{"type":"json_object"}`
 

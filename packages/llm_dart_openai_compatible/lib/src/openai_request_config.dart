@@ -26,6 +26,21 @@ abstract class OpenAIRequestConfig {
   String get baseUrl;
   String get model;
 
+  /// Optional endpoint prefix inserted before every API endpoint path.
+  ///
+  /// This exists for OpenAI-compatible providers that mount the OpenAI routes
+  /// under an additional path segment.
+  ///
+  /// Example: DeepInfra uses `/openai/*` routes, so `endpointPrefix` can be set
+  /// to `openai` and calling `chat/completions` becomes `openai/chat/completions`.
+  ///
+  /// Notes:
+  /// - The prefix may contain leading/trailing slashes; implementations should
+  ///   normalize it.
+  /// - This is applied to all endpoints (chat, embeddings, audio, images,
+  ///   responses, etc.).
+  String? get endpointPrefix;
+
   /// Extra request body fields merged into the final JSON payload.
   ///
   /// This is the escape hatch for provider-specific features (e.g. xAI live

@@ -167,6 +167,45 @@ void main() {
       expect(options!.uri.queryParameters['foo'], equals('bar'));
     });
 
+    test('endpointPrefix can prepend an extra path segment (DeepInfra-style)',
+        () async {
+      final llmConfig = LLMConfig(
+        apiKey: null,
+        // Intentionally omit the trailing slash to ensure baseUrl normalization
+        // keeps the last path segment.
+        baseUrl: 'https://api.deepinfra.com/v1',
+        model: 'meta-llama/Meta-Llama-3.1-8B-Instruct',
+        providerOptions: const {
+          'openai-compatible': {
+            'endpointPrefix': 'openai',
+          },
+        },
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'openai-compatible',
+        providerName: 'OpenAI-compatible',
+      );
+
+      final client = OpenAIClient(config);
+      final adapter = _CapturingHttpClientAdapter();
+      client.dio.httpClientAdapter = adapter;
+
+      await client.postJson('chat/completions', {
+        'model': llmConfig.model,
+        'messages': const [],
+        'stream': false,
+      });
+
+      final options = adapter.lastOptions;
+      expect(options, isNotNull);
+      expect(
+        options!.uri.toString(),
+        equals('https://api.deepinfra.com/v1/openai/chat/completions'),
+      );
+    });
+
     test('does not append query string when queryParams is not specified',
         () async {
       final llmConfig = LLMConfig(

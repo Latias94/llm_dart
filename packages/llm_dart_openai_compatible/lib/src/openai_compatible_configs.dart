@@ -16,6 +16,24 @@ const String _googleOpenAIBaseUrl =
     'https://generativelanguage.googleapis.com/v1beta/openai/';
 const String _googleOpenAIDefaultModel = 'gemini-2.0-flash';
 
+const String _deepInfraOpenAIBaseUrl = 'https://api.deepinfra.com/v1/';
+const String _deepInfraOpenAIDefaultEndpointPrefix = 'openai';
+const String _deepInfraOpenAIDefaultModel =
+    'meta-llama/Meta-Llama-3.1-8B-Instruct';
+
+const String _fireworksOpenAIBaseUrl = 'https://api.fireworks.ai/inference/v1/';
+const String _fireworksOpenAIDefaultModel =
+    'accounts/fireworks/models/llama-v3p1-8b-instruct';
+
+const String _cerebrasOpenAIBaseUrl = 'https://api.cerebras.ai/v1/';
+const String _cerebrasOpenAIDefaultModel = 'llama3.1-8b';
+
+const String _vercelV0OpenAIBaseUrl = 'https://api.v0.dev/v1/';
+const String _vercelV0OpenAIDefaultModel = 'v0-1.5-md';
+
+const String _basetenOpenAIBaseUrl = 'https://inference.baseten.co/v1/';
+const String _basetenOpenAIDefaultModel = 'deepseek-ai/DeepSeek-V3.1';
+
 const String _openRouterBaseUrl = 'https://openrouter.ai/api/v1/';
 const String _openRouterDefaultModel = 'openai/gpt-4';
 
@@ -57,6 +75,62 @@ class OpenAICompatibleConfigs {
     description: 'Google Gemini models using OpenAI-compatible interface',
     defaultBaseUrl: _googleOpenAIBaseUrl,
     defaultModel: _googleOpenAIDefaultModel,
+    supportedCapabilities: _bestEffortCapabilities,
+  );
+
+  /// DeepInfra configuration using OpenAI-compatible interface
+  static const OpenAICompatibleProviderConfig deepinfra =
+      OpenAICompatibleProviderConfig(
+    providerId: 'deepinfra-openai',
+    displayName: 'DeepInfra (OpenAI-compatible)',
+    description: 'DeepInfra models using an OpenAI-compatible interface',
+    defaultBaseUrl: _deepInfraOpenAIBaseUrl,
+    defaultEndpointPrefix: _deepInfraOpenAIDefaultEndpointPrefix,
+    defaultModel: _deepInfraOpenAIDefaultModel,
+    supportedCapabilities: _bestEffortCapabilities,
+  );
+
+  /// Fireworks configuration using OpenAI-compatible interface
+  static const OpenAICompatibleProviderConfig fireworks =
+      OpenAICompatibleProviderConfig(
+    providerId: 'fireworks-openai',
+    displayName: 'Fireworks (OpenAI-compatible)',
+    description: 'Fireworks models using an OpenAI-compatible interface',
+    defaultBaseUrl: _fireworksOpenAIBaseUrl,
+    defaultModel: _fireworksOpenAIDefaultModel,
+    supportedCapabilities: _bestEffortCapabilities,
+  );
+
+  /// Cerebras configuration using OpenAI-compatible interface
+  static const OpenAICompatibleProviderConfig cerebras =
+      OpenAICompatibleProviderConfig(
+    providerId: 'cerebras-openai',
+    displayName: 'Cerebras (OpenAI-compatible)',
+    description: 'Cerebras models using an OpenAI-compatible interface',
+    defaultBaseUrl: _cerebrasOpenAIBaseUrl,
+    defaultModel: _cerebrasOpenAIDefaultModel,
+    supportedCapabilities: _bestEffortCapabilities,
+  );
+
+  /// Vercel v0 configuration using OpenAI-compatible interface
+  static const OpenAICompatibleProviderConfig vercelV0 =
+      OpenAICompatibleProviderConfig(
+    providerId: 'vercel-v0',
+    displayName: 'Vercel v0 (OpenAI-compatible)',
+    description: 'Vercel v0 models using an OpenAI-compatible interface',
+    defaultBaseUrl: _vercelV0OpenAIBaseUrl,
+    defaultModel: _vercelV0OpenAIDefaultModel,
+    supportedCapabilities: _bestEffortCapabilities,
+  );
+
+  /// Baseten configuration using OpenAI-compatible interface
+  static const OpenAICompatibleProviderConfig baseten =
+      OpenAICompatibleProviderConfig(
+    providerId: 'baseten-openai',
+    displayName: 'Baseten (OpenAI-compatible)',
+    description: 'Baseten models using an OpenAI-compatible interface',
+    defaultBaseUrl: _basetenOpenAIBaseUrl,
+    defaultModel: _basetenOpenAIDefaultModel,
     supportedCapabilities: _bestEffortCapabilities,
   );
 
@@ -121,6 +195,11 @@ class OpenAICompatibleConfigs {
     return [
       deepseek,
       gemini,
+      deepinfra,
+      fireworks,
+      cerebras,
+      vercelV0,
+      baseten,
       xai,
       groq,
       openRouter,
@@ -136,6 +215,16 @@ class OpenAICompatibleConfigs {
         return deepseek;
       case 'google-openai':
         return gemini;
+      case 'deepinfra-openai':
+        return deepinfra;
+      case 'fireworks-openai':
+        return fireworks;
+      case 'cerebras-openai':
+        return cerebras;
+      case 'vercel-v0':
+        return vercelV0;
+      case 'baseten-openai':
+        return baseten;
       case 'xai-openai':
         return xai;
       case 'groq-openai':

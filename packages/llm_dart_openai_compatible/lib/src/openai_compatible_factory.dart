@@ -128,6 +128,7 @@ class OpenAICompatibleProviderFactory
       config,
       providerId: providerId,
       providerName: displayName,
+      defaultEndpointPrefix: _config.defaultEndpointPrefix,
     );
   }
 

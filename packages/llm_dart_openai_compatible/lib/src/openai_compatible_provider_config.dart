@@ -21,6 +21,11 @@ class OpenAICompatibleProviderConfig {
   /// Default model name.
   final String defaultModel;
 
+  /// Optional default endpoint prefix inserted before every endpoint path.
+  ///
+  /// Example: DeepInfra uses `/openai/*` routes.
+  final String? defaultEndpointPrefix;
+
   /// Best-effort capability set.
   ///
   /// This should be treated as a hint only; providers may reject requests at
@@ -33,6 +38,7 @@ class OpenAICompatibleProviderConfig {
     required this.description,
     required this.defaultBaseUrl,
     required this.defaultModel,
+    this.defaultEndpointPrefix,
     required this.supportedCapabilities,
   });
 }

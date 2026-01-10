@@ -101,6 +101,23 @@ class OpenAIClient {
     }
   }
 
+  String _resolveEndpoint(String endpoint) {
+    final rawPrefix = config.endpointPrefix?.trim();
+    if (rawPrefix == null || rawPrefix.isEmpty) return endpoint;
+
+    final parts = endpoint.split('?');
+    final rawPath = parts.isNotEmpty ? parts.first : endpoint;
+    final rawQuery = parts.length > 1 ? parts.sublist(1).join('?') : null;
+
+    final prefix =
+        rawPrefix.replaceAll(RegExp(r'^/+'), '').replaceAll(RegExp(r'/+$'), '');
+    final path = rawPath.replaceAll(RegExp(r'^/+'), '');
+
+    final combined = prefix.isEmpty ? path : '$prefix/$path';
+    if (rawQuery == null || rawQuery.isEmpty) return combined;
+    return '$combined?$rawQuery';
+  }
+
   /// Parse a Server-Sent Events (SSE) chunk from OpenAI's streaming API
   ///
   /// This method handles incomplete SSE chunks that can be split across network boundaries.
@@ -320,9 +337,11 @@ class OpenAIClient {
     CancelToken? cancelToken,
   }) async {
     try {
+      final resolvedEndpoint = _resolveEndpoint(endpoint);
+
       // Optimized logging with condition check
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine('${config.providerName} request: POST /$endpoint');
+        logger.fine('${config.providerName} request: POST /$resolvedEndpoint');
         logger.fine(
             '${config.providerName} request headers: ${dio.options.headers}');
       }
@@ -330,7 +349,7 @@ class OpenAIClient {
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.post(
-          endpoint,
+          resolvedEndpoint,
           data: body,
           queryParameters: _getDefaultQueryParameters(),
           cancelToken: dioToken,
@@ -343,7 +362,7 @@ class OpenAIClient {
       }
 
       if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
+        _handleErrorResponse(response, resolvedEndpoint);
       }
 
       // Use unified response parsing while keeping OpenAI's error handling
@@ -365,8 +384,10 @@ class OpenAIClient {
     CancelToken? cancelToken,
   }) async {
     try {
+      final resolvedEndpoint = _resolveEndpoint(endpoint);
+
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine('${config.providerName} request: GET /$endpoint');
+        logger.fine('${config.providerName} request: GET /$resolvedEndpoint');
         logger.fine(
             '${config.providerName} request headers: ${dio.options.headers}');
       }
@@ -379,7 +400,7 @@ class OpenAIClient {
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.get(
-          endpoint,
+          resolvedEndpoint,
           queryParameters:
               mergedQueryParameters.isEmpty ? null : mergedQueryParameters,
           cancelToken: dioToken,
@@ -392,7 +413,7 @@ class OpenAIClient {
       }
 
       if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
+        _handleErrorResponse(response, resolvedEndpoint);
       }
 
       return HttpResponseHandler.parseJsonResponse(
@@ -413,8 +434,11 @@ class OpenAIClient {
     CancelToken? cancelToken,
   }) async {
     try {
+      final resolvedEndpoint = _resolveEndpoint(endpoint);
+
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine('${config.providerName} request: POST /$endpoint (form)');
+        logger.fine(
+            '${config.providerName} request: POST /$resolvedEndpoint (form)');
         logger.fine(
             '${config.providerName} request headers: ${dio.options.headers}');
       }
@@ -422,7 +446,7 @@ class OpenAIClient {
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.post(
-          endpoint,
+          resolvedEndpoint,
           data: formData,
           queryParameters: _getDefaultQueryParameters(),
           cancelToken: dioToken,
@@ -435,7 +459,7 @@ class OpenAIClient {
       }
 
       if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
+        _handleErrorResponse(response, resolvedEndpoint);
       }
 
       return response.data as Map<String, dynamic>;
@@ -453,10 +477,12 @@ class OpenAIClient {
     CancelToken? cancelToken,
   }) async {
     try {
+      final resolvedEndpoint = _resolveEndpoint(endpoint);
+
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.post(
-          endpoint,
+          resolvedEndpoint,
           data: body,
           queryParameters: _getDefaultQueryParameters(),
           cancelToken: dioToken,
@@ -465,7 +491,7 @@ class OpenAIClient {
       );
 
       if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
+        _handleErrorResponse(response, resolvedEndpoint);
       }
 
       return response.data as List<int>;
@@ -482,8 +508,10 @@ class OpenAIClient {
     CancelToken? cancelToken,
   }) async {
     try {
+      final resolvedEndpoint = _resolveEndpoint(endpoint);
+
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine('${config.providerName} request: GET /$endpoint');
+        logger.fine('${config.providerName} request: GET /$resolvedEndpoint');
         logger.fine(
             '${config.providerName} request headers: ${dio.options.headers}');
       }
@@ -491,7 +519,7 @@ class OpenAIClient {
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.get(
-          endpoint,
+          resolvedEndpoint,
           queryParameters: _getDefaultQueryParameters(),
           cancelToken: dioToken,
         ),
@@ -503,7 +531,7 @@ class OpenAIClient {
       }
 
       if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
+        _handleErrorResponse(response, resolvedEndpoint);
       }
 
       return response.data as Map<String, dynamic>;
@@ -520,10 +548,12 @@ class OpenAIClient {
     CancelToken? cancelToken,
   }) async {
     try {
+      final resolvedEndpoint = _resolveEndpoint(endpoint);
+
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.get(
-          endpoint,
+          resolvedEndpoint,
           queryParameters: _getDefaultQueryParameters(),
           options: Options(responseType: ResponseType.bytes),
           cancelToken: dioToken,
@@ -531,7 +561,7 @@ class OpenAIClient {
       );
 
       if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
+        _handleErrorResponse(response, resolvedEndpoint);
       }
 
       return response.data as List<int>;
@@ -548,8 +578,11 @@ class OpenAIClient {
     CancelToken? cancelToken,
   }) async {
     try {
+      final resolvedEndpoint = _resolveEndpoint(endpoint);
+
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine('${config.providerName} request: DELETE /$endpoint');
+        logger
+            .fine('${config.providerName} request: DELETE /$resolvedEndpoint');
         logger.fine(
             '${config.providerName} request headers: ${dio.options.headers}');
       }
@@ -557,7 +590,7 @@ class OpenAIClient {
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.delete(
-          endpoint,
+          resolvedEndpoint,
           queryParameters: _getDefaultQueryParameters(),
           cancelToken: dioToken,
         ),
@@ -569,7 +602,7 @@ class OpenAIClient {
       }
 
       if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
+        _handleErrorResponse(response, resolvedEndpoint);
       }
 
       return response.data as Map<String, dynamic>;
@@ -590,8 +623,11 @@ class OpenAIClient {
     resetSSEBuffer();
 
     try {
+      final resolvedEndpoint = _resolveEndpoint(endpoint);
+
       if (logger.isLoggable(Level.FINE)) {
-        logger.fine('${config.providerName} request: POST /$endpoint (stream)');
+        logger.fine(
+            '${config.providerName} request: POST /$resolvedEndpoint (stream)');
         logger.fine(
             '${config.providerName} request headers: ${dio.options.headers}');
       }
@@ -599,7 +635,7 @@ class OpenAIClient {
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.post(
-          endpoint,
+          resolvedEndpoint,
           data: body,
           queryParameters: _getDefaultQueryParameters(),
           cancelToken: dioToken,
@@ -611,7 +647,7 @@ class OpenAIClient {
       );
 
       if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
+        _handleErrorResponse(response, resolvedEndpoint);
       }
 
       // Handle ResponseBody properly for streaming
@@ -718,17 +754,38 @@ class OpenAIClient {
   /// Extract error message from a parsed Map
   String? _extractErrorMessageFromMap(Map<String, dynamic> responseData) {
     // OpenAI error format: {"error": {"message": "...", "type": "...", "code": "..."}}
-    final error = responseData['error'] as Map<String, dynamic>?;
-    if (error != null) {
-      final message = error['message'] as String?;
-      final type = error['type'] as String?;
-      final code = error['code']?.toString();
+    final errorField = responseData['error'];
 
-      if (message != null) {
-        final parts = <String>[message];
-        if (type != null) parts.add('type: $type');
-        if (code != null) parts.add('code: $code');
+    // Some OpenAI-compatible providers return `{ "error": "..." }`.
+    if (errorField is String) {
+      final trimmed = errorField.trim();
+      if (trimmed.isNotEmpty) return trimmed;
+    }
+
+    if (errorField is Map<String, dynamic>) {
+      final message = errorField['message'] as String?;
+      final type = errorField['type'] as String?;
+      final code = errorField['code']?.toString();
+
+      if (message != null && message.trim().isNotEmpty) {
+        final parts = <String>[message.trim()];
+        if (type != null && type.trim().isNotEmpty) {
+          parts.add('type: ${type.trim()}');
+        }
+        if (code != null && code.trim().isNotEmpty) {
+          parts.add('code: ${code.trim()}');
+        }
         return parts.join(', ');
+      }
+
+      // Alternative nested shapes.
+      final nestedError = errorField['error'];
+      if (nestedError is String && nestedError.trim().isNotEmpty) {
+        return nestedError.trim();
+      }
+      final detail = errorField['detail'];
+      if (detail is String && detail.trim().isNotEmpty) {
+        return detail.trim();
       }
     }
 
