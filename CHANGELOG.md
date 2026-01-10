@@ -7,10 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Breaking Changes
-
-- **Provider defaults moved out of `llm_dart_core`**: `ProviderDefaults` and `OpenAICompatibleDefaults` are removed from core to keep it provider-agnostic.
-  - Import provider defaults from the relevant package instead, e.g. `package:llm_dart_openai/defaults.dart`, `package:llm_dart_anthropic_compatible/defaults.dart`, `package:llm_dart_openai_compatible/defaults.dart`.
+No changes yet.
 
 ## [0.11.0-alpha.1] - Not Released
 
@@ -19,6 +16,17 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
 
 ### Breaking Changes
 
+- **Dart pub workspaces**: the repo is now a Dart workspace; the root `pubspec.yaml` is not a published package.
+- **Umbrella package move**: the all-in-one package lives under `packages/llm_dart` (exports + built-in registration are now explicitly documented).
+- **Tiered stability policy (Vercel-style)**: provider subpath libraries are now opt-in; default `<provider>.dart` exports are narrower and more stable.
+  - Provider HTTP clients / Dio strategies are no longer exported from provider entrypoints; import via subpaths (e.g. `package:llm_dart_openai/client.dart`).
+  - Provider packages do not re-export protocol reuse layers (`*_compatible`) from their main entrypoints.
+- **Provider-utils boundary cleanup**: `llm_dart_provider_utils` no longer re-exports Dio/logging from its public surface.
+- **Provider defaults moved out of `llm_dart_core`**: `ProviderDefaults` and `OpenAICompatibleDefaults` are removed from core to keep it provider-agnostic.
+  - Import defaults from provider packages instead (e.g. `package:llm_dart_openai/defaults.dart`, `package:llm_dart_anthropic_compatible/defaults.dart`, `package:llm_dart_openai_compatible/defaults.dart`).
+- **OpenAI-only models moved out of `llm_dart_core`**: OpenAI-specific types (e.g. Assistants/Responses models) are now exposed from `llm_dart_openai` Tier 3 subpaths.
+- **Removed `LLMConfig.extensions` escape hatch**: `LLMConfig.extensions` is removed; use `providerOptions` for provider-only knobs and `transportOptions` for transport/HTTP.
+- **Removed unified web search helpers**: `WebSearchConfig` and `LLMBuilder.enableWebSearch()/webSearch()` are removed; prefer explicit provider tools (recommended) or provider-specific escape hatches.
 - **Removed legacy audio surface**: removed `AudioCapability`, `AudioFeature`, and `LLMBuilder.buildAudio()`.
   - Build task-specific capabilities instead: `buildSpeech()`, `buildStreamingSpeech()`, `buildTranscription()`, `buildAudioTranslation()`, `buildRealtimeAudio()`.
   - Capability detection: use task interface checks (e.g. `provider is TextToSpeechCapability`) or `CapabilityUtils.getCapabilities(...)`.
@@ -30,13 +38,18 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
 - **Phind removed**: the Phind provider package has been removed from this repository.
 - **Removed `phind-openai` preset provider id**: the legacy OpenAI-compatible preset id `phind-openai` is no longer provided.
 - **OpenAI Responses isolation (Vercel-style)**: `llm_dart_openai_compatible` no longer models the OpenAI Responses API; Responses message conversion now lives in `llm_dart_openai` via `OpenAIResponsesMessageConverter` (see `docs/adp/0007-openai-responses-openai-only.md`).
+- **xAI Responses split**: OpenAI-style Responses API support is now exposed under provider id `xai.responses` (best-effort) instead of being implicitly bundled into `xai`.
+- **Removed provider preset constructors**: provider packages no longer ship `create<Provider><Preset>Provider(...)` helpers (e.g. `createAnthropicChatProvider`); use `create<Provider>Provider(...)` or `LLMBuilder` with explicit config.
 
 ### Highlights
 
-- **Big refactor snapshot**: provider packages continue moving toward a Vercel AI SDK-style split (thin providers + protocol reuse + a stable “standard surface”).
+- **Big refactor snapshot**: provider packages continue moving toward a Vercel AI SDK-style split (thin providers + protocol reuse + a stable "standard surface").
+- **Azure OpenAI support**: first-party Azure provider package with OpenAI-style capabilities and Responses API opt-in.
 - **xAI Responses support**: new provider id `xai.responses` with streaming support.
+- **OpenAI-compatible presets + routing knobs**: expanded presets and added `endpointPrefix` for providers mounting OpenAI routes under extra path segments.
 - **Anthropic prompt caching**: `providerOptions['anthropic']['cacheControl']` now applies reliably when using Prompt IR.
 - **Rerank task (Vercel-style)**: added `rerank` standard task API, plus `rerankByEmbedding` fallback for embedding-only providers.
+- **Provider metadata parity**: standardized `providerMetadata` namespacing and aliases (e.g. `openai` + `openai.chat` / `openai.responses`).
 - **MiniMax (Anthropic-compatible) polish**: defaults and docs updated (including base URL guidance and trailing slash normalization).
 - **Local alignment tooling**: `tool/live_provider_alignment.dart` is more reliable for quick live smoke checks (including streaming delta detection).
 - **Migration guides**: see `docs/migrations/` for draft migration notes.
@@ -50,15 +63,26 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
 ### Fixed
 
 - **Anthropic Prompt IR caching**: config-level default `providerOptions['anthropic']['cacheControl']` is now applied during Prompt IR compilation.
+- **HTTP baseUrl normalization**: normalize Dio baseUrl trailing slash to avoid URL resolution dropping path segments.
+- **OpenAI-compatible GitHub Copilot baseUrl**: corrected preset baseUrl.
+- **OpenAI-compatible error shapes**: best-effort parsing for non-standard `{ "error": "..." }` responses.
+- **Tool call fallback (opt-in)**: allow parsing a single tool call JSON object from assistant text when a provider fails to populate `tool_calls`.
+- **Google systemInstruction + tools alignment**: match AI SDK behavior for empty `systemInstruction`, tool mixing, and function declaration schema (plus related upload/tool result role fixes).
 
 ### Added
 
 - **xAI Responses (Vercel-style)**: added provider id `xai.responses` with streaming parts support and offline fixture replays.
+- **Google Vertex provider**: added `google-vertex` package (including express mode support).
+- **OpenAI-compatible presets**: added presets for DeepInfra/Fireworks/Cerebras/Vercel v0/Baseten and expanded configuration knobs.
+- **User-Agent parity**: versioned user-agent headers aligned with AI SDK conventions.
+- **OpenAI stream parts**: `OpenAIProvider` now supports `ChatStreamPartsCapability`.
 
 ### Internal
 
 - Added offline conformance tests for Anthropic prompt caching precedence and `providerMetadata` cache usage token surfacing.
 - Added a monorepo dependency direction guardrail via `tool/check_monorepo_deps.dart` (see `docs/adp/0008-monorepo-dependency-direction.md`).
+- Added a provider capability consistency guard test to prevent capability/interface drift.
+- Vendored Vercel AI SDK fixtures for offline replays and removed `repo-ref` dependency in tests; CI now verifies fixture integrity.
 
 ## [0.10.5] - 2025-11-26
 
