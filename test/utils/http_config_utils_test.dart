@@ -89,7 +89,10 @@ void main() {
             .where((k) => k.toLowerCase() == 'user-agent')
             .toList(growable: false);
         expect(uaKeys, hasLength(1));
-        expect(dio.options.headers[uaKeys.single], equals('custom/1.0'));
+        expect(
+          dio.options.headers[uaKeys.single],
+          equals('custom/1.0 default/1.0'),
+        );
       });
 
       test('should apply timeout configurations', () {

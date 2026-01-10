@@ -28,3 +28,6 @@ export 'utils/sse_chunk_parser.dart';
 export 'utils/tool_name_mapping.dart';
 export 'utils/user_agent.dart';
 export 'utils/utf8_stream_decoder.dart';
+export 'utils/runtime_user_agent_stub.dart'
+    if (dart.library.io) 'utils/runtime_user_agent_io.dart'
+    if (dart.library.html) 'utils/runtime_user_agent_web.dart';

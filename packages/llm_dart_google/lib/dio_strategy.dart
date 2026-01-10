@@ -23,12 +23,11 @@ class GoogleDioStrategy extends BaseProviderDioStrategy {
       'Content-Type': 'application/json',
     };
 
-    if (!hasHeaderIgnoreCase(headers, 'user-agent')) {
-      final googleConfig = config as GoogleConfig;
-      headers['User-Agent'] =
-          defaultUserAgentForProvider(googleConfig.providerOptionsName);
-    }
-    return headers;
+    final googleConfig = config as GoogleConfig;
+    return withUserAgentSuffix(
+      headers,
+      defaultUserAgentSuffixPartsForProvider(googleConfig.providerOptionsName),
+    );
   }
 
   @override

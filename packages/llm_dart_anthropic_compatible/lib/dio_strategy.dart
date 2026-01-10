@@ -33,11 +33,10 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
       headers.addAll(extra);
     }
 
-    if (!hasHeaderIgnoreCase(headers, 'user-agent')) {
-      headers['User-Agent'] =
-          defaultUserAgentForProvider(anthropicConfig.providerId);
-    }
-    return headers;
+    return withUserAgentSuffix(
+      headers,
+      defaultUserAgentSuffixPartsForProvider(anthropicConfig.providerId),
+    );
   }
 
   @override

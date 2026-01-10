@@ -77,8 +77,10 @@ void main() {
 
       expect(headersLower.containsKey('authorization'), isFalse);
       expect(headersLower['x-test'], equals('1'));
-      expect(headersLower['user-agent'],
-          equals(defaultUserAgentForProvider('openai-compatible')));
+      expect(
+        headersLower['user-agent'],
+        equals(defaultUserAgentHeaderValueForProvider('openai-compatible')),
+      );
     });
 
     test('allows overriding default user-agent header', () async {
@@ -119,7 +121,15 @@ void main() {
         headersLower[entry.key.toLowerCase()] = entry.value.toString();
       }
 
-      expect(headersLower['user-agent'], equals('my-agent/1.0'));
+      expect(
+        headersLower['user-agent'],
+        equals(
+          withUserAgentSuffix(
+            {'User-Agent': 'my-agent/1.0'},
+            defaultUserAgentSuffixPartsForProvider('openai-compatible'),
+          )['User-Agent'],
+        ),
+      );
     });
 
     test('appends queryParams to request URLs', () async {

@@ -89,9 +89,21 @@ class DioClientFactory {
     // Merge essential headers (user's headers take precedence, case-insensitive)
     final essentialHeaders = strategy.buildHeaders(config);
     for (final entry in essentialHeaders.entries) {
-      if (_hasHeaderIgnoreCase(customDio.options.headers, entry.key)) {
-        continue;
+      final keyLower = entry.key.toLowerCase();
+      if (keyLower == 'user-agent') {
+        final existing = _getHeaderValueIgnoreCase(
+          customDio.options.headers,
+          'user-agent',
+        );
+        if (existing != null && existing.trim().isNotEmpty) {
+          _removeHeaderIgnoreCase(customDio.options.headers, 'user-agent');
+          customDio.options.headers['User-Agent'] =
+              '${existing.trim()} ${entry.value.trim()}';
+          continue;
+        }
       }
+
+      if (_hasHeaderIgnoreCase(customDio.options.headers, entry.key)) continue;
       customDio.options.headers[entry.key] = entry.value;
     }
 
@@ -113,6 +125,30 @@ class DioClientFactory {
       if (key.toLowerCase() == needle) return true;
     }
     return false;
+  }
+
+  static String? _getHeaderValueIgnoreCase(
+    Map<String, dynamic> headers,
+    String headerName,
+  ) {
+    final needle = headerName.toLowerCase();
+    for (final entry in headers.entries) {
+      if (entry.key.toLowerCase() == needle) return entry.value?.toString();
+    }
+    return null;
+  }
+
+  static void _removeHeaderIgnoreCase(
+    Map<String, dynamic> headers,
+    String headerName,
+  ) {
+    final needle = headerName.toLowerCase();
+    final toRemove = headers.keys
+        .where((k) => k.toLowerCase() == needle)
+        .toList(growable: false);
+    for (final k in toRemove) {
+      headers.remove(k);
+    }
   }
 
   /// Create new configured Dio instance

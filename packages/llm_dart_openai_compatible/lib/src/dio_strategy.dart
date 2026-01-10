@@ -41,13 +41,13 @@ class OpenAIDioStrategy extends BaseProviderDioStrategy {
       headers.addAll(extra);
     }
 
-    if (!hasHeaderIgnoreCase(headers, 'user-agent')) {
-      final uaId = openaiConfig is OpenAICompatibleConfig
-          ? openaiConfig.providerId
-          : providerId;
-      headers['User-Agent'] = defaultUserAgentForProvider(uaId);
-    }
-    return headers;
+    final uaId = openaiConfig is OpenAICompatibleConfig
+        ? openaiConfig.providerId
+        : providerId;
+    return withUserAgentSuffix(
+      headers,
+      defaultUserAgentSuffixPartsForProvider(uaId),
+    );
   }
 
   @override

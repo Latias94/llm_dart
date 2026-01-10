@@ -101,6 +101,30 @@ class HttpConfigUtils {
       final existingKeys = result.keys
           .where((k) => k.toLowerCase() == keyLower)
           .toList(growable: false);
+
+      final isUserAgent = keyLower == 'user-agent';
+      if (isUserAgent) {
+        final existingValues = existingKeys
+            .map((k) => result[k])
+            .whereType<String>()
+            .where((v) => v.trim().isNotEmpty)
+            .toList(growable: false);
+
+        for (final k in existingKeys) {
+          result.remove(k);
+        }
+
+        final customValue = entry.value.trim();
+        final combined = [
+          if (customValue.isNotEmpty) customValue,
+          ...existingValues,
+        ].join(' ');
+        if (combined.isNotEmpty) {
+          result['User-Agent'] = combined;
+        }
+        continue;
+      }
+
       for (final k in existingKeys) {
         result.remove(k);
       }

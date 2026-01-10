@@ -1,0 +1,1 @@
+String getRuntimeEnvironmentUserAgent() => 'runtime/browser';

@@ -21,12 +21,10 @@ class ElevenLabsDioStrategy extends BaseProviderDioStrategy {
       'xi-api-key': elevenLabsConfig.apiKey,
     };
 
-    if (!hasHeaderIgnoreCase(headers, 'user-agent')) {
-      headers['User-Agent'] =
-          defaultUserAgentForProvider(elevenLabsConfig.providerId);
-    }
-
-    return headers;
+    return withUserAgentSuffix(
+      headers,
+      defaultUserAgentSuffixPartsForProvider(elevenLabsConfig.providerId),
+    );
   }
 
   @override

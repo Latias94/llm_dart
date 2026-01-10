@@ -49,7 +49,7 @@ void main() {
       expect(dio.options.headers['anthropic-version'], equals('2023-06-01'));
       expect(
         headerValueIgnoreCase(dio.options.headers, 'user-agent'),
-        equals(defaultUserAgentForProvider('anthropic')),
+        equals(defaultUserAgentHeaderValueForProvider('anthropic')),
       );
 
       // Should have Anthropic-specific interceptors
@@ -74,7 +74,7 @@ void main() {
       expect(dio.options.headers['Content-Type'], equals('application/json'));
       expect(
         headerValueIgnoreCase(dio.options.headers, 'user-agent'),
-        equals(defaultUserAgentForProvider('openai')),
+        equals(defaultUserAgentHeaderValueForProvider('openai')),
       );
     });
 
@@ -96,7 +96,7 @@ void main() {
       expect(dio.options.headers['Content-Type'], equals('application/json'));
       expect(
         headerValueIgnoreCase(dio.options.headers, 'user-agent'),
-        equals(defaultUserAgentForProvider('google')),
+        equals(defaultUserAgentHeaderValueForProvider('google')),
       );
       // Google uses query parameter auth, so no Authorization header
       expect(dio.options.headers.containsKey('Authorization'), isFalse);
@@ -133,7 +133,9 @@ void main() {
       expect(dio.options.headers['X-Custom'], equals('test'));
       expect(
         headerValueIgnoreCase(dio.options.headers, 'user-agent'),
-        equals('CorporateApp/2.0'),
+        equals(
+          'CorporateApp/2.0 ${defaultUserAgentHeaderValueForProvider('anthropic')}',
+        ),
       );
 
       // Should still have essential Anthropic headers merged
@@ -194,7 +196,7 @@ void main() {
       expect(headers['Content-Type'], equals('application/json'));
       expect(
         headers['User-Agent'],
-        equals(defaultUserAgentForProvider('anthropic')),
+        equals(defaultUserAgentHeaderValueForProvider('anthropic')),
       );
     });
 
@@ -211,7 +213,9 @@ void main() {
       expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
       expect(
-          headers['User-Agent'], equals(defaultUserAgentForProvider('openai')));
+        headers['User-Agent'],
+        equals(defaultUserAgentHeaderValueForProvider('openai')),
+      );
     });
 
     test('GoogleDioStrategy should build correct headers', () {
@@ -226,7 +230,9 @@ void main() {
 
       expect(headers['Content-Type'], equals('application/json'));
       expect(
-          headers['User-Agent'], equals(defaultUserAgentForProvider('google')));
+        headers['User-Agent'],
+        equals(defaultUserAgentHeaderValueForProvider('google')),
+      );
       // Google doesn't use Authorization header
       expect(headers.containsKey('Authorization'), isFalse);
     });
@@ -245,7 +251,10 @@ void main() {
 
       expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
-      expect(headers['User-Agent'], equals(defaultUserAgentForProvider('xai')));
+      expect(
+        headers['User-Agent'],
+        equals(defaultUserAgentHeaderValueForProvider('xai')),
+      );
     });
 
     test('Groq should use standard OpenAI-compatible headers', () {
@@ -262,8 +271,8 @@ void main() {
 
       expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
-      expect(
-          headers['User-Agent'], equals(defaultUserAgentForProvider('groq')));
+      expect(headers['User-Agent'],
+          equals(defaultUserAgentHeaderValueForProvider('groq')));
     });
 
     test('Azure OpenAI should use api-key header', () {
@@ -314,8 +323,8 @@ void main() {
 
       expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
-      expect(
-          headers['User-Agent'], equals(defaultUserAgentForProvider('ollama')));
+      expect(headers['User-Agent'],
+          equals(defaultUserAgentHeaderValueForProvider('ollama')));
     });
 
     test('OllamaDioStrategy should handle null API key', () {
@@ -330,8 +339,8 @@ void main() {
 
       expect(headers.containsKey('Authorization'), isFalse);
       expect(headers['Content-Type'], equals('application/json'));
-      expect(
-          headers['User-Agent'], equals(defaultUserAgentForProvider('ollama')));
+      expect(headers['User-Agent'],
+          equals(defaultUserAgentHeaderValueForProvider('ollama')));
     });
 
     test('Phind should use standard OpenAI-compatible headers', () {
@@ -362,7 +371,7 @@ void main() {
       expect(headers['xi-api-key'], equals('test-key'));
       expect(headers['Content-Type'], equals('application/json'));
       expect(headers['User-Agent'],
-          equals(defaultUserAgentForProvider('elevenlabs')));
+          equals(defaultUserAgentHeaderValueForProvider('elevenlabs')));
     });
   });
 
