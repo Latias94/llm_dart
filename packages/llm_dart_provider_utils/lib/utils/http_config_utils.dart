@@ -14,6 +14,13 @@ import 'http_client_adapter_stub.dart'
 class HttpConfigUtils {
   static final Logger _logger = Logger('HttpConfigUtils');
 
+  static String _normalizeBaseUrl(String baseUrl) {
+    final trimmed = baseUrl.trim();
+    if (trimmed.isEmpty) return trimmed;
+    if (trimmed.endsWith('/')) return trimmed;
+    return '$trimmed/';
+  }
+
   /// Create a configured Dio instance with unified HTTP settings
   ///
   /// This method applies common HTTP configurations from `LLMConfig.transportOptions`
@@ -24,9 +31,11 @@ class HttpConfigUtils {
     required LLMConfig config,
     Duration? defaultTimeout,
   }) {
+    final normalizedBaseUrl = _normalizeBaseUrl(baseUrl);
+
     // Start with base options
     final options = BaseOptions(
-      baseUrl: baseUrl,
+      baseUrl: normalizedBaseUrl,
       connectTimeout: _getConnectionTimeout(config, defaultTimeout),
       receiveTimeout: _getReceiveTimeout(config, defaultTimeout),
       sendTimeout: _getSendTimeout(config, defaultTimeout),
@@ -185,7 +194,7 @@ class HttpConfigUtils {
   }) {
     return Dio(
       BaseOptions(
-        baseUrl: baseUrl,
+        baseUrl: _normalizeBaseUrl(baseUrl),
         connectTimeout: timeout ?? const Duration(seconds: 60),
         receiveTimeout: timeout ?? const Duration(seconds: 60),
         headers: headers,

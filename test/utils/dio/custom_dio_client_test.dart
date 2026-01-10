@@ -67,7 +67,7 @@ void main() {
         expect(anthropicClient.dio.options.headers['X-Test'],
             equals('test-value'));
         expect(anthropicClient.dio.options.baseUrl,
-            equals('https://api.example.com'));
+            equals('https://api.example.com/'));
 
         // Should have logging interceptor
         expect(anthropicClient.dio.interceptors.length, greaterThan(1));
@@ -376,7 +376,7 @@ void main() {
         final anthropicClient = AnthropicClient(anthropicConfig);
         expect(anthropicClient.dio, isNotNull);
         expect(anthropicClient.dio.options.baseUrl,
-            equals('https://api.example.com'));
+            equals('https://api.example.com/'));
       });
 
       test('should handle custom Dio with unusual configuration', () {

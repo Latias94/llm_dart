@@ -562,7 +562,7 @@ void main() {
         // Should create new Dio instance
         expect(dio, isA<Dio>(),
             reason: 'Provider ${strategy.providerName} should create new Dio');
-        expect(dio.options.baseUrl, equals('https://api.example.com'),
+        expect(dio.options.baseUrl, equals('https://api.example.com/'),
             reason:
                 'Provider ${strategy.providerName} should use correct base URL');
       }

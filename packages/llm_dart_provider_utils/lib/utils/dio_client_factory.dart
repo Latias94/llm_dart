@@ -43,6 +43,13 @@ abstract class DioEnhancer {
 /// approach to Dio client creation while allowing provider-specific
 /// customizations through the strategy pattern.
 class DioClientFactory {
+  static String _normalizeBaseUrl(String baseUrl) {
+    final trimmed = baseUrl.trim();
+    if (trimmed.isEmpty) return trimmed;
+    if (trimmed.endsWith('/')) return trimmed;
+    return '$trimmed/';
+  }
+
   /// Create a configured Dio client using provider strategy
   ///
   /// Priority order:
@@ -83,7 +90,8 @@ class DioClientFactory {
   ) {
     // Ensure base URL is set if not already configured
     if (customDio.options.baseUrl.isEmpty) {
-      customDio.options.baseUrl = strategy.getBaseUrl(config);
+      customDio.options.baseUrl =
+          _normalizeBaseUrl(strategy.getBaseUrl(config));
     }
 
     // Merge essential headers (user's headers take precedence, case-insensitive)

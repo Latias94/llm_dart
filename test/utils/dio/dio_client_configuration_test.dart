@@ -31,7 +31,7 @@ void main() {
         final client = AnthropicClient(config);
 
         expect(client.dio, isA<Dio>());
-        expect(client.dio.options.baseUrl, equals('https://api.example.com'));
+        expect(client.dio.options.baseUrl, equals('https://api.example.com/'));
         expect(
             client.dio.options.connectTimeout, equals(Duration(seconds: 30)));
 
@@ -70,7 +70,7 @@ void main() {
         final client = OpenAIClient(config);
 
         expect(client.dio, isA<Dio>());
-        expect(client.dio.options.baseUrl, equals('https://api.example.com'));
+        expect(client.dio.options.baseUrl, equals('https://api.example.com/'));
         expect(
             client.dio.options.connectTimeout, equals(Duration(seconds: 30)));
 
@@ -107,7 +107,7 @@ void main() {
         final client = OpenAIClient(config);
 
         expect(client.dio, isA<Dio>());
-        expect(client.dio.options.baseUrl, equals('https://api.example.com'));
+        expect(client.dio.options.baseUrl, equals('https://api.example.com/'));
         expect(
             client.dio.options.connectTimeout, equals(Duration(seconds: 30)));
 
@@ -146,7 +146,7 @@ void main() {
         final client = OpenAIClient(config);
 
         expect(client.dio, isA<Dio>());
-        expect(client.dio.options.baseUrl, equals('https://api.example.com'));
+        expect(client.dio.options.baseUrl, equals('https://api.example.com/'));
         expect(
             client.dio.options.connectTimeout, equals(Duration(seconds: 30)));
 
@@ -185,7 +185,7 @@ void main() {
         final client = OpenAIClient(config);
 
         expect(client.dio, isA<Dio>());
-        expect(client.dio.options.baseUrl, equals('https://api.example.com'));
+        expect(client.dio.options.baseUrl, equals('https://api.example.com/'));
         expect(
             client.dio.options.connectTimeout, equals(Duration(seconds: 30)));
 
@@ -219,7 +219,7 @@ void main() {
         final client = GoogleClient(config);
 
         expect(client.dio, isA<Dio>());
-        expect(client.dio.options.baseUrl, equals('https://api.example.com'));
+        expect(client.dio.options.baseUrl, equals('https://api.example.com/'));
         expect(
             client.dio.options.connectTimeout, equals(Duration(seconds: 30)));
 
@@ -252,7 +252,7 @@ void main() {
         final client = OllamaClient(config);
 
         expect(client.dio, isA<Dio>());
-        expect(client.dio.options.baseUrl, equals('https://api.example.com'));
+        expect(client.dio.options.baseUrl, equals('https://api.example.com/'));
         expect(
             client.dio.options.connectTimeout, equals(Duration(seconds: 30)));
 
@@ -268,7 +268,7 @@ void main() {
         final client = OllamaClient(config);
 
         expect(client.dio, isA<Dio>());
-        expect(client.dio.options.baseUrl, equals('http://localhost:11434'));
+        expect(client.dio.options.baseUrl, equals('http://localhost:11434/'));
 
         // Should have minimal interceptors in fallback mode
         expect(client.dio.interceptors.length, greaterThanOrEqualTo(0));

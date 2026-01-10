@@ -20,7 +20,7 @@ void main() {
         );
 
         expect(dio, isA<Dio>());
-        expect(dio.options.baseUrl, equals('https://api.example.com/v1'));
+        expect(dio.options.baseUrl, equals('https://api.example.com/v1/'));
         expect(dio.options.headers['Authorization'], equals('Bearer test-key'));
       });
 
@@ -210,7 +210,7 @@ void main() {
         );
 
         expect(dio, isA<Dio>());
-        expect(dio.options.baseUrl, equals('https://api.example.com/v1'));
+        expect(dio.options.baseUrl, equals('https://api.example.com/v1/'));
         expect(dio.options.headers['Authorization'], equals('Bearer test-key'));
         expect(dio.options.connectTimeout, equals(Duration(seconds: 60)));
         expect(dio.options.receiveTimeout, equals(Duration(seconds: 60)));

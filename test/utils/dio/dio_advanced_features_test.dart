@@ -245,7 +245,7 @@ void main() {
         expect(dio.interceptors.length, greaterThan(0));
 
         // Check base URL
-        expect(dio.options.baseUrl, equals('https://api.example.com/v1'));
+        expect(dio.options.baseUrl, equals('https://api.example.com/v1/'));
       });
 
       test('should handle invalid proxy configuration gracefully', () {
