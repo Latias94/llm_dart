@@ -86,10 +86,13 @@ class DioClientFactory {
       customDio.options.baseUrl = strategy.getBaseUrl(config);
     }
 
-    // Merge essential headers (user's headers take precedence)
+    // Merge essential headers (user's headers take precedence, case-insensitive)
     final essentialHeaders = strategy.buildHeaders(config);
     for (final entry in essentialHeaders.entries) {
-      customDio.options.headers.putIfAbsent(entry.key, () => entry.value);
+      if (_hasHeaderIgnoreCase(customDio.options.headers, entry.key)) {
+        continue;
+      }
+      customDio.options.headers[entry.key] = entry.value;
     }
 
     // Apply provider-specific enhancements
@@ -99,6 +102,17 @@ class DioClientFactory {
     }
 
     return customDio;
+  }
+
+  static bool _hasHeaderIgnoreCase(
+    Map<String, dynamic> headers,
+    String headerName,
+  ) {
+    final needle = headerName.toLowerCase();
+    for (final key in headers.keys) {
+      if (key.toLowerCase() == needle) return true;
+    }
+    return false;
   }
 
   /// Create new configured Dio instance

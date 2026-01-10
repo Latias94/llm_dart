@@ -18,6 +18,19 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('DioClientFactory', () {
+    String? headerValueIgnoreCase(
+      Map<String, dynamic> headers,
+      String headerName,
+    ) {
+      final needle = headerName.toLowerCase();
+      for (final entry in headers.entries) {
+        if (entry.key.toLowerCase() == needle) {
+          return entry.value?.toString();
+        }
+      }
+      return null;
+    }
+
     test('should create Dio client with Anthropic strategy', () {
       final config = AnthropicConfig(
         baseUrl: 'https://api.anthropic.com/v1/',
@@ -34,6 +47,10 @@ void main() {
       expect(dio.options.baseUrl, equals('https://api.anthropic.com/v1/'));
       expect(dio.options.headers['x-api-key'], equals('test-key'));
       expect(dio.options.headers['anthropic-version'], equals('2023-06-01'));
+      expect(
+        headerValueIgnoreCase(dio.options.headers, 'user-agent'),
+        equals(defaultUserAgentForProvider('anthropic')),
+      );
 
       // Should have Anthropic-specific interceptors
       expect(dio.interceptors.length, greaterThan(0));
@@ -55,6 +72,10 @@ void main() {
       expect(dio.options.baseUrl, equals('https://api.openai.com/v1/'));
       expect(dio.options.headers['Authorization'], equals('Bearer test-key'));
       expect(dio.options.headers['Content-Type'], equals('application/json'));
+      expect(
+        headerValueIgnoreCase(dio.options.headers, 'user-agent'),
+        equals(defaultUserAgentForProvider('openai')),
+      );
     });
 
     test('should create Dio client with Google strategy', () {
@@ -73,6 +94,10 @@ void main() {
       expect(dio.options.baseUrl,
           equals('https://generativelanguage.googleapis.com/v1beta/'));
       expect(dio.options.headers['Content-Type'], equals('application/json'));
+      expect(
+        headerValueIgnoreCase(dio.options.headers, 'user-agent'),
+        equals(defaultUserAgentForProvider('google')),
+      );
       // Google uses query parameter auth, so no Authorization header
       expect(dio.options.headers.containsKey('Authorization'), isFalse);
     });
@@ -81,6 +106,7 @@ void main() {
       final customDio = Dio();
       customDio.options.baseUrl = 'https://custom.example.com';
       customDio.options.headers['X-Custom'] = 'test';
+      customDio.options.headers['user-agent'] = 'CorporateApp/2.0';
 
       final llmConfig = LLMConfig(
         baseUrl: 'https://api.anthropic.com/v1/',
@@ -105,6 +131,10 @@ void main() {
       // Should use the custom Dio instance
       expect(dio, same(customDio));
       expect(dio.options.headers['X-Custom'], equals('test'));
+      expect(
+        headerValueIgnoreCase(dio.options.headers, 'user-agent'),
+        equals('CorporateApp/2.0'),
+      );
 
       // Should still have essential Anthropic headers merged
       expect(dio.options.headers['x-api-key'], equals('test-key'));
@@ -162,6 +192,10 @@ void main() {
       expect(headers['x-api-key'], equals('test-key'));
       expect(headers['anthropic-version'], equals('2023-06-01'));
       expect(headers['Content-Type'], equals('application/json'));
+      expect(
+        headers['User-Agent'],
+        equals(defaultUserAgentForProvider('anthropic')),
+      );
     });
 
     test('OpenAIDioStrategy should build correct headers', () {
@@ -176,6 +210,8 @@ void main() {
 
       expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
+      expect(
+          headers['User-Agent'], equals(defaultUserAgentForProvider('openai')));
     });
 
     test('GoogleDioStrategy should build correct headers', () {
@@ -189,6 +225,8 @@ void main() {
       final headers = strategy.buildHeaders(config);
 
       expect(headers['Content-Type'], equals('application/json'));
+      expect(
+          headers['User-Agent'], equals(defaultUserAgentForProvider('google')));
       // Google doesn't use Authorization header
       expect(headers.containsKey('Authorization'), isFalse);
     });
@@ -207,7 +245,7 @@ void main() {
 
       expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
-      expect(headers['User-Agent'], equals('llm_dart/openai-compatible'));
+      expect(headers['User-Agent'], equals(defaultUserAgentForProvider('xai')));
     });
 
     test('Groq should use standard OpenAI-compatible headers', () {
@@ -224,6 +262,8 @@ void main() {
 
       expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
+      expect(
+          headers['User-Agent'], equals(defaultUserAgentForProvider('groq')));
     });
 
     test('Azure OpenAI should use api-key header', () {
@@ -274,6 +314,8 @@ void main() {
 
       expect(headers['Authorization'], equals('Bearer test-key'));
       expect(headers['Content-Type'], equals('application/json'));
+      expect(
+          headers['User-Agent'], equals(defaultUserAgentForProvider('ollama')));
     });
 
     test('OllamaDioStrategy should handle null API key', () {
@@ -288,6 +330,8 @@ void main() {
 
       expect(headers.containsKey('Authorization'), isFalse);
       expect(headers['Content-Type'], equals('application/json'));
+      expect(
+          headers['User-Agent'], equals(defaultUserAgentForProvider('ollama')));
     });
 
     test('Phind should use standard OpenAI-compatible headers', () {
@@ -317,6 +361,8 @@ void main() {
 
       expect(headers['xi-api-key'], equals('test-key'));
       expect(headers['Content-Type'], equals('application/json'));
+      expect(headers['User-Agent'],
+          equals(defaultUserAgentForProvider('elevenlabs')));
     });
   });
 

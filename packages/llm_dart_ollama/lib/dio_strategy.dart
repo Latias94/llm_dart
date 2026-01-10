@@ -26,6 +26,10 @@ class OllamaDioStrategy extends BaseProviderDioStrategy {
       headers['Authorization'] = 'Bearer ${ollamaConfig.apiKey}';
     }
 
+    if (!hasHeaderIgnoreCase(headers, 'user-agent')) {
+      headers['User-Agent'] = defaultUserAgentForProvider('ollama');
+    }
+
     return headers;
   }
 }

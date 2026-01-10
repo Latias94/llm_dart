@@ -68,6 +68,30 @@ void main() {
             dio.options.headers['Authorization'], equals('Bearer custom-key'));
       });
 
+      test('should override default headers ignoring header name casing', () {
+        final config = LLMConfig(
+          baseUrl: 'https://api.example.com',
+          apiKey: 'test-key',
+          model: 'test-model',
+        ).withTransportOptions({
+          'customHeaders': {
+            'user-agent': 'custom/1.0',
+          }
+        });
+
+        final dio = HttpConfigUtils.createConfiguredDio(
+          baseUrl: 'https://api.example.com/v1',
+          defaultHeaders: {'User-Agent': 'default/1.0'},
+          config: config,
+        );
+
+        final uaKeys = dio.options.headers.keys
+            .where((k) => k.toLowerCase() == 'user-agent')
+            .toList(growable: false);
+        expect(uaKeys, hasLength(1));
+        expect(dio.options.headers[uaKeys.single], equals('custom/1.0'));
+      });
+
       test('should apply timeout configurations', () {
         final config = LLMConfig(
           baseUrl: 'https://api.example.com',

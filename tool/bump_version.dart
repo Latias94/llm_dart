@@ -59,6 +59,8 @@ void main(List<String> args) {
           }
         }
 
+        _writeProviderUtilsVersionFile(rootDir, version);
+
         stdout.writeln(
           'Updated ${packages.length} packages to version $version'
           '${updateConstraints ? ' (constraints updated)' : ''}.',
@@ -102,6 +104,10 @@ void main(List<String> args) {
           pubspec.writeAsStringSync(updated);
         }
 
+        if (packageName == 'llm_dart_provider_utils') {
+          _writeProviderUtilsVersionFile(Directory.current, version);
+        }
+
         stdout.writeln('Updated $packageName to version $version.');
         return;
       }
@@ -113,6 +119,24 @@ void main(List<String> args) {
         return;
       }
   }
+}
+
+void _writeProviderUtilsVersionFile(Directory rootDir, String version) {
+  final file = File(
+    '${rootDir.path}/packages/llm_dart_provider_utils/lib/utils/user_agent.dart',
+  );
+  if (!file.existsSync()) return;
+
+  final original = file.readAsStringSync();
+  final re = RegExp(
+    r"^(const String llmDartVersion\s*=\s*)'[^']*';\s*$",
+    multiLine: true,
+  );
+  final updated = re.hasMatch(original)
+      ? original.replaceFirstMapped(re, (m) => "${m.group(1)}'$version';")
+      : original;
+
+  if (updated != original) file.writeAsStringSync(updated);
 }
 
 void _printUsage() {

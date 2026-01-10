@@ -26,4 +26,5 @@ export 'utils/reasoning_utils.dart';
 export 'utils/sse_line_buffer.dart';
 export 'utils/sse_chunk_parser.dart';
 export 'utils/tool_name_mapping.dart';
+export 'utils/user_agent.dart';
 export 'utils/utf8_stream_decoder.dart';

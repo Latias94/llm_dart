@@ -3,13 +3,6 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'openai_compatible_config.dart';
 import 'openai_request_config.dart';
 
-const String _defaultOpenAICompatibleUserAgent = 'llm_dart/openai-compatible';
-
-bool _hasHeaderIgnoreCase(Map<String, String> headers, String headerName) {
-  final needle = headerName.toLowerCase();
-  return headers.keys.any((k) => k.toLowerCase() == needle);
-}
-
 /// OpenAI-specific Dio strategy implementation
 ///
 /// Handles OpenAI's standard Bearer token authentication
@@ -48,9 +41,11 @@ class OpenAIDioStrategy extends BaseProviderDioStrategy {
       headers.addAll(extra);
     }
 
-    if (openaiConfig is OpenAICompatibleConfig &&
-        !_hasHeaderIgnoreCase(headers, 'user-agent')) {
-      headers['User-Agent'] = _defaultOpenAICompatibleUserAgent;
+    if (!hasHeaderIgnoreCase(headers, 'user-agent')) {
+      final uaId = openaiConfig is OpenAICompatibleConfig
+          ? openaiConfig.providerId
+          : providerId;
+      headers['User-Agent'] = defaultUserAgentForProvider(uaId);
     }
     return headers;
   }

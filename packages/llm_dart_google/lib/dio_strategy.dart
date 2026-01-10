@@ -18,8 +18,17 @@ class GoogleDioStrategy extends BaseProviderDioStrategy {
 
   @override
   Map<String, String> buildHeaders(dynamic config) {
-    // Google uses query parameter authentication, so minimal headers
-    return {'Content-Type': 'application/json'};
+    // Google uses query parameter authentication, so minimal headers.
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+
+    if (!hasHeaderIgnoreCase(headers, 'user-agent')) {
+      final googleConfig = config as GoogleConfig;
+      headers['User-Agent'] =
+          defaultUserAgentForProvider(googleConfig.providerOptionsName);
+    }
+    return headers;
   }
 
   @override

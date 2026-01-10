@@ -85,11 +85,29 @@ class HttpConfigUtils {
             : null) ??
         <String, String>{};
 
-    // Merge headers, with custom headers taking precedence
-    return {
-      ...defaultHeaders,
-      ...customHeaders,
-    };
+    // Merge headers, with custom headers taking precedence (case-insensitive).
+    return _mergeHeadersCaseInsensitive(defaultHeaders, customHeaders);
+  }
+
+  static Map<String, String> _mergeHeadersCaseInsensitive(
+    Map<String, String> defaultHeaders,
+    Map<String, String> customHeaders,
+  ) {
+    if (customHeaders.isEmpty) return defaultHeaders;
+    final result = <String, String>{...defaultHeaders};
+
+    for (final entry in customHeaders.entries) {
+      final keyLower = entry.key.toLowerCase();
+      final existingKeys = result.keys
+          .where((k) => k.toLowerCase() == keyLower)
+          .toList(growable: false);
+      for (final k in existingKeys) {
+        result.remove(k);
+      }
+      result[entry.key] = entry.value;
+    }
+
+    return result;
   }
 
   /// Configure HTTP client adapter with proxy and SSL settings

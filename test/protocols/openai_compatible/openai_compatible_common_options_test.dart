@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:llm_dart_openai_compatible/client.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -76,7 +77,8 @@ void main() {
 
       expect(headersLower.containsKey('authorization'), isFalse);
       expect(headersLower['x-test'], equals('1'));
-      expect(headersLower['user-agent'], equals('llm_dart/openai-compatible'));
+      expect(headersLower['user-agent'],
+          equals(defaultUserAgentForProvider('openai-compatible')));
     });
 
     test('allows overriding default user-agent header', () async {

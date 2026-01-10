@@ -16,10 +16,17 @@ class ElevenLabsDioStrategy extends BaseProviderDioStrategy {
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final elevenLabsConfig = config as ElevenLabsConfig;
-    return {
+    final headers = <String, String>{
       'Content-Type': 'application/json',
       'xi-api-key': elevenLabsConfig.apiKey,
     };
+
+    if (!hasHeaderIgnoreCase(headers, 'user-agent')) {
+      headers['User-Agent'] =
+          defaultUserAgentForProvider(elevenLabsConfig.providerId);
+    }
+
+    return headers;
   }
 
   @override
