@@ -10,7 +10,8 @@ void main() {
             .queryParams(const {'foo': 'bar'})
             .headers(const {'X-Test': '1'})
             .includeUsage(true)
-            .supportsStructuredOutputs(false),
+            .supportsStructuredOutputs(false)
+            .parseToolCallsFromText(true),
       );
 
       expect(builder.providerId, equals('deepinfra-openai'));
@@ -55,6 +56,13 @@ void main() {
           'supportsStructuredOutputs',
         ),
         isFalse,
+      );
+      expect(
+        builder.currentConfig.getProviderOption<bool>(
+          'deepinfra-openai',
+          'parseToolCallsFromText',
+        ),
+        isTrue,
       );
     });
 

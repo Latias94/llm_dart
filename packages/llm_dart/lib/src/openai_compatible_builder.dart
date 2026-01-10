@@ -52,5 +52,16 @@ class OpenAICompatibleBuilder {
     return this;
   }
 
+  /// Best-effort tool call fallback parsing from response text.
+  ///
+  /// Some OpenAI-compatible providers may return a tool call JSON object in the
+  /// assistant `content` instead of populating `tool_calls`. When enabled,
+  /// `ChatResponse.toolCalls` will attempt to parse a single tool call from the
+  /// text **only when tools were requested**.
+  OpenAICompatibleBuilder parseToolCallsFromText([bool enabled = true]) {
+    _baseBuilder.providerOption(_providerId, 'parseToolCallsFromText', enabled);
+    return this;
+  }
+
   Future<ChatCapability> build() => _baseBuilder.build();
 }

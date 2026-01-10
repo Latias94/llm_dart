@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
@@ -26,6 +27,12 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
 
   String get chatEndpoint => 'chat/completions';
 
+  bool _parseToolCallsFromTextEnabled() {
+    return config.getProviderOption<bool>('parseToolCallsFromText') ??
+        config.getProviderOption<bool>('parse_tool_calls_from_text') ??
+        false;
+  }
+
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
@@ -43,7 +50,10 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
       requestBody,
       cancelToken: cancelToken,
     );
-    return _parseResponse(responseData);
+    return _parseResponse(
+      responseData,
+      didRequestTools: tools != null && tools.isNotEmpty,
+    );
   }
 
   @override
@@ -244,8 +254,11 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           ],
           if (usage != null) 'usage': usage,
         },
-        fullThinking.isNotEmpty ? fullThinking.toString() : null,
-        config.providerId,
+        thinkingContent:
+            fullThinking.isNotEmpty ? fullThinking.toString() : null,
+        providerId: config.providerId,
+        parseToolCallsFromText: _parseToolCallsFromTextEnabled(),
+        didRequestTools: effectiveTools != null && effectiveTools.isNotEmpty,
       );
 
       yield CompletionEvent(response);
@@ -504,8 +517,11 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
             ],
             if (usage != null) 'usage': usage,
           },
-          fullThinking.isNotEmpty ? fullThinking.toString() : null,
-          config.providerId,
+          thinkingContent:
+              fullThinking.isNotEmpty ? fullThinking.toString() : null,
+          providerId: config.providerId,
+          parseToolCallsFromText: _parseToolCallsFromTextEnabled(),
+          didRequestTools: effectiveTools != null && effectiveTools.isNotEmpty,
         );
 
         final metadata = response.providerMetadata;
@@ -550,8 +566,11 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
             ],
             if (usage != null) 'usage': usage,
           },
-          fullThinking.isNotEmpty ? fullThinking.toString() : null,
-          config.providerId,
+          thinkingContent:
+              fullThinking.isNotEmpty ? fullThinking.toString() : null,
+          providerId: config.providerId,
+          parseToolCallsFromText: _parseToolCallsFromTextEnabled(),
+          didRequestTools: effectiveTools != null && effectiveTools.isNotEmpty,
         );
 
         final metadata = response.providerMetadata;
@@ -600,7 +619,10 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
   }
 
   /// Parse non-streaming response
-  ChatResponse _parseResponse(Map<String, dynamic> responseData) {
+  ChatResponse _parseResponse(
+    Map<String, dynamic> responseData, {
+    required bool didRequestTools,
+  }) {
     // Extract thinking/reasoning content from non-streaming response
     String? thinkingContent;
 
@@ -639,7 +661,13 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
       }
     }
 
-    return OpenAIChatResponse(responseData, thinkingContent, config.providerId);
+    return OpenAIChatResponse(
+      responseData,
+      thinkingContent: thinkingContent,
+      providerId: config.providerId,
+      parseToolCallsFromText: _parseToolCallsFromTextEnabled(),
+      didRequestTools: didRequestTools,
+    );
   }
 
   /// Reset stream state (call this when starting a new stream)
@@ -672,9 +700,19 @@ class OpenAIChatResponse implements ChatResponse {
   final Map<String, dynamic> _rawResponse;
   final String? _thinkingContent;
   final String? _providerId;
+  final bool _parseToolCallsFromText;
+  final bool _didRequestTools;
 
-  OpenAIChatResponse(this._rawResponse,
-      [this._thinkingContent, this._providerId]);
+  OpenAIChatResponse(
+    this._rawResponse, {
+    String? thinkingContent,
+    String? providerId,
+    bool parseToolCallsFromText = false,
+    bool didRequestTools = false,
+  })  : _thinkingContent = thinkingContent,
+        _providerId = providerId,
+        _parseToolCallsFromText = parseToolCallsFromText,
+        _didRequestTools = didRequestTools;
 
   @override
   String? get text {
@@ -693,11 +731,21 @@ class OpenAIChatResponse implements ChatResponse {
     final message = choices.first['message'] as Map<String, dynamic>?;
     final toolCalls = message?['tool_calls'] as List?;
 
-    if (toolCalls == null) return null;
+    if (toolCalls != null) {
+      return toolCalls
+          .map((tc) => ToolCall.fromJson(tc as Map<String, dynamic>))
+          .toList();
+    }
 
-    return toolCalls
-        .map((tc) => ToolCall.fromJson(tc as Map<String, dynamic>))
-        .toList();
+    if (!_parseToolCallsFromText || !_didRequestTools) return null;
+
+    final content = message?['content'];
+    if (content is! String || content.trim().isEmpty) return null;
+
+    final fallback = _tryParseToolCallFromText(content);
+    if (fallback == null) return null;
+
+    return [fallback];
   }
 
   @override
@@ -772,4 +820,89 @@ class OpenAIChatResponse implements ChatResponse {
       return '';
     }
   }
+}
+
+ToolCall? _tryParseToolCallFromText(String text) {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) return null;
+
+  Map<String, dynamic>? json;
+
+  try {
+    final decoded = jsonDecode(trimmed);
+    if (decoded is Map) {
+      json = Map<String, dynamic>.from(decoded);
+    }
+  } catch (_) {
+    // ignore, fallback to extracting the first JSON object from text.
+  }
+
+  json ??= _extractFirstJsonObject(trimmed);
+  if (json == null) return null;
+
+  // Some providers might nest the tool call list.
+  final toolCalls = json['tool_calls'];
+  if (toolCalls is List && toolCalls.isNotEmpty && toolCalls.first is Map) {
+    json = Map<String, dynamic>.from(toolCalls.first as Map);
+  }
+
+  final id = (json['id'] as String?)?.trim();
+
+  String? name;
+  dynamic arguments;
+
+  final function = json['function'];
+  if (function is Map) {
+    final fn = Map<String, dynamic>.from(function);
+    name = fn['name']?.toString();
+    arguments = fn['arguments'];
+  } else {
+    name = json['name']?.toString();
+    arguments = json['arguments'];
+  }
+
+  if (name == null || name.trim().isEmpty) return null;
+
+  final String argumentsJson;
+  if (arguments == null) {
+    argumentsJson = '{}';
+  } else if (arguments is String) {
+    argumentsJson = arguments;
+  } else {
+    argumentsJson = jsonEncode(arguments);
+  }
+
+  return ToolCall(
+    id: id != null && id.isNotEmpty ? id : 'toolcall_0',
+    callType: 'function',
+    function: FunctionCall(
+      name: name.trim(),
+      arguments: argumentsJson,
+    ),
+  );
+}
+
+Map<String, dynamic>? _extractFirstJsonObject(String text) {
+  final start = text.indexOf('{');
+  if (start == -1) return null;
+
+  var depth = 0;
+  for (var i = start; i < text.length; i++) {
+    final ch = text.codeUnitAt(i);
+    if (ch == 0x7B) depth++; // {
+    if (ch == 0x7D) depth--; // }
+    if (depth == 0) {
+      final candidate = text.substring(start, i + 1);
+      try {
+        final decoded = jsonDecode(candidate);
+        if (decoded is Map) {
+          return Map<String, dynamic>.from(decoded);
+        }
+        return null;
+      } catch (_) {
+        return null;
+      }
+    }
+  }
+  return null;
 }

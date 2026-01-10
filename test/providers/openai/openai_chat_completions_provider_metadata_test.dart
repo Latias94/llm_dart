@@ -17,8 +17,7 @@ void main() {
             }
           ],
         },
-        null,
-        'openai',
+        providerId: 'openai',
       );
 
       final metadata = response.providerMetadata;
