@@ -10,6 +10,7 @@ import 'elevenlabs_builder.dart';
 import 'google_llm_builder.dart';
 import 'ollama_builder.dart';
 import 'openai_builder.dart';
+import 'openai_compatible_builder.dart';
 import 'openrouter_builder.dart';
 
 /// Convenience methods for built-in providers.
@@ -147,18 +148,88 @@ extension BuiltinProviderBuilders on LLMBuilder {
     return this;
   }
 
-  LLMBuilder githubCopilot() {
+  LLMBuilder githubCopilot(
+      [OpenAICompatibleBuilder Function(OpenAICompatibleBuilder)? configure]) {
     BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
       'github-copilot',
     );
-    return provider('github-copilot');
+    provider('github-copilot');
+    if (configure != null) {
+      configure(OpenAICompatibleBuilder(this, 'github-copilot'));
+    }
+    return this;
   }
 
-  LLMBuilder togetherAI() {
+  LLMBuilder togetherAI(
+      [OpenAICompatibleBuilder Function(OpenAICompatibleBuilder)? configure]) {
     BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
       'together-ai',
     );
-    return provider('together-ai');
+    provider('together-ai');
+    if (configure != null) {
+      configure(OpenAICompatibleBuilder(this, 'together-ai'));
+    }
+    return this;
+  }
+
+  LLMBuilder deepinfraOpenAI(
+      [OpenAICompatibleBuilder Function(OpenAICompatibleBuilder)? configure]) {
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'deepinfra-openai',
+    );
+    provider('deepinfra-openai');
+    if (configure != null) {
+      configure(OpenAICompatibleBuilder(this, 'deepinfra-openai'));
+    }
+    return this;
+  }
+
+  LLMBuilder fireworksOpenAI(
+      [OpenAICompatibleBuilder Function(OpenAICompatibleBuilder)? configure]) {
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'fireworks-openai',
+    );
+    provider('fireworks-openai');
+    if (configure != null) {
+      configure(OpenAICompatibleBuilder(this, 'fireworks-openai'));
+    }
+    return this;
+  }
+
+  LLMBuilder cerebrasOpenAI(
+      [OpenAICompatibleBuilder Function(OpenAICompatibleBuilder)? configure]) {
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'cerebras-openai',
+    );
+    provider('cerebras-openai');
+    if (configure != null) {
+      configure(OpenAICompatibleBuilder(this, 'cerebras-openai'));
+    }
+    return this;
+  }
+
+  LLMBuilder vercelV0(
+      [OpenAICompatibleBuilder Function(OpenAICompatibleBuilder)? configure]) {
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'vercel-v0',
+    );
+    provider('vercel-v0');
+    if (configure != null) {
+      configure(OpenAICompatibleBuilder(this, 'vercel-v0'));
+    }
+    return this;
+  }
+
+  LLMBuilder basetenOpenAI(
+      [OpenAICompatibleBuilder Function(OpenAICompatibleBuilder)? configure]) {
+    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
+      'baseten-openai',
+    );
+    provider('baseten-openai');
+    if (configure != null) {
+      configure(OpenAICompatibleBuilder(this, 'baseten-openai'));
+    }
+    return this;
   }
 }
 

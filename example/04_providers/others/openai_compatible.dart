@@ -19,6 +19,11 @@ import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 /// export GROQ_API_KEY="..."
 /// export XAI_API_KEY="..."
 /// export GOOGLE_API_KEY="..."
+/// export DEEPINFRA_API_KEY="..."
+/// export FIREWORKS_API_KEY="..."
+/// export CEREBRAS_API_KEY="..."
+/// export VERCEL_API_KEY="..."
+/// export BASETEN_API_KEY="..."
 /// export OPENROUTER_API_KEY="..."
 /// export GITHUB_COPILOT_API_KEY="..."
 /// export TOGETHER_API_KEY="..."
@@ -54,6 +59,11 @@ const _envVarByProviderId = <String, String>{
   'groq-openai': 'GROQ_API_KEY',
   'xai-openai': 'XAI_API_KEY',
   'google-openai': 'GOOGLE_API_KEY',
+  'deepinfra-openai': 'DEEPINFRA_API_KEY',
+  'fireworks-openai': 'FIREWORKS_API_KEY',
+  'cerebras-openai': 'CEREBRAS_API_KEY',
+  'vercel-v0': 'VERCEL_API_KEY',
+  'baseten-openai': 'BASETEN_API_KEY',
   'openrouter': 'OPENROUTER_API_KEY',
   'github-copilot': 'GITHUB_COPILOT_API_KEY',
   'together-ai': 'TOGETHER_API_KEY',

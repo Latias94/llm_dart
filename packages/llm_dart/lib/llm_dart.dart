@@ -44,6 +44,7 @@ export 'src/anthropic_builder.dart';
 export 'src/builtin_llm_builder_extensions.dart';
 export 'src/openai_builder.dart';
 export 'src/openrouter_builder.dart';
+export 'src/openai_compatible_builder.dart';
 export 'src/google_llm_builder.dart';
 export 'src/ollama_builder.dart';
 export 'src/elevenlabs_builder.dart';
