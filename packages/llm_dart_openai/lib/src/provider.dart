@@ -26,6 +26,7 @@ const String _openaiResponsesProviderMetadataKey = 'openai.responses';
 class OpenAIProvider
     implements
         ChatCapability,
+        ChatStreamPartsCapability,
         EmbeddingCapability,
         TextToSpeechCapability,
         VoiceListingCapability,
@@ -173,6 +174,32 @@ class OpenAIProvider
         aliasKey: _openaiChatProviderMetadataKey,
       );
     }
+  }
+
+  @override
+  Stream<LLMStreamPart> chatStreamParts(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    // Use Responses API if enabled, otherwise use Chat Completions API
+    if (config.useResponsesAPI && _responses != null) {
+      return wrapStreamPartsWithProviderMetadataAlias(
+        _responses.chatStreamParts(
+          messages,
+          tools: tools,
+          cancelToken: cancelToken,
+        ),
+        baseKey: config.providerId,
+        aliasKey: _openaiResponsesProviderMetadataKey,
+      );
+    }
+
+    return wrapStreamPartsWithProviderMetadataAlias(
+      _chat.chatStreamParts(messages, tools: tools, cancelToken: cancelToken),
+      baseKey: config.providerId,
+      aliasKey: _openaiChatProviderMetadataKey,
+    );
   }
 
   @override
