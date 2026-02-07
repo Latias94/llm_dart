@@ -124,7 +124,7 @@ class GoogleConfig {
       temperature: config.temperature,
       systemPrompt: config.systemPrompt,
       timeout: config.timeout,
-
+      stream: config.getExtension<bool>('stream') ?? false,
       topP: config.topP,
       topK: config.topK,
       tools: config.tools,

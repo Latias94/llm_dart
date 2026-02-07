@@ -260,6 +260,12 @@ class LLMBuilder {
     return this;
   }
 
+  /// Enables streaming for supported providers (OpenAI, Google Gemini, Ollama)
+  LLMBuilder stream(bool enable) {
+    _config = _config.withExtension('stream', enable);
+    return this;
+  }
+
   /// Sets thinking budget tokens for Anthropic extended thinking
   LLMBuilder thinkingBudgetTokens(int tokens) {
     _config = _config.withExtension('thinkingBudgetTokens', tokens);
