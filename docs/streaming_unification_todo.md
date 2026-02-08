@@ -152,9 +152,10 @@ Priority order:
 - [x] `openai-compatible responses`: derive legacy `chatStream` from `chatStreamParts`
 - [ ] `openai-compatible responses`: remove legacy stream event parser code
 - [ ] `openai` + `azure` providers (Responses mode): ensure consistent parts semantics
-- [ ] `xai.responses`: emit citations/sources + server tool lifecycle via typed parts
+- [x] `xai.responses`: emit citations/sources via typed parts
+- [ ] `xai.responses`: emit server tool lifecycle via typed parts
 - [x] `google`/`vertex`: emit grounding sources via typed parts
-- [ ] `anthropic`/`anthropic-compatible`: emit citations via typed parts
+- [x] `anthropic`/`anthropic-compatible`: emit citations via typed parts
 
 Acceptance criteria:
 
@@ -164,7 +165,7 @@ Acceptance criteria:
 ### M4 — Conformance tests (offline)
 
 - [ ] Add “source part” conformance tests per provider that supports citations
-- [x] Add source part tests for OpenAI Responses + Google grounding
+- [x] Add source part tests for OpenAI Responses + Google grounding + xAI citations
 - [ ] Add “provider tool part” conformance tests (web/file/search/code)
 - [ ] Expand chunk-fuzz coverage to the new part types
 - [ ] Add a global “no drift” guard: `chatStream` must be derived from parts
