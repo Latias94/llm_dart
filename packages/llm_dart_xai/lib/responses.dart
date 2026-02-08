@@ -9,6 +9,12 @@ class _FunctionCallAccum {
   String arguments = '';
 }
 
+Map<String, dynamic> _stringKeyedMap(Map input) {
+  return input.map<String, dynamic>((key, value) {
+    return MapEntry(key.toString(), value);
+  });
+}
+
 /// (Tier 3 / opt-in) xAI Responses API implementation (`POST /v1/responses`).
 ///
 /// This mirrors the event stream shape used by the OpenAI Responses API
@@ -124,6 +130,13 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
 
     Map<String, dynamic>? finalResponseObject;
 
+    final serverToolCallsById = <String, Map<String, dynamic>>{};
+    final sources = <String, Map<String, dynamic>>{};
+
+    String? responseId;
+    String? responseModel;
+    String? responseStatus;
+
     try {
       final stream = client.postStreamRaw(
         responsesEndpoint,
@@ -138,6 +151,18 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
         for (final json in jsonList) {
           final eventType = json['type'] as String?;
           if (eventType == null || eventType.isEmpty) continue;
+
+          if (eventType == 'response.created' ||
+              eventType == 'response.in_progress') {
+            final response = json['response'];
+            if (response is Map) {
+              final map = _stringKeyedMap(response);
+              responseId ??= map['id'] as String?;
+              responseModel ??= map['model'] as String?;
+              responseStatus ??= map['status'] as String?;
+            }
+            continue;
+          }
 
           if (eventType == 'response.reasoning_summary_part.added') {
             if (!inThinking) {
@@ -203,6 +228,34 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
             continue;
           }
 
+          if (eventType == 'response.output_text.annotation.added') {
+            final annotation = json['annotation'];
+            if (annotation is Map) {
+              final a = _stringKeyedMap(annotation);
+              if (a['type'] == 'url_citation') {
+                final url = a['url'] as String?;
+                if (url != null && url.isNotEmpty) {
+                  final title = a['title'] as String?;
+                  sources[url] = {
+                    'type': 'url',
+                    'url': url,
+                    if (title != null && title.isNotEmpty) 'title': title,
+                  };
+
+                  yield LLMProviderMetadataPart({
+                    config.providerId: {
+                      if (responseId != null) 'id': responseId,
+                      if (responseModel != null) 'model': responseModel,
+                      if (responseStatus != null) 'status': responseStatus,
+                      'sources': sources.values.toList(growable: false),
+                    },
+                  });
+                }
+              }
+            }
+            continue;
+          }
+
           if (eventType == 'response.output_item.added' ||
               eventType == 'response.output_item.done') {
             final item = json['item'] as Map<String, dynamic>?;
@@ -239,6 +292,25 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
               if (eventType == 'response.output_item.done') {
                 if (endedToolCalls.add(callId)) {
                   yield LLMToolCallEndPart(callId);
+                }
+              }
+            }
+
+            final type = item['type'];
+            if (type is String && type.endsWith('_call')) {
+              final id = item['id']?.toString() ?? '';
+              if (id.isNotEmpty) {
+                serverToolCallsById[id] = _stringKeyedMap(item);
+                if (eventType == 'response.output_item.done') {
+                  yield LLMProviderMetadataPart({
+                    config.providerId: {
+                      if (responseId != null) 'id': responseId,
+                      if (responseModel != null) 'model': responseModel,
+                      if (responseStatus != null) 'status': responseStatus,
+                      'serverToolCalls':
+                          serverToolCallsById.values.toList(growable: false),
+                    },
+                  });
                 }
               }
             }
@@ -606,18 +678,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
         }
 
         if (type is String && type.endsWith('_call')) {
-          final id = item['id'];
-          final status = item['status'];
-          final name = item['name'];
-          final args = item['arguments'];
-          final call = <String, dynamic>{
-            'type': type,
-            if (id != null) 'id': id,
-            if (status != null) 'status': status,
-            if (name != null) 'name': name,
-            if (args != null) 'arguments': args,
-          };
-          serverToolCalls.add(call);
+          serverToolCalls.add(_stringKeyedMap(item));
         }
       }
     }
