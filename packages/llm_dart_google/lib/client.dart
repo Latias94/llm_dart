@@ -121,7 +121,7 @@ class GoogleClient {
           cancelToken: dioToken,
           options: Options(
             responseType: ResponseType.stream,
-            headers: {'Accept': 'application/json'},
+            headers: {'Accept': 'text/event-stream'},
           ),
         ),
       );

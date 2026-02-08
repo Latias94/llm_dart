@@ -72,7 +72,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       '${googleModelPath(config.model)}:generateContent';
 
   String get _chatStreamEndpoint =>
-      '${googleModelPath(config.model)}:streamGenerateContent';
+      '${googleModelPath(config.model)}:streamGenerateContent?alt=sse';
 
   Future<_GoogleBuiltRequest> _buildRequestAsync(
     List<ChatMessage> messages,
