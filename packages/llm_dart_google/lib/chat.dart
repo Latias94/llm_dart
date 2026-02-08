@@ -256,6 +256,8 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
     final startedToolCalls = <String>{};
     final endedToolCalls = <String>{};
+    var codeExecutionSeq = 0;
+    String? lastCodeExecutionToolCallId;
 
     List<Map<String, dynamic>> extractJsonObjects(String chunk) {
       streamBuffer += chunk;
@@ -420,20 +422,21 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
                 if (retrieved is Map) {
                   final uri = retrieved['uri'];
                   final fileSearchStore = retrieved['fileSearchStore'];
-                  final title = retrieved['title'] is String
+                  final urlTitle = retrieved['title'] is String
                       ? retrieved['title'] as String
-                      : 'Unknown Document';
+                      : null;
+                  final docTitle = urlTitle ?? 'Unknown Document';
 
                   if (uri is String && uri.isNotEmpty) {
                     if (uri.startsWith('http://') ||
                         uri.startsWith('https://')) {
-                      final p = newUrlSource(uri, title: title);
+                      final p = newUrlSource(uri, title: urlTitle);
                       if (p != null) yield p;
                     } else {
                       final filename =
                           uri.split('/').isEmpty ? null : uri.split('/').last;
                       final p = newDocumentSource(
-                        title,
+                        docTitle,
                         mediaType: mediaTypeForUri(uri),
                         filename: filename,
                         dedupeKey: 'docUri:$uri',
@@ -446,7 +449,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
                         ? null
                         : fileSearchStore.split('/').last;
                     final p = newDocumentSource(
-                      title,
+                      docTitle,
                       mediaType: 'application/octet-stream',
                       filename: filename,
                       dedupeKey: 'fileSearchStore:$fileSearchStore',
@@ -489,6 +492,46 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         if (parts != null) {
           for (final part in parts) {
             if (part is! Map<String, dynamic>) continue;
+
+            final executableCode =
+                part['executableCode'] as Map<String, dynamic>?;
+            if (executableCode != null) {
+              final code = executableCode['code'] as String?;
+              if (code != null && code.isNotEmpty) {
+                final id = 'code_execution_${codeExecutionSeq++}';
+                lastCodeExecutionToolCallId = id;
+                yield LLMProviderToolCallPart(
+                  toolCallId: id,
+                  toolName: 'code_execution',
+                  input: executableCode,
+                  providerMetadata: {
+                    _providerOptionsName: {'type': 'code_execution'},
+                  },
+                );
+              }
+              continue;
+            }
+
+            final codeExecutionResult =
+                part['codeExecutionResult'] as Map<String, dynamic>?;
+            if (codeExecutionResult != null) {
+              final toolCallId = lastCodeExecutionToolCallId;
+              if (toolCallId != null) {
+                yield LLMProviderToolResultPart(
+                  toolCallId: toolCallId,
+                  toolName: 'code_execution',
+                  result: {
+                    'outcome': codeExecutionResult['outcome'],
+                    'output': codeExecutionResult['output'],
+                  },
+                  providerMetadata: {
+                    _providerOptionsName: {'type': 'code_execution_result'},
+                  },
+                );
+                lastCodeExecutionToolCallId = null;
+              }
+              continue;
+            }
 
             final functionCall = part['functionCall'] as Map<String, dynamic>?;
             if (functionCall != null) {
@@ -1621,7 +1664,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 }
 
 /// Google chat response implementation
-class GoogleChatResponse implements ChatResponse {
+class GoogleChatResponse implements ChatResponseWithFinishReason {
   final Map<String, dynamic> _rawResponse;
   final ToolNameMapping? _toolNameMapping;
   final List<Map<String, dynamic>> _toolWarnings;
@@ -1759,6 +1802,38 @@ class GoogleChatResponse implements ChatResponse {
     }
 
     return metadata;
+  }
+
+  @override
+  LLMFinishReason? get finishReason {
+    final candidates = _rawResponse['candidates'] as List?;
+    final firstCandidate =
+        (candidates != null && candidates.isNotEmpty && candidates.first is Map)
+            ? Map<String, dynamic>.from(candidates.first as Map)
+            : null;
+
+    final raw = firstCandidate?['finishReason'] as String?;
+    if (raw == null || raw.isEmpty) return null;
+
+    final hasToolCalls = (toolCalls?.isNotEmpty ?? false);
+    final unified =
+        hasToolCalls ? LLMUnifiedFinishReason.toolCalls : _mapFinishReason(raw);
+
+    return LLMFinishReason(unified: unified, raw: raw);
+  }
+
+  static LLMUnifiedFinishReason _mapFinishReason(String raw) {
+    switch (raw.toUpperCase()) {
+      case 'STOP':
+        return LLMUnifiedFinishReason.stop;
+      case 'MAX_TOKENS':
+        return LLMUnifiedFinishReason.length;
+      case 'SAFETY':
+      case 'RECITATION':
+        return LLMUnifiedFinishReason.contentFilter;
+      default:
+        return LLMUnifiedFinishReason.other;
+    }
   }
 
   @override
