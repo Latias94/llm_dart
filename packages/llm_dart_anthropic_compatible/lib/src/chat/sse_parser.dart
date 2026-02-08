@@ -19,6 +19,7 @@ class _AnthropicChatSseParser {
   final Map<int, Map<String, dynamic>> _pendingBlocks = {};
   final Map<int, Map<String, dynamic>> _redactedThinkingBlocks = {};
   final Map<int, List<Map<String, dynamic>>> _textBlockCitations = {};
+  final Map<int, StringBuffer> _thinkingSignatures = {};
 
   final SseChunkParser _parser = SseChunkParser();
 
@@ -45,6 +46,7 @@ class _AnthropicChatSseParser {
     _pendingBlocks.clear();
     _redactedThinkingBlocks.clear();
     _textBlockCitations.clear();
+    _thinkingSignatures.clear();
     _parser.reset();
 
     _contentBlocks.clear();
@@ -138,9 +140,19 @@ class _AnthropicChatSseParser {
     _inThinking = false;
     final thinking = _thinkingBuffer.toString();
     if (thinking.isNotEmpty) {
-      _contentBlocks.add({'type': 'thinking', 'thinking': thinking});
+      final signature = _currentThinkingIndex == null
+          ? null
+          : _thinkingSignatures[_currentThinkingIndex!]?.toString();
+      _contentBlocks.add({
+        'type': 'thinking',
+        'thinking': thinking,
+        if (signature != null && signature.isNotEmpty) 'signature': signature,
+      });
     }
     _thinkingBuffer.clear();
+    if (_currentThinkingIndex != null) {
+      _thinkingSignatures.remove(_currentThinkingIndex);
+    }
     _currentThinkingIndex = null;
   }
 
@@ -412,10 +424,21 @@ class _AnthropicChatSseParser {
 
           // Handle signature delta (thinking encryption).
           if (deltaType == 'signature_delta') {
-            // Signature deltas are for verification, typically not shown to users.
-            // We can safely ignore these or log them for debugging.
-            client.logger
-                .fine('Received signature delta for thinking verification');
+            final signature = delta['signature'] as String?;
+            if (signature != null &&
+                signature.isNotEmpty &&
+                index != null &&
+                _blockTypes[index] == 'thinking') {
+              final buf =
+                  _thinkingSignatures.putIfAbsent(index, StringBuffer.new);
+              buf
+                ..clear()
+                ..write(signature);
+            } else {
+              // Signature deltas are for verification, typically not shown to users.
+              client.logger
+                  .fine('Received signature delta for thinking verification');
+            }
             break;
           }
 

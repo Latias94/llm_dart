@@ -36,6 +36,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
   final redactedThinkingBlocks = <int, Map<String, dynamic>>{};
   final pendingBlocks = <int, Map<String, dynamic>>{};
   final textBlockCitations = <int, List<Map<String, dynamic>>>{};
+  final thinkingSignatures = <int, StringBuffer>{};
 
   final contentBlocks = <Map<String, dynamic>>[];
 
@@ -103,9 +104,19 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
     inThinking = false;
     final thinking = thinkingBuffer.toString();
     if (thinking.isNotEmpty) {
-      contentBlocks.add({'type': 'thinking', 'thinking': thinking});
+      final signature = currentThinkingIndex == null
+          ? null
+          : thinkingSignatures[currentThinkingIndex!]?.toString();
+      contentBlocks.add({
+        'type': 'thinking',
+        'thinking': thinking,
+        if (signature != null && signature.isNotEmpty) 'signature': signature,
+      });
     }
     thinkingBuffer.clear();
+    if (currentThinkingIndex != null) {
+      thinkingSignatures.remove(currentThinkingIndex);
+    }
     currentThinkingIndex = null;
   }
 
@@ -372,8 +383,24 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
               break;
             }
 
-            final partialJson = delta['partial_json'] as String?;
-            if (partialJson != null) {
+            if (deltaType == 'signature_delta') {
+              final signature = delta['signature'] as String?;
+              if (signature != null &&
+                  signature.isNotEmpty &&
+                  blockTypes[index] == 'thinking') {
+                final buf =
+                    thinkingSignatures.putIfAbsent(index, StringBuffer.new);
+                buf
+                  ..clear()
+                  ..write(signature);
+              }
+              break;
+            }
+
+            final partialJson = deltaType == 'input_json_delta'
+                ? delta['partial_json'] as String?
+                : null;
+            if (partialJson != null && partialJson.isNotEmpty) {
               final state = activeToolCalls[index];
               if (state != null) {
                 if (!state.prefilledInput) {
