@@ -43,10 +43,10 @@ Add new parts (names are placeholders; exact naming TBD):
 - `LLMSourceUrlPart({String sourceId, String url, String? title, Map<String, dynamic>? providerMetadata})`
 - `LLMSourceDocumentPart({String sourceId, String mediaType, String title, String? filename, Map<String, dynamic>? providerMetadata})`
 - Provider-executed tools (server tools):
-  - `LLMProviderToolStartPart(...)`
-  - `LLMProviderToolDeltaPart(...)`
-  - `LLMProviderToolResultPart(...)`
-  - `LLMProviderToolEndPart(...)`
+  - `LLMProviderToolCallPart(...)` (server tool call)
+  - `LLMProviderToolResultPart(...)` (server tool result)
+  - (optional) `LLMProviderToolDeltaPart(...)` for status/progress
+  - (optional) `LLMToolApprovalRequestPart(...)` for provider-executed approvals
 - `LLMFinishPart` enhancement:
   - include `finishReason` + `usage` explicitly (not only via `ChatResponse.providerMetadata`)
 
@@ -152,8 +152,9 @@ Priority order:
 - [x] `openai-compatible responses`: derive legacy `chatStream` from `chatStreamParts`
 - [ ] `openai-compatible responses`: remove legacy stream event parser code
 - [ ] `openai` + `azure` providers (Responses mode): ensure consistent parts semantics
+- [x] `openai-compatible responses`: emit server tool calls via typed parts
 - [x] `xai.responses`: emit citations/sources via typed parts
-- [ ] `xai.responses`: emit server tool lifecycle via typed parts
+- [x] `xai.responses`: emit server tool calls via typed parts (call/result)
 - [x] `google`/`vertex`: emit grounding sources via typed parts
 - [x] `anthropic`/`anthropic-compatible`: emit citations via typed parts
 
@@ -167,6 +168,7 @@ Acceptance criteria:
 - [ ] Add “source part” conformance tests per provider that supports citations
 - [x] Add source part tests for OpenAI Responses + Google grounding + xAI citations
 - [ ] Add “provider tool part” conformance tests (web/file/search/code)
+- [x] Add provider tool part tests for OpenAI Responses + xAI Responses
 - [ ] Expand chunk-fuzz coverage to the new part types
 - [ ] Add a global “no drift” guard: `chatStream` must be derived from parts
 
