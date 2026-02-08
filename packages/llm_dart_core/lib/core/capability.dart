@@ -148,6 +148,48 @@ abstract class ChatResponse {
   Map<String, dynamic>? get providerMetadata => null;
 }
 
+/// Unified, provider-agnostic finish reason (Vercel AI SDK v3 style).
+enum LLMUnifiedFinishReason {
+  /// Model generated stop sequence.
+  stop,
+
+  /// Model generated maximum number of tokens.
+  length,
+
+  /// Content filter violation stopped the model.
+  contentFilter,
+
+  /// Model triggered tool calls.
+  toolCalls,
+
+  /// Model stopped because of an error.
+  error,
+
+  /// Model stopped for other reasons.
+  other,
+}
+
+/// Finish reason for a model response.
+///
+/// Contains both a unified reason and a raw reason from the provider.
+class LLMFinishReason {
+  final LLMUnifiedFinishReason unified;
+  final String? raw;
+
+  const LLMFinishReason({
+    required this.unified,
+    required this.raw,
+  });
+
+  @override
+  String toString() => 'LLMFinishReason(unified: $unified, raw: $raw)';
+}
+
+/// Optional interface for responses that can expose a typed finish reason.
+abstract class ChatResponseWithFinishReason extends ChatResponse {
+  LLMFinishReason? get finishReason;
+}
+
 /// Optional interface for responses that can provide an exact assistant message
 /// that should be persisted into chat history.
 ///

@@ -6,6 +6,7 @@ class GenerateTextResult {
   final String? thinking;
   final List<ToolCall>? toolCalls;
   final UsageInfo? usage;
+  final LLMFinishReason? finishReason;
 
   /// The raw provider response object for advanced use cases.
   final ChatResponse rawResponse;
@@ -16,6 +17,7 @@ class GenerateTextResult {
     this.thinking,
     this.toolCalls,
     this.usage,
+    this.finishReason,
   });
 
   Map<String, dynamic>? get providerMetadata => rawResponse.providerMetadata;

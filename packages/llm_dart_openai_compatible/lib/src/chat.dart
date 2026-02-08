@@ -649,7 +649,7 @@ class _ToolCallAccum {
 }
 
 /// OpenAI chat response implementation
-class OpenAIChatResponse implements ChatResponse {
+class OpenAIChatResponse implements ChatResponseWithFinishReason {
   final Map<String, dynamic> _rawResponse;
   final String? _thinkingContent;
   final String? _providerId;
@@ -721,6 +721,27 @@ class OpenAIChatResponse implements ChatResponse {
 
   @override
   String? get thinking => _thinkingContent;
+
+  LLMUnifiedFinishReason _mapOpenAIFinishReason(String? raw) {
+    return switch (raw) {
+      'stop' => LLMUnifiedFinishReason.stop,
+      'length' => LLMUnifiedFinishReason.length,
+      'content_filter' => LLMUnifiedFinishReason.contentFilter,
+      'function_call' || 'tool_calls' => LLMUnifiedFinishReason.toolCalls,
+      _ => LLMUnifiedFinishReason.other,
+    };
+  }
+
+  @override
+  LLMFinishReason? get finishReason {
+    final choices = _rawResponse['choices'] as List?;
+    if (choices == null || choices.isEmpty) return null;
+    final first = choices.first;
+    if (first is! Map) return null;
+    final raw = first['finish_reason'] as String?;
+    if (raw == null || raw.isEmpty) return null;
+    return LLMFinishReason(unified: _mapOpenAIFinishReason(raw), raw: raw);
+  }
 
   @override
   Map<String, dynamic>? get providerMetadata {

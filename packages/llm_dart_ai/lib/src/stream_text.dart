@@ -138,6 +138,9 @@ Stream<TextStreamPart> streamText({
             thinking: response.thinking,
             toolCalls: response.toolCalls,
             usage: response.usage,
+            finishReason: response is ChatResponseWithFinishReason
+                ? response.finishReason
+                : null,
           ),
         );
 

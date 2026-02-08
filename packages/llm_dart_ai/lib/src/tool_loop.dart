@@ -331,6 +331,9 @@ Future<ToolLoopResult> runToolLoop({
       thinking: response.thinking,
       toolCalls: response.toolCalls,
       usage: response.usage,
+      finishReason: response is ChatResponseWithFinishReason
+          ? response.finishReason
+          : null,
     );
 
     final toolCalls = response.toolCalls ?? const <ToolCall>[];
@@ -475,6 +478,9 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       thinking: response.thinking,
       toolCalls: response.toolCalls,
       usage: response.usage,
+      finishReason: response is ChatResponseWithFinishReason
+          ? response.finishReason
+          : null,
     );
 
     final toolCalls = response.toolCalls ?? const <ToolCall>[];
@@ -670,6 +676,9 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       thinking: response.thinking,
       toolCalls: response.toolCalls,
       usage: response.usage,
+      finishReason: response is ChatResponseWithFinishReason
+          ? response.finishReason
+          : null,
     );
 
     final toolCalls = response.toolCalls ?? const <ToolCall>[];
@@ -815,6 +824,9 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       thinking: response.thinking,
       toolCalls: response.toolCalls,
       usage: response.usage,
+      finishReason: response is ChatResponseWithFinishReason
+          ? response.finishReason
+          : null,
     );
 
     final toolCalls = response.toolCalls ?? const <ToolCall>[];
@@ -1185,7 +1197,7 @@ Stream<TextStreamPart> streamToolLoopUntilBlockedWithToolSet({
   );
 }
 
-class _MergedChatResponseForStreaming implements ChatResponse {
+class _MergedChatResponseForStreaming implements ChatResponseWithFinishReason {
   final ChatResponse raw;
   final String? textOverride;
   final String? thinkingOverride;
@@ -1209,6 +1221,13 @@ class _MergedChatResponseForStreaming implements ChatResponse {
 
   @override
   UsageInfo? get usage => usageOverride ?? raw.usage;
+
+  @override
+  LLMFinishReason? get finishReason {
+    final r = raw;
+    if (r is ChatResponseWithFinishReason) return r.finishReason;
+    return null;
+  }
 
   @override
   Map<String, dynamic>? get providerMetadata => raw.providerMetadata;
@@ -1480,6 +1499,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
               thinking: mergedResponse.thinking,
               toolCalls: completedToolCalls,
               usage: mergedResponse.usage,
+              finishReason: mergedResponse.finishReason,
             ),
             toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
             toolCallsNeedingApproval:
@@ -1785,6 +1805,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
               thinking: mergedResponse.thinking,
               toolCalls: completedToolCalls,
               usage: mergedResponse.usage,
+              finishReason: mergedResponse.finishReason,
             ),
             toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
             toolCallsNeedingApproval:
@@ -2171,6 +2192,9 @@ Stream<TextStreamPart> _mapPartsToLegacyTextStreamParts(
             thinking: response.thinking,
             toolCalls: response.toolCalls,
             usage: response.usage,
+            finishReason: response is ChatResponseWithFinishReason
+                ? response.finishReason
+                : null,
           ),
         );
 

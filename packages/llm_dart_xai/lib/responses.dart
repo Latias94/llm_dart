@@ -819,7 +819,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
   }
 }
 
-class XAIResponsesChatResponse implements ChatResponse {
+class XAIResponsesChatResponse implements ChatResponseWithFinishReason {
   final String providerId;
   @override
   final String? text;
@@ -848,6 +848,38 @@ class XAIResponsesChatResponse implements ChatResponse {
     this.serverToolCalls,
     this.sources,
   });
+
+  @override
+  LLMFinishReason? get finishReason {
+    final st = status;
+    if (st == null || st.isEmpty) return null;
+
+    if (st == 'failed' || st == 'cancelled') {
+      return LLMFinishReason(
+        unified: LLMUnifiedFinishReason.error,
+        raw: st,
+      );
+    }
+
+    if (st == 'incomplete') {
+      return LLMFinishReason(
+        unified: LLMUnifiedFinishReason.other,
+        raw: st,
+      );
+    }
+
+    if (toolCalls != null && toolCalls!.isNotEmpty) {
+      return const LLMFinishReason(
+        unified: LLMUnifiedFinishReason.toolCalls,
+        raw: 'tool_calls',
+      );
+    }
+
+    return LLMFinishReason(
+      unified: LLMUnifiedFinishReason.stop,
+      raw: st,
+    );
+  }
 
   @override
   Map<String, dynamic>? get providerMetadata => {

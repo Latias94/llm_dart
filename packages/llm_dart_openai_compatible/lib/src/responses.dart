@@ -1410,7 +1410,7 @@ class OpenAIResponses
 }
 
 /// OpenAI Responses API response implementation
-class OpenAIResponsesResponse implements ChatResponse {
+class OpenAIResponsesResponse implements ChatResponseWithFinishReason {
   final Map<String, dynamic> _rawResponse;
   final String? _thinkingContent;
   final ToolNameMapping? _toolNameMapping;
@@ -1722,6 +1722,60 @@ class OpenAIResponsesResponse implements ChatResponse {
 
   @override
   String? get thinking => _thinkingContent;
+
+  @override
+  LLMFinishReason? get finishReason {
+    final status = _rawResponse['status'] as String?;
+    final incompleteDetails = _rawResponse['incomplete_details'];
+    final error = _rawResponse['error'];
+
+    if (error != null) {
+      return const LLMFinishReason(
+        unified: LLMUnifiedFinishReason.error,
+        raw: 'error',
+      );
+    }
+
+    if (status == null || status.isEmpty) return null;
+
+    if (status == 'failed' || status == 'cancelled') {
+      return LLMFinishReason(
+        unified: LLMUnifiedFinishReason.error,
+        raw: status,
+      );
+    }
+
+    if (status == 'incomplete') {
+      String? rawReason;
+      if (incompleteDetails is Map) {
+        final reason = incompleteDetails['reason'];
+        if (reason is String && reason.isNotEmpty) rawReason = reason;
+      }
+
+      final reason = rawReason ?? status;
+      final unified = switch (reason) {
+        'max_output_tokens' || 'max_tokens' => LLMUnifiedFinishReason.length,
+        'content_filter' || 'content_filter_violation' =>
+          LLMUnifiedFinishReason.contentFilter,
+        _ => LLMUnifiedFinishReason.other,
+      };
+
+      return LLMFinishReason(unified: unified, raw: reason);
+    }
+
+    // Completed.
+    if (toolCalls != null && toolCalls!.isNotEmpty) {
+      return const LLMFinishReason(
+        unified: LLMUnifiedFinishReason.toolCalls,
+        raw: 'tool_calls',
+      );
+    }
+
+    return LLMFinishReason(
+      unified: LLMUnifiedFinishReason.stop,
+      raw: status,
+    );
+  }
 
   @override
   Map<String, dynamic>? get providerMetadata {
