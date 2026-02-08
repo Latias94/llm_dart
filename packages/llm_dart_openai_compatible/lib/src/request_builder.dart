@@ -214,6 +214,16 @@ class OpenAIRequestBuilder {
               ],
             };
       }
+
+      // xAI citations: `return_citations` request body field.
+      //
+      // AI SDK supports both `returnCitations` and `return_citations` naming.
+      final returnCitations =
+          config.getProviderOption<bool>('returnCitations') ??
+              config.getProviderOption<bool>('return_citations');
+      if (returnCitations == true) {
+        body['return_citations'] = true;
+      }
     }
 
     final extraBodyFromConfig = config.extraBody;

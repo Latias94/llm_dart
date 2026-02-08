@@ -133,6 +133,8 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
     String? model;
     String? systemFingerprint;
     Map<String, dynamic>? usage;
+    final citations = <String>[];
+    final emittedCitationUrls = <String>{};
 
     var didEmitTerminalParts = false;
     String? finishReason;
@@ -152,6 +154,30 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           id ??= json['id'] as String?;
           model ??= json['model'] as String?;
           systemFingerprint ??= json['system_fingerprint'] as String?;
+
+          // xAI citations (top-level `citations` array of URL strings).
+          // Emit as source parts (deduped) to match AI SDK semantics.
+          final providerId = config.providerId;
+          final isXai = providerId == 'xai' || providerId == 'xai-openai';
+          final rawCitations = json['citations'];
+          if (isXai && rawCitations is List) {
+            for (final c in rawCitations) {
+              if (c is! String) continue;
+              final url = c.trim();
+              if (url.isEmpty) continue;
+              if (emittedCitationUrls.add(url)) {
+                citations.add(url);
+                yield LLMSourceUrlPart(
+                  sourceId: 'source_${emittedCitationUrls.length - 1}',
+                  url: url,
+                  title: null,
+                  providerMetadata: {
+                    providerId: {'type': 'citation'},
+                  },
+                );
+              }
+            }
+          }
 
           final rawUsage = json['usage'];
           if (rawUsage is Map<String, dynamic>) {
@@ -464,6 +490,7 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
                 },
               },
             ],
+            if (citations.isNotEmpty) 'citations': citations,
             if (usage != null) 'usage': usage,
           },
           thinkingContent:
@@ -517,6 +544,7 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
                 },
               },
             ],
+            if (citations.isNotEmpty) 'citations': citations,
             if (usage != null) 'usage': usage,
           },
           thinkingContent:
@@ -768,11 +796,21 @@ class OpenAIChatResponse implements ChatResponseWithFinishReason {
     final providerId = rawProviderId != null && rawProviderId.isNotEmpty
         ? rawProviderId
         : 'openai';
+
+    final rawCitations = _rawResponse['citations'];
+    final List<String>? citations;
+    if (rawCitations is List) {
+      citations = rawCitations.whereType<String>().toList(growable: false);
+    } else {
+      citations = null;
+    }
+    final isXai = providerId == 'xai' || providerId == 'xai-openai';
     final payload = <String, dynamic>{
       if (id != null) 'id': id,
       if (model != null) 'model': model,
       if (systemFingerprint != null) 'systemFingerprint': systemFingerprint,
       if (finishReason != null) 'finishReason': finishReason,
+      if (isXai && citations != null) 'citations': citations,
     };
     return {
       providerId: payload,
