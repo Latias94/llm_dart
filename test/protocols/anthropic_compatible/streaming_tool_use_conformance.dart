@@ -18,17 +18,17 @@ void registerAnthropicCompatibleToolUseStreamingConformanceTests({
       final client = FakeAnthropicCompatibleClient(
         config,
         chunks: const [
-          'data: {"type":"message_start","message":{"id":"msg_tool","model":"test-model","usage":{"input_tokens":10,"output_tokens":0}}}\n',
-          'data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}\n',
-          'data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hello "}}\n',
-          'data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"world"}}\n',
-          'data: {"type":"content_block_stop","index":0}\n',
-          'data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":5}}\n',
-          'data: {"type":"content_block_start","index":1,"content_block":{"type":"tool_use","id":"toolu_1","name":"getWeather"}}\n',
-          'data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\\"city\\":\\"Lon"}}\n',
-          'data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"don\\"}"}}\n',
-          'data: {"type":"content_block_stop","index":1}\n',
-          'data: {"type":"message_stop"}\n',
+          'data: {"type":"message_start","message":{"id":"msg_tool","model":"test-model","usage":{"input_tokens":10,"output_tokens":0}}}\n\n',
+          'data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}\n\n',
+          'data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hello "}}\n\n',
+          'data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"world"}}\n\n',
+          'data: {"type":"content_block_stop","index":0}\n\n',
+          'data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":5}}\n\n',
+          'data: {"type":"content_block_start","index":1,"content_block":{"type":"tool_use","id":"toolu_1","name":"getWeather"}}\n\n',
+          'data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\\"city\\":\\"Lon"}}\n\n',
+          'data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"don\\"}"}}\n\n',
+          'data: {"type":"content_block_stop","index":1}\n\n',
+          'data: {"type":"message_stop"}\n\n',
         ],
       );
 
@@ -83,12 +83,12 @@ void registerAnthropicCompatibleToolUseStreamingConformanceTests({
       final client = FakeAnthropicCompatibleClient(
         config,
         chunks: const [
-          'data: {"type":"message_start","message":{"id":"msg_ws","model":"test-model","usage":{"input_tokens":10,"output_tokens":0}}}\n',
-          'data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_ws","name":"web_search"}}\n',
-          'data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\\"query\\":\\"dart\\"}"}}\n',
-          'data: {"type":"content_block_stop","index":0}\n',
-          'data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":1,"server_tool_use":{"web_search_requests":1}}}\n',
-          'data: {"type":"message_stop"}\n',
+          'data: {"type":"message_start","message":{"id":"msg_ws","model":"test-model","usage":{"input_tokens":10,"output_tokens":0}}}\n\n',
+          'data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_ws","name":"web_search"}}\n\n',
+          'data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\\"query\\":\\"dart\\"}"}}\n\n',
+          'data: {"type":"content_block_stop","index":0}\n\n',
+          'data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":1,"server_tool_use":{"web_search_requests":1}}}\n\n',
+          'data: {"type":"message_stop"}\n\n',
         ],
       );
 

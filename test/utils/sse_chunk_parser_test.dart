@@ -10,7 +10,8 @@ void main() {
         'event: message_start\n'
         'data: {"type":"message_start"}\n'
         '\n'
-        'data: {"type":"message_delta"}\n',
+        'data: {"type":"message_delta"}\n'
+        '\n',
       );
 
       expect(lines, hasLength(2));
@@ -25,7 +26,7 @@ void main() {
 
       expect(parser.parse('data: {"a":'), isEmpty);
 
-      final lines = parser.parse('1}\n');
+      final lines = parser.parse('1}\n\n');
       expect(lines, hasLength(1));
       expect(lines.single.data, equals('{"a":1}'));
     });
@@ -34,7 +35,8 @@ void main() {
       final parser = SseChunkParser();
       final lines = parser.parse(
         ': ping\n'
-        'data: ok\n',
+        'data: ok\n'
+        '\n',
       );
       expect(lines, hasLength(1));
       expect(lines.single.data, equals('ok'));

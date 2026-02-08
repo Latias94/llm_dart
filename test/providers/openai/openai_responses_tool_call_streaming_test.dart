@@ -78,11 +78,11 @@ class _FakeOpenAIClient extends OpenAIClient {
   }) async* {
     // Simulate an OpenAI Responses SSE stream with incremental tool_calls chunks.
     const chunks = <String>[
-      'data: {"type":"response.output_text.delta","delta":""}\n',
-      'data: {"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"web_search_preview__1","arguments":""}}]}\n',
-      'data: {"tool_calls":[{"index":0,"type":"function","function":{"arguments":"{\\"location\\": \\""}}]}\n',
-      'data: {"tool_calls":[{"index":0,"type":"function","function":{"arguments":"New York\\"}"}}]}\n',
-      'data: [DONE]\n',
+      'data: {"type":"response.output_text.delta","delta":""}\n\n',
+      'data: {"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"web_search_preview__1","arguments":""}}]}\n\n',
+      'data: {"tool_calls":[{"index":0,"type":"function","function":{"arguments":"{\\"location\\": \\""}}]}\n\n',
+      'data: {"tool_calls":[{"index":0,"type":"function","function":{"arguments":"New York\\"}"}}]}\n\n',
+      'data: [DONE]\n\n',
     ];
 
     for (final chunk in chunks) {

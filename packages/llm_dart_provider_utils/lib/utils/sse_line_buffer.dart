@@ -24,6 +24,14 @@ class SseLineBuffer {
       _buffer.write(remainingContent);
     }
 
-    return completeContent.split('\n');
+    // `String.split` returns a trailing empty element when the input ends
+    // with the delimiter. Since we only split on complete `\n`-terminated
+    // content, that trailing empty element is an artifact and would
+    // incorrectly appear as a blank line to higher-level parsers.
+    final parts = completeContent.split('\n');
+    if (parts.isNotEmpty && parts.last.isEmpty) {
+      parts.removeLast();
+    }
+    return parts;
   }
 }

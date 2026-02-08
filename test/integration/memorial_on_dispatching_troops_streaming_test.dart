@@ -190,6 +190,34 @@ void main() {
       expect(reconstructedText, contains('俱为一体；陟罚臧否'));
       expect(reconstructedText, contains('不宜异同。若有作奸犯科'));
     });
+
+    test('handles multi-line SSE data events', () {
+      // Some SSE implementations can split a single JSON object across
+      // multiple `data:` lines within the same event. The SSE spec requires
+      // concatenating those lines with '\n' before parsing.
+      final chunks = [
+        'data: {"id":"x","choices":[{"delta":{"content":"Hello"}}],\n',
+        'data: "model":"gpt-test"}\n\n',
+        'data: [DONE]\n\n',
+      ];
+
+      client.resetSSEBuffer();
+      final parsed = <Map<String, dynamic>>[];
+      for (final chunk in chunks) {
+        parsed.addAll(client.parseSSEChunk(chunk));
+      }
+
+      expect(parsed, hasLength(1));
+      expect(parsed.first['id'], equals('x'));
+      expect(parsed.first['model'], equals('gpt-test'));
+
+      final choices = parsed.first['choices'] as List?;
+      expect(choices, isNotNull);
+      expect(choices, isNotEmpty);
+
+      final delta = (choices!.first as Map)['delta'] as Map?;
+      expect(delta?['content'], equals('Hello'));
+    });
   });
 }
 

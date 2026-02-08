@@ -17,9 +17,9 @@ void main() {
       );
 
       final client = _FakeOpenAIClient(config, const [
-        'data: {"type":"response.created","response":{"id":"resp_1","model":"gpt-4o","output":[]}}\n',
-        'data: {"type":"response.output_text.delta","delta":"Hello"}\n',
-        'data: [DONE]\n',
+        'data: {"type":"response.created","response":{"id":"resp_1","model":"gpt-4o","output":[]}}\n\n',
+        'data: {"type":"response.output_text.delta","delta":"Hello"}\n\n',
+        'data: [DONE]\n\n',
       ]);
 
       final responses = openai_responses.OpenAIResponses(client, config);
@@ -51,10 +51,10 @@ void main() {
       );
 
       final client = _FakeOpenAIClient(config, const [
-        'data: {"type":"response.created","response":{"id":"resp_2","model":"gpt-4o-search-preview","output":[]}}\n',
-        'data: {"type":"response.output_item.done","output_index":0,"item":{"type":"web_search_call","id":"ws_1","status":"completed","action":{"type":"search","query":"test","sources":[{"type":"url","url":"https://example.com"}]}}}\n',
-        'data: {"type":"response.output_text.annotation.added","annotation":{"type":"url_citation","url":"https://example.com","start_index":0,"end_index":4}}\n',
-        'data: [DONE]\n',
+        'data: {"type":"response.created","response":{"id":"resp_2","model":"gpt-4o-search-preview","output":[]}}\n\n',
+        'data: {"type":"response.output_item.done","output_index":0,"item":{"type":"web_search_call","id":"ws_1","status":"completed","action":{"type":"search","query":"test","sources":[{"type":"url","url":"https://example.com"}]}}}\n\n',
+        'data: {"type":"response.output_text.annotation.added","annotation":{"type":"url_citation","url":"https://example.com","start_index":0,"end_index":4}}\n\n',
+        'data: [DONE]\n\n',
       ]);
 
       final responses = openai_responses.OpenAIResponses(client, config);
