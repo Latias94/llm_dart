@@ -1,11 +1,11 @@
 import 'dart:typed_data';
 
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_google/client.dart';
 import 'package:test/test.dart';
 
-class _CapturingAdapter implements HttpClientAdapter {
+class _CapturingAdapter implements dio.HttpClientAdapter {
   Uri? lastUri;
   Map<String, dynamic>? lastHeaders;
 
@@ -13,19 +13,19 @@ class _CapturingAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 
   @override
-  Future<ResponseBody> fetch(
-    RequestOptions options,
+  Future<dio.ResponseBody> fetch(
+    dio.RequestOptions options,
     Stream<List<int>>? requestStream,
     Future<void>? cancelFuture,
   ) async {
     lastUri = options.uri;
     lastHeaders = options.headers.isEmpty ? null : Map<String, dynamic>.from(options.headers);
 
-    return ResponseBody(
+    return dio.ResponseBody(
       Stream<Uint8List>.empty(),
       200,
       headers: {
-        Headers.contentTypeHeader: ['text/event-stream'],
+        dio.Headers.contentTypeHeader: ['text/event-stream'],
       },
     );
   }
