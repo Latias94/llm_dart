@@ -2086,6 +2086,34 @@ Stream<TextStreamPart> _mapPartsToLegacyTextStreamParts(
       case LLMToolCallDeltaPart(:final toolCall):
         yield ToolCallDeltaPart(toolCall);
 
+      case LLMSourceUrlPart(
+          sourceId: final sourceId,
+          url: final url,
+          title: final title,
+          providerMetadata: final providerMetadata,
+        ):
+        yield SourceUrlPart(
+          sourceId: sourceId,
+          url: url,
+          title: title,
+          providerMetadata: providerMetadata,
+        );
+
+      case LLMSourceDocumentPart(
+          sourceId: final sourceId,
+          mediaType: final mediaType,
+          title: final title,
+          filename: final filename,
+          providerMetadata: final providerMetadata,
+        ):
+        yield SourceDocumentPart(
+          sourceId: sourceId,
+          mediaType: mediaType,
+          title: title,
+          filename: filename,
+          providerMetadata: providerMetadata,
+        );
+
       case LLMFinishPart(:final response):
         yield FinishPart(
           GenerateTextResult(

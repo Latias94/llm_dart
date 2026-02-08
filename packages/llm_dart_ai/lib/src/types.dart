@@ -41,6 +41,36 @@ class ToolCallDeltaPart extends TextStreamPart {
   const ToolCallDeltaPart(this.toolCall);
 }
 
+class SourceUrlPart extends TextStreamPart {
+  final String sourceId;
+  final String url;
+  final String? title;
+  final Map<String, dynamic>? providerMetadata;
+
+  const SourceUrlPart({
+    required this.sourceId,
+    required this.url,
+    this.title,
+    this.providerMetadata,
+  });
+}
+
+class SourceDocumentPart extends TextStreamPart {
+  final String sourceId;
+  final String mediaType;
+  final String title;
+  final String? filename;
+  final Map<String, dynamic>? providerMetadata;
+
+  const SourceDocumentPart({
+    required this.sourceId,
+    required this.mediaType,
+    required this.title,
+    this.filename,
+    this.providerMetadata,
+  });
+}
+
 class FinishPart extends TextStreamPart {
   final GenerateTextResult result;
   const FinishPart(this.result);

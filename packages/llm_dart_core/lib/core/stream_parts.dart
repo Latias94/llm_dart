@@ -102,6 +102,64 @@ class LLMProviderMetadataPart extends LLMStreamPart {
   const LLMProviderMetadataPart(this.providerMetadata);
 }
 
+/// A URL source that has been used as input to generate the response.
+///
+/// This mirrors the Vercel AI SDK "source-url" concept.
+class LLMSourceUrlPart extends LLMStreamPart {
+  /// Provider-stable source id within a single response.
+  final String sourceId;
+
+  /// The URL of the source.
+  final String url;
+
+  /// Optional human-readable title for the source.
+  final String? title;
+
+  /// Optional provider metadata for this source.
+  ///
+  /// When present, it follows the same shape as [ChatResponse.providerMetadata]:
+  /// `{ providerId: { ... } }`.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMSourceUrlPart({
+    required this.sourceId,
+    required this.url,
+    this.title,
+    this.providerMetadata,
+  });
+}
+
+/// A document source that has been used as input to generate the response.
+///
+/// This mirrors the Vercel AI SDK "source-document" concept.
+class LLMSourceDocumentPart extends LLMStreamPart {
+  /// Provider-stable source id within a single response.
+  final String sourceId;
+
+  /// IANA media type of the document (e.g. `application/pdf`).
+  final String mediaType;
+
+  /// Human-readable title for the document.
+  final String title;
+
+  /// Optional filename for the document.
+  final String? filename;
+
+  /// Optional provider metadata for this source.
+  ///
+  /// When present, it follows the same shape as [ChatResponse.providerMetadata]:
+  /// `{ providerId: { ... } }`.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMSourceDocumentPart({
+    required this.sourceId,
+    required this.mediaType,
+    required this.title,
+    this.filename,
+    this.providerMetadata,
+  });
+}
+
 /// A successful completion for the streamed request.
 class LLMFinishPart extends LLMStreamPart {
   final ChatResponse response;

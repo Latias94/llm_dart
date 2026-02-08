@@ -94,6 +94,44 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
             aliasKey: aliasKey,
           ),
         );
+      case LLMSourceUrlPart(
+          sourceId: final sourceId,
+          url: final url,
+          title: final title,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMSourceUrlPart(
+          sourceId: sourceId,
+          url: url,
+          title: title,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMSourceDocumentPart(
+          sourceId: final sourceId,
+          mediaType: final mediaType,
+          title: final title,
+          filename: final filename,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMSourceDocumentPart(
+          sourceId: sourceId,
+          mediaType: mediaType,
+          title: title,
+          filename: filename,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
       case LLMFinishPart(response: final response):
         yield LLMFinishPart(
           wrapChatResponseWithProviderMetadataAlias(

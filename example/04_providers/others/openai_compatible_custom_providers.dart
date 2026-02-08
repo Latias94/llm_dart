@@ -98,6 +98,12 @@ void main() async {
       case ToolCallDeltaPart():
         print('toolCall: ${part.toolCall}');
         break;
+      case SourceUrlPart():
+        print('sourceUrl: ${part.url}');
+        break;
+      case SourceDocumentPart():
+        print('sourceDocument: ${part.title} (${part.mediaType})');
+        break;
       case ErrorPart():
         print('error: ${part.error}');
         break;

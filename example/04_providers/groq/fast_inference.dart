@@ -133,6 +133,8 @@ Future<void> demonstrateStreamingSpeed(String apiKey) async {
 
         case ThinkingDeltaPart():
         case ToolCallDeltaPart():
+        case SourceUrlPart():
+        case SourceDocumentPart():
           break;
       }
     }

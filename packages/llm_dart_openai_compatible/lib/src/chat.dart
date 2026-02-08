@@ -88,6 +88,8 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
         case LLMToolCallEndPart():
         case LLMProviderMetadataPart():
         case LLMToolResultPart():
+        case LLMSourceUrlPart():
+        case LLMSourceDocumentPart():
           // Not represented in legacy ChatStreamEvent.
           break;
       }
@@ -346,7 +348,6 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           if (fr != null) {
             final pending = _thinkSplitter.consumePendingTagFragment();
             if (pending.isNotEmpty) {
-
               if (_thinkSplitter.inTag) {
                 if (inText) {
                   inText = false;
@@ -405,7 +406,6 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
 
       final pending = _thinkSplitter.consumePendingTagFragment();
       if (pending.isNotEmpty) {
-
         if (_thinkSplitter.inTag) {
           if (inText) {
             inText = false;
@@ -628,7 +628,6 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
     _toolCallIds.clear();
   }
 }
-
 
 class _ToolCallAccum {
   String? name;

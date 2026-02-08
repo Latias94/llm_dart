@@ -243,6 +243,8 @@ Future<void> demonstrateStreamingOptimization(String apiKey) async {
 
         case ThinkingDeltaPart():
         case ToolCallDeltaPart():
+        case SourceUrlPart():
+        case SourceDocumentPart():
           break;
       }
     }
@@ -422,6 +424,8 @@ Future<void> demonstrateMemoryOptimization(String apiKey) async {
         case ErrorPart():
         case ThinkingDeltaPart():
         case ToolCallDeltaPart():
+        case SourceUrlPart():
+        case SourceDocumentPart():
           break;
       }
     }

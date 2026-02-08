@@ -361,6 +361,12 @@ Future<List<_CheckResult>> _runProviderChecks(
                 case ToolCallDeltaPart():
                   sawAnyDelta = true;
                   dump('ToolCallDelta');
+                case SourceUrlPart(:final url):
+                  sawAnyDelta = true;
+                  dump('SourceUrl $url');
+                case SourceDocumentPart(:final title, :final mediaType):
+                  sawAnyDelta = true;
+                  dump('SourceDocument $title ($mediaType)');
                 case FinishPart(:final result):
                   sawFinish = true;
                   final t = result.text ?? '';
@@ -475,6 +481,20 @@ Future<List<_CheckResult>> _runProviderChecks(
               case LLMProviderMetadataPart(:final providerMetadata):
                 dump(
                     'ProviderMetadata keys=${providerMetadata.keys.toList(growable: false).join(',')}');
+
+              case LLMSourceUrlPart(:final url, :final title):
+                sawAnyDelta = true;
+                dump('SourceUrl $url${title == null ? '' : ' ($title)'}');
+
+              case LLMSourceDocumentPart(
+                  :final title,
+                  :final mediaType,
+                  :final filename,
+                ):
+                sawAnyDelta = true;
+                dump(
+                  'SourceDocument $title ($mediaType)${filename == null ? '' : ' [$filename]'}',
+                );
 
               case LLMFinishPart(:final response):
                 sawFinish = true;

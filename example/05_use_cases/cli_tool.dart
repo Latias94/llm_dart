@@ -369,6 +369,8 @@ ENVIRONMENT VARIABLES:
           break;
         case ThinkingDeltaPart():
         case ToolCallDeltaPart():
+        case SourceUrlPart():
+        case SourceDocumentPart():
           // Ignore for this demo.
           break;
       }

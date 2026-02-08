@@ -92,6 +92,20 @@ void main() async {
         stdout.writeln('[metadata] keys=${providerMetadata.keys.toList()}');
         break;
 
+      case LLMSourceUrlPart(:final url, :final title):
+        stdout.writeln('[source url] $url${title == null ? '' : ' ($title)'}');
+        break;
+
+      case LLMSourceDocumentPart(
+          :final title,
+          :final mediaType,
+          :final filename
+        ):
+        stdout.writeln(
+          '[source document] $title ($mediaType)${filename == null ? '' : ' [$filename]'}',
+        );
+        break;
+
       case LLMFinishPart(:final response):
         stdout.writeln('\n✅ Finished');
         stdout.writeln('text=${response.text?.length ?? 0} chars');

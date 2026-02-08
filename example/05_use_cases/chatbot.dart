@@ -149,6 +149,8 @@ class Chatbot {
 
           case ThinkingDeltaPart():
           case ToolCallDeltaPart():
+          case SourceUrlPart():
+          case SourceDocumentPart():
             // Handle other event types
             break;
         }
