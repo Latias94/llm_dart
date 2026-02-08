@@ -39,6 +39,31 @@ void main() {
       expect(finish.response.text, equals('Hi there'));
       expect(finish.response.providerMetadata, isNotNull);
     });
+
+    test('handles chunks split between event and data lines', () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-2.5-flash',
+        stream: true,
+      );
+
+      final client = FakeGoogleClient(config);
+      client.streamResponse = Stream<String>.fromIterable(const [
+        'event: message\n',
+        'data: {"candidates":[{"content":{"parts":[{"text":"Hi"}]}}]}\n\n',
+        'data: {"candidates":[{"content":{"parts":[{"text":"!"}]}}]}\n\n',
+      ]);
+
+      final chat = GoogleChat(client, config);
+      final parts = await chat
+          .chatStreamParts([ChatMessage.user('hello')], tools: const [])
+          .toList();
+
+      expect(
+        parts.whereType<LLMTextDeltaPart>().map((p) => p.delta).join(),
+        equals('Hi!'),
+      );
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
+    });
   });
 }
-

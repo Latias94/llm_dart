@@ -49,6 +49,8 @@ class GoogleFile {
   bool get isActive => state == 'ACTIVE';
 }
 
+enum _GoogleStreamMode { unknown, sse, jsonArray }
+
 /// Google Chat capability implementation
 ///
 /// This module handles all chat-related functionality for Google providers,
@@ -59,6 +61,12 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
   /// Cache for uploaded files to avoid re-uploading
   static final Map<String, GoogleFile> _fileCache = {};
+
+  // Stream parsing mode for the current request.
+  // Gemini streaming is typically SSE (`alt=sse`), but some gateways return
+  // legacy JSON array streams. Detect once per request.
+  _GoogleStreamMode _streamMode = _GoogleStreamMode.unknown;
+  final SseChunkParser _sseParser = SseChunkParser();
 
   // Buffer for incomplete JSON chunks
   String _streamBuffer = '';
@@ -465,6 +473,8 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     _streamBuffer = '';
     _isFirstChunk = true;
     _streamToolCallNameCounts.clear();
+    _streamMode = _GoogleStreamMode.unknown;
+    _sseParser.reset();
   }
 
   String _nextStreamToolCallId(String name) {
@@ -659,36 +669,23 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     // Based on flutter_gemini implementation
 
     try {
-      _streamBuffer += chunk;
+      if (_streamMode == _GoogleStreamMode.unknown) {
+        // Detect SSE by looking for `data:` / `event:` at the start of a line.
+        // This is important because chunks can be split such that the first
+        // chunk contains only `event:` without `data:`.
+        final looksLikeSse = RegExp(r'(^|\n)(data|event):', multiLine: true)
+            .hasMatch(chunk);
+        _streamMode = looksLikeSse
+            ? _GoogleStreamMode.sse
+            : _GoogleStreamMode.jsonArray;
+      }
 
-      // Some gateways proxy Gemini streaming as SSE ("data: {json}\n\n") instead
-      // of the raw JSON array stream. Support SSE by parsing complete event
-      // blocks separated by a blank line and concatenating multi-line `data:`
-      // fields per SSE spec.
-      if (_streamBuffer.contains('data:')) {
-        while (true) {
-          final sepCrlf = _streamBuffer.indexOf('\r\n\r\n');
-          final sepLf = _streamBuffer.indexOf('\n\n');
-          final hasCrlf = sepCrlf != -1;
-          final hasLf = sepLf != -1;
+      if (_streamMode == _GoogleStreamMode.sse) {
+        final lines = _sseParser.parse(chunk);
+        if (lines.isEmpty) return events;
 
-          if (!hasCrlf && !hasLf) break;
-
-          final sepIndex = hasCrlf ? sepCrlf : sepLf;
-          final sepLen = hasCrlf ? 4 : 2;
-
-          final block = _streamBuffer.substring(0, sepIndex);
-          _streamBuffer = _streamBuffer.substring(sepIndex + sepLen);
-
-          final dataLines = <String>[];
-          for (final rawLine in const LineSplitter().convert(block)) {
-            final line = rawLine.trimRight();
-            if (line.startsWith('data:')) {
-              dataLines.add(line.substring(5).trimLeft());
-            }
-          }
-
-          final data = dataLines.join('\n').trim();
+        for (final line in lines) {
+          final data = line.data.trim();
           if (data.isEmpty || data == '[DONE]') continue;
 
           try {
@@ -722,6 +719,8 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
         return events;
       }
+
+      _streamBuffer += chunk;
 
       String processedData = _streamBuffer.trim();
 
