@@ -76,6 +76,37 @@ void main() {
         isTrue,
       );
     });
+
+    test('emits provider tool delta parts for web_search_call status events',
+        () async {
+      const fixturePath =
+          'test/fixtures/xai/responses/xai-x-search-tool.chunks.txt';
+
+      final config = OpenAICompatibleConfig(
+        providerId: 'xai.responses',
+        providerName: 'xAI (Responses)',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.x.ai/v1/',
+        model: 'grok-4-fast',
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..streamResponse = sseStreamFromChunkFile(fixturePath);
+      final responses = XAIResponses(client, config);
+
+      final parts =
+          await responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+
+      final deltas = parts.whereType<LLMProviderToolDeltaPart>().toList();
+      expect(deltas, isNotEmpty);
+
+      final statuses = deltas.map((p) => p.status).toSet();
+      expect(statuses, containsAll(['in_progress', 'searching', 'completed']));
+
+      expect(
+        deltas.every((p) => p.toolName == 'web_search'),
+        isTrue,
+      );
+    });
   });
 }
-

@@ -129,6 +129,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
     final endedToolCalls = <String>{};
     final activeProviderToolCalls = <String>{};
     final endedProviderToolCalls = <String>{};
+    final providerToolTypeById = <String, String>{};
 
     Map<String, dynamic>? finalResponseObject;
 
@@ -166,6 +167,30 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
               responseStatus ??= map['status'] as String?;
             }
             continue;
+          }
+
+          if (eventType.startsWith('response.')) {
+            final segments = eventType.split('.');
+            if (segments.length == 3) {
+              final rawToolType = segments[1];
+              final status = segments[2];
+              if (rawToolType.endsWith('_call')) {
+                final toolCallId = json['item_id']?.toString();
+                if (toolCallId != null && toolCallId.isNotEmpty) {
+                  providerToolTypeById[toolCallId] = rawToolType;
+                  yield LLMProviderToolDeltaPart(
+                    toolCallId: toolCallId,
+                    toolName:
+                        rawToolType.substring(0, rawToolType.length - 5),
+                    status: status,
+                    data: _stringKeyedMap(json),
+                    providerMetadata: {
+                      config.providerId: {'type': eventType},
+                    },
+                  );
+                }
+              }
+            }
           }
 
           if (eventType == 'response.reasoning_summary_part.added') {
@@ -328,6 +353,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
                         (item['name'] as String).isNotEmpty)
                     ? item['name'] as String
                     : type.substring(0, type.length - 5);
+                providerToolTypeById[id] = type;
 
                 if (eventType == 'response.output_item.added') {
                   if (activeProviderToolCalls.add(id)) {

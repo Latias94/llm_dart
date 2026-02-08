@@ -57,6 +57,22 @@ class ProviderToolCallPart extends TextStreamPart {
   });
 }
 
+class ProviderToolDeltaPart extends TextStreamPart {
+  final String toolCallId;
+  final String toolName;
+  final String status;
+  final Object? data;
+  final Map<String, dynamic>? providerMetadata;
+
+  const ProviderToolDeltaPart({
+    required this.toolCallId,
+    required this.toolName,
+    required this.status,
+    this.data,
+    this.providerMetadata,
+  });
+}
+
 class ProviderToolResultPart extends TextStreamPart {
   final String toolCallId;
   final String toolName;

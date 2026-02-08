@@ -68,6 +68,21 @@ Stream<TextStreamPart> streamText({
           providerMetadata: providerMetadata,
         );
 
+      case LLMProviderToolDeltaPart(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          status: final status,
+          data: final data,
+          providerMetadata: final providerMetadata,
+        ):
+        yield ProviderToolDeltaPart(
+          toolCallId: toolCallId,
+          toolName: toolName,
+          status: status,
+          data: data,
+          providerMetadata: providerMetadata,
+        );
+
       case LLMProviderToolResultPart(
           toolCallId: final toolCallId,
           toolName: final toolName,

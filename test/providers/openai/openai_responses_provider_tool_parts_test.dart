@@ -76,6 +76,43 @@ void main() {
       );
     });
 
+    test('emits provider tool delta parts for web_search_call status events',
+        () async {
+      const fixturePath =
+          'test/fixtures/openai/responses/openai-web-search-tool.1.chunks.txt';
+
+      final expectedIds = _expectedProviderToolCallIdsFromChunks(fixturePath);
+      expect(expectedIds, isNotEmpty);
+
+      final config = openai_client.OpenAIConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1/',
+        model: 'gpt-5-mini',
+        useResponsesAPI: true,
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..streamResponse = sseStreamFromChunkFile(fixturePath);
+      final responses = openai_responses.OpenAIResponses(client, config);
+
+      final parts =
+          await responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+
+      final deltas = parts.whereType<LLMProviderToolDeltaPart>().toList();
+      expect(deltas, isNotEmpty);
+
+      final deltaIds = deltas.map((p) => p.toolCallId).toSet();
+      expect(deltaIds, containsAll(expectedIds));
+
+      final statuses = deltas.map((p) => p.status).toSet();
+      expect(statuses, containsAll(['in_progress', 'searching', 'completed']));
+
+      expect(
+        deltas.every((p) => p.toolName == 'web_search'),
+        isTrue,
+      );
+    });
+
     test('emits provider tool call/result parts for file_search_call', () async {
       const fixturePath =
           'test/fixtures/openai/responses/openai-file-search-tool.1.chunks.txt';
@@ -114,4 +151,3 @@ void main() {
     });
   });
 }
-

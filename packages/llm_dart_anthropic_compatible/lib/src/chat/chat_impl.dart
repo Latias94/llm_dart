@@ -177,6 +177,7 @@ class AnthropicChat
         case LLMSourceUrlPart():
         case LLMSourceDocumentPart():
         case LLMProviderToolCallPart():
+        case LLMProviderToolDeltaPart():
         case LLMProviderToolResultPart():
           // Not represented in legacy ChatStreamEvent.
           break;

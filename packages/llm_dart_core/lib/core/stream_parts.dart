@@ -137,6 +137,38 @@ class LLMProviderToolCallPart extends LLMStreamPart {
   });
 }
 
+/// A status/progress update for a provider-executed tool call (server-side).
+///
+/// Providers may emit additional lifecycle events between call and final result
+/// (e.g. `in_progress`, `searching`, `interpreting`).
+class LLMProviderToolDeltaPart extends LLMStreamPart {
+  /// Tool call id that this update is associated with.
+  final String toolCallId;
+
+  /// Provider tool name (e.g. `web_search`, `file_search`).
+  final String toolName;
+
+  /// Provider-defined status string (e.g. `in_progress`, `searching`).
+  final String status;
+
+  /// Optional JSON-serializable payload for this update.
+  final Object? data;
+
+  /// Optional provider metadata for this tool update.
+  ///
+  /// When present, it follows the same shape as [ChatResponse.providerMetadata]:
+  /// `{ providerId: { ... } }`.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMProviderToolDeltaPart({
+    required this.toolCallId,
+    required this.toolName,
+    required this.status,
+    this.data,
+    this.providerMetadata,
+  });
+}
+
 /// Result of a tool call that has been executed by the provider (server-side).
 ///
 /// This mirrors the Vercel AI SDK "tool-result" concept.

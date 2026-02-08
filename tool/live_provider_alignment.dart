@@ -367,6 +367,13 @@ Future<List<_CheckResult>> _runProviderChecks(
                   ):
                   sawAnyDelta = true;
                   dump('ProviderToolCall $toolName ($toolCallId)');
+                case ProviderToolDeltaPart(
+                    :final toolCallId,
+                    :final toolName,
+                    :final status,
+                  ):
+                  sawAnyDelta = true;
+                  dump('ProviderToolDelta $toolName ($toolCallId) $status');
                 case ProviderToolResultPart(
                     :final toolCallId,
                     :final toolName,
@@ -493,6 +500,14 @@ Future<List<_CheckResult>> _runProviderChecks(
               case LLMProviderToolCallPart(:final toolCallId, :final toolName):
                 sawAnyDelta = true;
                 dump('ProviderToolCall $toolName ($toolCallId)');
+
+              case LLMProviderToolDeltaPart(
+                  :final toolCallId,
+                  :final toolName,
+                  :final status
+                ):
+                sawAnyDelta = true;
+                dump('ProviderToolDelta $toolName ($toolCallId) $status');
 
               case LLMProviderToolResultPart(
                   :final toolCallId,

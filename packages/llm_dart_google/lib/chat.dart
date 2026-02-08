@@ -167,6 +167,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         case LLMSourceUrlPart():
         case LLMSourceDocumentPart():
         case LLMProviderToolCallPart():
+        case LLMProviderToolDeltaPart():
         case LLMProviderToolResultPart():
           // Not represented in legacy ChatStreamEvent.
           break;
