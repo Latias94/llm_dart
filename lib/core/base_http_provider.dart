@@ -9,6 +9,7 @@ import 'config.dart';
 import '../models/chat_models.dart';
 import '../models/tool_models.dart';
 import '../utils/http_config_utils.dart';
+import '../utils/log_sanitizer.dart';
 
 /// Base class for HTTP-based LLM providers
 ///
@@ -76,7 +77,8 @@ abstract class BaseHttpProvider implements ChatCapability {
       // Log request headers and body for debugging
       if (_logger.isLoggable(Level.FINE)) {
         _logger.fine('$providerName request: POST $chatEndpoint');
-        _logger.fine('$providerName request headers: ${_dio.options.headers}');
+        _logger.fine(
+            '$providerName request headers: ${LogSanitizer.sanitizeHeaders(_dio.options.headers)}');
       }
       if (_logger.isLoggable(Level.FINE)) {
         _logger.fine('$providerName request body: ${jsonEncode(requestBody)}');
@@ -130,7 +132,7 @@ abstract class BaseHttpProvider implements ChatCapability {
       if (_logger.isLoggable(Level.FINE)) {
         _logger.fine('$providerName stream request: POST $chatEndpoint');
         _logger.fine(
-            '$providerName stream request headers: ${_dio.options.headers}');
+            '$providerName stream request headers: ${LogSanitizer.sanitizeHeaders(_dio.options.headers)}');
       }
       if (_logger.isLoggable(Level.FINE)) {
         _logger.fine(

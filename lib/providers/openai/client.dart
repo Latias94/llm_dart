@@ -7,6 +7,7 @@ import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import '../../utils/dio_client_factory.dart';
 import '../../utils/http_response_handler.dart';
+import '../../utils/log_sanitizer.dart';
 import '../../utils/utf8_stream_decoder.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -355,7 +356,8 @@ class OpenAIClient {
       // Optimized logging with condition check
       if (logger.isLoggable(Level.FINE)) {
         logger.fine('OpenAI request: POST /$endpoint');
-        logger.fine('OpenAI request headers: ${dio.options.headers}');
+        logger.fine(
+            'OpenAI request headers: ${LogSanitizer.sanitizeHeaders(dio.options.headers)}');
       }
 
       final response = await dio.post(
@@ -397,7 +399,8 @@ class OpenAIClient {
     try {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine('OpenAI request: POST /$endpoint (form)');
-        logger.fine('OpenAI request headers: ${dio.options.headers}');
+        logger.fine(
+            'OpenAI request headers: ${LogSanitizer.sanitizeHeaders(dio.options.headers)}');
       }
 
       final response = await dio.post(
@@ -464,7 +467,8 @@ class OpenAIClient {
     try {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine('OpenAI request: GET /$endpoint');
-        logger.fine('OpenAI request headers: ${dio.options.headers}');
+        logger.fine(
+            'OpenAI request headers: ${LogSanitizer.sanitizeHeaders(dio.options.headers)}');
       }
 
       final response = await dio.get(
@@ -528,7 +532,8 @@ class OpenAIClient {
     try {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine('OpenAI request: DELETE /$endpoint');
-        logger.fine('OpenAI request headers: ${dio.options.headers}');
+        logger.fine(
+            'OpenAI request headers: ${LogSanitizer.sanitizeHeaders(dio.options.headers)}');
       }
 
       final response = await dio.delete(
@@ -568,7 +573,8 @@ class OpenAIClient {
     try {
       if (logger.isLoggable(Level.FINE)) {
         logger.fine('OpenAI request: POST /$endpoint (stream)');
-        logger.fine('OpenAI request headers: ${dio.options.headers}');
+        logger.fine(
+            'OpenAI request headers: ${LogSanitizer.sanitizeHeaders(dio.options.headers)}');
       }
 
       final response = await dio.post(

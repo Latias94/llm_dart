@@ -56,12 +56,11 @@ class GoogleChat implements ChatCapability {
 
   GoogleChat(this.client, this.config);
 
-  String get chatEndpoint {
-    final endpoint = config.stream
-        ? 'models/${config.model}:streamGenerateContent'
-        : 'models/${config.model}:generateContent';
-    return endpoint;
-  }
+  String get generateContentEndpoint =>
+      'models/${config.model}:generateContent';
+
+  String get streamGenerateContentEndpoint =>
+      'models/${config.model}:streamGenerateContent';
 
   @override
   Future<ChatResponse> chatWithTools(
@@ -71,7 +70,7 @@ class GoogleChat implements ChatCapability {
   }) async {
     final requestBody = _buildRequestBody(messages, tools, false);
     final responseData = await client.postJson(
-      chatEndpoint,
+      generateContentEndpoint,
       requestBody,
       cancelToken: cancelToken,
     );
@@ -92,7 +91,7 @@ class GoogleChat implements ChatCapability {
 
     // Create JSON array stream
     final stream = client.postStreamRaw(
-      chatEndpoint,
+      streamGenerateContentEndpoint,
       requestBody,
       cancelToken: cancelToken,
     );
@@ -276,9 +275,58 @@ class GoogleChat implements ChatCapability {
     // Based on flutter_gemini implementation
 
     try {
-      // Add chunk to buffer
       _streamBuffer += chunk;
 
+      // Support SSE-style streaming ("data: {json}\n\n") used by some gateways.
+      // Parse event blocks separated by a blank line, and concatenate multi-line
+      // `data:` fields per SSE spec.
+      if (_streamBuffer.contains('data:')) {
+        while (true) {
+          final sseSepCrlf = _streamBuffer.indexOf('\r\n\r\n');
+          final sseSepLf = _streamBuffer.indexOf('\n\n');
+          final hasCrlf = sseSepCrlf != -1;
+          final hasLf = sseSepLf != -1;
+
+          if (!hasCrlf && !hasLf) break;
+
+          final sepIndex = hasCrlf ? sseSepCrlf : sseSepLf;
+          final sepLen = hasCrlf ? 4 : 2;
+
+          final block = _streamBuffer.substring(0, sepIndex);
+          _streamBuffer = _streamBuffer.substring(sepIndex + sepLen);
+
+          final dataLines = <String>[];
+          for (final rawLine in const LineSplitter().convert(block)) {
+            final line = rawLine.trimRight();
+            if (line.startsWith('data:')) {
+              dataLines.add(line.substring(5).trimLeft());
+            }
+          }
+
+          final data = dataLines.join('\n').trim();
+          if (data.isEmpty || data == '[DONE]') continue;
+
+          try {
+            final decoded = jsonDecode(data);
+            if (decoded is Map<String, dynamic>) {
+              events.addAll(_parseStreamEvent(decoded));
+            } else if (decoded is List) {
+              for (final item in decoded) {
+                if (item is Map<String, dynamic>) {
+                  events.addAll(_parseStreamEvent(item));
+                }
+              }
+            }
+          } catch (e) {
+            client.logger.warning('Failed to parse Google SSE data: $e');
+            client.logger.fine('Raw SSE data: $data');
+          }
+        }
+
+        return events;
+      }
+
+      // Fallback: JSON array stream parsing.
       String processedData = _streamBuffer.trim();
 
       // Handle array format - remove brackets and commas
@@ -302,30 +350,24 @@ class GoogleChat implements ChatCapability {
       String jsonAccumulator = '';
 
       for (final line in lines) {
-        if (jsonAccumulator == '' && line == ',') {
+        final trimmed = line.trim();
+        if (trimmed.isEmpty) continue;
+        if (jsonAccumulator == '' && trimmed == ',') {
           continue;
         }
 
-        jsonAccumulator += line;
+        jsonAccumulator += trimmed;
 
         try {
-          // Try to parse the accumulated JSON
           final json = jsonDecode(jsonAccumulator) as Map<String, dynamic>;
-          final streamEvents = _parseStreamEvent(json);
-          if (streamEvents != null) {
-            events.add(streamEvents);
-          }
-
-          // Successfully parsed, clear accumulator and update buffer
+          events.addAll(_parseStreamEvent(json));
           jsonAccumulator = '';
           _streamBuffer = '';
         } catch (e) {
-          // JSON incomplete, continue accumulating
           continue;
         }
       }
 
-      // Keep incomplete JSON in buffer for next chunk
       if (jsonAccumulator.isNotEmpty) {
         _streamBuffer = jsonAccumulator;
       }
@@ -339,15 +381,27 @@ class GoogleChat implements ChatCapability {
   }
 
   /// Parse individual stream event
-  ChatStreamEvent? _parseStreamEvent(Map<String, dynamic> json) {
+  List<ChatStreamEvent> _parseStreamEvent(Map<String, dynamic> json) {
+    final out = <ChatStreamEvent>[];
     final candidates = json['candidates'] as List?;
-    if (candidates == null || candidates.isEmpty) return null;
+    if (candidates == null || candidates.isEmpty) return out;
 
     final content = candidates.first['content'] as Map<String, dynamic>?;
-    if (content == null) return null;
+    if (content == null) return out;
 
     final parts = content['parts'] as List?;
-    if (parts == null || parts.isEmpty) return null;
+    if (parts == null || parts.isEmpty) {
+      final finishReason = candidates.first['finishReason'] as String?;
+      if (finishReason != null) {
+        final usage = json['usageMetadata'] as Map<String, dynamic>?;
+        final response = GoogleChatResponse({
+          'candidates': [],
+          'usageMetadata': usage,
+        });
+        out.add(CompletionEvent(response));
+      }
+      return out;
+    }
 
     // Process all parts in the response
     for (final part in parts) {
@@ -357,12 +411,14 @@ class GoogleChat implements ChatCapability {
       final text = part['text'] as String?;
 
       if (isThought && text != null && text.isNotEmpty) {
-        return ThinkingDeltaEvent(text);
+        out.add(ThinkingDeltaEvent(text));
+        continue;
       }
 
       // Regular text content (not thinking)
       if (!isThought && text != null && text.isNotEmpty) {
-        return TextDeltaEvent(text);
+        out.add(TextDeltaEvent(text));
+        continue;
       }
 
       // Check for inline image data (generated images)
@@ -373,7 +429,8 @@ class GoogleChat implements ChatCapability {
         if (mimeType != null && data != null && mimeType.startsWith('image/')) {
           // This is a generated image - we could emit a custom event for this
           // For now, we'll include it as text content indicating image generation
-          return TextDeltaEvent('[Generated image: $mimeType]');
+          out.add(TextDeltaEvent('[Generated image: $mimeType]'));
+          continue;
         }
       }
 
@@ -389,7 +446,8 @@ class GoogleChat implements ChatCapability {
           function: FunctionCall(name: name, arguments: jsonEncode(args)),
         );
 
-        return ToolCallDeltaEvent(toolCall);
+        out.add(ToolCallDeltaEvent(toolCall));
+        continue;
       }
     }
 
@@ -401,10 +459,10 @@ class GoogleChat implements ChatCapability {
         'candidates': [],
         'usageMetadata': usage,
       });
-      return CompletionEvent(response);
+      out.add(CompletionEvent(response));
     }
 
-    return null;
+    return out;
   }
 
   /// Build request body for Google API
@@ -433,14 +491,15 @@ class GoogleChat implements ChatCapability {
       contents.add(_convertMessage(message));
     }
 
-    return _buildBodyWithConfig(contents, tools);
+    return _buildBodyWithConfig(contents, tools, stream: stream);
   }
 
   /// Create request body with configuration
   Map<String, dynamic> _buildBodyWithConfig(
     List<Map<String, dynamic>> contents,
-    List<Tool>? tools,
-  ) {
+    List<Tool>? tools, {
+    required bool stream,
+  }) {
     final body = <String, dynamic>{'contents': contents};
 
     // Add generation config if needed
@@ -486,7 +545,7 @@ class GoogleChat implements ChatCapability {
       // Include thoughts in response (for getting thinking summaries)
       if (config.includeThoughts != null) {
         thinkingConfig['includeThoughts'] = config.includeThoughts;
-      } else if (config.stream) {
+      } else if (stream) {
         // For streaming, we want to include thoughts by default to get thinking deltas
         thinkingConfig['includeThoughts'] = true;
       }
@@ -499,7 +558,7 @@ class GoogleChat implements ChatCapability {
       if (thinkingConfig.isNotEmpty) {
         generationConfig['thinkingConfig'] = thinkingConfig;
       }
-    } else if (config.stream) {
+    } else if (stream) {
       // For streaming without explicit thinking config, still enable includeThoughts
       // to get thinking deltas in the stream
       generationConfig['thinkingConfig'] = {

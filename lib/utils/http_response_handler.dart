@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
 import '../core/llm_error.dart';
+import 'log_sanitizer.dart';
 
 /// Unified HTTP response handler for all providers
 ///
@@ -104,7 +105,8 @@ class HttpResponseHandler {
     try {
       // Log request if fine logging is enabled
       if (log.isLoggable(Level.FINE)) {
-        log.fine('$provider request: POST $endpoint');
+        log.fine(
+            '$provider request: POST ${LogSanitizer.sanitizeEndpoint(endpoint)}');
         log.fine('$provider request payload: ${jsonEncode(data)}');
       }
 
@@ -160,7 +162,8 @@ class HttpResponseHandler {
 
     try {
       if (log.isLoggable(Level.FINE)) {
-        log.fine('$provider request: GET $endpoint');
+        log.fine(
+            '$provider request: GET ${LogSanitizer.sanitizeEndpoint(endpoint)}');
       }
 
       final response = await dio.get(
