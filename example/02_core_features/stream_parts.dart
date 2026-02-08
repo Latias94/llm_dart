@@ -102,6 +102,16 @@ void main() async {
         );
         break;
 
+      case LLMProviderToolApprovalRequestPart(
+          :final toolCallId,
+          :final toolName,
+          :final approvalId
+        ):
+        stdout.writeln(
+          '[provider tool approval] $toolName ($toolCallId) approvalId=$approvalId',
+        );
+        break;
+
       case LLMProviderToolResultPart(:final toolCallId, :final toolName):
         stdout.writeln('[provider tool result] $toolName ($toolCallId)');
         break;

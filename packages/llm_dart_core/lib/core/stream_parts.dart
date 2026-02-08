@@ -169,6 +169,41 @@ class LLMProviderToolDeltaPart extends LLMStreamPart {
   });
 }
 
+/// Tool approval request emitted by a provider for a provider-executed tool call.
+///
+/// This mirrors the Vercel AI SDK "tool-approval-request" concept.
+class LLMProviderToolApprovalRequestPart extends LLMStreamPart {
+  /// ID of the approval request. This ID should be referenced by a subsequent
+  /// provider-native approval response (provider/protocol-specific).
+  final String approvalId;
+
+  /// Provider-stable tool call id within a single response.
+  ///
+  /// Some providers do not distinguish approvalId vs toolCallId; in that case
+  /// they may be identical.
+  final String toolCallId;
+
+  /// Provider tool name (e.g. MCP tool name).
+  final String toolName;
+
+  /// Tool input payload (best-effort JSON-serializable object).
+  final Object? input;
+
+  /// Optional provider metadata for this approval request.
+  ///
+  /// When present, it follows the same shape as [ChatResponse.providerMetadata]:
+  /// `{ providerId: { ... } }`.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMProviderToolApprovalRequestPart({
+    required this.approvalId,
+    required this.toolCallId,
+    required this.toolName,
+    this.input,
+    this.providerMetadata,
+  });
+}
+
 /// Result of a tool call that has been executed by the provider (server-side).
 ///
 /// This mirrors the Vercel AI SDK "tool-result" concept.

@@ -212,6 +212,7 @@ slower person's pace. What's the minimum time to get everyone across?
         case ToolCallDeltaPart():
         case ProviderToolCallPart():
         case ProviderToolDeltaPart():
+        case ProviderToolApprovalRequestPart():
         case ProviderToolResultPart():
         case SourceUrlPart():
         case SourceDocumentPart():

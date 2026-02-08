@@ -46,7 +46,7 @@ Add new parts (names are placeholders; exact naming TBD):
   - `LLMProviderToolCallPart(...)` (server tool call)
   - `LLMProviderToolResultPart(...)` (server tool result)
   - (optional) `LLMProviderToolDeltaPart(...)` for status/progress
-  - (optional) `LLMToolApprovalRequestPart(...)` for provider-executed approvals
+  - (optional) `LLMProviderToolApprovalRequestPart(...)` for provider-executed approvals
 - `LLMFinishPart` enhancement:
   - include `finishReason` + `usage` explicitly (not only via `ChatResponse.providerMetadata`)
 
@@ -98,7 +98,7 @@ Already aligned in code:
 
 Still has drift risk:
 
-- `openai-compatible responses` still contains legacy stream parsing code (unused) that should be deleted
+- (none in `dev-remote` at the moment; keep watching for dual parsing paths)
 
 ---
 
@@ -126,9 +126,9 @@ These changes are expected to break downstream code:
 ### M1 — Core: stream parts & types (breaking)
 
 - [x] Update `packages/llm_dart_core/lib/core/stream_parts.dart` with new parts
-- [ ] Add stable `finishReason` model (core) and propagate it through parts/results
-- [ ] Update `packages/llm_dart_ai/lib/src/stream_parts.dart` adapters accordingly
-- [ ] Update `packages/llm_dart_ai/lib/src/tool_loop.dart` parts-mode loop integration
+- [x] Add stable `finishReason` model (core) and propagate it through parts/results
+- [x] Update `packages/llm_dart_ai/lib/src/stream_parts.dart` adapters accordingly
+- [x] Update `packages/llm_dart_ai/lib/src/tool_loop.dart` parts-mode loop integration
 
 Acceptance criteria:
 
@@ -153,6 +153,7 @@ Priority order:
 - [x] `openai-compatible responses`: remove legacy stream event parser code
 - [ ] `openai` + `azure` providers (Responses mode): ensure consistent parts semantics
 - [x] `openai-compatible responses`: emit server tool calls via typed parts
+- [x] `openai-compatible responses`: emit server tool approval request via typed parts (MCP)
 - [x] `xai.responses`: emit citations/sources via typed parts
 - [x] `xai.responses`: emit server tool calls via typed parts (call/result)
 - [x] `google`/`vertex`: emit grounding sources via typed parts
@@ -169,6 +170,7 @@ Acceptance criteria:
 - [x] Add source part tests for OpenAI Responses + Google grounding + xAI citations
 - [ ] Add “provider tool part” conformance tests (web/file/search/code)
 - [x] Add provider tool part tests for OpenAI Responses + xAI Responses
+- [x] Add provider tool approval request tests for OpenAI Responses (MCP)
 - [ ] Expand chunk-fuzz coverage to the new part types
 - [ ] Add a global “no drift” guard: `chatStream` must be derived from parts
 

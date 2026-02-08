@@ -75,6 +75,22 @@ class ProviderToolDeltaPart extends TextStreamPart {
   });
 }
 
+class ProviderToolApprovalRequestPart extends TextStreamPart {
+  final String approvalId;
+  final String toolCallId;
+  final String toolName;
+  final Object? input;
+  final Map<String, dynamic>? providerMetadata;
+
+  const ProviderToolApprovalRequestPart({
+    required this.approvalId,
+    required this.toolCallId,
+    required this.toolName,
+    this.input,
+    this.providerMetadata,
+  });
+}
+
 class ProviderToolResultPart extends TextStreamPart {
   final String toolCallId;
   final String toolName;

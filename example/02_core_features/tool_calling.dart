@@ -476,6 +476,7 @@ Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
         case LLMSourceDocumentPart():
         case LLMProviderToolCallPart():
         case LLMProviderToolDeltaPart():
+        case LLMProviderToolApprovalRequestPart():
         case LLMProviderToolResultPart():
           // Ignore for this demo.
           break;

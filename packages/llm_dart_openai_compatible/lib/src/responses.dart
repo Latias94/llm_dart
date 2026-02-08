@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
@@ -150,6 +151,7 @@ class OpenAIResponses
     final activeToolCalls = <String>{};
     final activeProviderToolCalls = <String>{};
     final endedProviderToolCalls = <String>{};
+    final emittedProviderApprovalRequests = <String>{};
 
     var didFinish = false;
     final providerToolTypeById = <String, String>{};
@@ -264,6 +266,40 @@ class OpenAIResponses
 
             if (item is Map) {
               final rawType = item['type'];
+
+              if (rawType == 'mcp_approval_request') {
+                final id = item['id'] as String? ?? '';
+                if (id.isNotEmpty && emittedProviderApprovalRequests.add(id)) {
+                  final name = item['name'] as String? ?? 'mcp';
+                  final argsRaw = item['arguments'];
+                  Object? input = argsRaw;
+                  if (argsRaw is String && argsRaw.isNotEmpty) {
+                    try {
+                      final decoded = jsonDecode(argsRaw);
+                      if (decoded is Map || decoded is List) {
+                        input = decoded;
+                      }
+                    } catch (_) {
+                      // Keep raw string as-is.
+                    }
+                  }
+
+                  yield LLMProviderToolApprovalRequestPart(
+                    approvalId: id,
+                    toolCallId: id,
+                    toolName: name,
+                    input: input,
+                    providerMetadata: {
+                      config.providerId: {
+                        'type': 'mcp_approval_request',
+                        if (item['server_label'] is String)
+                          'serverLabel': item['server_label'],
+                      },
+                    },
+                  );
+                }
+              }
+
               if (rawType is String &&
                   rawType.endsWith('_call') &&
                   rawType != 'function_call') {

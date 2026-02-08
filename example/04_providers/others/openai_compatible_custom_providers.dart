@@ -106,6 +106,11 @@ void main() async {
           'providerToolDelta: ${part.toolName} (${part.toolCallId}) status=${part.status}',
         );
         break;
+      case ProviderToolApprovalRequestPart():
+        print(
+          'providerToolApproval: ${part.toolName} (${part.toolCallId}) approvalId=${part.approvalId}',
+        );
+        break;
       case ProviderToolResultPart():
         print('providerToolResult: ${part.toolName} (${part.toolCallId})');
         break;

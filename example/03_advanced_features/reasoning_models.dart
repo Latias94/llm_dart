@@ -240,6 +240,7 @@ Future<void> demonstrateStreamingReasoning(String apiKey) async {
           break;
         case ProviderToolCallPart():
         case ProviderToolDeltaPart():
+        case ProviderToolApprovalRequestPart():
         case ProviderToolResultPart():
           // Ignore provider tool lifecycle for this demo.
           break;

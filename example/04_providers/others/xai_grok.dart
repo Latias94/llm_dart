@@ -312,6 +312,7 @@ Future<void> demonstrateBestPractices(String apiKey) async {
         case ToolCallDeltaPart():
         case ProviderToolCallPart():
         case ProviderToolDeltaPart():
+        case ProviderToolApprovalRequestPart():
         case ProviderToolResultPart():
         case SourceUrlPart():
         case SourceDocumentPart():

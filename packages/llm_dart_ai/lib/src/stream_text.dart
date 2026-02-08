@@ -83,6 +83,21 @@ Stream<TextStreamPart> streamText({
           providerMetadata: providerMetadata,
         );
 
+      case LLMProviderToolApprovalRequestPart(
+          approvalId: final approvalId,
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          input: final input,
+          providerMetadata: final providerMetadata,
+        ):
+        yield ProviderToolApprovalRequestPart(
+          approvalId: approvalId,
+          toolCallId: toolCallId,
+          toolName: toolName,
+          input: input,
+          providerMetadata: providerMetadata,
+        );
+
       case LLMProviderToolResultPart(
           toolCallId: final toolCallId,
           toolName: final toolName,
