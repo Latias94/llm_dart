@@ -63,6 +63,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   // Buffer for incomplete JSON chunks
   String _streamBuffer = '';
   bool _isFirstChunk = true;
+  final Map<String, int> _streamToolCallNameCounts = <String, int>{};
 
   GoogleChat(this.client, this.config);
 
@@ -463,6 +464,13 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   void _resetStreamState() {
     _streamBuffer = '';
     _isFirstChunk = true;
+    _streamToolCallNameCounts.clear();
+  }
+
+  String _nextStreamToolCallId(String name) {
+    final count = _streamToolCallNameCounts[name] ?? 0;
+    _streamToolCallNameCounts[name] = count + 1;
+    return count == 0 ? 'call_$name' : 'call_${name}_$count';
   }
 
   @override
@@ -851,11 +859,11 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
           continue;
         }
 
-        final name =
-            toolNameMapping.originalFunctionNameForRequestName(requestName) ??
-                requestName;
-        final toolCall = ToolCall(
-          id: 'call_$name',
+      final name =
+          toolNameMapping.originalFunctionNameForRequestName(requestName) ??
+              requestName;
+      final toolCall = ToolCall(
+          id: _nextStreamToolCallId(name),
           callType: 'function',
           function: FunctionCall(name: name, arguments: jsonEncode(args)),
           providerOptions: part['thoughtSignature'] == null
