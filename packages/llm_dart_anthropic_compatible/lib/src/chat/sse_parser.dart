@@ -394,8 +394,8 @@ class _AnthropicChatSseParser {
               }
               _thinkingBuffer.write(thinkingText);
               events.add(ThinkingDeltaEvent(thinkingText));
-              break;
             }
+            break;
           }
 
           if (deltaType == 'citations_delta') {
@@ -407,6 +407,7 @@ class _AnthropicChatSseParser {
                   index, () => <Map<String, dynamic>>[]);
               list.add(Map<String, dynamic>.from(citation));
             }
+            break;
           }
 
           // Handle signature delta (thinking encryption).
@@ -415,23 +416,26 @@ class _AnthropicChatSseParser {
             // We can safely ignore these or log them for debugging.
             client.logger
                 .fine('Received signature delta for thinking verification');
+            break;
           }
 
           // Handle tool use input delta - accumulate partial_json chunks.
-          final partialJson = delta['partial_json'] as String?;
-          if (partialJson != null && index != null) {
-            final state = _activeToolCalls[index];
-            if (state != null) {
-              // If we already have prefilled tool input, ignore partial deltas to
-              // avoid producing invalid JSON.
-              if (!state.prefilledInput) {
-                state.inputBuffer.write(partialJson);
+          if (deltaType == 'input_json_delta') {
+            final partialJson = delta['partial_json'] as String?;
+            if (partialJson != null && index != null) {
+              final state = _activeToolCalls[index];
+              if (state != null) {
+                // If we already have prefilled tool input, ignore partial deltas to
+                // avoid producing invalid JSON.
+                if (!state.prefilledInput) {
+                  state.inputBuffer.write(partialJson);
+                }
               }
+            } else {
+              client.logger.warning(
+                'Missing required parameter for input_json_delta: index=$index, partial_json=$partialJson',
+              );
             }
-          } else {
-            client.logger.severe(
-              'Missing required parameter for content_block_delta: index=$index, partial_json=$partialJson',
-            );
           }
         }
         break;
