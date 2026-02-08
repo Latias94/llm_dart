@@ -12,4 +12,3 @@ part 'src/chat/chat_impl.dart';
 part 'src/chat/response.dart';
 part 'src/chat/stream_parts.dart';
 part 'src/chat/tool_call_state.dart';
-part 'src/chat/sse_parser.dart';

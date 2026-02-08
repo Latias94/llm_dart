@@ -20,7 +20,6 @@ class AnthropicChat
   final AnthropicClient client;
   final AnthropicConfig config;
   late final AnthropicRequestBuilder _requestBuilder;
-  late final _AnthropicChatSseParser _sseParser;
 
   AnthropicChat(
     this.client,
@@ -28,7 +27,6 @@ class AnthropicChat
     AnthropicRequestBuilder? requestBuilder,
   }) {
     _requestBuilder = requestBuilder ?? AnthropicRequestBuilder(config);
-    _sseParser = _AnthropicChatSseParser(client, config);
   }
 
   String get chatEndpoint => 'messages';
@@ -83,26 +81,13 @@ class AnthropicChat
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
-    // Reset streaming parser state for new stream.
-    _sseParser.reset();
-
-    final effectiveTools = tools ?? config.tools;
-    final built = _requestBuilder.buildRequest(messages, effectiveTools, true);
-
-    // Create SSE stream - headers are automatically handled by AnthropicClient
-    // including interleaved thinking beta header if enabled
-    final stream = client.postStreamRaw(
-      chatEndpoint,
-      built.body,
-      cancelToken: cancelToken,
+    yield* _legacyEventsFromParts(
+      chatStreamParts(
+        messages,
+        tools: tools,
+        cancelToken: cancelToken,
+      ),
     );
-
-    await for (final chunk in stream) {
-      final events = _sseParser.parseChunk(chunk, built.toolNameMapping);
-      for (final event in events) {
-        yield event;
-      }
-    }
   }
 
   @override
@@ -111,25 +96,86 @@ class AnthropicChat
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
-    _sseParser.reset();
-
-    final effectiveTools = tools ?? config.tools;
-    final built = _requestBuilder.buildRequestFromPrompt(
-      prompt,
-      effectiveTools,
-      true,
+    yield* _legacyEventsFromParts(
+      chatPromptStreamParts(
+        prompt,
+        tools: tools,
+        cancelToken: cancelToken,
+      ),
     );
+  }
 
-    final stream = client.postStreamRaw(
-      chatEndpoint,
-      built.body,
-      cancelToken: cancelToken,
-    );
+  /// Map provider-agnostic stream parts into legacy `ChatStreamEvent`.
+  ///
+  /// Note: Anthropic legacy `chatStream` expects tool call arguments to be
+  /// emitted once (after the full `partial_json` stream is complete), so we
+  /// aggregate `LLMToolCall*Part` into a single `ToolCallDeltaEvent` on end.
+  Stream<ChatStreamEvent> _legacyEventsFromParts(
+    Stream<LLMStreamPart> parts,
+  ) async* {
+    final toolAccums = <String, _LegacyToolCallAccum>{};
 
-    await for (final chunk in stream) {
-      final events = _sseParser.parseChunk(chunk, built.toolNameMapping);
-      for (final event in events) {
-        yield event;
+    await for (final part in parts) {
+      switch (part) {
+        case LLMTextDeltaPart(:final delta):
+          yield TextDeltaEvent(delta);
+
+        case LLMReasoningDeltaPart(:final delta):
+          yield ThinkingDeltaEvent(delta);
+
+        case LLMToolCallStartPart(:final toolCall):
+          final accum = toolAccums.putIfAbsent(
+            toolCall.id,
+            () => _LegacyToolCallAccum(),
+          );
+          if (toolCall.function.name.isNotEmpty) {
+            accum.name = toolCall.function.name;
+          }
+          if (toolCall.function.arguments.isNotEmpty) {
+            accum.arguments.write(toolCall.function.arguments);
+          }
+
+        case LLMToolCallDeltaPart(:final toolCall):
+          final accum = toolAccums.putIfAbsent(
+            toolCall.id,
+            () => _LegacyToolCallAccum(),
+          );
+          if (toolCall.function.name.isNotEmpty) {
+            accum.name = toolCall.function.name;
+          }
+          if (toolCall.function.arguments.isNotEmpty) {
+            accum.arguments.write(toolCall.function.arguments);
+          }
+
+        case LLMToolCallEndPart(:final toolCallId):
+          final accum = toolAccums.remove(toolCallId);
+          if (accum == null) break;
+          yield ToolCallDeltaEvent(
+            ToolCall(
+              id: toolCallId,
+              callType: 'function',
+              function: FunctionCall(
+                name: accum.name ?? '',
+                arguments: accum.arguments.toString(),
+              ),
+            ),
+          );
+
+        case LLMFinishPart(:final response):
+          yield CompletionEvent(response);
+
+        case LLMErrorPart(:final error):
+          yield ErrorEvent(error);
+          return;
+
+        case LLMTextStartPart():
+        case LLMTextEndPart():
+        case LLMReasoningStartPart():
+        case LLMReasoningEndPart():
+        case LLMProviderMetadataPart():
+        case LLMToolResultPart():
+          // Not represented in legacy ChatStreamEvent.
+          break;
       }
     }
   }
@@ -258,6 +304,11 @@ class AnthropicChat
         return ProviderError('Anthropic API error ($errorType): $message');
     }
   }
+}
+
+class _LegacyToolCallAccum {
+  String? name;
+  final StringBuffer arguments = StringBuffer();
 }
 
 // `_ToolCallState` moved to `lib/src/chat/tool_call_state.dart`.
