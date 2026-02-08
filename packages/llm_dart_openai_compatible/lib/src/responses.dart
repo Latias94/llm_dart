@@ -52,6 +52,15 @@ class OpenAIResponses
   // only send function.arguments deltas. We cache the latest known name so
   // that downstream tool execution can reliably match the tool.
   final Map<int, String> _toolCallNames = {};
+  // Track Responses API `function_call` items by `output_index`.
+  //
+  // These are emitted via `response.output_item.*` events, and arguments are
+  // streamed separately via `response.function_call_arguments.delta`.
+  final Map<int, String> _functionCallIdsByOutputIndex = {};
+  final Map<int, String> _functionCallNamesByOutputIndex = {};
+  // Track function_call arguments streamed via `response.function_call_arguments.delta`.
+  // Keyed by `output_index` (Responses API event field).
+  final Map<int, StringBuffer> _functionCallArgsByOutputIndex = {};
 
   OpenAIResponses(this.client, this.config);
 
@@ -120,10 +129,11 @@ class OpenAIResponses
             toolNameMapping: builtRequest.toolNameMapping,
           );
           for (final event in events) {
-            if (event is CompletionEvent) {
+            if (event is CompletionEvent || event is ErrorEvent) {
               didEmitCompletion = true;
             }
             yield event;
+            if (event is ErrorEvent) return;
           }
         } catch (e) {
           // Log parsing errors but continue processing
@@ -168,7 +178,7 @@ class OpenAIResponses
 
     var inText = false;
     var inThinking = false;
-    final startedToolCalls = <String>{};
+    final activeToolCalls = <String>{};
 
     var didFinish = false;
 
@@ -197,6 +207,64 @@ class OpenAIResponses
             final outputIndex = json['output_index'] as int?;
             if (outputIndex != null) {
               _upsertOutputItem(outputIndex, json['item']);
+            }
+
+            final item = json['item'];
+            if (outputIndex != null &&
+                item is Map &&
+                item['type'] == 'function_call') {
+              final callId =
+                  item['call_id'] as String? ?? item['id'] as String?;
+              final rawName = item['name'] as String?;
+              final rawArgs = item['arguments'] as String?;
+
+              if (callId != null && callId.isNotEmpty) {
+                _functionCallIdsByOutputIndex[outputIndex] = callId;
+                if (rawName != null && rawName.isNotEmpty) {
+                  _functionCallNamesByOutputIndex[outputIndex] = rawName;
+                }
+
+                final requestName =
+                    _functionCallNamesByOutputIndex[outputIndex] ?? '';
+                final originalName =
+                    toolNameMapping.originalFunctionNameForRequestName(
+                          requestName,
+                        ) ??
+                        requestName;
+
+                if (eventType == 'response.output_item.added') {
+                  if (activeToolCalls.add(callId)) {
+                    yield LLMToolCallStartPart(
+                      ToolCall(
+                        id: callId,
+                        callType: 'function',
+                        function: FunctionCall(
+                          name: originalName,
+                          arguments: '',
+                        ),
+                      ),
+                    );
+                  }
+                } else if (eventType == 'response.output_item.done') {
+                  if (rawArgs != null) {
+                    _functionCallArgsByOutputIndex[outputIndex] =
+                        StringBuffer(rawArgs);
+                    final output = _partialOutput;
+                    if (output != null && outputIndex < output.length) {
+                      final current = output[outputIndex];
+                      if (current is Map<String, dynamic>) {
+                        current['arguments'] = rawArgs;
+                      } else if (current is Map) {
+                        current['arguments'] = rawArgs;
+                      }
+                    }
+                  }
+
+                  if (activeToolCalls.remove(callId)) {
+                    yield LLMToolCallEndPart(callId);
+                  }
+                }
+              }
             }
 
             if (eventType == 'response.output_item.done') {
@@ -313,6 +381,79 @@ class OpenAIResponses
             continue;
           }
 
+          if (eventType == 'response.function_call_arguments.delta') {
+            final outputIndex = json['output_index'] as int?;
+            final delta = json['delta'] as String?;
+            if (outputIndex == null || delta == null || delta.isEmpty) continue;
+
+            final callId = _functionCallIdsByOutputIndex[outputIndex];
+            if (callId == null || callId.isEmpty) continue;
+
+            final buf = _functionCallArgsByOutputIndex.putIfAbsent(
+              outputIndex,
+              StringBuffer.new,
+            );
+            buf.write(delta);
+
+            final output = _partialOutput;
+            if (output != null && outputIndex < output.length) {
+              final current = output[outputIndex];
+              if (current is Map<String, dynamic>) {
+                current['arguments'] = buf.toString();
+              } else if (current is Map) {
+                current['arguments'] = buf.toString();
+              }
+            }
+
+            var requestName =
+                _functionCallNamesByOutputIndex[outputIndex] ?? '';
+            if (requestName.isEmpty) {
+              if (output != null && outputIndex < output.length) {
+                final current = output[outputIndex];
+                if (current is Map) {
+                  final name = current['name'];
+                  if (name is String && name.isNotEmpty) {
+                    requestName = name;
+                  }
+                }
+              }
+            }
+
+            final originalName =
+                toolNameMapping.originalFunctionNameForRequestName(
+                      requestName,
+                    ) ??
+                    requestName;
+
+            if (originalName.isNotEmpty) {
+              if (activeToolCalls.add(callId)) {
+                yield LLMToolCallStartPart(
+                  ToolCall(
+                    id: callId,
+                    callType: 'function',
+                    function: FunctionCall(
+                      name: originalName,
+                      arguments: '',
+                    ),
+                  ),
+                );
+              }
+
+              yield LLMToolCallDeltaPart(
+                ToolCall(
+                  id: callId,
+                  callType: 'function',
+                  function: FunctionCall(
+                    name: originalName,
+                    arguments: delta,
+                  ),
+                ),
+              );
+            }
+
+            continue;
+          }
+
           // Function tool calls (client-side tools)
           final toolCalls = json['tool_calls'] as List?;
           if (toolCalls != null && toolCalls.isNotEmpty) {
@@ -350,7 +491,7 @@ class OpenAIResponses
                         arguments: args,
                       ),
                     );
-                    if (startedToolCalls.add(toolCall.id)) {
+                    if (activeToolCalls.add(toolCall.id)) {
                       yield LLMToolCallStartPart(toolCall);
                     } else {
                       yield LLMToolCallDeltaPart(toolCall);
@@ -368,7 +509,7 @@ class OpenAIResponses
                           requestName,
                         ) ??
                         requestName;
-                if (startedToolCalls.add(toolCall.id)) {
+                if (activeToolCalls.add(toolCall.id)) {
                   yield LLMToolCallStartPart(
                     ToolCall(
                       id: toolCall.id,
@@ -397,7 +538,27 @@ class OpenAIResponses
             }
           }
 
-          if (eventType == 'response.completed') {
+          if (eventType == 'response.failed' ||
+              eventType == 'response.cancelled') {
+            didFinish = true;
+
+            final raw = json['error'];
+            String message = eventType == 'response.cancelled'
+                ? 'Responses stream cancelled'
+                : 'Responses stream failed';
+            if (raw is Map) {
+              final rawMessage = raw['message'];
+              if (rawMessage is String && rawMessage.isNotEmpty) {
+                message = rawMessage;
+              }
+            }
+
+            yield LLMErrorPart(GenericError(message));
+            return;
+          }
+
+          if (eventType == 'response.completed' ||
+              eventType == 'response.incomplete') {
             didFinish = true;
 
             final completedResponse = json['response'];
@@ -420,7 +581,7 @@ class OpenAIResponses
             if (inThinking) {
               yield LLMReasoningEndPart(_thinkingBuffer.toString());
             }
-            for (final id in startedToolCalls) {
+            for (final id in activeToolCalls) {
               yield LLMToolCallEndPart(id);
             }
 
@@ -452,7 +613,7 @@ class OpenAIResponses
         if (inThinking) {
           yield LLMReasoningEndPart(_thinkingBuffer.toString());
         }
-        for (final id in startedToolCalls) {
+        for (final id in activeToolCalls) {
           yield LLMToolCallEndPart(id);
         }
 
@@ -1081,6 +1242,9 @@ class OpenAIResponses
     _thinkingBuffer.clear();
     _toolCallIds.clear();
     _toolCallNames.clear();
+    _functionCallIdsByOutputIndex.clear();
+    _functionCallNamesByOutputIndex.clear();
+    _functionCallArgsByOutputIndex.clear();
     _outputTextBuffer.clear();
     _outputTextAnnotations.clear();
     _partialResponse = null;
@@ -1157,6 +1321,33 @@ class OpenAIResponses
       if (outputIndex != null) {
         _upsertOutputItem(outputIndex, json['item']);
       }
+
+      final item = json['item'];
+      if (outputIndex != null &&
+          item is Map &&
+          item['type'] == 'function_call') {
+        final callId = item['call_id'] as String? ?? item['id'] as String?;
+        final rawName = item['name'] as String?;
+        final rawArgs = item['arguments'] as String?;
+        if (callId != null && callId.isNotEmpty) {
+          _functionCallIdsByOutputIndex[outputIndex] = callId;
+          if (rawName != null && rawName.isNotEmpty) {
+            _functionCallNamesByOutputIndex[outputIndex] = rawName;
+          }
+          if (rawArgs != null && eventType == 'response.output_item.done') {
+            _functionCallArgsByOutputIndex[outputIndex] = StringBuffer(rawArgs);
+            final output = _partialOutput;
+            if (output != null && outputIndex < output.length) {
+              final current = output[outputIndex];
+              if (current is Map<String, dynamic>) {
+                current['arguments'] = rawArgs;
+              } else if (current is Map) {
+                current['arguments'] = rawArgs;
+              }
+            }
+          }
+        }
+      }
       return events;
     }
 
@@ -1226,7 +1417,84 @@ class OpenAIResponses
       }
     }
 
-    if (eventType == 'response.completed') {
+    if (eventType == 'response.function_call_arguments.delta') {
+      final outputIndex = json['output_index'] as int?;
+      final delta = json['delta'] as String?;
+      if (outputIndex == null || delta == null || delta.isEmpty) return events;
+
+      final callId = _functionCallIdsByOutputIndex[outputIndex];
+      if (callId == null || callId.isEmpty) return events;
+
+      final buf = _functionCallArgsByOutputIndex.putIfAbsent(
+        outputIndex,
+        StringBuffer.new,
+      );
+      buf.write(delta);
+
+      final output = _partialOutput;
+      if (output != null && outputIndex < output.length) {
+        final current = output[outputIndex];
+        if (current is Map<String, dynamic>) {
+          current['arguments'] = buf.toString();
+        } else if (current is Map) {
+          current['arguments'] = buf.toString();
+        }
+      }
+
+      var requestName = _functionCallNamesByOutputIndex[outputIndex] ?? '';
+      if (requestName.isEmpty) {
+        if (output != null && outputIndex < output.length) {
+          final current = output[outputIndex];
+          if (current is Map) {
+            final name = current['name'];
+            if (name is String && name.isNotEmpty) {
+              requestName = name;
+            }
+          }
+        }
+      }
+
+      final originalName = toolNameMapping.originalFunctionNameForRequestName(
+            requestName,
+          ) ??
+          requestName;
+
+      if (originalName.isNotEmpty) {
+        events.add(
+          ToolCallDeltaEvent(
+            ToolCall(
+              id: callId,
+              callType: 'function',
+              function: FunctionCall(
+                name: originalName,
+                arguments: delta,
+              ),
+            ),
+          ),
+        );
+      }
+      return events;
+    }
+
+    if (eventType == 'response.failed' || eventType == 'response.cancelled') {
+      final raw = json['error'];
+      String message = eventType == 'response.cancelled'
+          ? 'Responses stream cancelled'
+          : 'Responses stream failed';
+      if (raw is Map) {
+        final rawMessage = raw['message'];
+        if (rawMessage is String && rawMessage.isNotEmpty) {
+          message = rawMessage;
+        }
+      }
+
+      events.add(ErrorEvent(GenericError(message)));
+      _resetStreamState();
+      return events;
+    }
+
+    if (eventType == 'response.completed' ||
+        eventType == 'response.incomplete') {
       // Handle completion event
       final response = json['response'] as Map<String, dynamic>?;
       if (response != null) {
@@ -1705,7 +1973,8 @@ class OpenAIResponsesResponse implements ChatResponse {
 
     // OpenAI Responses API reports token usage with `input_tokens`/`output_tokens`.
     // Normalize it into the standard `UsageInfo` fields.
-    final promptTokens = usageData['prompt_tokens'] ?? usageData['input_tokens'];
+    final promptTokens =
+        usageData['prompt_tokens'] ?? usageData['input_tokens'];
     final completionTokens =
         usageData['completion_tokens'] ?? usageData['output_tokens'];
 
@@ -1724,7 +1993,8 @@ class OpenAIResponsesResponse implements ChatResponse {
     return UsageInfo(
       promptTokens: promptTokens is int ? promptTokens : null,
       completionTokens: completionTokens is int ? completionTokens : null,
-      totalTokens: usageData['total_tokens'] is int ? usageData['total_tokens'] : null,
+      totalTokens:
+          usageData['total_tokens'] is int ? usageData['total_tokens'] : null,
       reasoningTokens: reasoningTokens,
     );
   }
