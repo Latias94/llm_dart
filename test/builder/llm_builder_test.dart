@@ -112,26 +112,30 @@ void main() {
       });
     });
 
-    group('OpenAI-Compatible Providers', () {
-      test('should select DeepSeek OpenAI', () {
-        final builder = LLMBuilder().deepseekOpenAI();
-        expect(builder, isNotNull);
-      });
+      group('OpenAI-Compatible Providers', () {
+        test('should select DeepSeek OpenAI', () {
+          // ignore: deprecated_member_use
+          final builder = LLMBuilder().deepseekOpenAI();
+          expect(builder, isNotNull);
+        });
 
-      test('should select Google OpenAI', () {
-        final builder = LLMBuilder().googleOpenAI();
-        expect(builder, isNotNull);
-      });
+        test('should select Google OpenAI', () {
+          // ignore: deprecated_member_use
+          final builder = LLMBuilder().googleOpenAI();
+          expect(builder, isNotNull);
+        });
 
-      test('should select xAI OpenAI', () {
-        final builder = LLMBuilder().xaiOpenAI();
-        expect(builder, isNotNull);
-      });
+        test('should select xAI OpenAI', () {
+          // ignore: deprecated_member_use
+          final builder = LLMBuilder().xaiOpenAI();
+          expect(builder, isNotNull);
+        });
 
-      test('should select Groq OpenAI', () {
-        final builder = LLMBuilder().groqOpenAI();
-        expect(builder, isNotNull);
-      });
+        test('should select Groq OpenAI', () {
+          // ignore: deprecated_member_use
+          final builder = LLMBuilder().groqOpenAI();
+          expect(builder, isNotNull);
+        });
 
       test('should select OpenRouter', () {
         final builder = LLMBuilder().openRouter();

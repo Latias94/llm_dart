@@ -1,5 +1,4 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
-import '../defaults.dart';
 
 import 'openai_compatible_provider_config.dart';
 

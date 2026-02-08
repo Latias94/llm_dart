@@ -59,7 +59,7 @@ void main(List<String> args) {
           }
         }
 
-        _writeProviderUtilsVersionFile(rootDir, version);
+        _writeProviderUtilsVersionFile(Directory.current, version);
 
         stdout.writeln(
           'Updated ${packages.length} packages to version $version'

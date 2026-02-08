@@ -1,6 +1,4 @@
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_google/chat.dart';
-import 'package:llm_dart_google/client.dart';
 import 'package:test/test.dart';
 
 import '../../utils/fakes/fakes.dart';

@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAI-compatible request builder conformance', () {
-    Tool _tool(String name) => Tool.function(
+    Tool tool(String name) => Tool.function(
           name: name,
           description: 'tool',
           parameters: const ParametersSchema(
@@ -97,7 +97,7 @@ void main() {
       final bodyAuto = builder.buildChatCompletionsRequestBody(
         client,
         messages: [ChatMessage.user('hi')],
-        tools: [_tool('t')],
+        tools: [tool('t')],
         stream: false,
       );
       expect(bodyAuto['tool_choice'], equals('auto'));
@@ -110,7 +110,7 @@ void main() {
       final bodyNone = OpenAIRequestBuilder(configNone).buildChatCompletionsRequestBody(
         OpenAIClient(configNone),
         messages: [ChatMessage.user('hi')],
-        tools: [_tool('t')],
+        tools: [tool('t')],
         stream: false,
       );
       expect(bodyNone['tool_choice'], equals('none'));
@@ -123,7 +123,7 @@ void main() {
       final bodyReq = OpenAIRequestBuilder(configReq).buildChatCompletionsRequestBody(
         OpenAIClient(configReq),
         messages: [ChatMessage.user('hi')],
-        tools: [_tool('t')],
+        tools: [tool('t')],
         stream: false,
       );
       expect(bodyReq['tool_choice'], equals('required'));
@@ -146,7 +146,7 @@ void main() {
       final body = OpenAIRequestBuilder(config).buildChatCompletionsRequestBody(
         OpenAIClient(config),
         messages: [ChatMessage.user('hi')],
-        tools: [_tool('myTool')],
+        tools: [tool('myTool')],
         stream: false,
       );
 

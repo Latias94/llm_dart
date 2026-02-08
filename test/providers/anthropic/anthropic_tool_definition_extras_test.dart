@@ -1,5 +1,4 @@
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -50,4 +49,3 @@ void main() {
     });
   });
 }
-

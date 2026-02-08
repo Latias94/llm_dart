@@ -200,7 +200,7 @@ void main() {
                       const {};
               final openaiMeta = meta is Map<String, dynamic>
                   ? meta
-                  : Map<String, dynamic>.from(meta as Map);
+                  : Map<String, dynamic>.from(meta);
 
               final lines = sessionLines[sessionIndex];
 

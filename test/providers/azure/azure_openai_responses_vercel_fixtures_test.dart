@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_azure/config.dart';
 import 'package:llm_dart_openai_compatible/responses.dart' as openai_responses;
 import 'package:test/test.dart';
 
@@ -178,7 +177,7 @@ void main() {
                   const {};
               final openaiMeta = meta is Map<String, dynamic>
                   ? meta
-                  : Map<String, dynamic>.from(meta as Map);
+                  : Map<String, dynamic>.from(meta);
 
               final lines = sessionLines[sessionIndex];
 

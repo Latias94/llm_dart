@@ -11,10 +11,10 @@ class _FakeElevenLabsClient extends ElevenLabsClient {
   final Map<String, dynamic> sttJson;
 
   _FakeElevenLabsClient(
-    ElevenLabsConfig config, {
+    super.config, {
     required this.ttsBytes,
     required this.sttJson,
-  }) : super(config);
+  });
 
   @override
   Future<Uint8List> postBinary(

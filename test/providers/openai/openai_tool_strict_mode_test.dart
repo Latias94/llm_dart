@@ -1,6 +1,4 @@
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_openai/chat.dart';
-import 'package:llm_dart_openai/client.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
 import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:test/test.dart';

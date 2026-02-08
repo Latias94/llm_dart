@@ -70,9 +70,11 @@ class OpenAIConfig implements OpenAIRequestConfig, OpenAIResponsesConfig {
   final bool useResponsesAPI;
 
   /// Previous response ID for chaining responses (Responses API only)
+  @override
   final String? previousResponseId;
 
   /// Built-in tools to use with Responses API
+  @override
   final List<OpenAIBuiltInTool>? builtInTools;
 
   /// Reference to original LLMConfig for accessing provider options.

@@ -1470,7 +1470,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
           }
 
           final uri = uploaded.uri ?? uploaded.name;
-          if (uri == null || uri.isEmpty) {
+          if (uri.isEmpty) {
             throw ProviderError(
               'Google file upload returned no uri/name for displayName="$displayName".',
             );

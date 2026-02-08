@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 

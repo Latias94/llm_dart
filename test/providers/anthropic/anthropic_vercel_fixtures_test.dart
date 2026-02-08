@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:test/test.dart';
 
 import '../../utils/fixture_replay.dart';
@@ -116,15 +115,15 @@ Map<String, int>? _sessionServerToolUseCounts(List<String> sessionLines) {
   if (name == null) return null;
 
   final rawJson = inputJson.toString().trim();
-  if (rawJson.isEmpty) return (name: name!, input: startInput ?? const {});
+  if (rawJson.isEmpty) return (name: name, input: startInput ?? const {});
 
   final decoded = jsonDecode(rawJson);
-  if (decoded is Map<String, dynamic>) return (name: name!, input: decoded);
+  if (decoded is Map<String, dynamic>) return (name: name, input: decoded);
   if (decoded is Map) {
-    return (name: name!, input: Map<String, dynamic>.from(decoded));
+    return (name: name, input: Map<String, dynamic>.from(decoded));
   }
 
-  return (name: name!, input: startInput ?? const {});
+  return (name: name, input: startInput ?? const {});
 }
 
 void main() {
