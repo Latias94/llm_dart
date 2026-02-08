@@ -132,6 +132,8 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
 
     final serverToolCallsById = <String, Map<String, dynamic>>{};
     final sources = <String, Map<String, dynamic>>{};
+    final sourceIdByUrl = <String, String>{};
+    var nextSourceSeq = 0;
 
     String? responseId;
     String? responseModel;
@@ -241,6 +243,26 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
                     'url': url,
                     if (title != null && title.isNotEmpty) 'title': title,
                   };
+
+                  final existingSourceId = sourceIdByUrl[url];
+                  if (existingSourceId == null) {
+                    final sourceId =
+                        sourceIdByUrl[url] = 'source_${nextSourceSeq++}';
+
+                    yield LLMSourceUrlPart(
+                      sourceId: sourceId,
+                      url: url,
+                      title: title != null && title.isNotEmpty ? title : null,
+                      providerMetadata: {
+                        config.providerId: {
+                          'type': 'url_citation',
+                          if (a['start_index'] is int)
+                            'startIndex': a['start_index'],
+                          if (a['end_index'] is int) 'endIndex': a['end_index'],
+                        },
+                      },
+                    );
+                  }
 
                   yield LLMProviderMetadataPart({
                     config.providerId: {
