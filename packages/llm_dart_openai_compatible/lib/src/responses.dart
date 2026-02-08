@@ -38,6 +38,8 @@ class OpenAIResponses
   final List<dynamic> _outputTextAnnotations = [];
   Map<String, dynamic>? _partialResponse;
   List<dynamic>? _partialOutput;
+  final Map<String, String> _sourceIdByUrl = {};
+  int _nextSourceSeq = 0;
   // Track tool call IDs by index for streaming tool calls in the Responses API.
   // The Responses stream can send tool_calls incrementally where only the
   // first chunk contains the id and later chunks reference the same call
@@ -235,6 +237,31 @@ class OpenAIResponses
             }
 
             if (eventType == 'response.output_item.done') {
+              if (item is Map && item['type'] == 'web_search_call') {
+                final action = item['action'];
+                if (action is Map) {
+                  final sources = action['sources'];
+                  if (sources is List) {
+                    for (final s in sources) {
+                      if (s is! Map) continue;
+                      if (s['type'] != 'url') continue;
+                      final url = s['url'];
+                      if (url is! String || url.isEmpty) continue;
+
+                      final part = _newSourceUrlPart(
+                        url: url,
+                        title:
+                            s['title'] is String ? s['title'] as String : null,
+                        providerMetadata: {
+                          config.providerId: {'type': 'web_search_call'},
+                        },
+                      );
+                      if (part != null) yield part;
+                    }
+                  }
+                }
+              }
+
               final metadata = OpenAIResponsesResponse(
                 _buildPartialResponse(),
                 null,
@@ -250,8 +277,31 @@ class OpenAIResponses
 
           if (eventType == 'response.output_text.annotation.added') {
             final annotation = json['annotation'];
-            if (annotation != null) {
+            if (annotation is Map) {
               _outputTextAnnotations.add(annotation);
+
+              if (annotation['type'] == 'url_citation') {
+                final url = annotation['url'];
+                if (url is String && url.isNotEmpty) {
+                  final part = _newSourceUrlPart(
+                    url: url,
+                    title: annotation['title'] is String
+                        ? annotation['title'] as String
+                        : null,
+                    providerMetadata: {
+                      config.providerId: {
+                        'type': 'url_citation',
+                        if (annotation['start_index'] is int)
+                          'startIndex': annotation['start_index'],
+                        if (annotation['end_index'] is int)
+                          'endIndex': annotation['end_index'],
+                      },
+                    },
+                  );
+                  if (part != null) yield part;
+                }
+              }
+
               final metadata = OpenAIResponsesResponse(
                 _buildPartialResponse(),
                 null,
@@ -1183,6 +1233,26 @@ class OpenAIResponses
     _outputTextAnnotations.clear();
     _partialResponse = null;
     _partialOutput = null;
+    _sourceIdByUrl.clear();
+    _nextSourceSeq = 0;
+  }
+
+  String _sourceIdForUrl(String url) {
+    return _sourceIdByUrl.putIfAbsent(url, () => 'source_${_nextSourceSeq++}');
+  }
+
+  LLMSourceUrlPart? _newSourceUrlPart({
+    required String url,
+    String? title,
+    Map<String, dynamic>? providerMetadata,
+  }) {
+    if (_sourceIdByUrl.containsKey(url)) return null;
+    return LLMSourceUrlPart(
+      sourceId: _sourceIdForUrl(url),
+      url: url,
+      title: title,
+      providerMetadata: providerMetadata,
+    );
   }
 
   Map<String, dynamic> _buildPartialResponse() {

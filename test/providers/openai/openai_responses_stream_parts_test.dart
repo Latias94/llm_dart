@@ -34,6 +34,10 @@ void main() {
           parts.whereType<LLMProviderMetadataPart>().toList();
       expect(providerMetadataParts, isNotEmpty);
 
+      final sources = parts.whereType<LLMSourceUrlPart>().toList();
+      expect(sources, hasLength(1));
+      expect(sources.single.url, equals('https://example.com'));
+
       final lastMetadata = providerMetadataParts.last.providerMetadata;
       final openai = lastMetadata['openai'] as Map<String, dynamic>;
       expect(openai['id'], equals('resp_1'));
