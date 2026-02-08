@@ -40,6 +40,9 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
 
   final contentBlocks = <Map<String, dynamic>>[];
 
+  final sourceIdByUrl = <String, String>{};
+  var nextSourceSeq = 0;
+
   String? messageId;
   String? model;
   String? stopReason;
@@ -58,6 +61,34 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
 
   final startedToolCalls = <String>{};
   final endedToolCalls = <String>{};
+
+  LLMSourceUrlPart? newSourceUrlPartFromCitation(Map citation) {
+    final url = citation['url'];
+    if (url is! String || url.isEmpty) return null;
+
+    if (sourceIdByUrl.containsKey(url)) return null;
+    final sourceId = sourceIdByUrl.putIfAbsent(
+      url,
+      () => 'source_${nextSourceSeq++}',
+    );
+
+    final title = citation['title'];
+    final citationType = citation['type'];
+    final encryptedIndex = citation['encrypted_index'];
+
+    return LLMSourceUrlPart(
+      sourceId: sourceId,
+      url: url,
+      title: title is String ? title : null,
+      providerMetadata: {
+        config.providerId: {
+          'type': 'citation',
+          if (citationType is String) 'citationType': citationType,
+          if (encryptedIndex is String) 'encryptedIndex': encryptedIndex,
+        },
+      },
+    );
+  }
 
   LLMProviderMetadataPart? computeProviderMetadataPart() {
     final raw = <String, dynamic>{
@@ -268,10 +299,16 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
               currentTextIndex = index;
               final citationsRaw = contentBlock['citations'];
               if (citationsRaw is List) {
-                textBlockCitations[index] = citationsRaw
+                final citations = citationsRaw
                     .whereType<Map>()
                     .map((m) => Map<String, dynamic>.from(m))
                     .toList(growable: true);
+                textBlockCitations[index] = citations;
+
+                for (final c in citations) {
+                  final part = newSourceUrlPartFromCitation(c);
+                  if (part != null) yield part;
+                }
               }
               yield const LLMTextStartPart();
             } else if (blockType == 'thinking') {
@@ -378,7 +415,11 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
               if (citation is Map && index == currentTextIndex) {
                 final list = textBlockCitations.putIfAbsent(
                     index, () => <Map<String, dynamic>>[]);
-                list.add(Map<String, dynamic>.from(citation));
+                final mapped = Map<String, dynamic>.from(citation);
+                list.add(mapped);
+
+                final part = newSourceUrlPartFromCitation(mapped);
+                if (part != null) yield part;
               }
               break;
             }
