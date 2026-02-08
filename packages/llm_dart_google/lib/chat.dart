@@ -673,7 +673,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         // Detect SSE by looking for `data:` / `event:` at the start of a line.
         // This is important because chunks can be split such that the first
         // chunk contains only `event:` without `data:`.
-        final looksLikeSse = RegExp(r'(^|\n)(data|event):', multiLine: true)
+        final looksLikeSse = RegExp(r'(^|\n)(:|data:|event:)', multiLine: true)
             .hasMatch(chunk);
         _streamMode = looksLikeSse
             ? _GoogleStreamMode.sse
