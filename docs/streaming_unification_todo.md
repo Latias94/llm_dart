@@ -150,7 +150,7 @@ Acceptance criteria:
 Priority order:
 
 - [x] `openai-compatible responses`: derive legacy `chatStream` from `chatStreamParts`
-- [ ] `openai-compatible responses`: remove legacy stream event parser code
+- [x] `openai-compatible responses`: remove legacy stream event parser code
 - [ ] `openai` + `azure` providers (Responses mode): ensure consistent parts semantics
 - [x] `openai-compatible responses`: emit server tool calls via typed parts
 - [x] `xai.responses`: emit citations/sources via typed parts
