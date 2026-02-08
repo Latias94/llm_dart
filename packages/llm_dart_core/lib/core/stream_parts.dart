@@ -102,6 +102,80 @@ class LLMProviderMetadataPart extends LLMStreamPart {
   const LLMProviderMetadataPart(this.providerMetadata);
 }
 
+/// A tool call that will be executed by the provider (server-side).
+///
+/// This mirrors the Vercel AI SDK "tool-call" with `providerExecuted=true`,
+/// but uses a dedicated part type to avoid accidental execution in local tool
+/// loops that only handle function tools.
+class LLMProviderToolCallPart extends LLMStreamPart {
+  /// Provider-stable tool call id within a single response.
+  final String toolCallId;
+
+  /// Provider tool name (e.g. `web_search`, `file_search`).
+  final String toolName;
+
+  /// Tool input payload (best-effort JSON-serializable object).
+  ///
+  /// Some providers encode inputs as a stringified JSON object.
+  final Object? input;
+
+  /// Whether the tool is dynamic (defined at runtime).
+  final bool? isDynamic;
+
+  /// Optional provider metadata for this tool call.
+  ///
+  /// When present, it follows the same shape as [ChatResponse.providerMetadata]:
+  /// `{ providerId: { ... } }`.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMProviderToolCallPart({
+    required this.toolCallId,
+    required this.toolName,
+    this.input,
+    this.isDynamic,
+    this.providerMetadata,
+  });
+}
+
+/// Result of a tool call that has been executed by the provider (server-side).
+///
+/// This mirrors the Vercel AI SDK "tool-result" concept.
+class LLMProviderToolResultPart extends LLMStreamPart {
+  /// Tool call id that this result is associated with.
+  final String toolCallId;
+
+  /// Provider tool name (e.g. `web_search`, `file_search`).
+  final String toolName;
+
+  /// Result payload (best-effort JSON-serializable object).
+  final Object? result;
+
+  /// Optional flag if the result is an error.
+  final bool? isError;
+
+  /// Whether the tool result is preliminary (e.g. previews).
+  final bool? preliminary;
+
+  /// Whether the tool is dynamic (defined at runtime).
+  final bool? isDynamic;
+
+  /// Optional provider metadata for this tool result.
+  ///
+  /// When present, it follows the same shape as [ChatResponse.providerMetadata]:
+  /// `{ providerId: { ... } }`.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMProviderToolResultPart({
+    required this.toolCallId,
+    required this.toolName,
+    this.result,
+    this.isError,
+    this.preliminary,
+    this.isDynamic,
+    this.providerMetadata,
+  });
+}
+
 /// A URL source that has been used as input to generate the response.
 ///
 /// This mirrors the Vercel AI SDK "source-url" concept.

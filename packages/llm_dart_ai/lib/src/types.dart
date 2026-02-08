@@ -41,6 +41,42 @@ class ToolCallDeltaPart extends TextStreamPart {
   const ToolCallDeltaPart(this.toolCall);
 }
 
+class ProviderToolCallPart extends TextStreamPart {
+  final String toolCallId;
+  final String toolName;
+  final Object? input;
+  final bool? isDynamic;
+  final Map<String, dynamic>? providerMetadata;
+
+  const ProviderToolCallPart({
+    required this.toolCallId,
+    required this.toolName,
+    this.input,
+    this.isDynamic,
+    this.providerMetadata,
+  });
+}
+
+class ProviderToolResultPart extends TextStreamPart {
+  final String toolCallId;
+  final String toolName;
+  final Object? result;
+  final bool? isError;
+  final bool? preliminary;
+  final bool? isDynamic;
+  final Map<String, dynamic>? providerMetadata;
+
+  const ProviderToolResultPart({
+    required this.toolCallId,
+    required this.toolName,
+    this.result,
+    this.isError,
+    this.preliminary,
+    this.isDynamic,
+    this.providerMetadata,
+  });
+}
+
 class SourceUrlPart extends TextStreamPart {
   final String sourceId;
   final String url;

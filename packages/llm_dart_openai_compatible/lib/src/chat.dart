@@ -90,6 +90,8 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
         case LLMToolResultPart():
         case LLMSourceUrlPart():
         case LLMSourceDocumentPart():
+        case LLMProviderToolCallPart():
+        case LLMProviderToolResultPart():
           // Not represented in legacy ChatStreamEvent.
           break;
       }

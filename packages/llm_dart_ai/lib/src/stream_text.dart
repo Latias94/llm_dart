@@ -53,6 +53,40 @@ Stream<TextStreamPart> streamText({
       case LLMToolCallDeltaPart(:final toolCall):
         yield ToolCallDeltaPart(toolCall);
 
+      case LLMProviderToolCallPart(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          input: final input,
+          isDynamic: final isDynamic,
+          providerMetadata: final providerMetadata,
+        ):
+        yield ProviderToolCallPart(
+          toolCallId: toolCallId,
+          toolName: toolName,
+          input: input,
+          isDynamic: isDynamic,
+          providerMetadata: providerMetadata,
+        );
+
+      case LLMProviderToolResultPart(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          result: final result,
+          isError: final isError,
+          preliminary: final preliminary,
+          isDynamic: final isDynamic,
+          providerMetadata: final providerMetadata,
+        ):
+        yield ProviderToolResultPart(
+          toolCallId: toolCallId,
+          toolName: toolName,
+          result: result,
+          isError: isError,
+          preliminary: preliminary,
+          isDynamic: isDynamic,
+          providerMetadata: providerMetadata,
+        );
+
       case LLMSourceUrlPart(
           sourceId: final sourceId,
           url: final url,

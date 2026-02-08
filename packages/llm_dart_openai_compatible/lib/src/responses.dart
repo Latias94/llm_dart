@@ -148,6 +148,8 @@ class OpenAIResponses
     var inText = false;
     var inThinking = false;
     final activeToolCalls = <String>{};
+    final activeProviderToolCalls = <String>{};
+    final endedProviderToolCalls = <String>{};
 
     var didFinish = false;
 
@@ -231,6 +233,68 @@ class OpenAIResponses
 
                   if (activeToolCalls.remove(callId)) {
                     yield LLMToolCallEndPart(callId);
+                  }
+                }
+              }
+            }
+
+            if (item is Map) {
+              final rawType = item['type'];
+              if (rawType is String &&
+                  rawType.endsWith('_call') &&
+                  rawType != 'function_call') {
+                final id = item['id'] as String? ?? '';
+                if (id.isNotEmpty) {
+                  final toolName = rawType.substring(0, rawType.length - 5);
+
+                  if (eventType == 'response.output_item.added') {
+                    if (activeProviderToolCalls.add(id)) {
+                      yield LLMProviderToolCallPart(
+                        toolCallId: id,
+                        toolName: toolName,
+                        input: item['arguments'] ?? item['action'],
+                        providerMetadata: {
+                          config.providerId: {'type': rawType},
+                        },
+                      );
+                    }
+                  } else if (eventType == 'response.output_item.done') {
+                    if (!endedProviderToolCalls.add(id)) {
+                      // Ignore duplicate done events for the same provider tool call.
+                      continue;
+                    }
+
+                    if (activeProviderToolCalls.add(id)) {
+                      // Some fixtures may only include a `done` item. Emit a call
+                      // part best-effort so consumers always see the invocation.
+                      yield LLMProviderToolCallPart(
+                        toolCallId: id,
+                        toolName: toolName,
+                        input: item['arguments'] ?? item['action'],
+                        providerMetadata: {
+                          config.providerId: {'type': rawType},
+                        },
+                      );
+                    }
+
+                    {
+                      yield LLMProviderToolResultPart(
+                        toolCallId: id,
+                        toolName: toolName,
+                        result: item.map<String, dynamic>(
+                          (key, value) => MapEntry(key.toString(), value),
+                        ),
+                        providerMetadata: {
+                          config.providerId: {
+                            'type': rawType,
+                            if (item['status'] is String)
+                              'status': item['status'],
+                          },
+                        },
+                      );
+                    }
+
+                    activeProviderToolCalls.remove(id);
                   }
                 }
               }

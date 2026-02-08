@@ -127,6 +127,8 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
     final toolAccums = <String, _FunctionCallAccum>{};
     final startedToolCalls = <String>{};
     final endedToolCalls = <String>{};
+    final activeProviderToolCalls = <String>{};
+    final endedProviderToolCalls = <String>{};
 
     Map<String, dynamic>? finalResponseObject;
 
@@ -322,6 +324,51 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
             if (type is String && type.endsWith('_call')) {
               final id = item['id']?.toString() ?? '';
               if (id.isNotEmpty) {
+                final toolName = (item['name'] is String &&
+                        (item['name'] as String).isNotEmpty)
+                    ? item['name'] as String
+                    : type.substring(0, type.length - 5);
+
+                if (eventType == 'response.output_item.added') {
+                  if (activeProviderToolCalls.add(id)) {
+                    yield LLMProviderToolCallPart(
+                      toolCallId: id,
+                      toolName: toolName,
+                      input: item['arguments'] ?? item['action'],
+                      providerMetadata: {
+                        config.providerId: {'type': type},
+                      },
+                    );
+                  }
+                } else if (eventType == 'response.output_item.done') {
+                  if (!endedProviderToolCalls.add(id)) continue;
+
+                  if (activeProviderToolCalls.add(id)) {
+                    yield LLMProviderToolCallPart(
+                      toolCallId: id,
+                      toolName: toolName,
+                      input: item['arguments'] ?? item['action'],
+                      providerMetadata: {
+                        config.providerId: {'type': type},
+                      },
+                    );
+                  }
+
+                  yield LLMProviderToolResultPart(
+                    toolCallId: id,
+                    toolName: toolName,
+                    result: _stringKeyedMap(item),
+                    providerMetadata: {
+                      config.providerId: {
+                        'type': type,
+                        if (item['status'] is String) 'status': item['status'],
+                      },
+                    },
+                  );
+
+                  activeProviderToolCalls.remove(id);
+                }
+
                 serverToolCallsById[id] = _stringKeyedMap(item);
                 if (eventType == 'response.output_item.done') {
                   yield LLMProviderMetadataPart({
