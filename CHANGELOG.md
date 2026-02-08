@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.6] - 2026-02-08
+
+### Fixed
+
+- **Google Chat Streaming**: Fixed `chatStream()` for Gemini gateways that return SSE (`data: ...\n\n`) instead of a JSON array, ensuring `TextDeltaEvent`/`CompletionEvent` are emitted correctly (in [#28](https://github.com/Latias94/llm_dart/pull/28)).
+- **Sensitive Data in Logs**: Redacted API keys/tokens from debug logs for request endpoints and headers (in [#28](https://github.com/Latias94/llm_dart/pull/28)).
+
 ## [0.10.5] - 2025-11-26
 
 ### Added
