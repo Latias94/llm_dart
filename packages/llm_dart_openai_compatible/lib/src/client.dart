@@ -142,9 +142,11 @@ class OpenAIClient {
 
       // Handle completion signal.
       if (data == '[DONE]') {
-        // Clear buffer and return empty list to signal completion.
+        // Clear buffer and stop processing this chunk.
+        // Note: a single network chunk can contain multiple SSE events; do not
+        // discard already-parsed JSON objects that appeared before [DONE].
         _sseParser.reset();
-        return [];
+        break;
       }
 
       // Skip empty data.
