@@ -13,6 +13,7 @@ import 'config.dart';
 class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
   final OllamaClient client;
   final OllamaConfig config;
+  final Map<String, int> _streamToolCallNameCounts = <String, int>{};
 
   OllamaChat(this.client, this.config);
 
@@ -54,6 +55,8 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
       return;
     }
 
+    _streamToolCallNameCounts.clear();
+
     try {
       final effectiveTools = tools ?? config.tools;
       final requestBody = _buildRequestBody(messages, effectiveTools, true);
@@ -75,6 +78,12 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
     } catch (e) {
       yield ErrorEvent(GenericError('Unexpected error: $e'));
     }
+  }
+
+  String _nextStreamToolCallId(String name) {
+    final count = _streamToolCallNameCounts[name] ?? 0;
+    _streamToolCallNameCounts[name] = count + 1;
+    return count == 0 ? 'call_$name' : 'call_${name}_$count';
   }
 
   @override
@@ -307,38 +316,38 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
   ) {
     final events = <ChatStreamEvent>[];
     for (final json in jsonlParser.parseObjects(chunk)) {
-      final event = _parseStreamEvent(json);
-      if (event != null) {
-        events.add(event);
-      }
+      events.addAll(_parseStreamEvent(json));
     }
 
     return events;
   }
 
   /// Parse individual stream event
-  ChatStreamEvent? _parseStreamEvent(Map<String, dynamic> json) {
+  List<ChatStreamEvent> _parseStreamEvent(Map<String, dynamic> json) {
+    final events = <ChatStreamEvent>[];
     final message = json['message'] as Map<String, dynamic>?;
     if (message != null) {
       final toolCalls = message['tool_calls'] as List?;
       if (toolCalls != null && toolCalls.isNotEmpty) {
         try {
-          final tc = toolCalls.first;
-          if (tc is Map<String, dynamic>) {
-            final function = tc['function'] as Map<String, dynamic>?;
+          for (final rawCall in toolCalls) {
+            if (rawCall is! Map<String, dynamic>) continue;
+            final function = rawCall['function'] as Map<String, dynamic>?;
             final name = function?['name'] as String?;
-            if (name != null && name.isNotEmpty) {
-              return ToolCallDeltaEvent(
+            if (name == null || name.isEmpty) continue;
+
+            events.add(
+              ToolCallDeltaEvent(
                 ToolCall(
-                  id: 'call_$name',
+                  id: _nextStreamToolCallId(name),
                   callType: 'function',
                   function: FunctionCall(
                     name: name,
                     arguments: jsonEncode(function?['arguments']),
                   ),
                 ),
-              );
-            }
+              ),
+            );
           }
         } catch (_) {
           // Ignore malformed tool calls in the legacy stream surface.
@@ -348,12 +357,12 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
       // Check for thinking content in stream
       final thinking = message['thinking'] as String?;
       if (thinking != null && thinking.isNotEmpty) {
-        return ThinkingDeltaEvent(thinking);
+        events.add(ThinkingDeltaEvent(thinking));
       }
 
       final content = message['content'] as String?;
       if (content != null && content.isNotEmpty) {
-        return TextDeltaEvent(content);
+        events.add(TextDeltaEvent(content));
       }
     }
 
@@ -361,10 +370,10 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
     final done = json['done'] as bool?;
     if (done == true) {
       final response = OllamaChatResponse(json);
-      return CompletionEvent(response);
+      events.add(CompletionEvent(response));
     }
 
-    return null;
+    return events;
   }
 
   /// Build request body for Ollama API
