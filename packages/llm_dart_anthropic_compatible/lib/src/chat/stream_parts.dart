@@ -43,6 +43,10 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
   final sourceIdByUrl = <String, String>{};
   var nextSourceSeq = 0;
 
+  final providerToolNameById = <String, String>{};
+  final emittedProviderToolCallIds = <String>{};
+  final emittedProviderToolResultIds = <String>{};
+
   String? messageId;
   String? model;
   String? stopReason;
@@ -88,6 +92,43 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
         },
       },
     );
+  }
+
+  LLMSourceUrlPart? newSourceUrlPartFromWebSearchResult(Map result) {
+    final url = result['url'];
+    if (url is! String || url.isEmpty) return null;
+
+    if (sourceIdByUrl.containsKey(url)) return null;
+    final sourceId = sourceIdByUrl.putIfAbsent(
+      url,
+      () => 'source_${nextSourceSeq++}',
+    );
+
+    final title = result['title'];
+    final pageAge = result['page_age'];
+
+    return LLMSourceUrlPart(
+      sourceId: sourceId,
+      url: url,
+      title: title is String ? title : null,
+      providerMetadata: {
+        config.providerId: {
+          'type': 'web_search_result',
+          if (pageAge is String) 'pageAge': pageAge,
+        },
+      },
+    );
+  }
+
+  String? inferProviderToolNameFromResultBlockType(String blockType) {
+    if (!blockType.endsWith('_tool_result')) return null;
+    return blockType.substring(0, blockType.length - '_tool_result'.length);
+  }
+
+  bool isLikelyToolResultError(Object? content) {
+    if (content is! Map) return false;
+    final t = content['type'];
+    return t is String && t.contains('_error');
   }
 
   LLMProviderMetadataPart? computeProviderMetadataPart() {
@@ -375,6 +416,78 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                 blockType == 'web_search_tool_result' ||
                 blockType.endsWith('_tool_result')) {
               pendingBlocks[index] = Map<String, dynamic>.from(contentBlock);
+
+              if (blockType == 'server_tool_use' ||
+                  blockType == 'mcp_tool_use') {
+                final id = contentBlock['id'];
+                final name = contentBlock['name'];
+                final input = contentBlock['input'];
+
+                if (id is String &&
+                    id.isNotEmpty &&
+                    name is String &&
+                    name.isNotEmpty) {
+                  providerToolNameById[id] = name;
+                  if (emittedProviderToolCallIds.add(id)) {
+                    yield LLMProviderToolCallPart(
+                      toolCallId: id,
+                      toolName: name,
+                      input: input,
+                      isDynamic: blockType == 'mcp_tool_use' ? true : null,
+                      providerMetadata: {
+                        config.providerId: {
+                          'type': blockType,
+                        },
+                      },
+                    );
+                  }
+                }
+                break;
+              }
+
+              final toolUseId = contentBlock['tool_use_id'];
+              if (toolUseId is String && toolUseId.isNotEmpty) {
+                final toolName = providerToolNameById[toolUseId] ??
+                    inferProviderToolNameFromResultBlockType(blockType) ??
+                    'tool';
+
+                final content = contentBlock['content'];
+                final isError = isLikelyToolResultError(content);
+                Object? resultPayload = content;
+
+                if (content is List) {
+                  resultPayload = content
+                      .whereType<Map>()
+                      .map((m) => Map<String, dynamic>.from(m))
+                      .toList(growable: false);
+
+                  if (blockType == 'web_search_tool_result') {
+                    for (final item in resultPayload as List) {
+                      if (item is! Map) continue;
+                      if (item['type'] != 'web_search_result') continue;
+                      final p = newSourceUrlPartFromWebSearchResult(item);
+                      if (p != null) yield p;
+                    }
+                  }
+                } else if (content is Map) {
+                  resultPayload = Map<String, dynamic>.from(content);
+                }
+
+                if (emittedProviderToolResultIds.add(toolUseId)) {
+                  yield LLMProviderToolResultPart(
+                    toolCallId: toolUseId,
+                    toolName: toolName,
+                    result: resultPayload,
+                    isError: isError ? true : null,
+                    isDynamic: blockType == 'mcp_tool_result' ? true : null,
+                    providerMetadata: {
+                      config.providerId: {
+                        'type': blockType,
+                      },
+                    },
+                  );
+                }
+              }
             }
             break;
 
