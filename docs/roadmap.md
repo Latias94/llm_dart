@@ -113,6 +113,10 @@ Outcome:
 
 Status: planned.
 
+Tracking:
+
+- `docs/streaming_unification_todo.md` (living milestone checklist)
+
 ### MVP 4: Expand protocol reuse + reduce provider duplication
 
 Outcome:
