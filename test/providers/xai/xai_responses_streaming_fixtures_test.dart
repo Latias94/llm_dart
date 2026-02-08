@@ -67,7 +67,8 @@ void main() {
           final item = j['item'];
           if (item is! Map) return false;
           final type = item['type'];
-          return type is String && type.endsWith('_call');
+          return type is String &&
+              (type.endsWith('_call') || type == 'custom_tool_call');
         });
 
         final metadata = finish.response.providerMetadata?['xai.responses'];

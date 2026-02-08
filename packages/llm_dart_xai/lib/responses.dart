@@ -130,6 +130,30 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
     final activeProviderToolCalls = <String>{};
     final endedProviderToolCalls = <String>{};
     final providerToolTypeById = <String, String>{};
+    final providerToolNameById = <String, String>{};
+    final customToolInputById = <String, StringBuffer>{};
+
+    String normalizeCustomToolName(String rawName) {
+      const webSearchSubTools = {
+        'web_search',
+        'web_search_with_snippets',
+        'browse_page',
+      };
+
+      const xSearchSubTools = {
+        'x_user_search',
+        'x_keyword_search',
+        'x_semantic_search',
+        'x_thread_fetch',
+      };
+
+      if (webSearchSubTools.contains(rawName)) return 'web_search';
+      if (xSearchSubTools.contains(rawName)) return 'x_search';
+      if (rawName == 'code_execution') return 'code_execution';
+      if (rawName == 'view_image') return 'view_image';
+      if (rawName == 'view_x_video') return 'view_x_video';
+      return rawName;
+    }
 
     Map<String, dynamic>? finalResponseObject;
 
@@ -190,6 +214,51 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
                 }
               }
             }
+          }
+
+          if (eventType == 'response.custom_tool_call_input.delta') {
+            final toolCallId = json['item_id']?.toString();
+            final delta = json['delta'] as String?;
+            if (toolCallId != null &&
+                toolCallId.isNotEmpty &&
+                delta != null &&
+                delta.isNotEmpty) {
+              final buffer =
+                  customToolInputById.putIfAbsent(toolCallId, StringBuffer.new);
+              buffer.write(delta);
+
+              yield LLMProviderToolDeltaPart(
+                toolCallId: toolCallId,
+                toolName: providerToolNameById[toolCallId] ?? 'custom_tool',
+                status: 'input_delta',
+                data: _stringKeyedMap(json),
+                providerMetadata: {
+                  config.providerId: {'type': eventType},
+                },
+              );
+            }
+            continue;
+          }
+
+          if (eventType == 'response.custom_tool_call_input.done') {
+            final toolCallId = json['item_id']?.toString();
+            final input = json['input'] as String?;
+            if (toolCallId != null && toolCallId.isNotEmpty) {
+              if (input != null && input.isNotEmpty) {
+                customToolInputById[toolCallId] = StringBuffer(input);
+              }
+
+              yield LLMProviderToolDeltaPart(
+                toolCallId: toolCallId,
+                toolName: providerToolNameById[toolCallId] ?? 'custom_tool',
+                status: 'input_done',
+                data: _stringKeyedMap(json),
+                providerMetadata: {
+                  config.providerId: {'type': eventType},
+                },
+              );
+            }
+            continue;
           }
 
           if (eventType == 'response.reasoning_summary_part.added') {
@@ -345,21 +414,31 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
             }
 
             final type = item['type'];
-            if (type is String && type.endsWith('_call')) {
+            if (type is String &&
+                (type.endsWith('_call') || type == 'custom_tool_call')) {
               final id = item['id']?.toString() ?? '';
               if (id.isNotEmpty) {
-                final toolName = (item['name'] is String &&
-                        (item['name'] as String).isNotEmpty)
-                    ? item['name'] as String
-                    : type.substring(0, type.length - 5);
+                final rawName = item['name'] as String? ?? '';
+                final toolName = type == 'custom_tool_call'
+                    ? (rawName.isNotEmpty
+                        ? normalizeCustomToolName(rawName)
+                        : 'custom_tool')
+                    : (rawName.isNotEmpty
+                        ? rawName
+                        : type.substring(0, type.length - 5));
                 providerToolTypeById[id] = type;
+                providerToolNameById[id] = toolName;
+
+                final input = type == 'custom_tool_call'
+                    ? (item['input'] ?? customToolInputById[id]?.toString())
+                    : (item['arguments'] ?? item['action']);
 
                 if (eventType == 'response.output_item.added') {
                   if (activeProviderToolCalls.add(id)) {
                     yield LLMProviderToolCallPart(
                       toolCallId: id,
                       toolName: toolName,
-                      input: item['arguments'] ?? item['action'],
+                      input: input,
                       providerMetadata: {
                         config.providerId: {'type': type},
                       },
@@ -372,7 +451,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
                     yield LLMProviderToolCallPart(
                       toolCallId: id,
                       toolName: toolName,
-                      input: item['arguments'] ?? item['action'],
+                      input: input,
                       providerMetadata: {
                         config.providerId: {'type': type},
                       },
@@ -783,7 +862,8 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
           continue;
         }
 
-        if (type is String && type.endsWith('_call')) {
+        if (type is String &&
+            (type.endsWith('_call') || type == 'custom_tool_call')) {
           serverToolCalls.add(_stringKeyedMap(item));
         }
       }
