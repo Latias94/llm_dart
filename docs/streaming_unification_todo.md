@@ -54,6 +54,17 @@ Optional but valuable (for multi-block providers):
 - add `blockId` to text/reasoning parts so multiple output blocks can be represented
   without flattening.
 
+### A.1) Additional breaking cleanups (recommended)
+
+- Remove providerMetadata alias proliferation over time:
+  - Today we sometimes expose both a base key (e.g. `openai`) and capability aliases
+    (e.g. `openai.chat`, `openai.responses`).
+  - During the refactor, prefer a **single canonical key** per provider (e.g. `openai`,
+    `azure`, `xai.responses`), and migrate callers to that.
+- Make `finishReason` a real, typed value:
+  - Stop forcing consumers to decode finish semantics from ad-hoc provider metadata.
+  - Keep raw provider reason as an escape hatch.
+
 ### B) Keep legacy events as adapters (until removal)
 
 - Keep `ChatStreamEvent` temporarily, but treat it as a compatibility layer.
@@ -90,6 +101,18 @@ Still has drift risk:
 
 ---
 
+## Breaking surface inventory (what will likely change)
+
+These changes are expected to break downstream code:
+
+- `LLMStreamPart` gains new subclasses (pattern matching `switch` becomes non-exhaustive).
+- `TextStreamPart` and legacy streaming helpers may need to ignore or expose new parts.
+- `ChatStreamEvent` is expected to be deprecated and removed (timeline TBD).
+- `GenerateTextResult` / `streamText` may change how they surface sources and finish reason.
+- Provider metadata keys may change (canonicalization; alias removal).
+
+---
+
 ## Milestones (TODO checklist)
 
 ### M0 — Decision + scope lock
@@ -106,11 +129,20 @@ Still has drift risk:
 - [ ] Update `packages/llm_dart_ai/lib/src/stream_parts.dart` adapters accordingly
 - [ ] Update `packages/llm_dart_ai/lib/src/tool_loop.dart` parts-mode loop integration
 
+Acceptance criteria:
+
+- All existing providers still compile.
+- New part types are not dropped silently in core adapters (explicitly handled/ignored).
+
 ### M2 — Tool loop safety upgrades
 
 - [ ] Ensure tool loop only executes “local function tools”
 - [ ] If provider tools are emitted as tool-like parts, add explicit skip rules
 - [ ] Add tests: provider tool parts never become `ChatResponse.toolCalls`
+
+Acceptance criteria:
+
+- It is impossible for a provider-executed tool to be executed locally by mistake.
 
 ### M3 — Provider migrations (single parsing path)
 
@@ -121,6 +153,11 @@ Priority order:
 - [ ] `xai.responses`: emit citations/sources + server tool lifecycle via typed parts
 - [ ] `google`/`vertex`: emit grounding sources via typed parts
 - [ ] `anthropic`/`anthropic-compatible`: emit citations via typed parts
+
+Acceptance criteria:
+
+- Each provider has exactly one streaming parser/state machine.
+- Legacy streams are adapters only.
 
 ### M4 — Conformance tests (offline)
 
@@ -135,6 +172,12 @@ Priority order:
 - [ ] Add a migration guide (next alpha) describing new parts + adapter behavior
 - [ ] Update provider docs to mention typed `source` and provider tool parts
 
+Migration guide must include:
+
+- Before/after examples for consuming streams (parts vs legacy events).
+- How to access citations/sources after typed parts land.
+- Tool loop changes and how to safely handle provider tools.
+
 ### M6 — Cleanup + removal window
 
 - [ ] Deprecate legacy `ChatStreamEvent` surfaces (with a removal version target)
@@ -148,3 +191,12 @@ Priority order:
 - Should multi-block outputs be modeled (block ids) or flattened (status quo)?
 - Should `providerMetadata` remain the escape hatch for raw data, even when typed parts exist?
 
+---
+
+## Suggested execution order (pragmatic)
+
+1) Remove duplicate parsing paths (largest drift risk, lowest product impact)
+   - Start with `openai-compatible responses`.
+2) Add typed `source` parts (low risk, high UX value).
+3) Add provider tool lifecycle parts + tool loop skip rules (safety-critical).
+4) Add `finishReason` typing and unify mapping across providers.
