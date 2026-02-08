@@ -86,8 +86,25 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   String get _chatEndpoint =>
       '${googleModelPath(config.model)}:generateContent';
 
-  String get _chatStreamEndpoint =>
-      '${googleModelPath(config.model)}:streamGenerateContent?alt=sse';
+  bool get _isVertexLikeBaseUrl {
+    final url = config.baseUrl;
+    return url.contains('aiplatform.googleapis.com');
+  }
+
+  bool get _shouldUseAltSseParam {
+    // Gemini API (generativelanguage.googleapis.com) needs `alt=sse`.
+    // Vertex AI Gemini streaming uses `:streamGenerateContent` and is already
+    // streamed as SSE, so `alt=sse` is unnecessary and may be rejected by
+    // strict gateways. Align with Vercel AI SDK behavior.
+    if (_providerOptionsName == 'vertex') return false;
+    if (_isVertexLikeBaseUrl) return false;
+    return true;
+  }
+
+  String get _chatStreamEndpoint {
+    final base = '${googleModelPath(config.model)}:streamGenerateContent';
+    return _shouldUseAltSseParam ? '$base?alt=sse' : base;
+  }
 
   Future<_GoogleBuiltRequest> _buildRequestAsync(
     List<ChatMessage> messages,
