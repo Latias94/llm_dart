@@ -150,6 +150,7 @@ class Chatbot {
           case ThinkingDeltaPart():
           case ToolCallDeltaPart():
           case ProviderToolCallPart():
+          case ProviderToolDeltaPart():
           case ProviderToolResultPart():
           case SourceUrlPart():
           case SourceDocumentPart():

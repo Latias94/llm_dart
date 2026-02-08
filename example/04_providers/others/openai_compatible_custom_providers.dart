@@ -101,6 +101,11 @@ void main() async {
       case ProviderToolCallPart():
         print('providerToolCall: ${part.toolName} (${part.toolCallId})');
         break;
+      case ProviderToolDeltaPart():
+        print(
+          'providerToolDelta: ${part.toolName} (${part.toolCallId}) status=${part.status}',
+        );
+        break;
       case ProviderToolResultPart():
         print('providerToolResult: ${part.toolName} (${part.toolCallId})');
         break;

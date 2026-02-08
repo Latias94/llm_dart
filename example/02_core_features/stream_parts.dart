@@ -92,6 +92,16 @@ void main() async {
         stdout.writeln('[provider tool call] $toolName ($toolCallId)');
         break;
 
+      case LLMProviderToolDeltaPart(
+          :final toolCallId,
+          :final toolName,
+          :final status
+        ):
+        stdout.writeln(
+          '[provider tool delta] $toolName ($toolCallId) status=$status',
+        );
+        break;
+
       case LLMProviderToolResultPart(:final toolCallId, :final toolName):
         stdout.writeln('[provider tool result] $toolName ($toolCallId)');
         break;

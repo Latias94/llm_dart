@@ -179,6 +179,7 @@ Future<void> _processStreamingToolUse(
       case LLMSourceUrlPart():
       case LLMSourceDocumentPart():
       case LLMProviderToolCallPart():
+      case LLMProviderToolDeltaPart():
       case LLMProviderToolResultPart():
         // Ignore for this demo.
         break;
