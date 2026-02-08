@@ -40,7 +40,8 @@ Add new parts (names are placeholders; exact naming TBD):
 
 - `LLMStreamStartPart({List<String> warnings})` (optional)
 - `LLMResponseMetadataPart({String? id, String? model, Map<String, dynamic>? raw})`
-- `LLMSourcePart({String id, String sourceType, String url, String? title, Map<String, dynamic>? providerMetadata})`
+- `LLMSourceUrlPart({String sourceId, String url, String? title, Map<String, dynamic>? providerMetadata})`
+- `LLMSourceDocumentPart({String sourceId, String mediaType, String title, String? filename, Map<String, dynamic>? providerMetadata})`
 - Provider-executed tools (server tools):
   - `LLMProviderToolStartPart(...)`
   - `LLMProviderToolDeltaPart(...)`
@@ -97,7 +98,7 @@ Already aligned in code:
 
 Still has drift risk:
 
-- `openai-compatible responses` has both `chatStream` and `chatStreamParts` parsing streams
+- `openai-compatible responses` still contains legacy stream parsing code (unused) that should be deleted
 
 ---
 
@@ -120,11 +121,11 @@ These changes are expected to break downstream code:
 - [ ] Decide: expand current `LLMStreamPart` vs introduce `LLMStreamPartV2`
 - [ ] Define the “provider tool” representation (typed parts vs `providerExecuted` flag)
 - [ ] Define `finishReason` unified mapping (or keep raw + best-effort unified)
-- [ ] Define source/citation typing (URLs, file ids, provider-native citations)
+- [x] Define source/citation typing (URLs, documents, provider-native citations)
 
 ### M1 — Core: stream parts & types (breaking)
 
-- [ ] Update `packages/llm_dart_core/lib/core/stream_parts.dart` with new parts
+- [x] Update `packages/llm_dart_core/lib/core/stream_parts.dart` with new parts
 - [ ] Add stable `finishReason` model (core) and propagate it through parts/results
 - [ ] Update `packages/llm_dart_ai/lib/src/stream_parts.dart` adapters accordingly
 - [ ] Update `packages/llm_dart_ai/lib/src/tool_loop.dart` parts-mode loop integration
