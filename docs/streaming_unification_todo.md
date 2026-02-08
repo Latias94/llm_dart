@@ -157,6 +157,7 @@ Priority order:
 - [x] `xai.responses`: emit citations/sources via typed parts
 - [x] `xai.responses`: emit server tool calls via typed parts (call/result)
 - [x] `google`/`vertex`: emit grounding sources via typed parts
+- [x] `google`/`vertex`: emit provider tool parts for code execution (call/result)
 - [x] `anthropic`/`anthropic-compatible`: emit citations via typed parts
 
 Acceptance criteria:
