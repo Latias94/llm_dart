@@ -96,5 +96,64 @@ void main() {
       expect(metadata, isNotNull);
       expect(metadata!['ollama']['model'], equals('llama3.1'));
     });
+
+    test('assigns unique ids for repeated tool names across chunks', () async {
+      final config = OllamaConfig(
+        baseUrl: 'http://localhost:11434',
+        model: 'llama3.1',
+      );
+
+      final chunks = <String>[
+        '${jsonEncode({
+              'message': {
+                'role': 'assistant',
+                'tool_calls': [
+                  {
+                    'function': {
+                      'name': 'getWeather',
+                      'arguments': {'city': 'London'},
+                    },
+                  },
+                ],
+              },
+              'done': false,
+            })}\n',
+        '${jsonEncode({
+              'message': {
+                'role': 'assistant',
+                'tool_calls': [
+                  {
+                    'function': {
+                      'name': 'getWeather',
+                      'arguments': {'city': 'Paris'},
+                    },
+                  },
+                ],
+              },
+              'done': true,
+            })}\n',
+      ];
+
+      final client = _FakeOllamaClient(
+        config,
+        stream: Stream<String>.fromIterable(chunks),
+      );
+      final chat = OllamaChat(client, config);
+
+      final parts = await chat
+          .chatStreamParts([ChatMessage.user('Hi')], tools: const []).toList();
+
+      final toolStarts = parts.whereType<LLMToolCallStartPart>().toList();
+      expect(toolStarts, hasLength(2));
+      expect(toolStarts[0].toolCall.id, equals('call_getWeather'));
+      expect(toolStarts[1].toolCall.id, equals('call_getWeather_1'));
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      final calls = finish.response.toolCalls;
+      expect(calls, isNotNull);
+      expect(calls, hasLength(2));
+      expect(calls![0].id, equals('call_getWeather'));
+      expect(calls[1].id, equals('call_getWeather_1'));
+    });
   });
 }

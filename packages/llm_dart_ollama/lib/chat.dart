@@ -50,33 +50,29 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
-    if (config.baseUrl.isEmpty) {
-      yield ErrorEvent(const InvalidRequestError('Missing Ollama base URL'));
-      return;
-    }
-
-    _streamToolCallNameCounts.clear();
-
-    try {
-      final effectiveTools = tools ?? config.tools;
-      final requestBody = _buildRequestBody(messages, effectiveTools, true);
-      final jsonlParser = JsonlChunkParser();
-
-      // Create JSON stream
-      final stream = client.postStreamRaw(
-        chatEndpoint,
-        requestBody,
-        cancelToken: cancelToken,
-      );
-
-      await for (final chunk in stream) {
-        final events = _parseStreamEvents(chunk, jsonlParser);
-        for (final event in events) {
-          yield event;
-        }
+    await for (final part in chatStreamParts(
+      messages,
+      tools: tools,
+      cancelToken: cancelToken,
+    )) {
+      switch (part) {
+        case LLMTextDeltaPart(:final delta):
+          yield TextDeltaEvent(delta);
+        case LLMReasoningDeltaPart(:final delta):
+          yield ThinkingDeltaEvent(delta);
+        case LLMToolCallStartPart(:final toolCall):
+          yield ToolCallDeltaEvent(toolCall);
+        case LLMToolCallDeltaPart(:final toolCall):
+          yield ToolCallDeltaEvent(toolCall);
+        case LLMFinishPart(:final response):
+          yield CompletionEvent(response);
+        case LLMErrorPart(:final error):
+          yield ErrorEvent(error);
+          return;
+        default:
+          // Ignore structural parts and provider metadata for legacy event stream.
+          break;
       }
-    } catch (e) {
-      yield ErrorEvent(GenericError('Unexpected error: $e'));
     }
   }
 
@@ -97,6 +93,8 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
       return;
     }
 
+    _streamToolCallNameCounts.clear();
+
     final effectiveTools = tools ?? config.tools;
     final requestBody = _buildRequestBody(messages, effectiveTools, true);
     final jsonlParser = JsonlChunkParser();
@@ -110,11 +108,6 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
     final startedToolCalls = <String>{};
     final endedToolCalls = <String>{};
     final toolAccums = <String, _ToolCallAccum>{};
-
-    String nextToolCallId(String name, int index) {
-      if (index == 0) return 'call_$name';
-      return 'call_${name}_$index';
-    }
 
     try {
       final stream = client.postStreamRaw(
@@ -149,10 +142,8 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
 
             final toolCalls = message['tool_calls'] as List?;
             if (toolCalls != null && toolCalls.isNotEmpty) {
-              var i = 0;
               for (final rawCall in toolCalls) {
                 if (rawCall is! Map<String, dynamic>) {
-                  i++;
                   continue;
                 }
 
@@ -161,11 +152,10 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
                 final name = function['name'] as String? ?? '';
                 final args = function['arguments'];
                 if (name.isEmpty) {
-                  i++;
                   continue;
                 }
 
-                final id = nextToolCallId(name, i);
+                final id = _nextStreamToolCallId(name);
                 final argsJson = args is String ? args : jsonEncode(args);
 
                 final accum = toolAccums.putIfAbsent(
@@ -188,8 +178,6 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
                 } else {
                   yield LLMToolCallDeltaPart(toolCall);
                 }
-
-                i++;
               }
             }
           }
@@ -307,73 +295,6 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
   /// Parse response from Ollama API
   OllamaChatResponse _parseResponse(Map<String, dynamic> responseData) {
     return OllamaChatResponse(responseData);
-  }
-
-  /// Parse stream events from JSON chunks
-  List<ChatStreamEvent> _parseStreamEvents(
-    String chunk,
-    JsonlChunkParser jsonlParser,
-  ) {
-    final events = <ChatStreamEvent>[];
-    for (final json in jsonlParser.parseObjects(chunk)) {
-      events.addAll(_parseStreamEvent(json));
-    }
-
-    return events;
-  }
-
-  /// Parse individual stream event
-  List<ChatStreamEvent> _parseStreamEvent(Map<String, dynamic> json) {
-    final events = <ChatStreamEvent>[];
-    final message = json['message'] as Map<String, dynamic>?;
-    if (message != null) {
-      final toolCalls = message['tool_calls'] as List?;
-      if (toolCalls != null && toolCalls.isNotEmpty) {
-        try {
-          for (final rawCall in toolCalls) {
-            if (rawCall is! Map<String, dynamic>) continue;
-            final function = rawCall['function'] as Map<String, dynamic>?;
-            final name = function?['name'] as String?;
-            if (name == null || name.isEmpty) continue;
-
-            events.add(
-              ToolCallDeltaEvent(
-                ToolCall(
-                  id: _nextStreamToolCallId(name),
-                  callType: 'function',
-                  function: FunctionCall(
-                    name: name,
-                    arguments: jsonEncode(function?['arguments']),
-                  ),
-                ),
-              ),
-            );
-          }
-        } catch (_) {
-          // Ignore malformed tool calls in the legacy stream surface.
-        }
-      }
-
-      // Check for thinking content in stream
-      final thinking = message['thinking'] as String?;
-      if (thinking != null && thinking.isNotEmpty) {
-        events.add(ThinkingDeltaEvent(thinking));
-      }
-
-      final content = message['content'] as String?;
-      if (content != null && content.isNotEmpty) {
-        events.add(TextDeltaEvent(content));
-      }
-    }
-
-    // Check if this is the final message
-    final done = json['done'] as bool?;
-    if (done == true) {
-      final response = OllamaChatResponse(json);
-      events.add(CompletionEvent(response));
-    }
-
-    return events;
   }
 
   /// Build request body for Ollama API
