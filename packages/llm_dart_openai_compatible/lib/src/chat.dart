@@ -19,6 +19,8 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
   // State tracking for stream processing
   bool _hasReasoningContent = false;
   String _lastChunk = '';
+  bool _inThinkTag = false;
+  String _pendingThinkTagFragment = '';
   final StringBuffer _thinkingBuffer = StringBuffer();
   final Map<int, String> _toolCallIds = {};
 
@@ -132,26 +134,29 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           if (content != null && content.isNotEmpty) {
             _lastChunk = content;
 
-            if (ReasoningUtils.containsThinkingTags(content)) {
-              final thinkMatch = RegExp(
-                r'<think>(.*?)</think>',
-                dotAll: true,
-              ).firstMatch(content);
-              final thinkingText = thinkMatch?.group(1)?.trim();
-              if (thinkingText != null && thinkingText.isNotEmpty) {
-                fullThinking.write(thinkingText);
-                yield ThinkingDeltaEvent(thinkingText);
-              }
-            } else {
-              final reasoningResult = ReasoningUtils.checkReasoningStatus(
-                delta: delta,
-                hasReasoningContent: _hasReasoningContent,
-                lastChunk: _lastChunk,
-              );
-              _hasReasoningContent = reasoningResult.hasReasoningContent;
+            final pieces = _splitThinkTaggedDelta(content);
+            for (final piece in pieces) {
+              switch (piece) {
+                case _ThinkPieceText(:final text):
+                  if (text.isEmpty) continue;
+                  final reasoningResult = ReasoningUtils.checkReasoningStatus(
+                    delta: delta,
+                    hasReasoningContent: _hasReasoningContent,
+                    lastChunk: _lastChunk,
+                  );
+                  _hasReasoningContent = reasoningResult.hasReasoningContent;
 
-              fullText.write(content);
-              yield TextDeltaEvent(content);
+                  fullText.write(text);
+                  yield TextDeltaEvent(text);
+                case _ThinkPieceThinking(:final thinking):
+                  if (thinking.isEmpty) continue;
+                  fullThinking.write(thinking);
+                  yield ThinkingDeltaEvent(thinking);
+                case _ThinkPieceThinkingStart():
+                case _ThinkPieceThinkingEnd():
+                  // Legacy stream does not expose start/end boundaries.
+                  break;
+              }
             }
           }
 
@@ -230,6 +235,19 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
         }
       }
 
+      if (_pendingThinkTagFragment.isNotEmpty) {
+        final pending = _pendingThinkTagFragment;
+        _pendingThinkTagFragment = '';
+
+        if (_inThinkTag) {
+          fullThinking.write(pending);
+          yield ThinkingDeltaEvent(pending);
+        } else {
+          fullText.write(pending);
+          yield TextDeltaEvent(pending);
+        }
+      }
+
       final completedToolCalls = toolAccums.entries
           .map((e) => e.value.toToolCall(e.key))
           .toList(growable: false);
@@ -297,6 +315,8 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
 
     final fullText = StringBuffer();
     final fullThinking = StringBuffer();
+    final currentText = StringBuffer();
+    final currentThinking = StringBuffer();
 
     final toolAccums = <String, _ToolCallAccum>{};
     final startedToolCalls = <String>{};
@@ -350,11 +370,18 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           final reasoningContent =
               ReasoningUtils.extractReasoningContent(delta);
           if (reasoningContent != null && reasoningContent.isNotEmpty) {
+            if (inText) {
+              inText = false;
+              yield LLMTextEndPart(currentText.toString());
+              currentText.clear();
+            }
             if (!inThinking) {
               inThinking = true;
               yield const LLMReasoningStartPart();
+              currentThinking.clear();
             }
             fullThinking.write(reasoningContent);
+            currentThinking.write(reasoningContent);
             yield LLMReasoningDeltaPart(reasoningContent);
           }
 
@@ -363,34 +390,64 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           if (content != null && content.isNotEmpty) {
             _lastChunk = content;
 
-            if (ReasoningUtils.containsThinkingTags(content)) {
-              final thinkMatch = RegExp(
-                r'<think>(.*?)</think>',
-                dotAll: true,
-              ).firstMatch(content);
-              final thinkingText = thinkMatch?.group(1)?.trim();
-              if (thinkingText != null && thinkingText.isNotEmpty) {
-                if (!inThinking) {
-                  inThinking = true;
-                  yield const LLMReasoningStartPart();
-                }
-                fullThinking.write(thinkingText);
-                yield LLMReasoningDeltaPart(thinkingText);
-              }
-            } else {
-              final reasoningResult = ReasoningUtils.checkReasoningStatus(
-                delta: delta,
-                hasReasoningContent: _hasReasoningContent,
-                lastChunk: _lastChunk,
-              );
-              _hasReasoningContent = reasoningResult.hasReasoningContent;
+            final pieces = _splitThinkTaggedDelta(content);
+            for (final piece in pieces) {
+              switch (piece) {
+                case _ThinkPieceText(:final text):
+                  if (text.isEmpty) continue;
+                  if (inThinking) {
+                    inThinking = false;
+                    yield LLMReasoningEndPart(currentThinking.toString());
+                    currentThinking.clear();
+                  }
+                  final reasoningResult = ReasoningUtils.checkReasoningStatus(
+                    delta: delta,
+                    hasReasoningContent: _hasReasoningContent,
+                    lastChunk: _lastChunk,
+                  );
+                  _hasReasoningContent = reasoningResult.hasReasoningContent;
 
-              if (!inText) {
-                inText = true;
-                yield const LLMTextStartPart();
+                  if (!inText) {
+                    inText = true;
+                    yield const LLMTextStartPart();
+                    currentText.clear();
+                  }
+                  fullText.write(text);
+                  currentText.write(text);
+                  yield LLMTextDeltaPart(text);
+                case _ThinkPieceThinkingStart():
+                  if (inText) {
+                    inText = false;
+                    yield LLMTextEndPart(currentText.toString());
+                    currentText.clear();
+                  }
+                  if (!inThinking) {
+                    inThinking = true;
+                    yield const LLMReasoningStartPart();
+                    currentThinking.clear();
+                  }
+                case _ThinkPieceThinking(:final thinking):
+                  if (thinking.isEmpty) continue;
+                  if (inText) {
+                    inText = false;
+                    yield LLMTextEndPart(currentText.toString());
+                    currentText.clear();
+                  }
+                  if (!inThinking) {
+                    inThinking = true;
+                    yield const LLMReasoningStartPart();
+                    currentThinking.clear();
+                  }
+                  fullThinking.write(thinking);
+                  currentThinking.write(thinking);
+                  yield LLMReasoningDeltaPart(thinking);
+                case _ThinkPieceThinkingEnd():
+                  if (inThinking) {
+                    inThinking = false;
+                    yield LLMReasoningEndPart(currentThinking.toString());
+                    currentThinking.clear();
+                  }
               }
-              fullText.write(content);
-              yield LLMTextDeltaPart(content);
             }
           }
 
@@ -471,16 +528,55 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           // Finish.
           final fr = choice['finish_reason'] as String?;
           if (fr != null) {
+            if (_pendingThinkTagFragment.isNotEmpty) {
+              final pending = _pendingThinkTagFragment;
+              _pendingThinkTagFragment = '';
+
+              if (_inThinkTag) {
+                if (inText) {
+                  inText = false;
+                  yield LLMTextEndPart(currentText.toString());
+                  currentText.clear();
+                }
+                if (!inThinking) {
+                  inThinking = true;
+                  yield const LLMReasoningStartPart();
+                  currentThinking.clear();
+                }
+                fullThinking.write(pending);
+                currentThinking.write(pending);
+                yield LLMReasoningDeltaPart(pending);
+              } else {
+                if (inThinking) {
+                  inThinking = false;
+                  yield LLMReasoningEndPart(currentThinking.toString());
+                  currentThinking.clear();
+                }
+                if (!inText) {
+                  inText = true;
+                  yield const LLMTextStartPart();
+                  currentText.clear();
+                }
+                fullText.write(pending);
+                currentText.write(pending);
+                yield LLMTextDeltaPart(pending);
+              }
+            }
+
             finishReason = fr;
 
             if (!didEmitTerminalParts) {
               didEmitTerminalParts = true;
 
               if (inText) {
-                yield LLMTextEndPart(fullText.toString());
+                inText = false;
+                yield LLMTextEndPart(currentText.toString());
+                currentText.clear();
               }
               if (inThinking) {
-                yield LLMReasoningEndPart(fullThinking.toString());
+                inThinking = false;
+                yield LLMReasoningEndPart(currentThinking.toString());
+                currentThinking.clear();
               }
               for (final toolCallId in startedToolCalls) {
                 if (endedToolCalls.add(toolCallId)) {
@@ -489,6 +585,41 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
               }
             }
           }
+        }
+      }
+
+      if (_pendingThinkTagFragment.isNotEmpty) {
+        final pending = _pendingThinkTagFragment;
+        _pendingThinkTagFragment = '';
+
+        if (_inThinkTag) {
+          if (inText) {
+            inText = false;
+            yield LLMTextEndPart(currentText.toString());
+            currentText.clear();
+          }
+          if (!inThinking) {
+            inThinking = true;
+            yield const LLMReasoningStartPart();
+            currentThinking.clear();
+          }
+          fullThinking.write(pending);
+          currentThinking.write(pending);
+          yield LLMReasoningDeltaPart(pending);
+        } else {
+          if (inThinking) {
+            inThinking = false;
+            yield LLMReasoningEndPart(currentThinking.toString());
+            currentThinking.clear();
+          }
+          if (!inText) {
+            inText = true;
+            yield const LLMTextStartPart();
+            currentText.clear();
+          }
+          fullText.write(pending);
+          currentText.write(pending);
+          yield LLMTextDeltaPart(pending);
         }
       }
 
@@ -536,10 +667,14 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
       // Best-effort finish if stream ends without a finish_reason chunk.
       if (finishReason == null) {
         if (inText) {
-          yield LLMTextEndPart(fullText.toString());
+          inText = false;
+          yield LLMTextEndPart(currentText.toString());
+          currentText.clear();
         }
         if (inThinking) {
-          yield LLMReasoningEndPart(fullThinking.toString());
+          inThinking = false;
+          yield LLMReasoningEndPart(currentThinking.toString());
+          currentThinking.clear();
         }
         for (final toolCallId in startedToolCalls) {
           if (endedToolCalls.add(toolCallId)) {
@@ -674,10 +809,111 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
   void _resetStreamState() {
     _hasReasoningContent = false;
     _lastChunk = '';
+    _inThinkTag = false;
+    _pendingThinkTagFragment = '';
     _thinkingBuffer.clear();
     _toolCallIds.clear();
   }
+
+  List<_ThinkPiece> _splitThinkTaggedDelta(String delta) {
+    if (delta.isEmpty) return const [];
+
+    final shouldScan =
+        _pendingThinkTagFragment.isNotEmpty || delta.contains('<');
+
+    if (!shouldScan) {
+      return [
+        _inThinkTag ? _ThinkPieceThinking(delta) : _ThinkPieceText(delta),
+      ];
+    }
+
+    var buffer = '$_pendingThinkTagFragment$delta';
+    _pendingThinkTagFragment = '';
+
+    final pieces = <_ThinkPiece>[];
+
+    while (buffer.isNotEmpty) {
+      final tag = _inThinkTag ? '</think>' : '<think>';
+      final index = buffer.indexOf(tag);
+
+      if (index == -1) {
+        final split = _splitForPotentialTagPrefix(buffer, tag);
+        if (split.emit.isNotEmpty) {
+          pieces.add(
+            _inThinkTag
+                ? _ThinkPieceThinking(split.emit)
+                : _ThinkPieceText(split.emit),
+          );
+        }
+        _pendingThinkTagFragment = split.pending;
+        break;
+      }
+
+      final before = buffer.substring(0, index);
+      if (before.isNotEmpty) {
+        pieces.add(
+          _inThinkTag ? _ThinkPieceThinking(before) : _ThinkPieceText(before),
+        );
+      }
+
+      pieces.add(
+        _inThinkTag
+            ? const _ThinkPieceThinkingEnd()
+            : const _ThinkPieceThinkingStart(),
+      );
+      _inThinkTag = !_inThinkTag;
+
+      buffer = buffer.substring(index + tag.length);
+    }
+
+    return pieces;
+  }
+
+  _PendingSplit _splitForPotentialTagPrefix(String buffer, String tag) {
+    final maxPrefixLen =
+        buffer.length < tag.length - 1 ? buffer.length : tag.length - 1;
+
+    for (var len = maxPrefixLen; len >= 1; len--) {
+      final prefix = tag.substring(0, len);
+      if (!buffer.endsWith(prefix)) continue;
+
+      final emit = buffer.substring(0, buffer.length - len);
+      final pending = buffer.substring(buffer.length - len);
+      return _PendingSplit(emit: emit, pending: pending);
+    }
+
+    return _PendingSplit(emit: buffer, pending: '');
+  }
 }
+
+final class _PendingSplit {
+  final String emit;
+  final String pending;
+  const _PendingSplit({required this.emit, required this.pending});
+}
+
+sealed class _ThinkPiece {
+  const _ThinkPiece();
+}
+
+final class _ThinkPieceText extends _ThinkPiece {
+  final String text;
+  const _ThinkPieceText(this.text);
+}
+
+final class _ThinkPieceThinking extends _ThinkPiece {
+  final String thinking;
+  const _ThinkPieceThinking(this.thinking);
+}
+
+final class _ThinkPieceThinkingStart extends _ThinkPiece {
+  const _ThinkPieceThinkingStart();
+}
+
+final class _ThinkPieceThinkingEnd extends _ThinkPiece {
+  const _ThinkPieceThinkingEnd();
+}
+
 
 class _ToolCallAccum {
   String? name;
