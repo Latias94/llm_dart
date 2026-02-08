@@ -72,6 +72,12 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   String _streamBuffer = '';
   bool _isFirstChunk = true;
   final Map<String, int> _streamToolCallNameCounts = <String, int>{};
+  final StringBuffer _streamTextBuffer = StringBuffer();
+  final StringBuffer _streamThinkingBuffer = StringBuffer();
+  final List<Map<String, dynamic>> _streamFunctionCallParts =
+      <Map<String, dynamic>>[];
+  Map<String, dynamic>? _streamUsageMetadata;
+  String? _streamFinishReason;
 
   GoogleChat(this.client, this.config);
 
@@ -137,6 +143,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   }) async* {
     // Reset stream state for new requests
     _resetStreamState();
+    var didEmitCompletion = false;
 
     final effectiveTools = tools ?? config.tools;
     final built =
@@ -156,8 +163,46 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         toolWarnings: built.toolWarnings,
       );
       for (final event in events) {
+        if (event is CompletionEvent || event is ErrorEvent) {
+          didEmitCompletion = true;
+        }
         yield event;
+        if (event is ErrorEvent) return;
       }
+    }
+
+    // Best-effort finish if the stream ends without an explicit finishReason.
+    // Vercel AI SDK always emits a terminal "finish" for streams; mirror that
+    // behavior so consumers can reliably observe providerMetadata/toolCalls.
+    if (!didEmitCompletion) {
+      final responseParts = <Map<String, dynamic>>[
+        if (_streamThinkingBuffer.isNotEmpty)
+          {
+            'text': _streamThinkingBuffer.toString(),
+            'thought': true,
+          },
+        if (_streamTextBuffer.isNotEmpty)
+          {'text': _streamTextBuffer.toString()},
+        ..._streamFunctionCallParts,
+      ];
+
+      final candidate = <String, dynamic>{
+        'content': {'parts': responseParts},
+        if (_streamFinishReason != null) 'finishReason': _streamFinishReason,
+      };
+
+      final response = GoogleChatResponse(
+        {
+          'modelVersion': config.model,
+          'candidates': [candidate],
+          if (_streamUsageMetadata != null)
+            'usageMetadata': _streamUsageMetadata,
+        },
+        toolNameMapping: built.toolNameMapping,
+        toolWarnings: built.toolWarnings,
+        providerOptionsName: _providerOptionsName,
+      );
+      yield CompletionEvent(response);
     }
   }
 
@@ -475,6 +520,11 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     _streamToolCallNameCounts.clear();
     _streamMode = _GoogleStreamMode.unknown;
     _sseParser.reset();
+    _streamTextBuffer.clear();
+    _streamThinkingBuffer.clear();
+    _streamFunctionCallParts.clear();
+    _streamUsageMetadata = null;
+    _streamFinishReason = null;
   }
 
   String _nextStreamToolCallId(String name) {
@@ -673,11 +723,10 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         // Detect SSE by looking for `data:` / `event:` at the start of a line.
         // This is important because chunks can be split such that the first
         // chunk contains only `event:` without `data:`.
-        final looksLikeSse = RegExp(r'(^|\n)(:|data:|event:)', multiLine: true)
-            .hasMatch(chunk);
-        _streamMode = looksLikeSse
-            ? _GoogleStreamMode.sse
-            : _GoogleStreamMode.jsonArray;
+        final looksLikeSse =
+            RegExp(r'(^|\n)(:|data:|event:)', multiLine: true).hasMatch(chunk);
+        _streamMode =
+            looksLikeSse ? _GoogleStreamMode.sse : _GoogleStreamMode.jsonArray;
       }
 
       if (_streamMode == _GoogleStreamMode.sse) {
@@ -790,6 +839,13 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     List<Map<String, dynamic>> toolWarnings = const [],
   }) {
     final out = <ChatStreamEvent>[];
+    final usageMetadataRaw = json['usageMetadata'];
+    if (usageMetadataRaw is Map<String, dynamic>) {
+      _streamUsageMetadata = usageMetadataRaw;
+    } else if (usageMetadataRaw is Map) {
+      _streamUsageMetadata = Map<String, dynamic>.from(usageMetadataRaw);
+    }
+
     final candidates = json['candidates'] as List?;
     if (candidates == null || candidates.isEmpty) return out;
 
@@ -823,12 +879,14 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       final text = part['text'] as String?;
 
       if (isThought && text != null && text.isNotEmpty) {
+        _streamThinkingBuffer.write(text);
         out.add(ThinkingDeltaEvent(text));
         continue;
       }
 
       // Regular text content (not thinking)
       if (!isThought && text != null && text.isNotEmpty) {
+        _streamTextBuffer.write(text);
         out.add(TextDeltaEvent(text));
         continue;
       }
@@ -841,7 +899,9 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         if (mimeType != null && data != null && mimeType.startsWith('image/')) {
           // This is a generated image - we could emit a custom event for this
           // For now, we'll include it as text content indicating image generation
-          out.add(TextDeltaEvent('[Generated image: $mimeType]'));
+          final placeholder = '[Generated image: $mimeType]';
+          _streamTextBuffer.write(placeholder);
+          out.add(TextDeltaEvent(placeholder));
           continue;
         }
       }
@@ -858,10 +918,10 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
           continue;
         }
 
-      final name =
-          toolNameMapping.originalFunctionNameForRequestName(requestName) ??
-              requestName;
-      final toolCall = ToolCall(
+        final name =
+            toolNameMapping.originalFunctionNameForRequestName(requestName) ??
+                requestName;
+        final toolCall = ToolCall(
           id: _nextStreamToolCallId(name),
           callType: 'function',
           function: FunctionCall(name: name, arguments: jsonEncode(args)),
@@ -874,6 +934,14 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
                 },
         );
 
+        _streamFunctionCallParts.add({
+          'functionCall': {
+            'name': name,
+            'args': args,
+          },
+          if (part['thoughtSignature'] != null)
+            'thoughtSignature': part['thoughtSignature'],
+        });
         out.add(ToolCallDeltaEvent(toolCall));
         continue;
       }
@@ -882,6 +950,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     // Check if this is the final message
     final finishReason = candidates.first['finishReason'] as String?;
     if (finishReason != null) {
+      _streamFinishReason = finishReason;
       final usage = json['usageMetadata'] as Map<String, dynamic>?;
       final response = GoogleChatResponse(
         {
