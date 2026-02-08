@@ -33,8 +33,6 @@ class OpenAIResponses
   final OpenAIResponsesConfig config;
 
   // State tracking for stream processing
-  bool _hasReasoningContent = false;
-  String _lastChunk = '';
   final StringBuffer _thinkingBuffer = StringBuffer();
   final StringBuffer _outputTextBuffer = StringBuffer();
   final List<dynamic> _outputTextAnnotations = [];
@@ -108,59 +106,28 @@ class OpenAIResponses
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
-    final builtRequest = _buildRequest(messages, tools, true, false);
-
-    // Reset stream state
-    _resetStreamState();
-    var didEmitCompletion = false;
-
-    try {
-      // Create SSE stream
-      final stream = client.postStreamRaw(
-        responsesEndpoint,
-        builtRequest.body,
-        cancelToken: cancelToken,
-      );
-
-      await for (final chunk in stream) {
-        try {
-          final events = _parseStreamEvents(
-            chunk,
-            toolNameMapping: builtRequest.toolNameMapping,
-          );
-          for (final event in events) {
-            if (event is CompletionEvent || event is ErrorEvent) {
-              didEmitCompletion = true;
-            }
-            yield event;
-            if (event is ErrorEvent) return;
-          }
-        } catch (e) {
-          // Log parsing errors but continue processing
-          client.logger.warning('Failed to parse stream chunk: $e');
-        }
-      }
-
-      // Some Responses streams may end with [DONE] without a `response.completed`
-      // event. Emit a best-effort completion to keep stream consumers
-      // consistent and to surface providerMetadata/tool summaries.
-      if (!didEmitCompletion) {
-        final thinkingContent =
-            _thinkingBuffer.isNotEmpty ? _thinkingBuffer.toString() : null;
-        final response = OpenAIResponsesResponse(
-          _buildPartialResponse(),
-          thinkingContent,
-          builtRequest.toolNameMapping,
-          config.providerId,
-        );
-        yield CompletionEvent(response);
-      }
-    } catch (e) {
-      // Handle stream creation or connection errors
-      if (e is LLMError) {
-        rethrow;
-      } else {
-        throw GenericError('Stream error: $e');
+    await for (final part in chatStreamParts(
+      messages,
+      tools: tools,
+      cancelToken: cancelToken,
+    )) {
+      switch (part) {
+        case LLMTextDeltaPart(:final delta):
+          yield TextDeltaEvent(delta);
+        case LLMReasoningDeltaPart(:final delta):
+          yield ThinkingDeltaEvent(delta);
+        case LLMToolCallStartPart(:final toolCall):
+          yield ToolCallDeltaEvent(toolCall);
+        case LLMToolCallDeltaPart(:final toolCall):
+          yield ToolCallDeltaEvent(toolCall);
+        case LLMFinishPart(:final response):
+          yield CompletionEvent(response);
+        case LLMErrorPart(:final error):
+          yield ErrorEvent(error);
+          return;
+        default:
+          // Ignore structural/provider-only parts for legacy event stream.
+          break;
       }
     }
   }
@@ -340,8 +307,6 @@ class OpenAIResponses
             final delta = json['delta'] as String?;
             if (delta == null || delta.isEmpty) continue;
 
-            _lastChunk = delta;
-
             if (ReasoningUtils.containsThinkingTags(delta)) {
               final thinkMatch = RegExp(
                 r'<think>(.*?)</think>',
@@ -376,7 +341,6 @@ class OpenAIResponses
               yield const LLMReasoningStartPart();
             }
             _thinkingBuffer.write(reasoningContent);
-            _hasReasoningContent = true;
             yield LLMReasoningDeltaPart(reasoningContent);
             continue;
           }
@@ -1207,38 +1171,8 @@ class OpenAIResponses
     );
   }
 
-  /// Parse streaming events
-  List<ChatStreamEvent> _parseStreamEvents(
-    String chunk, {
-    required ToolNameMapping toolNameMapping,
-  }) {
-    final events = <ChatStreamEvent>[];
-
-    // Parse SSE chunk - now returns a list of JSON objects
-    final jsonList = client.parseSSEChunk(chunk);
-    if (jsonList.isEmpty) return events;
-
-    // Process each JSON object in the chunk
-    for (final json in jsonList) {
-      // Use existing stream parsing logic with proper state tracking
-      final parsedEvents = _parseStreamEventWithReasoning(
-        json,
-        _hasReasoningContent,
-        _lastChunk,
-        _thinkingBuffer,
-        toolNameMapping: toolNameMapping,
-      );
-
-      events.addAll(parsedEvents);
-    }
-
-    return events;
-  }
-
   /// Reset stream state (call this when starting a new stream)
   void _resetStreamState() {
-    _hasReasoningContent = false;
-    _lastChunk = '';
     _thinkingBuffer.clear();
     _toolCallIds.clear();
     _toolCallNames.clear();
@@ -1298,6 +1232,7 @@ class OpenAIResponses
   }
 
   /// Parse stream events with reasoning support
+  // ignore: unused_element
   List<ChatStreamEvent> _parseStreamEventWithReasoning(
       Map<String, dynamic> json,
       bool hasReasoningContent,
@@ -1391,8 +1326,6 @@ class OpenAIResponses
       // Handle text delta events from Responses API
       final delta = json['delta'] as String?;
       if (delta != null && delta.isNotEmpty) {
-        _lastChunk = delta;
-
         // Filter out thinking tags for models that use <think> tags
         if (ReasoningUtils.containsThinkingTags(delta)) {
           // Extract thinking content and add to buffer
@@ -1519,7 +1452,6 @@ class OpenAIResponses
     final reasoningContent = ReasoningUtils.extractReasoningContent(json);
     if (reasoningContent != null && reasoningContent.isNotEmpty) {
       thinkingBuffer.write(reasoningContent);
-      _hasReasoningContent = true; // Update state
       events.add(ThinkingDeltaEvent(reasoningContent));
       return events;
     }
@@ -1527,18 +1459,12 @@ class OpenAIResponses
     // Legacy format: Handle regular content from output_text_delta
     final content = json['output_text_delta'] as String?;
     if (content != null && content.isNotEmpty) {
-      // Update last chunk for reasoning detection
-      _lastChunk = content;
-
       // Check reasoning status using utils
-      final reasoningResult = ReasoningUtils.checkReasoningStatus(
+      ReasoningUtils.checkReasoningStatus(
         delta: {'content': content}, // Adapt to reasoning utils format
-        hasReasoningContent: _hasReasoningContent,
+        hasReasoningContent: hasReasoningContent,
         lastChunk: lastChunk,
       );
-
-      // Update state based on reasoning detection
-      _hasReasoningContent = reasoningResult.hasReasoningContent;
 
       // Filter out thinking tags for models that use <think> tags
       if (ReasoningUtils.containsThinkingTags(content)) {
