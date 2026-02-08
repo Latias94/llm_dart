@@ -651,8 +651,69 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     // Based on flutter_gemini implementation
 
     try {
-      // Add chunk to buffer
       _streamBuffer += chunk;
+
+      // Some gateways proxy Gemini streaming as SSE ("data: {json}\n\n") instead
+      // of the raw JSON array stream. Support SSE by parsing complete event
+      // blocks separated by a blank line and concatenating multi-line `data:`
+      // fields per SSE spec.
+      if (_streamBuffer.contains('data:')) {
+        while (true) {
+          final sepCrlf = _streamBuffer.indexOf('\r\n\r\n');
+          final sepLf = _streamBuffer.indexOf('\n\n');
+          final hasCrlf = sepCrlf != -1;
+          final hasLf = sepLf != -1;
+
+          if (!hasCrlf && !hasLf) break;
+
+          final sepIndex = hasCrlf ? sepCrlf : sepLf;
+          final sepLen = hasCrlf ? 4 : 2;
+
+          final block = _streamBuffer.substring(0, sepIndex);
+          _streamBuffer = _streamBuffer.substring(sepIndex + sepLen);
+
+          final dataLines = <String>[];
+          for (final rawLine in const LineSplitter().convert(block)) {
+            final line = rawLine.trimRight();
+            if (line.startsWith('data:')) {
+              dataLines.add(line.substring(5).trimLeft());
+            }
+          }
+
+          final data = dataLines.join('\n').trim();
+          if (data.isEmpty || data == '[DONE]') continue;
+
+          try {
+            final decoded = jsonDecode(data);
+            if (decoded is Map<String, dynamic>) {
+              events.addAll(
+                _parseStreamEvent(
+                  decoded,
+                  toolNameMapping,
+                  toolWarnings: toolWarnings,
+                ),
+              );
+            } else if (decoded is List) {
+              for (final item in decoded) {
+                if (item is Map<String, dynamic>) {
+                  events.addAll(
+                    _parseStreamEvent(
+                      item,
+                      toolNameMapping,
+                      toolWarnings: toolWarnings,
+                    ),
+                  );
+                }
+              }
+            }
+          } catch (e) {
+            client.logger.warning('Failed to parse Google SSE data: $e');
+            client.logger.fine('Raw SSE data: $data');
+          }
+        }
+
+        return events;
+      }
 
       String processedData = _streamBuffer.trim();
 
@@ -691,9 +752,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
             toolNameMapping,
             toolWarnings: toolWarnings,
           );
-          if (streamEvents != null) {
-            events.add(streamEvents);
-          }
+          events.addAll(streamEvents);
 
           // Successfully parsed, clear accumulator and update buffer
           jsonAccumulator = '';
@@ -718,19 +777,36 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
   }
 
   /// Parse individual stream event
-  ChatStreamEvent? _parseStreamEvent(
+  List<ChatStreamEvent> _parseStreamEvent(
     Map<String, dynamic> json,
     ToolNameMapping toolNameMapping, {
     List<Map<String, dynamic>> toolWarnings = const [],
   }) {
+    final out = <ChatStreamEvent>[];
     final candidates = json['candidates'] as List?;
-    if (candidates == null || candidates.isEmpty) return null;
+    if (candidates == null || candidates.isEmpty) return out;
 
     final content = candidates.first['content'] as Map<String, dynamic>?;
-    if (content == null) return null;
+    if (content == null) return out;
 
     final parts = content['parts'] as List?;
-    if (parts == null || parts.isEmpty) return null;
+    if (parts == null || parts.isEmpty) {
+      final finishReason = candidates.first['finishReason'] as String?;
+      if (finishReason != null) {
+        final usage = json['usageMetadata'] as Map<String, dynamic>?;
+        final response = GoogleChatResponse(
+          {
+            'candidates': [],
+            'usageMetadata': usage,
+          },
+          toolNameMapping: toolNameMapping,
+          toolWarnings: toolWarnings,
+          providerOptionsName: _providerOptionsName,
+        );
+        out.add(CompletionEvent(response));
+      }
+      return out;
+    }
 
     // Process all parts in the response
     for (final part in parts) {
@@ -740,12 +816,14 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       final text = part['text'] as String?;
 
       if (isThought && text != null && text.isNotEmpty) {
-        return ThinkingDeltaEvent(text);
+        out.add(ThinkingDeltaEvent(text));
+        continue;
       }
 
       // Regular text content (not thinking)
       if (!isThought && text != null && text.isNotEmpty) {
-        return TextDeltaEvent(text);
+        out.add(TextDeltaEvent(text));
+        continue;
       }
 
       // Check for inline image data (generated images)
@@ -756,7 +834,8 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         if (mimeType != null && data != null && mimeType.startsWith('image/')) {
           // This is a generated image - we could emit a custom event for this
           // For now, we'll include it as text content indicating image generation
-          return TextDeltaEvent('[Generated image: $mimeType]');
+          out.add(TextDeltaEvent('[Generated image: $mimeType]'));
+          continue;
         }
       }
 
@@ -769,7 +848,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         // Provider-native tools should not be surfaced as local tool calls;
         // otherwise local tool loops may try to execute them.
         if (toolNameMapping.providerToolIdForRequestName(requestName) != null) {
-          return null;
+          continue;
         }
 
         final name =
@@ -788,7 +867,8 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
                 },
         );
 
-        return ToolCallDeltaEvent(toolCall);
+        out.add(ToolCallDeltaEvent(toolCall));
+        continue;
       }
     }
 
@@ -796,17 +876,19 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     final finishReason = candidates.first['finishReason'] as String?;
     if (finishReason != null) {
       final usage = json['usageMetadata'] as Map<String, dynamic>?;
-      final response = GoogleChatResponse({
-        'candidates': [],
-        'usageMetadata': usage,
-      },
-          toolNameMapping: toolNameMapping,
-          toolWarnings: toolWarnings,
-          providerOptionsName: _providerOptionsName);
-      return CompletionEvent(response);
+      final response = GoogleChatResponse(
+        {
+          'candidates': [],
+          'usageMetadata': usage,
+        },
+        toolNameMapping: toolNameMapping,
+        toolWarnings: toolWarnings,
+        providerOptionsName: _providerOptionsName,
+      );
+      out.add(CompletionEvent(response));
     }
 
-    return null;
+    return out;
   }
 
   /// Build request body for Google API
