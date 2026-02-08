@@ -49,8 +49,6 @@ class GoogleFile {
   bool get isActive => state == 'ACTIVE';
 }
 
-enum _GoogleStreamMode { unknown, sse, jsonArray }
-
 /// Google Chat capability implementation
 ///
 /// This module handles all chat-related functionality for Google providers,
@@ -61,23 +59,6 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
   /// Cache for uploaded files to avoid re-uploading
   static final Map<String, GoogleFile> _fileCache = {};
-
-  // Stream parsing mode for the current request.
-  // Gemini streaming is typically SSE (`alt=sse`), but some gateways return
-  // legacy JSON array streams. Detect once per request.
-  _GoogleStreamMode _streamMode = _GoogleStreamMode.unknown;
-  final SseChunkParser _sseParser = SseChunkParser();
-
-  // Buffer for incomplete JSON chunks
-  String _streamBuffer = '';
-  bool _isFirstChunk = true;
-  final Map<String, int> _streamToolCallNameCounts = <String, int>{};
-  final StringBuffer _streamTextBuffer = StringBuffer();
-  final StringBuffer _streamThinkingBuffer = StringBuffer();
-  final List<Map<String, dynamic>> _streamFunctionCallParts =
-      <Map<String, dynamic>>[];
-  Map<String, dynamic>? _streamUsageMetadata;
-  String? _streamFinishReason;
 
   GoogleChat(this.client, this.config);
 
@@ -158,68 +139,34 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
-    // Reset stream state for new requests
-    _resetStreamState();
-    var didEmitCompletion = false;
-
-    final effectiveTools = tools ?? config.tools;
-    final built =
-        await _buildRequestAsync(messages, effectiveTools, true, cancelToken);
-
-    // Create JSON array stream
-    final stream = client.postStreamRaw(
-      _chatStreamEndpoint,
-      built.body,
+    await for (final part in chatStreamParts(
+      messages,
+      tools: tools,
       cancelToken: cancelToken,
-    );
-
-    await for (final chunk in stream) {
-      final events = _parseStreamEvents(
-        chunk,
-        built.toolNameMapping,
-        toolWarnings: built.toolWarnings,
-      );
-      for (final event in events) {
-        if (event is CompletionEvent || event is ErrorEvent) {
-          didEmitCompletion = true;
-        }
-        yield event;
-        if (event is ErrorEvent) return;
+    )) {
+      switch (part) {
+        case LLMTextDeltaPart(:final delta):
+          yield TextDeltaEvent(delta);
+        case LLMReasoningDeltaPart(:final delta):
+          yield ThinkingDeltaEvent(delta);
+        case LLMToolCallStartPart(:final toolCall):
+          yield ToolCallDeltaEvent(toolCall);
+        case LLMToolCallDeltaPart(:final toolCall):
+          yield ToolCallDeltaEvent(toolCall);
+        case LLMFinishPart(:final response):
+          yield CompletionEvent(response);
+        case LLMErrorPart(:final error):
+          yield ErrorEvent(error);
+        case LLMTextStartPart():
+        case LLMTextEndPart():
+        case LLMReasoningStartPart():
+        case LLMReasoningEndPart():
+        case LLMToolCallEndPart():
+        case LLMProviderMetadataPart():
+        case LLMToolResultPart():
+          // Not represented in legacy ChatStreamEvent.
+          break;
       }
-    }
-
-    // Best-effort finish if the stream ends without an explicit finishReason.
-    // Vercel AI SDK always emits a terminal "finish" for streams; mirror that
-    // behavior so consumers can reliably observe providerMetadata/toolCalls.
-    if (!didEmitCompletion) {
-      final responseParts = <Map<String, dynamic>>[
-        if (_streamThinkingBuffer.isNotEmpty)
-          {
-            'text': _streamThinkingBuffer.toString(),
-            'thought': true,
-          },
-        if (_streamTextBuffer.isNotEmpty)
-          {'text': _streamTextBuffer.toString()},
-        ..._streamFunctionCallParts,
-      ];
-
-      final candidate = <String, dynamic>{
-        'content': {'parts': responseParts},
-        if (_streamFinishReason != null) 'finishReason': _streamFinishReason,
-      };
-
-      final response = GoogleChatResponse(
-        {
-          'modelVersion': config.model,
-          'candidates': [candidate],
-          if (_streamUsageMetadata != null)
-            'usageMetadata': _streamUsageMetadata,
-        },
-        toolNameMapping: built.toolNameMapping,
-        toolWarnings: built.toolWarnings,
-        providerOptionsName: _providerOptionsName,
-      );
-      yield CompletionEvent(response);
     }
   }
 
@@ -244,10 +191,13 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
     final fullText = StringBuffer();
     final fullThinking = StringBuffer();
+    final currentText = StringBuffer();
+    final currentThinking = StringBuffer();
     final functionCallParts = <Map<String, dynamic>>[];
     Map<String, dynamic>? usageMetadata;
 
     final startedToolCalls = <String>{};
+    final endedToolCalls = <String>{};
 
     List<Map<String, dynamic>> extractJsonObjects(String chunk) {
       streamBuffer += chunk;
@@ -336,14 +286,18 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       final parts = <LLMStreamPart>[];
       if (inText) {
         inText = false;
-        parts.add(LLMTextEndPart(fullText.toString()));
+        parts.add(LLMTextEndPart(currentText.toString()));
+        currentText.clear();
       }
       if (inThinking) {
         inThinking = false;
-        parts.add(LLMReasoningEndPart(fullThinking.toString()));
+        parts.add(LLMReasoningEndPart(currentThinking.toString()));
+        currentThinking.clear();
       }
       for (final id in startedToolCalls) {
-        parts.add(LLMToolCallEndPart(id));
+        if (endedToolCalls.add(id)) {
+          parts.add(LLMToolCallEndPart(id));
+        }
       }
       return parts;
     }
@@ -423,6 +377,9 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
                   },
                 });
                 yield LLMToolCallStartPart(toolCall);
+                if (endedToolCalls.add(id)) {
+                  yield LLMToolCallEndPart(id);
+                }
               }
               continue;
             }
@@ -432,11 +389,18 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
               final mimeType = inlineData['mimeType'] as String?;
               if (mimeType != null && mimeType.startsWith('image/')) {
                 final placeholder = '[Generated image: $mimeType]';
+                if (inThinking) {
+                  inThinking = false;
+                  yield LLMReasoningEndPart(currentThinking.toString());
+                  currentThinking.clear();
+                }
                 if (!inText) {
                   inText = true;
                   yield const LLMTextStartPart();
+                  currentText.clear();
                 }
                 fullText.write(placeholder);
+                currentText.write(placeholder);
                 yield LLMTextDeltaPart(placeholder);
               }
               continue;
@@ -446,18 +410,32 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
             final text = part['text'] as String?;
             if (text != null && text.isNotEmpty) {
               if (isThought) {
+                if (inText) {
+                  inText = false;
+                  yield LLMTextEndPart(currentText.toString());
+                  currentText.clear();
+                }
                 if (!inThinking) {
                   inThinking = true;
                   yield const LLMReasoningStartPart();
+                  currentThinking.clear();
                 }
                 fullThinking.write(text);
+                currentThinking.write(text);
                 yield LLMReasoningDeltaPart(text);
               } else {
+                if (inThinking) {
+                  inThinking = false;
+                  yield LLMReasoningEndPart(currentThinking.toString());
+                  currentThinking.clear();
+                }
                 if (!inText) {
                   inText = true;
                   yield const LLMTextStartPart();
+                  currentText.clear();
                 }
                 fullText.write(text);
+                currentText.write(text);
                 yield LLMTextDeltaPart(text);
               }
             }
@@ -528,26 +506,6 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       yield LLMProviderMetadataPart(metadata);
     }
     yield LLMFinishPart(response);
-  }
-
-  /// Reset stream parsing state for new requests
-  void _resetStreamState() {
-    _streamBuffer = '';
-    _isFirstChunk = true;
-    _streamToolCallNameCounts.clear();
-    _streamMode = _GoogleStreamMode.unknown;
-    _sseParser.reset();
-    _streamTextBuffer.clear();
-    _streamThinkingBuffer.clear();
-    _streamFunctionCallParts.clear();
-    _streamUsageMetadata = null;
-    _streamFinishReason = null;
-  }
-
-  String _nextStreamToolCallId(String name) {
-    final count = _streamToolCallNameCounts[name] ?? 0;
-    _streamToolCallNameCounts[name] = count + 1;
-    return count == 0 ? 'call_$name' : 'call_${name}_$count';
   }
 
   @override
@@ -721,267 +679,6 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       toolWarnings: toolWarnings,
       providerOptionsName: _providerOptionsName,
     );
-  }
-
-  /// Parse stream events from JSON array chunks
-  List<ChatStreamEvent> _parseStreamEvents(
-    String chunk,
-    ToolNameMapping toolNameMapping, {
-    List<Map<String, dynamic>> toolWarnings = const [],
-  }) {
-    final events = <ChatStreamEvent>[];
-
-    // Google's streaming format returns a JSON array: [{...}, {...}, {...}]
-    // We use the default JSON array format for compatibility with our HTTP client
-    // Based on flutter_gemini implementation
-
-    try {
-      if (_streamMode == _GoogleStreamMode.unknown) {
-        // Detect SSE by looking for `data:` / `event:` at the start of a line.
-        // This is important because chunks can be split such that the first
-        // chunk contains only `event:` without `data:`.
-        final looksLikeSse =
-            RegExp(r'(^|\n)(:|data:|event:)', multiLine: true).hasMatch(chunk);
-        _streamMode =
-            looksLikeSse ? _GoogleStreamMode.sse : _GoogleStreamMode.jsonArray;
-      }
-
-      if (_streamMode == _GoogleStreamMode.sse) {
-        final lines = _sseParser.parse(chunk);
-        if (lines.isEmpty) return events;
-
-        for (final line in lines) {
-          final data = line.data.trim();
-          if (data.isEmpty || data == '[DONE]') continue;
-
-          try {
-            final decoded = jsonDecode(data);
-            if (decoded is Map<String, dynamic>) {
-              events.addAll(
-                _parseStreamEvent(
-                  decoded,
-                  toolNameMapping,
-                  toolWarnings: toolWarnings,
-                ),
-              );
-            } else if (decoded is List) {
-              for (final item in decoded) {
-                if (item is Map<String, dynamic>) {
-                  events.addAll(
-                    _parseStreamEvent(
-                      item,
-                      toolNameMapping,
-                      toolWarnings: toolWarnings,
-                    ),
-                  );
-                }
-              }
-            }
-          } catch (e) {
-            client.logger.warning('Failed to parse Google SSE data: $e');
-            client.logger.fine('Raw SSE data: $data');
-          }
-        }
-
-        return events;
-      }
-
-      _streamBuffer += chunk;
-
-      String processedData = _streamBuffer.trim();
-
-      // Handle array format - remove brackets and commas
-      if (_isFirstChunk && processedData.startsWith('[')) {
-        processedData = processedData.replaceFirst('[', '');
-        _isFirstChunk = false;
-      }
-
-      if (processedData.startsWith(',')) {
-        processedData = processedData.replaceFirst(',', '');
-      }
-
-      if (processedData.endsWith(']')) {
-        processedData = processedData.substring(0, processedData.length - 1);
-      }
-
-      processedData = processedData.trim();
-
-      // Split by lines and try to parse complete JSON objects
-      final lines = const LineSplitter().convert(processedData);
-      String jsonAccumulator = '';
-
-      for (final line in lines) {
-        if (jsonAccumulator == '' && line == ',') {
-          continue;
-        }
-
-        jsonAccumulator += line;
-
-        try {
-          // Try to parse the accumulated JSON
-          final json = jsonDecode(jsonAccumulator) as Map<String, dynamic>;
-          final streamEvents = _parseStreamEvent(
-            json,
-            toolNameMapping,
-            toolWarnings: toolWarnings,
-          );
-          events.addAll(streamEvents);
-
-          // Successfully parsed, clear accumulator and update buffer
-          jsonAccumulator = '';
-          _streamBuffer = '';
-        } catch (e) {
-          // JSON incomplete, continue accumulating
-          continue;
-        }
-      }
-
-      // Keep incomplete JSON in buffer for next chunk
-      if (jsonAccumulator.isNotEmpty) {
-        _streamBuffer = jsonAccumulator;
-      }
-    } catch (e) {
-      client.logger.warning('Failed to parse Google stream chunk: $e');
-      client.logger.fine('Raw chunk: $chunk');
-      client.logger.fine('Buffer content: $_streamBuffer');
-    }
-
-    return events;
-  }
-
-  /// Parse individual stream event
-  List<ChatStreamEvent> _parseStreamEvent(
-    Map<String, dynamic> json,
-    ToolNameMapping toolNameMapping, {
-    List<Map<String, dynamic>> toolWarnings = const [],
-  }) {
-    final out = <ChatStreamEvent>[];
-    final usageMetadataRaw = json['usageMetadata'];
-    if (usageMetadataRaw is Map<String, dynamic>) {
-      _streamUsageMetadata = usageMetadataRaw;
-    } else if (usageMetadataRaw is Map) {
-      _streamUsageMetadata = Map<String, dynamic>.from(usageMetadataRaw);
-    }
-
-    final candidates = json['candidates'] as List?;
-    if (candidates == null || candidates.isEmpty) return out;
-
-    final content = candidates.first['content'] as Map<String, dynamic>?;
-    if (content == null) return out;
-
-    final parts = content['parts'] as List?;
-    if (parts == null || parts.isEmpty) {
-      final finishReason = candidates.first['finishReason'] as String?;
-      if (finishReason != null) {
-        final usage = json['usageMetadata'] as Map<String, dynamic>?;
-        final response = GoogleChatResponse(
-          {
-            'candidates': [],
-            'usageMetadata': usage,
-          },
-          toolNameMapping: toolNameMapping,
-          toolWarnings: toolWarnings,
-          providerOptionsName: _providerOptionsName,
-        );
-        out.add(CompletionEvent(response));
-      }
-      return out;
-    }
-
-    // Process all parts in the response
-    for (final part in parts) {
-      // Check for thinking content first - according to Google API docs,
-      // thinking content has a 'thought' boolean flag set to true
-      final isThought = part['thought'] as bool? ?? false;
-      final text = part['text'] as String?;
-
-      if (isThought && text != null && text.isNotEmpty) {
-        _streamThinkingBuffer.write(text);
-        out.add(ThinkingDeltaEvent(text));
-        continue;
-      }
-
-      // Regular text content (not thinking)
-      if (!isThought && text != null && text.isNotEmpty) {
-        _streamTextBuffer.write(text);
-        out.add(TextDeltaEvent(text));
-        continue;
-      }
-
-      // Check for inline image data (generated images)
-      final inlineData = part['inlineData'] as Map<String, dynamic>?;
-      if (inlineData != null) {
-        final mimeType = inlineData['mimeType'] as String?;
-        final data = inlineData['data'] as String?;
-        if (mimeType != null && data != null && mimeType.startsWith('image/')) {
-          // This is a generated image - we could emit a custom event for this
-          // For now, we'll include it as text content indicating image generation
-          final placeholder = '[Generated image: $mimeType]';
-          _streamTextBuffer.write(placeholder);
-          out.add(TextDeltaEvent(placeholder));
-          continue;
-        }
-      }
-
-      // Function calls
-      final functionCall = part['functionCall'] as Map<String, dynamic>?;
-      if (functionCall != null) {
-        final requestName = functionCall['name'] as String;
-        final args = functionCall['args'] as Map<String, dynamic>? ?? {};
-
-        // Provider-native tools should not be surfaced as local tool calls;
-        // otherwise local tool loops may try to execute them.
-        if (toolNameMapping.providerToolIdForRequestName(requestName) != null) {
-          continue;
-        }
-
-        final name =
-            toolNameMapping.originalFunctionNameForRequestName(requestName) ??
-                requestName;
-        final toolCall = ToolCall(
-          id: _nextStreamToolCallId(name),
-          callType: 'function',
-          function: FunctionCall(name: name, arguments: jsonEncode(args)),
-          providerOptions: part['thoughtSignature'] == null
-              ? const <String, Map<String, dynamic>>{}
-              : <String, Map<String, dynamic>>{
-                  _providerOptionsName: {
-                    'thoughtSignature': part['thoughtSignature'].toString(),
-                  },
-                },
-        );
-
-        _streamFunctionCallParts.add({
-          'functionCall': {
-            'name': name,
-            'args': args,
-          },
-          if (part['thoughtSignature'] != null)
-            'thoughtSignature': part['thoughtSignature'],
-        });
-        out.add(ToolCallDeltaEvent(toolCall));
-        continue;
-      }
-    }
-
-    // Check if this is the final message
-    final finishReason = candidates.first['finishReason'] as String?;
-    if (finishReason != null) {
-      _streamFinishReason = finishReason;
-      final usage = json['usageMetadata'] as Map<String, dynamic>?;
-      final response = GoogleChatResponse(
-        {
-          'candidates': [],
-          'usageMetadata': usage,
-        },
-        toolNameMapping: toolNameMapping,
-        toolWarnings: toolWarnings,
-        providerOptionsName: _providerOptionsName,
-      );
-      out.add(CompletionEvent(response));
-    }
-
-    return out;
   }
 
   /// Build request body for Google API
