@@ -24,6 +24,7 @@ class GoogleClient {
   final GoogleConfig config;
   final Logger logger = Logger('GoogleClient');
   late final Dio dio;
+  late final bool _useApiKeyHeaderAuth;
 
   GoogleClient(this.config) {
     // Use unified Dio client factory with Google-specific strategy
@@ -31,10 +32,22 @@ class GoogleClient {
       strategy: GoogleDioStrategy(),
       config: config,
     );
+
+    // Vertex "express mode" (aiplatform.googleapis.com) uses API key auth via
+    // headers (Vercel AI SDK parity). Gemini API uses query parameter auth.
+    final baseUri = Uri.tryParse(config.baseUrl);
+    _useApiKeyHeaderAuth =
+        baseUri != null && baseUri.host.endsWith('aiplatform.googleapis.com');
+    if (_useApiKeyHeaderAuth) {
+      dio.options.headers['x-goog-api-key'] = config.apiKey;
+    }
   }
 
   /// Get endpoint with API key authentication
   String _getEndpointWithAuth(String endpoint) {
+    if (_useApiKeyHeaderAuth) {
+      return endpoint;
+    }
     // Google uses query parameter authentication
     final separator = endpoint.contains('?') ? '&' : '?';
     return '$endpoint${separator}key=${config.apiKey}';

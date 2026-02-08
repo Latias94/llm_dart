@@ -1305,6 +1305,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
   Uri _buildUploadUri() {
     final base = Uri.parse(config.baseUrl);
+    final useHeaderAuth = base.host.endsWith('aiplatform.googleapis.com');
 
     final baseSegments = List<String>.from(base.pathSegments);
     while (baseSegments.isNotEmpty && baseSegments.last.isEmpty) {
@@ -1316,7 +1317,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
 
     return base.replace(
       pathSegments: [...baseSegments, 'upload', 'v1beta', 'files'],
-      queryParameters: {'key': config.apiKey},
+      queryParameters: useHeaderAuth ? null : {'key': config.apiKey},
     );
   }
 
