@@ -180,8 +180,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
                   providerToolTypeById[toolCallId] = rawToolType;
                   yield LLMProviderToolDeltaPart(
                     toolCallId: toolCallId,
-                    toolName:
-                        rawToolType.substring(0, rawToolType.length - 5),
+                    toolName: rawToolType.substring(0, rawToolType.length - 5),
                     status: status,
                     data: _stringKeyedMap(json),
                     providerMetadata: {
@@ -675,6 +674,18 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
     mapKey('fromDate', 'from_date');
     mapKey('toDate', 'to_date');
     mapKey('enableVideoUnderstanding', 'enable_video_understanding');
+
+    mapKey('vectorStoreIds', 'vector_store_ids');
+    mapKey('maxNumResults', 'max_num_results');
+
+    mapKey('serverUrl', 'server_url');
+    mapKey('serverLabel', 'server_label');
+    mapKey('serverDescription', 'server_description');
+    mapKey('allowedTools', 'allowed_tools');
+
+    // xAI MCP tool uses non-snake keys for these fields.
+    mapKey('headers', 'headers');
+    mapKey('authorization', 'authorization');
 
     // Pass through already-snake_case keys.
     for (final entry in options.entries) {

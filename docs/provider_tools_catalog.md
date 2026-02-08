@@ -16,6 +16,7 @@ Typed catalogs exist to avoid “stringly-typed” ids/options:
 - `OpenAIProviderTools` (Responses API built-ins)
 - `AnthropicProviderTools` (Anthropic server tools)
 - `GoogleProviderTools` (Gemini built-ins)
+- `XAIProviderTools` (xAI Responses built-ins)
 
 ## How to use
 

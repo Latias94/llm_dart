@@ -121,6 +121,42 @@ References:
 - `docs/protocols/openai_compatible.md`
 - Vercel xAI provider: `repo-ref/ai/packages/xai`
 
+## Citations (Chat Completions)
+
+xAI can return a top-level `citations` array (URLs) on Chat Completions
+responses.
+
+Enable it via `providerOptions['xai']`:
+
+- `returnCitations`: `bool` → request field `return_citations: true`
+
+When citations are present:
+
+- Streaming (`chatStreamParts`): emits one `LLMSourceUrlPart` per cited URL
+  (deduped).
+- Non-streaming (`chat`): exposes `providerMetadata['xai']['citations']` as
+  `List<String>` (URLs).
+
+Example:
+
+```dart
+final model = await LLMBuilder()
+    .provider(xaiProviderId)
+    .apiKey('XAI_API_KEY')
+    .model('grok-3')
+    .providerOptions('xai', const {
+      'returnCitations': true,
+    })
+    .build();
+
+final parts = await model
+    .chatStreamParts([ChatMessage.user('Give me sources about xAI')])
+    .toList();
+
+final sources = parts.whereType<LLMSourceUrlPart>().toList();
+print(sources.map((s) => s.url).toList());
+```
+
 ## providerMetadata
 
 `ChatResponse.providerMetadata` is an optional provider-id namespaced map.
@@ -162,6 +198,7 @@ import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_xai/llm_dart_xai.dart';
+import 'package:llm_dart_xai/provider_tools.dart';
 
 Future<void> main() async {
   registerXAI();
@@ -170,7 +207,7 @@ Future<void> main() async {
       .provider('xai.responses')
       .apiKey('XAI_API_KEY')
       .model('grok-4-fast')
-      .providerTool(const ProviderTool(id: 'xai.web_search'))
+      .providerTool(XAIProviderTools.webSearch())
       .build();
 
   final result = await generateText(
