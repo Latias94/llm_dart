@@ -19,8 +19,7 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
   // State tracking for stream processing
   bool _hasReasoningContent = false;
   String _lastChunk = '';
-  bool _inThinkTag = false;
-  String _pendingThinkTagFragment = '';
+  final ThinkTagSplitter _thinkSplitter = ThinkTagSplitter(tagName: 'think');
   final StringBuffer _thinkingBuffer = StringBuffer();
   final Map<int, String> _toolCallIds = {};
 
@@ -64,232 +63,34 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
-    final effectiveTools = tools ?? config.tools;
-    final requestBody = _requestBuilder.buildChatCompletionsRequestBody(
-      client,
-      messages: messages,
-      tools: effectiveTools,
-      stream: true,
-    );
-
-    client.resetSSEBuffer();
-    _resetStreamState();
-
-    final fullText = StringBuffer();
-    final fullThinking = StringBuffer();
-
-    final toolAccums = <String, _ToolCallAccum>{};
-    final startedToolCalls = <String>{};
-
-    String? id;
-    String? model;
-    String? systemFingerprint;
-    Map<String, dynamic>? usage;
-
-    String? finishReason;
-
-    try {
-      final stream = client.postStreamRaw(
-        chatEndpoint,
-        requestBody,
-        cancelToken: cancelToken,
-      );
-
-      await for (final chunk in stream) {
-        final jsonList = client.parseSSEChunk(chunk);
-        if (jsonList.isEmpty) continue;
-
-        for (final json in jsonList) {
-          id ??= json['id'] as String?;
-          model ??= json['model'] as String?;
-          systemFingerprint ??= json['system_fingerprint'] as String?;
-
-          final rawUsage = json['usage'];
-          if (rawUsage is Map<String, dynamic>) {
-            usage = {...?usage, ...rawUsage};
-          } else if (rawUsage is Map) {
-            usage = {...?usage, ...Map<String, dynamic>.from(rawUsage)};
-          }
-
-          final choices = json['choices'] as List?;
-          if (choices == null || choices.isEmpty) continue;
-
-          final choice = choices.first as Map<String, dynamic>;
-          final delta = choice['delta'] as Map<String, dynamic>?;
-
-          if (finishReason != null) {
-            continue; // ignore any post-finish deltas (best-effort)
-          }
-
-          // Reasoning/thinking content (provider-specific fields).
-          final reasoningContent =
-              ReasoningUtils.extractReasoningContent(delta);
-          if (reasoningContent != null && reasoningContent.isNotEmpty) {
-            fullThinking.write(reasoningContent);
-            yield ThinkingDeltaEvent(reasoningContent);
-          }
-
-          // Text content (may include <think> tags).
-          final content = delta?['content'] as String?;
-          if (content != null && content.isNotEmpty) {
-            _lastChunk = content;
-
-            final pieces = _splitThinkTaggedDelta(content);
-            for (final piece in pieces) {
-              switch (piece) {
-                case _ThinkPieceText(:final text):
-                  if (text.isEmpty) continue;
-                  final reasoningResult = ReasoningUtils.checkReasoningStatus(
-                    delta: delta,
-                    hasReasoningContent: _hasReasoningContent,
-                    lastChunk: _lastChunk,
-                  );
-                  _hasReasoningContent = reasoningResult.hasReasoningContent;
-
-                  fullText.write(text);
-                  yield TextDeltaEvent(text);
-                case _ThinkPieceThinking(:final thinking):
-                  if (thinking.isEmpty) continue;
-                  fullThinking.write(thinking);
-                  yield ThinkingDeltaEvent(thinking);
-                case _ThinkPieceThinkingStart():
-                case _ThinkPieceThinkingEnd():
-                  // Legacy stream does not expose start/end boundaries.
-                  break;
-              }
-            }
-          }
-
-          // Tool calls (client-side function tools).
-          final toolCalls = delta?['tool_calls'] as List?;
-          if (toolCalls != null && toolCalls.isNotEmpty) {
-            for (final rawCall in toolCalls) {
-              if (rawCall is! Map<String, dynamic>) continue;
-
-              final index = rawCall['index'] as int?;
-              if (index != null) {
-                final callId = rawCall['id'] as String?;
-                if (callId != null && callId.isNotEmpty) {
-                  _toolCallIds[index] = callId;
-                }
-
-                final stableId = _toolCallIds[index];
-                if (stableId == null || stableId.isEmpty) continue;
-
-                final functionMap =
-                    rawCall['function'] as Map<String, dynamic>?;
-                if (functionMap == null) continue;
-
-                final name = functionMap['name'] as String? ?? '';
-                final args = functionMap['arguments'] as String? ?? '';
-                if (name.isEmpty && args.isEmpty) continue;
-
-                final accum =
-                    toolAccums.putIfAbsent(stableId, () => _ToolCallAccum());
-                if (name.isNotEmpty) {
-                  accum.name = name;
-                }
-                if (args.isNotEmpty) {
-                  accum.arguments.write(args);
-                }
-
-                final toolCall = ToolCall(
-                  id: stableId,
-                  callType: 'function',
-                  function: FunctionCall(
-                    name: name.isNotEmpty ? name : (accum.name ?? ''),
-                    arguments: args,
-                  ),
-                );
-
-                startedToolCalls.add(stableId);
-                yield ToolCallDeltaEvent(toolCall);
-              } else if (rawCall.containsKey('id') &&
-                  rawCall.containsKey('function')) {
-                try {
-                  final toolCall = ToolCall.fromJson(rawCall);
-                  final accum = toolAccums.putIfAbsent(
-                    toolCall.id,
-                    () => _ToolCallAccum(),
-                  );
-                  if (toolCall.function.name.isNotEmpty) {
-                    accum.name = toolCall.function.name;
-                  }
-                  if (toolCall.function.arguments.isNotEmpty) {
-                    accum.arguments.write(toolCall.function.arguments);
-                  }
-
-                  startedToolCalls.add(toolCall.id);
-                  yield ToolCallDeltaEvent(toolCall);
-                } catch (_) {
-                  // Ignore malformed tool calls.
-                }
-              }
-            }
-          }
-
-          final fr = choice['finish_reason'] as String?;
-          if (fr != null) {
-            finishReason = fr;
-          }
-        }
+    await for (final part in chatStreamParts(
+      messages,
+      tools: tools,
+      cancelToken: cancelToken,
+    )) {
+      switch (part) {
+        case LLMTextDeltaPart(:final delta):
+          yield TextDeltaEvent(delta);
+        case LLMReasoningDeltaPart(:final delta):
+          yield ThinkingDeltaEvent(delta);
+        case LLMToolCallStartPart(:final toolCall):
+          yield ToolCallDeltaEvent(toolCall);
+        case LLMToolCallDeltaPart(:final toolCall):
+          yield ToolCallDeltaEvent(toolCall);
+        case LLMFinishPart(:final response):
+          yield CompletionEvent(response);
+        case LLMErrorPart(:final error):
+          yield ErrorEvent(error);
+        case LLMTextStartPart():
+        case LLMTextEndPart():
+        case LLMReasoningStartPart():
+        case LLMReasoningEndPart():
+        case LLMToolCallEndPart():
+        case LLMProviderMetadataPart():
+        case LLMToolResultPart():
+          // Not represented in legacy ChatStreamEvent.
+          break;
       }
-
-      if (_pendingThinkTagFragment.isNotEmpty) {
-        final pending = _pendingThinkTagFragment;
-        _pendingThinkTagFragment = '';
-
-        if (_inThinkTag) {
-          fullThinking.write(pending);
-          yield ThinkingDeltaEvent(pending);
-        } else {
-          fullText.write(pending);
-          yield TextDeltaEvent(pending);
-        }
-      }
-
-      final completedToolCalls = toolAccums.entries
-          .map((e) => e.value.toToolCall(e.key))
-          .toList(growable: false);
-
-      final response = OpenAIChatResponse(
-        {
-          if (id != null) 'id': id,
-          if (model != null) 'model': model,
-          if (systemFingerprint != null)
-            'system_fingerprint': systemFingerprint,
-          'choices': [
-            {
-              if (finishReason != null) 'finish_reason': finishReason,
-              'message': {
-                'role': 'assistant',
-                'content': fullText.toString(),
-                if (completedToolCalls.isNotEmpty)
-                  'tool_calls':
-                      completedToolCalls.map((c) => c.toJson()).toList(),
-              },
-            },
-          ],
-          if (usage != null) 'usage': usage,
-        },
-        thinkingContent:
-            fullThinking.isNotEmpty ? fullThinking.toString() : null,
-        providerId: config.providerId,
-        parseToolCallsFromText: _parseToolCallsFromTextEnabled(),
-        didRequestTools: effectiveTools != null && effectiveTools.isNotEmpty,
-      );
-
-      yield CompletionEvent(response);
-    } catch (e) {
-      if (e is LLMError) {
-        yield ErrorEvent(e);
-        return;
-      }
-      yield ErrorEvent(GenericError('Stream error: $e'));
-      return;
-    } finally {
-      client.resetSSEBuffer();
-      _resetStreamState();
     }
   }
 
@@ -390,10 +191,10 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           if (content != null && content.isNotEmpty) {
             _lastChunk = content;
 
-            final pieces = _splitThinkTaggedDelta(content);
+            final pieces = _thinkSplitter.splitDelta(content);
             for (final piece in pieces) {
               switch (piece) {
-                case _ThinkPieceText(:final text):
+                case ThinkTagTextPiece(:final text):
                   if (text.isEmpty) continue;
                   if (inThinking) {
                     inThinking = false;
@@ -415,7 +216,7 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
                   fullText.write(text);
                   currentText.write(text);
                   yield LLMTextDeltaPart(text);
-                case _ThinkPieceThinkingStart():
+                case ThinkTagThinkingStartPiece():
                   if (inText) {
                     inText = false;
                     yield LLMTextEndPart(currentText.toString());
@@ -426,7 +227,7 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
                     yield const LLMReasoningStartPart();
                     currentThinking.clear();
                   }
-                case _ThinkPieceThinking(:final thinking):
+                case ThinkTagThinkingPiece(:final thinking):
                   if (thinking.isEmpty) continue;
                   if (inText) {
                     inText = false;
@@ -441,7 +242,7 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
                   fullThinking.write(thinking);
                   currentThinking.write(thinking);
                   yield LLMReasoningDeltaPart(thinking);
-                case _ThinkPieceThinkingEnd():
+                case ThinkTagThinkingEndPiece():
                   if (inThinking) {
                     inThinking = false;
                     yield LLMReasoningEndPart(currentThinking.toString());
@@ -498,10 +299,18 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
                 } else {
                   yield LLMToolCallDeltaPart(toolCall);
                 }
+
+                final fullArgs = accum.arguments.toString();
+                if (fullArgs.isNotEmpty && isParsableJson(fullArgs)) {
+                  if (endedToolCalls.add(stableId)) {
+                    yield LLMToolCallEndPart(stableId);
+                  }
+                }
               } else if (rawCall.containsKey('id') &&
                   rawCall.containsKey('function')) {
                 try {
                   final toolCall = ToolCall.fromJson(rawCall);
+                  if (endedToolCalls.contains(toolCall.id)) continue;
                   final accum = toolAccums.putIfAbsent(
                     toolCall.id,
                     () => _ToolCallAccum(),
@@ -518,6 +327,13 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
                   } else {
                     yield LLMToolCallDeltaPart(toolCall);
                   }
+
+                  final fullArgs = accum.arguments.toString();
+                  if (fullArgs.isNotEmpty && isParsableJson(fullArgs)) {
+                    if (endedToolCalls.add(toolCall.id)) {
+                      yield LLMToolCallEndPart(toolCall.id);
+                    }
+                  }
                 } catch (_) {
                   // Ignore malformed tool calls.
                 }
@@ -528,11 +344,10 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           // Finish.
           final fr = choice['finish_reason'] as String?;
           if (fr != null) {
-            if (_pendingThinkTagFragment.isNotEmpty) {
-              final pending = _pendingThinkTagFragment;
-              _pendingThinkTagFragment = '';
+            final pending = _thinkSplitter.consumePendingTagFragment();
+            if (pending.isNotEmpty) {
 
-              if (_inThinkTag) {
+              if (_thinkSplitter.inTag) {
                 if (inText) {
                   inText = false;
                   yield LLMTextEndPart(currentText.toString());
@@ -588,11 +403,10 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
         }
       }
 
-      if (_pendingThinkTagFragment.isNotEmpty) {
-        final pending = _pendingThinkTagFragment;
-        _pendingThinkTagFragment = '';
+      final pending = _thinkSplitter.consumePendingTagFragment();
+      if (pending.isNotEmpty) {
 
-        if (_inThinkTag) {
+        if (_thinkSplitter.inTag) {
           if (inText) {
             inText = false;
             yield LLMTextEndPart(currentText.toString());
@@ -809,109 +623,10 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
   void _resetStreamState() {
     _hasReasoningContent = false;
     _lastChunk = '';
-    _inThinkTag = false;
-    _pendingThinkTagFragment = '';
+    _thinkSplitter.reset();
     _thinkingBuffer.clear();
     _toolCallIds.clear();
   }
-
-  List<_ThinkPiece> _splitThinkTaggedDelta(String delta) {
-    if (delta.isEmpty) return const [];
-
-    final shouldScan =
-        _pendingThinkTagFragment.isNotEmpty || delta.contains('<');
-
-    if (!shouldScan) {
-      return [
-        _inThinkTag ? _ThinkPieceThinking(delta) : _ThinkPieceText(delta),
-      ];
-    }
-
-    var buffer = '$_pendingThinkTagFragment$delta';
-    _pendingThinkTagFragment = '';
-
-    final pieces = <_ThinkPiece>[];
-
-    while (buffer.isNotEmpty) {
-      final tag = _inThinkTag ? '</think>' : '<think>';
-      final index = buffer.indexOf(tag);
-
-      if (index == -1) {
-        final split = _splitForPotentialTagPrefix(buffer, tag);
-        if (split.emit.isNotEmpty) {
-          pieces.add(
-            _inThinkTag
-                ? _ThinkPieceThinking(split.emit)
-                : _ThinkPieceText(split.emit),
-          );
-        }
-        _pendingThinkTagFragment = split.pending;
-        break;
-      }
-
-      final before = buffer.substring(0, index);
-      if (before.isNotEmpty) {
-        pieces.add(
-          _inThinkTag ? _ThinkPieceThinking(before) : _ThinkPieceText(before),
-        );
-      }
-
-      pieces.add(
-        _inThinkTag
-            ? const _ThinkPieceThinkingEnd()
-            : const _ThinkPieceThinkingStart(),
-      );
-      _inThinkTag = !_inThinkTag;
-
-      buffer = buffer.substring(index + tag.length);
-    }
-
-    return pieces;
-  }
-
-  _PendingSplit _splitForPotentialTagPrefix(String buffer, String tag) {
-    final maxPrefixLen =
-        buffer.length < tag.length - 1 ? buffer.length : tag.length - 1;
-
-    for (var len = maxPrefixLen; len >= 1; len--) {
-      final prefix = tag.substring(0, len);
-      if (!buffer.endsWith(prefix)) continue;
-
-      final emit = buffer.substring(0, buffer.length - len);
-      final pending = buffer.substring(buffer.length - len);
-      return _PendingSplit(emit: emit, pending: pending);
-    }
-
-    return _PendingSplit(emit: buffer, pending: '');
-  }
-}
-
-final class _PendingSplit {
-  final String emit;
-  final String pending;
-  const _PendingSplit({required this.emit, required this.pending});
-}
-
-sealed class _ThinkPiece {
-  const _ThinkPiece();
-}
-
-final class _ThinkPieceText extends _ThinkPiece {
-  final String text;
-  const _ThinkPieceText(this.text);
-}
-
-final class _ThinkPieceThinking extends _ThinkPiece {
-  final String thinking;
-  const _ThinkPieceThinking(this.thinking);
-}
-
-final class _ThinkPieceThinkingStart extends _ThinkPiece {
-  const _ThinkPieceThinkingStart();
-}
-
-final class _ThinkPieceThinkingEnd extends _ThinkPiece {
-  const _ThinkPieceThinkingEnd();
 }
 
 
