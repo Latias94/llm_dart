@@ -361,6 +361,18 @@ Future<List<_CheckResult>> _runProviderChecks(
                 case ToolCallDeltaPart():
                   sawAnyDelta = true;
                   dump('ToolCallDelta');
+                case ProviderToolCallPart(
+                    :final toolCallId,
+                    :final toolName,
+                  ):
+                  sawAnyDelta = true;
+                  dump('ProviderToolCall $toolName ($toolCallId)');
+                case ProviderToolResultPart(
+                    :final toolCallId,
+                    :final toolName,
+                  ):
+                  sawAnyDelta = true;
+                  dump('ProviderToolResult $toolName ($toolCallId)');
                 case SourceUrlPart(:final url):
                   sawAnyDelta = true;
                   dump('SourceUrl $url');
@@ -477,6 +489,17 @@ Future<List<_CheckResult>> _runProviderChecks(
                 sawAnyDelta = true;
                 dump(
                     'ToolResult toolCallId=${result.toolCallId} len=${result.content.length}');
+
+              case LLMProviderToolCallPart(:final toolCallId, :final toolName):
+                sawAnyDelta = true;
+                dump('ProviderToolCall $toolName ($toolCallId)');
+
+              case LLMProviderToolResultPart(
+                  :final toolCallId,
+                  :final toolName
+                ):
+                sawAnyDelta = true;
+                dump('ProviderToolResult $toolName ($toolCallId)');
 
               case LLMProviderMetadataPart(:final providerMetadata):
                 dump(

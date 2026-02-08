@@ -116,6 +116,8 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
 
           case ThinkingDeltaPart():
           case ToolCallDeltaPart():
+          case ProviderToolCallPart():
+          case ProviderToolResultPart():
           case SourceUrlPart():
           case SourceDocumentPart():
             // Ignore for this demo.

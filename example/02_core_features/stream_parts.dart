@@ -88,6 +88,14 @@ void main() async {
         stdout.writeln('[tool result] ${result.toolCallId}');
         break;
 
+      case LLMProviderToolCallPart(:final toolCallId, :final toolName):
+        stdout.writeln('[provider tool call] $toolName ($toolCallId)');
+        break;
+
+      case LLMProviderToolResultPart(:final toolCallId, :final toolName):
+        stdout.writeln('[provider tool result] $toolName ($toolCallId)');
+        break;
+
       case LLMProviderMetadataPart(:final providerMetadata):
         stdout.writeln('[metadata] keys=${providerMetadata.keys.toList()}');
         break;

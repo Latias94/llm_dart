@@ -238,6 +238,10 @@ Future<void> demonstrateStreamingReasoning(String apiKey) async {
           // Handle tool call events (if supported)
           print('\n   [Tool Call: ${toolCall.function.name}]');
           break;
+        case ProviderToolCallPart():
+        case ProviderToolResultPart():
+          // Ignore provider tool lifecycle for this demo.
+          break;
         case SourceUrlPart():
         case SourceDocumentPart():
           // Ignore sources for this demo.

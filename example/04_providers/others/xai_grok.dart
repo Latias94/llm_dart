@@ -310,6 +310,8 @@ Future<void> demonstrateBestPractices(String apiKey) async {
           break;
         case ThinkingDeltaPart():
         case ToolCallDeltaPart():
+        case ProviderToolCallPart():
+        case ProviderToolResultPart():
         case SourceUrlPart():
         case SourceDocumentPart():
           // Handle other event types

@@ -210,6 +210,8 @@ slower person's pace. What's the minimum time to get everyone across?
           print('\n   ❌ Stream error: $error');
           break;
         case ToolCallDeltaPart():
+        case ProviderToolCallPart():
+        case ProviderToolResultPart():
         case SourceUrlPart():
         case SourceDocumentPart():
           break;

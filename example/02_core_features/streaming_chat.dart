@@ -85,6 +85,8 @@ Future<void> demonstrateBasicStreaming(ChatCapability provider) async {
           break;
         case ThinkingDeltaPart():
         case ToolCallDeltaPart():
+        case ProviderToolCallPart():
+        case ProviderToolResultPart():
         case SourceUrlPart():
         case SourceDocumentPart():
           // Ignore for basic demo.
@@ -161,6 +163,8 @@ Future<void> demonstrateStreamEventTypes(ChatCapability provider) async {
         case LLMReasoningEndPart():
         case LLMToolCallEndPart():
         case LLMToolResultPart():
+        case LLMProviderToolCallPart():
+        case LLMProviderToolResultPart():
         case LLMSourceUrlPart():
         case LLMSourceDocumentPart():
           // Ignore for this demo.
@@ -229,6 +233,8 @@ Future<void> demonstrateStreamingWithThinking(ChatCapability provider) async {
           break;
 
         case ToolCallDeltaPart():
+        case ProviderToolCallPart():
+        case ProviderToolResultPart():
         case SourceUrlPart():
         case SourceDocumentPart():
           // Ignore for this demo.
@@ -289,6 +295,8 @@ Future<void> demonstrateStreamErrorHandling(ChatCapability provider) async {
 
         case ThinkingDeltaPart():
         case ToolCallDeltaPart():
+        case ProviderToolCallPart():
+        case ProviderToolResultPart():
         case SourceUrlPart():
         case SourceDocumentPart():
           // Ignore for this demo.
@@ -358,6 +366,8 @@ Future<void> demonstrateStreamPerformance(ChatCapability provider) async {
 
         case ThinkingDeltaPart():
         case ToolCallDeltaPart():
+        case ProviderToolCallPart():
+        case ProviderToolResultPart():
         case SourceUrlPart():
         case SourceDocumentPart():
           // Ignore for this demo.

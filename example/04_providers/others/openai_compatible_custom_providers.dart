@@ -98,6 +98,12 @@ void main() async {
       case ToolCallDeltaPart():
         print('toolCall: ${part.toolCall}');
         break;
+      case ProviderToolCallPart():
+        print('providerToolCall: ${part.toolName} (${part.toolCallId})');
+        break;
+      case ProviderToolResultPart():
+        print('providerToolResult: ${part.toolName} (${part.toolCallId})');
+        break;
       case SourceUrlPart():
         print('sourceUrl: ${part.url}');
         break;
