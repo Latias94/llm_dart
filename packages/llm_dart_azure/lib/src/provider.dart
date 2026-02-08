@@ -16,6 +16,7 @@ const String _azureResponsesProviderMetadataKey = 'azure.responses';
 class AzureOpenAIProvider
     implements
         ChatCapability,
+        ChatStreamPartsCapability,
         EmbeddingCapability,
         ImageGenerationCapability,
         TextToSpeechCapability,
