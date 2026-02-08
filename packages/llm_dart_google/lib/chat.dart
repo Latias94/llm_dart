@@ -198,6 +198,58 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     final functionCallParts = <Map<String, dynamic>>[];
     Map<String, dynamic>? usageMetadata;
 
+    String? modelVersion;
+    dynamic promptFeedback;
+    dynamic safetyRatings;
+    dynamic groundingMetadata;
+    dynamic urlContextMetadata;
+
+    final emittedSourceKeys = <String>{};
+    var nextSourceSeq = 0;
+
+    LLMSourceUrlPart? newUrlSource(String url, {String? title}) {
+      final key = 'url:$url';
+      if (!emittedSourceKeys.add(key)) return null;
+      return LLMSourceUrlPart(
+        sourceId: 'source_${nextSourceSeq++}',
+        url: url,
+        title: title,
+        providerMetadata: {
+          _providerOptionsName: {'type': 'groundingMetadata'},
+        },
+      );
+    }
+
+    String mediaTypeForUri(String uri) {
+      if (uri.endsWith('.pdf')) return 'application/pdf';
+      if (uri.endsWith('.txt')) return 'text/plain';
+      if (uri.endsWith('.docx')) {
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      }
+      if (uri.endsWith('.doc')) return 'application/msword';
+      if (RegExp(r'\.(md|markdown)$').hasMatch(uri)) return 'text/markdown';
+      return 'application/octet-stream';
+    }
+
+    LLMSourceDocumentPart? newDocumentSource(
+      String title, {
+      required String mediaType,
+      String? filename,
+      String? dedupeKey,
+    }) {
+      final key = dedupeKey ?? 'doc:$title:$mediaType:${filename ?? ''}';
+      if (!emittedSourceKeys.add(key)) return null;
+      return LLMSourceDocumentPart(
+        sourceId: 'source_${nextSourceSeq++}',
+        mediaType: mediaType,
+        title: title,
+        filename: filename,
+        providerMetadata: {
+          _providerOptionsName: {'type': 'groundingMetadata'},
+        },
+      );
+    }
+
     final startedToolCalls = <String>{};
     final endedToolCalls = <String>{};
 
@@ -327,6 +379,99 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         if (candidates == null || candidates.isEmpty) continue;
 
         final candidate = candidates.first as Map<String, dynamic>;
+
+        final mv = json['modelVersion'] as String?;
+        if (mv != null && mv.isNotEmpty) modelVersion = mv;
+
+        final pf = json['promptFeedback'];
+        if (pf != null) promptFeedback = pf;
+
+        final sr = candidate['safetyRatings'];
+        if (sr != null) safetyRatings = sr;
+
+        final gm = candidate['groundingMetadata'];
+        if (gm != null) {
+          groundingMetadata = gm;
+          if (gm is Map) {
+            final chunks = gm['groundingChunks'];
+            if (chunks is List) {
+              for (final chunk in chunks) {
+                if (chunk is! Map) continue;
+
+                final web = chunk['web'];
+                if (web is Map) {
+                  final uri = web['uri'];
+                  if (uri is String && uri.isNotEmpty) {
+                    final p = newUrlSource(
+                      uri,
+                      title: web['title'] is String
+                          ? web['title'] as String
+                          : null,
+                    );
+                    if (p != null) yield p;
+                  }
+                }
+
+                final retrieved = chunk['retrievedContext'];
+                if (retrieved is Map) {
+                  final uri = retrieved['uri'];
+                  final fileSearchStore = retrieved['fileSearchStore'];
+                  final title = retrieved['title'] is String
+                      ? retrieved['title'] as String
+                      : 'Unknown Document';
+
+                  if (uri is String && uri.isNotEmpty) {
+                    if (uri.startsWith('http://') ||
+                        uri.startsWith('https://')) {
+                      final p = newUrlSource(uri, title: title);
+                      if (p != null) yield p;
+                    } else {
+                      final filename =
+                          uri.split('/').isEmpty ? null : uri.split('/').last;
+                      final p = newDocumentSource(
+                        title,
+                        mediaType: mediaTypeForUri(uri),
+                        filename: filename,
+                        dedupeKey: 'docUri:$uri',
+                      );
+                      if (p != null) yield p;
+                    }
+                  } else if (fileSearchStore is String &&
+                      fileSearchStore.isNotEmpty) {
+                    final filename = fileSearchStore.split('/').isEmpty
+                        ? null
+                        : fileSearchStore.split('/').last;
+                    final p = newDocumentSource(
+                      title,
+                      mediaType: 'application/octet-stream',
+                      filename: filename,
+                      dedupeKey: 'fileSearchStore:$fileSearchStore',
+                    );
+                    if (p != null) yield p;
+                  }
+                }
+
+                final maps = chunk['maps'];
+                if (maps is Map) {
+                  final uri = maps['uri'];
+                  if (uri is String && uri.isNotEmpty) {
+                    final p = newUrlSource(
+                      uri,
+                      title: maps['title'] is String
+                          ? maps['title'] as String
+                          : null,
+                    );
+                    if (p != null) yield p;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        final ucm = candidate['urlContextMetadata'];
+        if (ucm != null) urlContextMetadata = ucm;
+
         final content = candidate['content'] as Map<String, dynamic>?;
         final parts = content?['parts'] as List?;
 
@@ -458,13 +603,19 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
           ];
 
           final response = GoogleChatResponse({
-            'modelVersion': config.model,
+            'modelVersion': modelVersion ?? config.model,
             'candidates': [
               {
                 'content': {'parts': responseParts},
                 'finishReason': finishReason,
+                if (safetyRatings != null) 'safetyRatings': safetyRatings,
+                if (groundingMetadata != null)
+                  'groundingMetadata': groundingMetadata,
+                if (urlContextMetadata != null)
+                  'urlContextMetadata': urlContextMetadata,
               },
             ],
+            if (promptFeedback != null) 'promptFeedback': promptFeedback,
             if (usageMetadata != null) 'usageMetadata': usageMetadata,
           },
               toolNameMapping: toolNameMapping,
@@ -492,12 +643,17 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       ...functionCallParts,
     ];
     final response = GoogleChatResponse({
-      'modelVersion': config.model,
+      'modelVersion': modelVersion ?? config.model,
       'candidates': [
         {
           'content': {'parts': responseParts},
+          if (safetyRatings != null) 'safetyRatings': safetyRatings,
+          if (groundingMetadata != null) 'groundingMetadata': groundingMetadata,
+          if (urlContextMetadata != null)
+            'urlContextMetadata': urlContextMetadata,
         },
       ],
+      if (promptFeedback != null) 'promptFeedback': promptFeedback,
       if (usageMetadata != null) 'usageMetadata': usageMetadata,
     },
         toolNameMapping: toolNameMapping,
