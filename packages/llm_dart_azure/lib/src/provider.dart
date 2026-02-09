@@ -17,6 +17,8 @@ class AzureOpenAIProvider
     implements
         ChatCapability,
         ChatStreamPartsCapability,
+        PromptChatCapability,
+        PromptChatStreamPartsCapability,
         EmbeddingCapability,
         ImageGenerationCapability,
         TextToSpeechCapability,
@@ -146,6 +148,63 @@ class AzureOpenAIProvider
     return _wrapStreamPartsWithProviderMetadataAlias(
       _chat.chatStreamParts(
         messages,
+        tools: tools,
+        cancelToken: cancelToken,
+      ),
+      baseKey: config.providerId,
+      aliasKey: _azureChatProviderMetadataKey,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async {
+    if (config.useResponsesAPI) {
+      final response = await _responses.chatPrompt(
+        prompt,
+        tools: tools,
+        cancelToken: cancelToken,
+      );
+      return _wrapResponseWithProviderMetadataAlias(
+        response,
+        baseKey: config.providerId,
+        aliasKey: _azureResponsesProviderMetadataKey,
+      );
+    }
+
+    final response =
+        await _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+    return _wrapResponseWithProviderMetadataAlias(
+      response,
+      baseKey: config.providerId,
+      aliasKey: _azureChatProviderMetadataKey,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    if (config.useResponsesAPI) {
+      return _wrapStreamPartsWithProviderMetadataAlias(
+        _responses.chatPromptStreamParts(
+          prompt,
+          tools: tools,
+          cancelToken: cancelToken,
+        ),
+        baseKey: config.providerId,
+        aliasKey: _azureResponsesProviderMetadataKey,
+      );
+    }
+
+    return _wrapStreamPartsWithProviderMetadataAlias(
+      _chat.chatPromptStreamParts(
+        prompt,
         tools: tools,
         cancelToken: cancelToken,
       ),
