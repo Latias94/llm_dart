@@ -8,6 +8,7 @@ void main() {
     test('namespaces metadata under vertex (AI SDK parity)', () async {
       final config = GoogleConfig(
         providerOptionsName: 'vertex',
+        providerId: 'google-vertex',
         apiKey: 'test-key',
         baseUrl: googleVertexBaseUrl,
         model: googleVertexDefaultModel,

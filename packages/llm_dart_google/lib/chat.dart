@@ -77,7 +77,40 @@ class GoogleChat
 
   GoogleChat(this.client, this.config);
 
+  String get _providerOptionsId => config.providerId;
+
   String get _providerOptionsName => config.providerOptionsName;
+
+  Map<String, dynamic>? _scopedProviderOptions(
+      ProviderOptions providerOptions) {
+    final primary = providerOptions[_providerOptionsId];
+    if (primary != null) return primary;
+
+    final byName = providerOptions[_providerOptionsName];
+    if (byName != null) return byName;
+
+    // Backward-compat + convenience fallback:
+    // - Vertex provider id is `google-vertex` but metadata namespace is `vertex`.
+    // - Some callsites may still attach options under `google`.
+    if (_providerOptionsName == 'vertex') {
+      final vertexId = providerOptions['google-vertex'];
+      if (vertexId != null) return vertexId;
+
+      final googleId = providerOptions['google'];
+      if (googleId != null) return googleId;
+    }
+
+    return null;
+  }
+
+  String? _thoughtSignatureFromProviderOptions(
+      ProviderOptions providerOptions) {
+    final scoped = _scopedProviderOptions(providerOptions);
+    final value = scoped?['thoughtSignature'];
+    if (value == null) return null;
+    final str = value.toString();
+    return str.isEmpty ? null : str;
+  }
 
   String get _chatEndpoint =>
       '${googleModelPath(config.model)}:generateContent';
@@ -1163,6 +1196,21 @@ class GoogleChat
       String? currentRole;
       final currentParts = <Map<String, dynamic>>[];
 
+      ProviderOptions mergeProviderOptions(
+        ProviderOptions base,
+        ProviderOptions override,
+      ) {
+        if (base.isEmpty) return override;
+        if (override.isEmpty) return base;
+
+        final merged = <String, Map<String, dynamic>>{...base};
+        for (final entry in override.entries) {
+          final existing = merged[entry.key];
+          merged[entry.key] = {...?existing, ...entry.value};
+        }
+        return merged;
+      }
+
       void flush() {
         if (currentRole == null || currentParts.isEmpty) return;
         contents.add({
@@ -1192,22 +1240,43 @@ class GoogleChat
         }
         currentRole ??= googleRole;
 
+        final effectiveProviderOptions =
+            mergeProviderOptions(message.providerOptions, part.providerOptions);
+        final thoughtSignature = partRole == ChatRole.assistant
+            ? _thoughtSignatureFromProviderOptions(effectiveProviderOptions)
+            : null;
+
         switch (part) {
           case TextPart(:final text):
-            currentParts.add({'text': text});
+            currentParts.add({
+              'text': text,
+              if (thoughtSignature != null)
+                'thoughtSignature': thoughtSignature,
+            });
 
           case ImagePart(:final mime, :final data, :final text):
             if (text != null && text.trim().isNotEmpty) {
-              currentParts.add({'text': text});
+              currentParts.add({
+                'text': text,
+                if (thoughtSignature != null)
+                  'thoughtSignature': thoughtSignature,
+              });
             }
             currentParts.add({
               'inlineData': {
                 'mimeType': mime.mimeType,
                 'data': base64Encode(data),
               },
+              if (thoughtSignature != null)
+                'thoughtSignature': thoughtSignature,
             });
 
           case ImageUrlPart(:final url, :final text):
+            if (googleRole == 'model') {
+              throw const InvalidRequestError(
+                'Google does not support fileData URLs in assistant messages.',
+              );
+            }
             if (text != null && text.trim().isNotEmpty) {
               currentParts.add({'text': text});
             }
@@ -1220,9 +1289,19 @@ class GoogleChat
 
           case FilePart(:final mime, :final data, :final text):
             if (text != null && text.trim().isNotEmpty) {
-              currentParts.add({'text': text});
+              currentParts.add({
+                'text': text,
+                if (thoughtSignature != null)
+                  'thoughtSignature': thoughtSignature,
+              });
             }
             if (data.length > config.maxInlineDataSize) {
+              if (googleRole == 'model') {
+                throw InvalidRequestError(
+                  'File too large for Google inlineData in assistant messages: '
+                  '${data.length} bytes (maxInlineDataSize=${config.maxInlineDataSize}).',
+                );
+              }
               final displayName = _defaultUploadDisplayName(
                   mimeType: mime.mimeType, data: data);
               final uploaded = await getOrUploadFile(
@@ -1260,6 +1339,8 @@ class GoogleChat
                   'mimeType': mime.mimeType,
                   'data': base64Encode(data),
                 },
+                if (thoughtSignature != null)
+                  'thoughtSignature': thoughtSignature,
               });
             }
 
@@ -1270,6 +1351,9 @@ class GoogleChat
                 'ToolCallPart must be emitted from an assistant message.',
               );
             }
+            final callThoughtSignature = _thoughtSignatureFromProviderOptions(
+                    toolCall.providerOptions) ??
+                thoughtSignature;
             Map<String, dynamic> args;
             try {
               final decoded = jsonDecode(toolCall.function.arguments);
@@ -1286,6 +1370,8 @@ class GoogleChat
                 'name': requestName,
                 'args': args,
               },
+              if (callThoughtSignature != null)
+                'thoughtSignature': callThoughtSignature,
             });
 
           case ToolResultPart(:final toolResult, :final overrideRole):
@@ -1693,22 +1779,41 @@ class GoogleChat
 
     switch (message.messageType) {
       case TextMessage():
-        parts.add({'text': message.content});
+        final thoughtSignature = message.role == ChatRole.assistant
+            ? _thoughtSignatureFromProviderOptions(message.providerOptions)
+            : null;
+        parts.add({
+          'text': message.content,
+          if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
+        });
         break;
       case ImageMessage(mime: final mime, data: final data):
+        final thoughtSignature = message.role == ChatRole.assistant
+            ? _thoughtSignatureFromProviderOptions(message.providerOptions)
+            : null;
         if (message.content.trim().isNotEmpty) {
-          parts.add({'text': message.content});
+          parts.add({
+            'text': message.content,
+            if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
+          });
         }
         parts.add({
           'inlineData': {
             'mimeType': mime.mimeType,
             'data': base64Encode(data),
           },
+          if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
         });
         break;
       case FileMessage(mime: final mime, data: final data):
+        final thoughtSignature = message.role == ChatRole.assistant
+            ? _thoughtSignatureFromProviderOptions(message.providerOptions)
+            : null;
         if (message.content.trim().isNotEmpty) {
-          parts.add({'text': message.content});
+          parts.add({
+            'text': message.content,
+            if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
+          });
         }
         final uploaded = message.getProtocolPayload<Map<String, dynamic>>(
           'google',
@@ -1717,6 +1822,11 @@ class GoogleChat
         final uploadedMimeType = uploaded?['mimeType'] as String?;
 
         if (fileUri != null && fileUri.isNotEmpty) {
+          if (message.role == ChatRole.assistant) {
+            throw const InvalidRequestError(
+              'Google does not support fileData URLs in assistant messages.',
+            );
+          }
           parts.add({
             'fileData': {
               'fileUri': fileUri,
@@ -1737,9 +1847,15 @@ class GoogleChat
             'mimeType': mime.mimeType,
             'data': base64Encode(data),
           },
+          if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
         });
         break;
       case ImageUrlMessage(url: final url):
+        if (message.role == ChatRole.assistant) {
+          throw const InvalidRequestError(
+            'Google does not support fileData URLs in assistant messages.',
+          );
+        }
         if (message.content.trim().isNotEmpty) {
           parts.add({'text': message.content});
         }
@@ -1756,11 +1872,16 @@ class GoogleChat
             final args = jsonDecode(toolCall.function.arguments);
             final requestName =
                 toolNameMapping.requestNameForFunction(toolCall.function.name);
+            final thoughtSignature = message.role == ChatRole.assistant
+                ? _thoughtSignatureFromProviderOptions(toolCall.providerOptions)
+                : null;
             parts.add({
               'functionCall': {
                 'name': requestName,
                 'args': args,
               },
+              if (thoughtSignature != null)
+                'thoughtSignature': thoughtSignature,
             });
           } catch (e) {
             client.logger.warning(
@@ -1815,6 +1936,11 @@ class GoogleChat
       if (message.messageType
           case FileMessage(mime: final mime, data: final data)) {
         if (data.length > config.maxInlineDataSize) {
+          if (message.role == ChatRole.assistant) {
+            throw const InvalidRequestError(
+              'Google does not support file uploads from assistant messages.',
+            );
+          }
           final displayName =
               _defaultUploadDisplayName(mimeType: mime.mimeType, data: data);
           final uploaded = await getOrUploadFile(
@@ -2191,21 +2317,33 @@ class GoogleChatResponse implements ChatResponseWithFinishReason {
     if (raw == null || raw.isEmpty) return null;
 
     final hasToolCalls = (toolCalls?.isNotEmpty ?? false);
-    final unified =
-        hasToolCalls ? LLMUnifiedFinishReason.toolCalls : _mapFinishReason(raw);
+    final unified = _mapFinishReason(raw, hasToolCalls: hasToolCalls);
 
     return LLMFinishReason(unified: unified, raw: raw);
   }
 
-  static LLMUnifiedFinishReason _mapFinishReason(String raw) {
+  static LLMUnifiedFinishReason _mapFinishReason(
+    String raw, {
+    required bool hasToolCalls,
+  }) {
     switch (raw.toUpperCase()) {
       case 'STOP':
-        return LLMUnifiedFinishReason.stop;
+        return hasToolCalls
+            ? LLMUnifiedFinishReason.toolCalls
+            : LLMUnifiedFinishReason.stop;
       case 'MAX_TOKENS':
         return LLMUnifiedFinishReason.length;
+      case 'IMAGE_SAFETY':
       case 'SAFETY':
       case 'RECITATION':
+      case 'BLOCKLIST':
+      case 'PROHIBITED_CONTENT':
+      case 'SPII':
         return LLMUnifiedFinishReason.contentFilter;
+      case 'MALFORMED_FUNCTION_CALL':
+        return LLMUnifiedFinishReason.error;
+      case 'FINISH_REASON_UNSPECIFIED':
+      case 'OTHER':
       default:
         return LLMUnifiedFinishReason.other;
     }

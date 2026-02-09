@@ -9,6 +9,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/google.dart';
 
 import 'defaults.dart';
+import 'google_vertex_factory.dart';
 
 GoogleProvider createGoogleVertexProvider({
   required String apiKey,
@@ -36,6 +37,7 @@ GoogleProvider createGoogleVertexProvider({
 }) {
   final config = GoogleConfig(
     providerOptionsName: 'vertex',
+    providerId: googleVertexProviderId,
     apiKey: apiKey,
     model: model ?? googleVertexDefaultModel,
     baseUrl: baseUrl ?? googleVertexBaseUrl,

@@ -51,6 +51,7 @@ void main() {
     test('sends API key via x-goog-api-key header (not query)', () async {
       final config = GoogleConfig(
         providerOptionsName: 'vertex',
+        providerId: 'google-vertex',
         apiKey: 'test-vertex-key',
         baseUrl: googleVertexBaseUrl,
         model: 'gemini-2.5-pro',
@@ -83,4 +84,3 @@ void main() {
     });
   });
 }
-

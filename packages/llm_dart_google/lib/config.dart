@@ -54,6 +54,13 @@ class SafetySetting {
 /// This class contains all configuration options for the Google providers.
 /// It's extracted from the main provider to improve modularity and reusability.
 class GoogleConfig {
+  /// Provider id used for reading request-side `providerOptions`.
+  ///
+  /// Examples:
+  /// - `google` (Gemini API)
+  /// - `google-vertex` (Vertex express mode)
+  final String providerId;
+
   /// Provider options namespace name used for `providerMetadata` and per-part
   /// `providerOptions` propagation.
   ///
@@ -110,6 +117,7 @@ class GoogleConfig {
   final LLMConfig? _originalConfig;
 
   const GoogleConfig({
+    this.providerId = 'google',
     this.providerOptionsName = 'google',
     required this.apiKey,
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/',
@@ -200,6 +208,7 @@ class GoogleConfig {
     );
 
     return GoogleConfig(
+      providerId: providerId,
       providerOptionsName: providerOptionsName,
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
@@ -400,6 +409,7 @@ class GoogleConfig {
       ];
 
   GoogleConfig copyWith({
+    String? providerId,
     String? providerOptionsName,
     String? apiKey,
     String? baseUrl,
@@ -430,6 +440,7 @@ class GoogleConfig {
     int? embeddingDimensions,
   }) =>
       GoogleConfig(
+        providerId: providerId ?? this.providerId,
         providerOptionsName: providerOptionsName ?? this.providerOptionsName,
         apiKey: apiKey ?? this.apiKey,
         baseUrl: baseUrl ?? this.baseUrl,

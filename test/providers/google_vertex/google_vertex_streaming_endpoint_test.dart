@@ -10,6 +10,7 @@ void main() {
     test('uses streamGenerateContent without alt=sse', () async {
       final config = GoogleConfig(
         providerOptionsName: 'vertex',
+        providerId: 'google-vertex',
         apiKey: 'test-key',
         baseUrl: googleVertexBaseUrl,
         model: googleVertexDefaultModel,
