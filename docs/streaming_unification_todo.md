@@ -38,8 +38,8 @@ Core principle:
 
 Add new parts (names are placeholders; exact naming TBD):
 
-- `LLMStreamStartPart({List<String> warnings})` (optional)
-- `LLMResponseMetadataPart({String? id, String? model, Map<String, dynamic>? raw})`
+- `LLMStreamStartPart({List<Map<String, dynamic>> warnings})` (optional)
+- `LLMResponseMetadataPart({String? id, String? model, String? status, String? systemFingerprint, Map<String, dynamic>? providerMetadata, Map<String, dynamic>? raw})`
 - `LLMSourceUrlPart({String sourceId, String url, String? title, Map<String, dynamic>? providerMetadata})`
 - `LLMSourceDocumentPart({String sourceId, String mediaType, String title, String? filename, Map<String, dynamic>? providerMetadata})`
 - Provider-executed tools (server tools):
@@ -94,6 +94,7 @@ Already aligned in code:
 - `google` legacy stream derived from parts
 - `ollama` legacy stream derived from parts
 - `xai.responses` legacy stream derived from parts
+- Providers emit `LLMResponseMetadataPart` snapshots when stable metadata is available
 - Text/reasoning parts support optional `blockId` + per-part `providerMetadata` (AI SDK-style)
 - `streamChatParts` / `streamToolLoopParts` emit `LLMStreamStartPart` (AI SDK-style)
 - `LLMFinishPart` can carry typed `usage` + `finishReason`
@@ -130,6 +131,7 @@ These changes are expected to break downstream code:
 
 - [x] Update `packages/llm_dart_core/lib/core/stream_parts.dart` with new parts
 - [x] Add stable `finishReason` model (core) and propagate it through parts/results
+- [x] Emit `LLMResponseMetadataPart` snapshots for key providers (OpenAI-compatible, Anthropic, Google, xAI)
 - [x] Update `packages/llm_dart_ai/lib/src/stream_parts.dart` adapters accordingly
 - [x] Update `packages/llm_dart_ai/lib/src/tool_loop.dart` parts-mode loop integration
 
