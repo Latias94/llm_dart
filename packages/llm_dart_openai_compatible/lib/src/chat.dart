@@ -699,7 +699,11 @@ class OpenAIChat
           yield LLMProviderMetadataPart(metadata);
         }
 
-        yield LLMFinishPart(response);
+        yield LLMFinishPart(
+          response,
+          usage: response.usage,
+          finishReason: response.finishReason,
+        );
         return;
       }
 
@@ -764,7 +768,11 @@ class OpenAIChat
         if (metadata != null && metadata.isNotEmpty) {
           yield LLMProviderMetadataPart(metadata);
         }
-        yield LLMFinishPart(response);
+        yield LLMFinishPart(
+          response,
+          usage: response.usage,
+          finishReason: response.finishReason,
+        );
       }
     } catch (e) {
       if (e is LLMError) {

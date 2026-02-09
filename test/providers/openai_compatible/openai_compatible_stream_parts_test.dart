@@ -156,6 +156,15 @@ void main() {
       final finish = parts.last as LLMFinishPart;
       expect(finish.response.text, equals('Hello world'));
       expect(finish.response.thinking, isNull);
+      expect(finish.usage, isNotNull);
+      expect(finish.usage!.promptTokens, equals(10));
+      expect(finish.usage!.completionTokens, equals(5));
+      expect(finish.usage!.totalTokens, equals(15));
+      expect(finish.finishReason, isNotNull);
+      expect(
+        finish.finishReason!.unified,
+        equals(LLMUnifiedFinishReason.toolCalls),
+      );
 
       final calls = finish.response.toolCalls;
       expect(calls, isNotNull);
