@@ -95,6 +95,7 @@ Already aligned in code:
 - `ollama` legacy stream derived from parts
 - `xai.responses` legacy stream derived from parts
 - Providers emit `LLMResponseMetadataPart` snapshots when stable metadata is available
+- `LLMResponseMetadataPart` includes `timestamp` when providers expose it (`created` / `created_at`)
 - Google emits `toolWarnings` via `LLMStreamStartPart(warnings: ...)` when streaming
 - Text/reasoning parts support optional `blockId` + per-part `providerMetadata` (AI SDK-style)
 - `streamChatParts` / `streamToolLoopParts` emit `LLMStreamStartPart` (AI SDK-style)
