@@ -1,7 +1,8 @@
 part of 'package:llm_dart_anthropic_compatible/chat.dart';
 
 /// Anthropic chat response implementation.
-class AnthropicChatResponse implements ChatResponseWithAssistantMessage {
+class AnthropicChatResponse
+    implements ChatResponseWithAssistantMessage, ChatResponseWithFinishReason {
   final Map<String, dynamic> _rawResponse;
   final String? _providerId;
   final ToolNameMapping? _toolNameMapping;
@@ -120,6 +121,25 @@ class AnthropicChatResponse implements ChatResponseWithAssistantMessage {
       providerId: payload,
       '$providerId.messages': payload,
     };
+  }
+
+  @override
+  LLMFinishReason? get finishReason {
+    final stopReason = _rawResponse['stop_reason'];
+    if (stopReason is! String || stopReason.isEmpty) return null;
+
+    final unified = switch (stopReason) {
+      'end_turn' => LLMUnifiedFinishReason.stop,
+      'stop_sequence' => LLMUnifiedFinishReason.stop,
+      'max_tokens' => LLMUnifiedFinishReason.length,
+      'tool_use' => (toolCalls != null && toolCalls!.isNotEmpty)
+          ? LLMUnifiedFinishReason.toolCalls
+          : LLMUnifiedFinishReason.other,
+      'content_filtered' => LLMUnifiedFinishReason.contentFilter,
+      _ => LLMUnifiedFinishReason.other,
+    };
+
+    return LLMFinishReason(unified: unified, raw: stopReason);
   }
 
   @override
