@@ -171,8 +171,71 @@ LLM Dart supports streaming on both API families:
 - Chat Completions: SSE deltas mapped into `LLMStreamPart` via capability adapters.
 - Responses: SSE events mapped into `LLMStreamPart`, including incremental tool call deltas.
 
+### Streaming example (LLMStreamPart)
+
+This is the recommended way to consume streaming output, because it exposes:
+
+- `LLMStreamStartPart` warnings (if any)
+- `LLMResponseMetadataPart` (response id/model/timestamp snapshots)
+- citations/sources (`LLMSourceUrlPart` / `LLMSourceDocumentPart`)
+- provider-executed tools (`LLMProviderTool*Part`)
+- typed `usage` + `finishReason` (on `LLMFinishPart`, when available)
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+Future<void> main() async {
+  registerOpenAI();
+
+  final model = await LLMBuilder()
+      .provider(openaiProviderId)
+      .apiKey(Platform.environment['OPENAI_API_KEY'] ?? 'OPENAI_API_KEY')
+      .model('gpt-4o')
+      // Optional: enable provider-executed web search (Responses API).
+      // .providerTool(OpenAIProviderTools.webSearch())
+      .build();
+
+  await for (final part in streamChatParts(
+    model: model,
+    messages: const [ChatMessage.user('Explain streaming in 2 sentences.')],
+  )) {
+    switch (part) {
+      case LLMStreamStartPart(:final warnings):
+        if (warnings.isNotEmpty) stderr.writeln('warnings: $warnings');
+      case LLMResponseMetadataPart(:final id, :final model, :final timestamp):
+        stderr.writeln('meta: id=$id model=$model ts=$timestamp');
+      case LLMTextDeltaPart(:final delta):
+        stdout.write(delta);
+      case LLMSourceUrlPart(:final url, :final title):
+        stderr.writeln('\nsource: ${title ?? '(no title)'} $url');
+      case LLMProviderToolCallPart(:final toolName, :final toolCallId):
+        stderr.writeln('\nprovider tool call: $toolName ($toolCallId)');
+      case LLMProviderToolResultPart(:final toolName, :final toolCallId):
+        stderr.writeln('\nprovider tool result: $toolName ($toolCallId)');
+      case LLMFinishPart(:final finishReason, :final usage):
+        stderr.writeln('\nfinish: $finishReason usage=$usage');
+      case LLMErrorPart(:final error):
+        stderr.writeln('error: $error');
+      default:
+        // Ignore other part types for this example.
+        break;
+    }
+  }
+}
+```
+
+### Notes
+
+- Legacy `chatStream()` (`ChatStreamEvent`) is a lossy adapter and does not
+  represent sources/citations, provider-executed tools, or stream-start warnings.
+- If you need those features, consume `LLMStreamPart` via `streamChatParts()`.
+
 Official docs:
 
 - Responses streaming: https://platform.openai.com/docs/api-reference/responses/streaming
 - Chat Completions streaming: https://platform.openai.com/docs/api-reference/chat/streaming
-
