@@ -30,7 +30,7 @@ Note: If you use the **pre-configured OpenAI-compatible** provider id
 
 Default base URL:
 
-- `https://api.deepseek.com/v1/`
+- `https://api.deepseek.com/`
 
 ## Authentication
 

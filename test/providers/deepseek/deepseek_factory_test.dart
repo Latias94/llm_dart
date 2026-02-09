@@ -47,7 +47,7 @@ void main() {
       test('should create provider with basic config', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
         );
 
@@ -60,7 +60,7 @@ void main() {
       test('should create provider with reasoning config', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-reasoner',
           providerOptions: const {
             'deepseek': {
@@ -106,7 +106,7 @@ void main() {
 
       test('should handle missing API key gracefully', () {
         final config = LLMConfig(
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
         );
 
@@ -116,7 +116,7 @@ void main() {
       test('should handle empty API key gracefully', () {
         final config = LLMConfig(
           apiKey: '',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
         );
 
@@ -145,7 +145,7 @@ void main() {
         final defaultConfig = factory.getDefaultConfig();
 
         expect(defaultConfig.baseUrl, isNotNull);
-        expect(defaultConfig.baseUrl, equals('https://api.deepseek.com/v1/'));
+        expect(defaultConfig.baseUrl, equals('https://api.deepseek.com/'));
       });
     });
 
@@ -153,7 +153,7 @@ void main() {
       test('should validate valid config', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
         );
 
@@ -162,7 +162,7 @@ void main() {
 
       test('should reject config without API key', () {
         final config = LLMConfig(
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
         );
 
@@ -172,7 +172,7 @@ void main() {
       test('should reject config with empty API key', () {
         final config = LLMConfig(
           apiKey: '',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
         );
 
@@ -182,7 +182,7 @@ void main() {
       test('should accept config with reasoning model', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-reasoner',
         );
 
@@ -192,7 +192,7 @@ void main() {
       test('should accept config with provider options', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
           providerOptions: const {
             'deepseek': {
@@ -214,7 +214,7 @@ void main() {
       test('should create providers that implement required interfaces', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
         );
 
@@ -268,7 +268,7 @@ void main() {
       test('should preserve original config reference', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
           transportOptions: const {
             'customHeaders': {'X-Test': 'customValue'},
@@ -292,7 +292,7 @@ void main() {
       test('should handle invalid model gracefully', () {
         final config = LLMConfig(
           apiKey: 'test-api-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'invalid-model',
         );
 

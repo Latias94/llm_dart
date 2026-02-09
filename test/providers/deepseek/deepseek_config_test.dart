@@ -10,7 +10,7 @@ void main() {
         );
 
         expect(config.apiKey, equals('test-api-key'));
-        expect(config.baseUrl, equals('https://api.deepseek.com/v1/'));
+        expect(config.baseUrl, equals('https://api.deepseek.com/'));
         expect(config.model, equals('deepseek-chat'));
       });
 
@@ -123,7 +123,7 @@ void main() {
       test('should create from LLMConfig', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-reasoner',
           temperature: 0.7,
           maxTokens: 1500,
@@ -140,7 +140,7 @@ void main() {
       test('should extract DeepSeek-specific provider options', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
           providerOptions: const {
             'deepseek': {
@@ -165,7 +165,7 @@ void main() {
       test('should preserve transportOptions via original config', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
           transportOptions: const {
             'customHeaders': {'X-Test': 'customValue'},
@@ -185,7 +185,7 @@ void main() {
       test('should handle missing provider options gracefully', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
         );
 
@@ -205,7 +205,7 @@ void main() {
           apiKey: 'test-key',
         );
 
-        expect(config.baseUrl, equals('https://api.deepseek.com/v1/'));
+        expect(config.baseUrl, equals('https://api.deepseek.com/'));
         expect(config.model, equals('deepseek-chat'));
         expect(config.maxTokens, isNull);
         expect(config.temperature, isNull);

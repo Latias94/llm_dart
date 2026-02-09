@@ -20,6 +20,7 @@
 library;
 
 import 'config.dart';
+import 'defaults.dart';
 import 'provider.dart';
 
 // Core exports
@@ -43,8 +44,8 @@ DeepSeekProvider createDeepSeekProvider({
 }) {
   final config = DeepSeekConfig(
     apiKey: apiKey,
-    model: model ?? 'deepseek-chat',
-    baseUrl: baseUrl ?? 'https://api.deepseek.com/v1/',
+    model: model ?? deepseekDefaultModel,
+    baseUrl: baseUrl ?? deepseekBaseUrl,
     maxTokens: maxTokens,
     temperature: temperature,
     systemPrompt: systemPrompt,

@@ -401,7 +401,7 @@ void main() {
     test('DeepSeek-openai forwards responseFormat to response_format', () {
       final llmConfig = LLMConfig(
         apiKey: 'k',
-        baseUrl: 'https://api.deepseek.com/v1/',
+        baseUrl: 'https://api.deepseek.com/',
         model: 'deepseek-chat',
         providerOptions: const {
           'deepseek-openai': {

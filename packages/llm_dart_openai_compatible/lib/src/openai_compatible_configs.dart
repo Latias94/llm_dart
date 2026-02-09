@@ -2,7 +2,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'openai_compatible_provider_config.dart';
 
-const String _deepseekOpenAIBaseUrl = 'https://api.deepseek.com/v1/';
+const String _deepseekOpenAIBaseUrl = 'https://api.deepseek.com/';
 const String _deepseekOpenAIDefaultModel = 'deepseek-chat';
 
 const String _groqOpenAIBaseUrl = 'https://api.groq.com/openai/v1/';

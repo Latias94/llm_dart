@@ -10,7 +10,7 @@ void main() {
       config = const DeepSeekConfig(
         apiKey: 'test-api-key',
         model: 'deepseek-chat',
-        baseUrl: 'https://api.deepseek.com/v1/',
+        baseUrl: 'https://api.deepseek.com/',
         maxTokens: 1000,
         temperature: 0.7,
       );
@@ -125,7 +125,7 @@ void main() {
         expect(provider.config, isNotNull);
         expect(provider.config.apiKey, equals('test-api-key'));
         expect(provider.config.model, equals('deepseek-chat'));
-        expect(provider.config.baseUrl, equals('https://api.deepseek.com/v1/'));
+        expect(provider.config.baseUrl, equals('https://api.deepseek.com/'));
       });
 
       test('should handle custom configuration', () {
@@ -155,7 +155,7 @@ void main() {
       test('should work with factory pattern', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
           temperature: 0.7,
         );
@@ -172,7 +172,7 @@ void main() {
       test('should handle provider options from LLMConfig', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
           providerOptions: const {
             'deepseek': {

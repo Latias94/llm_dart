@@ -8,7 +8,7 @@ void main() {
     test('reads canonical keys from providerOptions', () {
       final config = LLMConfig(
         apiKey: 'k',
-        baseUrl: 'https://api.deepseek.com/v1/',
+        baseUrl: 'https://api.deepseek.com/',
         model: 'deepseek-chat',
         providerOptions: const {
           'deepseek': {
@@ -33,7 +33,7 @@ void main() {
     test('does not read options from other namespaces', () {
       final config = LLMConfig(
         apiKey: 'k',
-        baseUrl: 'https://api.deepseek.com/v1/',
+        baseUrl: 'https://api.deepseek.com/',
         model: 'deepseek-chat',
         providerOptions: const {
           'openai': {

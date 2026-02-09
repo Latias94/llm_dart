@@ -120,14 +120,13 @@ void main() {
           providerId: 'deepseek',
           providerName: 'DeepSeek',
           apiKey: 'test-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: 'deepseek-chat',
         );
         final client = OpenAIClient(config);
 
         expect(client.dio, isA<Dio>());
-        expect(
-            client.dio.options.baseUrl, equals('https://api.deepseek.com/v1/'));
+        expect(client.dio.options.baseUrl, equals('https://api.deepseek.com/'));
 
         // Should have minimal interceptors in fallback mode
         expect(client.dio.interceptors.length, greaterThanOrEqualTo(0));

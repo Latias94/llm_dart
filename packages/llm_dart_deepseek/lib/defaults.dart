@@ -4,5 +4,7 @@
 /// keep provider packages from leaking protocol-layer package names.
 library;
 
-const String deepseekBaseUrl = 'https://api.deepseek.com/v1/';
+// Vercel AI SDK parity: DeepSeek API base URL uses `/chat/completions` without
+// a `/v1` prefix.
+const String deepseekBaseUrl = 'https://api.deepseek.com/';
 const String deepseekDefaultModel = 'deepseek-chat';

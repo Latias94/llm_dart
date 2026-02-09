@@ -77,7 +77,7 @@ void main() {
           providerId: 'deepseek',
           providerName: 'DeepSeek',
           apiKey: 'test-key',
-          baseUrl: 'https://api.deepseek.com/v1/',
+          baseUrl: 'https://api.deepseek.com/',
           model: raw['model'] as String? ?? 'deepseek-chat',
         );
 

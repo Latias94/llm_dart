@@ -109,7 +109,7 @@ void main() {
         providerId: 'deepseek',
         providerName: 'DeepSeek',
         apiKey: 'test-key',
-        baseUrl: 'https://api.deepseek.com/v1/',
+        baseUrl: 'https://api.deepseek.com/',
         model: 'deepseek-chat',
       );
 
@@ -145,7 +145,7 @@ void main() {
         providerId: 'deepseek',
         providerName: 'DeepSeek',
         apiKey: 'test-key',
-        baseUrl: 'https://api.deepseek.com/v1/',
+        baseUrl: 'https://api.deepseek.com/',
         model: 'deepseek-reasoner',
       );
 
@@ -183,7 +183,7 @@ void main() {
         providerId: 'deepseek',
         providerName: 'DeepSeek',
         apiKey: 'test-key',
-        baseUrl: 'https://api.deepseek.com/v1/',
+        baseUrl: 'https://api.deepseek.com/',
         model: 'deepseek-reasoner',
       );
 
