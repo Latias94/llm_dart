@@ -180,6 +180,7 @@ Acceptance criteria:
 - [ ] Add “provider tool part” conformance tests (web/file/search/code)
 - [x] Add provider tool part tests for OpenAI Responses + xAI Responses
 - [x] Add provider tool approval request tests for OpenAI Responses (MCP)
+- [x] Add providerMetadata dedupe conformance tests (OpenAI Responses + xAI Responses)
 - [ ] Expand chunk-fuzz coverage to the new part types
 - [x] Add a global “no drift” guard: `chatStream` must be derived from parts
 - [x] Azure: add request mapping tests for `/responses` + `api-version` (v1 + deployment URL modes)

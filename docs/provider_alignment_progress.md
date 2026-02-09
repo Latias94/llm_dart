@@ -36,6 +36,7 @@ For each provider `llm_dart_<name>`:
    - request JSON compilation (including `providerOptions`/`providerTools` bridges)
    - streaming part ordering + tool call semantics
    - providerMetadata namespacing stability
+   - providerMetadata stream snapshot dedupe (reduce noise; stable JSON keys)
 5.5) (Optional, local) run live smoke checks with real keys:
    - `dart run tool/live_provider_alignment.dart --all`
 6) Record notable changes in `CHANGELOG.md`
