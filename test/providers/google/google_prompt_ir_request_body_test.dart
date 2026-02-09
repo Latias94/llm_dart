@@ -167,5 +167,102 @@ void main() {
       expect(inlineData['mimeType'], equals('application/pdf'));
       expect(inlineData['data'], equals(base64Encode(const [9, 8, 7, 6])));
     });
+
+    test('propagates thoughtSignature for assistant parts (AI SDK parity)',
+        () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-2.5-pro',
+      );
+
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final chat = GoogleChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.assistant,
+            parts: [
+              TextPart(
+                'Thinking...',
+                providerOptions: {
+                  'google': {'thoughtSignature': 'sigA'},
+                },
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await chat.chatPrompt(prompt);
+
+      final contents = client.lastBody?['contents'] as List?;
+      expect(contents, isNotNull);
+      expect(contents, hasLength(1));
+
+      final entry = contents!.single as Map;
+      expect(entry['role'], equals('model'));
+      final parts = entry['parts'] as List;
+      expect(parts, hasLength(1));
+      expect(
+        parts.single,
+        equals({'text': 'Thinking...', 'thoughtSignature': 'sigA'}),
+      );
+    });
+
+    test('throws for ImageUrlPart in assistant messages (AI SDK parity)',
+        () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-2.5-pro',
+      );
+
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final chat = GoogleChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.assistant,
+            parts: [
+              ImageUrlPart(url: 'https://example.com/a.png'),
+            ],
+          ),
+        ],
+      );
+
+      await expectLater(
+        chat.chatPrompt(prompt),
+        throwsA(isA<InvalidRequestError>()),
+      );
+    });
   });
 }

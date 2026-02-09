@@ -62,6 +62,32 @@ void main() {
       expect(finish.raw, equals('MAX_TOKENS'));
     });
 
+    test(
+        'does not override MAX_TOKENS to toolCalls when tool calls are present',
+        () {
+      final response = GoogleChatResponse({
+        'candidates': [
+          {
+            'content': {
+              'parts': [
+                {
+                  'functionCall': {
+                    'name': 'get_weather',
+                    'args': {'location': 'London'},
+                  },
+                },
+              ],
+            },
+            'finishReason': 'MAX_TOKENS',
+          },
+        ],
+      });
+
+      final finish = (response as ChatResponseWithFinishReason).finishReason!;
+      expect(finish.unified, equals(LLMUnifiedFinishReason.length));
+      expect(finish.raw, equals('MAX_TOKENS'));
+    });
+
     test('maps SAFETY to unified.contentFilter', () {
       final response = GoogleChatResponse({
         'candidates': [
