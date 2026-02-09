@@ -189,6 +189,8 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     final toolNameMapping = built.toolNameMapping;
     final toolWarnings = built.toolWarnings;
 
+    final sseParser = SseChunkParser();
+    bool? useSse;
     var streamBuffer = '';
     final nameCounts = <String, int>{};
 
@@ -336,6 +338,40 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       }
     }
 
+    Iterable<Map<String, dynamic>> decodeEventPayload(String data) sync* {
+      if (data.isEmpty || data == '[DONE]') return;
+
+      Object? decoded;
+      try {
+        decoded = jsonDecode(data);
+      } catch (_) {
+        return;
+      }
+
+      if (decoded is Map) {
+        yield Map<String, dynamic>.from(decoded);
+        return;
+      }
+
+      if (decoded is List) {
+        for (final item in decoded) {
+          if (item is Map) {
+            yield Map<String, dynamic>.from(item);
+          }
+        }
+      }
+    }
+
+    Iterable<Map<String, dynamic>> jsonObjectsFromChunk(String chunk) sync* {
+      if (useSse == true) {
+        for (final event in sseParser.parse(chunk)) {
+          yield* decodeEventPayload(event.data);
+        }
+        return;
+      }
+      yield* extractJsonObjects(chunk);
+    }
+
     String nextToolCallId(String name) {
       final count = nameCounts[name] ?? 0;
       nameCounts[name] = count + 1;
@@ -369,7 +405,13 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     );
 
     await for (final chunk in stream) {
-      for (final json in extractJsonObjects(chunk)) {
+      if (useSse == null) {
+        final trimmed = chunk.trimLeft();
+        if (trimmed.isEmpty) continue;
+        useSse = !(trimmed.startsWith('[') || trimmed.startsWith('{'));
+      }
+
+      for (final json in jsonObjectsFromChunk(chunk)) {
         if (json.containsKey('error')) {
           try {
             throw _handleGoogleApiError(json);
