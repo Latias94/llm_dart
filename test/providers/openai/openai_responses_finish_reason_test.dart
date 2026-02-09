@@ -27,7 +27,7 @@ void main() {
 
       final finish = response.finishReason!;
       expect(finish.unified, equals(LLMUnifiedFinishReason.stop));
-      expect(finish.raw, equals('completed'));
+      expect(finish.raw, isNull);
     });
 
     test('completed with function calls => tool-calls', () {
@@ -54,7 +54,7 @@ void main() {
 
       final finish = response.finishReason!;
       expect(finish.unified, equals(LLMUnifiedFinishReason.toolCalls));
-      expect(finish.raw, equals('tool_calls'));
+      expect(finish.raw, isNull);
     });
 
     test('incomplete max_output_tokens => length', () {
@@ -77,4 +77,3 @@ void main() {
     });
   });
 }
-

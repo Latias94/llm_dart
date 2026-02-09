@@ -1947,15 +1947,23 @@ class OpenAIResponsesResponse implements ChatResponseWithFinishReason {
       return LLMFinishReason(unified: unified, raw: reason);
     }
 
-    // Completed.
-    if (toolCalls != null && toolCalls!.isNotEmpty) {
+    if (status == 'completed') {
+      // The Responses API does not expose a Chat Completions-style finish_reason.
+      // Align with AI SDK: treat completion as stop unless function tool calls exist.
+      if (toolCalls != null && toolCalls!.isNotEmpty) {
+        return const LLMFinishReason(
+          unified: LLMUnifiedFinishReason.toolCalls,
+          raw: null,
+        );
+      }
       return const LLMFinishReason(
-        unified: LLMUnifiedFinishReason.toolCalls,
-        raw: 'tool_calls',
+        unified: LLMUnifiedFinishReason.stop,
+        raw: null,
       );
     }
 
-    return LLMFinishReason(unified: LLMUnifiedFinishReason.stop, raw: status);
+    // Fallback for unexpected status values.
+    return LLMFinishReason(unified: LLMUnifiedFinishReason.other, raw: status);
   }
 
   @override
