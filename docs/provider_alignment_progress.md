@@ -115,3 +115,7 @@ Legend:
   standardized protocol docs under `docs/protocols/`.
 - 2025-12-24: OpenAI provider now supports `providerOptions['openai']['extraBody']`
   and `extraHeaders` consistently across Chat Completions and Responses.
+- 2026-02-09: OpenAI-compatible streaming aligns closer to AI SDK semantics:
+  - Chat Completions: emit URL citation source parts from `delta.annotations` (best-effort).
+  - Tool calls: only surface completed function tool calls (parseable JSON arguments) in the final response,
+    and avoid emitting `LLMToolCallEndPart` for incomplete tool calls at stream end.
