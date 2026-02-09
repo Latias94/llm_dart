@@ -158,10 +158,73 @@ Official docs:
 
 - Web fetch tool: https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool
 
+## Streaming
+
+Anthropic streaming uses SSE. LLM Dart parses the stream and emits `LLMStreamPart`
+items (parts-first, Vercel AI SDK style).
+
+### Streaming example (LLMStreamPart)
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+
+Future<void> main() async {
+  registerAnthropic();
+
+  final model = await LLMBuilder()
+      .provider(anthropicProviderId)
+      .apiKey(Platform.environment['ANTHROPIC_API_KEY'] ?? 'ANTHROPIC_API_KEY')
+      .model('claude-sonnet-4-20250514')
+      // Optional: enable provider-executed web search (server tool).
+      // .providerTool(AnthropicProviderTools.webSearch())
+      .build();
+
+  await for (final part in streamChatParts(
+    model: model,
+    messages: const [ChatMessage.user('Give me 3 bullet points about SSE.')],
+  )) {
+    switch (part) {
+      case LLMStreamStartPart(:final warnings):
+        if (warnings.isNotEmpty) stderr.writeln('warnings: $warnings');
+      case LLMResponseMetadataPart(:final id, :final model, :final timestamp):
+        stderr.writeln('meta: id=$id model=$model ts=$timestamp');
+      case LLMTextDeltaPart(:final delta):
+        stdout.write(delta);
+      case LLMReasoningDeltaPart(:final delta):
+        // Extended thinking (if enabled) streams here.
+        stderr.write(delta);
+      case LLMSourceUrlPart(:final url, :final title):
+        stderr.writeln('\nsource: ${title ?? '(no title)'} $url');
+      case LLMProviderToolCallPart(:final toolName, :final toolCallId):
+        stderr.writeln('\nprovider tool call: $toolName ($toolCallId)');
+      case LLMProviderToolResultPart(:final toolName, :final toolCallId):
+        stderr.writeln('\nprovider tool result: $toolName ($toolCallId)');
+      case LLMFinishPart(:final finishReason, :final usage):
+        stderr.writeln('\nfinish: $finishReason usage=$usage');
+      case LLMErrorPart(:final error):
+        stderr.writeln('error: $error');
+      default:
+        break;
+    }
+  }
+}
+```
+
+Notes:
+
+- Legacy `chatStream()` (`ChatStreamEvent`) is a lossy adapter and does not
+  represent sources/citations, provider-executed tools, or stream-start warnings.
+- Provider-executed server tools (e.g. `web_search` / `web_fetch`) are surfaced
+  via `LLMProviderTool*Part` (parts-only) and must never be executed locally.
+
 ## References
 
 - Messages API: https://platform.claude.com/docs/en/api/messages
 - Create message: https://platform.claude.com/docs/en/api/messages/create
 - Token counting: https://platform.claude.com/docs/en/api/messages/count-tokens
 - Models: https://platform.claude.com/docs/en/api/models
-
