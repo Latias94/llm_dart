@@ -109,10 +109,22 @@ class ElevenLabsAudio
     final voiceUsed = request.voice ?? config.defaultVoiceId;
     final modelUsed = request.model ?? config.defaultTTSModel;
 
+    final voiceSettings = <String, dynamic>{
+      ...config.voiceSettings,
+      if (request.stability != null) 'stability': request.stability,
+      if (request.similarityBoost != null)
+        'similarity_boost': request.similarityBoost,
+      if (request.style != null) 'style': request.style,
+      if (request.useSpeakerBoost != null)
+        'use_speaker_boost': request.useSpeakerBoost,
+      if (request.speed != null) 'speed': request.speed,
+    };
+
     final response = await _textToSpeechInternal(
       request.text,
       voiceId: voiceUsed,
       model: modelUsed,
+      voiceSettings: voiceSettings,
       languageCode: request.languageCode,
       seed: request.seed,
       previousText: request.previousText,
@@ -156,18 +168,21 @@ class ElevenLabsAudio
     final effectiveModel = request.model ?? config.defaultTTSModel;
     final outputFormat = _resolveOutputFormat(request);
 
+    final voiceSettings = <String, dynamic>{
+      ...config.voiceSettings,
+      if (request.stability != null) 'stability': request.stability,
+      if (request.similarityBoost != null)
+        'similarity_boost': request.similarityBoost,
+      if (request.style != null) 'style': request.style,
+      if (request.useSpeakerBoost != null)
+        'use_speaker_boost': request.useSpeakerBoost,
+      if (request.speed != null) 'speed': request.speed,
+    };
+
     final requestBody = <String, dynamic>{
       'text': request.text,
       'model_id': effectiveModel,
-      'voice_settings': {
-        ...config.voiceSettings,
-        if (request.stability != null) 'stability': request.stability,
-        if (request.similarityBoost != null)
-          'similarity_boost': request.similarityBoost,
-        if (request.style != null) 'style': request.style,
-        if (request.useSpeakerBoost != null)
-          'use_speaker_boost': request.useSpeakerBoost,
-      },
+      if (voiceSettings.isNotEmpty) 'voice_settings': voiceSettings,
       if (request.languageCode != null) 'language_code': request.languageCode,
       if (request.seed != null) 'seed': request.seed,
       if (request.previousText != null) 'previous_text': request.previousText,
@@ -327,6 +342,7 @@ class ElevenLabsAudio
     String text, {
     String? voiceId,
     String? model,
+    required Map<String, dynamic> voiceSettings,
     String? languageCode,
     int? seed,
     String? previousText,
@@ -354,7 +370,7 @@ class ElevenLabsAudio
       final requestBody = <String, dynamic>{
         'text': text,
         'model_id': effectiveModel,
-        'voice_settings': config.voiceSettings,
+        if (voiceSettings.isNotEmpty) 'voice_settings': voiceSettings,
       };
 
       if (languageCode != null) requestBody['language_code'] = languageCode;
