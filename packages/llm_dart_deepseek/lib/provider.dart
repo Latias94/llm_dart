@@ -9,7 +9,12 @@ import 'config.dart';
 /// DeepSeek is an OpenAI-compatible API surface. This provider is intentionally
 /// thin and delegates protocol behavior to `llm_dart_openai_compatible`.
 class DeepSeekProvider
-    implements ChatCapability, ChatStreamPartsCapability, ProviderCapabilities {
+    implements
+        ChatCapability,
+        ChatStreamPartsCapability,
+        PromptChatCapability,
+        PromptChatStreamPartsCapability,
+        ProviderCapabilities {
   final DeepSeekConfig config;
   final OpenAICompatibleConfig _openAIConfig;
   final OpenAIClient _client;
@@ -59,6 +64,28 @@ class DeepSeekProvider
   }) {
     return _chat.chatStreamParts(
       messages,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatPromptStreamParts(
+      prompt,
       tools: tools,
       cancelToken: cancelToken,
     );
