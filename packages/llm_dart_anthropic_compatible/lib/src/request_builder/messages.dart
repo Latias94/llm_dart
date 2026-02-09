@@ -8,13 +8,22 @@ extension _AnthropicRequestBuilderMessages on AnthropicRequestBuilder {
     final anthropicMessages = <Map<String, dynamic>>[];
     final systemContentBlocks = <Map<String, dynamic>>[];
     final systemMessages = <String>[];
+    var didSeeNonSystemMessage = false;
 
     for (final message in messages) {
       if (message.role == ChatRole.system) {
+        if (didSeeNonSystemMessage) {
+          throw const InvalidRequestError(
+            'Multiple system messages that are separated by user/assistant '
+            'messages are not supported. Put all system content at the '
+            'beginning of the prompt.',
+          );
+        }
         final result = _processSystemMessage(message);
         systemContentBlocks.addAll(result.contentBlocks);
         systemMessages.addAll(result.plainMessages);
       } else {
+        didSeeNonSystemMessage = true;
         anthropicMessages.add(_convertMessage(message, toolNameMapping));
       }
     }
@@ -110,18 +119,45 @@ extension _AnthropicRequestBuilderMessages on AnthropicRequestBuilder {
               'media_type': mime.mimeType,
               'data': base64Encode(data),
             },
+            if (effectiveCacheControl != null)
+              'cache_control': effectiveCacheControl,
           });
           break;
-        case ImageUrlMessage():
-          throw const InvalidRequestError(
-            'ImageUrlMessage is not supported by the Anthropic Messages API. '
-            'Download the image and send it as ImageMessage (base64) instead.',
-          );
+        case ImageUrlMessage(url: final url):
+          if (message.content.isNotEmpty) {
+            content.add({
+              'type': 'text',
+              'text': message.content,
+              if (effectiveCacheControl != null)
+                'cache_control': effectiveCacheControl,
+            });
+          }
+
+          final trimmed = url.trim();
+          final isHttp = trimmed.startsWith('http://') ||
+              trimmed.startsWith('https://');
+          if (!isHttp) {
+            throw InvalidRequestError(
+              'ImageUrlMessage must be an http(s) URL. Got: "$url"',
+            );
+          }
+
+          content.add({
+            'type': 'image',
+            'source': {
+              'type': 'url',
+              'url': trimmed,
+            },
+            if (effectiveCacheControl != null)
+              'cache_control': effectiveCacheControl,
+          });
+          break;
         case FileMessage(mime: final mime, data: final data):
-          if (mime.mimeType != 'application/pdf') {
+          if (mime.mimeType != 'application/pdf' &&
+              mime.mimeType != 'text/plain') {
             throw InvalidRequestError(
               'FileMessage (${mime.mimeType}) is not supported by the Anthropic '
-              'Messages API. Only application/pdf is supported.',
+              'Messages API. Only application/pdf and text/plain are supported.',
             );
           }
           if (message.content.isNotEmpty) {
@@ -132,13 +168,28 @@ extension _AnthropicRequestBuilderMessages on AnthropicRequestBuilder {
                 'cache_control': effectiveCacheControl,
             });
           }
+
+          final docOptions =
+              _documentOptionsFromProviderOptions(message.providerOptions);
+          final source = mime.mimeType == 'text/plain'
+              ? <String, dynamic>{
+                  'type': 'text',
+                  'media_type': 'text/plain',
+                  'data': utf8.decode(data, allowMalformed: true),
+                }
+              : <String, dynamic>{
+                  'type': 'base64',
+                  'media_type': 'application/pdf',
+                  'data': base64Encode(data),
+                };
           content.add({
             'type': 'document',
-            'source': {
-              'type': 'base64',
-              'media_type': 'application/pdf',
-              'data': base64Encode(data),
-            },
+            'source': source,
+            if (docOptions.title != null) 'title': docOptions.title,
+            if (docOptions.context != null) 'context': docOptions.context,
+            if (docOptions.citationsEnabled) 'citations': {'enabled': true},
+            if (effectiveCacheControl != null)
+              'cache_control': effectiveCacheControl,
           });
           break;
         case ToolUseMessage(toolCalls: final toolCalls):

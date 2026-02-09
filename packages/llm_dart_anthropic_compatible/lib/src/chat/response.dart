@@ -129,13 +129,16 @@ class AnthropicChatResponse
     if (stopReason is! String || stopReason.isEmpty) return null;
 
     final unified = switch (stopReason) {
+      'pause_turn' => LLMUnifiedFinishReason.stop,
       'end_turn' => LLMUnifiedFinishReason.stop,
       'stop_sequence' => LLMUnifiedFinishReason.stop,
       'max_tokens' => LLMUnifiedFinishReason.length,
+      'model_context_window_exceeded' => LLMUnifiedFinishReason.length,
       'tool_use' => (toolCalls != null && toolCalls!.isNotEmpty)
           ? LLMUnifiedFinishReason.toolCalls
           : LLMUnifiedFinishReason.other,
       'content_filtered' => LLMUnifiedFinishReason.contentFilter,
+      'refusal' => LLMUnifiedFinishReason.contentFilter,
       _ => LLMUnifiedFinishReason.other,
     };
 

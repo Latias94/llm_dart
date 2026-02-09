@@ -114,6 +114,11 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
       betaFeatures.add('web-fetch-2025-09-10');
     }
 
+    // Add PDF support beta header when PDF documents are present in the request.
+    if (_requestUsesPdfDocuments(requestData)) {
+      betaFeatures.add('pdfs-2024-09-25');
+    }
+
     // Structured outputs + advanced tool use are beta-gated and are driven by
     // request payload shape (tools definitions).
     if (_requestUsesStructuredOutputs(requestData)) {
@@ -158,6 +163,32 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
       _toolsContainKey(data, 'input_examples') ||
       _toolsContainKey(data, 'allowed_callers') ||
       _toolsContainKey(data, 'defer_loading');
+
+  static bool _requestUsesPdfDocuments(dynamic data) =>
+      _containsPdfDocumentBlock(data);
+
+  static bool _containsPdfDocumentBlock(dynamic value) {
+    if (value is Map) {
+      final type = value['type'];
+      if (type == 'document') {
+        final source = value['source'];
+        if (source is Map) {
+          final mediaType = source['media_type'];
+          if (mediaType == 'application/pdf') return true;
+        }
+      }
+
+      for (final v in value.values) {
+        if (_containsPdfDocumentBlock(v)) return true;
+      }
+    } else if (value is List) {
+      for (final v in value) {
+        if (_containsPdfDocumentBlock(v)) return true;
+      }
+    }
+
+    return false;
+  }
 
   static bool _toolsContainKey(dynamic data, String key) {
     if (data is! Map) return false;

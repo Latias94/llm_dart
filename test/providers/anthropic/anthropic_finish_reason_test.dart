@@ -3,6 +3,19 @@ import 'package:test/test.dart';
 
 void main() {
   group('Anthropic finishReason (typed)', () {
+    test('maps pause_turn to unified.stop', () {
+      final response = AnthropicChatResponse({
+        'content': [
+          {'type': 'text', 'text': 'ok'},
+        ],
+        'stop_reason': 'pause_turn',
+      });
+
+      final finish = (response as ChatResponseWithFinishReason).finishReason!;
+      expect(finish.unified, equals(LLMUnifiedFinishReason.stop));
+      expect(finish.raw, equals('pause_turn'));
+    });
+
     test('maps end_turn to unified.stop', () {
       final response = AnthropicChatResponse({
         'content': [
@@ -41,6 +54,32 @@ void main() {
       final finish = (response as ChatResponseWithFinishReason).finishReason!;
       expect(finish.unified, equals(LLMUnifiedFinishReason.length));
       expect(finish.raw, equals('max_tokens'));
+    });
+
+    test('maps model_context_window_exceeded to unified.length', () {
+      final response = AnthropicChatResponse({
+        'content': [
+          {'type': 'text', 'text': 'ok'},
+        ],
+        'stop_reason': 'model_context_window_exceeded',
+      });
+
+      final finish = (response as ChatResponseWithFinishReason).finishReason!;
+      expect(finish.unified, equals(LLMUnifiedFinishReason.length));
+      expect(finish.raw, equals('model_context_window_exceeded'));
+    });
+
+    test('maps refusal to unified.contentFilter', () {
+      final response = AnthropicChatResponse({
+        'content': [
+          {'type': 'text', 'text': 'nope'},
+        ],
+        'stop_reason': 'refusal',
+      });
+
+      final finish = (response as ChatResponseWithFinishReason).finishReason!;
+      expect(finish.unified, equals(LLMUnifiedFinishReason.contentFilter));
+      expect(finish.raw, equals('refusal'));
     });
 
     test('maps tool_use to unified.toolCalls when local tool calls are present',
