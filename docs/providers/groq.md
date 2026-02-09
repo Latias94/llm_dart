@@ -109,6 +109,15 @@ The OpenAI-compatible layer surfaces best-effort metadata such as:
 
 - `id`, `model`, `systemFingerprint`, `finishReason`
 
+## Streaming
+
+Groq streaming is implemented via the OpenAI Chat Completions compatible layer.
+Prefer consuming streams via `LLMStreamPart` (parts-first).
+
+See:
+
+- `docs/protocols/openai_compatible.md` (Streaming section)
+
 ## Conformance tests
 
 Groq-specific request mapping tests:

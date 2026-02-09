@@ -71,6 +71,15 @@ Future<void> main() async {
 }
 ```
 
+## Streaming
+
+OpenRouter streaming is implemented via the OpenAI Chat Completions compatible
+layer. Prefer consuming streams via `LLMStreamPart` (parts-first).
+
+See:
+
+- `docs/protocols/openai_compatible.md` (Streaming section)
+
 ## Web search and the `:online` model suffix
 
 OpenRouter enables web search via the `:online` model suffix (provider-specific).

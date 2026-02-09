@@ -118,3 +118,68 @@ Streaming parts conformance:
 
 Provider packages that reuse this protocol layer should add their own delta
 tests under `test/providers/<provider>/...` (e.g. Groq/xAI/OpenRouter).
+
+## Streaming (LLMStreamPart)
+
+This protocol layer maps Chat Completions SSE deltas into `LLMStreamPart`
+(parts-first, Vercel AI SDK style). This is the recommended way to consume
+streaming output, because it exposes:
+
+- `LLMResponseMetadataPart` (response id/model/timestamp snapshots)
+- structural text/thinking/tool boundaries
+- typed `usage` + `finishReason` (on `LLMFinishPart`, when available)
+
+Note: provider-executed tools and citations are provider-specific. Some
+OpenAI-compatible providers add extra fields (e.g. xAI `citations`) that LLM Dart
+surfaces best-effort via parts.
+
+### Streaming example (parts)
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_deepseek/llm_dart_deepseek.dart';
+
+Future<void> main() async {
+  registerDeepSeek();
+
+  final model = await LLMBuilder()
+      .provider(deepseekProviderId)
+      .apiKey(Platform.environment['DEEPSEEK_API_KEY'] ?? 'DEEPSEEK_API_KEY')
+      .model('deepseek-chat')
+      .build();
+
+  await for (final part in streamChatParts(
+    model: model,
+    messages: const [ChatMessage.user('Write one sentence about HTTP.')],
+  )) {
+    switch (part) {
+      case LLMResponseMetadataPart(:final id, :final model):
+        stderr.writeln('meta: id=$id model=$model');
+      case LLMTextDeltaPart(:final delta):
+        stdout.write(delta);
+      case LLMToolCallStartPart(:final toolCall):
+        stderr.writeln('\ntool call: ${toolCall.function.name} (${toolCall.id})');
+      case LLMSourceUrlPart(:final url):
+        // Example: xAI citations (when enabled) are surfaced as sources.
+        stderr.writeln('\nsource: $url');
+      case LLMFinishPart(:final finishReason, :final usage):
+        stderr.writeln('\nfinish: $finishReason usage=$usage');
+      case LLMErrorPart(:final error):
+        stderr.writeln('error: $error');
+      default:
+        break;
+    }
+  }
+}
+```
+
+### Notes
+
+- Azure may send `usage` in a trailing chunk after the finish_reason chunk.
+  LLM Dart captures it best-effort (guarded by conformance tests).
+- Legacy `chatStream()` (`ChatStreamEvent`) is a lossy adapter surface and does
+  not represent sources/citations or structural parts.

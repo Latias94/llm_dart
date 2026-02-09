@@ -69,6 +69,47 @@ Future<void> main() async {
 Ollama streaming is JSONL (one JSON object per line). LLM Dart parses the JSONL
 stream and emits standard `LLMStreamPart` items.
 
+### Streaming example (LLMStreamPart)
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_ollama/llm_dart_ollama.dart';
+
+Future<void> main() async {
+  registerOllama();
+
+  final model = await LLMBuilder()
+      .provider(ollamaProviderId)
+      .baseUrl('http://localhost:11434/')
+      .model('llama3.1')
+      .build();
+
+  await for (final part in streamChatParts(
+    model: model,
+    messages: const [ChatMessage.user('Say hello in one sentence.')],
+  )) {
+    switch (part) {
+      case LLMStreamStartPart(:final warnings):
+        if (warnings.isNotEmpty) stderr.writeln('warnings: $warnings');
+      case LLMResponseMetadataPart(:final model):
+        stderr.writeln('meta: model=$model');
+      case LLMTextDeltaPart(:final delta):
+        stdout.write(delta);
+      case LLMFinishPart(:final finishReason, :final usage):
+        stderr.writeln('\nfinish: $finishReason usage=$usage');
+      case LLMErrorPart(:final error):
+        stderr.writeln('error: $error');
+      default:
+        break;
+    }
+  }
+}
+```
+
 ## Provider options (local runtime knobs)
 
 Ollama exposes local runtime knobs via `providerOptions['ollama']` (best-effort):
@@ -112,4 +153,3 @@ Ollama provider tests:
 - `test/providers/ollama/ollama_provider_test.dart`
 - `test/providers/ollama/ollama_stream_parts_test.dart`
 - `test/providers/ollama/ollama_thinking_test.dart`
-

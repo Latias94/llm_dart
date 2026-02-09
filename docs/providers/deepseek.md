@@ -47,6 +47,15 @@ Official docs:
 - DeepSeek API docs: https://api-docs.deepseek.com/
 - List models: https://api-docs.deepseek.com/api/list-models
 
+## Streaming
+
+DeepSeek streaming is implemented via the OpenAI Chat Completions compatible
+layer. Prefer consuming streams via `LLMStreamPart` (parts-first).
+
+See:
+
+- `docs/protocols/openai_compatible.md` (Streaming section)
+
 ## Quick start (recommended: task APIs)
 
 ```dart
