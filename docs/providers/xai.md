@@ -240,3 +240,112 @@ Tool options are forwarded best-effort. Prefer snake_case keys in
 Offline fixture replays:
 
 - `test/providers/xai/xai_responses_streaming_fixtures_test.dart`
+
+## Streaming (LLMStreamPart)
+
+For the parts-first streaming surface, prefer `streamChatParts()` from
+`llm_dart_ai`. This exposes:
+
+- `LLMStreamStartPart` warnings (if any)
+- `LLMResponseMetadataPart` snapshots (response id/model/timestamp)
+- citations/sources (`LLMSourceUrlPart` / `LLMSourceDocumentPart`)
+- provider-executed tools on `xai.responses` (`LLMProviderTool*Part`)
+- typed `finishReason` + `usage` (on `LLMFinishPart`, when available)
+
+### Streaming example (Chat Completions: `xai`)
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart';
+
+Future<void> main() async {
+  registerXAI();
+
+  final model = await LLMBuilder()
+      .provider(xaiProviderId)
+      .apiKey(Platform.environment['XAI_API_KEY'] ?? 'XAI_API_KEY')
+      .model('grok-3')
+      // Optional: request top-level citations (Chat Completions).
+      .providerOptions('xai', const {'returnCitations': true})
+      .build();
+
+  await for (final part in streamChatParts(
+    model: model,
+    messages: const [ChatMessage.user('Give me 1 source about xAI.')],
+  )) {
+    switch (part) {
+      case LLMResponseMetadataPart(:final id, :final model, :final timestamp):
+        stderr.writeln('meta: id=$id model=$model ts=$timestamp');
+      case LLMTextDeltaPart(:final delta):
+        stdout.write(delta);
+      case LLMSourceUrlPart(:final url):
+        stderr.writeln('\nsource: $url');
+      case LLMFinishPart(:final finishReason, :final usage):
+        stderr.writeln('\nfinish: $finishReason usage=$usage');
+      case LLMErrorPart(:final error):
+        stderr.writeln('error: $error');
+      default:
+        break;
+    }
+  }
+}
+```
+
+### Streaming example (Responses: `xai.responses`)
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_xai/llm_dart_xai.dart';
+import 'package:llm_dart_xai/provider_tools.dart';
+
+Future<void> main() async {
+  registerXAI();
+
+  final model = await LLMBuilder()
+      .provider('xai.responses')
+      .apiKey(Platform.environment['XAI_API_KEY'] ?? 'XAI_API_KEY')
+      .model('grok-4-fast')
+      // Optional: enable provider-executed web search (server tool).
+      .providerTool(XAIProviderTools.webSearch())
+      .build();
+
+  await for (final part in streamChatParts(
+    model: model,
+    messages: const [ChatMessage.user('Search and answer: what is Grok?')],
+  )) {
+    switch (part) {
+      case LLMResponseMetadataPart(:final id, :final model, :final timestamp):
+        stderr.writeln('meta: id=$id model=$model ts=$timestamp');
+      case LLMTextDeltaPart(:final delta):
+        stdout.write(delta);
+      case LLMSourceUrlPart(:final url, :final title):
+        stderr.writeln('\nsource: ${title ?? '(no title)'} $url');
+      case LLMProviderToolCallPart(:final toolName, :final toolCallId):
+        stderr.writeln('\nprovider tool call: $toolName ($toolCallId)');
+      case LLMProviderToolResultPart(:final toolName, :final toolCallId):
+        stderr.writeln('\nprovider tool result: $toolName ($toolCallId)');
+      case LLMFinishPart(:final finishReason, :final usage):
+        stderr.writeln('\nfinish: $finishReason usage=$usage');
+      case LLMErrorPart(:final error):
+        stderr.writeln('error: $error');
+      default:
+        break;
+    }
+  }
+}
+```
+
+Notes:
+
+- Legacy `chatStream()` (`ChatStreamEvent`) is a lossy adapter and does not
+  represent sources/citations, provider-executed tools, or stream-start warnings.
+- On `xai.responses`, provider-executed tools (web search, code execution, MCP)
+  are surfaced via `LLMProviderTool*Part` (parts-only) and must never be executed locally.
