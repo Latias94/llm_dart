@@ -1,7 +1,7 @@
 # Streaming Unification TODO (Fearless Refactor)
 
 Status: draft (breaking changes expected)  
-Last updated: 2026-02-08
+Last updated: 2026-02-09
 
 This document tracks the milestone plan to unify streaming across providers
 in a Vercel AI SDK–aligned way.
@@ -137,9 +137,9 @@ Acceptance criteria:
 
 ### M2 — Tool loop safety upgrades
 
-- [ ] Ensure tool loop only executes “local function tools”
-- [ ] If provider tools are emitted as tool-like parts, add explicit skip rules
-- [ ] Add tests: provider tool parts never become `ChatResponse.toolCalls`
+- [x] Ensure tool loop only executes “local function tools”
+- [x] If provider tools are emitted as tool-like parts, add explicit skip rules
+- [x] Add tests: provider tool parts never become `ChatResponse.toolCalls`
 
 Acceptance criteria:
 
@@ -173,7 +173,7 @@ Acceptance criteria:
 - [x] Add provider tool part tests for OpenAI Responses + xAI Responses
 - [x] Add provider tool approval request tests for OpenAI Responses (MCP)
 - [ ] Expand chunk-fuzz coverage to the new part types
-- [ ] Add a global “no drift” guard: `chatStream` must be derived from parts
+- [x] Add a global “no drift” guard: `chatStream` must be derived from parts
 
 ### M5 — Documentation + migration guide
 
