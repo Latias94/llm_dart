@@ -89,6 +89,7 @@ void main() {
       ).toList();
 
       expect(parts[0], isA<LLMStreamStartPart>());
+      expect(parts.whereType<LLMStreamStartPart>(), hasLength(1));
 
       expect(parts[1], isA<LLMTextStartPart>());
       expect(parts[2], isA<LLMTextDeltaPart>());
