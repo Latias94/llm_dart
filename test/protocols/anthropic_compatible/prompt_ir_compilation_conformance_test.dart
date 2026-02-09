@@ -43,5 +43,86 @@ void main() {
         equals({'type': 'ephemeral', 'ttl': '1h'}),
       );
     });
+
+    test('splits ToolCallPart/ToolResultPart by overrideRole (order-preserving)',
+        () {
+      const config = AnthropicConfig(
+        apiKey: 'k',
+        model: 'test-model',
+        providerId: 'anthropic',
+      );
+      final builder = AnthropicRequestBuilder(config);
+
+      final toolCall = ToolCall(
+        id: 'call_1',
+        callType: 'function',
+        function: const FunctionCall(
+          name: 'get_weather',
+          arguments: '{"city":"Tokyo"}',
+        ),
+      );
+      final toolResult = ToolCall(
+        id: 'call_1',
+        callType: 'function',
+        function: const FunctionCall(
+          name: 'get_weather',
+          arguments: '11 degrees celsius',
+        ),
+      );
+
+      final prompt = Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              const TextPart('Before'),
+              ToolCallPart(toolCall, overrideRole: ChatRole.assistant),
+              ToolResultPart(toolResult, overrideRole: ChatRole.user),
+              const TextPart('After'),
+            ],
+          ),
+        ],
+      );
+
+      final built = builder.buildRequestFromPrompt(prompt, const [], false);
+      final messages = built.body['messages'] as List<dynamic>;
+      expect(messages, hasLength(3));
+
+      expect(
+        messages[0],
+        equals({
+          'role': 'user',
+          'content': [
+            {'type': 'text', 'text': 'Before'},
+          ],
+        }),
+      );
+
+      final assistant = messages[1] as Map<String, dynamic>;
+      expect(assistant['role'], equals('assistant'));
+      final assistantContent = assistant['content'] as List<dynamic>;
+      expect(assistantContent, hasLength(1));
+      final toolUse = assistantContent.single as Map<String, dynamic>;
+      expect(toolUse['type'], equals('tool_use'));
+      expect(toolUse['id'], equals('call_1'));
+      expect(toolUse['name'], equals('get_weather'));
+      expect(toolUse['input'], equals({'city': 'Tokyo'}));
+
+      expect(
+        messages[2],
+        equals({
+          'role': 'user',
+          'content': [
+            {
+              'type': 'tool_result',
+              'tool_use_id': 'call_1',
+              'content': '11 degrees celsius',
+              'is_error': false,
+            },
+            {'type': 'text', 'text': 'After'},
+          ],
+        }),
+      );
+    });
   });
 }

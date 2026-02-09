@@ -63,12 +63,23 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
     final anthropicMessages = <Map<String, dynamic>>[];
     final systemContentBlocks = <Map<String, dynamic>>[];
     final systemMessages = <String>[];
+    var didSeeNonSystemMessage = false;
 
     for (final message in prompt.messages) {
       if (message.role == ChatRole.system) {
+        if (didSeeNonSystemMessage) {
+          throw const InvalidRequestError(
+            'Multiple system messages that are separated by user/assistant '
+            'messages are not supported. Put all system content at the '
+            'beginning of the prompt.',
+          );
+        }
         systemContentBlocks.addAll(_convertPromptSystemMessage(message));
       } else {
-        anthropicMessages.add(_convertPromptMessage(message, toolNameMapping));
+        didSeeNonSystemMessage = true;
+        anthropicMessages.addAll(
+          _convertPromptMessageSegments(message, toolNameMapping),
+        );
       }
     }
 
@@ -119,11 +130,23 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
     return blocks;
   }
 
-  Map<String, dynamic> _convertPromptMessage(
+  List<Map<String, dynamic>> _convertPromptMessageSegments(
     PromptMessage message,
     ToolNameMapping toolNameMapping,
   ) {
-    final content = <Map<String, dynamic>>[];
+    final segments = <Map<String, dynamic>>[];
+
+    final currentContent = <Map<String, dynamic>>[];
+    ChatRole currentRole = message.role;
+
+    void flush() {
+      if (currentContent.isEmpty) return;
+      segments.add({
+        'role': currentRole.name,
+        'content': List<Map<String, dynamic>>.from(currentContent),
+      });
+      currentContent.clear();
+    }
 
     final messageCacheControl =
         _cacheControlFromProviderOptions(message.providerOptions) ??
@@ -138,11 +161,23 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
 
       Map<String, dynamic>? effectiveCacheControlForPart;
 
+      ChatRole effectiveRole = message.role;
+      if (part case ToolCallPart(:final overrideRole)) {
+        effectiveRole = overrideRole ?? message.role;
+      } else if (part case ToolResultPart(:final overrideRole)) {
+        effectiveRole = overrideRole ?? message.role;
+      }
+
+      if (effectiveRole != currentRole) {
+        flush();
+        currentRole = effectiveRole;
+      }
+
       switch (part) {
         case TextPart(:final text):
           effectiveCacheControlForPart =
               partCacheControl ?? (isLastPart ? messageCacheControl : null);
-          content.add({
+          currentContent.add({
             'type': 'text',
             'text': text,
             if (effectiveCacheControlForPart != null)
@@ -154,7 +189,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
           if (text != null && text.isNotEmpty) {
             effectiveCacheControlForPart =
                 partCacheControl ?? (isLastPart ? messageCacheControl : null);
-            content.add({
+            currentContent.add({
               'type': 'text',
               'text': text,
               if (effectiveCacheControlForPart != null)
@@ -164,7 +199,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
 
           effectiveCacheControlForPart =
               partCacheControl ?? (isLastPart ? messageCacheControl : null);
-          content.add({
+          currentContent.add({
             'type': 'image',
             'source': {
               'type': 'base64',
@@ -176,24 +211,53 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
           });
           break;
 
-        case ImageUrlPart():
-          throw const InvalidRequestError(
-            'ImageUrlPart is not supported by the Anthropic Messages API. '
-            'Download the image and send it as ImagePart (base64) instead.',
-          );
+        case ImageUrlPart(:final url, :final text):
+          if (text != null && text.isNotEmpty) {
+            effectiveCacheControlForPart =
+                partCacheControl ?? (isLastPart ? messageCacheControl : null);
+            currentContent.add({
+              'type': 'text',
+              'text': text,
+              if (effectiveCacheControlForPart != null)
+                'cache_control': effectiveCacheControlForPart,
+            });
+          }
+
+          final trimmed = url.trim();
+          final isHttp = trimmed.startsWith('http://') ||
+              trimmed.startsWith('https://');
+          if (!isHttp) {
+            throw InvalidRequestError(
+              'ImageUrlPart must be an http(s) URL. Got: "$url"',
+            );
+          }
+
+          effectiveCacheControlForPart =
+              partCacheControl ?? (isLastPart ? messageCacheControl : null);
+          currentContent.add({
+            'type': 'image',
+            'source': {
+              'type': 'url',
+              'url': trimmed,
+            },
+            if (effectiveCacheControlForPart != null)
+              'cache_control': effectiveCacheControlForPart,
+          });
+          break;
 
         case FilePart(:final mime, :final data, :final text):
-          if (mime.mimeType != 'application/pdf') {
+          if (mime.mimeType != 'application/pdf' &&
+              mime.mimeType != 'text/plain') {
             throw InvalidRequestError(
               'FilePart (${mime.mimeType}) is not supported by the Anthropic '
-              'Messages API. Only application/pdf is supported.',
+              'Messages API. Only application/pdf and text/plain are supported.',
             );
           }
 
           if (text != null && text.isNotEmpty) {
             effectiveCacheControlForPart =
                 partCacheControl ?? (isLastPart ? messageCacheControl : null);
-            content.add({
+            currentContent.add({
               'type': 'text',
               'text': text,
               if (effectiveCacheControlForPart != null)
@@ -203,20 +267,36 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
 
           effectiveCacheControlForPart =
               partCacheControl ?? (isLastPart ? messageCacheControl : null);
-          content.add({
+
+          final docOptions = _documentOptionsFromProviderOptions(
+            part.providerOptions,
+          );
+
+          final source = mime.mimeType == 'text/plain'
+              ? <String, dynamic>{
+                  'type': 'text',
+                  'media_type': 'text/plain',
+                  'data': utf8.decode(data, allowMalformed: true),
+                }
+              : <String, dynamic>{
+                  'type': 'base64',
+                  'media_type': 'application/pdf',
+                  'data': base64Encode(data),
+                };
+
+          currentContent.add({
             'type': 'document',
-            'source': {
-              'type': 'base64',
-              'media_type': 'application/pdf',
-              'data': base64Encode(data),
-            },
+            'source': source,
+            if (docOptions.title != null) 'title': docOptions.title,
+            if (docOptions.context != null) 'context': docOptions.context,
+            if (docOptions.citationsEnabled) 'citations': {'enabled': true},
             if (effectiveCacheControlForPart != null)
               'cache_control': effectiveCacheControlForPart,
           });
           break;
 
         case ToolCallPart(:final toolCall):
-          if (message.role != ChatRole.assistant) {
+          if (effectiveRole != ChatRole.assistant) {
             throw const InvalidRequestError(
               'ToolCallPart must be emitted from an assistant message.',
             );
@@ -232,7 +312,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
             final input = jsonDecode(toolCall.function.arguments);
             final requestName =
                 toolNameMapping.requestNameForFunction(toolCall.function.name);
-            content.add({
+            currentContent.add({
               'type': 'tool_use',
               'id': toolCall.id,
               'name': requestName,
@@ -249,7 +329,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
           break;
 
         case ToolResultPart(:final toolResult):
-          if (message.role != ChatRole.user) {
+          if (effectiveRole != ChatRole.user) {
             throw const InvalidRequestError(
               'ToolResultPart must be emitted from a user message.',
             );
@@ -264,7 +344,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
           final resultContent = toolResult.function.arguments;
           final isError = _toolResultIsError(resultContent, toolResult);
 
-          content.add({
+          currentContent.add({
             'type': 'tool_result',
             'tool_use_id': toolResult.id,
             'content': resultContent,
@@ -276,9 +356,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
       }
     }
 
-    return {
-      'role': message.role.name,
-      'content': content,
-    };
+    flush();
+    return List<Map<String, dynamic>>.unmodifiable(segments);
   }
 }
