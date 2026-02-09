@@ -145,8 +145,8 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
         AnthropicChatResponse(raw, config.providerId, toolNameMapping);
     final metadata = response.providerMetadata;
     if (metadata == null || metadata.isEmpty) return null;
-    final encoded = jsonEncode(metadata);
-    if (encoded == lastProviderMetadataJson) return null;
+    final encoded = tryStableJsonEncode(metadata);
+    if (encoded != null && encoded == lastProviderMetadataJson) return null;
     lastProviderMetadataJson = encoded;
     return LLMProviderMetadataPart(metadata);
   }
