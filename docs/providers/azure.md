@@ -123,10 +123,9 @@ For Azure, the namespace is:
 
 - `providerMetadata['azure']`
 
-LLM Dart also emits capability aliases:
-
-- `providerMetadata['azure.chat']`
-- `providerMetadata['azure.responses']`
+Compatibility aliases may also be emitted during the fearless refactor window
+(e.g. `azure.chat`, `azure.responses`), but downstream code should treat
+`providerMetadata['azure']` as canonical.
 
 The payload includes best-effort fields such as:
 
@@ -175,4 +174,3 @@ signal; LLM Dart captures it best-effort (see conformance tests).
 - `test/providers/azure/azure_openai_request_mapping_test.dart`
 - `test/providers/azure/azure_openai_responses_vercel_fixtures_test.dart`
 - `test/protocols/openai_compatible/openai_compatible_streaming_usage_tail_conformance_test.dart`
-

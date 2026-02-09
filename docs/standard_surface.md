@@ -177,11 +177,12 @@ Reference:
 
 ### 2.3 `providerMetadata` (response-time)
 
-- `ChatResponse.providerMetadata[providerId]`
+- `ChatResponse.providerMetadata` (namespaced map; prefer the canonical key)
 
 Reference:
 
 - `docs/provider_escape_hatches.md`
+- `docs/provider_metadata.md` (canonical key + alias policy)
 
 ### 2.4 Local tools (FunctionTool)
 

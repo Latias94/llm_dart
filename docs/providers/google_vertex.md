@@ -70,7 +70,10 @@ Future<void> main() async {
 Vertex metadata follows Vercel AI SDK conventions:
 
 - `providerMetadata['vertex']`
-- `providerMetadata['vertex.chat']`
+
+Compatibility alias:
+
+- `providerMetadata['vertex.chat']` (mirrors `vertex`; avoid depending on it)
 
 ## Streaming (LLMStreamPart)
 
@@ -109,4 +112,3 @@ Future<void> printStream(Stream<LLMStreamPart> parts) async {
 - Provider tools catalog: `docs/provider_tools_catalog.md`
 - Provider options reference: `docs/provider_options_reference.md`
 - Escape hatches: `docs/provider_escape_hatches.md`
-

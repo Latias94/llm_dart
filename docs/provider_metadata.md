@@ -47,6 +47,11 @@ final openai = meta?['openai'] as Map<String, dynamic>?;
 If you are migrating legacy code that used an alias key (e.g. `openai.chat`),
 update it to the canonical `openai` key.
 
+Exception note:
+
+- Some providers intentionally emit AI SDK parity namespaces (e.g. Google Vertex
+  emits `vertex`). See provider guides for the canonical key per provider.
+
 ## Recommended Payload Shape
 
 Minimal, capability-agnostic payload:
