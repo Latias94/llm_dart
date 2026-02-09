@@ -114,6 +114,7 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
     final startedToolCalls = <String>{};
     final endedToolCalls = <String>{};
     final toolAccums = <String, _ToolCallAccum>{};
+    var didEmitResponseMetadata = false;
 
     try {
       final stream = client.postStreamRaw(
@@ -124,6 +125,17 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
 
       await for (final chunk in stream) {
         for (final json in jsonlParser.parseObjects(chunk)) {
+          if (!didEmitResponseMetadata) {
+            final model = json['model'] as String? ?? config.model;
+            if (model.isNotEmpty) {
+              didEmitResponseMetadata = true;
+              yield LLMResponseMetadataPart(
+                model: model,
+                raw: {'model': model},
+              );
+            }
+          }
+
           final message = json['message'] as Map<String, dynamic>?;
           if (message != null) {
             final thinking = message['thinking'] as String?;

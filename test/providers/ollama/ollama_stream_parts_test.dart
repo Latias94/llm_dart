@@ -65,6 +65,14 @@ void main() {
       final parts = await chat
           .chatStreamParts([ChatMessage.user('Hi')], tools: const []).toList();
 
+      final responseMetadata =
+          parts.whereType<LLMResponseMetadataPart>().single;
+      expect(responseMetadata.model, equals('llama3.1'));
+      expect(
+        parts.indexOf(responseMetadata),
+        lessThan(parts.indexWhere((p) => p is LLMTextStartPart)),
+      );
+
       expect(parts.whereType<LLMTextStartPart>(), hasLength(1));
       expect(parts.whereType<LLMTextDeltaPart>().map((p) => p.delta).join(),
           equals('Hello world'));
