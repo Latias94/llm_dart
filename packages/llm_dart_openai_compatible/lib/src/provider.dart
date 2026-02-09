@@ -10,7 +10,12 @@ import 'openai_request_config.dart';
 /// This is used by `llm_dart_openai_compatible` factories so users can depend
 /// on OpenAI-compatible providers without pulling in `llm_dart_openai`.
 class OpenAICompatibleChatProvider
-    implements ChatCapability, ProviderCapabilities, ChatStreamPartsCapability {
+    implements
+        ChatCapability,
+        ProviderCapabilities,
+        ChatStreamPartsCapability,
+        PromptChatCapability,
+        PromptChatStreamPartsCapability {
   final OpenAIClient _client;
   final OpenAIRequestConfig config;
   final Set<LLMCapability> _supportedCapabilities;
@@ -58,6 +63,28 @@ class OpenAICompatibleChatProvider
   }) {
     return _chat.chatStreamParts(messages,
         tools: tools, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatPromptStreamParts(
+      prompt,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override

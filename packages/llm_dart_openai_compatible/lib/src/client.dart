@@ -296,6 +296,193 @@ class OpenAIClient {
     return result;
   }
 
+  /// Build OpenAI-compatible API messages from Prompt IR.
+  ///
+  /// This preserves multi-part message structure (text + image/file parts in a
+  /// single message) instead of relying on `Prompt.toChatMessages()` which
+  /// emits one ChatMessage per part.
+  List<Map<String, dynamic>> buildApiMessagesFromPrompt(Prompt prompt) {
+    final apiMessages = <Map<String, dynamic>>[];
+
+    String? currentRole;
+    String? currentName;
+    final currentContentParts = <Map<String, dynamic>>[];
+    final currentToolCalls = <ToolCall>[];
+
+    void flush() {
+      if (currentRole == null) return;
+      if (currentContentParts.isEmpty && currentToolCalls.isEmpty) {
+        currentRole = null;
+        currentName = null;
+        return;
+      }
+
+      final msg = <String, dynamic>{'role': currentRole};
+      if (currentName != null && currentName!.trim().isNotEmpty) {
+        msg['name'] = currentName;
+      }
+
+      if (currentContentParts.isNotEmpty) {
+        if (currentContentParts.length == 1 &&
+            currentContentParts.first['type'] == 'text' &&
+            currentToolCalls.isEmpty) {
+          msg['content'] = currentContentParts.first['text'] ?? '';
+        } else {
+          msg['content'] = List<Map<String, dynamic>>.from(currentContentParts);
+        }
+      }
+
+      if (currentToolCalls.isNotEmpty) {
+        msg['tool_calls'] = currentToolCalls.map((t) => t.toJson()).toList();
+      }
+
+      apiMessages.add(msg);
+
+      currentRole = null;
+      currentName = null;
+      currentContentParts.clear();
+      currentToolCalls.clear();
+    }
+
+    List<Map<String, dynamic>> toContentParts(PromptPart part) {
+      switch (part) {
+        case TextPart(:final text):
+          if (text.isEmpty) return const [];
+          return [
+            {
+              'type': 'text',
+              'text': text,
+            }
+          ];
+
+        case ImagePart(:final mime, :final data, :final text):
+          final base64Data = base64Encode(data);
+          final imageDataUrl = 'data:${mime.mimeType};base64,$base64Data';
+
+          final parts = <Map<String, dynamic>>[];
+          if (text != null && text.trim().isNotEmpty) {
+            parts.add({'type': 'text', 'text': text});
+          }
+          parts.add({
+            'type': 'image_url',
+            'image_url': {'url': imageDataUrl},
+          });
+          return parts;
+
+        case ImageUrlPart(:final url, :final text):
+          final parts = <Map<String, dynamic>>[];
+          if (text != null && text.trim().isNotEmpty) {
+            parts.add({'type': 'text', 'text': text});
+          }
+          parts.add({
+            'type': 'image_url',
+            'image_url': {'url': url},
+          });
+          return parts;
+
+        case FilePart(:final data, :final text):
+          final parts = <Map<String, dynamic>>[];
+          if (text != null && text.trim().isNotEmpty) {
+            parts.add({'type': 'text', 'text': text});
+          }
+          parts.add({
+            'type': 'file',
+            'file': {
+              'file_data': base64Encode(data),
+            },
+          });
+          return parts;
+
+        case ToolCallPart() || ToolResultPart():
+          return const [];
+      }
+    }
+
+    for (final message in prompt.messages) {
+      if (message.role == ChatRole.system) {
+        flush();
+
+        final texts = <String>[];
+        for (final part in message.parts) {
+          if (part case TextPart(:final text)) {
+            if (text.trim().isNotEmpty) texts.add(text);
+            continue;
+          }
+          throw const InvalidRequestError(
+            'System messages must be plain text for OpenAI-compatible providers.',
+          );
+        }
+
+        apiMessages.add({
+          'role': 'system',
+          if (message.name != null && message.name!.trim().isNotEmpty)
+            'name': message.name,
+          'content': texts.join('\n\n'),
+        });
+        continue;
+      }
+
+      for (final part in message.parts) {
+        ChatRole effectiveRole;
+        if (part case ToolCallPart(:final overrideRole)) {
+          effectiveRole = overrideRole ?? message.role;
+        } else if (part case ToolResultPart(:final overrideRole)) {
+          effectiveRole = overrideRole ?? message.role;
+        } else {
+          effectiveRole = message.role;
+        }
+
+        if (part case ToolCallPart(:final toolCall)) {
+          if (effectiveRole != ChatRole.assistant) {
+            throw const InvalidRequestError(
+              'ToolCallPart must be emitted from an assistant message.',
+            );
+          }
+
+          if (currentRole != null && currentRole != 'assistant') {
+            flush();
+          }
+          currentRole ??= 'assistant';
+          currentName ??= message.name;
+          currentToolCalls.add(toolCall);
+          continue;
+        }
+
+        if (part case ToolResultPart(:final toolResult)) {
+          if (effectiveRole != ChatRole.user) {
+            throw const InvalidRequestError(
+              'ToolResultPart must be emitted from a user message.',
+            );
+          }
+
+          flush();
+          apiMessages.add({
+            'role': 'tool',
+            'tool_call_id': toolResult.id,
+            'content': toolResult.function.arguments.isNotEmpty
+                ? toolResult.function.arguments
+                : 'Tool result',
+          });
+          continue;
+        }
+
+        final targetRole =
+            effectiveRole == ChatRole.user ? 'user' : 'assistant';
+        if (currentRole != null && currentRole != targetRole) {
+          flush();
+        }
+        currentRole ??= targetRole;
+        currentName ??= message.name;
+
+        currentContentParts.addAll(toContentParts(part));
+      }
+
+      flush();
+    }
+
+    return apiMessages;
+  }
+
   /// Build API messages array from ChatMessage list
   ///
   /// Note: System prompt should be added by the calling module if needed,

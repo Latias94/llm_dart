@@ -11,7 +11,12 @@ import 'request_builder.dart';
 ///
 /// This module handles all chat-related functionality for OpenAI providers,
 /// including streaming, tool calling, and reasoning model support.
-class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
+class OpenAIChat
+    implements
+        ChatCapability,
+        ChatStreamPartsCapability,
+        PromptChatCapability,
+        PromptChatStreamPartsCapability {
   final OpenAIClient client;
   final OpenAIRequestConfig config;
   final OpenAIRequestBuilder _requestBuilder;
@@ -58,6 +63,30 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
   }
 
   @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async {
+    final requestBody =
+        _requestBuilder.buildChatCompletionsRequestBodyFromPrompt(
+      client,
+      prompt: prompt,
+      tools: tools,
+      stream: false,
+    );
+    final responseData = await client.postJson(
+      chatEndpoint,
+      requestBody,
+      cancelToken: cancelToken,
+    );
+    return _parseResponse(
+      responseData,
+      didRequestTools: tools != null && tools.isNotEmpty,
+    );
+  }
+
+  @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
@@ -71,6 +100,40 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
       stream: true,
     );
 
+    yield* _chatStreamPartsFromRequestBody(
+      requestBody,
+      effectiveTools: effectiveTools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async* {
+    final effectiveTools = tools ?? config.tools;
+    final requestBody =
+        _requestBuilder.buildChatCompletionsRequestBodyFromPrompt(
+      client,
+      prompt: prompt,
+      tools: effectiveTools,
+      stream: true,
+    );
+
+    yield* _chatStreamPartsFromRequestBody(
+      requestBody,
+      effectiveTools: effectiveTools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  Stream<LLMStreamPart> _chatStreamPartsFromRequestBody(
+    Map<String, dynamic> requestBody, {
+    required List<Tool>? effectiveTools,
+    CancelToken? cancelToken,
+  }) async* {
     client.resetSSEBuffer();
     _resetStreamState();
 
