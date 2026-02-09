@@ -29,7 +29,9 @@ class OpenAIResponses
     implements
         ChatCapability,
         OpenAIResponsesCapability,
-        ChatStreamPartsCapability {
+        ChatStreamPartsCapability,
+        PromptChatCapability,
+        PromptChatStreamPartsCapability {
   final OpenAIClient client;
   final OpenAIResponsesConfig config;
 
@@ -84,6 +86,24 @@ class OpenAIResponses
     );
   }
 
+  @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async {
+    final builtRequest = _buildPromptRequest(prompt, tools, false, false);
+    final responseData = await client.postJson(
+      responsesEndpoint,
+      builtRequest.body,
+      cancelToken: cancelToken,
+    );
+    return _parseResponse(
+      responseData,
+      toolNameMapping: builtRequest.toolNameMapping,
+    );
+  }
+
   /// Create a response with background processing
   ///
   /// When background=true, the response will be processed asynchronously.
@@ -111,6 +131,29 @@ class OpenAIResponses
     CancelToken? cancelToken,
   }) async* {
     final builtRequest = _buildRequest(messages, tools, true, false);
+    yield* _chatStreamPartsFromBuiltRequest(
+      builtRequest,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async* {
+    final builtRequest = _buildPromptRequest(prompt, tools, true, false);
+    yield* _chatStreamPartsFromBuiltRequest(
+      builtRequest,
+      cancelToken: cancelToken,
+    );
+  }
+
+  Stream<LLMStreamPart> _chatStreamPartsFromBuiltRequest(
+    _OpenAIResponsesBuiltRequest builtRequest, {
+    CancelToken? cancelToken,
+  }) async* {
     final toolNameMapping = builtRequest.toolNameMapping;
 
     _resetStreamState();
@@ -1120,6 +1163,33 @@ class OpenAIResponses
     );
   }
 
+  _OpenAIResponsesBuiltRequest _buildPromptRequest(
+    Prompt prompt,
+    List<Tool>? tools,
+    bool stream,
+    bool background, {
+    String? previousResponseId,
+  }) {
+    final effectiveTools = tools ?? config.tools;
+    final toolNameMapping = _createToolNameMapping(effectiveTools);
+
+    final apiMessages =
+        OpenAIResponsesMessageConverter.buildInputMessagesFromPrompt(prompt);
+    final body = _buildRequestBodyFromApiMessages(
+      apiMessages,
+      effectiveTools,
+      stream,
+      background,
+      toolNameMapping,
+      previousResponseId: previousResponseId,
+    );
+
+    return _OpenAIResponsesBuiltRequest(
+      body: body,
+      toolNameMapping: toolNameMapping,
+    );
+  }
+
   ToolNameMapping _createToolNameMapping(List<Tool>? tools) {
     final functionToolNames = (tools ?? const <Tool>[]).map(
       (t) => t.function.name,
@@ -1151,22 +1221,42 @@ class OpenAIResponses
     ToolNameMapping toolNameMapping, {
     String? previousResponseId,
   }) {
-    // Convert messages to Responses API format.
     final apiMessages = OpenAIResponsesMessageConverter.buildInputMessages(
       messages,
     );
+    return _buildRequestBodyFromApiMessages(
+      apiMessages,
+      tools,
+      stream,
+      background,
+      toolNameMapping,
+      previousResponseId: previousResponseId,
+    );
+  }
+
+  Map<String, dynamic> _buildRequestBodyFromApiMessages(
+    List<Map<String, dynamic>> apiMessages,
+    List<Tool>? tools,
+    bool stream,
+    bool background,
+    ToolNameMapping toolNameMapping, {
+    String? previousResponseId,
+  }) {
+    final inputMessages = List<Map<String, dynamic>>.from(apiMessages);
 
     // Handle system prompt: prefer explicit system messages over config
-    final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
+    final hasSystemMessage =
+        inputMessages.any((m) => m['role']?.toString() == 'system');
 
     // Only add config system prompt if no explicit system message exists
     if (!hasSystemMessage && config.systemPrompt != null) {
-      apiMessages.insert(0, {'role': 'system', 'content': config.systemPrompt});
+      inputMessages
+          .insert(0, {'role': 'system', 'content': config.systemPrompt});
     }
 
     final body = <String, dynamic>{
       'model': config.model,
-      'input': apiMessages,
+      'input': inputMessages,
       'stream': stream,
       'background': background,
     };
