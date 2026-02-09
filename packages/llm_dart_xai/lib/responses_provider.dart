@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:llm_dart_openai_compatible/client.dart';
@@ -43,16 +42,6 @@ class XAIResponsesProvider
     CancelToken? cancelToken,
   }) {
     return _responses.chatWithTools(messages, tools, cancelToken: cancelToken);
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) {
-    return _responses.chatStream(messages,
-        tools: tools, cancelToken: cancelToken);
   }
 
   @override

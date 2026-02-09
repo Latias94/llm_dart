@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'dart:async';
 
 import 'package:llm_dart/llm_dart.dart';
@@ -9,7 +8,8 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAI Responses streaming completion', () {
-    test('should emit CompletionEvent when stream ends with [DONE]', () async {
+    test('chatStreamParts emits a finish when stream ends with [DONE]',
+        () async {
       final config = openai_client.OpenAIConfig(
         apiKey: 'test-key',
         baseUrl: 'https://api.openai.com/v1/',
@@ -24,20 +24,20 @@ void main() {
       ]);
 
       final responses = openai_responses.OpenAIResponses(client, config);
-      final events =
-          await responses.chatStream([ChatMessage.user('test')]).toList();
+      final parts =
+          await responses.chatStreamParts([ChatMessage.user('test')]).toList();
 
-      expect(events.whereType<TextDeltaEvent>(), hasLength(1));
-      final completion = events.whereType<CompletionEvent>().single;
+      expect(parts.whereType<LLMTextDeltaPart>(), hasLength(1));
+      final finish = parts.whereType<LLMFinishPart>().single;
 
-      expect(completion.response.text, equals('Hello'));
-      expect(completion.response.providerMetadata, isNotNull);
+      expect(finish.response.text, equals('Hello'));
+      expect(finish.response.providerMetadata, isNotNull);
       expect(
-        completion.response.providerMetadata!['openai'],
+        finish.response.providerMetadata!['openai'],
         containsPair('id', 'resp_1'),
       );
       expect(
-        completion.response.providerMetadata!['openai'],
+        finish.response.providerMetadata!['openai'],
         containsPair('model', 'gpt-4o'),
       );
     });
@@ -59,11 +59,11 @@ void main() {
       ]);
 
       final responses = openai_responses.OpenAIResponses(client, config);
-      final events =
-          await responses.chatStream([ChatMessage.user('test')]).toList();
+      final parts =
+          await responses.chatStreamParts([ChatMessage.user('test')]).toList();
 
-      final completion = events.whereType<CompletionEvent>().single;
-      final openai = completion.response.providerMetadata!['openai']
+      final finish = parts.whereType<LLMFinishPart>().single;
+      final openai = finish.response.providerMetadata!['openai']
           as Map<String, dynamic>;
 
       final webSearchCalls = openai['webSearchCalls'] as List;

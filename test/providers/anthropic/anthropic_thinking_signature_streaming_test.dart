@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:test/test.dart';
@@ -87,63 +86,6 @@ void main() {
 
       expect(thinking['thinking'], equals('I am thinking...'));
       expect(thinking['signature'], equals('sig_123'));
-    });
-
-    test('chatStream preserves thinking.signature in assistantMessage',
-        () async {
-      final llmConfig = LLMConfig(
-        apiKey: 'test-key',
-        baseUrl: 'https://api.anthropic.com/v1/',
-        model: 'claude-sonnet-4-20250514',
-      );
-      final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-
-      final sse = [
-        'event: message_start\n'
-            'data: {"type":"message_start","message":{"id":"msg_456","model":"claude-sonnet-4-20250514","usage":{"input_tokens":1,"output_tokens":0}}}\n'
-            '\n'
-            'event: content_block_start\n'
-            'data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":""}}\n'
-            '\n'
-            'event: content_block_delta\n'
-            'data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"More thinking..."}}\n'
-            '\n'
-            'event: content_block_delta\n'
-            'data: {"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"sig_456"}}\n'
-            '\n'
-            'event: content_block_stop\n'
-            'data: {"type":"content_block_stop","index":0}\n'
-            '\n'
-            'event: message_stop\n'
-            'data: {"type":"message_stop"}\n'
-            '\n',
-      ];
-
-      final client = _FakeAnthropicClient(
-        anthropicConfig,
-        stream: Stream<String>.fromIterable(sse),
-      );
-      final chat = AnthropicChat(client, anthropicConfig);
-
-      final events = await chat
-          .chatStream([ChatMessage.user('Hi')], tools: const []).toList();
-      final completion = events.whereType<CompletionEvent>().single;
-      expect(completion.response, isA<ChatResponseWithAssistantMessage>());
-
-      final assistantMessage =
-          (completion.response as ChatResponseWithAssistantMessage)
-              .assistantMessage;
-      final blocks =
-          _anthropicPayload(assistantMessage)['contentBlocks'] as List?;
-      expect(blocks, isNotNull);
-
-      final thinking = blocks!
-          .whereType<Map>()
-          .map((m) => Map<String, dynamic>.from(m))
-          .firstWhere((b) => b['type'] == 'thinking');
-
-      expect(thinking['thinking'], equals('More thinking...'));
-      expect(thinking['signature'], equals('sig_456'));
     });
   });
 }

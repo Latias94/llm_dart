@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 library;
 
 import 'dart:convert';
@@ -34,8 +33,9 @@ class _FakeChatResponse implements ChatResponse {
   Map<String, dynamic>? get providerMetadata => _providerMetadata;
 }
 
-class _SequencedStreamChatModel extends ChatCapability {
-  final List<List<ChatStreamEvent>> steps;
+class _SequencedStreamChatModel extends ChatCapability
+    implements ChatStreamPartsCapability {
+  final List<List<LLMStreamPart>> steps;
 
   _SequencedStreamChatModel(this.steps);
 
@@ -51,7 +51,7 @@ class _SequencedStreamChatModel extends ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
     CancelToken? cancelToken,
@@ -59,9 +59,9 @@ class _SequencedStreamChatModel extends ChatCapability {
     if (_index >= steps.length) {
       throw StateError('No more stream steps configured for fake model');
     }
-    final events = steps[_index++];
-    for (final event in events) {
-      yield event;
+    final parts = steps[_index++];
+    for (final part in parts) {
+      yield part;
     }
   }
 }
@@ -71,22 +71,25 @@ void main() {
     test('should emit tool results and a single finish part', () async {
       final model = _SequencedStreamChatModel([
         [
-          const TextDeltaEvent('Need '),
-          ToolCallDeltaEvent(
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Need '),
+          LLMToolCallStartPart(
             ToolCall(
               id: 'call_1',
               callType: 'function',
               function: FunctionCall(name: 'get_weather', arguments: '{'),
             ),
           ),
-          ToolCallDeltaEvent(
+          LLMToolCallDeltaPart(
             ToolCall(
               id: 'call_1',
               callType: 'function',
               function: FunctionCall(name: '', arguments: '"city":"SF"}'),
             ),
           ),
-          const CompletionEvent(
+          const LLMTextEndPart('Need '),
+          const LLMToolCallEndPart('call_1'),
+          const LLMFinishPart(
             _FakeChatResponse(
               providerMetadata: {
                 'openai': {'id': 'resp_step_1'}
@@ -95,8 +98,10 @@ void main() {
           ),
         ],
         [
-          const TextDeltaEvent('Done'),
-          const CompletionEvent(
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Done'),
+          const LLMTextEndPart('Done'),
+          const LLMFinishPart(
             _FakeChatResponse(
               providerMetadata: {
                 'openai': {'id': 'resp_step_2'}

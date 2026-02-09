@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
@@ -70,38 +69,6 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
       throw const GenericError('no text in summary response');
     }
     return text;
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) async* {
-    await for (final part in chatStreamParts(
-      messages,
-      tools: tools,
-      cancelToken: cancelToken,
-    )) {
-      switch (part) {
-        case LLMTextDeltaPart(:final delta):
-          yield TextDeltaEvent(delta);
-        case LLMReasoningDeltaPart(:final delta):
-          yield ThinkingDeltaEvent(delta);
-        case LLMToolCallStartPart(:final toolCall):
-          yield ToolCallDeltaEvent(toolCall);
-        case LLMToolCallDeltaPart(:final toolCall):
-          yield ToolCallDeltaEvent(toolCall);
-        case LLMFinishPart(:final response):
-          yield CompletionEvent(response);
-        case LLMErrorPart(:final error):
-          yield ErrorEvent(error);
-          return;
-        default:
-          // Ignore structural parts for legacy event stream.
-          break;
-      }
-    }
   }
 
   @override

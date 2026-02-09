@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
 import 'package:test/test.dart';
@@ -20,19 +19,17 @@ void main() {
 
       final chat = GoogleChat(client, config);
 
-      final events = await chat
-          .chatStream([ChatMessage.user('hi')])
-          .where((e) => e is TextDeltaEvent || e is CompletionEvent)
-          .toList();
+      final parts =
+          await chat.chatStreamParts([ChatMessage.user('hi')]).toList();
 
       expect(
-        events.whereType<TextDeltaEvent>().map((e) => e.delta).join(),
+        parts.whereType<LLMTextDeltaPart>().map((p) => p.delta).join(),
         equals('Hello'),
       );
-      expect(events.whereType<CompletionEvent>(), hasLength(1));
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
 
-      final completion = events.whereType<CompletionEvent>().single;
-      expect(completion.response.providerMetadata, isNotNull);
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.providerMetadata, isNotNull);
     });
   });
 }

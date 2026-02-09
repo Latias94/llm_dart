@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'chat.dart';
@@ -49,15 +48,6 @@ class OpenAICompatibleChatProvider
     CancelToken? cancelToken,
   }) async {
     return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) {
-    return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
   }
 
   @override

@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
@@ -50,25 +49,26 @@ void main() {
       ]);
 
       final chat = GoogleChat(client, config);
-      final events = await chat
-          .chatStream([ChatMessage.user('hi')], tools: const [])
+      final parts = await chat
+          .chatStreamParts([ChatMessage.user('hi')], tools: const [])
           .toList();
 
-      final toolEvents = events.whereType<ToolCallDeltaEvent>().toList();
-      expect(toolEvents, hasLength(2));
+      final toolCalls =
+          parts.whereType<LLMToolCallStartPart>().map((p) => p.toolCall).toList();
+      expect(toolCalls, hasLength(2));
 
-      expect(toolEvents[0].toolCall.id, equals('call_get_weather'));
-      expect(toolEvents[1].toolCall.id, equals('call_get_weather_1'));
+      expect(toolCalls[0].id, equals('call_get_weather'));
+      expect(toolCalls[1].id, equals('call_get_weather_1'));
 
       expect(
-        toolEvents.map((e) => e.toolCall.function.arguments).toList(),
+        toolCalls.map((c) => c.function.arguments).toList(),
         equals([
           jsonEncode({'location': 'London'}),
           jsonEncode({'location': 'Paris'}),
         ]),
       );
 
-      expect(events.whereType<CompletionEvent>(), hasLength(1));
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
     });
   });
 }

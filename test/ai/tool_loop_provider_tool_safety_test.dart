@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 library;
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
@@ -32,32 +31,6 @@ class _FakeChatResponse implements ChatResponse {
   Map<String, dynamic>? get providerMetadata => _providerMetadata;
 }
 
-class _SequencedStreamChatModel extends ChatCapability {
-  final List<ChatStreamEvent> events;
-
-  _SequencedStreamChatModel(this.events);
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    CancelToken? cancelToken,
-  }) {
-    throw UnsupportedError('chatWithTools not used in this test');
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) async* {
-    for (final event in events) {
-      yield event;
-    }
-  }
-}
-
 class _PartsOnlyChatModel extends ChatCapability
     implements ChatStreamPartsCapability {
   final List<LLMStreamPart> parts;
@@ -74,15 +47,6 @@ class _PartsOnlyChatModel extends ChatCapability
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) {
-    throw UnsupportedError('chatStream not used in this test');
-  }
-
-  @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
@@ -96,20 +60,22 @@ class _PartsOnlyChatModel extends ChatCapability
 
 void main() {
   group('Tool loop safety', () {
-    test('ignores non-function ToolCallDeltaEvent in legacy chatStream',
-        () async {
+    test('does not execute non-function LLMToolCall parts', () async {
       var handlerCalls = 0;
 
-      final model = _SequencedStreamChatModel([
-        const TextDeltaEvent('Hello'),
-        ToolCallDeltaEvent(
+      final model = _PartsOnlyChatModel([
+        const LLMTextStartPart(),
+        const LLMTextDeltaPart('Hello'),
+        LLMToolCallStartPart(
           ToolCall(
             id: 'call_provider_1',
             callType: 'provider',
             function: const FunctionCall(name: 'web_search', arguments: '{}'),
           ),
         ),
-        const CompletionEvent(
+        const LLMToolCallEndPart('call_provider_1'),
+        const LLMTextEndPart('Hello'),
+        const LLMFinishPart(
           _FakeChatResponse(
             providerMetadata: {
               'openai': {'id': 'resp_1'}
@@ -132,7 +98,7 @@ void main() {
 
       expect(handlerCalls, equals(0));
       expect(parts.whereType<LLMToolResultPart>(), isEmpty);
-      expect(parts.whereType<LLMToolCallStartPart>(), isEmpty);
+      expect(parts.whereType<LLMToolCallStartPart>(), hasLength(1));
       expect(parts.whereType<LLMFinishPart>(), hasLength(1));
     });
 

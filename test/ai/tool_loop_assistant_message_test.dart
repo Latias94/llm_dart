@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:test/test.dart';
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
@@ -54,15 +53,6 @@ class _FakeToolModel extends ChatCapability {
     }
 
     return _FakeTextResponse('done');
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) async* {
-    throw UnimplementedError();
   }
 }
 

@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 library;
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
@@ -32,10 +31,11 @@ class _FakeChatResponse implements ChatResponse {
   Map<String, dynamic>? get providerMetadata => _providerMetadata;
 }
 
-class _FakeChatModel extends ChatCapability {
-  final List<ChatStreamEvent> streamEvents;
+class _FakeChatModel extends ChatCapability
+    implements ChatStreamPartsCapability {
+  final List<LLMStreamPart> parts;
 
-  _FakeChatModel(this.streamEvents);
+  _FakeChatModel(this.parts);
 
   @override
   Future<ChatResponse> chatWithTools(
@@ -47,13 +47,13 @@ class _FakeChatModel extends ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
-    for (final event in streamEvents) {
-      yield event;
+    for (final part in parts) {
+      yield part;
     }
   }
 }
@@ -68,16 +68,24 @@ void main() {
       );
 
       final model = _FakeChatModel([
-        const TextDeltaEvent('Hel'),
-        const TextDeltaEvent('lo'),
-        const ThinkingDeltaEvent('Th'),
-        const ThinkingDeltaEvent('ink'),
-        ToolCallDeltaEvent(toolCall),
-        CompletionEvent(
+        const LLMTextStartPart(),
+        const LLMTextDeltaPart('Hel'),
+        const LLMTextDeltaPart('lo'),
+        const LLMTextEndPart('Hello'),
+        const LLMReasoningStartPart(),
+        const LLMReasoningDeltaPart('Th'),
+        const LLMReasoningDeltaPart('ink'),
+        const LLMReasoningEndPart('Think'),
+        LLMToolCallStartPart(toolCall),
+        const LLMToolCallEndPart('call_1'),
+        const LLMProviderMetadataPart({
+          'openai': {'id': 'resp_1'},
+        }),
+        const LLMFinishPart(
           _FakeChatResponse(
             text: 'Hello',
             thinking: 'Think',
-            providerMetadata: const {
+            providerMetadata: {
               'openai': {'id': 'resp_1'}
             },
           ),
@@ -98,7 +106,6 @@ void main() {
       expect(parts[3], isA<LLMTextDeltaPart>());
       expect((parts[3] as LLMTextDeltaPart).delta, equals('lo'));
 
-      // Switching from text to reasoning closes the current text block.
       expect(parts[4], isA<LLMTextEndPart>());
       expect((parts[4] as LLMTextEndPart).text, equals('Hello'));
 
@@ -108,12 +115,11 @@ void main() {
       expect(parts[7], isA<LLMReasoningDeltaPart>());
       expect((parts[7] as LLMReasoningDeltaPart).delta, equals('ink'));
 
-      expect(parts[8], isA<LLMToolCallStartPart>());
-      expect((parts[8] as LLMToolCallStartPart).toolCall.id, equals('call_1'));
+      expect(parts[8], isA<LLMReasoningEndPart>());
+      expect((parts[8] as LLMReasoningEndPart).thinking, equals('Think'));
 
-      // Completion emits end parts, provider metadata, then finish.
-      expect(parts[9], isA<LLMReasoningEndPart>());
-      expect((parts[9] as LLMReasoningEndPart).thinking, equals('Think'));
+      expect(parts[9], isA<LLMToolCallStartPart>());
+      expect((parts[9] as LLMToolCallStartPart).toolCall.id, equals('call_1'));
 
       expect(parts[10], isA<LLMToolCallEndPart>());
       expect((parts[10] as LLMToolCallEndPart).toolCallId, equals('call_1'));

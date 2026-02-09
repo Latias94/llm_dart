@@ -298,24 +298,6 @@ abstract class ChatCapability {
     CancelToken? cancelToken,
   });
 
-  /// Sends a streaming chat request to the provider
-  ///
-  /// [messages] - The conversation history as a list of chat messages
-  /// [tools] - Optional list of tools to use in the chat
-  /// [cancelToken] - Optional token to cancel the stream
-  ///
-  /// Returns a stream of chat events
-  @Deprecated(
-    'Legacy streaming adapter surface. Prefer `ChatStreamPartsCapability.chatStreamParts()` '
-    '(LLMStreamPart) or task-level streaming APIs like `streamChatParts()` / `streamText()` '
-    'from `llm_dart_ai`. Planned removal in `0.12.0-alpha.1`.',
-  )
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  });
-
   /// Get current memory contents if provider supports memory
   Future<List<ChatMessage>?> memoryContents() async => null;
 
@@ -350,77 +332,6 @@ abstract class PromptChatCapability {
     List<Tool>? tools,
     CancelToken? cancelToken,
   });
-
-  @Deprecated(
-    'Legacy streaming adapter surface. Prefer `PromptChatStreamPartsCapability.chatPromptStreamParts()` '
-    '(LLMStreamPart) or task-level streaming APIs like `streamChatParts()` / `streamText()` '
-    'from `llm_dart_ai`. Planned removal in `0.12.0-alpha.1`.',
-  )
-  Stream<ChatStreamEvent> chatPromptStream(
-    Prompt prompt, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  });
-}
-
-/// Stream event for streaming chat responses
-@Deprecated(
-  'Legacy, lossy streaming event model. Prefer `LLMStreamPart` streaming via '
-  '`ChatStreamPartsCapability.chatStreamParts()` / `PromptChatStreamPartsCapability.chatPromptStreamParts()` '
-  'or task-level streaming APIs from `llm_dart_ai`. Planned removal in `0.12.0-alpha.1`.',
-)
-sealed class ChatStreamEvent {
-  const ChatStreamEvent();
-}
-
-/// Text delta event
-@Deprecated(
-  'Legacy, lossy streaming event model. Prefer `LLMStreamPart` streaming. Planned removal in `0.12.0-alpha.1`.',
-)
-class TextDeltaEvent extends ChatStreamEvent {
-  final String delta;
-
-  const TextDeltaEvent(this.delta);
-}
-
-/// Tool call delta event
-@Deprecated(
-  'Legacy, lossy streaming event model. Prefer `LLMStreamPart` streaming. Planned removal in `0.12.0-alpha.1`.',
-)
-class ToolCallDeltaEvent extends ChatStreamEvent {
-  final ToolCall toolCall;
-
-  const ToolCallDeltaEvent(this.toolCall);
-}
-
-/// Completion event
-@Deprecated(
-  'Legacy, lossy streaming event model. Prefer `LLMStreamPart` streaming. Planned removal in `0.12.0-alpha.1`.',
-)
-class CompletionEvent extends ChatStreamEvent {
-  final ChatResponse response;
-
-  const CompletionEvent(this.response);
-}
-
-/// Thinking/reasoning delta event for reasoning models
-@Deprecated(
-  'Legacy, lossy streaming event model. Prefer `LLMStreamPart` streaming. Planned removal in `0.12.0-alpha.1`.',
-)
-class ThinkingDeltaEvent extends ChatStreamEvent {
-  final String delta;
-
-  const ThinkingDeltaEvent(this.delta);
-}
-
-/// Error event
-@Deprecated(
-  'Legacy, lossy streaming event model. Prefer `LLMStreamPart` streaming. Planned removal in `0.12.0-alpha.1`.',
-)
-class ErrorEvent extends ChatStreamEvent {
-  final LLMError error;
-
-  const ErrorEvent(this.error);
 }
 
 /// Completion request for text completion providers
@@ -991,27 +902,6 @@ abstract class EnhancedChatCapability extends ChatCapability {
   ///
   /// Returns the provider's response or throws an LLMError
   Future<ChatResponse> chatWithAdvancedTools(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    ToolChoice? toolChoice,
-    StructuredOutputFormat? structuredOutput,
-  });
-
-  /// Sends a streaming chat request with advanced tool and output configuration
-  ///
-  /// [messages] - The conversation history as a list of chat messages
-  /// [tools] - Optional list of tools to use in the chat
-  /// [toolChoice] - Optional tool choice strategy (auto, required, specific, none)
-  /// [structuredOutput] - Optional structured output format for typed responses
-  ///
-  /// Returns a stream of chat events
-  @Deprecated(
-    'Legacy streaming adapter surface. Prefer parts-first streaming via '
-    '`ChatStreamPartsCapability.chatStreamParts()` / `PromptChatStreamPartsCapability.chatPromptStreamParts()` '
-    'and task-level streaming APIs from `llm_dart_ai`. Planned removal in `0.12.0-alpha.1`.',
-  )
-  // ignore: deprecated_member_use_from_same_package
-  Stream<ChatStreamEvent> chatStreamWithAdvancedTools(
     List<ChatMessage> messages, {
     List<Tool>? tools,
     ToolChoice? toolChoice,

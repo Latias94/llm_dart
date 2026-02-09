@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'ensure_stream_start.dart';
@@ -80,12 +79,9 @@ Stream<LLMStreamPart> _streamChatPartsInternal({
         return;
       }
 
-      yield* _streamChatPartsFromEvents(
-        model.chatStream(
-          messages,
-          tools: tools,
-          cancelToken: cancelToken,
-        ),
+      throw UnsupportedError(
+        'Model does not support parts-first streaming. Implement '
+        '`ChatStreamPartsCapability.chatStreamParts()` (or use a provider that does).',
       );
 
     case StandardizedPromptIr(:final prompt):
@@ -114,17 +110,6 @@ Stream<LLMStreamPart> _streamChatPartsInternal({
               yield part;
           }
         }
-        return;
-      }
-
-      if (model is PromptChatCapability) {
-        yield* _streamChatPartsFromEvents(
-          (model as PromptChatCapability).chatPromptStream(
-            prompt,
-            tools: tools,
-            cancelToken: cancelToken,
-          ),
-        );
         return;
       }
 
@@ -170,116 +155,4 @@ Stream<LLMStreamPart> streamChatPartsFromPrompt({
     tools: tools,
     cancelToken: cancelToken,
   );
-}
-
-Stream<LLMStreamPart> _streamChatPartsFromEvents(
-  Stream<ChatStreamEvent> events,
-) async* {
-  var inText = false;
-  var inThinking = false;
-
-  final fullText = StringBuffer();
-  final fullThinking = StringBuffer();
-  final currentText = StringBuffer();
-  final currentThinking = StringBuffer();
-
-  String? currentTextBlockId;
-  String? currentThinkingBlockId;
-  var blockCounter = 0;
-
-  final startedToolCalls = <String>{};
-  final endedToolCalls = <String>{};
-
-  await for (final event in events) {
-    switch (event) {
-      case TextDeltaEvent(:final delta):
-        if (inThinking) {
-          inThinking = false;
-          yield LLMReasoningEndPart(
-            currentThinking.toString(),
-            blockId: currentThinkingBlockId,
-          );
-          currentThinking.clear();
-          currentThinkingBlockId = null;
-        }
-        if (!inText) {
-          inText = true;
-          currentTextBlockId ??= '${blockCounter++}';
-          yield LLMTextStartPart(blockId: currentTextBlockId);
-          currentText.clear();
-        }
-        fullText.write(delta);
-        currentText.write(delta);
-        yield LLMTextDeltaPart(delta, blockId: currentTextBlockId);
-
-      case ThinkingDeltaEvent(:final delta):
-        if (inText) {
-          inText = false;
-          yield LLMTextEndPart(
-            currentText.toString(),
-            blockId: currentTextBlockId,
-          );
-          currentText.clear();
-          currentTextBlockId = null;
-        }
-        if (!inThinking) {
-          inThinking = true;
-          currentThinkingBlockId ??= '${blockCounter++}';
-          yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
-          currentThinking.clear();
-        }
-        fullThinking.write(delta);
-        currentThinking.write(delta);
-        yield LLMReasoningDeltaPart(delta, blockId: currentThinkingBlockId);
-
-      case ToolCallDeltaEvent(:final toolCall):
-        if (!startedToolCalls.contains(toolCall.id)) {
-          startedToolCalls.add(toolCall.id);
-          yield LLMToolCallStartPart(toolCall);
-        } else {
-          yield LLMToolCallDeltaPart(toolCall);
-        }
-
-      case CompletionEvent(:final response):
-        if (inText) {
-          yield LLMTextEndPart(
-            currentText.toString(),
-            blockId: currentTextBlockId,
-          );
-          inText = false;
-          currentText.clear();
-          currentTextBlockId = null;
-        }
-        if (inThinking) {
-          yield LLMReasoningEndPart(
-            currentThinking.toString(),
-            blockId: currentThinkingBlockId,
-          );
-          inThinking = false;
-          currentThinking.clear();
-          currentThinkingBlockId = null;
-        }
-        for (final toolCallId in startedToolCalls) {
-          if (endedToolCalls.add(toolCallId)) {
-            yield LLMToolCallEndPart(toolCallId);
-          }
-        }
-
-        final providerMetadata = response.providerMetadata;
-        if (providerMetadata != null && providerMetadata.isNotEmpty) {
-          yield LLMProviderMetadataPart(providerMetadata);
-        }
-
-        yield LLMFinishPart(
-          response,
-          usage: response.usage,
-          finishReason: response is ChatResponseWithFinishReason
-              ? response.finishReason
-              : null,
-        );
-
-      case ErrorEvent(:final error):
-        yield LLMErrorPart(error);
-    }
-  }
 }

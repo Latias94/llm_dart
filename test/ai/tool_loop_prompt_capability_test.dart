@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:test/test.dart';
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
@@ -19,15 +18,6 @@ class _FakePromptToolModel extends ChatCapability
     chatWithToolsCalls++;
     throw StateError(
         'chatWithTools should not be called for PromptChatCapability');
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) async* {
-    throw UnimplementedError();
   }
 
   @override
@@ -78,15 +68,6 @@ class _FakePromptToolModel extends ChatCapability
     }
 
     return _FakeTextResponse('done');
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
-    Prompt prompt, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) async* {
-    throw UnimplementedError();
   }
 }
 

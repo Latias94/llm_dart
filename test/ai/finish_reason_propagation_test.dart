@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
@@ -49,15 +48,6 @@ class _FakeModel implements ChatCapability, ChatStreamPartsCapability {
   @override
   Future<String> summarizeHistory(List<ChatMessage> messages) async =>
       'summary';
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) async* {
-    yield CompletionEvent(_FakeResponse());
-  }
 
   @override
   Stream<LLMStreamPart> chatStreamParts(

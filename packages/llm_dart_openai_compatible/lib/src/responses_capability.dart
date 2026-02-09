@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 /// OpenAI-specific Responses API capability interface
 ///
 /// This interface is specific to OpenAI's Responses API and provides
@@ -34,10 +33,11 @@ abstract class OpenAIResponsesCapability {
     List<Tool>? tools,
   );
 
-  /// Stream chat responses with tools
-  Stream<ChatStreamEvent> chatStream(
+  /// Stream chat responses with tools as structured stream parts.
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   });
 
   // ========== Response Lifecycle Management ==========

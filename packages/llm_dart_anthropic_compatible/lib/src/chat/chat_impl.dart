@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 part of 'package:llm_dart_anthropic_compatible/chat.dart';
 
 /// Anthropic Chat capability implementation
@@ -67,126 +66,6 @@ class AnthropicChat
       cancelToken: cancelToken,
     );
     return _parseResponse(responseData, built.toolNameMapping);
-  }
-
-  /// Stream chat responses with real-time events
-  ///
-  /// **API Reference:** https://docs.anthropic.com/en/api/messages-streaming
-  ///
-  /// Returns a stream of events including text deltas, thinking deltas,
-  /// tool calls, and completion events. Supports all message types and
-  /// extended thinking for reasoning models.
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) async* {
-    yield* _legacyEventsFromParts(
-      chatStreamParts(
-        messages,
-        tools: tools,
-        cancelToken: cancelToken,
-      ),
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
-    Prompt prompt, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) async* {
-    yield* _legacyEventsFromParts(
-      chatPromptStreamParts(
-        prompt,
-        tools: tools,
-        cancelToken: cancelToken,
-      ),
-    );
-  }
-
-  /// Map provider-agnostic stream parts into legacy `ChatStreamEvent`.
-  ///
-  /// Note: Anthropic legacy `chatStream` expects tool call arguments to be
-  /// emitted once (after the full `partial_json` stream is complete), so we
-  /// aggregate `LLMToolCall*Part` into a single `ToolCallDeltaEvent` on end.
-  Stream<ChatStreamEvent> _legacyEventsFromParts(
-    Stream<LLMStreamPart> parts,
-  ) async* {
-    final toolAccums = <String, _LegacyToolCallAccum>{};
-
-    await for (final part in parts) {
-      switch (part) {
-        case LLMTextDeltaPart(:final delta):
-          yield TextDeltaEvent(delta);
-
-        case LLMReasoningDeltaPart(:final delta):
-          yield ThinkingDeltaEvent(delta);
-
-        case LLMToolCallStartPart(:final toolCall):
-          final accum = toolAccums.putIfAbsent(
-            toolCall.id,
-            () => _LegacyToolCallAccum(),
-          );
-          if (toolCall.function.name.isNotEmpty) {
-            accum.name = toolCall.function.name;
-          }
-          if (toolCall.function.arguments.isNotEmpty) {
-            accum.arguments.write(toolCall.function.arguments);
-          }
-
-        case LLMToolCallDeltaPart(:final toolCall):
-          final accum = toolAccums.putIfAbsent(
-            toolCall.id,
-            () => _LegacyToolCallAccum(),
-          );
-          if (toolCall.function.name.isNotEmpty) {
-            accum.name = toolCall.function.name;
-          }
-          if (toolCall.function.arguments.isNotEmpty) {
-            accum.arguments.write(toolCall.function.arguments);
-          }
-
-        case LLMToolCallEndPart(:final toolCallId):
-          final accum = toolAccums.remove(toolCallId);
-          if (accum == null) break;
-          yield ToolCallDeltaEvent(
-            ToolCall(
-              id: toolCallId,
-              callType: 'function',
-              function: FunctionCall(
-                name: accum.name ?? '',
-                arguments: accum.arguments.toString(),
-              ),
-            ),
-          );
-
-        case LLMFinishPart(:final response):
-          yield CompletionEvent(response);
-
-        case LLMErrorPart(:final error):
-          yield ErrorEvent(error);
-          return;
-
-        case LLMStreamStartPart():
-        case LLMTextStartPart():
-        case LLMTextEndPart():
-        case LLMReasoningStartPart():
-        case LLMReasoningEndPart():
-        case LLMProviderMetadataPart():
-        case LLMToolResultPart():
-        case LLMSourceUrlPart():
-        case LLMSourceDocumentPart():
-        case LLMResponseMetadataPart():
-        case LLMProviderToolCallPart():
-        case LLMProviderToolDeltaPart():
-        case LLMProviderToolApprovalRequestPart():
-        case LLMProviderToolResultPart():
-          // Not represented in legacy ChatStreamEvent.
-          break;
-      }
-    }
   }
 
   @override
@@ -313,11 +192,6 @@ class AnthropicChat
         return ProviderError('Anthropic API error ($errorType): $message');
     }
   }
-}
-
-class _LegacyToolCallAccum {
-  String? name;
-  final StringBuffer arguments = StringBuffer();
 }
 
 // `_ToolCallState` moved to `lib/src/chat/tool_call_state.dart`.

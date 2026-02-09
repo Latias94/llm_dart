@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 library;
 
 import 'dart:convert';
@@ -36,11 +35,11 @@ class _FakeChatResponse implements ChatResponse {
 
 class _FakeChatModel extends ChatCapability {
   final ChatResponse response;
-  final List<ChatStreamEvent> streamEvents;
+  final List<LLMStreamPart> streamParts;
 
   _FakeChatModel({
     required this.response,
-    this.streamEvents = const [],
+    this.streamParts = const [],
   });
 
   @override
@@ -52,14 +51,23 @@ class _FakeChatModel extends ChatCapability {
     return response;
   }
 
+}
+
+class _FakeStreamChatModel extends _FakeChatModel
+    implements ChatStreamPartsCapability {
+  _FakeStreamChatModel({
+    required super.response,
+    super.streamParts = const [],
+  });
+
   @override
-  Stream<ChatStreamEvent> chatStream(
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
-    for (final event in streamEvents) {
-      yield event;
+    for (final part in streamParts) {
+      yield part;
     }
   }
 }
@@ -167,20 +175,14 @@ class _SequencedChatModel extends ChatCapability {
     }
     return responses[_index++];
   }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) async* {}
 }
 
-class _SequencedStreamChatModel extends ChatCapability {
-  final List<List<ChatStreamEvent>> eventSteps;
+class _SequencedStreamChatModel extends ChatCapability
+    implements ChatStreamPartsCapability {
+  final List<List<LLMStreamPart>> partSteps;
   final List<List<ChatMessage>> calls = [];
 
-  _SequencedStreamChatModel(this.eventSteps);
+  _SequencedStreamChatModel(this.partSteps);
 
   var _index = 0;
 
@@ -194,18 +196,18 @@ class _SequencedStreamChatModel extends ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
     calls.add(List<ChatMessage>.from(messages));
-    if (_index >= eventSteps.length) {
+    if (_index >= partSteps.length) {
       throw StateError('No more stream steps configured for fake model');
     }
-    final events = eventSteps[_index++];
-    for (final event in events) {
-      yield event;
+    final parts = partSteps[_index++];
+    for (final part in parts) {
+      yield part;
     }
   }
 }
@@ -280,21 +282,21 @@ void main() {
       );
     });
 
-    test('streamText maps stream events to parts', () async {
+    test('streamText maps stream parts to TextStreamPart', () async {
       final response = _FakeChatResponse(text: 'done');
-      final model = _FakeChatModel(
+      final model = _FakeStreamChatModel(
         response: response,
-        streamEvents: [
-          const TextDeltaEvent('a'),
-          const ThinkingDeltaEvent('b'),
-          const ToolCallDeltaEvent(
-            ToolCall(
+        streamParts: [
+          const LLMTextDeltaPart('a'),
+          const LLMReasoningDeltaPart('b'),
+          LLMToolCallStartPart(
+            const ToolCall(
               id: 'call_1',
               callType: 'function',
               function: FunctionCall(name: 't', arguments: '{}'),
             ),
           ),
-          CompletionEvent(response),
+          LLMFinishPart(response),
         ],
       );
 
@@ -702,13 +704,13 @@ void main() {
 
       final model = _SequencedStreamChatModel([
         [
-          ToolCallDeltaEvent(toolCall1),
-          ToolCallDeltaEvent(toolCall2),
-          const CompletionEvent(_FakeChatResponse()),
+          LLMToolCallStartPart(toolCall1),
+          LLMToolCallDeltaPart(toolCall2),
+          const LLMFinishPart(_FakeChatResponse()),
         ],
         [
-          const TextDeltaEvent('done'),
-          const CompletionEvent(_FakeChatResponse(text: '')),
+          const LLMTextDeltaPart('done'),
+          const LLMFinishPart(_FakeChatResponse(text: '')),
         ],
       ]);
 
@@ -760,8 +762,8 @@ void main() {
 
       final model = _SequencedStreamChatModel([
         [
-          ToolCallDeltaEvent(toolCall),
-          const CompletionEvent(_FakeChatResponse()),
+          LLMToolCallStartPart(toolCall),
+          const LLMFinishPart(_FakeChatResponse()),
         ],
       ]);
 
@@ -792,8 +794,8 @@ void main() {
 
       final model = _SequencedStreamChatModel([
         [
-          ToolCallDeltaEvent(toolCall),
-          const CompletionEvent(_FakeChatResponse()),
+          LLMToolCallStartPart(toolCall),
+          const LLMFinishPart(_FakeChatResponse()),
         ],
       ]);
 

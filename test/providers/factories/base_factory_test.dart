@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
@@ -67,7 +66,8 @@ class MockBaseFactory extends BaseProviderFactory<ChatCapability> {
 }
 
 // Mock provider implementation
-class MockProvider implements ChatCapability, ProviderCapabilities {
+class MockProvider
+    implements ChatCapability, ChatStreamPartsCapability, ProviderCapabilities {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
@@ -86,13 +86,16 @@ class MockProvider implements ChatCapability, ProviderCapabilities {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
-    yield TextDeltaEvent('Mock response');
-    yield CompletionEvent(MockChatResponse(text: 'Mock response'));
+    yield const LLMStreamStartPart();
+    yield const LLMTextStartPart();
+    yield const LLMTextDeltaPart('Mock response');
+    yield const LLMTextEndPart('Mock response');
+    yield LLMFinishPart(MockChatResponse(text: 'Mock response'));
   }
 
   @override

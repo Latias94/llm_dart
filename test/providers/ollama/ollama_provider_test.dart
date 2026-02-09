@@ -90,8 +90,12 @@ void main() {
         expect(provider.chatWithTools, isA<Function>());
       });
 
-      test('should have chatStream method', () {
-        expect(provider.chatStream, isA<Function>());
+      test('should support parts-first streaming', () {
+        expect(provider, isA<ChatStreamPartsCapability>());
+        expect(
+          (provider as ChatStreamPartsCapability).chatStreamParts,
+          isA<Function>(),
+        );
       });
 
       test('should have memoryContents method', () {

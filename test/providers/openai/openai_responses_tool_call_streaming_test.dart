@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'dart:async';
 
 import 'package:llm_dart/llm_dart.dart';
@@ -35,28 +34,37 @@ void main() {
         ),
       );
 
-      final events = await responses.chatStream(
-        [ChatMessage.user('test')],
-        tools: [collidingTool],
-      ).toList();
+      final parts = await responses
+          .chatStreamParts(
+            [ChatMessage.user('test')],
+            tools: [collidingTool],
+          )
+          .toList();
 
-      final toolEvents = events.whereType<ToolCallDeltaEvent>().toList();
-      expect(toolEvents, hasLength(3));
+      final toolCalls = <ToolCall>[];
+      for (final part in parts) {
+        if (part is LLMToolCallStartPart) {
+          toolCalls.add(part.toolCall);
+        } else if (part is LLMToolCallDeltaPart) {
+          toolCalls.add(part.toolCall);
+        }
+      }
+      expect(toolCalls, hasLength(3));
 
       // All chunks should share the same id, proving index → id tracking works.
-      final ids = toolEvents.map((e) => e.toolCall.id).toSet();
+      final ids = toolCalls.map((c) => c.id).toSet();
       expect(ids.length, equals(1));
       expect(ids.single, equals('call_1'));
 
       // All chunks should preserve the original tool name (request name is mapped back).
       expect(
-        toolEvents.map((e) => e.toolCall.function.name).toSet(),
+        toolCalls.map((c) => c.function.name).toSet(),
         equals({'web_search_preview'}),
       );
 
       // Arguments should reflect incremental updates in order.
       expect(
-        toolEvents.map((e) => e.toolCall.function.arguments).toList(),
+        toolCalls.map((c) => c.function.arguments).toList(),
         equals([
           '',
           '{"location": "',

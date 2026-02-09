@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/audio.dart';
 import 'package:llm_dart_openai_compatible/chat.dart';
@@ -121,31 +120,6 @@ class AzureOpenAIProvider
     );
     return _wrapResponseWithProviderMetadataAlias(
       response,
-      baseKey: config.providerId,
-      aliasKey: _azureChatProviderMetadataKey,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) {
-    if (config.useResponsesAPI) {
-      return _wrapChatStreamWithProviderMetadataAlias(
-        _responses.chatStream(
-          messages,
-          tools: tools,
-          cancelToken: cancelToken,
-        ),
-        baseKey: config.providerId,
-        aliasKey: _azureResponsesProviderMetadataKey,
-      );
-    }
-
-    return _wrapChatStreamWithProviderMetadataAlias(
-      _chat.chatStream(messages, tools: tools, cancelToken: cancelToken),
       baseKey: config.providerId,
       aliasKey: _azureChatProviderMetadataKey,
     );
@@ -299,18 +273,6 @@ ChatResponse _wrapResponseWithProviderMetadataAlias(
 }) {
   return wrapChatResponseWithProviderMetadataAlias(
     response,
-    baseKey: baseKey,
-    aliasKey: aliasKey,
-  );
-}
-
-Stream<ChatStreamEvent> _wrapChatStreamWithProviderMetadataAlias(
-  Stream<ChatStreamEvent> stream, {
-  required String baseKey,
-  required String aliasKey,
-}) {
-  return wrapChatStreamWithProviderMetadataAlias(
-    stream,
     baseKey: baseKey,
     aliasKey: aliasKey,
   );

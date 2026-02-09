@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'dart:async';
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:logging/logging.dart';
@@ -15,7 +14,8 @@ import '../utils/utf8_stream_decoder.dart';
 ///
 /// This class provides common functionality for providers that use HTTP APIs,
 /// reducing code duplication and ensuring consistent error handling.
-abstract class BaseHttpProvider implements ChatCapability {
+abstract class BaseHttpProvider
+    implements ChatCapability, ChatStreamPartsCapability {
   final Dio _dio;
   final Logger _logger;
 
@@ -44,10 +44,13 @@ abstract class BaseHttpProvider implements ChatCapability {
   /// Each provider should implement this to parse their specific response format
   ChatResponse parseResponse(Map<String, dynamic> responseData);
 
-  /// Parse streaming events
+  /// Parse streaming parts.
   ///
-  /// Each provider should implement this to parse their specific streaming format
-  List<ChatStreamEvent> parseStreamEvents(String chunk);
+  /// Each provider should implement this to parse their specific streaming format.
+  /// The returned parts should be forward-compatible and may include structural
+  /// boundaries (`LLMTextStartPart`/`LLMTextEndPart`, etc.), tool calls, and a
+  /// terminal `LLMFinishPart`.
+  List<LLMStreamPart> parseStreamParts(String chunk);
 
   /// Get the chat endpoint path
   String get chatEndpoint;
@@ -125,7 +128,7 @@ abstract class BaseHttpProvider implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
     CancelToken? cancelToken,
@@ -163,7 +166,7 @@ abstract class BaseHttpProvider implements ChatCapability {
       _logger.fine('$providerName stream HTTP status: ${response.statusCode}');
 
       if (response.statusCode != 200) {
-        yield ErrorEvent(
+        yield LLMErrorPart(
           _mapHttpStatusToError(
             providerName: providerName,
             statusCode: response.statusCode,
@@ -188,9 +191,9 @@ abstract class BaseHttpProvider implements ChatCapability {
             _logger.fine('$providerName raw stream chunk: $chunk');
           }
 
-          final events = parseStreamEvents(chunk);
-          for (final event in events) {
-            yield event;
+          final parts = parseStreamParts(chunk);
+          for (final part in parts) {
+            yield part;
           }
         } catch (e) {
           // Skip malformed chunks but log them
@@ -207,22 +210,22 @@ abstract class BaseHttpProvider implements ChatCapability {
       final remaining = decoder.flush();
       if (remaining.isNotEmpty) {
         try {
-          final events = parseStreamEvents(remaining);
-          for (final event in events) {
-            yield event;
+          final parts = parseStreamParts(remaining);
+          for (final part in parts) {
+            yield part;
           }
         } catch (_) {
           // Best-effort flush; ignore trailing decode/parse errors.
         }
       }
     } on DioException catch (e) {
-      yield ErrorEvent(await handleDioError(e));
+      yield LLMErrorPart(await handleDioError(e));
     } catch (e) {
       if (e is LLMError) {
-        yield ErrorEvent(e);
+        yield LLMErrorPart(e);
         return;
       }
-      yield ErrorEvent(GenericError('Unexpected error: $e'));
+      yield LLMErrorPart(GenericError('Unexpected error: $e'));
     }
   }
 

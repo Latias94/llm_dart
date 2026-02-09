@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:test/test.dart';
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
@@ -7,7 +6,6 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 class _FakePromptToolStreamPartsModel extends ChatCapability
     implements PromptChatStreamPartsCapability {
   int chatWithToolsCalls = 0;
-  int chatStreamCalls = 0;
   int chatPromptStreamPartsCalls = 0;
   int _step = 0;
 
@@ -20,18 +18,6 @@ class _FakePromptToolStreamPartsModel extends ChatCapability
     chatWithToolsCalls++;
     throw StateError(
       'chatWithTools should not be called for PromptChatStreamPartsCapability',
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) async* {
-    chatStreamCalls++;
-    throw StateError(
-      'chatStream should not be called for PromptChatStreamPartsCapability',
     );
   }
 
@@ -115,7 +101,6 @@ void main() {
       expect(finish.response.text, equals('done'));
 
       expect(model.chatWithToolsCalls, equals(0));
-      expect(model.chatStreamCalls, equals(0));
       expect(model.chatPromptStreamPartsCalls, greaterThanOrEqualTo(1));
     });
   });

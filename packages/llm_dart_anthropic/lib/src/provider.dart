@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_anthropic_compatible/chat.dart';
 import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:llm_dart_anthropic_compatible/config.dart';
@@ -63,15 +62,6 @@ class AnthropicProvider
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) {
-    return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
-  }
-
-  @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
@@ -91,16 +81,6 @@ class AnthropicProvider
     CancelToken? cancelToken,
   }) {
     return _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
-    Prompt prompt, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) {
-    return _chat.chatPromptStream(prompt,
-        tools: tools, cancelToken: cancelToken);
   }
 
   @override

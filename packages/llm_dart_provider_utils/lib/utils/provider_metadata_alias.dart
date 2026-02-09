@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'stable_json.dart';
@@ -55,29 +54,6 @@ ChatResponse wrapChatResponseWithProviderMetadataAlias(
     baseKey: baseKey,
     aliasKey: aliasKey,
   );
-}
-
-/// Wrap a chat stream so `CompletionEvent.response.providerMetadata` includes
-/// [aliasKey].
-Stream<ChatStreamEvent> wrapChatStreamWithProviderMetadataAlias(
-  Stream<ChatStreamEvent> stream, {
-  required String baseKey,
-  required String aliasKey,
-}) async* {
-  await for (final event in stream) {
-    switch (event) {
-      case CompletionEvent(response: final response):
-        yield CompletionEvent(
-          wrapChatResponseWithProviderMetadataAlias(
-            response,
-            baseKey: baseKey,
-            aliasKey: aliasKey,
-          ),
-        );
-      default:
-        yield event;
-    }
-  }
 }
 
 /// Wrap an LLM stream parts stream so `LLMProviderMetadataPart` and

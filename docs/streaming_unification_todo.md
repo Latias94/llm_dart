@@ -9,8 +9,7 @@ in a Vercel AI SDK-aligned way.
 Core principle:
 
 - **`LLMStreamPart` is the single source of truth.**
-- All legacy streaming APIs (e.g. `chatStream` with `ChatStreamEvent`) are
-  adapters derived from parts.
+- Legacy event-based streaming (`ChatStreamEvent` / `chatStream`) is removed.
 
 ---
 
@@ -68,9 +67,7 @@ Optional but valuable (for multi-block providers):
 
 ### B) Keep legacy events as adapters (until removal)
 
-- Keep `ChatStreamEvent` temporarily, but treat it as a compatibility layer.
-- Implement `chatStream` by mapping `chatStreamParts` (never parse provider streams twice).
-- Deprecate direct provider implementations of `chatStream` where possible.
+- (Completed) Legacy `ChatStreamEvent` streaming surface has been removed.
 
 ### C) Tool loop understands provider tools
 
@@ -89,11 +86,7 @@ Recommendation: prefer (2) to match AI SDK ergonomics while remaining safe.
 
 Already aligned in code:
 
-- `openai-compatible chat` legacy stream derived from parts
-- `anthropic-compatible` legacy streams derived from parts
-- `google` legacy stream derived from parts
-- `ollama` legacy stream derived from parts
-- `xai.responses` legacy stream derived from parts
+- Streaming is parts-first across providers and orchestration (`llm_dart_ai`).
 - Providers emit `LLMResponseMetadataPart` snapshots when stable metadata is available
 - `LLMResponseMetadataPart` includes `timestamp` when providers expose it (`created` / `created_at`)
 - Google emits `toolWarnings` via `LLMStreamStartPart(warnings: ...)` when streaming
@@ -115,7 +108,7 @@ These changes are expected to break downstream code:
 
 - `LLMStreamPart` gains new subclasses (pattern matching `switch` becomes non-exhaustive).
 - `TextStreamPart` and legacy streaming helpers may need to ignore or expose new parts.
-- `ChatStreamEvent` is expected to be deprecated and removed (timeline TBD).
+- `ChatStreamEvent` was removed (breaking).
 - `GenerateTextResult` / `streamText` may change how they surface sources and finish reason.
 - Provider metadata keys may change (canonicalization; alias removal).
 
@@ -137,6 +130,7 @@ These changes are expected to break downstream code:
 - [x] Emit `LLMResponseMetadataPart` snapshots for key providers (OpenAI-compatible, Anthropic, Google, xAI)
 - [x] Update `packages/llm_dart_ai/lib/src/stream_parts.dart` adapters accordingly
 - [x] Update `packages/llm_dart_ai/lib/src/tool_loop.dart` parts-mode loop integration
+- [x] Remove legacy `ChatStreamEvent` + `chatStream` surface (breaking)
 
 Acceptance criteria:
 
@@ -182,7 +176,7 @@ Acceptance criteria:
 - [x] Add provider tool approval request tests for OpenAI Responses (MCP)
 - [x] Add providerMetadata dedupe conformance tests (OpenAI Responses + xAI Responses)
 - [ ] Expand chunk-fuzz coverage to the new part types
-- [x] Add a global "no drift" guard: `chatStream` must be derived from parts
+- [x] Add a global "no drift" guard: legacy stream event surfaces must not exist
 - [x] Azure: add request mapping tests for `/responses` + `api-version` (v1 + deployment URL modes)
 - [x] providerMetadata alias equivalence conformance tests (canonical equals aliases)
 

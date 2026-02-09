@@ -72,8 +72,7 @@ class LLMResponseMetadataPart extends LLMStreamPart {
 
 /// Optional capability for providers to emit `LLMStreamPart` directly.
 ///
-/// If a provider implements this, orchestration layers can prefer it over the
-/// legacy `ChatStreamEvent` adapter.
+/// Orchestration layers should prefer this capability for streaming.
 abstract class ChatStreamPartsCapability {
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {

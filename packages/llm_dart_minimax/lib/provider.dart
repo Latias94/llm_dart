@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:llm_dart_anthropic_compatible/config.dart';
 import 'package:llm_dart_anthropic_compatible/dio_strategy.dart';
@@ -61,14 +60,6 @@ class MinimaxProvider
       _delegate.chatWithTools(messages, tools, cancelToken: cancelToken);
 
   @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) =>
-      _delegate.chatStream(messages, tools: tools, cancelToken: cancelToken);
-
-  @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
@@ -87,15 +78,6 @@ class MinimaxProvider
     CancelToken? cancelToken,
   }) =>
       _delegate.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
-
-  @override
-  Stream<ChatStreamEvent> chatPromptStream(
-    Prompt prompt, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) =>
-      _delegate.chatPromptStream(prompt,
-          tools: tools, cancelToken: cancelToken);
 
   @override
   Stream<LLMStreamPart> chatPromptStreamParts(

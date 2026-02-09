@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 /// Functionality tests for OpenAI Responses API methods
 ///
 /// This test suite focuses on testing the actual functionality and method
@@ -39,7 +38,7 @@ void main() {
         expect(responses.chatWithToolsBackground, isA<Function>());
 
         // Streaming methods
-        expect(responses.chatStream, isA<Function>());
+        expect(responses.chatStreamParts, isA<Function>());
 
         // Response management methods
         expect(responses.getResponse, isA<Function>());
@@ -57,7 +56,7 @@ void main() {
 
         // Test ChatCapability methods exist without calling them
         expect(responses.chat, isA<Function>());
-        expect(responses.chatStream, isA<Function>());
+        expect(responses.chatWithTools, isA<Function>());
       });
 
       test('should implement OpenAIResponsesCapability interface', () {
@@ -400,7 +399,7 @@ void main() {
         expect(messages, isEmpty);
 
         // Test that streaming method exists without calling it
-        expect(responses.chatStream, isA<Function>());
+        expect(responses.chatStreamParts, isA<Function>());
       });
 
       test('should handle streaming with messages', () {
@@ -409,7 +408,7 @@ void main() {
         expect(messages.first.role, equals(ChatRole.user));
 
         // Test that streaming method exists without calling it
-        expect(responses.chatStream, isA<Function>());
+        expect(responses.chatStreamParts, isA<Function>());
       });
 
       test('should handle streaming with tools', () {
@@ -436,7 +435,7 @@ void main() {
         expect(tools.first.function.name, equals('get_weather'));
 
         // Test that streaming method exists without calling it
-        expect(responses.chatStream, isA<Function>());
+        expect(responses.chatStreamParts, isA<Function>());
       });
     });
   });
@@ -479,12 +478,16 @@ class _FakeOpenAIResponsesCapability implements OpenAIResponsesCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
   }) async* {
-    yield const TextDeltaEvent('delta');
-    yield const CompletionEvent(_FakeChatResponse(text: 'done'));
+    yield const LLMStreamStartPart();
+    yield const LLMTextStartPart();
+    yield const LLMTextDeltaPart('delta');
+    yield const LLMTextEndPart('delta');
+    yield const LLMFinishPart(_FakeChatResponse(text: 'done'));
   }
 
   @override

@@ -1,7 +1,7 @@
-// ignore_for_file: deprecated_member_use
-import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
 import 'dart:async';
+
+import 'package:llm_dart/llm_dart.dart';
+import 'package:test/test.dart';
 
 /// Mock ChatResponse for testing
 class MockChatResponse extends ChatResponse {
@@ -40,8 +40,8 @@ class MockChatResponse extends ChatResponse {
 
 void main() {
   group('Tool Streaming Tests', () {
-    group('ToolCallDeltaEvent', () {
-      test('should create tool call delta event', () {
+    group('LLMToolCallDeltaPart', () {
+      test('should create tool call delta part', () {
         final toolCall = ToolCall(
           id: 'call_123',
           callType: 'function',
@@ -51,11 +51,11 @@ void main() {
           ),
         );
 
-        final event = ToolCallDeltaEvent(toolCall);
+        final part = LLMToolCallDeltaPart(toolCall);
 
-        expect(event.toolCall, equals(toolCall));
-        expect(event.toolCall.id, equals('call_123'));
-        expect(event.toolCall.function.name, equals('test_function'));
+        expect(part.toolCall, equals(toolCall));
+        expect(part.toolCall.id, equals('call_123'));
+        expect(part.toolCall.function.name, equals('test_function'));
       });
 
       test('should handle partial tool call data', () {
@@ -68,18 +68,18 @@ void main() {
           ),
         );
 
-        final event = ToolCallDeltaEvent(partialToolCall);
+        final part = LLMToolCallDeltaPart(partialToolCall);
 
-        expect(event.toolCall.id, equals('call_partial'));
-        expect(event.toolCall.function.name, equals('partial_function'));
-        expect(event.toolCall.function.arguments, equals('{"incomplete": "'));
+        expect(part.toolCall.id, equals('call_partial'));
+        expect(part.toolCall.function.name, equals('partial_function'));
+        expect(part.toolCall.function.arguments, equals('{"incomplete": "'));
       });
     });
 
     group('Tool Call Streaming Simulation', () {
-      test('should handle streaming tool call events', () async {
-        final events = <ChatStreamEvent>[];
-        final controller = StreamController<ChatStreamEvent>();
+      test('should handle streaming tool call parts', () async {
+        final parts = <LLMStreamPart>[];
+        final controller = StreamController<LLMStreamPart>();
 
         // Create a mock response for testing
         final mockResponse = MockChatResponse(
@@ -97,9 +97,9 @@ void main() {
           ],
         );
 
-        // Simulate streaming events
-        controller.add(TextDeltaEvent('I need to call a tool: '));
-        controller.add(ToolCallDeltaEvent(
+        // Simulate streaming parts
+        controller.add(const LLMTextDeltaPart('I need to call a tool: '));
+        controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_stream_1',
             callType: 'function',
@@ -109,28 +109,30 @@ void main() {
             ),
           ),
         ));
-        controller.add(TextDeltaEvent('Let me check the weather for you.'));
-        controller.add(CompletionEvent(mockResponse));
+        controller.add(
+          const LLMTextDeltaPart('Let me check the weather for you.'),
+        );
+        controller.add(LLMFinishPart(mockResponse));
         controller.close();
 
-        // Collect all events
-        await for (final event in controller.stream) {
-          events.add(event);
+        // Collect all parts
+        await for (final part in controller.stream) {
+          parts.add(part);
         }
 
-        expect(events, hasLength(4));
-        expect(events[0], isA<TextDeltaEvent>());
-        expect(events[1], isA<ToolCallDeltaEvent>());
-        expect(events[2], isA<TextDeltaEvent>());
-        expect(events[3], isA<CompletionEvent>());
+        expect(parts, hasLength(4));
+        expect(parts[0], isA<LLMTextDeltaPart>());
+        expect(parts[1], isA<LLMToolCallDeltaPart>());
+        expect(parts[2], isA<LLMTextDeltaPart>());
+        expect(parts[3], isA<LLMFinishPart>());
 
-        final toolCallEvent = events[1] as ToolCallDeltaEvent;
-        expect(toolCallEvent.toolCall.function.name, equals('get_weather'));
+        final toolCallPart = parts[1] as LLMToolCallDeltaPart;
+        expect(toolCallPart.toolCall.function.name, equals('get_weather'));
       });
 
       test('should handle multiple tool calls in stream', () async {
-        final toolCallEvents = <ToolCallDeltaEvent>[];
-        final controller = StreamController<ChatStreamEvent>();
+        final toolCallParts = <LLMToolCallDeltaPart>[];
+        final controller = StreamController<LLMStreamPart>();
 
         final mockResponse = MockChatResponse(
           id: 'response_multi',
@@ -156,8 +158,8 @@ void main() {
         );
 
         // Simulate multiple tool calls
-        controller.add(TextDeltaEvent('I need to call multiple tools: '));
-        controller.add(ToolCallDeltaEvent(
+        controller.add(const LLMTextDeltaPart('I need to call multiple tools: '));
+        controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_1',
             callType: 'function',
@@ -167,7 +169,7 @@ void main() {
             ),
           ),
         ));
-        controller.add(ToolCallDeltaEvent(
+        controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_2',
             callType: 'function',
@@ -177,29 +179,29 @@ void main() {
             ),
           ),
         ));
-        controller.add(CompletionEvent(mockResponse));
+        controller.add(LLMFinishPart(mockResponse));
         controller.close();
 
-        // Collect tool call events
-        await for (final event in controller.stream) {
-          if (event is ToolCallDeltaEvent) {
-            toolCallEvents.add(event);
+        // Collect tool call parts
+        await for (final part in controller.stream) {
+          if (part is LLMToolCallDeltaPart) {
+            toolCallParts.add(part);
           }
         }
 
-        expect(toolCallEvents, hasLength(2));
-        expect(toolCallEvents[0].toolCall.function.name, equals('get_weather'));
-        expect(toolCallEvents[1].toolCall.function.name, equals('calculate'));
+        expect(toolCallParts, hasLength(2));
+        expect(toolCallParts[0].toolCall.function.name, equals('get_weather'));
+        expect(toolCallParts[1].toolCall.function.name, equals('calculate'));
       });
 
       test('should handle streaming with incremental tool call building',
           () async {
-        final controller = StreamController<ChatStreamEvent>();
+        final controller = StreamController<LLMStreamPart>();
         final toolCallParts = <String>[];
 
         // Simulate incremental tool call argument building
-        controller.add(TextDeltaEvent('Calling function: '));
-        controller.add(ToolCallDeltaEvent(
+        controller.add(const LLMTextDeltaPart('Calling function: '));
+        controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_incremental',
             callType: 'function',
@@ -209,7 +211,7 @@ void main() {
             ),
           ),
         ));
-        controller.add(ToolCallDeltaEvent(
+        controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_incremental',
             callType: 'function',
@@ -219,7 +221,7 @@ void main() {
             ),
           ),
         ));
-        controller.add(ToolCallDeltaEvent(
+        controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_incremental',
             callType: 'function',
@@ -232,9 +234,9 @@ void main() {
         controller.close();
 
         // Collect tool call arguments progression
-        await for (final event in controller.stream) {
-          if (event is ToolCallDeltaEvent) {
-            toolCallParts.add(event.toolCall.function.arguments);
+        await for (final part in controller.stream) {
+          if (part is LLMToolCallDeltaPart) {
+            toolCallParts.add(part.toolCall.function.arguments);
           }
         }
 
@@ -247,11 +249,11 @@ void main() {
 
     group('Error Handling in Streaming', () {
       test('should handle malformed tool call in stream', () async {
-        final controller = StreamController<ChatStreamEvent>();
-        final events = <ChatStreamEvent>[];
+        final controller = StreamController<LLMStreamPart>();
+        final parts = <LLMStreamPart>[];
 
-        controller.add(TextDeltaEvent('Starting tool call...'));
-        controller.add(ToolCallDeltaEvent(
+        controller.add(const LLMTextDeltaPart('Starting tool call...'));
+        controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_malformed',
             callType: 'function',
@@ -261,25 +263,25 @@ void main() {
             ),
           ),
         ));
-        controller.add(TextDeltaEvent('Tool call completed.'));
+        controller.add(const LLMTextDeltaPart('Tool call completed.'));
         controller.close();
 
-        await for (final event in controller.stream) {
-          events.add(event);
+        await for (final part in controller.stream) {
+          parts.add(part);
         }
 
-        expect(events, hasLength(3));
-        final toolCallEvent = events[1] as ToolCallDeltaEvent;
+        expect(parts, hasLength(3));
+        final toolCallPart = parts[1] as LLMToolCallDeltaPart;
         expect(
-            toolCallEvent.toolCall.function.arguments, equals('invalid json'));
+            toolCallPart.toolCall.function.arguments, equals('invalid json'));
         // The streaming should continue despite malformed JSON
       });
 
       test('should handle empty tool call arguments in stream', () async {
-        final controller = StreamController<ChatStreamEvent>();
-        final toolCallEvents = <ToolCallDeltaEvent>[];
+        final controller = StreamController<LLMStreamPart>();
+        final toolCallParts = <LLMToolCallDeltaPart>[];
 
-        controller.add(ToolCallDeltaEvent(
+        controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_empty',
             callType: 'function',
@@ -289,7 +291,7 @@ void main() {
             ),
           ),
         ));
-        controller.add(ToolCallDeltaEvent(
+        controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_empty_json',
             callType: 'function',
@@ -301,30 +303,30 @@ void main() {
         ));
         controller.close();
 
-        await for (final event in controller.stream) {
-          if (event is ToolCallDeltaEvent) {
-            toolCallEvents.add(event);
+        await for (final part in controller.stream) {
+          if (part is LLMToolCallDeltaPart) {
+            toolCallParts.add(part);
           }
         }
 
-        expect(toolCallEvents, hasLength(2));
-        expect(toolCallEvents[0].toolCall.function.arguments, equals(''));
-        expect(toolCallEvents[1].toolCall.function.arguments, equals('{}'));
+        expect(toolCallParts, hasLength(2));
+        expect(toolCallParts[0].toolCall.function.arguments, equals(''));
+        expect(toolCallParts[1].toolCall.function.arguments, equals('{}'));
       });
     });
 
     group('Tool Call Event Ordering', () {
       test('should maintain correct event order in complex stream', () async {
-        final controller = StreamController<ChatStreamEvent>();
+        final controller = StreamController<LLMStreamPart>();
         final eventTypes = <String>[];
 
         final mockResponse = MockChatResponse(id: 'final', text: 'Complete');
 
         // Complex streaming scenario
-        controller.add(TextDeltaEvent('Starting analysis: '));
+        controller.add(const LLMTextDeltaPart('Starting analysis: '));
         eventTypes.add('text');
 
-        controller.add(ToolCallDeltaEvent(
+        controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_1',
             callType: 'function',
@@ -333,10 +335,10 @@ void main() {
         ));
         eventTypes.add('tool_call');
 
-        controller.add(TextDeltaEvent('Analysis complete. Now calculating: '));
+        controller.add(const LLMTextDeltaPart('Analysis complete. Now calculating: '));
         eventTypes.add('text');
 
-        controller.add(ToolCallDeltaEvent(
+        controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_2',
             callType: 'function',
@@ -345,22 +347,22 @@ void main() {
         ));
         eventTypes.add('tool_call');
 
-        controller.add(TextDeltaEvent('All done!'));
+        controller.add(const LLMTextDeltaPart('All done!'));
         eventTypes.add('text');
 
-        controller.add(CompletionEvent(mockResponse));
-        eventTypes.add('completion');
+        controller.add(LLMFinishPart(mockResponse));
+        eventTypes.add('finish');
 
         controller.close();
 
         final actualEventTypes = <String>[];
-        await for (final event in controller.stream) {
-          if (event is TextDeltaEvent) {
+        await for (final part in controller.stream) {
+          if (part is LLMTextDeltaPart) {
             actualEventTypes.add('text');
-          } else if (event is ToolCallDeltaEvent) {
+          } else if (part is LLMToolCallDeltaPart) {
             actualEventTypes.add('tool_call');
-          } else if (event is CompletionEvent) {
-            actualEventTypes.add('completion');
+          } else if (part is LLMFinishPart) {
+            actualEventTypes.add('finish');
           }
         }
 
@@ -373,7 +375,7 @@ void main() {
               'text',
               'tool_call',
               'text',
-              'completion'
+              'finish'
             ]));
       });
     });

@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 import 'dart:async';
 import 'dart:convert';
 
@@ -46,7 +45,6 @@ class OpenAIResponses
   // The Responses stream can send tool_calls incrementally where only the
   // first chunk contains the id and later chunks reference the same call
   // via an index. This map keeps a stable id per index so that every
-  // ToolCallDeltaEvent carries a consistent toolCall.id.
   final Map<int, String> _toolCallIds = {};
   // Track tool call function names by index for streaming tool calls.
   //
@@ -104,38 +102,6 @@ class OpenAIResponses
       responseData,
       toolNameMapping: builtRequest.toolNameMapping,
     );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    CancelToken? cancelToken,
-  }) async* {
-    await for (final part in chatStreamParts(
-      messages,
-      tools: tools,
-      cancelToken: cancelToken,
-    )) {
-      switch (part) {
-        case LLMTextDeltaPart(:final delta):
-          yield TextDeltaEvent(delta);
-        case LLMReasoningDeltaPart(:final delta):
-          yield ThinkingDeltaEvent(delta);
-        case LLMToolCallStartPart(:final toolCall):
-          yield ToolCallDeltaEvent(toolCall);
-        case LLMToolCallDeltaPart(:final toolCall):
-          yield ToolCallDeltaEvent(toolCall);
-        case LLMFinishPart(:final response):
-          yield CompletionEvent(response);
-        case LLMErrorPart(:final error):
-          yield ErrorEvent(error);
-          return;
-        default:
-          // Ignore structural/provider-only parts for legacy event stream.
-          break;
-      }
-    }
   }
 
   @override

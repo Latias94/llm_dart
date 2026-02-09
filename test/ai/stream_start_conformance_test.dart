@@ -1,4 +1,3 @@
-// ignore_for_file: deprecated_member_use
 library;
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
@@ -44,14 +43,6 @@ class _FakePartsModel
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
-  }) =>
-      throw UnsupportedError('not used');
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
     CancelToken? cancelToken,
   }) =>
       throw UnsupportedError('not used');

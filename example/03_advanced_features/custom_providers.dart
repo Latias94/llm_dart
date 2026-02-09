@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, deprecated_member_use
+// ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:math';
 
@@ -49,20 +49,19 @@ Future<void> demonstrateMockProvider() async {
     print('\n   Streaming test:');
     print('   🤖 Mock AI: ');
 
-    await for (final event
-        in mockProvider.chatStream([ChatMessage.user('Count to 5')])) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
+    await for (final part
+        in mockProvider.chatStreamParts([ChatMessage.user('Count to 5')])) {
+      switch (part) {
+        case LLMTextDeltaPart(delta: final delta):
           stdout.write(delta);
           break;
-        case CompletionEvent():
+        case LLMFinishPart():
           print('\n');
           break;
-        case ErrorEvent(error: final error):
+        case LLMErrorPart(error: final error):
           print('Error: $error');
           break;
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
+        default:
           break;
       }
     }
@@ -208,7 +207,7 @@ Future<void> demonstrateProviderChaining() async {
 }
 
 /// Mock chat provider for testing
-class MockChatProvider implements ChatCapability {
+class MockChatProvider implements ChatCapability, ChatStreamPartsCapability {
   final Random _random = Random();
 
   @override
@@ -237,7 +236,7 @@ class MockChatProvider implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
     CancelToken? cancelToken,
@@ -250,19 +249,25 @@ class MockChatProvider implements ChatCapability {
     final response = _generateMockResponse(userMessage.content.toString());
     final words = response.split(' ');
 
+    yield const LLMStreamStartPart();
+    yield const LLMTextStartPart();
+
     // Stream words with delays
     for (final word in words) {
       await Future.delayed(Duration(milliseconds: 50 + _random.nextInt(100)));
-      yield TextDeltaEvent('$word ');
+      yield LLMTextDeltaPart('$word ');
     }
 
-    yield CompletionEvent(MockChatResponse(
-      text: response,
-      usage: MockUsage(
-        promptTokens: 10 + _random.nextInt(20),
-        completionTokens: words.length,
+    yield LLMTextEndPart(response);
+    yield LLMFinishPart(
+      MockChatResponse(
+        text: response,
+        usage: MockUsage(
+          promptTokens: 10 + _random.nextInt(20),
+          completionTokens: words.length,
+        ),
       ),
-    ));
+    );
   }
 
   @override
@@ -295,7 +300,7 @@ class MockChatProvider implements ChatCapability {
 }
 
 /// Logging wrapper provider
-class LoggingChatProvider implements ChatCapability {
+class LoggingChatProvider implements ChatCapability, ChatStreamPartsCapability {
   final ChatCapability _baseProvider;
 
   LoggingChatProvider(this._baseProvider);
@@ -329,30 +334,44 @@ class LoggingChatProvider implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
     print('   📝 [LOG] Starting streaming chat request');
 
-    await for (final event in _baseProvider.chatStream(messages,
-        tools: tools, cancelToken: cancelToken)) {
-      switch (event) {
-        case TextDeltaEvent():
+    final partsCap = _baseProvider is ChatStreamPartsCapability
+        ? _baseProvider as ChatStreamPartsCapability
+        : null;
+    if (partsCap == null) {
+      throw UnsupportedError(
+        'Base provider does not support ChatStreamPartsCapability',
+      );
+    }
+
+    await for (final part in partsCap.chatStreamParts(
+      messages,
+      tools: tools,
+      cancelToken: cancelToken,
+    )) {
+      switch (part) {
+        case LLMTextDeltaPart():
           print('   📝 [LOG] Text delta received');
           break;
-        case CompletionEvent():
-          print('   📝 [LOG] Stream completed');
+        case LLMToolCallStartPart():
+          print('   📝 [LOG] Tool call started');
           break;
-        case ErrorEvent():
+        case LLMFinishPart():
+          print('   📝 [LOG] Stream finished');
+          break;
+        case LLMErrorPart():
           print('   📝 [LOG] Stream error occurred');
           break;
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
+        default:
           break;
       }
-      yield event;
+      yield part;
     }
   }
 
@@ -381,7 +400,7 @@ class LoggingChatProvider implements ChatCapability {
 }
 
 /// Caching wrapper provider
-class CachingChatProvider implements ChatCapability {
+class CachingChatProvider implements ChatCapability, ChatStreamPartsCapability {
   final ChatCapability _baseProvider;
   final Map<String, ChatResponse> _cache = {};
 
@@ -408,14 +427,25 @@ class CachingChatProvider implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
     // For simplicity, streaming bypasses cache
-    return _baseProvider.chatStream(messages,
-        tools: tools, cancelToken: cancelToken);
+    final partsCap = _baseProvider is ChatStreamPartsCapability
+        ? _baseProvider as ChatStreamPartsCapability
+        : null;
+    if (partsCap == null) {
+      throw UnsupportedError(
+        'Base provider does not support ChatStreamPartsCapability',
+      );
+    }
+    return partsCap.chatStreamParts(
+      messages,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -445,7 +475,7 @@ class CachingChatProvider implements ChatCapability {
 }
 
 /// Custom API provider example
-class CustomAPIProvider implements ChatCapability {
+class CustomAPIProvider implements ChatCapability, ChatStreamPartsCapability {
   final String baseUrl;
   final String apiKey;
   final String model;
@@ -471,14 +501,19 @@ class CustomAPIProvider implements ChatCapability {
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
+  Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
     final response = await chat(messages, cancelToken: cancelToken);
-    yield TextDeltaEvent(response.text ?? '');
-    yield CompletionEvent(response);
+    final text = response.text ?? '';
+
+    yield const LLMStreamStartPart();
+    yield const LLMTextStartPart();
+    yield LLMTextDeltaPart(text);
+    yield LLMTextEndPart(text);
+    yield LLMFinishPart(response);
   }
 
   @override
@@ -541,7 +576,8 @@ class MockUsage extends UsageInfo {
 /// Provider Interface:
 /// - ChatCapability: Core interface to implement
 /// - chat(): Single request/response
-/// - chatStream(): Streaming responses
+/// - ChatStreamPartsCapability: Parts-first streaming interface
+/// - chatStreamParts(): Streaming responses as structured parts
 /// - chatWithTools(): Tool-enabled chat
 ///
 /// Implementation Patterns:
