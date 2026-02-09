@@ -95,6 +95,38 @@ void main() {
       );
     });
 
+    test('v1 base URL: responses include api-version', () async {
+      final adapter = _CapturingHttpClientAdapter();
+      final customDio = Dio()..httpClientAdapter = adapter;
+
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://example.openai.azure.com/openai',
+        model: 'deployment_1',
+      )
+          .withProviderOptions('azure', {
+            'apiVersion': '2024-10-01-preview',
+            'useDeploymentBasedUrls': false,
+            'useResponsesAPI': true,
+          })
+          .withTransportOptions({'customDio': customDio});
+
+      final factory = AzureOpenAIProviderFactory();
+      final provider = factory.create(llmConfig) as AzureOpenAIProvider;
+
+      await provider.chat([ChatMessage.user('hi')]);
+
+      final req = adapter.lastRequest;
+      expect(req, isNotNull);
+      expect(req!.headers['api-key'], equals('test-key'));
+      expect(req.headers.containsKey('Authorization'), isFalse);
+      expect(req.uri.toString(), contains('/openai/v1/responses'));
+      expect(
+        req.uri.queryParameters['api-version'],
+        equals('2024-10-01-preview'),
+      );
+    });
+
     test('deployment-based URL: images include deployments/{deployment}', () async {
       final adapter = _CapturingHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
@@ -123,6 +155,36 @@ void main() {
         req!.uri.toString(),
         contains('/openai/deployments/deployment_1/images/generations'),
       );
+      expect(
+        req.uri.queryParameters['api-version'],
+        equals('2024-10-01-preview'),
+      );
+    });
+
+    test('deployment-based URL: responses include deployments/{deployment}', () async {
+      final adapter = _CapturingHttpClientAdapter();
+      final customDio = Dio()..httpClientAdapter = adapter;
+
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://example.openai.azure.com/openai',
+        model: 'deployment_1',
+      )
+          .withProviderOptions('azure', {
+            'apiVersion': '2024-10-01-preview',
+            'useDeploymentBasedUrls': true,
+            'useResponsesAPI': true,
+          })
+          .withTransportOptions({'customDio': customDio});
+
+      final factory = AzureOpenAIProviderFactory();
+      final provider = factory.create(llmConfig) as AzureOpenAIProvider;
+
+      await provider.chat([ChatMessage.user('hi')]);
+
+      final req = adapter.lastRequest;
+      expect(req, isNotNull);
+      expect(req!.uri.toString(), contains('/openai/deployments/deployment_1/responses'));
       expect(
         req.uri.queryParameters['api-version'],
         equals('2024-10-01-preview'),
@@ -195,6 +257,20 @@ class _CapturingHttpClientAdapter implements HttpClientAdapter {
           'data': [
             {'url': 'https://example.com/image.png'}
           ],
+        }),
+        200,
+        headers: {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+        },
+      );
+    }
+
+    if (options.path.endsWith('responses')) {
+      return ResponseBody.fromString(
+        jsonEncode({
+          'id': 'resp_1',
+          'output_text': 'ok',
+          'output': const [],
         }),
         200,
         headers: {
