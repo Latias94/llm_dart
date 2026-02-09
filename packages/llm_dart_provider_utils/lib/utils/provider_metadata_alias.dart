@@ -132,6 +132,90 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
                   aliasKey: aliasKey,
                 ),
         );
+      case LLMProviderToolCallPart(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          input: final input,
+          isDynamic: final isDynamic,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMProviderToolCallPart(
+          toolCallId: toolCallId,
+          toolName: toolName,
+          input: input,
+          isDynamic: isDynamic,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMProviderToolDeltaPart(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          status: final status,
+          data: final data,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMProviderToolDeltaPart(
+          toolCallId: toolCallId,
+          toolName: toolName,
+          status: status,
+          data: data,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMProviderToolApprovalRequestPart(
+          approvalId: final approvalId,
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          input: final input,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMProviderToolApprovalRequestPart(
+          approvalId: approvalId,
+          toolCallId: toolCallId,
+          toolName: toolName,
+          input: input,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMProviderToolResultPart(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          result: final result,
+          isError: final isError,
+          preliminary: final preliminary,
+          isDynamic: final isDynamic,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMProviderToolResultPart(
+          toolCallId: toolCallId,
+          toolName: toolName,
+          result: result,
+          isError: isError,
+          preliminary: preliminary,
+          isDynamic: isDynamic,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
       case LLMFinishPart(response: final response):
         yield LLMFinishPart(
           wrapChatResponseWithProviderMetadataAlias(
