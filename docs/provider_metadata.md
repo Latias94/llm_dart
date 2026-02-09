@@ -5,11 +5,21 @@ part of the standardized surface.
 
 This repository follows a Vercel AI SDK–style namespacing convention:
 
-- Always emit a base namespace key equal to `providerId` (e.g. `openai`,
-  `anthropic`, `google`, `deepseek`).
-- Additionally emit one or more capability aliases (e.g. `openai.chat`,
-  `openai.responses`, `openai.image`, `openai.speech`, `openai.transcription`).
-- Never remove existing keys. New aliases must mirror the exact same payload.
+- Always emit a canonical namespace key equal to the provider instance `providerId`
+  (e.g. `openai`, `anthropic`, `google`, `deepseek`, `xai.responses`).
+- Historically, we also emitted capability aliases (e.g. `openai.chat`,
+  `openai.responses`, `google.generative-ai`) for AI SDK fixture parity.
+
+Canonicalization policy:
+
+- **Downstream code should treat `providerMetadata[providerId]` as canonical.**
+- Alias keys are **compatibility only** during the fearless refactor window.
+- If aliases are emitted, their payload must deep-equal the canonical payload.
+- We stop adding new aliases by default.
+
+See:
+
+- ADP 0009: `docs/adp/0009-provider-metadata-canonicalization.md`
 
 ## Why Aliases
 
@@ -24,6 +34,18 @@ We keep `providerId` as the stable primary key and add aliases so that:
 
 - Users can match AI SDK fixtures/expectations when porting tests.
 - Protocol reuse layers (`*_compatible`) can expose consistent namespaces.
+
+## Recommended usage (downstream)
+
+Prefer reading the canonical key:
+
+```dart
+final meta = response.providerMetadata;
+final openai = meta?['openai'] as Map<String, dynamic>?;
+```
+
+If you are migrating legacy code that used an alias key (e.g. `openai.chat`),
+update it to the canonical `openai` key.
 
 ## Recommended Payload Shape
 
@@ -76,4 +98,3 @@ Google Generative AI (chat):
   "google.generative-ai": { "model": "gemini-1.5-flash" }
 }
 ```
-

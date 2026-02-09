@@ -24,3 +24,4 @@ Index:
 - `docs/adp/0006-standard-surface-and-prompt-ir.md`
 - `docs/adp/0007-openai-responses-openai-only.md`
 - `docs/adp/0008-monorepo-dependency-direction.md`
+- `docs/adp/0009-provider-metadata-canonicalization.md`
