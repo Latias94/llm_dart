@@ -37,12 +37,24 @@ class OpenAIResponses
 
   // State tracking for stream processing
   final StringBuffer _thinkingBuffer = StringBuffer();
+  final StringBuffer _activeReasoningBuffer = StringBuffer();
   final StringBuffer _outputTextBuffer = StringBuffer();
   final List<dynamic> _outputTextAnnotations = [];
   Map<String, dynamic>? _partialResponse;
   List<dynamic>? _partialOutput;
   final Map<String, String> _sourceIdByUrl = {};
+  final Map<String, String> _sourceIdByDocumentKey = {};
   int _nextSourceSeq = 0;
+
+  // Capture Responses API logprobs emitted on `response.output_text.delta`.
+  // These are surfaced via providerMetadata for AI SDK parity.
+  final List<dynamic> _streamLogprobs = [];
+
+  // Capture encrypted reasoning content for reasoning blocks.
+  final Map<String, String?> _reasoningEncryptedByItemId = {};
+
+  // Track the active reasoning summary block (`{item_id}:{summary_index}`).
+  String? _activeReasoningBlockId;
   // Track tool call IDs by index for streaming tool calls in the Responses API.
   // The Responses stream can send tool_calls incrementally where only the
   // first chunk contains the id and later chunks reference the same call
@@ -265,6 +277,20 @@ class OpenAIResponses
             }
 
             final item = json['item'];
+
+            // Capture encrypted reasoning content so we can surface it in
+            // reasoning block providerMetadata (AI SDK parity).
+            if (item is Map && item['type'] == 'reasoning') {
+              final itemId = item['id'] as String?;
+              final encrypted = item['encrypted_content'];
+              if (itemId != null &&
+                  itemId.isNotEmpty &&
+                  encrypted is String &&
+                  encrypted.isNotEmpty) {
+                _reasoningEncryptedByItemId[itemId] = encrypted;
+              }
+            }
+
             if (outputIndex != null &&
                 item is Map &&
                 item['type'] == 'function_call') {
@@ -490,6 +516,52 @@ class OpenAIResponses
                 }
               }
 
+              // OpenAI Responses file citations: surface as source-document parts
+              // (AI SDK parity).
+              final type = annotation['type'];
+              if (type == 'file_citation' ||
+                  type == 'container_file_citation' ||
+                  type == 'file_path') {
+                final fileId = annotation['file_id'];
+                final index = annotation['index'];
+                final containerId = annotation['container_id'];
+                final filename = annotation['filename'];
+
+                if (fileId is String && fileId.isNotEmpty) {
+                  final isFilePath = type == 'file_path';
+                  final mediaType =
+                      isFilePath ? 'application/octet-stream' : 'text/plain';
+                  final title = (filename is String && filename.isNotEmpty)
+                      ? filename
+                      : fileId;
+
+                  final key = [
+                    type.toString(),
+                    fileId,
+                    index is int ? index.toString() : '',
+                    containerId is String ? containerId : '',
+                  ].join(':');
+
+                  final docPart = _newSourceDocumentPart(
+                    dedupeKey: key,
+                    mediaType: mediaType,
+                    title: title,
+                    filename: title,
+                    providerMetadata: {
+                      config.providerId: {
+                        'type': type,
+                        'fileId': fileId,
+                        if (index is int) 'index': index,
+                        if (containerId is String && containerId.isNotEmpty)
+                          'containerId': containerId,
+                      },
+                    },
+                  );
+
+                  if (docPart != null) yield docPart;
+                }
+              }
+
               final metadata = OpenAIResponsesResponse(
                 _buildPartialResponse(),
                 null,
@@ -518,31 +590,174 @@ class OpenAIResponses
 
           // OpenAI Responses: encrypted reasoning comes as a summary stream.
           // We map it to `thinking` (same as other reasoning deltas).
+          if (eventType == 'response.reasoning_summary_part.added') {
+            final itemId = json['item_id'] as String?;
+            final summaryIndex = json['summary_index'] as int?;
+            if (itemId == null || itemId.isEmpty || summaryIndex == null) {
+              continue;
+            }
+
+            final nextBlockId = '$itemId:$summaryIndex';
+            if (_activeReasoningBlockId != nextBlockId) {
+              if (inThinking && _activeReasoningBlockId != null) {
+                final prevItemId = _activeReasoningBlockId!.split(':').first;
+                yield LLMReasoningEndPart(
+                  _activeReasoningBuffer.toString(),
+                  blockId: _activeReasoningBlockId,
+                  providerMetadata: {
+                    config.providerId: {'itemId': prevItemId},
+                  },
+                );
+                _activeReasoningBuffer.clear();
+              }
+
+              _activeReasoningBlockId = nextBlockId;
+              inThinking = true;
+              currentThinkingBlockId = nextBlockId;
+
+              yield LLMReasoningStartPart(
+                blockId: nextBlockId,
+                providerMetadata: {
+                  config.providerId: {
+                    'itemId': itemId,
+                    if (_reasoningEncryptedByItemId[itemId] != null)
+                      'reasoningEncryptedContent':
+                          _reasoningEncryptedByItemId[itemId],
+                  },
+                },
+              );
+            }
+            continue;
+          }
+
           if (eventType == 'response.reasoning_summary_text.delta') {
             final delta = json['delta'] as String?;
             if (delta == null || delta.isEmpty) continue;
 
-            if (!inThinking) {
+            final itemId = json['item_id'] as String?;
+            final summaryIndex = json['summary_index'] as int?;
+
+            final nextBlockId = (itemId == null || itemId.isEmpty)
+                ? (currentThinkingBlockId ?? '${blockCounter++}')
+                : '$itemId:${summaryIndex ?? 0}';
+
+            if (_activeReasoningBlockId != nextBlockId) {
+              if (inThinking && _activeReasoningBlockId != null) {
+                final prevItemId = _activeReasoningBlockId!.split(':').first;
+                yield LLMReasoningEndPart(
+                  _activeReasoningBuffer.toString(),
+                  blockId: _activeReasoningBlockId,
+                  providerMetadata: {
+                    config.providerId: {'itemId': prevItemId},
+                  },
+                );
+                _activeReasoningBuffer.clear();
+              }
+
+              _activeReasoningBlockId = nextBlockId;
               inThinking = true;
-              currentThinkingBlockId ??= '${blockCounter++}';
-              yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
+              currentThinkingBlockId = nextBlockId;
+
+              yield LLMReasoningStartPart(
+                blockId: nextBlockId,
+                providerMetadata: itemId == null || itemId.isEmpty
+                    ? null
+                    : {
+                        config.providerId: {
+                          'itemId': itemId,
+                          if (_reasoningEncryptedByItemId[itemId] != null)
+                            'reasoningEncryptedContent':
+                                _reasoningEncryptedByItemId[itemId],
+                        },
+                      },
+              );
             }
+
             _thinkingBuffer.write(delta);
-            yield LLMReasoningDeltaPart(delta, blockId: currentThinkingBlockId);
+            _activeReasoningBuffer.write(delta);
+            yield LLMReasoningDeltaPart(
+              delta,
+              blockId: currentThinkingBlockId,
+              providerMetadata: itemId == null || itemId.isEmpty
+                  ? null
+                  : {
+                      config.providerId: {'itemId': itemId},
+                    },
+            );
             continue;
           }
 
           if (eventType == 'response.reasoning_summary_text.done') {
             final text = json['text'] as String?;
             if (text != null) {
-              if (!inThinking) {
+              final itemId = json['item_id'] as String?;
+              final summaryIndex = json['summary_index'] as int?;
+              final nextBlockId = (itemId == null || itemId.isEmpty)
+                  ? (currentThinkingBlockId ?? '${blockCounter++}')
+                  : '$itemId:${summaryIndex ?? 0}';
+
+              if (_activeReasoningBlockId != nextBlockId) {
+                if (inThinking && _activeReasoningBlockId != null) {
+                  final prevItemId = _activeReasoningBlockId!.split(':').first;
+                  yield LLMReasoningEndPart(
+                    _activeReasoningBuffer.toString(),
+                    blockId: _activeReasoningBlockId,
+                    providerMetadata: {
+                      config.providerId: {'itemId': prevItemId},
+                    },
+                  );
+                  _activeReasoningBuffer.clear();
+                }
+
+                _activeReasoningBlockId = nextBlockId;
                 inThinking = true;
-                currentThinkingBlockId ??= '${blockCounter++}';
-                yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
+                currentThinkingBlockId = nextBlockId;
+                yield LLMReasoningStartPart(
+                  blockId: nextBlockId,
+                  providerMetadata: itemId == null || itemId.isEmpty
+                      ? null
+                      : {
+                          config.providerId: {
+                            'itemId': itemId,
+                            if (_reasoningEncryptedByItemId[itemId] != null)
+                              'reasoningEncryptedContent':
+                                  _reasoningEncryptedByItemId[itemId],
+                          },
+                        },
+                );
               }
-              _thinkingBuffer
-                ..clear()
-                ..write(text);
+
+              // If the stream provides only a final done value, ensure buffers
+              // reflect it. If deltas were already observed, keep the delta
+              // accumulation as the source of truth.
+              if (_activeReasoningBuffer.isEmpty) {
+                _thinkingBuffer.write(text);
+                _activeReasoningBuffer.write(text);
+              }
+            }
+            continue;
+          }
+
+          if (eventType == 'response.reasoning_summary_part.done') {
+            final itemId = json['item_id'] as String?;
+            final summaryIndex = json['summary_index'] as int?;
+            if (itemId == null || itemId.isEmpty || summaryIndex == null) {
+              continue;
+            }
+
+            final blockId = '$itemId:$summaryIndex';
+            if (inThinking && _activeReasoningBlockId == blockId) {
+              yield LLMReasoningEndPart(
+                _activeReasoningBuffer.toString(),
+                blockId: blockId,
+                providerMetadata: {
+                  config.providerId: {'itemId': itemId},
+                },
+              );
+              _activeReasoningBuffer.clear();
+              _activeReasoningBlockId = null;
+              inThinking = false;
+              currentThinkingBlockId = null;
             }
             continue;
           }
@@ -550,6 +765,11 @@ class OpenAIResponses
           if (eventType == 'response.output_text.delta') {
             final delta = json['delta'] as String?;
             if (delta == null || delta.isEmpty) continue;
+
+            final logprobs = json['logprobs'];
+            if (logprobs != null) {
+              _streamLogprobs.add(logprobs);
+            }
 
             if (ReasoningUtils.containsThinkingTags(delta)) {
               final thinkMatch = RegExp(
@@ -861,10 +1081,23 @@ class OpenAIResponses
               currentTextBlockId = null;
             }
             if (inThinking) {
-              yield LLMReasoningEndPart(
-                _thinkingBuffer.toString(),
-                blockId: currentThinkingBlockId,
-              );
+              if (_activeReasoningBlockId != null) {
+                final itemId = _activeReasoningBlockId!.split(':').first;
+                yield LLMReasoningEndPart(
+                  _activeReasoningBuffer.toString(),
+                  blockId: _activeReasoningBlockId,
+                  providerMetadata: {
+                    config.providerId: {'itemId': itemId},
+                  },
+                );
+                _activeReasoningBuffer.clear();
+                _activeReasoningBlockId = null;
+              } else {
+                yield LLMReasoningEndPart(
+                  _thinkingBuffer.toString(),
+                  blockId: currentThinkingBlockId,
+                );
+              }
               inThinking = false;
               currentThinkingBlockId = null;
             }
@@ -885,7 +1118,11 @@ class OpenAIResponses
               }
             }
 
-            yield LLMFinishPart(response);
+            yield LLMFinishPart(
+              response,
+              usage: response.usage,
+              finishReason: response.finishReason,
+            );
             return;
           }
         }
@@ -911,10 +1148,23 @@ class OpenAIResponses
           currentTextBlockId = null;
         }
         if (inThinking) {
-          yield LLMReasoningEndPart(
-            _thinkingBuffer.toString(),
-            blockId: currentThinkingBlockId,
-          );
+          if (_activeReasoningBlockId != null) {
+            final itemId = _activeReasoningBlockId!.split(':').first;
+            yield LLMReasoningEndPart(
+              _activeReasoningBuffer.toString(),
+              blockId: _activeReasoningBlockId,
+              providerMetadata: {
+                config.providerId: {'itemId': itemId},
+              },
+            );
+            _activeReasoningBuffer.clear();
+            _activeReasoningBlockId = null;
+          } else {
+            yield LLMReasoningEndPart(
+              _thinkingBuffer.toString(),
+              blockId: currentThinkingBlockId,
+            );
+          }
           inThinking = false;
           currentThinkingBlockId = null;
         }
@@ -934,7 +1184,11 @@ class OpenAIResponses
             yield LLMProviderMetadataPart(metadata);
           }
         }
-        yield LLMFinishPart(response);
+        yield LLMFinishPart(
+          response,
+          usage: response.usage,
+          finishReason: response.finishReason,
+        );
       }
     } catch (e) {
       if (e is LLMError) {
@@ -1584,6 +1838,7 @@ class OpenAIResponses
   /// Reset stream state (call this when starting a new stream)
   void _resetStreamState() {
     _thinkingBuffer.clear();
+    _activeReasoningBuffer.clear();
     _toolCallIds.clear();
     _toolCallNames.clear();
     _functionCallIdsByOutputIndex.clear();
@@ -1594,7 +1849,11 @@ class OpenAIResponses
     _partialResponse = null;
     _partialOutput = null;
     _sourceIdByUrl.clear();
+    _sourceIdByDocumentKey.clear();
     _nextSourceSeq = 0;
+    _streamLogprobs.clear();
+    _reasoningEncryptedByItemId.clear();
+    _activeReasoningBlockId = null;
   }
 
   String _sourceIdForUrl(String url) {
@@ -1611,6 +1870,30 @@ class OpenAIResponses
       sourceId: _sourceIdForUrl(url),
       url: url,
       title: title,
+      providerMetadata: providerMetadata,
+    );
+  }
+
+  String _sourceIdForDocumentKey(String key) {
+    return _sourceIdByDocumentKey.putIfAbsent(
+      key,
+      () => 'source_${_nextSourceSeq++}',
+    );
+  }
+
+  LLMSourceDocumentPart? _newSourceDocumentPart({
+    required String dedupeKey,
+    required String mediaType,
+    required String title,
+    String? filename,
+    Map<String, dynamic>? providerMetadata,
+  }) {
+    if (_sourceIdByDocumentKey.containsKey(dedupeKey)) return null;
+    return LLMSourceDocumentPart(
+      sourceId: _sourceIdForDocumentKey(dedupeKey),
+      mediaType: mediaType,
+      title: title,
+      filename: filename,
       providerMetadata: providerMetadata,
     );
   }
@@ -1636,6 +1919,10 @@ class OpenAIResponses
       result['output_text_annotations'] = List<dynamic>.from(
         _outputTextAnnotations,
       );
+    }
+
+    if (_streamLogprobs.isNotEmpty) {
+      result['logprobs'] = List<dynamic>.from(_streamLogprobs);
     }
 
     return result;
@@ -2060,6 +2347,8 @@ class OpenAIResponsesResponse implements ChatResponseWithFinishReason {
   Map<String, dynamic>? get providerMetadata {
     final id = _rawResponse['id'];
     final model = _rawResponse['model'];
+    final serviceTier = _rawResponse['service_tier'];
+    final logprobs = _rawResponse['logprobs'];
 
     final serverToolCalls = _extractServerToolCalls();
     final fileSearchCalls = _extractFileSearchCalls();
@@ -2095,6 +2384,8 @@ class OpenAIResponsesResponse implements ChatResponseWithFinishReason {
 
     if (id == null &&
         model == null &&
+        serviceTier == null &&
+        logprobs == null &&
         serverToolCalls == null &&
         fileSearchCalls == null &&
         computerCalls == null &&
@@ -2117,7 +2408,11 @@ class OpenAIResponsesResponse implements ChatResponseWithFinishReason {
     return {
       _providerId: {
         if (id != null) 'id': id,
+        if (id != null) 'responseId': id,
         if (model != null) 'model': model,
+        if (serviceTier is String && serviceTier.isNotEmpty)
+          'serviceTier': serviceTier,
+        if (logprobs is List && logprobs.isNotEmpty) 'logprobs': logprobs,
         if (serverToolCalls != null) 'serverToolCalls': serverToolCalls,
         if (fileSearchCalls != null) 'fileSearchCalls': fileSearchCalls,
         if (computerCalls != null) 'computerCalls': computerCalls,
