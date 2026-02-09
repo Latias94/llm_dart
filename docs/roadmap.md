@@ -104,14 +104,14 @@ Current implementation:
 
 - Prompt IR types + adapter: `packages/llm_dart_core/lib/prompt/prompt.dart` (re-exported by `llm_dart_ai`)
 
-### MVP 3: Provider tools become “first-class” in streaming + tooling
+### MVP 3: Provider tools become first-class in streaming + tooling
 
 Outcome:
 
 - Stream parts include provider tool lifecycle (start/delta/result) where supported.
 - Shared `provider-utils` includes stable mapping logic and provider tool catalogs.
 
-Status: planned.
+Status: in progress (mostly implemented on `dev`; pending cleanup + deprecation window).
 
 Tracking:
 
