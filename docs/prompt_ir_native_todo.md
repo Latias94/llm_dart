@@ -44,7 +44,7 @@ Core principle:
 - [x] Google (Gemini) + Vertex: implement prompt-native compilation
 - [x] Anthropic + Anthropic-compatible: prompt-native chat + streaming
 - [x] OpenAI-compatible Chat Completions: prompt-native compilation
-- [ ] OpenAI (Responses): prompt-native compilation
+- [x] OpenAI (Responses): prompt-native compilation
 - [ ] Ollama JSONL: prompt-native compilation (if it benefits multi-part inputs)
 - [ ] Any remaining providers that support multi-part content
 

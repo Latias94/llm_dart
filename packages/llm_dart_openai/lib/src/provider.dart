@@ -27,6 +27,8 @@ class OpenAIProvider
     implements
         ChatCapability,
         ChatStreamPartsCapability,
+        PromptChatCapability,
+        PromptChatStreamPartsCapability,
         EmbeddingCapability,
         TextToSpeechCapability,
         VoiceListingCapability,
@@ -174,6 +176,60 @@ class OpenAIProvider
 
     return wrapStreamPartsWithProviderMetadataAlias(
       _chat.chatStreamParts(messages, tools: tools, cancelToken: cancelToken),
+      baseKey: config.providerId,
+      aliasKey: _openaiChatProviderMetadataKey,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async {
+    if (config.useResponsesAPI && _responses != null) {
+      final response = await _responses.chatPrompt(prompt,
+          tools: tools, cancelToken: cancelToken);
+      return _wrapResponseWithProviderMetadataAlias(
+        response,
+        baseKey: config.providerId,
+        aliasKey: _openaiResponsesProviderMetadataKey,
+      );
+    }
+
+    final response =
+        await _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+    return _wrapResponseWithProviderMetadataAlias(
+      response,
+      baseKey: config.providerId,
+      aliasKey: _openaiChatProviderMetadataKey,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    if (config.useResponsesAPI && _responses != null) {
+      return wrapStreamPartsWithProviderMetadataAlias(
+        _responses.chatPromptStreamParts(
+          prompt,
+          tools: tools,
+          cancelToken: cancelToken,
+        ),
+        baseKey: config.providerId,
+        aliasKey: _openaiResponsesProviderMetadataKey,
+      );
+    }
+
+    return wrapStreamPartsWithProviderMetadataAlias(
+      _chat.chatPromptStreamParts(
+        prompt,
+        tools: tools,
+        cancelToken: cancelToken,
+      ),
       baseKey: config.providerId,
       aliasKey: _openaiChatProviderMetadataKey,
     );
