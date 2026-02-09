@@ -1,5 +1,7 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'stable_json.dart';
+
 /// Inject a providerMetadata alias key into an existing providerMetadata map.
 ///
 /// This is used for Vercel AI SDK parity, where the response metadata can be
@@ -84,16 +86,23 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
   required String baseKey,
   required String aliasKey,
 }) async* {
+  String? lastProviderMetadataJson;
+
   await for (final part in stream) {
     switch (part) {
       case LLMProviderMetadataPart(providerMetadata: final providerMetadata):
-        yield LLMProviderMetadataPart(
-          withProviderMetadataAlias(
-            providerMetadata,
-            baseKey: baseKey,
-            aliasKey: aliasKey,
-          ),
+        final aliased = withProviderMetadataAlias(
+          providerMetadata,
+          baseKey: baseKey,
+          aliasKey: aliasKey,
         );
+
+        final encoded = tryStableJsonEncode(aliased);
+        if (encoded != null && encoded == lastProviderMetadataJson) {
+          break;
+        }
+        lastProviderMetadataJson = encoded;
+        yield LLMProviderMetadataPart(aliased);
       case LLMSourceUrlPart(
           sourceId: final sourceId,
           url: final url,

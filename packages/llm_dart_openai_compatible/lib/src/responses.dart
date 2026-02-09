@@ -95,8 +95,10 @@ class OpenAIResponses
     List<Tool>? tools,
   ) async {
     final builtRequest = _buildRequest(messages, tools, false, true);
-    final responseData =
-        await client.postJson(responsesEndpoint, builtRequest.body);
+    final responseData = await client.postJson(
+      responsesEndpoint,
+      builtRequest.body,
+    );
     return _parseResponse(
       responseData,
       toolNameMapping: builtRequest.toolNameMapping,
@@ -160,6 +162,7 @@ class OpenAIResponses
 
     var didFinish = false;
     var didEmitResponseMetadata = false;
+    String? lastProviderMetadataJson;
     final providerToolTypeById = <String, String>{};
 
     try {
@@ -287,8 +290,9 @@ class OpenAIResponses
                   }
                 } else if (eventType == 'response.output_item.done') {
                   if (rawArgs != null) {
-                    _functionCallArgsByOutputIndex[outputIndex] =
-                        StringBuffer(rawArgs);
+                    _functionCallArgsByOutputIndex[outputIndex] = StringBuffer(
+                      rawArgs,
+                    );
                     final output = _partialOutput;
                     if (output != null && outputIndex < output.length) {
                       final current = output[outputIndex];
@@ -437,7 +441,11 @@ class OpenAIResponses
                 config.providerId,
               ).providerMetadata;
               if (metadata != null && metadata.isNotEmpty) {
-                yield LLMProviderMetadataPart(metadata);
+                final encoded = tryStableJsonEncode(metadata);
+                if (encoded == null || encoded != lastProviderMetadataJson) {
+                  lastProviderMetadataJson = encoded;
+                  yield LLMProviderMetadataPart(metadata);
+                }
               }
             }
             continue;
@@ -477,7 +485,11 @@ class OpenAIResponses
                 config.providerId,
               ).providerMetadata;
               if (metadata != null && metadata.isNotEmpty) {
-                yield LLMProviderMetadataPart(metadata);
+                final encoded = tryStableJsonEncode(metadata);
+                if (encoded == null || encoded != lastProviderMetadataJson) {
+                  lastProviderMetadataJson = encoded;
+                  yield LLMProviderMetadataPart(metadata);
+                }
               }
             }
             continue;
@@ -624,10 +636,7 @@ class OpenAIResponses
                   ToolCall(
                     id: callId,
                     callType: 'function',
-                    function: FunctionCall(
-                      name: originalName,
-                      arguments: '',
-                    ),
+                    function: FunctionCall(name: originalName, arguments: ''),
                   ),
                 );
               }
@@ -636,10 +645,7 @@ class OpenAIResponses
                 ToolCall(
                   id: callId,
                   callType: 'function',
-                  function: FunctionCall(
-                    name: originalName,
-                    arguments: delta,
-                  ),
+                  function: FunctionCall(name: originalName, arguments: delta),
                 ),
               );
             }
@@ -679,10 +685,7 @@ class OpenAIResponses
                     final toolCall = ToolCall(
                       id: stableId,
                       callType: 'function',
-                      function: FunctionCall(
-                        name: name,
-                        arguments: args,
-                      ),
+                      function: FunctionCall(name: name, arguments: args),
                     );
                     if (activeToolCalls.add(toolCall.id)) {
                       yield LLMToolCallStartPart(toolCall);
@@ -828,7 +831,11 @@ class OpenAIResponses
 
             final metadata = response.providerMetadata;
             if (metadata != null && metadata.isNotEmpty) {
-              yield LLMProviderMetadataPart(metadata);
+              final encoded = tryStableJsonEncode(metadata);
+              if (encoded == null || encoded != lastProviderMetadataJson) {
+                lastProviderMetadataJson = encoded;
+                yield LLMProviderMetadataPart(metadata);
+              }
             }
 
             yield LLMFinishPart(response);
@@ -870,7 +877,11 @@ class OpenAIResponses
 
         final metadata = response.providerMetadata;
         if (metadata != null && metadata.isNotEmpty) {
-          yield LLMProviderMetadataPart(metadata);
+          final encoded = tryStableJsonEncode(metadata);
+          if (encoded == null || encoded != lastProviderMetadataJson) {
+            lastProviderMetadataJson = encoded;
+            yield LLMProviderMetadataPart(metadata);
+          }
         }
         yield LLMFinishPart(response);
       }
@@ -942,8 +953,10 @@ class OpenAIResponses
     // Append query parameters to endpoint
     if (queryParams.isNotEmpty) {
       final queryString = queryParams.entries
-          .map((e) =>
-              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+          .map(
+            (e) =>
+                '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+          )
           .join('&');
       endpoint = '$endpoint?$queryString';
     }
@@ -1014,8 +1027,10 @@ class OpenAIResponses
 
     // Append query parameters to endpoint
     final queryString = queryParams.entries
-        .map((e) =>
-            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .map(
+          (e) =>
+              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}',
+        )
         .join('&');
     endpoint = '$endpoint?$queryString';
 
@@ -1043,8 +1058,10 @@ class OpenAIResponses
       background,
       previousResponseId: previousResponseId,
     );
-    final responseData =
-        await client.postJson(responsesEndpoint, builtRequest.body);
+    final responseData = await client.postJson(
+      responsesEndpoint,
+      builtRequest.body,
+    );
     return _parseResponse(
       responseData,
       toolNameMapping: builtRequest.toolNameMapping,
@@ -1063,8 +1080,12 @@ class OpenAIResponses
     bool background = false,
   }) async {
     // Fork is the same as continue for OpenAI Responses API
-    return continueConversation(fromResponseId, newMessages,
-        tools: tools, background: background);
+    return continueConversation(
+      fromResponseId,
+      newMessages,
+      tools: tools,
+      background: background,
+    );
   }
 
   _OpenAIResponsesBuiltRequest _buildRequest(
@@ -1086,12 +1107,15 @@ class OpenAIResponses
     );
 
     return _OpenAIResponsesBuiltRequest(
-        body: body, toolNameMapping: toolNameMapping);
+      body: body,
+      toolNameMapping: toolNameMapping,
+    );
   }
 
   ToolNameMapping _createToolNameMapping(List<Tool>? tools) {
-    final functionToolNames =
-        (tools ?? const <Tool>[]).map((t) => t.function.name);
+    final functionToolNames = (tools ?? const <Tool>[]).map(
+      (t) => t.function.name,
+    );
 
     final providerToolRequestNamesById = <String, String>{};
     final builtInTools = config.builtInTools;
@@ -1120,8 +1144,9 @@ class OpenAIResponses
     String? previousResponseId,
   }) {
     // Convert messages to Responses API format.
-    final apiMessages =
-        OpenAIResponsesMessageConverter.buildInputMessages(messages);
+    final apiMessages = OpenAIResponsesMessageConverter.buildInputMessages(
+      messages,
+    );
 
     // Handle system prompt: prefer explicit system messages over config
     final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
@@ -1167,9 +1192,7 @@ class OpenAIResponses
 
     // Add reasoning effort parameters (Responses API format)
     if (config.reasoningEffort != null) {
-      body['reasoning'] = {
-        'effort': config.reasoningEffort!.value,
-      };
+      body['reasoning'] = {'effort': config.reasoningEffort!.value};
     }
 
     // Build tools array combining function tools and built-in tools
@@ -1219,8 +1242,10 @@ class OpenAIResponses
     // `webSearchCalls[*].sources` reliably.
     final include = <String>[];
 
-    final rawInclude = config.originalConfig
-        ?.getProviderOption<dynamic>(config.providerId, 'include');
+    final rawInclude = config.originalConfig?.getProviderOption<dynamic>(
+      config.providerId,
+      'include',
+    );
     if (rawInclude is List) {
       include.addAll(rawInclude.whereType<String>());
     }
@@ -1237,18 +1262,16 @@ class OpenAIResponses
       include.add('web_search_call.action.sources');
     }
 
-    final hasFileSearchTool = builtInTools?.any(
-          (t) => t.type == OpenAIBuiltInToolType.fileSearch,
-        ) ??
-        false;
+    final hasFileSearchTool =
+        builtInTools?.any((t) => t.type == OpenAIBuiltInToolType.fileSearch) ??
+            false;
     if (hasFileSearchTool) {
       include.add('file_search_call.results');
     }
 
-    final hasComputerUseTool = builtInTools?.any(
-          (t) => t.type == OpenAIBuiltInToolType.computerUse,
-        ) ??
-        false;
+    final hasComputerUseTool =
+        builtInTools?.any((t) => t.type == OpenAIBuiltInToolType.computerUse) ??
+            false;
     if (hasComputerUseTool) {
       include.add('computer_call_output.output.image_url');
     }
@@ -1304,8 +1327,9 @@ class OpenAIResponses
     }
 
     // Add OpenAI-specific provider options
-    final frequencyPenalty =
-        config.getProviderOption<double>('frequencyPenalty');
+    final frequencyPenalty = config.getProviderOption<double>(
+      'frequencyPenalty',
+    );
     if (frequencyPenalty != null) {
       body['frequency_penalty'] = frequencyPenalty;
     }
@@ -1315,8 +1339,9 @@ class OpenAIResponses
       body['presence_penalty'] = presencePenalty;
     }
 
-    final logitBias =
-        config.getProviderOption<Map<String, double>>('logitBias');
+    final logitBias = config.getProviderOption<Map<String, double>>(
+      'logitBias',
+    );
     if (logitBias != null && logitBias.isNotEmpty) {
       body['logit_bias'] = logitBias;
     }
@@ -1510,8 +1535,9 @@ class OpenAIResponses
     }
 
     if (_outputTextAnnotations.isNotEmpty) {
-      result['output_text_annotations'] =
-          List<dynamic>.from(_outputTextAnnotations);
+      result['output_text_annotations'] = List<dynamic>.from(
+        _outputTextAnnotations,
+      );
     }
 
     return result;
@@ -1545,8 +1571,9 @@ class OpenAIResponses
     Tool tool,
     ToolNameMapping toolNameMapping,
   ) {
-    final requestName =
-        toolNameMapping.requestNameForFunction(tool.function.name);
+    final requestName = toolNameMapping.requestNameForFunction(
+      tool.function.name,
+    );
     return {
       'type': 'function',
       'name': requestName,
@@ -1920,10 +1947,7 @@ class OpenAIResponsesResponse implements ChatResponseWithFinishReason {
       );
     }
 
-    return LLMFinishReason(
-      unified: LLMUnifiedFinishReason.stop,
-      raw: status,
-    );
+    return LLMFinishReason(unified: LLMUnifiedFinishReason.stop, raw: status);
   }
 
   @override
@@ -1937,26 +1961,31 @@ class OpenAIResponsesResponse implements ChatResponseWithFinishReason {
     final webSearchCalls = _extractWebSearchCalls();
     final annotations = _extractOutputTextAnnotations();
 
-    final codeInterpreterCalls =
-        _extractOutputItemsByType('code_interpreter_call');
-    final imageGenerationCalls =
-        _extractOutputItemsByType('image_generation_call');
+    final codeInterpreterCalls = _extractOutputItemsByType(
+      'code_interpreter_call',
+    );
+    final imageGenerationCalls = _extractOutputItemsByType(
+      'image_generation_call',
+    );
 
     final mcpCalls = _extractOutputItemsByType('mcp_call');
     final mcpListTools = _extractOutputItemsByType('mcp_list_tools');
-    final mcpApprovalRequests =
-        _extractOutputItemsByType('mcp_approval_request');
+    final mcpApprovalRequests = _extractOutputItemsByType(
+      'mcp_approval_request',
+    );
 
     final shellCalls = _extractOutputItemsByType('shell_call');
     final shellCallOutputs = _extractOutputItemsByType('shell_call_output');
 
     final localShellCalls = _extractOutputItemsByType('local_shell_call');
-    final localShellCallOutputs =
-        _extractOutputItemsByType('local_shell_call_output');
+    final localShellCallOutputs = _extractOutputItemsByType(
+      'local_shell_call_output',
+    );
 
     final applyPatchCalls = _extractOutputItemsByType('apply_patch_call');
-    final applyPatchCallOutputs =
-        _extractOutputItemsByType('apply_patch_call_output');
+    final applyPatchCallOutputs = _extractOutputItemsByType(
+      'apply_patch_call_output',
+    );
 
     if (id == null &&
         model == null &&

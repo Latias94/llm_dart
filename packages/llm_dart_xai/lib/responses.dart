@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:llm_dart_openai_compatible/client.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 class _FunctionCallAccum {
   String? name;
@@ -173,6 +174,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
     String? responseStatus;
     int? responseCreatedAtSeconds;
     var didEmitResponseMetadata = false;
+    String? lastProviderMetadataJson;
 
     try {
       final stream = client.postStreamRaw(
@@ -257,8 +259,10 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
                 toolCallId.isNotEmpty &&
                 delta != null &&
                 delta.isNotEmpty) {
-              final buffer =
-                  customToolInputById.putIfAbsent(toolCallId, StringBuffer.new);
+              final buffer = customToolInputById.putIfAbsent(
+                toolCallId,
+                StringBuffer.new,
+              );
               buffer.write(delta);
 
               yield LLMProviderToolDeltaPart(
@@ -419,14 +423,19 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
                     );
                   }
 
-                  yield LLMProviderMetadataPart({
+                  final metadata = {
                     config.providerId: {
                       if (responseId != null) 'id': responseId,
                       if (responseModel != null) 'model': responseModel,
                       if (responseStatus != null) 'status': responseStatus,
                       'sources': sources.values.toList(growable: false),
                     },
-                  });
+                  };
+                  final encoded = tryStableJsonEncode(metadata);
+                  if (encoded == null || encoded != lastProviderMetadataJson) {
+                    lastProviderMetadataJson = encoded;
+                    yield LLMProviderMetadataPart(metadata);
+                  }
                 }
               }
             }
@@ -446,8 +455,10 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
               final name = item['name'] as String? ?? '';
               final args = item['arguments'] as String? ?? '';
 
-              final accum =
-                  toolAccums.putIfAbsent(callId, () => _FunctionCallAccum());
+              final accum = toolAccums.putIfAbsent(
+                callId,
+                () => _FunctionCallAccum(),
+              );
               if (name.isNotEmpty) accum.name = name;
               if (args.isNotEmpty) accum.arguments = args;
 
@@ -535,15 +546,21 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
 
                 serverToolCallsById[id] = _stringKeyedMap(item);
                 if (eventType == 'response.output_item.done') {
-                  yield LLMProviderMetadataPart({
+                  final metadata = {
                     config.providerId: {
                       if (responseId != null) 'id': responseId,
                       if (responseModel != null) 'model': responseModel,
                       if (responseStatus != null) 'status': responseStatus,
-                      'serverToolCalls':
-                          serverToolCallsById.values.toList(growable: false),
+                      'serverToolCalls': serverToolCallsById.values.toList(
+                        growable: false,
+                      ),
                     },
-                  });
+                  };
+                  final encoded = tryStableJsonEncode(metadata);
+                  if (encoded == null || encoded != lastProviderMetadataJson) {
+                    lastProviderMetadataJson = encoded;
+                    yield LLMProviderMetadataPart(metadata);
+                  }
                 }
               }
             }
@@ -607,10 +624,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
 
             if (inText && !endedText) {
               endedText = true;
-              yield LLMTextEndPart(
-                finishText,
-                blockId: currentTextBlockId,
-              );
+              yield LLMTextEndPart(finishText, blockId: currentTextBlockId);
               inText = false;
               currentText.clear();
               currentTextBlockId = null;
@@ -641,7 +655,11 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
 
             final metadata = response.providerMetadata;
             if (metadata != null && metadata.isNotEmpty) {
-              yield LLMProviderMetadataPart(metadata);
+              final encoded = tryStableJsonEncode(metadata);
+              if (encoded == null || encoded != lastProviderMetadataJson) {
+                lastProviderMetadataJson = encoded;
+                yield LLMProviderMetadataPart(metadata);
+              }
             }
 
             yield LLMFinishPart(response);
@@ -657,7 +675,11 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
       );
       final metadata = response.providerMetadata;
       if (metadata != null && metadata.isNotEmpty) {
-        yield LLMProviderMetadataPart(metadata);
+        final encoded = tryStableJsonEncode(metadata);
+        if (encoded == null || encoded != lastProviderMetadataJson) {
+          lastProviderMetadataJson = encoded;
+          yield LLMProviderMetadataPart(metadata);
+        }
       }
       yield LLMFinishPart(response);
     } catch (e) {
@@ -731,8 +753,9 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
       }
     }
 
-    final parallelToolCalls =
-        config.getProviderOption<bool>('parallelToolCalls');
+    final parallelToolCalls = config.getProviderOption<bool>(
+      'parallelToolCalls',
+    );
     if (parallelToolCalls != null) {
       body['parallel_tool_calls'] = parallelToolCalls;
     }
@@ -824,10 +847,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
 
     Map<String, dynamic> applyOptions(Map<String, dynamic> base) {
       if (tool.options.isEmpty) return base;
-      return {
-        ...base,
-        ..._normalizeXaiToolOptions(tool.options),
-      };
+      return {...base, ..._normalizeXaiToolOptions(tool.options)};
     }
 
     return switch (id) {
@@ -889,7 +909,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
       AnyToolChoice() => 'required',
       SpecificToolChoice(toolName: final name) => {
           'type': 'function',
-          'name': name
+          'name': name,
         },
     };
   }
@@ -1052,17 +1072,11 @@ class XAIResponsesChatResponse implements ChatResponseWithFinishReason {
     if (st == null || st.isEmpty) return null;
 
     if (st == 'failed' || st == 'cancelled') {
-      return LLMFinishReason(
-        unified: LLMUnifiedFinishReason.error,
-        raw: st,
-      );
+      return LLMFinishReason(unified: LLMUnifiedFinishReason.error, raw: st);
     }
 
     if (st == 'incomplete') {
-      return LLMFinishReason(
-        unified: LLMUnifiedFinishReason.other,
-        raw: st,
-      );
+      return LLMFinishReason(unified: LLMUnifiedFinishReason.other, raw: st);
     }
 
     if (toolCalls != null && toolCalls!.isNotEmpty) {
@@ -1072,10 +1086,7 @@ class XAIResponsesChatResponse implements ChatResponseWithFinishReason {
       );
     }
 
-    return LLMFinishReason(
-      unified: LLMUnifiedFinishReason.stop,
-      raw: st,
-    );
+    return LLMFinishReason(unified: LLMUnifiedFinishReason.stop, raw: st);
   }
 
   @override
