@@ -97,6 +97,7 @@ Already aligned in code:
 - Providers emit `LLMResponseMetadataPart` snapshots when stable metadata is available
 - `LLMResponseMetadataPart` includes `timestamp` when providers expose it (`created` / `created_at`)
 - Google emits `toolWarnings` via `LLMStreamStartPart(warnings: ...)` when streaming
+- `LLMProviderMetadataPart` snapshots are best-effort deduped (stable JSON key) to reduce stream noise
 - Text/reasoning parts support optional `blockId` + per-part `providerMetadata` (AI SDK-style)
 - `streamChatParts` / `streamToolLoopParts` emit `LLMStreamStartPart` (AI SDK-style)
 - `LLMFinishPart` can carry typed `usage` + `finishReason`
