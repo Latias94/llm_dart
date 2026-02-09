@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'ensure_stream_start.dart';
 import 'prompt_input.dart';
 import 'tool_set.dart';
 import 'tool_types.dart';
@@ -1272,349 +1273,352 @@ Stream<LLMStreamPart> streamToolLoopParts({
   bool continueOnToolError = true,
   CancelToken? cancelToken,
 }) async* {
-  yield const LLMStreamStartPart();
-
-  final input = standardizePromptInput(
-    system: system,
-    prompt: prompt,
-    messages: messages,
-    promptIr: promptIr,
-  );
-
-  if (input is StandardizedPromptIr) {
-    yield* _streamToolLoopPartsPromptIr(
-      model: model,
-      prompt: input.prompt,
-      tools: tools,
-      toolHandlers: toolHandlers,
-      toolApprovalChecks: toolApprovalChecks,
-      needsApproval: needsApproval,
-      maxSteps: maxSteps,
-      continueOnToolError: continueOnToolError,
-      cancelToken: cancelToken,
+  Stream<LLMStreamPart> upstream() async* {
+    final input = standardizePromptInput(
+      system: system,
+      prompt: prompt,
+      messages: messages,
+      promptIr: promptIr,
     );
-    return;
-  }
 
-  final standardizedMessages = (input as StandardizedChatMessages).messages;
-
-  if (maxSteps < 1) {
-    yield const LLMErrorPart(
-      InvalidRequestError('maxSteps must be >= 1'),
-    );
-    return;
-  }
-
-  final workingMessages = List<ChatMessage>.from(standardizedMessages);
-
-  for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
-    final toolAccums = <String, _ToolCallAccum>{};
-    final fullText = StringBuffer();
-    final fullThinking = StringBuffer();
-    UsageInfo? usage;
-    ChatResponse? completedResponse;
-
-    final startedToolCalls = <String>{};
-
-    final usesNativeParts = model is ChatStreamPartsCapability;
-    var didEmitProviderMetadataPart = false;
-
-    if (usesNativeParts) {
-      final partsCapable = model as ChatStreamPartsCapability;
-
-      await for (final part in partsCapable.chatStreamParts(
-        workingMessages,
+    if (input is StandardizedPromptIr) {
+      yield* _streamToolLoopPartsPromptIr(
+        model: model,
+        prompt: input.prompt,
         tools: tools,
+        toolHandlers: toolHandlers,
+        toolApprovalChecks: toolApprovalChecks,
+        needsApproval: needsApproval,
+        maxSteps: maxSteps,
+        continueOnToolError: continueOnToolError,
         cancelToken: cancelToken,
-      )) {
-        switch (part) {
-          case LLMTextDeltaPart(:final delta):
-            fullText.write(delta);
-            yield part;
-
-          case LLMTextEndPart(:final text):
-            if (fullText.isEmpty && text.isNotEmpty) {
-              fullText.write(text);
-            }
-            yield part;
-
-          case LLMReasoningDeltaPart(:final delta):
-            fullThinking.write(delta);
-            yield part;
-
-          case LLMReasoningEndPart(:final thinking):
-            if (fullThinking.isEmpty && thinking.isNotEmpty) {
-              fullThinking.write(thinking);
-            }
-            yield part;
-
-          case LLMToolCallStartPart(:final toolCall):
-          case LLMToolCallDeltaPart(:final toolCall):
-            if (!_isFunctionToolCall(toolCall)) {
-              // Tool loop only executes local function tools.
-              yield part;
-              break;
-            }
-            final accum =
-                toolAccums.putIfAbsent(toolCall.id, () => _ToolCallAccum());
-            accum.callType = toolCall.callType;
-            if (toolCall.function.name.isNotEmpty) {
-              accum.name = toolCall.function.name;
-            }
-            if (toolCall.function.arguments.isNotEmpty) {
-              accum.arguments.write(toolCall.function.arguments);
-            }
-            startedToolCalls.add(toolCall.id);
-            yield part;
-
-          case LLMProviderMetadataPart():
-            didEmitProviderMetadataPart = true;
-            yield part;
-
-          case LLMFinishPart(:final response):
-            completedResponse = response;
-            usage = response.usage;
-            break;
-
-          case LLMErrorPart():
-            yield part;
-            return;
-
-          default:
-            yield part;
-        }
-
-        if (part is LLMFinishPart) {
-          break;
-        }
-      }
-    } else {
-      var inText = false;
-      var inThinking = false;
-      final currentText = StringBuffer();
-      final currentThinking = StringBuffer();
-
-      String? currentTextBlockId;
-      String? currentThinkingBlockId;
-      var blockCounter = 0;
-
-      await for (final event in model.chatStream(
-        workingMessages,
-        tools: tools,
-        cancelToken: cancelToken,
-      )) {
-        switch (event) {
-          case TextDeltaEvent(:final delta):
-            if (inThinking) {
-              inThinking = false;
-              yield LLMReasoningEndPart(
-                currentThinking.toString(),
-                blockId: currentThinkingBlockId,
-              );
-              currentThinking.clear();
-              currentThinkingBlockId = null;
-            }
-            if (!inText) {
-              inText = true;
-              currentTextBlockId ??= '${blockCounter++}';
-              yield LLMTextStartPart(blockId: currentTextBlockId);
-              currentText.clear();
-            }
-            fullText.write(delta);
-            currentText.write(delta);
-            yield LLMTextDeltaPart(delta, blockId: currentTextBlockId);
-
-          case ThinkingDeltaEvent(:final delta):
-            if (inText) {
-              inText = false;
-              yield LLMTextEndPart(
-                currentText.toString(),
-                blockId: currentTextBlockId,
-              );
-              currentText.clear();
-              currentTextBlockId = null;
-            }
-            if (!inThinking) {
-              inThinking = true;
-              currentThinkingBlockId ??= '${blockCounter++}';
-              yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
-              currentThinking.clear();
-            }
-            fullThinking.write(delta);
-            currentThinking.write(delta);
-            yield LLMReasoningDeltaPart(
-              delta,
-              blockId: currentThinkingBlockId,
-            );
-
-          case ToolCallDeltaEvent(:final toolCall):
-            if (!_isFunctionToolCall(toolCall)) {
-              // Tool loop only executes local function tools.
-              break;
-            }
-            final accum =
-                toolAccums.putIfAbsent(toolCall.id, () => _ToolCallAccum());
-            accum.callType = toolCall.callType;
-            if (toolCall.function.name.isNotEmpty) {
-              accum.name = toolCall.function.name;
-            }
-            if (toolCall.function.arguments.isNotEmpty) {
-              accum.arguments.write(toolCall.function.arguments);
-            }
-
-            if (startedToolCalls.add(toolCall.id)) {
-              yield LLMToolCallStartPart(toolCall);
-            } else {
-              yield LLMToolCallDeltaPart(toolCall);
-            }
-
-          case CompletionEvent(:final response):
-            completedResponse = response;
-            usage = response.usage;
-
-          case ErrorEvent(:final error):
-            yield LLMErrorPart(error);
-            return;
-        }
-      }
-
-      if (inText) {
-        yield LLMTextEndPart(
-          currentText.toString(),
-          blockId: currentTextBlockId,
-        );
-      }
-      if (inThinking) {
-        yield LLMReasoningEndPart(
-          currentThinking.toString(),
-          blockId: currentThinkingBlockId,
-        );
-      }
-      for (final toolCallId in startedToolCalls) {
-        yield LLMToolCallEndPart(toolCallId);
-      }
-    }
-
-    final baseResponse = completedResponse ??
-        _FakeChatResponseForStreaming(
-          text: fullText.isNotEmpty ? fullText.toString() : null,
-          thinking: fullThinking.isNotEmpty ? fullThinking.toString() : null,
-          usage: usage,
-        );
-
-    final mergedResponse = _MergedChatResponseForStreaming(
-      raw: baseResponse,
-      textOverride:
-          fullText.isNotEmpty ? fullText.toString() : baseResponse.text,
-      thinkingOverride: fullThinking.isNotEmpty
-          ? fullThinking.toString()
-          : baseResponse.thinking,
-      usageOverride: usage ?? baseResponse.usage,
-    );
-
-    final completedToolCalls = toolAccums.entries
-        .map((e) => e.value.toToolCall(e.key))
-        .where(_isExecutableFunctionToolCall)
-        .toList(growable: false);
-
-    if (usesNativeParts && !didEmitProviderMetadataPart) {
-      final providerMetadata = mergedResponse.providerMetadata;
-      if (providerMetadata != null && providerMetadata.isNotEmpty) {
-        yield LLMProviderMetadataPart(providerMetadata);
-      }
-    } else if (!usesNativeParts) {
-      final providerMetadata = mergedResponse.providerMetadata;
-      if (providerMetadata != null && providerMetadata.isNotEmpty) {
-        yield LLMProviderMetadataPart(providerMetadata);
-      }
-    }
-
-    // If no tool calls, we're done.
-    if (completedToolCalls.isEmpty) {
-      if (completedResponse is ChatResponseWithAssistantMessage) {
-        workingMessages.add(completedResponse.assistantMessage);
-      } else {
-        final finalText = mergedResponse.text;
-        if (finalText != null && finalText.isNotEmpty) {
-          workingMessages.add(ChatMessage.assistant(finalText));
-        }
-      }
-
-      yield LLMFinishPart(
-        mergedResponse,
-        usage: mergedResponse.usage,
-        finishReason: mergedResponse.finishReason,
       );
       return;
     }
 
-    final needingApproval = await _findToolCallsNeedingApproval(
-      toolCalls: completedToolCalls,
-      toolApprovalChecks: toolApprovalChecks,
-      needsApproval: needsApproval,
-      messages: workingMessages,
-      stepIndex: stepIndex,
-      cancelToken: cancelToken,
-    );
-    if (needingApproval.isNotEmpty) {
+    final standardizedMessages = (input as StandardizedChatMessages).messages;
+
+    if (maxSteps < 1) {
+      yield const LLMErrorPart(
+        InvalidRequestError('maxSteps must be >= 1'),
+      );
+      return;
+    }
+
+    final workingMessages = List<ChatMessage>.from(standardizedMessages);
+
+    for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
+      final toolAccums = <String, _ToolCallAccum>{};
+      final fullText = StringBuffer();
+      final fullThinking = StringBuffer();
+      UsageInfo? usage;
+      ChatResponse? completedResponse;
+
+      final startedToolCalls = <String>{};
+
+      final usesNativeParts = model is ChatStreamPartsCapability;
+      var didEmitProviderMetadataPart = false;
+
+      if (usesNativeParts) {
+        final partsCapable = model as ChatStreamPartsCapability;
+
+        await for (final part in partsCapable.chatStreamParts(
+          workingMessages,
+          tools: tools,
+          cancelToken: cancelToken,
+        )) {
+          switch (part) {
+            case LLMTextDeltaPart(:final delta):
+              fullText.write(delta);
+              yield part;
+
+            case LLMTextEndPart(:final text):
+              if (fullText.isEmpty && text.isNotEmpty) {
+                fullText.write(text);
+              }
+              yield part;
+
+            case LLMReasoningDeltaPart(:final delta):
+              fullThinking.write(delta);
+              yield part;
+
+            case LLMReasoningEndPart(:final thinking):
+              if (fullThinking.isEmpty && thinking.isNotEmpty) {
+                fullThinking.write(thinking);
+              }
+              yield part;
+
+            case LLMToolCallStartPart(:final toolCall):
+            case LLMToolCallDeltaPart(:final toolCall):
+              if (!_isFunctionToolCall(toolCall)) {
+                // Tool loop only executes local function tools.
+                yield part;
+                break;
+              }
+              final accum =
+                  toolAccums.putIfAbsent(toolCall.id, () => _ToolCallAccum());
+              accum.callType = toolCall.callType;
+              if (toolCall.function.name.isNotEmpty) {
+                accum.name = toolCall.function.name;
+              }
+              if (toolCall.function.arguments.isNotEmpty) {
+                accum.arguments.write(toolCall.function.arguments);
+              }
+              startedToolCalls.add(toolCall.id);
+              yield part;
+
+            case LLMProviderMetadataPart():
+              didEmitProviderMetadataPart = true;
+              yield part;
+
+            case LLMFinishPart(:final response):
+              completedResponse = response;
+              usage = response.usage;
+              break;
+
+            case LLMErrorPart():
+              yield part;
+              return;
+
+            default:
+              yield part;
+          }
+
+          if (part is LLMFinishPart) {
+            break;
+          }
+        }
+      } else {
+        var inText = false;
+        var inThinking = false;
+        final currentText = StringBuffer();
+        final currentThinking = StringBuffer();
+
+        String? currentTextBlockId;
+        String? currentThinkingBlockId;
+        var blockCounter = 0;
+
+        await for (final event in model.chatStream(
+          workingMessages,
+          tools: tools,
+          cancelToken: cancelToken,
+        )) {
+          switch (event) {
+            case TextDeltaEvent(:final delta):
+              if (inThinking) {
+                inThinking = false;
+                yield LLMReasoningEndPart(
+                  currentThinking.toString(),
+                  blockId: currentThinkingBlockId,
+                );
+                currentThinking.clear();
+                currentThinkingBlockId = null;
+              }
+              if (!inText) {
+                inText = true;
+                currentTextBlockId ??= '${blockCounter++}';
+                yield LLMTextStartPart(blockId: currentTextBlockId);
+                currentText.clear();
+              }
+              fullText.write(delta);
+              currentText.write(delta);
+              yield LLMTextDeltaPart(delta, blockId: currentTextBlockId);
+
+            case ThinkingDeltaEvent(:final delta):
+              if (inText) {
+                inText = false;
+                yield LLMTextEndPart(
+                  currentText.toString(),
+                  blockId: currentTextBlockId,
+                );
+                currentText.clear();
+                currentTextBlockId = null;
+              }
+              if (!inThinking) {
+                inThinking = true;
+                currentThinkingBlockId ??= '${blockCounter++}';
+                yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
+                currentThinking.clear();
+              }
+              fullThinking.write(delta);
+              currentThinking.write(delta);
+              yield LLMReasoningDeltaPart(
+                delta,
+                blockId: currentThinkingBlockId,
+              );
+
+            case ToolCallDeltaEvent(:final toolCall):
+              if (!_isFunctionToolCall(toolCall)) {
+                // Tool loop only executes local function tools.
+                break;
+              }
+              final accum =
+                  toolAccums.putIfAbsent(toolCall.id, () => _ToolCallAccum());
+              accum.callType = toolCall.callType;
+              if (toolCall.function.name.isNotEmpty) {
+                accum.name = toolCall.function.name;
+              }
+              if (toolCall.function.arguments.isNotEmpty) {
+                accum.arguments.write(toolCall.function.arguments);
+              }
+
+              if (startedToolCalls.add(toolCall.id)) {
+                yield LLMToolCallStartPart(toolCall);
+              } else {
+                yield LLMToolCallDeltaPart(toolCall);
+              }
+
+            case CompletionEvent(:final response):
+              completedResponse = response;
+              usage = response.usage;
+
+            case ErrorEvent(:final error):
+              yield LLMErrorPart(error);
+              return;
+          }
+        }
+
+        if (inText) {
+          yield LLMTextEndPart(
+            currentText.toString(),
+            blockId: currentTextBlockId,
+          );
+        }
+        if (inThinking) {
+          yield LLMReasoningEndPart(
+            currentThinking.toString(),
+            blockId: currentThinkingBlockId,
+          );
+        }
+        for (final toolCallId in startedToolCalls) {
+          yield LLMToolCallEndPart(toolCallId);
+        }
+      }
+
+      final baseResponse = completedResponse ??
+          _FakeChatResponseForStreaming(
+            text: fullText.isNotEmpty ? fullText.toString() : null,
+            thinking: fullThinking.isNotEmpty ? fullThinking.toString() : null,
+            usage: usage,
+          );
+
+      final mergedResponse = _MergedChatResponseForStreaming(
+        raw: baseResponse,
+        textOverride:
+            fullText.isNotEmpty ? fullText.toString() : baseResponse.text,
+        thinkingOverride: fullThinking.isNotEmpty
+            ? fullThinking.toString()
+            : baseResponse.thinking,
+        usageOverride: usage ?? baseResponse.usage,
+      );
+
+      final completedToolCalls = toolAccums.entries
+          .map((e) => e.value.toToolCall(e.key))
+          .where(_isExecutableFunctionToolCall)
+          .toList(growable: false);
+
+      if (usesNativeParts && !didEmitProviderMetadataPart) {
+        final providerMetadata = mergedResponse.providerMetadata;
+        if (providerMetadata != null && providerMetadata.isNotEmpty) {
+          yield LLMProviderMetadataPart(providerMetadata);
+        }
+      } else if (!usesNativeParts) {
+        final providerMetadata = mergedResponse.providerMetadata;
+        if (providerMetadata != null && providerMetadata.isNotEmpty) {
+          yield LLMProviderMetadataPart(providerMetadata);
+        }
+      }
+
+      // If no tool calls, we're done.
+      if (completedToolCalls.isEmpty) {
+        if (completedResponse is ChatResponseWithAssistantMessage) {
+          workingMessages.add(completedResponse.assistantMessage);
+        } else {
+          final finalText = mergedResponse.text;
+          if (finalText != null && finalText.isNotEmpty) {
+            workingMessages.add(ChatMessage.assistant(finalText));
+          }
+        }
+
+        yield LLMFinishPart(
+          mergedResponse,
+          usage: mergedResponse.usage,
+          finishReason: mergedResponse.finishReason,
+        );
+        return;
+      }
+
+      final needingApproval = await _findToolCallsNeedingApproval(
+        toolCalls: completedToolCalls,
+        toolApprovalChecks: toolApprovalChecks,
+        needsApproval: needsApproval,
+        messages: workingMessages,
+        stepIndex: stepIndex,
+        cancelToken: cancelToken,
+      );
+      if (needingApproval.isNotEmpty) {
+        if (completedResponse is ChatResponseWithAssistantMessage) {
+          workingMessages.add(completedResponse.assistantMessage);
+        } else {
+          workingMessages
+              .add(ChatMessage.toolUse(toolCalls: completedToolCalls));
+        }
+
+        yield LLMErrorPart(
+          ToolApprovalRequiredError(
+            state: ToolLoopBlockedState(
+              stepIndex: stepIndex,
+              stepResult: GenerateTextResult(
+                rawResponse: mergedResponse,
+                text: mergedResponse.text,
+                thinking: mergedResponse.thinking,
+                toolCalls: completedToolCalls,
+                usage: mergedResponse.usage,
+                finishReason: mergedResponse.finishReason,
+              ),
+              toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+              toolCallsNeedingApproval:
+                  List<ToolCall>.unmodifiable(needingApproval),
+              steps: const [],
+              messages: List<ChatMessage>.unmodifiable(workingMessages),
+            ),
+          ),
+        );
+        return;
+      }
+
+      final executed = await _executeToolCalls(
+        toolCalls: completedToolCalls,
+        toolHandlers: toolHandlers,
+        continueOnToolError: continueOnToolError,
+        cancelToken: cancelToken,
+      );
+
+      for (final result in executed) {
+        yield LLMToolResultPart(result);
+      }
+
       if (completedResponse is ChatResponseWithAssistantMessage) {
         workingMessages.add(completedResponse.assistantMessage);
       } else {
         workingMessages.add(ChatMessage.toolUse(toolCalls: completedToolCalls));
       }
-
-      yield LLMErrorPart(
-        ToolApprovalRequiredError(
-          state: ToolLoopBlockedState(
-            stepIndex: stepIndex,
-            stepResult: GenerateTextResult(
-              rawResponse: mergedResponse,
-              text: mergedResponse.text,
-              thinking: mergedResponse.thinking,
-              toolCalls: completedToolCalls,
-              usage: mergedResponse.usage,
-              finishReason: mergedResponse.finishReason,
-            ),
-            toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
-            toolCallsNeedingApproval:
-                List<ToolCall>.unmodifiable(needingApproval),
-            steps: const [],
-            messages: List<ChatMessage>.unmodifiable(workingMessages),
-          ),
+      workingMessages.add(
+        ChatMessage.toolResult(
+          results: _toToolResultCalls(completedToolCalls, executed),
         ),
       );
-      return;
     }
 
-    final executed = await _executeToolCalls(
-      toolCalls: completedToolCalls,
-      toolHandlers: toolHandlers,
-      continueOnToolError: continueOnToolError,
-      cancelToken: cancelToken,
-    );
-
-    for (final result in executed) {
-      yield LLMToolResultPart(result);
-    }
-
-    if (completedResponse is ChatResponseWithAssistantMessage) {
-      workingMessages.add(completedResponse.assistantMessage);
-    } else {
-      workingMessages.add(ChatMessage.toolUse(toolCalls: completedToolCalls));
-    }
-    workingMessages.add(
-      ChatMessage.toolResult(
-        results: _toToolResultCalls(completedToolCalls, executed),
+    yield LLMErrorPart(
+      InvalidRequestError(
+        'Tool loop exceeded maxSteps ($maxSteps). '
+        'The model kept requesting tools and did not produce a final response.',
       ),
     );
   }
 
-  yield LLMErrorPart(
-    InvalidRequestError(
-      'Tool loop exceeded maxSteps ($maxSteps). '
-      'The model kept requesting tools and did not produce a final response.',
-    ),
-  );
+  yield* ensureStreamStartPart(upstream());
 }
 
 Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({

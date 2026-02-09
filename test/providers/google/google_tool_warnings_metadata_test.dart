@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:llm_dart/llm_dart.dart';
 import 'package:test/test.dart';
 
 import '../../utils/fakes/google_fake_client.dart';
+
+String _sseData(Map<String, dynamic> json) => 'data: ${jsonEncode(json)}\n\n';
 
 void main() {
   group('Google toolWarnings providerMetadata (AI SDK parity)', () {
@@ -117,6 +121,76 @@ void main() {
             'feature': 'provider-defined tool google.google_maps',
             'details':
                 'The Google Maps grounding tool is not supported with Gemini models other than Gemini 2 or newer.',
+          },
+        ]),
+      );
+    });
+
+    test('emits warning as stream-start warnings when streaming', () async {
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
+        model: 'gemini-2.5-flash',
+        providerOptions: const {
+          'google': {
+            'webSearchEnabled': true,
+          },
+        },
+      );
+
+      final config = GoogleConfig.fromLLMConfig(llmConfig);
+      final client = FakeGoogleClient(config)
+        ..streamResponse = Stream<String>.fromIterable([
+          _sseData({
+            'modelVersion': config.model,
+            'candidates': [
+              {
+                'content': {
+                  'parts': [
+                    {'text': 'ok'}
+                  ],
+                },
+              },
+            ],
+          }),
+          _sseData({
+            'candidates': [
+              {
+                'content': {
+                  'parts': [
+                    {'text': ''}
+                  ],
+                },
+                'finishReason': 'STOP',
+              },
+            ],
+          }),
+        ]);
+      final chat = GoogleChat(client, config);
+
+      final parts = await chat.chatStreamParts(
+        [ChatMessage.user('hi')],
+        tools: [
+          Tool.function(
+            name: 'testFunction',
+            description: 'Test',
+            parameters: const ParametersSchema(
+              schemaType: 'object',
+              properties: {},
+              required: [],
+            ),
+          ),
+        ],
+      ).toList();
+
+      expect(parts.first, isA<LLMStreamStartPart>());
+      final start = parts.first as LLMStreamStartPart;
+      expect(
+        start.warnings,
+        equals([
+          {
+            'type': 'unsupported',
+            'feature': 'combination of function and provider-defined tools',
           },
         ]),
       );

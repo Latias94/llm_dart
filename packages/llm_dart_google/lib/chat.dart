@@ -191,6 +191,10 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     final toolNameMapping = built.toolNameMapping;
     final toolWarnings = built.toolWarnings;
 
+    if (toolWarnings.isNotEmpty) {
+      yield LLMStreamStartPart(warnings: toolWarnings);
+    }
+
     final sseParser = SseChunkParser();
     bool? useSse;
     var streamBuffer = '';
