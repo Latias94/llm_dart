@@ -113,6 +113,32 @@ plus optional `providerMetadata` for provider-only outputs.
 All tasks and capability methods accept a provider-agnostic `CancelToken?` for
 best-effort cancellation.
 
+### 1.1 Streaming (standardized parts)
+
+The standard streaming representation is `LLMStreamPart` (Vercel AI SDK style).
+
+Key points:
+
+- Providers may implement `ChatStreamPartsCapability` directly.
+- Legacy `chatStream()` (`ChatStreamEvent`) is treated as a lossy adapter
+  derived from parts.
+- Structural parts make streaming deterministic and inspectable:
+  - `LLMStreamStartPart` (includes best-effort `warnings`)
+  - `LLMResponseMetadataPart` (id/model/timestamp snapshots)
+  - `LLMText*Part` / `LLMReasoning*Part` / `LLMToolCall*Part` boundaries
+  - `LLMSourceUrlPart` / `LLMSourceDocumentPart` (citations / grounding)
+  - Provider-executed tools as typed parts:
+    - `LLMProviderToolCallPart` / `LLMProviderToolDeltaPart` /
+      `LLMProviderToolResultPart` / `LLMProviderToolApprovalRequestPart`
+  - `LLMFinishPart` (may carry typed `usage` + typed `finishReason`)
+
+Safety rule:
+
+- Local tool loops only execute **local function tools** (`ToolCall` /
+  `LLMToolCall*Part`).
+- Provider-executed tools are surfaced via `LLMProviderTool*Part` and must never
+  be treated as local tool calls.
+
 Note on capability reporting:
 
 - `ProviderCapabilities.supports(...)` is a **best-effort hint**, not a guarantee.
@@ -129,7 +155,7 @@ because semantics differ significantly between providers:
 - Provider-native tools (web search / file search / computer use / grounding)
 - Provider-specific caching controls
 - Provider-specific reasoning/thinking knobs
-- Provider-specific streaming event shapes and raw protocol fields
+- Raw provider protocol event shapes and provider-only response fields
 
 Instead, use:
 
