@@ -76,6 +76,54 @@ void main() {
       expect(inlineData['data'], equals(base64Encode(bytes)));
     });
 
+    test('includes FileMessage content as a text part when non-empty',
+        () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-1.5-flash',
+        maxInlineDataSize: 1024,
+      );
+
+      final bytes = <int>[1, 2, 3, 4];
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final chat = GoogleChat(client, config);
+
+      await chat.chatWithTools(
+        [
+          ChatMessage.file(
+            role: ChatRole.user,
+            mime: FileMime.pdf,
+            data: bytes,
+            content: 'Please summarize.',
+          ),
+        ],
+        null,
+      );
+
+      final parts = ((client.lastBody?['contents'] as List).single
+          as Map)['parts'] as List;
+      expect(parts, hasLength(2));
+      expect((parts[0] as Map)['text'], equals('Please summarize.'));
+
+      final inlineData = (parts[1] as Map)['inlineData'] as Map;
+      expect(inlineData['mimeType'], equals('application/pdf'));
+      expect(inlineData['data'], equals(base64Encode(bytes)));
+    });
+
     test('encodes ImageUrlMessage as fileData with guessed mimeType', () async {
       final config = GoogleConfig(
         apiKey: 'test-key',
@@ -117,6 +165,51 @@ void main() {
       expect(parts, hasLength(1));
 
       final fileData = (parts.single as Map)['fileData'] as Map;
+      expect(fileData['fileUri'], equals('https://example.com/a.webp'));
+      expect(fileData['mimeType'], equals('image/webp'));
+    });
+
+    test('includes ImageUrlMessage content as a text part when non-empty',
+        () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-1.5-flash',
+      );
+
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final chat = GoogleChat(client, config);
+
+      await chat.chatWithTools(
+        [
+          ChatMessage.imageUrl(
+            role: ChatRole.user,
+            url: 'https://example.com/a.webp',
+            content: 'Describe this image.',
+          ),
+        ],
+        null,
+      );
+
+      final parts = ((client.lastBody?['contents'] as List).single
+          as Map)['parts'] as List;
+      expect(parts, hasLength(2));
+      expect((parts[0] as Map)['text'], equals('Describe this image.'));
+
+      final fileData = (parts[1] as Map)['fileData'] as Map;
       expect(fileData['fileUri'], equals('https://example.com/a.webp'));
       expect(fileData['mimeType'], equals('image/webp'));
     });

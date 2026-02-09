@@ -19,6 +19,16 @@ class _GoogleBuiltRequest {
   });
 }
 
+class _GoogleBuiltContents {
+  final List<Map<String, dynamic>> contents;
+  final List<Map<String, dynamic>> systemInstructionParts;
+
+  const _GoogleBuiltContents({
+    required this.contents,
+    required this.systemInstructionParts,
+  });
+}
+
 /// Google file upload response
 class GoogleFile {
   final String name;
@@ -53,7 +63,12 @@ class GoogleFile {
 ///
 /// This module handles all chat-related functionality for Google providers,
 /// including streaming, tool calling, and reasoning model support.
-class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
+class GoogleChat
+    implements
+        ChatCapability,
+        ChatStreamPartsCapability,
+        PromptChatCapability,
+        PromptChatStreamPartsCapability {
   final GoogleClient client;
   final GoogleConfig config;
 
@@ -103,7 +118,33 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     final toolWarnings = <Map<String, dynamic>>[];
     return _GoogleBuiltRequest(
       body: _buildRequestBody(
-        preparedMessages,
+          preparedMessages, effectiveTools, stream, toolNameMapping,
+          toolWarnings: toolWarnings),
+      toolNameMapping: toolNameMapping,
+      toolWarnings: List<Map<String, dynamic>>.unmodifiable(toolWarnings),
+    );
+  }
+
+  Future<_GoogleBuiltRequest> _buildPromptRequestAsync(
+    Prompt prompt,
+    List<Tool>? tools,
+    bool stream,
+    CancelToken? cancelToken,
+  ) async {
+    final effectiveTools = tools ?? config.tools;
+    final toolNameMapping = _createToolNameMapping(effectiveTools);
+
+    final built = await _buildPromptContentsAsync(
+      prompt,
+      toolNameMapping: toolNameMapping,
+      cancelToken: cancelToken,
+    );
+
+    final toolWarnings = <Map<String, dynamic>>[];
+    return _GoogleBuiltRequest(
+      body: _buildRequestBodyFromContents(
+        built.contents,
+        built.systemInstructionParts,
         effectiveTools,
         stream,
         toolNameMapping,
@@ -142,6 +183,44 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     final effectiveTools = tools ?? config.tools;
     final built =
         await _buildRequestAsync(messages, effectiveTools, true, cancelToken);
+    yield* _chatStreamPartsFromBuilt(built, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async {
+    final built =
+        await _buildPromptRequestAsync(prompt, tools, false, cancelToken);
+    final responseData = await client.postJson(
+      _chatEndpoint,
+      built.body,
+      cancelToken: cancelToken,
+    );
+    return _parseResponse(
+      responseData,
+      built.toolNameMapping,
+      toolWarnings: built.toolWarnings,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async* {
+    final built =
+        await _buildPromptRequestAsync(prompt, tools, true, cancelToken);
+    yield* _chatStreamPartsFromBuilt(built, cancelToken: cancelToken);
+  }
+
+  Stream<LLMStreamPart> _chatStreamPartsFromBuilt(
+    _GoogleBuiltRequest built, {
+    CancelToken? cancelToken,
+  }) async* {
     final requestBody = built.body;
     final toolNameMapping = built.toolNameMapping;
     final toolWarnings = built.toolWarnings;
@@ -993,6 +1072,24 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       contents.add(_convertMessage(message, toolNameMapping));
     }
 
+    return _buildRequestBodyFromContents(
+      contents,
+      systemInstructionParts,
+      tools,
+      stream,
+      toolNameMapping,
+      toolWarnings: toolWarnings,
+    );
+  }
+
+  Map<String, dynamic> _buildRequestBodyFromContents(
+    List<Map<String, dynamic>> contents,
+    List<Map<String, dynamic>> systemInstructionParts,
+    List<Tool>? tools,
+    bool stream,
+    ToolNameMapping toolNameMapping, {
+    required List<Map<String, dynamic>> toolWarnings,
+  }) {
     // Prefer explicit system messages over config.systemPrompt.
     if (systemInstructionParts.isEmpty &&
         config.systemPrompt != null &&
@@ -1028,6 +1125,205 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       };
     }
     return body;
+  }
+
+  Future<_GoogleBuiltContents> _buildPromptContentsAsync(
+    Prompt prompt, {
+    required ToolNameMapping toolNameMapping,
+    CancelToken? cancelToken,
+  }) async {
+    final contents = <Map<String, dynamic>>[];
+    final systemInstructionParts = <Map<String, dynamic>>[];
+
+    var systemMessagesAllowed = true;
+
+    for (final message in prompt.messages) {
+      if (message.role == ChatRole.system) {
+        if (!systemMessagesAllowed) {
+          throw const InvalidRequestError(
+            'Google system messages are only supported at the beginning of the conversation.',
+          );
+        }
+        for (final part in message.parts) {
+          if (part case TextPart(:final text)) {
+            if (text.trim().isNotEmpty) {
+              systemInstructionParts.add({'text': text});
+            }
+            continue;
+          }
+          throw const InvalidRequestError(
+            'Google system messages must be plain text.',
+          );
+        }
+        continue;
+      }
+
+      systemMessagesAllowed = false;
+
+      String? currentRole;
+      final currentParts = <Map<String, dynamic>>[];
+
+      void flush() {
+        if (currentRole == null || currentParts.isEmpty) return;
+        contents.add({
+          'role': currentRole,
+          'parts': List<Map<String, dynamic>>.from(currentParts),
+        });
+        currentRole = null;
+        currentParts.clear();
+      }
+
+      String roleToGoogle(ChatRole role) =>
+          role == ChatRole.user ? 'user' : 'model';
+
+      for (final part in message.parts) {
+        ChatRole partRole;
+        if (part case ToolCallPart(:final overrideRole)) {
+          partRole = overrideRole ?? message.role;
+        } else if (part case ToolResultPart(:final overrideRole)) {
+          partRole = overrideRole ?? message.role;
+        } else {
+          partRole = message.role;
+        }
+
+        final googleRole = roleToGoogle(partRole);
+        if (currentRole != null && currentRole != googleRole) {
+          flush();
+        }
+        currentRole ??= googleRole;
+
+        switch (part) {
+          case TextPart(:final text):
+            currentParts.add({'text': text});
+
+          case ImagePart(:final mime, :final data, :final text):
+            if (text != null && text.trim().isNotEmpty) {
+              currentParts.add({'text': text});
+            }
+            currentParts.add({
+              'inlineData': {
+                'mimeType': mime.mimeType,
+                'data': base64Encode(data),
+              },
+            });
+
+          case ImageUrlPart(:final url, :final text):
+            if (text != null && text.trim().isNotEmpty) {
+              currentParts.add({'text': text});
+            }
+            currentParts.add({
+              'fileData': {
+                'fileUri': url,
+                'mimeType': _guessImageMimeTypeFromUrl(url) ?? 'image/png',
+              },
+            });
+
+          case FilePart(:final mime, :final data, :final text):
+            if (text != null && text.trim().isNotEmpty) {
+              currentParts.add({'text': text});
+            }
+            if (data.length > config.maxInlineDataSize) {
+              final displayName = _defaultUploadDisplayName(
+                  mimeType: mime.mimeType, data: data);
+              final uploaded = await getOrUploadFile(
+                data: data,
+                mimeType: mime.mimeType,
+                displayName: displayName,
+                cancelToken: cancelToken,
+              );
+
+              if (uploaded == null) {
+                throw InvalidRequestError(
+                  'File too large for Google inlineData and upload failed: '
+                  '${data.length} bytes (maxInlineDataSize=${config.maxInlineDataSize}).',
+                );
+              }
+
+              final uri = uploaded.uri ?? uploaded.name;
+              if (uri.isEmpty) {
+                throw ProviderError(
+                  'Google file upload returned no uri/name for displayName="$displayName".',
+                );
+              }
+
+              currentParts.add({
+                'fileData': {
+                  'fileUri': uri,
+                  'mimeType': uploaded.mimeType.isEmpty
+                      ? mime.mimeType
+                      : uploaded.mimeType,
+                },
+              });
+            } else {
+              currentParts.add({
+                'inlineData': {
+                  'mimeType': mime.mimeType,
+                  'data': base64Encode(data),
+                },
+              });
+            }
+
+          case ToolCallPart(:final toolCall, :final overrideRole):
+            final effectiveRole = overrideRole ?? message.role;
+            if (effectiveRole != ChatRole.assistant) {
+              throw const InvalidRequestError(
+                'ToolCallPart must be emitted from an assistant message.',
+              );
+            }
+            Map<String, dynamic> args;
+            try {
+              final decoded = jsonDecode(toolCall.function.arguments);
+              args = decoded is Map
+                  ? Map<String, dynamic>.from(decoded)
+                  : const <String, dynamic>{};
+            } catch (_) {
+              args = const <String, dynamic>{};
+            }
+            final requestName =
+                toolNameMapping.requestNameForFunction(toolCall.function.name);
+            currentParts.add({
+              'functionCall': {
+                'name': requestName,
+                'args': args,
+              },
+            });
+
+          case ToolResultPart(:final toolResult, :final overrideRole):
+            final effectiveRole = overrideRole ?? message.role;
+            if (effectiveRole != ChatRole.user) {
+              throw const InvalidRequestError(
+                'ToolResultPart must be emitted from a user message.',
+              );
+            }
+            final requestName = toolNameMapping
+                .requestNameForFunction(toolResult.function.name);
+            final raw = toolResult.function.arguments;
+            Object content;
+            try {
+              content = jsonDecode(raw);
+            } catch (_) {
+              content = raw;
+            }
+            currentParts.add({
+              'functionResponse': {
+                'name': requestName,
+                'response': {
+                  'name': requestName,
+                  'content': content,
+                },
+              },
+            });
+        }
+      }
+
+      flush();
+    }
+
+    return _GoogleBuiltContents(
+      contents: List<Map<String, dynamic>>.unmodifiable(contents),
+      systemInstructionParts:
+          List<Map<String, dynamic>>.unmodifiable(systemInstructionParts),
+    );
   }
 
   /// Create request body with configuration
@@ -1400,6 +1696,9 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         parts.add({'text': message.content});
         break;
       case ImageMessage(mime: final mime, data: final data):
+        if (message.content.trim().isNotEmpty) {
+          parts.add({'text': message.content});
+        }
         parts.add({
           'inlineData': {
             'mimeType': mime.mimeType,
@@ -1408,6 +1707,9 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         });
         break;
       case FileMessage(mime: final mime, data: final data):
+        if (message.content.trim().isNotEmpty) {
+          parts.add({'text': message.content});
+        }
         final uploaded = message.getProtocolPayload<Map<String, dynamic>>(
           'google',
         );
@@ -1438,6 +1740,9 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         });
         break;
       case ImageUrlMessage(url: final url):
+        if (message.content.trim().isNotEmpty) {
+          parts.add({'text': message.content});
+        }
         parts.add({
           'fileData': {
             'fileUri': url,
