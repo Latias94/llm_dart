@@ -231,9 +231,8 @@ Future<void> main() async {
 
 ### Notes
 
-- Legacy `chatStream()` (`ChatStreamEvent`) is a lossy adapter and does not
-  represent sources/citations, provider-executed tools, or stream-start warnings.
-- If you need those features, consume `LLMStreamPart` via `streamChatParts()`.
+- Legacy `chatStream()` / `ChatStreamEvent` was removed (breaking).
+- Consume `LLMStreamPart` via `streamChatParts()` / `streamToolLoopParts()`.
 
 Official docs:
 

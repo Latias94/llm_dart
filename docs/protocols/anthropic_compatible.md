@@ -70,12 +70,11 @@ Background:
 ## Streaming semantics (content blocks)
 
 Anthropic streaming is based on **content blocks** (`content_block_*` events).
-LLM Dart supports two streaming surfaces:
+LLM Dart supports parts-first streaming:
 
 - `chatStreamParts` (preferred): emits `LLMStreamPart` with block boundaries and
   preserves provider-native blocks for replay.
-- `chatStream` (legacy): emits `ChatStreamEvent` deltas and returns a final
-  `CompletionEvent` with provider metadata + content blocks.
+- Legacy `chatStream` / `ChatStreamEvent` was removed (breaking).
 
 Supported block types (best-effort):
 

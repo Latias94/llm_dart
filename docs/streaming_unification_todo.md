@@ -194,7 +194,7 @@ Migration guide must include:
 
 ### M6 - Cleanup + removal window
 
-- [x] Deprecate legacy `ChatStreamEvent` surfaces (planned removal: `0.12.0-alpha.1`)
+- [x] Remove legacy `ChatStreamEvent` surfaces (`0.12.0-alpha.1`)
 - [ ] Remove duplicate helpers and keep a single recommended streaming API
 
 ---

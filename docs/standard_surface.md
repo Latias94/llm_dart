@@ -120,8 +120,7 @@ The standard streaming representation is `LLMStreamPart` (Vercel AI SDK style).
 Key points:
 
 - Providers may implement `ChatStreamPartsCapability` directly.
-- Legacy `chatStream()` (`ChatStreamEvent`) is treated as a lossy adapter
-  derived from parts.
+- Legacy `chatStream()` / `ChatStreamEvent` was removed (breaking).
 - Structural parts make streaming deterministic and inspectable:
   - `LLMStreamStartPart` (includes best-effort `warnings`)
   - `LLMResponseMetadataPart` (id/model/timestamp snapshots)

@@ -217,8 +217,7 @@ Future<void> main() async {
 
 Notes:
 
-- Legacy `chatStream()` (`ChatStreamEvent`) is a lossy adapter and does not
-  represent sources/citations, provider-executed tools, or stream-start warnings.
+- Legacy `chatStream()` / `ChatStreamEvent` was removed (breaking).
 - Provider-executed server tools (e.g. `web_search` / `web_fetch`) are surfaced
   via `LLMProviderTool*Part` (parts-only) and must never be executed locally.
 

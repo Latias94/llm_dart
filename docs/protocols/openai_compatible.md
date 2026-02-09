@@ -181,5 +181,5 @@ Future<void> main() async {
 
 - Azure may send `usage` in a trailing chunk after the finish_reason chunk.
   LLM Dart captures it best-effort (guarded by conformance tests).
-- Legacy `chatStream()` (`ChatStreamEvent`) is a lossy adapter surface and does
-  not represent sources/citations or structural parts.
+- Legacy `chatStream()` / `ChatStreamEvent` was removed (breaking). Use
+  parts-first streaming (`chatStreamParts` / `LLMStreamPart`).

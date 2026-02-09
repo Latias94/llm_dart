@@ -27,8 +27,8 @@ Provider-by-provider alignment tracker:
   - Umbrella registration policy is documented in `docs/umbrella_policy.md`.
 
 - **Examples migrated to task APIs (Vercel-style)**:
-  - Examples now prefer `llm_dart_ai` streaming/task APIs (`streamText` / `streamChatParts` / `streamToolLoopPartsWithToolSet`) instead of calling `provider.chatStream(...)` directly.
-  - The `provider.chatStream(...)` surface is a legacy capability interface and is now deprecated; `example/03_advanced_features/custom_providers.dart` may still demonstrate it for compatibility, but new code should prefer parts-first streaming.
+  - Examples now prefer `llm_dart_ai` streaming/task APIs (`streamText` / `streamChatParts` / `streamToolLoopPartsWithToolSet`) instead of provider-specific streaming surfaces.
+  - Streaming is parts-first (`LLMStreamPart` via `ChatStreamPartsCapability` / `PromptChatStreamPartsCapability`). Legacy `chatStream` / `ChatStreamEvent` was removed (breaking).
   - Examples and example READMEs no longer import `package:llm_dart/llm_dart.dart` or call `ai()`; they use explicit subpackages + `register*()` + `LLMBuilder()` (and provider wrapper builders where available).
   - `ai()` remains a legacy convenience in the umbrella package (auto-registers built-in providers via `BuiltinProviderRegistry`).
 
@@ -184,7 +184,7 @@ Provider-by-provider alignment tracker:
       - `executeToolCalls` + `encodeToolResultsAsToolCalls`: helpers for “manual resume” flows
     - `generateText`
     - `generateObject` (prefers tool calling, falls back to extracting JSON from text)
-    - `streamText` (maps existing `ChatStreamEvent` → `TextStreamPart`)
+    - `streamText` (maps `LLMStreamPart` → `TextStreamPart`)
     - `embed`
     - `generateImage`
     - `generateSpeech` / `generateSpeechFromText`
@@ -197,9 +197,9 @@ Provider-by-provider alignment tracker:
 
 - **Unified stream parts (Vercel-style) — MVP shipped (initial)**:
   - Added `LLMStreamPart` types in `llm_dart_core` (text/reasoning/tool boundaries + providerMetadata + finish/error).
-  - Added `streamChatParts(...)` in `llm_dart_ai` as an adapter on top of legacy `ChatStreamEvent`.
+  - Added `streamChatParts(...)` in `llm_dart_ai` as the standard parts-first streaming surface.
   - Added `streamToolLoopParts(...)` in `llm_dart_ai` to expose local tool execution via `LLMToolResultPart` and emit a single `LLMFinishPart` at the end.
-  - Legacy streaming APIs (`streamText` / `streamToolLoop`) now map from `LLMStreamPart` adapters internally to keep one source of truth.
+  - `streamText` / `streamToolLoop` map from `LLMStreamPart` internally to keep one source of truth.
   - Added `ChatStreamPartsCapability` (provider-native stream parts) and implemented it for:
     - OpenAI Responses (`llm_dart_openai`)
     - OpenAI-compatible Chat Completions protocol layer (`llm_dart_openai_compatible`, reused by Groq/DeepSeek/OpenRouter, etc.)
@@ -437,7 +437,7 @@ Each output includes:
 - Optional `providerMetadata` (namespaced)
 - Stream uses standardized stream parts (text/reasoning/tool/result/metadata/finish/error/raw)
 
-### 4.2 Stream parts (upgrade path from current ChatStreamEvent)
+### 4.2 Stream parts (parts-first streaming)
 
 Vercel’s stream parts include block boundaries (`text-start`, `text-delta`, `text-end`, etc.) and carry `providerMetadata`.
 
@@ -452,7 +452,7 @@ LLM Dart can adopt the same shape:
 
 **Backward compatibility**:
 
-`ChatStreamEvent` can be an adapter on top of the new stream parts for a transition period.
+Legacy `ChatStreamEvent` / `chatStream` was removed. Consumers should migrate to parts-first streaming.
 
 ---
 
@@ -692,7 +692,7 @@ LLM Dart already has users relying on:
 
 - Legacy `ai().openai()...build()` chain builder (umbrella)
 - `ChatCapability` / `EmbeddingCapability` / `TextToSpeechCapability` / `SpeechToTextCapability` traits
-- `ChatStreamEvent` stream types
+- Parts-first streaming (`LLMStreamPart`) via `ChatStreamPartsCapability`
 
 Proposed compatibility plan:
 

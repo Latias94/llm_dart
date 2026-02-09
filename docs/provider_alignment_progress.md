@@ -95,6 +95,7 @@ Legend:
   longer emits premature `CompletionEvent` at `message_delta`; it now preserves
   content blocks for the final response and supports both pre-populated tool
   uses at `message_start` and progressive `partial_json` tool input deltas.
+  (Legacy `chatStream` / `ChatStreamEvent` was removed in `0.12.0-alpha.1`.)
 - 2025-12-24: Anthropic-compatible streaming now preserves `citations_delta`
   events by attaching citations to the corresponding text content blocks.
 - 2025-12-24: OpenAI-compatible streaming now captures trailing `usage` chunks
