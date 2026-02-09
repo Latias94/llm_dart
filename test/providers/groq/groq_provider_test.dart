@@ -67,6 +67,10 @@ void main() {
         expect(provider, isA<ChatCapability>());
       });
 
+      test('should implement PromptChatCapability', () {
+        expect(provider, isA<PromptChatCapability>());
+      });
+
       test('should implement ProviderCapabilities', () {
         expect(provider, isA<ProviderCapabilities>());
       });
@@ -85,6 +89,14 @@ void main() {
         expect(provider, isA<ChatStreamPartsCapability>());
         expect(
           (provider as ChatStreamPartsCapability).chatStreamParts,
+          isA<Function>(),
+        );
+      });
+
+      test('should support prompt-native parts-first streaming', () {
+        expect(provider, isA<PromptChatStreamPartsCapability>());
+        expect(
+          (provider as PromptChatStreamPartsCapability).chatPromptStreamParts,
           isA<Function>(),
         );
       });
