@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/audio.dart';
 import 'package:llm_dart_openai_compatible/chat.dart';

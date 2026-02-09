@@ -28,7 +28,7 @@ Provider-by-provider alignment tracker:
 
 - **Examples migrated to task APIs (Vercel-style)**:
   - Examples now prefer `llm_dart_ai` streaming/task APIs (`streamText` / `streamChatParts` / `streamToolLoopPartsWithToolSet`) instead of calling `provider.chatStream(...)` directly.
-  - The `provider.chatStream(...)` surface remains the low-level capability interface; `example/03_advanced_features/custom_providers.dart` intentionally still demonstrates it.
+  - The `provider.chatStream(...)` surface is a legacy capability interface and is now deprecated; `example/03_advanced_features/custom_providers.dart` may still demonstrate it for compatibility, but new code should prefer parts-first streaming.
   - Examples and example READMEs no longer import `package:llm_dart/llm_dart.dart` or call `ai()`; they use explicit subpackages + `register*()` + `LLMBuilder()` (and provider wrapper builders where available).
   - `ai()` remains a legacy convenience in the umbrella package (auto-registers built-in providers via `BuiltinProviderRegistry`).
 

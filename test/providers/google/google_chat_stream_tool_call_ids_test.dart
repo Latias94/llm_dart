@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
@@ -71,4 +72,3 @@ void main() {
     });
   });
 }
-

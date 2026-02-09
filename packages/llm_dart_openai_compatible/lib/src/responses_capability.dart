@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 /// OpenAI-specific Responses API capability interface
 ///
 /// This interface is specific to OpenAI's Responses API and provides

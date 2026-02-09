@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:llm_dart_anthropic_compatible/config.dart';
 import 'package:llm_dart_anthropic_compatible/dio_strategy.dart';

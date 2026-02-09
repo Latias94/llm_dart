@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
 import 'package:llm_dart_openai/client.dart';

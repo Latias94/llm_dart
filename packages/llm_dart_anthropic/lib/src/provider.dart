@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:llm_dart_anthropic_compatible/chat.dart';
 import 'package:llm_dart_anthropic_compatible/client.dart';
 import 'package:llm_dart_anthropic_compatible/config.dart';

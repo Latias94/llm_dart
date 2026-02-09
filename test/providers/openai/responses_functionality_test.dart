@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 /// Functionality tests for OpenAI Responses API methods
 ///
 /// This test suite focuses on testing the actual functionality and method

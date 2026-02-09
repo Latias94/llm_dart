@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'dart:async';

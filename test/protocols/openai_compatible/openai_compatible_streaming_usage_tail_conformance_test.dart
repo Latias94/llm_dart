@@ -1,3 +1,4 @@
+// ignore_for_file: deprecated_member_use
 import 'dart:convert';
 
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
