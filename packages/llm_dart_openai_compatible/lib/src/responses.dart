@@ -123,6 +123,8 @@ class OpenAIResponses
     var blockCounter = 0;
 
     final activeToolCalls = <String>{};
+    final toolCallArgsById = <String, StringBuffer>{};
+    final endedToolCalls = <String>{};
     final activeProviderToolCalls = <String>{};
     final endedProviderToolCalls = <String>{};
     final emittedProviderApprovalRequests = <String>{};
@@ -659,6 +661,21 @@ class OpenAIResponses
                     } else {
                       yield LLMToolCallDeltaPart(toolCall);
                     }
+
+                    if (args.isNotEmpty) {
+                      final buf = toolCallArgsById.putIfAbsent(
+                        stableId,
+                        StringBuffer.new,
+                      );
+                      buf.write(args);
+                      final fullArgs = buf.toString();
+                      if (fullArgs.isNotEmpty &&
+                          isParsableJson(fullArgs) &&
+                          endedToolCalls.add(stableId)) {
+                        yield LLMToolCallEndPart(stableId);
+                        activeToolCalls.remove(stableId);
+                      }
+                    }
                   }
                 }
               }
@@ -694,6 +711,22 @@ class OpenAIResponses
                       ),
                     ),
                   );
+                }
+
+                final args = toolCall.function.arguments;
+                if (args.isNotEmpty) {
+                  final buf = toolCallArgsById.putIfAbsent(
+                    toolCall.id,
+                    StringBuffer.new,
+                  );
+                  buf.write(args);
+                  final fullArgs = buf.toString();
+                  if (fullArgs.isNotEmpty &&
+                      isParsableJson(fullArgs) &&
+                      endedToolCalls.add(toolCall.id)) {
+                    yield LLMToolCallEndPart(toolCall.id);
+                    activeToolCalls.remove(toolCall.id);
+                  }
                 }
               } catch (_) {
                 // Ignore malformed tool calls
@@ -793,7 +826,11 @@ class OpenAIResponses
               currentThinkingBlockId = null;
             }
             for (final id in activeToolCalls) {
-              yield LLMToolCallEndPart(id);
+              if (endedToolCalls.contains(id)) continue;
+              final fullArgs = toolCallArgsById[id]?.toString() ?? '';
+              if (fullArgs.isNotEmpty && isParsableJson(fullArgs)) {
+                yield LLMToolCallEndPart(id);
+              }
             }
 
             final metadata = response.providerMetadata;
@@ -839,7 +876,11 @@ class OpenAIResponses
           currentThinkingBlockId = null;
         }
         for (final id in activeToolCalls) {
-          yield LLMToolCallEndPart(id);
+          if (endedToolCalls.contains(id)) continue;
+          final fullArgs = toolCallArgsById[id]?.toString() ?? '';
+          if (fullArgs.isNotEmpty && isParsableJson(fullArgs)) {
+            yield LLMToolCallEndPart(id);
+          }
         }
 
         final metadata = response.providerMetadata;

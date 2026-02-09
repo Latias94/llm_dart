@@ -97,6 +97,8 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
     Map<String, dynamic>? usage;
     final citations = <String>[];
     final emittedCitationUrls = <String>{};
+    final emittedAnnotationUrls = <String>{};
+    var nextAnnotationSeq = 0;
     var didEmitResponseMetadata = false;
 
     var didEmitTerminalParts = false;
@@ -396,6 +398,36 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
             }
           }
 
+          // URL citations/annotations (best-effort).
+          //
+          // Some providers emit `annotations` in the Chat Completions delta
+          // stream. Mirror AI SDK behavior by emitting them as typed source parts.
+          final annotations = delta?['annotations'] as List?;
+          if (annotations != null && annotations.isNotEmpty) {
+            for (final raw in annotations) {
+              if (raw is! Map) continue;
+              final urlCitation = raw['url_citation'];
+              if (urlCitation is! Map) continue;
+              final url = urlCitation['url'];
+              if (url is! String) continue;
+              final trimmed = url.trim();
+              if (trimmed.isEmpty) continue;
+              if (!emittedAnnotationUrls.add(trimmed)) continue;
+
+              final title = urlCitation['title'];
+              yield LLMSourceUrlPart(
+                sourceId: 'source_${nextAnnotationSeq++}',
+                url: trimmed,
+                title: title is String && title.trim().isNotEmpty
+                    ? title.trim()
+                    : null,
+                providerMetadata: {
+                  config.providerId: {'type': 'url_citation'},
+                },
+              );
+            }
+          }
+
           // Finish.
           final fr = choice['finish_reason'] as String?;
           if (fr != null) {
@@ -469,8 +501,13 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
                 currentThinkingBlockId = null;
               }
               for (final toolCallId in startedToolCalls) {
-                if (endedToolCalls.add(toolCallId)) {
-                  yield LLMToolCallEndPart(toolCallId);
+                if (endedToolCalls.contains(toolCallId)) continue;
+                final fullArgs =
+                    toolAccums[toolCallId]?.arguments.toString() ?? '';
+                if (fullArgs.isNotEmpty && isParsableJson(fullArgs)) {
+                  if (endedToolCalls.add(toolCallId)) {
+                    yield LLMToolCallEndPart(toolCallId);
+                  }
                 }
               }
             }
@@ -522,6 +559,12 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
       }
 
       final completedToolCalls = toolAccums.entries
+          .where((e) {
+            final name = e.value.name?.trim() ?? '';
+            if (name.isEmpty) return false;
+            final args = e.value.arguments.toString();
+            return args.isNotEmpty && isParsableJson(args);
+          })
           .map((e) => e.value.toToolCall(e.key))
           .toList(growable: false);
 
@@ -584,8 +627,12 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           currentThinkingBlockId = null;
         }
         for (final toolCallId in startedToolCalls) {
-          if (endedToolCalls.add(toolCallId)) {
-            yield LLMToolCallEndPart(toolCallId);
+          if (endedToolCalls.contains(toolCallId)) continue;
+          final fullArgs = toolAccums[toolCallId]?.arguments.toString() ?? '';
+          if (fullArgs.isNotEmpty && isParsableJson(fullArgs)) {
+            if (endedToolCalls.add(toolCallId)) {
+              yield LLMToolCallEndPart(toolCallId);
+            }
           }
         }
 
@@ -776,9 +823,17 @@ class OpenAIChatResponse implements ChatResponseWithFinishReason {
     final toolCalls = message?['tool_calls'] as List?;
 
     if (toolCalls != null) {
-      return toolCalls
-          .map((tc) => ToolCall.fromJson(tc as Map<String, dynamic>))
-          .toList();
+      final calls = toolCalls
+          .whereType<Map>()
+          .map((tc) => ToolCall.fromJson(tc.cast<String, dynamic>()))
+          .where((c) {
+        if (c.callType.trim().toLowerCase() != 'function') return false;
+        if (c.function.name.trim().isEmpty) return false;
+        final args = c.function.arguments;
+        return args.trim().isNotEmpty && isParsableJson(args);
+      }).toList(growable: false);
+
+      return calls.isEmpty ? null : calls;
     }
 
     if (!_parseToolCallsFromText || !_didRequestTools) return null;
