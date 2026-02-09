@@ -404,6 +404,11 @@ class OpenAIChat
                 if (args.isNotEmpty) {
                   accum.arguments.write(args);
                 }
+                final thoughtSignature =
+                    _extractThoughtSignatureFromExtraContent(rawCall);
+                if (thoughtSignature != null) {
+                  accum.thoughtSignature ??= thoughtSignature;
+                }
 
                 final toolCall = ToolCall(
                   id: stableId,
@@ -412,6 +417,14 @@ class OpenAIChat
                     name: name.isNotEmpty ? name : (accum.name ?? ''),
                     arguments: args,
                   ),
+                  providerOptions: accum.thoughtSignature == null ||
+                          config.providerId.isEmpty
+                      ? const {}
+                      : {
+                          config.providerId: {
+                            'thoughtSignature': accum.thoughtSignature!,
+                          },
+                        },
                 );
 
                 if (startedToolCalls.add(stableId)) {
@@ -429,7 +442,25 @@ class OpenAIChat
               } else if (rawCall.containsKey('id') &&
                   rawCall.containsKey('function')) {
                 try {
-                  final toolCall = ToolCall.fromJson(rawCall);
+                  final parsed = ToolCall.fromJson(rawCall);
+                  final thoughtSignature =
+                      _extractThoughtSignatureFromExtraContent(rawCall);
+                  final toolCall = thoughtSignature == null ||
+                          thoughtSignature.isEmpty ||
+                          config.providerId.isEmpty
+                      ? parsed
+                      : ToolCall(
+                          id: parsed.id,
+                          callType: parsed.callType,
+                          function: parsed.function,
+                          providerOptions: {
+                            ...parsed.providerOptions,
+                            config.providerId: {
+                              ...?parsed.providerOptions[config.providerId],
+                              'thoughtSignature': thoughtSignature,
+                            },
+                          },
+                        );
                   if (endedToolCalls.contains(toolCall.id)) continue;
                   final accum = toolAccums.putIfAbsent(
                     toolCall.id,
@@ -440,6 +471,9 @@ class OpenAIChat
                   }
                   if (toolCall.function.arguments.isNotEmpty) {
                     accum.arguments.write(toolCall.function.arguments);
+                  }
+                  if (thoughtSignature != null) {
+                    accum.thoughtSignature ??= thoughtSignature;
                   }
 
                   if (startedToolCalls.add(toolCall.id)) {
@@ -628,7 +662,7 @@ class OpenAIChat
             final args = e.value.arguments.toString();
             return args.isNotEmpty && isParsableJson(args);
           })
-          .map((e) => e.value.toToolCall(e.key))
+          .map((e) => e.value.toToolCall(e.key, providerId: config.providerId))
           .toList(growable: false);
 
       if (finishReason != null) {
@@ -836,8 +870,13 @@ class OpenAIChat
 class _ToolCallAccum {
   String? name;
   final StringBuffer arguments = StringBuffer();
+  String? thoughtSignature;
 
-  ToolCall toToolCall(String id) {
+  ToolCall toToolCall(
+    String id, {
+    required String providerId,
+  }) {
+    final signature = thoughtSignature;
     return ToolCall(
       id: id,
       callType: 'function',
@@ -845,8 +884,26 @@ class _ToolCallAccum {
         name: name ?? '',
         arguments: arguments.toString(),
       ),
+      providerOptions: signature == null || signature.isEmpty
+          ? const {}
+          : {
+              providerId: {
+                'thoughtSignature': signature,
+              },
+            },
     );
   }
+}
+
+String? _extractThoughtSignatureFromExtraContent(Map<String, dynamic> rawCall) {
+  final extra = rawCall['extra_content'];
+  if (extra is! Map) return null;
+  final google = extra['google'];
+  if (google is! Map) return null;
+  final ts = google['thought_signature'];
+  if (ts is! String) return null;
+  final trimmed = ts.trim();
+  return trimmed.isEmpty ? null : trimmed;
 }
 
 /// OpenAI chat response implementation
@@ -886,10 +943,30 @@ class OpenAIChatResponse implements ChatResponseWithFinishReason {
     final toolCalls = message?['tool_calls'] as List?;
 
     if (toolCalls != null) {
-      final calls = toolCalls
-          .whereType<Map>()
-          .map((tc) => ToolCall.fromJson(tc.cast<String, dynamic>()))
-          .where((c) {
+      final providerId = _providerId;
+      final calls = toolCalls.whereType<Map>().map((tc) {
+        final map = tc.cast<String, dynamic>();
+        final parsed = ToolCall.fromJson(map);
+        final thoughtSignature = _extractThoughtSignatureFromExtraContent(map);
+        if (thoughtSignature == null ||
+            thoughtSignature.isEmpty ||
+            providerId == null ||
+            providerId.isEmpty) {
+          return parsed;
+        }
+        return ToolCall(
+          id: parsed.id,
+          callType: parsed.callType,
+          function: parsed.function,
+          providerOptions: {
+            ...parsed.providerOptions,
+            providerId: {
+              ...?parsed.providerOptions[providerId],
+              'thoughtSignature': thoughtSignature,
+            },
+          },
+        );
+      }).where((c) {
         if (c.callType.trim().toLowerCase() != 'function') return false;
         if (c.function.name.trim().isEmpty) return false;
         final args = c.function.arguments;

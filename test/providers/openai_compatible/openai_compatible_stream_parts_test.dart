@@ -171,5 +171,92 @@ void main() {
       expect(metadata.containsKey('deepseek.chat'), isTrue);
       expect(metadata['deepseek.chat'], equals(metadata['deepseek']));
     });
+
+    test(
+        'captures tool call thoughtSignature from extra_content (AI SDK parity)',
+        () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'deepseek',
+        providerName: 'DeepSeek',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'gpt-4o',
+      );
+
+      final chunks = <String>[
+        _sseData({
+          'id': 'chatcmpl_123',
+          'created': 1700000000,
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {'role': 'assistant'},
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_123',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {
+                'tool_calls': [
+                  {
+                    'index': 0,
+                    'id': 'call_1',
+                    'type': 'function',
+                    'function': {
+                      'name': 'getWeather',
+                      'arguments': '{"city":"London"}',
+                    },
+                    'extra_content': {
+                      'google': {'thought_signature': 'sigA'},
+                    },
+                  }
+                ],
+              },
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_123',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': <String, dynamic>{},
+              'finish_reason': 'tool_calls',
+            }
+          ],
+        }),
+        'data: [DONE]\n\n',
+      ];
+
+      final client = FakeOpenAIClient(config)
+        ..streamResponse = Stream<String>.fromIterable(chunks);
+      final chat = OpenAIChat(client, config);
+
+      final parts = await chat.chatStreamParts(
+        [ChatMessage.user('Hi')],
+        tools: const [],
+      ).toList();
+
+      final toolStart = parts.whereType<LLMToolCallStartPart>().single;
+      expect(
+        toolStart.toolCall.providerOptions['deepseek']?['thoughtSignature'],
+        equals('sigA'),
+      );
+
+      final finish = parts.last as LLMFinishPart;
+      final calls = finish.response.toolCalls;
+      expect(calls, isNotNull);
+      expect(calls, hasLength(1));
+      expect(
+        calls!.single.providerOptions['deepseek']?['thoughtSignature'],
+        equals('sigA'),
+      );
+    });
   });
 }
