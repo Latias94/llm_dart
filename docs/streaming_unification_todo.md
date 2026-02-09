@@ -94,6 +94,7 @@ Already aligned in code:
 - `google` legacy stream derived from parts
 - `ollama` legacy stream derived from parts
 - `xai.responses` legacy stream derived from parts
+- Text/reasoning parts support optional `blockId` + per-part `providerMetadata` (AI SDK-style)
 - Added fuzz/fixture-style tests for chunk boundary robustness
 
 Still has drift risk:

@@ -38,38 +38,94 @@ abstract class PromptChatStreamPartsCapability {
 
 /// Starts a text block.
 class LLMTextStartPart extends LLMStreamPart {
-  const LLMTextStartPart();
+  /// Optional block id to represent multiple output blocks (AI SDK style).
+  final String? blockId;
+
+  /// Optional provider metadata associated with this block boundary.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMTextStartPart({this.blockId, this.providerMetadata});
 }
 
 /// A delta within the current text block.
 class LLMTextDeltaPart extends LLMStreamPart {
   final String delta;
-  const LLMTextDeltaPart(this.delta);
+
+  /// Optional block id to represent multiple output blocks (AI SDK style).
+  final String? blockId;
+
+  /// Optional provider metadata associated with this delta.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMTextDeltaPart(
+    this.delta, {
+    this.blockId,
+    this.providerMetadata,
+  });
 }
 
 /// Ends a text block.
 class LLMTextEndPart extends LLMStreamPart {
   /// Best-effort full text accumulated for this block.
   final String text;
-  const LLMTextEndPart(this.text);
+
+  /// Optional block id to represent multiple output blocks (AI SDK style).
+  final String? blockId;
+
+  /// Optional provider metadata associated with this block boundary.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMTextEndPart(
+    this.text, {
+    this.blockId,
+    this.providerMetadata,
+  });
 }
 
 /// Starts a reasoning/thinking block.
 class LLMReasoningStartPart extends LLMStreamPart {
-  const LLMReasoningStartPart();
+  /// Optional block id to represent multiple output blocks (AI SDK style).
+  final String? blockId;
+
+  /// Optional provider metadata associated with this block boundary.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMReasoningStartPart({this.blockId, this.providerMetadata});
 }
 
 /// A delta within the current reasoning/thinking block.
 class LLMReasoningDeltaPart extends LLMStreamPart {
   final String delta;
-  const LLMReasoningDeltaPart(this.delta);
+
+  /// Optional block id to represent multiple output blocks (AI SDK style).
+  final String? blockId;
+
+  /// Optional provider metadata associated with this delta.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMReasoningDeltaPart(
+    this.delta, {
+    this.blockId,
+    this.providerMetadata,
+  });
 }
 
 /// Ends a reasoning/thinking block.
 class LLMReasoningEndPart extends LLMStreamPart {
   /// Best-effort full reasoning accumulated for this block.
   final String thinking;
-  const LLMReasoningEndPart(this.thinking);
+
+  /// Optional block id to represent multiple output blocks (AI SDK style).
+  final String? blockId;
+
+  /// Optional provider metadata associated with this block boundary.
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMReasoningEndPart(
+    this.thinking, {
+    this.blockId,
+    this.providerMetadata,
+  });
 }
 
 /// Starts a tool call (arguments are usually streamed progressively).

@@ -104,6 +104,12 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
 
     final fullText = StringBuffer();
     final fullThinking = StringBuffer();
+    final currentText = StringBuffer();
+    final currentThinking = StringBuffer();
+
+    String? currentTextBlockId;
+    String? currentThinkingBlockId;
+    var blockCounter = 0;
 
     final startedToolCalls = <String>{};
     final endedToolCalls = <String>{};
@@ -122,22 +128,49 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
           if (message != null) {
             final thinking = message['thinking'] as String?;
             if (thinking != null && thinking.isNotEmpty) {
+              if (inText) {
+                inText = false;
+                yield LLMTextEndPart(
+                  currentText.toString(),
+                  blockId: currentTextBlockId,
+                );
+                currentText.clear();
+                currentTextBlockId = null;
+              }
               if (!inThinking) {
                 inThinking = true;
-                yield const LLMReasoningStartPart();
+                currentThinkingBlockId ??= '${blockCounter++}';
+                yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
+                currentThinking.clear();
               }
               fullThinking.write(thinking);
-              yield LLMReasoningDeltaPart(thinking);
+              currentThinking.write(thinking);
+              yield LLMReasoningDeltaPart(
+                thinking,
+                blockId: currentThinkingBlockId,
+              );
             }
 
             final content = message['content'] as String?;
             if (content != null && content.isNotEmpty) {
+              if (inThinking) {
+                inThinking = false;
+                yield LLMReasoningEndPart(
+                  currentThinking.toString(),
+                  blockId: currentThinkingBlockId,
+                );
+                currentThinking.clear();
+                currentThinkingBlockId = null;
+              }
               if (!inText) {
                 inText = true;
-                yield const LLMTextStartPart();
+                currentTextBlockId ??= '${blockCounter++}';
+                yield LLMTextStartPart(blockId: currentTextBlockId);
+                currentText.clear();
               }
               fullText.write(content);
-              yield LLMTextDeltaPart(content);
+              currentText.write(content);
+              yield LLMTextDeltaPart(content, blockId: currentTextBlockId);
             }
 
             final toolCalls = message['tool_calls'] as List?;
@@ -185,10 +218,22 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
           final done = json['done'] as bool?;
           if (done == true) {
             if (inText) {
-              yield LLMTextEndPart(fullText.toString());
+              yield LLMTextEndPart(
+                currentText.toString(),
+                blockId: currentTextBlockId,
+              );
+              inText = false;
+              currentText.clear();
+              currentTextBlockId = null;
             }
             if (inThinking) {
-              yield LLMReasoningEndPart(fullThinking.toString());
+              yield LLMReasoningEndPart(
+                currentThinking.toString(),
+                blockId: currentThinkingBlockId,
+              );
+              inThinking = false;
+              currentThinking.clear();
+              currentThinkingBlockId = null;
             }
             for (final id in startedToolCalls) {
               if (endedToolCalls.add(id)) {
@@ -227,10 +272,22 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
 
       // Best-effort finish if stream ends unexpectedly.
       if (inText) {
-        yield LLMTextEndPart(fullText.toString());
+        yield LLMTextEndPart(
+          currentText.toString(),
+          blockId: currentTextBlockId,
+        );
+        inText = false;
+        currentText.clear();
+        currentTextBlockId = null;
       }
       if (inThinking) {
-        yield LLMReasoningEndPart(fullThinking.toString());
+        yield LLMReasoningEndPart(
+          currentThinking.toString(),
+          blockId: currentThinkingBlockId,
+        );
+        inThinking = false;
+        currentThinking.clear();
+        currentThinkingBlockId = null;
       }
       for (final id in startedToolCalls) {
         if (endedToolCalls.add(id)) {

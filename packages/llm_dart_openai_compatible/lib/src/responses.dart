@@ -148,6 +148,11 @@ class OpenAIResponses
 
     var inText = false;
     var inThinking = false;
+
+    String? currentTextBlockId;
+    String? currentThinkingBlockId;
+    var blockCounter = 0;
+
     final activeToolCalls = <String>{};
     final activeProviderToolCalls = <String>{};
     final endedProviderToolCalls = <String>{};
@@ -457,10 +462,11 @@ class OpenAIResponses
 
             if (!inThinking) {
               inThinking = true;
-              yield const LLMReasoningStartPart();
+              currentThinkingBlockId ??= '${blockCounter++}';
+              yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
             }
             _thinkingBuffer.write(delta);
-            yield LLMReasoningDeltaPart(delta);
+            yield LLMReasoningDeltaPart(delta, blockId: currentThinkingBlockId);
             continue;
           }
 
@@ -469,7 +475,8 @@ class OpenAIResponses
             if (text != null) {
               if (!inThinking) {
                 inThinking = true;
-                yield const LLMReasoningStartPart();
+                currentThinkingBlockId ??= '${blockCounter++}';
+                yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
               }
               _thinkingBuffer
                 ..clear()
@@ -491,20 +498,25 @@ class OpenAIResponses
               if (thinkingText != null && thinkingText.isNotEmpty) {
                 if (!inThinking) {
                   inThinking = true;
-                  yield const LLMReasoningStartPart();
+                  currentThinkingBlockId ??= '${blockCounter++}';
+                  yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
                 }
                 _thinkingBuffer.write(thinkingText);
-                yield LLMReasoningDeltaPart(thinkingText);
+                yield LLMReasoningDeltaPart(
+                  thinkingText,
+                  blockId: currentThinkingBlockId,
+                );
               }
               continue;
             }
 
             if (!inText) {
               inText = true;
-              yield const LLMTextStartPart();
+              currentTextBlockId ??= '${blockCounter++}';
+              yield LLMTextStartPart(blockId: currentTextBlockId);
             }
             _outputTextBuffer.write(delta);
-            yield LLMTextDeltaPart(delta);
+            yield LLMTextDeltaPart(delta, blockId: currentTextBlockId);
             continue;
           }
 
@@ -513,10 +525,14 @@ class OpenAIResponses
           if (reasoningContent != null && reasoningContent.isNotEmpty) {
             if (!inThinking) {
               inThinking = true;
-              yield const LLMReasoningStartPart();
+              currentThinkingBlockId ??= '${blockCounter++}';
+              yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
             }
             _thinkingBuffer.write(reasoningContent);
-            yield LLMReasoningDeltaPart(reasoningContent);
+            yield LLMReasoningDeltaPart(
+              reasoningContent,
+              blockId: currentThinkingBlockId,
+            );
             continue;
           }
 
@@ -715,10 +731,20 @@ class OpenAIResponses
             );
 
             if (inText) {
-              yield LLMTextEndPart(_outputTextBuffer.toString());
+              yield LLMTextEndPart(
+                _outputTextBuffer.toString(),
+                blockId: currentTextBlockId,
+              );
+              inText = false;
+              currentTextBlockId = null;
             }
             if (inThinking) {
-              yield LLMReasoningEndPart(_thinkingBuffer.toString());
+              yield LLMReasoningEndPart(
+                _thinkingBuffer.toString(),
+                blockId: currentThinkingBlockId,
+              );
+              inThinking = false;
+              currentThinkingBlockId = null;
             }
             for (final id in activeToolCalls) {
               yield LLMToolCallEndPart(id);
@@ -747,10 +773,20 @@ class OpenAIResponses
         );
 
         if (inText) {
-          yield LLMTextEndPart(_outputTextBuffer.toString());
+          yield LLMTextEndPart(
+            _outputTextBuffer.toString(),
+            blockId: currentTextBlockId,
+          );
+          inText = false;
+          currentTextBlockId = null;
         }
         if (inThinking) {
-          yield LLMReasoningEndPart(_thinkingBuffer.toString());
+          yield LLMReasoningEndPart(
+            _thinkingBuffer.toString(),
+            blockId: currentThinkingBlockId,
+          );
+          inThinking = false;
+          currentThinkingBlockId = null;
         }
         for (final id in activeToolCalls) {
           yield LLMToolCallEndPart(id);
@@ -1791,7 +1827,8 @@ class OpenAIResponsesResponse implements ChatResponseWithFinishReason {
       final reason = rawReason ?? status;
       final unified = switch (reason) {
         'max_output_tokens' || 'max_tokens' => LLMUnifiedFinishReason.length,
-        'content_filter' || 'content_filter_violation' =>
+        'content_filter' ||
+        'content_filter_violation' =>
           LLMUnifiedFinishReason.contentFilter,
         _ => LLMUnifiedFinishReason.other,
       };

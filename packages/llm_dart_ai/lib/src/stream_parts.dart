@@ -118,6 +118,12 @@ Stream<LLMStreamPart> _streamChatPartsFromEvents(
 
   final fullText = StringBuffer();
   final fullThinking = StringBuffer();
+  final currentText = StringBuffer();
+  final currentThinking = StringBuffer();
+
+  String? currentTextBlockId;
+  String? currentThinkingBlockId;
+  var blockCounter = 0;
 
   final startedToolCalls = <String>{};
   final endedToolCalls = <String>{};
@@ -125,20 +131,44 @@ Stream<LLMStreamPart> _streamChatPartsFromEvents(
   await for (final event in events) {
     switch (event) {
       case TextDeltaEvent(:final delta):
+        if (inThinking) {
+          inThinking = false;
+          yield LLMReasoningEndPart(
+            currentThinking.toString(),
+            blockId: currentThinkingBlockId,
+          );
+          currentThinking.clear();
+          currentThinkingBlockId = null;
+        }
         if (!inText) {
           inText = true;
-          yield const LLMTextStartPart();
+          currentTextBlockId ??= '${blockCounter++}';
+          yield LLMTextStartPart(blockId: currentTextBlockId);
+          currentText.clear();
         }
         fullText.write(delta);
-        yield LLMTextDeltaPart(delta);
+        currentText.write(delta);
+        yield LLMTextDeltaPart(delta, blockId: currentTextBlockId);
 
       case ThinkingDeltaEvent(:final delta):
+        if (inText) {
+          inText = false;
+          yield LLMTextEndPart(
+            currentText.toString(),
+            blockId: currentTextBlockId,
+          );
+          currentText.clear();
+          currentTextBlockId = null;
+        }
         if (!inThinking) {
           inThinking = true;
-          yield const LLMReasoningStartPart();
+          currentThinkingBlockId ??= '${blockCounter++}';
+          yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
+          currentThinking.clear();
         }
         fullThinking.write(delta);
-        yield LLMReasoningDeltaPart(delta);
+        currentThinking.write(delta);
+        yield LLMReasoningDeltaPart(delta, blockId: currentThinkingBlockId);
 
       case ToolCallDeltaEvent(:final toolCall):
         if (!startedToolCalls.contains(toolCall.id)) {
@@ -150,10 +180,22 @@ Stream<LLMStreamPart> _streamChatPartsFromEvents(
 
       case CompletionEvent(:final response):
         if (inText) {
-          yield LLMTextEndPart(fullText.toString());
+          yield LLMTextEndPart(
+            currentText.toString(),
+            blockId: currentTextBlockId,
+          );
+          inText = false;
+          currentText.clear();
+          currentTextBlockId = null;
         }
         if (inThinking) {
-          yield LLMReasoningEndPart(fullThinking.toString());
+          yield LLMReasoningEndPart(
+            currentThinking.toString(),
+            blockId: currentThinkingBlockId,
+          );
+          inThinking = false;
+          currentThinking.clear();
+          currentThinkingBlockId = null;
         }
         for (final toolCallId in startedToolCalls) {
           if (endedToolCalls.add(toolCallId)) {

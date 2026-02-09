@@ -201,6 +201,11 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     final fullThinking = StringBuffer();
     final currentText = StringBuffer();
     final currentThinking = StringBuffer();
+
+    String? currentTextBlockId;
+    String? currentThinkingBlockId;
+    var blockCounter = 0;
+
     final functionCallParts = <Map<String, dynamic>>[];
     Map<String, dynamic>? usageMetadata;
 
@@ -382,13 +387,25 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
       final parts = <LLMStreamPart>[];
       if (inText) {
         inText = false;
-        parts.add(LLMTextEndPart(currentText.toString()));
+        parts.add(
+          LLMTextEndPart(
+            currentText.toString(),
+            blockId: currentTextBlockId,
+          ),
+        );
         currentText.clear();
+        currentTextBlockId = null;
       }
       if (inThinking) {
         inThinking = false;
-        parts.add(LLMReasoningEndPart(currentThinking.toString()));
+        parts.add(
+          LLMReasoningEndPart(
+            currentThinking.toString(),
+            blockId: currentThinkingBlockId,
+          ),
+        );
         currentThinking.clear();
+        currentThinkingBlockId = null;
       }
       for (final id in startedToolCalls) {
         if (endedToolCalls.add(id)) {
@@ -627,17 +644,25 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
                 final placeholder = '[Generated image: $mimeType]';
                 if (inThinking) {
                   inThinking = false;
-                  yield LLMReasoningEndPart(currentThinking.toString());
+                  yield LLMReasoningEndPart(
+                    currentThinking.toString(),
+                    blockId: currentThinkingBlockId,
+                  );
                   currentThinking.clear();
+                  currentThinkingBlockId = null;
                 }
                 if (!inText) {
                   inText = true;
-                  yield const LLMTextStartPart();
+                  currentTextBlockId ??= '${blockCounter++}';
+                  yield LLMTextStartPart(blockId: currentTextBlockId);
                   currentText.clear();
                 }
                 fullText.write(placeholder);
                 currentText.write(placeholder);
-                yield LLMTextDeltaPart(placeholder);
+                yield LLMTextDeltaPart(
+                  placeholder,
+                  blockId: currentTextBlockId,
+                );
               }
               continue;
             }
@@ -645,34 +670,66 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
             final isThought = part['thought'] as bool? ?? false;
             final text = part['text'] as String?;
             if (text != null && text.isNotEmpty) {
+              final thoughtSignature = part['thoughtSignature'];
+              final partProviderMetadata = thoughtSignature == null
+                  ? null
+                  : <String, dynamic>{
+                      _providerOptionsName: {
+                        'thoughtSignature': thoughtSignature.toString(),
+                      },
+                    };
               if (isThought) {
                 if (inText) {
                   inText = false;
-                  yield LLMTextEndPart(currentText.toString());
+                  yield LLMTextEndPart(
+                    currentText.toString(),
+                    blockId: currentTextBlockId,
+                  );
                   currentText.clear();
+                  currentTextBlockId = null;
                 }
                 if (!inThinking) {
                   inThinking = true;
-                  yield const LLMReasoningStartPart();
+                  currentThinkingBlockId ??= '${blockCounter++}';
+                  yield LLMReasoningStartPart(
+                    blockId: currentThinkingBlockId,
+                    providerMetadata: partProviderMetadata,
+                  );
                   currentThinking.clear();
                 }
                 fullThinking.write(text);
                 currentThinking.write(text);
-                yield LLMReasoningDeltaPart(text);
+                yield LLMReasoningDeltaPart(
+                  text,
+                  blockId: currentThinkingBlockId,
+                  providerMetadata: partProviderMetadata,
+                );
               } else {
                 if (inThinking) {
                   inThinking = false;
-                  yield LLMReasoningEndPart(currentThinking.toString());
+                  yield LLMReasoningEndPart(
+                    currentThinking.toString(),
+                    blockId: currentThinkingBlockId,
+                  );
                   currentThinking.clear();
+                  currentThinkingBlockId = null;
                 }
                 if (!inText) {
                   inText = true;
-                  yield const LLMTextStartPart();
+                  currentTextBlockId ??= '${blockCounter++}';
+                  yield LLMTextStartPart(
+                    blockId: currentTextBlockId,
+                    providerMetadata: partProviderMetadata,
+                  );
                   currentText.clear();
                 }
                 fullText.write(text);
                 currentText.write(text);
-                yield LLMTextDeltaPart(text);
+                yield LLMTextDeltaPart(
+                  text,
+                  blockId: currentTextBlockId,
+                  providerMetadata: partProviderMetadata,
+                );
               }
             }
           }

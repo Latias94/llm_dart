@@ -125,6 +125,10 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
     final currentText = StringBuffer();
     final currentThinking = StringBuffer();
 
+    String? currentTextBlockId;
+    String? currentThinkingBlockId;
+    var blockCounter = 0;
+
     final toolAccums = <String, _ToolCallAccum>{};
     final startedToolCalls = <String>{};
     final endedToolCalls = <String>{};
@@ -205,17 +209,25 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           if (reasoningContent != null && reasoningContent.isNotEmpty) {
             if (inText) {
               inText = false;
-              yield LLMTextEndPart(currentText.toString());
+              yield LLMTextEndPart(
+                currentText.toString(),
+                blockId: currentTextBlockId,
+              );
               currentText.clear();
+              currentTextBlockId = null;
             }
             if (!inThinking) {
               inThinking = true;
-              yield const LLMReasoningStartPart();
+              currentThinkingBlockId ??= '${blockCounter++}';
+              yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
               currentThinking.clear();
             }
             fullThinking.write(reasoningContent);
             currentThinking.write(reasoningContent);
-            yield LLMReasoningDeltaPart(reasoningContent);
+            yield LLMReasoningDeltaPart(
+              reasoningContent,
+              blockId: currentThinkingBlockId,
+            );
           }
 
           // Text content (may include <think> tags).
@@ -230,8 +242,12 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
                   if (text.isEmpty) continue;
                   if (inThinking) {
                     inThinking = false;
-                    yield LLMReasoningEndPart(currentThinking.toString());
+                    yield LLMReasoningEndPart(
+                      currentThinking.toString(),
+                      blockId: currentThinkingBlockId,
+                    );
                     currentThinking.clear();
+                    currentThinkingBlockId = null;
                   }
                   final reasoningResult = ReasoningUtils.checkReasoningStatus(
                     delta: delta,
@@ -242,43 +258,65 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
 
                   if (!inText) {
                     inText = true;
-                    yield const LLMTextStartPart();
+                    currentTextBlockId ??= '${blockCounter++}';
+                    yield LLMTextStartPart(blockId: currentTextBlockId);
                     currentText.clear();
                   }
                   fullText.write(text);
                   currentText.write(text);
-                  yield LLMTextDeltaPart(text);
+                  yield LLMTextDeltaPart(text, blockId: currentTextBlockId);
                 case ThinkTagThinkingStartPiece():
                   if (inText) {
                     inText = false;
-                    yield LLMTextEndPart(currentText.toString());
+                    yield LLMTextEndPart(
+                      currentText.toString(),
+                      blockId: currentTextBlockId,
+                    );
                     currentText.clear();
+                    currentTextBlockId = null;
                   }
                   if (!inThinking) {
                     inThinking = true;
-                    yield const LLMReasoningStartPart();
+                    currentThinkingBlockId ??= '${blockCounter++}';
+                    yield LLMReasoningStartPart(
+                      blockId: currentThinkingBlockId,
+                    );
                     currentThinking.clear();
                   }
                 case ThinkTagThinkingPiece(:final thinking):
                   if (thinking.isEmpty) continue;
                   if (inText) {
                     inText = false;
-                    yield LLMTextEndPart(currentText.toString());
+                    yield LLMTextEndPart(
+                      currentText.toString(),
+                      blockId: currentTextBlockId,
+                    );
                     currentText.clear();
+                    currentTextBlockId = null;
                   }
                   if (!inThinking) {
                     inThinking = true;
-                    yield const LLMReasoningStartPart();
+                    currentThinkingBlockId ??= '${blockCounter++}';
+                    yield LLMReasoningStartPart(
+                      blockId: currentThinkingBlockId,
+                    );
                     currentThinking.clear();
                   }
                   fullThinking.write(thinking);
                   currentThinking.write(thinking);
-                  yield LLMReasoningDeltaPart(thinking);
+                  yield LLMReasoningDeltaPart(
+                    thinking,
+                    blockId: currentThinkingBlockId,
+                  );
                 case ThinkTagThinkingEndPiece():
                   if (inThinking) {
                     inThinking = false;
-                    yield LLMReasoningEndPart(currentThinking.toString());
+                    yield LLMReasoningEndPart(
+                      currentThinking.toString(),
+                      blockId: currentThinkingBlockId,
+                    );
                     currentThinking.clear();
+                    currentThinkingBlockId = null;
                   }
               }
             }
@@ -381,31 +419,44 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
               if (_thinkSplitter.inTag) {
                 if (inText) {
                   inText = false;
-                  yield LLMTextEndPart(currentText.toString());
+                  yield LLMTextEndPart(
+                    currentText.toString(),
+                    blockId: currentTextBlockId,
+                  );
                   currentText.clear();
+                  currentTextBlockId = null;
                 }
                 if (!inThinking) {
                   inThinking = true;
-                  yield const LLMReasoningStartPart();
+                  currentThinkingBlockId ??= '${blockCounter++}';
+                  yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
                   currentThinking.clear();
                 }
                 fullThinking.write(pending);
                 currentThinking.write(pending);
-                yield LLMReasoningDeltaPart(pending);
+                yield LLMReasoningDeltaPart(
+                  pending,
+                  blockId: currentThinkingBlockId,
+                );
               } else {
                 if (inThinking) {
                   inThinking = false;
-                  yield LLMReasoningEndPart(currentThinking.toString());
+                  yield LLMReasoningEndPart(
+                    currentThinking.toString(),
+                    blockId: currentThinkingBlockId,
+                  );
                   currentThinking.clear();
+                  currentThinkingBlockId = null;
                 }
                 if (!inText) {
                   inText = true;
-                  yield const LLMTextStartPart();
+                  currentTextBlockId ??= '${blockCounter++}';
+                  yield LLMTextStartPart(blockId: currentTextBlockId);
                   currentText.clear();
                 }
                 fullText.write(pending);
                 currentText.write(pending);
-                yield LLMTextDeltaPart(pending);
+                yield LLMTextDeltaPart(pending, blockId: currentTextBlockId);
               }
             }
 
@@ -416,13 +467,21 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
 
               if (inText) {
                 inText = false;
-                yield LLMTextEndPart(currentText.toString());
+                yield LLMTextEndPart(
+                  currentText.toString(),
+                  blockId: currentTextBlockId,
+                );
                 currentText.clear();
+                currentTextBlockId = null;
               }
               if (inThinking) {
                 inThinking = false;
-                yield LLMReasoningEndPart(currentThinking.toString());
+                yield LLMReasoningEndPart(
+                  currentThinking.toString(),
+                  blockId: currentThinkingBlockId,
+                );
                 currentThinking.clear();
+                currentThinkingBlockId = null;
               }
               for (final toolCallId in startedToolCalls) {
                 if (endedToolCalls.add(toolCallId)) {
@@ -439,31 +498,41 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
         if (_thinkSplitter.inTag) {
           if (inText) {
             inText = false;
-            yield LLMTextEndPart(currentText.toString());
+            yield LLMTextEndPart(
+              currentText.toString(),
+              blockId: currentTextBlockId,
+            );
             currentText.clear();
+            currentTextBlockId = null;
           }
           if (!inThinking) {
             inThinking = true;
-            yield const LLMReasoningStartPart();
+            currentThinkingBlockId ??= '${blockCounter++}';
+            yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
             currentThinking.clear();
           }
           fullThinking.write(pending);
           currentThinking.write(pending);
-          yield LLMReasoningDeltaPart(pending);
+          yield LLMReasoningDeltaPart(pending, blockId: currentThinkingBlockId);
         } else {
           if (inThinking) {
             inThinking = false;
-            yield LLMReasoningEndPart(currentThinking.toString());
+            yield LLMReasoningEndPart(
+              currentThinking.toString(),
+              blockId: currentThinkingBlockId,
+            );
             currentThinking.clear();
+            currentThinkingBlockId = null;
           }
           if (!inText) {
             inText = true;
-            yield const LLMTextStartPart();
+            currentTextBlockId ??= '${blockCounter++}';
+            yield LLMTextStartPart(blockId: currentTextBlockId);
             currentText.clear();
           }
           fullText.write(pending);
           currentText.write(pending);
-          yield LLMTextDeltaPart(pending);
+          yield LLMTextDeltaPart(pending, blockId: currentTextBlockId);
         }
       }
 
@@ -513,13 +582,21 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
       if (finishReason == null) {
         if (inText) {
           inText = false;
-          yield LLMTextEndPart(currentText.toString());
+          yield LLMTextEndPart(
+            currentText.toString(),
+            blockId: currentTextBlockId,
+          );
           currentText.clear();
+          currentTextBlockId = null;
         }
         if (inThinking) {
           inThinking = false;
-          yield LLMReasoningEndPart(currentThinking.toString());
+          yield LLMReasoningEndPart(
+            currentThinking.toString(),
+            blockId: currentThinkingBlockId,
+          );
           currentThinking.clear();
+          currentThinkingBlockId = null;
         }
         for (final toolCallId in startedToolCalls) {
           if (endedToolCalls.add(toolCallId)) {

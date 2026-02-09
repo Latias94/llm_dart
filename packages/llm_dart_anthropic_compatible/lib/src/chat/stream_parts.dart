@@ -212,11 +212,17 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
         if (data == '[DONE]') {
           // Best-effort finish if the stream ends without message_stop.
           if (inText) {
-            yield LLMTextEndPart(textBuffer.toString());
+            yield LLMTextEndPart(
+              textBuffer.toString(),
+              blockId: currentTextIndex?.toString(),
+            );
             closeOpenTextBlock();
           }
           if (inThinking) {
-            yield LLMReasoningEndPart(thinkingBuffer.toString());
+            yield LLMReasoningEndPart(
+              thinkingBuffer.toString(),
+              blockId: currentThinkingIndex?.toString(),
+            );
             closeOpenThinkingBlock();
           }
           for (final id in startedToolCalls.difference(endedToolCalls)) {
@@ -333,7 +339,10 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
 
             if (blockType == 'text') {
               if (inText) {
-                yield LLMTextEndPart(textBuffer.toString());
+                yield LLMTextEndPart(
+                  textBuffer.toString(),
+                  blockId: currentTextIndex?.toString(),
+                );
                 closeOpenTextBlock();
               }
               inText = true;
@@ -351,15 +360,18 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                   if (part != null) yield part;
                 }
               }
-              yield const LLMTextStartPart();
+              yield LLMTextStartPart(blockId: index.toString());
             } else if (blockType == 'thinking') {
               if (inThinking) {
-                yield LLMReasoningEndPart(thinkingBuffer.toString());
+                yield LLMReasoningEndPart(
+                  thinkingBuffer.toString(),
+                  blockId: currentThinkingIndex?.toString(),
+                );
                 closeOpenThinkingBlock();
               }
               inThinking = true;
               currentThinkingIndex = index;
-              yield const LLMReasoningStartPart();
+              yield LLMReasoningStartPart(blockId: index.toString());
             } else if (blockType == 'redacted_thinking') {
               // Keep for response.thinking getter (redacted placeholder).
               redactedThinkingBlocks[index] = contentBlock;
@@ -501,10 +513,10 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
               if (!inText) {
                 inText = true;
                 currentTextIndex = index;
-                yield const LLMTextStartPart();
+                yield LLMTextStartPart(blockId: index.toString());
               }
               textBuffer.write(text);
-              yield LLMTextDeltaPart(text);
+              yield LLMTextDeltaPart(text, blockId: index.toString());
               break;
             }
 
@@ -515,10 +527,13 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                 if (!inThinking) {
                   inThinking = true;
                   currentThinkingIndex = index;
-                  yield const LLMReasoningStartPart();
+                  yield LLMReasoningStartPart(blockId: index.toString());
                 }
                 thinkingBuffer.write(thinkingText);
-                yield LLMReasoningDeltaPart(thinkingText);
+                yield LLMReasoningDeltaPart(
+                  thinkingText,
+                  blockId: index.toString(),
+                );
               }
               break;
             }
@@ -598,12 +613,16 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
 
             final blockType = blockTypes[index];
             if (blockType == 'text' && index == currentTextIndex) {
-              yield LLMTextEndPart(textBuffer.toString());
+              yield LLMTextEndPart(textBuffer.toString(),
+                  blockId: index.toString());
               closeOpenTextBlock();
               break;
             }
             if (blockType == 'thinking' && index == currentThinkingIndex) {
-              yield LLMReasoningEndPart(thinkingBuffer.toString());
+              yield LLMReasoningEndPart(
+                thinkingBuffer.toString(),
+                blockId: index.toString(),
+              );
               closeOpenThinkingBlock();
               break;
             }
@@ -688,11 +707,17 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
 
           case 'message_stop':
             if (inText) {
-              yield LLMTextEndPart(textBuffer.toString());
+              yield LLMTextEndPart(
+                textBuffer.toString(),
+                blockId: currentTextIndex?.toString(),
+              );
               closeOpenTextBlock();
             }
             if (inThinking) {
-              yield LLMReasoningEndPart(thinkingBuffer.toString());
+              yield LLMReasoningEndPart(
+                thinkingBuffer.toString(),
+                blockId: currentThinkingIndex?.toString(),
+              );
               closeOpenThinkingBlock();
             }
             for (final id in startedToolCalls.difference(endedToolCalls)) {
@@ -749,11 +774,17 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
     );
 
     if (inText) {
-      yield LLMTextEndPart(textBuffer.toString());
+      yield LLMTextEndPart(
+        textBuffer.toString(),
+        blockId: currentTextIndex?.toString(),
+      );
       closeOpenTextBlock();
     }
     if (inThinking) {
-      yield LLMReasoningEndPart(thinkingBuffer.toString());
+      yield LLMReasoningEndPart(
+        thinkingBuffer.toString(),
+        blockId: currentThinkingIndex?.toString(),
+      );
       closeOpenThinkingBlock();
     }
     for (final id in startedToolCalls.difference(endedToolCalls)) {

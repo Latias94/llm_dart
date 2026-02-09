@@ -123,6 +123,12 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
 
     final fullText = StringBuffer();
     final fullThinking = StringBuffer();
+    final currentText = StringBuffer();
+    final currentThinking = StringBuffer();
+
+    String? currentTextBlockId;
+    String? currentThinkingBlockId;
+    var blockCounter = 0;
 
     final toolAccums = <String, _FunctionCallAccum>{};
     final startedToolCalls = <String>{};
@@ -264,7 +270,9 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
           if (eventType == 'response.reasoning_summary_part.added') {
             if (!inThinking) {
               inThinking = true;
-              yield const LLMReasoningStartPart();
+              currentThinkingBlockId ??= '${blockCounter++}';
+              yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
+              currentThinking.clear();
             }
             continue;
           }
@@ -275,10 +283,13 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
 
             if (!inText) {
               inText = true;
-              yield const LLMTextStartPart();
+              currentTextBlockId ??= '${blockCounter++}';
+              yield LLMTextStartPart(blockId: currentTextBlockId);
+              currentText.clear();
             }
             fullText.write(delta);
-            yield LLMTextDeltaPart(delta);
+            currentText.write(delta);
+            yield LLMTextDeltaPart(delta, blockId: currentTextBlockId);
             continue;
           }
 
@@ -288,10 +299,13 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
 
             if (!inThinking) {
               inThinking = true;
-              yield const LLMReasoningStartPart();
+              currentThinkingBlockId ??= '${blockCounter++}';
+              yield LLMReasoningStartPart(blockId: currentThinkingBlockId);
+              currentThinking.clear();
             }
             fullThinking.write(delta);
-            yield LLMReasoningDeltaPart(delta);
+            currentThinking.write(delta);
+            yield LLMReasoningDeltaPart(delta, blockId: currentThinkingBlockId);
             continue;
           }
 
@@ -301,11 +315,20 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
               fullThinking
                 ..clear()
                 ..write(text);
+              currentThinking
+                ..clear()
+                ..write(text);
             }
 
             if (inThinking && !endedThinking) {
               endedThinking = true;
-              yield LLMReasoningEndPart(fullThinking.toString());
+              yield LLMReasoningEndPart(
+                fullThinking.toString(),
+                blockId: currentThinkingBlockId,
+              );
+              inThinking = false;
+              currentThinking.clear();
+              currentThinkingBlockId = null;
             }
             continue;
           }
@@ -316,11 +339,20 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
               fullText
                 ..clear()
                 ..write(text);
+              currentText
+                ..clear()
+                ..write(text);
             }
 
             if (inText && !endedText) {
               endedText = true;
-              yield LLMTextEndPart(fullText.toString());
+              yield LLMTextEndPart(
+                fullText.toString(),
+                blockId: currentTextBlockId,
+              );
+              inText = false;
+              currentText.clear();
+              currentTextBlockId = null;
             }
             continue;
           }
@@ -513,11 +545,23 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
 
             if (inText && !endedText) {
               endedText = true;
-              yield LLMTextEndPart(finishText);
+              yield LLMTextEndPart(
+                finishText,
+                blockId: currentTextBlockId,
+              );
+              inText = false;
+              currentText.clear();
+              currentTextBlockId = null;
             }
             if (inThinking && !endedThinking) {
               endedThinking = true;
-              yield LLMReasoningEndPart(finishThinking);
+              yield LLMReasoningEndPart(
+                finishThinking,
+                blockId: currentThinkingBlockId,
+              );
+              inThinking = false;
+              currentThinking.clear();
+              currentThinkingBlockId = null;
             }
 
             for (final toolCallId in startedToolCalls) {

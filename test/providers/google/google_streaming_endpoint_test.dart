@@ -1,8 +1,9 @@
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart' as dio;
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/client.dart';
+import 'package:llm_dart_google/config.dart';
 import 'package:test/test.dart';
 
 class _CapturingAdapter implements dio.HttpClientAdapter {
@@ -19,7 +20,9 @@ class _CapturingAdapter implements dio.HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     lastUri = options.uri;
-    lastHeaders = options.headers.isEmpty ? null : Map<String, dynamic>.from(options.headers);
+    lastHeaders = options.headers.isEmpty
+        ? null
+        : Map<String, dynamic>.from(options.headers);
 
     return dio.ResponseBody(
       Stream<Uint8List>.empty(),
@@ -39,19 +42,18 @@ void main() {
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
         model: 'gemini-2.5-flash',
       );
-      final config = GoogleConfig.fromLLMConfig(llmConfig).copyWith(stream: true);
+      final config =
+          GoogleConfig.fromLLMConfig(llmConfig).copyWith(stream: true);
 
       final client = GoogleClient(config);
       final adapter = _CapturingAdapter();
       client.dio.httpClientAdapter = adapter;
 
       // Trigger a streaming request (we don't care about the body).
-      await client
-          .postStreamRaw(
-            'models/${config.model}:streamGenerateContent?alt=sse',
-            const {},
-          )
-          .drain<void>();
+      await client.postStreamRaw(
+        'models/${config.model}:streamGenerateContent?alt=sse',
+        const {},
+      ).drain<void>();
 
       expect(
         adapter.lastUri.toString(),
