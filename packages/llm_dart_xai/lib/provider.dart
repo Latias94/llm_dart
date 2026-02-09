@@ -8,6 +8,8 @@ class XAIProvider
     implements
         ChatCapability,
         ChatStreamPartsCapability,
+        PromptChatCapability,
+        PromptChatStreamPartsCapability,
         EmbeddingCapability,
         ProviderCapabilities {
   final XAIConfig config;
@@ -59,6 +61,28 @@ class XAIProvider
   }) {
     return _provider.chatStreamParts(
       messages,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    return _provider.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    return _provider.chatPromptStreamParts(
+      prompt,
       tools: tools,
       cancelToken: cancelToken,
     );

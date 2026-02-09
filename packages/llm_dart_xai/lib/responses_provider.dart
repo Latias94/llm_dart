@@ -8,7 +8,12 @@ import 'responses.dart';
 ///
 /// Registry id: `xai.responses` (Vercel-style).
 class XAIResponsesProvider
-    implements ChatCapability, ChatStreamPartsCapability, ProviderCapabilities {
+    implements
+        ChatCapability,
+        ChatStreamPartsCapability,
+        PromptChatCapability,
+        PromptChatStreamPartsCapability,
+        ProviderCapabilities {
   final OpenAICompatibleConfig config;
   final OpenAIClient _client;
   late final XAIResponses _responses;
@@ -52,6 +57,29 @@ class XAIResponsesProvider
   }) {
     return _responses.chatStreamParts(
       messages,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    return _responses.chatPrompt(prompt,
+        tools: tools, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    return _responses.chatPromptStreamParts(
+      prompt,
       tools: tools,
       cancelToken: cancelToken,
     );

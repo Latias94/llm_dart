@@ -4,26 +4,133 @@ import 'defaults.dart';
 
 /// Search source configuration for search parameters.
 class SearchSource {
-  /// Type of source: "web" or "news".
+  /// Type of source: "web" | "x" | "news" | "rss".
   final String sourceType;
+
+  /// Optional country code (e.g. "US", "GB").
+  final String? country;
 
   /// List of websites to exclude from this source.
   final List<String>? excludedWebsites;
 
-  const SearchSource({required this.sourceType, this.excludedWebsites});
+  /// List of websites to allow for this source (web only).
+  final List<String>? allowedWebsites;
 
-  Map<String, dynamic> toJson() => {
-        'type': sourceType,
-        if (excludedWebsites != null) 'excluded_websites': excludedWebsites,
-      };
+  /// Safe search flag (web/news only).
+  final bool? safeSearch;
+
+  /// List of X handles to exclude (x only).
+  final List<String>? excludedXHandles;
+
+  /// List of X handles to include (x only).
+  final List<String>? includedXHandles;
+
+  /// Deprecated alias for included X handles (x only).
+  final List<String>? xHandles;
+
+  /// Minimum favorite count filter (x only).
+  final int? postFavoriteCount;
+
+  /// Minimum view count filter (x only).
+  final int? postViewCount;
+
+  /// RSS feed links (rss only). Currently most APIs support a single link.
+  final List<String>? links;
+
+  const SearchSource({
+    required this.sourceType,
+    this.country,
+    this.excludedWebsites,
+    this.allowedWebsites,
+    this.safeSearch,
+    this.excludedXHandles,
+    this.includedXHandles,
+    this.xHandles,
+    this.postFavoriteCount,
+    this.postViewCount,
+    this.links,
+  });
+
+  static List<String>? _parseStringList(dynamic value) {
+    if (value is List<String>) return value;
+    if (value is List) return value.whereType<String>().toList();
+    return null;
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return null;
+  }
+
+  Map<String, dynamic> toJson() {
+    final type = sourceType.trim().isEmpty ? 'web' : sourceType.trim();
+    final lower = type.toLowerCase();
+
+    final json = <String, dynamic>{
+      'type': lower,
+    };
+
+    switch (lower) {
+      case 'web':
+        if (country != null) json['country'] = country;
+        if (excludedWebsites != null) {
+          json['excluded_websites'] = excludedWebsites;
+        }
+        if (allowedWebsites != null) json['allowed_websites'] = allowedWebsites;
+        if (safeSearch != null) json['safe_search'] = safeSearch;
+        return json;
+
+      case 'news':
+        if (country != null) json['country'] = country;
+        if (excludedWebsites != null) {
+          json['excluded_websites'] = excludedWebsites;
+        }
+        if (safeSearch != null) json['safe_search'] = safeSearch;
+        return json;
+
+      case 'x':
+        if (excludedXHandles != null) {
+          json['excluded_x_handles'] = excludedXHandles;
+        }
+        final included = includedXHandles ?? xHandles;
+        if (included != null) json['included_x_handles'] = included;
+        if (postFavoriteCount != null) {
+          json['post_favorite_count'] = postFavoriteCount;
+        }
+        if (postViewCount != null) json['post_view_count'] = postViewCount;
+        return json;
+
+      case 'rss':
+        if (links != null) json['links'] = links;
+        return json;
+
+      default:
+        return json;
+    }
+  }
 
   factory SearchSource.fromJson(Map<String, dynamic> json) {
     return SearchSource(
       sourceType:
           json['type'] as String? ?? json['sourceType'] as String? ?? 'web',
-      excludedWebsites:
-          (json['excluded_websites'] as List?)?.whereType<String>().toList() ??
-              (json['excludedWebsites'] as List?)?.whereType<String>().toList(),
+      country: json['country'] as String?,
+      excludedWebsites: _parseStringList(json['excluded_websites']) ??
+          _parseStringList(json['excludedWebsites']),
+      allowedWebsites: _parseStringList(json['allowed_websites']) ??
+          _parseStringList(json['allowedWebsites']),
+      safeSearch: json['safe_search'] as bool? ?? json['safeSearch'] as bool?,
+      excludedXHandles: _parseStringList(json['excluded_x_handles']) ??
+          _parseStringList(json['excludedXHandles']),
+      includedXHandles: _parseStringList(json['included_x_handles']) ??
+          _parseStringList(json['includedXHandles']),
+      xHandles: _parseStringList(json['xHandles']),
+      postFavoriteCount: _parseInt(
+        json['post_favorite_count'] ?? json['postFavoriteCount'],
+      ),
+      postViewCount:
+          _parseInt(json['post_view_count'] ?? json['postViewCount']),
+      links: _parseStringList(json['links']),
     );
   }
 }
@@ -32,8 +139,15 @@ class SearchSource {
 ///
 /// Reference: https://docs.x.ai/docs/guides/live-search
 class SearchParameters {
-  /// "auto" | "always" | "never"
+  /// Search mode preference: "off" | "auto" | "on".
+  ///
+  /// Legacy aliases:
+  /// - "never" -> "off"
+  /// - "always" -> "on"
   final String? mode;
+
+  /// Whether to return citations.
+  final bool? returnCitations;
 
   /// Sources like "web" / "news".
   final List<SearchSource>? sources;
@@ -49,19 +163,35 @@ class SearchParameters {
 
   const SearchParameters({
     this.mode,
+    this.returnCitations,
     this.sources,
     this.maxSearchResults,
     this.fromDate,
     this.toDate,
   });
 
+  static String? _normalizeMode(String? raw) {
+    final v = raw?.trim();
+    if (v == null || v.isEmpty) return null;
+    switch (v.toLowerCase()) {
+      case 'always':
+        return 'on';
+      case 'never':
+        return 'off';
+      default:
+        return v;
+    }
+  }
+
   factory SearchParameters.webSearch({
     String mode = 'auto',
+    bool? returnCitations,
     int? maxResults,
     List<String>? excludedWebsites,
   }) {
     return SearchParameters(
-      mode: mode,
+      mode: _normalizeMode(mode),
+      returnCitations: returnCitations,
       sources: [
         SearchSource(
           sourceType: 'web',
@@ -74,13 +204,15 @@ class SearchParameters {
 
   factory SearchParameters.newsSearch({
     String mode = 'auto',
+    bool? returnCitations,
     int? maxResults,
     String? fromDate,
     String? toDate,
     List<String>? excludedWebsites,
   }) {
     return SearchParameters(
-      mode: mode,
+      mode: _normalizeMode(mode),
+      returnCitations: returnCitations,
       sources: [
         SearchSource(
           sourceType: 'news',
@@ -95,13 +227,15 @@ class SearchParameters {
 
   factory SearchParameters.combined({
     String mode = 'auto',
+    bool? returnCitations,
     int? maxResults,
     String? fromDate,
     String? toDate,
     List<String>? excludedWebsites,
   }) {
     return SearchParameters(
-      mode: mode,
+      mode: _normalizeMode(mode),
+      returnCitations: returnCitations,
       sources: [
         SearchSource(
           sourceType: 'web',
@@ -119,7 +253,8 @@ class SearchParameters {
   }
 
   Map<String, dynamic> toJson() => {
-        if (mode != null) 'mode': mode,
+        if (_normalizeMode(mode) != null) 'mode': _normalizeMode(mode),
+        if (returnCitations != null) 'return_citations': returnCitations,
         if (sources != null)
           'sources': sources!.map((s) => s.toJson()).toList(),
         if (maxSearchResults != null) 'max_search_results': maxSearchResults,
@@ -148,7 +283,9 @@ class SearchParameters {
     }
 
     return SearchParameters(
-      mode: json['mode'] as String?,
+      mode: _normalizeMode(json['mode'] as String?),
+      returnCitations:
+          json['return_citations'] as bool? ?? json['returnCitations'] as bool?,
       sources: sources,
       maxSearchResults: maxResults,
       fromDate: json['from_date'] as String? ?? json['fromDate'] as String?,
@@ -158,13 +295,15 @@ class SearchParameters {
 
   SearchParameters copyWith({
     String? mode,
+    bool? returnCitations,
     List<SearchSource>? sources,
     int? maxSearchResults,
     String? fromDate,
     String? toDate,
   }) {
     return SearchParameters(
-      mode: mode ?? this.mode,
+      mode: _normalizeMode(mode ?? this.mode),
+      returnCitations: returnCitations ?? this.returnCitations,
       sources: sources ?? this.sources,
       maxSearchResults: maxSearchResults ?? this.maxSearchResults,
       fromDate: fromDate ?? this.fromDate,
@@ -270,6 +409,9 @@ class XAIConfig {
       liveSearchEnabled = true;
       searchParams = SearchParameters.webSearch();
     }
+
+    // Normalize legacy aliases (e.g. always/never) after all fallback paths.
+    searchParams = searchParams?.copyWith();
 
     return XAIConfig(
       apiKey: config.apiKey!,

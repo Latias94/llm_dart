@@ -24,7 +24,7 @@ XAIProvider createXAIProvider({
     temperature: temperature,
     maxTokens: maxTokens,
     systemPrompt: systemPrompt,
-    searchParameters: searchParameters,
+    searchParameters: searchParameters?.copyWith(),
     liveSearch: liveSearch,
   );
 

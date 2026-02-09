@@ -21,7 +21,12 @@ Map<String, dynamic> _stringKeyedMap(Map input) {
 /// This mirrors the event stream shape used by the OpenAI Responses API
 /// (`response.output_text.delta`, `response.reasoning_summary_text.delta`, etc),
 /// but uses xAI's tool definition shapes (e.g. `tools: [{type: "web_search"}]`).
-class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
+class XAIResponses
+    implements
+        ChatCapability,
+        ChatStreamPartsCapability,
+        PromptChatCapability,
+        PromptChatStreamPartsCapability {
   final OpenAIClient client;
   final OpenAICompatibleConfig config;
 
@@ -45,6 +50,25 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
   }) async {
     final body = _buildRequestBody(
       messages: messages,
+      tools: tools,
+      stream: false,
+    );
+    final responseData = await client.postJson(
+      responsesEndpoint,
+      body,
+      cancelToken: cancelToken,
+    );
+    return _parseResponse(responseData);
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async {
+    final body = _buildRequestBodyFromPrompt(
+      prompt: prompt,
       tools: tools,
       stream: false,
     );
@@ -82,9 +106,28 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
       tools: tools,
       stream: true,
     );
+    yield* _chatStreamPartsFromBody(body, cancelToken: cancelToken);
+  }
 
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async* {
+    final body = _buildRequestBodyFromPrompt(
+      prompt: prompt,
+      tools: tools,
+      stream: true,
+    );
+    yield* _chatStreamPartsFromBody(body, cancelToken: cancelToken);
+  }
+
+  Stream<LLMStreamPart> _chatStreamPartsFromBody(
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+  }) async* {
     client.resetSSEBuffer();
-
     var inText = false;
     var inThinking = false;
     var endedText = false;
@@ -668,6 +711,31 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
     required bool stream,
   }) {
     final input = _buildInputMessages(messages);
+    return _buildRequestBodyFromInput(
+      input: input,
+      tools: tools,
+      stream: stream,
+    );
+  }
+
+  Map<String, dynamic> _buildRequestBodyFromPrompt({
+    required Prompt prompt,
+    required List<Tool>? tools,
+    required bool stream,
+  }) {
+    final input = _buildInputMessagesFromPrompt(prompt);
+    return _buildRequestBodyFromInput(
+      input: input,
+      tools: tools,
+      stream: stream,
+    );
+  }
+
+  Map<String, dynamic> _buildRequestBodyFromInput({
+    required List<Map<String, dynamic>> input,
+    required List<Tool>? tools,
+    required bool stream,
+  }) {
     final effectiveTools = tools ?? config.tools;
 
     final body = <String, dynamic>{
@@ -789,6 +857,114 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
             'xAI Responses API does not support ${message.messageType.runtimeType} messages',
           );
       }
+    }
+
+    if (!hasSystemMessage && config.systemPrompt != null) {
+      input.insert(0, {'role': 'system', 'content': config.systemPrompt});
+    }
+
+    return input;
+  }
+
+  List<Map<String, dynamic>> _buildInputMessagesFromPrompt(Prompt prompt) {
+    final input = <Map<String, dynamic>>[];
+    var hasSystemMessage = false;
+
+    String? currentRole;
+    final currentText = StringBuffer();
+
+    void flushText() {
+      final role = currentRole;
+      if (role == null) return;
+      final text = currentText.toString();
+      if (text.trim().isNotEmpty) {
+        input.add({'role': role, 'content': text});
+      }
+      currentRole = null;
+      currentText.clear();
+    }
+
+    void ensureRole(String role) {
+      if (currentRole == role) return;
+      flushText();
+      currentRole = role;
+    }
+
+    for (final message in prompt.messages) {
+      if (message.role == ChatRole.system) {
+        hasSystemMessage = true;
+      }
+
+      for (final part in message.parts) {
+        ChatRole effectiveRole;
+        if (part case ToolCallPart(:final overrideRole)) {
+          effectiveRole = overrideRole ?? message.role;
+        } else if (part case ToolResultPart(:final overrideRole)) {
+          effectiveRole = overrideRole ?? message.role;
+        } else {
+          effectiveRole = message.role;
+        }
+
+        if (effectiveRole == ChatRole.system) {
+          if (part case TextPart(:final text)) {
+            ensureRole('system');
+            if (currentText.isNotEmpty) currentText.write('\n\n');
+            currentText.write(text);
+            continue;
+          }
+          throw UnsupportedError(
+            'xAI Responses API does not support ${part.runtimeType} in system messages',
+          );
+        }
+
+        if (part case ToolCallPart(:final toolCall)) {
+          if (effectiveRole != ChatRole.assistant) {
+            throw const InvalidRequestError(
+              'ToolCallPart must be emitted from an assistant message.',
+            );
+          }
+          flushText();
+          input.add({
+            'type': 'function_call',
+            'id': toolCall.id,
+            'call_id': toolCall.id,
+            'name': toolCall.function.name,
+            'arguments': toolCall.function.arguments,
+            'status': 'completed',
+          });
+          continue;
+        }
+
+        if (part case ToolResultPart(:final toolResult)) {
+          if (effectiveRole != ChatRole.user) {
+            throw const InvalidRequestError(
+              'ToolResultPart must be emitted from a user message.',
+            );
+          }
+          flushText();
+          input.add({
+            'type': 'function_call_output',
+            'call_id': toolResult.id,
+            'output': toolResult.function.arguments.isNotEmpty
+                ? toolResult.function.arguments
+                : 'Tool result',
+          });
+          continue;
+        }
+
+        if (part case TextPart(:final text)) {
+          ensureRole(effectiveRole == ChatRole.user ? 'user' : 'assistant');
+          if (currentText.isNotEmpty) currentText.write('\n\n');
+          currentText.write(text);
+          continue;
+        }
+
+        throw UnsupportedError(
+          'xAI Responses API does not support ${part.runtimeType} parts',
+        );
+      }
+
+      flushText();
     }
 
     if (!hasSystemMessage && config.systemPrompt != null) {

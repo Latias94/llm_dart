@@ -126,9 +126,12 @@ References:
 xAI can return a top-level `citations` array (URLs) on Chat Completions
 responses.
 
-Enable it via `providerOptions['xai']`:
+Enable it via `providerOptions['xai']` (AI SDK parity):
 
-- `returnCitations`: `bool` → request field `return_citations: true`
+- Prefer: `searchParameters.returnCitations: true` → request field
+  `search_parameters.return_citations: true`
+- Legacy alias: `returnCitations: true` (only applied when live search is
+  enabled via `liveSearch/searchParameters`)
 
 When citations are present:
 
@@ -144,8 +147,11 @@ final model = await LLMBuilder()
     .provider(xaiProviderId)
     .apiKey('XAI_API_KEY')
     .model('grok-3')
-    .providerOptions('xai', const {
-      'returnCitations': true,
+    .providerOptions('xai', {
+      'liveSearch': true,
+      'searchParameters': SearchParameters.webSearch(
+        returnCitations: true,
+      ).toJson(),
     })
     .build();
 

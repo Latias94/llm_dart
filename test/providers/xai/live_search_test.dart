@@ -66,7 +66,7 @@ void main() {
       final xaiProvider = provider as XAIProvider;
       expect(xaiProvider.config.searchParameters, isNotNull);
       expect(xaiProvider.config.searchParameters!.maxSearchResults, equals(10));
-      expect(xaiProvider.config.searchParameters!.mode, equals('always'));
+      expect(xaiProvider.config.searchParameters!.mode, equals('on'));
     });
 
     test('should build correct search parameters JSON', () {
@@ -115,6 +115,48 @@ void main() {
       expect(json['sources'], hasLength(2));
       expect(json['sources'][0]['type'], equals('web'));
       expect(json['sources'][1]['type'], equals('news'));
+    });
+
+    test(
+        'should encode x/news/rss sources with snake_case keys (AI SDK parity)',
+        () {
+      final searchParams = SearchParameters(
+        mode: 'on',
+        sources: const [
+          SearchSource(
+            sourceType: 'x',
+            includedXHandles: ['grok'],
+            excludedXHandles: ['openai'],
+            postFavoriteCount: 5,
+            postViewCount: 50,
+          ),
+          SearchSource(
+            sourceType: 'rss',
+            links: ['https://status.x.ai/feed.xml'],
+          ),
+        ],
+      );
+
+      final json = searchParams.toJson();
+      expect(json['mode'], equals('on'));
+      expect(json['sources'], isA<List>());
+      final sources = json['sources'] as List;
+      expect(
+        sources,
+        equals([
+          {
+            'type': 'x',
+            'excluded_x_handles': ['openai'],
+            'included_x_handles': ['grok'],
+            'post_favorite_count': 5,
+            'post_view_count': 50,
+          },
+          {
+            'type': 'rss',
+            'links': ['https://status.x.ai/feed.xml'],
+          },
+        ]),
+      );
     });
 
     test('should handle search source with excluded websites', () {
@@ -172,7 +214,7 @@ void main() {
 
       expect(provider.config.liveSearch, isTrue);
       expect(provider.config.searchParameters, isNotNull);
-      expect(provider.config.searchParameters!.mode, equals('always'));
+      expect(provider.config.searchParameters!.mode, equals('on'));
       expect(provider.config.searchParameters!.maxSearchResults, equals(15));
       expect(provider.config.searchParameters!.fromDate, equals('2024-06-01'));
     });

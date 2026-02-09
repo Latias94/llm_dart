@@ -337,7 +337,7 @@ void main() {
 
         expect(xaiConfig.liveSearch, isTrue);
         expect(xaiConfig.searchParameters, isNotNull);
-        expect(xaiConfig.searchParameters!.mode, equals('always'));
+        expect(xaiConfig.searchParameters!.mode, equals('on'));
         expect(xaiConfig.searchParameters!.maxSearchResults, equals(7));
         expect(xaiConfig.searchParameters!.sources, isNotNull);
         expect(xaiConfig.searchParameters!.sources, hasLength(1));

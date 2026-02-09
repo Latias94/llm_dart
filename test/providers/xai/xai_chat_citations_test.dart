@@ -9,7 +9,7 @@ String _sseData(Map<String, dynamic> json) => 'data: ${jsonEncode(json)}\n\n';
 
 void main() {
   group('xAI Chat Completions citations (AI SDK parity)', () {
-    test('includes return_citations when providerOptions.returnCitations=true',
+    test('includes search_parameters.return_citations when live search enabled',
         () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',
@@ -17,6 +17,7 @@ void main() {
         model: 'grok-3',
         providerOptions: const {
           'xai': {
+            'liveSearch': true,
             'returnCitations': true,
           },
         },
@@ -49,7 +50,15 @@ void main() {
 
       final body = client.lastJsonBody;
       expect(body, isNotNull);
-      expect(body!['return_citations'], isTrue);
+      expect(body!['return_citations'], isNull);
+      expect(body['search_parameters'], isA<Map>());
+      final sp = body['search_parameters'] as Map;
+      expect(sp['return_citations'], isTrue);
+      expect(sp['sources'], isA<List>());
+      expect(
+        (sp['sources'] as List).map((e) => (e as Map)['type']).toList(),
+        equals(['web', 'x']),
+      );
     });
 
     test('exposes citations in providerMetadata for non-stream responses',
