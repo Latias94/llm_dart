@@ -1540,7 +1540,11 @@ Stream<LLMStreamPart> streamToolLoopParts({
         }
       }
 
-      yield LLMFinishPart(mergedResponse);
+      yield LLMFinishPart(
+        mergedResponse,
+        usage: mergedResponse.usage,
+        finishReason: mergedResponse.finishReason,
+      );
       return;
     }
 
@@ -1892,7 +1896,11 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
         }
       }
 
-      yield LLMFinishPart(mergedResponse);
+      yield LLMFinishPart(
+        mergedResponse,
+        usage: mergedResponse.usage,
+        finishReason: mergedResponse.finishReason,
+      );
       return;
     }
 

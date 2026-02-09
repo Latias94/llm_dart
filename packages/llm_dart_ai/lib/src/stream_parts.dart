@@ -50,11 +50,30 @@ Stream<LLMStreamPart> _streamChatPartsInternal({
     case StandardizedChatMessages(:final messages):
       final partsCapable = model;
       if (partsCapable is ChatStreamPartsCapability) {
-        yield* (partsCapable as ChatStreamPartsCapability).chatStreamParts(
+        await for (final part
+            in (partsCapable as ChatStreamPartsCapability).chatStreamParts(
           messages,
           tools: tools,
           cancelToken: cancelToken,
-        );
+        )) {
+          switch (part) {
+            case LLMFinishPart(
+                response: final response,
+                usage: final usage,
+                finishReason: final finishReason,
+              ):
+              yield LLMFinishPart(
+                response,
+                usage: usage ?? response.usage,
+                finishReason: finishReason ??
+                    (response is ChatResponseWithFinishReason
+                        ? response.finishReason
+                        : null),
+              );
+            default:
+              yield part;
+          }
+        }
         return;
       }
 
@@ -68,11 +87,30 @@ Stream<LLMStreamPart> _streamChatPartsInternal({
 
     case StandardizedPromptIr(:final prompt):
       if (model is PromptChatStreamPartsCapability) {
-        yield* (model as PromptChatStreamPartsCapability).chatPromptStreamParts(
+        await for (final part
+            in (model as PromptChatStreamPartsCapability).chatPromptStreamParts(
           prompt,
           tools: tools,
           cancelToken: cancelToken,
-        );
+        )) {
+          switch (part) {
+            case LLMFinishPart(
+                response: final response,
+                usage: final usage,
+                finishReason: final finishReason,
+              ):
+              yield LLMFinishPart(
+                response,
+                usage: usage ?? response.usage,
+                finishReason: finishReason ??
+                    (response is ChatResponseWithFinishReason
+                        ? response.finishReason
+                        : null),
+              );
+            default:
+              yield part;
+          }
+        }
         return;
       }
 
@@ -229,7 +267,13 @@ Stream<LLMStreamPart> _streamChatPartsFromEvents(
           yield LLMProviderMetadataPart(providerMetadata);
         }
 
-        yield LLMFinishPart(response);
+        yield LLMFinishPart(
+          response,
+          usage: response.usage,
+          finishReason: response is ChatResponseWithFinishReason
+              ? response.finishReason
+              : null,
+        );
 
       case ErrorEvent(:final error):
         yield LLMErrorPart(error);

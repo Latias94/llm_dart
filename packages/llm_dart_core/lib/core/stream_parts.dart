@@ -374,7 +374,23 @@ class LLMSourceDocumentPart extends LLMStreamPart {
 /// A successful completion for the streamed request.
 class LLMFinishPart extends LLMStreamPart {
   final ChatResponse response;
-  const LLMFinishPart(this.response);
+
+  /// Optional usage snapshot at finish time.
+  ///
+  /// This mirrors AI SDK's `finish.usage` shape and avoids forcing consumers
+  /// to parse provider metadata for token counts.
+  final UsageInfo? usage;
+
+  /// Optional typed finish reason at finish time.
+  ///
+  /// When present, this is best-effort provider-agnostic mapping.
+  final LLMFinishReason? finishReason;
+
+  const LLMFinishPart(
+    this.response, {
+    this.usage,
+    this.finishReason,
+  });
 }
 
 /// A terminal error emitted by the provider or orchestration layer.
