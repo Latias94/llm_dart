@@ -124,6 +124,16 @@ Dart’s `runToolLoop*` / `streamToolLoop*` utilities do this automatically.
 If you implement your own loop, store and replay the full assistant message
 content blocks instead of reconstructing them from plain text.
 
+## Streaming
+
+MiniMax streaming is Anthropic-compatible SSE (Messages API shape). Prefer
+consuming streams via `LLMStreamPart` (parts-first).
+
+See:
+
+- `docs/providers/anthropic.md` (Streaming section)
+- `docs/protocols/anthropic_compatible.md`
+
 ## Web search
 
 LLM Dart does not provide a single cross-provider “web search” abstraction.

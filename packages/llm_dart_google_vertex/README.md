@@ -13,13 +13,28 @@ dart pub add llm_dart_google_vertex llm_dart_builder llm_dart_ai
 ## Usage (Builder)
 
 ```dart
-import 'package:llm_dart/llm_dart.dart';
+import 'dart:io';
 
-final provider = await ai()
-  .provider('google-vertex')
-  .apiKey('YOUR_VERTEX_API_KEY')
-  .model('gemini-2.5-flash')
-  .build();
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_google_vertex/llm_dart_google_vertex.dart';
+
+Future<void> main() async {
+  registerGoogleVertex();
+
+  final model = await LLMBuilder()
+      .provider(googleVertexProviderId) // 'google-vertex'
+      .apiKey(Platform.environment['VERTEX_API_KEY'] ?? 'VERTEX_API_KEY')
+      .model('gemini-2.5-flash')
+      .build();
+
+  final result = await generateText(
+    model: model,
+    prompt: 'Hello from Vertex!',
+  );
+
+  print(result.text);
+}
 ```
 
 ## Notes
@@ -27,3 +42,6 @@ final provider = await ai()
 - Provider metadata keys follow Vercel AI SDK: `vertex` and `vertex.chat`.
 - Non-express (OAuth / service account) authentication is not implemented yet.
 
+See also:
+
+- `docs/providers/google_vertex.md`
