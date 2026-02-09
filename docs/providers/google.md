@@ -123,6 +123,52 @@ The provider surfaces best-effort metadata such as:
 Gemini streaming uses a JSON stream (not SSE). LLM Dart parses the stream and
 emits standard `LLMStreamPart` items, including text deltas and tool call parts.
 
+### Streaming example (LLMStreamPart)
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_google/llm_dart_google.dart';
+
+Future<void> main() async {
+  registerGoogle();
+
+  final model = await LLMBuilder()
+      .provider(googleProviderId)
+      .apiKey(Platform.environment['GEMINI_API_KEY'] ?? 'GEMINI_API_KEY')
+      // Optional: override baseUrl for proxies or self-hosted gateways.
+      // .baseUrl('https://generativelanguage.googleapis.com/v1beta/')
+      .model('gemini-2.0-flash')
+      .build();
+
+  await for (final part in streamChatParts(
+    model: model,
+    messages: const [ChatMessage.user('Write a haiku about streaming APIs.')],
+  )) {
+    switch (part) {
+      case LLMStreamStartPart(:final warnings):
+        if (warnings.isNotEmpty) {
+          stderr.writeln('warnings: $warnings');
+        }
+      case LLMResponseMetadataPart(:final id, :final model, :final timestamp):
+        stderr.writeln('meta: id=$id model=$model ts=$timestamp');
+      case LLMTextDeltaPart(:final delta):
+        stdout.write(delta);
+      case LLMFinishPart(:final finishReason, :final usage):
+        stderr.writeln('\nfinish: $finishReason usage=$usage');
+      case LLMErrorPart(:final error):
+        stderr.writeln('error: $error');
+      default:
+        // Ignore other part types for this example.
+        break;
+    }
+  }
+}
+```
+
 Official docs:
 
 - Streaming: https://ai.google.dev/gemini-api/docs/text-generation#streaming
