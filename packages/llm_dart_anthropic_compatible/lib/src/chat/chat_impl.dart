@@ -177,6 +177,7 @@ class AnthropicChat
         case LLMToolResultPart():
         case LLMSourceUrlPart():
         case LLMSourceDocumentPart():
+        case LLMResponseMetadataPart():
         case LLMProviderToolCallPart():
         case LLMProviderToolDeltaPart():
         case LLMProviderToolApprovalRequestPart():

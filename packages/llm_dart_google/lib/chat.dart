@@ -157,6 +157,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
           yield CompletionEvent(response);
         case LLMErrorPart(:final error):
           yield ErrorEvent(error);
+        case LLMResponseMetadataPart():
         case LLMStreamStartPart():
         case LLMTextStartPart():
         case LLMTextEndPart():
@@ -211,6 +212,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
     Map<String, dynamic>? usageMetadata;
 
     String? modelVersion;
+    var didEmitResponseMetadata = false;
     dynamic promptFeedback;
     dynamic safetyRatings;
     dynamic groundingMetadata;
@@ -447,7 +449,16 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
         final candidate = candidates.first as Map<String, dynamic>;
 
         final mv = json['modelVersion'] as String?;
-        if (mv != null && mv.isNotEmpty) modelVersion = mv;
+        if (mv != null && mv.isNotEmpty) {
+          modelVersion = mv;
+          if (!didEmitResponseMetadata) {
+            didEmitResponseMetadata = true;
+            yield LLMResponseMetadataPart(
+              model: modelVersion,
+              raw: {'modelVersion': modelVersion},
+            );
+          }
+        }
 
         final pf = json['promptFeedback'];
         if (pf != null) promptFeedback = pf;

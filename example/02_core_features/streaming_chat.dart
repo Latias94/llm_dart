@@ -172,6 +172,7 @@ Future<void> demonstrateStreamEventTypes(ChatCapability provider) async {
         case LLMProviderToolResultPart():
         case LLMSourceUrlPart():
         case LLMSourceDocumentPart():
+        case LLMResponseMetadataPart():
           // Ignore for this demo.
           break;
       }

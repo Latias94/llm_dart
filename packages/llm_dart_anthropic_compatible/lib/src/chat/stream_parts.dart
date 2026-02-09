@@ -54,6 +54,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
   dynamic container;
 
   String? lastProviderMetadataJson;
+  var didEmitResponseMetadata = false;
 
   var inText = false;
   var inThinking = false;
@@ -318,6 +319,20 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                   }
                 }
               }
+            }
+
+            if (!didEmitResponseMetadata &&
+                (messageId != null || model != null)) {
+              didEmitResponseMetadata = true;
+              final raw = <String, dynamic>{
+                if (messageId != null) 'id': messageId,
+                if (model != null) 'model': model,
+              };
+              yield LLMResponseMetadataPart(
+                id: messageId,
+                model: model,
+                raw: raw.isEmpty ? null : raw,
+              );
             }
 
             final metadataPart = computeProviderMetadataPart();

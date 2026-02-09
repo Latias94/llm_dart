@@ -81,6 +81,7 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           yield CompletionEvent(response);
         case LLMErrorPart(:final error):
           yield ErrorEvent(error);
+        case LLMResponseMetadataPart():
         case LLMStreamStartPart():
         case LLMTextStartPart():
         case LLMTextEndPart():
@@ -140,6 +141,7 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
     Map<String, dynamic>? usage;
     final citations = <String>[];
     final emittedCitationUrls = <String>{};
+    var didEmitResponseMetadata = false;
 
     var didEmitTerminalParts = false;
     String? finishReason;
@@ -159,6 +161,23 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           id ??= json['id'] as String?;
           model ??= json['model'] as String?;
           systemFingerprint ??= json['system_fingerprint'] as String?;
+
+          if (!didEmitResponseMetadata &&
+              (id != null || model != null || systemFingerprint != null)) {
+            didEmitResponseMetadata = true;
+            final raw = <String, dynamic>{
+              if (id != null) 'id': id,
+              if (model != null) 'model': model,
+              if (systemFingerprint != null)
+                'system_fingerprint': systemFingerprint,
+            };
+            yield LLMResponseMetadataPart(
+              id: id,
+              model: model,
+              systemFingerprint: systemFingerprint,
+              raw: raw.isEmpty ? null : raw,
+            );
+          }
 
           // xAI citations (top-level `citations` array of URL strings).
           // Emit as source parts (deduped) to match AI SDK semantics.

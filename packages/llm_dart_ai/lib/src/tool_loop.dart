@@ -2362,6 +2362,7 @@ Stream<TextStreamPart> _mapPartsToLegacyTextStreamParts(
       case LLMReasoningEndPart():
       case LLMToolCallEndPart():
       case LLMProviderMetadataPart():
+      case LLMResponseMetadataPart():
       case LLMToolResultPart():
         // Not represented in legacy TextStreamPart.
         break;

@@ -159,6 +159,7 @@ class OpenAIResponses
     final emittedProviderApprovalRequests = <String>{};
 
     var didFinish = false;
+    var didEmitResponseMetadata = false;
     final providerToolTypeById = <String, String>{};
 
     try {
@@ -178,6 +179,35 @@ class OpenAIResponses
           if (eventType == 'response.created' ||
               eventType == 'response.in_progress') {
             _captureResponseObject(json['response']);
+            if (!didEmitResponseMetadata) {
+              final response = _partialResponse;
+              final id = response?['id'] as String?;
+              final model = response?['model'] as String?;
+              final status = response?['status'] as String?;
+              final systemFingerprint =
+                  response?['system_fingerprint'] as String?;
+
+              if (id != null ||
+                  model != null ||
+                  status != null ||
+                  systemFingerprint != null) {
+                didEmitResponseMetadata = true;
+                final raw = <String, dynamic>{
+                  if (id != null) 'id': id,
+                  if (model != null) 'model': model,
+                  if (status != null) 'status': status,
+                  if (systemFingerprint != null)
+                    'system_fingerprint': systemFingerprint,
+                };
+                yield LLMResponseMetadataPart(
+                  id: id,
+                  model: model,
+                  status: status,
+                  systemFingerprint: systemFingerprint,
+                  raw: raw.isEmpty ? null : raw,
+                );
+              }
+            }
             continue;
           }
 
@@ -719,6 +749,35 @@ class OpenAIResponses
             final completedResponse = json['response'];
             if (completedResponse is Map) {
               _captureResponseObject(completedResponse);
+              if (!didEmitResponseMetadata) {
+                final response = _partialResponse;
+                final id = response?['id'] as String?;
+                final model = response?['model'] as String?;
+                final status = response?['status'] as String?;
+                final systemFingerprint =
+                    response?['system_fingerprint'] as String?;
+
+                if (id != null ||
+                    model != null ||
+                    status != null ||
+                    systemFingerprint != null) {
+                  didEmitResponseMetadata = true;
+                  final raw = <String, dynamic>{
+                    if (id != null) 'id': id,
+                    if (model != null) 'model': model,
+                    if (status != null) 'status': status,
+                    if (systemFingerprint != null)
+                      'system_fingerprint': systemFingerprint,
+                  };
+                  yield LLMResponseMetadataPart(
+                    id: id,
+                    model: model,
+                    status: status,
+                    systemFingerprint: systemFingerprint,
+                    raw: raw.isEmpty ? null : raw,
+                  );
+                }
+              }
             }
 
             final thinkingContent =

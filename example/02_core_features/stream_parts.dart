@@ -49,6 +49,16 @@ void main() async {
         stdout.writeln('[stream start]');
         break;
 
+      case LLMResponseMetadataPart(
+          id: final id,
+          model: final model,
+          status: final status,
+        ):
+        stdout.writeln(
+          '[response metadata] id=${id ?? '-'} model=${model ?? '-'} status=${status ?? '-'}',
+        );
+        break;
+
       case LLMTextStartPart():
         stdout.write('[text] ');
         break;

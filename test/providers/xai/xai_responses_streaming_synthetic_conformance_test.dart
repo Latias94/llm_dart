@@ -110,6 +110,12 @@ void main() {
       final parts =
           await responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
 
+      expect(parts.first, isA<LLMResponseMetadataPart>());
+      final responseMetadata = parts.whereType<LLMResponseMetadataPart>().first;
+      expect(responseMetadata.id, equals('resp_1'));
+      expect(responseMetadata.model, equals('grok-4-fast-reasoning'));
+      expect(responseMetadata.status, equals('in_progress'));
+
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.text, equals('Hello'));
       expect(finish.response.toolCalls, isNull);

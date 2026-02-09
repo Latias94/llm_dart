@@ -177,6 +177,7 @@ Future<void> _processStreamingToolUse(
       case LLMReasoningEndPart():
       case LLMToolCallEndPart():
       case LLMProviderMetadataPart():
+      case LLMResponseMetadataPart():
       case LLMSourceUrlPart():
       case LLMSourceDocumentPart():
       case LLMProviderToolCallPart():

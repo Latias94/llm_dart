@@ -216,6 +216,28 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
                   aliasKey: aliasKey,
                 ),
         );
+      case LLMResponseMetadataPart(
+          id: final id,
+          model: final model,
+          status: final status,
+          systemFingerprint: final systemFingerprint,
+          providerMetadata: final providerMetadata,
+          raw: final raw,
+        ):
+        yield LLMResponseMetadataPart(
+          id: id,
+          model: model,
+          status: status,
+          systemFingerprint: systemFingerprint,
+          raw: raw,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
       case LLMFinishPart(response: final response):
         yield LLMFinishPart(
           wrapChatResponseWithProviderMetadataAlias(
@@ -223,6 +245,8 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
             baseKey: baseKey,
             aliasKey: aliasKey,
           ),
+          usage: part.usage,
+          finishReason: part.finishReason,
         );
       default:
         yield part;

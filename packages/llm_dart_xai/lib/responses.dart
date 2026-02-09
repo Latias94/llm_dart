@@ -171,6 +171,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
     String? responseId;
     String? responseModel;
     String? responseStatus;
+    var didEmitResponseMetadata = false;
 
     try {
       final stream = client.postStreamRaw(
@@ -195,6 +196,23 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
               responseId ??= map['id'] as String?;
               responseModel ??= map['model'] as String?;
               responseStatus ??= map['status'] as String?;
+            }
+            if (!didEmitResponseMetadata &&
+                (responseId != null ||
+                    responseModel != null ||
+                    responseStatus != null)) {
+              didEmitResponseMetadata = true;
+              final raw = <String, dynamic>{
+                if (responseId != null) 'id': responseId,
+                if (responseModel != null) 'model': responseModel,
+                if (responseStatus != null) 'status': responseStatus,
+              };
+              yield LLMResponseMetadataPart(
+                id: responseId,
+                model: responseModel,
+                status: responseStatus,
+                raw: raw.isEmpty ? null : raw,
+              );
             }
             continue;
           }
@@ -530,6 +548,30 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
               finalResponseObject = rawResponse;
             } else if (rawResponse is Map) {
               finalResponseObject = Map<String, dynamic>.from(rawResponse);
+            }
+
+            if (finalResponseObject != null) {
+              responseId ??= finalResponseObject['id'] as String?;
+              responseModel ??= finalResponseObject['model'] as String?;
+              responseStatus ??= finalResponseObject['status'] as String?;
+
+              if (!didEmitResponseMetadata &&
+                  (responseId != null ||
+                      responseModel != null ||
+                      responseStatus != null)) {
+                didEmitResponseMetadata = true;
+                final raw = <String, dynamic>{
+                  if (responseId != null) 'id': responseId,
+                  if (responseModel != null) 'model': responseModel,
+                  if (responseStatus != null) 'status': responseStatus,
+                };
+                yield LLMResponseMetadataPart(
+                  id: responseId,
+                  model: responseModel,
+                  status: responseStatus,
+                  raw: raw.isEmpty ? null : raw,
+                );
+              }
             }
 
             final parsed = finalResponseObject == null

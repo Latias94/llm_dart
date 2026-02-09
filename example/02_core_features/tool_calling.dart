@@ -473,6 +473,7 @@ Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
         case LLMToolCallDeltaPart():
         case LLMToolCallEndPart():
         case LLMProviderMetadataPart():
+        case LLMResponseMetadataPart():
         case LLMSourceUrlPart():
         case LLMSourceDocumentPart():
         case LLMProviderToolCallPart():

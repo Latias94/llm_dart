@@ -120,6 +120,16 @@ void main() {
         tools: const [],
       ).toList();
 
+      final responseMetadata =
+          parts.whereType<LLMResponseMetadataPart>().single;
+      expect(responseMetadata.id, equals('chatcmpl_123'));
+      expect(responseMetadata.model, equals('gpt-4o'));
+      expect(responseMetadata.systemFingerprint, equals('fp_1'));
+      expect(
+        parts.indexOf(responseMetadata),
+        lessThan(parts.indexWhere((p) => p is LLMTextStartPart)),
+      );
+
       expect(parts.whereType<LLMTextStartPart>(), hasLength(1));
       expect(parts.whereType<LLMTextDeltaPart>().map((p) => p.delta).join(),
           equals('Hello world'));

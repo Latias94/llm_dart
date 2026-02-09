@@ -22,6 +22,14 @@ void main() {
       final parts = await chat.chatStreamParts([ChatMessage.user('hello')],
           tools: const []).toList();
 
+      final responseMetadata =
+          parts.whereType<LLMResponseMetadataPart>().single;
+      expect(responseMetadata.model, equals('gemini-2.5-flash'));
+      expect(
+        parts.indexOf(responseMetadata),
+        lessThan(parts.indexWhere((p) => p is LLMSourceUrlPart)),
+      );
+
       final sources = parts.whereType<LLMSourceUrlPart>().toList();
       expect(sources, hasLength(1));
       expect(sources.single.url, equals('https://example.com'));

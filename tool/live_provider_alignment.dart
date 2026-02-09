@@ -470,6 +470,15 @@ Future<List<_CheckResult>> _runProviderChecks(
               case LLMStreamStartPart():
                 dump('StreamStart');
 
+              case LLMResponseMetadataPart(
+                  id: final id,
+                  model: final model,
+                  status: final status,
+                ):
+                dump(
+                  'ResponseMetadata id=${id ?? '-'} model=${model ?? '-'} status=${status ?? '-'}',
+                );
+
               case LLMTextStartPart():
                 dump('TextStart');
 

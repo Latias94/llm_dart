@@ -28,6 +28,42 @@ class LLMStreamStartPart extends LLMStreamPart {
   const LLMStreamStartPart({this.warnings = const []});
 }
 
+/// Response metadata emitted during streaming.
+///
+/// Mirrors Vercel AI SDK's `response-metadata` concept.
+///
+/// This part is intended for *stable, inspectable* metadata like response id
+/// or model identifier, without forcing consumers to decode provider-specific
+/// payloads from `providerMetadata`.
+class LLMResponseMetadataPart extends LLMStreamPart {
+  /// Provider response id (if available).
+  final String? id;
+
+  /// Model identifier (if available).
+  final String? model;
+
+  /// Provider-specific response status (if applicable).
+  final String? status;
+
+  /// OpenAI-style system fingerprint (if available).
+  final String? systemFingerprint;
+
+  /// Optional provider metadata (namespaced) associated with this snapshot.
+  final Map<String, dynamic>? providerMetadata;
+
+  /// Optional raw snapshot for debugging (best-effort JSON-serializable map).
+  final Map<String, dynamic>? raw;
+
+  const LLMResponseMetadataPart({
+    this.id,
+    this.model,
+    this.status,
+    this.systemFingerprint,
+    this.providerMetadata,
+    this.raw,
+  });
+}
+
 /// Optional capability for providers to emit `LLMStreamPart` directly.
 ///
 /// If a provider implements this, orchestration layers can prefer it over the
