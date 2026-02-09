@@ -18,6 +18,9 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
 
 - **Dart pub workspaces**: the repo is now a Dart workspace; the root `pubspec.yaml` is not a published package.
 - **Umbrella package move**: the all-in-one package lives under `packages/llm_dart` (exports + built-in registration are now explicitly documented).
+- **Streaming is parts-first (AI SDK style)**: `LLMStreamPart` is the single source of truth; legacy `chatStream()` is an adapter derived from `chatStreamParts()`.
+  - New parts: `LLMStreamStartPart` (warnings), `LLMResponseMetadataPart`, `LLMSourceUrlPart`/`LLMSourceDocumentPart`, typed provider-executed tool parts.
+  - Update any exhaustive `switch` statements over `LLMStreamPart` (or add a `default`).
 - **Tiered stability policy (Vercel-style)**: provider subpath libraries are now opt-in; default `<provider>.dart` exports are narrower and more stable.
   - Provider HTTP clients / Dio strategies are no longer exported from provider entrypoints; import via subpaths (e.g. `package:llm_dart_openai/client.dart`).
   - Provider packages do not re-export protocol reuse layers (`*_compatible`) from their main entrypoints.
