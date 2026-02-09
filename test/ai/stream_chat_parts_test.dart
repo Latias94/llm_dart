@@ -94,19 +94,20 @@ void main() {
       expect(parts[2], isA<LLMTextDeltaPart>());
       expect((parts[2] as LLMTextDeltaPart).delta, equals('lo'));
 
-      expect(parts[3], isA<LLMReasoningStartPart>());
-      expect(parts[4], isA<LLMReasoningDeltaPart>());
-      expect((parts[4] as LLMReasoningDeltaPart).delta, equals('Th'));
-      expect(parts[5], isA<LLMReasoningDeltaPart>());
-      expect((parts[5] as LLMReasoningDeltaPart).delta, equals('ink'));
+      // Switching from text to reasoning closes the current text block.
+      expect(parts[3], isA<LLMTextEndPart>());
+      expect((parts[3] as LLMTextEndPart).text, equals('Hello'));
 
-      expect(parts[6], isA<LLMToolCallStartPart>());
-      expect((parts[6] as LLMToolCallStartPart).toolCall.id, equals('call_1'));
+      expect(parts[4], isA<LLMReasoningStartPart>());
+      expect(parts[5], isA<LLMReasoningDeltaPart>());
+      expect((parts[5] as LLMReasoningDeltaPart).delta, equals('Th'));
+      expect(parts[6], isA<LLMReasoningDeltaPart>());
+      expect((parts[6] as LLMReasoningDeltaPart).delta, equals('ink'));
+
+      expect(parts[7], isA<LLMToolCallStartPart>());
+      expect((parts[7] as LLMToolCallStartPart).toolCall.id, equals('call_1'));
 
       // Completion emits end parts, provider metadata, then finish.
-      expect(parts[7], isA<LLMTextEndPart>());
-      expect((parts[7] as LLMTextEndPart).text, equals('Hello'));
-
       expect(parts[8], isA<LLMReasoningEndPart>());
       expect((parts[8] as LLMReasoningEndPart).thinking, equals('Think'));
 
