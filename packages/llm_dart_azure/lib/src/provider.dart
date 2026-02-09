@@ -34,7 +34,10 @@ class AzureOpenAIProvider
   late final OpenAIStyleImages _images;
   late final OpenAIStyleAudio _audio;
 
-  AzureOpenAIProvider(this.config) : _client = OpenAIClient(config) {
+  AzureOpenAIProvider(
+    this.config, {
+    OpenAIClient? client,
+  }) : _client = client ?? OpenAIClient(config) {
     _chat = OpenAIChat(_client, config);
     _embeddings = OpenAIEmbeddings(_client, config);
     _responses = OpenAIResponses(_client, config);

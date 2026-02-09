@@ -45,7 +45,10 @@ class OpenAIProvider
   late final OpenAIImages _images;
   late final OpenAIResponses? _responses;
 
-  OpenAIProvider(this.config) : _client = OpenAIClient(config) {
+  OpenAIProvider(
+    this.config, {
+    OpenAIClient? client,
+  }) : _client = client ?? OpenAIClient(config) {
     // Initialize capability modules
     _chat = OpenAIChat(_client, config);
     _embeddings = OpenAIEmbeddings(_client, config);
