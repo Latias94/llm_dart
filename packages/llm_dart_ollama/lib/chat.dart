@@ -10,7 +10,12 @@ import 'config.dart';
 ///
 /// This module handles all chat-related functionality for Ollama providers,
 /// including streaming and tool calling. Ollama is designed for local deployment.
-class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
+class OllamaChat
+    implements
+        ChatCapability,
+        ChatStreamPartsCapability,
+        PromptChatCapability,
+        PromptChatStreamPartsCapability {
   final OllamaClient client;
   final OllamaConfig config;
   final Map<String, int> _streamToolCallNameCounts = <String, int>{};
@@ -31,6 +36,31 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
 
     try {
       final requestBody = _buildRequestBody(messages, tools, false);
+      final responseData = await client.postJson(
+        chatEndpoint,
+        requestBody,
+        cancelToken: cancelToken,
+      );
+      return _parseResponse(responseData);
+    } on DioException catch (e) {
+      throw await DioErrorHandler.handleDioError(e, 'Ollama');
+    } catch (e) {
+      throw GenericError('Unexpected error: $e');
+    }
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async {
+    if (config.baseUrl.isEmpty) {
+      throw const InvalidRequestError('Missing Ollama base URL');
+    }
+
+    try {
+      final requestBody = _buildRequestBodyFromPrompt(prompt, tools, false);
       final responseData = await client.postJson(
         chatEndpoint,
         requestBody,
@@ -65,6 +95,36 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
 
     final effectiveTools = tools ?? config.tools;
     final requestBody = _buildRequestBody(messages, effectiveTools, true);
+    yield* _chatStreamPartsFromRequestBody(
+      requestBody,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async* {
+    if (config.baseUrl.isEmpty) {
+      yield const LLMErrorPart(InvalidRequestError('Missing Ollama base URL'));
+      return;
+    }
+
+    _streamToolCallNameCounts.clear();
+
+    final requestBody = _buildRequestBodyFromPrompt(prompt, tools, true);
+    yield* _chatStreamPartsFromRequestBody(
+      requestBody,
+      cancelToken: cancelToken,
+    );
+  }
+
+  Stream<LLMStreamPart> _chatStreamPartsFromRequestBody(
+    Map<String, dynamic> requestBody, {
+    CancelToken? cancelToken,
+  }) async* {
     final jsonlParser = JsonlChunkParser();
 
     var inText = false;
@@ -349,7 +409,7 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
 
     // Convert messages to Ollama format
     for (final message in messages) {
-      chatMessages.add(_convertMessage(message));
+      chatMessages.addAll(_convertChatMessage(message));
     }
 
     final body = <String, dynamic>{
@@ -403,54 +463,286 @@ class OllamaChat implements ChatCapability, ChatStreamPartsCapability {
     return body;
   }
 
-  /// Convert ChatMessage to Ollama format
-  Map<String, dynamic> _convertMessage(ChatMessage message) {
-    final result = <String, dynamic>{
-      'role': message.role.name,
+  Map<String, dynamic> _buildRequestBodyFromPrompt(
+    Prompt prompt,
+    List<Tool>? tools,
+    bool stream,
+  ) {
+    final chatMessages = <Map<String, dynamic>>[];
+
+    if (config.systemPrompt != null && config.systemPrompt!.isNotEmpty) {
+      chatMessages.add({'role': 'system', 'content': config.systemPrompt});
+    }
+
+    for (final message in prompt.messages) {
+      chatMessages.addAll(_convertPromptMessage(message));
+    }
+
+    final body = <String, dynamic>{
+      'model': config.model,
+      'messages': chatMessages,
+      'stream': stream,
     };
 
-    // Add name field if present
-    if (message.name != null) {
-      result['name'] = message.name;
+    final options = <String, dynamic>{};
+    if (config.temperature != null) options['temperature'] = config.temperature;
+    if (config.topP != null) options['top_p'] = config.topP;
+    if (config.topK != null) options['top_k'] = config.topK;
+    if (config.maxTokens != null) options['num_predict'] = config.maxTokens;
+    if (config.numCtx != null) options['num_ctx'] = config.numCtx;
+    if (config.numGpu != null) options['num_gpu'] = config.numGpu;
+    if (config.numThread != null) options['num_thread'] = config.numThread;
+    if (config.numa != null) options['numa'] = config.numa;
+    if (config.numBatch != null) options['num_batch'] = config.numBatch;
+    if (options.isNotEmpty) {
+      body['options'] = options;
     }
 
-    // Handle different message types
+    body['keep_alive'] = config.keepAlive ?? '5m';
+
+    if (config.raw == true) {
+      body['raw'] = true;
+    }
+
+    if (config.jsonSchema?.schema != null) {
+      body['format'] = config.jsonSchema!.schema;
+    }
+
+    final effectiveTools = tools ?? config.tools;
+    if (effectiveTools != null && effectiveTools.isNotEmpty) {
+      body['tools'] = effectiveTools.map((t) => _convertTool(t)).toList();
+    }
+
+    if (config.reasoning != null) {
+      body['think'] = config.reasoning;
+    }
+
+    return body;
+  }
+
+  /// Convert ChatMessage into one-or-more Ollama wire messages.
+  ///
+  /// Ollama represents tool results as separate `role=tool` messages, so a
+  /// single `ToolResultMessage` may expand into multiple wire messages.
+  List<Map<String, dynamic>> _convertChatMessage(ChatMessage message) {
+    Map<String, dynamic> buildNormal({
+      required String role,
+      required String content,
+      List<String>? images,
+      List<Map<String, dynamic>>? toolCalls,
+    }) {
+      final m = <String, dynamic>{
+        'role': role,
+        'content': content,
+      };
+      if (message.name != null) {
+        m['name'] = message.name;
+      }
+      if (images != null && images.isNotEmpty) {
+        m['images'] = images;
+      }
+      if (toolCalls != null && toolCalls.isNotEmpty) {
+        m['tool_calls'] = toolCalls;
+      }
+      return m;
+    }
+
     switch (message.messageType) {
       case TextMessage():
-        result['content'] = message.content;
-        break;
+        return [
+          buildNormal(role: message.role.name, content: message.content),
+        ];
+
       case ImageMessage(mime: final _, data: final data):
-        // Convert image data to base64 for Ollama
         final base64Image = base64Encode(data);
-        result['content'] = message.content;
-        result['images'] = [base64Image];
-        break;
+        return [
+          buildNormal(
+            role: message.role.name,
+            content: message.content,
+            images: [base64Image],
+          ),
+        ];
+
       case ImageUrlMessage(url: final url):
-        // Ollama doesn't support image URLs directly, would need to download
-        result['content'] = message.content;
-        client.logger
-            .warning('Image URLs not directly supported by Ollama: $url');
-        break;
+        client.logger.warning('Image URLs not directly supported by Ollama: $url');
+        return [
+          buildNormal(role: message.role.name, content: message.content),
+        ];
+
       case ToolUseMessage(toolCalls: final toolCalls):
-        result['content'] = message.content;
-        result['tool_calls'] = toolCalls
-            .map((tc) => {
-                  'function': {
-                    'name': tc.function.name,
-                    'arguments': jsonDecode(tc.function.arguments),
-                  }
-                })
-            .toList();
-        break;
-      case ToolResultMessage():
-        // Tool results are handled as separate messages in Ollama
-        result['content'] = message.content;
-        break;
+        final convertedToolCalls = <Map<String, dynamic>>[];
+        for (final tc in toolCalls) {
+          dynamic args;
+          try {
+            args = jsonDecode(tc.function.arguments);
+          } catch (e) {
+            throw InvalidRequestError(
+              'Invalid JSON tool call arguments for tool "${tc.function.name}": $e',
+            );
+          }
+          convertedToolCalls.add({
+            'function': {
+              'name': tc.function.name,
+              'arguments': args,
+            },
+          });
+        }
+        return [
+          buildNormal(
+            role: message.role.name,
+            content: message.content,
+            toolCalls: convertedToolCalls,
+          ),
+        ];
+
+      case ToolResultMessage(results: final results):
+        final out = <Map<String, dynamic>>[];
+        for (final result in results) {
+          final toolContent = message.content.isNotEmpty
+              ? '${message.content}\n${result.function.arguments}'
+              : result.function.arguments;
+          out.add({
+            'role': 'tool',
+            'content': toolContent,
+            'tool_name': result.function.name,
+          });
+        }
+        return out;
+
       default:
-        result['content'] = message.content;
+        return [
+          buildNormal(role: message.role.name, content: message.content),
+        ];
+    }
+  }
+
+  List<Map<String, dynamic>> _convertPromptMessage(PromptMessage message) {
+    final out = <Map<String, dynamic>>[];
+
+    void addNormalMessage({
+      required ChatRole role,
+      required String content,
+      List<String>? images,
+      List<Map<String, dynamic>>? toolCalls,
+    }) {
+      out.add({
+        'role': role.name,
+        'content': content,
+        if (message.name != null) 'name': message.name,
+        if (images != null && images.isNotEmpty) 'images': images,
+        if (toolCalls != null && toolCalls.isNotEmpty) 'tool_calls': toolCalls,
+      });
     }
 
-    return result;
+    if (message.parts.isEmpty) {
+      addNormalMessage(role: message.role, content: '');
+      return out;
+    }
+
+    ChatRole currentRole = message.role;
+    final contentSegments = <String>[];
+    final images = <String>[];
+    final toolCalls = <Map<String, dynamic>>[];
+
+    void flushIfNotEmpty() {
+      if (contentSegments.isEmpty && images.isEmpty && toolCalls.isEmpty) {
+        return;
+      }
+      addNormalMessage(
+        role: currentRole,
+        content: contentSegments.join('\n'),
+        images: images.isEmpty ? null : List<String>.from(images),
+        toolCalls: toolCalls.isEmpty ? null : List<Map<String, dynamic>>.from(toolCalls),
+      );
+      contentSegments.clear();
+      images.clear();
+      toolCalls.clear();
+    }
+
+    for (final part in message.parts) {
+      switch (part) {
+        case ToolResultPart(:final toolResult, :final overrideRole):
+          final effectiveRole = overrideRole ?? message.role;
+          if (effectiveRole != ChatRole.user) {
+            throw const InvalidRequestError(
+              'ToolResultPart must be emitted from a user message.',
+            );
+          }
+
+          flushIfNotEmpty();
+
+          out.add({
+            'role': 'tool',
+            'content': toolResult.function.arguments,
+            'tool_name': toolResult.function.name,
+          });
+          break;
+
+        case ToolCallPart(:final toolCall, :final overrideRole):
+          final effectiveRole = overrideRole ?? message.role;
+          if (effectiveRole != ChatRole.assistant) {
+            throw const InvalidRequestError(
+              'ToolCallPart must be emitted from an assistant message.',
+            );
+          }
+
+          if (currentRole != ChatRole.assistant) {
+            flushIfNotEmpty();
+            currentRole = ChatRole.assistant;
+          }
+
+          dynamic args;
+          try {
+            args = jsonDecode(toolCall.function.arguments);
+          } catch (e) {
+            throw InvalidRequestError(
+              'Invalid JSON tool call arguments for tool "${toolCall.function.name}": $e',
+            );
+          }
+
+          toolCalls.add({
+            'function': {
+              'name': toolCall.function.name,
+              'arguments': args,
+            },
+          });
+          break;
+
+        case TextPart(:final text):
+          if (currentRole != message.role) {
+            flushIfNotEmpty();
+            currentRole = message.role;
+          }
+          contentSegments.add(text);
+          break;
+
+        case ImagePart(:final data, :final text):
+          if (currentRole != message.role) {
+            flushIfNotEmpty();
+            currentRole = message.role;
+          }
+          if (text != null && text.isNotEmpty) {
+            contentSegments.add(text);
+          }
+          images.add(base64Encode(data));
+          break;
+
+        case ImageUrlPart(:final url):
+          throw InvalidRequestError(
+            'ImageUrlPart is not supported by the Ollama Chat API. '
+            'Download the image and send it as ImagePart (base64) instead. '
+            'Got: "$url"',
+          );
+
+        case FilePart(:final mime):
+          throw InvalidRequestError(
+            'FilePart (${mime.mimeType}) is not supported by the Ollama Chat API.',
+          );
+      }
+    }
+
+    flushIfNotEmpty();
+    return out;
   }
 
   /// Convert Tool to Ollama format

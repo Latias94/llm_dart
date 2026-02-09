@@ -45,7 +45,9 @@ Core principle:
 - [x] Anthropic + Anthropic-compatible: prompt-native chat + streaming
 - [x] OpenAI-compatible Chat Completions: prompt-native compilation
 - [x] OpenAI (Responses): prompt-native compilation
-- [ ] Ollama JSONL: prompt-native compilation (if it benefits multi-part inputs)
+- [x] DeepSeek + Groq: expose prompt-native forwarding (wrappers)
+- [x] xAI: expose prompt-native forwarding (Chat Completions) + prompt-native compilation (Responses)
+- [x] Ollama JSONL: prompt-native compilation (groups text+images; aligns tool result role with Ollama API)
 - [ ] Any remaining providers that support multi-part content
 
 ### M2 — Conformance tests (offline)
