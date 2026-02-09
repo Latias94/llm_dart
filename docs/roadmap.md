@@ -104,6 +104,10 @@ Current implementation:
 
 - Prompt IR types + adapter: `packages/llm_dart_core/lib/prompt/prompt.dart` (re-exported by `llm_dart_ai`)
 
+Tracking:
+
+- `docs/prompt_ir_native_todo.md` (native provider compilation)
+
 ### MVP 3: Provider tools become first-class in streaming + tooling
 
 Outcome:
