@@ -88,40 +88,42 @@ void main() {
         messages: [ChatMessage.user('hi')],
       ).toList();
 
-      expect(parts[0], isA<LLMTextStartPart>());
-      expect(parts[1], isA<LLMTextDeltaPart>());
-      expect((parts[1] as LLMTextDeltaPart).delta, equals('Hel'));
+      expect(parts[0], isA<LLMStreamStartPart>());
+
+      expect(parts[1], isA<LLMTextStartPart>());
       expect(parts[2], isA<LLMTextDeltaPart>());
-      expect((parts[2] as LLMTextDeltaPart).delta, equals('lo'));
+      expect((parts[2] as LLMTextDeltaPart).delta, equals('Hel'));
+      expect(parts[3], isA<LLMTextDeltaPart>());
+      expect((parts[3] as LLMTextDeltaPart).delta, equals('lo'));
 
       // Switching from text to reasoning closes the current text block.
-      expect(parts[3], isA<LLMTextEndPart>());
-      expect((parts[3] as LLMTextEndPart).text, equals('Hello'));
+      expect(parts[4], isA<LLMTextEndPart>());
+      expect((parts[4] as LLMTextEndPart).text, equals('Hello'));
 
-      expect(parts[4], isA<LLMReasoningStartPart>());
-      expect(parts[5], isA<LLMReasoningDeltaPart>());
-      expect((parts[5] as LLMReasoningDeltaPart).delta, equals('Th'));
+      expect(parts[5], isA<LLMReasoningStartPart>());
       expect(parts[6], isA<LLMReasoningDeltaPart>());
-      expect((parts[6] as LLMReasoningDeltaPart).delta, equals('ink'));
+      expect((parts[6] as LLMReasoningDeltaPart).delta, equals('Th'));
+      expect(parts[7], isA<LLMReasoningDeltaPart>());
+      expect((parts[7] as LLMReasoningDeltaPart).delta, equals('ink'));
 
-      expect(parts[7], isA<LLMToolCallStartPart>());
-      expect((parts[7] as LLMToolCallStartPart).toolCall.id, equals('call_1'));
+      expect(parts[8], isA<LLMToolCallStartPart>());
+      expect((parts[8] as LLMToolCallStartPart).toolCall.id, equals('call_1'));
 
       // Completion emits end parts, provider metadata, then finish.
-      expect(parts[8], isA<LLMReasoningEndPart>());
-      expect((parts[8] as LLMReasoningEndPart).thinking, equals('Think'));
+      expect(parts[9], isA<LLMReasoningEndPart>());
+      expect((parts[9] as LLMReasoningEndPart).thinking, equals('Think'));
 
-      expect(parts[9], isA<LLMToolCallEndPart>());
-      expect((parts[9] as LLMToolCallEndPart).toolCallId, equals('call_1'));
+      expect(parts[10], isA<LLMToolCallEndPart>());
+      expect((parts[10] as LLMToolCallEndPart).toolCallId, equals('call_1'));
 
-      expect(parts[10], isA<LLMProviderMetadataPart>());
+      expect(parts[11], isA<LLMProviderMetadataPart>());
       expect(
-        (parts[10] as LLMProviderMetadataPart).providerMetadata,
+        (parts[11] as LLMProviderMetadataPart).providerMetadata,
         containsPair('openai', {'id': 'resp_1'}),
       );
 
-      expect(parts[11], isA<LLMFinishPart>());
-      expect((parts[11] as LLMFinishPart).response.text, equals('Hello'));
+      expect(parts[12], isA<LLMFinishPart>());
+      expect((parts[12] as LLMFinishPart).response.text, equals('Hello'));
     });
   });
 }

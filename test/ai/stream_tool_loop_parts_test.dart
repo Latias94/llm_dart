@@ -115,44 +115,46 @@ void main() {
       ).toList();
 
       // Step 1
-      expect(parts[0], isA<LLMTextStartPart>());
-      expect(parts[1], isA<LLMTextDeltaPart>());
-      expect((parts[1] as LLMTextDeltaPart).delta, equals('Need '));
+      expect(parts[0], isA<LLMStreamStartPart>());
 
-      expect(parts[2], isA<LLMToolCallStartPart>());
-      expect((parts[2] as LLMToolCallStartPart).toolCall.id, equals('call_1'));
-      expect(parts[3], isA<LLMToolCallDeltaPart>());
+      expect(parts[1], isA<LLMTextStartPart>());
+      expect(parts[2], isA<LLMTextDeltaPart>());
+      expect((parts[2] as LLMTextDeltaPart).delta, equals('Need '));
 
-      expect(parts[4], isA<LLMTextEndPart>());
-      expect((parts[4] as LLMTextEndPart).text, equals('Need '));
-      expect(parts[5], isA<LLMToolCallEndPart>());
+      expect(parts[3], isA<LLMToolCallStartPart>());
+      expect((parts[3] as LLMToolCallStartPart).toolCall.id, equals('call_1'));
+      expect(parts[4], isA<LLMToolCallDeltaPart>());
 
-      expect(parts[6], isA<LLMProviderMetadataPart>());
+      expect(parts[5], isA<LLMTextEndPart>());
+      expect((parts[5] as LLMTextEndPart).text, equals('Need '));
+      expect(parts[6], isA<LLMToolCallEndPart>());
+
+      expect(parts[7], isA<LLMProviderMetadataPart>());
       expect(
-        (parts[6] as LLMProviderMetadataPart).providerMetadata,
+        (parts[7] as LLMProviderMetadataPart).providerMetadata,
         containsPair('openai', {'id': 'resp_step_1'}),
       );
 
-      expect(parts[7], isA<LLMToolResultPart>());
-      final toolResult = (parts[7] as LLMToolResultPart).result;
+      expect(parts[8], isA<LLMToolResultPart>());
+      final toolResult = (parts[8] as LLMToolResultPart).result;
       expect(toolResult.toolCallId, equals('call_1'));
       expect(toolResult.isError, isFalse);
       expect(jsonDecode(toolResult.content), equals({'temp': 70}));
 
       // Step 2 (final)
-      expect(parts[8], isA<LLMTextStartPart>());
-      expect(parts[9], isA<LLMTextDeltaPart>());
-      expect((parts[9] as LLMTextDeltaPart).delta, equals('Done'));
-      expect(parts[10], isA<LLMTextEndPart>());
-      expect((parts[10] as LLMTextEndPart).text, equals('Done'));
-      expect(parts[11], isA<LLMProviderMetadataPart>());
+      expect(parts[9], isA<LLMTextStartPart>());
+      expect(parts[10], isA<LLMTextDeltaPart>());
+      expect((parts[10] as LLMTextDeltaPart).delta, equals('Done'));
+      expect(parts[11], isA<LLMTextEndPart>());
+      expect((parts[11] as LLMTextEndPart).text, equals('Done'));
+      expect(parts[12], isA<LLMProviderMetadataPart>());
       expect(
-        (parts[11] as LLMProviderMetadataPart).providerMetadata,
+        (parts[12] as LLMProviderMetadataPart).providerMetadata,
         containsPair('openai', {'id': 'resp_step_2'}),
       );
 
-      expect(parts[12], isA<LLMFinishPart>());
-      expect((parts[12] as LLMFinishPart).response.text, equals('Done'));
+      expect(parts[13], isA<LLMFinishPart>());
+      expect((parts[13] as LLMFinishPart).response.text, equals('Done'));
     });
   });
 }

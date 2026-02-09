@@ -157,6 +157,7 @@ class GoogleChat implements ChatCapability, ChatStreamPartsCapability {
           yield CompletionEvent(response);
         case LLMErrorPart(:final error):
           yield ErrorEvent(error);
+        case LLMStreamStartPart():
         case LLMTextStartPart():
         case LLMTextEndPart():
         case LLMReasoningStartPart():

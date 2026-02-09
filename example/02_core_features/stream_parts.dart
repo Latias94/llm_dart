@@ -45,6 +45,10 @@ void main() async {
     prompt: 'Explain “streaming” in 3 bullet points.',
   )) {
     switch (part) {
+      case LLMStreamStartPart():
+        stdout.writeln('[stream start]');
+        break;
+
       case LLMTextStartPart():
         stdout.write('[text] ');
         break;

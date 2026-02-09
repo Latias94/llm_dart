@@ -168,6 +168,7 @@ class AnthropicChat
           yield ErrorEvent(error);
           return;
 
+        case LLMStreamStartPart():
         case LLMTextStartPart():
         case LLMTextEndPart():
         case LLMReasoningStartPart():

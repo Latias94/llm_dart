@@ -464,6 +464,7 @@ Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
           print('\n   ❌ Stream error: $error');
           break;
 
+        case LLMStreamStartPart():
         case LLMTextStartPart():
         case LLMTextEndPart():
         case LLMReasoningStartPart():

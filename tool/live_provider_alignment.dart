@@ -467,6 +467,9 @@ Future<List<_CheckResult>> _runProviderChecks(
             messages: [ChatMessage.user(spec.chatPrompt)],
           )) {
             switch (part) {
+              case LLMStreamStartPart():
+                dump('StreamStart');
+
               case LLMTextStartPart():
                 dump('TextStart');
 

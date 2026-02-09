@@ -159,6 +159,7 @@ Future<void> demonstrateStreamEventTypes(ChatCapability provider) async {
           print('   ❌ Error part: $error');
           break;
 
+        case LLMStreamStartPart():
         case LLMTextStartPart():
         case LLMTextEndPart():
         case LLMReasoningStartPart():

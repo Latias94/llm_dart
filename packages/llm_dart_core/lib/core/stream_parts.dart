@@ -14,6 +14,20 @@ sealed class LLMStreamPart {
   const LLMStreamPart();
 }
 
+/// Marks the start of a streaming response.
+///
+/// Mirrors Vercel AI SDK's `stream-start` concept and provides a stable place
+/// to surface warnings or other non-token metadata without overloading
+/// providerMetadata maps.
+class LLMStreamStartPart extends LLMStreamPart {
+  /// Optional warnings emitted by the orchestration layer or provider.
+  ///
+  /// Best-effort structure aligned with AI SDK warnings (typically objects).
+  final List<Map<String, dynamic>> warnings;
+
+  const LLMStreamStartPart({this.warnings = const []});
+}
+
 /// Optional capability for providers to emit `LLMStreamPart` directly.
 ///
 /// If a provider implements this, orchestration layers can prefer it over the

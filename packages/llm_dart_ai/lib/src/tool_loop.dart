@@ -1272,6 +1272,8 @@ Stream<LLMStreamPart> streamToolLoopParts({
   bool continueOnToolError = true,
   CancelToken? cancelToken,
 }) async* {
+  yield const LLMStreamStartPart();
+
   final input = standardizePromptInput(
     system: system,
     prompt: prompt,
@@ -2345,6 +2347,7 @@ Stream<TextStreamPart> _mapPartsToLegacyTextStreamParts(
       case LLMErrorPart(:final error):
         yield ErrorPart(error);
 
+      case LLMStreamStartPart():
       case LLMTextStartPart():
       case LLMTextEndPart():
       case LLMReasoningStartPart():

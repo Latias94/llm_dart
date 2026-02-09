@@ -169,6 +169,7 @@ Future<void> _processStreamingToolUse(
         stdout.writeln('\n   ❌ Streaming error: $error');
         break;
 
+      case LLMStreamStartPart():
       case LLMReasoningDeltaPart():
       case LLMTextStartPart():
       case LLMTextEndPart():

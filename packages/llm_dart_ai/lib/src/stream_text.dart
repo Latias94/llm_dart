@@ -162,6 +162,7 @@ Stream<TextStreamPart> streamText({
       case LLMErrorPart(:final error):
         yield ErrorPart(error);
 
+      case LLMStreamStartPart():
       case LLMTextStartPart():
       case LLMTextEndPart():
       case LLMReasoningStartPart():

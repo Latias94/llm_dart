@@ -18,6 +18,27 @@ Stream<LLMStreamPart> streamChatParts({
   List<Tool>? tools,
   CancelToken? cancelToken,
 }) async* {
+  yield const LLMStreamStartPart();
+  yield* _streamChatPartsInternal(
+    model: model,
+    system: system,
+    prompt: prompt,
+    messages: messages,
+    promptIr: promptIr,
+    tools: tools,
+    cancelToken: cancelToken,
+  );
+}
+
+Stream<LLMStreamPart> _streamChatPartsInternal({
+  required ChatCapability model,
+  String? system,
+  String? prompt,
+  List<ChatMessage>? messages,
+  Prompt? promptIr,
+  List<Tool>? tools,
+  CancelToken? cancelToken,
+}) async* {
   final input = standardizePromptInput(
     system: system,
     prompt: prompt,
@@ -66,7 +87,7 @@ Stream<LLMStreamPart> streamChatParts({
         return;
       }
 
-      yield* streamChatParts(
+      yield* _streamChatPartsInternal(
         model: model,
         messages: prompt.toChatMessages(),
         tools: tools,
