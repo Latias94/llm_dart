@@ -78,7 +78,7 @@ class AzureOpenAIProviderFactory
           'apiVersion',
         ) ??
         azureDefaultApiVersion;
-    final useResponsesAPI = readProviderOption<bool>(
+    var useResponsesAPI = readProviderOption<bool>(
           providerOptions,
           providerId,
           'useResponsesAPI',
@@ -102,6 +102,13 @@ class AzureOpenAIProviderFactory
     final extraHeaders = _parseStringMap(extraHeadersRaw);
 
     final builtInTools = _parseBuiltInTools(config.providerTools);
+
+    // Azure provider-native tools (OpenAI Responses built-ins) require the
+    // Responses API. Align with OpenAI factory behavior: if any built-in tools
+    // are configured, force `useResponsesAPI=true`.
+    if ((builtInTools?.isNotEmpty ?? false) && useResponsesAPI == false) {
+      useResponsesAPI = true;
+    }
 
     return AzureOpenAIConfig(
       apiKey: config.apiKey ?? '',

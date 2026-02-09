@@ -17,13 +17,11 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://example.openai.azure.com/openai',
         model: 'deployment_1',
-      )
-          .withProviderOptions('azure', {
-            'apiVersion': '2024-10-01-preview',
-            'useDeploymentBasedUrls': false,
-            'useResponsesAPI': false,
-          })
-          .withTransportOptions({'customDio': customDio});
+      ).withProviderOptions('azure', {
+        'apiVersion': '2024-10-01-preview',
+        'useDeploymentBasedUrls': false,
+        'useResponsesAPI': false,
+      }).withTransportOptions({'customDio': customDio});
 
       final factory = AzureOpenAIProviderFactory();
       final provider = factory.create(llmConfig) as AzureOpenAIProvider;
@@ -42,7 +40,8 @@ void main() {
       expect(response.usage!.totalTokens, equals(7));
     });
 
-    test('responses api adds azure.responses alias key + normalizes usage', () async {
+    test('responses api adds azure.responses alias key + normalizes usage',
+        () async {
       final adapter = _FakeAzureHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
 
@@ -50,13 +49,11 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://example.openai.azure.com/openai',
         model: 'deployment_1',
-      )
-          .withProviderOptions('azure', {
-            'apiVersion': '2024-10-01-preview',
-            'useDeploymentBasedUrls': false,
-            'useResponsesAPI': true,
-          })
-          .withTransportOptions({'customDio': customDio});
+      ).withProviderOptions('azure', {
+        'apiVersion': '2024-10-01-preview',
+        'useDeploymentBasedUrls': false,
+        'useResponsesAPI': true,
+      }).withTransportOptions({'customDio': customDio});
 
       final factory = AzureOpenAIProviderFactory();
       final provider = factory.create(llmConfig) as AzureOpenAIProvider;
@@ -69,6 +66,43 @@ void main() {
       expect(meta.containsKey('azure.responses'), isTrue);
       expect(meta['azure.responses'], equals(meta['azure']));
 
+      expect(response.usage, isNotNull);
+      expect(response.usage!.promptTokens, equals(11));
+      expect(response.usage!.completionTokens, equals(7));
+      expect(response.usage!.totalTokens, equals(18));
+      expect(response.usage!.reasoningTokens, equals(5));
+    });
+
+    test('providerTools force Responses API even when useResponsesAPI=false',
+        () async {
+      final adapter = _FakeAzureHttpClientAdapter();
+      final customDio = Dio()..httpClientAdapter = adapter;
+
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://example.openai.azure.com/openai',
+        model: 'deployment_1',
+        providerTools: const [
+          ProviderTool(id: 'openai.web_search_preview'),
+        ],
+      ).withProviderOptions('azure', {
+        'apiVersion': '2024-10-01-preview',
+        'useDeploymentBasedUrls': false,
+        'useResponsesAPI': false,
+      }).withTransportOptions({'customDio': customDio});
+
+      final factory = AzureOpenAIProviderFactory();
+      final provider = factory.create(llmConfig) as AzureOpenAIProvider;
+
+      final response = await provider.chat([ChatMessage.user('hi')]);
+      final meta = response.providerMetadata;
+
+      expect(meta, isNotNull);
+      expect(meta!.containsKey('azure'), isTrue);
+      expect(meta.containsKey('azure.responses'), isTrue);
+      expect(meta['azure.responses'], equals(meta['azure']));
+
+      // The fake adapter returns different usage for chat vs responses.
       expect(response.usage, isNotNull);
       expect(response.usage!.promptTokens, equals(11));
       expect(response.usage!.completionTokens, equals(7));
