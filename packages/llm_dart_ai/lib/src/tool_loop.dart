@@ -270,6 +270,21 @@ ImageMime _imageMimeFromMediaType(String mediaType) {
   }
 }
 
+bool _isFunctionToolCall(ToolCall toolCall) {
+  return toolCall.callType.trim().toLowerCase() == 'function';
+}
+
+bool _isExecutableFunctionToolCall(ToolCall toolCall) {
+  if (!_isFunctionToolCall(toolCall)) return false;
+  return toolCall.function.name.trim().isNotEmpty;
+}
+
+List<ToolCall> _onlyLocalFunctionToolCalls(List<ToolCall>? toolCalls) {
+  if (toolCalls == null || toolCalls.isEmpty) return const [];
+  final filtered = toolCalls.where(_isExecutableFunctionToolCall).toList();
+  return filtered.isEmpty ? const [] : List<ToolCall>.unmodifiable(filtered);
+}
+
 /// Run a non-streaming tool loop:
 /// - Call the model
 /// - If tool calls are returned, execute them locally and send tool results back
@@ -325,18 +340,19 @@ Future<ToolLoopResult> runToolLoop({
       cancelToken: cancelToken,
     );
 
+    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+
     final stepResult = GenerateTextResult(
       rawResponse: response,
       text: response.text,
       thinking: response.thinking,
-      toolCalls: response.toolCalls,
+      toolCalls: toolCalls,
       usage: response.usage,
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
     );
 
-    final toolCalls = response.toolCalls ?? const <ToolCall>[];
     if (toolCalls.isEmpty) {
       if (response.text != null) {
         workingMessages.add(ChatMessage.assistant(response.text!));
@@ -472,18 +488,19 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       cancelToken: cancelToken,
     );
 
+    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+
     final stepResult = GenerateTextResult(
       rawResponse: response,
       text: response.text,
       thinking: response.thinking,
-      toolCalls: response.toolCalls,
+      toolCalls: toolCalls,
       usage: response.usage,
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
     );
 
-    final toolCalls = response.toolCalls ?? const <ToolCall>[];
     if (toolCalls.isEmpty) {
       if (response is ChatResponseWithAssistantMessage) {
         workingMessages.add(response.assistantMessage);
@@ -670,18 +687,19 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       cancelToken: cancelToken,
     );
 
+    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+
     final stepResult = GenerateTextResult(
       rawResponse: response,
       text: response.text,
       thinking: response.thinking,
-      toolCalls: response.toolCalls,
+      toolCalls: toolCalls,
       usage: response.usage,
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
     );
 
-    final toolCalls = response.toolCalls ?? const <ToolCall>[];
     if (toolCalls.isEmpty) {
       if (response.text != null) {
         workingMessages.add(ChatMessage.assistant(response.text!));
@@ -818,18 +836,19 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       cancelToken: cancelToken,
     );
 
+    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+
     final stepResult = GenerateTextResult(
       rawResponse: response,
       text: response.text,
       thinking: response.thinking,
-      toolCalls: response.toolCalls,
+      toolCalls: toolCalls,
       usage: response.usage,
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
     );
 
-    final toolCalls = response.toolCalls ?? const <ToolCall>[];
     if (toolCalls.isEmpty) {
       if (response is ChatResponseWithAssistantMessage) {
         workingMessages.add(response.assistantMessage);
@@ -1329,6 +1348,11 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
           case LLMToolCallStartPart(:final toolCall):
           case LLMToolCallDeltaPart(:final toolCall):
+            if (!_isFunctionToolCall(toolCall)) {
+              // Tool loop only executes local function tools.
+              yield part;
+              break;
+            }
             final accum =
                 toolAccums.putIfAbsent(toolCall.id, () => _ToolCallAccum());
             accum.callType = toolCall.callType;
@@ -1389,6 +1413,10 @@ Stream<LLMStreamPart> streamToolLoopParts({
             yield LLMReasoningDeltaPart(delta);
 
           case ToolCallDeltaEvent(:final toolCall):
+            if (!_isFunctionToolCall(toolCall)) {
+              // Tool loop only executes local function tools.
+              break;
+            }
             final accum =
                 toolAccums.putIfAbsent(toolCall.id, () => _ToolCallAccum());
             accum.callType = toolCall.callType;
@@ -1445,6 +1473,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
     final completedToolCalls = toolAccums.entries
         .map((e) => e.value.toToolCall(e.key))
+        .where(_isExecutableFunctionToolCall)
         .toList(growable: false);
 
     if (usesNativeParts && !didEmitProviderMetadataPart) {
@@ -1624,6 +1653,11 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
 
           case LLMToolCallStartPart(:final toolCall):
           case LLMToolCallDeltaPart(:final toolCall):
+            if (!_isFunctionToolCall(toolCall)) {
+              // Tool loop only executes local function tools.
+              yield part;
+              break;
+            }
             final accum =
                 toolAccums.putIfAbsent(toolCall.id, () => _ToolCallAccum());
             accum.callType = toolCall.callType;
@@ -1686,6 +1720,10 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
             yield LLMReasoningDeltaPart(delta);
 
           case ToolCallDeltaEvent(:final toolCall):
+            if (!_isFunctionToolCall(toolCall)) {
+              // Tool loop only executes local function tools.
+              break;
+            }
             final accum =
                 toolAccums.putIfAbsent(toolCall.id, () => _ToolCallAccum());
             accum.callType = toolCall.callType;
@@ -1742,6 +1780,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
 
     final completedToolCalls = toolAccums.entries
         .map((e) => e.value.toToolCall(e.key))
+        .where(_isExecutableFunctionToolCall)
         .toList(growable: false);
 
     if (hasPromptStreamParts && !didEmitProviderMetadataPart) {
@@ -1970,6 +2009,7 @@ Future<List<ToolCall>> _findToolCallsNeedingApproval({
 
   final needing = <ToolCall>[];
   for (final toolCall in toolCalls) {
+    if (!_isExecutableFunctionToolCall(toolCall)) continue;
     final checker =
         toolApprovalChecks?[toolCall.function.name] ?? needsApproval;
     if (checker == null) continue;
@@ -1997,6 +2037,17 @@ Future<List<ToolResult>> _executeToolCalls({
   final results = <ToolResult>[];
 
   for (final toolCall in toolCalls) {
+    if (!_isExecutableFunctionToolCall(toolCall)) {
+      results.add(
+        ToolResult.error(
+          toolCallId: toolCall.id,
+          errorMessage:
+              'Only "function" ToolCall can be executed locally (got: ${toolCall.callType})',
+        ),
+      );
+      if (!continueOnToolError) break;
+      continue;
+    }
     final handler = toolHandlers[toolCall.function.name];
     if (handler == null) {
       results.add(

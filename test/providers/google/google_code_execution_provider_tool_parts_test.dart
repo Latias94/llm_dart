@@ -37,7 +37,8 @@ void main() {
       expect((results.single.result as Map)['outcome'], equals('OUTCOME_OK'));
       expect((results.single.result as Map)['output'], equals('1\n'));
 
-      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.toolCalls, anyOf(isNull, isEmpty));
     });
   });
 }

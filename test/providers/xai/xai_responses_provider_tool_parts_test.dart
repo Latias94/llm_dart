@@ -18,7 +18,8 @@ Set<String> _expectedProviderToolCallIdsFromChunks(String fixturePath) {
     final json = jsonDecode(trimmed) as Map<String, dynamic>;
 
     final type = json['type'];
-    if (type != 'response.output_item.added' && type != 'response.output_item.done') {
+    if (type != 'response.output_item.added' &&
+        type != 'response.output_item.done') {
       continue;
     }
 
@@ -40,7 +41,8 @@ Set<String> _expectedProviderToolCallIdsFromChunks(String fixturePath) {
   return ids;
 }
 
-Map<String, String> _expectedCustomToolCallIdToNameFromChunks(String fixturePath) {
+Map<String, String> _expectedCustomToolCallIdToNameFromChunks(
+    String fixturePath) {
   const xSearchSubTools = {
     'x_user_search',
     'x_keyword_search',
@@ -56,7 +58,8 @@ Map<String, String> _expectedCustomToolCallIdToNameFromChunks(String fixturePath
     final json = jsonDecode(trimmed) as Map<String, dynamic>;
 
     final type = json['type'];
-    if (type != 'response.output_item.added' && type != 'response.output_item.done') {
+    if (type != 'response.output_item.added' &&
+        type != 'response.output_item.done') {
       continue;
     }
 
@@ -69,7 +72,8 @@ Map<String, String> _expectedCustomToolCallIdToNameFromChunks(String fixturePath
     if (id is! String || id.isEmpty) continue;
     if (rawName is! String || rawName.isEmpty) continue;
 
-    final expectedName = xSearchSubTools.contains(rawName) ? 'x_search' : rawName;
+    final expectedName =
+        xSearchSubTools.contains(rawName) ? 'x_search' : rawName;
     out[id] = expectedName;
   }
 
@@ -114,6 +118,9 @@ void main() {
         results.every((p) => p.toolName == 'web_search'),
         isTrue,
       );
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.toolCalls, anyOf(isNull, isEmpty));
     });
 
     test('emits provider tool delta parts for web_search_call status events',
@@ -147,12 +154,19 @@ void main() {
       expect(statuses, containsAll(['in_progress', 'searching', 'completed']));
 
       expect(
-        deltas.where((p) => p.status.startsWith('input_')).map((p) => p.toolName).toSet(),
+        deltas
+            .where((p) => p.status.startsWith('input_'))
+            .map((p) => p.toolName)
+            .toSet(),
         containsAll(['x_search', 'view_x_video']),
       );
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.toolCalls, anyOf(isNull, isEmpty));
     });
 
-    test('emits provider tool call/result parts for custom_tool_call', () async {
+    test('emits provider tool call/result parts for custom_tool_call',
+        () async {
       const fixturePath =
           'test/fixtures/xai/responses/xai-x-search-tool.chunks.txt';
 
@@ -183,8 +197,10 @@ void main() {
           .where((p) => expected.containsKey(p.toolCallId))
           .toList();
 
-      expect(calls.map((p) => p.toolCallId).toSet(), equals(expected.keys.toSet()));
-      expect(results.map((p) => p.toolCallId).toSet(), equals(expected.keys.toSet()));
+      expect(calls.map((p) => p.toolCallId).toSet(),
+          equals(expected.keys.toSet()));
+      expect(results.map((p) => p.toolCallId).toSet(),
+          equals(expected.keys.toSet()));
 
       for (final c in calls) {
         expect(c.toolName, equals(expected[c.toolCallId]));
@@ -192,6 +208,9 @@ void main() {
       for (final r in results) {
         expect(r.toolName, equals(expected[r.toolCallId]));
       }
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.toolCalls, anyOf(isNull, isEmpty));
     });
   });
 }

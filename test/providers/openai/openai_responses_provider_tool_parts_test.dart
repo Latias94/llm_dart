@@ -108,6 +108,9 @@ void main() {
       expect(meta, isNotNull);
       expect(meta!['type'], equals('mcp_approval_request'));
       expect(meta['serverLabel'], equals('zip1'));
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.toolCalls, anyOf(isNull, isEmpty));
     });
 
     test('emits provider tool call/result parts for web_search_call', () async {
@@ -145,6 +148,9 @@ void main() {
         results.every((p) => p.toolName == 'web_search'),
         isTrue,
       );
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.toolCalls, anyOf(isNull, isEmpty));
     });
 
     test('emits provider tool delta parts for web_search_call status events',
@@ -182,6 +188,9 @@ void main() {
         deltas.every((p) => p.toolName == 'web_search'),
         isTrue,
       );
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.toolCalls, anyOf(isNull, isEmpty));
     });
 
     test('emits provider tool call/result parts for file_search_call',
@@ -220,6 +229,9 @@ void main() {
         results.every((p) => p.toolName == 'file_search'),
         isTrue,
       );
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.toolCalls, anyOf(isNull, isEmpty));
     });
   });
 }
