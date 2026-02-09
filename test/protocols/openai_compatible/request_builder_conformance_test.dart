@@ -288,7 +288,7 @@ void main() {
           'xai': {
             'liveSearch': true,
             'searchParameters': {
-              'mode': 'always',
+              'mode': 'on',
               'sources': [
                 {'type': 'web'}
               ],
@@ -317,7 +317,7 @@ void main() {
       final searchParameters =
           body['search_parameters'] as Map<String, dynamic>?;
       expect(searchParameters, isNotNull);
-      expect(searchParameters!['mode'], equals('always'));
+      expect(searchParameters!['mode'], equals('on'));
       expect(searchParameters['max_search_results'], equals(3));
     });
 
@@ -330,7 +330,7 @@ void main() {
           'xai-openai': {
             'liveSearch': true,
             'searchParameters': {
-              'mode': 'always',
+              'mode': 'on',
               'sources': [
                 {'type': 'web'}
               ],
@@ -359,7 +359,7 @@ void main() {
       final searchParameters =
           body['search_parameters'] as Map<String, dynamic>?;
       expect(searchParameters, isNotNull);
-      expect(searchParameters!['mode'], equals('always'));
+      expect(searchParameters!['mode'], equals('on'));
       expect(searchParameters['max_search_results'], equals(3));
     });
 
@@ -396,6 +396,12 @@ void main() {
       expect(searchParameters, isNotNull);
       expect(searchParameters!['mode'], equals('auto'));
       expect(searchParameters['sources'], isA<List>());
+      expect(
+        (searchParameters['sources'] as List)
+            .map((e) => (e as Map)['type'])
+            .toList(),
+        equals(['web', 'x']),
+      );
     });
 
     test('DeepSeek-openai forwards responseFormat to response_format', () {

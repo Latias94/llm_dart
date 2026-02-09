@@ -206,25 +206,38 @@ class OpenAIRequestBuilder {
           config.getProviderOption<bool>('liveSearch') == true;
       final searchParameters =
           config.getProviderOption<Map<String, dynamic>>('searchParameters');
-
-      if (liveSearchEnabled || searchParameters != null) {
-        body['search_parameters'] = searchParameters ??
-            const {
-              'mode': 'auto',
-              'sources': [
-                {'type': 'web'},
-              ],
-            };
-      }
-
-      // xAI citations: `return_citations` request body field.
-      //
-      // AI SDK supports both `returnCitations` and `return_citations` naming.
       final returnCitations =
           config.getProviderOption<bool>('returnCitations') ??
               config.getProviderOption<bool>('return_citations');
-      if (returnCitations == true) {
-        body['return_citations'] = true;
+
+      Map<String, dynamic>? effectiveSearch;
+      if (searchParameters != null) {
+        effectiveSearch = Map<String, dynamic>.from(searchParameters);
+      } else if (liveSearchEnabled) {
+        // AI SDK parity: default to web + x sources.
+        effectiveSearch = {
+          'mode': 'auto',
+          'sources': const [
+            {'type': 'web'},
+            {'type': 'x'},
+          ],
+        };
+      }
+
+      if (effectiveSearch != null) {
+        // AI SDK parity: `return_citations` belongs under `search_parameters`.
+        if (returnCitations == true) {
+          effectiveSearch['return_citations'] = true;
+        }
+
+        // Best-effort compatibility for camelCase keys.
+        if (effectiveSearch['return_citations'] == null &&
+            effectiveSearch['returnCitations'] is bool) {
+          effectiveSearch['return_citations'] =
+              effectiveSearch['returnCitations'];
+        }
+
+        body['search_parameters'] = effectiveSearch;
       }
     }
 
@@ -426,25 +439,38 @@ class OpenAIRequestBuilder {
           config.getProviderOption<bool>('liveSearch') == true;
       final searchParameters =
           config.getProviderOption<Map<String, dynamic>>('searchParameters');
-
-      if (liveSearchEnabled || searchParameters != null) {
-        body['search_parameters'] = searchParameters ??
-            const {
-              'mode': 'auto',
-              'sources': [
-                {'type': 'web'},
-              ],
-            };
-      }
-
-      // xAI citations: `return_citations` request body field.
-      //
-      // AI SDK supports both `returnCitations` and `return_citations` naming.
       final returnCitations =
           config.getProviderOption<bool>('returnCitations') ??
               config.getProviderOption<bool>('return_citations');
-      if (returnCitations == true) {
-        body['return_citations'] = true;
+
+      Map<String, dynamic>? effectiveSearch;
+      if (searchParameters != null) {
+        effectiveSearch = Map<String, dynamic>.from(searchParameters);
+      } else if (liveSearchEnabled) {
+        // AI SDK parity: default to web + x sources.
+        effectiveSearch = {
+          'mode': 'auto',
+          'sources': const [
+            {'type': 'web'},
+            {'type': 'x'},
+          ],
+        };
+      }
+
+      if (effectiveSearch != null) {
+        // AI SDK parity: `return_citations` belongs under `search_parameters`.
+        if (returnCitations == true) {
+          effectiveSearch['return_citations'] = true;
+        }
+
+        // Best-effort compatibility for camelCase keys.
+        if (effectiveSearch['return_citations'] == null &&
+            effectiveSearch['returnCitations'] is bool) {
+          effectiveSearch['return_citations'] =
+              effectiveSearch['returnCitations'];
+        }
+
+        body['search_parameters'] = effectiveSearch;
       }
     }
 
