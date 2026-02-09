@@ -95,6 +95,8 @@ Already aligned in code:
 - `ollama` legacy stream derived from parts
 - `xai.responses` legacy stream derived from parts
 - Text/reasoning parts support optional `blockId` + per-part `providerMetadata` (AI SDK-style)
+- `streamChatParts` / `streamToolLoopParts` emit `LLMStreamStartPart` (AI SDK-style)
+- `LLMFinishPart` can carry typed `usage` + `finishReason`
 - Added fuzz/fixture-style tests for chunk boundary robustness
 
 Still has drift risk:
