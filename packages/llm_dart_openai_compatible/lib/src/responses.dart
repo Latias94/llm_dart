@@ -184,6 +184,7 @@ class OpenAIResponses
               final id = response?['id'] as String?;
               final model = response?['model'] as String?;
               final status = response?['status'] as String?;
+              final createdAtSeconds = response?['created_at'] as int?;
               final systemFingerprint =
                   response?['system_fingerprint'] as String?;
 
@@ -196,11 +197,18 @@ class OpenAIResponses
                   if (id != null) 'id': id,
                   if (model != null) 'model': model,
                   if (status != null) 'status': status,
+                  if (createdAtSeconds != null) 'created_at': createdAtSeconds,
                   if (systemFingerprint != null)
                     'system_fingerprint': systemFingerprint,
                 };
                 yield LLMResponseMetadataPart(
                   id: id,
+                  timestamp: createdAtSeconds == null
+                      ? null
+                      : DateTime.fromMillisecondsSinceEpoch(
+                          createdAtSeconds * 1000,
+                          isUtc: true,
+                        ),
                   model: model,
                   status: status,
                   systemFingerprint: systemFingerprint,
@@ -754,6 +762,7 @@ class OpenAIResponses
                 final id = response?['id'] as String?;
                 final model = response?['model'] as String?;
                 final status = response?['status'] as String?;
+                final createdAtSeconds = response?['created_at'] as int?;
                 final systemFingerprint =
                     response?['system_fingerprint'] as String?;
 
@@ -766,11 +775,19 @@ class OpenAIResponses
                     if (id != null) 'id': id,
                     if (model != null) 'model': model,
                     if (status != null) 'status': status,
+                    if (createdAtSeconds != null)
+                      'created_at': createdAtSeconds,
                     if (systemFingerprint != null)
                       'system_fingerprint': systemFingerprint,
                   };
                   yield LLMResponseMetadataPart(
                     id: id,
+                    timestamp: createdAtSeconds == null
+                        ? null
+                        : DateTime.fromMillisecondsSinceEpoch(
+                            createdAtSeconds * 1000,
+                            isUtc: true,
+                          ),
                     model: model,
                     status: status,
                     systemFingerprint: systemFingerprint,

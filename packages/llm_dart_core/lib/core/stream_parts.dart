@@ -39,6 +39,11 @@ class LLMResponseMetadataPart extends LLMStreamPart {
   /// Provider response id (if available).
   final String? id;
 
+  /// Timestamp for the start of the response (if available).
+  ///
+  /// Mirrors Vercel AI SDK's `response-metadata.timestamp` field.
+  final DateTime? timestamp;
+
   /// Model identifier (if available).
   final String? model;
 
@@ -56,6 +61,7 @@ class LLMResponseMetadataPart extends LLMStreamPart {
 
   const LLMResponseMetadataPart({
     this.id,
+    this.timestamp,
     this.model,
     this.status,
     this.systemFingerprint,

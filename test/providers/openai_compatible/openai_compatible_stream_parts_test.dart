@@ -22,6 +22,7 @@ void main() {
       final chunks = <String>[
         _sseData({
           'id': 'chatcmpl_123',
+          'created': 1700000000,
           'model': 'gpt-4o',
           'system_fingerprint': 'fp_1',
           'choices': [
@@ -125,6 +126,10 @@ void main() {
       expect(responseMetadata.id, equals('chatcmpl_123'));
       expect(responseMetadata.model, equals('gpt-4o'));
       expect(responseMetadata.systemFingerprint, equals('fp_1'));
+      expect(
+        responseMetadata.timestamp?.toUtc().millisecondsSinceEpoch,
+        equals(1700000000 * 1000),
+      );
       expect(
         parts.indexOf(responseMetadata),
         lessThan(parts.indexWhere((p) => p is LLMTextStartPart)),

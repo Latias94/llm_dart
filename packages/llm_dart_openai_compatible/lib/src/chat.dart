@@ -138,6 +138,7 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
     String? id;
     String? model;
     String? systemFingerprint;
+    int? createdSeconds;
     Map<String, dynamic>? usage;
     final citations = <String>[];
     final emittedCitationUrls = <String>{};
@@ -161,18 +162,27 @@ class OpenAIChat implements ChatCapability, ChatStreamPartsCapability {
           id ??= json['id'] as String?;
           model ??= json['model'] as String?;
           systemFingerprint ??= json['system_fingerprint'] as String?;
+          createdSeconds ??=
+              json['created'] is int ? json['created'] as int : null;
 
           if (!didEmitResponseMetadata &&
               (id != null || model != null || systemFingerprint != null)) {
             didEmitResponseMetadata = true;
             final raw = <String, dynamic>{
               if (id != null) 'id': id,
+              if (createdSeconds != null) 'created': createdSeconds,
               if (model != null) 'model': model,
               if (systemFingerprint != null)
                 'system_fingerprint': systemFingerprint,
             };
             yield LLMResponseMetadataPart(
               id: id,
+              timestamp: createdSeconds == null
+                  ? null
+                  : DateTime.fromMillisecondsSinceEpoch(
+                      createdSeconds * 1000,
+                      isUtc: true,
+                    ),
               model: model,
               systemFingerprint: systemFingerprint,
               raw: raw.isEmpty ? null : raw,

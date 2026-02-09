@@ -26,6 +26,7 @@ void main() {
           'response': {
             'object': 'response',
             'id': 'resp_1',
+            'created_at': 1700000001,
             'model': 'grok-4-fast-reasoning',
             'output': [],
             'status': 'in_progress',
@@ -115,6 +116,10 @@ void main() {
       expect(responseMetadata.id, equals('resp_1'));
       expect(responseMetadata.model, equals('grok-4-fast-reasoning'));
       expect(responseMetadata.status, equals('in_progress'));
+      expect(
+        responseMetadata.timestamp?.toUtc().millisecondsSinceEpoch,
+        equals(1700000001 * 1000),
+      );
 
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.text, equals('Hello'));

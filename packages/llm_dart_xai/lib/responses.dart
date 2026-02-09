@@ -171,6 +171,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
     String? responseId;
     String? responseModel;
     String? responseStatus;
+    int? responseCreatedAtSeconds;
     var didEmitResponseMetadata = false;
 
     try {
@@ -196,6 +197,7 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
               responseId ??= map['id'] as String?;
               responseModel ??= map['model'] as String?;
               responseStatus ??= map['status'] as String?;
+              responseCreatedAtSeconds ??= map['created_at'] as int?;
             }
             if (!didEmitResponseMetadata &&
                 (responseId != null ||
@@ -206,9 +208,17 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
                 if (responseId != null) 'id': responseId,
                 if (responseModel != null) 'model': responseModel,
                 if (responseStatus != null) 'status': responseStatus,
+                if (responseCreatedAtSeconds != null)
+                  'created_at': responseCreatedAtSeconds,
               };
               yield LLMResponseMetadataPart(
                 id: responseId,
+                timestamp: responseCreatedAtSeconds == null
+                    ? null
+                    : DateTime.fromMillisecondsSinceEpoch(
+                        responseCreatedAtSeconds * 1000,
+                        isUtc: true,
+                      ),
                 model: responseModel,
                 status: responseStatus,
                 raw: raw.isEmpty ? null : raw,
@@ -554,6 +564,8 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
               responseId ??= finalResponseObject['id'] as String?;
               responseModel ??= finalResponseObject['model'] as String?;
               responseStatus ??= finalResponseObject['status'] as String?;
+              responseCreatedAtSeconds ??=
+                  finalResponseObject['created_at'] as int?;
 
               if (!didEmitResponseMetadata &&
                   (responseId != null ||
@@ -564,9 +576,17 @@ class XAIResponses implements ChatCapability, ChatStreamPartsCapability {
                   if (responseId != null) 'id': responseId,
                   if (responseModel != null) 'model': responseModel,
                   if (responseStatus != null) 'status': responseStatus,
+                  if (responseCreatedAtSeconds != null)
+                    'created_at': responseCreatedAtSeconds,
                 };
                 yield LLMResponseMetadataPart(
                   id: responseId,
+                  timestamp: responseCreatedAtSeconds == null
+                      ? null
+                      : DateTime.fromMillisecondsSinceEpoch(
+                          responseCreatedAtSeconds * 1000,
+                          isUtc: true,
+                        ),
                   model: responseModel,
                   status: responseStatus,
                   raw: raw.isEmpty ? null : raw,

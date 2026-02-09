@@ -218,6 +218,7 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
         );
       case LLMResponseMetadataPart(
           id: final id,
+          timestamp: final timestamp,
           model: final model,
           status: final status,
           systemFingerprint: final systemFingerprint,
@@ -226,6 +227,7 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
         ):
         yield LLMResponseMetadataPart(
           id: id,
+          timestamp: timestamp,
           model: model,
           status: status,
           systemFingerprint: systemFingerprint,
