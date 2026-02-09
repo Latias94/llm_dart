@@ -174,6 +174,7 @@ Acceptance criteria:
 - [x] Add provider tool approval request tests for OpenAI Responses (MCP)
 - [ ] Expand chunk-fuzz coverage to the new part types
 - [x] Add a global “no drift” guard: `chatStream` must be derived from parts
+- [x] Azure: add request mapping tests for `/responses` + `api-version` (v1 + deployment URL modes)
 
 ### M5 — Documentation + migration guide
 
@@ -209,3 +210,25 @@ Migration guide must include:
 2) Add typed `source` parts (low risk, high UX value).
 3) Add provider tool lifecycle parts + tool loop skip rules (safety-critical).
 4) Add `finishReason` typing and unify mapping across providers.
+
+---
+
+## Provider parity checklist (AI SDK alignment)
+
+Goal: for each provider, confirm we match the Vercel AI SDK behavior for:
+
+- streaming endpoint + auth
+- SSE parsing (chunk boundaries, `[DONE]`, multi-line `data:`)
+- parts semantics (text/reasoning/tool start→delta→end)
+- sources/citations parts (dedupe, stable ids)
+- provider tool lifecycle parts (call/delta/result/approval)
+- tool loop safety (provider tools never become local tool calls)
+- usage + finishReason mapping (toolCalls vs providerExecuted tools)
+
+Status notes (dev-remote, best-effort):
+
+- OpenAI + Azure (Responses): covered by fixtures + provider-tool alias tests; Azure `/responses` request mapping includes `api-version`.
+- OpenAI-compatible (Chat/Responses): has streaming usage tail + `[DONE]` conformance tests.
+- Google + Vertex: covered by SSE fixtures, streaming endpoint/auth tests, grounding source parts, code execution provider tool parts.
+- Anthropic (+ compatible): covered by Vercel fixtures, citations source parts, web tools/provider tool parts, fuzz tests.
+- xAI (Responses): covered by custom_tool_call streaming parsing + citations + provider tool parts.
