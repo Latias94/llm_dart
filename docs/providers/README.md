@@ -9,6 +9,8 @@ Protocol reuse layer docs:
 - OpenAI (GPT): [openai.md](openai.md)
 - Anthropic (Claude): [anthropic.md](anthropic.md)
 - Google (Gemini): [google.md](google.md)
+- Azure OpenAI: [azure.md](azure.md)
+- Google Vertex AI (Gemini): [google_vertex.md](google_vertex.md)
 
 ## OpenAI-compatible providers
 
