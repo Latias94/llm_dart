@@ -48,7 +48,7 @@ every AI SDK v3 part **losslessly**, including:
 - text blocks (`text-start|delta|end`)
 - reasoning blocks (`reasoning-start|delta|end`)
 - tool input stream (`tool-input-start|delta|end`)
-- tool call/result/error (`tool-call|tool-result|tool-error`)
+- tool call + result (`tool-call|tool-result`) and tool errors via `tool-result.isError=true`
 - sources (`source` with `sourceType: url|document`)
 - generated files (`file`)
 - raw passthrough (`raw`)
@@ -213,16 +213,16 @@ Legend:
   - `id` must be non-empty for every tool-input part.
   - Preserve `dynamic`, `title`, and provider-executed flags if present.
 
-#### tool-call / tool-result / tool-error
+#### tool-call / tool-result (and tool errors)
 
 - AI SDK emits typed tool call and result parts in the AI-layer transformation.
 - Contract:
-  - A canonical stream must be able to represent:
+- A canonical stream must be able to represent:
     - Parsed tool calls (`tool-call`)
     - Tool results (`tool-result`)
     - Tool errors (represented as `tool-result` with `isError: true` at the
-      provider-v3 layer; an AI-layer `tool-error` part can be introduced later
-      if we add a higher-level transformation API similar to Vercel's
+      provider-v3 layer; a higher-level AI-layer `tool-error` part can be
+      introduced later if we add a transformation API similar to Vercel's
       `generateText`/`streamText`)
     - Invalid tool calls (best-effort flags + error payload)
   - Provider-executed tools must never be surfaced as locally executable calls.

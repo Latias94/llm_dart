@@ -15,16 +15,16 @@ Reference: `docs/ai_sdk_v3_refactor_purpose.md`
 
 ### 0.1 Complete the canonical part set in `llm_dart_core`
 
-- [ ] Add missing part types to `packages/llm_dart_core/lib/core/stream_parts.dart`:
+- [x] Add missing part types to `packages/llm_dart_core/lib/core/stream_parts.dart`:
   - [x] `raw` passthrough part (AI SDK: `type: 'raw'`)
   - [x] `file` part for model-generated files (AI SDK: `type: 'file'`)
-  - [ ] Align `error` part semantics with AI SDK (streamable/multiple vs terminal)
-- [ ] Decide and document tool-related part strategy:
-  - [ ] Represent `tool-input-start|delta|end` as string deltas (AI SDK-style)
-  - [ ] Represent `tool-call`, `tool-result`, and `tool-error` parts explicitly
-- [ ] Make block ids a contract:
-  - [ ] Ensure every `text-*`, `reasoning-*`, and `tool-input-*` part carries a non-empty id
-- [ ] Usage parity (finish usage payload):
+  - [x] Align `error` part semantics with AI SDK (streamable/multiple vs terminal) in the v3 JSON shape
+- [x] Decide and document tool-related part strategy:
+  - [x] Represent `tool-input-start|delta|end` as string deltas (AI SDK-style) in the v3 JSON codec
+  - [x] Represent `tool-call` and `tool-result` explicitly; represent tool errors via `tool-result.isError=true`
+- [x] Make block ids a contract:
+  - [x] Ensure every `text-*`, `reasoning-*`, and `tool-input-*` part carries a non-empty id (normalization + codec injection)
+- [x] Usage parity (finish usage payload):
   - [x] Extend `UsageInfo` to carry AI SDK v3-style cache/text/reasoning splits
   - [x] Encode v3 `finish.usage` as `{ inputTokens, outputTokens, raw? }`
 
@@ -50,7 +50,7 @@ Reference: `docs/ai_sdk_v3_refactor_purpose.md`
   - [x] Canonical JSON uses AI SDK v3 `type:'source'` + `sourceType`.
   - [x] `LLMSourceUrlPart` / `LLMSourceDocumentPart` remain Dart-friendly
     wrappers but must encode losslessly into the canonical v3 shape.
-- [ ] File part payload encoding:
+- [x] File part payload encoding:
   - [x] Decide stable JSON encoding for bytes (for `.jsonl` goldens):
     - If `data` is a base64 `String`, keep it as-is.
     - If `data` is raw bytes (`Uint8List`), encode as a base64 `String` in the v3 JSONL encoder.
@@ -58,29 +58,30 @@ Reference: `docs/ai_sdk_v3_refactor_purpose.md`
 
 ### 0.2 Add a stable JSON codec for parts (fixture-friendly)
 
-- [ ] Implement `LLMStreamPart` JSON serialization/deserialization helpers:
-  - [ ] Stable key naming and ordering (golden output stability)
-  - [ ] Round-trip tests
-- [ ] Provide a JSONL helper for streams:
-  - [ ] `Stream<LLMStreamPart>` -> `.jsonl` lines
-  - [ ] `.jsonl` lines -> `List<LLMStreamPart>`
+- [x] Implement `LLMStreamPart` -> AI SDK v3 JSON encoding:
+  - [x] Stable key naming and ordering (via golden normalizer)
+  - [x] Deterministic block id injection for fixtures (counter-based fallback)
+- [ ] Implement AI SDK v3 JSON -> `LLMStreamPart` decoding (optional; only if needed for round-trips)
+- [x] Provide JSONL helpers for goldens:
+  - [x] parts -> `.jsonl` stable lines
+  - [ ] `.jsonl` lines -> parts (only if decoding is implemented)
 
 ### 0.2.1 Golden fixtures conventions
 
-- [ ] Directory layout:
-  - [ ] `test/fixtures/v3_parts/<provider>/<scenario>.jsonl` (canonical parts goldens)
-  - [ ] `test/fixtures/v3_parts/<provider>/<scenario>.meta.json` (optional; human notes)
-- [ ] Golden stability rules:
-  - [ ] Do not include timestamps unless fixture explicitly asserts them.
-  - [ ] Prefer deterministic ids (counter-based) when providers do not supply ids.
-  - [ ] Preserve provider-only fields under `providerMetadata` or `raw` only.
+- [x] Directory layout:
+  - [x] `test/fixtures/v3_parts/<provider>/<scenario>.jsonl` (canonical parts goldens)
+  - [x] `test/fixtures/v3_parts/<provider>/<scenario>.meta.json` (human notes + assertions)
+- [x] Golden stability rules:
+  - [x] Prefer deterministic ids (counter-based) when providers do not supply ids.
+  - [x] Preserve provider-only fields under `providerMetadata` or `raw` only.
+  - [x] Redact very large base64-like blobs in goldens (hash + length) to keep repo size manageable.
 
 ### 0.3 Ensure orchestration emits v3-consistent boundaries
 
 - [ ] In `llm_dart_ai` (`packages/llm_dart_ai/lib/src/stream_parts.dart`):
   - [ ] Inject `stream-start` exactly once (already done via `ensureStreamStartPart`)
-  - [ ] Inject/normalize missing block ids (text/reasoning/tool input)
-  - [ ] Ensure exactly one final `finish` part at end of stream
+  - [x] Inject/normalize missing block ids (text/reasoning/tool input) via `ensure_block_ids.dart`
+  - [ ] Ensure exactly one final `finish` part at end of stream (only if providers ever emit multiple finish events)
 
 ---
 
@@ -88,14 +89,14 @@ Reference: `docs/ai_sdk_v3_refactor_purpose.md`
 
 ### 1.1 Typed tool call lifecycle (AI SDK-style)
 
-- [ ] Add canonical representation for:
-  - [ ] parsed tool calls (`tool-call`)
-  - [ ] tool results (`tool-result`)
-  - [ ] tool errors (`tool-result` with `isError: true` at provider-v3 layer)
+- [x] Add canonical representation for:
+  - [x] parsed tool calls (`tool-call`) via `LLMToolCall*Part` + v3 codec mapping
+  - [x] tool results (`tool-result`) via `LLMToolResultPart`
+  - [x] tool errors via `tool-result.isError=true`
   - [x] “invalid tool call” behavior (best-effort) in local tool loop (invalid JSON / schema mismatch / unknown tool)
-- [ ] Update `llm_dart_ai` tool loop to emit the canonical tool parts:
-  - [ ] stream: `streamToolLoopParts*`
-  - [ ] non-stream: `runToolLoop*` (if/when it exposes tool events)
+- [x] Update `llm_dart_ai` tool loop to emit canonical tool lifecycle parts for streaming APIs:
+  - [x] stream: `streamToolLoopParts*`
+  - [ ] non-stream: `runToolLoop*` (if/when we expose tool events)
 
 ### 1.2 Optional repair hook (fearless-friendly)
 
@@ -139,6 +140,22 @@ For each streaming provider implementation:
 - [ ] Emit `finish` with typed `usage` + typed `finishReason`
 - [ ] Preserve provider-only fields via `providerMetadata` and/or `raw` parts
 
+Current status (fixture-backed v3 golden tests in this repo):
+
+- [x] OpenAI Responses (`packages/llm_dart_openai` via `responses.dart`)
+- [x] Azure OpenAI (Responses API shape)
+- [x] Anthropic (messages SSE)
+- [x] OpenAI-compatible baseline (DeepSeek fixtures)
+- [x] xAI Responses
+
+Remaining (recommended next targets):
+
+- [ ] Groq (OpenAI-compatible; add fixtures + goldens)
+- [ ] Google Gemini (streaming + usage; align usage mapping)
+- [ ] Ollama (streaming + usage; align usage mapping)
+- [ ] Vertex AI (Google Vertex; usage + metadata)
+- [ ] MiniMax / ElevenLabs (non-chat surfaces; define parity scope)
+
 Recommended order:
 
 1. OpenAI Responses (richest part surface)
@@ -150,22 +167,22 @@ Recommended order:
 ## P2: Execution plan (minimal tooling)
 
 - [ ] Add a small “golden generator” tool (repo-local):
-  - [ ] Reads a selected provider fixture (vendored under `repo-ref/ai`)
+  - [ ] Reads a selected `test/fixtures/**.chunks.txt` stream capture (sourced from AI SDK fixtures)
   - [ ] Replays/decodes it into canonical parts
-  - [ ] Writes `.jsonl` golden outputs under `test/fixtures/v3_parts/...`
-- [ ] Add a “golden check” test harness:
-  - [ ] Loads expected `.jsonl`
-  - [ ] Compares canonical parts with stable normalization (key order, omitted nulls)
-  - [ ] Prints a minimal diff on mismatch
+  - [ ] Writes `.jsonl` golden outputs under `test/fixtures/v3_parts/...` (and `.meta.json`)
+- [x] Add a “golden check” test harness:
+  - [x] Loads expected `.jsonl`
+  - [x] Compares canonical parts with stable normalization (key order, omitted nulls)
+  - [x] Prints a minimal diff on mismatch (line + expected/actual)
 
 ---
 
 ## P2: Test plan (fixtures-first)
 
-- [ ] Add a v3-part golden test harness:
-  - [ ] input: vendored AI SDK fixtures under `repo-ref/ai/.../__fixtures__`
-  - [ ] expected: repo-local goldens under `test/fixtures/...`
-  - [ ] assertion: parsed canonical parts JSONL deep-equals expected JSONL
+- [x] Add a v3-part golden test harness:
+  - [x] input: replayable stream captures under `test/fixtures/**.chunks.txt` (sourced from AI SDK fixtures)
+  - [x] expected: repo-local goldens under `test/fixtures/v3_parts/...`
+  - [x] assertion: encoded canonical parts JSONL deep-equals expected JSONL
 - [ ] Add targeted “nasty stream boundaries” fuzz tests:
   - [ ] tool input JSON split across arbitrary chunk boundaries
   - [ ] usage arriving after finish_reason (common in OpenAI-compatible/Azure)

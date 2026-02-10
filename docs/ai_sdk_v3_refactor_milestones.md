@@ -11,6 +11,14 @@ This document defines milestones for the refactor described in:
 The guiding rule: **internal data structures + semantics match AI SDK v3**,
 while **public Dart APIs remain idiomatic**.
 
+Current progress (as of 2026-02-10):
+
+- M0: Achieved (guardrails + baseline docs + fixture policy)
+- M1: Achieved (canonical v3 part set + v3 JSONL codec + goldens)
+- M2: Achieved for streaming + tool loop (stream-start + block id normalization; tool loop emits canonical parts)
+- M3: Achieved (multiple providers covered by fixture-backed v3 golden tests)
+- M4/M5: In progress (expand protocol reuse + stabilize + cleanup)
+
 ---
 
 ## Milestone M0: Baseline alignment and guardrails
