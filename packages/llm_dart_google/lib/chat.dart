@@ -114,7 +114,6 @@ class GoogleChat
     // Vertex AI Gemini streaming uses `:streamGenerateContent` and is already
     // streamed as SSE, so `alt=sse` is unnecessary and may be rejected by
     // strict gateways. Align with Vercel AI SDK behavior.
-    if (_providerOptionsId == 'google-vertex') return false;
     if (_isVertexLikeBaseUrl) return false;
     return true;
   }
