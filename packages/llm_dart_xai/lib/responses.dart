@@ -145,8 +145,9 @@ class XAIResponses
     final toolAccums = <String, _FunctionCallAccum>{};
     final startedToolCalls = <String>{};
     final endedToolCalls = <String>{};
-    final activeProviderToolCalls = <String>{};
-    final endedProviderToolCalls = <String>{};
+    final providerToolParts = ProviderToolPartEmitter(
+      providerMetadataNamespace: config.providerId,
+    );
     final providerToolTypeById = <String, String>{};
     final providerToolNameById = <String, String>{};
     final customToolInputById = <String, StringBuffer>{};
@@ -508,43 +509,32 @@ class XAIResponses
                     : (item['arguments'] ?? item['action']);
 
                 if (eventType == 'response.output_item.added') {
-                  if (activeProviderToolCalls.add(id)) {
-                    yield LLMProviderToolCallPart(
-                      toolCallId: id,
-                      toolName: toolName,
-                      input: input,
-                      providerMetadata: {
-                        config.providerId: {'type': type},
-                      },
-                    );
-                  }
+                  final part = providerToolParts.call(
+                    toolCallId: id,
+                    toolName: toolName,
+                    input: input,
+                    providerMetadataPayload: {'type': type},
+                  );
+                  if (part != null) yield part;
                 } else if (eventType == 'response.output_item.done') {
-                  if (!endedProviderToolCalls.add(id)) continue;
+                  final callPart = providerToolParts.call(
+                    toolCallId: id,
+                    toolName: toolName,
+                    input: input,
+                    providerMetadataPayload: {'type': type},
+                  );
+                  if (callPart != null) yield callPart;
 
-                  if (activeProviderToolCalls.add(id)) {
-                    yield LLMProviderToolCallPart(
-                      toolCallId: id,
-                      toolName: toolName,
-                      input: input,
-                      providerMetadata: {
-                        config.providerId: {'type': type},
-                      },
-                    );
-                  }
-
-                  yield LLMProviderToolResultPart(
+                  final resultPart = providerToolParts.result(
                     toolCallId: id,
                     toolName: toolName,
                     result: _stringKeyedMap(item),
-                    providerMetadata: {
-                      config.providerId: {
-                        'type': type,
-                        if (item['status'] is String) 'status': item['status'],
-                      },
+                    providerMetadataPayload: {
+                      'type': type,
+                      if (item['status'] is String) 'status': item['status'],
                     },
                   );
-
-                  activeProviderToolCalls.remove(id);
+                  if (resultPart != null) yield resultPart;
                 }
 
                 serverToolCallsById[id] = _stringKeyedMap(item);
