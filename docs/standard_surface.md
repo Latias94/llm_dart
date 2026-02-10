@@ -41,6 +41,12 @@ Stable tasks (current):
 Prompt construction (Vercel-style, adapter-first):
 
 - `Prompt` / `PromptMessage` / `PromptPart` (compile to `List<ChatMessage>` today)
+- Prompt IR file references:
+  - Inline bytes: `FilePart(mime, data, ...)`
+  - URL reference: `FileUrlPart(mime, url, ...)`
+  - Provider file id: `FileIdPart(mime, id, ...)`
+  - Note: `FileUrlPart` / `FileIdPart` cannot be losslessly converted to legacy
+    `ChatMessage`; tasks will require prompt-native capabilities.
 - Task prompt inputs (Vercel-style):
   - `system` + exactly one of: `prompt` / `messages` / `promptIr`
   - Applies to text/object tasks and tool loop orchestration APIs.
@@ -51,6 +57,10 @@ Prompt construction (Vercel-style, adapter-first):
 Provider support note:
 
 - If a provider implements `PromptChatCapability` / `PromptChatStreamPartsCapability`, task APIs will prefer those methods and preserve prompt part structure without forcing `Prompt.toChatMessages()`.
+- If a `Prompt` contains `FileUrlPart` / `FileIdPart` but the model does not
+  implement the corresponding prompt capability, task APIs throw
+  `InvalidRequestError` with guidance instead of falling back to legacy
+  `ChatMessage` conversion.
 
 Prompt vs `ChatMessage` (when to use which):
 
