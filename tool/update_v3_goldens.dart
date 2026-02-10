@@ -49,7 +49,13 @@ void main(List<String> args) async {
           .where((s) => flags.onlyProviders.contains(s.provider))
           .toList(growable: false);
 
-  if (selected.isEmpty) {
+  final selectedFiltered = flags.onlyScenarios.isEmpty
+      ? selected
+      : selected
+          .where((s) => flags.onlyScenarios.contains(s.baseName))
+          .toList(growable: false);
+
+  if (selectedFiltered.isEmpty) {
     stderr.writeln(
       'No scenarios selected. Known providers: '
       '${scenarios.map((s) => s.provider).toSet().toList()..sort()}',
@@ -61,7 +67,7 @@ void main(List<String> args) async {
   var hasDiffs = false;
   var wroteAny = false;
 
-  for (final scenario in selected) {
+  for (final scenario in selectedFiltered) {
     final fixturePath = scenario.fixturePath;
     final sessions = scenario.splitSessions(fixturePath);
     if (sessions.isEmpty) {
@@ -647,12 +653,14 @@ class _Flags {
   final bool write;
   final _Scope scope;
   final Set<String> onlyProviders;
+  final Set<String> onlyScenarios;
 
   const _Flags({
     required this.check,
     required this.write,
     required this.scope,
     required this.onlyProviders,
+    required this.onlyScenarios,
   });
 }
 
@@ -661,6 +669,7 @@ _Flags _parseArgs(List<String> args) {
   var write = false;
   var scope = _Scope.optIn;
   final only = <String>{};
+  final onlyScenarios = <String>{};
 
   for (final a in args) {
     if (a == '--check') {
@@ -688,6 +697,15 @@ _Flags _parseArgs(List<String> args) {
       }
       continue;
     }
+    if (a.startsWith('--scenarios=')) {
+      final raw = a.substring('--scenarios='.length).trim();
+      if (raw.isNotEmpty) {
+        onlyScenarios.addAll(
+          raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
+        );
+      }
+      continue;
+    }
   }
 
   if (!check && !write) check = true;
@@ -700,6 +718,7 @@ _Flags _parseArgs(List<String> args) {
     write: write,
     scope: scope,
     onlyProviders: only,
+    onlyScenarios: onlyScenarios,
   );
 }
 
