@@ -15,6 +15,9 @@ Why this matters:
 - Vercel AI SDK compiles prompts **as late as possible** to preserve fidelity.
 - Native prompt compilation reduces protocol hacks (`protocolPayloads`) and
   makes multi-modal/tool flows more predictable.
+- Today, Prompt IR file parts are **bytes-only** (`FilePart.data: List<int>`),
+  so URL-based documents / provider file references (AI SDK-style) must be
+  modeled via new part types in a future breaking step.
 
 Core principle:
 
@@ -72,6 +75,9 @@ Core principle:
 - [x] Preserve protocol payloads through Prompt IR (`PromptMessage.protocolPayloads`)
   so tool loops do not lose provider-native continuity blocks (e.g. Anthropic thinking signatures).
 - [ ] Ensure `llm_dart_ai` prefers prompt-native capabilities when available
+- [ ] Add URL-based file parts to Prompt IR (AI SDK parity)
+  - e.g. `FileUrlPart(url, mimeType, ...)` for Anthropic/Google/OpenAI Responses
+  - optionally support provider file ids (e.g. OpenAI `file-*`) as a separate part type
 
 ---
 

@@ -139,3 +139,11 @@ Legend:
 - 2026-02-09: Ollama prompt-native compilation now preserves multi-part user messages:
   - Prompt IR groups text + images into a single `/api/chat` message with `images` array.
   - Tool results are encoded as `role=tool` messages with `tool_name`, aligning with Ollama API docs.
+- 2026-02-10: Prompt IR now preserves protocol-native continuity payloads across tool loops:
+  - Added `PromptMessage.protocolPayloads` and propagate it via `Prompt.toChatMessages()`.
+  - `llm_dart_ai` tool loops preserve `ChatMessage.protocolPayloads` when converting to `Prompt`.
+  - Anthropic-compatible prompt compilation preserves provider-native `contentBlocks` when present.
+- 2026-02-10: OpenAI-compatible request compilation aligns closer to AI SDK for file parts:
+  - PDF parts encode `data:application/pdf;base64,...` + filename.
+  - Audio parts encode `input_audio` with `{ data, format }`.
+  - Tool call `thoughtSignature` maps to `extra_content.google.thought_signature` (wire format).
