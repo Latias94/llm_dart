@@ -65,7 +65,7 @@ Notes:
 - [x] Request-side `providerOptions` are scoped under `providerOptions['google-vertex']`
 - [x] Response metadata is emitted under `providerMetadata['google-vertex']`
 - [x] providerMetadata alias equivalence (`google-vertex.chat` mirrors `google-vertex`)
-- [ ] Add dedicated Vertex source-part conformance tests (optional; should match Google grounding)
+- [x] Source parts conformance (should match Google grounding)
 
 ### xAI (`llm_dart_xai`)
 
@@ -97,4 +97,3 @@ Notes:
   - canonical: `providerMetadata['google-vertex']`
   - alias: `providerMetadata['google-vertex.chat']`
   - see `docs/migrations/0.12.0-alpha.1.md`
-
