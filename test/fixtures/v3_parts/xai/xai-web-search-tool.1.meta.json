@@ -1,0 +1,22 @@
+{
+  "provider": "xai",
+  "scenario": "xai-web-search-tool.1",
+  "description": "xAI Responses streaming with provider-executed web_search tool. Used to validate canonical v3 `tool-call`/`tool-result` and `source` parts.",
+  "source": {
+    "type": "fixture",
+    "paths": [
+      "test/fixtures/xai/responses/xai-web-search-tool.1.chunks.txt"
+    ],
+    "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": false
+  },
+  "notes": [
+    "Sources are expected to be emitted as canonical `type:'source'` parts."
+  ]
+}
+

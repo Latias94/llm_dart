@@ -1,0 +1,23 @@
+{
+  "provider": "azure",
+  "scenario": "azure-reasoning-encrypted-content.1",
+  "description": "Azure OpenAI Responses streaming with encrypted reasoning content. Validates canonical v3 reasoning blocks and finish semantics.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/azure/responses/azure-reasoning-encrypted-content.1.chunks.txt",
+      "repo-ref/ai/packages/azure/src/__fixtures__/azure-reasoning-encrypted-content.1.chunks.txt"
+    ],
+    "notes": "Replayed via FakeOpenAIClient against OpenAIResponses (AzureOpenAIConfig)."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": []
+}
+

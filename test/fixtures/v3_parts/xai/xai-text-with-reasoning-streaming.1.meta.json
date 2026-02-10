@@ -1,0 +1,18 @@
+{
+  "provider": "xai",
+  "scenario": "xai-text-with-reasoning-streaming.1",
+  "description": "xAI Responses streaming: text + reasoning summary deltas. Used to validate canonical v3 `reasoning-delta` and related block id handling.",
+  "source": {
+    "type": "fixture",
+    "paths": [
+      "test/fixtures/xai/responses/xai-text-with-reasoning-streaming.1.chunks.txt"
+    ],
+    "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true
+  }
+}
+

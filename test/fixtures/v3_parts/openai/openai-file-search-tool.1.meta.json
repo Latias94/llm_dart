@@ -1,0 +1,24 @@
+{
+  "provider": "openai",
+  "scenario": "openai-file-search-tool.1",
+  "description": "OpenAI Responses streaming with provider-executed file_search tool. Used to validate canonical v3 provider tool lifecycle and any emitted sources/citations.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/openai/responses/openai-file-search-tool.1.chunks.txt",
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-file-search-tool.1.chunks.txt"
+    ],
+    "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "Some fixtures include trailing usage chunks; finish usage must still be present."
+  ]
+}
+

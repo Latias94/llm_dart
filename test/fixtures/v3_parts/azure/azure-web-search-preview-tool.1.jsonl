@@ -1,0 +1,360 @@
+{"type":"stream-start","warnings":[]}
+{"id":"resp_0dcf1a118189f28100691daa5591108194a7dc13f2d6faa80c","modelId":"gpt-4.1-mini","timestamp":"2025-11-19T11:30:29.000Z","type":"response-metadata"}
+{"input":"{\"type\":\"search\"}","providerExecuted":true,"providerMetadata":{"azure":{"type":"web_search_call"}},"toolCallId":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","toolName":"web_search","type":"tool-call"}
+{"rawValue":{"data":{"item_id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","output_index":0,"sequence_number":3,"type":"response.web_search_call.in_progress"},"kind":"provider-tool-delta","providerMetadata":{"azure":{"type":"response.web_search_call.in_progress"}},"status":"in_progress","toolCallId":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","toolName":"web_search"},"type":"raw"}
+{"rawValue":{"data":{"item_id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","output_index":0,"sequence_number":4,"type":"response.web_search_call.searching"},"kind":"provider-tool-delta","providerMetadata":{"azure":{"type":"response.web_search_call.searching"}},"status":"searching","toolCallId":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","toolName":"web_search"},"type":"raw"}
+{"providerExecuted":true,"providerMetadata":{"azure":{"status":"searching","type":"web_search_call"}},"result":{"action":{"query":"top news stories November 19, 2025","type":"search"},"id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","status":"searching","type":"web_search_call"},"toolCallId":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","toolName":"web_search","type":"tool-result"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"azure":{"id":"resp_0dcf1a118189f28100691daa5591108194a7dc13f2d6faa80c","model":"gpt-4.1-mini","responseId":"resp_0dcf1a118189f28100691daa5591108194a7dc13f2d6faa80c","serverToolCalls":[{"action":{"query":"top news stories November 19, 2025","type":"search"},"id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","status":"searching","type":"web_search_call"}],"serviceTier":"auto","webSearchCalls":[{"action":{"query":"top news stories November 19, 2025","type":"search"},"id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","status":"searching"}]}}},"type":"raw"}
+{"id":"0","type":"text-start"}
+{"delta":"Here","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" three","id":"0","type":"text-delta"}
+{"delta":" major","id":"0","type":"text-delta"}
+{"delta":" news","id":"0","type":"text-delta"}
+{"delta":" stories","id":"0","type":"text-delta"}
+{"delta":" from","id":"0","type":"text-delta"}
+{"delta":" today","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" November","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"19","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":":\n\n","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" U","id":"0","type":"text-delta"}
+{"delta":".S","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" President","id":"0","type":"text-delta"}
+{"delta":" Donald","id":"0","type":"text-delta"}
+{"delta":" Trump","id":"0","type":"text-delta"}
+{"delta":" hosted","id":"0","type":"text-delta"}
+{"delta":" Saudi","id":"0","type":"text-delta"}
+{"delta":" Crown","id":"0","type":"text-delta"}
+{"delta":" Prince","id":"0","type":"text-delta"}
+{"delta":" Mohammed","id":"0","type":"text-delta"}
+{"delta":" bin","id":"0","type":"text-delta"}
+{"delta":" Salman","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" White","id":"0","type":"text-delta"}
+{"delta":" House","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" defending","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" prince","id":"0","type":"text-delta"}
+{"delta":" over","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"201","id":"0","type":"text-delta"}
+{"delta":"8","id":"0","type":"text-delta"}
+{"delta":" killing","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" journalist","id":"0","type":"text-delta"}
+{"delta":" Jam","id":"0","type":"text-delta"}
+{"delta":"al","id":"0","type":"text-delta"}
+{"delta":" K","id":"0","type":"text-delta"}
+{"delta":"hash","id":"0","type":"text-delta"}
+{"delta":"oggi","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" praising","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" $","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":" trillion","id":"0","type":"text-delta"}
+{"delta":" investment","id":"0","type":"text-delta"}
+{"delta":" pledge","id":"0","type":"text-delta"}
+{"delta":" by","id":"0","type":"text-delta"}
+{"delta":" Saudi","id":"0","type":"text-delta"}
+{"delta":" Arabia","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" The","id":"0","type":"text-delta"}
+{"delta":" visit","id":"0","type":"text-delta"}
+{"delta":" included","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" military","id":"0","type":"text-delta"}
+{"delta":" display","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" plans","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" selling","id":"0","type":"text-delta"}
+{"delta":" F","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"35","id":"0","type":"text-delta"}
+{"delta":" jets","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" Riy","id":"0","type":"text-delta"}
+{"delta":"adh","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" highlighting","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" strengthening","id":"0","type":"text-delta"}
+{"delta":" U","id":"0","type":"text-delta"}
+{"delta":".S","id":"0","type":"text-delta"}
+{"delta":".-","id":"0","type":"text-delta"}
+{"delta":"Saudi","id":"0","type":"text-delta"}
+{"delta":" relationship","id":"0","type":"text-delta"}
+{"delta":" despite","id":"0","type":"text-delta"}
+{"delta":" controversies","id":"0","type":"text-delta"}
+{"delta":" [","id":"0","type":"text-delta"}
+{"delta":"Str","id":"0","type":"text-delta"}
+{"delta":"aits","id":"0","type":"text-delta"}
+{"delta":" Times","id":"0","type":"text-delta"}
+{"delta":"](","id":"0","type":"text-delta"}
+{"delta":"https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"www","id":"0","type":"text-delta"}
+{"delta":".st","id":"0","type":"text-delta"}
+{"delta":"rait","id":"0","type":"text-delta"}
+{"delta":"st","id":"0","type":"text-delta"}
+{"delta":"imes","id":"0","type":"text-delta"}
+{"delta":".com","id":"0","type":"text-delta"}
+{"delta":"/world","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"while","id":"0","type":"text-delta"}
+{"delta":"-you","id":"0","type":"text-delta"}
+{"delta":"-w","id":"0","type":"text-delta"}
+{"delta":"ere","id":"0","type":"text-delta"}
+{"delta":"-s","id":"0","type":"text-delta"}
+{"delta":"leep","id":"0","type":"text-delta"}
+{"delta":"ing","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"-st","id":"0","type":"text-delta"}
+{"delta":"ories","id":"0","type":"text-delta"}
+{"delta":"-you","id":"0","type":"text-delta"}
+{"delta":"-m","id":"0","type":"text-delta"}
+{"delta":"ight","id":"0","type":"text-delta"}
+{"delta":"-have","id":"0","type":"text-delta"}
+{"delta":"-m","id":"0","type":"text-delta"}
+{"delta":"issed","id":"0","type":"text-delta"}
+{"delta":"-n","id":"0","type":"text-delta"}
+{"delta":"ov","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"19","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":").\n\n","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" In","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" U","id":"0","type":"text-delta"}
+{"delta":".S","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" House","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" Representatives","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" vote","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"427","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" passed","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" compel","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" Justice","id":"0","type":"text-delta"}
+{"delta":" Department","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" release","id":"0","type":"text-delta"}
+{"delta":" more","id":"0","type":"text-delta"}
+{"delta":" files","id":"0","type":"text-delta"}
+{"delta":" related","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" Jeffrey","id":"0","type":"text-delta"}
+{"delta":" Epstein","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" marking","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" significant","id":"0","type":"text-delta"}
+{"delta":" step","id":"0","type":"text-delta"}
+{"delta":" toward","id":"0","type":"text-delta"}
+{"delta":" transparency","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" case","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" This","id":"0","type":"text-delta"}
+{"delta":" follows","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" notable","id":"0","type":"text-delta"}
+{"delta":" political","id":"0","type":"text-delta"}
+{"delta":" division","id":"0","type":"text-delta"}
+{"delta":" among","id":"0","type":"text-delta"}
+{"delta":" Republicans","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" recent","id":"0","type":"text-delta"}
+{"delta":" shift","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" President","id":"0","type":"text-delta"}
+{"delta":" Trump's","id":"0","type":"text-delta"}
+{"delta":" position","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" matter","id":"0","type":"text-delta"}
+{"delta":" [","id":"0","type":"text-delta"}
+{"delta":"Str","id":"0","type":"text-delta"}
+{"delta":"aits","id":"0","type":"text-delta"}
+{"delta":" Times","id":"0","type":"text-delta"}
+{"delta":"](","id":"0","type":"text-delta"}
+{"delta":"https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"www","id":"0","type":"text-delta"}
+{"delta":".st","id":"0","type":"text-delta"}
+{"delta":"rait","id":"0","type":"text-delta"}
+{"delta":"st","id":"0","type":"text-delta"}
+{"delta":"imes","id":"0","type":"text-delta"}
+{"delta":".com","id":"0","type":"text-delta"}
+{"delta":"/world","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"while","id":"0","type":"text-delta"}
+{"delta":"-you","id":"0","type":"text-delta"}
+{"delta":"-w","id":"0","type":"text-delta"}
+{"delta":"ere","id":"0","type":"text-delta"}
+{"delta":"-s","id":"0","type":"text-delta"}
+{"delta":"leep","id":"0","type":"text-delta"}
+{"delta":"ing","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"-st","id":"0","type":"text-delta"}
+{"delta":"ories","id":"0","type":"text-delta"}
+{"delta":"-you","id":"0","type":"text-delta"}
+{"delta":"-m","id":"0","type":"text-delta"}
+{"delta":"ight","id":"0","type":"text-delta"}
+{"delta":"-have","id":"0","type":"text-delta"}
+{"delta":"-m","id":"0","type":"text-delta"}
+{"delta":"issed","id":"0","type":"text-delta"}
+{"delta":"-n","id":"0","type":"text-delta"}
+{"delta":"ov","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"19","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":").\n\n","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Spain","id":"0","type":"text-delta"}
+{"delta":" announced","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" €","id":"0","type":"text-delta"}
+{"delta":"817","id":"0","type":"text-delta"}
+{"delta":" million","id":"0","type":"text-delta"}
+{"delta":" military","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" aid","id":"0","type":"text-delta"}
+{"delta":" package","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" Ukraine","id":"0","type":"text-delta"}
+{"delta":" amid","id":"0","type":"text-delta"}
+{"delta":" ongoing","id":"0","type":"text-delta"}
+{"delta":" conflict","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" Russia","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" This","id":"0","type":"text-delta"}
+{"delta":" includes","id":"0","type":"text-delta"}
+{"delta":" €","id":"0","type":"text-delta"}
+{"delta":"300","id":"0","type":"text-delta"}
+{"delta":" million","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" defense","id":"0","type":"text-delta"}
+{"delta":" equipment","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" purchase","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" U","id":"0","type":"text-delta"}
+{"delta":".S","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" military","id":"0","type":"text-delta"}
+{"delta":" gear","id":"0","type":"text-delta"}
+{"delta":" as","id":"0","type":"text-delta"}
+{"delta":" part","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" long","id":"0","type":"text-delta"}
+{"delta":"-term","id":"0","type":"text-delta"}
+{"delta":" bilateral","id":"0","type":"text-delta"}
+{"delta":" security","id":"0","type":"text-delta"}
+{"delta":" agreement","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" aiming","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" bolster","id":"0","type":"text-delta"}
+{"delta":" Ukraine","id":"0","type":"text-delta"}
+{"delta":"'s","id":"0","type":"text-delta"}
+{"delta":" air","id":"0","type":"text-delta"}
+{"delta":" defenses","id":"0","type":"text-delta"}
+{"delta":" [","id":"0","type":"text-delta"}
+{"delta":"Str","id":"0","type":"text-delta"}
+{"delta":"aits","id":"0","type":"text-delta"}
+{"delta":" Times","id":"0","type":"text-delta"}
+{"delta":"](","id":"0","type":"text-delta"}
+{"delta":"https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"www","id":"0","type":"text-delta"}
+{"delta":".st","id":"0","type":"text-delta"}
+{"delta":"rait","id":"0","type":"text-delta"}
+{"delta":"st","id":"0","type":"text-delta"}
+{"delta":"imes","id":"0","type":"text-delta"}
+{"delta":".com","id":"0","type":"text-delta"}
+{"delta":"/world","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"while","id":"0","type":"text-delta"}
+{"delta":"-you","id":"0","type":"text-delta"}
+{"delta":"-w","id":"0","type":"text-delta"}
+{"delta":"ere","id":"0","type":"text-delta"}
+{"delta":"-s","id":"0","type":"text-delta"}
+{"delta":"leep","id":"0","type":"text-delta"}
+{"delta":"ing","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"-st","id":"0","type":"text-delta"}
+{"delta":"ories","id":"0","type":"text-delta"}
+{"delta":"-you","id":"0","type":"text-delta"}
+{"delta":"-m","id":"0","type":"text-delta"}
+{"delta":"ight","id":"0","type":"text-delta"}
+{"delta":"-have","id":"0","type":"text-delta"}
+{"delta":"-m","id":"0","type":"text-delta"}
+{"delta":"issed","id":"0","type":"text-delta"}
+{"delta":"-n","id":"0","type":"text-delta"}
+{"delta":"ov","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"19","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":").\n\n","id":"0","type":"text-delta"}
+{"delta":"If","id":"0","type":"text-delta"}
+{"delta":" you","id":"0","type":"text-delta"}
+{"delta":" want","id":"0","type":"text-delta"}
+{"delta":" more","id":"0","type":"text-delta"}
+{"delta":" detailed","id":"0","type":"text-delta"}
+{"delta":" summaries","id":"0","type":"text-delta"}
+{"delta":" or","id":"0","type":"text-delta"}
+{"delta":" additional","id":"0","type":"text-delta"}
+{"delta":" news","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" just","id":"0","type":"text-delta"}
+{"delta":" let","id":"0","type":"text-delta"}
+{"delta":" me","id":"0","type":"text-delta"}
+{"delta":" know","id":"0","type":"text-delta"}
+{"delta":"!","id":"0","type":"text-delta"}
+{"id":"source_0","providerMetadata":{"azure":{"endIndex":577,"startIndex":458,"type":"url_citation"}},"sourceType":"url","title":"While You Were Sleeping: 5 stories you might have missed, Nov 19, 2025","type":"source","url":"https://www.straitstimes.com/world/while-you-were-sleeping-5-stories-you-might-have-missed-nov-19-2025"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"azure":{"annotations":[{"end_index":577,"start_index":458,"title":"While You Were Sleeping: 5 stories you might have missed, Nov 19, 2025","type":"url_citation","url":"https://www.straitstimes.com/world/while-you-were-sleeping-5-stories-you-might-have-missed-nov-19-2025"}],"id":"resp_0dcf1a118189f28100691daa5591108194a7dc13f2d6faa80c","logprobs":[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],"model":"gpt-4.1-mini","responseId":"resp_0dcf1a118189f28100691daa5591108194a7dc13f2d6faa80c","serverToolCalls":[{"action":{"query":"top news stories November 19, 2025","type":"search"},"id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","status":"searching","type":"web_search_call"}],"serviceTier":"auto","webSearchCalls":[{"action":{"query":"top news stories November 19, 2025","type":"search"},"id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","status":"searching"}]}}},"type":"raw"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"azure":{"annotations":[{"end_index":577,"start_index":458,"title":"While You Were Sleeping: 5 stories you might have missed, Nov 19, 2025","type":"url_citation","url":"https://www.straitstimes.com/world/while-you-were-sleeping-5-stories-you-might-have-missed-nov-19-2025"},{"end_index":577,"start_index":458,"title":"While You Were Sleeping: 5 stories you might have missed, Nov 19, 2025","type":"url_citation","url":"https://www.straitstimes.com/world/while-you-were-sleeping-5-stories-you-might-have-missed-nov-19-2025"}],"id":"resp_0dcf1a118189f28100691daa5591108194a7dc13f2d6faa80c","logprobs":[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],"model":"gpt-4.1-mini","responseId":"resp_0dcf1a118189f28100691daa5591108194a7dc13f2d6faa80c","serverToolCalls":[{"action":{"query":"top news stories November 19, 2025","type":"search"},"id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","status":"searching","type":"web_search_call"}],"serviceTier":"auto","webSearchCalls":[{"action":{"query":"top news stories November 19, 2025","type":"search"},"id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","status":"searching"}]}}},"type":"raw"}
+{"id":"0","type":"text-end"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"azure":{"annotations":[{"end_index":577,"start_index":458,"title":"While You Were Sleeping: 5 stories you might have missed, Nov 19, 2025","type":"url_citation","url":"https://www.straitstimes.com/world/while-you-were-sleeping-5-stories-you-might-have-missed-nov-19-2025"},{"end_index":577,"start_index":458,"title":"While You Were Sleeping: 5 stories you might have missed, Nov 19, 2025","type":"url_citation","url":"https://www.straitstimes.com/world/while-you-were-sleeping-5-stories-you-might-have-missed-nov-19-2025"}],"id":"resp_0dcf1a118189f28100691daa5591108194a7dc13f2d6faa80c","logprobs":[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],"model":"gpt-4.1-mini","responseId":"resp_0dcf1a118189f28100691daa5591108194a7dc13f2d6faa80c","serverToolCalls":[{"action":{"query":"top news stories November 19, 2025","type":"search"},"id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","status":"searching","type":"web_search_call"}],"serviceTier":"default","webSearchCalls":[{"action":{"query":"top news stories November 19, 2025","type":"search"},"id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","status":"searching"}]}}},"type":"raw"}
+{"finishReason":{"unified":"stop"},"providerMetadata":{"azure":{"annotations":[{"end_index":577,"start_index":458,"title":"While You Were Sleeping: 5 stories you might have missed, Nov 19, 2025","type":"url_citation","url":"https://www.straitstimes.com/world/while-you-were-sleeping-5-stories-you-might-have-missed-nov-19-2025"},{"end_index":577,"start_index":458,"title":"While You Were Sleeping: 5 stories you might have missed, Nov 19, 2025","type":"url_citation","url":"https://www.straitstimes.com/world/while-you-were-sleeping-5-stories-you-might-have-missed-nov-19-2025"}],"id":"resp_0dcf1a118189f28100691daa5591108194a7dc13f2d6faa80c","logprobs":[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],"model":"gpt-4.1-mini","responseId":"resp_0dcf1a118189f28100691daa5591108194a7dc13f2d6faa80c","serverToolCalls":[{"action":{"query":"top news stories November 19, 2025","type":"search"},"id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","status":"searching","type":"web_search_call"}],"serviceTier":"default","webSearchCalls":[{"action":{"query":"top news stories November 19, 2025","type":"search"},"id":"ws_0dcf1a118189f28100691daa56c6488194b41c751d5cb3b4c3","status":"searching"}]}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"noCache":5093,"total":5093},"outputTokens":{"reasoning":0,"text":369,"total":369},"raw":{"input_tokens":5093,"input_tokens_details":{"cached_tokens":0},"output_tokens":369,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":5462}}}

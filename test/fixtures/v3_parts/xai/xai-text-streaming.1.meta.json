@@ -1,0 +1,18 @@
+{
+  "provider": "xai",
+  "scenario": "xai-text-streaming.1",
+  "description": "xAI Responses streaming: plain text output. Used to validate canonical v3 `text-delta` and `finish` parts.",
+  "source": {
+    "type": "fixture",
+    "paths": [
+      "test/fixtures/xai/responses/xai-text-streaming.1.chunks.txt"
+    ],
+    "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true
+  }
+}
+

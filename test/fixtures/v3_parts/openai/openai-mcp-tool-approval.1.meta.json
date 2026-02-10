@@ -1,0 +1,24 @@
+{
+  "provider": "openai",
+  "scenario": "openai-mcp-tool-approval.1",
+  "description": "OpenAI Responses streaming with MCP tool approval request. Used to validate canonical v3 `tool-approval-request` parts and provider-executed tool lifecycle.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/openai/responses/openai-mcp-tool-approval.1.chunks.txt",
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-mcp-tool-approval.1.chunks.txt"
+    ],
+    "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "If the fixture contains multiple sessions, multiple `.jsonl` files may be generated (session1, session2, ...)."
+  ]
+}
+

@@ -1,0 +1,24 @@
+{
+  "provider": "azure",
+  "scenario": "azure-image-generation-tool.1",
+  "description": "Azure OpenAI Responses streaming with image_generation tool. Validates canonical v3 tool-call/tool-result parts for large base64 payloads.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/azure/responses/azure-image-generation-tool.1.chunks.txt",
+      "repo-ref/ai/packages/azure/src/__fixtures__/azure-image-generation-tool.1.chunks.txt"
+    ],
+    "notes": "Golden normalization redacts large base64 strings to keep repo size manageable."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "Large base64 fields are redacted in JSONL goldens as {\"$redacted\":\"base64\",\"len\":...,\"hash\":\"fnv1a64:...\"}."
+  ]
+}
+

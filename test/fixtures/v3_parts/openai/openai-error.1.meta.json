@@ -1,0 +1,24 @@
+{
+  "provider": "openai",
+  "scenario": "openai-error.1",
+  "description": "OpenAI Responses streaming error scenario. Used to validate canonical v3 `error` parts (streamable) and finish behavior on failure.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/openai/responses/openai-error.1.chunks.txt",
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-error.1.chunks.txt"
+    ],
+    "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": false,
+    "finish_usage_present": false,
+    "finish_reason_typed": false
+  },
+  "notes": [
+    "Error parts are streamable; the stream may or may not end with a finish depending on provider semantics."
+  ]
+}
+

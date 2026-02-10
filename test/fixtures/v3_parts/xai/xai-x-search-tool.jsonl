@@ -1,0 +1,1781 @@
+{"type":"stream-start","warnings":[]}
+{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","modelId":"grok-4-fast-reasoning","timestamp":"2025-12-01T17:51:44.000Z","type":"response-metadata"}
+{"input":"","providerExecuted":true,"providerMetadata":{"xai.responses":{"type":"custom_tool_call"}},"toolCallId":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","toolName":"x_search","type":"tool-call"}
+{"rawValue":{"data":{"delta":"{\"query\":\"from:xai filter:media\",\"limit\":20,\"mode\":\"Latest\"}","item_id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","output_index":0,"sequence_number":3,"type":"response.custom_tool_call_input.delta"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.custom_tool_call_input.delta"}},"status":"input_delta","toolCallId":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","toolName":"x_search"},"type":"raw"}
+{"rawValue":{"data":{"input":"{\"query\":\"from:xai filter:media\",\"limit\":20,\"mode\":\"Latest\"}","item_id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","output_index":0,"sequence_number":4,"type":"response.custom_tool_call_input.done"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.custom_tool_call_input.done"}},"status":"input_done","toolCallId":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","toolName":"x_search"},"type":"raw"}
+{"providerExecuted":true,"providerMetadata":{"xai.responses":{"status":"completed","type":"custom_tool_call"}},"result":{"call_id":"xs_call_24148162","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","input":"{\"query\":\"from:xai filter:media\",\"limit\":20,\"mode\":\"Latest\"}","name":"x_keyword_search","status":"completed","type":"custom_tool_call"},"toolCallId":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","toolName":"x_search","type":"tool-result"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","serverToolCalls":[{"call_id":"xs_call_24148162","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","input":"{\"query\":\"from:xai filter:media\",\"limit\":20,\"mode\":\"Latest\"}","name":"x_keyword_search","status":"completed","type":"custom_tool_call"}],"status":"in_progress"}}},"type":"raw"}
+{"input":"","providerExecuted":true,"providerMetadata":{"xai.responses":{"type":"custom_tool_call"}},"toolCallId":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","toolName":"view_x_video","type":"tool-call"}
+{"rawValue":{"data":{"delta":"{\"video_url\":\"https://video.twimg.com/amplify_video/1991284765027364866/vid/avc1/468x270/kRkbodV96jk4PmbG.mp4\"}","item_id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","output_index":1,"sequence_number":7,"type":"response.custom_tool_call_input.delta"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.custom_tool_call_input.delta"}},"status":"input_delta","toolCallId":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","toolName":"view_x_video"},"type":"raw"}
+{"rawValue":{"data":{"input":"{\"video_url\":\"https://video.twimg.com/amplify_video/1991284765027364866/vid/avc1/468x270/kRkbodV96jk4PmbG.mp4\"}","item_id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","output_index":1,"sequence_number":8,"type":"response.custom_tool_call_input.done"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.custom_tool_call_input.done"}},"status":"input_done","toolCallId":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","toolName":"view_x_video"},"type":"raw"}
+{"input":"{\"type\":\"search\",\"query\":\"\",\"sources\":[]}","providerExecuted":true,"providerMetadata":{"xai.responses":{"type":"web_search_call"}},"toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","toolName":"web_search","type":"tool-call"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","output_index":2,"sequence_number":10,"type":"response.web_search_call.in_progress"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.in_progress"}},"status":"in_progress","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","toolName":"web_search"},"type":"raw"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","output_index":2,"sequence_number":11,"type":"response.web_search_call.searching"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.searching"}},"status":"searching","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","toolName":"web_search"},"type":"raw"}
+{"input":"{\"type\":\"search\",\"query\":\"\",\"sources\":[]}","providerExecuted":true,"providerMetadata":{"xai.responses":{"type":"web_search_call"}},"toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","toolName":"web_search","type":"tool-call"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","output_index":3,"sequence_number":13,"type":"response.web_search_call.in_progress"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.in_progress"}},"status":"in_progress","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","toolName":"web_search"},"type":"raw"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","output_index":3,"sequence_number":14,"type":"response.web_search_call.searching"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.searching"}},"status":"searching","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","toolName":"web_search"},"type":"raw"}
+{"input":"{\"type\":\"search\",\"query\":\"\",\"sources\":[]}","providerExecuted":true,"providerMetadata":{"xai.responses":{"type":"web_search_call"}},"toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","toolName":"web_search","type":"tool-call"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","output_index":4,"sequence_number":16,"type":"response.web_search_call.in_progress"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.in_progress"}},"status":"in_progress","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","toolName":"web_search"},"type":"raw"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","output_index":4,"sequence_number":17,"type":"response.web_search_call.searching"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.searching"}},"status":"searching","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","toolName":"web_search"},"type":"raw"}
+{"input":"{\"type\":\"search\",\"query\":\"\",\"sources\":[]}","providerExecuted":true,"providerMetadata":{"xai.responses":{"type":"web_search_call"}},"toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","toolName":"web_search","type":"tool-call"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","output_index":5,"sequence_number":19,"type":"response.web_search_call.in_progress"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.in_progress"}},"status":"in_progress","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","toolName":"web_search"},"type":"raw"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","output_index":5,"sequence_number":20,"type":"response.web_search_call.searching"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.searching"}},"status":"searching","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","toolName":"web_search"},"type":"raw"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","output_index":4,"sequence_number":21,"type":"response.web_search_call.completed"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.completed"}},"status":"completed","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","toolName":"web_search"},"type":"raw"}
+{"providerExecuted":true,"providerMetadata":{"xai.responses":{"status":"completed","type":"web_search_call"}},"result":{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","status":"completed","type":"web_search_call"},"toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","toolName":"web_search","type":"tool-result"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","serverToolCalls":[{"call_id":"xs_call_24148162","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","input":"{\"query\":\"from:xai filter:media\",\"limit\":20,\"mode\":\"Latest\"}","name":"x_keyword_search","status":"completed","type":"custom_tool_call"},{"call_id":"xs_call_14963218","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","input":"","name":"view_x_video","status":"in_progress","type":"custom_tool_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","status":"in_progress","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","status":"in_progress","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","status":"in_progress","type":"web_search_call"}],"status":"in_progress"}}},"type":"raw"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","output_index":5,"sequence_number":23,"type":"response.web_search_call.completed"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.completed"}},"status":"completed","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","toolName":"web_search"},"type":"raw"}
+{"providerExecuted":true,"providerMetadata":{"xai.responses":{"status":"completed","type":"web_search_call"}},"result":{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","status":"completed","type":"web_search_call"},"toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","toolName":"web_search","type":"tool-result"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","serverToolCalls":[{"call_id":"xs_call_24148162","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","input":"{\"query\":\"from:xai filter:media\",\"limit\":20,\"mode\":\"Latest\"}","name":"x_keyword_search","status":"completed","type":"custom_tool_call"},{"call_id":"xs_call_14963218","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","input":"","name":"view_x_video","status":"in_progress","type":"custom_tool_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","status":"in_progress","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","status":"in_progress","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","status":"completed","type":"web_search_call"}],"status":"in_progress"}}},"type":"raw"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","output_index":2,"sequence_number":25,"type":"response.web_search_call.completed"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.completed"}},"status":"completed","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","toolName":"web_search"},"type":"raw"}
+{"providerExecuted":true,"providerMetadata":{"xai.responses":{"status":"completed","type":"web_search_call"}},"result":{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","status":"completed","type":"web_search_call"},"toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","toolName":"web_search","type":"tool-result"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","serverToolCalls":[{"call_id":"xs_call_24148162","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","input":"{\"query\":\"from:xai filter:media\",\"limit\":20,\"mode\":\"Latest\"}","name":"x_keyword_search","status":"completed","type":"custom_tool_call"},{"call_id":"xs_call_14963218","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","input":"","name":"view_x_video","status":"in_progress","type":"custom_tool_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","status":"in_progress","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","status":"completed","type":"web_search_call"}],"status":"in_progress"}}},"type":"raw"}
+{"rawValue":{"data":{"item_id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","output_index":3,"sequence_number":27,"type":"response.web_search_call.completed"},"kind":"provider-tool-delta","providerMetadata":{"xai.responses":{"type":"response.web_search_call.completed"}},"status":"completed","toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","toolName":"web_search"},"type":"raw"}
+{"providerExecuted":true,"providerMetadata":{"xai.responses":{"status":"completed","type":"web_search_call"}},"result":{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","status":"completed","type":"web_search_call"},"toolCallId":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","toolName":"web_search","type":"tool-result"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","serverToolCalls":[{"call_id":"xs_call_24148162","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","input":"{\"query\":\"from:xai filter:media\",\"limit\":20,\"mode\":\"Latest\"}","name":"x_keyword_search","status":"completed","type":"custom_tool_call"},{"call_id":"xs_call_14963218","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","input":"","name":"view_x_video","status":"in_progress","type":"custom_tool_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","status":"completed","type":"web_search_call"}],"status":"in_progress"}}},"type":"raw"}
+{"providerExecuted":true,"providerMetadata":{"xai.responses":{"status":"completed","type":"custom_tool_call"}},"result":{"call_id":"xs_call_14963218","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","input":"{\"video_url\":\"https://video.twimg.com/amplify_video/1991284765027364866/vid/avc1/468x270/kRkbodV96jk4PmbG.mp4\"}","name":"view_x_video","status":"completed","type":"custom_tool_call"},"toolCallId":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","toolName":"view_x_video","type":"tool-result"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","serverToolCalls":[{"call_id":"xs_call_24148162","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","input":"{\"query\":\"from:xai filter:media\",\"limit\":20,\"mode\":\"Latest\"}","name":"x_keyword_search","status":"completed","type":"custom_tool_call"},{"call_id":"xs_call_14963218","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","input":"{\"video_url\":\"https://video.twimg.com/amplify_video/1991284765027364866/vid/avc1/468x270/kRkbodV96jk4PmbG.mp4\"}","name":"view_x_video","status":"completed","type":"custom_tool_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","status":"completed","type":"web_search_call"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"0","type":"text-start"}
+{"delta":"###","id":"0","type":"text-delta"}
+{"delta":" Latest","id":"0","type":"text-delta"}
+{"delta":" Videos","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" Images","id":"0","type":"text-delta"}
+{"delta":" from","id":"0","type":"text-delta"}
+{"delta":" x","id":"0","type":"text-delta"}
+{"delta":"AI","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" X","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"as","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" December","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":")\n\n","id":"0","type":"text-delta"}
+{"delta":"x","id":"0","type":"text-delta"}
+{"delta":"AI","id":"0","type":"text-delta"}
+{"delta":"'s","id":"0","type":"text-delta"}
+{"delta":" official","id":"0","type":"text-delta"}
+{"delta":" X","id":"0","type":"text-delta"}
+{"delta":" account","id":"0","type":"text-delta"}
+{"delta":" (@","id":"0","type":"text-delta"}
+{"delta":"x","id":"0","type":"text-delta"}
+{"delta":"ai","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" frequently","id":"0","type":"text-delta"}
+{"delta":" shares","id":"0","type":"text-delta"}
+{"delta":" media","id":"0","type":"text-delta"}
+{"delta":" related","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" their","id":"0","type":"text-delta"}
+{"delta":" AI","id":"0","type":"text-delta"}
+{"delta":" products","id":"0","type":"text-delta"}
+{"delta":" like","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" models","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" APIs","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" partnerships","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Based","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" most","id":"0","type":"text-delta"}
+{"delta":" recent","id":"0","type":"text-delta"}
+{"delta":" posts","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" media","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"f","id":"0","type":"text-delta"}
+{"delta":"etched","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"Latest","id":"0","type":"text-delta"}
+{"delta":"\"","id":"0","type":"text-delta"}
+{"delta":" order","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" here","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" top","id":"0","type":"text-delta"}
+{"delta":" latest","id":"0","type":"text-delta"}
+{"delta":" videos","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" images","id":"0","type":"text-delta"}
+{"delta":" focusing","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" product","id":"0","type":"text-delta"}
+{"delta":" announcements","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" demos","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" These","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" primarily","id":"0","type":"text-delta"}
+{"delta":" from","id":"0","type":"text-delta"}
+{"delta":" late","id":"0","type":"text-delta"}
+{"delta":" November","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" centered","id":"0","type":"text-delta"}
+{"delta":" around","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" launch","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"G","id":"0","type":"text-delta"}
+{"delta":"rok","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" Fast","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"a","id":"0","type":"text-delta"}
+{"delta":" new","id":"0","type":"text-delta"}
+{"delta":" tool","id":"0","type":"text-delta"}
+{"delta":"-c","id":"0","type":"text-delta"}
+{"delta":"alling","id":"0","type":"text-delta"}
+{"delta":" AI","id":"0","type":"text-delta"}
+{"delta":" model","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":"M","id":"0","type":"text-delta"}
+{"delta":"-token","id":"0","type":"text-delta"}
+{"delta":" context","id":"0","type":"text-delta"}
+{"delta":" window","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Agent","id":"0","type":"text-delta"}
+{"delta":" Tools","id":"0","type":"text-delta"}
+{"delta":" API","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"en","id":"0","type":"text-delta"}
+{"delta":"abling","id":"0","type":"text-delta"}
+{"delta":" autonomous","id":"0","type":"text-delta"}
+{"delta":" web","id":"0","type":"text-delta"}
+{"delta":" browsing","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" X","id":"0","type":"text-delta"}
+{"delta":" searches","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" code","id":"0","type":"text-delta"}
+{"delta":" execution","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" more","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" I've","id":"0","type":"text-delta"}
+{"delta":" included","id":"0","type":"text-delta"}
+{"delta":" descriptions","id":"0","type":"text-delta"}
+{"delta":" based","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" direct","id":"0","type":"text-delta"}
+{"delta":" analysis","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" media","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" timestamps","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" context","id":"0","type":"text-delta"}
+{"delta":" from","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" posts","id":"0","type":"text-delta"}
+{"delta":".\n\n","id":"0","type":"text-delta"}
+{"delta":"####","id":"0","type":"text-delta"}
+{"delta":" Latest","id":"0","type":"text-delta"}
+{"delta":" Video","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"November","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"19","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":")\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Post","id":"0","type":"text-delta"}
+{"delta":" Details","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" From","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" announcement","id":"0","type":"text-delta"}
+{"delta":" thread","id":"0","type":"text-delta"}
+{"delta":" introducing","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" Fast","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" Agent","id":"0","type":"text-delta"}
+{"delta":" Tools","id":"0","type":"text-delta"}
+{"delta":" API","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"Post","id":"0","type":"text-delta"}
+{"delta":" ID","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"199","id":"0","type":"text-delta"}
+{"delta":"128","id":"0","type":"text-delta"}
+{"delta":"481","id":"0","type":"text-delta"}
+{"delta":"372","id":"0","type":"text-delta"}
+{"delta":"747","id":"0","type":"text-delta"}
+{"delta":"407","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ~","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":"M","id":"0","type":"text-delta"}
+{"delta":" views","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" This","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" most","id":"0","type":"text-delta"}
+{"delta":" recent","id":"0","type":"text-delta"}
+{"delta":" video","id":"0","type":"text-delta"}
+{"delta":" post","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Video","id":"0","type":"text-delta"}
+{"delta":" Description","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" A","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"14","id":"0","type":"text-delta"}
+{"delta":"-second","id":"0","type":"text-delta"}
+{"delta":" demo","id":"0","type":"text-delta"}
+{"delta":" clip","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"low","id":"0","type":"text-delta"}
+{"delta":"-resolution","id":"0","type":"text-delta"}
+{"delta":" preview","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"468","id":"0","type":"text-delta"}
+{"delta":"x","id":"0","type":"text-delta"}
+{"delta":"270","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" showcasing","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" Fast","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" action","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" new","id":"0","type":"text-delta"}
+{"delta":" Agent","id":"0","type":"text-delta"}
+{"delta":" Tools","id":"0","type":"text-delta"}
+{"delta":" API","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" It","id":"0","type":"text-delta"}
+{"delta":" demonstrates","id":"0","type":"text-delta"}
+{"delta":" real","id":"0","type":"text-delta"}
+{"delta":"-time","id":"0","type":"text-delta"}
+{"delta":" web","id":"0","type":"text-delta"}
+{"delta":" browsing","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" research","id":"0","type":"text-delta"}
+{"delta":" capabilities","id":"0","type":"text-delta"}
+{"delta":":\n","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" The","id":"0","type":"text-delta"}
+{"delta":" interface","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" dark","id":"0","type":"text-delta"}
+{"delta":"-themed","id":"0","type":"text-delta"}
+{"delta":" chat","id":"0","type":"text-delta"}
+{"delta":" window","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"similar","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":"'s","id":"0","type":"text-delta"}
+{"delta":" UI","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" where","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" user","id":"0","type":"text-delta"}
+{"delta":" queries","id":"0","type":"text-delta"}
+{"delta":" about","id":"0","type":"text-delta"}
+{"delta":" Tesla","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"e","id":"0","type":"text-delta"}
+{"delta":".g","id":"0","type":"text-delta"}
+{"delta":".,","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"How","id":"0","type":"text-delta"}
+{"delta":" many","id":"0","type":"text-delta"}
+{"delta":" Tesla","id":"0","type":"text-delta"}
+{"delta":" factories","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" there","id":"0","type":"text-delta"}
+{"delta":"?\"","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" follow","id":"0","type":"text-delta"}
+{"delta":"-ups","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" production","id":"0","type":"text-delta"}
+{"delta":").\n","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" autonomously","id":"0","type":"text-delta"}
+{"delta":" brows","id":"0","type":"text-delta"}
+{"delta":"es","id":"0","type":"text-delta"}
+{"delta":" websites","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" Frames","id":"0","type":"text-delta"}
+{"delta":" show","id":"0","type":"text-delta"}
+{"delta":" loading","id":"0","type":"text-delta"}
+{"delta":" web","id":"0","type":"text-delta"}
+{"delta":" pages","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"e","id":"0","type":"text-delta"}
+{"delta":".g","id":"0","type":"text-delta"}
+{"delta":".,","id":"0","type":"text-delta"}
+{"delta":" Tesla","id":"0","type":"text-delta"}
+{"delta":"'s","id":"0","type":"text-delta"}
+{"delta":" official","id":"0","type":"text-delta"}
+{"delta":" site","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" extracting","id":"0","type":"text-delta"}
+{"delta":" data","id":"0","type":"text-delta"}
+{"delta":" like","id":"0","type":"text-delta"}
+{"delta":" factory","id":"0","type":"text-delta"}
+{"delta":" locations","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" output","id":"0","type":"text-delta"}
+{"delta":" gauges","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" summarizing","id":"0","type":"text-delta"}
+{"delta":" results","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" real","id":"0","type":"text-delta"}
+{"delta":"-time","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" Key","id":"0","type":"text-delta"}
+{"delta":" features","id":"0","type":"text-delta"}
+{"delta":" highlighted","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" Multi","id":"0","type":"text-delta"}
+{"delta":"-step","id":"0","type":"text-delta"}
+{"delta":" agent","id":"0","type":"text-delta"}
+{"delta":"ic","id":"0","type":"text-delta"}
+{"delta":" workflow","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"search","id":"0","type":"text-delta"}
+{"delta":" →","id":"0","type":"text-delta"}
+{"delta":" browse","id":"0","type":"text-delta"}
+{"delta":" →","id":"0","type":"text-delta"}
+{"delta":" read","id":"0","type":"text-delta"}
+{"delta":" documents","id":"0","type":"text-delta"}
+{"delta":" →","id":"0","type":"text-delta"}
+{"delta":" respond","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" UI","id":"0","type":"text-delta"}
+{"delta":" elements","id":"0","type":"text-delta"}
+{"delta":" like","id":"0","type":"text-delta"}
+{"delta":" loading","id":"0","type":"text-delta"}
+{"delta":" sp","id":"0","type":"text-delta"}
+{"delta":"inners","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" document","id":"0","type":"text-delta"}
+{"delta":" previews","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" action","id":"0","type":"text-delta"}
+{"delta":" buttons","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"e","id":"0","type":"text-delta"}
+{"delta":".g","id":"0","type":"text-delta"}
+{"delta":".,","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"Browse","id":"0","type":"text-delta"}
+{"delta":" web","id":"0","type":"text-delta"}
+{"delta":"\",","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"Read","id":"0","type":"text-delta"}
+{"delta":" document","id":"0","type":"text-delta"}
+{"delta":"\").\n","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" Visual","id":"0","type":"text-delta"}
+{"delta":" style","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" Clean","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" animated","id":"0","type":"text-delta"}
+{"delta":" transitions","id":"0","type":"text-delta"}
+{"delta":" between","id":"0","type":"text-delta"}
+{"delta":" search","id":"0","type":"text-delta"}
+{"delta":" results","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" web","id":"0","type":"text-delta"}
+{"delta":" tabs","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" chat","id":"0","type":"text-delta"}
+{"delta":" responses","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" No","id":"0","type":"text-delta"}
+{"delta":" subtitles","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" but","id":"0","type":"text-delta"}
+{"delta":" text","id":"0","type":"text-delta"}
+{"delta":" overlays","id":"0","type":"text-delta"}
+{"delta":" show","id":"0","type":"text-delta"}
+{"delta":" queries","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" summaries","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"e","id":"0","type":"text-delta"}
+{"delta":".g","id":"0","type":"text-delta"}
+{"delta":".,","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"Reading","id":"0","type":"text-delta"}
+{"delta":" factory","id":"0","type":"text-delta"}
+{"delta":" output","id":"0","type":"text-delta"}
+{"delta":" gauges","id":"0","type":"text-delta"}
+{"delta":"\",","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"Building","id":"0","type":"text-delta"}
+{"delta":" summary","id":"0","type":"text-delta"}
+{"delta":"\").\n","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Re","id":"0","type":"text-delta"}
+{"delta":"levance","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" This","id":"0","type":"text-delta"}
+{"delta":" illustrates","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" product's","id":"0","type":"text-delta"}
+{"delta":" enterprise","id":"0","type":"text-delta"}
+{"delta":" use","id":"0","type":"text-delta"}
+{"delta":" cases","id":"0","type":"text-delta"}
+{"delta":" like","id":"0","type":"text-delta"}
+{"delta":" deep","id":"0","type":"text-delta"}
+{"delta":" research","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" customer","id":"0","type":"text-delta"}
+{"delta":" support","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Link","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" full","id":"0","type":"text-delta"}
+{"delta":" announcement","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" [","id":"0","type":"text-delta"}
+{"delta":"x","id":"0","type":"text-delta"}
+{"delta":".ai","id":"0","type":"text-delta"}
+{"delta":"/news","id":"0","type":"text-delta"}
+{"delta":"/g","id":"0","type":"text-delta"}
+{"delta":"rok","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":"-fast","id":"0","type":"text-delta"}
+{"delta":"](","id":"0","type":"text-delta"}
+{"delta":"https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"x","id":"0","type":"text-delta"}
+{"delta":".ai","id":"0","type":"text-delta"}
+{"delta":"/news","id":"0","type":"text-delta"}
+{"delta":"/g","id":"0","type":"text-delta"}
+{"delta":"rok","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":"-fast","id":"0","type":"text-delta"}
+{"delta":").\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Direct","id":"0","type":"text-delta"}
+{"delta":" Video","id":"0","type":"text-delta"}
+{"delta":" URL","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"for","id":"0","type":"text-delta"}
+{"delta":" viewing","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" X","id":"0","type":"text-delta"}
+{"delta":"):","id":"0","type":"text-delta"}
+{"delta":" https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"video","id":"0","type":"text-delta"}
+{"delta":".twimg","id":"0","type":"text-delta"}
+{"delta":".com","id":"0","type":"text-delta"}
+{"delta":"/am","id":"0","type":"text-delta"}
+{"delta":"plify","id":"0","type":"text-delta"}
+{"delta":"_video","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"199","id":"0","type":"text-delta"}
+{"delta":"128","id":"0","type":"text-delta"}
+{"delta":"476","id":"0","type":"text-delta"}
+{"delta":"502","id":"0","type":"text-delta"}
+{"delta":"736","id":"0","type":"text-delta"}
+{"delta":"486","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":"/v","id":"0","type":"text-delta"}
+{"delta":"id","id":"0","type":"text-delta"}
+{"delta":"/av","id":"0","type":"text-delta"}
+{"delta":"c","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"468","id":"0","type":"text-delta"}
+{"delta":"x","id":"0","type":"text-delta"}
+{"delta":"270","id":"0","type":"text-delta"}
+{"delta":"/k","id":"0","type":"text-delta"}
+{"delta":"R","id":"0","type":"text-delta"}
+{"delta":"kb","id":"0","type":"text-delta"}
+{"delta":"od","id":"0","type":"text-delta"}
+{"delta":"V","id":"0","type":"text-delta"}
+{"delta":"96","id":"0","type":"text-delta"}
+{"delta":"jk","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":"P","id":"0","type":"text-delta"}
+{"delta":"mb","id":"0","type":"text-delta"}
+{"delta":"G","id":"0","type":"text-delta"}
+{"delta":".mp","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":"\n\n","id":"0","type":"text-delta"}
+{"delta":"####","id":"0","type":"text-delta"}
+{"delta":" Latest","id":"0","type":"text-delta"}
+{"delta":" Images","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"November","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"19","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":")\n","id":"0","type":"text-delta"}
+{"delta":"These","id":"0","type":"text-delta"}
+{"delta":" accompany","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" same","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" Fast","id":"0","type":"text-delta"}
+{"delta":" announcement","id":"0","type":"text-delta"}
+{"delta":" thread","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" They","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" benchmark","id":"0","type":"text-delta"}
+{"delta":" charts","id":"0","type":"text-delta"}
+{"delta":" emphasizing","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" model's","id":"0","type":"text-delta"}
+{"delta":" performance","id":"0","type":"text-delta"}
+{"delta":" advantages","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" tool","id":"0","type":"text-delta"}
+{"delta":"-c","id":"0","type":"text-delta"}
+{"delta":"alling","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" agent","id":"0","type":"text-delta"}
+{"delta":"ic","id":"0","type":"text-delta"}
+{"delta":" tasks","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" cost","id":"0","type":"text-delta"}
+{"delta":"-efficiency","id":"0","type":"text-delta"}
+{"delta":" compared","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" competitors","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"e","id":"0","type":"text-delta"}
+{"delta":".g","id":"0","type":"text-delta"}
+{"delta":".,","id":"0","type":"text-delta"}
+{"delta":" GPT","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" Claude","id":"0","type":"text-delta"}
+{"delta":" Son","id":"0","type":"text-delta"}
+{"delta":"net","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" Gemini","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":" Pro","id":"0","type":"text-delta"}
+{"delta":").\n\n","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Image","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" Multi","id":"0","type":"text-delta"}
+{"delta":"-T","id":"0","type":"text-delta"}
+{"delta":"urn","id":"0","type":"text-delta"}
+{"delta":" Accuracy","id":"0","type":"text-delta"}
+{"delta":" Benchmarks","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"Post","id":"0","type":"text-delta"}
+{"delta":" ID","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"199","id":"0","type":"text-delta"}
+{"delta":"128","id":"0","type":"text-delta"}
+{"delta":"481","id":"0","type":"text-delta"}
+{"delta":"892","id":"0","type":"text-delta"}
+{"delta":"836","id":"0","type":"text-delta"}
+{"delta":"601","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ~","id":"0","type":"text-delta"}
+{"delta":"55","id":"0","type":"text-delta"}
+{"delta":"K","id":"0","type":"text-delta"}
+{"delta":" views","id":"0","type":"text-delta"}
+{"delta":")\n","id":"0","type":"text-delta"}
+{"delta":"  ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Description","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" A","id":"0","type":"text-delta"}
+{"delta":" bar","id":"0","type":"text-delta"}
+{"delta":" chart","id":"0","type":"text-delta"}
+{"delta":" comparing","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" models","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"Multi","id":"0","type":"text-delta"}
+{"delta":"-T","id":"0","type":"text-delta"}
+{"delta":"urn","id":"0","type":"text-delta"}
+{"delta":" Acc","id":"0","type":"text-delta"}
+{"delta":"\"","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"accuracy","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" extended","id":"0","type":"text-delta"}
+{"delta":" conversations","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"Multi","id":"0","type":"text-delta"}
+{"delta":"-T","id":"0","type":"text-delta"}
+{"delta":"urn","id":"0","type":"text-delta"}
+{"delta":" Long","id":"0","type":"text-delta"}
+{"delta":" Context","id":"0","type":"text-delta"}
+{"delta":"\"","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"performance","id":"0","type":"text-delta"}
+{"delta":" over","id":"0","type":"text-delta"}
+{"delta":" long","id":"0","type":"text-delta"}
+{"delta":" inputs","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" Orange","id":"0","type":"text-delta"}
+{"delta":" bars","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"G","id":"0","type":"text-delta"}
+{"delta":"rok","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" Fast","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" lead","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"57","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":"%","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"67","id":"0","type":"text-delta"}
+{"delta":"%,","id":"0","type":"text-delta"}
+{"delta":" vs","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" brown","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"G","id":"0","type":"text-delta"}
+{"delta":"rok","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":" Fast","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"41","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":"%/","id":"0","type":"text-delta"}
+{"delta":"52","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"%,","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" gray","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"G","id":"0","type":"text-delta"}
+{"delta":"rok","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"20","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"%/","id":"0","type":"text-delta"}
+{"delta":"22","id":"0","type":"text-delta"}
+{"delta":"%.","id":"0","type":"text-delta"}
+{"delta":" Dark","id":"0","type":"text-delta"}
+{"delta":" background","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" x","id":"0","type":"text-delta"}
+{"delta":"AI","id":"0","type":"text-delta"}
+{"delta":" branding","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Highlights","id":"0","type":"text-delta"}
+{"delta":" training","id":"0","type":"text-delta"}
+{"delta":" improvements","id":"0","type":"text-delta"}
+{"delta":" via","id":"0","type":"text-delta"}
+{"delta":" long","id":"0","type":"text-delta"}
+{"delta":"-h","id":"0","type":"text-delta"}
+{"delta":"orizon","id":"0","type":"text-delta"}
+{"delta":" RL","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" consistent","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":"M","id":"0","type":"text-delta"}
+{"delta":"-token","id":"0","type":"text-delta"}
+{"delta":" performance","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":"  ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"URL","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"pbs","id":"0","type":"text-delta"}
+{"delta":".twimg","id":"0","type":"text-delta"}
+{"delta":".com","id":"0","type":"text-delta"}
+{"delta":"/media","id":"0","type":"text-delta"}
+{"delta":"/G","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":"J","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":"_U","id":"0","type":"text-delta"}
+{"delta":"xac","id":"0","type":"text-delta"}
+{"delta":"AQ","id":"0","type":"text-delta"}
+{"delta":"f","id":"0","type":"text-delta"}
+{"delta":"8","id":"0","type":"text-delta"}
+{"delta":"u","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".jpg","id":"0","type":"text-delta"}
+{"delta":"\n\n","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Image","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" Enterprise","id":"0","type":"text-delta"}
+{"delta":" Use","id":"0","type":"text-delta"}
+{"delta":" Case","id":"0","type":"text-delta"}
+{"delta":" Benchmarks","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"e","id":"0","type":"text-delta"}
+{"delta":".g","id":"0","type":"text-delta"}
+{"delta":".,","id":"0","type":"text-delta"}
+{"delta":" Customer","id":"0","type":"text-delta"}
+{"delta":" Support","id":"0","type":"text-delta"}
+{"delta":")**","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"Post","id":"0","type":"text-delta"}
+{"delta":" ID","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"199","id":"0","type":"text-delta"}
+{"delta":"128","id":"0","type":"text-delta"}
+{"delta":"482","id":"0","type":"text-delta"}
+{"delta":"282","id":"0","type":"text-delta"}
+{"delta":"072","id":"0","type":"text-delta"}
+{"delta":"073","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ~","id":"0","type":"text-delta"}
+{"delta":"12","id":"0","type":"text-delta"}
+{"delta":"K","id":"0","type":"text-delta"}
+{"delta":" views","id":"0","type":"text-delta"}
+{"delta":")\n","id":"0","type":"text-delta"}
+{"delta":"  ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Description","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" A","id":"0","type":"text-delta"}
+{"delta":" scatter","id":"0","type":"text-delta"}
+{"delta":" plot","id":"0","type":"text-delta"}
+{"delta":" titled","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"τ","id":"0","type":"text-delta"}
+{"delta":"²","id":"0","type":"text-delta"}
+{"delta":"-B","id":"0","type":"text-delta"}
+{"delta":"ench","id":"0","type":"text-delta"}
+{"delta":" Telecom","id":"0","type":"text-delta"}
+{"delta":"\"","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"a","id":"0","type":"text-delta"}
+{"delta":" telecom","id":"0","type":"text-delta"}
+{"delta":"/customer","id":"0","type":"text-delta"}
+{"delta":" support","id":"0","type":"text-delta"}
+{"delta":" workflow","id":"0","type":"text-delta"}
+{"delta":" benchmark","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" Points","id":"0","type":"text-delta"}
+{"delta":" plot","id":"0","type":"text-delta"}
+{"delta":" score","id":"0","type":"text-delta"}
+{"delta":" (%)","id":"0","type":"text-delta"}
+{"delta":" vs","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" total","id":"0","type":"text-delta"}
+{"delta":" cost","id":"0","type":"text-delta"}
+{"delta":" ($","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" Fast","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"orange","id":"0","type":"text-delta"}
+{"delta":" dot","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" tops","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" ~","id":"0","type":"text-delta"}
+{"delta":"100","id":"0","type":"text-delta"}
+{"delta":"%","id":"0","type":"text-delta"}
+{"delta":" score","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" ~","id":"0","type":"text-delta"}
+{"delta":"$","id":"0","type":"text-delta"}
+{"delta":"105","id":"0","type":"text-delta"}
+{"delta":" cost","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" outper","id":"0","type":"text-delta"}
+{"delta":"forming","id":"0","type":"text-delta"}
+{"delta":" GPT","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":" high","id":"0","type":"text-delta"}
+{"delta":" (~","id":"0","type":"text-delta"}
+{"delta":"80","id":"0","type":"text-delta"}
+{"delta":"%","id":"0","type":"text-delta"}
+{"delta":"/$","id":"0","type":"text-delta"}
+{"delta":"150","id":"0","type":"text-delta"}
+{"delta":"+","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" Gemini","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":" Pro","id":"0","type":"text-delta"}
+{"delta":" (~","id":"0","type":"text-delta"}
+{"delta":"70","id":"0","type":"text-delta"}
+{"delta":"%","id":"0","type":"text-delta"}
+{"delta":"/$","id":"0","type":"text-delta"}
+{"delta":"120","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" Claude","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":" Son","id":"0","type":"text-delta"}
+{"delta":"net","id":"0","type":"text-delta"}
+{"delta":" (~","id":"0","type":"text-delta"}
+{"delta":"60","id":"0","type":"text-delta"}
+{"delta":"%","id":"0","type":"text-delta"}
+{"delta":"/$","id":"0","type":"text-delta"}
+{"delta":"130","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":" Fast","id":"0","type":"text-delta"}
+{"delta":" (~","id":"0","type":"text-delta"}
+{"delta":"50","id":"0","type":"text-delta"}
+{"delta":"%","id":"0","type":"text-delta"}
+{"delta":"/$","id":"0","type":"text-delta"}
+{"delta":"100","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" Verified","id":"0","type":"text-delta"}
+{"delta":" by","id":"0","type":"text-delta"}
+{"delta":" independent","id":"0","type":"text-delta"}
+{"delta":" evaluator","id":"0","type":"text-delta"}
+{"delta":" Artificial","id":"0","type":"text-delta"}
+{"delta":" Analysis","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Emphas","id":"0","type":"text-delta"}
+{"delta":"izes","id":"0","type":"text-delta"}
+{"delta":" real","id":"0","type":"text-delta"}
+{"delta":"-world","id":"0","type":"text-delta"}
+{"delta":" S","id":"0","type":"text-delta"}
+{"delta":"OTA","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"state","id":"0","type":"text-delta"}
+{"delta":"-of","id":"0","type":"text-delta"}
+{"delta":"-the","id":"0","type":"text-delta"}
+{"delta":"-art","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" agent","id":"0","type":"text-delta"}
+{"delta":"ic","id":"0","type":"text-delta"}
+{"delta":" workflows","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":"  ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"URL","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"pbs","id":"0","type":"text-delta"}
+{"delta":".twimg","id":"0","type":"text-delta"}
+{"delta":".com","id":"0","type":"text-delta"}
+{"delta":"/media","id":"0","type":"text-delta"}
+{"delta":"/G","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":"J","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":"_mc","id":"0","type":"text-delta"}
+{"delta":"ac","id":"0","type":"text-delta"}
+{"delta":"AM","id":"0","type":"text-delta"}
+{"delta":"t","id":"0","type":"text-delta"}
+{"delta":"O","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"w","id":"0","type":"text-delta"}
+{"delta":".jpg","id":"0","type":"text-delta"}
+{"delta":"\n\n","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Image","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" Function","id":"0","type":"text-delta"}
+{"delta":" Calling","id":"0","type":"text-delta"}
+{"delta":" Benchmark","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"Post","id":"0","type":"text-delta"}
+{"delta":" ID","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"199","id":"0","type":"text-delta"}
+{"delta":"128","id":"0","type":"text-delta"}
+{"delta":"482","id":"0","type":"text-delta"}
+{"delta":"459","id":"0","type":"text-delta"}
+{"delta":"487","id":"0","type":"text-delta"}
+{"delta":"029","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ~","id":"0","type":"text-delta"}
+{"delta":"8","id":"0","type":"text-delta"}
+{"delta":"K","id":"0","type":"text-delta"}
+{"delta":" views","id":"0","type":"text-delta"}
+{"delta":")\n","id":"0","type":"text-delta"}
+{"delta":"  ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Description","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" A","id":"0","type":"text-delta"}
+{"delta":" line","id":"0","type":"text-delta"}
+{"delta":" graph","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"Berkeley","id":"0","type":"text-delta"}
+{"delta":" Function","id":"0","type":"text-delta"}
+{"delta":" Calling","id":"0","type":"text-delta"}
+{"delta":" v","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":" Benchmark","id":"0","type":"text-delta"}
+{"delta":"\"","id":"0","type":"text-delta"}
+{"delta":" showing","id":"0","type":"text-delta"}
+{"delta":" overall","id":"0","type":"text-delta"}
+{"delta":" accuracy","id":"0","type":"text-delta"}
+{"delta":" (%)","id":"0","type":"text-delta"}
+{"delta":" vs","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" total","id":"0","type":"text-delta"}
+{"delta":" cost","id":"0","type":"text-delta"}
+{"delta":" ($","id":"0","type":"text-delta"}
+{"delta":" up","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" $","id":"0","type":"text-delta"}
+{"delta":"400","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" Fast","id":"0","type":"text-delta"}
+{"delta":" Reasoning","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"orange","id":"0","type":"text-delta"}
+{"delta":" line","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" reaches","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"72","id":"0","type":"text-delta"}
+{"delta":"%","id":"0","type":"text-delta"}
+{"delta":" accuracy","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" low","id":"0","type":"text-delta"}
+{"delta":" cost","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" leading","id":"0","type":"text-delta"}
+{"delta":" Claude","id":"0","type":"text-delta"}
+{"delta":" Son","id":"0","type":"text-delta"}
+{"delta":"net","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"gray","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" GPT","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"gray","id":"0","type":"text-delta"}
+{"delta":" dot","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" Gemini","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":" Pro","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"gray","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" estimated","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"gray","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" Dark","id":"0","type":"text-delta"}
+{"delta":" theme","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" striped","id":"0","type":"text-delta"}
+{"delta":" borders","id":"0","type":"text-delta"}
+{"delta":";","id":"0","type":"text-delta"}
+{"delta":" notes","id":"0","type":"text-delta"}
+{"delta":" pending","id":"0","type":"text-delta"}
+{"delta":" official","id":"0","type":"text-delta"}
+{"delta":" results","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" some","id":"0","type":"text-delta"}
+{"delta":" models","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":"  ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"URL","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"pbs","id":"0","type":"text-delta"}
+{"delta":".twimg","id":"0","type":"text-delta"}
+{"delta":".com","id":"0","type":"text-delta"}
+{"delta":"/media","id":"0","type":"text-delta"}
+{"delta":"/G","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":"J","id":"0","type":"text-delta"}
+{"delta":"23","id":"0","type":"text-delta"}
+{"delta":"p","id":"0","type":"text-delta"}
+{"delta":"zac","id":"0","type":"text-delta"}
+{"delta":"AA","id":"0","type":"text-delta"}
+{"delta":"pg","id":"0","type":"text-delta"}
+{"delta":"dm","id":"0","type":"text-delta"}
+{"delta":".jpg","id":"0","type":"text-delta"}
+{"delta":"\n\n","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Image","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" Agent","id":"0","type":"text-delta"}
+{"delta":" Tools","id":"0","type":"text-delta"}
+{"delta":" API","id":"0","type":"text-delta"}
+{"delta":" Benchmarks","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"Post","id":"0","type":"text-delta"}
+{"delta":" ID","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"199","id":"0","type":"text-delta"}
+{"delta":"128","id":"0","type":"text-delta"}
+{"delta":"483","id":"0","type":"text-delta"}
+{"delta":"042","id":"0","type":"text-delta"}
+{"delta":"075","id":"0","type":"text-delta"}
+{"delta":"868","id":"0","type":"text-delta"}
+{"delta":"7","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ~","id":"0","type":"text-delta"}
+{"delta":"8","id":"0","type":"text-delta"}
+{"delta":"K","id":"0","type":"text-delta"}
+{"delta":" views","id":"0","type":"text-delta"}
+{"delta":")\n","id":"0","type":"text-delta"}
+{"delta":"  ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Description","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" A","id":"0","type":"text-delta"}
+{"delta":" table","id":"0","type":"text-delta"}
+{"delta":" comparing","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" Fast","id":"0","type":"text-delta"}
+{"delta":" +","id":"0","type":"text-delta"}
+{"delta":" Agent","id":"0","type":"text-delta"}
+{"delta":" Tools","id":"0","type":"text-delta"}
+{"delta":" API","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" research","id":"0","type":"text-delta"}
+{"delta":"/agent","id":"0","type":"text-delta"}
+{"delta":"ic","id":"0","type":"text-delta"}
+{"delta":" benchmarks","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"Research","id":"0","type":"text-delta"}
+{"delta":"-E","id":"0","type":"text-delta"}
+{"delta":"val","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" FR","id":"0","type":"text-delta"}
+{"delta":"AMES","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" X","id":"0","type":"text-delta"}
+{"delta":" Browse","id":"0","type":"text-delta"}
+{"delta":"*).","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" leads","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" scores","id":"0","type":"text-delta"}
+{"delta":" like","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"63","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"9","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"87","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"56","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" low","id":"0","type":"text-delta"}
+{"delta":" costs","id":"0","type":"text-delta"}
+{"delta":" ($","id":"0","type":"text-delta"}
+{"delta":"0","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"046","id":"0","type":"text-delta"}
+{"delta":"–","id":"0","type":"text-delta"}
+{"delta":"$","id":"0","type":"text-delta"}
+{"delta":"0","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"091","id":"0","type":"text-delta"}
+{"delta":" per","id":"0","type":"text-delta"}
+{"delta":" query","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" vs","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" GPT","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"45","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"86","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"0","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"24","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" $","id":"0","type":"text-delta"}
+{"delta":"0","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"107","id":"0","type":"text-delta"}
+{"delta":"–","id":"0","type":"text-delta"}
+{"delta":"$","id":"0","type":"text-delta"}
+{"delta":"0","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"198","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" Claude","id":"0","type":"text-delta"}
+{"delta":" Son","id":"0","type":"text-delta"}
+{"delta":"net","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"41","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"85","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"0","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"14","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" Gemini","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":" Pro","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"55","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"9","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"90","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"9","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"26","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" Focus","id":"0","type":"text-delta"}
+{"delta":"es","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" web","id":"0","type":"text-delta"}
+{"delta":"/X","id":"0","type":"text-delta"}
+{"delta":" integration","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" autonomous","id":"0","type":"text-delta"}
+{"delta":" tasks","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" *","id":"0","type":"text-delta"}
+{"delta":"X","id":"0","type":"text-delta"}
+{"delta":" Browse","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" an","id":"0","type":"text-delta"}
+{"delta":" internal","id":"0","type":"text-delta"}
+{"delta":" x","id":"0","type":"text-delta"}
+{"delta":"AI","id":"0","type":"text-delta"}
+{"delta":" benchmark","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" multi","id":"0","type":"text-delta"}
+{"delta":"-hop","id":"0","type":"text-delta"}
+{"delta":" search","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" X","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":"  ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"URL","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"pbs","id":"0","type":"text-delta"}
+{"delta":".twimg","id":"0","type":"text-delta"}
+{"delta":".com","id":"0","type":"text-delta"}
+{"delta":"/media","id":"0","type":"text-delta"}
+{"delta":"/G","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":"J","id":"0","type":"text-delta"}
+{"delta":"26","id":"0","type":"text-delta"}
+{"delta":"O","id":"0","type":"text-delta"}
+{"delta":"_a","id":"0","type":"text-delta"}
+{"delta":"8","id":"0","type":"text-delta"}
+{"delta":"AA","id":"0","type":"text-delta"}
+{"delta":"qh","id":"0","type":"text-delta"}
+{"delta":"Z","id":"0","type":"text-delta"}
+{"delta":"J","id":"0","type":"text-delta"}
+{"delta":".jpg","id":"0","type":"text-delta"}
+{"delta":"\n\n","id":"0","type":"text-delta"}
+{"delta":"####","id":"0","type":"text-delta"}
+{"delta":" Other","id":"0","type":"text-delta"}
+{"delta":" Recent","id":"0","type":"text-delta"}
+{"delta":" Media","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"November","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"17","id":"0","type":"text-delta"}
+{"delta":"–","id":"0","type":"text-delta"}
+{"delta":"19","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":")\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Part","id":"0","type":"text-delta"}
+{"delta":"nership","id":"0","type":"text-delta"}
+{"delta":" Announcement","id":"0","type":"text-delta"}
+{"delta":" Image","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"November","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"19","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":")**","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" Post","id":"0","type":"text-delta"}
+{"delta":" ID","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"199","id":"0","type":"text-delta"}
+{"delta":"122","id":"0","type":"text-delta"}
+{"delta":"422","id":"0","type":"text-delta"}
+{"delta":"431","id":"0","type":"text-delta"}
+{"delta":"348","id":"0","type":"text-delta"}
+{"delta":"769","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":" (~","id":"0","type":"text-delta"}
+{"delta":"115","id":"0","type":"text-delta"}
+{"delta":"K","id":"0","type":"text-delta"}
+{"delta":" views","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" A","id":"0","type":"text-delta"}
+{"delta":" graphic","id":"0","type":"text-delta"}
+{"delta":" showing","id":"0","type":"text-delta"}
+{"delta":" x","id":"0","type":"text-delta"}
+{"delta":"AI","id":"0","type":"text-delta"}
+{"delta":"'s","id":"0","type":"text-delta"}
+{"delta":" partnership","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" Saudi","id":"0","type":"text-delta"}
+{"delta":" Arabia","id":"0","type":"text-delta"}
+{"delta":"'s","id":"0","type":"text-delta"}
+{"delta":" HUM","id":"0","type":"text-delta"}
+{"delta":"AIN","id":"0","type":"text-delta"}
+{"delta":" AI","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" deploying","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" nationwide","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" building","id":"0","type":"text-delta"}
+{"delta":" GPU","id":"0","type":"text-delta"}
+{"delta":" data","id":"0","type":"text-delta"}
+{"delta":" centers","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Features","id":"0","type":"text-delta"}
+{"delta":" flags","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" AI","id":"0","type":"text-delta"}
+{"delta":" icons","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" text","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"G","id":"0","type":"text-delta"}
+{"delta":"rok","id":"0","type":"text-delta"}
+{"delta":" goes","id":"0","type":"text-delta"}
+{"delta":" Global","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" K","id":"0","type":"text-delta"}
+{"delta":"SA","id":"0","type":"text-delta"}
+{"delta":".\"","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"URL","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"pbs","id":"0","type":"text-delta"}
+{"delta":".twimg","id":"0","type":"text-delta"}
+{"delta":".com","id":"0","type":"text-delta"}
+{"delta":"/media","id":"0","type":"text-delta"}
+{"delta":"/G","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":"I","id":"0","type":"text-delta"}
+{"delta":"_","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":"O","id":"0","type":"text-delta"}
+{"delta":"8","id":"0","type":"text-delta"}
+{"delta":"ac","id":"0","type":"text-delta"}
+{"delta":"A","id":"0","type":"text-delta"}
+{"delta":"AMI","id":"0","type":"text-delta"}
+{"delta":"Wh","id":"0","type":"text-delta"}
+{"delta":".jpg","id":"0","type":"text-delta"}
+{"delta":")\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"G","id":"0","type":"text-delta"}
+{"delta":"rok","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" Announcement","id":"0","type":"text-delta"}
+{"delta":" Images","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"November","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"17","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":")**","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" Thread","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"Post","id":"0","type":"text-delta"}
+{"delta":" ID","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"199","id":"0","type":"text-delta"}
+{"delta":"053","id":"0","type":"text-delta"}
+{"delta":"049","id":"0","type":"text-delta"}
+{"delta":"975","id":"0","type":"text-delta"}
+{"delta":"298","id":"0","type":"text-delta"}
+{"delta":"063","id":"0","type":"text-delta"}
+{"delta":"8","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ~","id":"0","type":"text-delta"}
+{"delta":"33","id":"0","type":"text-delta"}
+{"delta":"M","id":"0","type":"text-delta"}
+{"delta":" views","id":"0","type":"text-delta"}
+{"delta":" total","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"+","id":"0","type":"text-delta"}
+{"delta":" charts","id":"0","type":"text-delta"}
+{"delta":":\n","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" Arena","id":"0","type":"text-delta"}
+{"delta":" leaderboard","id":"0","type":"text-delta"}
+{"delta":" (#","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"148","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":" Elo","id":"0","type":"text-delta"}
+{"delta":").\n","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" EQ","id":"0","type":"text-delta"}
+{"delta":"-B","id":"0","type":"text-delta"}
+{"delta":"ench","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"emotional","id":"0","type":"text-delta"}
+{"delta":" intelligence","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"158","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":").\n","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" Creative","id":"0","type":"text-delta"}
+{"delta":" Writing","id":"0","type":"text-delta"}
+{"delta":" v","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"172","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":" Elo","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" +","id":"0","type":"text-delta"}
+{"delta":"600","id":"0","type":"text-delta"}
+{"delta":" points","id":"0","type":"text-delta"}
+{"delta":").\n","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" Hall","id":"0","type":"text-delta"}
+{"delta":"uc","id":"0","type":"text-delta"}
+{"delta":"ination","id":"0","type":"text-delta"}
+{"delta":" reduction","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":"x","id":"0","type":"text-delta"}
+{"delta":" less","id":"0","type":"text-delta"}
+{"delta":" error","id":"0","type":"text-delta"}
+{"delta":"-prone","id":"0","type":"text-delta"}
+{"delta":").\n","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":" -","id":"0","type":"text-delta"}
+{"delta":" User","id":"0","type":"text-delta"}
+{"delta":" preference","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"65","id":"0","type":"text-delta"}
+{"delta":"%","id":"0","type":"text-delta"}
+{"delta":" over","id":"0","type":"text-delta"}
+{"delta":" prior","id":"0","type":"text-delta"}
+{"delta":" models","id":"0","type":"text-delta"}
+{"delta":").\n","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":" These","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" similar","id":"0","type":"text-delta"}
+{"delta":" benchmark","id":"0","type":"text-delta"}
+{"delta":" visuals","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" emphasizing","id":"0","type":"text-delta"}
+{"delta":" conversational","id":"0","type":"text-delta"}
+{"delta":" AI","id":"0","type":"text-delta"}
+{"delta":" improvements","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Available","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"x","id":"0","type":"text-delta"}
+{"delta":".ai","id":"0","type":"text-delta"}
+{"delta":"/news","id":"0","type":"text-delta"}
+{"delta":"/g","id":"0","type":"text-delta"}
+{"delta":"rok","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":"\n\n","id":"0","type":"text-delta"}
+{"delta":"####","id":"0","type":"text-delta"}
+{"delta":" Notes","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" Older","id":"0","type":"text-delta"}
+{"delta":" Media","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" The","id":"0","type":"text-delta"}
+{"delta":" next","id":"0","type":"text-delta"}
+{"delta":" videos","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" from","id":"0","type":"text-delta"}
+{"delta":" October","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" like","id":"0","type":"text-delta"}
+{"delta":" demos","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"G","id":"0","type":"text-delta"}
+{"delta":"rok","id":"0","type":"text-delta"}
+{"delta":" Imagine","id":"0","type":"text-delta"}
+{"delta":" v","id":"0","type":"text-delta"}
+{"delta":"0","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"9","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"AI","id":"0","type":"text-delta"}
+{"delta":" video","id":"0","type":"text-delta"}
+{"delta":" generation","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" motion","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" singing","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" dancing","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" audio","id":"0","type":"text-delta"}
+{"delta":" sync","id":"0","type":"text-delta"}
+{"delta":"—","id":"0","type":"text-delta"}
+{"delta":"e","id":"0","type":"text-delta"}
+{"delta":".g","id":"0","type":"text-delta"}
+{"delta":".,","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" dragon","id":"0","type":"text-delta"}
+{"delta":" video","id":"0","type":"text-delta"}
+{"delta":" or","id":"0","type":"text-delta"}
+{"delta":" Ani","id":"0","type":"text-delta"}
+{"delta":" character","id":"0","type":"text-delta"}
+{"delta":" clips","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" These","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" product","id":"0","type":"text-delta"}
+{"delta":" demos","id":"0","type":"text-delta"}
+{"delta":" but","id":"0","type":"text-delta"}
+{"delta":" not","id":"0","type":"text-delta"}
+{"delta":" as","id":"0","type":"text-delta"}
+{"delta":" recent","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" x","id":"0","type":"text-delta"}
+{"delta":"AI","id":"0","type":"text-delta"}
+{"delta":" posts","id":"0","type":"text-delta"}
+{"delta":" media","id":"0","type":"text-delta"}
+{"delta":" sparingly","id":"0","type":"text-delta"}
+{"delta":";","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" November","id":"0","type":"text-delta"}
+{"delta":" announcements","id":"0","type":"text-delta"}
+{"delta":" dominate","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" latest","id":"0","type":"text-delta"}
+{"delta":" activity","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" For","id":"0","type":"text-delta"}
+{"delta":" real","id":"0","type":"text-delta"}
+{"delta":"-time","id":"0","type":"text-delta"}
+{"delta":" updates","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" check","id":"0","type":"text-delta"}
+{"delta":" @","id":"0","type":"text-delta"}
+{"delta":"x","id":"0","type":"text-delta"}
+{"delta":"ai","id":"0","type":"text-delta"}
+{"delta":" directly","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" If","id":"0","type":"text-delta"}
+{"delta":" you","id":"0","type":"text-delta"}
+{"delta":" want","id":"0","type":"text-delta"}
+{"delta":" details","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" specific","id":"0","type":"text-delta"}
+{"delta":" older","id":"0","type":"text-delta"}
+{"delta":" items","id":"0","type":"text-delta"}
+{"delta":" or","id":"0","type":"text-delta"}
+{"delta":" more","id":"0","type":"text-delta"}
+{"delta":" views","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" let","id":"0","type":"text-delta"}
+{"delta":" me","id":"0","type":"text-delta"}
+{"delta":" know","id":"0","type":"text-delta"}
+{"delta":"!","id":"0","type":"text-delta"}
+{"id":"source_0","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1990530503129391571"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_1","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1990530506879074316"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_2","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1991284822820720732"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_3","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1990530501237715372"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_4","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1975608007250829383"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_5","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1977121515587223679"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_6","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1975608070245175592"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_7","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1975608184711880816"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_8","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1990530508770718154"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_9","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1990530505209754056"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_10","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1991224224313487696"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_11","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1987696575314104339"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"},{"type":"url","url":"https://x.com/i/status/1987696575314104339"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_12","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1991284824594870293"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"},{"type":"url","url":"https://x.com/i/status/1987696575314104339"},{"type":"url","url":"https://x.com/i/status/1991284824594870293"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_13","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1991284828667527322"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"},{"type":"url","url":"https://x.com/i/status/1987696575314104339"},{"type":"url","url":"https://x.com/i/status/1991284824594870293"},{"type":"url","url":"https://x.com/i/status/1991284828667527322"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_14","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1975608017396867282"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"},{"type":"url","url":"https://x.com/i/status/1987696575314104339"},{"type":"url","url":"https://x.com/i/status/1991284824594870293"},{"type":"url","url":"https://x.com/i/status/1991284828667527322"},{"type":"url","url":"https://x.com/i/status/1975608017396867282"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_15","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1975608122845896765"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"},{"type":"url","url":"https://x.com/i/status/1987696575314104339"},{"type":"url","url":"https://x.com/i/status/1991284824594870293"},{"type":"url","url":"https://x.com/i/status/1991284828667527322"},{"type":"url","url":"https://x.com/i/status/1975608017396867282"},{"type":"url","url":"https://x.com/i/status/1975608122845896765"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_16","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1991284813727474073"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"},{"type":"url","url":"https://x.com/i/status/1987696575314104339"},{"type":"url","url":"https://x.com/i/status/1991284824594870293"},{"type":"url","url":"https://x.com/i/status/1991284828667527322"},{"type":"url","url":"https://x.com/i/status/1975608017396867282"},{"type":"url","url":"https://x.com/i/status/1975608122845896765"},{"type":"url","url":"https://x.com/i/status/1991284813727474073"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_17","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1991284830420758687"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"},{"type":"url","url":"https://x.com/i/status/1987696575314104339"},{"type":"url","url":"https://x.com/i/status/1991284824594870293"},{"type":"url","url":"https://x.com/i/status/1991284828667527322"},{"type":"url","url":"https://x.com/i/status/1975608017396867282"},{"type":"url","url":"https://x.com/i/status/1975608122845896765"},{"type":"url","url":"https://x.com/i/status/1991284813727474073"},{"type":"url","url":"https://x.com/i/status/1991284830420758687"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_18","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1975608132530544900"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"},{"type":"url","url":"https://x.com/i/status/1987696575314104339"},{"type":"url","url":"https://x.com/i/status/1991284824594870293"},{"type":"url","url":"https://x.com/i/status/1991284828667527322"},{"type":"url","url":"https://x.com/i/status/1975608017396867282"},{"type":"url","url":"https://x.com/i/status/1975608122845896765"},{"type":"url","url":"https://x.com/i/status/1991284813727474073"},{"type":"url","url":"https://x.com/i/status/1991284830420758687"},{"type":"url","url":"https://x.com/i/status/1975608132530544900"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_19","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.com/i/status/1991284818928366015"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"},{"type":"url","url":"https://x.com/i/status/1987696575314104339"},{"type":"url","url":"https://x.com/i/status/1991284824594870293"},{"type":"url","url":"https://x.com/i/status/1991284828667527322"},{"type":"url","url":"https://x.com/i/status/1975608017396867282"},{"type":"url","url":"https://x.com/i/status/1975608122845896765"},{"type":"url","url":"https://x.com/i/status/1991284813727474073"},{"type":"url","url":"https://x.com/i/status/1991284830420758687"},{"type":"url","url":"https://x.com/i/status/1975608132530544900"},{"type":"url","url":"https://x.com/i/status/1991284818928366015"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"0","type":"text-end"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","serverToolCalls":[{"call_id":"xs_call_24148162","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","input":"{\"query\":\"from:xai filter:media\",\"limit\":20,\"mode\":\"Latest\"}","name":"x_keyword_search","status":"completed","type":"custom_tool_call"},{"call_id":"xs_call_14963218","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","input":"{\"video_url\":\"https://video.twimg.com/amplify_video/1991284765027364866/vid/avc1/468x270/kRkbodV96jk4PmbG.mp4\"}","name":"view_x_video","status":"completed","type":"custom_tool_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","status":"completed","type":"web_search_call"}],"sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"},{"type":"url","url":"https://x.com/i/status/1987696575314104339"},{"type":"url","url":"https://x.com/i/status/1991284824594870293"},{"type":"url","url":"https://x.com/i/status/1991284828667527322"},{"type":"url","url":"https://x.com/i/status/1975608017396867282"},{"type":"url","url":"https://x.com/i/status/1975608122845896765"},{"type":"url","url":"https://x.com/i/status/1991284813727474073"},{"type":"url","url":"https://x.com/i/status/1991284830420758687"},{"type":"url","url":"https://x.com/i/status/1975608132530544900"},{"type":"url","url":"https://x.com/i/status/1991284818928366015"}],"status":"completed"}}},"type":"raw"}
+{"finishReason":{"raw":"completed","unified":"stop"},"providerMetadata":{"xai.responses":{"id":"b7b464ea-cc85-d44a-0f2f-1f7320e703c3","model":"grok-4-fast-reasoning","serverToolCalls":[{"call_id":"xs_call_24148162","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_24148162","input":"{\"query\":\"from:xai filter:media\",\"limit\":20,\"mode\":\"Latest\"}","name":"x_keyword_search","status":"completed","type":"custom_tool_call"},{"call_id":"xs_call_14963218","id":"ctc_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_xs_call_14963218","input":"{\"video_url\":\"https://video.twimg.com/amplify_video/1991284765027364866/vid/avc1/468x270/kRkbodV96jk4PmbG.mp4\"}","name":"view_x_video","status":"completed","type":"custom_tool_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_55360208","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_63718660","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_09546004","status":"completed","type":"web_search_call"},{"action":{"query":"","sources":[],"type":"search"},"id":"ws_b7b464ea-cc85-d44a-0f2f-1f7320e703c3_call_45339693","status":"completed","type":"web_search_call"}],"sources":[{"type":"url","url":"https://x.com/i/status/1990530503129391571"},{"type":"url","url":"https://x.com/i/status/1990530506879074316"},{"type":"url","url":"https://x.com/i/status/1991284822820720732"},{"type":"url","url":"https://x.com/i/status/1990530501237715372"},{"type":"url","url":"https://x.com/i/status/1975608007250829383"},{"type":"url","url":"https://x.com/i/status/1977121515587223679"},{"type":"url","url":"https://x.com/i/status/1975608070245175592"},{"type":"url","url":"https://x.com/i/status/1975608184711880816"},{"type":"url","url":"https://x.com/i/status/1990530508770718154"},{"type":"url","url":"https://x.com/i/status/1990530505209754056"},{"type":"url","url":"https://x.com/i/status/1991224224313487696"},{"type":"url","url":"https://x.com/i/status/1987696575314104339"},{"type":"url","url":"https://x.com/i/status/1991284824594870293"},{"type":"url","url":"https://x.com/i/status/1991284828667527322"},{"type":"url","url":"https://x.com/i/status/1975608017396867282"},{"type":"url","url":"https://x.com/i/status/1975608122845896765"},{"type":"url","url":"https://x.com/i/status/1991284813727474073"},{"type":"url","url":"https://x.com/i/status/1991284830420758687"},{"type":"url","url":"https://x.com/i/status/1975608132530544900"},{"type":"url","url":"https://x.com/i/status/1991284818928366015"}],"status":"completed"}},"type":"finish","usage":{"inputTokens":{"cacheRead":4585,"noCache":22651,"total":27236},"outputTokens":{"reasoning":1091,"text":1986,"total":3077},"raw":{"input_tokens":27236,"input_tokens_details":{"cached_tokens":4585},"num_server_side_tools_used":6,"num_sources_used":0,"output_tokens":3077,"output_tokens_details":{"reasoning_tokens":1091},"server_side_tool_usage_details":{"code_interpreter_calls":0,"document_search_calls":0,"file_search_calls":0,"mcp_calls":0,"web_search_calls":0,"x_search_calls":1},"total_tokens":30313}}}

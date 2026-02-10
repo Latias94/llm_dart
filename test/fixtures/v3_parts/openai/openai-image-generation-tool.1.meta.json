@@ -1,0 +1,24 @@
+{
+  "provider": "openai",
+  "scenario": "openai-image-generation-tool.1",
+  "description": "OpenAI Responses streaming with provider-executed image_generation tool. Used to validate canonical v3 provider tool result mapping (may include large base64 payloads).",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/openai/responses/openai-image-generation-tool.1.chunks.txt",
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-image-generation-tool.1.chunks.txt"
+    ],
+    "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "Golden files may contain large lines because image payloads can be base64 strings inside tool results."
+  ]
+}
+

@@ -1,0 +1,278 @@
+{"type":"stream-start","warnings":[]}
+{"id":"98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8","modelId":"grok-4-fast-reasoning","timestamp":"2025-11-03T17:09:45.000Z","type":"response-metadata"}
+{"input":"{\"query\":\"what is xAI\",\"num_results\":5}","providerExecuted":true,"providerMetadata":{"xai.responses":{"type":"web_search_call"}},"toolCallId":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","toolName":"web_search","type":"tool-call"}
+{"providerExecuted":true,"providerMetadata":{"xai.responses":{"status":"completed","type":"web_search_call"}},"result":{"arguments":"{\"query\":\"what is xAI\",\"num_results\":5}","call_id":"","id":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","name":"web_search","status":"completed","type":"web_search_call"},"toolCallId":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","toolName":"web_search","type":"tool-result"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8","model":"grok-4-fast-reasoning","serverToolCalls":[{"arguments":"{\"query\":\"what is xAI\",\"num_results\":5}","call_id":"","id":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","name":"web_search","status":"completed","type":"web_search_call"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"0","type":"text-start"}
+{"delta":"x","id":"0","type":"text-delta"}
+{"delta":"AI","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" an","id":"0","type":"text-delta"}
+{"delta":" American","id":"0","type":"text-delta"}
+{"delta":" artificial","id":"0","type":"text-delta"}
+{"delta":" intelligence","id":"0","type":"text-delta"}
+{"delta":" company","id":"0","type":"text-delta"}
+{"delta":" founded","id":"0","type":"text-delta"}
+{"delta":" by","id":"0","type":"text-delta"}
+{"delta":" Elon","id":"0","type":"text-delta"}
+{"delta":" Musk","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" July","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Its","id":"0","type":"text-delta"}
+{"delta":" mission","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"understand","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" true","id":"0","type":"text-delta"}
+{"delta":" nature","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" universe","id":"0","type":"text-delta"}
+{"delta":"\"","id":"0","type":"text-delta"}
+{"delta":" by","id":"0","type":"text-delta"}
+{"delta":" advancing","id":"0","type":"text-delta"}
+{"delta":" scientific","id":"0","type":"text-delta"}
+{"delta":" discovery","id":"0","type":"text-delta"}
+{"delta":" through","id":"0","type":"text-delta"}
+{"delta":" AI","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" The","id":"0","type":"text-delta"}
+{"delta":" company","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" based","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" San","id":"0","type":"text-delta"}
+{"delta":" Francisco","id":"0","type":"text-delta"}
+{"delta":" Bay","id":"0","type":"text-delta"}
+{"delta":" Area","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" focuses","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" developing","id":"0","type":"text-delta"}
+{"delta":" advanced","id":"0","type":"text-delta"}
+{"delta":" AI","id":"0","type":"text-delta"}
+{"delta":" models","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" including","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":" chatbot","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"integrated","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" X","id":"0","type":"text-delta"}
+{"delta":" platform","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" formerly","id":"0","type":"text-delta"}
+{"delta":" Twitter","id":"0","type":"text-delta"}
+{"delta":").\n\n","id":"0","type":"text-delta"}
+{"delta":"Key","id":"0","type":"text-delta"}
+{"delta":" points","id":"0","type":"text-delta"}
+{"delta":":\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Found","id":"0","type":"text-delta"}
+{"delta":"ers","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" Team","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" Led","id":"0","type":"text-delta"}
+{"delta":" by","id":"0","type":"text-delta"}
+{"delta":" Elon","id":"0","type":"text-delta"}
+{"delta":" Musk","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" team","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" engineers","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" researchers","id":"0","type":"text-delta"}
+{"delta":" from","id":"0","type":"text-delta"}
+{"delta":" companies","id":"0","type":"text-delta"}
+{"delta":" like","id":"0","type":"text-delta"}
+{"delta":" Open","id":"0","type":"text-delta"}
+{"delta":"AI","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" Google","id":"0","type":"text-delta"}
+{"delta":" Deep","id":"0","type":"text-delta"}
+{"delta":"Mind","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" Tesla","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Products","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" x","id":"0","type":"text-delta"}
+{"delta":"AI","id":"0","type":"text-delta"}
+{"delta":" has","id":"0","type":"text-delta"}
+{"delta":" released","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"an","id":"0","type":"text-delta"}
+{"delta":" open","id":"0","type":"text-delta"}
+{"delta":"-source","id":"0","type":"text-delta"}
+{"delta":" large","id":"0","type":"text-delta"}
+{"delta":" language","id":"0","type":"text-delta"}
+{"delta":" model","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" subsequent","id":"0","type":"text-delta"}
+{"delta":" versions","id":"0","type":"text-delta"}
+{"delta":" like","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" Gro","id":"0","type":"text-delta"}
+{"delta":"k","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" which","id":"0","type":"text-delta"}
+{"delta":" power","id":"0","type":"text-delta"}
+{"delta":" conversational","id":"0","type":"text-delta"}
+{"delta":" AI","id":"0","type":"text-delta"}
+{"delta":" tools","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Funding","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" Raised","id":"0","type":"text-delta"}
+{"delta":" significant","id":"0","type":"text-delta"}
+{"delta":" venture","id":"0","type":"text-delta"}
+{"delta":" capital","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" including","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" $","id":"0","type":"text-delta"}
+{"delta":"6","id":"0","type":"text-delta"}
+{"delta":" billion","id":"0","type":"text-delta"}
+{"delta":" Series","id":"0","type":"text-delta"}
+{"delta":" B","id":"0","type":"text-delta"}
+{"delta":" round","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"4","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" valuing","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" company","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" around","id":"0","type":"text-delta"}
+{"delta":" $","id":"0","type":"text-delta"}
+{"delta":"24","id":"0","type":"text-delta"}
+{"delta":" billion","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Philosophy","id":"0","type":"text-delta"}
+{"delta":"**:","id":"0","type":"text-delta"}
+{"delta":" Emphas","id":"0","type":"text-delta"}
+{"delta":"izes","id":"0","type":"text-delta"}
+{"delta":" curiosity","id":"0","type":"text-delta"}
+{"delta":"-driven","id":"0","type":"text-delta"}
+{"delta":" AI","id":"0","type":"text-delta"}
+{"delta":" development","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" focus","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" truth","id":"0","type":"text-delta"}
+{"delta":"-seeking","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" avoiding","id":"0","type":"text-delta"}
+{"delta":" overly","id":"0","type":"text-delta"}
+{"delta":" restrictive","id":"0","type":"text-delta"}
+{"delta":" safety","id":"0","type":"text-delta"}
+{"delta":" measures","id":"0","type":"text-delta"}
+{"delta":" compared","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" competitors","id":"0","type":"text-delta"}
+{"delta":".\n\n","id":"0","type":"text-delta"}
+{"delta":"Note","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"X","id":"0","type":"text-delta"}
+{"delta":"AI","id":"0","type":"text-delta"}
+{"delta":"\"","id":"0","type":"text-delta"}
+{"delta":" can","id":"0","type":"text-delta"}
+{"delta":" also","id":"0","type":"text-delta"}
+{"delta":" refer","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"Explain","id":"0","type":"text-delta"}
+{"delta":"able","id":"0","type":"text-delta"}
+{"delta":" AI","id":"0","type":"text-delta"}
+{"delta":",\"","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" field","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" machine","id":"0","type":"text-delta"}
+{"delta":" learning","id":"0","type":"text-delta"}
+{"delta":" that","id":"0","type":"text-delta"}
+{"delta":" makes","id":"0","type":"text-delta"}
+{"delta":" AI","id":"0","type":"text-delta"}
+{"delta":" decisions","id":"0","type":"text-delta"}
+{"delta":" transparent","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" interpre","id":"0","type":"text-delta"}
+{"delta":"table","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" humans","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" If","id":"0","type":"text-delta"}
+{"delta":" that's","id":"0","type":"text-delta"}
+{"delta":" what","id":"0","type":"text-delta"}
+{"delta":" you","id":"0","type":"text-delta"}
+{"delta":" meant","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" let","id":"0","type":"text-delta"}
+{"delta":" me","id":"0","type":"text-delta"}
+{"delta":" know","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" more","id":"0","type":"text-delta"}
+{"delta":" details","id":"0","type":"text-delta"}
+{"delta":"!","id":"0","type":"text-delta"}
+{"delta":" For","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" latest","id":"0","type":"text-delta"}
+{"delta":" updates","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" check","id":"0","type":"text-delta"}
+{"delta":" x","id":"0","type":"text-delta"}
+{"delta":".ai","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"id":"source_0","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://en.wikipedia.org/wiki/XAI_%28company%29"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://en.wikipedia.org/wiki/XAI_%28company%29"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_1","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.ai/company"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://en.wikipedia.org/wiki/XAI_%28company%29"},{"type":"url","url":"https://x.ai/company"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_2","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://www.ibm.com/think/topics/explainable-ai"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://en.wikipedia.org/wiki/XAI_%28company%29"},{"type":"url","url":"https://x.ai/company"},{"type":"url","url":"https://www.ibm.com/think/topics/explainable-ai"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_3","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://www.owkin.com/a-z-of-ai-for-healthcare/xai"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://en.wikipedia.org/wiki/XAI_%28company%29"},{"type":"url","url":"https://x.ai/company"},{"type":"url","url":"https://www.ibm.com/think/topics/explainable-ai"},{"type":"url","url":"https://www.owkin.com/a-z-of-ai-for-healthcare/xai"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"source_4","providerMetadata":{"xai.responses":{"type":"url_citation"}},"sourceType":"url","type":"source","url":"https://x.ai/"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8","model":"grok-4-fast-reasoning","sources":[{"type":"url","url":"https://en.wikipedia.org/wiki/XAI_%28company%29"},{"type":"url","url":"https://x.ai/company"},{"type":"url","url":"https://www.ibm.com/think/topics/explainable-ai"},{"type":"url","url":"https://www.owkin.com/a-z-of-ai-for-healthcare/xai"},{"type":"url","url":"https://x.ai/"}],"status":"in_progress"}}},"type":"raw"}
+{"id":"0","type":"text-end"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8","model":"grok-4-fast-reasoning","serverToolCalls":[{"arguments":"{\"query\":\"what is xAI\",\"num_results\":5}","call_id":"","id":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","name":"web_search","status":"completed","type":"web_search_call"}],"sources":[{"type":"url","url":"https://en.wikipedia.org/wiki/XAI_%28company%29"},{"type":"url","url":"https://x.ai/company"},{"type":"url","url":"https://www.ibm.com/think/topics/explainable-ai"},{"type":"url","url":"https://www.owkin.com/a-z-of-ai-for-healthcare/xai"},{"type":"url","url":"https://x.ai/"}],"status":"completed"}}},"type":"raw"}
+{"finishReason":{"raw":"completed","unified":"stop"},"providerMetadata":{"xai.responses":{"id":"98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8","model":"grok-4-fast-reasoning","serverToolCalls":[{"arguments":"{\"query\":\"what is xAI\",\"num_results\":5}","call_id":"","id":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","name":"web_search","status":"completed","type":"web_search_call"}],"sources":[{"type":"url","url":"https://en.wikipedia.org/wiki/XAI_%28company%29"},{"type":"url","url":"https://x.ai/company"},{"type":"url","url":"https://www.ibm.com/think/topics/explainable-ai"},{"type":"url","url":"https://www.owkin.com/a-z-of-ai-for-healthcare/xai"},{"type":"url","url":"https://x.ai/"}],"status":"completed"}},"type":"finish","usage":{"inputTokens":{"cacheRead":1578,"noCache":297,"total":1875},"outputTokens":{"reasoning":397,"text":298,"total":695},"raw":{"input_tokens":1875,"input_tokens_details":{"cached_tokens":1578},"num_server_side_tools_used":1,"num_sources_used":0,"output_tokens":695,"output_tokens_details":{"reasoning_tokens":397},"total_tokens":2570}}}

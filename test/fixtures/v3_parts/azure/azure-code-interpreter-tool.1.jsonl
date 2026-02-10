@@ -1,0 +1,236 @@
+{"type":"stream-start","warnings":[]}
+{"id":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","modelId":"gpt-5-mini","timestamp":"2025-10-12T13:05:16.000Z","type":"response-metadata"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"azure":{"id":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","model":"gpt-5-mini","responseId":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","serviceTier":"auto"}}},"type":"raw"}
+{"input":"null","providerExecuted":true,"providerMetadata":{"azure":{"type":"code_interpreter_call"}},"toolCallId":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","toolName":"code_interpreter","type":"tool-call"}
+{"rawValue":{"data":{"item_id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","output_index":1,"sequence_number":5,"type":"response.code_interpreter_call.in_progress"},"kind":"provider-tool-delta","providerMetadata":{"azure":{"type":"response.code_interpreter_call.in_progress"}},"status":"in_progress","toolCallId":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","toolName":"code_interpreter"},"type":"raw"}
+{"rawValue":{"data":{"item_id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","output_index":1,"sequence_number":110,"type":"response.code_interpreter_call.interpreting"},"kind":"provider-tool-delta","providerMetadata":{"azure":{"type":"response.code_interpreter_call.interpreting"}},"status":"interpreting","toolCallId":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","toolName":"code_interpreter"},"type":"raw"}
+{"rawValue":{"data":{"item_id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","output_index":1,"sequence_number":111,"type":"response.code_interpreter_call.completed"},"kind":"provider-tool-delta","providerMetadata":{"azure":{"type":"response.code_interpreter_call.completed"}},"status":"completed","toolCallId":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","toolName":"code_interpreter"},"type":"raw"}
+{"providerExecuted":true,"providerMetadata":{"azure":{"status":"completed","type":"code_interpreter_call"}},"result":{"code":"# Program: generate five random numbers between 1 and 100 with two decimal places\nimport random\n\n# Generate five random numbers and round to two decimals\nnumbers = [round(random.uniform(1, 100), 2) for _ in range(5)]\n\n# Print the list and a nicely formatted string\nprint(\"Generated numbers (as floats):\", numbers)\nprint(\"Generated numbers (formatted to 2 decimal places):\", \", \".join(f\"{n:.2f}\" for n in numbers))","container_id":"cntr_68eba78d6dc081908116b7ad7a32f52d0050b146e60e47a9","id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","outputs":[{"logs":"Generated numbers (as floats): [88.99, 51.21, 89.85, 88.97, 7.73]\nGenerated numbers (formatted to 2 decimal places): 88.99, 51.21, 89.85, 88.97, 7.73\n","type":"logs"}],"status":"completed","type":"code_interpreter_call"},"toolCallId":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","toolName":"code_interpreter","type":"tool-result"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"azure":{"codeInterpreterCalls":[{"code":"# Program: generate five random numbers between 1 and 100 with two decimal places\nimport random\n\n# Generate five random numbers and round to two decimals\nnumbers = [round(random.uniform(1, 100), 2) for _ in range(5)]\n\n# Print the list and a nicely formatted string\nprint(\"Generated numbers (as floats):\", numbers)\nprint(\"Generated numbers (formatted to 2 decimal places):\", \", \".join(f\"{n:.2f}\" for n in numbers))","container_id":"cntr_68eba78d6dc081908116b7ad7a32f52d0050b146e60e47a9","id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","outputs":[{"logs":"Generated numbers (as floats): [88.99, 51.21, 89.85, 88.97, 7.73]\nGenerated numbers (formatted to 2 decimal places): 88.99, 51.21, 89.85, 88.97, 7.73\n","type":"logs"}],"status":"completed","type":"code_interpreter_call"}],"id":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","model":"gpt-5-mini","responseId":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","serverToolCalls":[{"code":"# Program: generate five random numbers between 1 and 100 with two decimal places\nimport random\n\n# Generate five random numbers and round to two decimals\nnumbers = [round(random.uniform(1, 100), 2) for _ in range(5)]\n\n# Print the list and a nicely formatted string\nprint(\"Generated numbers (as floats):\", numbers)\nprint(\"Generated numbers (formatted to 2 decimal places):\", \", \".join(f\"{n:.2f}\" for n in numbers))","container_id":"cntr_68eba78d6dc081908116b7ad7a32f52d0050b146e60e47a9","id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","outputs":[{"logs":"Generated numbers (as floats): [88.99, 51.21, 89.85, 88.97, 7.73]\nGenerated numbers (formatted to 2 decimal places): 88.99, 51.21, 89.85, 88.97, 7.73\n","type":"logs"}],"status":"completed","type":"code_interpreter_call"}],"serviceTier":"auto"}}},"type":"raw"}
+{"id":"0","type":"text-start"}
+{"delta":"Here's","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" simple","id":"0","type":"text-delta"}
+{"delta":" Python","id":"0","type":"text-delta"}
+{"delta":" program","id":"0","type":"text-delta"}
+{"delta":" that","id":"0","type":"text-delta"}
+{"delta":" generates","id":"0","type":"text-delta"}
+{"delta":" five","id":"0","type":"text-delta"}
+{"delta":" random","id":"0","type":"text-delta"}
+{"delta":" numbers","id":"0","type":"text-delta"}
+{"delta":" between","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"100","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" two","id":"0","type":"text-delta"}
+{"delta":" decimal","id":"0","type":"text-delta"}
+{"delta":" places","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" execution","id":"0","type":"text-delta"}
+{"delta":" result","id":"0","type":"text-delta"}
+{"delta":" from","id":"0","type":"text-delta"}
+{"delta":" running","id":"0","type":"text-delta"}
+{"delta":" it","id":"0","type":"text-delta"}
+{"delta":".\n\n","id":"0","type":"text-delta"}
+{"delta":"Program","id":"0","type":"text-delta"}
+{"delta":":\n","id":"0","type":"text-delta"}
+{"delta":"```","id":"0","type":"text-delta"}
+{"delta":"python","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"import","id":"0","type":"text-delta"}
+{"delta":" random","id":"0","type":"text-delta"}
+{"delta":"\n\n","id":"0","type":"text-delta"}
+{"delta":"#","id":"0","type":"text-delta"}
+{"delta":" Generate","id":"0","type":"text-delta"}
+{"delta":" five","id":"0","type":"text-delta"}
+{"delta":" random","id":"0","type":"text-delta"}
+{"delta":" numbers","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" round","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" two","id":"0","type":"text-delta"}
+{"delta":" decimals","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"numbers","id":"0","type":"text-delta"}
+{"delta":" =","id":"0","type":"text-delta"}
+{"delta":" [","id":"0","type":"text-delta"}
+{"delta":"round","id":"0","type":"text-delta"}
+{"delta":"(random","id":"0","type":"text-delta"}
+{"delta":".uniform","id":"0","type":"text-delta"}
+{"delta":"(","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"100","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" _","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" range","id":"0","type":"text-delta"}
+{"delta":"(","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":")]\n\n","id":"0","type":"text-delta"}
+{"delta":"#","id":"0","type":"text-delta"}
+{"delta":" Print","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" list","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" nicely","id":"0","type":"text-delta"}
+{"delta":" formatted","id":"0","type":"text-delta"}
+{"delta":" string","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"print","id":"0","type":"text-delta"}
+{"delta":"(\"","id":"0","type":"text-delta"}
+{"delta":"Generated","id":"0","type":"text-delta"}
+{"delta":" numbers","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"as","id":"0","type":"text-delta"}
+{"delta":" floats","id":"0","type":"text-delta"}
+{"delta":"):","id":"0","type":"text-delta"}
+{"delta":"\",","id":"0","type":"text-delta"}
+{"delta":" numbers","id":"0","type":"text-delta"}
+{"delta":")\n","id":"0","type":"text-delta"}
+{"delta":"print","id":"0","type":"text-delta"}
+{"delta":"(\"","id":"0","type":"text-delta"}
+{"delta":"Generated","id":"0","type":"text-delta"}
+{"delta":" numbers","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"formatted","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":" decimal","id":"0","type":"text-delta"}
+{"delta":" places","id":"0","type":"text-delta"}
+{"delta":"):","id":"0","type":"text-delta"}
+{"delta":"\",","id":"0","type":"text-delta"}
+{"delta":" \",","id":"0","type":"text-delta"}
+{"delta":" \".","id":"0","type":"text-delta"}
+{"delta":"join","id":"0","type":"text-delta"}
+{"delta":"(f","id":"0","type":"text-delta"}
+{"delta":"\"{","id":"0","type":"text-delta"}
+{"delta":"n","id":"0","type":"text-delta"}
+{"delta":":.","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":"f","id":"0","type":"text-delta"}
+{"delta":"}\"","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" n","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" numbers","id":"0","type":"text-delta"}
+{"delta":"))\n","id":"0","type":"text-delta"}
+{"delta":"``","id":"0","type":"text-delta"}
+{"delta":"`\n\n","id":"0","type":"text-delta"}
+{"delta":"Execution","id":"0","type":"text-delta"}
+{"delta":" result","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"from","id":"0","type":"text-delta"}
+{"delta":" this","id":"0","type":"text-delta"}
+{"delta":" run","id":"0","type":"text-delta"}
+{"delta":"):\n","id":"0","type":"text-delta"}
+{"delta":"Generated","id":"0","type":"text-delta"}
+{"delta":" numbers","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"as","id":"0","type":"text-delta"}
+{"delta":" floats","id":"0","type":"text-delta"}
+{"delta":"):","id":"0","type":"text-delta"}
+{"delta":" [","id":"0","type":"text-delta"}
+{"delta":"88","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"99","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"51","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"21","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"89","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"85","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"88","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"97","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"7","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"73","id":"0","type":"text-delta"}
+{"delta":"]\n","id":"0","type":"text-delta"}
+{"delta":"Generated","id":"0","type":"text-delta"}
+{"delta":" numbers","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"formatted","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":" decimal","id":"0","type":"text-delta"}
+{"delta":" places","id":"0","type":"text-delta"}
+{"delta":"):","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"88","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"99","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"51","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"21","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"89","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"85","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"88","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"97","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"7","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"73","id":"0","type":"text-delta"}
+{"delta":"\n\n","id":"0","type":"text-delta"}
+{"delta":"If","id":"0","type":"text-delta"}
+{"delta":" you","id":"0","type":"text-delta"}
+{"delta":" want","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" reproduc","id":"0","type":"text-delta"}
+{"delta":"ible","id":"0","type":"text-delta"}
+{"delta":" result","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" I","id":"0","type":"text-delta"}
+{"delta":" can","id":"0","type":"text-delta"}
+{"delta":" add","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" fixed","id":"0","type":"text-delta"}
+{"delta":" random","id":"0","type":"text-delta"}
+{"delta":" seed","id":"0","type":"text-delta"}
+{"delta":" or","id":"0","type":"text-delta"}
+{"delta":" save","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" program","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" file","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" you","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Want","id":"0","type":"text-delta"}
+{"delta":" that","id":"0","type":"text-delta"}
+{"delta":"?","id":"0","type":"text-delta"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"azure":{"codeInterpreterCalls":[{"code":"# Program: generate five random numbers between 1 and 100 with two decimal places\nimport random\n\n# Generate five random numbers and round to two decimals\nnumbers = [round(random.uniform(1, 100), 2) for _ in range(5)]\n\n# Print the list and a nicely formatted string\nprint(\"Generated numbers (as floats):\", numbers)\nprint(\"Generated numbers (formatted to 2 decimal places):\", \", \".join(f\"{n:.2f}\" for n in numbers))","container_id":"cntr_68eba78d6dc081908116b7ad7a32f52d0050b146e60e47a9","id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","outputs":[{"logs":"Generated numbers (as floats): [88.99, 51.21, 89.85, 88.97, 7.73]\nGenerated numbers (formatted to 2 decimal places): 88.99, 51.21, 89.85, 88.97, 7.73\n","type":"logs"}],"status":"completed","type":"code_interpreter_call"}],"id":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","logprobs":[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],"model":"gpt-5-mini","responseId":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","serverToolCalls":[{"code":"# Program: generate five random numbers between 1 and 100 with two decimal places\nimport random\n\n# Generate five random numbers and round to two decimals\nnumbers = [round(random.uniform(1, 100), 2) for _ in range(5)]\n\n# Print the list and a nicely formatted string\nprint(\"Generated numbers (as floats):\", numbers)\nprint(\"Generated numbers (formatted to 2 decimal places):\", \", \".join(f\"{n:.2f}\" for n in numbers))","container_id":"cntr_68eba78d6dc081908116b7ad7a32f52d0050b146e60e47a9","id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","outputs":[{"logs":"Generated numbers (as floats): [88.99, 51.21, 89.85, 88.97, 7.73]\nGenerated numbers (formatted to 2 decimal places): 88.99, 51.21, 89.85, 88.97, 7.73\n","type":"logs"}],"status":"completed","type":"code_interpreter_call"}],"serviceTier":"auto"}}},"type":"raw"}
+{"id":"0","type":"text-end"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"azure":{"codeInterpreterCalls":[{"code":"# Program: generate five random numbers between 1 and 100 with two decimal places\nimport random\n\n# Generate five random numbers and round to two decimals\nnumbers = [round(random.uniform(1, 100), 2) for _ in range(5)]\n\n# Print the list and a nicely formatted string\nprint(\"Generated numbers (as floats):\", numbers)\nprint(\"Generated numbers (formatted to 2 decimal places):\", \", \".join(f\"{n:.2f}\" for n in numbers))","container_id":"cntr_68eba78d6dc081908116b7ad7a32f52d0050b146e60e47a9","id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","outputs":[{"logs":"Generated numbers (as floats): [88.99, 51.21, 89.85, 88.97, 7.73]\nGenerated numbers (formatted to 2 decimal places): 88.99, 51.21, 89.85, 88.97, 7.73\n","type":"logs"}],"status":"completed","type":"code_interpreter_call"}],"id":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","logprobs":[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],"model":"gpt-5-mini","responseId":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","serverToolCalls":[{"code":"# Program: generate five random numbers between 1 and 100 with two decimal places\nimport random\n\n# Generate five random numbers and round to two decimals\nnumbers = [round(random.uniform(1, 100), 2) for _ in range(5)]\n\n# Print the list and a nicely formatted string\nprint(\"Generated numbers (as floats):\", numbers)\nprint(\"Generated numbers (formatted to 2 decimal places):\", \", \".join(f\"{n:.2f}\" for n in numbers))","container_id":"cntr_68eba78d6dc081908116b7ad7a32f52d0050b146e60e47a9","id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","outputs":[{"logs":"Generated numbers (as floats): [88.99, 51.21, 89.85, 88.97, 7.73]\nGenerated numbers (formatted to 2 decimal places): 88.99, 51.21, 89.85, 88.97, 7.73\n","type":"logs"}],"status":"completed","type":"code_interpreter_call"}],"serviceTier":"default"}}},"type":"raw"}
+{"finishReason":{"unified":"stop"},"providerMetadata":{"azure":{"codeInterpreterCalls":[{"code":"# Program: generate five random numbers between 1 and 100 with two decimal places\nimport random\n\n# Generate five random numbers and round to two decimals\nnumbers = [round(random.uniform(1, 100), 2) for _ in range(5)]\n\n# Print the list and a nicely formatted string\nprint(\"Generated numbers (as floats):\", numbers)\nprint(\"Generated numbers (formatted to 2 decimal places):\", \", \".join(f\"{n:.2f}\" for n in numbers))","container_id":"cntr_68eba78d6dc081908116b7ad7a32f52d0050b146e60e47a9","id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","outputs":[{"logs":"Generated numbers (as floats): [88.99, 51.21, 89.85, 88.97, 7.73]\nGenerated numbers (formatted to 2 decimal places): 88.99, 51.21, 89.85, 88.97, 7.73\n","type":"logs"}],"status":"completed","type":"code_interpreter_call"}],"id":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","logprobs":[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],"model":"gpt-5-mini","responseId":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","serverToolCalls":[{"code":"# Program: generate five random numbers between 1 and 100 with two decimal places\nimport random\n\n# Generate five random numbers and round to two decimals\nnumbers = [round(random.uniform(1, 100), 2) for _ in range(5)]\n\n# Print the list and a nicely formatted string\nprint(\"Generated numbers (as floats):\", numbers)\nprint(\"Generated numbers (formatted to 2 decimal places):\", \", \".join(f\"{n:.2f}\" for n in numbers))","container_id":"cntr_68eba78d6dc081908116b7ad7a32f52d0050b146e60e47a9","id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","outputs":[{"logs":"Generated numbers (as floats): [88.99, 51.21, 89.85, 88.97, 7.73]\nGenerated numbers (formatted to 2 decimal places): 88.99, 51.21, 89.85, 88.97, 7.73\n","type":"logs"}],"status":"completed","type":"code_interpreter_call"}],"serviceTier":"default"}},"type":"finish","usage":{"inputTokens":{"cacheRead":1280,"noCache":863,"total":2143},"outputTokens":{"reasoning":576,"text":343,"total":919},"raw":{"input_tokens":2143,"input_tokens_details":{"cached_tokens":1280},"output_tokens":919,"output_tokens_details":{"reasoning_tokens":576},"total_tokens":3062}}}

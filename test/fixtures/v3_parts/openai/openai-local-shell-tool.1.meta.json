@@ -1,0 +1,26 @@
+{
+  "provider": "openai",
+  "scenario": "openai-local-shell-tool.1",
+  "description": "OpenAI Responses streaming with a provider-executed local_shell tool call and its tool result. Used to validate canonical v3 parts encoding and tool-call/tool-result mapping.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/openai/responses/openai-local-shell-tool.1.chunks.txt",
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-local-shell-tool.1.chunks.txt"
+    ],
+    "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "This golden is derived from llm_dart parsing of the vendored AI SDK fixture, not directly copied from upstream.",
+    "Provider-only fields may appear under providerMetadata or raw parts."
+  ]
+}
+

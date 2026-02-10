@@ -1,0 +1,650 @@
+{"type":"stream-start","warnings":[]}
+{"id":"0b824fe9-3250-2588-0bbf-0810402fc822","modelId":"grok-code-fast-1","timestamp":"2025-11-23T01:11:25.000Z","type":"response-metadata"}
+{"id":"0","type":"reasoning-start"}
+{"delta":"First","id":"0","type":"reasoning-delta"}
+{"delta":",","id":"0","type":"reasoning-delta"}
+{"delta":" the","id":"0","type":"reasoning-delta"}
+{"delta":" question","id":"0","type":"reasoning-delta"}
+{"delta":" is","id":"0","type":"reasoning-delta"}
+{"delta":":","id":"0","type":"reasoning-delta"}
+{"delta":" \"","id":"0","type":"reasoning-delta"}
+{"delta":"What","id":"0","type":"reasoning-delta"}
+{"delta":" is","id":"0","type":"reasoning-delta"}
+{"delta":" specifically","id":"0","type":"reasoning-delta"}
+{"delta":" notable","id":"0","type":"reasoning-delta"}
+{"delta":" about","id":"0","type":"reasoning-delta"}
+{"delta":" the","id":"0","type":"reasoning-delta"}
+{"delta":" style","id":"0","type":"reasoning-delta"}
+{"delta":" of","id":"0","type":"reasoning-delta"}
+{"delta":" Son","id":"0","type":"reasoning-delta"}
+{"delta":"oran","id":"0","type":"reasoning-delta"}
+{"delta":" food","id":"0","type":"reasoning-delta"}
+{"delta":"?\"","id":"0","type":"reasoning-delta"}
+{"delta":" This","id":"0","type":"reasoning-delta"}
+{"delta":" is","id":"0","type":"reasoning-delta"}
+{"delta":" an","id":"0","type":"reasoning-delta"}
+{"delta":" open","id":"0","type":"reasoning-delta"}
+{"delta":"-ended","id":"0","type":"reasoning-delta"}
+{"delta":" question","id":"0","type":"reasoning-delta"}
+{"delta":" about","id":"0","type":"reasoning-delta"}
+{"delta":" food","id":"0","type":"reasoning-delta"}
+{"delta":" culture","id":"0","type":"reasoning-delta"}
+{"delta":",","id":"0","type":"reasoning-delta"}
+{"delta":" specifically","id":"0","type":"reasoning-delta"}
+{"delta":" Son","id":"0","type":"reasoning-delta"}
+{"delta":"oran","id":"0","type":"reasoning-delta"}
+{"delta":" cuisine","id":"0","type":"reasoning-delta"}
+{"delta":".","id":"0","type":"reasoning-delta"}
+{"delta":" It's","id":"0","type":"reasoning-delta"}
+{"delta":" not","id":"0","type":"reasoning-delta"}
+{"delta":" closed","id":"0","type":"reasoning-delta"}
+{"delta":"-ended","id":"0","type":"reasoning-delta"}
+{"delta":" math","id":"0","type":"reasoning-delta"}
+{"delta":"/science","id":"0","type":"reasoning-delta"}
+{"delta":",","id":"0","type":"reasoning-delta"}
+{"delta":" so","id":"0","type":"reasoning-delta"}
+{"delta":" I","id":"0","type":"reasoning-delta"}
+{"delta":" need","id":"0","type":"reasoning-delta"}
+{"delta":" to","id":"0","type":"reasoning-delta"}
+{"delta":" be","id":"0","type":"reasoning-delta"}
+{"delta":" maximally","id":"0","type":"reasoning-delta"}
+{"delta":" informative","id":"0","type":"reasoning-delta"}
+{"delta":",","id":"0","type":"reasoning-delta"}
+{"delta":" structure","id":"0","type":"reasoning-delta"}
+{"delta":" it","id":"0","type":"reasoning-delta"}
+{"delta":" easily","id":"0","type":"reasoning-delta"}
+{"delta":" pars","id":"0","type":"reasoning-delta"}
+{"delta":"able","id":"0","type":"reasoning-delta"}
+{"delta":",","id":"0","type":"reasoning-delta"}
+{"delta":" perhaps","id":"0","type":"reasoning-delta"}
+{"delta":" with","id":"0","type":"reasoning-delta"}
+{"delta":" sections","id":"0","type":"reasoning-delta"}
+{"delta":" if","id":"0","type":"reasoning-delta"}
+{"delta":" needed","id":"0","type":"reasoning-delta"}
+{"delta":".\n","id":"0","type":"reasoning-delta"}
+{"delta":"\n\n## Investigating Sonoran Cuisine  \n- The question focuses on what makes Sonoran food style notable, indicating an open-ended exploration of its cultural and culinary significance.","id":"0","type":"reasoning-delta"}
+{"delta":"  \n- Sonoran cuisine is part of food culture, suggesting a need for a structured, informative response to highlight its unique traits.","id":"0","type":"reasoning-delta"}
+{"delta":"  \n- The task isn't math or science, so the approach will prioritize breadth and accessibility, possibly using sections for clarity.","id":"0","type":"reasoning-delta"}
+{"id":"0","type":"reasoning-end"}
+{"id":"1","type":"text-start"}
+{"delta":"###","id":"1","type":"text-delta"}
+{"delta":" Overview","id":"1","type":"text-delta"}
+{"delta":" of","id":"1","type":"text-delta"}
+{"delta":" Son","id":"1","type":"text-delta"}
+{"delta":"oran","id":"1","type":"text-delta"}
+{"delta":" Cuisine","id":"1","type":"text-delta"}
+{"delta":"\n","id":"1","type":"text-delta"}
+{"delta":"Son","id":"1","type":"text-delta"}
+{"delta":"oran","id":"1","type":"text-delta"}
+{"delta":" cuisine","id":"1","type":"text-delta"}
+{"delta":" originates","id":"1","type":"text-delta"}
+{"delta":" from","id":"1","type":"text-delta"}
+{"delta":" the","id":"1","type":"text-delta"}
+{"delta":" Sonora","id":"1","type":"text-delta"}
+{"delta":" region","id":"1","type":"text-delta"}
+{"delta":" in","id":"1","type":"text-delta"}
+{"delta":" northwestern","id":"1","type":"text-delta"}
+{"delta":" Mexico","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" characterized","id":"1","type":"text-delta"}
+{"delta":" by","id":"1","type":"text-delta"}
+{"delta":" its","id":"1","type":"text-delta"}
+{"delta":" simplicity","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" fresh","id":"1","type":"text-delta"}
+{"delta":" ingredients","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" emphasis","id":"1","type":"text-delta"}
+{"delta":" on","id":"1","type":"text-delta"}
+{"delta":" grilling","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" bold","id":"1","type":"text-delta"}
+{"delta":" flavors","id":"1","type":"text-delta"}
+{"delta":".","id":"1","type":"text-delta"}
+{"delta":" Unlike","id":"1","type":"text-delta"}
+{"delta":" spic","id":"1","type":"text-delta"}
+{"delta":"ier","id":"1","type":"text-delta"}
+{"delta":" Mexican","id":"1","type":"text-delta"}
+{"delta":" cuisines","id":"1","type":"text-delta"}
+{"delta":" from","id":"1","type":"text-delta"}
+{"delta":" other","id":"1","type":"text-delta"}
+{"delta":" regions","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" it's","id":"1","type":"text-delta"}
+{"delta":" notably","id":"1","type":"text-delta"}
+{"delta":" milder","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" relying","id":"1","type":"text-delta"}
+{"delta":" on","id":"1","type":"text-delta"}
+{"delta":" the","id":"1","type":"text-delta"}
+{"delta":" region's","id":"1","type":"text-delta"}
+{"delta":" abundant","id":"1","type":"text-delta"}
+{"delta":" desert","id":"1","type":"text-delta"}
+{"delta":" produce","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" livestock","id":"1","type":"text-delta"}
+{"delta":".","id":"1","type":"text-delta"}
+{"delta":" This","id":"1","type":"text-delta"}
+{"delta":" style","id":"1","type":"text-delta"}
+{"delta":" blends","id":"1","type":"text-delta"}
+{"delta":" indigenous","id":"1","type":"text-delta"}
+{"delta":" influences","id":"1","type":"text-delta"}
+{"delta":" (","id":"1","type":"text-delta"}
+{"delta":"e","id":"1","type":"text-delta"}
+{"delta":".g","id":"1","type":"text-delta"}
+{"delta":".,","id":"1","type":"text-delta"}
+{"delta":" from","id":"1","type":"text-delta"}
+{"delta":" Ya","id":"1","type":"text-delta"}
+{"delta":"qui","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" Mayo","id":"1","type":"text-delta"}
+{"delta":" peoples","id":"1","type":"text-delta"}
+{"delta":")","id":"1","type":"text-delta"}
+{"delta":" with","id":"1","type":"text-delta"}
+{"delta":" Spanish","id":"1","type":"text-delta"}
+{"delta":" colonial","id":"1","type":"text-delta"}
+{"delta":" elements","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" resulting","id":"1","type":"text-delta"}
+{"delta":" in","id":"1","type":"text-delta"}
+{"delta":" hearty","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" straightforward","id":"1","type":"text-delta"}
+{"delta":" dishes","id":"1","type":"text-delta"}
+{"delta":" that","id":"1","type":"text-delta"}
+{"delta":" highlight","id":"1","type":"text-delta"}
+{"delta":" natural","id":"1","type":"text-delta"}
+{"delta":" tastes","id":"1","type":"text-delta"}
+{"delta":" over","id":"1","type":"text-delta"}
+{"delta":" complex","id":"1","type":"text-delta"}
+{"delta":" preparations","id":"1","type":"text-delta"}
+{"delta":".\n\n","id":"1","type":"text-delta"}
+{"delta":"###","id":"1","type":"text-delta"}
+{"delta":" Key","id":"1","type":"text-delta"}
+{"delta":" Ingredients","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" Flav","id":"1","type":"text-delta"}
+{"delta":"ors","id":"1","type":"text-delta"}
+{"delta":"\n","id":"1","type":"text-delta"}
+{"delta":"-","id":"1","type":"text-delta"}
+{"delta":" **","id":"1","type":"text-delta"}
+{"delta":"M","id":"1","type":"text-delta"}
+{"delta":"ild","id":"1","type":"text-delta"}
+{"delta":" Chil","id":"1","type":"text-delta"}
+{"delta":"ies","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" Heat","id":"1","type":"text-delta"}
+{"delta":"**:","id":"1","type":"text-delta"}
+{"delta":" The","id":"1","type":"text-delta"}
+{"delta":" signature","id":"1","type":"text-delta"}
+{"delta":" is","id":"1","type":"text-delta"}
+{"delta":" the","id":"1","type":"text-delta"}
+{"delta":" Mexican","id":"1","type":"text-delta"}
+{"delta":" Sonora","id":"1","type":"text-delta"}
+{"delta":" chile","id":"1","type":"text-delta"}
+{"delta":" (","id":"1","type":"text-delta"}
+{"delta":"a","id":"1","type":"text-delta"}
+{"delta":" mild","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" fruity","id":"1","type":"text-delta"}
+{"delta":" pepper","id":"1","type":"text-delta"}
+{"delta":"),","id":"1","type":"text-delta"}
+{"delta":" often","id":"1","type":"text-delta"}
+{"delta":" used","id":"1","type":"text-delta"}
+{"delta":" fresh","id":"1","type":"text-delta"}
+{"delta":" or","id":"1","type":"text-delta"}
+{"delta":" roasted","id":"1","type":"text-delta"}
+{"delta":".","id":"1","type":"text-delta"}
+{"delta":" Unlike","id":"1","type":"text-delta"}
+{"delta":" hotter","id":"1","type":"text-delta"}
+{"delta":" varieties","id":"1","type":"text-delta"}
+{"delta":" in","id":"1","type":"text-delta"}
+{"delta":" Yuc","id":"1","type":"text-delta"}
+{"delta":"atán","id":"1","type":"text-delta"}
+{"delta":" or","id":"1","type":"text-delta"}
+{"delta":" Oaxaca","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" Son","id":"1","type":"text-delta"}
+{"delta":"oran","id":"1","type":"text-delta"}
+{"delta":" food","id":"1","type":"text-delta"}
+{"delta":" avoids","id":"1","type":"text-delta"}
+{"delta":" excessive","id":"1","type":"text-delta"}
+{"delta":" spice","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" focusing","id":"1","type":"text-delta"}
+{"delta":" on","id":"1","type":"text-delta"}
+{"delta":" subtle","id":"1","type":"text-delta"}
+{"delta":" sweetness","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" smok","id":"1","type":"text-delta"}
+{"delta":"iness","id":"1","type":"text-delta"}
+{"delta":".\n","id":"1","type":"text-delta"}
+{"delta":"-","id":"1","type":"text-delta"}
+{"delta":" **","id":"1","type":"text-delta"}
+{"delta":"Des","id":"1","type":"text-delta"}
+{"delta":"ert","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" Local","id":"1","type":"text-delta"}
+{"delta":" Produce","id":"1","type":"text-delta"}
+{"delta":"**:","id":"1","type":"text-delta"}
+{"delta":" Staples","id":"1","type":"text-delta"}
+{"delta":" include","id":"1","type":"text-delta"}
+{"delta":" nop","id":"1","type":"text-delta"}
+{"delta":"ales","id":"1","type":"text-delta"}
+{"delta":" (","id":"1","type":"text-delta"}
+{"delta":"c","id":"1","type":"text-delta"}
+{"delta":"actus","id":"1","type":"text-delta"}
+{"delta":" pads","id":"1","type":"text-delta"}
+{"delta":"),","id":"1","type":"text-delta"}
+{"delta":" beans","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" corn","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" tomatoes","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" onions","id":"1","type":"text-delta"}
+{"delta":".","id":"1","type":"text-delta"}
+{"delta":" The","id":"1","type":"text-delta"}
+{"delta":" arid","id":"1","type":"text-delta"}
+{"delta":" climate","id":"1","type":"text-delta"}
+{"delta":" favors","id":"1","type":"text-delta"}
+{"delta":" grilled","id":"1","type":"text-delta"}
+{"delta":" or","id":"1","type":"text-delta"}
+{"delta":" fresh","id":"1","type":"text-delta"}
+{"delta":" preparations","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" with","id":"1","type":"text-delta"}
+{"delta":" minimal","id":"1","type":"text-delta"}
+{"delta":" sauces","id":"1","type":"text-delta"}
+{"delta":".\n","id":"1","type":"text-delta"}
+{"delta":"-","id":"1","type":"text-delta"}
+{"delta":" **","id":"1","type":"text-delta"}
+{"delta":"Prote","id":"1","type":"text-delta"}
+{"delta":"ins","id":"1","type":"text-delta"}
+{"delta":"**:","id":"1","type":"text-delta"}
+{"delta":" Beef","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" especially","id":"1","type":"text-delta"}
+{"delta":" in","id":"1","type":"text-delta"}
+{"delta":" carne","id":"1","type":"text-delta"}
+{"delta":" as","id":"1","type":"text-delta"}
+{"delta":"ada","id":"1","type":"text-delta"}
+{"delta":" (","id":"1","type":"text-delta"}
+{"delta":"gr","id":"1","type":"text-delta"}
+{"delta":"illed","id":"1","type":"text-delta"}
+{"delta":" skirt","id":"1","type":"text-delta"}
+{"delta":" steak","id":"1","type":"text-delta"}
+{"delta":"),","id":"1","type":"text-delta"}
+{"delta":" is","id":"1","type":"text-delta"}
+{"delta":" dominant","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" reflecting","id":"1","type":"text-delta"}
+{"delta":" Sonora","id":"1","type":"text-delta"}
+{"delta":"'s","id":"1","type":"text-delta"}
+{"delta":" cattle","id":"1","type":"text-delta"}
+{"delta":" ranch","id":"1","type":"text-delta"}
+{"delta":"ing","id":"1","type":"text-delta"}
+{"delta":" history","id":"1","type":"text-delta"}
+{"delta":".","id":"1","type":"text-delta"}
+{"delta":" Other","id":"1","type":"text-delta"}
+{"delta":" meats","id":"1","type":"text-delta"}
+{"delta":" like","id":"1","type":"text-delta"}
+{"delta":" pork","id":"1","type":"text-delta"}
+{"delta":" or","id":"1","type":"text-delta"}
+{"delta":" chicken","id":"1","type":"text-delta"}
+{"delta":" are","id":"1","type":"text-delta"}
+{"delta":" common","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" often","id":"1","type":"text-delta"}
+{"delta":" seasoned","id":"1","type":"text-delta"}
+{"delta":" simply","id":"1","type":"text-delta"}
+{"delta":" with","id":"1","type":"text-delta"}
+{"delta":" garlic","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" lime","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" herbs","id":"1","type":"text-delta"}
+{"delta":".\n","id":"1","type":"text-delta"}
+{"delta":"-","id":"1","type":"text-delta"}
+{"delta":" **","id":"1","type":"text-delta"}
+{"delta":"Influence","id":"1","type":"text-delta"}
+{"delta":" of","id":"1","type":"text-delta"}
+{"delta":" the","id":"1","type":"text-delta"}
+{"delta":" Sea","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" Land","id":"1","type":"text-delta"}
+{"delta":"**:","id":"1","type":"text-delta"}
+{"delta":" Coastal","id":"1","type":"text-delta"}
+{"delta":" areas","id":"1","type":"text-delta"}
+{"delta":" incorporate","id":"1","type":"text-delta"}
+{"delta":" seafood","id":"1","type":"text-delta"}
+{"delta":" (","id":"1","type":"text-delta"}
+{"delta":"e","id":"1","type":"text-delta"}
+{"delta":".g","id":"1","type":"text-delta"}
+{"delta":".,","id":"1","type":"text-delta"}
+{"delta":" shrimp","id":"1","type":"text-delta"}
+{"delta":" or","id":"1","type":"text-delta"}
+{"delta":" fish","id":"1","type":"text-delta"}
+{"delta":"),","id":"1","type":"text-delta"}
+{"delta":" while","id":"1","type":"text-delta"}
+{"delta":" inland","id":"1","type":"text-delta"}
+{"delta":" focuses","id":"1","type":"text-delta"}
+{"delta":" on","id":"1","type":"text-delta"}
+{"delta":" ranch","id":"1","type":"text-delta"}
+{"delta":"-","id":"1","type":"text-delta"}
+{"delta":"raised","id":"1","type":"text-delta"}
+{"delta":" meats","id":"1","type":"text-delta"}
+{"delta":".","id":"1","type":"text-delta"}
+{"delta":" Dairy","id":"1","type":"text-delta"}
+{"delta":" is","id":"1","type":"text-delta"}
+{"delta":" rare","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" emphasizing","id":"1","type":"text-delta"}
+{"delta":" Mexican","id":"1","type":"text-delta"}
+{"delta":" crema","id":"1","type":"text-delta"}
+{"delta":" or","id":"1","type":"text-delta"}
+{"delta":" cheese","id":"1","type":"text-delta"}
+{"delta":" sparingly","id":"1","type":"text-delta"}
+{"delta":".\n\n","id":"1","type":"text-delta"}
+{"delta":"###","id":"1","type":"text-delta"}
+{"delta":" Notable","id":"1","type":"text-delta"}
+{"delta":" Dishes","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" Preparation","id":"1","type":"text-delta"}
+{"delta":" Styles","id":"1","type":"text-delta"}
+{"delta":"\n","id":"1","type":"text-delta"}
+{"delta":"-","id":"1","type":"text-delta"}
+{"delta":" **","id":"1","type":"text-delta"}
+{"delta":"Gr","id":"1","type":"text-delta"}
+{"delta":"illing","id":"1","type":"text-delta"}
+{"delta":" as","id":"1","type":"text-delta"}
+{"delta":" a","id":"1","type":"text-delta"}
+{"delta":" Core","id":"1","type":"text-delta"}
+{"delta":" Technique","id":"1","type":"text-delta"}
+{"delta":"**:","id":"1","type":"text-delta"}
+{"delta":" Many","id":"1","type":"text-delta"}
+{"delta":" dishes","id":"1","type":"text-delta"}
+{"delta":" are","id":"1","type":"text-delta"}
+{"delta":" cooked","id":"1","type":"text-delta"}
+{"delta":" over","id":"1","type":"text-delta"}
+{"delta":" open","id":"1","type":"text-delta"}
+{"delta":" flames","id":"1","type":"text-delta"}
+{"delta":" or","id":"1","type":"text-delta"}
+{"delta":" on","id":"1","type":"text-delta"}
+{"delta":" a","id":"1","type":"text-delta"}
+{"delta":" com","id":"1","type":"text-delta"}
+{"delta":"al","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" impart","id":"1","type":"text-delta"}
+{"delta":"ing","id":"1","type":"text-delta"}
+{"delta":" a","id":"1","type":"text-delta"}
+{"delta":" charred","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" smoky","id":"1","type":"text-delta"}
+{"delta":" flavor","id":"1","type":"text-delta"}
+{"delta":".","id":"1","type":"text-delta"}
+{"delta":" This","id":"1","type":"text-delta"}
+{"delta":" is","id":"1","type":"text-delta"}
+{"delta":" seen","id":"1","type":"text-delta"}
+{"delta":" in","id":"1","type":"text-delta"}
+{"delta":" carne","id":"1","type":"text-delta"}
+{"delta":" as","id":"1","type":"text-delta"}
+{"delta":"ada","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" served","id":"1","type":"text-delta"}
+{"delta":" with","id":"1","type":"text-delta"}
+{"delta":" tortillas","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" gu","id":"1","type":"text-delta"}
+{"delta":"acamole","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" pico","id":"1","type":"text-delta"}
+{"delta":" de","id":"1","type":"text-delta"}
+{"delta":" gall","id":"1","type":"text-delta"}
+{"delta":"o","id":"1","type":"text-delta"}
+{"delta":".\n","id":"1","type":"text-delta"}
+{"delta":"-","id":"1","type":"text-delta"}
+{"delta":" **","id":"1","type":"text-delta"}
+{"delta":"Icon","id":"1","type":"text-delta"}
+{"delta":"ic","id":"1","type":"text-delta"}
+{"delta":" Foods","id":"1","type":"text-delta"}
+{"delta":"**:","id":"1","type":"text-delta"}
+{"delta":" \n","id":"1","type":"text-delta"}
+{"delta":" ","id":"1","type":"text-delta"}
+{"delta":" -","id":"1","type":"text-delta"}
+{"delta":" **","id":"1","type":"text-delta"}
+{"delta":"Mach","id":"1","type":"text-delta"}
+{"delta":"aca","id":"1","type":"text-delta"}
+{"delta":"**:","id":"1","type":"text-delta"}
+{"delta":" Shred","id":"1","type":"text-delta"}
+{"delta":"ded","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" dried","id":"1","type":"text-delta"}
+{"delta":" beef","id":"1","type":"text-delta"}
+{"delta":" slow","id":"1","type":"text-delta"}
+{"delta":"-c","id":"1","type":"text-delta"}
+{"delta":"ooked","id":"1","type":"text-delta"}
+{"delta":" with","id":"1","type":"text-delta"}
+{"delta":" eggs","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" onions","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" chil","id":"1","type":"text-delta"}
+{"delta":"ies","id":"1","type":"text-delta"}
+{"delta":"—","id":"1","type":"text-delta"}
+{"delta":" a","id":"1","type":"text-delta"}
+{"delta":" breakfast","id":"1","type":"text-delta"}
+{"delta":" staple","id":"1","type":"text-delta"}
+{"delta":" that's","id":"1","type":"text-delta"}
+{"delta":" simple","id":"1","type":"text-delta"}
+{"delta":" yet","id":"1","type":"text-delta"}
+{"delta":" flavorful","id":"1","type":"text-delta"}
+{"delta":".\n","id":"1","type":"text-delta"}
+{"delta":" ","id":"1","type":"text-delta"}
+{"delta":" -","id":"1","type":"text-delta"}
+{"delta":" **","id":"1","type":"text-delta"}
+{"delta":"Tam","id":"1","type":"text-delta"}
+{"delta":"ales","id":"1","type":"text-delta"}
+{"delta":"**:","id":"1","type":"text-delta"}
+{"delta":" Ste","id":"1","type":"text-delta"}
+{"delta":"amed","id":"1","type":"text-delta"}
+{"delta":" corn","id":"1","type":"text-delta"}
+{"delta":" masa","id":"1","type":"text-delta"}
+{"delta":" filled","id":"1","type":"text-delta"}
+{"delta":" with","id":"1","type":"text-delta"}
+{"delta":" meat","id":"1","type":"text-delta"}
+{"delta":" or","id":"1","type":"text-delta"}
+{"delta":" cheese","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" often","id":"1","type":"text-delta"}
+{"delta":" wrapped","id":"1","type":"text-delta"}
+{"delta":" in","id":"1","type":"text-delta"}
+{"delta":" corn","id":"1","type":"text-delta"}
+{"delta":" hus","id":"1","type":"text-delta"}
+{"delta":"ks","id":"1","type":"text-delta"}
+{"delta":";","id":"1","type":"text-delta"}
+{"delta":" Son","id":"1","type":"text-delta"}
+{"delta":"oran","id":"1","type":"text-delta"}
+{"delta":" versions","id":"1","type":"text-delta"}
+{"delta":" are","id":"1","type":"text-delta"}
+{"delta":" less","id":"1","type":"text-delta"}
+{"delta":" sa","id":"1","type":"text-delta"}
+{"delta":"uced","id":"1","type":"text-delta"}
+{"delta":" than","id":"1","type":"text-delta"}
+{"delta":" those","id":"1","type":"text-delta"}
+{"delta":" in","id":"1","type":"text-delta"}
+{"delta":" central","id":"1","type":"text-delta"}
+{"delta":" Mexico","id":"1","type":"text-delta"}
+{"delta":".\n","id":"1","type":"text-delta"}
+{"delta":" ","id":"1","type":"text-delta"}
+{"delta":" -","id":"1","type":"text-delta"}
+{"delta":" **","id":"1","type":"text-delta"}
+{"delta":"Ch","id":"1","type":"text-delta"}
+{"delta":"im","id":"1","type":"text-delta"}
+{"delta":"ich","id":"1","type":"text-delta"}
+{"delta":"angas","id":"1","type":"text-delta"}
+{"delta":"**:","id":"1","type":"text-delta"}
+{"delta":" Fried","id":"1","type":"text-delta"}
+{"delta":" bur","id":"1","type":"text-delta"}
+{"delta":"ritos","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" a","id":"1","type":"text-delta"}
+{"delta":" Sonora","id":"1","type":"text-delta"}
+{"delta":"-in","id":"1","type":"text-delta"}
+{"delta":"flu","id":"1","type":"text-delta"}
+{"delta":"enced","id":"1","type":"text-delta"}
+{"delta":" Tex","id":"1","type":"text-delta"}
+{"delta":"-M","id":"1","type":"text-delta"}
+{"delta":"ex","id":"1","type":"text-delta"}
+{"delta":" creation","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" highlighting","id":"1","type":"text-delta"}
+{"delta":" the","id":"1","type":"text-delta"}
+{"delta":" region's","id":"1","type":"text-delta"}
+{"delta":" border","id":"1","type":"text-delta"}
+{"delta":" proximity","id":"1","type":"text-delta"}
+{"delta":" to","id":"1","type":"text-delta"}
+{"delta":" Arizona","id":"1","type":"text-delta"}
+{"delta":".\n","id":"1","type":"text-delta"}
+{"delta":"-","id":"1","type":"text-delta"}
+{"delta":" **","id":"1","type":"text-delta"}
+{"delta":"Bever","id":"1","type":"text-delta"}
+{"delta":"ages","id":"1","type":"text-delta"}
+{"delta":"**:","id":"1","type":"text-delta"}
+{"delta":" Agua","id":"1","type":"text-delta"}
+{"delta":" fresca","id":"1","type":"text-delta"}
+{"delta":" (","id":"1","type":"text-delta"}
+{"delta":"fruit","id":"1","type":"text-delta"}
+{"delta":" waters","id":"1","type":"text-delta"}
+{"delta":")","id":"1","type":"text-delta"}
+{"delta":" from","id":"1","type":"text-delta"}
+{"delta":" local","id":"1","type":"text-delta"}
+{"delta":" fruits","id":"1","type":"text-delta"}
+{"delta":" like","id":"1","type":"text-delta"}
+{"delta":" watermelon","id":"1","type":"text-delta"}
+{"delta":" or","id":"1","type":"text-delta"}
+{"delta":" hib","id":"1","type":"text-delta"}
+{"delta":"iscus","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" hor","id":"1","type":"text-delta"}
+{"delta":"ch","id":"1","type":"text-delta"}
+{"delta":"ata","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" a","id":"1","type":"text-delta"}
+{"delta":" rice","id":"1","type":"text-delta"}
+{"delta":"-based","id":"1","type":"text-delta"}
+{"delta":" drink","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" complement","id":"1","type":"text-delta"}
+{"delta":" meals","id":"1","type":"text-delta"}
+{"delta":".\n\n","id":"1","type":"text-delta"}
+{"delta":"###","id":"1","type":"text-delta"}
+{"delta":" Cultural","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" Regional","id":"1","type":"text-delta"}
+{"delta":" Context","id":"1","type":"text-delta"}
+{"delta":"\n","id":"1","type":"text-delta"}
+{"delta":"Son","id":"1","type":"text-delta"}
+{"delta":"or","id":"1","type":"text-delta"}
+{"delta":"an's","id":"1","type":"text-delta"}
+{"delta":" style","id":"1","type":"text-delta"}
+{"delta":" is","id":"1","type":"text-delta"}
+{"delta":" practical","id":"1","type":"text-delta"}
+{"delta":" for","id":"1","type":"text-delta"}
+{"delta":" its","id":"1","type":"text-delta"}
+{"delta":" hot","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" dry","id":"1","type":"text-delta"}
+{"delta":" climate","id":"1","type":"text-delta"}
+{"delta":"—","id":"1","type":"text-delta"}
+{"delta":"dis","id":"1","type":"text-delta"}
+{"delta":"hes","id":"1","type":"text-delta"}
+{"delta":" are","id":"1","type":"text-delta"}
+{"delta":" quick","id":"1","type":"text-delta"}
+{"delta":" to","id":"1","type":"text-delta"}
+{"delta":" prepare","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" preserve","id":"1","type":"text-delta"}
+{"delta":" well","id":"1","type":"text-delta"}
+{"delta":".","id":"1","type":"text-delta"}
+{"delta":" It's","id":"1","type":"text-delta"}
+{"delta":" less","id":"1","type":"text-delta"}
+{"delta":" ornate","id":"1","type":"text-delta"}
+{"delta":" than","id":"1","type":"text-delta"}
+{"delta":" Yuc","id":"1","type":"text-delta"}
+{"delta":"ate","id":"1","type":"text-delta"}
+{"delta":"can","id":"1","type":"text-delta"}
+{"delta":" or","id":"1","type":"text-delta"}
+{"delta":" Jal","id":"1","type":"text-delta"}
+{"delta":"iscan","id":"1","type":"text-delta"}
+{"delta":" cuisines","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" prioritizing","id":"1","type":"text-delta"}
+{"delta":" sustenance","id":"1","type":"text-delta"}
+{"delta":" over","id":"1","type":"text-delta"}
+{"delta":" elaboration","id":"1","type":"text-delta"}
+{"delta":".","id":"1","type":"text-delta"}
+{"delta":" In","id":"1","type":"text-delta"}
+{"delta":" the","id":"1","type":"text-delta"}
+{"delta":" U","id":"1","type":"text-delta"}
+{"delta":".S","id":"1","type":"text-delta"}
+{"delta":".,","id":"1","type":"text-delta"}
+{"delta":" especially","id":"1","type":"text-delta"}
+{"delta":" Arizona","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" Son","id":"1","type":"text-delta"}
+{"delta":"oran","id":"1","type":"text-delta"}
+{"delta":" influences","id":"1","type":"text-delta"}
+{"delta":" appear","id":"1","type":"text-delta"}
+{"delta":" in","id":"1","type":"text-delta"}
+{"delta":" fusion","id":"1","type":"text-delta"}
+{"delta":" foods","id":"1","type":"text-delta"}
+{"delta":" like","id":"1","type":"text-delta"}
+{"delta":" Mexican","id":"1","type":"text-delta"}
+{"delta":" hot","id":"1","type":"text-delta"}
+{"delta":" dogs","id":"1","type":"text-delta"}
+{"delta":" (","id":"1","type":"text-delta"}
+{"delta":"b","id":"1","type":"text-delta"}
+{"delta":"acon","id":"1","type":"text-delta"}
+{"delta":"-w","id":"1","type":"text-delta"}
+{"delta":"rapped","id":"1","type":"text-delta"}
+{"delta":" with","id":"1","type":"text-delta"}
+{"delta":" beans","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" salsa","id":"1","type":"text-delta"}
+{"delta":").","id":"1","type":"text-delta"}
+{"delta":" This","id":"1","type":"text-delta"}
+{"delta":" cuisine","id":"1","type":"text-delta"}
+{"delta":"'s","id":"1","type":"text-delta"}
+{"delta":" notable","id":"1","type":"text-delta"}
+{"delta":" restraint","id":"1","type":"text-delta"}
+{"delta":" in","id":"1","type":"text-delta"}
+{"delta":" spice","id":"1","type":"text-delta"}
+{"delta":" and","id":"1","type":"text-delta"}
+{"delta":" focus","id":"1","type":"text-delta"}
+{"delta":" on","id":"1","type":"text-delta"}
+{"delta":" grilling","id":"1","type":"text-delta"}
+{"delta":" make","id":"1","type":"text-delta"}
+{"delta":" it","id":"1","type":"text-delta"}
+{"delta":" distinct","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" emphasizing","id":"1","type":"text-delta"}
+{"delta":" the","id":"1","type":"text-delta"}
+{"delta":" desert","id":"1","type":"text-delta"}
+{"delta":"'s","id":"1","type":"text-delta"}
+{"delta":" bounty","id":"1","type":"text-delta"}
+{"delta":" for","id":"1","type":"text-delta"}
+{"delta":" authentic","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" approachable","id":"1","type":"text-delta"}
+{"delta":" meals","id":"1","type":"text-delta"}
+{"delta":".","id":"1","type":"text-delta"}
+{"id":"1","type":"text-end"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"0b824fe9-3250-2588-0bbf-0810402fc822","model":"grok-code-fast-1","status":"completed"}}},"type":"raw"}
+{"finishReason":{"raw":"completed","unified":"stop"},"providerMetadata":{"xai.responses":{"id":"0b824fe9-3250-2588-0bbf-0810402fc822","model":"grok-code-fast-1","status":"completed"}},"type":"finish","usage":{"inputTokens":{"cacheRead":192,"noCache":24,"total":216},"outputTokens":{"reasoning":253,"text":578,"total":831},"raw":{"input_tokens":216,"input_tokens_details":{"cached_tokens":192},"num_server_side_tools_used":0,"num_sources_used":0,"output_tokens":831,"output_tokens_details":{"reasoning_tokens":253},"total_tokens":1047}}}

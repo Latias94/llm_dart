@@ -1,0 +1,406 @@
+{"type":"stream-start","warnings":[]}
+{"id":"f6117a0b-129d-46fa-b239-78f01c2c5df9","modelId":"deepseek-chat","timestamp":"2025-12-02T06:46:33.000Z","type":"response-metadata"}
+{"id":"0","type":"text-start"}
+{"delta":"##","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"H","id":"0","type":"text-delta"}
+{"delta":"olid","id":"0","type":"text-delta"}
+{"delta":"ay","id":"0","type":"text-delta"}
+{"delta":" Name","id":"0","type":"text-delta"}
+{"delta":":**","id":"0","type":"text-delta"}
+{"delta":" St","id":"0","type":"text-delta"}
+{"delta":"arl","id":"0","type":"text-delta"}
+{"delta":"ight","id":"0","type":"text-delta"}
+{"delta":" Rem","id":"0","type":"text-delta"}
+{"delta":"embrance","id":"0","type":"text-delta"}
+{"delta":"\n\n","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":"Date","id":"0","type":"text-delta"}
+{"delta":":**","id":"0","type":"text-delta"}
+{"delta":" The","id":"0","type":"text-delta"}
+{"delta":" Saturday","id":"0","type":"text-delta"}
+{"delta":" nearest","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" new","id":"0","type":"text-delta"}
+{"delta":" moon","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" October","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" when","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" night","id":"0","type":"text-delta"}
+{"delta":" sky","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" its","id":"0","type":"text-delta"}
+{"delta":" darkest","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" stars","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" most","id":"0","type":"text-delta"}
+{"delta":" vivid","id":"0","type":"text-delta"}
+{"delta":".\n\n","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":"Origin","id":"0","type":"text-delta"}
+{"delta":" &","id":"0","type":"text-delta"}
+{"delta":" Meaning","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":"**\n","id":"0","type":"text-delta"}
+{"delta":"St","id":"0","type":"text-delta"}
+{"delta":"arl","id":"0","type":"text-delta"}
+{"delta":"ight","id":"0","type":"text-delta"}
+{"delta":" Rem","id":"0","type":"text-delta"}
+{"delta":"embrance","id":"0","type":"text-delta"}
+{"delta":" emerged","id":"0","type":"text-delta"}
+{"delta":" from","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" modern","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" collective","id":"0","type":"text-delta"}
+{"delta":" yearning","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" honor","id":"0","type":"text-delta"}
+{"delta":" personal","id":"0","type":"text-delta"}
+{"delta":" loss","id":"0","type":"text-delta"}
+{"delta":" while","id":"0","type":"text-delta"}
+{"delta":" celebrating","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" enduring","id":"0","type":"text-delta"}
+{"delta":" connections","id":"0","type":"text-delta"}
+{"delta":" that","id":"0","type":"text-delta"}
+{"delta":" transcend","id":"0","type":"text-delta"}
+{"delta":" it","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" It","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" not","id":"0","type":"text-delta"}
+{"delta":" tied","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" any","id":"0","type":"text-delta"}
+{"delta":" one","id":"0","type":"text-delta"}
+{"delta":" religion","id":"0","type":"text-delta"}
+{"delta":" or","id":"0","type":"text-delta"}
+{"delta":" culture","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" but","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" universal","id":"0","type":"text-delta"}
+{"delta":" human","id":"0","type":"text-delta"}
+{"delta":" experience","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" The","id":"0","type":"text-delta"}
+{"delta":" core","id":"0","type":"text-delta"}
+{"delta":" philosophy","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" that","id":"0","type":"text-delta"}
+{"delta":" people","id":"0","type":"text-delta"}
+{"delta":" we","id":"0","type":"text-delta"}
+{"delta":" love","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ideas","id":"0","type":"text-delta"}
+{"delta":" that","id":"0","type":"text-delta"}
+{"delta":" inspired","id":"0","type":"text-delta"}
+{"delta":" us","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" even","id":"0","type":"text-delta"}
+{"delta":" versions","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" ourselves","id":"0","type":"text-delta"}
+{"delta":" that","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" gone","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" not","id":"0","type":"text-delta"}
+{"delta":" vanished","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" but","id":"0","type":"text-delta"}
+{"delta":" have","id":"0","type":"text-delta"}
+{"delta":" become","id":"0","type":"text-delta"}
+{"delta":" part","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" universe","id":"0","type":"text-delta"}
+{"delta":"'s","id":"0","type":"text-delta"}
+{"delta":" fabric","id":"0","type":"text-delta"}
+{"delta":"—","id":"0","type":"text-delta"}
+{"delta":"like","id":"0","type":"text-delta"}
+{"delta":" st","id":"0","type":"text-delta"}
+{"delta":"ard","id":"0","type":"text-delta"}
+{"delta":"ust","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" The","id":"0","type":"text-delta"}
+{"delta":" holiday","id":"0","type":"text-delta"}
+{"delta":" asks","id":"0","type":"text-delta"}
+{"delta":" participants","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" look","id":"0","type":"text-delta"}
+{"delta":" up","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" vast","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" shared","id":"0","type":"text-delta"}
+{"delta":" sky","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" find","id":"0","type":"text-delta"}
+{"delta":" comfort","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" both","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" darkness","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"the","id":"0","type":"text-delta"}
+{"delta":" loss","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" enduring","id":"0","type":"text-delta"}
+{"delta":" points","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" light","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"the","id":"0","type":"text-delta"}
+{"delta":" memory","id":"0","type":"text-delta"}
+{"delta":").\n\n","id":"0","type":"text-delta"}
+{"delta":"---\n\n","id":"0","type":"text-delta"}
+{"delta":"###","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"T","id":"0","type":"text-delta"}
+{"delta":"rad","id":"0","type":"text-delta"}
+{"delta":"itions","id":"0","type":"text-delta"}
+{"delta":" &","id":"0","type":"text-delta"}
+{"delta":" Rit","id":"0","type":"text-delta"}
+{"delta":"uals","id":"0","type":"text-delta"}
+{"delta":":**\n\n","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" The","id":"0","type":"text-delta"}
+{"delta":" Dim","id":"0","type":"text-delta"}
+{"delta":"ming","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" Lights","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":"**\n","id":"0","type":"text-delta"}
+{"delta":"As","id":"0","type":"text-delta"}
+{"delta":" night","id":"0","type":"text-delta"}
+{"delta":" falls","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" households","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" communities","id":"0","type":"text-delta"}
+{"delta":" turn","id":"0","type":"text-delta"}
+{"delta":" off","id":"0","type":"text-delta"}
+{"delta":" non","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"essential","id":"0","type":"text-delta"}
+{"delta":" electric","id":"0","type":"text-delta"}
+{"delta":" lights","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Streets","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" lit","id":"0","type":"text-delta"}
+{"delta":" only","id":"0","type":"text-delta"}
+{"delta":" by","id":"0","type":"text-delta"}
+{"delta":" subtle","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" blue","id":"0","type":"text-delta"}
+{"delta":"-ton","id":"0","type":"text-delta"}
+{"delta":"ed","id":"0","type":"text-delta"}
+{"delta":" lantern","id":"0","type":"text-delta"}
+{"delta":"s","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"symbol","id":"0","type":"text-delta"}
+{"delta":"izing","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" night","id":"0","type":"text-delta"}
+{"delta":" sky","id":"0","type":"text-delta"}
+{"delta":").","id":"0","type":"text-delta"}
+{"delta":" This","id":"0","type":"text-delta"}
+{"delta":" collective","id":"0","type":"text-delta"}
+{"delta":" act","id":"0","type":"text-delta"}
+{"delta":" reduces","id":"0","type":"text-delta"}
+{"delta":" light","id":"0","type":"text-delta"}
+{"delta":" pollution","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" literally","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" metaphor","id":"0","type":"text-delta"}
+{"delta":"ically","id":"0","type":"text-delta"}
+{"delta":" making","id":"0","type":"text-delta"}
+{"delta":" space","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" stars","id":"0","type":"text-delta"}
+{"delta":"—","id":"0","type":"text-delta"}
+{"delta":"and","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" reflection","id":"0","type":"text-delta"}
+{"delta":".\n\n","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":"2","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Craft","id":"0","type":"text-delta"}
+{"delta":"ing","id":"0","type":"text-delta"}
+{"delta":" Constellation","id":"0","type":"text-delta"}
+{"delta":" J","id":"0","type":"text-delta"}
+{"delta":"ars","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":"**\n","id":"0","type":"text-delta"}
+{"delta":"In","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" days","id":"0","type":"text-delta"}
+{"delta":" leading","id":"0","type":"text-delta"}
+{"delta":" up","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" holiday","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" people","id":"0","type":"text-delta"}
+{"delta":" create","id":"0","type":"text-delta"}
+{"delta":" \"","id":"0","type":"text-delta"}
+{"delta":"Const","id":"0","type":"text-delta"}
+{"delta":"ellation","id":"0","type":"text-delta"}
+{"delta":" J","id":"0","type":"text-delta"}
+{"delta":"ars","id":"0","type":"text-delta"}
+{"delta":".\"","id":"0","type":"text-delta"}
+{"delta":" They","id":"0","type":"text-delta"}
+{"delta":" take","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" clear","id":"0","type":"text-delta"}
+{"delta":" jar","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" using","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" small","id":"0","type":"text-delta"}
+{"delta":" drill","id":"0","type":"text-delta"}
+{"delta":" or","id":"0","type":"text-delta"}
+{"delta":" adhesive","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" create","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" pattern","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" holes","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" its","id":"0","type":"text-delta"}
+{"delta":" lid","id":"0","type":"text-delta"}
+{"delta":" representing","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" stars","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" specific","id":"0","type":"text-delta"}
+{"delta":" constellation","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" On","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" night","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" holiday","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" small","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" battery","id":"0","type":"text-delta"}
+{"delta":"-operated","id":"0","type":"text-delta"}
+{"delta":" tea","id":"0","type":"text-delta"}
+{"delta":" light","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" placed","id":"0","type":"text-delta"}
+{"delta":" inside","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" Each","id":"0","type":"text-delta"}
+{"delta":" jar","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" dedicated","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" someone","id":"0","type":"text-delta"}
+{"delta":" or","id":"0","type":"text-delta"}
+{"delta":" something","id":"0","type":"text-delta"}
+{"delta":" remembered","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" The","id":"0","type":"text-delta"}
+{"delta":" constellation","id":"0","type":"text-delta"}
+{"delta":" might","id":"0","type":"text-delta"}
+{"delta":" be","id":"0","type":"text-delta"}
+{"delta":" their","id":"0","type":"text-delta"}
+{"delta":" birth","id":"0","type":"text-delta"}
+{"delta":" sign","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" shape","id":"0","type":"text-delta"}
+{"delta":" that","id":"0","type":"text-delta"}
+{"delta":" reminds","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" maker","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" them","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" or","id":"0","type":"text-delta"}
+{"delta":" simply","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" pattern","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" sky","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" night","id":"0","type":"text-delta"}
+{"delta":" they","id":"0","type":"text-delta"}
+{"delta":" passed","id":"0","type":"text-delta"}
+{"delta":".\n\n","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":"3","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" The","id":"0","type":"text-delta"}
+{"delta":" Silent","id":"0","type":"text-delta"}
+{"delta":" Vig","id":"0","type":"text-delta"}
+{"delta":"il","id":"0","type":"text-delta"}
+{"delta":" &","id":"0","type":"text-delta"}
+{"delta":" Story","id":"0","type":"text-delta"}
+{"delta":" Stars","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":"**\n","id":"0","type":"text-delta"}
+{"delta":"At","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" designated","id":"0","type":"text-delta"}
+{"delta":" time","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"e","id":"0","type":"text-delta"}
+{"delta":".g","id":"0","type":"text-delta"}
+{"delta":".,","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"9","id":"0","type":"text-delta"}
+{"delta":" PM","id":"0","type":"text-delta"}
+{"delta":" local","id":"0","type":"text-delta"}
+{"delta":" time","id":"0","type":"text-delta"}
+{"delta":"),","id":"0","type":"text-delta"}
+{"delta":" people","id":"0","type":"text-delta"}
+{"delta":" step","id":"0","type":"text-delta"}
+{"delta":" outside","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" alone","id":"0","type":"text-delta"}
+{"delta":" or","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" quiet","id":"0","type":"text-delta"}
+{"delta":" groups","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" observe","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"15","id":"0","type":"text-delta"}
+{"delta":" minutes","id":"0","type":"text-delta"}
+{"delta":" of","id":"0","type":"text-delta"}
+{"delta":" silent","id":"0","type":"text-delta"}
+{"delta":" looking","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"id":"0","type":"text-end"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"deepseek":{"finishReason":"length","id":"f6117a0b-129d-46fa-b239-78f01c2c5df9","model":"deepseek-chat","systemFingerprint":"fp_eaab8d114b_prod0820_fp8_kvcache"},"deepseek.chat":{"finishReason":"length","id":"f6117a0b-129d-46fa-b239-78f01c2c5df9","model":"deepseek-chat","systemFingerprint":"fp_eaab8d114b_prod0820_fp8_kvcache"}}},"type":"raw"}
+{"finishReason":{"raw":"length","unified":"length"},"providerMetadata":{"deepseek":{"finishReason":"length","id":"f6117a0b-129d-46fa-b239-78f01c2c5df9","model":"deepseek-chat","systemFingerprint":"fp_eaab8d114b_prod0820_fp8_kvcache"},"deepseek.chat":{"finishReason":"length","id":"f6117a0b-129d-46fa-b239-78f01c2c5df9","model":"deepseek-chat","systemFingerprint":"fp_eaab8d114b_prod0820_fp8_kvcache"}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"noCache":13,"total":13},"outputTokens":{"total":400},"raw":{"completion_tokens":400,"prompt_cache_hit_tokens":0,"prompt_cache_miss_tokens":13,"prompt_tokens":13,"prompt_tokens_details":{"cached_tokens":0},"total_tokens":413}}}
