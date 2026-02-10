@@ -31,6 +31,33 @@ Vertex express mode uses API key header auth:
 
 - `x-goog-api-key: <VERTEX_API_KEY>`
 
+## File URLs (`supportedFileUrlsOnly`)
+
+By default, URL-based parts like `ImageUrlPart` / `FileUrlPart` are compiled to
+Google `fileData.fileUri` and the URL is passed through (after trimming).
+
+If you want stricter AI SDK-style validation, enable:
+
+```dart
+providerOptions: const {
+  'google-vertex': {
+    'supportedFileUrlsOnly': true,
+  },
+},
+```
+
+When enabled, http(s) file URLs are restricted to:
+
+- Google Generative Language Files API:
+  `https://generativelanguage.googleapis.com/v1beta/files/...`
+- YouTube URLs:
+  `https://www.youtube.com/watch?v=...` and `https://youtu.be/...`
+
+`gs://...` URIs and `files/...` resource names are still allowed.
+
+This mode is intentionally conservative; disable it if you rely on arbitrary
+public URLs and prefer inline uploads instead.
+
 ## Quick start (recommended: task APIs)
 
 ```dart

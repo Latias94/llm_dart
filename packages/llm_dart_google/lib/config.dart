@@ -102,6 +102,25 @@ class GoogleConfig {
   /// `googleSearchRetrieval`, depending on the model).
   final bool webSearchEnabled;
 
+  /// When true, only known-supported http(s) file URLs are allowed for URL-based
+  /// file inputs (e.g. `ImageUrlPart`, `FileUrlPart`).
+  ///
+  /// This is an AI SDK parity option. Supported URLs currently include:
+  /// - Google Generative Language files API:
+  ///   `https://generativelanguage.googleapis.com/v1beta/files/...`
+  /// - YouTube URLs (public or unlisted):
+  ///   `https://www.youtube.com/watch?v=...` and `https://youtu.be/...`
+  ///
+  /// Notes:
+  /// - `gs://...` and `files/...` resource names are still allowed.
+  /// - This is intentionally conservative; disable it if you rely on arbitrary
+  ///   public URLs and prefer inline uploads instead.
+  ///
+  /// Enable via:
+  /// - `providerOptions['google']['supportedFileUrlsOnly'] = true`
+  /// - `providerOptions['google-vertex']['supportedFileUrlsOnly'] = true`
+  final bool supportedFileUrlsOnly;
+
   /// Provider-native tool options for `google.google_search`.
   ///
   /// This follows the Vercel-style provider tool input schema (e.g.
@@ -142,6 +161,7 @@ class GoogleConfig {
     this.candidateCount,
     this.stopSequences,
     this.webSearchEnabled = false,
+    this.supportedFileUrlsOnly = false,
     this.webSearchToolOptions,
     this.embeddingTaskType,
     this.embeddingTitle,
@@ -199,6 +219,28 @@ class GoogleConfig {
     final mergedWebSearchToolOptions = webSearchToolOptionsFromProviderTools ??
         webSearchToolOptionsFromProviderOptions;
 
+    final supportedFileUrlsOnly = readProviderOption<bool>(
+            providerOptions, providerId, 'supportedFileUrlsOnly') ??
+        _parseSupportedFileUrlsOnlyFromLegacyConfig(
+          readProviderOptionMap(
+                  providerOptions, providerId, 'supportedFileUrl') ??
+              readProviderOption<dynamic>(
+                providerOptions,
+                providerId,
+                'supportedFileUrl',
+              ),
+        ) ??
+        _parseSupportedFileUrlsOnlyFromLegacyConfig(
+          readProviderOptionMap(
+                  providerOptions, providerId, 'supportedFileUrls') ??
+              readProviderOption<dynamic>(
+                providerOptions,
+                providerId,
+                'supportedFileUrls',
+              ),
+        ) ??
+        false;
+
     final safetySettings = _parseSafetySettings(
       readProviderOptionList(
         providerOptions,
@@ -255,6 +297,7 @@ class GoogleConfig {
           providerOptions, providerId, 'candidateCount'),
       stopSequences: config.stopSequences,
       webSearchEnabled: mergedWebSearchEnabled,
+      supportedFileUrlsOnly: supportedFileUrlsOnly,
       webSearchToolOptions: mergedWebSearchToolOptions,
       // Embedding-specific provider options
       embeddingTaskType: readProviderOption<String>(
@@ -341,6 +384,23 @@ class GoogleConfig {
     }
 
     return true;
+  }
+
+  static bool? _parseSupportedFileUrlsOnlyFromLegacyConfig(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is bool) return raw;
+    if (raw is Map<String, dynamic>) {
+      final enabled = raw['enabled'];
+      if (enabled is bool) return enabled;
+      return true; // presence implies enable (legacy behavior)
+    }
+    if (raw is Map) {
+      final map = Map<String, dynamic>.from(raw);
+      final enabled = map['enabled'];
+      if (enabled is bool) return enabled;
+      return true;
+    }
+    return null;
   }
 
   static bool _isProviderToolEnabled(ProviderTool tool) {
@@ -434,6 +494,7 @@ class GoogleConfig {
     int? candidateCount,
     List<String>? stopSequences,
     bool? webSearchEnabled,
+    bool? supportedFileUrlsOnly,
     GoogleWebSearchToolOptions? webSearchToolOptions,
     String? embeddingTaskType,
     String? embeddingTitle,
@@ -466,6 +527,8 @@ class GoogleConfig {
         candidateCount: candidateCount ?? this.candidateCount,
         stopSequences: stopSequences ?? this.stopSequences,
         webSearchEnabled: webSearchEnabled ?? this.webSearchEnabled,
+        supportedFileUrlsOnly:
+            supportedFileUrlsOnly ?? this.supportedFileUrlsOnly,
         webSearchToolOptions: webSearchToolOptions ?? this.webSearchToolOptions,
         embeddingTaskType: embeddingTaskType ?? this.embeddingTaskType,
         embeddingTitle: embeddingTitle ?? this.embeddingTitle,

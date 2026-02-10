@@ -101,6 +101,25 @@ class GoogleChat
     return str.isEmpty ? null : str;
   }
 
+  bool _supportedFileUrlsOnlyFromProviderOptions(
+    ProviderOptions providerOptions,
+  ) {
+    final scoped = _scopedProviderOptions(providerOptions);
+    if (scoped == null) return false;
+
+    final direct = scoped['supportedFileUrlsOnly'];
+    if (direct == true) return true;
+
+    final raw = scoped['supportedFileUrl'] ?? scoped['supportedFileUrls'];
+    if (raw is Map) {
+      final map = Map<String, dynamic>.from(raw);
+      if (map['enabled'] == true) return true;
+      return map.isNotEmpty;
+    }
+
+    return false;
+  }
+
   String get _chatEndpoint =>
       '${googleModelPath(config.model)}:generateContent';
 
@@ -1249,7 +1268,14 @@ class GoogleChat
             if (text != null && text.trim().isNotEmpty) {
               currentParts.add({'text': text});
             }
-            final normalizedUrl = _normalizeGoogleFileUri(url);
+            final supportedOnly = config.supportedFileUrlsOnly ||
+                _supportedFileUrlsOnlyFromProviderOptions(
+                  effectiveProviderOptions,
+                );
+            final normalizedUrl = _normalizeGoogleFileUri(
+              url,
+              supportedFileUrlsOnly: supportedOnly,
+            );
             currentParts.add({
               'fileData': {
                 'fileUri': normalizedUrl,
@@ -1324,7 +1350,14 @@ class GoogleChat
             if (text != null && text.trim().isNotEmpty) {
               currentParts.add({'text': text});
             }
-            final trimmed = _normalizeGoogleFileUri(url);
+            final supportedOnly = config.supportedFileUrlsOnly ||
+                _supportedFileUrlsOnlyFromProviderOptions(
+                  effectiveProviderOptions,
+                );
+            final trimmed = _normalizeGoogleFileUri(
+              url,
+              supportedFileUrlsOnly: supportedOnly,
+            );
             currentParts.add({
               'fileData': {
                 'fileUri': trimmed,
@@ -1815,7 +1848,13 @@ class GoogleChat
               'Google does not support fileData URLs in assistant messages.',
             );
           }
-          final normalizedFileUri = _normalizeGoogleFileUri(fileUri);
+          final supportedOnly = config.supportedFileUrlsOnly ||
+              _supportedFileUrlsOnlyFromProviderOptions(
+                  message.providerOptions);
+          final normalizedFileUri = _normalizeGoogleFileUri(
+            fileUri,
+            supportedFileUrlsOnly: supportedOnly,
+          );
           parts.add({
             'fileData': {
               'fileUri': normalizedFileUri,
@@ -1848,7 +1887,12 @@ class GoogleChat
         if (message.content.trim().isNotEmpty) {
           parts.add({'text': message.content});
         }
-        final normalizedUrl = _normalizeGoogleFileUri(url);
+        final supportedOnly = config.supportedFileUrlsOnly ||
+            _supportedFileUrlsOnlyFromProviderOptions(message.providerOptions);
+        final normalizedUrl = _normalizeGoogleFileUri(
+          url,
+          supportedFileUrlsOnly: supportedOnly,
+        );
         parts.add({
           'fileData': {
             'fileUri': normalizedUrl,
@@ -2002,7 +2046,30 @@ class GoogleChat
     return subtype;
   }
 
-  static String _normalizeGoogleFileUri(String uri) {
+  static final RegExp _youtubeWatchUrlRegex = RegExp(
+    r'^https:\/\/(?:www\.)?youtube\.com\/watch\?v=[\w-]+(?:&[\w=&.-]*)?$',
+  );
+  static final RegExp _youtubeShortUrlRegex = RegExp(
+    r'^https:\/\/youtu\.be\/[\w-]+(?:\?[\w=&.-]*)?$',
+  );
+
+  static bool _isSupportedGoogleHttpsFileUrl(String urlString) {
+    // Google Generative Language files API.
+    if (urlString.startsWith(
+      'https://generativelanguage.googleapis.com/v1beta/files/',
+    )) {
+      return true;
+    }
+
+    // YouTube URLs (public or unlisted videos).
+    return _youtubeWatchUrlRegex.hasMatch(urlString) ||
+        _youtubeShortUrlRegex.hasMatch(urlString);
+  }
+
+  static String _normalizeGoogleFileUri(
+    String uri, {
+    required bool supportedFileUrlsOnly,
+  }) {
     final trimmed = uri.trim();
     if (trimmed.isEmpty) {
       throw const InvalidRequestError('Google file URI cannot be empty.');
@@ -2016,6 +2083,14 @@ class GoogleChat
 
     // Allow explicit URLs and GCS URIs.
     if (scheme == 'http' || scheme == 'https' || scheme == 'gs') {
+      if (supportedFileUrlsOnly && (scheme == 'http' || scheme == 'https')) {
+        if (_isSupportedGoogleHttpsFileUrl(trimmed)) return trimmed;
+        throw InvalidRequestError(
+          'Unsupported Google file URL: "$uri". '
+          'When supportedFileUrlsOnly=true, only Google Files API URLs and '
+          'YouTube URLs are allowed.',
+        );
+      }
       return trimmed;
     }
 

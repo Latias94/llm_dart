@@ -406,5 +406,145 @@ void main() {
         throwsA(isA<InvalidRequestError>()),
       );
     });
+
+    test('supportedFileUrlsOnly rejects arbitrary https FileUrlPart URLs',
+        () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-1.5-flash',
+        supportedFileUrlsOnly: true,
+      );
+
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final chat = GoogleChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              FileUrlPart(
+                mime: FileMime.pdf,
+                url: 'https://example.com/a.pdf',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await expectLater(
+        chat.chatPrompt(prompt),
+        throwsA(isA<InvalidRequestError>()),
+      );
+    });
+
+    test('supportedFileUrlsOnly accepts Google Files API URLs', () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-1.5-flash',
+        supportedFileUrlsOnly: true,
+      );
+
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final chat = GoogleChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              FileUrlPart(
+                mime: FileMime.pdf,
+                url:
+                    'https://generativelanguage.googleapis.com/v1beta/files/abc',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await chat.chatPrompt(prompt);
+
+      final contents = client.lastBody?['contents'] as List?;
+      expect(contents, isNotNull);
+      expect(contents, hasLength(1));
+
+      final parts = ((contents!.single as Map)['parts'] as List);
+      expect(parts, hasLength(1));
+      final fileData = (parts.single as Map)['fileData'] as Map;
+      expect(
+        fileData['fileUri'],
+        equals('https://generativelanguage.googleapis.com/v1beta/files/abc'),
+      );
+    });
+
+    test('supportedFileUrlsOnly rejects arbitrary ImageUrlPart URLs', () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-1.5-flash',
+        supportedFileUrlsOnly: true,
+      );
+
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final chat = GoogleChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              ImageUrlPart(url: 'https://example.com/a.png'),
+            ],
+          ),
+        ],
+      );
+
+      await expectLater(
+        chat.chatPrompt(prompt),
+        throwsA(isA<InvalidRequestError>()),
+      );
+    });
   });
 }
