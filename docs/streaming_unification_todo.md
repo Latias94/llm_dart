@@ -1,7 +1,7 @@
 # Streaming Unification TODO (Fearless Refactor)
 
 Status: draft (breaking changes expected)  
-Last updated: 2026-02-09
+Last updated: 2026-02-10
 
 This document tracks the milestone plan to unify streaming across providers
 in a Vercel AI SDK-aligned way.
@@ -175,7 +175,7 @@ Acceptance criteria:
 - [x] Add provider tool part tests for OpenAI Responses + xAI Responses + Google code execution + Anthropic web tools
 - [x] Add provider tool approval request tests for OpenAI Responses (MCP)
 - [x] Add providerMetadata dedupe conformance tests (OpenAI Responses + xAI Responses)
-- [ ] Expand chunk-fuzz coverage to the new part types
+- [x] Expand chunk-fuzz coverage to the new part types
 - [x] Add a global "no drift" guard: legacy stream event surfaces must not exist
 - [x] Azure: add request mapping tests for `/responses` + `api-version` (v1 + deployment URL modes)
 - [x] providerMetadata alias equivalence conformance tests (canonical equals aliases)
