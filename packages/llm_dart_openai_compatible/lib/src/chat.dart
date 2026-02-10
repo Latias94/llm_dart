@@ -159,9 +159,9 @@ class OpenAIChat
     int? createdSeconds;
     Map<String, dynamic>? usage;
     final citations = <String>[];
-    final emittedCitationUrls = <String>{};
-    final emittedAnnotationUrls = <String>{};
-    var nextAnnotationSeq = 0;
+    final sourceParts = SourcePartEmitter(
+      providerMetadataNamespace: config.providerId,
+    );
     var didEmitResponseMetadata = false;
 
     var didEmitTerminalParts = false;
@@ -219,17 +219,13 @@ class OpenAIChat
               if (c is! String) continue;
               final url = c.trim();
               if (url.isEmpty) continue;
-              if (emittedCitationUrls.add(url)) {
-                citations.add(url);
-                yield LLMSourceUrlPart(
-                  sourceId: 'source_${emittedCitationUrls.length - 1}',
-                  url: url,
-                  title: null,
-                  providerMetadata: {
-                    providerId: {'type': 'citation'},
-                  },
-                );
-              }
+              final part = sourceParts.url(
+                url,
+                providerMetadataPayload: const {'type': 'citation'},
+              );
+              if (part == null) continue;
+              citations.add(url);
+              yield part;
             }
           }
 
@@ -509,19 +505,16 @@ class OpenAIChat
               if (url is! String) continue;
               final trimmed = url.trim();
               if (trimmed.isEmpty) continue;
-              if (!emittedAnnotationUrls.add(trimmed)) continue;
 
               final title = urlCitation['title'];
-              yield LLMSourceUrlPart(
-                sourceId: 'source_${nextAnnotationSeq++}',
-                url: trimmed,
+              final part = sourceParts.url(
+                trimmed,
                 title: title is String && title.trim().isNotEmpty
                     ? title.trim()
                     : null,
-                providerMetadata: {
-                  config.providerId: {'type': 'url_citation'},
-                },
+                providerMetadataPayload: const {'type': 'url_citation'},
               );
+              if (part != null) yield part;
             }
           }
 
