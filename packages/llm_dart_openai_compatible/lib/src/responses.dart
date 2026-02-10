@@ -193,6 +193,28 @@ class OpenAIResponses
     final endedReasoningItems = <String>{};
     final reasoningItemsWithSummaries = <String>{};
 
+    // Tool-input streaming state for provider-triggered tools that stream
+    // structured inputs via dedicated delta events (AI SDK parity).
+    final codeInterpreterCodeByToolCallId = <String, StringBuffer>{};
+    final codeInterpreterContainerIdByToolCallId = <String, String>{};
+    final codeInterpreterToolNameByToolCallId = <String, String>{};
+
+    final applyPatchDiffByItemId = <String, StringBuffer>{};
+    final applyPatchCallIdByItemId = <String, String>{};
+    final applyPatchToolNameByItemId = <String, String>{};
+    final applyPatchOperationByItemId = <String, Map<String, dynamic>>{};
+
+    String jsonStringFragment(String value) {
+      if (value.isEmpty) return '';
+      final encoded = jsonEncode(value);
+      if (encoded.length >= 2 &&
+          encoded.startsWith('"') &&
+          encoded.endsWith('"')) {
+        return encoded.substring(1, encoded.length - 1);
+      }
+      return value;
+    }
+
     var mcpApprovalSeq = 0;
     final mcpApprovalToolCallIdByApprovalId = <String, String>{};
 
@@ -318,6 +340,70 @@ class OpenAIResponses
                 }
               }
             }
+          }
+
+          // OpenAI Responses: code interpreter streams code via dedicated delta
+          // events. AI SDK models this as tool-input deltas that build a JSON
+          // string for the tool-call input.
+          if (eventType == 'response.code_interpreter_call_code.delta') {
+            final toolCallId = json['item_id'] as String?;
+            final delta = json['delta'] as String?;
+            if (toolCallId == null ||
+                toolCallId.isEmpty ||
+                delta == null ||
+                delta.isEmpty) {
+              continue;
+            }
+
+            codeInterpreterCodeByToolCallId
+                .putIfAbsent(toolCallId, () => StringBuffer())
+                .write(delta);
+
+            yield LLMToolInputDeltaPart(
+              id: toolCallId,
+              delta: jsonStringFragment(delta),
+            );
+            continue;
+          }
+
+          // OpenAI Responses: apply_patch streams `operation.diff` deltas.
+          if (eventType == 'response.apply_patch_call_operation_diff.delta') {
+            final itemId = json['item_id'] as String?;
+            final delta = json['delta'] as String?;
+            if (itemId == null ||
+                itemId.isEmpty ||
+                delta == null ||
+                delta.isEmpty) {
+              continue;
+            }
+
+            final callId = applyPatchCallIdByItemId[itemId];
+            if (callId == null || callId.isEmpty) continue;
+
+            applyPatchDiffByItemId
+                .putIfAbsent(itemId, () => StringBuffer())
+                .write(delta);
+
+            yield LLMToolInputDeltaPart(
+              id: callId,
+              delta: jsonStringFragment(delta),
+            );
+            continue;
+          }
+
+          if (eventType == 'response.apply_patch_call_operation_diff.done') {
+            final itemId = json['item_id'] as String?;
+            final diff = json['diff'] as String?;
+            if (itemId == null || itemId.isEmpty || diff == null) continue;
+
+            final buf = applyPatchDiffByItemId.putIfAbsent(
+              itemId,
+              () => StringBuffer(),
+            );
+            if (buf.isEmpty) {
+              buf.write(diff);
+            }
+            continue;
           }
 
           if (eventType == 'response.output_item.added' ||
@@ -612,6 +698,10 @@ class OpenAIResponses
                     callProviderMetadataPayload = {'itemId': id};
                   }
 
+                  if (toolType == 'apply_patch') {
+                    callProviderMetadataPayload = {'itemId': id};
+                  }
+
                   Object? _resolvedResultPayload(Map item) {
                     switch (toolType) {
                       case 'web_search':
@@ -654,9 +744,16 @@ class OpenAIResponses
                       case 'image_generation':
                         return {'result': item['result']};
 
+                      case 'code_interpreter':
+                        return {'outputs': item['outputs']};
+
                       case 'local_shell':
                       case 'shell':
                         // No tool-result is emitted for shell tools in AI SDK.
+                        return null;
+
+                      case 'apply_patch':
+                        // No tool-result is emitted for apply_patch tools in AI SDK.
                         return null;
 
                       default:
@@ -673,11 +770,79 @@ class OpenAIResponses
                       continue;
                     }
 
+                    if (toolType == 'code_interpreter') {
+                      final containerId = item['container_id'];
+                      if (containerId is String && containerId.isNotEmpty) {
+                        codeInterpreterContainerIdByToolCallId[toolCallId] =
+                            containerId;
+                      }
+                      codeInterpreterToolNameByToolCallId[toolCallId] =
+                          resolvedToolName;
+
+                      yield LLMToolInputStartPart(
+                        id: toolCallId,
+                        toolName: resolvedToolName,
+                        providerExecuted: true,
+                      );
+                      yield LLMToolInputDeltaPart(
+                        id: toolCallId,
+                        delta:
+                            '{"containerId":${jsonEncode(codeInterpreterContainerIdByToolCallId[toolCallId] ?? '')},"code":"',
+                      );
+                      continue;
+                    }
+
+                    if (toolType == 'apply_patch') {
+                      applyPatchCallIdByItemId[id] = toolCallId;
+                      applyPatchToolNameByItemId[id] = resolvedToolName;
+
+                      final opRaw = item['operation'];
+                      final op = opRaw is Map
+                          ? opRaw.map<String, dynamic>(
+                              (k, v) => MapEntry(k.toString(), v),
+                            )
+                          : const <String, dynamic>{};
+                      applyPatchOperationByItemId[id] = op;
+
+                      yield LLMToolInputStartPart(
+                        id: toolCallId,
+                        toolName: resolvedToolName,
+                      );
+
+                      final opType = op['type'];
+                      final path = op['path'];
+                      final hasDiff = op.containsKey('diff');
+
+                      if (hasDiff) {
+                        yield LLMToolInputDeltaPart(
+                          id: toolCallId,
+                          delta:
+                              '{"callId":${jsonEncode(toolCallId)},"operation":{"type":${jsonEncode(opType)},"path":${jsonEncode(path)},"diff":"',
+                        );
+                      } else {
+                        final input = jsonEncode({
+                          'callId': toolCallId,
+                          'operation': {
+                            'type': opType,
+                            'path': path,
+                          },
+                        });
+                        yield LLMToolInputDeltaPart(
+                          id: toolCallId,
+                          delta: input,
+                        );
+                        yield LLMToolInputEndPart(id: toolCallId);
+                      }
+                      continue;
+                    }
+
                     final part = providerToolParts.call(
                       toolCallId: toolCallId,
                       toolName: resolvedToolName,
                       input: resolvedCallInput,
-                      providerExecuted: toolType != 'local_shell',
+                      providerExecuted: toolType != 'local_shell' &&
+                          toolType != 'shell' &&
+                          toolType != 'apply_patch',
                       providerMetadataPayload: callProviderMetadataPayload,
                     );
                     if (part != null) {
@@ -692,11 +857,100 @@ class OpenAIResponses
                       yield part;
                     }
                   } else if (eventType == 'response.output_item.done') {
+                    if (toolType == 'code_interpreter') {
+                      final buf = codeInterpreterCodeByToolCallId[toolCallId];
+                      final code = buf?.toString() ??
+                          (item['code'] is String
+                              ? item['code'] as String
+                              : '');
+                      final containerId =
+                          codeInterpreterContainerIdByToolCallId[toolCallId] ??
+                              (item['container_id'] is String
+                                  ? item['container_id'] as String
+                                  : '');
+
+                      yield LLMToolInputDeltaPart(
+                        id: toolCallId,
+                        delta: '"}',
+                      );
+                      yield LLMToolInputEndPart(id: toolCallId);
+
+                      final input = jsonEncode({
+                        'code': code,
+                        'containerId': containerId,
+                      });
+
+                      final callPart = providerToolParts.call(
+                        toolCallId: toolCallId,
+                        toolName: resolvedToolName,
+                        input: input,
+                        providerExecuted: true,
+                      );
+                      if (callPart != null) yield callPart;
+
+                      final payload = _resolvedResultPayload(item);
+                      if (payload == null) continue;
+
+                      final resultPart = providerToolParts.result(
+                        toolCallId: toolCallId,
+                        toolName: resolvedToolName,
+                        result: payload,
+                      );
+                      if (resultPart != null) yield resultPart;
+                      continue;
+                    }
+
+                    if (toolType == 'apply_patch') {
+                      final op = applyPatchOperationByItemId[id] ??
+                          (item['operation'] is Map
+                              ? (item['operation'] as Map).map<String, dynamic>(
+                                  (k, v) => MapEntry(k.toString(), v),
+                                )
+                              : const <String, dynamic>{});
+
+                      final opType = op['type'];
+                      final path = op['path'];
+                      final buf = applyPatchDiffByItemId[id];
+                      final diff = buf?.toString() ??
+                          (op['diff'] is String ? op['diff'] as String : null);
+
+                      final hasDiff = diff != null;
+                      if (hasDiff) {
+                        yield LLMToolInputDeltaPart(
+                          id: toolCallId,
+                          delta: '"}}',
+                        );
+                        yield LLMToolInputEndPart(id: toolCallId);
+                      }
+
+                      final opFinal = <String, dynamic>{
+                        'type': opType,
+                        'path': path,
+                        if (diff != null) 'diff': diff,
+                      };
+                      final input = jsonEncode({
+                        'callId': toolCallId,
+                        'operation': opFinal,
+                      });
+
+                      final callPart = providerToolParts.call(
+                        toolCallId: toolCallId,
+                        toolName: resolvedToolName,
+                        input: input,
+                        providerExecuted: false,
+                        providerMetadataPayload: callProviderMetadataPayload,
+                      );
+                      if (callPart != null) yield callPart;
+                      continue;
+                    }
+
                     final callPart = providerToolParts.call(
                       toolCallId: toolCallId,
                       toolName: resolvedToolName,
                       input: resolvedCallInput,
-                      providerExecuted: toolType != 'local_shell',
+                      providerExecuted: toolType != 'local_shell' &&
+                          toolType != 'shell' &&
+                          toolType != 'apply_patch',
                       providerMetadataPayload: callProviderMetadataPayload,
                     );
                     if (callPart != null) {

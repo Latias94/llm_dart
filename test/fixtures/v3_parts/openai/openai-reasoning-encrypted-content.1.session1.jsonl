@@ -1,0 +1,53 @@
+{"type":"stream-start","warnings":[]}
+{"id":"resp_01830d662ab3856501693c321345c88190b0de00f3b9975691","modelId":"gpt-5.1-codex-max","timestamp":"2025-12-12T15:17:39.000Z","type":"response-metadata"}
+{"id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9","reasoningEncryptedContent":"gAAAAABpPDIUph8czEXzDePCV2lJ27wm7TsbCvazrvHSn0yWitN7RGWq8sjrPtfEYNkSVR8GZzB59nmPMV9haW4HIeHtIFfWz2boJ58r5pqNxfC3bI5TeUSP_O5MmkuIXjU3jHPqpYVyIBGGW7G3ER79DJGZKdBGMiYFNiodJez0fxOuRtRwAJKyIG4ySE3z6an38XFE6ZqHW58_WfI5ASZ_nuNIZtclNTl2qkW9N5X2TaxZj7evx3e24DXjcbMHJvwAnDropoufqTSC5Ec8uBbD_trspO6Ofc44hIOg5osGY8rtEg_Havfv8X6kP5KESMAPjte2aVIK2PdNz6iZFw7F4IWyNJfrREedu1B8q6Xj5XlwIprwZ0EttT9lf1SEIFmjsSzBKUo4vdxYlDLguW1UiX0uCZWQtpMm8BDYYfJnGXgsHuFBkp4wRSpwIEmAboPnHJ7fPm5YKlq-tW9mqMx7jH14aOOhTI6NT-BMWxmHOhSwXRjs6QkC3HPJBPe-GuVdrOeaF6toplDVr3jawhsFiRGX6v25inDLjTvegukgpsBlkpEQUxRtsb1q5OvBQRGaCXdsTPvBFfVPW9fPwz8durYiY4cGCySIt2yyuptC6M4i4dZfF2Fk5Y1LtHCQ-C2BLMo-1nbuae6uFnbEBGztbd8JWDKHX-6z22FhJy9U1GI9qq8n5qUFoVmgp6qIK8v1YSjKG4YTK_sE95ZwJ3X-A_U_MjOZfMyaEgxqX8FCSo_CZMAqT5K9_IRCPPC4fGA1HYgzxPs8P5Ml_-_5q0YnxsbW2SrgzZoKeYMsImgNLPeTk7Wll27KnB3zWeHnpbKZBhhgTybX"}},"type":"reasoning-start"}
+{"delta":"**Calcul","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":"ating","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" step","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":"-by","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":"-step","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" using","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" calculator","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":"**\n\nI'll","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" compute","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" 12","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" plus","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" 7","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":",","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" then","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" multiply","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" the","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" result","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" by","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" 3","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":",","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" and","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" finally","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" multiply","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" that","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" by","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" 10","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":",","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" reporting","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" the","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" final","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":" product","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"delta":".","id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-delta"}
+{"id":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9:0","providerMetadata":{"openai":{"itemId":"rs_01830d662ab3856501693c321405c88190be3ab04d5782d5f9"}},"type":"reasoning-end"}
+{"id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","toolName":"calculator","type":"tool-input-start"}
+{"delta":"{\"","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":"a","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":"\":","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":"12","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":",\"","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":"b","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":"\":","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":"7","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":",\"","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":"op","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":"\":\"","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":"add","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"delta":"\"}","id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-delta"}
+{"id":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","type":"tool-input-end"}
+{"input":"{\"a\":12,\"b\":7,\"op\":\"add\"}","toolCallId":"call_AB6AaRZ1FYZB2RwS6A5vbdqn","toolName":"calculator","type":"tool-call"}
+{"finishReason":{"unified":"tool-calls"},"providerMetadata":{"openai":{"id":"resp_01830d662ab3856501693c321345c88190b0de00f3b9975691","model":"gpt-5.1-codex-max","responseId":"resp_01830d662ab3856501693c321345c88190b0de00f3b9975691","serviceTier":"default"}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"noCache":134,"total":134},"outputTokens":{"reasoning":0,"text":28,"total":28},"raw":{"input_tokens":134,"input_tokens_details":{"cached_tokens":0},"output_tokens":28,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":162}}}

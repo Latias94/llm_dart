@@ -1,0 +1,21 @@
+{
+  "provider": "openai",
+  "scenario": "openai-shell-tool.1",
+  "description": "OpenAI Responses streaming with shell_call. Used to validate client-executed shell tool-call semantics (providerExecuted omitted) and call_id handling.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/openai/responses/openai-shell-tool.1.chunks.txt",
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-shell-tool.1.chunks.txt"
+    ],
+    "notes": "shell_call uses `call_id` as toolCallId and provides an `action` object on output_item.done."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  }
+}
+

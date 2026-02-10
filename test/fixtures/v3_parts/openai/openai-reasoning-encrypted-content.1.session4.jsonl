@@ -1,0 +1,13 @@
+{"type":"stream-start","warnings":[]}
+{"id":"resp_01830d662ab3856501693c3217ba4c8190a3ddf6c839d4f12a","modelId":"gpt-5.1-codex-max","timestamp":"2025-12-12T15:17:43.000Z","type":"response-metadata"}
+{"id":"0","type":"text-start"}
+{"delta":"The","id":"0","type":"text-delta"}
+{"delta":" final","id":"0","type":"text-delta"}
+{"delta":" result","id":"0","type":"text-delta"}
+{"delta":" is","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"570","id":"0","type":"text-delta"}
+{"delta":"**","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"id":"0","type":"text-end"}
+{"finishReason":{"unified":"stop"},"providerMetadata":{"openai":{"id":"resp_01830d662ab3856501693c3217ba4c8190a3ddf6c839d4f12a","logprobs":[[],[],[],[],[],[],[],[]],"model":"gpt-5.1-codex-max","responseId":"resp_01830d662ab3856501693c3217ba4c8190a3ddf6c839d4f12a","serviceTier":"default"}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"noCache":299,"total":299},"outputTokens":{"reasoning":0,"text":12,"total":12},"raw":{"input_tokens":299,"input_tokens_details":{"cached_tokens":0},"output_tokens":12,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":311}}}

@@ -1,0 +1,21 @@
+{
+  "provider": "openai",
+  "scenario": "openai-apply-patch-tool.1",
+  "description": "OpenAI Responses streaming with apply_patch_call diff deltas. Used to validate tool-input streaming for apply_patch and client-executed tool-call semantics.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/openai/responses/openai-apply-patch-tool.1.chunks.txt",
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-apply-patch-tool.1.chunks.txt"
+    ],
+    "notes": "apply_patch_call streams operation.diff via `response.apply_patch_call_operation_diff.delta` events."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  }
+}
+

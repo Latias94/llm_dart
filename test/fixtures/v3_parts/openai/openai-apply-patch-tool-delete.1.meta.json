@@ -1,0 +1,21 @@
+{
+  "provider": "openai",
+  "scenario": "openai-apply-patch-tool-delete.1",
+  "description": "OpenAI Responses streaming with apply_patch_call delete_file operation (no diff deltas). Used to validate minimal tool-input for apply_patch operations without streamed diff.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/openai/responses/openai-apply-patch-tool-delete.1.chunks.txt",
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-apply-patch-tool-delete.1.chunks.txt"
+    ],
+    "notes": "delete_file operations provide a complete operation object without diff streaming."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  }
+}
+

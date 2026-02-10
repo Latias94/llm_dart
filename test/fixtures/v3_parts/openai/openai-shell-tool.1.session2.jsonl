@@ -1,0 +1,167 @@
+{"type":"stream-start","warnings":[]}
+{"id":"resp_0434d6d64b12b08900692f639d784481959af65f985b9c13e2","modelId":"gpt-5.1-2025-11-13","timestamp":"2025-12-02T22:09:33.000Z","type":"response-metadata"}
+{"id":"0","type":"text-start"}
+{"delta":"Here","id":"0","type":"text-delta"}
+{"delta":" are","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" files","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" folders","id":"0","type":"text-delta"}
+{"delta":" in","id":"0","type":"text-delta"}
+{"delta":" your","id":"0","type":"text-delta"}
+{"delta":" `","id":"0","type":"text-delta"}
+{"delta":"~/","id":"0","type":"text-delta"}
+{"delta":"Desktop","id":"0","type":"text-delta"}
+{"delta":"`","id":"0","type":"text-delta"}
+{"delta":" directory","id":"0","type":"text-delta"}
+{"delta":":\n\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" .\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" ..\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" .","id":"0","type":"text-delta"}
+{"delta":"DS","id":"0","type":"text-delta"}
+{"delta":"_","id":"0","type":"text-delta"}
+{"delta":"Store","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" .","id":"0","type":"text-delta"}
+{"delta":"localized","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" ai","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" ai","id":"0","type":"text-delta"}
+{"delta":"-dev","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"ny","id":"0","type":"text-delta"}
+{"delta":"c","id":"0","type":"text-delta"}
+{"delta":"-app","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" ai","id":"0","type":"text-delta"}
+{"delta":"-dev","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"ny","id":"0","type":"text-delta"}
+{"delta":"c","id":"0","type":"text-delta"}
+{"delta":"-st","id":"0","type":"text-delta"}
+{"delta":"arter","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" ai","id":"0","type":"text-delta"}
+{"delta":"-sdk","id":"0","type":"text-delta"}
+{"delta":"-open","id":"0","type":"text-delta"}
+{"delta":"router","id":"0","type":"text-delta"}
+{"delta":"-provider","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" chat","id":"0","type":"text-delta"}
+{"delta":"-sdk","id":"0","type":"text-delta"}
+{"delta":"-m","id":"0","type":"text-delta"}
+{"delta":"cp","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" dec","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":".txt","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" oll","id":"0","type":"text-delta"}
+{"delta":"ama","id":"0","type":"text-delta"}
+{"delta":"-ai","id":"0","type":"text-delta"}
+{"delta":"-provider","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" port","id":"0","type":"text-delta"}
+{"delta":"key","id":"0","type":"text-delta"}
+{"delta":"-ver","id":"0","type":"text-delta"}
+{"delta":"cel","id":"0","type":"text-delta"}
+{"delta":"-provider","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" Screenshot","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"11","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"26","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"11","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"58","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"16","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"AM","id":"0","type":"text-delta"}
+{"delta":".png","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" Screenshot","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"11","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"26","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"12","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"21","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"45","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"PM","id":"0","type":"text-delta"}
+{"delta":".png","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" Screenshot","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"11","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"26","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"12","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"27","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"48","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"PM","id":"0","type":"text-delta"}
+{"delta":".png","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" Screenshot","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"202","id":"0","type":"text-delta"}
+{"delta":"5","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"11","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":"28","id":"0","type":"text-delta"}
+{"delta":" at","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"17","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":"53","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"PM","id":"0","type":"text-delta"}
+{"delta":".png","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" test","id":"0","type":"text-delta"}
+{"delta":"-server","id":"0","type":"text-delta"}
+{"id":"0","type":"text-end"}
+{"finishReason":{"unified":"stop"},"providerMetadata":{"openai":{"id":"resp_0434d6d64b12b08900692f639d784481959af65f985b9c13e2","logprobs":[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],"model":"gpt-5.1-2025-11-13","responseId":"resp_0434d6d64b12b08900692f639d784481959af65f985b9c13e2","serviceTier":"default"}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"noCache":331,"total":331},"outputTokens":{"reasoning":0,"text":166,"total":166},"raw":{"input_tokens":331,"input_tokens_details":{"cached_tokens":0},"output_tokens":166,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":497}}}
