@@ -1,7 +1,7 @@
 # Prompt IR Native Support TODO (Fearless Refactor)
 
 Status: draft (behavioral changes expected)  
-Last updated: 2026-02-09
+Last updated: 2026-02-10
 
 This tracker focuses on **Prompt IR native support** across providers:
 implementing `PromptChatCapability` / `PromptChatStreamPartsCapability` so
@@ -52,10 +52,19 @@ Core principle:
 
 ### M2 — Conformance tests (offline)
 
-- [ ] Prompt multi-part message is compiled into a single provider message
-- [ ] Prompt image + caption preserves ordering (text then image part)
-- [ ] Prompt file + caption preserves ordering
-- [ ] Tool part `overrideRole` splits into valid wire messages (no mixed roles)
+- [x] Prompt multi-part message is compiled into a single provider message
+  - Google: `test/providers/google/google_prompt_ir_request_body_test.dart`
+  - OpenAI-compatible: `test/providers/openai_compatible/openai_compatible_prompt_ir_request_body_test.dart`
+  - Ollama: `test/providers/ollama/ollama_prompt_ir_request_body_test.dart`
+- [x] Prompt image + caption preserves ordering (text then image part)
+  - Google: `test/providers/google/google_prompt_ir_request_body_test.dart`
+  - OpenAI-compatible: `test/providers/openai_compatible/openai_compatible_prompt_ir_request_body_test.dart`
+  - Anthropic: `test/providers/anthropic/anthropic_prompt_ir_documents_test.dart`
+- [x] Prompt file + caption preserves ordering
+  - Google: `test/providers/google/google_prompt_ir_request_body_test.dart`
+  - Anthropic: `test/providers/anthropic/anthropic_prompt_ir_documents_test.dart`
+- [x] Tool part `overrideRole` splits into valid wire messages (no mixed roles)
+  - Anthropic-compatible: `test/protocols/anthropic_compatible/prompt_ir_compilation_conformance_test.dart`
 
 ### M3 — Cleanup
 
