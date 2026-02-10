@@ -2,6 +2,7 @@ library;
 
 export 'src/generate_text.dart';
 export 'src/tool_types.dart';
+export 'src/tool_repair_strategies.dart';
 export 'src/tool_set.dart';
 export 'src/tool_loop.dart';
 export 'src/stream_parts.dart';

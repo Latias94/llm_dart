@@ -317,6 +317,80 @@ void main() {
       expect(finish.response.text, equals('Done'));
     });
 
+    test('repair hook failure preserves invalid_tool_call metadata', () async {
+      var handlerCalls = 0;
+      var repairCalls = 0;
+
+      final model = _SequencedStreamChatModel([
+        [
+          LLMToolCallStartPart(
+            ToolCall(
+              id: 'call_bad_json',
+              callType: 'function',
+              function: FunctionCall(name: 'get_weather', arguments: '{'),
+            ),
+          ),
+          const LLMToolCallEndPart('call_bad_json'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_1'}
+              },
+            ),
+          ),
+        ],
+        [
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Done'),
+          const LLMTextEndPart('Done'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_2'}
+              },
+            ),
+          ),
+        ],
+      ]);
+
+      final parts = await streamToolLoopParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        tools: [getWeatherToolDefinition()],
+        toolHandlers: {
+          'get_weather': (toolCall, {cancelToken}) {
+            handlerCalls++;
+            return {'temp': 70};
+          },
+        },
+        repairToolCall: (toolCall,
+            {required reason, errorMessage, validationErrors}) {
+          repairCalls++;
+          return '{"city":';
+        },
+        maxSteps: 3,
+      ).toList();
+
+      expect(handlerCalls, equals(0));
+      expect(repairCalls, equals(1));
+
+      final toolResult = parts.whereType<LLMToolResultPart>().single.result;
+      expect(toolResult.toolCallId, equals('call_bad_json'));
+      expect(toolResult.isError, isTrue);
+      expect(toolResult.metadata, isNotNull);
+      expect(toolResult.metadata!['kind'], equals('invalid_tool_call'));
+      expect(toolResult.metadata!['reason'], equals('invalid_json'));
+      expect(toolResult.metadata!['repairAttempted'], isTrue);
+      expect(toolResult.metadata!['repairedInput'], equals('{"city":'));
+
+      final v3 = encodeV3StreamParts(parts);
+      final toolResultV3 = v3.where((o) => o['type'] == 'tool-result').single;
+      final providerMetadata = toolResultV3['providerMetadata'] as Map?;
+      final toolMetadata = providerMetadata?['tool'] as Map?;
+      expect(toolMetadata?['kind'], equals('invalid_tool_call'));
+      expect(toolMetadata?['repairAttempted'], isTrue);
+    });
+
     test('skips execution and emits error tool result for schema mismatch',
         () async {
       var handlerCalls = 0;
