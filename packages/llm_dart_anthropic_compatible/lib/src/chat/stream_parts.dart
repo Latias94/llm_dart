@@ -40,8 +40,9 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
 
   final contentBlocks = <Map<String, dynamic>>[];
 
-  final sourceIdByUrl = <String, String>{};
-  var nextSourceSeq = 0;
+  final sources = SourcePartEmitter(
+    providerMetadataNamespace: config.providerId,
+  );
 
   final providerToolNameById = <String, String>{};
   final emittedProviderToolCallIds = <String>{};
@@ -71,26 +72,17 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
     final url = citation['url'];
     if (url is! String || url.isEmpty) return null;
 
-    if (sourceIdByUrl.containsKey(url)) return null;
-    final sourceId = sourceIdByUrl.putIfAbsent(
-      url,
-      () => 'source_${nextSourceSeq++}',
-    );
-
     final title = citation['title'];
     final citationType = citation['type'];
     final encryptedIndex = citation['encrypted_index'];
 
-    return LLMSourceUrlPart(
-      sourceId: sourceId,
-      url: url,
+    return sources.url(
+      url,
       title: title is String ? title : null,
-      providerMetadata: {
-        config.providerId: {
-          'type': 'citation',
-          if (citationType is String) 'citationType': citationType,
-          if (encryptedIndex is String) 'encryptedIndex': encryptedIndex,
-        },
+      providerMetadataPayload: {
+        'type': 'citation',
+        if (citationType is String) 'citationType': citationType,
+        if (encryptedIndex is String) 'encryptedIndex': encryptedIndex,
       },
     );
   }
@@ -99,24 +91,15 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
     final url = result['url'];
     if (url is! String || url.isEmpty) return null;
 
-    if (sourceIdByUrl.containsKey(url)) return null;
-    final sourceId = sourceIdByUrl.putIfAbsent(
-      url,
-      () => 'source_${nextSourceSeq++}',
-    );
-
     final title = result['title'];
     final pageAge = result['page_age'];
 
-    return LLMSourceUrlPart(
-      sourceId: sourceId,
-      url: url,
+    return sources.url(
+      url,
       title: title is String ? title : null,
-      providerMetadata: {
-        config.providerId: {
-          'type': 'web_search_result',
-          if (pageAge is String) 'pageAge': pageAge,
-        },
+      providerMetadataPayload: {
+        'type': 'web_search_result',
+        if (pageAge is String) 'pageAge': pageAge,
       },
     );
   }
