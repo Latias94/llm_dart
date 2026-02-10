@@ -100,9 +100,10 @@ Reference: `docs/ai_sdk_v3_refactor_purpose.md`
 
 ### 1.2 Optional repair hook (fearless-friendly)
 
-- [ ] Add optional hook(s) to tool loop / streaming transformer:
-  - [ ] `parseToolCall` (decode + schema validation)
-  - [ ] `repairToolCall` (user-provided strategy; no default “model re-ask” yet)
+- [x] Add optional hook(s) to tool loop / streaming transformer:
+  - [x] `parseToolCall` (decode + schema validation; invalid tool calls emit error results)
+  - [x] `repairToolCall` (user-provided strategy; default is strict/no-repair)
+  - [x] Provide conservative built-in strategy helpers (opt-in)
 
 ---
 
