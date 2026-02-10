@@ -271,6 +271,7 @@ File URLs:
     - YouTube URLs:
       `https://www.youtube.com/watch?v=...` and `https://youtu.be/...`
   - `gs://...` and `files/...` resource names are still allowed.
+  - Also supported under `providerOptions['google-vertex']` (Vertex express mode).
 
 Embeddings (Gemini-native):
 

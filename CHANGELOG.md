@@ -7,7 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-No changes yet.
+### Added
+
+- **Prompt IR file references**: `FileUrlPart` and `FileIdPart` are now available
+  alongside inline `FilePart` bytes.
+- **Google / Google Vertex**: `providerOptions['google'|'google-vertex']['supportedFileUrlsOnly']`
+  to optionally restrict URL-based file parts to AI SDK supported patterns.
+
+### Changed
+
+- **AI task APIs** (`llm_dart_ai`): prompts containing `FileUrlPart` / `FileIdPart`
+  now require prompt-native capabilities (`PromptChatCapability` /
+  `PromptChatStreamPartsCapability`) when the underlying model cannot represent
+  these parts via legacy `ChatMessage`.
+
+### Fixed
+
+- **Anthropic-compatible**: URL-based PDF documents now correctly enable the
+  `pdfs-2024-09-25` beta header when required.
 
 ## [0.11.0-alpha.1] - Not Released
 
