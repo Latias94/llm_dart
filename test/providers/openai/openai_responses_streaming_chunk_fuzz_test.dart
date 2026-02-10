@@ -204,5 +204,192 @@ void main() {
             finish.finishReason?.unified, equals(LLMUnifiedFinishReason.stop));
       }
     });
+
+    test('handles arbitrary chunk splits without losing function tool input',
+        () async {
+      final config = openai_client.OpenAIConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1/',
+        model: 'gpt-5-mini',
+        useResponsesAPI: true,
+      );
+
+      final tools = [
+        Tool.function(
+          name: 'getWeather',
+          description: 'Get the weather for a city.',
+          parameters: const ParametersSchema(
+            schemaType: 'object',
+            properties: {
+              'city': ParameterProperty(
+                propertyType: 'string',
+                description: 'City name.',
+              ),
+            },
+            required: ['city'],
+          ),
+        ),
+      ];
+
+      final fullArgs = '{"city":"London"}';
+      final sse = [
+        _sseData({
+          'type': 'response.created',
+          'response': {
+            'id': 'resp_fn_fuzz',
+            'model': 'gpt-5-mini',
+            'status': 'in_progress',
+            'created_at': 1739145600,
+            'output': [],
+          },
+        }),
+        _sseData({
+          'type': 'response.output_item.added',
+          'output_index': 0,
+          'item': {
+            'type': 'function_call',
+            'id': 'fc_1',
+            'call_id': 'call_1',
+            'name': 'getWeather',
+            'status': 'in_progress',
+          },
+        }),
+        _sseData({
+          'type': 'response.function_call_arguments.delta',
+          'output_index': 0,
+          'delta': '{"city":"Lon',
+        }),
+        _sseData({
+          'type': 'response.function_call_arguments.delta',
+          'output_index': 0,
+          'delta': 'don"}',
+        }),
+        _sseData({
+          'type': 'response.output_item.done',
+          'output_index': 0,
+          'item': {
+            'type': 'function_call',
+            'id': 'fc_1',
+            'call_id': 'call_1',
+            'name': 'getWeather',
+            'arguments': fullArgs,
+            'status': 'completed',
+          },
+        }),
+        _sseData({
+          'type': 'response.output_text.delta',
+          'delta': 'OK',
+        }),
+        _sseData({
+          'type': 'response.completed',
+          'response': {
+            'id': 'resp_fn_fuzz',
+            'model': 'gpt-5-mini',
+            'status': 'completed',
+            'created_at': 1739145600,
+            'usage': {
+              'input_tokens': 10,
+              'output_tokens': 5,
+              'total_tokens': 15,
+            },
+            'output': [
+              {
+                'type': 'function_call',
+                'id': 'fc_1',
+                'call_id': 'call_1',
+                'name': 'getWeather',
+                'arguments': fullArgs,
+                'status': 'completed',
+              },
+              {
+                'type': 'message',
+                'id': 'msg_1',
+                'role': 'assistant',
+                'status': 'completed',
+                'content': [
+                  {
+                    'type': 'output_text',
+                    'text': 'OK',
+                    'annotations': const [],
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+        'data: [DONE]\n\n',
+      ].join();
+
+      for (final seed in [1, 7, 42]) {
+        final client = FakeOpenAIClient(config)
+          ..streamResponse =
+              Stream<String>.fromIterable(_splitRandom(sse, seed: seed));
+        final responses = openai_responses.OpenAIResponses(client, config);
+
+        final parts = await responses
+            .chatStreamParts([ChatMessage.user('Hi')], tools: tools).toList();
+
+        final toolStarts = parts.whereType<LLMToolCallStartPart>().toList();
+        final toolDeltas = parts.whereType<LLMToolCallDeltaPart>().toList();
+        final toolEnds = parts.whereType<LLMToolCallEndPart>().toList();
+
+        expect(toolStarts, hasLength(1));
+        expect(toolDeltas, hasLength(2));
+        expect(toolEnds, hasLength(1));
+
+        expect(toolStarts.single.toolCall.id, equals('call_1'));
+        expect(toolStarts.single.toolCall.function.name, equals('getWeather'));
+        expect(toolStarts.single.toolCall.function.arguments, isEmpty);
+
+        expect(toolDeltas[0].toolCall.id, equals('call_1'));
+        expect(toolDeltas[1].toolCall.id, equals('call_1'));
+        expect(
+            toolDeltas[0].toolCall.function.arguments, equals('{"city":"Lon'));
+        expect(toolDeltas[1].toolCall.function.arguments, equals('don"}'));
+
+        expect(toolEnds.single.toolCallId, equals('call_1'));
+
+        final idxStart = parts.indexOf(toolStarts.single);
+        final idxDelta0 = parts.indexOf(toolDeltas[0]);
+        final idxDelta1 = parts.indexOf(toolDeltas[1]);
+        final idxEnd = parts.indexOf(toolEnds.single);
+        expect(idxStart, lessThan(idxDelta0));
+        expect(idxDelta0, lessThan(idxDelta1));
+        expect(idxDelta1, lessThan(idxEnd));
+
+        final finish = parts.whereType<LLMFinishPart>().single;
+        expect(finish.response.text, equals('OK'));
+        expect(finish.finishReason?.unified,
+            equals(LLMUnifiedFinishReason.toolCalls));
+
+        final calls = finish.response.toolCalls;
+        expect(calls, isNotNull);
+        expect(calls, hasLength(1));
+        expect(calls!.single.id, equals('call_1'));
+        expect(calls.single.function.name, equals('getWeather'));
+        expect(jsonDecode(calls.single.function.arguments),
+            equals(jsonDecode(fullArgs)));
+
+        final v3 = encodeV3StreamParts(parts);
+        final toolInputStart =
+            v3.where((p) => p['type'] == 'tool-input-start').toList();
+        final toolInputDelta =
+            v3.where((p) => p['type'] == 'tool-input-delta').toList();
+        final toolInputEnd =
+            v3.where((p) => p['type'] == 'tool-input-end').toList();
+        final toolCall = v3.where((p) => p['type'] == 'tool-call').toList();
+
+        expect(toolInputStart, hasLength(1));
+        expect(toolInputEnd, hasLength(1));
+        expect(toolInputDelta, hasLength(2));
+        expect(toolCall, hasLength(1));
+        expect(toolInputStart.single['id'], equals('call_1'));
+        expect(toolInputStart.single['toolName'], equals('getWeather'));
+        expect(toolInputEnd.single['id'], equals('call_1'));
+        expect(toolCall.single['toolCallId'], equals('call_1'));
+        expect(toolCall.single['toolName'], equals('getWeather'));
+        expect(toolCall.single['input'], equals(fullArgs));
+      }
+    });
   });
 }
