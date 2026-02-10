@@ -182,8 +182,9 @@ class OpenAIResponses
     final activeToolCalls = <String>{};
     final toolCallArgsById = <String, StringBuffer>{};
     final endedToolCalls = <String>{};
-    final activeProviderToolCalls = <String>{};
-    final endedProviderToolCalls = <String>{};
+    final providerToolParts = ProviderToolPartEmitter(
+      providerMetadataNamespace: config.providerId,
+    );
     final emittedProviderApprovalRequests = <String>{};
 
     var didFinish = false;
@@ -396,53 +397,36 @@ class OpenAIResponses
                   providerToolTypeById[id] = rawType;
 
                   if (eventType == 'response.output_item.added') {
-                    if (activeProviderToolCalls.add(id)) {
-                      yield LLMProviderToolCallPart(
-                        toolCallId: id,
-                        toolName: toolName,
-                        input: item['arguments'] ?? item['action'],
-                        providerMetadata: {
-                          config.providerId: {'type': rawType},
-                        },
-                      );
-                    }
+                    final part = providerToolParts.call(
+                      toolCallId: id,
+                      toolName: toolName,
+                      input: item['arguments'] ?? item['action'],
+                      providerMetadataPayload: {'type': rawType},
+                    );
+                    if (part != null) yield part;
                   } else if (eventType == 'response.output_item.done') {
-                    if (!endedProviderToolCalls.add(id)) {
-                      // Ignore duplicate done events for the same provider tool call.
-                      continue;
-                    }
+                    // Some fixtures may only include a `done` item. Emit a call
+                    // part best-effort so consumers always see the invocation.
+                    final callPart = providerToolParts.call(
+                      toolCallId: id,
+                      toolName: toolName,
+                      input: item['arguments'] ?? item['action'],
+                      providerMetadataPayload: {'type': rawType},
+                    );
+                    if (callPart != null) yield callPart;
 
-                    if (activeProviderToolCalls.add(id)) {
-                      // Some fixtures may only include a `done` item. Emit a call
-                      // part best-effort so consumers always see the invocation.
-                      yield LLMProviderToolCallPart(
-                        toolCallId: id,
-                        toolName: toolName,
-                        input: item['arguments'] ?? item['action'],
-                        providerMetadata: {
-                          config.providerId: {'type': rawType},
-                        },
-                      );
-                    }
-
-                    {
-                      yield LLMProviderToolResultPart(
-                        toolCallId: id,
-                        toolName: toolName,
-                        result: item.map<String, dynamic>(
-                          (key, value) => MapEntry(key.toString(), value),
-                        ),
-                        providerMetadata: {
-                          config.providerId: {
-                            'type': rawType,
-                            if (item['status'] is String)
-                              'status': item['status'],
-                          },
-                        },
-                      );
-                    }
-
-                    activeProviderToolCalls.remove(id);
+                    final resultPart = providerToolParts.result(
+                      toolCallId: id,
+                      toolName: toolName,
+                      result: item.map<String, dynamic>(
+                        (key, value) => MapEntry(key.toString(), value),
+                      ),
+                      providerMetadataPayload: {
+                        'type': rawType,
+                        if (item['status'] is String) 'status': item['status'],
+                      },
+                    );
+                    if (resultPart != null) yield resultPart;
                   }
                 }
               }
