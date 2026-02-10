@@ -244,6 +244,79 @@ void main() {
       expect(finish.response.text, equals('Done'));
     });
 
+    test('repairs invalid JSON input when repair hook is provided', () async {
+      var handlerCalls = 0;
+      var repairCalls = 0;
+      String? lastReason;
+      String? lastInput;
+
+      final model = _SequencedStreamChatModel([
+        [
+          LLMToolCallStartPart(
+            ToolCall(
+              id: 'call_bad_json',
+              callType: 'function',
+              function: FunctionCall(name: 'get_weather', arguments: '{'),
+            ),
+          ),
+          const LLMToolCallEndPart('call_bad_json'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_1'}
+              },
+            ),
+          ),
+        ],
+        [
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Done'),
+          const LLMTextEndPart('Done'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_2'}
+              },
+            ),
+          ),
+        ],
+      ]);
+
+      final parts = await streamToolLoopParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        tools: [getWeatherToolDefinition()],
+        toolHandlers: {
+          'get_weather': (toolCall, {cancelToken}) {
+            handlerCalls++;
+            return {'temp': 70, 'city': 'SF'};
+          },
+        },
+        repairToolCall: (toolCall,
+            {required reason, errorMessage, validationErrors}) {
+          repairCalls++;
+          lastReason = reason;
+          lastInput = toolCall.function.arguments;
+          return '{"city":"SF"}';
+        },
+        maxSteps: 3,
+      ).toList();
+
+      expect(handlerCalls, equals(1));
+      expect(repairCalls, equals(1));
+      expect(lastReason, equals('invalid_json'));
+      expect(lastInput, equals('{'));
+
+      final toolResult = parts.whereType<LLMToolResultPart>().single.result;
+      expect(toolResult.toolCallId, equals('call_bad_json'));
+      expect(toolResult.isError, isFalse);
+      expect(
+          jsonDecode(toolResult.content), equals({'temp': 70, 'city': 'SF'}));
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.text, equals('Done'));
+    });
+
     test('skips execution and emits error tool result for schema mismatch',
         () async {
       var handlerCalls = 0;
@@ -300,6 +373,84 @@ void main() {
       expect(toolResult.toolCallId, equals('call_schema'));
       expect(toolResult.isError, isTrue);
       expect(toolResult.content, contains('Parameter'));
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.text, equals('Done'));
+    });
+
+    test('repairs schema validation failure when repair hook is provided',
+        () async {
+      var handlerCalls = 0;
+      var repairCalls = 0;
+      String? lastReason;
+      List<String>? lastErrors;
+
+      final model = _SequencedStreamChatModel([
+        [
+          LLMToolCallStartPart(
+            ToolCall(
+              id: 'call_schema',
+              callType: 'function',
+              function:
+                  FunctionCall(name: 'get_weather', arguments: '{"city":123}'),
+            ),
+          ),
+          const LLMToolCallEndPart('call_schema'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_1'}
+              },
+            ),
+          ),
+        ],
+        [
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Done'),
+          const LLMTextEndPart('Done'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_2'}
+              },
+            ),
+          ),
+        ],
+      ]);
+
+      final parts = await streamToolLoopParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        tools: [getWeatherToolDefinition()],
+        toolHandlers: {
+          'get_weather': (toolCall, {cancelToken}) {
+            handlerCalls++;
+            return {'temp': 71, 'city': 'SF'};
+          },
+        },
+        repairToolCall: (toolCall,
+            {required reason, errorMessage, validationErrors}) {
+          repairCalls++;
+          lastReason = reason;
+          lastErrors = validationErrors;
+          return '{"city":"SF"}';
+        },
+        maxSteps: 3,
+      ).toList();
+
+      expect(handlerCalls, equals(1));
+      expect(repairCalls, equals(1));
+      expect(lastReason, equals('schema_validation_failed'));
+      expect(lastErrors, isNotNull);
+      expect(lastErrors, isNotEmpty);
+
+      final toolResult = parts.whereType<LLMToolResultPart>().single.result;
+      expect(toolResult.toolCallId, equals('call_schema'));
+      expect(toolResult.isError, isFalse);
+      expect(
+        jsonDecode(toolResult.content),
+        equals({'temp': 71, 'city': 'SF'}),
+      );
 
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.text, equals('Done'));

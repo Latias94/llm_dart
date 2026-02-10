@@ -300,6 +300,7 @@ Future<ToolLoopResult> runToolLoop({
   Prompt? promptIr,
   List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
@@ -319,6 +320,7 @@ Future<ToolLoopResult> runToolLoop({
       prompt: input.prompt,
       tools: tools,
       toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
@@ -418,6 +420,7 @@ Future<ToolLoopResult> runToolLoop({
       toolCalls: toolCalls,
       tools: tools,
       toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
       cancelToken: cancelToken,
     );
@@ -510,6 +513,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   required Prompt prompt,
   List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
@@ -526,6 +530,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       messages: prompt.toChatMessages(),
       tools: tools,
       toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
@@ -639,6 +644,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       toolCalls: toolCalls,
       tools: tools,
       toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
       cancelToken: cancelToken,
     );
@@ -684,6 +690,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
   Prompt? promptIr,
   List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
@@ -703,6 +710,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       prompt: input.prompt,
       tools: tools,
       toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
@@ -804,6 +812,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       toolCalls: toolCalls,
       tools: tools,
       toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
       cancelToken: cancelToken,
     );
@@ -840,6 +849,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   required Prompt prompt,
   List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
@@ -856,6 +866,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       messages: prompt.toChatMessages(),
       tools: tools,
       toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
@@ -970,6 +981,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       toolCalls: toolCalls,
       tools: tools,
       toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
       cancelToken: cancelToken,
     );
@@ -1114,6 +1126,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
   Prompt? promptIr,
   List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
@@ -1134,6 +1147,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         prompt: input.prompt,
         tools: tools,
         toolHandlers: toolHandlers,
+        repairToolCall: repairToolCall,
         toolApprovalChecks: toolApprovalChecks,
         needsApproval: needsApproval,
         maxSteps: maxSteps,
@@ -1336,6 +1350,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         toolCalls: completedToolCalls,
         tools: tools,
         toolHandlers: toolHandlers,
+        repairToolCall: repairToolCall,
         continueOnToolError: continueOnToolError,
         cancelToken: cancelToken,
       );
@@ -1372,6 +1387,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   required Prompt prompt,
   List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
@@ -1390,6 +1406,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       messages: prompt.toChatMessages(),
       tools: tools,
       toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
@@ -1590,6 +1607,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       toolCalls: completedToolCalls,
       tools: tools,
       toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
       cancelToken: cancelToken,
     );
@@ -1632,6 +1650,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   required ToolSet toolSet,
+  ToolCallRepair? repairToolCall,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
@@ -1645,6 +1664,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     promptIr: promptIr,
     tools: toolSet.tools,
     toolHandlers: toolSet.handlers,
+    repairToolCall: repairToolCall,
     toolApprovalChecks: toolSet.approvalChecks,
     needsApproval: needsApproval,
     maxSteps: maxSteps,
@@ -1658,6 +1678,7 @@ Future<List<ToolResult>> executeToolCalls({
   required List<ToolCall> toolCalls,
   List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
   bool continueOnToolError = true,
   CancelToken? cancelToken,
 }) {
@@ -1665,6 +1686,7 @@ Future<List<ToolResult>> executeToolCalls({
     toolCalls: toolCalls,
     tools: tools,
     toolHandlers: toolHandlers,
+    repairToolCall: repairToolCall,
     continueOnToolError: continueOnToolError,
     cancelToken: cancelToken,
   );
@@ -1715,6 +1737,7 @@ Future<List<ToolResult>> _executeToolCalls({
   required List<ToolCall> toolCalls,
   required List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
   required bool continueOnToolError,
   CancelToken? cancelToken,
 }) async {
@@ -1747,7 +1770,31 @@ Future<List<ToolResult>> _executeToolCalls({
     return (parsed: Map<String, dynamic>.from(decoded), error: null);
   }
 
+  Future<String?> tryRepairToolCall(
+    ToolCall toolCall, {
+    required String reason,
+    String? errorMessage,
+    List<String>? validationErrors,
+  }) async {
+    final repair = repairToolCall;
+    if (repair == null) return null;
+
+    final repaired = await Future.value(
+      repair(
+        toolCall,
+        reason: reason,
+        errorMessage: errorMessage,
+        validationErrors: validationErrors,
+      ),
+    );
+    final trimmed = repaired?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
+  }
+
   for (final toolCall in toolCalls) {
+    var effectiveToolCall = toolCall;
+
     if (!_isExecutableFunctionToolCall(toolCall)) {
       results.add(
         ToolResult.error(
@@ -1762,36 +1809,83 @@ Future<List<ToolResult>> _executeToolCalls({
 
     // Best-effort AI SDK parity: tool call input is expected to be a JSON object.
     // If it is malformed, emit an error result and skip execution.
-    final parsed = parseToolInput(toolCall.function.arguments);
+    var parsed = parseToolInput(effectiveToolCall.function.arguments);
     if (parsed.error != null) {
-      results.add(
-        ToolResult.error(
-          toolCallId: toolCall.id,
-          errorMessage: '${parsed.error}: "${toolCall.function.name}"',
-          metadata: {
-            'kind': 'invalid_tool_call',
-            'reason': 'invalid_json',
-            'toolName': toolCall.function.name,
-            'input': toolCall.function.arguments,
-          },
-        ),
+      final reason = parsed.error == 'Tool arguments must be a JSON object'
+          ? 'arguments_not_object'
+          : 'invalid_json';
+
+      final repaired = await tryRepairToolCall(
+        effectiveToolCall,
+        reason: reason,
+        errorMessage: parsed.error,
       );
-      if (!continueOnToolError) break;
-      continue;
+
+      if (repaired != null) {
+        final repairedCall = ToolCall(
+          id: effectiveToolCall.id,
+          callType: effectiveToolCall.callType,
+          function: FunctionCall(
+            name: effectiveToolCall.function.name,
+            arguments: repaired,
+          ),
+          providerOptions: effectiveToolCall.providerOptions,
+        );
+        final repairedParsed = parseToolInput(repairedCall.function.arguments);
+        if (repairedParsed.error == null) {
+          effectiveToolCall = repairedCall;
+          parsed = repairedParsed;
+        } else {
+          results.add(
+            ToolResult.error(
+              toolCallId: effectiveToolCall.id,
+              errorMessage:
+                  '${repairedParsed.error}: "${effectiveToolCall.function.name}"',
+              metadata: {
+                'kind': 'invalid_tool_call',
+                'reason': reason,
+                'toolName': effectiveToolCall.function.name,
+                'input': toolCall.function.arguments,
+                'repairAttempted': true,
+                'repairedInput': repaired,
+                'repairError': repairedParsed.error,
+              },
+            ),
+          );
+          if (!continueOnToolError) break;
+          continue;
+        }
+      } else {
+        results.add(
+          ToolResult.error(
+            toolCallId: effectiveToolCall.id,
+            errorMessage:
+                '${parsed.error}: "${effectiveToolCall.function.name}"',
+            metadata: {
+              'kind': 'invalid_tool_call',
+              'reason': reason,
+              'toolName': effectiveToolCall.function.name,
+              'input': effectiveToolCall.function.arguments,
+            },
+          ),
+        );
+        if (!continueOnToolError) break;
+        continue;
+      }
     }
 
-    final toolDef = toolByName?[toolCall.function.name];
+    final toolDef = toolByName?[effectiveToolCall.function.name];
     if (toolByName != null && toolDef == null) {
       results.add(
         ToolResult.error(
-          toolCallId: toolCall.id,
-          errorMessage: 'No such tool: "${toolCall.function.name}"',
+          toolCallId: effectiveToolCall.id,
+          errorMessage: 'No such tool: "${effectiveToolCall.function.name}"',
           metadata: {
             'kind': 'invalid_tool_call',
             'reason': 'no_such_tool',
-            'toolName': toolCall.function.name,
+            'toolName': effectiveToolCall.function.name,
             'availableTools': toolByName.keys.toList()..sort(),
-            'input': toolCall.function.arguments,
+            'input': effectiveToolCall.function.arguments,
           },
         ),
       );
@@ -1805,31 +1899,102 @@ Future<List<ToolResult>> _executeToolCalls({
         toolDef.function.parameters,
       );
       if (errors.isNotEmpty) {
-        results.add(
-          ToolResult.error(
-            toolCallId: toolCall.id,
-            errorMessage: 'Parameter validation failed: ${errors.join('; ')}',
-            metadata: {
-              'kind': 'invalid_tool_call',
-              'reason': 'schema_validation_failed',
-              'toolName': toolCall.function.name,
-              'errors': errors,
-              'input': toolCall.function.arguments,
-            },
-          ),
+        final repaired = await tryRepairToolCall(
+          effectiveToolCall,
+          reason: 'schema_validation_failed',
+          validationErrors: errors,
         );
-        if (!continueOnToolError) break;
-        continue;
+
+        if (repaired != null) {
+          final repairedCall = ToolCall(
+            id: effectiveToolCall.id,
+            callType: effectiveToolCall.callType,
+            function: FunctionCall(
+              name: effectiveToolCall.function.name,
+              arguments: repaired,
+            ),
+            providerOptions: effectiveToolCall.providerOptions,
+          );
+
+          final repairedParsed =
+              parseToolInput(repairedCall.function.arguments);
+          if (repairedParsed.error == null) {
+            final repairedErrors = ToolValidator.validateParameters(
+              repairedParsed.parsed!,
+              toolDef.function.parameters,
+            );
+            if (repairedErrors.isEmpty) {
+              effectiveToolCall = repairedCall;
+              parsed = repairedParsed;
+            } else {
+              results.add(
+                ToolResult.error(
+                  toolCallId: effectiveToolCall.id,
+                  errorMessage:
+                      'Parameter validation failed: ${errors.join('; ')}',
+                  metadata: {
+                    'kind': 'invalid_tool_call',
+                    'reason': 'schema_validation_failed',
+                    'toolName': effectiveToolCall.function.name,
+                    'errors': errors,
+                    'input': toolCall.function.arguments,
+                    'repairAttempted': true,
+                    'repairedInput': repaired,
+                    'repairErrors': repairedErrors,
+                  },
+                ),
+              );
+              if (!continueOnToolError) break;
+              continue;
+            }
+          } else {
+            results.add(
+              ToolResult.error(
+                toolCallId: effectiveToolCall.id,
+                errorMessage:
+                    '${repairedParsed.error}: "${effectiveToolCall.function.name}"',
+                metadata: {
+                  'kind': 'invalid_tool_call',
+                  'reason': 'schema_validation_failed',
+                  'toolName': effectiveToolCall.function.name,
+                  'errors': errors,
+                  'input': toolCall.function.arguments,
+                  'repairAttempted': true,
+                  'repairedInput': repaired,
+                  'repairError': repairedParsed.error,
+                },
+              ),
+            );
+            if (!continueOnToolError) break;
+            continue;
+          }
+        } else {
+          results.add(
+            ToolResult.error(
+              toolCallId: effectiveToolCall.id,
+              errorMessage: 'Parameter validation failed: ${errors.join('; ')}',
+              metadata: {
+                'kind': 'invalid_tool_call',
+                'reason': 'schema_validation_failed',
+                'toolName': effectiveToolCall.function.name,
+                'errors': errors,
+                'input': effectiveToolCall.function.arguments,
+              },
+            ),
+          );
+          if (!continueOnToolError) break;
+          continue;
+        }
       }
     }
 
-    final handler = toolHandlers[toolCall.function.name];
+    final handler = toolHandlers[effectiveToolCall.function.name];
     if (handler == null) {
       results.add(
         ToolResult.error(
-          toolCallId: toolCall.id,
+          toolCallId: effectiveToolCall.id,
           errorMessage:
-              'No tool handler registered for "${toolCall.function.name}"',
+              'No tool handler registered for "${effectiveToolCall.function.name}"',
         ),
       );
       if (!continueOnToolError) break;
@@ -1837,14 +2002,15 @@ Future<List<ToolResult>> _executeToolCalls({
     }
 
     try {
-      final output = await handler(toolCall, cancelToken: cancelToken);
+      final output = await handler(effectiveToolCall, cancelToken: cancelToken);
       final content = _stringifyToolOutput(output);
-      results
-          .add(ToolResult.success(toolCallId: toolCall.id, content: content));
+      results.add(
+        ToolResult.success(toolCallId: effectiveToolCall.id, content: content),
+      );
     } catch (e) {
       results.add(
         ToolResult.error(
-          toolCallId: toolCall.id,
+          toolCallId: effectiveToolCall.id,
           errorMessage: 'Tool execution failed: $e',
         ),
       );
