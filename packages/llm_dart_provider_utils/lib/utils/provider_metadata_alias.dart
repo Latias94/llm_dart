@@ -122,6 +122,7 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
           toolCallId: final toolCallId,
           toolName: final toolName,
           input: final input,
+          providerExecuted: final providerExecuted,
           isDynamic: final isDynamic,
           providerMetadata: final providerMetadata,
         ):
@@ -129,6 +130,7 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
           toolCallId: toolCallId,
           toolName: toolName,
           input: input,
+          providerExecuted: providerExecuted,
           isDynamic: isDynamic,
           providerMetadata: providerMetadata == null
               ? null
@@ -218,6 +220,150 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
           status: status,
           systemFingerprint: systemFingerprint,
           raw: raw,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMTextStartPart(
+          blockId: final blockId,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMTextStartPart(
+          blockId: blockId,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMTextDeltaPart(
+          delta: final delta,
+          blockId: final blockId,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMTextDeltaPart(
+          delta,
+          blockId: blockId,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMTextEndPart(
+          text: final text,
+          blockId: final blockId,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMTextEndPart(
+          text,
+          blockId: blockId,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMReasoningStartPart(
+          blockId: final blockId,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMReasoningStartPart(
+          blockId: blockId,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMReasoningDeltaPart(
+          delta: final delta,
+          blockId: final blockId,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMReasoningDeltaPart(
+          delta,
+          blockId: blockId,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMReasoningEndPart(
+          thinking: final thinking,
+          blockId: final blockId,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMReasoningEndPart(
+          thinking,
+          blockId: blockId,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMToolInputStartPart(
+          id: final id,
+          toolName: final toolName,
+          providerMetadata: final providerMetadata,
+          providerExecuted: final providerExecuted,
+          isDynamic: final isDynamic,
+          title: final title,
+        ):
+        yield LLMToolInputStartPart(
+          id: id,
+          toolName: toolName,
+          providerExecuted: providerExecuted,
+          isDynamic: isDynamic,
+          title: title,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMToolInputDeltaPart(
+          id: final id,
+          delta: final delta,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMToolInputDeltaPart(
+          id: id,
+          delta: delta,
+          providerMetadata: providerMetadata == null
+              ? null
+              : withProviderMetadataAlias(
+                  providerMetadata,
+                  baseKey: baseKey,
+                  aliasKey: aliasKey,
+                ),
+        );
+      case LLMToolInputEndPart(
+          id: final id,
+          providerMetadata: final providerMetadata,
+        ):
+        yield LLMToolInputEndPart(
+          id: id,
           providerMetadata: providerMetadata == null
               ? null
               : withProviderMetadataAlias(

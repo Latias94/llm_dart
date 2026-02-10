@@ -447,6 +447,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                     toolCallId: id,
                     toolName: name,
                     input: input,
+                    providerExecuted: true,
                     isDynamic: blockType == 'mcp_tool_use' ? true : null,
                     providerMetadataPayload: {'type': blockType},
                   );

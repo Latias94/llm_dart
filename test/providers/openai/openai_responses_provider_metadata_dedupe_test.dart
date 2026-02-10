@@ -27,30 +27,14 @@ class _FakeOpenAIClient extends OpenAIClient {
 }
 
 void main() {
-  group('OpenAI Responses provider metadata dedupe (conformance)', () {
-    test(
-        'dedupes identical metadata snapshots across repeated output_item.done',
-        () async {
+  group('OpenAI Responses source dedupe (AI SDK parity)', () {
+    test('dedupes identical url sources across repeated annotations', () async {
       final config = openai_client.OpenAIConfig(
         apiKey: 'test-key',
         baseUrl: 'https://api.openai.com/v1/',
         model: 'gpt-4o',
         useResponsesAPI: true,
       );
-
-      const messageItem = {
-        'type': 'message',
-        'id': 'msg_1',
-        'role': 'assistant',
-        'status': 'completed',
-        'content': [
-          {
-            'type': 'output_text',
-            'text': 'Hello',
-            'annotations': [],
-          }
-        ],
-      };
 
       final chunks = <String>[
         _sseData({
@@ -65,16 +49,27 @@ void main() {
           },
         }),
         _sseData({
-          'type': 'response.output_item.done',
-          'output_index': 0,
-          'item': messageItem,
+          'type': 'response.output_text.annotation.added',
+          'annotation': {
+            'type': 'url_citation',
+            'url': 'https://example.com/',
+            'start_index': 0,
+            'end_index': 4,
+          },
         }),
-        // Duplicate done event with the same payload: should not emit a new
-        // LLMProviderMetadataPart snapshot.
+        // Duplicate annotation: should not emit a new source part.
         _sseData({
-          'type': 'response.output_item.done',
-          'output_index': 0,
-          'item': messageItem,
+          'type': 'response.output_text.annotation.added',
+          'annotation': {
+            'type': 'url_citation',
+            'url': 'https://example.com/',
+            'start_index': 0,
+            'end_index': 4,
+          },
+        }),
+        _sseData({
+          'type': 'response.output_text.delta',
+          'delta': 'Hello',
         }),
         _sseData({
           'type': 'response.completed',
@@ -84,7 +79,7 @@ void main() {
             'created_at': 1700000000,
             'model': 'gpt-4o',
             'status': 'completed',
-            'output': [messageItem],
+            'output': [],
             'usage': {
               'input_tokens': 1,
               'output_tokens': 1,
@@ -101,15 +96,9 @@ void main() {
       final parts =
           await responses.chatStreamParts([ChatMessage.user('x')]).toList();
 
-      final providerMetadataParts =
-          parts.whereType<LLMProviderMetadataPart>().toList();
-
-      // Provider metadata does not currently include response `status`, so
-      // repeated events that don't change (id/model/etc.) would otherwise spam
-      // identical snapshots. Ensure we only emit a single snapshot.
-      expect(providerMetadataParts, hasLength(1));
-      expect(
-          providerMetadataParts.single.providerMetadata['openai'], isA<Map>());
+      final sources = parts.whereType<LLMSourceUrlPart>().toList();
+      expect(sources, hasLength(1));
+      expect(sources.single.url, equals('https://example.com/'));
 
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.text, equals('Hello'));

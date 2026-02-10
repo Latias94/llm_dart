@@ -97,8 +97,8 @@ void main() {
       expect(approvals.map((p) => p.approvalId).toSet(), equals(expectedIds));
 
       final approval = approvals.first;
-      expect(approval.toolCallId, equals(approval.approvalId));
-      expect(approval.toolName, equals('create_short_url'));
+      expect(approval.toolCallId, startsWith('id-'));
+      expect(approval.toolName, equals('mcp.create_short_url'));
 
       expect(approval.input, isA<Map>());
       final input = approval.input as Map;
@@ -106,8 +106,14 @@ void main() {
 
       final meta = approval.providerMetadata?[config.providerId] as Map?;
       expect(meta, isNotNull);
-      expect(meta!['type'], equals('mcp_approval_request'));
-      expect(meta['serverLabel'], equals('zip1'));
+      expect(meta!['serverLabel'], equals('zip1'));
+
+      final calls = parts.whereType<LLMProviderToolCallPart>().toList();
+      final call =
+          calls.singleWhere((p) => p.toolCallId == approval.toolCallId);
+      expect(call.isDynamic, isTrue);
+      expect(call.providerExecuted, isTrue);
+      expect(call.toolName, equals('mcp.create_short_url'));
 
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.toolCalls, anyOf(isNull, isEmpty));
@@ -166,6 +172,13 @@ void main() {
         baseUrl: 'https://api.openai.com/v1/',
         model: 'gpt-5-mini',
         useResponsesAPI: true,
+        originalConfig: const LLMConfig(
+          baseUrl: 'https://api.openai.com/v1/',
+          model: 'gpt-5-mini',
+          providerOptions: {
+            'openai': {'emitProviderToolDeltas': true},
+          },
+        ),
       );
 
       final client = FakeOpenAIClient(config)

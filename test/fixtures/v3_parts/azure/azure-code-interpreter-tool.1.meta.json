@@ -10,6 +10,15 @@
     ],
     "notes": "Replayed via FakeOpenAIClient against OpenAIResponses (AzureOpenAIConfig)."
   },
+  "request": {
+    "providerTools": [
+      {
+        "id": "azure.code_interpreter",
+        "name": "codeExecution",
+        "options": {}
+      }
+    ]
+  },
   "assertions": {
     "ordering": true,
     "single_stream_start": true,
@@ -19,4 +28,3 @@
   },
   "notes": []
 }
-

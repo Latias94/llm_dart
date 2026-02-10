@@ -77,6 +77,7 @@ class OpenAIResponses
   OpenAIResponses(this.client, this.config) {
     _sourceParts = SourcePartEmitter(
       providerMetadataNamespace: config.providerId,
+      sourceIdPrefix: 'id-',
     );
   }
 
@@ -188,11 +189,21 @@ class OpenAIResponses
       providerMetadataNamespace: config.providerId,
     );
     final emittedProviderApprovalRequests = <String>{};
+    final emittedReasoningItems = <String>{};
+    final endedReasoningItems = <String>{};
+    final reasoningItemsWithSummaries = <String>{};
+
+    var mcpApprovalSeq = 0;
+    final mcpApprovalToolCallIdByApprovalId = <String, String>{};
 
     var didFinish = false;
     var didEmitResponseMetadata = false;
-    String? lastProviderMetadataJson;
-    final providerToolTypeById = <String, String>{};
+    final emitProviderToolDeltas =
+        config.originalConfig?.getProviderOption<bool>(
+              config.providerId,
+              'emitProviderToolDeltas',
+            ) ??
+            false;
 
     try {
       final stream = client.postStreamRaw(
@@ -259,16 +270,51 @@ class OpenAIResponses
               if (rawToolType.endsWith('_call')) {
                 final toolCallId = json['item_id'] as String?;
                 if (toolCallId != null && toolCallId.isNotEmpty) {
-                  providerToolTypeById[toolCallId] = rawToolType;
-                  yield LLMProviderToolDeltaPart(
-                    toolCallId: toolCallId,
-                    toolName: rawToolType.substring(0, rawToolType.length - 5),
-                    status: status,
-                    data: json,
-                    providerMetadata: {
-                      config.providerId: {'type': eventType},
-                    },
-                  );
+                  final toolType =
+                      rawToolType.substring(0, rawToolType.length - 5);
+
+                  // AI SDK parity: emit preliminary tool results for streamed
+                  // image generation partials.
+                  if (rawToolType == 'image_generation_call' &&
+                      status == 'partial_image') {
+                    final partial = json['partial_image_b64'];
+                    if (partial is String && partial.isNotEmpty) {
+                      var toolName = toolType;
+                      final providerTools =
+                          config.originalConfig?.providerTools;
+                      if (providerTools != null && providerTools.isNotEmpty) {
+                        final id = '${config.providerId}.$toolType';
+                        for (final t in providerTools) {
+                          if (t.id == id &&
+                              t.name != null &&
+                              t.name!.isNotEmpty) {
+                            toolName = t.name!;
+                            break;
+                          }
+                        }
+                      }
+
+                      yield LLMProviderToolResultPart(
+                        toolCallId: toolCallId,
+                        toolName: toolName,
+                        result: {'result': partial},
+                        preliminary: true,
+                      );
+                      continue;
+                    }
+                  }
+
+                  if (emitProviderToolDeltas) {
+                    yield LLMProviderToolDeltaPart(
+                      toolCallId: toolCallId,
+                      toolName: toolType,
+                      status: status,
+                      data: json,
+                      providerMetadata: {
+                        config.providerId: {'type': eventType},
+                      },
+                    );
+                  }
                 }
               }
             }
@@ -293,6 +339,41 @@ class OpenAIResponses
                   encrypted is String &&
                   encrypted.isNotEmpty) {
                 _reasoningEncryptedByItemId[itemId] = encrypted;
+              }
+            }
+
+            // Emit reasoning block boundaries even if the reasoning content is
+            // empty (AI SDK v3 parity). Responses can emit `reasoning` items
+            // with only summaries/encrypted content.
+            if (item is Map && item['type'] == 'reasoning') {
+              final itemId = item['id'] as String? ?? '';
+              if (itemId.isNotEmpty) {
+                final blockId = '$itemId:0';
+                final pm = <String, dynamic>{
+                  config.providerId: {
+                    'itemId': itemId,
+                    'reasoningEncryptedContent':
+                        _reasoningEncryptedByItemId[itemId],
+                  },
+                };
+
+                if (eventType == 'response.output_item.done' &&
+                    !reasoningItemsWithSummaries.contains(itemId)) {
+                  if (emittedReasoningItems.add(itemId)) {
+                    yield LLMReasoningStartPart(
+                      blockId: blockId,
+                      providerMetadata: pm,
+                    );
+                  }
+
+                  if (endedReasoningItems.add(itemId)) {
+                    yield LLMReasoningEndPart(
+                      '',
+                      blockId: blockId,
+                      providerMetadata: pm,
+                    );
+                  }
+                }
               }
             }
 
@@ -358,35 +439,53 @@ class OpenAIResponses
               final rawType = item['type'];
 
               if (rawType == 'mcp_approval_request') {
-                final id = item['id'] as String? ?? '';
-                if (id.isNotEmpty && emittedProviderApprovalRequests.add(id)) {
-                  final name = item['name'] as String? ?? 'mcp';
-                  final argsRaw = item['arguments'];
-                  Object? input = argsRaw;
-                  if (argsRaw is String && argsRaw.isNotEmpty) {
+                final approvalId = item['id'] as String? ?? '';
+                if (approvalId.isNotEmpty) {
+                  final toolCallId =
+                      mcpApprovalToolCallIdByApprovalId.putIfAbsent(
+                    approvalId,
+                    () => 'id-${mcpApprovalSeq++}',
+                  );
+
+                  final rawName = item['name'] as String? ?? 'mcp';
+                  final toolName =
+                      rawName.startsWith('mcp.') ? rawName : 'mcp.$rawName';
+
+                  final argsRaw = item['arguments'] as String?;
+                  Object? parsedArgs;
+                  if (argsRaw != null && argsRaw.isNotEmpty) {
                     try {
-                      final decoded = jsonDecode(argsRaw);
-                      if (decoded is Map || decoded is List) {
-                        input = decoded;
-                      }
+                      parsedArgs = jsonDecode(argsRaw);
                     } catch (_) {
-                      // Keep raw string as-is.
+                      parsedArgs = argsRaw;
                     }
+                  } else {
+                    parsedArgs = const <String, dynamic>{};
                   }
 
-                  yield LLMProviderToolApprovalRequestPart(
-                    approvalId: id,
-                    toolCallId: id,
-                    toolName: name,
-                    input: input,
-                    providerMetadata: {
-                      config.providerId: {
-                        'type': 'mcp_approval_request',
-                        if (item['server_label'] is String)
-                          'serverLabel': item['server_label'],
-                      },
-                    },
+                  final callPart = providerToolParts.call(
+                    toolCallId: toolCallId,
+                    toolName: toolName,
+                    input: parsedArgs,
+                    providerExecuted: true,
+                    isDynamic: true,
                   );
+                  if (callPart != null) yield callPart;
+
+                  if (emittedProviderApprovalRequests.add(approvalId)) {
+                    yield LLMProviderToolApprovalRequestPart(
+                      approvalId: approvalId,
+                      toolCallId: toolCallId,
+                      toolName: toolName,
+                      input: parsedArgs,
+                      providerMetadata: {
+                        config.providerId: {
+                          if (item['server_label'] is String)
+                            'serverLabel': item['server_label'],
+                        },
+                      },
+                    );
+                  }
                 }
               }
 
@@ -395,38 +494,230 @@ class OpenAIResponses
                   rawType != 'function_call') {
                 final id = item['id'] as String? ?? '';
                 if (id.isNotEmpty) {
-                  final toolName = rawType.substring(0, rawType.length - 5);
-                  providerToolTypeById[id] = rawType;
+                  final toolType = rawType.substring(0, rawType.length - 5);
+
+                  // Dynamic MCP tool calls have different semantics in AI SDK:
+                  // - toolName includes the MCP tool name (e.g. `mcp.foo`)
+                  // - input comes from streamed `arguments`
+                  // - no tool-input-* boundaries are emitted
+                  if (toolType == 'mcp') {
+                    final rawName = item['name'] as String? ?? 'mcp';
+                    final toolName =
+                        rawName.startsWith('mcp.') ? rawName : 'mcp.$rawName';
+                    final argsRaw = item['arguments'] as String?;
+                    Object? parsedArgs;
+                    if (argsRaw != null && argsRaw.isNotEmpty) {
+                      try {
+                        parsedArgs = jsonDecode(argsRaw);
+                      } catch (_) {
+                        parsedArgs = argsRaw;
+                      }
+                    } else {
+                      parsedArgs = const <String, dynamic>{};
+                    }
+
+                    if (eventType == 'response.output_item.added') {
+                      final part = providerToolParts.call(
+                        toolCallId: id,
+                        toolName: toolName,
+                        input: parsedArgs,
+                        providerExecuted: true,
+                        isDynamic: true,
+                        providerMetadataPayload: {
+                          if (item['server_label'] is String)
+                            'serverLabel': item['server_label'],
+                          if (item['id'] is String) 'itemId': item['id'],
+                        },
+                      );
+                      if (part != null) yield part;
+                    } else if (eventType == 'response.output_item.done') {
+                      final callPart = providerToolParts.call(
+                        toolCallId: id,
+                        toolName: toolName,
+                        input: parsedArgs,
+                        providerExecuted: true,
+                        isDynamic: true,
+                        providerMetadataPayload: {
+                          if (item['server_label'] is String)
+                            'serverLabel': item['server_label'],
+                          if (item['id'] is String) 'itemId': item['id'],
+                        },
+                      );
+                      if (callPart != null) yield callPart;
+
+                      final resultPart = providerToolParts.result(
+                        toolCallId: id,
+                        toolName: toolName,
+                        result: item.map<String, dynamic>(
+                          (key, value) => MapEntry(key.toString(), value),
+                        ),
+                        isDynamic: true,
+                        providerMetadataPayload: {
+                          if (item['server_label'] is String)
+                            'serverLabel': item['server_label'],
+                          if (item['id'] is String) 'itemId': item['id'],
+                        },
+                      );
+                      if (resultPart != null) yield resultPart;
+                    }
+                    continue;
+                  }
+
+                  String resolvedToolName = toolType;
+
+                  final providerTools = config.originalConfig?.providerTools;
+                  ProviderTool? matchedProviderTool;
+                  final providerToolId = '${config.providerId}.$toolType';
+
+                  if (providerTools != null && providerTools.isNotEmpty) {
+                    for (final t in providerTools) {
+                      if (t.id == providerToolId) {
+                        matchedProviderTool = t;
+                        break;
+                      }
+                    }
+
+                    // Best-effort: `web_search_call` does not disambiguate
+                    // preview vs full web search. Prefer preview config if
+                    // that's the only one provided.
+                    if (matchedProviderTool == null &&
+                        toolType == 'web_search') {
+                      final previewId =
+                          '${config.providerId}.web_search_preview';
+                      for (final t in providerTools) {
+                        if (t.id == previewId) {
+                          matchedProviderTool = t;
+                          break;
+                        }
+                      }
+                    }
+                  }
+
+                  if (matchedProviderTool?.name != null &&
+                      matchedProviderTool!.name!.isNotEmpty) {
+                    resolvedToolName = matchedProviderTool.name!;
+                  }
+
+                  final callId = item['call_id'] as String?;
+                  final toolCallId =
+                      (callId != null && callId.isNotEmpty) ? callId : id;
+
+                  Object resolvedCallInput = const <String, dynamic>{};
+                  Map<String, dynamic>? callProviderMetadataPayload;
+
+                  if (toolType == 'local_shell' || toolType == 'shell') {
+                    resolvedCallInput = {
+                      'action': item['action'],
+                    };
+                    callProviderMetadataPayload = {'itemId': id};
+                  }
+
+                  Object? _resolvedResultPayload(Map item) {
+                    switch (toolType) {
+                      case 'web_search':
+                        final action = item['action'];
+                        if (action is! Map) {
+                          return const <String, dynamic>{
+                            'action': null,
+                            'sources': <Object>[],
+                          };
+                        }
+
+                        final sourcesRaw = action['sources'];
+                        final sources = <Map<String, dynamic>>[];
+                        if (sourcesRaw is List) {
+                          for (final s in sourcesRaw) {
+                            if (s is! Map) continue;
+                            if (s['type'] != 'url') continue;
+                            final url = s['url'];
+                            if (url is! String || url.isEmpty) continue;
+                            sources.add({'type': 'url', 'url': url});
+                          }
+                        }
+
+                        final actionCopy = action.map<String, dynamic>(
+                          (k, v) => MapEntry(k.toString(), v),
+                        );
+                        actionCopy.remove('sources');
+
+                        return {
+                          'action': actionCopy,
+                          'sources': sources,
+                        };
+
+                      case 'file_search':
+                        return {
+                          'queries': item['queries'],
+                          'results': item['results'],
+                        };
+
+                      case 'image_generation':
+                        return {'result': item['result']};
+
+                      case 'local_shell':
+                      case 'shell':
+                        // No tool-result is emitted for shell tools in AI SDK.
+                        return null;
+
+                      default:
+                        return item.map<String, dynamic>(
+                          (key, value) => MapEntry(key.toString(), value),
+                        );
+                    }
+                  }
 
                   if (eventType == 'response.output_item.added') {
+                    if (toolType == 'local_shell' || toolType == 'shell') {
+                      // Shell tools only become meaningful once the provider
+                      // supplies the final action (command/env) on `done`.
+                      continue;
+                    }
+
                     final part = providerToolParts.call(
-                      toolCallId: id,
-                      toolName: toolName,
-                      input: item['arguments'] ?? item['action'],
-                      providerMetadataPayload: {'type': rawType},
+                      toolCallId: toolCallId,
+                      toolName: resolvedToolName,
+                      input: resolvedCallInput,
+                      providerExecuted: toolType != 'local_shell',
+                      providerMetadataPayload: callProviderMetadataPayload,
                     );
-                    if (part != null) yield part;
+                    if (part != null) {
+                      if (toolType == 'web_search') {
+                        yield LLMToolInputStartPart(
+                          id: toolCallId,
+                          toolName: resolvedToolName,
+                          providerExecuted: true,
+                        );
+                        yield LLMToolInputEndPart(id: toolCallId);
+                      }
+                      yield part;
+                    }
                   } else if (eventType == 'response.output_item.done') {
-                    // Some fixtures may only include a `done` item. Emit a call
-                    // part best-effort so consumers always see the invocation.
                     final callPart = providerToolParts.call(
-                      toolCallId: id,
-                      toolName: toolName,
-                      input: item['arguments'] ?? item['action'],
-                      providerMetadataPayload: {'type': rawType},
+                      toolCallId: toolCallId,
+                      toolName: resolvedToolName,
+                      input: resolvedCallInput,
+                      providerExecuted: toolType != 'local_shell',
+                      providerMetadataPayload: callProviderMetadataPayload,
                     );
-                    if (callPart != null) yield callPart;
+                    if (callPart != null) {
+                      if (toolType == 'web_search') {
+                        yield LLMToolInputStartPart(
+                          id: toolCallId,
+                          toolName: resolvedToolName,
+                          providerExecuted: true,
+                        );
+                        yield LLMToolInputEndPart(id: toolCallId);
+                      }
+                      yield callPart;
+                    }
+
+                    final payload = _resolvedResultPayload(item);
+                    if (payload == null) continue;
 
                     final resultPart = providerToolParts.result(
-                      toolCallId: id,
-                      toolName: toolName,
-                      result: item.map<String, dynamic>(
-                        (key, value) => MapEntry(key.toString(), value),
-                      ),
-                      providerMetadataPayload: {
-                        'type': rawType,
-                        if (item['status'] is String) 'status': item['status'],
-                      },
+                      toolCallId: toolCallId,
+                      toolName: resolvedToolName,
+                      result: payload,
                     );
                     if (resultPart != null) yield resultPart;
                   }
@@ -450,27 +741,11 @@ class OpenAIResponses
                         url: url,
                         title:
                             s['title'] is String ? s['title'] as String : null,
-                        providerMetadata: {
-                          config.providerId: {'type': 'web_search_call'},
-                        },
+                        providerMetadata: null,
                       );
                       if (part != null) yield part;
                     }
                   }
-                }
-              }
-
-              final metadata = OpenAIResponsesResponse(
-                _buildPartialResponse(),
-                null,
-                null,
-                config.providerId,
-              ).providerMetadata;
-              if (metadata != null && metadata.isNotEmpty) {
-                final encoded = tryStableJsonEncode(metadata);
-                if (encoded == null || encoded != lastProviderMetadataJson) {
-                  lastProviderMetadataJson = encoded;
-                  yield LLMProviderMetadataPart(metadata);
                 }
               }
             }
@@ -490,15 +765,7 @@ class OpenAIResponses
                     title: annotation['title'] is String
                         ? annotation['title'] as String
                         : null,
-                    providerMetadata: {
-                      config.providerId: {
-                        'type': 'url_citation',
-                        if (annotation['start_index'] is int)
-                          'startIndex': annotation['start_index'],
-                        if (annotation['end_index'] is int)
-                          'endIndex': annotation['end_index'],
-                      },
-                    },
+                    providerMetadata: null,
                   );
                   if (part != null) yield part;
                 }
@@ -549,20 +816,6 @@ class OpenAIResponses
                   if (docPart != null) yield docPart;
                 }
               }
-
-              final metadata = OpenAIResponsesResponse(
-                _buildPartialResponse(),
-                null,
-                null,
-                config.providerId,
-              ).providerMetadata;
-              if (metadata != null && metadata.isNotEmpty) {
-                final encoded = tryStableJsonEncode(metadata);
-                if (encoded == null || encoded != lastProviderMetadataJson) {
-                  lastProviderMetadataJson = encoded;
-                  yield LLMProviderMetadataPart(metadata);
-                }
-              }
             }
             continue;
           }
@@ -584,6 +837,8 @@ class OpenAIResponses
             if (itemId == null || itemId.isEmpty || summaryIndex == null) {
               continue;
             }
+
+            reasoningItemsWithSummaries.add(itemId);
 
             final nextBlockId = '$itemId:$summaryIndex';
             if (_activeReasoningBlockId != nextBlockId) {
@@ -1097,15 +1352,6 @@ class OpenAIResponses
               }
             }
 
-            final metadata = response.providerMetadata;
-            if (metadata != null && metadata.isNotEmpty) {
-              final encoded = tryStableJsonEncode(metadata);
-              if (encoded == null || encoded != lastProviderMetadataJson) {
-                lastProviderMetadataJson = encoded;
-                yield LLMProviderMetadataPart(metadata);
-              }
-            }
-
             yield LLMFinishPart(
               response,
               usage: response.usage,
@@ -1164,14 +1410,6 @@ class OpenAIResponses
           }
         }
 
-        final metadata = response.providerMetadata;
-        if (metadata != null && metadata.isNotEmpty) {
-          final encoded = tryStableJsonEncode(metadata);
-          if (encoded == null || encoded != lastProviderMetadataJson) {
-            lastProviderMetadataJson = encoded;
-            yield LLMProviderMetadataPart(metadata);
-          }
-        }
         yield LLMFinishPart(
           response,
           usage: response.usage,

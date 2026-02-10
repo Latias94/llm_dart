@@ -10,6 +10,19 @@
     ],
     "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
   },
+  "request": {
+    "providerTools": [
+      {
+        "id": "openai.file_search",
+        "name": "fileSearch",
+        "options": {
+          "vectorStoreIds": [
+            "vs_68caad8bd5d88191ab766cf043d89a18"
+          ]
+        }
+      }
+    ]
+  },
   "assertions": {
     "ordering": true,
     "single_stream_start": true,
@@ -21,4 +34,3 @@
     "Some fixtures include trailing usage chunks; finish usage must still be present."
   ]
 }
-

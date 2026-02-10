@@ -626,6 +626,7 @@ class GoogleChat
                   toolCallId: id,
                   toolName: 'code_execution',
                   input: executableCode,
+                  providerExecuted: true,
                   providerMetadataPayload: const {'type': 'code_execution'},
                 );
                 if (part != null) yield part;

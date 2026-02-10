@@ -7,7 +7,7 @@ import '../../utils/fixture_replay.dart';
 
 void main() {
   group('OpenAI provider metadata alias (stream parts)', () {
-    test('adds openai.responses alias to provider tool parts', () async {
+    test('adds openai.responses alias to providerMetadata maps', () async {
       const fixturePath =
           'test/fixtures/openai/responses/openai-web-search-tool.1.chunks.txt';
 
@@ -25,30 +25,30 @@ void main() {
       final parts =
           await provider.chatStreamParts([ChatMessage.user('Hi')]).toList();
 
-      final toolParts = [
-        ...parts.whereType<LLMProviderToolCallPart>(),
-        ...parts.whereType<LLMProviderToolDeltaPart>(),
-        ...parts.whereType<LLMProviderToolResultPart>(),
-      ];
-      expect(toolParts, isNotEmpty);
-
-      for (final part in toolParts) {
-        final meta = switch (part) {
+      Map<String, dynamic>? providerMetadataForPart(LLMStreamPart part) {
+        return switch (part) {
           LLMProviderToolCallPart(:final providerMetadata) => providerMetadata,
           LLMProviderToolDeltaPart(:final providerMetadata) => providerMetadata,
           LLMProviderToolResultPart(:final providerMetadata) =>
             providerMetadata,
+          LLMProviderToolApprovalRequestPart(:final providerMetadata) =>
+            providerMetadata,
+          LLMReasoningStartPart(:final providerMetadata) => providerMetadata,
+          LLMReasoningEndPart(:final providerMetadata) => providerMetadata,
+          LLMSourceDocumentPart(:final providerMetadata) => providerMetadata,
           _ => null,
         };
-        expect(meta, isNotNull);
-        expect(meta!['openai.responses'], equals(meta['openai']));
       }
 
-      final metadataPart = parts.whereType<LLMProviderMetadataPart>().last;
-      expect(
-        metadataPart.providerMetadata['openai.responses'],
-        equals(metadataPart.providerMetadata['openai']),
-      );
+      final metas = parts
+          .map(providerMetadataForPart)
+          .whereType<Map<String, dynamic>>()
+          .toList();
+      expect(metas, isNotEmpty);
+
+      for (final meta in metas) {
+        expect(meta['openai.responses'], equals(meta['openai']));
+      }
 
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(

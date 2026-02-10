@@ -10,6 +10,15 @@
     ],
     "notes": "Replayed via FakeOpenAIClient against OpenAIResponses (AzureOpenAIConfig)."
   },
+  "request": {
+    "providerTools": [
+      {
+        "id": "azure.web_search_preview",
+        "name": "webSearch",
+        "options": {}
+      }
+    ]
+  },
   "assertions": {
     "ordering": true,
     "single_stream_start": true,
@@ -19,4 +28,3 @@
   },
   "notes": []
 }
-

@@ -516,6 +516,7 @@ class XAIResponses
                     toolCallId: id,
                     toolName: toolName,
                     input: input,
+                    providerExecuted: true,
                     providerMetadataPayload: {'type': type},
                   );
                   if (part != null) yield part;
@@ -524,6 +525,7 @@ class XAIResponses
                     toolCallId: id,
                     toolName: toolName,
                     input: input,
+                    providerExecuted: true,
                     providerMetadataPayload: {'type': type},
                   );
                   if (callPart != null) yield callPart;

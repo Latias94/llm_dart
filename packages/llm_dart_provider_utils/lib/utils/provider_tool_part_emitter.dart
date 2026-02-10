@@ -31,6 +31,7 @@ class ProviderToolPartEmitter {
     required String toolCallId,
     required String toolName,
     Object? input,
+    bool? providerExecuted,
     bool? isDynamic,
     Map<String, dynamic>? providerMetadataPayload,
   }) {
@@ -39,6 +40,7 @@ class ProviderToolPartEmitter {
       toolCallId: toolCallId,
       toolName: toolName,
       input: input,
+      providerExecuted: providerExecuted,
       isDynamic: isDynamic,
       providerMetadata: _providerMetadata(providerMetadataPayload),
     );
@@ -63,4 +65,3 @@ class ProviderToolPartEmitter {
     );
   }
 }
-

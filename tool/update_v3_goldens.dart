@@ -71,9 +71,14 @@ void main(List<String> args) async {
     }
 
     for (var i = 0; i < sessions.length; i++) {
+      final providerTools = _readProviderToolsFromMeta(
+        provider: scenario.provider,
+        scenario: scenario.baseName,
+      );
       final parts = await scenario.runner(
         fixturePath: fixturePath,
         sessionStream: sessions[i],
+        providerTools: providerTools,
       );
 
       final encoded = encodeV3StreamParts(parts);
@@ -131,6 +136,7 @@ void main(List<String> args) async {
 typedef _ScenarioRunner = Future<List<LLMStreamPart>> Function({
   required String fixturePath,
   required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
 });
 
 class _Scenario {
@@ -319,6 +325,36 @@ String? _repoRefFixturePathFor(String provider, String scenario) {
   return null;
 }
 
+List<ProviderTool>? _readProviderToolsFromMeta({
+  required String provider,
+  required String scenario,
+}) {
+  final path = 'test/fixtures/v3_parts/$provider/$scenario.meta.json';
+  final file = File(path);
+  if (!file.existsSync()) return null;
+
+  final decoded = jsonDecode(file.readAsStringSync());
+  if (decoded is! Map) return null;
+  final meta = decoded.cast<String, dynamic>();
+
+  final request = meta['request'];
+  if (request is! Map) return null;
+  final providerTools = request['providerTools'];
+  if (providerTools is! List) return null;
+
+  final out = <ProviderTool>[];
+  for (final raw in providerTools) {
+    if (raw is! Map) continue;
+    try {
+      out.add(ProviderTool.fromJson(raw.cast<String, dynamic>()));
+    } catch (_) {
+      // Skip invalid entries.
+    }
+  }
+
+  return out.isEmpty ? null : out;
+}
+
 List<_Scenario> _discoverScenarios({
   required String provider,
   required Directory fixtureDir,
@@ -362,12 +398,20 @@ List<_Scenario> _discoverScenarios({
 Future<List<LLMStreamPart>> _runOpenAIResponsesFixture({
   required String fixturePath,
   required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
 }) async {
   final config = openai_client.OpenAIConfig(
     apiKey: 'test-key',
     baseUrl: 'https://api.openai.com/v1/',
     model: 'gpt-5-mini',
     useResponsesAPI: true,
+    originalConfig: providerTools == null
+        ? null
+        : LLMConfig(
+            baseUrl: 'https://api.openai.com/v1/',
+            model: 'gpt-5-mini',
+            providerTools: providerTools,
+          ),
   );
 
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
@@ -378,12 +422,22 @@ Future<List<LLMStreamPart>> _runOpenAIResponsesFixture({
 Future<List<LLMStreamPart>> _runAzureResponsesFixture({
   required String fixturePath,
   required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
 }) async {
+  const baseUrl = 'https://example.azure.com/openai/';
+  const model = 'gpt-4.1-mini';
   final config = AzureOpenAIConfig(
     apiKey: 'test-key',
-    baseUrl: 'https://example.azure.com/openai/',
-    model: 'gpt-4.1-mini',
+    baseUrl: baseUrl,
+    model: model,
     useResponsesAPI: true,
+    originalConfig: providerTools == null
+        ? null
+        : LLMConfig(
+            baseUrl: baseUrl,
+            model: model,
+            providerTools: providerTools,
+          ),
   );
 
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
@@ -394,6 +448,7 @@ Future<List<LLMStreamPart>> _runAzureResponsesFixture({
 Future<List<LLMStreamPart>> _runAnthropicMessagesFixture({
   required String fixturePath,
   required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
 }) async {
   final config = AnthropicConfig(
     providerId: 'anthropic',
@@ -431,6 +486,7 @@ class _DeepSeekFakeClient extends OpenAIClient {
 Future<List<LLMStreamPart>> _runDeepSeekOpenAICompatibleFixture({
   required String fixturePath,
   required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
 }) async {
   const capabilities = {LLMCapability.chat, LLMCapability.streaming};
 
@@ -452,13 +508,23 @@ Future<List<LLMStreamPart>> _runDeepSeekOpenAICompatibleFixture({
 Future<List<LLMStreamPart>> _runXAIResponsesFixture({
   required String fixturePath,
   required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
 }) async {
+  const baseUrl = 'https://api.x.ai/v1/';
+  const model = 'grok-4-fast';
   final config = OpenAICompatibleConfig(
     providerId: 'xai.responses',
     providerName: 'xAI (Responses)',
     apiKey: 'test-key',
-    baseUrl: 'https://api.x.ai/v1/',
-    model: 'grok-4-fast',
+    baseUrl: baseUrl,
+    model: model,
+    originalConfig: providerTools == null
+        ? null
+        : LLMConfig(
+            baseUrl: baseUrl,
+            model: model,
+            providerTools: providerTools,
+          ),
   );
 
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;

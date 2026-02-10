@@ -150,6 +150,50 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         },
       ];
 
+    // Canonical v3 tool input parts:
+    case LLMToolInputStartPart(
+        id: final id,
+        toolName: final toolName,
+        providerMetadata: final pm,
+        providerExecuted: final providerExecuted,
+        isDynamic: final dynamicTool,
+        title: final title,
+      ):
+      return [
+        {
+          'type': 'tool-input-start',
+          'id': id,
+          'toolName': toolName,
+          if (providerExecuted == true) 'providerExecuted': true,
+          if (dynamicTool == true) 'dynamic': true,
+          if (title != null && title.isNotEmpty) 'title': title,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        },
+      ];
+
+    case LLMToolInputDeltaPart(
+        id: final id,
+        delta: final delta,
+        providerMetadata: final pm,
+      ):
+      return [
+        {
+          'type': 'tool-input-delta',
+          'id': id,
+          'delta': delta,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        },
+      ];
+
+    case LLMToolInputEndPart(id: final id, providerMetadata: final pm):
+      return [
+        {
+          'type': 'tool-input-end',
+          'id': id,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        },
+      ];
+
     // Local tool call lifecycle (client-executed function tools):
     case LLMToolCallStartPart(:final toolCall):
       state.toolInput.onStart(toolCall);
@@ -208,6 +252,7 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         toolCallId: final id,
         toolName: final toolName,
         input: final input,
+        providerExecuted: final providerExecuted,
         isDynamic: final dynamicTool,
         providerMetadata: final pm,
       ):
@@ -217,7 +262,7 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
           'toolCallId': id,
           'toolName': toolName,
           'input': _stringifyToolInput(input),
-          'providerExecuted': true,
+          if (providerExecuted == true) 'providerExecuted': true,
           if (dynamicTool == true) 'dynamic': true,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         },
@@ -240,7 +285,6 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
           'result': _normalizeJsonLike(result),
           if (isError == true) 'isError': true,
           if (preliminary == true) 'preliminary': true,
-          'providerExecuted': true,
           if (dynamicTool == true) 'dynamic': true,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         },

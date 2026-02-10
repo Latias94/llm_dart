@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAI Responses chatStreamParts', () {
-    test('should emit provider metadata parts for annotations and web search',
+    test('emits sources and provider tool parts for annotations and web search',
         () async {
       final config = openai_client.OpenAIConfig(
         apiKey: 'test-key',
@@ -30,20 +30,32 @@ void main() {
       final parts =
           await responses.chatStreamParts([ChatMessage.user('x')]).toList();
 
-      final providerMetadataParts =
-          parts.whereType<LLMProviderMetadataPart>().toList();
-      expect(providerMetadataParts, isNotEmpty);
+      expect(parts.whereType<LLMProviderMetadataPart>(), isEmpty);
+
+      final responseMetadata =
+          parts.whereType<LLMResponseMetadataPart>().single;
+      expect(responseMetadata.id, equals('resp_1'));
+      expect(responseMetadata.model, equals('gpt-4o-search-preview'));
 
       final sources = parts.whereType<LLMSourceUrlPart>().toList();
       expect(sources, hasLength(1));
       expect(sources.single.url, equals('https://example.com'));
 
-      final lastMetadata = providerMetadataParts.last.providerMetadata;
-      final openai = lastMetadata['openai'] as Map<String, dynamic>;
-      expect(openai['id'], equals('resp_1'));
-      expect(openai['model'], equals('gpt-4o-search-preview'));
-      expect(openai['webSearchCalls'], isA<List>());
-      expect(openai['annotations'], isA<List>());
+      final toolInputs = parts.whereType<LLMToolInputStartPart>().toList();
+      expect(toolInputs, hasLength(1));
+      expect(toolInputs.single.id, equals('ws_1'));
+      expect(toolInputs.single.toolName, equals('web_search'));
+
+      expect(parts.whereType<LLMToolInputEndPart>(), hasLength(1));
+
+      final calls = parts.whereType<LLMProviderToolCallPart>().toList();
+      final results = parts.whereType<LLMProviderToolResultPart>().toList();
+      expect(calls, hasLength(1));
+      expect(results, hasLength(1));
+      expect(calls.single.toolCallId, equals('ws_1'));
+      expect(calls.single.toolName, equals('web_search'));
+      expect(results.single.toolCallId, equals('ws_1'));
+      expect(results.single.toolName, equals('web_search'));
 
       expect(parts.whereType<LLMFinishPart>(), hasLength(1));
       expect(parts.whereType<LLMTextDeltaPart>(), hasLength(1));

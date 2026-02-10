@@ -189,9 +189,7 @@ void main() {
         expect(results.single.toolCallId, equals(calls.single.toolCallId));
 
         final deltas = parts.whereType<LLMProviderToolDeltaPart>().toList();
-        expect(deltas, hasLength(1));
-        expect(deltas.single.toolCallId, equals('ws_1'));
-        expect(deltas.single.toolName, equals('web_search'));
+        expect(deltas, isEmpty);
 
         final sources = parts.whereType<LLMSourceUrlPart>().toList();
         final urls = sources.map((p) => p.url).toSet();

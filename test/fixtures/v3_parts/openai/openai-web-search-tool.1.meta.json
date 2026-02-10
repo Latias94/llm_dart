@@ -10,6 +10,15 @@
     ],
     "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
   },
+  "request": {
+    "providerTools": [
+      {
+        "id": "openai.web_search",
+        "name": "webSearch",
+        "options": {}
+      }
+    ]
+  },
   "assertions": {
     "ordering": true,
     "single_stream_start": true,
@@ -21,4 +30,3 @@
     "Sources are expected to be emitted as canonical `type:'source'` parts."
   ]
 }
-

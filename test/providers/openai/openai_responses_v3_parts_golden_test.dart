@@ -5,6 +5,7 @@ import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
 import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:test/test.dart';
 
+import '../../utils/fixture_meta.dart';
 import '../../utils/fixture_replay.dart';
 import '../../utils/fakes/fakes.dart';
 import '../../utils/v3_parts_golden.dart';
@@ -23,11 +24,25 @@ void main() {
       );
       expect(sessions, isNotEmpty, reason: 'Expected at least one session.');
 
+      const baseUrl = 'https://api.openai.com/v1/';
+      const model = 'gpt-5-mini';
+      final providerTools = readProviderToolsFromV3Meta(
+        provider: provider,
+        scenario: baseName,
+      );
+
       final config = openai_client.OpenAIConfig(
         apiKey: 'test-key',
-        baseUrl: 'https://api.openai.com/v1/',
-        model: 'gpt-5-mini',
+        baseUrl: baseUrl,
+        model: model,
         useResponsesAPI: true,
+        originalConfig: providerTools.isEmpty
+            ? null
+            : LLMConfig(
+                baseUrl: baseUrl,
+                model: model,
+                providerTools: providerTools,
+              ),
       );
 
       for (var i = 0; i < sessions.length; i++) {

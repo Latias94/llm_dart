@@ -185,6 +185,69 @@ class LLMReasoningEndPart extends LLMStreamPart {
   });
 }
 
+/// Starts a tool input block (AI SDK v3-style).
+///
+/// Tool inputs are streamed as string deltas, typically containing fragments of
+/// stringified JSON objects.
+///
+/// This part mirrors AI SDK v3 `type: 'tool-input-start'`.
+class LLMToolInputStartPart extends LLMStreamPart {
+  /// Stable tool input id (typically the tool call id).
+  final String id;
+
+  /// The tool name that should be called.
+  final String toolName;
+
+  /// Optional provider metadata associated with this boundary.
+  final Map<String, dynamic>? providerMetadata;
+
+  /// Whether the tool will be executed by the provider (server-side).
+  final bool? providerExecuted;
+
+  /// Whether the tool is dynamic (defined at runtime, e.g. MCP tools).
+  final bool? isDynamic;
+
+  /// Optional human-readable title (best-effort).
+  final String? title;
+
+  const LLMToolInputStartPart({
+    required this.id,
+    required this.toolName,
+    this.providerMetadata,
+    this.providerExecuted,
+    this.isDynamic,
+    this.title,
+  });
+}
+
+/// A delta/update within a tool input block (AI SDK v3-style).
+///
+/// Mirrors AI SDK v3 `type: 'tool-input-delta'`.
+class LLMToolInputDeltaPart extends LLMStreamPart {
+  final String id;
+  final String delta;
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMToolInputDeltaPart({
+    required this.id,
+    required this.delta,
+    this.providerMetadata,
+  });
+}
+
+/// Ends a tool input block (AI SDK v3-style).
+///
+/// Mirrors AI SDK v3 `type: 'tool-input-end'`.
+class LLMToolInputEndPart extends LLMStreamPart {
+  final String id;
+  final Map<String, dynamic>? providerMetadata;
+
+  const LLMToolInputEndPart({
+    required this.id,
+    this.providerMetadata,
+  });
+}
+
 /// Starts a tool call (arguments are usually streamed progressively).
 class LLMToolCallStartPart extends LLMStreamPart {
   final ToolCall toolCall;
@@ -241,6 +304,13 @@ class LLMProviderToolCallPart extends LLMStreamPart {
   /// Some providers encode inputs as a stringified JSON object.
   final Object? input;
 
+  /// Whether the tool call will be executed by the provider.
+  ///
+  /// Mirrors AI SDK v3 `tool-call.providerExecuted`. Defaults to `true` for
+  /// provider-native tools, but can be set to `false` for provider-triggered
+  /// client-executed tools (e.g. "local shell" style calls).
+  final bool? providerExecuted;
+
   /// Whether the tool is dynamic (defined at runtime).
   final bool? isDynamic;
 
@@ -254,6 +324,7 @@ class LLMProviderToolCallPart extends LLMStreamPart {
     required this.toolCallId,
     required this.toolName,
     this.input,
+    this.providerExecuted,
     this.isDynamic,
     this.providerMetadata,
   });

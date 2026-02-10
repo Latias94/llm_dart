@@ -1,7 +1,7 @@
 {"type":"stream-start","warnings":[]}
 {"id":"98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8","modelId":"grok-4-fast-reasoning","timestamp":"2025-11-03T17:09:45.000Z","type":"response-metadata"}
 {"input":"{\"query\":\"what is xAI\",\"num_results\":5}","providerExecuted":true,"providerMetadata":{"xai.responses":{"type":"web_search_call"}},"toolCallId":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","toolName":"web_search","type":"tool-call"}
-{"providerExecuted":true,"providerMetadata":{"xai.responses":{"status":"completed","type":"web_search_call"}},"result":{"arguments":"{\"query\":\"what is xAI\",\"num_results\":5}","call_id":"","id":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","name":"web_search","status":"completed","type":"web_search_call"},"toolCallId":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","toolName":"web_search","type":"tool-result"}
+{"providerMetadata":{"xai.responses":{"status":"completed","type":"web_search_call"}},"result":{"arguments":"{\"query\":\"what is xAI\",\"num_results\":5}","call_id":"","id":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","name":"web_search","status":"completed","type":"web_search_call"},"toolCallId":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","toolName":"web_search","type":"tool-result"}
 {"rawValue":{"kind":"provider-metadata","providerMetadata":{"xai.responses":{"id":"98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8","model":"grok-4-fast-reasoning","serverToolCalls":[{"arguments":"{\"query\":\"what is xAI\",\"num_results\":5}","call_id":"","id":"fc_98a8d4aa-fc8b-fd93-e673-d5a8f1c9cee8_0","name":"web_search","status":"completed","type":"web_search_call"}],"status":"in_progress"}}},"type":"raw"}
 {"id":"0","type":"text-start"}
 {"delta":"x","id":"0","type":"text-delta"}

@@ -10,6 +10,15 @@
     ],
     "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
   },
+  "request": {
+    "providerTools": [
+      {
+        "id": "openai.image_generation",
+        "name": "generateImage",
+        "options": {}
+      }
+    ]
+  },
   "assertions": {
     "ordering": true,
     "single_stream_start": true,
@@ -21,4 +30,3 @@
     "Golden files may contain large lines because image payloads can be base64 strings inside tool results."
   ]
 }
-

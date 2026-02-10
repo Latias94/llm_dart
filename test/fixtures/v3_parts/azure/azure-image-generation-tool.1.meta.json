@@ -10,6 +10,15 @@
     ],
     "notes": "Golden normalization redacts large base64 strings to keep repo size manageable."
   },
+  "request": {
+    "providerTools": [
+      {
+        "id": "azure.image_generation",
+        "name": "generateImage",
+        "options": {}
+      }
+    ]
+  },
   "assertions": {
     "ordering": true,
     "single_stream_start": true,
@@ -21,4 +30,3 @@
     "Large base64 fields are redacted in JSONL goldens as {\"$redacted\":\"base64\",\"len\":...,\"hash\":\"fnv1a64:...\"}."
   ]
 }
-

@@ -325,11 +325,22 @@ class ProviderTool {
   /// Stable, versionable tool identifier.
   final String id;
 
+  /// Optional user-facing tool name.
+  ///
+  /// This mirrors the Vercel AI SDK `name` field for provider-native tools.
+  /// When present, streaming parsers should prefer this value when emitting
+  /// canonical v3 `toolName` fields for provider-executed tool calls.
+  ///
+  /// If omitted, implementations should fall back to a provider-derived name
+  /// (e.g. request tool type or id suffix).
+  final String? name;
+
   /// Optional provider-specific tool configuration (JSON-like).
   final Map<String, dynamic> options;
 
   const ProviderTool({
     required this.id,
+    this.name,
     this.options = const {},
   });
 
@@ -344,16 +355,18 @@ class ProviderTool {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        if (name != null && name!.isNotEmpty) 'name': name,
         if (options.isNotEmpty) 'options': options,
       };
 
   factory ProviderTool.fromJson(Map<String, dynamic> json) => ProviderTool(
         id: json['id'] as String,
+        name: json['name'] as String?,
         options: (json['options'] as Map?)?.cast<String, dynamic>() ?? const {},
       );
 
   @override
-  String toString() => 'ProviderTool(id: $id, options: $options)';
+  String toString() => 'ProviderTool(id: $id, name: $name, options: $options)';
 }
 
 /// Tool choice determines how the LLM uses available tools.
