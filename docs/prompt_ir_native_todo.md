@@ -74,13 +74,21 @@ Core principle:
 - [ ] Reduce reliance on `ChatMessage.protocolPayloads` for content-part wiring
 - [x] Preserve protocol payloads through Prompt IR (`PromptMessage.protocolPayloads`)
   so tool loops do not lose provider-native continuity blocks (e.g. Anthropic thinking signatures).
-- [ ] Ensure `llm_dart_ai` prefers prompt-native capabilities when available
+- [x] Ensure `llm_dart_ai` prefers prompt-native capabilities when available
+  - `generateText`: `packages/llm_dart_ai/lib/src/generate_text.dart`
+  - `streamChatParts`: `packages/llm_dart_ai/lib/src/stream_parts.dart`
+  - Tool loop (Prompt IR): `packages/llm_dart_ai/lib/src/tool_loop.dart`
+  - Conformance: `test/ai/tool_loop_prompt_capability_test.dart`
+  - Conformance: `test/ai/tool_loop_prompt_stream_parts_capability_test.dart`
 - [x] Add URL-based file parts to Prompt IR (AI SDK parity)
   - e.g. `FileUrlPart(url, mimeType, ...)` for Anthropic/Google/OpenAI Responses
   - Anthropic-compatible: `test/protocols/anthropic_compatible/prompt_ir_compilation_conformance_test.dart`
   - Google: `test/providers/google/google_prompt_ir_request_body_test.dart`
   - OpenAI Responses: `test/providers/openai/openai_responses_prompt_ir_request_body_test.dart`
-  - optionally support provider file ids (e.g. OpenAI `file-*`) as a separate part type
+- [x] Add provider file id parts to Prompt IR (AI SDK parity)
+  - `FileIdPart(id, mimeType, ...)` for Google `files/...` and OpenAI Responses `file-*`
+  - Google: `test/providers/google/google_prompt_ir_request_body_test.dart`
+  - OpenAI Responses: `test/providers/openai/openai_responses_prompt_ir_request_body_test.dart`
 
 ---
 

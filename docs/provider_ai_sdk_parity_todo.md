@@ -37,6 +37,8 @@ Notes:
 - [x] Responses streaming emits provider tools as typed parts
 - [x] Finish part includes typed `usage` + `finishReason`
 - [x] providerMetadata alias equivalence (`openai.responses` mirrors `openai`)
+- [x] Prompt IR file reference parts (Responses request compilation)
+  - `FileUrlPart` (PDF) and `FileIdPart` (PDF/image) are compiled to Responses inputs.
 
 ### OpenAI-compatible baseline (`llm_dart_openai_compatible`)
 
@@ -55,6 +57,10 @@ Notes:
 ### Google (Gemini API) (`llm_dart_google`)
 
 - [x] Prompt IR native compilation (content parts grouping)
+- [x] Prompt IR file reference parts (AI SDK parity)
+  - `FileUrlPart` -> `fileData.fileUri`
+  - `FileIdPart(id: 'files/...')` -> `fileData.fileUri`
+  - Optional strict URL validation: `providerOptions['google']['supportedFileUrlsOnly']=true`
 - [x] Grounding sources emitted as typed source parts
 - [x] Code execution emitted as provider tool typed parts
 - [x] Finish part includes typed `usage` + `finishReason`
@@ -63,6 +69,7 @@ Notes:
 ### Google Vertex (express mode) (`llm_dart_google_vertex`)
 
 - [x] Request-side `providerOptions` are scoped under `providerOptions['google-vertex']`
+- [x] Prompt IR file URL strict mode is namespaced (`supportedFileUrlsOnly`)
 - [x] Response metadata is emitted under `providerMetadata['google-vertex']`
 - [x] providerMetadata alias equivalence (`google-vertex.chat` mirrors `google-vertex`)
 - [x] Source parts conformance (should match Google grounding)
