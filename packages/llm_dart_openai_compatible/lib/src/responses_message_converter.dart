@@ -55,8 +55,8 @@ class OpenAIResponsesMessageConverter {
         result['content'] = contentArray;
         break;
 
-      case FileMessage(data: final data):
-        final base64Data = base64Encode(data);
+      case FileMessage(mime: final mime, data: final data):
+        final mimeType = mime.mimeType.toLowerCase();
 
         final contentArray = <Map<String, dynamic>>[];
         if (message.content.isNotEmpty) {
@@ -65,13 +65,31 @@ class OpenAIResponsesMessageConverter {
             'text': message.content,
           });
         }
-        contentArray.add({
-          'type': 'input_file',
-          'file_data': base64Data,
-        });
 
-        result['content'] = contentArray;
-        break;
+        if (mimeType.startsWith('image/')) {
+          final base64Data = base64Encode(data);
+          contentArray.add({
+            'type': 'input_image',
+            'image_url': 'data:${mime.mimeType};base64,$base64Data',
+          });
+          result['content'] = contentArray;
+          break;
+        }
+
+        if (mimeType == 'application/pdf') {
+          final base64Data = base64Encode(data);
+          contentArray.add({
+            'type': 'input_file',
+            'filename': 'document.pdf',
+            'file_data': 'data:application/pdf;base64,$base64Data',
+          });
+          result['content'] = contentArray;
+          break;
+        }
+
+        throw InvalidRequestError(
+          'Unsupported file media type for the Responses API: ${mime.mimeType}',
+        );
 
       case ToolUseMessage(toolCalls: final toolCalls):
         result['tool_calls'] = toolCalls.map((tc) => tc.toJson()).toList();
@@ -208,16 +226,36 @@ class OpenAIResponsesMessageConverter {
           });
           return parts;
 
-        case FilePart(:final data, :final text):
+        case FilePart(:final mime, :final data, :final text):
           final parts = <Map<String, dynamic>>[];
           if (text != null && text.trim().isNotEmpty) {
             parts.add({'type': 'input_text', 'text': text});
           }
-          parts.add({
-            'type': 'input_file',
-            'file_data': base64Encode(data),
-          });
-          return parts;
+
+          final mimeType = mime.mimeType.toLowerCase();
+
+          if (mimeType.startsWith('image/')) {
+            final base64Data = base64Encode(data);
+            parts.add({
+              'type': 'input_image',
+              'image_url': 'data:${mime.mimeType};base64,$base64Data',
+            });
+            return parts;
+          }
+
+          if (mimeType == 'application/pdf') {
+            final base64Data = base64Encode(data);
+            parts.add({
+              'type': 'input_file',
+              'filename': 'document.pdf',
+              'file_data': 'data:application/pdf;base64,$base64Data',
+            });
+            return parts;
+          }
+
+          throw InvalidRequestError(
+            'Unsupported file media type for the Responses API: ${mime.mimeType}',
+          );
 
         case ToolCallPart() || ToolResultPart():
           return const [];

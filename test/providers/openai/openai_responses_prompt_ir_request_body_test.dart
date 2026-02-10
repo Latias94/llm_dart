@@ -138,5 +138,62 @@ void main() {
           }));
       expect(input[2], equals({'role': 'user', 'content': 'After'}));
     });
+
+    test('encodes PDF FilePart as input_file with data URL (AI SDK parity)',
+        () async {
+      final config = OpenAIConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://example.com',
+        model: 'gpt-4o-mini',
+        useResponsesAPI: true,
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'id': 'resp_1',
+          'status': 'completed',
+          'output': [
+            {
+              'type': 'message',
+              'role': 'assistant',
+              'content': [
+                {'type': 'output_text', 'text': 'ok'}
+              ],
+            }
+          ],
+        };
+      final responses = OpenAIResponses(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: const [
+              FilePart(mime: FileMime.pdf, data: [1, 2, 3]),
+            ],
+          ),
+        ],
+      );
+
+      await responses.chatPrompt(prompt);
+
+      final input = client.lastJsonBody?['input'] as List?;
+      expect(input, isNotNull);
+      expect(input, hasLength(1));
+
+      final user = input!.single as Map;
+      expect(user['role'], equals('user'));
+      final content = user['content'] as List;
+      expect(content, hasLength(1));
+
+      expect(
+        content.single,
+        equals({
+          'type': 'input_file',
+          'filename': 'document.pdf',
+          'file_data': 'data:application/pdf;base64,${base64Encode([1, 2, 3])}',
+        }),
+      );
+    });
   });
 }
