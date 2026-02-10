@@ -42,9 +42,7 @@ class OpenAIResponses
   final List<dynamic> _outputTextAnnotations = [];
   Map<String, dynamic>? _partialResponse;
   List<dynamic>? _partialOutput;
-  final Map<String, String> _sourceIdByUrl = {};
-  final Map<String, String> _sourceIdByDocumentKey = {};
-  int _nextSourceSeq = 0;
+  late final SourcePartEmitter _sourceParts;
 
   // Capture Responses API logprobs emitted on `response.output_text.delta`.
   // These are surfaced via providerMetadata for AI SDK parity.
@@ -76,7 +74,11 @@ class OpenAIResponses
   // Keyed by `output_index` (Responses API event field).
   final Map<int, StringBuffer> _functionCallArgsByOutputIndex = {};
 
-  OpenAIResponses(this.client, this.config);
+  OpenAIResponses(this.client, this.config) {
+    _sourceParts = SourcePartEmitter(
+      providerMetadataNamespace: config.providerId,
+    );
+  }
 
   String get responsesEndpoint => 'responses';
 
@@ -1848,16 +1850,20 @@ class OpenAIResponses
     _outputTextAnnotations.clear();
     _partialResponse = null;
     _partialOutput = null;
-    _sourceIdByUrl.clear();
-    _sourceIdByDocumentKey.clear();
-    _nextSourceSeq = 0;
+    _sourceParts.reset();
     _streamLogprobs.clear();
     _reasoningEncryptedByItemId.clear();
     _activeReasoningBlockId = null;
   }
 
-  String _sourceIdForUrl(String url) {
-    return _sourceIdByUrl.putIfAbsent(url, () => 'source_${_nextSourceSeq++}');
+  Map<String, dynamic>? _innerProviderMetadataPayload(
+    Map<String, dynamic>? providerMetadata,
+  ) {
+    if (providerMetadata == null) return null;
+    final raw = providerMetadata[config.providerId];
+    if (raw is Map<String, dynamic>) return raw;
+    if (raw is! Map) return null;
+    return raw.map<String, dynamic>((k, v) => MapEntry(k.toString(), v));
   }
 
   LLMSourceUrlPart? _newSourceUrlPart({
@@ -1865,19 +1871,10 @@ class OpenAIResponses
     String? title,
     Map<String, dynamic>? providerMetadata,
   }) {
-    if (_sourceIdByUrl.containsKey(url)) return null;
-    return LLMSourceUrlPart(
-      sourceId: _sourceIdForUrl(url),
-      url: url,
+    return _sourceParts.url(
+      url,
       title: title,
-      providerMetadata: providerMetadata,
-    );
-  }
-
-  String _sourceIdForDocumentKey(String key) {
-    return _sourceIdByDocumentKey.putIfAbsent(
-      key,
-      () => 'source_${_nextSourceSeq++}',
+      providerMetadataPayload: _innerProviderMetadataPayload(providerMetadata),
     );
   }
 
@@ -1888,13 +1885,12 @@ class OpenAIResponses
     String? filename,
     Map<String, dynamic>? providerMetadata,
   }) {
-    if (_sourceIdByDocumentKey.containsKey(dedupeKey)) return null;
-    return LLMSourceDocumentPart(
-      sourceId: _sourceIdForDocumentKey(dedupeKey),
+    return _sourceParts.document(
+      title,
       mediaType: mediaType,
-      title: title,
       filename: filename,
-      providerMetadata: providerMetadata,
+      dedupeKey: 'doc:$dedupeKey',
+      providerMetadataPayload: _innerProviderMetadataPayload(providerMetadata),
     );
   }
 
