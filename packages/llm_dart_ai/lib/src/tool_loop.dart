@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'ensure_block_ids.dart';
 import 'ensure_stream_start.dart';
 import 'prompt_input.dart';
 import 'tool_set.dart';
@@ -415,6 +416,7 @@ Future<ToolLoopResult> runToolLoop({
 
     final executed = await _executeToolCalls(
       toolCalls: toolCalls,
+      tools: tools,
       toolHandlers: toolHandlers,
       continueOnToolError: continueOnToolError,
       cancelToken: cancelToken,
@@ -635,6 +637,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
 
     final executed = await _executeToolCalls(
       toolCalls: toolCalls,
+      tools: tools,
       toolHandlers: toolHandlers,
       continueOnToolError: continueOnToolError,
       cancelToken: cancelToken,
@@ -799,6 +802,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
 
     final executed = await _executeToolCalls(
       toolCalls: toolCalls,
+      tools: tools,
       toolHandlers: toolHandlers,
       continueOnToolError: continueOnToolError,
       cancelToken: cancelToken,
@@ -964,6 +968,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
 
     final executed = await _executeToolCalls(
       toolCalls: toolCalls,
+      tools: tools,
       toolHandlers: toolHandlers,
       continueOnToolError: continueOnToolError,
       cancelToken: cancelToken,
@@ -1329,6 +1334,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
       final executed = await _executeToolCalls(
         toolCalls: completedToolCalls,
+        tools: tools,
         toolHandlers: toolHandlers,
         continueOnToolError: continueOnToolError,
         cancelToken: cancelToken,
@@ -1358,7 +1364,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
     );
   }
 
-  yield* ensureStreamStartPart(upstream());
+  yield* ensureStreamStartPart(ensureBlockIdsPart(upstream()));
 }
 
 Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
@@ -1582,6 +1588,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
 
     final executed = await _executeToolCalls(
       toolCalls: completedToolCalls,
+      tools: tools,
       toolHandlers: toolHandlers,
       continueOnToolError: continueOnToolError,
       cancelToken: cancelToken,
@@ -1649,12 +1656,14 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
 /// Execute tool calls locally and return a list of tool results.
 Future<List<ToolResult>> executeToolCalls({
   required List<ToolCall> toolCalls,
+  List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
   bool continueOnToolError = true,
   CancelToken? cancelToken,
 }) {
   return _executeToolCalls(
     toolCalls: toolCalls,
+    tools: tools,
     toolHandlers: toolHandlers,
     continueOnToolError: continueOnToolError,
     cancelToken: cancelToken,
@@ -1704,11 +1713,39 @@ Future<List<ToolCall>> _findToolCallsNeedingApproval({
 
 Future<List<ToolResult>> _executeToolCalls({
   required List<ToolCall> toolCalls,
+  required List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
   required bool continueOnToolError,
   CancelToken? cancelToken,
 }) async {
   final results = <ToolResult>[];
+
+  final toolByName = tools == null
+      ? null
+      : <String, Tool>{
+          for (final t in tools)
+            if (t.function.name.trim().isNotEmpty) t.function.name: t,
+        };
+
+  ({Map<String, dynamic>? parsed, String? error}) parseToolInput(
+    String raw,
+  ) {
+    final trimmed = raw.trim();
+    final toParse = trimmed.isEmpty ? '{}' : trimmed;
+
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(toParse);
+    } catch (_) {
+      return (parsed: null, error: 'Invalid JSON in tool arguments');
+    }
+
+    if (decoded is! Map) {
+      return (parsed: null, error: 'Tool arguments must be a JSON object');
+    }
+
+    return (parsed: Map<String, dynamic>.from(decoded), error: null);
+  }
 
   for (final toolCall in toolCalls) {
     if (!_isExecutableFunctionToolCall(toolCall)) {
@@ -1722,6 +1759,70 @@ Future<List<ToolResult>> _executeToolCalls({
       if (!continueOnToolError) break;
       continue;
     }
+
+    // Best-effort AI SDK parity: tool call input is expected to be a JSON object.
+    // If it is malformed, emit an error result and skip execution.
+    final parsed = parseToolInput(toolCall.function.arguments);
+    if (parsed.error != null) {
+      results.add(
+        ToolResult.error(
+          toolCallId: toolCall.id,
+          errorMessage: '${parsed.error}: "${toolCall.function.name}"',
+          metadata: {
+            'kind': 'invalid_tool_call',
+            'reason': 'invalid_json',
+            'toolName': toolCall.function.name,
+            'input': toolCall.function.arguments,
+          },
+        ),
+      );
+      if (!continueOnToolError) break;
+      continue;
+    }
+
+    final toolDef = toolByName?[toolCall.function.name];
+    if (toolByName != null && toolDef == null) {
+      results.add(
+        ToolResult.error(
+          toolCallId: toolCall.id,
+          errorMessage: 'No such tool: "${toolCall.function.name}"',
+          metadata: {
+            'kind': 'invalid_tool_call',
+            'reason': 'no_such_tool',
+            'toolName': toolCall.function.name,
+            'availableTools': toolByName.keys.toList()..sort(),
+            'input': toolCall.function.arguments,
+          },
+        ),
+      );
+      if (!continueOnToolError) break;
+      continue;
+    }
+
+    if (toolDef != null) {
+      final errors = ToolValidator.validateParameters(
+        parsed.parsed!,
+        toolDef.function.parameters,
+      );
+      if (errors.isNotEmpty) {
+        results.add(
+          ToolResult.error(
+            toolCallId: toolCall.id,
+            errorMessage: 'Parameter validation failed: ${errors.join('; ')}',
+            metadata: {
+              'kind': 'invalid_tool_call',
+              'reason': 'schema_validation_failed',
+              'toolName': toolCall.function.name,
+              'errors': errors,
+              'input': toolCall.function.arguments,
+            },
+          ),
+        );
+        if (!continueOnToolError) break;
+        continue;
+      }
+    }
+
     final handler = toolHandlers[toolCall.function.name];
     if (handler == null) {
       results.add(

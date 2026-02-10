@@ -1,6 +1,7 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'ensure_stream_start.dart';
+import 'ensure_block_ids.dart';
 import 'prompt_input.dart';
 
 export 'package:llm_dart_core/core/stream_parts.dart';
@@ -20,14 +21,16 @@ Stream<LLMStreamPart> streamChatParts({
   CancelToken? cancelToken,
 }) async* {
   yield* ensureStreamStartPart(
-    _streamChatPartsInternal(
-      model: model,
-      system: system,
-      prompt: prompt,
-      messages: messages,
-      promptIr: promptIr,
-      tools: tools,
-      cancelToken: cancelToken,
+    ensureBlockIdsPart(
+      _streamChatPartsInternal(
+        model: model,
+        system: system,
+        prompt: prompt,
+        messages: messages,
+        promptIr: promptIr,
+        tools: tools,
+        cancelToken: cancelToken,
+      ),
     ),
   );
 }
