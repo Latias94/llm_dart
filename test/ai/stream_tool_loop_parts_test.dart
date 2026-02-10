@@ -163,5 +163,207 @@ void main() {
       expect(parts[13], isA<LLMFinishPart>());
       expect((parts[13] as LLMFinishPart).response.text, equals('Done'));
     });
+
+    Tool getWeatherToolDefinition() {
+      return Tool(
+        toolType: 'function',
+        function: FunctionTool(
+          name: 'get_weather',
+          description: 'Get weather for a city',
+          parameters: ParametersSchema(
+            schemaType: 'object',
+            properties: const {
+              'city': ParameterProperty(
+                propertyType: 'string',
+                description: 'City name',
+              ),
+            },
+            required: const ['city'],
+          ),
+        ),
+      );
+    }
+
+    test('skips execution and emits error tool result for invalid JSON input',
+        () async {
+      var handlerCalls = 0;
+
+      final model = _SequencedStreamChatModel([
+        [
+          LLMToolCallStartPart(
+            ToolCall(
+              id: 'call_bad_json',
+              callType: 'function',
+              function: FunctionCall(name: 'get_weather', arguments: '{'),
+            ),
+          ),
+          const LLMToolCallEndPart('call_bad_json'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_1'}
+              },
+            ),
+          ),
+        ],
+        [
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Done'),
+          const LLMTextEndPart('Done'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_2'}
+              },
+            ),
+          ),
+        ],
+      ]);
+
+      final parts = await streamToolLoopParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        tools: [getWeatherToolDefinition()],
+        toolHandlers: {
+          'get_weather': (toolCall, {cancelToken}) {
+            handlerCalls++;
+            return {'temp': 70};
+          },
+        },
+        maxSteps: 3,
+      ).toList();
+
+      expect(handlerCalls, equals(0));
+
+      final toolResult = parts.whereType<LLMToolResultPart>().single.result;
+      expect(toolResult.toolCallId, equals('call_bad_json'));
+      expect(toolResult.isError, isTrue);
+      expect(toolResult.content, contains('Invalid JSON'));
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.text, equals('Done'));
+    });
+
+    test('skips execution and emits error tool result for schema mismatch',
+        () async {
+      var handlerCalls = 0;
+
+      final model = _SequencedStreamChatModel([
+        [
+          LLMToolCallStartPart(
+            ToolCall(
+              id: 'call_schema',
+              callType: 'function',
+              function:
+                  FunctionCall(name: 'get_weather', arguments: '{"city":123}'),
+            ),
+          ),
+          const LLMToolCallEndPart('call_schema'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_1'}
+              },
+            ),
+          ),
+        ],
+        [
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Done'),
+          const LLMTextEndPart('Done'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_2'}
+              },
+            ),
+          ),
+        ],
+      ]);
+
+      final parts = await streamToolLoopParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        tools: [getWeatherToolDefinition()],
+        toolHandlers: {
+          'get_weather': (toolCall, {cancelToken}) {
+            handlerCalls++;
+            return {'temp': 70};
+          },
+        },
+        maxSteps: 3,
+      ).toList();
+
+      expect(handlerCalls, equals(0));
+
+      final toolResult = parts.whereType<LLMToolResultPart>().single.result;
+      expect(toolResult.toolCallId, equals('call_schema'));
+      expect(toolResult.isError, isTrue);
+      expect(toolResult.content, contains('Parameter'));
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.text, equals('Done'));
+    });
+
+    test('treats tools list as allowlist (unknown tool emits error result)',
+        () async {
+      var handlerCalls = 0;
+
+      final model = _SequencedStreamChatModel([
+        [
+          LLMToolCallStartPart(
+            ToolCall(
+              id: 'call_unknown',
+              callType: 'function',
+              function:
+                  FunctionCall(name: 'get_weather', arguments: '{"city":"SF"}'),
+            ),
+          ),
+          const LLMToolCallEndPart('call_unknown'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_1'}
+              },
+            ),
+          ),
+        ],
+        [
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Done'),
+          const LLMTextEndPart('Done'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_2'}
+              },
+            ),
+          ),
+        ],
+      ]);
+
+      final parts = await streamToolLoopParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        tools: const [],
+        toolHandlers: {
+          'get_weather': (toolCall, {cancelToken}) {
+            handlerCalls++;
+            return {'temp': 70};
+          },
+        },
+        maxSteps: 3,
+      ).toList();
+
+      expect(handlerCalls, equals(0));
+
+      final toolResult = parts.whereType<LLMToolResultPart>().single.result;
+      expect(toolResult.toolCallId, equals('call_unknown'));
+      expect(toolResult.isError, isTrue);
+      expect(toolResult.content, contains('No such tool'));
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.text, equals('Done'));
+    });
   });
 }

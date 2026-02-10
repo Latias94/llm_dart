@@ -105,5 +105,81 @@ void main() {
       expect(usage.completionTokens, equals(2));
       expect(usage.totalTokens, equals(5));
     });
+
+    test('chatStreamParts maps cached and reasoning tokens into UsageInfo',
+        () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'azure-openai',
+        providerName: 'Azure OpenAI',
+        apiKey: 'test-key',
+        baseUrl: 'https://azure.example.com/v1/',
+        model: 'gpt-4o-mini',
+      );
+
+      final chunks = <String>[
+        _sseData({
+          'id': 'chatcmpl_2',
+          'model': 'gpt-4o-mini',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {'role': 'assistant'},
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_2',
+          'model': 'gpt-4o-mini',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {'content': 'Hello'},
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_2',
+          'model': 'gpt-4o-mini',
+          'choices': [
+            {
+              'index': 0,
+              'delta': <String, dynamic>{},
+              'finish_reason': 'stop',
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_2',
+          'model': 'gpt-4o-mini',
+          'choices': [],
+          'usage': {
+            'prompt_tokens': 10,
+            'completion_tokens': 9,
+            'total_tokens': 19,
+            'prompt_tokens_details': {'cached_tokens': 7},
+            'completion_tokens_details': {'reasoning_tokens': 4},
+          },
+        }),
+      ];
+
+      final client = _FakeOpenAIClient(
+        config,
+        stream: Stream<String>.fromIterable(chunks),
+      );
+      final chat = OpenAIChat(client, config);
+
+      final parts =
+          await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      final usage = finish.response.usage!;
+      expect(usage.promptTokens, equals(10));
+      expect(usage.completionTokens, equals(9));
+      expect(usage.promptTokensCacheRead, equals(7));
+      expect(usage.promptTokensNoCache, equals(3));
+      expect(usage.reasoningTokens, equals(4));
+      expect(usage.completionTokensText, equals(5));
+      expect(usage.raw, isNotNull);
+    });
   });
 }
