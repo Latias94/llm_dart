@@ -214,11 +214,12 @@ signal spec we have for stream semantics.
 - [ ] Add a small helper script (optional) to sync/select fixtures from `repo-ref/ai`
   into `test/fixtures/**.chunks.txt` with stable naming.
 
-### Anthropic fixture coverage gaps (as of 2026-02-10)
+### Anthropic fixture coverage notes (as of 2026-02-10)
 
-`repo-ref/ai/packages/anthropic/src/__fixtures__` contains a few fixtures that
-are not yet copied into our `test/fixtures/anthropic/messages` tree. These are
-good next targets because they affect usage accounting and tool search flows:
+We vendor AI SDK Anthropic `*.chunks.txt` fixtures under
+`test/fixtures/anthropic/messages` and maintain matching v3 parts goldens.
+
+Notable fixtures that validate usage and deferred tool search flows:
 
 - `anthropic-message-delta-input-tokens.chunks.txt`
 - `anthropic-tool-search-deferred-bm25.chunks.txt`

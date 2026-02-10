@@ -146,6 +146,13 @@ Current coverage (goldens added in this repo):
 - Anthropic:
   - `test/fixtures/v3_parts/anthropic/anthropic-web-search-tool.1.jsonl`
   - `test/fixtures/v3_parts/anthropic/anthropic-json-tool.1.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-message-delta-input-tokens.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-bm25.session1.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-bm25.session2.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-bm25.session3.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-regex.session1.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-regex.session2.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-regex.session3.jsonl`
 - OpenAI-compatible (DeepSeek fixtures):
   - `test/fixtures/v3_parts/openai_compatible/deepseek-text.jsonl`
   - `test/fixtures/v3_parts/openai_compatible/deepseek-reasoning.jsonl`
