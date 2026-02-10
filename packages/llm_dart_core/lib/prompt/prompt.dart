@@ -30,11 +30,22 @@ class PromptMessage {
   final String? name;
   final ProviderOptions providerOptions;
 
+  /// Provider-specific protocol payloads (internal).
+  ///
+  /// This is an escape hatch for protocol adapters that must persist
+  /// provider-native content blocks through the legacy `ChatMessage` model.
+  ///
+  /// App code should prefer:
+  /// - Prompt parts + providerOptions for prompt composition
+  /// - providerOptions for provider-only knobs
+  final Map<String, dynamic> protocolPayloads;
+
   const PromptMessage({
     required this.role,
     required this.parts,
     this.name,
     this.providerOptions = const {},
+    this.protocolPayloads = const {},
   });
 
   factory PromptMessage.system(
@@ -84,6 +95,7 @@ class PromptMessage {
               messageType: const TextMessage(),
               content: text,
               name: name,
+              protocolPayloads: protocolPayloads,
               providerOptions: effectiveProviderOptions,
             ),
           );
@@ -98,6 +110,7 @@ class PromptMessage {
               mime: mime,
               data: data,
               content: text ?? '',
+              protocolPayloads: protocolPayloads,
               providerOptions: effectiveProviderOptions,
             ),
           );
@@ -111,6 +124,7 @@ class PromptMessage {
               role: role,
               url: url,
               content: text ?? '',
+              protocolPayloads: protocolPayloads,
               providerOptions: effectiveProviderOptions,
             ),
           );
@@ -125,6 +139,7 @@ class PromptMessage {
               mime: mime,
               data: data,
               content: text ?? '',
+              protocolPayloads: protocolPayloads,
               providerOptions: effectiveProviderOptions,
             ),
           );
@@ -145,6 +160,7 @@ class PromptMessage {
           result.add(
             ChatMessage.toolUse(
               toolCalls: [mergedToolCall],
+              protocolPayloads: protocolPayloads,
               providerOptions: effectiveProviderOptions,
             ),
           );
@@ -165,6 +181,7 @@ class PromptMessage {
           result.add(
             ChatMessage.toolResult(
               results: [mergedToolResult],
+              protocolPayloads: protocolPayloads,
               providerOptions: effectiveProviderOptions,
             ),
           );

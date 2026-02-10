@@ -445,11 +445,13 @@ class ChatMessage {
   factory ChatMessage.user(
     String content, {
     ProviderOptions providerOptions = const {},
+    Map<String, dynamic> protocolPayloads = const {},
   }) =>
       ChatMessage(
         role: ChatRole.user,
         messageType: const TextMessage(),
         content: content,
+        protocolPayloads: protocolPayloads,
         providerOptions: providerOptions,
       );
 
@@ -457,11 +459,13 @@ class ChatMessage {
   factory ChatMessage.assistant(
     String content, {
     ProviderOptions providerOptions = const {},
+    Map<String, dynamic> protocolPayloads = const {},
   }) =>
       ChatMessage(
         role: ChatRole.assistant,
         messageType: const TextMessage(),
         content: content,
+        protocolPayloads: protocolPayloads,
         providerOptions: providerOptions,
       );
 
@@ -470,12 +474,14 @@ class ChatMessage {
     String content, {
     String? name,
     ProviderOptions providerOptions = const {},
+    Map<String, dynamic> protocolPayloads = const {},
   }) =>
       ChatMessage(
         role: ChatRole.system,
         messageType: const TextMessage(),
         content: content,
         name: name,
+        protocolPayloads: protocolPayloads,
         providerOptions: providerOptions,
       );
 
@@ -486,11 +492,13 @@ class ChatMessage {
     required List<int> data,
     String content = '',
     ProviderOptions providerOptions = const {},
+    Map<String, dynamic> protocolPayloads = const {},
   }) =>
       ChatMessage(
         role: role,
         messageType: ImageMessage(mime, data),
         content: content,
+        protocolPayloads: protocolPayloads,
         providerOptions: providerOptions,
       );
 
@@ -500,11 +508,13 @@ class ChatMessage {
     required String url,
     String content = '',
     ProviderOptions providerOptions = const {},
+    Map<String, dynamic> protocolPayloads = const {},
   }) =>
       ChatMessage(
         role: role,
         messageType: ImageUrlMessage(url),
         content: content,
+        protocolPayloads: protocolPayloads,
         providerOptions: providerOptions,
       );
 
@@ -515,11 +525,13 @@ class ChatMessage {
     required List<int> data,
     String content = '',
     ProviderOptions providerOptions = const {},
+    Map<String, dynamic> protocolPayloads = const {},
   }) =>
       ChatMessage(
         role: role,
         messageType: FileMessage(mime, data),
         content: content,
+        protocolPayloads: protocolPayloads,
         providerOptions: providerOptions,
       );
 
@@ -529,6 +541,7 @@ class ChatMessage {
     required List<int> data,
     String content = '',
     ProviderOptions providerOptions = const {},
+    Map<String, dynamic> protocolPayloads = const {},
   }) =>
       ChatMessage.file(
         role: role,
@@ -536,6 +549,7 @@ class ChatMessage {
         data: data,
         content: content,
         providerOptions: providerOptions,
+        protocolPayloads: protocolPayloads,
       );
 
   /// Create a tool use message
@@ -543,11 +557,13 @@ class ChatMessage {
     required List<ToolCall> toolCalls,
     String content = '',
     ProviderOptions providerOptions = const {},
+    Map<String, dynamic> protocolPayloads = const {},
   }) =>
       ChatMessage(
         role: ChatRole.assistant,
         messageType: ToolUseMessage(toolCalls),
         content: content,
+        protocolPayloads: protocolPayloads,
         providerOptions: providerOptions,
       );
 
@@ -556,11 +572,13 @@ class ChatMessage {
     required List<ToolCall> results,
     String content = '',
     ProviderOptions providerOptions = const {},
+    Map<String, dynamic> protocolPayloads = const {},
   }) =>
       ChatMessage(
         role: ChatRole.user,
         messageType: ToolResultMessage(results),
         content: content,
+        protocolPayloads: protocolPayloads,
         providerOptions: providerOptions,
       );
 }

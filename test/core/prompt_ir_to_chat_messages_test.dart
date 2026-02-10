@@ -189,5 +189,34 @@ void main() {
         equals({'foo': 2}),
       );
     });
+
+    test('propagates protocolPayloads to emitted ChatMessages', () {
+      final messages = Prompt(
+        messages: const [
+          PromptMessage(
+            role: ChatRole.user,
+            protocolPayloads: {
+              'google': {
+                'fileUri': 'gs://bucket/file.pdf',
+              },
+            },
+            parts: [
+              TextPart('hi'),
+              ImageUrlPart(url: 'https://example.com/a.png'),
+            ],
+          ),
+        ],
+      ).toChatMessages();
+
+      expect(messages, hasLength(2));
+      expect(
+        messages[0].protocolPayloads,
+        containsPair('google', {'fileUri': 'gs://bucket/file.pdf'}),
+      );
+      expect(
+        messages[1].protocolPayloads,
+        containsPair('google', {'fileUri': 'gs://bucket/file.pdf'}),
+      );
+    });
   });
 }

@@ -67,6 +67,23 @@ class _FakePromptToolModel extends ChatCapability
       );
     }
 
+    final assistant = prompt.messages.firstWhere(
+      (m) => m.role == ChatRole.assistant,
+      orElse: () => throw StateError('expected assistant message in prompt'),
+    );
+    final anthropic = assistant.protocolPayloads['anthropic'];
+    expect(anthropic, isA<Map>());
+    final blocks = (anthropic as Map)['contentBlocks'];
+    expect(blocks, isA<List>());
+    expect(
+      (blocks as List).whereType<Map>().any((b) => b['type'] == 'thinking'),
+      isTrue,
+    );
+    expect(
+      blocks.whereType<Map>().any((b) => b['type'] == 'tool_use'),
+      isTrue,
+    );
+
     return _FakeTextResponse('done');
   }
 }

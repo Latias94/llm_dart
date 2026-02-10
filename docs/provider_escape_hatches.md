@@ -214,6 +214,19 @@ Notes:
 - Prefer `Prompt` IR (`llm_dart_ai`) for prompt composition and `providerOptions`
   for provider-only knobs.
 
+### 2.2.2 Protocol payloads (`protocolPayloads`) (internal)
+
+`ChatMessage.protocolPayloads` and `PromptMessage.protocolPayloads` are
+**protocol-internal** escape hatches used by some providers to persist
+provider-native content blocks across requests (e.g. Anthropic thinking
+signatures, Google uploaded file URIs).
+
+Notes:
+
+- App code should treat these fields as **unstable** and avoid writing to them.
+- `llm_dart_ai` tool loops preserve protocol payloads when converting between
+  `ChatMessage` and `Prompt` to avoid losing provider-native continuity data.
+
 ### 2.3 `cacheControl` (Anthropic-compatible shape)
 
 When supported by an Anthropic-style provider, `cacheControl` uses Anthropic’s prompt caching shape, e.g.:

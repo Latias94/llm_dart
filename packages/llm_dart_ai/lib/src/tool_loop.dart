@@ -253,6 +253,7 @@ PromptMessage _promptMessageFromChatMessage(ChatMessage message) {
     parts: List<PromptPart>.unmodifiable(parts),
     name: message.name,
     providerOptions: providerOptions,
+    protocolPayloads: message.protocolPayloads,
   );
 }
 

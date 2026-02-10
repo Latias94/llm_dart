@@ -66,9 +66,11 @@ Core principle:
 - [x] Tool part `overrideRole` splits into valid wire messages (no mixed roles)
   - Anthropic-compatible: `test/protocols/anthropic_compatible/prompt_ir_compilation_conformance_test.dart`
 
-### M3 — Cleanup
+### M3 – Cleanup
 
 - [ ] Reduce reliance on `ChatMessage.protocolPayloads` for content-part wiring
+- [x] Preserve protocol payloads through Prompt IR (`PromptMessage.protocolPayloads`)
+  so tool loops do not lose provider-native continuity blocks (e.g. Anthropic thinking signatures).
 - [ ] Ensure `llm_dart_ai` prefers prompt-native capabilities when available
 
 ---

@@ -134,6 +134,28 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
     PromptMessage message,
     ToolNameMapping toolNameMapping,
   ) {
+    // Protocol-internal: if we have provider-native Anthropic content blocks
+    // attached (e.g. persisted assistant messages with thinking signatures),
+    // preserve them verbatim to maintain multi-step tool use continuity.
+    final anthropicPayload = message.protocolPayloads['anthropic'];
+    if (anthropicPayload is Map) {
+      final rawBlocks = anthropicPayload['contentBlocks'];
+      if (rawBlocks is List && rawBlocks.isNotEmpty) {
+        final blocks = rawBlocks
+            .whereType<Map>()
+            .map((m) => Map<String, dynamic>.from(m))
+            .toList(growable: false);
+        if (blocks.isNotEmpty) {
+          return [
+            {
+              'role': message.role.name,
+              'content': blocks,
+            },
+          ];
+        }
+      }
+    }
+
     final segments = <Map<String, dynamic>>[];
 
     final currentContent = <Map<String, dynamic>>[];
@@ -224,8 +246,8 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
           }
 
           final trimmed = url.trim();
-          final isHttp = trimmed.startsWith('http://') ||
-              trimmed.startsWith('https://');
+          final isHttp =
+              trimmed.startsWith('http://') || trimmed.startsWith('https://');
           if (!isHttp) {
             throw InvalidRequestError(
               'ImageUrlPart must be an http(s) URL. Got: "$url"',
