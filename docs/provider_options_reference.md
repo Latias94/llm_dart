@@ -261,6 +261,17 @@ Generation:
 - `safetySettings`: `List<Map<String, dynamic>>` or `List<SafetySetting>`
 - `maxInlineDataSize`: `int` (bytes; default: 20MB)
 
+File URLs:
+
+- `supportedFileUrlsOnly`: `bool`
+  - When `true`, http(s) URLs used by URL-based prompt parts (e.g.
+    `ImageUrlPart`, `FileUrlPart`) are restricted to AI SDK supported patterns:
+    - Google Generative Language Files API:
+      `https://generativelanguage.googleapis.com/v1beta/files/...`
+    - YouTube URLs:
+      `https://www.youtube.com/watch?v=...` and `https://youtu.be/...`
+  - `gs://...` and `files/...` resource names are still allowed.
+
 Embeddings (Gemini-native):
 
 - `embeddingTaskType`: `String`
