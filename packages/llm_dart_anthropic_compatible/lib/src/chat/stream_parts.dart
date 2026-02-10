@@ -45,8 +45,9 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
   );
 
   final providerToolNameById = <String, String>{};
-  final emittedProviderToolCallIds = <String>{};
-  final emittedProviderToolResultIds = <String>{};
+  final providerToolParts = ProviderToolPartEmitter(
+    providerMetadataNamespace: config.providerId,
+  );
 
   String? messageId;
   String? model;
@@ -442,19 +443,14 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                     name is String &&
                     name.isNotEmpty) {
                   providerToolNameById[id] = name;
-                  if (emittedProviderToolCallIds.add(id)) {
-                    yield LLMProviderToolCallPart(
-                      toolCallId: id,
-                      toolName: name,
-                      input: input,
-                      isDynamic: blockType == 'mcp_tool_use' ? true : null,
-                      providerMetadata: {
-                        config.providerId: {
-                          'type': blockType,
-                        },
-                      },
-                    );
-                  }
+                  final part = providerToolParts.call(
+                    toolCallId: id,
+                    toolName: name,
+                    input: input,
+                    isDynamic: blockType == 'mcp_tool_use' ? true : null,
+                    providerMetadataPayload: {'type': blockType},
+                  );
+                  if (part != null) yield part;
                 }
                 break;
               }
@@ -487,20 +483,15 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                   resultPayload = Map<String, dynamic>.from(content);
                 }
 
-                if (emittedProviderToolResultIds.add(toolUseId)) {
-                  yield LLMProviderToolResultPart(
-                    toolCallId: toolUseId,
-                    toolName: toolName,
-                    result: resultPayload,
-                    isError: isError ? true : null,
-                    isDynamic: blockType == 'mcp_tool_result' ? true : null,
-                    providerMetadata: {
-                      config.providerId: {
-                        'type': blockType,
-                      },
-                    },
-                  );
-                }
+                final part = providerToolParts.result(
+                  toolCallId: toolUseId,
+                  toolName: toolName,
+                  result: resultPayload,
+                  isError: isError ? true : null,
+                  isDynamic: blockType == 'mcp_tool_result' ? true : null,
+                  providerMetadataPayload: {'type': blockType},
+                );
+                if (part != null) yield part;
               }
             }
             break;
