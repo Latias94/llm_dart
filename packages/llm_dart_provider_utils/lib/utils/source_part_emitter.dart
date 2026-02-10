@@ -18,6 +18,11 @@ class SourcePartEmitter {
     this.sourceIdPrefix = 'source_',
   });
 
+  void reset() {
+    _emittedKeys.clear();
+    _seq = 0;
+  }
+
   Map<String, dynamic>? _providerMetadataForPayload(
     Map<String, dynamic>? payload,
   ) {
