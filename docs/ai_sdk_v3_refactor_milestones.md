@@ -1,0 +1,181 @@
+# AI SDK v3 Parity Refactor: Milestones
+
+Status: Draft  
+Last updated: 2026-02-10
+
+This document defines milestones for the refactor described in:
+
+- `docs/ai_sdk_v3_refactor_purpose.md`
+- `docs/ai_sdk_v3_refactor_todo.md`
+
+The guiding rule: **internal data structures + semantics match AI SDK v3**,
+while **public Dart APIs remain idiomatic**.
+
+---
+
+## Milestone M0: Baseline alignment and guardrails
+
+Exit criteria:
+
+- `LLMFinishReason` unified/raw matches AI SDK v3 semantics
+- Provider metadata namespacing policy is documented and tested
+- Fixture sync is green (`melos run fixtures:check`)
+
+Deliverables:
+
+- Confirm canonical references and invariants in docs
+- Identify the first provider to fully migrate (recommended: OpenAI Responses)
+
+Acceptance use cases:
+
+- `fixtures:check` passes and fixtures are up to date.
+- Provider metadata key policy is enforced by tests (canonical + alias deep-equal).
+
+---
+
+## Milestone M1: Canonical v3 part set (types + codec)
+
+Exit criteria:
+
+- `LLMStreamPart` can represent every AI SDK v3 `type`
+- JSON codec round-trips parts without loss (unit tests)
+- JSONL stream dumping/reading helpers exist for golden tests
+
+Deliverables:
+
+- Core types updated in `llm_dart_core`
+- Codec utilities in `llm_dart_core` or `llm_dart_provider_utils` (whichever fits dep rules)
+
+Acceptance use cases:
+
+- A unit test round-trips every canonical part through JSON encode/decode.
+- A JSONL writer/reader can serialize and parse a stream deterministically.
+
+---
+
+## Milestone M2: Orchestration normalization (parts-first always)
+
+Exit criteria:
+
+- `streamChatParts` always emits:
+  - one `stream-start`
+  - stable non-empty block ids
+  - exactly one terminal `finish`
+- Tool loop streaming emits canonical tool lifecycle parts
+
+Deliverables:
+
+- Normalization layer in `llm_dart_ai` (id injection + finish enforcement)
+- Conformance tests for ordering and boundary behavior
+
+Acceptance use cases:
+
+- Any provider stream missing block ids is normalized to non-empty ids.
+- Exactly one `stream-start` and exactly one terminal `finish` are emitted.
+- Tool loop streaming emits tool lifecycle parts in correct order.
+
+---
+
+## Milestone M3: First fully-migrated provider (fixture-backed)
+
+Exit criteria:
+
+- One provider’s streaming output matches v3 golden fixtures:
+  - ordering
+  - tool input/tool call semantics
+  - sources/files (when present)
+  - finish usage + finishReason
+
+Recommended target:
+
+- OpenAI Responses (richest event surface; best ROI for fixtures)
+
+Deliverables:
+
+- Golden tests using vendored fixtures
+- Provider adapter emits canonical parts with minimal provider-specific branching
+
+Acceptance use cases:
+
+- At least one provider scenario passes golden `.jsonl` comparison:
+  - tool input split across arbitrary boundaries
+  - usage arriving late (after finish reason), if applicable
+  - provider-native tool events never become locally executable tool calls
+
+Current coverage (goldens added in this repo):
+
+- OpenAI Responses:
+  - `test/fixtures/v3_parts/openai/openai-local-shell-tool.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-error.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-mcp-tool-approval.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-web-search-tool.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-image-generation-tool.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-file-search-tool.1.jsonl`
+- Azure OpenAI (Responses API shape):
+  - `test/fixtures/v3_parts/azure/azure-code-interpreter-tool.1.jsonl`
+  - `test/fixtures/v3_parts/azure/azure-web-search-preview-tool.1.jsonl`
+  - `test/fixtures/v3_parts/azure/azure-reasoning-encrypted-content.1.session1.jsonl`
+  - `test/fixtures/v3_parts/azure/azure-reasoning-encrypted-content.1.session2.jsonl`
+  - `test/fixtures/v3_parts/azure/azure-reasoning-encrypted-content.1.session3.jsonl`
+  - `test/fixtures/v3_parts/azure/azure-reasoning-encrypted-content.1.session4.jsonl`
+  - `test/fixtures/v3_parts/azure/azure-image-generation-tool.1.jsonl`
+- Anthropic:
+  - `test/fixtures/v3_parts/anthropic/anthropic-web-search-tool.1.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-json-tool.1.jsonl`
+- OpenAI-compatible (DeepSeek fixtures):
+  - `test/fixtures/v3_parts/openai_compatible/deepseek-text.jsonl`
+  - `test/fixtures/v3_parts/openai_compatible/deepseek-reasoning.jsonl`
+  - `test/fixtures/v3_parts/openai_compatible/deepseek-tool-call.jsonl`
+- xAI Responses:
+  - `test/fixtures/v3_parts/xai/xai-text-streaming.1.jsonl`
+  - `test/fixtures/v3_parts/xai/xai-text-with-reasoning-streaming.1.jsonl`
+  - `test/fixtures/v3_parts/xai/xai-text-with-reasoning-streaming-store-false.1.jsonl`
+  - `test/fixtures/v3_parts/xai/xai-web-search-tool.1.jsonl`
+  - `test/fixtures/v3_parts/xai/xai-x-search-tool.jsonl`
+
+---
+
+## Milestone M4: Expand to protocol reuse layers + OpenAI-compatible baseline
+
+Exit criteria:
+
+- Anthropic-compatible + OpenAI-compatible streaming parsers both:
+  - emit v3-consistent canonical parts
+  - preserve provider-only fields via `providerMetadata`/`raw`
+- Regression tests cover chunk boundary edge cases
+
+Deliverables:
+
+- Conformance suites under `test/protocols/...`
+- Fixture-based tests for at least 2 providers
+
+Acceptance use cases:
+
+- Anthropic-compatible and OpenAI-compatible both pass the canonical parts contract:
+  - reasoning block ordering
+  - tool call parsing/invalid call behavior (best-effort)
+  - finish usage + finishReason consistency
+
+---
+
+## Milestone M5: Cleanup and stabilization
+
+Exit criteria:
+
+- Provider packages no longer depend on “reserved tool name + throw” heuristics
+- Tool name mapping is used consistently where provider tools exist
+- Documentation updated:
+  - standard surface
+  - streaming semantics
+  - migration notes for breaking changes
+
+Deliverables:
+
+- Deprecations (if any) applied and documented in `docs/migrations/`
+- `CHANGELOG.md` entries for user-visible breakages
+
+Acceptance use cases:
+
+- Provider packages no longer use ad-hoc “reserved tool name” heuristics.
+- Tool name mapping is used consistently where provider-native tools exist.
+- Documentation explicitly describes the fixture alignment contract and JSONL golden format.

@@ -1,0 +1,26 @@
+{
+  "provider": "openai",
+  "scenario": "tool-input-split-boundaries",
+  "description": "Short human-readable description of the scenario and why it exists.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "repo-ref/ai/packages/<provider>/src/<area>/__fixtures__/..."
+    ],
+    "notes": "Where the input comes from (vendored fixture, replay file, hand-constructed test)."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "tool_input_delta_is_string": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "Add any extra invariants or gotchas here.",
+    "If providerMetadata/raw are expected, document why."
+  ]
+}
+
