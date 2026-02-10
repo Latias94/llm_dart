@@ -77,7 +77,7 @@ Notes:
 
 - [x] Prompt IR native compilation groups text+images and tool result roles
 - [x] Finish part includes typed `usage` + `finishReason`
-- [ ] Add streaming conformance fixtures (JSONL boundary fuzz)
+- [x] Streaming chunk boundary fuzz (JSONL)
 
 ---
 
