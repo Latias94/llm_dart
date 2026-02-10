@@ -150,7 +150,7 @@ Current status (fixture-backed v3 golden tests in this repo):
 
 - [x] OpenAI Responses (`packages/llm_dart_openai` via `responses.dart`)
 - [x] Azure OpenAI (Responses API shape)
-- [x] Anthropic (messages SSE)
+- [x] Anthropic (messages SSE; expand remaining fixtures)
 - [x] OpenAI-compatible baseline (DeepSeek fixtures)
 - [x] xAI Responses
 
@@ -177,6 +177,7 @@ Recommended order:
   - [x] Replays/decodes into canonical parts
   - [x] Writes `.jsonl` goldens under `test/fixtures/v3_parts/...` and ensures `.meta.json` exists
   - Entry point: `tool/update_v3_goldens.dart` (see `melos goldens:check` / `melos goldens:update`)
+  - [x] Supports incremental updates via `--scenarios=a,b,c` to avoid full-suite runs
 - [x] Add a “golden check” test harness:
   - [x] Loads expected `.jsonl`
   - [x] Compares canonical parts with stable normalization (key order, omitted nulls)
@@ -205,8 +206,20 @@ signal spec we have for stream semantics.
   - repository (e.g. `vercel/ai`)
   - commit hash / tag
   - original fixture path(s) in AI SDK
+- [ ] Track the pinned upstream reference commit:
+  - current `repo-ref/ai` commit: `c36a873ce00892a4c587c2e9492220b392aefd09`
 - [ ] Document the “what to copy” rule:
   - prefer copying *only* the minimal fixtures that cover a semantic edge case
   - avoid bulk-copying entire snapshot suites to keep repo size manageable
 - [ ] Add a small helper script (optional) to sync/select fixtures from `repo-ref/ai`
   into `test/fixtures/**.chunks.txt` with stable naming.
+
+### Anthropic fixture coverage gaps (as of 2026-02-10)
+
+`repo-ref/ai/packages/anthropic/src/__fixtures__` contains a few fixtures that
+are not yet copied into our `test/fixtures/anthropic/messages` tree. These are
+good next targets because they affect usage accounting and tool search flows:
+
+- `anthropic-message-delta-input-tokens.chunks.txt`
+- `anthropic-tool-search-deferred-bm25.chunks.txt`
+- `anthropic-tool-search-deferred-regex.chunks.txt`

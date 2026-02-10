@@ -330,6 +330,27 @@ We explicitly test **post-parse canonical parts**, not raw network data.
   - tool lifecycle semantics (input stream, parsing, invalid calls, results)
   - preservation of provider-only data via `providerMetadata` and/or `raw`
 
+### How to add a new fixture scenario
+
+1. Ensure the upstream fixture exists under `repo-ref/ai` (read-only reference).
+2. Copy the corresponding `*.chunks.txt` file into our test fixtures tree
+   (provider-specific):
+   - OpenAI: `test/fixtures/openai/responses`
+   - Azure: `test/fixtures/azure/responses`
+   - Anthropic: `test/fixtures/anthropic/messages`
+   - xAI: `test/fixtures/xai/responses`
+   - OpenAI-compatible: `test/fixtures/openai_compatible`
+3. Add a `*.meta.json` under `test/fixtures/v3_parts/<provider>/`:
+   - include both local and upstream fixture paths in `source.paths`
+   - include `request.providerTools` when tool-name mapping matters
+4. Generate/update goldens:
+   - `dart run tool/update_v3_goldens.dart --write --only=<provider> --scenarios=<scenario1,scenario2>`
+5. Run tests:
+   - `dart test`
+
+Golden tests discover scenarios from `*.meta.json` automatically, so adding a
+meta file is the “registration” step for a new scenario.
+
 Golden format recommendation:
 
 - JSON Lines (`.jsonl`): one canonical part per line as a JSON object.

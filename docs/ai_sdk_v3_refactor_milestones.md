@@ -120,8 +120,18 @@ Current coverage (goldens added in this repo):
 
 - OpenAI Responses:
   - `test/fixtures/v3_parts/openai/openai-local-shell-tool.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-shell-tool.1.session1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-shell-tool.1.session2.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-code-interpreter-tool.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-apply-patch-tool.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-apply-patch-tool-delete.1.jsonl`
   - `test/fixtures/v3_parts/openai/openai-error.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-reasoning-encrypted-content.1.session1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-reasoning-encrypted-content.1.session2.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-reasoning-encrypted-content.1.session3.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-reasoning-encrypted-content.1.session4.jsonl`
   - `test/fixtures/v3_parts/openai/openai-mcp-tool-approval.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-mcp-tool.1.jsonl`
   - `test/fixtures/v3_parts/openai/openai-web-search-tool.1.jsonl`
   - `test/fixtures/v3_parts/openai/openai-image-generation-tool.1.jsonl`
   - `test/fixtures/v3_parts/openai/openai-file-search-tool.1.jsonl`
