@@ -279,7 +279,7 @@ class GoogleChat
 
     final sources = SourcePartEmitter(
       providerMetadataNamespace: _providerOptionsName,
-      providerMetadataPayload: {'type': 'groundingMetadata'},
+      defaultProviderMetadataPayload: {'type': 'groundingMetadata'},
     );
 
     String mediaTypeForUri(String uri) {

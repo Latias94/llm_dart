@@ -6,7 +6,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 /// avoid duplicates during streaming.
 class SourcePartEmitter {
   final String providerMetadataNamespace;
-  final Map<String, dynamic>? providerMetadataPayload;
+  final Map<String, dynamic>? defaultProviderMetadataPayload;
   final String sourceIdPrefix;
 
   final Set<String> _emittedKeys = <String>{};
@@ -14,14 +14,17 @@ class SourcePartEmitter {
 
   SourcePartEmitter({
     required this.providerMetadataNamespace,
-    this.providerMetadataPayload,
+    this.defaultProviderMetadataPayload,
     this.sourceIdPrefix = 'source_',
   });
 
-  Map<String, dynamic>? _providerMetadata() {
-    final payload = providerMetadataPayload;
-    if (payload == null) return null;
-    return {providerMetadataNamespace: payload};
+  Map<String, dynamic>? _providerMetadataForPayload(
+    Map<String, dynamic>? payload,
+  ) {
+    final effective = payload ?? defaultProviderMetadataPayload;
+    if (effective == null) return null;
+    if (effective.isEmpty) return null;
+    return {providerMetadataNamespace: effective};
   }
 
   /// Emits a URL source part if it has not been emitted yet.
@@ -31,6 +34,7 @@ class SourcePartEmitter {
     String url, {
     String? title,
     String? dedupeKey,
+    Map<String, dynamic>? providerMetadataPayload,
   }) {
     final key = dedupeKey ?? 'url:$url';
     if (!_emittedKeys.add(key)) return null;
@@ -38,7 +42,7 @@ class SourcePartEmitter {
       sourceId: '$sourceIdPrefix${_seq++}',
       url: url,
       title: title,
-      providerMetadata: _providerMetadata(),
+      providerMetadata: _providerMetadataForPayload(providerMetadataPayload),
     );
   }
 
@@ -50,6 +54,7 @@ class SourcePartEmitter {
     required String mediaType,
     String? filename,
     String? dedupeKey,
+    Map<String, dynamic>? providerMetadataPayload,
   }) {
     final key = dedupeKey ?? 'doc:$title:$mediaType:${filename ?? ''}';
     if (!_emittedKeys.add(key)) return null;
@@ -58,8 +63,7 @@ class SourcePartEmitter {
       mediaType: mediaType,
       title: title,
       filename: filename,
-      providerMetadata: _providerMetadata(),
+      providerMetadata: _providerMetadataForPayload(providerMetadataPayload),
     );
   }
 }
-
