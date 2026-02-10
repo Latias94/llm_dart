@@ -2526,12 +2526,7 @@ class GoogleChatResponse implements ChatResponseWithFinishReason {
       return null;
     }
 
-    return UsageInfo(
-      promptTokens: usageMetadata['promptTokenCount'] as int?,
-      completionTokens: usageMetadata['candidatesTokenCount'] as int?,
-      totalTokens: usageMetadata['totalTokenCount'] as int?,
-      reasoningTokens: usageMetadata['thoughtsTokenCount'] as int?,
-    );
+    return UsageInfo.fromProviderUsage(usageMetadata);
   }
 
   @override

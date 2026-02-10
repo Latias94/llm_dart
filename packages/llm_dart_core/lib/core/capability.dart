@@ -289,18 +289,28 @@ class UsageInfo {
   }) {
     // Support both Chat Completions (`prompt_tokens`/`completion_tokens`) and
     // Responses (`input_tokens`/`output_tokens`) usage shapes.
-    final promptTokens =
-        _asInt(json['prompt_tokens']) ?? _asInt(json['input_tokens']);
-    final completionTokens =
-        _asInt(json['completion_tokens']) ?? _asInt(json['output_tokens']);
+    //
+    // Also support common non-OpenAI shapes:
+    // - Google Gemini `usageMetadata`: promptTokenCount/candidatesTokenCount/totalTokenCount/thoughtsTokenCount
+    // - Ollama: prompt_eval_count/eval_count
+    final promptTokens = _asInt(json['prompt_tokens']) ??
+        _asInt(json['input_tokens']) ??
+        _asInt(json['promptTokenCount']) ??
+        _asInt(json['prompt_eval_count']);
+    final completionTokens = _asInt(json['completion_tokens']) ??
+        _asInt(json['output_tokens']) ??
+        _asInt(json['candidatesTokenCount']) ??
+        _asInt(json['eval_count']);
 
     var totalTokens = _asInt(json['total_tokens']);
+    totalTokens ??= _asInt(json['totalTokenCount']);
     totalTokens ??= (promptTokens != null && completionTokens != null)
         ? promptTokens + completionTokens
         : null;
 
     // Reasoning tokens: may be a top-level field or nested in *_tokens_details.
     var reasoningTokens = _asInt(json['reasoning_tokens']);
+    reasoningTokens ??= _asInt(json['thoughtsTokenCount']);
     final completionDetails =
         _asStringKeyedMap(json['completion_tokens_details']);
     final outputDetails = _asStringKeyedMap(json['output_tokens_details']);
@@ -313,6 +323,8 @@ class UsageInfo {
 
     // Anthropic-style cache fields.
     cacheRead ??= _asInt(json['cache_read_input_tokens']);
+    // Google-style cached prompt fields (best-effort).
+    cacheRead ??= _asInt(json['cachedContentTokenCount']);
 
     final promptDetails = _asStringKeyedMap(json['prompt_tokens_details']);
     final inputDetails = _asStringKeyedMap(json['input_tokens_details']);

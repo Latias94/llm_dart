@@ -206,11 +206,7 @@ class GoogleTTSResponse {
 
   /// Parse Google's usage metadata format to UsageInfo
   static UsageInfo _parseUsageInfo(Map<String, dynamic> usageMetadata) {
-    return UsageInfo(
-      promptTokens: usageMetadata['promptTokenCount'] as int?,
-      completionTokens: usageMetadata['candidatesTokenCount'] as int?,
-      totalTokens: usageMetadata['totalTokenCount'] as int?,
-    );
+    return UsageInfo.fromProviderUsage(usageMetadata);
   }
 }
 

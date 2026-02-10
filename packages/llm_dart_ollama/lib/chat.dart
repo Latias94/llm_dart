@@ -899,12 +899,10 @@ class OllamaChatResponse implements ChatResponse {
     if (promptEvalCount is! int || evalCount is! int) {
       return null;
     }
-    return UsageInfo(
-      promptTokens: promptEvalCount,
-      completionTokens: evalCount,
-      totalTokens: promptEvalCount + evalCount,
-      reasoningTokens: null,
-    );
+    return UsageInfo.fromProviderUsage({
+      'prompt_eval_count': promptEvalCount,
+      'eval_count': evalCount,
+    });
   }
 
   @override

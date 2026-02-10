@@ -54,5 +54,44 @@ void main() {
       expect(usage.promptTokens, 10);
       expect(usage.promptTokensCacheWrite, 2);
     });
+
+    test('maps Google usageMetadata token counts', () {
+      final usage = UsageInfo.fromProviderUsage({
+        'promptTokenCount': 10,
+        'candidatesTokenCount': 3,
+        'totalTokenCount': 13,
+        'thoughtsTokenCount': 2,
+      });
+
+      expect(usage.promptTokens, 10);
+      expect(usage.completionTokens, 3);
+      expect(usage.totalTokens, 13);
+      expect(usage.reasoningTokens, 2);
+      expect(usage.completionTokensText, 1);
+    });
+
+    test('maps Google cachedContentTokenCount into cacheRead/noCache', () {
+      final usage = UsageInfo.fromProviderUsage({
+        'promptTokenCount': 10,
+        'candidatesTokenCount': 1,
+        'cachedContentTokenCount': 4,
+      });
+
+      expect(usage.promptTokens, 10);
+      expect(usage.promptTokensCacheRead, 4);
+      expect(usage.promptTokensNoCache, 6);
+    });
+
+    test('maps Ollama eval counts', () {
+      final usage = UsageInfo.fromProviderUsage({
+        'prompt_eval_count': 7,
+        'eval_count': 5,
+      });
+
+      expect(usage.promptTokens, 7);
+      expect(usage.completionTokens, 5);
+      expect(usage.totalTokens, 12);
+      expect(usage.raw, isNotNull);
+    });
   });
 }
