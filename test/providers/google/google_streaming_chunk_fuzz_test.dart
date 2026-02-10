@@ -28,8 +28,8 @@ void main() {
       );
 
       final sse = [
-        'data: {"candidates":[{"content":{"parts":[{"text":"思考","thought":true},{"text":"Hello "}]}}]}\n\n',
-        'data: {"candidates":[{"content":{"parts":[{"text":"world"},{"functionCall":{"name":"get_weather","args":{"location":"London"}}}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":5,"totalTokenCount":15,"thoughtsTokenCount":1}}\n\n',
+        'data: {"candidates":[{"groundingMetadata":{"groundingChunks":[{"web":{"uri":"https://example.com/grounding","title":"Grounding"}}]},"content":{"parts":[{"text":"思考","thought":true},{"text":"Hello "},{"executableCode":{"code":"print(1+1)"}}]}}]}\n\n',
+        'data: {"candidates":[{"groundingMetadata":{"groundingChunks":[{"web":{"uri":"https://example.com/grounding","title":"Grounding"}}]},"content":{"parts":[{"codeExecutionResult":{"outcome":"OUTCOME_OK","output":"2"}},{"text":"world"},{"functionCall":{"name":"get_weather","args":{"location":"London"}}}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":5,"totalTokenCount":15,"thoughtsTokenCount":1}}\n\n',
       ].join();
 
       for (final seed in [1, 7, 42]) {
@@ -43,10 +43,8 @@ void main() {
 
         final text =
             parts.whereType<LLMTextDeltaPart>().map((p) => p.delta).join();
-        final thinking = parts
-            .whereType<LLMReasoningDeltaPart>()
-            .map((p) => p.delta)
-            .join();
+        final thinking =
+            parts.whereType<LLMReasoningDeltaPart>().map((p) => p.delta).join();
 
         expect(text, equals('Hello world'));
         expect(thinking, equals('思考'));
@@ -54,13 +52,29 @@ void main() {
         expect(parts.whereType<LLMToolCallStartPart>(), hasLength(1));
         expect(parts.whereType<LLMToolCallEndPart>(), hasLength(1));
 
+        final providerToolCalls =
+            parts.whereType<LLMProviderToolCallPart>().toList();
+        final providerToolResults =
+            parts.whereType<LLMProviderToolResultPart>().toList();
+        expect(providerToolCalls, hasLength(1));
+        expect(providerToolResults, hasLength(1));
+        expect(providerToolCalls.single.toolName, equals('code_execution'));
+        expect(providerToolResults.single.toolName, equals('code_execution'));
+        expect(providerToolResults.single.toolCallId,
+            equals(providerToolCalls.single.toolCallId));
+
+        // Grounding sources should survive arbitrary chunk splits and be deduped.
+        final sources = parts.whereType<LLMSourceUrlPart>().toList();
+        expect(sources, hasLength(1));
+        expect(sources.single.url, equals('https://example.com/grounding'));
+
         final finish = parts.whereType<LLMFinishPart>().single;
         expect(finish.response.text, equals('Hello world'));
         expect(finish.response.thinking, equals('思考'));
         expect(finish.response.toolCalls, isNotNull);
-        expect(finish.response.toolCalls!.single.id, equals('call_get_weather'));
+        expect(
+            finish.response.toolCalls!.single.id, equals('call_get_weather'));
       }
     });
   });
 }
-
