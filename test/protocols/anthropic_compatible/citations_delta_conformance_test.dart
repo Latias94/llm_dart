@@ -32,6 +32,11 @@ void main() {
       final parts =
           await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
       final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.usage, isNotNull);
+      expect(finish.usage!.promptTokens, equals(1));
+      expect(finish.usage!.completionTokens, equals(1));
+      expect(finish.finishReason, isNotNull);
+      expect(finish.finishReason!.unified, equals(LLMUnifiedFinishReason.stop));
       final response = finish.response as ChatResponseWithAssistantMessage;
       final assistant = response.assistantMessage;
 

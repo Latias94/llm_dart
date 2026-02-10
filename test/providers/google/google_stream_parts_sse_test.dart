@@ -47,6 +47,11 @@ void main() {
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.text, equals('Hi there'));
       expect(finish.response.providerMetadata, isNotNull);
+      expect(finish.finishReason, isNotNull);
+      expect(
+        finish.finishReason!.unified,
+        equals(LLMUnifiedFinishReason.stop),
+      );
     });
 
     test('handles chunks split between event and data lines', () async {

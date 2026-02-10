@@ -248,7 +248,11 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
             yield metadataPart;
           }
 
-          yield LLMFinishPart(response);
+          yield LLMFinishPart(
+            response,
+            usage: response.usage,
+            finishReason: response.finishReason,
+          );
           return;
         }
 
@@ -757,7 +761,11 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
               yield metadataPart;
             }
 
-            yield LLMFinishPart(response);
+            yield LLMFinishPart(
+              response,
+              usage: response.usage,
+              finishReason: response.finishReason,
+            );
             return;
 
           case 'error':
@@ -810,7 +818,11 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
     if (metadataPart != null) {
       yield metadataPart;
     }
-    yield LLMFinishPart(response);
+    yield LLMFinishPart(
+      response,
+      usage: response.usage,
+      finishReason: response.finishReason,
+    );
   } catch (e) {
     if (e is LLMError) {
       yield LLMErrorPart(e);

@@ -59,6 +59,24 @@ void main() {
         expect(finish.response.toolCalls, isNull);
         expect(finish.response.providerMetadata?['xai.responses'], isNotNull);
 
+        // AI SDK parity: finish part should surface usage/finishReason when the
+        // response provides them.
+        if (finish.response is ChatResponseWithFinishReason) {
+          final fr =
+              (finish.response as ChatResponseWithFinishReason).finishReason;
+          if (fr == null) {
+            expect(finish.finishReason, isNull);
+          } else {
+            expect(finish.finishReason, isNotNull);
+            expect(finish.finishReason!.unified, equals(fr.unified));
+            expect(finish.finishReason!.raw, equals(fr.raw));
+          }
+        }
+        if (finish.response.usage != null) {
+          expect(finish.usage, isNotNull);
+          expect(finish.usage!.toJson(), equals(finish.response.usage!.toJson()));
+        }
+
         final expectedHasServerToolCall = File(file.path)
             .readAsLinesSync()
             .where((l) => l.trim().isNotEmpty)

@@ -673,7 +673,15 @@ class XAIResponses
               }
             }
 
-            yield LLMFinishPart(response);
+            final finishReason =
+                response is ChatResponseWithFinishReason
+                    ? response.finishReason
+                    : null;
+            yield LLMFinishPart(
+              response,
+              usage: response.usage,
+              finishReason: finishReason,
+            );
             return;
           }
         }
@@ -692,7 +700,11 @@ class XAIResponses
           yield LLMProviderMetadataPart(metadata);
         }
       }
-      yield LLMFinishPart(response);
+      yield LLMFinishPart(
+        response,
+        usage: response.usage,
+        finishReason: response.finishReason,
+      );
     } catch (e) {
       if (e is LLMError) {
         yield LLMErrorPart(e);

@@ -855,7 +855,11 @@ class GoogleChat
           if (metadata != null && metadata.isNotEmpty) {
             yield LLMProviderMetadataPart(metadata);
           }
-          yield LLMFinishPart(response);
+          yield LLMFinishPart(
+            response,
+            usage: response.usage,
+            finishReason: response.finishReason,
+          );
           return;
         }
       }
@@ -892,7 +896,11 @@ class GoogleChat
     if (metadata != null && metadata.isNotEmpty) {
       yield LLMProviderMetadataPart(metadata);
     }
-    yield LLMFinishPart(response);
+    yield LLMFinishPart(
+      response,
+      usage: response.usage,
+      finishReason: response.finishReason,
+    );
   }
 
   @override

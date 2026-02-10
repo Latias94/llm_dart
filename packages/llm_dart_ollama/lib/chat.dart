@@ -304,7 +304,13 @@ class OllamaChat
             if (metadata != null && metadata.isNotEmpty) {
               yield LLMProviderMetadataPart(metadata);
             }
-            yield LLMFinishPart(response);
+            yield LLMFinishPart(
+              response,
+              usage: response.usage,
+              finishReason: response is ChatResponseWithFinishReason
+                  ? (response as ChatResponseWithFinishReason).finishReason
+                  : null,
+            );
             return;
           }
         }
@@ -354,7 +360,13 @@ class OllamaChat
       if (metadata != null && metadata.isNotEmpty) {
         yield LLMProviderMetadataPart(metadata);
       }
-      yield LLMFinishPart(response);
+      yield LLMFinishPart(
+        response,
+        usage: response.usage,
+        finishReason: response is ChatResponseWithFinishReason
+            ? (response as ChatResponseWithFinishReason).finishReason
+            : null,
+      );
     } catch (e) {
       if (e is LLMError) {
         yield LLMErrorPart(e);
