@@ -19,6 +19,12 @@ Current progress (as of 2026-02-10):
 - M3: Achieved (multiple providers covered by fixture-backed v3 golden tests)
 - M4/M5: In progress (expand protocol reuse + stabilize + cleanup)
 
+Notable parity decisions (see `docs/ai_sdk_v3_refactor_purpose.md`):
+
+- Provider-native tool `toolName` is resolved from request `providerTools[*].name` when available.
+- MCP approval requests use `approvalId != toolCallId` (AI SDK semantics); tool calls use `mcp.<name>` and `dynamic=true`.
+- Provider tool deltas are opt-in (`emitProviderToolDeltas=true`), default `false`.
+
 ---
 
 ## Milestone M0: Baseline alignment and guardrails

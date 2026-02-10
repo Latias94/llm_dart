@@ -19,6 +19,28 @@ Primary references:
 - Streaming unification tracker: `docs/streaming_unification_todo.md`
 - Provider parity tracker: `docs/provider_ai_sdk_parity_todo.md`
 
+## Repo layout mapping (AI SDK -> llm_dart)
+
+This refactor intentionally follows the AI SDK split between:
+
+- **canonical model** (parts + semantics)
+- **provider adapters** (request compilation + stream parsing)
+- **orchestration** (tool loops + normalization)
+
+Approximate mapping:
+
+| AI SDK (repo-ref/ai) | llm_dart package(s) | Notes |
+| --- | --- | --- |
+| `packages/provider` | `packages/llm_dart_core` | Canonical part types (`LLMStreamPart`, finish reasons, usage) |
+| `packages/provider` | `packages/llm_dart_provider_utils` | Shared emitters/codecs/dedupe (sources, tool parts, stable JSON) |
+| `packages/ai` (high-level) | `packages/llm_dart_ai` | Dart-flavored tasks + tool loops + normalization |
+| `packages/openai` | `packages/llm_dart_openai` + `packages/llm_dart_openai_compatible` | Responses API parsing is the parity anchor |
+| `packages/anthropic` | `packages/llm_dart_anthropic` + `packages/llm_dart_anthropic_compatible` | Messages SSE -> canonical parts |
+| `packages/xai` | `packages/llm_dart_xai` | Responses-like mapping + fixtures |
+
+`repo-ref/ai` is used as a **read-only reference** and as a source of fixtures;
+it is not part of the published Dart API surface.
+
 ---
 
 ## Why we are doing this
@@ -66,6 +88,30 @@ We keep the external task APIs and tool loop ergonomics:
   - response-time: `providerMetadata`
 
 The internal v3 parity should not force users to write TypeScript-style code.
+
+---
+
+## Key decisions (recorded constraints)
+
+These are the “hard edges” that keep us close to AI SDK v3 while still being
+Dart-friendly:
+
+1. **Tool names come from the request** (when available):
+   - Provider-native tool `toolName` is resolved from `LLMConfig.providerTools[*].name`.
+   - When absent, we fall back to provider tool type (e.g. `web_search`).
+2. **Provider tool deltas are debug-only by default**:
+   - `LLMProviderToolDeltaPart` emission is opt-in via provider option
+     `emitProviderToolDeltas=true` (default `false`).
+3. **`providerExecuted` is semantic, not decorative**:
+   - Encode `providerExecuted` only when it is `true` in v3 JSON.
+   - Omit it for client-executed tool calls (e.g. “local shell” style).
+4. **MCP approval request semantics match AI SDK**:
+   - `approvalId` is provider-issued (e.g. `mcpr_*`).
+   - `toolCallId` is a stable stream-local id (e.g. `id-0`) and is **not**
+     required to equal `approvalId`.
+   - `toolName` uses the `mcp.<name>` prefix and the tool call is `dynamic=true`.
+5. **Sources are deduped and get stable ids**:
+   - Source ids use the `id-<seq>` prefix for fixture parity and determinism.
 
 ---
 

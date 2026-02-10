@@ -50,6 +50,11 @@ Reference: `docs/ai_sdk_v3_refactor_purpose.md`
   - [x] Canonical JSON uses AI SDK v3 `type:'source'` + `sourceType`.
   - [x] `LLMSourceUrlPart` / `LLMSourceDocumentPart` remain Dart-friendly
     wrappers but must encode losslessly into the canonical v3 shape.
+- [x] Provider tool delta policy:
+  - [x] `LLMProviderToolDeltaPart` emission is opt-in via provider option
+    `emitProviderToolDeltas=true` (default `false`) to stay close to AI SDK v3
+    (which does not require a dedicated “tool-delta” concept in the canonical
+    part set).
 - [x] File part payload encoding:
   - [x] Decide stable JSON encoding for bytes (for `.jsonl` goldens):
     - If `data` is a base64 `String`, keep it as-is.
@@ -188,3 +193,20 @@ Recommended order:
 - [ ] Add targeted “nasty stream boundaries” fuzz tests:
   - [ ] tool input JSON split across arbitrary chunk boundaries
   - [ ] usage arriving after finish_reason (common in OpenAI-compatible/Azure)
+
+---
+
+## P1: Fixture provenance + licensing hygiene
+
+We intentionally reuse AI SDK fixtures/snapshots because they are the highest
+signal spec we have for stream semantics.
+
+- [ ] Add an optional `upstream` block to each `*.meta.json`:
+  - repository (e.g. `vercel/ai`)
+  - commit hash / tag
+  - original fixture path(s) in AI SDK
+- [ ] Document the “what to copy” rule:
+  - prefer copying *only* the minimal fixtures that cover a semantic edge case
+  - avoid bulk-copying entire snapshot suites to keep repo size manageable
+- [ ] Add a small helper script (optional) to sync/select fixtures from `repo-ref/ai`
+  into `test/fixtures/**.chunks.txt` with stable naming.
