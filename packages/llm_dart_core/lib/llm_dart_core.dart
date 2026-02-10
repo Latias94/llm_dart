@@ -11,6 +11,7 @@ export 'core/llm_error.dart';
 export 'core/provider_options.dart';
 export 'core/registry.dart';
 export 'core/stream_parts.dart';
+export 'core/v3_stream_part_codec.dart';
 
 export 'utils/capability_utils.dart';
 export 'utils/provider_registry.dart';

@@ -209,11 +209,37 @@ class UsageInfo {
   final int? totalTokens;
   final int? reasoningTokens;
 
+  /// Optional split of prompt tokens into cached vs non-cached categories.
+  ///
+  /// Mirrors AI SDK v3 usage fields:
+  /// - inputTokens.cacheRead
+  /// - inputTokens.noCache
+  /// - inputTokens.cacheWrite (rare; provider-dependent)
+  final int? promptTokensCacheRead;
+  final int? promptTokensNoCache;
+  final int? promptTokensCacheWrite;
+
+  /// Optional split of completion tokens into text vs reasoning categories.
+  ///
+  /// Mirrors AI SDK v3 outputTokens.text/reasoning when available.
+  final int? completionTokensText;
+
+  /// Optional raw provider usage payload (best-effort JSON object).
+  ///
+  /// This is intentionally not included in [toJson] to keep the public JSON
+  /// surface stable; it is used by fixture/golden encoders and debugging tools.
+  final Map<String, dynamic>? raw;
+
   const UsageInfo({
     this.promptTokens,
     this.completionTokens,
     this.totalTokens,
     this.reasoningTokens,
+    this.promptTokensCacheRead,
+    this.promptTokensNoCache,
+    this.promptTokensCacheWrite,
+    this.completionTokensText,
+    this.raw,
   });
 
   /// Adds two UsageInfo instances together for token usage accumulation
@@ -223,6 +249,14 @@ class UsageInfo {
       completionTokens: (completionTokens ?? 0) + (other.completionTokens ?? 0),
       totalTokens: (totalTokens ?? 0) + (other.totalTokens ?? 0),
       reasoningTokens: (reasoningTokens ?? 0) + (other.reasoningTokens ?? 0),
+      promptTokensCacheRead:
+          (promptTokensCacheRead ?? 0) + (other.promptTokensCacheRead ?? 0),
+      promptTokensNoCache:
+          (promptTokensNoCache ?? 0) + (other.promptTokensNoCache ?? 0),
+      promptTokensCacheWrite:
+          (promptTokensCacheWrite ?? 0) + (other.promptTokensCacheWrite ?? 0),
+      completionTokensText:
+          (completionTokensText ?? 0) + (other.completionTokensText ?? 0),
     );
   }
 
@@ -231,14 +265,107 @@ class UsageInfo {
         if (completionTokens != null) 'completion_tokens': completionTokens,
         if (totalTokens != null) 'total_tokens': totalTokens,
         if (reasoningTokens != null) 'reasoning_tokens': reasoningTokens,
+        if (promptTokensCacheRead != null)
+          'prompt_tokens_cache_read': promptTokensCacheRead,
+        if (promptTokensNoCache != null)
+          'prompt_tokens_no_cache': promptTokensNoCache,
+        if (promptTokensCacheWrite != null)
+          'prompt_tokens_cache_write': promptTokensCacheWrite,
+        if (completionTokensText != null)
+          'completion_tokens_text': completionTokensText,
       };
 
-  factory UsageInfo.fromJson(Map<String, dynamic> json) => UsageInfo(
-        promptTokens: json['prompt_tokens'] as int?,
-        completionTokens: json['completion_tokens'] as int?,
-        totalTokens: json['total_tokens'] as int?,
-        reasoningTokens: json['reasoning_tokens'] as int?,
-      );
+  static int? _asInt(dynamic value) => value is int ? value : null;
+
+  static Map<String, dynamic>? _asStringKeyedMap(dynamic value) {
+    if (value is Map<String, dynamic>) return value;
+    if (value is Map) return value.map((k, v) => MapEntry(k.toString(), v));
+    return null;
+  }
+
+  static UsageInfo _fromProviderUsage(
+    Map<String, dynamic> json, {
+    Map<String, dynamic>? raw,
+  }) {
+    // Support both Chat Completions (`prompt_tokens`/`completion_tokens`) and
+    // Responses (`input_tokens`/`output_tokens`) usage shapes.
+    final promptTokens =
+        _asInt(json['prompt_tokens']) ?? _asInt(json['input_tokens']);
+    final completionTokens =
+        _asInt(json['completion_tokens']) ?? _asInt(json['output_tokens']);
+
+    var totalTokens = _asInt(json['total_tokens']);
+    totalTokens ??= (promptTokens != null && completionTokens != null)
+        ? promptTokens + completionTokens
+        : null;
+
+    // Reasoning tokens: may be a top-level field or nested in *_tokens_details.
+    var reasoningTokens = _asInt(json['reasoning_tokens']);
+    final completionDetails =
+        _asStringKeyedMap(json['completion_tokens_details']);
+    final outputDetails = _asStringKeyedMap(json['output_tokens_details']);
+    reasoningTokens ??= _asInt(completionDetails?['reasoning_tokens']) ??
+        _asInt(outputDetails?['reasoning_tokens']);
+
+    // Cache details: provider-dependent. Prefer explicit hit/miss fields when present.
+    var cacheRead = _asInt(json['prompt_cache_hit_tokens']);
+    var noCache = _asInt(json['prompt_cache_miss_tokens']);
+
+    // Anthropic-style cache fields.
+    cacheRead ??= _asInt(json['cache_read_input_tokens']);
+
+    final promptDetails = _asStringKeyedMap(json['prompt_tokens_details']);
+    final inputDetails = _asStringKeyedMap(json['input_tokens_details']);
+    cacheRead ??= _asInt(promptDetails?['cached_tokens']) ??
+        _asInt(inputDetails?['cached_tokens']);
+
+    if (noCache == null && promptTokens != null && cacheRead != null) {
+      final computed = promptTokens - cacheRead;
+      if (computed >= 0) noCache = computed;
+    }
+
+    // Some providers may expose explicit cache write tokens (rare).
+    final cacheWrite = _asInt(json['prompt_cache_write_tokens']) ??
+        _asInt(json['cache_write_input_tokens']) ??
+        _asInt(json['cache_creation_input_tokens']) ??
+        _asInt(promptDetails?['cache_write_tokens']) ??
+        _asInt(inputDetails?['cache_write_tokens']);
+
+    // Text tokens: best-effort derived if we have totals.
+    var completionText = _asInt(outputDetails?['text_tokens']) ??
+        _asInt(outputDetails?['text']) ??
+        _asInt(completionDetails?['text_tokens']);
+    if (completionText == null &&
+        completionTokens != null &&
+        reasoningTokens != null) {
+      final computed = completionTokens - reasoningTokens;
+      if (computed >= 0) completionText = computed;
+    }
+
+    return UsageInfo(
+      promptTokens: promptTokens,
+      completionTokens: completionTokens,
+      totalTokens: totalTokens,
+      reasoningTokens: reasoningTokens,
+      promptTokensCacheRead: cacheRead,
+      promptTokensNoCache: noCache,
+      promptTokensCacheWrite: cacheWrite,
+      completionTokensText: completionText,
+      raw: raw,
+    );
+  }
+
+  /// Parse usage from a provider usage payload.
+  ///
+  /// This preserves the original usage object in [raw].
+  factory UsageInfo.fromProviderUsage(Map<String, dynamic> json) =>
+      _fromProviderUsage(json, raw: json);
+
+  /// Parse usage from an already-normalized JSON payload.
+  ///
+  /// This does not set [raw] (the original provider payload is not known).
+  factory UsageInfo.fromJson(Map<String, dynamic> json) =>
+      _fromProviderUsage(json);
 
   @override
   String toString() {
@@ -258,11 +385,23 @@ class UsageInfo {
           promptTokens == other.promptTokens &&
           completionTokens == other.completionTokens &&
           totalTokens == other.totalTokens &&
-          reasoningTokens == other.reasoningTokens;
+          reasoningTokens == other.reasoningTokens &&
+          promptTokensCacheRead == other.promptTokensCacheRead &&
+          promptTokensNoCache == other.promptTokensNoCache &&
+          promptTokensCacheWrite == other.promptTokensCacheWrite &&
+          completionTokensText == other.completionTokensText;
 
   @override
-  int get hashCode =>
-      Object.hash(promptTokens, completionTokens, totalTokens, reasoningTokens);
+  int get hashCode => Object.hash(
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        reasoningTokens,
+        promptTokensCacheRead,
+        promptTokensNoCache,
+        promptTokensCacheWrite,
+        completionTokensText,
+      );
 }
 
 /// Core chat capability interface that most LLM providers implement
