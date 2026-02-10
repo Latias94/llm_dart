@@ -68,28 +68,19 @@ void main() {
       expect(meta.existsSync(), isTrue);
     }
 
-    test('openai-local-shell-tool.1', () async {
-      await runFixtureGolden('openai-local-shell-tool.1');
-    });
+    final metaDir = Directory('test/fixtures/v3_parts/openai');
+    final baseNames = metaDir
+        .listSync(followLinks: false)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.meta.json'))
+        .map((f) => f.uri.pathSegments.last.replaceAll('.meta.json', ''))
+        .toList()
+      ..sort();
 
-    test('openai-error.1', () async {
-      await runFixtureGolden('openai-error.1');
-    });
-
-    test('openai-mcp-tool-approval.1', () async {
-      await runFixtureGolden('openai-mcp-tool-approval.1');
-    });
-
-    test('openai-web-search-tool.1', () async {
-      await runFixtureGolden('openai-web-search-tool.1');
-    });
-
-    test('openai-image-generation-tool.1', () async {
-      await runFixtureGolden('openai-image-generation-tool.1');
-    });
-
-    test('openai-file-search-tool.1', () async {
-      await runFixtureGolden('openai-file-search-tool.1');
-    });
+    for (final baseName in baseNames) {
+      test(baseName, () async {
+        await runFixtureGolden(baseName);
+      });
+    }
   });
 }

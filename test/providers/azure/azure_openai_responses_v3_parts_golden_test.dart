@@ -68,22 +68,19 @@ void main() {
       expect(meta.existsSync(), isTrue);
     }
 
-    test('azure-code-interpreter-tool.1', () async {
-      await runFixtureGolden('azure-code-interpreter-tool.1');
-    });
+    final metaDir = Directory('test/fixtures/v3_parts/azure');
+    final baseNames = metaDir
+        .listSync(followLinks: false)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.meta.json'))
+        .map((f) => f.uri.pathSegments.last.replaceAll('.meta.json', ''))
+        .toList()
+      ..sort();
 
-    test('azure-web-search-preview-tool.1', () async {
-      await runFixtureGolden('azure-web-search-preview-tool.1');
-    });
-
-    test('azure-reasoning-encrypted-content.1', () async {
-      await runFixtureGolden('azure-reasoning-encrypted-content.1');
-    });
-
-    // Large fixture (base64 image). Golden normalization redacts large base64
-    // strings to keep repo size manageable.
-    test('azure-image-generation-tool.1', () async {
-      await runFixtureGolden('azure-image-generation-tool.1');
-    });
+    for (final baseName in baseNames) {
+      test(baseName, () async {
+        await runFixtureGolden(baseName);
+      });
+    }
   });
 }
