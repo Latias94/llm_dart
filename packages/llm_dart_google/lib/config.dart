@@ -68,7 +68,7 @@ class GoogleConfig {
   ///
   /// This exists to support Vercel AI SDK parity where the same internal
   /// message/part mapping is shared across Google AI and Vertex AI, but the
-  /// metadata namespace differs (`google` vs `vertex`).
+  /// metadata namespace differs (`google` vs `google-vertex`).
   final String providerOptionsName;
 
   final String apiKey;

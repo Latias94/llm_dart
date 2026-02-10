@@ -89,17 +89,6 @@ class GoogleChat
     final byName = providerOptions[_providerOptionsName];
     if (byName != null) return byName;
 
-    // Backward-compat + convenience fallback:
-    // - Vertex provider id is `google-vertex` but metadata namespace is `vertex`.
-    // - Some callsites may still attach options under `google`.
-    if (_providerOptionsName == 'vertex') {
-      final vertexId = providerOptions['google-vertex'];
-      if (vertexId != null) return vertexId;
-
-      final googleId = providerOptions['google'];
-      if (googleId != null) return googleId;
-    }
-
     return null;
   }
 
@@ -125,7 +114,7 @@ class GoogleChat
     // Vertex AI Gemini streaming uses `:streamGenerateContent` and is already
     // streamed as SSE, so `alt=sse` is unnecessary and may be rejected by
     // strict gateways. Align with Vercel AI SDK behavior.
-    if (_providerOptionsName == 'vertex') return false;
+    if (_providerOptionsId == 'google-vertex') return false;
     if (_isVertexLikeBaseUrl) return false;
     return true;
   }
