@@ -293,6 +293,102 @@ void main() {
       );
     });
 
+    test('encodes image FileUrlPart as image_url (AI SDK parity)', () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        apiKey: 'test-key',
+        baseUrl: 'https://example.com',
+        model: 'gpt-4o-mini',
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'choices': [
+            {
+              'message': {'role': 'assistant', 'content': 'ok'}
+            }
+          ],
+        };
+      final chat = OpenAIChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: const [
+              TextPart('Look at this:'),
+              FileUrlPart(
+                mime: FileMime.png,
+                url: ' https://example.com/a.png ',
+                text: 'A small icon.',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await chat.chatPrompt(prompt);
+
+      final messages = client.lastJsonBody?['messages'] as List?;
+      expect(messages, isNotNull);
+      expect(messages, hasLength(1));
+
+      final user = messages!.single as Map;
+      expect(user['role'], equals('user'));
+
+      final content = user['content'] as List;
+      expect(content, hasLength(3));
+      expect(content[0], equals({'type': 'text', 'text': 'Look at this:'}));
+      expect(content[1], equals({'type': 'text', 'text': 'A small icon.'}));
+      expect(
+        content[2],
+        equals({
+          'type': 'image_url',
+          'image_url': {'url': 'https://example.com/a.png'},
+        }),
+      );
+    });
+
+    test('throws for PDF FileUrlPart (use Responses API)', () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        apiKey: 'test-key',
+        baseUrl: 'https://example.com',
+        model: 'gpt-4o-mini',
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'choices': [
+            {
+              'message': {'role': 'assistant', 'content': 'ok'}
+            }
+          ],
+        };
+      final chat = OpenAIChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              FileUrlPart(
+                mime: FileMime.pdf,
+                url: 'https://example.com/a.pdf',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await expectLater(
+        chat.chatPrompt(prompt),
+        throwsA(isA<InvalidRequestError>()),
+      );
+    });
+
     test('encodes audio FilePart as input_audio (AI SDK parity)', () async {
       final config = OpenAICompatibleConfig(
         providerId: 'openai',
