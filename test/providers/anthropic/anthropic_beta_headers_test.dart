@@ -70,6 +70,46 @@ void main() {
       );
     });
 
+    test('adds pdfs beta header when PDF URL documents are present', () {
+      final config = AnthropicConfig(
+        apiKey: 'k',
+        model: 'm',
+        providerId: 'anthropic',
+      );
+
+      final strategy = AnthropicDioStrategy();
+      final enhancers = strategy.getEnhancers(config);
+      final endpointHeaders = enhancers.whereType<InterceptorEnhancer>().single;
+      final interceptor = endpointHeaders.interceptor as InterceptorsWrapper;
+
+      final options = RequestOptions(
+        path: 'messages',
+        data: const {
+          'messages': [
+            {
+              'role': 'user',
+              'content': [
+                {
+                  'type': 'document',
+                  'source': {
+                    'type': 'url',
+                    'url': 'https://example.com/a.pdf',
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      );
+      final handler = RequestInterceptorHandler();
+      interceptor.onRequest(options, handler);
+
+      expect(
+        options.headers['anthropic-beta'],
+        contains('pdfs-2024-09-25'),
+      );
+    });
+
     test('adds structured outputs beta header when strict tools are used', () {
       final config = AnthropicConfig(
         apiKey: 'k',

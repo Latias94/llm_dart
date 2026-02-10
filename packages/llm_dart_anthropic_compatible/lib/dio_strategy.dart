@@ -175,6 +175,17 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
         if (source is Map) {
           final mediaType = source['media_type'];
           if (mediaType == 'application/pdf') return true;
+
+          final sourceType = source['type'];
+          if (sourceType == 'url') {
+            final url = source['url'];
+            if (url is String) {
+              final trimmed = url.trim();
+              final parsed = Uri.tryParse(trimmed);
+              final path = parsed?.path ?? trimmed;
+              if (path.toLowerCase().endsWith('.pdf')) return true;
+            }
+          }
         }
       }
 
