@@ -177,8 +177,9 @@ class XAIResponses
 
     final serverToolCallsById = <String, Map<String, dynamic>>{};
     final sources = <String, Map<String, dynamic>>{};
-    final sourceIdByUrl = <String, String>{};
-    var nextSourceSeq = 0;
+    final sourceParts = SourcePartEmitter(
+      providerMetadataNamespace: config.providerId,
+    );
 
     String? responseId;
     String? responseModel;
@@ -414,25 +415,16 @@ class XAIResponses
                     if (title != null && title.isNotEmpty) 'title': title,
                   };
 
-                  final existingSourceId = sourceIdByUrl[url];
-                  if (existingSourceId == null) {
-                    final sourceId =
-                        sourceIdByUrl[url] = 'source_${nextSourceSeq++}';
-
-                    yield LLMSourceUrlPart(
-                      sourceId: sourceId,
-                      url: url,
-                      title: title != null && title.isNotEmpty ? title : null,
-                      providerMetadata: {
-                        config.providerId: {
-                          'type': 'url_citation',
-                          if (a['start_index'] is int)
-                            'startIndex': a['start_index'],
-                          if (a['end_index'] is int) 'endIndex': a['end_index'],
-                        },
-                      },
-                    );
-                  }
+                  final part = sourceParts.url(
+                    url,
+                    title: title != null && title.isNotEmpty ? title : null,
+                    providerMetadataPayload: {
+                      'type': 'url_citation',
+                      if (a['start_index'] is int) 'startIndex': a['start_index'],
+                      if (a['end_index'] is int) 'endIndex': a['end_index'],
+                    },
+                  );
+                  if (part != null) yield part;
 
                   final metadata = {
                     config.providerId: {
