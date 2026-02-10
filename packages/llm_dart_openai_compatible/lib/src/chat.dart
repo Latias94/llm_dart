@@ -1003,7 +1003,7 @@ class OpenAIChatResponse implements ChatResponseWithFinishReason {
       return null;
     }
 
-    return UsageInfo.fromJson(usageData);
+    return UsageInfo.fromProviderUsage(usageData);
   }
 
   @override

@@ -101,6 +101,7 @@ class XAIResponses
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
+    yield const LLMStreamStartPart();
     final body = _buildRequestBody(
       messages: messages,
       tools: tools,
@@ -115,6 +116,7 @@ class XAIResponses
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
+    yield const LLMStreamStartPart();
     final body = _buildRequestBodyFromPrompt(
       prompt: prompt,
       tools: tools,
@@ -421,7 +423,8 @@ class XAIResponses
                     title: title != null && title.isNotEmpty ? title : null,
                     providerMetadataPayload: {
                       'type': 'url_citation',
-                      if (a['start_index'] is int) 'startIndex': a['start_index'],
+                      if (a['start_index'] is int)
+                        'startIndex': a['start_index'],
                       if (a['end_index'] is int) 'endIndex': a['end_index'],
                     },
                   );
@@ -655,10 +658,9 @@ class XAIResponses
               }
             }
 
-            final finishReason =
-                response is ChatResponseWithFinishReason
-                    ? response.finishReason
-                    : null;
+            final finishReason = response is ChatResponseWithFinishReason
+                ? response.finishReason
+                : null;
             yield LLMFinishPart(
               response,
               usage: response.usage,
@@ -1147,12 +1149,7 @@ class XAIResponses
           ? (outputDetails['reasoning_tokens'] as int?)
           : null;
 
-      usage = UsageInfo(
-        promptTokens: inputTokens,
-        completionTokens: outputTokens,
-        totalTokens: totalTokens,
-        reasoningTokens: reasoningTokens,
-      );
+      usage = UsageInfo.fromProviderUsage(usageMap);
     }
 
     final id = responseData['id'] as String?;

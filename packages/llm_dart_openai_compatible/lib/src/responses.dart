@@ -144,6 +144,7 @@ class OpenAIResponses
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
+    yield const LLMStreamStartPart();
     final builtRequest = _buildRequest(messages, tools, true, false);
     yield* _chatStreamPartsFromBuiltRequest(
       builtRequest,
@@ -157,6 +158,7 @@ class OpenAIResponses
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
+    yield const LLMStreamStartPart();
     final builtRequest = _buildPromptRequest(prompt, tools, true, false);
     yield* _chatStreamPartsFromBuiltRequest(
       builtRequest,
@@ -2232,32 +2234,7 @@ class OpenAIResponsesResponse implements ChatResponseWithFinishReason {
       return null;
     }
 
-    // OpenAI Responses API reports token usage with `input_tokens`/`output_tokens`.
-    // Normalize it into the standard `UsageInfo` fields.
-    final promptTokens =
-        usageData['prompt_tokens'] ?? usageData['input_tokens'];
-    final completionTokens =
-        usageData['completion_tokens'] ?? usageData['output_tokens'];
-
-    int? reasoningTokens;
-    final rawReasoning = usageData['reasoning_tokens'];
-    if (rawReasoning is int) {
-      reasoningTokens = rawReasoning;
-    } else {
-      final outputDetails = usageData['output_tokens_details'];
-      if (outputDetails is Map) {
-        final value = outputDetails['reasoning_tokens'];
-        if (value is int) reasoningTokens = value;
-      }
-    }
-
-    return UsageInfo(
-      promptTokens: promptTokens is int ? promptTokens : null,
-      completionTokens: completionTokens is int ? completionTokens : null,
-      totalTokens:
-          usageData['total_tokens'] is int ? usageData['total_tokens'] : null,
-      reasoningTokens: reasoningTokens,
-    );
+    return UsageInfo.fromProviderUsage(usageData);
   }
 
   @override

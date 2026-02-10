@@ -233,20 +233,7 @@ class AnthropicChatResponse
       return null;
     }
 
-    final inputTokens = usageData['input_tokens'] as int? ?? 0;
-    final outputTokens = usageData['output_tokens'] as int? ?? 0;
-
-    // Note: Anthropic also provides cache_creation_input_tokens and cache_read_input_tokens.
-    // These could be exposed in a future version of UsageInfo.
-
-    return UsageInfo(
-      promptTokens: inputTokens,
-      completionTokens: outputTokens,
-      totalTokens: inputTokens + outputTokens,
-      // Anthropic doesn't provide separate thinking_tokens in usage.
-      // Thinking content is handled separately through content blocks.
-      reasoningTokens: null,
-    );
+    return UsageInfo.fromProviderUsage(usageData);
   }
 
   @override
