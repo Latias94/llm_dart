@@ -503,6 +503,28 @@ class OpenAIClient {
             'Unsupported file media type for OpenAI-compatible provider: $mimeType',
           );
 
+        case FileUrlPart(:final mime, :final url, :final text):
+          final parts = <Map<String, dynamic>>[];
+          if (text != null && text.trim().isNotEmpty) {
+            parts.add({'type': 'text', 'text': text});
+          }
+
+          final mimeType = mime.mimeType.toLowerCase();
+          final trimmed = url.trim();
+
+          if (mimeType.startsWith('image/')) {
+            parts.add({
+              'type': 'image_url',
+              'image_url': {'url': trimmed},
+            });
+            return parts;
+          }
+
+          throw InvalidRequestError(
+            'FileUrlPart ($mimeType) is not supported by the Chat Completions API. '
+            'Use the Responses API (useResponsesAPI=true) or send file data inline.',
+          );
+
         case ToolCallPart() || ToolResultPart():
           return const [];
       }

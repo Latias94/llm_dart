@@ -44,7 +44,8 @@ void main() {
       );
     });
 
-    test('splits ToolCallPart/ToolResultPart by overrideRole (order-preserving)',
+    test(
+        'splits ToolCallPart/ToolResultPart by overrideRole (order-preserving)',
         () {
       const config = AnthropicConfig(
         apiKey: 'k',
@@ -120,6 +121,53 @@ void main() {
               'is_error': false,
             },
             {'type': 'text', 'text': 'After'},
+          ],
+        }),
+      );
+    });
+
+    test('compiles FileUrlPart to document(url) blocks', () {
+      const config = AnthropicConfig(
+        apiKey: 'k',
+        model: 'test-model',
+        providerId: 'anthropic',
+      );
+      final builder = AnthropicRequestBuilder(config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              FileUrlPart(
+                mime: FileMime.pdf,
+                url: ' https://example.com/a.pdf ',
+                providerOptions: {
+                  'anthropic': {'title': 'Doc title'},
+                },
+              ),
+            ],
+          ),
+        ],
+      );
+
+      final built = builder.buildRequestFromPrompt(prompt, const [], false);
+      final messages = built.body['messages'] as List<dynamic>;
+      expect(messages, hasLength(1));
+
+      expect(
+        messages.single,
+        equals({
+          'role': 'user',
+          'content': [
+            {
+              'type': 'document',
+              'source': {
+                'type': 'url',
+                'url': 'https://example.com/a.pdf',
+              },
+              'title': 'Doc title',
+            },
           ],
         }),
       );

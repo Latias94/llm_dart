@@ -218,5 +218,24 @@ void main() {
         containsPair('google', {'fileUri': 'gs://bucket/file.pdf'}),
       );
     });
+
+    test('FileUrlPart cannot be converted to legacy ChatMessages', () {
+      expect(
+        () => const Prompt(
+          messages: [
+            PromptMessage(
+              role: ChatRole.user,
+              parts: [
+                FileUrlPart(
+                  mime: FileMime.pdf,
+                  url: 'https://example.com/a.pdf',
+                ),
+              ],
+            ),
+          ],
+        ).toChatMessages(),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
   });
 }

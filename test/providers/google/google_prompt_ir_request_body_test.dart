@@ -264,5 +264,104 @@ void main() {
         throwsA(isA<InvalidRequestError>()),
       );
     });
+
+    test('encodes FileUrlPart as fileData and preserves part text', () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-1.5-flash',
+      );
+
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final chat = GoogleChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              const TextPart('Here is the document:'),
+              const FileUrlPart(
+                mime: FileMime.pdf,
+                url: ' https://example.com/a.pdf ',
+                text: 'A short PDF.',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await chat.chatPrompt(prompt);
+
+      final contents = client.lastBody?['contents'] as List?;
+      expect(contents, isNotNull);
+      expect(contents, hasLength(1));
+
+      final parts = ((contents!.single as Map)['parts'] as List);
+      expect(parts, hasLength(3));
+      expect((parts[0] as Map)['text'], equals('Here is the document:'));
+      expect((parts[1] as Map)['text'], equals('A short PDF.'));
+
+      final fileData = (parts[2] as Map)['fileData'] as Map;
+      expect(fileData['mimeType'], equals('application/pdf'));
+      expect(fileData['fileUri'], equals('https://example.com/a.pdf'));
+    });
+
+    test('throws for FileUrlPart in assistant messages (AI SDK parity)',
+        () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-2.5-pro',
+      );
+
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final chat = GoogleChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.assistant,
+            parts: [
+              FileUrlPart(
+                mime: FileMime.pdf,
+                url: 'https://example.com/a.pdf',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await expectLater(
+        chat.chatPrompt(prompt),
+        throwsA(isA<InvalidRequestError>()),
+      );
+    });
   });
 }

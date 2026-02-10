@@ -119,6 +119,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
         case ImagePart():
         case ImageUrlPart():
         case FilePart():
+        case FileUrlPart():
         case ToolCallPart():
         case ToolResultPart():
           throw const InvalidRequestError(
@@ -309,6 +310,56 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
           currentContent.add({
             'type': 'document',
             'source': source,
+            if (docOptions.title != null) 'title': docOptions.title,
+            if (docOptions.context != null) 'context': docOptions.context,
+            if (docOptions.citationsEnabled) 'citations': {'enabled': true},
+            if (effectiveCacheControlForPart != null)
+              'cache_control': effectiveCacheControlForPart,
+          });
+          break;
+
+        case FileUrlPart(:final mime, :final url, :final text):
+          if (mime.mimeType != 'application/pdf' &&
+              mime.mimeType != 'text/plain') {
+            throw InvalidRequestError(
+              'FileUrlPart (${mime.mimeType}) is not supported by the Anthropic '
+              'Messages API. Only application/pdf and text/plain are supported.',
+            );
+          }
+
+          if (text != null && text.isNotEmpty) {
+            effectiveCacheControlForPart =
+                partCacheControl ?? (isLastPart ? messageCacheControl : null);
+            currentContent.add({
+              'type': 'text',
+              'text': text,
+              if (effectiveCacheControlForPart != null)
+                'cache_control': effectiveCacheControlForPart,
+            });
+          }
+
+          final trimmed = url.trim();
+          final isHttp =
+              trimmed.startsWith('http://') || trimmed.startsWith('https://');
+          if (!isHttp) {
+            throw InvalidRequestError(
+              'FileUrlPart must be an http(s) URL. Got: "$url"',
+            );
+          }
+
+          effectiveCacheControlForPart =
+              partCacheControl ?? (isLastPart ? messageCacheControl : null);
+
+          final docOptions = _documentOptionsFromProviderOptions(
+            part.providerOptions,
+          );
+
+          currentContent.add({
+            'type': 'document',
+            'source': {
+              'type': 'url',
+              'url': trimmed,
+            },
             if (docOptions.title != null) 'title': docOptions.title,
             if (docOptions.context != null) 'context': docOptions.context,
             if (docOptions.citationsEnabled) 'citations': {'enabled': true},

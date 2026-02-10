@@ -75,8 +75,11 @@ Core principle:
 - [x] Preserve protocol payloads through Prompt IR (`PromptMessage.protocolPayloads`)
   so tool loops do not lose provider-native continuity blocks (e.g. Anthropic thinking signatures).
 - [ ] Ensure `llm_dart_ai` prefers prompt-native capabilities when available
-- [ ] Add URL-based file parts to Prompt IR (AI SDK parity)
+- [x] Add URL-based file parts to Prompt IR (AI SDK parity)
   - e.g. `FileUrlPart(url, mimeType, ...)` for Anthropic/Google/OpenAI Responses
+  - Anthropic-compatible: `test/protocols/anthropic_compatible/prompt_ir_compilation_conformance_test.dart`
+  - Google: `test/providers/google/google_prompt_ir_request_body_test.dart`
+  - OpenAI Responses: `test/providers/openai/openai_responses_prompt_ir_request_body_test.dart`
   - optionally support provider file ids (e.g. OpenAI `file-*`) as a separate part type
 
 ---

@@ -144,6 +144,13 @@ class PromptMessage {
             ),
           );
 
+        case FileUrlPart():
+          throw ArgumentError(
+            'FileUrlPart cannot be converted to legacy ChatMessage. '
+            'Use a provider that implements PromptChatCapability / '
+            'PromptChatStreamPartsCapability.',
+          );
+
         case ToolCallPart(:final toolCall, :final overrideRole):
           final effectiveRole = overrideRole ?? role;
           if (effectiveRole != ChatRole.assistant) {
@@ -236,6 +243,29 @@ class FilePart extends PromptPart {
   const FilePart({
     required this.mime,
     required this.data,
+    this.text,
+    super.providerOptions,
+  });
+}
+
+/// A URL-based file prompt part.
+///
+/// This models provider-native "file URL" inputs (AI SDK style) and is intended
+/// to be consumed by prompt-native provider request builders.
+///
+/// Notes:
+/// - This part cannot be losslessly converted to legacy `ChatMessage` because
+///   the message model has no file-url message type.
+/// - Use providers that implement `PromptChatCapability` /
+///   `PromptChatStreamPartsCapability`.
+class FileUrlPart extends PromptPart {
+  final FileMime mime;
+  final String url;
+  final String? text;
+
+  const FileUrlPart({
+    required this.mime,
+    required this.url,
     this.text,
     super.providerOptions,
   });

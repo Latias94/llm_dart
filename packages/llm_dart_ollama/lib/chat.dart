@@ -576,7 +576,8 @@ class OllamaChat
         ];
 
       case ImageUrlMessage(url: final url):
-        client.logger.warning('Image URLs not directly supported by Ollama: $url');
+        client.logger
+            .warning('Image URLs not directly supported by Ollama: $url');
         return [
           buildNormal(role: message.role.name, content: message.content),
         ];
@@ -664,7 +665,9 @@ class OllamaChat
         role: currentRole,
         content: contentSegments.join('\n'),
         images: images.isEmpty ? null : List<String>.from(images),
-        toolCalls: toolCalls.isEmpty ? null : List<Map<String, dynamic>>.from(toolCalls),
+        toolCalls: toolCalls.isEmpty
+            ? null
+            : List<Map<String, dynamic>>.from(toolCalls),
       );
       contentSegments.clear();
       images.clear();
@@ -749,6 +752,13 @@ class OllamaChat
         case FilePart(:final mime):
           throw InvalidRequestError(
             'FilePart (${mime.mimeType}) is not supported by the Ollama Chat API.',
+          );
+
+        case FileUrlPart(:final mime, :final url):
+          throw InvalidRequestError(
+            'FileUrlPart (${mime.mimeType}) is not supported by the Ollama Chat API. '
+            'Download the file and send it as FilePart (inline/base64) instead. '
+            'Got: "$url"',
           );
       }
     }

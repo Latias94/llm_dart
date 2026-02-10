@@ -1313,6 +1313,23 @@ class GoogleChat
               });
             }
 
+          case FileUrlPart(:final mime, :final url, :final text):
+            if (googleRole == 'model') {
+              throw const InvalidRequestError(
+                'Google does not support fileData URLs in assistant messages.',
+              );
+            }
+            if (text != null && text.trim().isNotEmpty) {
+              currentParts.add({'text': text});
+            }
+            final trimmed = url.trim();
+            currentParts.add({
+              'fileData': {
+                'fileUri': trimmed,
+                'mimeType': mime.mimeType,
+              },
+            });
+
           case ToolCallPart(:final toolCall, :final overrideRole):
             final effectiveRole = overrideRole ?? message.role;
             if (effectiveRole != ChatRole.assistant) {
