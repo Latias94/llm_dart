@@ -121,38 +121,3 @@ Stream<LLMStreamPart> _streamChatPartsInternal({
       );
   }
 }
-
-/// Stream chat as provider-agnostic stream parts from a `Prompt` IR (legacy helper).
-@Deprecated('Use streamChatParts(model: ..., promptIr: ...) instead.')
-Stream<LLMStreamPart> streamChatPartsFromPromptIr({
-  required ChatCapability model,
-  required Prompt prompt,
-  List<Tool>? tools,
-  CancelToken? cancelToken,
-}) {
-  return streamChatParts(
-    model: model,
-    promptIr: prompt,
-    tools: tools,
-    cancelToken: cancelToken,
-  );
-}
-
-/// Stream chat parts from a plain prompt (legacy helper).
-@Deprecated(
-    'Use streamChatParts(model: ..., system: ..., prompt: ...) instead.')
-Stream<LLMStreamPart> streamChatPartsFromPrompt({
-  required ChatCapability model,
-  required String prompt,
-  String? systemPrompt,
-  List<Tool>? tools,
-  CancelToken? cancelToken,
-}) {
-  return streamChatParts(
-    model: model,
-    system: systemPrompt,
-    prompt: prompt,
-    tools: tools,
-    cancelToken: cancelToken,
-  );
-}

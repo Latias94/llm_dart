@@ -73,19 +73,20 @@ void main() {
       expect(result.finishReason!.raw, equals('stop'));
     });
 
-    test('streamText finish part exposes finishReason when available', () async {
-      final parts = await streamText(
+    test('streamChatParts finish part exposes finishReason when available',
+        () async {
+      final parts = await streamChatParts(
         model: _FakeModel(),
         messages: [ChatMessage.user('x')],
       ).toList();
 
-      final finish = parts.whereType<FinishPart>().single;
-      expect(finish.result.finishReason, isNotNull);
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.finishReason, isNotNull);
       expect(
-        finish.result.finishReason!.unified,
+        finish.finishReason!.unified,
         equals(LLMUnifiedFinishReason.stop),
       );
-      expect(finish.result.finishReason!.raw, equals('stop'));
+      expect(finish.finishReason!.raw, equals('stop'));
     });
   });
 }

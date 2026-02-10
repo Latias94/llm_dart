@@ -125,49 +125,6 @@ Future<GenerateObjectResult> generateObject({
   return GenerateObjectResult(object: parsed, rawResponse: response);
 }
 
-/// Generate a JSON object from a `Prompt` IR (legacy helper).
-@Deprecated('Use generateObject(model: ..., promptIr: ...) instead.')
-Future<GenerateObjectResult> generateObjectFromPromptIr({
-  required ChatCapability model,
-  required Prompt prompt,
-  required ParametersSchema schema,
-  String toolName = 'return_object',
-  String toolDescription =
-      'Return the result as a JSON object that matches the schema.',
-  CancelToken? cancelToken,
-}) =>
-    generateObject(
-      model: model,
-      promptIr: prompt,
-      schema: schema,
-      toolName: toolName,
-      toolDescription: toolDescription,
-      cancelToken: cancelToken,
-    );
-
-/// Generate a JSON object from a plain prompt (legacy helper).
-@Deprecated('Use generateObject(model: ..., system: ..., prompt: ...) instead.')
-Future<GenerateObjectResult> generateObjectFromPrompt({
-  required ChatCapability model,
-  required String prompt,
-  required ParametersSchema schema,
-  String? systemPrompt,
-  String toolName = 'return_object',
-  String toolDescription =
-      'Return the result as a JSON object that matches the schema.',
-  CancelToken? cancelToken,
-}) {
-  return generateObject(
-    model: model,
-    system: systemPrompt,
-    prompt: prompt,
-    schema: schema,
-    toolName: toolName,
-    toolDescription: toolDescription,
-    cancelToken: cancelToken,
-  );
-}
-
 Map<String, dynamic>? _extractFirstJsonObject(String text) {
   final start = text.indexOf('{');
   if (start == -1) return null;

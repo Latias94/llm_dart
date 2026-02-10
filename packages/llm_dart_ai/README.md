@@ -4,14 +4,14 @@ Provider-agnostic task APIs for `llm_dart`, inspired by Vercel AI SDK.
 
 This package is the recommended “standard surface” for most applications:
 
-- `generateText`, `streamText`
-- `streamChatParts` (Vercel-style stream parts)
+- `generateText`
+- `streamChatParts` (Vercel-style stream parts; recommended streaming API)
 - `generateObject`
 - `embed`
 - `generateImage`
 - `generateSpeech`, `streamSpeech`
 - `transcribe`, `translateAudio`
-- Tool loop orchestration (`runToolLoop`, `streamToolLoop`, `runToolLoopUntilBlocked`)
+- Tool loop orchestration (`runToolLoop`, `streamToolLoopParts`, `runToolLoopUntilBlocked`)
 
 ## Install
 

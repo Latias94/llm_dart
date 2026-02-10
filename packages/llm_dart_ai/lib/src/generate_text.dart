@@ -56,41 +56,7 @@ Future<GenerateTextResult> generateText({
     thinking: response.thinking,
     toolCalls: response.toolCalls,
     usage: response.usage,
-    finishReason: response is ChatResponseWithFinishReason
-        ? response.finishReason
-        : null,
-  );
-}
-
-/// Generate text from a `Prompt` IR (legacy helper).
-@Deprecated('Use generateText(model: ..., promptIr: ...) instead.')
-Future<GenerateTextResult> generateTextFromPromptIr({
-  required ChatCapability model,
-  required Prompt prompt,
-  List<Tool>? tools,
-  CancelToken? cancelToken,
-}) =>
-    generateText(
-      model: model,
-      promptIr: prompt,
-      tools: tools,
-      cancelToken: cancelToken,
-    );
-
-/// Generate text from a plain prompt (legacy helper).
-@Deprecated('Use generateText(model: ..., system: ..., prompt: ...) instead.')
-Future<GenerateTextResult> generateTextFromPrompt({
-  required ChatCapability model,
-  required String prompt,
-  String? systemPrompt,
-  List<Tool>? tools,
-  CancelToken? cancelToken,
-}) {
-  return generateText(
-    model: model,
-    system: systemPrompt,
-    prompt: prompt,
-    tools: tools,
-    cancelToken: cancelToken,
+    finishReason:
+        response is ChatResponseWithFinishReason ? response.finishReason : null,
   );
 }

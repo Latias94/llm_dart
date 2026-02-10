@@ -50,7 +50,6 @@ class _FakeChatModel extends ChatCapability {
   }) async {
     return response;
   }
-
 }
 
 class _FakeStreamChatModel extends _FakeChatModel
@@ -282,7 +281,7 @@ void main() {
       );
     });
 
-    test('streamText maps stream parts to TextStreamPart', () async {
+    test('streamChatParts preserves stream parts', () async {
       final response = _FakeChatResponse(text: 'done');
       final model = _FakeStreamChatModel(
         response: response,
@@ -300,19 +299,23 @@ void main() {
         ],
       );
 
-      final parts = await streamText(
+      final parts = await streamChatParts(
         model: model,
         messages: [ChatMessage.user('hi')],
       ).toList();
 
-      expect(parts[0], isA<TextDeltaPart>());
-      expect((parts[0] as TextDeltaPart).delta, 'a');
-      expect(parts[1], isA<ThinkingDeltaPart>());
-      expect((parts[1] as ThinkingDeltaPart).delta, 'b');
-      expect(parts[2], isA<ToolCallDeltaPart>());
-      expect((parts[2] as ToolCallDeltaPart).toolCall.function.name, 't');
-      expect(parts[3], isA<FinishPart>());
-      expect((parts[3] as FinishPart).result.text, 'done');
+      expect(parts[0], isA<LLMStreamStartPart>());
+      expect(parts[1], isA<LLMTextDeltaPart>());
+      expect((parts[1] as LLMTextDeltaPart).delta, 'a');
+      expect(parts[2], isA<LLMReasoningDeltaPart>());
+      expect((parts[2] as LLMReasoningDeltaPart).delta, 'b');
+      expect(parts[3], isA<LLMToolCallStartPart>());
+      expect(
+        (parts[3] as LLMToolCallStartPart).toolCall.function.name,
+        't',
+      );
+      expect(parts[4], isA<LLMFinishPart>());
+      expect((parts[4] as LLMFinishPart).response.text, 'done');
     });
 
     test('embed forwards to EmbeddingCapability', () async {
@@ -690,7 +693,7 @@ void main() {
       );
     });
 
-    test('streamToolLoop runs tools and continues streaming', () async {
+    test('streamToolLoopParts runs tools and continues streaming', () async {
       final toolCall1 = ToolCall(
         id: 'call_1',
         callType: 'function',
@@ -714,7 +717,7 @@ void main() {
         ],
       ]);
 
-      final parts = await streamToolLoop(
+      final parts = await streamToolLoopParts(
         model: model,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
@@ -728,14 +731,16 @@ void main() {
         maxSteps: 5,
       ).toList();
 
-      expect(parts.whereType<ToolCallDeltaPart>(), hasLength(2));
+      expect(parts.whereType<LLMToolCallStartPart>(), hasLength(1));
+      expect(parts.whereType<LLMToolCallDeltaPart>(), hasLength(1));
+      expect(parts.whereType<LLMToolResultPart>(), hasLength(1));
       expect(
-        parts.whereType<TextDeltaPart>().map((p) => p.delta).toList().join(),
+        parts.whereType<LLMTextDeltaPart>().map((p) => p.delta).toList().join(),
         'done',
       );
 
-      final finish = parts.last as FinishPart;
-      expect(finish.result.text, 'done');
+      final finish = parts.whereType<LLMFinishPart>().last;
+      expect(finish.response.text, 'done');
 
       // Second step should include tool use + tool result messages.
       expect(model.calls, hasLength(2));
@@ -752,7 +757,7 @@ void main() {
     });
 
     test(
-        'streamToolLoop yields ToolApprovalRequiredError when approval is required',
+        'streamToolLoopParts yields ToolApprovalRequiredError when approval is required',
         () async {
       final toolCall = ToolCall(
         id: 'call_1',
@@ -767,7 +772,7 @@ void main() {
         ],
       ]);
 
-      final parts = await streamToolLoop(
+      final parts = await streamToolLoopParts(
         model: model,
         messages: [ChatMessage.user('hi')],
         toolHandlers: const {},
@@ -777,15 +782,16 @@ void main() {
         maxSteps: 5,
       ).toList();
 
-      expect(parts.whereType<ToolCallDeltaPart>(), hasLength(1));
-      expect(parts.last, isA<ErrorPart>());
-      final err = (parts.last as ErrorPart).error;
+      expect(parts.whereType<LLMToolCallStartPart>(), hasLength(1));
+      expect(parts.last, isA<LLMErrorPart>());
+      final err = (parts.last as LLMErrorPart).error;
       expect(err, isA<ToolApprovalRequiredError>());
       final approval = err as ToolApprovalRequiredError;
       expect(approval.state.toolCallsNeedingApproval.single.id, 'call_1');
     });
 
-    test('streamToolLoop yields ErrorPart when exceeding maxSteps', () async {
+    test('streamToolLoopParts yields ErrorPart when exceeding maxSteps',
+        () async {
       final toolCall = ToolCall(
         id: 'call_1',
         callType: 'function',
@@ -799,7 +805,7 @@ void main() {
         ],
       ]);
 
-      final parts = await streamToolLoop(
+      final parts = await streamToolLoopParts(
         model: model,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
@@ -809,8 +815,8 @@ void main() {
       ).toList();
 
       final last = parts.last;
-      expect(last, isA<ErrorPart>());
-      expect((last as ErrorPart).error, isA<InvalidRequestError>());
+      expect(last, isA<LLMErrorPart>());
+      expect((last as LLMErrorPart).error, isA<InvalidRequestError>());
     });
 
     test('ToolSet works with runToolLoopWithToolSet', () async {

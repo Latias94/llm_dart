@@ -610,32 +610,6 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   );
 }
 
-/// Run a non-streaming tool loop starting from a `Prompt` IR (Vercel-style).
-@Deprecated('Use runToolLoop(model: ..., promptIr: ...) instead.')
-Future<ToolLoopResult> runToolLoopFromPromptIr({
-  required ChatCapability model,
-  required Prompt prompt,
-  List<Tool>? tools,
-  required Map<String, ToolCallHandler> toolHandlers,
-  Map<String, ToolApprovalCheck>? toolApprovalChecks,
-  ToolApprovalCheck? needsApproval,
-  int maxSteps = 10,
-  bool continueOnToolError = true,
-  CancelToken? cancelToken,
-}) {
-  return runToolLoop(
-    model: model,
-    promptIr: prompt,
-    tools: tools,
-    toolHandlers: toolHandlers,
-    toolApprovalChecks: toolApprovalChecks,
-    needsApproval: needsApproval,
-    maxSteps: maxSteps,
-    continueOnToolError: continueOnToolError,
-    cancelToken: cancelToken,
-  );
-}
-
 /// Run a non-streaming tool loop, but stop and return state when approval is required.
 Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
   required ChatCapability model,
@@ -959,126 +933,6 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   );
 }
 
-/// Run a tool loop until blocked starting from a `Prompt` IR (Vercel-style).
-@Deprecated('Use runToolLoopUntilBlocked(model: ..., promptIr: ...) instead.')
-Future<ToolLoopRunOutcome> runToolLoopUntilBlockedFromPromptIr({
-  required ChatCapability model,
-  required Prompt prompt,
-  List<Tool>? tools,
-  required Map<String, ToolCallHandler> toolHandlers,
-  Map<String, ToolApprovalCheck>? toolApprovalChecks,
-  ToolApprovalCheck? needsApproval,
-  int maxSteps = 10,
-  bool continueOnToolError = true,
-  CancelToken? cancelToken,
-}) {
-  return runToolLoopUntilBlocked(
-    model: model,
-    promptIr: prompt,
-    tools: tools,
-    toolHandlers: toolHandlers,
-    toolApprovalChecks: toolApprovalChecks,
-    needsApproval: needsApproval,
-    maxSteps: maxSteps,
-    continueOnToolError: continueOnToolError,
-    cancelToken: cancelToken,
-  );
-}
-
-/// Stream a tool loop as provider-agnostic stream parts.
-///
-/// This behaves like [streamText], but automatically runs a non-streaming tool
-/// loop under the hood:
-/// - For each step, stream model output parts.
-/// - If the step results in tool calls, execute them locally and continue with a
-///   next step by appending tool messages.
-/// - Once a step completes without tool calls, emit a final [FinishPart].
-Stream<TextStreamPart> streamToolLoop({
-  required ChatCapability model,
-  String? system,
-  String? prompt,
-  List<ChatMessage>? messages,
-  Prompt? promptIr,
-  List<Tool>? tools,
-  required Map<String, ToolCallHandler> toolHandlers,
-  Map<String, ToolApprovalCheck>? toolApprovalChecks,
-  ToolApprovalCheck? needsApproval,
-  int maxSteps = 10,
-  bool continueOnToolError = true,
-  CancelToken? cancelToken,
-}) {
-  final input = standardizePromptInput(
-    system: system,
-    prompt: prompt,
-    messages: messages,
-    promptIr: promptIr,
-  );
-
-  if (input is StandardizedPromptIr) {
-    return _mapPartsToLegacyTextStreamParts(
-      streamToolLoopParts(
-        model: model,
-        promptIr: input.prompt,
-        tools: tools,
-        toolHandlers: toolHandlers,
-        toolApprovalChecks: toolApprovalChecks,
-        needsApproval: needsApproval,
-        maxSteps: maxSteps,
-        continueOnToolError: continueOnToolError,
-        cancelToken: cancelToken,
-      ),
-    );
-  }
-
-  final standardizedMessages = (input as StandardizedChatMessages).messages;
-
-  return _mapPartsToLegacyTextStreamParts(
-    streamToolLoopParts(
-      model: model,
-      messages: standardizedMessages,
-      tools: tools,
-      toolHandlers: toolHandlers,
-      toolApprovalChecks: toolApprovalChecks,
-      needsApproval: needsApproval,
-      maxSteps: maxSteps,
-      continueOnToolError: continueOnToolError,
-      cancelToken: cancelToken,
-    ),
-  );
-}
-
-/// Stream a tool loop (legacy `TextStreamPart`) starting from a `Prompt` IR.
-///
-/// This is a compatibility wrapper over [streamToolLoopPartsFromPromptIr].
-/// Prefer [streamToolLoopPartsFromPromptIr] for Vercel-style structured parts.
-@Deprecated(
-  'Use streamToolLoop(model: ..., promptIr: ...) or '
-  'streamToolLoopParts(model: ..., promptIr: ...) instead.',
-)
-Stream<TextStreamPart> streamToolLoopFromPromptIr({
-  required ChatCapability model,
-  required Prompt prompt,
-  List<Tool>? tools,
-  required Map<String, ToolCallHandler> toolHandlers,
-  Map<String, ToolApprovalCheck>? toolApprovalChecks,
-  ToolApprovalCheck? needsApproval,
-  int maxSteps = 10,
-  bool continueOnToolError = true,
-  CancelToken? cancelToken,
-}) {
-  return streamToolLoop(
-    model: model,
-    promptIr: prompt,
-    tools: tools,
-    toolHandlers: toolHandlers,
-    toolApprovalChecks: toolApprovalChecks,
-    needsApproval: needsApproval,
-    maxSteps: maxSteps,
-    continueOnToolError: continueOnToolError,
-    cancelToken: cancelToken,
-  );
-}
-
 /// ToolSet variant of [runToolLoop].
 Future<ToolLoopResult> runToolLoopWithToolSet({
   required ChatCapability model,
@@ -1108,57 +962,6 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
   );
 }
 
-/// ToolSet variant of [streamToolLoop].
-Stream<TextStreamPart> streamToolLoopWithToolSet({
-  required ChatCapability model,
-  String? system,
-  String? prompt,
-  List<ChatMessage>? messages,
-  Prompt? promptIr,
-  required ToolSet toolSet,
-  ToolApprovalCheck? needsApproval,
-  int maxSteps = 10,
-  bool continueOnToolError = true,
-  CancelToken? cancelToken,
-}) {
-  return streamToolLoop(
-    model: model,
-    system: system,
-    prompt: prompt,
-    messages: messages,
-    promptIr: promptIr,
-    tools: toolSet.tools,
-    toolHandlers: toolSet.handlers,
-    toolApprovalChecks: toolSet.approvalChecks,
-    needsApproval: needsApproval,
-    maxSteps: maxSteps,
-    continueOnToolError: continueOnToolError,
-    cancelToken: cancelToken,
-  );
-}
-
-/// ToolSet variant of [streamToolLoopFromPromptIr].
-@Deprecated('Use streamToolLoopWithToolSet(model: ..., promptIr: ...) instead.')
-Stream<TextStreamPart> streamToolLoopWithToolSetFromPromptIr({
-  required ChatCapability model,
-  required Prompt prompt,
-  required ToolSet toolSet,
-  ToolApprovalCheck? needsApproval,
-  int maxSteps = 10,
-  bool continueOnToolError = true,
-  CancelToken? cancelToken,
-}) {
-  return streamToolLoopWithToolSet(
-    model: model,
-    promptIr: prompt,
-    toolSet: toolSet,
-    needsApproval: needsApproval,
-    maxSteps: maxSteps,
-    continueOnToolError: continueOnToolError,
-    cancelToken: cancelToken,
-  );
-}
-
 /// ToolSet variant of [runToolLoopUntilBlocked].
 Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
   required ChatCapability model,
@@ -1173,35 +976,6 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
   CancelToken? cancelToken,
 }) {
   return runToolLoopUntilBlocked(
-    model: model,
-    system: system,
-    prompt: prompt,
-    messages: messages,
-    promptIr: promptIr,
-    tools: toolSet.tools,
-    toolHandlers: toolSet.handlers,
-    toolApprovalChecks: toolSet.approvalChecks,
-    needsApproval: needsApproval,
-    maxSteps: maxSteps,
-    continueOnToolError: continueOnToolError,
-    cancelToken: cancelToken,
-  );
-}
-
-/// ToolSet variant of [streamToolLoop] that can stop when approval is required.
-Stream<TextStreamPart> streamToolLoopUntilBlockedWithToolSet({
-  required ChatCapability model,
-  String? system,
-  String? prompt,
-  List<ChatMessage>? messages,
-  Prompt? promptIr,
-  required ToolSet toolSet,
-  ToolApprovalCheck? needsApproval,
-  int maxSteps = 10,
-  bool continueOnToolError = true,
-  CancelToken? cancelToken,
-}) {
-  return streamToolLoop(
     model: model,
     system: system,
     prompt: prompt,
@@ -1255,7 +1029,7 @@ class _MergedChatResponseForStreaming implements ChatResponseWithFinishReason {
 
 /// Stream a tool loop as Vercel-style stream parts.
 ///
-/// Differences vs [streamToolLoop]:
+/// Differences vs [runToolLoop]:
 /// - Uses `LLMStreamPart` with block boundaries.
 /// - Emits `LLMToolResultPart` for locally executed tools.
 /// - Emits a single `LLMFinishPart` only when the loop completes.
@@ -1769,32 +1543,6 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   );
 }
 
-/// Stream a tool loop as Vercel-style stream parts from a `Prompt` IR.
-@Deprecated('Use streamToolLoopParts(model: ..., promptIr: ...) instead.')
-Stream<LLMStreamPart> streamToolLoopPartsFromPromptIr({
-  required ChatCapability model,
-  required Prompt prompt,
-  List<Tool>? tools,
-  required Map<String, ToolCallHandler> toolHandlers,
-  Map<String, ToolApprovalCheck>? toolApprovalChecks,
-  ToolApprovalCheck? needsApproval,
-  int maxSteps = 10,
-  bool continueOnToolError = true,
-  CancelToken? cancelToken,
-}) {
-  return streamToolLoopParts(
-    model: model,
-    promptIr: prompt,
-    tools: tools,
-    toolHandlers: toolHandlers,
-    toolApprovalChecks: toolApprovalChecks,
-    needsApproval: needsApproval,
-    maxSteps: maxSteps,
-    continueOnToolError: continueOnToolError,
-    cancelToken: cancelToken,
-  );
-}
-
 /// ToolSet variant of [streamToolLoopParts].
 Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
   required ChatCapability model,
@@ -1817,29 +1565,6 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     tools: toolSet.tools,
     toolHandlers: toolSet.handlers,
     toolApprovalChecks: toolSet.approvalChecks,
-    needsApproval: needsApproval,
-    maxSteps: maxSteps,
-    continueOnToolError: continueOnToolError,
-    cancelToken: cancelToken,
-  );
-}
-
-/// ToolSet variant of [streamToolLoopPartsFromPromptIr].
-@Deprecated(
-    'Use streamToolLoopPartsWithToolSet(model: ..., promptIr: ...) instead.')
-Stream<LLMStreamPart> streamToolLoopPartsWithToolSetFromPromptIr({
-  required ChatCapability model,
-  required Prompt prompt,
-  required ToolSet toolSet,
-  ToolApprovalCheck? needsApproval,
-  int maxSteps = 10,
-  bool continueOnToolError = true,
-  CancelToken? cancelToken,
-}) {
-  return streamToolLoopPartsWithToolSet(
-    model: model,
-    promptIr: prompt,
-    toolSet: toolSet,
     needsApproval: needsApproval,
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
@@ -2014,145 +1739,4 @@ class _FakeChatResponseForStreaming implements ChatResponse {
     this.thinking,
     this.usage,
   }) : toolCalls = null;
-}
-
-Stream<TextStreamPart> _mapPartsToLegacyTextStreamParts(
-  Stream<LLMStreamPart> parts,
-) async* {
-  await for (final part in parts) {
-    switch (part) {
-      case LLMTextDeltaPart(:final delta):
-        yield TextDeltaPart(delta);
-
-      case LLMReasoningDeltaPart(:final delta):
-        yield ThinkingDeltaPart(delta);
-
-      case LLMToolCallStartPart(:final toolCall):
-        yield ToolCallDeltaPart(toolCall);
-
-      case LLMToolCallDeltaPart(:final toolCall):
-        yield ToolCallDeltaPart(toolCall);
-
-      case LLMProviderToolCallPart(
-          toolCallId: final toolCallId,
-          toolName: final toolName,
-          input: final input,
-          isDynamic: final isDynamic,
-          providerMetadata: final providerMetadata,
-        ):
-        yield ProviderToolCallPart(
-          toolCallId: toolCallId,
-          toolName: toolName,
-          input: input,
-          isDynamic: isDynamic,
-          providerMetadata: providerMetadata,
-        );
-
-      case LLMProviderToolDeltaPart(
-          toolCallId: final toolCallId,
-          toolName: final toolName,
-          status: final status,
-          data: final data,
-          providerMetadata: final providerMetadata,
-        ):
-        yield ProviderToolDeltaPart(
-          toolCallId: toolCallId,
-          toolName: toolName,
-          status: status,
-          data: data,
-          providerMetadata: providerMetadata,
-        );
-
-      case LLMProviderToolApprovalRequestPart(
-          approvalId: final approvalId,
-          toolCallId: final toolCallId,
-          toolName: final toolName,
-          input: final input,
-          providerMetadata: final providerMetadata,
-        ):
-        yield ProviderToolApprovalRequestPart(
-          approvalId: approvalId,
-          toolCallId: toolCallId,
-          toolName: toolName,
-          input: input,
-          providerMetadata: providerMetadata,
-        );
-
-      case LLMProviderToolResultPart(
-          toolCallId: final toolCallId,
-          toolName: final toolName,
-          result: final result,
-          isError: final isError,
-          preliminary: final preliminary,
-          isDynamic: final isDynamic,
-          providerMetadata: final providerMetadata,
-        ):
-        yield ProviderToolResultPart(
-          toolCallId: toolCallId,
-          toolName: toolName,
-          result: result,
-          isError: isError,
-          preliminary: preliminary,
-          isDynamic: isDynamic,
-          providerMetadata: providerMetadata,
-        );
-
-      case LLMSourceUrlPart(
-          sourceId: final sourceId,
-          url: final url,
-          title: final title,
-          providerMetadata: final providerMetadata,
-        ):
-        yield SourceUrlPart(
-          sourceId: sourceId,
-          url: url,
-          title: title,
-          providerMetadata: providerMetadata,
-        );
-
-      case LLMSourceDocumentPart(
-          sourceId: final sourceId,
-          mediaType: final mediaType,
-          title: final title,
-          filename: final filename,
-          providerMetadata: final providerMetadata,
-        ):
-        yield SourceDocumentPart(
-          sourceId: sourceId,
-          mediaType: mediaType,
-          title: title,
-          filename: filename,
-          providerMetadata: providerMetadata,
-        );
-
-      case LLMFinishPart(:final response):
-        yield FinishPart(
-          GenerateTextResult(
-            rawResponse: response,
-            text: response.text,
-            thinking: response.thinking,
-            toolCalls: response.toolCalls,
-            usage: response.usage,
-            finishReason: response is ChatResponseWithFinishReason
-                ? response.finishReason
-                : null,
-          ),
-        );
-
-      case LLMErrorPart(:final error):
-        yield ErrorPart(error);
-
-      case LLMStreamStartPart():
-      case LLMTextStartPart():
-      case LLMTextEndPart():
-      case LLMReasoningStartPart():
-      case LLMReasoningEndPart():
-      case LLMToolCallEndPart():
-      case LLMProviderMetadataPart():
-      case LLMResponseMetadataPart():
-      case LLMToolResultPart():
-        // Not represented in legacy TextStreamPart.
-        break;
-    }
-  }
 }

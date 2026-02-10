@@ -235,7 +235,7 @@ Future<List<_CheckResult>> _runProviderChecks(
   final checks = <_LiveCheck>[
     ...(() {
       if (spec.liveChecks.isNotEmpty) return spec.liveChecks;
-      return const [_LiveCheck.generateText, _LiveCheck.streamText];
+      return const [_LiveCheck.generateText, _LiveCheck.streamChatParts];
     })(),
     if (includeStreaming && dumpChatParts) _LiveCheck.streamChatParts,
   ];
@@ -314,122 +314,6 @@ Future<List<_CheckResult>> _runProviderChecks(
             ok: metadataOk,
             detail: metadataOk ? null : 'providerMetadata is not a map',
           );
-        });
-
-      case _LiveCheck.streamText:
-        if (!includeStreaming) {
-          results.add(const _CheckResult(
-            name: 'streamText',
-            ok: true,
-            detail: 'skipped (enable with --stream)',
-          ));
-          continue;
-        }
-
-        await run('streamText', () async {
-          if (model is! ChatCapability) {
-            return const _CheckResult(
-              name: 'streamText',
-              ok: false,
-              detail: 'not a ChatCapability',
-            );
-          }
-
-          Future<_CheckResult> attempt(ChatCapability m) async {
-            var sawFinish = false;
-            var sawAnyDelta = false;
-            var dumped = 0;
-
-            void dump(String line) {
-              if (dumpCount <= 0) return;
-              if (dumped >= dumpCount) return;
-              dumped++;
-              stdout.writeln('  [${spec.providerId}] #$dumped $line');
-            }
-
-            await for (final part in streamText(
-              model: m,
-              messages: [ChatMessage.user(spec.chatPrompt)],
-            )) {
-              switch (part) {
-                case TextDeltaPart(:final delta):
-                  if (delta.isNotEmpty) sawAnyDelta = true;
-                  dump('TextDelta len=${delta.length}');
-                case ThinkingDeltaPart(:final delta):
-                  if (delta.isNotEmpty) sawAnyDelta = true;
-                  dump('ThinkingDelta len=${delta.length}');
-                case ToolCallDeltaPart():
-                  sawAnyDelta = true;
-                  dump('ToolCallDelta');
-                case ProviderToolCallPart(
-                    :final toolCallId,
-                    :final toolName,
-                  ):
-                  sawAnyDelta = true;
-                  dump('ProviderToolCall $toolName ($toolCallId)');
-                case ProviderToolDeltaPart(
-                    :final toolCallId,
-                    :final toolName,
-                    :final status,
-                  ):
-                  sawAnyDelta = true;
-                  dump('ProviderToolDelta $toolName ($toolCallId) $status');
-                case ProviderToolApprovalRequestPart(
-                    :final toolCallId,
-                    :final toolName,
-                    :final approvalId,
-                  ):
-                  sawAnyDelta = true;
-                  dump(
-                      'ProviderToolApproval $toolName ($toolCallId) approvalId=$approvalId');
-                case ProviderToolResultPart(
-                    :final toolCallId,
-                    :final toolName,
-                  ):
-                  sawAnyDelta = true;
-                  dump('ProviderToolResult $toolName ($toolCallId)');
-                case SourceUrlPart(:final url):
-                  sawAnyDelta = true;
-                  dump('SourceUrl $url');
-                case SourceDocumentPart(:final title, :final mediaType):
-                  sawAnyDelta = true;
-                  dump('SourceDocument $title ($mediaType)');
-                case FinishPart(:final result):
-                  sawFinish = true;
-                  final t = result.text ?? '';
-                  final r = result.thinking ?? '';
-                  dump(
-                      'Finish textLen=${t.length} thinkingLen=${r.length} toolCalls=${result.toolCalls?.length ?? 0}');
-                case ErrorPart(:final error):
-                  dump('Error ${error.runtimeType}');
-                  return _CheckResult(
-                    name: 'streamText',
-                    ok: false,
-                    detail: redactor.redact(error.toString()),
-                  );
-              }
-              if (sawFinish) break;
-            }
-
-            if (!sawFinish) {
-              return const _CheckResult(
-                name: 'streamText',
-                ok: false,
-                detail: 'did not finish',
-              );
-            }
-
-            return _CheckResult(
-              name: 'streamText',
-              ok: true,
-              detail: sawAnyDelta ? null : 'no text/thinking delta observed',
-            );
-          }
-
-          final first = await attempt(model);
-          if (first.ok) return first;
-
-          return first;
         });
 
       case _LiveCheck.streamChatParts:
@@ -758,7 +642,6 @@ Future<Object> _buildProvider(_ProviderSpec spec,
 
 enum _LiveCheck {
   generateText,
-  streamText,
   streamChatParts,
   textToSpeech,
   elevenLabsSpeechToSpeech,
