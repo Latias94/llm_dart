@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:llm_dart/llm_dart.dart';
@@ -43,9 +44,8 @@ void main() {
               Stream<String>.fromIterable(_splitRandom(sse, seed: seed));
 
         final chat = AnthropicChat(client, config);
-        final parts = await chat
-            .chatStreamParts([ChatMessage.user('Hi')], tools: const [])
-            .toList();
+        final parts = await chat.chatStreamParts([ChatMessage.user('Hi')],
+            tools: const []).toList();
 
         final text =
             parts.whereType<LLMTextDeltaPart>().map((p) => p.delta).join();
@@ -59,10 +59,62 @@ void main() {
         expect(finish.response.toolCalls, hasLength(1));
         expect(finish.response.toolCalls!.single.function.name,
             equals('updateIssueList'));
-        expect(finish.response.toolCalls!.single.function.arguments,
-            equals('{}'));
+        expect(
+            finish.response.toolCalls!.single.function.arguments, equals('{}'));
+      }
+    });
+
+    test('handles arbitrary chunk splits without losing tool input deltas',
+        () async {
+      const fixturePath = 'test/fixtures/anthropic/messages/'
+          'anthropic-json-tool.1.chunks.txt';
+      final lines = readFixtureLines(fixturePath);
+
+      final sse = lines.map(_asSse).join();
+
+      final config = AnthropicConfig(
+        providerId: 'anthropic',
+        apiKey: 'test-key',
+        model: 'claude-sonnet-4-5-20250929',
+        baseUrl: 'https://api.anthropic.com/v1/',
+      );
+
+      for (final seed in [1, 7, 42]) {
+        final client = FakeAnthropicClient(config)
+          ..streamResponse =
+              Stream<String>.fromIterable(_splitRandom(sse, seed: seed));
+
+        final chat = AnthropicChat(client, config);
+        final parts = await chat.chatStreamParts([ChatMessage.user('Hi')],
+            tools: const []).toList();
+
+        final toolStarts = parts.whereType<LLMToolCallStartPart>().toList();
+        final toolDeltas = parts.whereType<LLMToolCallDeltaPart>().toList();
+        final toolEnds = parts.whereType<LLMToolCallEndPart>().toList();
+
+        expect(toolStarts, hasLength(1));
+        expect(toolDeltas.length, greaterThanOrEqualTo(1));
+        expect(toolEnds, hasLength(1));
+
+        final id = toolStarts.single.toolCall.id;
+        expect(id, isNotEmpty);
+        expect(toolEnds.single.toolCallId, equals(id));
+        expect(toolDeltas.every((d) => d.toolCall.id == id), isTrue);
+
+        final emittedArgs = <String>[
+          toolStarts.single.toolCall.function.arguments,
+          ...toolDeltas.map((d) => d.toolCall.function.arguments),
+        ].where((s) => s.isNotEmpty).join();
+
+        final finish = parts.whereType<LLMFinishPart>().single;
+        expect(finish.response.toolCalls, isNotNull);
+        expect(finish.response.toolCalls, hasLength(1));
+
+        final expectedArgs =
+            finish.response.toolCalls!.single.function.arguments;
+
+        expect(jsonDecode(emittedArgs), equals(jsonDecode(expectedArgs)));
       }
     });
   });
 }
-

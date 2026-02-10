@@ -145,7 +145,8 @@ void main() {
           );
         final chat = OpenAIChat(client, config);
 
-        final parts = await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
+        final parts =
+            await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
 
         final text =
             parts.whereType<LLMTextDeltaPart>().map((p) => p.delta).join();
@@ -154,6 +155,24 @@ void main() {
 
         expect(text, equals('Hello world'));
         expect(thinking, equals('analyzing'));
+
+        final toolStarts = parts.whereType<LLMToolCallStartPart>().toList();
+        final toolDeltas = parts.whereType<LLMToolCallDeltaPart>().toList();
+        final toolEnds = parts.whereType<LLMToolCallEndPart>().toList();
+        expect(toolStarts, hasLength(1));
+        expect(toolDeltas, hasLength(1));
+        expect(toolEnds, hasLength(1));
+        expect(toolStarts.single.toolCall.id, equals('call_1'));
+        expect(toolStarts.single.toolCall.function.name, equals('getWeather'));
+        expect(toolDeltas.single.toolCall.id, equals('call_1'));
+        expect(toolDeltas.single.toolCall.function.arguments, equals('don"}'));
+        expect(toolEnds.single.toolCallId, equals('call_1'));
+
+        final idxStart = parts.indexOf(toolStarts.single);
+        final idxDelta = parts.indexOf(toolDeltas.single);
+        final idxEnd = parts.indexOf(toolEnds.single);
+        expect(idxStart, lessThan(idxDelta));
+        expect(idxDelta, lessThan(idxEnd));
 
         final finish = parts.whereType<LLMFinishPart>().single;
         expect(finish.response.text, equals('Hello world'));
@@ -165,6 +184,88 @@ void main() {
         expect(calls.single.function.arguments, equals('{"city":"London"}'));
       }
     });
+
+    test(
+        'captures usage from trailing chunk after finish_reason with random splits',
+        () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'azure-openai',
+        providerName: 'Azure OpenAI',
+        apiKey: 'test-key',
+        baseUrl: 'https://azure.example.com/v1/',
+        model: 'gpt-4o-mini',
+      );
+
+      final sse = [
+        _sseData({
+          'id': 'chatcmpl_usage_fuzz',
+          'model': 'gpt-4o-mini',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {'role': 'assistant'},
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_usage_fuzz',
+          'model': 'gpt-4o-mini',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {'content': 'Hello'},
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_usage_fuzz',
+          'model': 'gpt-4o-mini',
+          'choices': [
+            {
+              'index': 0,
+              'delta': <String, dynamic>{},
+              'finish_reason': 'stop',
+            }
+          ],
+        }),
+        // Azure may send usage in a trailing chunk with empty choices.
+        _sseData({
+          'id': 'chatcmpl_usage_fuzz',
+          'model': 'gpt-4o-mini',
+          'choices': [],
+          'usage': {
+            'prompt_tokens': 3,
+            'completion_tokens': 2,
+            'total_tokens': 5,
+            'prompt_tokens_details': {'cached_tokens': 1},
+            'completion_tokens_details': {'reasoning_tokens': 1},
+          },
+        }),
+        'data: [DONE]\n\n',
+      ].join();
+
+      for (final seed in [1, 7, 42]) {
+        final client = FakeOpenAIClient(config)
+          ..streamResponse =
+              Stream<String>.fromIterable(_splitRandom(sse, seed: seed));
+        final chat = OpenAIChat(client, config);
+
+        final parts =
+            await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
+
+        final finish = parts.whereType<LLMFinishPart>().single;
+        expect(finish.response.text, equals('Hello'));
+
+        final usage = finish.response.usage;
+        expect(usage, isNotNull);
+        expect(usage!.promptTokens, equals(3));
+        expect(usage.completionTokens, equals(2));
+        expect(usage.totalTokens, equals(5));
+        expect(usage.promptTokensCacheRead, equals(1));
+        expect(usage.promptTokensNoCache, equals(2));
+        expect(usage.reasoningTokens, equals(1));
+        expect(usage.completionTokensText, equals(1));
+      }
+    });
   });
 }
-
