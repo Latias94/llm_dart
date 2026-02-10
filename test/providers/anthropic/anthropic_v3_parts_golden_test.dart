@@ -56,12 +56,19 @@ void main() {
       expect(meta.existsSync(), isTrue);
     }
 
-    test('anthropic-web-search-tool.1', () async {
-      await runFixtureGolden('anthropic-web-search-tool.1');
-    });
+    final metaDir = Directory('test/fixtures/v3_parts/anthropic');
+    final baseNames = metaDir
+        .listSync(followLinks: false)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.meta.json'))
+        .map((f) => f.uri.pathSegments.last.replaceAll('.meta.json', ''))
+        .toList()
+      ..sort();
 
-    test('anthropic-json-tool.1', () async {
-      await runFixtureGolden('anthropic-json-tool.1');
-    });
+    for (final baseName in baseNames) {
+      test(baseName, () async {
+        await runFixtureGolden(baseName);
+      });
+    }
   });
 }
