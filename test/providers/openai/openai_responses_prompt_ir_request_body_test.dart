@@ -254,5 +254,123 @@ void main() {
         }),
       );
     });
+
+    test('encodes PDF FileIdPart as input_file with file_id (AI SDK parity)',
+        () async {
+      final config = OpenAIConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://example.com',
+        model: 'gpt-4o-mini',
+        useResponsesAPI: true,
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'id': 'resp_1',
+          'status': 'completed',
+          'output': [
+            {
+              'type': 'message',
+              'role': 'assistant',
+              'content': [
+                {'type': 'output_text', 'text': 'ok'}
+              ],
+            }
+          ],
+        };
+      final responses = OpenAIResponses(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              FileIdPart(
+                mime: FileMime.pdf,
+                id: 'file-abc',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await responses.chatPrompt(prompt);
+
+      final input = client.lastJsonBody?['input'] as List?;
+      expect(input, isNotNull);
+      expect(input, hasLength(1));
+
+      final user = input!.single as Map;
+      expect(user['role'], equals('user'));
+      final content = user['content'] as List;
+      expect(content, hasLength(1));
+
+      expect(
+        content.single,
+        equals({
+          'type': 'input_file',
+          'file_id': 'file-abc',
+        }),
+      );
+    });
+
+    test('encodes image FileIdPart as input_image with file_id (AI SDK parity)',
+        () async {
+      final config = OpenAIConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://example.com',
+        model: 'gpt-4o-mini',
+        useResponsesAPI: true,
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'id': 'resp_1',
+          'status': 'completed',
+          'output': [
+            {
+              'type': 'message',
+              'role': 'assistant',
+              'content': [
+                {'type': 'output_text', 'text': 'ok'}
+              ],
+            }
+          ],
+        };
+      final responses = OpenAIResponses(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              FileIdPart(
+                mime: FileMime.png,
+                id: 'file-img',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await responses.chatPrompt(prompt);
+
+      final input = client.lastJsonBody?['input'] as List?;
+      expect(input, isNotNull);
+      expect(input, hasLength(1));
+
+      final user = input!.single as Map;
+      expect(user['role'], equals('user'));
+      final content = user['content'] as List;
+      expect(content, hasLength(1));
+
+      expect(
+        content.single,
+        equals({
+          'type': 'input_image',
+          'file_id': 'file-img',
+        }),
+      );
+    });
   });
 }

@@ -525,6 +525,13 @@ class OpenAIClient {
             'Use the Responses API (useResponsesAPI=true) or send file data inline.',
           );
 
+        case FileIdPart(:final mime, :final id):
+          throw InvalidRequestError(
+            'FileIdPart (${mime.mimeType}) is not supported by the Chat '
+            'Completions API. Use the Responses API (useResponsesAPI=true) '
+            'or send file data inline. Got id: "$id"',
+          );
+
         case ToolCallPart() || ToolResultPart():
           return const [];
       }

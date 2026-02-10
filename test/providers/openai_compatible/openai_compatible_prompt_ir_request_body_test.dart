@@ -389,6 +389,45 @@ void main() {
       );
     });
 
+    test('throws for FileIdPart (use Responses API)', () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        apiKey: 'test-key',
+        baseUrl: 'https://example.com',
+        model: 'gpt-4o-mini',
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'choices': [
+            {
+              'message': {'role': 'assistant', 'content': 'ok'}
+            }
+          ],
+        };
+      final chat = OpenAIChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              FileIdPart(
+                mime: FileMime.pdf,
+                id: 'file-abc',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await expectLater(
+        chat.chatPrompt(prompt),
+        throwsA(isA<InvalidRequestError>()),
+      );
+    });
+
     test('encodes audio FilePart as input_audio (AI SDK parity)', () async {
       final config = OpenAICompatibleConfig(
         providerId: 'openai',

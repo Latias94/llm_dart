@@ -120,6 +120,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
         case ImageUrlPart():
         case FilePart():
         case FileUrlPart():
+        case FileIdPart():
         case ToolCallPart():
         case ToolResultPart():
           throw const InvalidRequestError(
@@ -367,6 +368,13 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
               'cache_control': effectiveCacheControlForPart,
           });
           break;
+
+        case FileIdPart(:final mime, :final id):
+          throw InvalidRequestError(
+            'FileIdPart (${mime.mimeType}) is not supported by the Anthropic '
+            'Messages API. Use FilePart (base64/text) or FileUrlPart (url) instead. '
+            'Got id: "$id"',
+          );
 
         case ToolCallPart(:final toolCall):
           if (effectiveRole != ChatRole.assistant) {

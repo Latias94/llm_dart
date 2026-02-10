@@ -237,5 +237,24 @@ void main() {
         throwsA(isA<ArgumentError>()),
       );
     });
+
+    test('FileIdPart cannot be converted to legacy ChatMessages', () {
+      expect(
+        () => const Prompt(
+          messages: [
+            PromptMessage(
+              role: ChatRole.user,
+              parts: [
+                FileIdPart(
+                  mime: FileMime.pdf,
+                  id: 'files/123',
+                ),
+              ],
+            ),
+          ],
+        ).toChatMessages(),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
   });
 }

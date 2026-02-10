@@ -546,5 +546,60 @@ void main() {
         throwsA(isA<InvalidRequestError>()),
       );
     });
+
+    test('encodes FileIdPart as fileData and preserves part text', () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-1.5-flash',
+      );
+
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final chat = GoogleChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: const [
+              TextPart('Here is the document:'),
+              FileIdPart(
+                mime: FileMime.pdf,
+                id: 'files/123',
+                text: 'A short PDF.',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await chat.chatPrompt(prompt);
+
+      final contents = client.lastBody?['contents'] as List?;
+      expect(contents, isNotNull);
+      expect(contents, hasLength(1));
+
+      final parts = ((contents!.single as Map)['parts'] as List);
+      expect(parts, hasLength(3));
+      expect((parts[0] as Map)['text'], equals('Here is the document:'));
+      expect((parts[1] as Map)['text'], equals('A short PDF.'));
+
+      final fileData = (parts[2] as Map)['fileData'] as Map;
+      expect(fileData['mimeType'], equals('application/pdf'));
+      expect(fileData['fileUri'], equals('files/123'));
+    });
   });
 }

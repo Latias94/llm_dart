@@ -151,6 +151,13 @@ class PromptMessage {
             'PromptChatStreamPartsCapability.',
           );
 
+        case FileIdPart():
+          throw ArgumentError(
+            'FileIdPart cannot be converted to legacy ChatMessage. '
+            'Use a provider that implements PromptChatCapability / '
+            'PromptChatStreamPartsCapability.',
+          );
+
         case ToolCallPart(:final toolCall, :final overrideRole):
           final effectiveRole = overrideRole ?? role;
           if (effectiveRole != ChatRole.assistant) {
@@ -266,6 +273,30 @@ class FileUrlPart extends PromptPart {
   const FileUrlPart({
     required this.mime,
     required this.url,
+    this.text,
+    super.providerOptions,
+  });
+}
+
+/// A provider-managed file reference prompt part.
+///
+/// This models provider-native file references, e.g.:
+/// - Google Generative Language Files API resource names (`files/...`)
+/// - OpenAI file ids (`file-...`)
+///
+/// Notes:
+/// - This part cannot be losslessly converted to legacy `ChatMessage` because
+///   the message model has no file-id message type.
+/// - Use providers that implement `PromptChatCapability` /
+///   `PromptChatStreamPartsCapability`.
+class FileIdPart extends PromptPart {
+  final FileMime mime;
+  final String id;
+  final String? text;
+
+  const FileIdPart({
+    required this.mime,
+    required this.id,
     this.text,
     super.providerOptions,
   });

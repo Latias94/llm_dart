@@ -1365,6 +1365,27 @@ class GoogleChat
               },
             });
 
+          case FileIdPart(:final mime, :final id, :final text):
+            if (googleRole == 'model') {
+              throw const InvalidRequestError(
+                'Google does not support fileData URLs in assistant messages.',
+              );
+            }
+            if (text != null && text.trim().isNotEmpty) {
+              currentParts.add({'text': text});
+            }
+            final trimmed = id.trim();
+            if (trimmed.isEmpty) {
+              throw const InvalidRequestError(
+                  'Google file id cannot be empty.');
+            }
+            currentParts.add({
+              'fileData': {
+                'fileUri': trimmed,
+                'mimeType': mime.mimeType,
+              },
+            });
+
           case ToolCallPart(:final toolCall, :final overrideRole):
             final effectiveRole = overrideRole ?? message.role;
             if (effectiveRole != ChatRole.assistant) {

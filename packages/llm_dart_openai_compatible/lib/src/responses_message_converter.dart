@@ -286,6 +286,38 @@ class OpenAIResponsesMessageConverter {
             'Unsupported file URL media type for the Responses API: ${mime.mimeType}',
           );
 
+        case FileIdPart(:final mime, :final id, :final text):
+          final parts = <Map<String, dynamic>>[];
+          if (text != null && text.trim().isNotEmpty) {
+            parts.add({'type': 'input_text', 'text': text});
+          }
+
+          final mimeType = mime.mimeType.toLowerCase();
+          final trimmed = id.trim();
+          if (trimmed.isEmpty) {
+            throw const InvalidRequestError('File id cannot be empty.');
+          }
+
+          if (mimeType.startsWith('image/')) {
+            parts.add({
+              'type': 'input_image',
+              'file_id': trimmed,
+            });
+            return parts;
+          }
+
+          if (mimeType == 'application/pdf') {
+            parts.add({
+              'type': 'input_file',
+              'file_id': trimmed,
+            });
+            return parts;
+          }
+
+          throw InvalidRequestError(
+            'Unsupported file id media type for the Responses API: ${mime.mimeType}',
+          );
+
         case ToolCallPart() || ToolResultPart():
           return const [];
       }

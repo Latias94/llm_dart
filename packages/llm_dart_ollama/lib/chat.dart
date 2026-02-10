@@ -760,6 +760,13 @@ class OllamaChat
             'Download the file and send it as FilePart (inline/base64) instead. '
             'Got: "$url"',
           );
+
+        case FileIdPart(:final mime, :final id):
+          throw InvalidRequestError(
+            'FileIdPart (${mime.mimeType}) is not supported by the Ollama Chat API. '
+            'Download the file and send it as FilePart (inline/base64) instead. '
+            'Got id: "$id"',
+          );
       }
     }
 
