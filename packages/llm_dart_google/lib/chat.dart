@@ -277,21 +277,10 @@ class GoogleChat
     dynamic groundingMetadata;
     dynamic urlContextMetadata;
 
-    final emittedSourceKeys = <String>{};
-    var nextSourceSeq = 0;
-
-    LLMSourceUrlPart? newUrlSource(String url, {String? title}) {
-      final key = 'url:$url';
-      if (!emittedSourceKeys.add(key)) return null;
-      return LLMSourceUrlPart(
-        sourceId: 'source_${nextSourceSeq++}',
-        url: url,
-        title: title,
-        providerMetadata: {
-          _providerOptionsName: {'type': 'groundingMetadata'},
-        },
-      );
-    }
+    final sources = SourcePartEmitter(
+      providerMetadataNamespace: _providerOptionsName,
+      providerMetadataPayload: {'type': 'groundingMetadata'},
+    );
 
     String mediaTypeForUri(String uri) {
       if (uri.endsWith('.pdf')) return 'application/pdf';
@@ -302,25 +291,6 @@ class GoogleChat
       if (uri.endsWith('.doc')) return 'application/msword';
       if (RegExp(r'\.(md|markdown)$').hasMatch(uri)) return 'text/markdown';
       return 'application/octet-stream';
-    }
-
-    LLMSourceDocumentPart? newDocumentSource(
-      String title, {
-      required String mediaType,
-      String? filename,
-      String? dedupeKey,
-    }) {
-      final key = dedupeKey ?? 'doc:$title:$mediaType:${filename ?? ''}';
-      if (!emittedSourceKeys.add(key)) return null;
-      return LLMSourceDocumentPart(
-        sourceId: 'source_${nextSourceSeq++}',
-        mediaType: mediaType,
-        title: title,
-        filename: filename,
-        providerMetadata: {
-          _providerOptionsName: {'type': 'groundingMetadata'},
-        },
-      );
     }
 
     final startedToolCalls = <String>{};
@@ -538,7 +508,7 @@ class GoogleChat
                 if (web is Map) {
                   final uri = web['uri'];
                   if (uri is String && uri.isNotEmpty) {
-                    final p = newUrlSource(
+                    final p = sources.url(
                       uri,
                       title: web['title'] is String
                           ? web['title'] as String
@@ -560,12 +530,12 @@ class GoogleChat
                   if (uri is String && uri.isNotEmpty) {
                     if (uri.startsWith('http://') ||
                         uri.startsWith('https://')) {
-                      final p = newUrlSource(uri, title: urlTitle);
+                      final p = sources.url(uri, title: urlTitle);
                       if (p != null) yield p;
                     } else {
                       final filename =
                           uri.split('/').isEmpty ? null : uri.split('/').last;
-                      final p = newDocumentSource(
+                      final p = sources.document(
                         docTitle,
                         mediaType: mediaTypeForUri(uri),
                         filename: filename,
@@ -578,7 +548,7 @@ class GoogleChat
                     final filename = fileSearchStore.split('/').isEmpty
                         ? null
                         : fileSearchStore.split('/').last;
-                    final p = newDocumentSource(
+                    final p = sources.document(
                       docTitle,
                       mediaType: 'application/octet-stream',
                       filename: filename,
@@ -592,7 +562,7 @@ class GoogleChat
                 if (maps is Map) {
                   final uri = maps['uri'];
                   if (uri is String && uri.isNotEmpty) {
-                    final p = newUrlSource(
+                    final p = sources.url(
                       uri,
                       title: maps['title'] is String
                           ? maps['title'] as String

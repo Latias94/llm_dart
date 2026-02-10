@@ -28,6 +28,7 @@ export 'utils/think_tag_splitter.dart';
 export 'utils/sse_line_buffer.dart';
 export 'utils/sse_chunk_parser.dart';
 export 'utils/stable_json.dart';
+export 'utils/source_part_emitter.dart';
 export 'utils/tool_name_mapping.dart';
 export 'utils/user_agent.dart';
 export 'utils/utf8_stream_decoder.dart';
