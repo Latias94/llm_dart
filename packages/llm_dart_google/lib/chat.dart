@@ -1249,10 +1249,12 @@ class GoogleChat
             if (text != null && text.trim().isNotEmpty) {
               currentParts.add({'text': text});
             }
+            final normalizedUrl = _normalizeGoogleFileUri(url);
             currentParts.add({
               'fileData': {
-                'fileUri': url,
-                'mimeType': _guessImageMimeTypeFromUrl(url) ?? 'image/png',
+                'fileUri': normalizedUrl,
+                'mimeType':
+                    _guessImageMimeTypeFromUrl(normalizedUrl) ?? 'image/png',
               },
             });
 
@@ -1322,7 +1324,7 @@ class GoogleChat
             if (text != null && text.trim().isNotEmpty) {
               currentParts.add({'text': text});
             }
-            final trimmed = url.trim();
+            final trimmed = _normalizeGoogleFileUri(url);
             currentParts.add({
               'fileData': {
                 'fileUri': trimmed,
@@ -1813,9 +1815,10 @@ class GoogleChat
               'Google does not support fileData URLs in assistant messages.',
             );
           }
+          final normalizedFileUri = _normalizeGoogleFileUri(fileUri);
           parts.add({
             'fileData': {
-              'fileUri': fileUri,
+              'fileUri': normalizedFileUri,
               'mimeType': uploadedMimeType ?? mime.mimeType,
             },
           });
@@ -1845,10 +1848,12 @@ class GoogleChat
         if (message.content.trim().isNotEmpty) {
           parts.add({'text': message.content});
         }
+        final normalizedUrl = _normalizeGoogleFileUri(url);
         parts.add({
           'fileData': {
-            'fileUri': url,
-            'mimeType': _guessImageMimeTypeFromUrl(url) ?? 'image/png',
+            'fileUri': normalizedUrl,
+            'mimeType':
+                _guessImageMimeTypeFromUrl(normalizedUrl) ?? 'image/png',
           },
         });
         break;
@@ -1995,6 +2000,29 @@ class GoogleChat
     if (subtype.contains('+json')) return 'json';
     if (subtype == 'plain') return 'txt';
     return subtype;
+  }
+
+  static String _normalizeGoogleFileUri(String uri) {
+    final trimmed = uri.trim();
+    if (trimmed.isEmpty) {
+      throw const InvalidRequestError('Google file URI cannot be empty.');
+    }
+
+    // Google Generative Language files API supports file names like `files/123`.
+    if (trimmed.startsWith('files/')) return trimmed;
+
+    final parsed = Uri.tryParse(trimmed);
+    final scheme = parsed?.scheme ?? '';
+
+    // Allow explicit URLs and GCS URIs.
+    if (scheme == 'http' || scheme == 'https' || scheme == 'gs') {
+      return trimmed;
+    }
+
+    throw InvalidRequestError(
+      'Unsupported Google file URI: "$uri". '
+      'Expected an http(s) URL, a gs:// URI, or a `files/...` resource name.',
+    );
   }
 
   static String? _guessImageMimeTypeFromUrl(String url) {

@@ -363,5 +363,48 @@ void main() {
         throwsA(isA<InvalidRequestError>()),
       );
     });
+
+    test('throws for unsupported FileUrlPart URL schemes', () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-1.5-flash',
+      );
+
+      final client = FakeGoogleClient(
+        config,
+        defaultJsonResponse: {
+          'modelVersion': config.model,
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {'text': 'ok'}
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final chat = GoogleChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          const PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              FileUrlPart(
+                mime: FileMime.pdf,
+                url: 'file:///tmp/a.pdf',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await expectLater(
+        chat.chatPrompt(prompt),
+        throwsA(isA<InvalidRequestError>()),
+      );
+    });
   });
 }
