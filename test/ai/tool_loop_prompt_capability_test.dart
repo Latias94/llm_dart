@@ -158,6 +158,54 @@ void main() {
       expect(model.chatPromptCalls, greaterThanOrEqualTo(1));
     });
 
+    test('runToolLoop(promptIr) supports file reference parts', () async {
+      final model = _FakePromptToolModel();
+
+      final result = await runToolLoop(
+        model: model,
+        promptIr: Prompt(
+          messages: const [
+            PromptMessage(
+              role: ChatRole.user,
+              parts: [
+                FileUrlPart(
+                  mime: FileMime.pdf,
+                  url: 'https://example.com/a.pdf',
+                ),
+                FileIdPart(
+                  mime: FileMime.pdf,
+                  id: 'files/123',
+                ),
+              ],
+            ),
+          ],
+        ),
+        tools: [
+          Tool.function(
+            name: 'get_weather',
+            description: 'Get weather for a location',
+            parameters: ParametersSchema(
+              schemaType: 'object',
+              properties: {
+                'location': ParameterProperty(
+                  propertyType: 'string',
+                  description: 'City name',
+                ),
+              },
+              required: ['location'],
+            ),
+          ),
+        ],
+        toolHandlers: {
+          'get_weather': (call, {cancelToken}) async => {'ok': true},
+        },
+      );
+
+      expect(result.finalResult.text, equals('done'));
+      expect(model.chatWithToolsCalls, equals(0));
+      expect(model.chatPromptCalls, greaterThanOrEqualTo(1));
+    });
+
     test('runToolLoopUntilBlocked(promptIr) prefers chatPrompt()', () async {
       final model = _FakePromptToolModel();
 

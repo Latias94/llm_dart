@@ -448,6 +448,61 @@ Future<ToolLoopResult> runToolLoop({
   );
 }
 
+Prompt _sanitizePromptForLegacyChat(Prompt prompt) {
+  PromptMessage sanitizeMessage(PromptMessage message) {
+    if (message.parts.isEmpty) return message;
+
+    final sanitizedParts = <PromptPart>[];
+    for (final part in message.parts) {
+      switch (part) {
+        case FileUrlPart(:final mime, :final text):
+          final trimmedText = text?.trim() ?? '';
+          sanitizedParts.add(
+            TextPart(
+              trimmedText.isNotEmpty
+                  ? trimmedText
+                  : '[FileUrlPart ${mime.mimeType}]',
+              providerOptions: part.providerOptions,
+            ),
+          );
+          break;
+
+        case FileIdPart(:final mime, :final text):
+          final trimmedText = text?.trim() ?? '';
+          sanitizedParts.add(
+            TextPart(
+              trimmedText.isNotEmpty
+                  ? trimmedText
+                  : '[FileIdPart ${mime.mimeType}]',
+              providerOptions: part.providerOptions,
+            ),
+          );
+          break;
+
+        default:
+          sanitizedParts.add(part);
+          break;
+      }
+    }
+
+    return PromptMessage(
+      role: message.role,
+      parts: sanitizedParts,
+      name: message.name,
+      providerOptions: message.providerOptions,
+      protocolPayloads: message.protocolPayloads,
+    );
+  }
+
+  return Prompt(
+    messages: prompt.messages.map(sanitizeMessage).toList(growable: false),
+  );
+}
+
+List<ChatMessage> _promptToLegacyChatMessagesBestEffort(Prompt prompt) {
+  return _sanitizePromptForLegacyChat(prompt).toChatMessages();
+}
+
 Future<ToolLoopResult> _runToolLoopPromptIr({
   required ChatCapability model,
   required Prompt prompt,
@@ -478,7 +533,9 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   }
 
   var workingPrompt = prompt;
-  final workingMessages = List<ChatMessage>.from(prompt.toChatMessages());
+  final workingMessages = List<ChatMessage>.from(
+    _promptToLegacyChatMessagesBestEffort(prompt),
+  );
   final steps = <ToolLoopStep>[];
 
   final promptCapable = model as PromptChatCapability;
@@ -800,7 +857,9 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   }
 
   var workingPrompt = prompt;
-  final workingMessages = List<ChatMessage>.from(prompt.toChatMessages());
+  final workingMessages = List<ChatMessage>.from(
+    _promptToLegacyChatMessagesBestEffort(prompt),
+  );
   final steps = <ToolLoopStep>[];
 
   final promptCapable = model as PromptChatCapability;
@@ -1330,7 +1389,9 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   }
 
   var workingPrompt = prompt;
-  final workingMessages = List<ChatMessage>.from(prompt.toChatMessages());
+  final workingMessages = List<ChatMessage>.from(
+    _promptToLegacyChatMessagesBestEffort(prompt),
+  );
 
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
     final toolAccums = <String, _ToolCallAccum>{};
