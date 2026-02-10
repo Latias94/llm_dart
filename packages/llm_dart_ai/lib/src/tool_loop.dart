@@ -515,6 +515,10 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   CancelToken? cancelToken,
 }) async {
   if (model is! PromptChatCapability) {
+    requirePromptCapabilityForFileReferenceParts(
+      prompt: prompt,
+      requiredCapabilityName: '`PromptChatCapability`',
+    );
     return runToolLoop(
       model: model,
       messages: prompt.toChatMessages(),
@@ -839,6 +843,10 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   CancelToken? cancelToken,
 }) async {
   if (model is! PromptChatCapability) {
+    requirePromptCapabilityForFileReferenceParts(
+      prompt: prompt,
+      requiredCapabilityName: '`PromptChatCapability`',
+    );
     return runToolLoopUntilBlocked(
       model: model,
       messages: prompt.toChatMessages(),
@@ -1367,6 +1375,10 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   final hasPromptStreamParts = model is PromptChatStreamPartsCapability;
 
   if (!hasPromptStreamParts) {
+    requirePromptCapabilityForFileReferenceParts(
+      prompt: prompt,
+      requiredCapabilityName: '`PromptChatStreamPartsCapability`',
+    );
     yield* streamToolLoopParts(
       model: model,
       messages: prompt.toChatMessages(),

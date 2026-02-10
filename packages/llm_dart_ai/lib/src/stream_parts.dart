@@ -113,6 +113,11 @@ Stream<LLMStreamPart> _streamChatPartsInternal({
         return;
       }
 
+      requirePromptCapabilityForFileReferenceParts(
+        prompt: prompt,
+        requiredCapabilityName: '`PromptChatStreamPartsCapability`',
+      );
+
       yield* _streamChatPartsInternal(
         model: model,
         messages: prompt.toChatMessages(),

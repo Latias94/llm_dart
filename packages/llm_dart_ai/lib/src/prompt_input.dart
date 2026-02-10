@@ -14,6 +14,31 @@ class StandardizedPromptIr extends StandardizedPromptInput {
   const StandardizedPromptIr(this.prompt);
 }
 
+bool promptHasFileReferenceParts(Prompt prompt) {
+  for (final message in prompt.messages) {
+    for (final part in message.parts) {
+      switch (part) {
+        case FileUrlPart() || FileIdPart():
+          return true;
+        default:
+          break;
+      }
+    }
+  }
+  return false;
+}
+
+void requirePromptCapabilityForFileReferenceParts({
+  required Prompt prompt,
+  required String requiredCapabilityName,
+}) {
+  if (!promptHasFileReferenceParts(prompt)) return;
+  throw InvalidRequestError(
+    'Prompt contains FileUrlPart/FileIdPart and cannot be converted to legacy '
+    'ChatMessages. Use a model that implements $requiredCapabilityName.',
+  );
+}
+
 /// Vercel-style prompt standardization.
 ///
 /// Rules:

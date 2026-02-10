@@ -37,17 +37,23 @@ Future<GenerateTextResult> generateText({
       );
 
     case StandardizedPromptIr(:final prompt):
-      response = model is PromptChatCapability
-          ? await (model as PromptChatCapability).chatPrompt(
-              prompt,
-              tools: tools,
-              cancelToken: cancelToken,
-            )
-          : await model.chatWithTools(
-              prompt.toChatMessages(),
-              tools,
-              cancelToken: cancelToken,
-            );
+      if (model is PromptChatCapability) {
+        response = await (model as PromptChatCapability).chatPrompt(
+          prompt,
+          tools: tools,
+          cancelToken: cancelToken,
+        );
+      } else {
+        requirePromptCapabilityForFileReferenceParts(
+          prompt: prompt,
+          requiredCapabilityName: '`PromptChatCapability`',
+        );
+        response = await model.chatWithTools(
+          prompt.toChatMessages(),
+          tools,
+          cancelToken: cancelToken,
+        );
+      }
   }
 
   return GenerateTextResult(

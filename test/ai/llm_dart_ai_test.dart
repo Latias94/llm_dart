@@ -281,6 +281,33 @@ void main() {
       );
     });
 
+    test(
+        'generateText(promptIr) rejects file reference parts without PromptChatCapability',
+        () async {
+      final response = _FakeChatResponse(text: 'ok');
+      final model = _FakeChatModel(response: response);
+
+      await expectLater(
+        generateText(
+          model: model,
+          promptIr: const Prompt(
+            messages: [
+              PromptMessage(
+                role: ChatRole.user,
+                parts: [
+                  FileUrlPart(
+                    mime: FileMime.pdf,
+                    url: 'https://example.com/a.pdf',
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        throwsA(isA<InvalidRequestError>()),
+      );
+    });
+
     test('streamChatParts preserves stream parts', () async {
       final response = _FakeChatResponse(text: 'done');
       final model = _FakeStreamChatModel(
@@ -316,6 +343,38 @@ void main() {
       );
       expect(parts[4], isA<LLMFinishPart>());
       expect((parts[4] as LLMFinishPart).response.text, 'done');
+    });
+
+    test(
+        'streamChatParts(promptIr) rejects file reference parts without PromptChatStreamPartsCapability',
+        () async {
+      final response = _FakeChatResponse(text: 'done');
+      final model = _FakeStreamChatModel(
+        response: response,
+        streamParts: [
+          LLMFinishPart(response),
+        ],
+      );
+
+      await expectLater(
+        streamChatParts(
+          model: model,
+          promptIr: const Prompt(
+            messages: [
+              PromptMessage(
+                role: ChatRole.user,
+                parts: [
+                  FileIdPart(
+                    mime: FileMime.pdf,
+                    id: 'files/123',
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ).toList(),
+        throwsA(isA<InvalidRequestError>()),
+      );
     });
 
     test('embed forwards to EmbeddingCapability', () async {
@@ -361,6 +420,54 @@ void main() {
 
       expect(result.object['answer'], 'ok');
       expect(result.rawResponse, same(response));
+    });
+
+    test(
+        'generateObject(promptIr) rejects file reference parts without PromptChatCapability',
+        () async {
+      const schema = ParametersSchema(
+        schemaType: 'object',
+        properties: {
+          'answer': ParameterProperty(
+            propertyType: 'string',
+            description: 'Answer text',
+          ),
+        },
+        required: ['answer'],
+      );
+
+      final response = _FakeChatResponse(
+        toolCalls: const [
+          ToolCall(
+            id: 'call_1',
+            callType: 'function',
+            function: FunctionCall(
+                name: 'return_object', arguments: '{"answer":"ok"}'),
+          ),
+        ],
+      );
+      final model = _FakeChatModel(response: response);
+
+      await expectLater(
+        generateObject(
+          model: model,
+          promptIr: const Prompt(
+            messages: [
+              PromptMessage(
+                role: ChatRole.user,
+                parts: [
+                  FileUrlPart(
+                    mime: FileMime.pdf,
+                    url: 'https://example.com/a.pdf',
+                  ),
+                ],
+              ),
+            ],
+          ),
+          schema: schema,
+        ),
+        throwsA(isA<InvalidRequestError>()),
+      );
     });
 
     test('generateImage forwards to ImageGenerationCapability', () async {

@@ -75,17 +75,23 @@ Future<GenerateObjectResult> generateObject({
         ],
       );
 
-      response = model is PromptChatCapability
-          ? await (model as PromptChatCapability).chatPrompt(
-              augmentedPrompt,
-              tools: [tool],
-              cancelToken: cancelToken,
-            )
-          : await model.chatWithTools(
-              augmentedPrompt.toChatMessages(),
-              [tool],
-              cancelToken: cancelToken,
-            );
+      if (model is PromptChatCapability) {
+        response = await (model as PromptChatCapability).chatPrompt(
+          augmentedPrompt,
+          tools: [tool],
+          cancelToken: cancelToken,
+        );
+      } else {
+        requirePromptCapabilityForFileReferenceParts(
+          prompt: augmentedPrompt,
+          requiredCapabilityName: '`PromptChatCapability`',
+        );
+        response = await model.chatWithTools(
+          augmentedPrompt.toChatMessages(),
+          [tool],
+          cancelToken: cancelToken,
+        );
+      }
   }
 
   final toolCall = response.toolCalls
