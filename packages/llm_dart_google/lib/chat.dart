@@ -297,6 +297,9 @@ class GoogleChat
     final endedToolCalls = <String>{};
     var codeExecutionSeq = 0;
     String? lastCodeExecutionToolCallId;
+    final providerToolParts = ProviderToolPartEmitter(
+      providerMetadataNamespace: _providerOptionsName,
+    );
 
     List<Map<String, dynamic>> extractJsonObjects(String chunk) {
       streamBuffer += chunk;
@@ -600,14 +603,13 @@ class GoogleChat
               if (code != null && code.isNotEmpty) {
                 final id = 'code_execution_${codeExecutionSeq++}';
                 lastCodeExecutionToolCallId = id;
-                yield LLMProviderToolCallPart(
+                final part = providerToolParts.call(
                   toolCallId: id,
                   toolName: 'code_execution',
                   input: executableCode,
-                  providerMetadata: {
-                    _providerOptionsName: {'type': 'code_execution'},
-                  },
+                  providerMetadataPayload: const {'type': 'code_execution'},
                 );
+                if (part != null) yield part;
               }
               continue;
             }
@@ -617,17 +619,18 @@ class GoogleChat
             if (codeExecutionResult != null) {
               final toolCallId = lastCodeExecutionToolCallId;
               if (toolCallId != null) {
-                yield LLMProviderToolResultPart(
+                final part = providerToolParts.result(
                   toolCallId: toolCallId,
                   toolName: 'code_execution',
                   result: {
                     'outcome': codeExecutionResult['outcome'],
                     'output': codeExecutionResult['output'],
                   },
-                  providerMetadata: {
-                    _providerOptionsName: {'type': 'code_execution_result'},
+                  providerMetadataPayload: const {
+                    'type': 'code_execution_result',
                   },
                 );
+                if (part != null) yield part;
                 lastCodeExecutionToolCallId = null;
               }
               continue;
