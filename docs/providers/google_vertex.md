@@ -10,12 +10,7 @@ Provider-agnostic usage should prefer `llm_dart_ai` task APIs. Vertex-only knobs
 live behind:
 
 - `providerOptions['google-vertex']`
-- `providerMetadata['vertex']`
-
-Note the intentional asymmetry:
-
-- Provider options use the provider id (`google-vertex`)
-- Response metadata follows AI SDK conventions (`vertex`, `vertex.chat`)
+- `providerMetadata['google-vertex']`
 
 ## Packages
 
@@ -69,11 +64,11 @@ Future<void> main() async {
 
 Vertex metadata follows Vercel AI SDK conventions:
 
-- `providerMetadata['vertex']`
+- `providerMetadata['google-vertex']`
 
 Compatibility alias:
 
-- `providerMetadata['vertex.chat']` (mirrors `vertex`; avoid depending on it)
+- `providerMetadata['google-vertex.chat']` (mirrors `google-vertex`; avoid depending on it)
 
 ## Streaming (LLMStreamPart)
 

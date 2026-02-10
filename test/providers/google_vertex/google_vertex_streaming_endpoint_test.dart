@@ -9,7 +9,7 @@ void main() {
   group('Google Vertex streaming endpoint (AI SDK parity)', () {
     test('uses streamGenerateContent without alt=sse', () async {
       final config = GoogleConfig(
-        providerOptionsName: 'vertex',
+        providerOptionsName: 'google-vertex',
         providerId: 'google-vertex',
         apiKey: 'test-key',
         baseUrl: googleVertexBaseUrl,

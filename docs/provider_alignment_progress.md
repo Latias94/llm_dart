@@ -133,8 +133,9 @@ Legend:
   - Adds `anthropic-beta: pdfs-2024-09-25` when PDF documents are present.
   - Finish reason mapping recognizes `pause_turn`, `refusal`, and `model_context_window_exceeded`.
 - 2026-02-09: Google Vertex (express mode) providerOptions scoping aligns with AI SDK conventions:
-  - Request-side `providerOptions` are now read from the provider id (`google-vertex`), while response metadata remains under `vertex` / `vertex.chat`.
-  - Prompt IR assistant `thoughtSignature` now works when provided under `providerOptions['google-vertex']`.
+  - Request-side `providerOptions` are read from the provider id (`google-vertex`).
+  - Response metadata is emitted under `google-vertex` / `google-vertex.chat`.
+  - Prompt IR assistant `thoughtSignature` works when provided under `providerOptions['google-vertex']`.
 - 2026-02-09: Ollama prompt-native compilation now preserves multi-part user messages:
   - Prompt IR groups text + images into a single `/api/chat` message with `images` array.
   - Tool results are encoded as `role=tool` messages with `tool_name`, aligning with Ollama API docs.

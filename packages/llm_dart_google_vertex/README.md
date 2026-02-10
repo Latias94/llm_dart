@@ -39,8 +39,8 @@ Future<void> main() async {
 
 ## Notes
 
-- Provider metadata keys follow Vercel AI SDK: `vertex` (canonical) and
-  `vertex.chat` (compatibility alias).
+- Provider metadata keys follow Vercel AI SDK: `google-vertex` (canonical) and
+  `google-vertex.chat` (compatibility alias).
 - Non-express (OAuth / service account) authentication is not implemented yet.
 
 See also:

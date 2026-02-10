@@ -24,7 +24,7 @@ void main() {
       final config = GoogleConfig.fromLLMConfig(
         llmConfig,
         providerId: 'google-vertex',
-        providerOptionsName: 'vertex',
+        providerOptionsName: 'google-vertex',
       );
 
       final client = FakeGoogleClient(config)

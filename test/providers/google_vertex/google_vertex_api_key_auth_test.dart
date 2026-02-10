@@ -50,7 +50,7 @@ void main() {
   group('Google Vertex express API key auth (AI SDK parity)', () {
     test('sends API key via x-goog-api-key header (not query)', () async {
       final config = GoogleConfig(
-        providerOptionsName: 'vertex',
+        providerOptionsName: 'google-vertex',
         providerId: 'google-vertex',
         apiKey: 'test-vertex-key',
         baseUrl: googleVertexBaseUrl,

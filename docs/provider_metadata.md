@@ -49,8 +49,8 @@ update it to the canonical `openai` key.
 
 Exception note:
 
-- Some providers intentionally emit AI SDK parity namespaces (e.g. Google Vertex
-  emits `vertex`). See provider guides for the canonical key per provider.
+- Some providers may emit additional compatibility aliases during the refactor
+  window, but the canonical key should remain the provider `providerId`.
 
 ## Recommended Payload Shape
 

@@ -61,12 +61,12 @@ class GoogleVertexProviderFactory extends BaseProviderFactory<ChatCapability> {
   GoogleConfig _transformConfig(LLMConfig config) {
     // Derive config from the unified LLMConfig, but:
     // - Read provider options from this provider id (google-vertex)
-    // - Emit provider metadata under `vertex` for AI SDK parity.
+    // - Emit provider metadata under `google-vertex` for AI SDK parity.
     final baseUrl = _ensureTrailingSlash(config.baseUrl);
     return GoogleConfig.fromLLMConfig(
       config,
       providerId: googleVertexProviderId,
-      providerOptionsName: 'vertex',
+      providerOptionsName: googleVertexProviderId,
     ).copyWith(
       baseUrl: baseUrl,
       model: config.model.isEmpty ? googleVertexDefaultModel : config.model,

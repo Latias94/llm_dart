@@ -48,17 +48,14 @@ Examples:
 - OpenAI: canonical key is `openai`
 - Anthropic: canonical key is `anthropic`
 - Google (Gemini API): canonical key is `google`
-- Google Vertex: canonical key is `google-vertex` (provider id), but metadata
-  namespace for AI SDK parity is `vertex` (see note below)
+- Google Vertex: canonical key is `google-vertex`
 - xAI Responses: canonical key is `xai.responses`
 
-Note (Vertex):
+Historical note (Vertex):
 
-- `llm_dart_google_vertex` intentionally emits `providerMetadata['vertex']`
-  (and `vertex.chat`) for AI SDK parity while provider options live under
-  `providerOptions['google-vertex']`.
-- This ADP does not change that behavior; it only constrains canonicalization
-  rules for metadata within a provider's emitted namespace.
+- Earlier refactor iterations emitted `providerMetadata['vertex']` for Vertex
+  express mode. This has been aligned to `providerMetadata['google-vertex']`
+  for Vercel AI SDK parity.
 
 ### 2) Alias policy
 
@@ -111,10 +108,6 @@ Negative:
 
 ## Open questions
 
-1) Vertex naming:
-   - Should we align provider id and metadata namespace (`google-vertex` vs
-     `vertex`) in a future major pre-release?
-2) Should we expose a helper for consumers:
+1) Should we expose a helper for consumers:
    - e.g. `readProviderMetadata(providerMetadata, providerId)` that always
      prefers canonical key and falls back to single-entry maps?
-

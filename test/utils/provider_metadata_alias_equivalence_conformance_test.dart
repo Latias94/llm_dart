@@ -241,9 +241,10 @@ void main() {
       expect(meta.containsKey('google.chat'), isTrue);
     });
 
-    test('Vertex namespace emits vertex.chat alias equal to vertex', () async {
+    test('Google Vertex emits google-vertex.chat alias equal to google-vertex',
+        () async {
       final config = GoogleConfig(
-        providerOptionsName: 'vertex',
+        providerOptionsName: 'google-vertex',
         apiKey: 'test-key',
         baseUrl: 'https://aiplatform.googleapis.com/v1/publishers/google/',
         model: 'gemini-2.5-flash',
@@ -262,8 +263,8 @@ void main() {
 
       final meta = finish.response.providerMetadata;
       expect(meta, isNotNull);
-      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'vertex');
-      expect(meta.containsKey('vertex.chat'), isTrue);
+      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'google-vertex');
+      expect(meta.containsKey('google-vertex.chat'), isTrue);
     });
   });
 }

@@ -158,8 +158,8 @@ Priority order:
 - [x] `openai-compatible responses`: emit server tool approval request via typed parts (MCP)
 - [x] `xai.responses`: emit citations/sources via typed parts
 - [x] `xai.responses`: emit server tool calls via typed parts (call/result)
-- [x] `google`/`vertex`: emit grounding sources via typed parts
-- [x] `google`/`vertex`: emit provider tool parts for code execution (call/result)
+- [x] `google`/`google-vertex`: emit grounding sources via typed parts
+- [x] `google`/`google-vertex`: emit provider tool parts for code execution (call/result)
 - [x] `anthropic`/`anthropic-compatible`: emit citations via typed parts
 
 Acceptance criteria:
@@ -233,6 +233,6 @@ Status notes (dev-remote, best-effort):
 
 - OpenAI + Azure (Responses): covered by fixtures + provider-tool alias tests; Azure `/responses` request mapping includes `api-version`.
 - OpenAI-compatible (Chat/Responses): has streaming usage tail + `[DONE]` conformance tests.
-- Google + Vertex: covered by SSE fixtures, streaming endpoint/auth tests, grounding source parts, code execution provider tool parts.
+- Google + Google Vertex: covered by SSE fixtures, streaming endpoint/auth tests, grounding source parts, code execution provider tool parts.
 - Anthropic (+ compatible): covered by fixtures, citations source parts, web tools/provider tool parts, fuzz tests.
 - xAI (Responses): covered by custom tool call streaming parsing + citations + provider tool parts.
