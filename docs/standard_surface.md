@@ -29,8 +29,8 @@ For most users, the recommended “standard” APIs are the **task functions** i
 
 Stable tasks (current):
 
-- Text: `generateText`, `streamText`, `streamChatParts`
-- Tool loop orchestration: `runToolLoop`, `streamToolLoop`, `runToolLoopUntilBlocked`
+- Text: `generateText`, `streamChatParts`
+- Tool loop orchestration: `runToolLoop`, `streamToolLoopParts`, `runToolLoopUntilBlocked`
 - Structured output: `generateObject`
 - Embeddings: `embed`
 - Rerank: `rerank` (and `rerankByEmbedding` as a best-effort fallback)
@@ -46,7 +46,7 @@ Prompt construction (Vercel-style, adapter-first):
   - Applies to text/object tasks and tool loop orchestration APIs.
 - Tool loop streaming (recommended):
   - Prefer `streamToolLoopParts(..., promptIr: ...)` / `streamToolLoopPartsWithToolSet(..., promptIr: ...)`
-  - Legacy aliases like `streamToolLoopPartsFromPromptIr` still exist for compatibility
+  - Legacy `*FromPromptIr` / `*FromPrompt` aliases were removed as part of the fearless refactor cleanup
 
 Provider support note:
 

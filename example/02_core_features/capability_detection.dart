@@ -330,10 +330,10 @@ Future<void> demonstrateCapabilityValidation(
 
     if (provider.supports(LLMCapability.streaming)) {
       print(
-          '      ✅ Streaming capability available - can use streamText()/streamChatParts()');
+          '      ✅ Streaming capability available - can use streamChatParts()');
     } else {
       print(
-          '      ❌ Streaming capability not available - avoid streamText()/streamChatParts()');
+          '      ❌ Streaming capability not available - avoid streamChatParts()');
     }
 
     if (provider.supports(LLMCapability.toolCalling)) {

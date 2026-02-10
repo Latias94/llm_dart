@@ -43,9 +43,9 @@ This creates drift and long-term maintenance risk:
 We treat the **task APIs** in `package:llm_dart_ai/llm_dart_ai.dart` as the
 primary stable surface:
 
-- Text: `generateText`, `streamText`, `streamChatParts`
+- Text: `generateText`, `streamChatParts`
 - Structured output: `generateObject`
-- Tool loops: `runToolLoop`, `streamToolLoop`, `runToolLoopUntilBlocked`
+- Tool loops: `runToolLoop`, `streamToolLoopParts`, `runToolLoopUntilBlocked`
 - Embeddings: `embed`
 - Images: `generateImage`
 - Speech: `generateSpeech`, `streamSpeech`
@@ -65,9 +65,8 @@ Task APIs accept Vercel-style prompt inputs:
 - `system` + exactly one of: `prompt` / `messages` / `promptIr`
 
 The recommended path is passing `promptIr: Prompt(...)` to tasks directly.
-Legacy helper aliases (e.g. `generateTextFromPromptIr`) remain available for
-compatibility via `package:llm_dart_ai/legacy.dart` (not exported by default).
-They are deprecated and planned to be removed in `0.12.0-alpha.1`.
+Legacy helper aliases (e.g. `generateTextFromPromptIr`) were removed as part of
+the fearless refactor cleanup.
 
 Providers can optionally implement prompt-native traits
 (`PromptChatCapability`, `PromptChatStreamPartsCapability`) so prompt parts can

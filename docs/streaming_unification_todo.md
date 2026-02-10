@@ -107,9 +107,8 @@ Still has drift risk:
 These changes are expected to break downstream code:
 
 - `LLMStreamPart` gains new subclasses (pattern matching `switch` becomes non-exhaustive).
-- `TextStreamPart` and legacy streaming helpers may need to ignore or expose new parts.
 - `ChatStreamEvent` was removed (breaking).
-- `GenerateTextResult` / `streamText` may change how they surface sources and finish reason.
+- Task-level streaming is parts-first only (`streamChatParts`, `streamToolLoopParts`).
 - Provider metadata keys may change (canonicalization; alias removal).
 
 ---

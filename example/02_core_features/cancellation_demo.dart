@@ -81,15 +81,15 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
     var charCount = 0;
     var firstTokenReceived = false;
 
-    // Start streaming (recommended: llm_dart_ai task API)
+    // Start streaming (recommended: llm_dart_ai parts-first API)
     final streamFuture = () async {
-      await for (final part in streamText(
+      await for (final part in streamChatParts(
         model: provider,
         promptIr: prompt,
         cancelToken: cancelToken,
       )) {
         switch (part) {
-          case TextDeltaPart(delta: final delta):
+          case LLMTextDeltaPart(:final delta):
             chunkCount++;
             charCount += delta.length;
             stdout.write(delta);
@@ -102,11 +102,11 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
             }
             break;
 
-          case FinishPart():
+          case LLMFinishPart():
             print('\n   ⚠️  Stream completed without cancellation');
             break;
 
-          case ErrorPart(error: final error):
+          case LLMErrorPart(error: final error):
             if (CancellationHelper.isCancelled(error)) {
               print('   ✅ Stream cancelled via ErrorEvent');
             } else {
@@ -114,15 +114,8 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
             }
             break;
 
-          case ThinkingDeltaPart():
-          case ToolCallDeltaPart():
-          case ProviderToolCallPart():
-          case ProviderToolDeltaPart():
-          case ProviderToolApprovalRequestPart():
-          case ProviderToolResultPart():
-          case SourceUrlPart():
-          case SourceDocumentPart():
-            // Ignore for this demo.
+          default:
+            // Ignore non-text parts for this demo.
             break;
         }
       }

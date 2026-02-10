@@ -213,19 +213,19 @@ Future<void> demonstrateStreamingReasoning(String apiKey) async {
     var responseContent = StringBuffer();
     var isThinking = true;
 
-    // Stream text and handle thinking + final answer parts
-    await for (final part in streamText(
+    // Stream parts and handle thinking + final answer parts
+    await for (final part in streamChatParts(
       model: reasoningProvider,
       promptIr: Prompt(messages: [PromptMessage.user(problem)]),
     )) {
       switch (part) {
-        case ThinkingDeltaPart(delta: final delta):
+        case LLMReasoningDeltaPart(:final delta):
           // Collect thinking/reasoning content
           thinkingContent.write(delta);
           stdout.write(
               '\x1B[90m$delta\x1B[0m'); // Gray color for thinking content, no newline
           break;
-        case TextDeltaPart(delta: final delta):
+        case LLMTextDeltaPart(:final delta):
           // This is the actual response after thinking
           if (isThinking) {
             print('\n\n   🎯 Final Answer:');
@@ -234,33 +234,36 @@ Future<void> demonstrateStreamingReasoning(String apiKey) async {
           responseContent.write(delta);
           stdout.write(delta); // No newline for continuous text
           break;
-        case ToolCallDeltaPart(toolCall: final toolCall):
+        case LLMToolCallDeltaPart(:final toolCall):
           // Handle tool call events (if supported)
           print('\n   [Tool Call: ${toolCall.function.name}]');
           break;
-        case ProviderToolCallPart():
-        case ProviderToolDeltaPart():
-        case ProviderToolApprovalRequestPart():
-        case ProviderToolResultPart():
+        case LLMProviderToolCallPart():
+        case LLMProviderToolDeltaPart():
+        case LLMProviderToolApprovalRequestPart():
+        case LLMProviderToolResultPart():
           // Ignore provider tool lifecycle for this demo.
           break;
-        case SourceUrlPart():
-        case SourceDocumentPart():
+        case LLMSourceUrlPart():
+        case LLMSourceDocumentPart():
           // Ignore sources for this demo.
           break;
-        case FinishPart(result: final result):
+        case LLMFinishPart(:final response, :final usage):
           print('\n\n✅ Streaming reasoning completed!');
 
-          if (result.usage != null) {
-            final usage = result.usage!;
+          final effectiveUsage = usage ?? response.usage;
+          if (effectiveUsage != null) {
+            final usage = effectiveUsage;
             print(
               '\n📊 Usage: ${usage.promptTokens} prompt + ${usage.completionTokens} completion = ${usage.totalTokens} total tokens',
             );
           }
           break;
-        case ErrorPart(error: final error):
+        case LLMErrorPart(error: final error):
           // Handle errors
           print('\n❌ Stream error: $error');
+          break;
+        default:
           break;
       }
     }

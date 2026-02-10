@@ -24,7 +24,7 @@ Non-goals:
   - Immutable types (messages, tools), capability traits, registry, cancellation, stream parts.
   - Escape hatch types: `providerOptions`, `providerTools`, `providerMetadata`, `transportOptions`.
 - `llm_dart_ai` (standard surface)
-  - Task APIs: `generateText`, `streamText`, `generateObject`, `embed`, `generateImage`, `generateSpeech`, `transcribe`, tool loop orchestration.
+  - Task APIs: `generateText`, `streamChatParts`, `generateObject`, `embed`, `generateImage`, `generateSpeech`, `transcribe`, tool loop orchestration.
   - Provider-agnostic result types + `providerMetadata` passthrough.
 - `llm_dart_provider_utils`
   - Transport helpers, request utilities, tool name mapping, protocol glue that multiple providers reuse.
@@ -151,5 +151,4 @@ Status: planned.
 - [x] Remove Anthropic-compatible “ignored request keys” stripping (no silent dropping).
 - [x] Move legacy OpenAI-compatible config/matrix types out of `llm_dart_core`.
 - [x] Remove legacy `MessageBuilder` from core (Prompt IR is the replacement).
-- [x] Hide legacy task helper aliases from default exports (use `package:llm_dart_ai/legacy.dart` or `package:llm_dart/legacy.dart`).
-- [x] Deprecate `*FromPromptIr` / `*FromPrompt` helper aliases (planned removal: `0.12.0-alpha.1`).
+- [x] Remove legacy task helper aliases (`*FromPromptIr` / `*FromPrompt`) as part of the fearless refactor cleanup.

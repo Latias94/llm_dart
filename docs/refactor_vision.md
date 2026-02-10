@@ -29,7 +29,7 @@ If something in code contradicts this document, either:
 
 Vercel AI SDK essentially splits:
 
-- **Standard task APIs** (`generateText`, `streamText`, `generateObject`, `embed`, …)
+- **Standard task APIs** (`generateText`, `streamChatParts`, `generateObject`, `embed`, …)
 - **Provider implementations** (OpenAI, Anthropic, Gemini, plus community providers)
 - **Protocol reuse layers** (e.g. OpenAI-compatible)
 - **Provider utils** (tool naming, transport helpers)
@@ -60,7 +60,7 @@ Design rule:
 
 Owns:
 
-- Task APIs: `generateText`, `streamText`, `generateObject`, `embed`,
+- Task APIs: `generateText`, `streamChatParts`, `generateObject`, `embed`,
   `generateImage`, `generateSpeech`, `transcribe`, tool-loop orchestration.
 - Provider-agnostic results and streaming parts.
 - Prompt building recommended path: **Prompt IR**.
@@ -118,7 +118,7 @@ We standardize **tasks**, not provider-specific features.
 
 Standard tasks are things like:
 
-- chat text generation (`generateText` / `streamText`)
+- chat text generation (`generateText` / `streamChatParts`)
 - structured output (`generateObject`)
 - embeddings (`embed`)
 - images (`generateImage`)
@@ -203,9 +203,7 @@ below are the “shape” we want to keep stable:
 Recent high-signal changes:
 
 - `llm_dart_ai` task APIs now use Vercel-style prompt inputs: `system` + exactly one of `prompt/messages/promptIr`.
-- Legacy `*FromPromptIr` / `*FromPrompt` helpers are no longer exported by default and are deprecated:
-  - Use `package:llm_dart_ai/legacy.dart` (or `package:llm_dart/legacy.dart`) if you still need them.
-  - Planned removal: `0.12.0-alpha.1`.
+- Legacy `*FromPromptIr` / `*FromPrompt` helpers were removed as part of the fearless refactor cleanup.
 - MiniMax (Anthropic-compatible) auth headers align with Vercel: `x-api-key` + `anthropic-version` (not `Authorization`).
 - MiniMax provider is now a thin Anthropic-compatible wrapper (`MinimaxProvider`); protocol behavior lives in `llm_dart_anthropic_compatible`.
 - Groq (OpenAI-compatible) request mapping aligns with Vercel providerOptions: `reasoningFormat`, `reasoningEffort`, `structuredOutputs`, `serviceTier`.

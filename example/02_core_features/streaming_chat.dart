@@ -68,30 +68,23 @@ Future<void> demonstrateBasicStreaming(ChatCapability provider) async {
     print('   User: Count from 1 to 10 and explain each number briefly.');
     print('   AI: ');
 
-    // Stream the response (recommended: llm_dart_ai task API)
-    await for (final part in streamText(
+    // Stream the response (recommended: llm_dart_ai parts-first API)
+    await for (final part in streamChatParts(
       model: provider,
       promptIr: prompt,
     )) {
       switch (part) {
-        case TextDeltaPart(delta: final delta):
+        case LLMTextDeltaPart(:final delta):
           stdout.write(delta);
           break;
-        case FinishPart():
+        case LLMFinishPart():
           print('\n   ✅ Basic streaming successful\n');
           break;
-        case ErrorPart(error: final error):
+        case LLMErrorPart(error: final error):
           print('\n   ❌ Stream error: $error\n');
           break;
-        case ThinkingDeltaPart():
-        case ToolCallDeltaPart():
-        case ProviderToolCallPart():
-        case ProviderToolDeltaPart():
-        case ProviderToolApprovalRequestPart():
-        case ProviderToolResultPart():
-        case SourceUrlPart():
-        case SourceDocumentPart():
-          // Ignore for basic demo.
+        default:
+          // Ignore non-text parts for this demo.
           break;
       }
     }
@@ -216,36 +209,30 @@ Future<void> demonstrateStreamingWithThinking(ChatCapability provider) async {
 
     var hasThinking = false;
 
-    await for (final part in streamText(
+    await for (final part in streamChatParts(
       model: thinkingProvider,
       promptIr: prompt,
     )) {
       switch (part) {
-        case ThinkingDeltaPart(delta: final delta):
+        case LLMReasoningDeltaPart(:final delta):
           hasThinking = true;
           print('   🧠 Thinking: $delta');
           break;
 
-        case TextDeltaPart(delta: final delta):
+        case LLMTextDeltaPart(:final delta):
           stdout.write(delta);
           break;
 
-        case FinishPart():
+        case LLMFinishPart():
           print('\n');
           break;
 
-        case ErrorPart(error: final error):
+        case LLMErrorPart(error: final error):
           print('   ❌ Error: $error');
           break;
 
-        case ToolCallDeltaPart():
-        case ProviderToolCallPart():
-        case ProviderToolDeltaPart():
-        case ProviderToolApprovalRequestPart():
-        case ProviderToolResultPart():
-        case SourceUrlPart():
-        case SourceDocumentPart():
-          // Ignore for this demo.
+        default:
+          // Ignore non-text parts for this demo.
           break;
       }
     }
@@ -283,33 +270,26 @@ Future<void> demonstrateStreamErrorHandling(ChatCapability provider) async {
 
     print('   Testing error handling with invalid API key...');
 
-    await for (final part in streamText(
+    await for (final part in streamChatParts(
       model: invalidProvider,
       promptIr: prompt,
     )) {
       switch (part) {
-        case TextDeltaPart(delta: final delta):
+        case LLMTextDeltaPart(:final delta):
           print('   📝 Unexpected text: $delta');
           break;
 
-        case ErrorPart(error: final error):
+        case LLMErrorPart(error: final error):
           print('   ✅ Caught error in stream: ${error.runtimeType}');
           print('   📝 Error message: $error');
           break;
 
-        case FinishPart():
+        case LLMFinishPart():
           print('   ❌ Unexpected completion');
           break;
 
-        case ThinkingDeltaPart():
-        case ToolCallDeltaPart():
-        case ProviderToolCallPart():
-        case ProviderToolDeltaPart():
-        case ProviderToolApprovalRequestPart():
-        case ProviderToolResultPart():
-        case SourceUrlPart():
-        case SourceDocumentPart():
-          // Ignore for this demo.
+        default:
+          // Ignore non-text parts for this demo.
           break;
       }
     }
@@ -349,12 +329,12 @@ Future<void> demonstrateStreamPerformance(ChatCapability provider) async {
     var totalChars = 0;
     final chunkTimes = <int>[];
 
-    await for (final part in streamText(
+    await for (final part in streamChatParts(
       model: provider,
       promptIr: prompt,
     )) {
       switch (part) {
-        case TextDeltaPart(delta: final delta):
+        case LLMTextDeltaPart(:final delta):
           chunkCount++;
           totalChars += delta.length;
 
@@ -366,23 +346,16 @@ Future<void> demonstrateStreamPerformance(ChatCapability provider) async {
           chunkTimes.add(stopwatch.elapsedMilliseconds);
           break;
 
-        case FinishPart():
+        case LLMFinishPart():
           stopwatch.stop();
           break;
 
-        case ErrorPart(error: final error):
+        case LLMErrorPart(error: final error):
           print('   ❌ Performance test error: $error');
           return;
 
-        case ThinkingDeltaPart():
-        case ToolCallDeltaPart():
-        case ProviderToolCallPart():
-        case ProviderToolDeltaPart():
-        case ProviderToolApprovalRequestPart():
-        case ProviderToolResultPart():
-        case SourceUrlPart():
-        case SourceDocumentPart():
-          // Ignore for this demo.
+        default:
+          // Ignore non-text parts for this demo.
           break;
       }
     }
@@ -417,8 +390,7 @@ Future<void> demonstrateStreamPerformance(ChatCapability provider) async {
 /// 🎯 Key Streaming Concepts Summary:
 ///
 /// Recommended stream surface (Vercel-style):
-/// - `streamText`: stable legacy-friendly parts (`TextDeltaPart`, `FinishPart`, ...)
-/// - `streamChatParts`: richer parts with block boundaries + provider metadata
+/// - `streamChatParts`: parts-first streaming with block boundaries + provider metadata
 ///
 /// Benefits:
 /// - Reduced perceived latency

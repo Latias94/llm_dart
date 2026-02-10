@@ -290,7 +290,7 @@ Future<void> demonstrateBestPractices(String apiKey) async {
     print('      Question: Write a short poem about technology.');
     print('      Grok (streaming): ');
 
-    await for (final part in streamText(
+    await for (final part in streamChatParts(
       model: streamProvider,
       promptIr: Prompt(
         messages: [
@@ -299,24 +299,17 @@ Future<void> demonstrateBestPractices(String apiKey) async {
       ),
     )) {
       switch (part) {
-        case TextDeltaPart(delta: final delta):
+        case LLMTextDeltaPart(:final delta):
           stdout.write(delta);
           break;
-        case FinishPart():
+        case LLMFinishPart():
           print('\n      ✅ Streaming completed');
           break;
-        case ErrorPart(error: final error):
+        case LLMErrorPart(error: final error):
           print('\n      ❌ Stream error: $error');
           break;
-        case ThinkingDeltaPart():
-        case ToolCallDeltaPart():
-        case ProviderToolCallPart():
-        case ProviderToolDeltaPart():
-        case ProviderToolApprovalRequestPart():
-        case ProviderToolResultPart():
-        case SourceUrlPart():
-        case SourceDocumentPart():
-          // Handle other event types
+        default:
+          // Ignore non-text parts for this demo.
           break;
       }
     }

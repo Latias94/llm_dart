@@ -11,7 +11,7 @@ This document defines the stability tiers we commit to.
 These APIs are intended to be stable and are the recommended entrypoints for
 most users:
 
-- `llm_dart_ai`: task APIs (`generateText`, `streamText`, `generateObject`, tool
+- `llm_dart_ai`: task APIs (`generateText`, `streamChatParts`, `generateObject`, tool
   loops, etc.)
 - `llm_dart_core`: provider-agnostic types and contracts (capabilities, prompt
   IR, shared request/response types)

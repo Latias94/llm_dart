@@ -351,31 +351,25 @@ ENVIRONMENT VARIABLES:
 
     final responseBuffer = StringBuffer();
 
-    await for (final part in streamText(model: provider, messages: messages)) {
+    await for (final part
+        in streamChatParts(model: provider, messages: messages)) {
       switch (part) {
-        case TextDeltaPart(delta: final delta):
+        case LLMTextDeltaPart(:final delta):
           stdout.write(delta);
           responseBuffer.write(delta);
           break;
-        case FinishPart(result: final result):
+        case LLMFinishPart(:final response, :final usage):
           print('\n');
-          if (_verbose && result.usage != null) {
-            final usage = result.usage!;
-            print('📊 Usage: ${usage.totalTokens} tokens');
+          final effectiveUsage = usage ?? response.usage;
+          if (_verbose && effectiveUsage != null) {
+            print('📊 Usage: ${effectiveUsage.totalTokens} tokens');
           }
           break;
-        case ErrorPart(error: final error):
+        case LLMErrorPart(error: final error):
           printError('\nStreaming error: $error');
           break;
-        case ThinkingDeltaPart():
-        case ToolCallDeltaPart():
-        case ProviderToolCallPart():
-        case ProviderToolDeltaPart():
-        case ProviderToolApprovalRequestPart():
-        case ProviderToolResultPart():
-        case SourceUrlPart():
-        case SourceDocumentPart():
-          // Ignore for this demo.
+        default:
+          // Ignore non-text parts for this demo.
           break;
       }
     }

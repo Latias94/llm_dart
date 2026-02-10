@@ -218,12 +218,12 @@ Future<void> demonstrateStreamingOptimization(String apiKey) async {
     var chunkCount = 0;
     final responseBuffer = StringBuffer();
 
-    await for (final part in streamText(
+    await for (final part in streamChatParts(
       model: provider,
       messages: [ChatMessage.user(question)],
     )) {
       switch (part) {
-        case TextDeltaPart(delta: final delta):
+        case LLMTextDeltaPart(:final delta):
           chunkCount++;
           responseBuffer.write(delta);
 
@@ -233,22 +233,15 @@ Future<void> demonstrateStreamingOptimization(String apiKey) async {
           }
           break;
 
-        case FinishPart():
+        case LLMFinishPart():
           streamStopwatch.stop();
           break;
 
-        case ErrorPart(error: final error):
+        case LLMErrorPart(error: final error):
           print('      Error: $error');
           return;
 
-        case ThinkingDeltaPart():
-        case ToolCallDeltaPart():
-        case ProviderToolCallPart():
-        case ProviderToolDeltaPart():
-        case ProviderToolApprovalRequestPart():
-        case ProviderToolResultPart():
-        case SourceUrlPart():
-        case SourceDocumentPart():
+        default:
           break;
       }
     }
@@ -407,33 +400,25 @@ Future<void> demonstrateMemoryOptimization(String apiKey) async {
 
     var totalChars = 0;
 
-    await for (final part in streamText(
+    await for (final part in streamChatParts(
       model: provider,
       messages: [
         ChatMessage.user('Write a detailed explanation of quantum computing.')
       ],
     )) {
       switch (part) {
-        case TextDeltaPart(delta: final delta):
+        case LLMTextDeltaPart(:final delta):
           totalChars += delta.length;
           // In real app, process chunk immediately instead of accumulating
           print(
               '      Processed chunk: ${delta.length} chars (total: $totalChars)');
           break;
 
-        case FinishPart():
+        case LLMFinishPart():
           print('      Streaming completed');
           break;
 
-        case ErrorPart():
-        case ThinkingDeltaPart():
-        case ToolCallDeltaPart():
-        case ProviderToolCallPart():
-        case ProviderToolDeltaPart():
-        case ProviderToolApprovalRequestPart():
-        case ProviderToolResultPart():
-        case SourceUrlPart():
-        case SourceDocumentPart():
+        default:
           break;
       }
     }

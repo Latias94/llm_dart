@@ -109,12 +109,12 @@ Future<void> demonstrateStreamingSpeed(String apiKey) async {
     var firstChunkTime = 0;
     var chunkCount = 0;
 
-    await for (final part in streamText(
+    await for (final part in streamChatParts(
       model: provider,
       promptIr: Prompt(messages: [PromptMessage.user(question)]),
     )) {
       switch (part) {
-        case TextDeltaPart(delta: final delta):
+        case LLMTextDeltaPart(:final delta):
           chunkCount++;
           if (firstChunkTime == 0) {
             firstChunkTime = stopwatch.elapsedMilliseconds;
@@ -122,23 +122,16 @@ Future<void> demonstrateStreamingSpeed(String apiKey) async {
           stdout.write(delta);
           break;
 
-        case FinishPart():
+        case LLMFinishPart():
           stopwatch.stop();
           print('\n');
           break;
 
-        case ErrorPart(error: final error):
+        case LLMErrorPart(error: final error):
           print('\nStreaming error: $error');
           return;
 
-        case ThinkingDeltaPart():
-        case ToolCallDeltaPart():
-        case ProviderToolCallPart():
-        case ProviderToolDeltaPart():
-        case ProviderToolApprovalRequestPart():
-        case ProviderToolResultPart():
-        case SourceUrlPart():
-        case SourceDocumentPart():
+        default:
           break;
       }
     }

@@ -42,19 +42,19 @@ final provider = await LLMBuilder()
 
 final stopwatch = Stopwatch()..start();
 
-await for (final part in streamText(
+await for (final part in streamChatParts(
   model: provider,
   messages: [
     ChatMessage.user('Generate a quick story'),
   ],
 )) {
   switch (part) {
-    case TextDeltaPart(delta: final delta):
+    case LLMTextDeltaPart(delta: final delta):
       print('Token: $delta (${stopwatch.elapsedMilliseconds}ms)');
       break;
-    case FinishPart():
+    case LLMFinishPart():
       break;
-    case ErrorPart(error: final error):
+    case LLMErrorPart(error: final error):
       print('Error: $error');
       break;
     default:

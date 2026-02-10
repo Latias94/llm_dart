@@ -74,8 +74,8 @@ void main() async {
   print('generateText: ${result.text}');
 
   // Streaming call (parts).
-  print('\nstreamText:');
-  await for (final part in streamText(
+  print('\nstreamChatParts:');
+  await for (final part in streamChatParts(
     model: provider,
     promptIr: Prompt(
       messages: [
@@ -84,44 +84,64 @@ void main() async {
     ),
   )) {
     switch (part) {
-      case TextDeltaPart():
-        print('delta: "${part.delta}"');
+      case LLMTextDeltaPart(:final delta):
+        print('delta: "$delta"');
         break;
-      case FinishPart():
-        print('finalText: ${part.result.text}');
-        print('usage: ${part.result.usage}');
-        print('providerMetadata: ${part.result.providerMetadata}');
+      case LLMFinishPart(:final response, :final usage, :final finishReason):
+        print('finalText: ${response.text}');
+        print('usage: ${usage ?? response.usage}');
+        print('finishReason: ${finishReason ?? (response is ChatResponseWithFinishReason ? response.finishReason : null)}');
+        print('providerMetadata: ${response.providerMetadata}');
         break;
-      case ThinkingDeltaPart():
-        print('thinking: "${part.delta}"');
+      case LLMReasoningDeltaPart(:final delta):
+        print('thinking: "$delta"');
         break;
-      case ToolCallDeltaPart():
-        print('toolCall: ${part.toolCall}');
+      case LLMToolCallDeltaPart(:final toolCall):
+        print('toolCall: $toolCall');
         break;
-      case ProviderToolCallPart():
-        print('providerToolCall: ${part.toolName} (${part.toolCallId})');
+      case LLMToolCallStartPart(:final toolCall):
+        print('toolCallStart: $toolCall');
         break;
-      case ProviderToolDeltaPart():
+      case LLMProviderToolCallPart(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+        ):
+        print('providerToolCall: $toolName ($toolCallId)');
+        break;
+      case LLMProviderToolDeltaPart(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          status: final status,
+        ):
         print(
-          'providerToolDelta: ${part.toolName} (${part.toolCallId}) status=${part.status}',
+          'providerToolDelta: $toolName ($toolCallId) status=$status',
         );
         break;
-      case ProviderToolApprovalRequestPart():
+      case LLMProviderToolApprovalRequestPart(
+          approvalId: final approvalId,
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+        ):
         print(
-          'providerToolApproval: ${part.toolName} (${part.toolCallId}) approvalId=${part.approvalId}',
+          'providerToolApproval: $toolName ($toolCallId) approvalId=$approvalId',
         );
         break;
-      case ProviderToolResultPart():
-        print('providerToolResult: ${part.toolName} (${part.toolCallId})');
+      case LLMProviderToolResultPart(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+        ):
+        print('providerToolResult: $toolName ($toolCallId)');
         break;
-      case SourceUrlPart():
-        print('sourceUrl: ${part.url}');
+      case LLMSourceUrlPart(:final url):
+        print('sourceUrl: $url');
         break;
-      case SourceDocumentPart():
-        print('sourceDocument: ${part.title} (${part.mediaType})');
+      case LLMSourceDocumentPart(:final title, :final mediaType):
+        print('sourceDocument: $title ($mediaType)');
         break;
-      case ErrorPart():
-        print('error: ${part.error}');
+      case LLMErrorPart(:final error):
+        print('error: $error');
+        break;
+      default:
         break;
     }
   }

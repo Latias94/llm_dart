@@ -166,7 +166,7 @@ Future<void> demonstrateStreamingThinking() async {
     var responseContent = StringBuffer();
     var isThinking = true;
 
-    await for (final part in streamText(
+    await for (final part in streamChatParts(
       model: provider,
       promptIr: Prompt(
         messages: [
@@ -181,12 +181,12 @@ slower person's pace. What's the minimum time to get everyone across?
       ),
     )) {
       switch (part) {
-        case ThinkingDeltaPart(delta: final delta):
+        case LLMReasoningDeltaPart(:final delta):
           thinkingContent.write(delta);
           // Print thinking in gray color
           stdout.write('\x1B[90m$delta\x1B[0m');
           break;
-        case TextDeltaPart(delta: final delta):
+        case LLMTextDeltaPart(:final delta):
           if (isThinking) {
             print('\n\n   🎯 Ollama\'s Final Answer:');
             print('   ${'-' * 40}');
@@ -195,27 +195,22 @@ slower person's pace. What's the minimum time to get everyone across?
           responseContent.write(delta);
           stdout.write(delta);
           break;
-        case FinishPart(result: final result):
+        case LLMFinishPart(:final response, :final usage):
           print('\n   ${'-' * 40}');
           print('\n   ✅ Streaming thinking completed!');
 
-          if (result.usage != null) {
-            print('   📊 Usage: ${result.usage!.totalTokens} tokens');
+          final effectiveUsage = usage ?? response.usage;
+          if (effectiveUsage != null) {
+            print('   📊 Usage: ${effectiveUsage.totalTokens} tokens');
           }
 
           print('   🧠 Thinking length: ${thinkingContent.length} characters');
           print('   📝 Response length: ${responseContent.length} characters');
           break;
-        case ErrorPart(error: final error):
+        case LLMErrorPart(error: final error):
           print('\n   ❌ Stream error: $error');
           break;
-        case ToolCallDeltaPart():
-        case ProviderToolCallPart():
-        case ProviderToolDeltaPart():
-        case ProviderToolApprovalRequestPart():
-        case ProviderToolResultPart():
-        case SourceUrlPart():
-        case SourceDocumentPart():
+        default:
           break;
       }
     }

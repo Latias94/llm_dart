@@ -124,38 +124,32 @@ class Chatbot {
       // Get AI response with streaming
       final responseBuffer = StringBuffer();
 
-      await for (final part in streamText(
+      await for (final part in streamChatParts(
         model: _ai,
         messages: _getContextMessages(),
       )) {
         switch (part) {
-          case TextDeltaPart(delta: final delta):
+          case LLMTextDeltaPart(:final delta):
             stdout.write(delta);
             responseBuffer.write(delta);
             break;
 
-          case FinishPart(result: final result):
+          case LLMFinishPart(:final response, :final usage):
             // Add complete response to history
             _addToHistory(ChatMessage.assistant(responseBuffer.toString()));
 
             // Log usage statistics
-            if (result.usage != null) {
-              _logUsage(result.usage!);
+            final effectiveUsage = usage ?? response.usage;
+            if (effectiveUsage != null) {
+              _logUsage(effectiveUsage);
             }
             break;
 
-          case ErrorPart(error: final error):
+          case LLMErrorPart(error: final error):
             throw Exception('Stream error: $error');
 
-          case ThinkingDeltaPart():
-          case ToolCallDeltaPart():
-          case ProviderToolCallPart():
-          case ProviderToolDeltaPart():
-          case ProviderToolApprovalRequestPart():
-          case ProviderToolResultPart():
-          case SourceUrlPart():
-          case SourceDocumentPart():
-            // Handle other event types
+          default:
+            // Ignore non-text parts for this demo.
             break;
         }
       }

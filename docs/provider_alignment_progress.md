@@ -85,7 +85,7 @@ Legend:
   package counterparts for provider-specific deltas.
 - 2025-12-24: Anthropic streaming no longer emits a premature “finish” event at
   `message_start`; the Anthropic provider now exposes `chatStreamParts` for
-  correct delta streaming via `llm_dart_ai` (`streamText`/`streamChatParts`).
+  correct delta streaming via `llm_dart_ai` (`streamChatParts`).
 - 2025-12-24: Anthropic-compatible `chatStreamParts` now preserves additional
   content block types (`server_tool_use`, `*_tool_result`, `mcp_tool_*`) and
   supports `tool_use` blocks that include non-empty `input` at
