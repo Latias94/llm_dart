@@ -166,10 +166,11 @@ Recommended order:
 
 ## P2: Execution plan (minimal tooling)
 
-- [ ] Add a small “golden generator” tool (repo-local):
-  - [ ] Reads a selected `test/fixtures/**.chunks.txt` stream capture (sourced from AI SDK fixtures)
-  - [ ] Replays/decodes it into canonical parts
-  - [ ] Writes `.jsonl` golden outputs under `test/fixtures/v3_parts/...` (and `.meta.json`)
+- [x] Add a small “golden generator” tool (repo-local):
+  - [x] Reads selected `test/fixtures/**.chunks.txt` stream captures (sourced from AI SDK fixtures)
+  - [x] Replays/decodes into canonical parts
+  - [x] Writes `.jsonl` goldens under `test/fixtures/v3_parts/...` and ensures `.meta.json` exists
+  - Entry point: `tool/update_v3_goldens.dart` (see `melos goldens:check` / `melos goldens:update`)
 - [x] Add a “golden check” test harness:
   - [x] Loads expected `.jsonl`
   - [x] Compares canonical parts with stable normalization (key order, omitted nulls)
