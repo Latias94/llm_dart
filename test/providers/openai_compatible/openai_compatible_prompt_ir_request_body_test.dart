@@ -237,5 +237,230 @@ void main() {
         ]),
       );
     });
+
+    test('encodes PDF FilePart as file with data URL (AI SDK parity)',
+        () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        apiKey: 'test-key',
+        baseUrl: 'https://example.com',
+        model: 'gpt-4o-mini',
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'choices': [
+            {
+              'message': {'role': 'assistant', 'content': 'ok'}
+            }
+          ],
+        };
+      final chat = OpenAIChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: const [
+              FilePart(mime: FileMime.pdf, data: [1, 2, 3]),
+            ],
+          ),
+        ],
+      );
+
+      await chat.chatPrompt(prompt);
+
+      final messages = client.lastJsonBody?['messages'] as List?;
+      expect(messages, isNotNull);
+      expect(messages, hasLength(1));
+
+      final user = messages!.single as Map;
+      expect(user['role'], equals('user'));
+      final content = user['content'] as List;
+      expect(content, hasLength(1));
+
+      expect(
+        content.single,
+        equals({
+          'type': 'file',
+          'file': {
+            'filename': 'document.pdf',
+            'file_data':
+                'data:application/pdf;base64,${base64Encode([1, 2, 3])}',
+          },
+        }),
+      );
+    });
+
+    test('encodes audio FilePart as input_audio (AI SDK parity)', () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        apiKey: 'test-key',
+        baseUrl: 'https://example.com',
+        model: 'gpt-4o-mini',
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'choices': [
+            {
+              'message': {'role': 'assistant', 'content': 'ok'}
+            }
+          ],
+        };
+      final chat = OpenAIChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: const [
+              FilePart(mime: FileMime.wav, data: [1, 2, 3]),
+            ],
+          ),
+        ],
+      );
+
+      await chat.chatPrompt(prompt);
+
+      final messages = client.lastJsonBody?['messages'] as List?;
+      expect(messages, isNotNull);
+      expect(messages, hasLength(1));
+
+      final user = messages!.single as Map;
+      expect(user['role'], equals('user'));
+      final content = user['content'] as List;
+      expect(content, hasLength(1));
+
+      expect(
+        content.single,
+        equals({
+          'type': 'input_audio',
+          'input_audio': {
+            'data': base64Encode([1, 2, 3]),
+            'format': 'wav',
+          },
+        }),
+      );
+    });
+
+    test('decodes text/* FilePart to text content (AI SDK parity)', () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        apiKey: 'test-key',
+        baseUrl: 'https://example.com',
+        model: 'gpt-4o-mini',
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'choices': [
+            {
+              'message': {'role': 'assistant', 'content': 'ok'}
+            }
+          ],
+        };
+      final chat = OpenAIChat(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.user,
+            parts: [
+              FilePart(
+                mime: FileMime.txt,
+                data: utf8.encode('hello'),
+              ),
+            ],
+          ),
+        ],
+      );
+
+      await chat.chatPrompt(prompt);
+
+      final messages = client.lastJsonBody?['messages'] as List?;
+      expect(messages, isNotNull);
+      expect(messages, hasLength(1));
+
+      final user = messages!.single as Map;
+      expect(user['role'], equals('user'));
+      expect(user['content'], equals('hello'));
+    });
+
+    test('maps tool call thoughtSignature to extra_content (AI SDK parity)',
+        () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'deepseek',
+        providerName: 'DeepSeek',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'gpt-4o',
+      );
+
+      final client = FakeOpenAIClient(config)
+        ..jsonResponse = {
+          'choices': [
+            {
+              'message': {'role': 'assistant', 'content': 'ok'}
+            }
+          ],
+        };
+      final chat = OpenAIChat(client, config);
+
+      final call = ToolCall(
+        id: 'call_1',
+        callType: 'function',
+        function: const FunctionCall(
+          name: 'getWeather',
+          arguments: '{"city":"London"}',
+        ),
+        providerOptions: const {
+          'deepseek': {'thoughtSignature': 'sigA'},
+        },
+      );
+
+      final prompt = Prompt(
+        messages: [
+          PromptMessage(
+            role: ChatRole.assistant,
+            parts: [
+              ToolCallPart(call),
+            ],
+          ),
+        ],
+      );
+
+      await chat.chatPrompt(prompt);
+
+      final messages = client.lastJsonBody?['messages'] as List?;
+      expect(messages, isNotNull);
+      expect(messages, hasLength(1));
+
+      final assistant = messages!.single as Map;
+      expect(assistant['role'], equals('assistant'));
+
+      final toolCalls = assistant['tool_calls'] as List;
+      expect(toolCalls, hasLength(1));
+
+      final wire = toolCalls.single as Map;
+      expect(wire.containsKey('providerOptions'), isFalse);
+      expect(
+        wire,
+        equals({
+          'id': 'call_1',
+          'type': 'function',
+          'function': {
+            'name': 'getWeather',
+            'arguments': '{"city":"London"}',
+          },
+          'extra_content': {
+            'google': {'thought_signature': 'sigA'},
+          },
+        }),
+      );
+    });
   });
 }

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
@@ -194,6 +195,43 @@ class OpenAIClient {
     _sseParser.reset();
   }
 
+  String? _audioFormatForMime(String mimeType) {
+    switch (mimeType.toLowerCase()) {
+      case 'audio/wav':
+        return 'wav';
+      case 'audio/mp3':
+      case 'audio/mpeg':
+        return 'mp3';
+      default:
+        return null;
+    }
+  }
+
+  Map<String, dynamic> _toolCallToWireJson(ToolCall toolCall) {
+    final effectiveProviderId = providerId;
+    final thoughtSignature =
+        toolCall.providerOptions[effectiveProviderId]?['thoughtSignature'];
+
+    final wire = <String, dynamic>{
+      'id': toolCall.id,
+      'type': toolCall.callType,
+      'function': {
+        'name': toolCall.function.name,
+        'arguments': toolCall.function.arguments,
+      },
+    };
+
+    if (thoughtSignature is String && thoughtSignature.trim().isNotEmpty) {
+      wire['extra_content'] = {
+        'google': {
+          'thought_signature': thoughtSignature.trim(),
+        },
+      };
+    }
+
+    return wire;
+  }
+
   /// Convert ChatMessage to OpenAI API format
   Map<String, dynamic> convertMessage(ChatMessage message) {
     final result = <String, dynamic>{'role': message.role.name};
@@ -253,14 +291,12 @@ class OpenAIClient {
         result['content'] = contentArray;
         break;
 
-      case FileMessage(data: final data):
-        // Handle file messages (documents, audio, video, etc.)
-        final base64Data = base64Encode(data);
+      case FileMessage(mime: final mime, data: final data):
+        final mimeType = mime.mimeType;
 
-        // Build content array with optional text + file
+        // Build content array with optional caption + part.
         final contentArray = <Map<String, dynamic>>[];
 
-        // Add text content if present
         if (message.content.isNotEmpty) {
           contentArray.add({
             'type': 'text',
@@ -268,20 +304,56 @@ class OpenAIClient {
           });
         }
 
-        // Add file content
-        // Chat Completions API format: { type: 'file', file: { file_data: '<base64>' } }
-        contentArray.add({
-          'type': 'file',
-          'file': {
-            'file_data': base64Data,
-          },
-        });
+        if (mimeType.toLowerCase() == 'application/pdf') {
+          final base64Data = base64Encode(data);
+          contentArray.add({
+            'type': 'file',
+            'file': {
+              'filename': 'document.pdf',
+              'file_data': 'data:application/pdf;base64,$base64Data',
+            },
+          });
+          result['content'] = contentArray;
+          break;
+        }
 
-        result['content'] = contentArray;
-        break;
+        if (mimeType.toLowerCase().startsWith('audio/')) {
+          final format = _audioFormatForMime(mimeType);
+          if (format == null) {
+            throw InvalidRequestError(
+              'Unsupported audio media type for OpenAI-compatible provider: $mimeType',
+            );
+          }
+          contentArray.add({
+            'type': 'input_audio',
+            'input_audio': {
+              'data': base64Encode(data),
+              'format': format,
+            },
+          });
+          result['content'] = contentArray;
+          break;
+        }
+
+        if (mimeType.toLowerCase().startsWith('text/')) {
+          final decoded =
+              utf8.decode(Uint8List.fromList(data), allowMalformed: true);
+          // Prefer emitting plain string content when possible.
+          final merged = [
+            if (message.content.isNotEmpty) message.content,
+            if (decoded.trim().isNotEmpty) decoded,
+          ].join('\n\n');
+          result['content'] = merged;
+          break;
+        }
+
+        throw InvalidRequestError(
+          'Unsupported file media type for OpenAI-compatible provider: $mimeType',
+        );
 
       case ToolUseMessage(toolCalls: final toolCalls):
-        result['tool_calls'] = toolCalls.map((tc) => tc.toJson()).toList();
+        result['tool_calls'] =
+            toolCalls.map((tc) => _toolCallToWireJson(tc)).toList();
         break;
       case ToolResultMessage(results: final results):
         // Tool results are normally handled in buildApiMessages where we
@@ -333,7 +405,8 @@ class OpenAIClient {
       }
 
       if (currentToolCalls.isNotEmpty) {
-        msg['tool_calls'] = currentToolCalls.map((t) => t.toJson()).toList();
+        msg['tool_calls'] =
+            currentToolCalls.map((t) => _toolCallToWireJson(t)).toList();
       }
 
       apiMessages.add(msg);
@@ -380,18 +453,55 @@ class OpenAIClient {
           });
           return parts;
 
-        case FilePart(:final data, :final text):
+        case FilePart(:final mime, :final data, :final text):
           final parts = <Map<String, dynamic>>[];
           if (text != null && text.trim().isNotEmpty) {
             parts.add({'type': 'text', 'text': text});
           }
-          parts.add({
-            'type': 'file',
-            'file': {
-              'file_data': base64Encode(data),
-            },
-          });
-          return parts;
+
+          final mimeType = mime.mimeType;
+
+          if (mimeType.toLowerCase() == 'application/pdf') {
+            parts.add({
+              'type': 'file',
+              'file': {
+                'filename': 'document.pdf',
+                'file_data':
+                    'data:application/pdf;base64,${base64Encode(data)}',
+              },
+            });
+            return parts;
+          }
+
+          if (mimeType.toLowerCase().startsWith('audio/')) {
+            final format = _audioFormatForMime(mimeType);
+            if (format == null) {
+              throw InvalidRequestError(
+                'Unsupported audio media type for OpenAI-compatible provider: $mimeType',
+              );
+            }
+            parts.add({
+              'type': 'input_audio',
+              'input_audio': {
+                'data': base64Encode(data),
+                'format': format,
+              },
+            });
+            return parts;
+          }
+
+          if (mimeType.toLowerCase().startsWith('text/')) {
+            final decoded =
+                utf8.decode(Uint8List.fromList(data), allowMalformed: true);
+            if (decoded.trim().isNotEmpty) {
+              parts.add({'type': 'text', 'text': decoded});
+            }
+            return parts;
+          }
+
+          throw InvalidRequestError(
+            'Unsupported file media type for OpenAI-compatible provider: $mimeType',
+          );
 
         case ToolCallPart() || ToolResultPart():
           return const [];
