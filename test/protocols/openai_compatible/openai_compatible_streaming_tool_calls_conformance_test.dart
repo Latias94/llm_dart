@@ -242,5 +242,68 @@ void main() {
       expect(calls[1].function.name, equals('toolB'));
       expect(calls[1].function.arguments, equals('{"y":2}'));
     });
+
+    test('does not surface incomplete tool calls in the final response',
+        () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'openai-compatible',
+        providerName: 'OpenAI-compatible',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'gpt-4o-mini',
+      );
+
+      final chunks = <String>[
+        _sseData({
+          'id': 'chatcmpl_3',
+          'model': 'gpt-4o-mini',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {
+                'tool_calls': [
+                  {
+                    'index': 0,
+                    'id': 'call_1',
+                    'function': {
+                      'name': 'sum',
+                      // Invalid JSON on purpose.
+                      'arguments': '{"a":1,',
+                    },
+                  },
+                ],
+              },
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_3',
+          'model': 'gpt-4o-mini',
+          'choices': [
+            {
+              'index': 0,
+              'delta': <String, dynamic>{},
+              'finish_reason': 'tool_calls',
+            }
+          ],
+        }),
+      ];
+
+      final client = _FakeOpenAIClient(
+        config,
+        stream: Stream<String>.fromIterable(chunks),
+      );
+      final chat = OpenAIChat(client, config);
+
+      final parts =
+          await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
+
+      // Start may be emitted, but we must not emit an end for invalid JSON.
+      expect(parts.whereType<LLMToolCallStartPart>(), hasLength(1));
+      expect(parts.whereType<LLMToolCallEndPart>(), isEmpty);
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.toolCalls, anyOf(isNull, isEmpty));
+    });
   });
 }
