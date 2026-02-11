@@ -7,6 +7,8 @@ import 'package:llm_dart_ai/llm_dart_ai.dart' as llm_ai;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_azure/config.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_google/chat.dart';
+import 'package:llm_dart_google/config.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
 import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
@@ -19,6 +21,7 @@ import 'package:llm_dart_ollama/config.dart';
 import '../test/utils/fakes/anthropic_fake_client.dart';
 import '../test/utils/fakes/openai_fake_client.dart';
 import '../test/utils/fakes/ollama_fake_client.dart';
+import '../test/utils/fakes/google_fake_client.dart';
 import '../test/utils/fakes/open_responses_config.dart';
 import '../test/utils/fixture_replay.dart';
 
@@ -303,6 +306,9 @@ List<Stream<String>> _splitSessionsFor(String provider, String fixturePath) {
       );
     case 'ollama':
       return [ndjsonStreamFromChunkFile(fixturePath)];
+    case 'google':
+    case 'google_vertex':
+      return [sseStreamFromChunkFile(fixturePath)];
     case 'openai_compatible':
     case 'openai_chat':
     case 'groq':
@@ -332,6 +338,10 @@ _ScenarioRunner _runnerFor(String provider) {
       return _runGroqChatFixture;
     case 'ollama':
       return _runOllamaChatFixture;
+    case 'google':
+      return _runGoogleChatFixture;
+    case 'google_vertex':
+      return _runGoogleVertexChatFixture;
   }
   throw ArgumentError('Unsupported provider: $provider');
 }
@@ -357,6 +367,10 @@ String? _fixturePathFor(String provider, String scenario) {
       return 'test/fixtures/groq/chat/$filename';
     case 'ollama':
       return 'test/fixtures/ollama/chat/$filename';
+    case 'google':
+      return 'test/fixtures/google/chat/$filename';
+    case 'google_vertex':
+      return 'test/fixtures/google_vertex/chat/$filename';
   }
   return null;
 }
@@ -381,6 +395,10 @@ String? _repoRefFixturePathFor(String provider, String scenario) {
     case 'groq':
       return null; // handcrafted contract fixtures
     case 'ollama':
+      return null; // handcrafted contract fixtures
+    case 'google':
+      return null; // handcrafted contract fixtures
+    case 'google_vertex':
       return null; // handcrafted contract fixtures
   }
   return null;
@@ -676,6 +694,63 @@ Future<List<LLMStreamPart>> _runOllamaChatFixture({
 
   final client = FakeOllamaClient(config)..streamResponse = sessionStream;
   final chat = OllamaChat(client, config);
+
+  return llm_ai.streamChatParts(
+    model: chat,
+    messages: [ChatMessage.user('Hi')],
+  ).toList();
+}
+
+Future<List<LLMStreamPart>> _runGoogleChatFixture({
+  required String fixturePath,
+  required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
+}) async {
+  final config = GoogleConfig(
+    apiKey: 'test-key',
+    model: 'gemini-2.5-pro',
+    stream: true,
+    originalConfig: providerTools == null
+        ? null
+        : LLMConfig(
+            baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
+            model: 'gemini-2.5-pro',
+            providerTools: providerTools,
+          ),
+  );
+
+  final client = FakeGoogleClient(config)..streamResponse = sessionStream;
+  final chat = GoogleChat(client, config);
+
+  return llm_ai.streamChatParts(
+    model: chat,
+    messages: [ChatMessage.user('Hi')],
+  ).toList();
+}
+
+Future<List<LLMStreamPart>> _runGoogleVertexChatFixture({
+  required String fixturePath,
+  required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
+}) async {
+  final config = GoogleConfig(
+    providerId: 'google-vertex',
+    providerOptionsName: 'google-vertex',
+    apiKey: 'test-key',
+    baseUrl: 'https://us-central1-aiplatform.googleapis.com/v1/',
+    model: 'gemini-2.5-pro',
+    stream: true,
+    originalConfig: providerTools == null
+        ? null
+        : LLMConfig(
+            baseUrl: 'https://us-central1-aiplatform.googleapis.com/v1/',
+            model: 'gemini-2.5-pro',
+            providerTools: providerTools,
+          ),
+  );
+
+  final client = FakeGoogleClient(config)..streamResponse = sessionStream;
+  final chat = GoogleChat(client, config);
 
   return llm_ai.streamChatParts(
     model: chat,

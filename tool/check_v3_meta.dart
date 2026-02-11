@@ -54,6 +54,10 @@ String? _repoRefFixturePathFor(String provider, String scenario) {
       return null; // handcrafted contract fixtures (no upstream chunks).
     case 'ollama':
       return null; // handcrafted contract fixtures (no upstream chunks).
+    case 'google':
+      return null; // handcrafted contract fixtures (no upstream chunks).
+    case 'google_vertex':
+      return null; // handcrafted contract fixtures (no upstream chunks).
   }
   return null;
 }
@@ -79,6 +83,10 @@ String? _localFixturePathFor(String provider, String scenario) {
       return 'test/fixtures/groq/chat/$filename';
     case 'ollama':
       return 'test/fixtures/ollama/chat/$filename';
+    case 'google':
+      return 'test/fixtures/google/chat/$filename';
+    case 'google_vertex':
+      return 'test/fixtures/google_vertex/chat/$filename';
   }
   return null;
 }
