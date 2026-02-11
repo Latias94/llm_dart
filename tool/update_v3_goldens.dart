@@ -9,6 +9,7 @@ import 'package:llm_dart_azure/config.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/chat.dart';
 import 'package:llm_dart_google/config.dart';
+import 'package:llm_dart_google_vertex/defaults.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
 import 'package:llm_dart_openai/responses.dart' as openai_responses;
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
@@ -733,18 +734,29 @@ Future<List<LLMStreamPart>> _runGoogleVertexChatFixture({
   required Stream<String> sessionStream,
   List<ProviderTool>? providerTools,
 }) async {
+  final baseName = _basename(fixturePath).replaceAll('.chunks.txt', '');
+  final isNonExpress = baseName.startsWith('google-vertex-non-express-');
+
+  final model = isNonExpress
+      ? 'projects/test-project/locations/us-central1/publishers/google/models/gemini-2.5-pro'
+      : 'gemini-2.5-pro';
+
+  final baseUrl = isNonExpress
+      ? 'https://us-central1-aiplatform.googleapis.com/v1/'
+      : googleVertexBaseUrl;
+
   final config = GoogleConfig(
     providerId: 'google-vertex',
     providerOptionsName: 'google-vertex',
     apiKey: 'test-key',
-    baseUrl: 'https://us-central1-aiplatform.googleapis.com/v1/',
-    model: 'gemini-2.5-pro',
+    baseUrl: baseUrl,
+    model: model,
     stream: true,
     originalConfig: providerTools == null
         ? null
         : LLMConfig(
-            baseUrl: 'https://us-central1-aiplatform.googleapis.com/v1/',
-            model: 'gemini-2.5-pro',
+            baseUrl: baseUrl,
+            model: model,
             providerTools: providerTools,
           ),
   );
