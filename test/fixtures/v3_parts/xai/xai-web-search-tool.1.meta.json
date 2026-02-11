@@ -3,9 +3,10 @@
   "scenario": "xai-web-search-tool.1",
   "description": "xAI Responses streaming with provider-executed web_search tool. Used to validate canonical v3 `tool-call`/`tool-result` and `source` parts.",
   "source": {
-    "type": "fixture",
+    "type": "vendored-ai-sdk-fixture",
     "paths": [
-      "test/fixtures/xai/responses/xai-web-search-tool.1.chunks.txt"
+      "test/fixtures/xai/responses/xai-web-search-tool.1.chunks.txt",
+      "repo-ref/ai/packages/xai/src/responses/__fixtures__/xai-web-search-tool.1.chunks.txt"
     ],
     "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
   },
@@ -21,6 +22,9 @@
   "upstream": {
     "repository": "https://github.com/vercel/ai",
     "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
-    "license": "Apache-2.0"
+    "license": "Apache-2.0",
+    "paths": [
+      "repo-ref/ai/packages/xai/src/responses/__fixtures__/xai-web-search-tool.1.chunks.txt"
+    ]
   }
 }

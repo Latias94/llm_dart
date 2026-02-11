@@ -3,9 +3,10 @@
   "scenario": "xai-text-with-reasoning-streaming.1",
   "description": "xAI Responses streaming: text + reasoning summary deltas. Used to validate canonical v3 `reasoning-delta` and related block id handling.",
   "source": {
-    "type": "fixture",
+    "type": "vendored-ai-sdk-fixture",
     "paths": [
-      "test/fixtures/xai/responses/xai-text-with-reasoning-streaming.1.chunks.txt"
+      "test/fixtures/xai/responses/xai-text-with-reasoning-streaming.1.chunks.txt",
+      "repo-ref/ai/packages/xai/src/responses/__fixtures__/xai-text-with-reasoning-streaming.1.chunks.txt"
     ],
     "notes": "We replay the `.chunks.txt` fixture via FakeOpenAIClient and assert the parsed canonical parts JSONL."
   },
@@ -17,6 +18,9 @@
   "upstream": {
     "repository": "https://github.com/vercel/ai",
     "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
-    "license": "Apache-2.0"
+    "license": "Apache-2.0",
+    "paths": [
+      "repo-ref/ai/packages/xai/src/responses/__fixtures__/xai-text-with-reasoning-streaming.1.chunks.txt"
+    ]
   }
 }

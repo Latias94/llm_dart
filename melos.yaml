@@ -37,6 +37,15 @@ scripts:
   goldens:update:
     run: dart run tool/update_v3_goldens.dart --write
     description: Update AI SDK v3 parts goldens from vendored fixtures.
+  v3meta:check:
+    run: dart run tool/check_v3_meta.dart --check
+    description: Verify v3 parts meta files follow conventions and include upstream provenance.
+  v3meta:upstream:check:
+    run: dart run tool/backfill_v3_meta_upstream.dart --check
+    description: Verify v3 meta upstream fields match test/fixtures/v3_parts/_upstream.json.
+  v3meta:upstream:backfill:
+    run: dart run tool/backfill_v3_meta_upstream.dart --write
+    description: Backfill v3 meta upstream fields from test/fixtures/v3_parts/_upstream.json.
   version:set-all:
     run: dart run tool/bump_version.dart set-all
     description: Set all package versions and internal dependency constraints (pass -- --version X.Y.Z).

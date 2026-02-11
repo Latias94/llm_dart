@@ -354,6 +354,9 @@ existing metas:
    - `dart run tool/update_v3_goldens.dart --write --only=<provider> --scenarios=<scenario1,scenario2>`
 5. Run tests:
    - `dart test`
+6. Run meta checks (recommended for CI):
+   - `dart run tool/check_v3_meta.dart --check`
+   - `dart run tool/backfill_v3_meta_upstream.dart --check`
 
 Golden tests discover scenarios from `*.meta.json` automatically, so adding a
 meta file is the “registration” step for a new scenario.
