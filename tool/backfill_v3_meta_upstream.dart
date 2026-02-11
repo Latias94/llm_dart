@@ -63,6 +63,8 @@ void main(List<String> args) {
     final meta = decoded.cast<String, dynamic>();
 
     final source = meta['source'];
+    final sourceType =
+        (source is Map) ? (source['type'] as String?)?.trim() ?? '' : '';
     final sourcePaths = <String>[
       if (source is Map && source['paths'] is List)
         ...((source['paths'] as List).map((e) => e.toString())),
@@ -71,6 +73,12 @@ void main(List<String> args) {
     final repoRefPaths = sourcePaths
         .where((p) => p.replaceAll('\\', '/').startsWith('repo-ref/ai/'))
         .toList(growable: false);
+
+    final isVendored = sourceType == 'vendored-ai-sdk-fixture';
+    if (!isVendored && repoRefPaths.isEmpty) {
+      // Handcrafted scenarios: do not inject upstream fields automatically.
+      continue;
+    }
 
     final upstream = (meta['upstream'] is Map)
         ? (meta['upstream'] as Map).cast<String, dynamic>()

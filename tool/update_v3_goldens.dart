@@ -300,6 +300,7 @@ List<Stream<String>> _splitSessionsFor(String provider, String fixturePath) {
       );
     case 'openai_compatible':
     case 'openai_chat':
+    case 'groq':
       return [sseStreamFromChunkFile(fixturePath)];
     default:
       return [sseStreamFromChunkFile(fixturePath)];
@@ -322,6 +323,8 @@ _ScenarioRunner _runnerFor(String provider) {
       return _runXAIResponsesFixture;
     case 'open_responses':
       return _runOpenResponsesFixture;
+    case 'groq':
+      return _runGroqChatFixture;
   }
   throw ArgumentError('Unsupported provider: $provider');
 }
@@ -343,6 +346,8 @@ String? _fixturePathFor(String provider, String scenario) {
       return 'test/fixtures/xai/responses/$filename';
     case 'open_responses':
       return 'test/fixtures/open_responses/responses/$filename';
+    case 'groq':
+      return 'test/fixtures/groq/chat/$filename';
   }
   return null;
 }
@@ -364,6 +369,8 @@ String? _repoRefFixturePathFor(String provider, String scenario) {
       return 'repo-ref/ai/packages/xai/src/responses/__fixtures__/$filename';
     case 'open_responses':
       return 'repo-ref/ai/packages/open-responses/src/responses/__fixtures__/$filename';
+    case 'groq':
+      return null; // handcrafted contract fixtures
   }
   return null;
 }
@@ -623,6 +630,27 @@ Future<List<LLMStreamPart>> _runOpenResponsesFixture({
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
   final responses = openai_compat.OpenAIResponses(client, config);
   return responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+}
+
+Future<List<LLMStreamPart>> _runGroqChatFixture({
+  required String fixturePath,
+  required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
+}) async {
+  const capabilities = {LLMCapability.chat, LLMCapability.streaming};
+
+  final config = OpenAICompatibleConfig(
+    providerId: 'groq',
+    providerName: 'Groq',
+    apiKey: 'test-key',
+    baseUrl: 'https://api.groq.com/openai/v1/',
+    model: 'llama-3.3-70b-versatile',
+  );
+
+  final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
+  final provider = OpenAICompatibleChatProvider(client, config, capabilities);
+
+  return provider.chatStreamParts([ChatMessage.user('Hi')]).toList();
 }
 
 enum _JsonlDiffStatus { ok, different, wrote }

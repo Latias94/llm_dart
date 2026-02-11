@@ -50,6 +50,8 @@ String? _repoRefFixturePathFor(String provider, String scenario) {
       return 'repo-ref/ai/packages/xai/src/responses/__fixtures__/$filename';
     case 'open_responses':
       return 'repo-ref/ai/packages/open-responses/src/responses/__fixtures__/$filename';
+    case 'groq':
+      return null; // handcrafted contract fixtures (no upstream chunks).
   }
   return null;
 }
@@ -71,6 +73,8 @@ String? _localFixturePathFor(String provider, String scenario) {
       return 'test/fixtures/xai/responses/$filename';
     case 'open_responses':
       return 'test/fixtures/open_responses/responses/$filename';
+    case 'groq':
+      return 'test/fixtures/groq/chat/$filename';
   }
   return null;
 }

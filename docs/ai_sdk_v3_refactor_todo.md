@@ -153,6 +153,7 @@ Current status (fixture-backed v3 golden tests in this repo):
 - [x] Azure OpenAI (Responses API shape)
 - [x] Anthropic (messages SSE; expand remaining fixtures)
 - [x] OpenAI-compatible baseline (DeepSeek fixtures)
+- [x] Groq (OpenAI-compatible Chat Completions; handcrafted contract fixtures)
 - [x] xAI Responses
 - [x] Open Responses (LMStudio fixtures; OpenAI Responses stream shape)
 

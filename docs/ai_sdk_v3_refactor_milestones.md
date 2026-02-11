@@ -187,6 +187,9 @@ Current coverage (goldens added in this repo):
   - `test/fixtures/v3_parts/open_responses/lmstudio-basic.1.jsonl`
   - `test/fixtures/v3_parts/open_responses/lmstudio-tool-call.1.jsonl`
   - `test/fixtures/v3_parts/open_responses/lmstudio-tool-call.2.jsonl`
+- Groq (OpenAI-compatible Chat Completions; contract fixtures):
+  - `test/fixtures/v3_parts/groq/groq-text.1.jsonl`
+  - `test/fixtures/v3_parts/groq/groq-tool-call.1.jsonl`
 
 ---
 
