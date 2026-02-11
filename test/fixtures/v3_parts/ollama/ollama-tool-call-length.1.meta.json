@@ -1,0 +1,25 @@
+{
+  "provider": "ollama",
+  "scenario": "ollama-tool-call-length.1",
+  "description": "Ollama NDJSON streaming with a tool call but `done_reason=length`. Contract fixture validating finishReason precedence: toolCalls => unified `tool-calls`, while preserving raw `done_reason`.",
+  "source": {
+    "type": "handcrafted-contract-fixture",
+    "paths": [
+      "test/fixtures/ollama/chat/ollama-tool-call-length.1.chunks.txt"
+    ],
+    "notes": "Handcrafted fixture because upstream AI SDK does not ship Ollama NDJSON streaming captures. This fixture uses Ollama's NDJSON stream format (not SSE)."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "tool_input_delta_is_string": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "We intentionally prioritize `toolCalls` over `done_reason` when deriving the unified finishReason."
+  ]
+}
+

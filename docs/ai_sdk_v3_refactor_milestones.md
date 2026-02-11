@@ -193,6 +193,8 @@ Current coverage (goldens added in this repo):
 - Ollama (NDJSON streaming; contract fixtures):
   - `test/fixtures/v3_parts/ollama/ollama-text-thinking.1.jsonl`
   - `test/fixtures/v3_parts/ollama/ollama-tool-call.1.jsonl`
+  - `test/fixtures/v3_parts/ollama/ollama-text-length.1.jsonl`
+  - `test/fixtures/v3_parts/ollama/ollama-tool-call-length.1.jsonl`
 
 ---
 
