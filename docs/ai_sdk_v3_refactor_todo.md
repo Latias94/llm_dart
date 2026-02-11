@@ -149,14 +149,17 @@ For each streaming provider implementation:
 Current status (fixture-backed v3 golden tests in this repo):
 
 - [x] OpenAI Responses (`packages/llm_dart_openai` via `responses.dart`)
+- [x] OpenAI Chat Completions (SSE chat.completion.chunk streams)
 - [x] Azure OpenAI (Responses API shape)
 - [x] Anthropic (messages SSE; expand remaining fixtures)
 - [x] OpenAI-compatible baseline (DeepSeek fixtures)
 - [x] xAI Responses
+- [x] Open Responses (LMStudio fixtures; OpenAI Responses stream shape)
 
 Remaining (recommended next targets):
 
 - [ ] Groq (OpenAI-compatible; add fixtures + goldens)
+  - Note: AI SDK currently does not ship Groq `*.chunks.txt` fixtures; for Groq/Ollama/etc we should add small handcrafted contract fixtures under `test/fixtures/openai_compatible/` and keep `repo-ref` fixtures as the primary reference when available.
 - [ ] Google Gemini (streaming + usage; align usage mapping)
 - [ ] Ollama (streaming + usage; align usage mapping)
 - [ ] Vertex AI (Google Vertex; usage + metadata)

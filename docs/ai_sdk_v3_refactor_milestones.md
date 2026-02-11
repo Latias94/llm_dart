@@ -139,6 +139,8 @@ Current coverage (goldens added in this repo):
   - `test/fixtures/v3_parts/openai/openai-image-generation-tool.1.jsonl`
   - `test/fixtures/v3_parts/openai/openai-file-search-tool.1.jsonl`
   - `test/fixtures/v3_parts/openai/openai-file-search-tool.2.jsonl`
+- OpenAI Chat Completions:
+  - `test/fixtures/v3_parts/openai_chat/azure-model-router.1.jsonl`
 - Azure OpenAI (Responses API shape):
   - `test/fixtures/v3_parts/azure/azure-code-interpreter-tool.1.jsonl`
   - `test/fixtures/v3_parts/azure/azure-web-search-preview-tool.1.jsonl`
@@ -181,6 +183,10 @@ Current coverage (goldens added in this repo):
   - `test/fixtures/v3_parts/xai/xai-text-with-reasoning-streaming-store-false.1.jsonl`
   - `test/fixtures/v3_parts/xai/xai-web-search-tool.1.jsonl`
   - `test/fixtures/v3_parts/xai/xai-x-search-tool.jsonl`
+- Open Responses (LMStudio fixtures):
+  - `test/fixtures/v3_parts/open_responses/lmstudio-basic.1.jsonl`
+  - `test/fixtures/v3_parts/open_responses/lmstudio-tool-call.1.jsonl`
+  - `test/fixtures/v3_parts/open_responses/lmstudio-tool-call.2.jsonl`
 
 ---
 

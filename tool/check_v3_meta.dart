@@ -38,6 +38,8 @@ String? _repoRefFixturePathFor(String provider, String scenario) {
   switch (provider) {
     case 'openai':
       return 'repo-ref/ai/packages/openai/src/responses/__fixtures__/$filename';
+    case 'openai_chat':
+      return 'repo-ref/ai/packages/openai/src/chat/__fixtures__/$filename';
     case 'azure':
       return 'repo-ref/ai/packages/azure/src/__fixtures__/$filename';
     case 'anthropic':
@@ -46,6 +48,8 @@ String? _repoRefFixturePathFor(String provider, String scenario) {
       return 'repo-ref/ai/packages/deepseek/src/chat/__fixtures__/$filename';
     case 'xai':
       return 'repo-ref/ai/packages/xai/src/responses/__fixtures__/$filename';
+    case 'open_responses':
+      return 'repo-ref/ai/packages/open-responses/src/responses/__fixtures__/$filename';
   }
   return null;
 }
@@ -55,6 +59,8 @@ String? _localFixturePathFor(String provider, String scenario) {
   switch (provider) {
     case 'openai':
       return 'test/fixtures/openai/responses/$filename';
+    case 'openai_chat':
+      return 'test/fixtures/openai/chat/$filename';
     case 'azure':
       return 'test/fixtures/azure/responses/$filename';
     case 'anthropic':
@@ -63,6 +69,8 @@ String? _localFixturePathFor(String provider, String scenario) {
       return 'test/fixtures/openai_compatible/$filename';
     case 'xai':
       return 'test/fixtures/xai/responses/$filename';
+    case 'open_responses':
+      return 'test/fixtures/open_responses/responses/$filename';
   }
   return null;
 }

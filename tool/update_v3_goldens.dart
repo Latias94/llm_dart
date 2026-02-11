@@ -16,6 +16,7 @@ import 'package:llm_dart_xai/responses.dart';
 
 import '../test/utils/fakes/anthropic_fake_client.dart';
 import '../test/utils/fakes/openai_fake_client.dart';
+import '../test/utils/fakes/open_responses_config.dart';
 import '../test/utils/fixture_replay.dart';
 
 /// Updates/checks AI SDK v3-style JSONL golden files under `test/fixtures/v3_parts`.
@@ -178,6 +179,14 @@ List<_Scenario> _discoverAllScenarios() => <_Scenario>[
         ),
       ),
       ..._discoverScenarios(
+        provider: 'openai_chat',
+        fixtureDir: Directory('test/fixtures/openai/chat'),
+        fixtureRepoRefDir:
+            Directory('repo-ref/ai/packages/openai/src/chat/__fixtures__'),
+        runner: _runOpenAIChatFixture,
+        splitSessions: (path) => [sseStreamFromChunkFile(path)],
+      ),
+      ..._discoverScenarios(
         provider: 'azure',
         fixtureDir: Directory('test/fixtures/azure/responses'),
         fixtureRepoRefDir:
@@ -213,6 +222,18 @@ List<_Scenario> _discoverAllScenarios() => <_Scenario>[
         fixtureRepoRefDir:
             Directory('repo-ref/ai/packages/xai/src/responses/__fixtures__'),
         runner: _runXAIResponsesFixture,
+        splitSessions: (path) => sseStreamsFromChunkFileSplitByTerminalEvent(
+          path,
+          isTerminalEvent: isOpenAIResponsesTerminalEvent,
+        ),
+      ),
+      ..._discoverScenarios(
+        provider: 'open_responses',
+        fixtureDir: Directory('test/fixtures/open_responses/responses'),
+        fixtureRepoRefDir: Directory(
+          'repo-ref/ai/packages/open-responses/src/responses/__fixtures__',
+        ),
+        runner: _runOpenResponsesFixture,
         splitSessions: (path) => sseStreamsFromChunkFileSplitByTerminalEvent(
           path,
           isTerminalEvent: isOpenAIResponsesTerminalEvent,
@@ -267,6 +288,7 @@ List<Stream<String>> _splitSessionsFor(String provider, String fixturePath) {
     case 'openai':
     case 'azure':
     case 'xai':
+    case 'open_responses':
       return sseStreamsFromChunkFileSplitByTerminalEvent(
         fixturePath,
         isTerminalEvent: isOpenAIResponsesTerminalEvent,
@@ -277,6 +299,7 @@ List<Stream<String>> _splitSessionsFor(String provider, String fixturePath) {
         isTerminalEvent: isAnthropicMessagesTerminalEvent,
       );
     case 'openai_compatible':
+    case 'openai_chat':
       return [sseStreamFromChunkFile(fixturePath)];
     default:
       return [sseStreamFromChunkFile(fixturePath)];
@@ -287,6 +310,8 @@ _ScenarioRunner _runnerFor(String provider) {
   switch (provider) {
     case 'openai':
       return _runOpenAIResponsesFixture;
+    case 'openai_chat':
+      return _runOpenAIChatFixture;
     case 'azure':
       return _runAzureResponsesFixture;
     case 'anthropic':
@@ -295,6 +320,8 @@ _ScenarioRunner _runnerFor(String provider) {
       return _runDeepSeekOpenAICompatibleFixture;
     case 'xai':
       return _runXAIResponsesFixture;
+    case 'open_responses':
+      return _runOpenResponsesFixture;
   }
   throw ArgumentError('Unsupported provider: $provider');
 }
@@ -304,6 +331,8 @@ String? _fixturePathFor(String provider, String scenario) {
   switch (provider) {
     case 'openai':
       return 'test/fixtures/openai/responses/$filename';
+    case 'openai_chat':
+      return 'test/fixtures/openai/chat/$filename';
     case 'azure':
       return 'test/fixtures/azure/responses/$filename';
     case 'anthropic':
@@ -312,6 +341,8 @@ String? _fixturePathFor(String provider, String scenario) {
       return 'test/fixtures/openai_compatible/$filename';
     case 'xai':
       return 'test/fixtures/xai/responses/$filename';
+    case 'open_responses':
+      return 'test/fixtures/open_responses/responses/$filename';
   }
   return null;
 }
@@ -321,6 +352,8 @@ String? _repoRefFixturePathFor(String provider, String scenario) {
   switch (provider) {
     case 'openai':
       return 'repo-ref/ai/packages/openai/src/responses/__fixtures__/$filename';
+    case 'openai_chat':
+      return 'repo-ref/ai/packages/openai/src/chat/__fixtures__/$filename';
     case 'azure':
       return 'repo-ref/ai/packages/azure/src/__fixtures__/$filename';
     case 'anthropic':
@@ -329,6 +362,8 @@ String? _repoRefFixturePathFor(String provider, String scenario) {
       return 'repo-ref/ai/packages/deepseek/src/chat/__fixtures__/$filename';
     case 'xai':
       return 'repo-ref/ai/packages/xai/src/responses/__fixtures__/$filename';
+    case 'open_responses':
+      return 'repo-ref/ai/packages/open-responses/src/responses/__fixtures__/$filename';
   }
   return null;
 }
@@ -425,6 +460,30 @@ Future<List<LLMStreamPart>> _runOpenAIResponsesFixture({
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
   final responses = openai_responses.OpenAIResponses(client, config);
   return responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+}
+
+Future<List<LLMStreamPart>> _runOpenAIChatFixture({
+  required String fixturePath,
+  required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
+}) async {
+  final config = openai_client.OpenAIConfig(
+    apiKey: 'test-key',
+    baseUrl: 'https://api.openai.com/v1/',
+    model: 'gpt-5-mini',
+    useResponsesAPI: false,
+    originalConfig: providerTools == null
+        ? null
+        : LLMConfig(
+            baseUrl: 'https://api.openai.com/v1/',
+            model: 'gpt-5-mini',
+            providerTools: providerTools,
+          ),
+  );
+
+  final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
+  final provider = openai_client.OpenAIProvider(config, client: client);
+  return provider.chatStreamParts([ChatMessage.user('Hi')]).toList();
 }
 
 Future<List<LLMStreamPart>> _runAzureResponsesFixture({
@@ -537,6 +596,32 @@ Future<List<LLMStreamPart>> _runXAIResponsesFixture({
 
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
   final responses = XAIResponses(client, config);
+  return responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+}
+
+Future<List<LLMStreamPart>> _runOpenResponsesFixture({
+  required String fixturePath,
+  required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
+}) async {
+  const baseUrl = 'https://example.local/v1/';
+  const model = 'gemma-7b-it';
+
+  final config = OpenResponsesConfig(
+    apiKey: 'test-key',
+    baseUrl: baseUrl,
+    model: model,
+    originalConfig: providerTools == null
+        ? null
+        : LLMConfig(
+            baseUrl: baseUrl,
+            model: model,
+            providerTools: providerTools,
+          ),
+  );
+
+  final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
+  final responses = openai_compat.OpenAIResponses(client, config);
   return responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
 }
 
