@@ -34,6 +34,15 @@ jobs:
       - name: Verify Vercel AI SDK fixtures are synced
         run: dart run tool/sync_vercel_fixtures.dart --check
 
+      - name: Verify AI SDK v3 meta conventions
+        run: dart run tool/check_v3_meta.dart --check
+
+      - name: Verify AI SDK v3 meta upstream provenance is consistent
+        run: dart run tool/backfill_v3_meta_upstream.dart --check
+
+      - name: Verify AI SDK v3 parts goldens are up to date
+        run: dart run tool/update_v3_goldens.dart --check
+
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 
