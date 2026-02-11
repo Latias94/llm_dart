@@ -22,7 +22,7 @@ Rolling plan (kept up to date):
   - [x] provider adapter emits `LLMFilePart` where applicable
   - [x] add a small handcrafted contract fixture (if upstream has no stream capture)
   - [x] add/extend v3 golden(s) to include at least one `type:'file'` part
-- [ ] Strengthen conformance suites:
+- [x] Strengthen conformance suites:
   - [x] protocol-level tests under `test/protocols/...` for shared OpenAI-compatible + Anthropic-compatible semantics (incremental; keep expanding)
   - [x] ordering invariants for metadata vs first content (best-effort; do not reorder/delay content)
 - [ ] Keep fixtures synced with AI SDK:
@@ -122,7 +122,7 @@ Tracker note: per-provider progress is tracked in `docs/provider_alignment_progr
 
 ### 0.3 Ensure orchestration emits v3-consistent boundaries
 
-- [ ] In `llm_dart_ai` (`packages/llm_dart_ai/lib/src/stream_parts.dart`):
+- [x] In `llm_dart_ai` (`packages/llm_dart_ai/lib/src/stream_parts.dart`):
   - [x] Inject `stream-start` exactly once (via `ensureStreamStartPart`)
   - [x] Inject/normalize missing block ids (text/reasoning/tool input) via `ensure_block_ids.dart`
   - [x] Ensure exactly one final `finish` part at end of stream (via `ensureSingleFinishPart`)
@@ -242,12 +242,14 @@ Recommended order:
   - [x] input: replayable stream captures under `test/fixtures/**.chunks.txt` (sourced from AI SDK fixtures)
   - [x] expected: repo-local goldens under `test/fixtures/v3_parts/...`
   - [x] assertion: encoded canonical parts JSONL deep-equals expected JSONL
-- [ ] Add targeted “nasty stream boundaries” fuzz tests:
+- [x] Add targeted “nasty stream boundaries” fuzz tests:
   - [x] out-of-order `tool-input-delta` before tool-input start (OpenAI/Azure specific)
   - [x] tool input JSON split across arbitrary chunk boundaries (see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
   - [x] interleaved multiple tool calls across chunks (see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
   - [x] tool call id arriving late (buffer by index; see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
   - [x] usage arriving after finish_reason (common in OpenAI-compatible/Azure; see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
+  - [x] OpenAI Responses SSE chunk boundaries (tool-input deltas + MCP approvals; see `test/providers/openai/openai_responses_streaming_chunk_fuzz_test.dart`)
+  - [x] Anthropic messages SSE chunk boundaries (server tools; see `test/providers/anthropic/anthropic_streaming_chunk_fuzz_test.dart`)
   - [x] response-metadata/providerMetadata never appear after finish (llm_dart_ai wrapper; see `test/ai/response_metadata_conformance_test.dart`)
 
 ---
