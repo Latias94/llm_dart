@@ -33,19 +33,57 @@ bool _isMetaFile(File f) =>
 
 String _normalizePath(String p) => p.replaceAll('\\', '/');
 
-void main(List<String> args) {
-  final check = args.contains('--check') || !args.contains('--write');
-  final write = args.contains('--write');
-
-  if (check && write) {
-    stderr.writeln('Pass at most one of --check or --write.');
-    exitCode = 2;
-    return;
+String? _repoRefFixturePathFor(String provider, String scenario) {
+  final filename = '$scenario.chunks.txt';
+  switch (provider) {
+    case 'openai':
+      return 'repo-ref/ai/packages/openai/src/responses/__fixtures__/$filename';
+    case 'azure':
+      return 'repo-ref/ai/packages/azure/src/__fixtures__/$filename';
+    case 'anthropic':
+      return 'repo-ref/ai/packages/anthropic/src/__fixtures__/$filename';
+    case 'openai_compatible':
+      return 'repo-ref/ai/packages/deepseek/src/chat/__fixtures__/$filename';
+    case 'xai':
+      return 'repo-ref/ai/packages/xai/src/responses/__fixtures__/$filename';
   }
+  return null;
+}
 
-  // This tool is check-only for now.
-  if (write) {
-    stderr.writeln('This tool is check-only. Use --check.');
+String? _localFixturePathFor(String provider, String scenario) {
+  final filename = '$scenario.chunks.txt';
+  switch (provider) {
+    case 'openai':
+      return 'test/fixtures/openai/responses/$filename';
+    case 'azure':
+      return 'test/fixtures/azure/responses/$filename';
+    case 'anthropic':
+      return 'test/fixtures/anthropic/messages/$filename';
+    case 'openai_compatible':
+      return 'test/fixtures/openai_compatible/$filename';
+    case 'xai':
+      return 'test/fixtures/xai/responses/$filename';
+  }
+  return null;
+}
+
+List<String> _readStringList(Object? value) {
+  if (value is! List) return const [];
+  return value
+      .map((e) => e.toString().trim())
+      .where((s) => s.isNotEmpty)
+      .toList(growable: false);
+}
+
+bool _containsPath(List<String> paths, String path) =>
+    paths.map(_normalizePath).contains(_normalizePath(path));
+
+void main(List<String> args) {
+  final fix = args.contains('--fix') || args.contains('--write');
+  final check = args.contains('--check') || !fix;
+
+  if (check && fix) {
+    stderr.writeln('Pass at most one of --check or --fix.');
     exitCode = 2;
     return;
   }
@@ -73,6 +111,8 @@ void main(List<String> args) {
     ..sort((a, b) => a.path.compareTo(b.path));
 
   final issues = <_Issue>[];
+  var fixedFiles = 0;
+  var fixedFields = 0;
 
   for (final file in metas) {
     final path = _normalizePath(file.path);
@@ -93,11 +133,17 @@ void main(List<String> args) {
     }
 
     final meta = decoded.cast<String, dynamic>();
+    final before = _prettyJson(meta);
 
     final provider = (meta['provider'] as String?)?.trim();
     final scenario = (meta['scenario'] as String?)?.trim();
+
     if (provider == null || provider.isEmpty) {
       issues.add(_Issue('ERROR', path, 'Missing or empty `provider`.'));
+      if (fix) {
+        meta['provider'] = expectedProvider;
+        fixedFields++;
+      }
     } else if (provider != expectedProvider) {
       issues.add(
         _Issue(
@@ -106,10 +152,18 @@ void main(List<String> args) {
           '`provider` mismatch: meta=$provider path=$expectedProvider',
         ),
       );
+      if (fix) {
+        meta['provider'] = expectedProvider;
+        fixedFields++;
+      }
     }
 
     if (scenario == null || scenario.isEmpty) {
       issues.add(_Issue('ERROR', path, 'Missing or empty `scenario`.'));
+      if (fix) {
+        meta['scenario'] = expectedScenario;
+        fixedFields++;
+      }
     } else if (scenario != expectedScenario) {
       issues.add(
         _Issue(
@@ -118,121 +172,220 @@ void main(List<String> args) {
           '`scenario` mismatch: meta=$scenario path=$expectedScenario',
         ),
       );
+      if (fix) {
+        meta['scenario'] = expectedScenario;
+        fixedFields++;
+      }
     }
+
+    final effectiveProvider =
+        (meta['provider'] as String?)?.trim() ?? expectedProvider;
+    final effectiveScenario =
+        (meta['scenario'] as String?)?.trim() ?? expectedScenario;
 
     final description = (meta['description'] as String?)?.trim() ?? '';
     if (description.isEmpty) {
       issues.add(_Issue('ERROR', path, 'Missing or empty `description`.'));
-    }
-    if (description.contains('Short human-readable description') ||
+    } else if (description.contains('Short human-readable description') ||
         description.contains('Auto-generated meta')) {
       issues.add(
         _Issue(
-          'ERROR',
+          'WARN',
           path,
           '`description` appears to be a placeholder; please replace it.',
         ),
       );
     }
 
-    // Validate `source.paths` contain local + repo-ref paths and exist.
-    final source = meta['source'];
-    final sourcePaths = <String>[];
-    if (source is Map && source['paths'] is List) {
-      for (final p in (source['paths'] as List)) {
-        final s = p.toString().trim();
-        if (s.isNotEmpty) sourcePaths.add(_normalizePath(s));
-      }
-    }
+    final source = (meta['source'] is Map)
+        ? (meta['source'] as Map).cast<String, dynamic>()
+        : null;
+    final sourceType = (source?['type'] as String?)?.trim() ?? '';
+    final sourcePaths =
+        _readStringList(source?['paths']).map(_normalizePath).toList();
+    final isVendored = sourceType == 'vendored-ai-sdk-fixture';
 
-    final localFixturePaths = sourcePaths
-        .where(
-            (p) => p.startsWith('test/fixtures/') && p.endsWith('.chunks.txt'))
-        .toList(growable: false);
-    final repoRefPaths = sourcePaths
-        .where((p) => p.startsWith('repo-ref/ai/') && p.endsWith('.chunks.txt'))
-        .toList(growable: false);
+    final expectedLocalFixturePath =
+        _localFixturePathFor(effectiveProvider, effectiveScenario);
+    final expectedRepoRefFixturePath =
+        _repoRefFixturePathFor(effectiveProvider, effectiveScenario);
 
-    if (localFixturePaths.isEmpty) {
+    final hasLocal = expectedLocalFixturePath != null &&
+        _containsPath(sourcePaths, expectedLocalFixturePath);
+    final hasRepoRef = expectedRepoRefFixturePath != null &&
+        _containsPath(sourcePaths, expectedRepoRefFixturePath);
+
+    if (!hasLocal) {
       issues.add(
-          _Issue('ERROR', path, '`source.paths` missing local fixture path.'));
-    }
-    if (repoRefPaths.isEmpty) {
-      issues.add(_Issue(
-          'ERROR', path, '`source.paths` missing repo-ref fixture path.'));
-    }
-
-    for (final p in localFixturePaths) {
-      if (!File(p).existsSync()) {
-        issues.add(_Issue('ERROR', path, 'Local fixture not found: $p'));
+        _Issue(
+          isVendored ? 'ERROR' : 'WARN',
+          path,
+          '`source.paths` missing local fixture path.',
+        ),
+      );
+      if (fix &&
+          expectedLocalFixturePath != null &&
+          File(expectedLocalFixturePath).existsSync()) {
+        final updated = List<String>.from(sourcePaths);
+        updated.insert(0, expectedLocalFixturePath);
+        source?['paths'] = updated;
+        meta['source'] = source;
+        fixedFields++;
       }
-    }
-    for (final p in repoRefPaths) {
-      if (!File(p).existsSync()) {
-        issues.add(_Issue('ERROR', path, 'Repo-ref fixture not found: $p'));
-      }
-    }
-
-    // Validate `upstream` points at the pinned reference and includes repo-ref paths.
-    final upstream = meta['upstream'];
-    if (upstream is! Map) {
-      issues.add(_Issue('ERROR', path, 'Missing `upstream` object.'));
     } else {
-      final u = upstream.cast<String, dynamic>();
-      final uRepo = (u['repository'] as String?)?.trim();
-      final uCommit = (u['commit'] as String?)?.trim();
-      final uLicense = (u['license'] as String?)?.trim();
-
-      if (uRepo == null || uRepo.isEmpty) {
-        issues.add(_Issue('ERROR', path, 'Missing `upstream.repository`.'));
-      } else if (uRepo != upstreamInfo['repository']) {
-        issues.add(
-          _Issue(
-            'ERROR',
-            path,
-            '`upstream.repository` mismatch: meta=$uRepo expected=${upstreamInfo['repository']}',
-          ),
-        );
-      }
-
-      if (uCommit == null || uCommit.isEmpty) {
-        issues.add(_Issue('ERROR', path, 'Missing `upstream.commit`.'));
-      } else if (uCommit != upstreamInfo['commit']) {
-        issues.add(
-          _Issue(
-            'ERROR',
-            path,
-            '`upstream.commit` mismatch: meta=$uCommit expected=${upstreamInfo['commit']}',
-          ),
-        );
-      }
-
-      if (uLicense == null || uLicense.isEmpty) {
-        issues.add(
-            _Issue('WARN', path, 'Missing `upstream.license` (recommended).'));
-      } else if (uLicense != upstreamInfo['license']) {
-        issues.add(
-          _Issue(
-            'WARN',
-            path,
-            '`upstream.license` mismatch: meta=$uLicense expected=${upstreamInfo['license']}',
-          ),
-        );
-      }
-
-      final uPaths = <String>[];
-      if (u['paths'] is List) {
-        for (final p in (u['paths'] as List)) {
-          final s = p.toString().trim();
-          if (s.isNotEmpty) uPaths.add(_normalizePath(s));
+      for (final p
+          in sourcePaths.where((p) => p.startsWith('test/fixtures/'))) {
+        if (!File(p).existsSync()) {
+          issues.add(_Issue('ERROR', path, 'Local fixture not found: $p'));
         }
       }
-      final uRepoRefPaths =
-          uPaths.where((p) => p.startsWith('repo-ref/ai/')).toList();
-      if (uRepoRefPaths.isEmpty) {
-        issues.add(_Issue(
-            'ERROR', path, '`upstream.paths` must include repo-ref/ai paths.'));
+    }
+
+    if (isVendored) {
+      if (!hasRepoRef) {
+        issues.add(
+          _Issue(
+            'ERROR',
+            path,
+            '`source.paths` missing repo-ref fixture path.',
+          ),
+        );
+        if (fix &&
+            expectedRepoRefFixturePath != null &&
+            File(expectedRepoRefFixturePath).existsSync()) {
+          final updated = List<String>.from(sourcePaths);
+          updated.add(expectedRepoRefFixturePath);
+          source?['paths'] = updated;
+          meta['source'] = source;
+          fixedFields++;
+        }
+      } else {
+        for (final p
+            in sourcePaths.where((p) => p.startsWith('repo-ref/ai/'))) {
+          if (!File(p).existsSync()) {
+            issues.add(_Issue('ERROR', path, 'Repo-ref fixture not found: $p'));
+          }
+        }
       }
+    }
+
+    // Upstream provenance checks:
+    // - required for vendored fixtures
+    // - optional for hand-constructed scenarios
+    final upstream = (meta['upstream'] is Map)
+        ? (meta['upstream'] as Map).cast<String, dynamic>()
+        : null;
+
+    if (isVendored && upstream == null) {
+      issues.add(_Issue('ERROR', path, 'Missing `upstream` object.'));
+      if (fix) {
+        meta['upstream'] = <String, dynamic>{
+          'repository': upstreamInfo['repository'],
+          'commit': upstreamInfo['commit'],
+          'license': upstreamInfo['license'],
+          if (expectedRepoRefFixturePath != null)
+            'paths': [expectedRepoRefFixturePath],
+        };
+        fixedFields++;
+      }
+    } else if (upstream != null) {
+      final uRepo = (upstream['repository'] as String?)?.trim();
+      final uCommit = (upstream['commit'] as String?)?.trim();
+      final uLicense = (upstream['license'] as String?)?.trim();
+
+      if (isVendored) {
+        if (uRepo == null || uRepo.isEmpty) {
+          issues.add(_Issue('ERROR', path, 'Missing `upstream.repository`.'));
+          if (fix) {
+            upstream['repository'] = upstreamInfo['repository'];
+            fixedFields++;
+          }
+        } else if (uRepo != upstreamInfo['repository']) {
+          issues.add(
+            _Issue(
+              'ERROR',
+              path,
+              '`upstream.repository` mismatch: meta=$uRepo expected=${upstreamInfo['repository']}',
+            ),
+          );
+          if (fix) {
+            upstream['repository'] = upstreamInfo['repository'];
+            fixedFields++;
+          }
+        }
+
+        if (uCommit == null || uCommit.isEmpty) {
+          issues.add(_Issue('ERROR', path, 'Missing `upstream.commit`.'));
+          if (fix) {
+            upstream['commit'] = upstreamInfo['commit'];
+            fixedFields++;
+          }
+        } else if (uCommit != upstreamInfo['commit']) {
+          issues.add(
+            _Issue(
+              'ERROR',
+              path,
+              '`upstream.commit` mismatch: meta=$uCommit expected=${upstreamInfo['commit']}',
+            ),
+          );
+          if (fix) {
+            upstream['commit'] = upstreamInfo['commit'];
+            fixedFields++;
+          }
+        }
+
+        if (uLicense == null || uLicense.isEmpty) {
+          issues.add(_Issue(
+              'WARN', path, 'Missing `upstream.license` (recommended).'));
+          if (fix) {
+            upstream['license'] = upstreamInfo['license'];
+            fixedFields++;
+          }
+        } else if (uLicense != upstreamInfo['license']) {
+          issues.add(
+            _Issue(
+              'WARN',
+              path,
+              '`upstream.license` mismatch: meta=$uLicense expected=${upstreamInfo['license']}',
+            ),
+          );
+          if (fix) {
+            upstream['license'] = upstreamInfo['license'];
+            fixedFields++;
+          }
+        }
+
+        final upstreamPaths = _readStringList(upstream['paths']);
+        final needsRepoRefPath = expectedRepoRefFixturePath != null &&
+            !_containsPath(upstreamPaths, expectedRepoRefFixturePath);
+        if (upstreamPaths
+            .where((p) => _normalizePath(p).startsWith('repo-ref/ai/'))
+            .isEmpty) {
+          issues.add(_Issue('ERROR', path,
+              '`upstream.paths` must include repo-ref/ai paths.'));
+        }
+
+        if (needsRepoRefPath) {
+          issues.add(
+            _Issue(
+              'ERROR',
+              path,
+              '`upstream.paths` missing repo-ref fixture path.',
+            ),
+          );
+          if (fix &&
+              expectedRepoRefFixturePath != null &&
+              File(expectedRepoRefFixturePath).existsSync()) {
+            upstream['paths'] = [...upstreamPaths, expectedRepoRefFixturePath];
+            fixedFields++;
+          }
+        }
+      }
+
+      final uRepoRefPaths = _readStringList(upstream['paths'])
+          .map(_normalizePath)
+          .where((p) => p.startsWith('repo-ref/ai/'))
+          .toList(growable: false);
       for (final p in uRepoRefPaths) {
         if (!File(p).existsSync()) {
           issues.add(_Issue('ERROR', path, 'Upstream path not found: $p'));
@@ -240,27 +393,35 @@ void main(List<String> args) {
       }
     }
 
-    // Validate goldens exist for this scenario.
-    if (provider != null &&
-        provider.isNotEmpty &&
-        scenario != null &&
-        scenario.isNotEmpty) {
-      final providerDir = Directory('test/fixtures/v3_parts/$provider');
-      if (!providerDir.existsSync()) {
+    // Golden existence check (must exist for any scenario).
+    final providerDir = Directory('test/fixtures/v3_parts/$expectedProvider');
+    if (!providerDir.existsSync()) {
+      issues.add(
+        _Issue(
+          'ERROR',
+          path,
+          'Missing provider golden directory: ${_normalizePath(providerDir.path)}',
+        ),
+      );
+    } else {
+      final matches = providerDir
+          .listSync(followLinks: false)
+          .whereType<File>()
+          .map((f) => _normalizePath(f.path))
+          .where(
+              (p) => p.contains('/$expectedScenario') && p.endsWith('.jsonl'))
+          .toList(growable: false);
+      if (matches.isEmpty) {
         issues.add(_Issue('ERROR', path,
-            'Missing provider golden directory: ${providerDir.path}'));
-      } else {
-        final matches = providerDir
-            .listSync(followLinks: false)
-            .whereType<File>()
-            .map((f) => _normalizePath(f.path))
-            .where((p) => p.contains('/$scenario') && p.endsWith('.jsonl'))
-            .toList(growable: false);
-        if (matches.isEmpty) {
-          issues.add(_Issue(
-              'ERROR', path, 'Missing golden JSONL for scenario: $scenario'));
-        }
+            'Missing golden JSONL for scenario: $expectedScenario'));
       }
+    }
+
+    final after = _prettyJson(meta);
+    if (fix && after != before) {
+      file.writeAsStringSync(after);
+      fixedFiles++;
+      stdout.writeln('Fixed meta: $path');
     }
   }
 
@@ -285,5 +446,10 @@ void main(List<String> args) {
   } else {
     stdout.writeln('OK.');
   }
+
+  if (fix) {
+    stdout.writeln('Fixed files: $fixedFiles (fields updated: $fixedFields).');
+  }
+
   exitCode = 0;
 }
