@@ -13,6 +13,24 @@ class OpenAIDioStrategy extends BaseProviderDioStrategy {
 
   OpenAIDioStrategy({this.providerName = 'OpenAI'});
 
+  void _setHeaderCaseInsensitive(
+    Map<String, String> headers,
+    String key,
+    String value,
+  ) {
+    final lower = key.toLowerCase();
+    final keysToRemove = <String>[];
+    for (final existingKey in headers.keys) {
+      if (existingKey.toLowerCase() == lower) {
+        keysToRemove.add(existingKey);
+      }
+    }
+    for (final k in keysToRemove) {
+      headers.remove(k);
+    }
+    headers[key] = value;
+  }
+
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final openaiConfig = config as OpenAIRequestConfig;
@@ -24,21 +42,22 @@ class OpenAIDioStrategy extends BaseProviderDioStrategy {
 
     final apiKey = openaiConfig.apiKey?.trim();
 
-    final headers = <String, String>{
-      'Content-Type': 'application/json',
-    };
+    final headers = <String, String>{};
+    _setHeaderCaseInsensitive(headers, 'Content-Type', 'application/json');
 
     if (apiKey != null && apiKey.isNotEmpty) {
       if (isAzure) {
-        headers['api-key'] = apiKey;
+        _setHeaderCaseInsensitive(headers, 'api-key', apiKey);
       } else {
-        headers['Authorization'] = 'Bearer $apiKey';
+        _setHeaderCaseInsensitive(headers, 'Authorization', 'Bearer $apiKey');
       }
     }
 
     final extra = openaiConfig.extraHeaders;
     if (extra != null && extra.isNotEmpty) {
-      headers.addAll(extra);
+      for (final entry in extra.entries) {
+        _setHeaderCaseInsensitive(headers, entry.key, entry.value);
+      }
     }
 
     final uaId = openaiConfig is OpenAICompatibleConfig
