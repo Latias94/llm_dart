@@ -1,8 +1,9 @@
+import 'dart:convert';
 import 'dart:math';
 
+import 'package:llm_dart_azure/config.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
-import 'package:llm_dart_openai/responses.dart' as openai_responses;
+import 'package:llm_dart_openai_compatible/responses.dart' as openai_responses;
 import 'package:test/test.dart';
 
 import '../../utils/fixture_meta.dart';
@@ -26,12 +27,12 @@ List<String> _splitRandom(String input, {required int seed, int maxLen = 11}) {
 String _asSse(String line) => 'data: $line\n\n';
 
 void main() {
-  group('OpenAI Responses fixture fuzz (chunk boundaries)', () {
+  group('Azure OpenAI Responses fixture fuzz (chunk boundaries)', () {
     Future<void> runFixtureFuzz(
       String baseName, {
       required List<int> seeds,
     }) async {
-      final fixturePath = 'test/fixtures/openai/responses/$baseName.chunks.txt';
+      final fixturePath = 'test/fixtures/azure/responses/$baseName.chunks.txt';
 
       final sessions = splitJsonLinesIntoSessions(
         readFixtureLines(fixturePath),
@@ -39,14 +40,14 @@ void main() {
       );
       expect(sessions, isNotEmpty, reason: 'Expected at least one session.');
 
-      const baseUrl = 'https://api.openai.com/v1/';
-      const model = 'gpt-5-mini';
+      const baseUrl = 'https://example.azure.com/openai/';
+      const model = 'gpt-4.1-mini';
       final providerTools = readProviderToolsFromV3Meta(
-        provider: 'openai',
+        provider: 'azure',
         scenario: baseName,
       );
 
-      final config = openai_client.OpenAIConfig(
+      final config = AzureOpenAIConfig(
         apiKey: 'test-key',
         baseUrl: baseUrl,
         model: model,
@@ -63,14 +64,14 @@ void main() {
       for (var sessionIndex = 0;
           sessionIndex < sessions.length;
           sessionIndex++) {
-        final goldenBasePath = 'test/fixtures/v3_parts/openai/$baseName';
+        final goldenBasePath = 'test/fixtures/v3_parts/azure/$baseName';
         final goldenPath = sessions.length == 1
             ? '$goldenBasePath.jsonl'
             : '$goldenBasePath.session${sessionIndex + 1}.jsonl';
 
-        for (final seed in seeds) {
-          final sse = sessions[sessionIndex].map(_asSse).join();
+        final sse = sessions[sessionIndex].map(_asSse).join();
 
+        for (final seed in seeds) {
           final client = FakeOpenAIClient(config)
             ..streamResponse = Stream<String>.fromIterable(
               _splitRandom(sse, seed: seed),
@@ -79,8 +80,8 @@ void main() {
 
           final parts = await responses
               .chatStreamParts([ChatMessage.user('Hi')]).toList();
-          final actual = encodeV3StreamParts(parts);
 
+          final actual = encodeV3StreamParts(parts);
           expectStableJsonlGolden(
             goldenPath: goldenPath,
             actualObjects: actual,
@@ -89,16 +90,24 @@ void main() {
       }
     }
 
-    test('tool-input deltas survive arbitrary splits', () async {
+    test('web_search_preview tool survives arbitrary splits', () async {
       await runFixtureFuzz(
-        'openai-code-interpreter-tool.1',
+        'azure-web-search-preview-tool.1',
         seeds: const [1, 7, 42],
       );
     });
 
-    test('mcp tool approval survives arbitrary splits', () async {
+    test('code-interpreter tool-input deltas survive arbitrary splits',
+        () async {
       await runFixtureFuzz(
-        'openai-mcp-tool-approval.1',
+        'azure-code-interpreter-tool.1',
+        seeds: const [1, 7, 42],
+      );
+    });
+
+    test('reasoning-encrypted-content survives arbitrary splits', () async {
+      await runFixtureFuzz(
+        'azure-reasoning-encrypted-content.1',
         seeds: const [1, 7, 42],
       );
     });

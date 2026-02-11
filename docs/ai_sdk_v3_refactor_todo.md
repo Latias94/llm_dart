@@ -26,7 +26,7 @@ Rolling plan (kept up to date):
   - [x] protocol-level tests under `test/protocols/...` for shared OpenAI-compatible + Anthropic-compatible semantics (incremental; keep expanding)
   - [x] ordering invariants for metadata vs first content (best-effort; do not reorder/delay content)
 - [ ] Keep fixtures synced with AI SDK:
-  - [ ] when bumping `_upstream.json`, run `melos run fixtures:sync` then `melos run parity:check`
+  - [x] when bumping `_upstream.json`, run `melos run upstream:vercel-ai:bump -- --commit <sha>`
 
 1) Enforce finish semantics in orchestration:
    - [x] guarantee exactly one terminal `finish` part (buffer + emit last)
@@ -250,6 +250,8 @@ Recommended order:
   - [x] usage arriving after finish_reason (common in OpenAI-compatible/Azure; see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
   - [x] OpenAI Responses SSE chunk boundaries (tool-input deltas + MCP approvals; see `test/providers/openai/openai_responses_fixture_streaming_chunk_fuzz_test.dart`)
   - [x] Anthropic messages SSE chunk boundaries (server tools; see `test/providers/anthropic/anthropic_fixture_streaming_chunk_fuzz_test.dart`)
+  - [x] Azure OpenAI Responses SSE chunk boundaries (see `test/providers/azure/azure_openai_responses_fixture_streaming_chunk_fuzz_test.dart`)
+  - [x] xAI Responses SSE chunk boundaries (see `test/providers/xai/xai_responses_fixture_streaming_chunk_fuzz_test.dart`)
   - [x] response-metadata/providerMetadata never appear after finish (llm_dart_ai wrapper; see `test/ai/response_metadata_conformance_test.dart`)
 
 ---

@@ -1,7 +1,8 @@
 import 'dart:math';
 
-import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_ai/llm_dart_ai.dart' as llm_ai;
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
+import 'package:llm_dart_xai/responses.dart';
 import 'package:test/test.dart';
 
 import '../../utils/fixture_replay.dart';
@@ -24,49 +25,46 @@ List<String> _splitRandom(String input, {required int seed, int maxLen = 11}) {
 String _asSse(String line) => 'data: $line\n\n';
 
 void main() {
-  group('Anthropic fixture fuzz (chunk boundaries)', () {
+  group('xAI Responses fixture fuzz (chunk boundaries)', () {
     Future<void> runFixtureFuzz(
       String baseName, {
       required List<int> seeds,
     }) async {
-      final fixturePath =
-          'test/fixtures/anthropic/messages/$baseName.chunks.txt';
+      final fixturePath = 'test/fixtures/xai/responses/$baseName.chunks.txt';
 
       final sessions = splitJsonLinesIntoSessions(
         readFixtureLines(fixturePath),
-        isTerminalEvent: isAnthropicMessagesTerminalEvent,
+        isTerminalEvent: isOpenAIResponsesTerminalEvent,
       );
       expect(sessions, isNotEmpty, reason: 'Expected at least one session.');
 
-      final config = AnthropicConfig(
-        providerId: 'anthropic',
+      final config = OpenAICompatibleConfig(
+        providerId: 'xai.responses',
+        providerName: 'xAI (Responses)',
         apiKey: 'test-key',
-        model: 'claude-sonnet-4-20250514',
-        baseUrl: 'https://api.anthropic.com/v1/',
-        stream: true,
+        baseUrl: 'https://api.x.ai/v1/',
+        model: 'grok-4-fast',
       );
 
       for (var sessionIndex = 0;
           sessionIndex < sessions.length;
           sessionIndex++) {
-        final goldenBasePath = 'test/fixtures/v3_parts/anthropic/$baseName';
+        final goldenBasePath = 'test/fixtures/v3_parts/xai/$baseName';
         final goldenPath = sessions.length == 1
             ? '$goldenBasePath.jsonl'
             : '$goldenBasePath.session${sessionIndex + 1}.jsonl';
 
-        for (final seed in seeds) {
-          final sse = sessions[sessionIndex].map(_asSse).join();
+        final sse = sessions[sessionIndex].map(_asSse).join();
 
-          final client = FakeAnthropicClient(config)
+        for (final seed in seeds) {
+          final client = FakeOpenAIClient(config)
             ..streamResponse = Stream<String>.fromIterable(
               _splitRandom(sse, seed: seed),
             );
-          final chat = AnthropicChat(client, config);
+          final responses = XAIResponses(client, config);
 
-          final parts = await llm_ai.streamChatParts(
-            model: chat,
-            messages: [ChatMessage.user('Hi')],
-          ).toList();
+          final parts = await responses
+              .chatStreamParts([ChatMessage.user('Hi')]).toList();
 
           final actual = encodeV3StreamParts(parts);
           expectStableJsonlGolden(
@@ -77,9 +75,9 @@ void main() {
       }
     }
 
-    test('web-search server tool survives arbitrary splits', () async {
+    test('web-search tool survives arbitrary splits', () async {
       await runFixtureFuzz(
-        'anthropic-web-search-tool.1',
+        'xai-web-search-tool.1',
         seeds: const [1, 7, 42],
       );
     });
