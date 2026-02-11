@@ -5,6 +5,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'ensure_single_finish.dart';
 import 'ensure_block_ids.dart';
+import 'ensure_response_metadata.dart';
 import 'ensure_stream_start.dart';
 import 'prompt_input.dart';
 import 'tool_set.dart';
@@ -1382,7 +1383,9 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
   yield* ensureStreamStartPart(
     ensureBlockIdsPart(
-      ensureSingleFinishPart(upstream()),
+      ensureSingleFinishPart(
+        ensureResponseMetadataPart(upstream()),
+      ),
     ),
   );
 }

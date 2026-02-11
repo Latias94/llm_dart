@@ -79,5 +79,47 @@ void main() {
       expect(parts.indexOf(responseMetadata), lessThan(finishIndex));
       expect(parts.indexOf(providerMetadata), lessThan(finishIndex));
     });
+
+    test('collapses consecutive response-metadata parts into one', () async {
+      final model = _FakePartsModel(
+        Stream<LLMStreamPart>.fromIterable([
+          LLMResponseMetadataPart(id: 'resp_1'),
+          LLMResponseMetadataPart(model: 'm1'),
+          const LLMTextDeltaPart('ok'),
+          const LLMFinishPart(_FakeChatResponse(text: 'ok')),
+        ]),
+      );
+
+      final parts = await streamChatParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+      ).toList();
+
+      final metas = parts.whereType<LLMResponseMetadataPart>().toList();
+      expect(metas, hasLength(1));
+      expect(metas.single.id, equals('resp_1'));
+      expect(metas.single.model, equals('m1'));
+    });
+
+    test('drops additional response-metadata parts later in stream', () async {
+      final model = _FakePartsModel(
+        Stream<LLMStreamPart>.fromIterable([
+          LLMResponseMetadataPart(id: 'resp_1', model: 'm1'),
+          const LLMTextDeltaPart('ok'),
+          LLMResponseMetadataPart(id: 'resp_2', model: 'm2'),
+          const LLMFinishPart(_FakeChatResponse(text: 'ok')),
+        ]),
+      );
+
+      final parts = await streamChatParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+      ).toList();
+
+      final metas = parts.whereType<LLMResponseMetadataPart>().toList();
+      expect(metas, hasLength(1));
+      expect(metas.single.id, equals('resp_1'));
+      expect(metas.single.model, equals('m1'));
+    });
   });
 }

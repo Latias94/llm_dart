@@ -27,6 +27,9 @@ semantics while keeping the public Dart APIs idiomatic.
    - keep provider-only citation payloads under `providerMetadata` (namespaced)
 4) Optional: v3 JSON decoding (only if it unlocks faster fixture workflows):
    - support `.jsonl` -> parts round-trips for debugging and meta checks
+5) Response metadata conformance:
+   - [x] ensure metadata does not appear after finish
+   - [x] dedupe/merge consecutive response-metadata parts (best-effort)
 
 Tracker note: per-provider progress is tracked in `docs/provider_alignment_progress.md`.
 
