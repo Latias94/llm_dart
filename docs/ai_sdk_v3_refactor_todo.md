@@ -16,6 +16,18 @@ Reference: `docs/ai_sdk_v3_refactor_purpose.md`
 These are the next concrete steps we should take to stay close to AI SDK v3
 semantics while keeping the public Dart APIs idiomatic.
 
+Rolling plan (kept up to date):
+
+- [ ] Add `file` part end-to-end for at least one real provider surface (ROI target: Google/Gemini inline data):
+  - [ ] provider adapter emits `LLMFilePart` where applicable
+  - [ ] add a small handcrafted contract fixture (if upstream has no stream capture)
+  - [ ] add/extend v3 golden(s) to include at least one `type:'file'` part
+- [ ] Strengthen conformance suites:
+  - [ ] protocol-level tests under `test/protocols/...` for shared OpenAI-compatible + Anthropic-compatible semantics
+  - [ ] ordering invariants for metadata vs first content (best-effort, document exceptions)
+- [ ] Keep fixtures synced with AI SDK:
+  - [ ] when bumping `_upstream.json`, run `melos run fixtures:sync` then `melos run parity:check`
+
 1) Enforce finish semantics in orchestration:
    - [x] guarantee exactly one terminal `finish` part (buffer + emit last)
    - [x] conformance test for duplicate finish events
