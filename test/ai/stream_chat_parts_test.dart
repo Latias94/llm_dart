@@ -133,5 +133,31 @@ void main() {
       expect(parts[12], isA<LLMFinishPart>());
       expect((parts[12] as LLMFinishPart).response.text, equals('Hello'));
     });
+
+    test('deduplicates finish and ensures it is last', () async {
+      final model = _FakeChatModel([
+        const LLMTextDeltaPart('A'),
+        const LLMFinishPart(_FakeChatResponse(text: 'first')),
+        const LLMProviderMetadataPart({
+          'openai': {'id': 'resp_early'},
+        }),
+        const LLMFinishPart(_FakeChatResponse(text: 'last')),
+      ]);
+
+      final parts = await streamChatParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+      ).toList();
+
+      expect(parts.whereType<LLMStreamStartPart>(), hasLength(1));
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
+      expect(parts.last, isA<LLMFinishPart>());
+      expect((parts.last as LLMFinishPart).response.text, equals('last'));
+
+      final providerMetadataIndex =
+          parts.indexWhere((p) => p is LLMProviderMetadataPart);
+      expect(providerMetadataIndex, isNonNegative);
+      expect(providerMetadataIndex, lessThan(parts.length - 1));
+    });
   });
 }

@@ -17,8 +17,8 @@ These are the next concrete steps we should take to stay close to AI SDK v3
 semantics while keeping the public Dart APIs idiomatic.
 
 1) Enforce finish semantics in orchestration:
-   - guarantee exactly one terminal `finish` part
-   - add conformance tests for providers that may emit multiple finish-like events
+   - [x] guarantee exactly one terminal `finish` part (buffer + emit last)
+   - [x] conformance test for duplicate finish events
 2) Tool name mapping conformance:
    - cover tool name collisions (rewrite stability) with fixtures/tests
    - verify provider-native tool names always round-trip through our mapping layer
@@ -105,7 +105,7 @@ Tracker note: per-provider progress is tracked in `docs/provider_alignment_progr
 - [ ] In `llm_dart_ai` (`packages/llm_dart_ai/lib/src/stream_parts.dart`):
   - [x] Inject `stream-start` exactly once (via `ensureStreamStartPart`)
   - [x] Inject/normalize missing block ids (text/reasoning/tool input) via `ensure_block_ids.dart`
-  - [ ] Ensure exactly one final `finish` part at end of stream (only if providers ever emit multiple finish events)
+  - [x] Ensure exactly one final `finish` part at end of stream (via `ensureSingleFinishPart`)
 
 ---
 

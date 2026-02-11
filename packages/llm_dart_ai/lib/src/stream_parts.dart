@@ -2,6 +2,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'ensure_stream_start.dart';
 import 'ensure_block_ids.dart';
+import 'ensure_single_finish.dart';
 import 'prompt_input.dart';
 
 export 'package:llm_dart_core/core/stream_parts.dart';
@@ -22,14 +23,16 @@ Stream<LLMStreamPart> streamChatParts({
 }) async* {
   yield* ensureStreamStartPart(
     ensureBlockIdsPart(
-      _streamChatPartsInternal(
-        model: model,
-        system: system,
-        prompt: prompt,
-        messages: messages,
-        promptIr: promptIr,
-        tools: tools,
-        cancelToken: cancelToken,
+      ensureSingleFinishPart(
+        _streamChatPartsInternal(
+          model: model,
+          system: system,
+          prompt: prompt,
+          messages: messages,
+          promptIr: promptIr,
+          tools: tools,
+          cancelToken: cancelToken,
+        ),
       ),
     ),
   );
