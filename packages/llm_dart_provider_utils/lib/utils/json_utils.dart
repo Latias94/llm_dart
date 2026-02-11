@@ -17,4 +17,3 @@ bool isParsableJson(String input) {
     return false;
   }
 }
-

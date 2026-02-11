@@ -50,11 +50,12 @@ void main() {
 
       final chat = GoogleChat(client, config);
       final parts = await chat
-          .chatStreamParts([ChatMessage.user('hi')], tools: const [])
-          .toList();
+          .chatStreamParts([ChatMessage.user('hi')], tools: const []).toList();
 
-      final toolCalls =
-          parts.whereType<LLMToolCallStartPart>().map((p) => p.toolCall).toList();
+      final toolCalls = parts
+          .whereType<LLMToolCallStartPart>()
+          .map((p) => p.toolCall)
+          .toList();
       expect(toolCalls, hasLength(2));
 
       expect(toolCalls[0].id, equals('call_get_weather'));

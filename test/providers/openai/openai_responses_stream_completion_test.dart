@@ -63,8 +63,8 @@ void main() {
           await responses.chatStreamParts([ChatMessage.user('test')]).toList();
 
       final finish = parts.whereType<LLMFinishPart>().single;
-      final openai = finish.response.providerMetadata!['openai']
-          as Map<String, dynamic>;
+      final openai =
+          finish.response.providerMetadata!['openai'] as Map<String, dynamic>;
 
       final webSearchCalls = openai['webSearchCalls'] as List;
       expect(webSearchCalls, hasLength(1));

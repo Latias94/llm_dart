@@ -68,8 +68,7 @@ void main() {
       final chat = OllamaChat(client, config);
 
       final parts = await chat
-          .chatStreamParts([ChatMessage.user('Hi')], tools: const [])
-          .toList();
+          .chatStreamParts([ChatMessage.user('Hi')], tools: const []).toList();
 
       final toolCalls = parts
           .whereType<LLMToolCallStartPart>()

@@ -17,11 +17,9 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://api.openai.com/v1/',
         model: 'gpt-4o',
-      )
-          .withProviderOptions('openai', {
-            'useResponsesAPI': false,
-          })
-          .withTransportOptions({'customDio': customDio});
+      ).withProviderOptions('openai', {
+        'useResponsesAPI': false,
+      }).withTransportOptions({'customDio': customDio});
 
       final factory = OpenAIProviderFactory();
       final provider = factory.create(llmConfig) as OpenAIProvider;
@@ -40,7 +38,8 @@ void main() {
       expect(response.usage!.totalTokens, equals(7));
     });
 
-    test('responses api adds openai.responses alias key + normalizes usage', () async {
+    test('responses api adds openai.responses alias key + normalizes usage',
+        () async {
       final adapter = _FakeOpenAIHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
 
@@ -48,11 +47,9 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://api.openai.com/v1/',
         model: 'gpt-4o',
-      )
-          .withProviderOptions('openai', {
-            'useResponsesAPI': true,
-          })
-          .withTransportOptions({'customDio': customDio});
+      ).withProviderOptions('openai', {
+        'useResponsesAPI': true,
+      }).withTransportOptions({'customDio': customDio});
 
       final factory = OpenAIProviderFactory();
       final provider = factory.create(llmConfig) as OpenAIProvider;
@@ -161,4 +158,3 @@ class _FakeOpenAIHttpClientAdapter implements HttpClientAdapter {
     );
   }
 }
-

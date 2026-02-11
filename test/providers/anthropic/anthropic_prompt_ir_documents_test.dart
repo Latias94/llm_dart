@@ -47,8 +47,8 @@ void main() {
 
       final body = b.buildRequestBodyFromPrompt(prompt, null, false);
       final messages = body['messages'] as List<dynamic>;
-      final content = (messages.single as Map<String, dynamic>)['content']
-          as List<dynamic>;
+      final content =
+          (messages.single as Map<String, dynamic>)['content'] as List<dynamic>;
 
       expect(content, hasLength(3));
       expect(content[0]['type'], equals('text'));
@@ -56,7 +56,8 @@ void main() {
       expect(content[1]['type'], equals('text'));
       expect(content[1]['text'], equals('caption'));
       expect(content[2]['type'], equals('image'));
-      expect(content[2]['source'], equals({'type': 'url', 'url': 'https://example.com/a.png'}));
+      expect(content[2]['source'],
+          equals({'type': 'url', 'url': 'https://example.com/a.png'}));
     });
 
     test('supports text/plain FilePart with citations metadata', () {
@@ -83,8 +84,8 @@ void main() {
 
       final body = b.buildRequestBodyFromPrompt(prompt, null, false);
       final messages = body['messages'] as List<dynamic>;
-      final content = (messages.single as Map<String, dynamic>)['content']
-          as List<dynamic>;
+      final content =
+          (messages.single as Map<String, dynamic>)['content'] as List<dynamic>;
 
       expect(content, hasLength(1));
       expect(content[0]['type'], equals('document'));
@@ -102,4 +103,3 @@ void main() {
     });
   });
 }
-

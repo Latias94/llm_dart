@@ -158,7 +158,8 @@ void main() {
         );
 
         // Simulate multiple tool calls
-        controller.add(const LLMTextDeltaPart('I need to call multiple tools: '));
+        controller
+            .add(const LLMTextDeltaPart('I need to call multiple tools: '));
         controller.add(LLMToolCallDeltaPart(
           ToolCall(
             id: 'call_1',
@@ -335,7 +336,8 @@ void main() {
         ));
         eventTypes.add('tool_call');
 
-        controller.add(const LLMTextDeltaPart('Analysis complete. Now calculating: '));
+        controller.add(
+            const LLMTextDeltaPart('Analysis complete. Now calculating: '));
         eventTypes.add('text');
 
         controller.add(LLMToolCallDeltaPart(
@@ -369,14 +371,8 @@ void main() {
         expect(actualEventTypes, equals(eventTypes));
         expect(
             actualEventTypes,
-            equals([
-              'text',
-              'tool_call',
-              'text',
-              'tool_call',
-              'text',
-              'finish'
-            ]));
+            equals(
+                ['text', 'tool_call', 'text', 'tool_call', 'text', 'finish']));
       });
     });
   });

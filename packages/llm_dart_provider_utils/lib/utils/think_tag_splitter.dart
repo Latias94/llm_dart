@@ -61,8 +61,7 @@ final class ThinkTagSplitter {
     final openTag = '<$tagName>';
     final closeTag = '</$tagName>';
 
-    final shouldScan =
-        _pendingTagFragment.isNotEmpty || delta.contains('<');
+    final shouldScan = _pendingTagFragment.isNotEmpty || delta.contains('<');
     if (!shouldScan) {
       return [
         _inTag ? ThinkTagThinkingPiece(delta) : ThinkTagTextPiece(delta),
@@ -133,4 +132,3 @@ final class _PendingSplit {
   final String pending;
   const _PendingSplit({required this.emit, required this.pending});
 }
-

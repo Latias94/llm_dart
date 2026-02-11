@@ -16,12 +16,13 @@ void main() {
         equals('2024-10-01-preview'),
       );
       expect(
-        builder.currentConfig.getProviderOption<bool>(
-            'azure', 'useDeploymentBasedUrls'),
+        builder.currentConfig
+            .getProviderOption<bool>('azure', 'useDeploymentBasedUrls'),
         isTrue,
       );
       expect(
-        builder.currentConfig.getProviderOption<bool>('azure', 'useResponsesAPI'),
+        builder.currentConfig
+            .getProviderOption<bool>('azure', 'useResponsesAPI'),
         isFalse,
       );
     });
@@ -35,7 +36,8 @@ void main() {
             .imageGenerationTool(),
       );
 
-      final ids = builder.currentConfig.providerTools?.map((t) => t.id).toList();
+      final ids =
+          builder.currentConfig.providerTools?.map((t) => t.id).toList();
       expect(ids, isNotNull);
       expect(
         ids!,
@@ -49,4 +51,3 @@ void main() {
     });
   });
 }
-

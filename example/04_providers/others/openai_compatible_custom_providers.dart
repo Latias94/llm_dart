@@ -90,7 +90,8 @@ void main() async {
       case LLMFinishPart(:final response, :final usage, :final finishReason):
         print('finalText: ${response.text}');
         print('usage: ${usage ?? response.usage}');
-        print('finishReason: ${finishReason ?? (response is ChatResponseWithFinishReason ? response.finishReason : null)}');
+        print(
+            'finishReason: ${finishReason ?? (response is ChatResponseWithFinishReason ? response.finishReason : null)}');
         print('providerMetadata: ${response.providerMetadata}');
         break;
       case LLMReasoningDeltaPart(:final delta):

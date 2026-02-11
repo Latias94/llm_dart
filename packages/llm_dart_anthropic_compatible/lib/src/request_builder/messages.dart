@@ -134,8 +134,8 @@ extension _AnthropicRequestBuilderMessages on AnthropicRequestBuilder {
           }
 
           final trimmed = url.trim();
-          final isHttp = trimmed.startsWith('http://') ||
-              trimmed.startsWith('https://');
+          final isHttp =
+              trimmed.startsWith('http://') || trimmed.startsWith('https://');
           if (!isHttp) {
             throw InvalidRequestError(
               'ImageUrlMessage must be an http(s) URL. Got: "$url"',

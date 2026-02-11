@@ -34,12 +34,10 @@ void main() {
         ),
       );
 
-      final parts = await responses
-          .chatStreamParts(
-            [ChatMessage.user('test')],
-            tools: [collidingTool],
-          )
-          .toList();
+      final parts = await responses.chatStreamParts(
+        [ChatMessage.user('test')],
+        tools: [collidingTool],
+      ).toList();
 
       final toolCalls = <ToolCall>[];
       for (final part in parts) {

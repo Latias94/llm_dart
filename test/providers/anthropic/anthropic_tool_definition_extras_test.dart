@@ -43,7 +43,11 @@ void main() {
       final def = tools.single.cast<String, dynamic>();
       expect(def['name'], equals('t'));
       expect(def['strict'], isTrue);
-      expect(def['input_examples'], equals(const [{'a': 1}]));
+      expect(
+          def['input_examples'],
+          equals(const [
+            {'a': 1}
+          ]));
       expect(def['defer_loading'], isTrue);
       expect(def['allowed_callers'], equals(const ['code_execution_20250825']));
     });

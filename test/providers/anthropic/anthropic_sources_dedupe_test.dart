@@ -5,7 +5,8 @@ import '../../utils/fakes/anthropic_fake_client.dart';
 
 void main() {
   group('Anthropic source parts dedupe (AI SDK parity)', () {
-    test('dedupes URL sources across web_search results and citations', () async {
+    test('dedupes URL sources across web_search results and citations',
+        () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',
         baseUrl: 'https://api.anthropic.com/v1/',
@@ -58,9 +59,8 @@ void main() {
         ..streamResponse = Stream<String>.fromIterable(sse);
       final chat = AnthropicChat(client, config);
 
-      final parts =
-          await chat.chatStreamParts([ChatMessage.user('Hi')], tools: const [])
-              .toList();
+      final parts = await chat
+          .chatStreamParts([ChatMessage.user('Hi')], tools: const []).toList();
 
       final sources = parts.whereType<LLMSourceUrlPart>().toList();
       expect(sources, hasLength(1));

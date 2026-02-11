@@ -68,7 +68,9 @@ void main() {
       expect(msg['content'], equals('Describe:\nA small icon.'));
       expect(
         msg['images'],
-        equals([base64Encode(const [1, 2, 3])]),
+        equals([
+          base64Encode(const [1, 2, 3])
+        ]),
       );
     });
 
@@ -147,4 +149,3 @@ void main() {
     });
   });
 }
-

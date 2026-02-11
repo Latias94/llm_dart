@@ -45,7 +45,8 @@ class _CapturingHttpClientAdapter implements HttpClientAdapter {
 
 void main() {
   group('ElevenLabs request mapping (AI SDK parity)', () {
-    test('TTS: maps voice/model + output_format + request voice settings', () async {
+    test('TTS: maps voice/model + output_format + request voice settings',
+        () async {
       final adapter = _CapturingHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
 
@@ -162,10 +163,10 @@ void main() {
       expect(body, isA<FormData>());
       final form = body as FormData;
 
-      expect(form.fields.any((e) => e.key == 'model_id' && e.value == 'scribe_v1'),
+      expect(
+          form.fields.any((e) => e.key == 'model_id' && e.value == 'scribe_v1'),
           isTrue);
       expect(form.files.any((e) => e.key == 'file'), isTrue);
     });
   });
 }
-

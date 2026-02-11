@@ -74,7 +74,8 @@ void main() {
         }
         if (finish.response.usage != null) {
           expect(finish.usage, isNotNull);
-          expect(finish.usage!.toJson(), equals(finish.response.usage!.toJson()));
+          expect(
+              finish.usage!.toJson(), equals(finish.response.usage!.toJson()));
         }
 
         final expectedHasServerToolCall = File(file.path)

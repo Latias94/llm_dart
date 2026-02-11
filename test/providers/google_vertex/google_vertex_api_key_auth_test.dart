@@ -20,8 +20,9 @@ class _CapturingAdapter implements HttpClientAdapter {
     Future<void>? cancelFuture,
   ) async {
     lastUri = options.uri;
-    lastHeaders =
-        options.headers.isEmpty ? null : Map<String, dynamic>.from(options.headers);
+    lastHeaders = options.headers.isEmpty
+        ? null
+        : Map<String, dynamic>.from(options.headers);
 
     final body = jsonEncode({
       'candidates': [

@@ -23,7 +23,8 @@ void main() {
       String baseName, {
       String provider = 'minimax',
     }) async {
-      final fixturePath = 'test/fixtures/anthropic/messages/$baseName.chunks.txt';
+      final fixturePath =
+          'test/fixtures/anthropic/messages/$baseName.chunks.txt';
       final sessions = sseStreamsFromChunkFileSplitByTerminalEvent(
         fixturePath,
         isTerminalEvent: isAnthropicMessagesTerminalEvent,
@@ -38,7 +39,8 @@ void main() {
       );
 
       for (var i = 0; i < sessions.length; i++) {
-        final client = FakeAnthropicClient(config)..streamResponse = sessions[i];
+        final client = FakeAnthropicClient(config)
+          ..streamResponse = sessions[i];
         final providerInstance =
             anthropic_compat_provider.AnthropicCompatibleChatProvider(
           client,
@@ -84,4 +86,3 @@ void main() {
     }
   });
 }
-

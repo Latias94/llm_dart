@@ -44,7 +44,8 @@ void main() {
       expect(parts.whereType<LLMFinishPart>(), hasLength(1));
     });
 
-    test('passes through full Vertex model resource path (non-express)', () async {
+    test('passes through full Vertex model resource path (non-express)',
+        () async {
       const fullModelPath =
           'projects/test-project/locations/us-central1/publishers/google/models/gemini-2.5-pro';
 
@@ -75,8 +76,7 @@ void main() {
 
       final chat = GoogleChat(client, config);
       final parts = await chat
-          .chatStreamParts([ChatMessage.user('hi')], tools: const [])
-          .toList();
+          .chatStreamParts([ChatMessage.user('hi')], tools: const []).toList();
 
       expect(
         client.lastEndpoint,

@@ -4,7 +4,8 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAI providerTools legacy id compatibility', () {
-    test('accepts openai.computer_use_preview as an alias for computer_use', () async {
+    test('accepts openai.computer_use_preview as an alias for computer_use',
+        () async {
       final provider = await ai()
           .provider('openai')
           .apiKey('test-key')
@@ -24,10 +25,10 @@ void main() {
       expect(openai.config.useResponsesAPI, isTrue);
       expect(openai.config.builtInTools, isNotNull);
       expect(
-        openai.config.builtInTools!.any((t) => t.toJson()['type'] == 'computer_use_preview'),
+        openai.config.builtInTools!
+            .any((t) => t.toJson()['type'] == 'computer_use_preview'),
         isTrue,
       );
     });
   });
 }
-

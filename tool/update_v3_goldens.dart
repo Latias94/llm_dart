@@ -898,7 +898,8 @@ _MetaStatus _ensureMeta({
   final source = (meta['source'] is Map)
       ? (meta['source'] as Map).cast<String, dynamic>()
       : <String, dynamic>{};
-  final isVendored = repoRefFixturePath != null && repoRefFixturePath.isNotEmpty;
+  final isVendored =
+      repoRefFixturePath != null && repoRefFixturePath.isNotEmpty;
   source['type'] =
       isVendored ? 'vendored-ai-sdk-fixture' : 'handcrafted-contract-fixture';
 

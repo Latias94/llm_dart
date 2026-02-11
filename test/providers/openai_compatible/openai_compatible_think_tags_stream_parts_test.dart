@@ -87,7 +87,8 @@ void main() {
         ..streamResponse = Stream<String>.fromIterable(chunks);
       final chat = OpenAIChat(client, config);
 
-      final parts = await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
+      final parts =
+          await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
 
       expect(parts.whereType<LLMTextStartPart>(), hasLength(2));
       expect(
@@ -162,11 +163,13 @@ void main() {
         ..streamResponse = Stream<String>.fromIterable(chunks);
       final chat = OpenAIChat(client, config);
 
-      final parts = await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
+      final parts =
+          await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
 
       expect(parts.whereType<LLMReasoningStartPart>(), hasLength(1));
       expect(parts.whereType<LLMReasoningDeltaPart>(), isEmpty);
-      expect(parts.whereType<LLMReasoningEndPart>().single.thinking, equals(''));
+      expect(
+          parts.whereType<LLMReasoningEndPart>().single.thinking, equals(''));
 
       final finish = parts.last as LLMFinishPart;
       expect(finish.response.text, equals('Hello'));
@@ -174,4 +177,3 @@ void main() {
     });
   });
 }
-

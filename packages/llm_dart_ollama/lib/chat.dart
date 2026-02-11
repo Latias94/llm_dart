@@ -923,7 +923,9 @@ class OllamaChatResponse implements ChatResponseWithFinishReason {
       'stop' => LLMUnifiedFinishReason.stop,
       'length' => LLMUnifiedFinishReason.length,
       'tool_calls' || 'tool-calls' => LLMUnifiedFinishReason.toolCalls,
-      'content_filter' || 'content-filter' => LLMUnifiedFinishReason.contentFilter,
+      'content_filter' ||
+      'content-filter' =>
+        LLMUnifiedFinishReason.contentFilter,
       'error' => LLMUnifiedFinishReason.error,
       _ => LLMUnifiedFinishReason.other,
     };
