@@ -1,0 +1,22 @@
+{
+  "provider": "google",
+  "scenario": "google-thinking-text.1",
+  "description": "Google (Gemini API) SSE streaming with thought=true reasoning and regular text. Handcrafted contract fixture validating v3 reasoning/text boundaries, response-metadata, and usage mapping.",
+  "source": {
+    "type": "handcrafted-contract-fixture",
+    "paths": [
+      "test/fixtures/google/chat/google-thinking-text.1.chunks.txt"
+    ],
+    "notes": "Handcrafted fixture because upstream AI SDK does not ship Google `*.chunks.txt` stream captures. Uses Gemini SSE (`alt=sse`) style with `[DONE]`."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "tool_input_delta_is_string": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  }
+}
+

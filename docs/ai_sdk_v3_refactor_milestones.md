@@ -195,6 +195,16 @@ Current coverage (goldens added in this repo):
   - `test/fixtures/v3_parts/ollama/ollama-tool-call.1.jsonl`
   - `test/fixtures/v3_parts/ollama/ollama-text-length.1.jsonl`
   - `test/fixtures/v3_parts/ollama/ollama-tool-call-length.1.jsonl`
+- Google (Gemini API; contract fixtures):
+  - `test/fixtures/v3_parts/google/google-thinking-text.1.jsonl`
+  - `test/fixtures/v3_parts/google/google-tool-call.1.jsonl`
+  - `test/fixtures/v3_parts/google/google-code-execution.1.jsonl`
+  - `test/fixtures/v3_parts/google/google-grounding-sources.1.jsonl`
+- Google Vertex (express mode; contract fixtures):
+  - `test/fixtures/v3_parts/google_vertex/google-thinking-text.1.jsonl`
+  - `test/fixtures/v3_parts/google_vertex/google-tool-call.1.jsonl`
+  - `test/fixtures/v3_parts/google_vertex/google-code-execution.1.jsonl`
+  - `test/fixtures/v3_parts/google_vertex/google-grounding-sources.1.jsonl`
 
 ---
 

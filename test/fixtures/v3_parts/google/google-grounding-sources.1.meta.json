@@ -1,0 +1,22 @@
+{
+  "provider": "google",
+  "scenario": "google-grounding-sources.1",
+  "description": "Google (Gemini API) SSE streaming with groundingMetadata emitting sources. Handcrafted contract fixture validating v3 source url/document parts emission.",
+  "source": {
+    "type": "handcrafted-contract-fixture",
+    "paths": [
+      "test/fixtures/google/chat/google-grounding-sources.1.chunks.txt"
+    ],
+    "notes": "Handcrafted fixture because upstream AI SDK does not ship Google `*.chunks.txt` stream captures."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "tool_input_delta_is_string": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  }
+}
+

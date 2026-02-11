@@ -1,0 +1,2 @@
+{"modelVersion":"gemini-2.5-pro","candidates":[{"content":{"parts":[{"text":"Let me think...","thought":true},{"text":"Hello world"}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":12,"candidatesTokenCount":5,"totalTokenCount":17,"thoughtsTokenCount":2}}
+[DONE]

@@ -1,0 +1,2 @@
+{"modelVersion":"gemini-2.5-pro","candidates":[{"content":{"parts":[{"text":"Here are sources."}],"role":"model"},"groundingMetadata":{"groundingChunks":[{"web":{"uri":"https://example.com","title":"Example"}},{"retrievedContext":{"uri":"gs://bucket/docs/report.pdf","title":"Report"}}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":9,"candidatesTokenCount":4,"totalTokenCount":13}}
+[DONE]

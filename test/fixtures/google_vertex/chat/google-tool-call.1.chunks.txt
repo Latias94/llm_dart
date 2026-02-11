@@ -1,0 +1,2 @@
+{"modelVersion":"gemini-2.5-pro","candidates":[{"content":{"parts":[{"text":"Calling tool..."},{"functionCall":{"name":"getWeather","args":{"city":"London"}}}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":6,"totalTokenCount":16}}
+[DONE]

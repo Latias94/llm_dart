@@ -155,6 +155,8 @@ Current status (fixture-backed v3 golden tests in this repo):
 - [x] OpenAI-compatible baseline (DeepSeek fixtures)
 - [x] Groq (OpenAI-compatible Chat Completions; handcrafted contract fixtures)
 - [x] Ollama (NDJSON streaming; handcrafted contract fixtures)
+- [x] Google (Gemini API; handcrafted contract fixtures)
+- [x] Google Vertex (express mode; handcrafted contract fixtures)
 - [x] xAI Responses
 - [x] Open Responses (LMStudio fixtures; OpenAI Responses stream shape)
 
@@ -163,8 +165,7 @@ Remaining (recommended next targets):
 - Note: if upstream AI SDK does not ship `*.chunks.txt` captures for a provider,
   add small handcrafted contract fixtures under `test/fixtures/<provider>/...`
   and mark `source.type = "handcrafted-contract-fixture"` in `*.meta.json`.
-- [ ] Google Gemini (streaming + usage; align usage mapping)
-- [ ] Vertex AI (Google Vertex; usage + metadata)
+- [ ] Vertex AI (non-express mode; usage + metadata)
 - [ ] MiniMax / ElevenLabs (non-chat surfaces; define parity scope)
 
 Recommended order:

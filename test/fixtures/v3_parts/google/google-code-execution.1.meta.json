@@ -1,0 +1,22 @@
+{
+  "provider": "google",
+  "scenario": "google-code-execution.1",
+  "description": "Google (Gemini API) SSE streaming with provider-executed code execution tool parts. Handcrafted contract fixture validating provider tool call + tool result mapping in v3 parts.",
+  "source": {
+    "type": "handcrafted-contract-fixture",
+    "paths": [
+      "test/fixtures/google/chat/google-code-execution.1.chunks.txt"
+    ],
+    "notes": "Handcrafted fixture because upstream AI SDK does not ship Google `*.chunks.txt` stream captures."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "tool_input_delta_is_string": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  }
+}
+
