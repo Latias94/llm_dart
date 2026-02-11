@@ -15,3 +15,16 @@ class _ToolCallState {
 
   bool get isComplete => id != null && name != null;
 }
+
+class _ProviderToolCallState {
+  String? id;
+  String? toolName;
+  String? providerToolName;
+  bool providerExecuted = true;
+  bool isDynamic = false;
+
+  final StringBuffer inputBuffer = StringBuffer();
+  bool firstDelta = true;
+
+  bool get isComplete => id != null && toolName != null;
+}

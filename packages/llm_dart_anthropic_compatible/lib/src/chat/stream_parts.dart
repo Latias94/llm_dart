@@ -32,6 +32,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
 
   final sseParser = SseChunkParser();
   final activeToolCalls = <int, _ToolCallState>{};
+  final activeProviderToolCalls = <int, _ProviderToolCallState>{};
   final blockTypes = <int, String>{};
   final redactedThinkingBlocks = <int, Map<String, dynamic>>{};
   final pendingBlocks = <int, Map<String, dynamic>>{};
@@ -114,6 +115,14 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
     if (content is! Map) return false;
     final t = content['type'];
     return t is String && t.contains('_error');
+  }
+
+  String normalizeServerToolName(String raw) {
+    return switch (raw) {
+      'text_editor_code_execution' => 'code_execution',
+      'bash_code_execution' => 'code_execution',
+      _ => raw,
+    };
   }
 
   LLMProviderMetadataPart? computeProviderMetadataPart() {
@@ -442,16 +451,36 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                     id.isNotEmpty &&
                     name is String &&
                     name.isNotEmpty) {
-                  providerToolNameById[id] = name;
-                  final part = providerToolParts.call(
-                    toolCallId: id,
-                    toolName: name,
-                    input: input,
+                  final toolName = blockType == 'server_tool_use'
+                      ? normalizeServerToolName(name)
+                      : name;
+
+                  providerToolNameById[id] = toolName;
+
+                  final state = _ProviderToolCallState()
+                    ..id = id
+                    ..toolName = toolName
+                    ..providerToolName = name
+                    ..providerExecuted = true
+                    ..isDynamic = blockType == 'mcp_tool_use';
+
+                  final hasNonEmptyInput =
+                      input is Map && (input as Map).isNotEmpty;
+                  if (hasNonEmptyInput) {
+                    final encoded =
+                        tryStableJsonEncode(input) ?? jsonEncode(input);
+                    state.inputBuffer.write(encoded);
+                    state.firstDelta = false;
+                  }
+
+                  activeProviderToolCalls[index] = state;
+
+                  yield LLMToolInputStartPart(
+                    id: id,
+                    toolName: toolName,
                     providerExecuted: true,
                     isDynamic: blockType == 'mcp_tool_use' ? true : null,
-                    providerMetadataPayload: {'type': blockType},
                   );
-                  if (part != null) yield part;
                 }
                 break;
               }
@@ -564,6 +593,31 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                 ? delta['partial_json'] as String?
                 : null;
             if (partialJson != null && partialJson.isNotEmpty) {
+              final providerState = activeProviderToolCalls[index];
+              if (providerState != null && providerState.isComplete) {
+                var fragment = partialJson;
+
+                if (providerState.firstDelta == true) {
+                  final providerToolName = providerState.providerToolName;
+                  if (providerToolName == 'bash_code_execution' ||
+                      providerToolName == 'text_editor_code_execution') {
+                    if (fragment.startsWith('{')) {
+                      fragment =
+                          '{"type": "$providerToolName",${fragment.substring(1)}';
+                    }
+                  }
+                }
+
+                providerState.inputBuffer.write(fragment);
+                providerState.firstDelta = false;
+
+                yield LLMToolInputDeltaPart(
+                  id: providerState.id!,
+                  delta: fragment,
+                );
+                break;
+              }
+
               final state = activeToolCalls[index];
               if (state != null) {
                 if (!state.prefilledInput) {
@@ -665,9 +719,49 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
               }
               break;
             }
-            if (blockType == 'server_tool_use' ||
-                blockType == 'mcp_tool_use' ||
-                blockType == 'mcp_tool_result' ||
+            if (blockType == 'server_tool_use' || blockType == 'mcp_tool_use') {
+              final state = activeProviderToolCalls.remove(index);
+              if (state != null && state.isComplete) {
+                yield LLMToolInputEndPart(id: state.id!);
+
+                var inputString = state.inputBuffer.toString();
+                if (inputString.isEmpty) inputString = '{}';
+
+                if (state.providerToolName == 'code_execution') {
+                  try {
+                    final parsed = jsonDecode(inputString);
+                    if (parsed is Map &&
+                        parsed.containsKey('code') &&
+                        !parsed.containsKey('type')) {
+                      inputString = jsonEncode({
+                        'type': 'programmatic-tool-call',
+                        ...Map<String, dynamic>.from(parsed),
+                      });
+                    }
+                  } catch (_) {
+                    // Keep original inputString on parse errors.
+                  }
+                }
+
+                final part = providerToolParts.call(
+                  toolCallId: state.id!,
+                  toolName: state.toolName!,
+                  input: inputString,
+                  providerExecuted: state.providerExecuted ? true : null,
+                  isDynamic: state.isDynamic ? true : null,
+                  providerMetadataPayload: {'type': blockType},
+                );
+                if (part != null) yield part;
+              }
+
+              final block = pendingBlocks.remove(index);
+              if (block != null) {
+                contentBlocks.add(block);
+              }
+              break;
+            }
+
+            if (blockType == 'mcp_tool_result' ||
                 blockType == 'web_fetch_tool_result' ||
                 blockType == 'web_search_tool_result' ||
                 (blockType != null && blockType.endsWith('_tool_result'))) {

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:llm_dart/llm_dart.dart';
 import 'package:test/test.dart';
 
@@ -48,12 +50,23 @@ void main() {
       final parts = await chat
           .chatStreamParts([ChatMessage.user('Hi')], tools: const []).toList();
 
+      final toolInputStarts = parts.whereType<LLMToolInputStartPart>().toList();
+      expect(toolInputStarts, hasLength(1));
+      expect(toolInputStarts.single.id, equals('tool_1'));
+      expect(toolInputStarts.single.toolName, equals('web_search'));
+      expect(toolInputStarts.single.providerExecuted, isTrue);
+
+      final toolInputEnds = parts.whereType<LLMToolInputEndPart>().toList();
+      expect(toolInputEnds, hasLength(1));
+      expect(toolInputEnds.single.id, equals('tool_1'));
+
       final calls = parts.whereType<LLMProviderToolCallPart>().toList();
       expect(calls, hasLength(1));
       expect(calls.single.toolCallId, equals('tool_1'));
       expect(calls.single.toolName, equals('web_search'));
-      expect(calls.single.input, isA<Map>());
-      expect((calls.single.input as Map)['query'], equals('latest AI news'));
+      expect(calls.single.input, isA<String>());
+      expect(jsonDecode(calls.single.input as String)['query'],
+          equals('latest AI news'));
 
       final sources = parts.whereType<LLMSourceUrlPart>().toList();
       expect(sources, hasLength(1));
