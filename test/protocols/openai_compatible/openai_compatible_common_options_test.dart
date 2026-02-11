@@ -323,6 +323,50 @@ void main() {
       expect(options.uri.queryParameters['hello'], equals('world'));
     });
 
+    test(
+        'google-openai supports queryParameters alias and merges with precedence google-openai > google',
+        () async {
+      final llmConfig = LLMConfig(
+        apiKey: null,
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        model: 'gemini-2.0-flash',
+        providerOptions: const {
+          'google': {
+            'queryParameters': {
+              'foo': 'google',
+              'hello': 'world',
+            },
+          },
+          'google-openai': {
+            'queryParameters': {
+              'foo': 'google-openai',
+            },
+          },
+        },
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'google-openai',
+        providerName: 'Google Gemini (OpenAI-compatible)',
+      );
+
+      final client = OpenAIClient(config);
+      final adapter = _CapturingHttpClientAdapter();
+      client.dio.httpClientAdapter = adapter;
+
+      await client.postJson('chat/completions', {
+        'model': llmConfig.model,
+        'messages': const [],
+        'stream': false,
+      });
+
+      final options = adapter.lastOptions;
+      expect(options, isNotNull);
+      expect(options!.uri.queryParameters['foo'], equals('google-openai'));
+      expect(options.uri.queryParameters['hello'], equals('world'));
+    });
+
     test('google-openai merges queryParams with providerOptions["google"]',
         () async {
       final llmConfig = LLMConfig(
