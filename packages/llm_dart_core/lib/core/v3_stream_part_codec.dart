@@ -197,13 +197,22 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
     // Local tool call lifecycle (client-executed function tools):
     case LLMToolCallStartPart(:final toolCall):
       state.toolInput.onStart(toolCall);
-      return [
+      final out = <V3JsonMap>[
         {
           'type': 'tool-input-start',
           'id': toolCall.id,
           'toolName': toolCall.function.name,
         },
       ];
+      if (toolCall.function.arguments.isNotEmpty) {
+        state.toolInput.onDelta(toolCall);
+        out.add({
+          'type': 'tool-input-delta',
+          'id': toolCall.id,
+          'delta': toolCall.function.arguments,
+        });
+      }
+      return out;
 
     case LLMToolCallDeltaPart(:final toolCall):
       state.toolInput.onDelta(toolCall);
