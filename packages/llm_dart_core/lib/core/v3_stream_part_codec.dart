@@ -246,15 +246,16 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
         final providerExecuted = obj['providerExecuted'] == true ? true : null;
         final dynamicTool = obj['dynamic'] == true ? true : null;
 
-        final parsedInput = _decodeJsonIfPossible(inputRaw);
-        state.rememberTool(
-            id: toolCallId, toolName: toolName, input: parsedInput);
+        // Preserve the original v3 shape: `tool-call.input` is a stringified JSON
+        // object. Do not decode it, otherwise whitespace/minification differences
+        // would break fixture round-trips.
+        state.rememberTool(id: toolCallId, toolName: toolName, input: inputRaw);
 
         out.add(
           LLMProviderToolCallPart(
             toolCallId: toolCallId,
             toolName: toolName,
-            input: parsedInput,
+            input: inputRaw,
             providerExecuted: providerExecuted,
             isDynamic: dynamicTool,
             providerMetadata: providerMetadata,
@@ -1085,9 +1086,44 @@ class _ToolInputState {
 
 LLMError _decodeV3Error(Object? error) {
   if (error is Map) {
+    final name = error['name'] as String?;
     final message = error['message'];
     if (message is String && message.isNotEmpty) {
-      return ProviderError(message);
+      switch (name) {
+        case 'HttpError':
+          return HttpError(message);
+        case 'AuthError':
+          return AuthError(message);
+        case 'InvalidRequestError':
+          return InvalidRequestError(message);
+        case 'ProviderError':
+          return ProviderError(message);
+        case 'ResponseFormatError':
+          return ResponseFormatError(message, '');
+        case 'GenericError':
+          return GenericError(message);
+        case 'TimeoutError':
+          return TimeoutError(message);
+        case 'NotFoundError':
+          return NotFoundError(message);
+        case 'JsonError':
+          return JsonError(message);
+        case 'ToolConfigError':
+          return ToolConfigError(message);
+        case 'ToolExecutionError':
+          return ToolExecutionError(message, toolName: 'tool');
+        case 'ToolValidationError':
+          return ToolValidationError(message, toolName: 'tool');
+        case 'StructuredOutputError':
+          return StructuredOutputError(message);
+        case 'RateLimitError':
+          return RateLimitError(message);
+        case 'QuotaExceededError':
+          return QuotaExceededError(message);
+        default:
+          // Best-effort fallback.
+          return ProviderError(message);
+      }
     }
   }
   if (error is String && error.isNotEmpty) return ProviderError(error);

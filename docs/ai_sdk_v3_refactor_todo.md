@@ -107,6 +107,7 @@ Tracker note: per-provider progress is tracked in `docs/provider_alignment_progr
 - [x] Provide JSONL helpers for goldens:
   - [x] parts -> `.jsonl` stable lines
   - [x] `.jsonl` lines -> parts (only if decoding is implemented)
+- [x] Add v3 JSONL round-trip check tool (`tool/check_v3_jsonl_roundtrip.dart`) and run it in `melos run parity:check`
 
 ### 0.2.1 Golden fixtures conventions
 

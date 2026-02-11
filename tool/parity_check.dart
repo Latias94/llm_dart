@@ -23,6 +23,7 @@ void main(List<String> args) async {
   final meta = ['dart', 'run', 'tool/check_v3_meta.dart'];
   final upstream = ['dart', 'run', 'tool/backfill_v3_meta_upstream.dart'];
   final goldens = ['dart', 'run', 'tool/update_v3_goldens.dart'];
+  final roundtrip = ['dart', 'run', 'tool/check_v3_jsonl_roundtrip.dart'];
 
   final modeFlag = write ? '--write' : '--check';
 
@@ -31,6 +32,7 @@ void main(List<String> args) async {
     [...meta, modeFlag],
     [...upstream, modeFlag],
     [...goldens, modeFlag],
+    [...roundtrip, '--check'],
   ];
 
   for (final cmd in steps) {
