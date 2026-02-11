@@ -206,5 +206,28 @@ void main() {
           ((finish['finishReason'] as Map)['raw'] as String?), equals('stop'));
       expect(finish['providerMetadata'], isNotNull);
     });
+
+    test('encodes finish with default usage and finish reason when missing',
+        () {
+      final parts = <LLMStreamPart>[
+        const LLMStreamStartPart(),
+        const LLMFinishPart(_FakeChatResponse()),
+      ];
+
+      final json = encodeV3StreamParts(parts);
+      final finish = json.last;
+
+      expect(finish['type'], equals('finish'));
+      expect(finish['usage'], isA<Map>());
+      expect((finish['usage'] as Map).containsKey('inputTokens'), isTrue);
+      expect((finish['usage'] as Map).containsKey('outputTokens'), isTrue);
+
+      expect(finish['finishReason'], isA<Map>());
+      expect(
+        ((finish['finishReason'] as Map)['unified'] as String),
+        equals('other'),
+      );
+      expect((finish['finishReason'] as Map).containsKey('raw'), isFalse);
+    });
   });
 }

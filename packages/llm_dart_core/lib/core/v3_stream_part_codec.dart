@@ -22,6 +22,32 @@ import 'stream_parts.dart';
 
 typedef V3JsonMap = Map<String, dynamic>;
 
+LLMFinishReason _defaultFinishReasonForResponse(ChatResponse response) {
+  final hasToolCalls =
+      response.toolCalls != null && response.toolCalls!.isNotEmpty;
+  if (hasToolCalls) {
+    return const LLMFinishReason(
+      unified: LLMUnifiedFinishReason.toolCalls,
+      raw: null,
+    );
+  }
+
+  final hasText = response.text != null && response.text!.trim().isNotEmpty;
+  final hasThinking =
+      response.thinking != null && response.thinking!.trim().isNotEmpty;
+  if (hasText || hasThinking) {
+    return const LLMFinishReason(
+      unified: LLMUnifiedFinishReason.stop,
+      raw: null,
+    );
+  }
+
+  return const LLMFinishReason(
+    unified: LLMUnifiedFinishReason.other,
+    raw: null,
+  );
+}
+
 /// Encodes a list/stream of [LLMStreamPart] into AI SDK v3-style JSON objects.
 ///
 /// This encoder performs a small amount of normalization to make fixture tests
@@ -382,9 +408,10 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
       return [
         {
           'type': 'finish',
-          if (mergedUsage != null) 'usage': _encodeV3Usage(mergedUsage),
-          if (mergedFinishReason != null)
-            'finishReason': _encodeV3FinishReason(mergedFinishReason),
+          'usage': _encodeV3Usage(mergedUsage ?? const UsageInfo()),
+          'finishReason': _encodeV3FinishReason(
+            mergedFinishReason ?? _defaultFinishReasonForResponse(response),
+          ),
           if (responseProviderMetadata != null &&
               responseProviderMetadata.isNotEmpty)
             'providerMetadata': responseProviderMetadata,
@@ -481,7 +508,7 @@ V3JsonMap _encodeV3Usage(UsageInfo usage) {
 
 V3JsonMap _encodeV3FinishReason(LLMFinishReason reason) => {
       'unified': _encodeUnifiedFinishReason(reason.unified),
-      'raw': reason.raw,
+      if (reason.raw != null) 'raw': reason.raw,
     };
 
 String _encodeUnifiedFinishReason(LLMUnifiedFinishReason reason) {
