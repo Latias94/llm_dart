@@ -90,7 +90,7 @@
 {"delta":" multip","id":"rs_0ca3f598125653cf01693c1f22e2d08195b4275856d2c3bd9f:0","providerMetadata":{"azure":{"itemId":"rs_0ca3f598125653cf01693c1f22e2d08195b4275856d2c3bd9f"}},"type":"reasoning-delta"}
 {"delta":"lications","id":"rs_0ca3f598125653cf01693c1f22e2d08195b4275856d2c3bd9f:0","providerMetadata":{"azure":{"itemId":"rs_0ca3f598125653cf01693c1f22e2d08195b4275856d2c3bd9f"}},"type":"reasoning-delta"}
 {"delta":".","id":"rs_0ca3f598125653cf01693c1f22e2d08195b4275856d2c3bd9f:0","providerMetadata":{"azure":{"itemId":"rs_0ca3f598125653cf01693c1f22e2d08195b4275856d2c3bd9f"}},"type":"reasoning-delta"}
-{"id":"rs_0ca3f598125653cf01693c1f22e2d08195b4275856d2c3bd9f:0","providerMetadata":{"azure":{"itemId":"rs_0ca3f598125653cf01693c1f22e2d08195b4275856d2c3bd9f"}},"type":"reasoning-end"}
+{"providerMetadata":{"azure":{"itemId":"rs_0ca3f598125653cf01693c1f22e2d08195b4275856d2c3bd9f"}},"type":"reasoning-end"}
 {"id":"call_UdvUeOElp5zdU0DKr6IoyhjE","toolName":"calculator","type":"tool-input-start"}
 {"delta":"{\"","id":"call_UdvUeOElp5zdU0DKr6IoyhjE","type":"tool-input-delta"}
 {"delta":"a","id":"call_UdvUeOElp5zdU0DKr6IoyhjE","type":"tool-input-delta"}

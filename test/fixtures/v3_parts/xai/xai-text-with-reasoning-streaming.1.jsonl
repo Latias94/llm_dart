@@ -67,7 +67,7 @@
 {"delta":"\n\n## Identifying the Question  \n- The user's query asks, \"What is specifically notable about the style of Sonoran food?\"  \n- This is an open-ended question about cuisine, requiring a structured, informative response.","id":"0","type":"reasoning-delta"}
 {"delta":"  \n\n## Planning the Approach  \n- The response should focus on key characteristics of Sonoran food, ensuring it’s easy to read and parse.","id":"0","type":"reasoning-delta"}
 {"delta":"  \n- Consider using sections with clear headers to organize notable features systematically.","id":"0","type":"reasoning-delta"}
-{"id":"0","type":"reasoning-end"}
+{"type":"reasoning-end"}
 {"id":"1","type":"text-start"}
 {"delta":"###","id":"1","type":"text-delta"}
 {"delta":" Overview","id":"1","type":"text-delta"}

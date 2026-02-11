@@ -166,12 +166,11 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         blockId: final blockId,
         providerMetadata: final pm,
       ):
-      final id = state.reasoning.resolveId(blockId);
+      state.reasoning.resolveId(blockId);
       state.reasoning.currentId = null;
       return [
         {
           'type': 'reasoning-end',
-          'id': id,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         },
       ];

@@ -60,7 +60,7 @@
 {"delta":".\n","id":"0","type":"reasoning-delta"}
 {"delta":"\n\n## Investigating Sonoran Cuisine  \n- The question focuses on what makes Sonoran food's style notable, suggesting an exploration of its unique characteristics.","id":"0","type":"reasoning-delta"}
 {"delta":"  \n- This is an open-ended question about cuisine, requiring a structured, informative response to highlight key aspects.","id":"0","type":"reasoning-delta"}
-{"id":"0","type":"reasoning-end"}
+{"type":"reasoning-end"}
 {"id":"1","type":"text-start"}
 {"delta":"###","id":"1","type":"text-delta"}
 {"delta":" Overview","id":"1","type":"text-delta"}

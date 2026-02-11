@@ -1,7 +1,7 @@
 {"type":"stream-start","warnings":[]}
 {"id":"resp_04a97b4fce127879006949a855fa68819598a2a379fd5b6c38","modelId":"gpt-5-mini-2025-08-07","timestamp":"2025-12-22T20:21:42.000Z","type":"response-metadata"}
 {"id":"rs_04a97b4fce127879006949a857b7c88195818dab6d25ff091d:0","providerMetadata":{"openai":{"itemId":"rs_04a97b4fce127879006949a857b7c88195818dab6d25ff091d"}},"type":"reasoning-start"}
-{"id":"rs_04a97b4fce127879006949a857b7c88195818dab6d25ff091d:0","providerMetadata":{"openai":{"itemId":"rs_04a97b4fce127879006949a857b7c88195818dab6d25ff091d"}},"type":"reasoning-end"}
+{"providerMetadata":{"openai":{"itemId":"rs_04a97b4fce127879006949a857b7c88195818dab6d25ff091d"}},"type":"reasoning-end"}
 {"id":"0","type":"text-start"}
 {"delta":"I","id":"0","type":"text-delta"}
 {"delta":" wasn","id":"0","type":"text-delta"}

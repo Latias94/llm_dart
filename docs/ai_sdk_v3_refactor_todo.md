@@ -102,6 +102,7 @@ Tracker note: per-provider progress is tracked in `docs/provider_alignment_progr
 - [x] Implement `LLMStreamPart` -> AI SDK v3 JSON encoding:
   - [x] Stable key naming and ordering (via golden normalizer)
   - [x] Deterministic block id injection for fixtures (counter-based fallback)
+  - [x] Match upstream v3 shape: `reasoning-end` has no `id` field
 - [ ] Implement AI SDK v3 JSON -> `LLMStreamPart` decoding (optional; only if needed for round-trips)
 - [x] Provide JSONL helpers for goldens:
   - [x] parts -> `.jsonl` stable lines

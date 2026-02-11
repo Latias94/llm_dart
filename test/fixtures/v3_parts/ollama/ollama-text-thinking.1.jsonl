@@ -3,7 +3,7 @@
 {"id":"0","type":"reasoning-start"}
 {"delta":"Let me think...","id":"0","type":"reasoning-delta"}
 {"delta":" Step 1.","id":"0","type":"reasoning-delta"}
-{"id":"0","type":"reasoning-end"}
+{"type":"reasoning-end"}
 {"id":"1","type":"text-start"}
 {"delta":"Hello ","id":"1","type":"text-delta"}
 {"delta":"world","id":"1","type":"text-delta"}
