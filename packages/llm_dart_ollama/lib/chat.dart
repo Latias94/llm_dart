@@ -832,7 +832,7 @@ Map<String, dynamic> _toOllamaToolCallJson(ToolCall toolCall) {
 }
 
 /// Ollama chat response implementation
-class OllamaChatResponse implements ChatResponse {
+class OllamaChatResponse implements ChatResponseWithFinishReason {
   final Map<String, dynamic> _rawResponse;
 
   OllamaChatResponse(this._rawResponse);
@@ -903,6 +903,32 @@ class OllamaChatResponse implements ChatResponse {
       'prompt_eval_count': promptEvalCount,
       'eval_count': evalCount,
     });
+  }
+
+  @override
+  LLMFinishReason? get finishReason {
+    final calls = toolCalls;
+    if (calls != null && calls.isNotEmpty) {
+      return LLMFinishReason(
+        unified: LLMUnifiedFinishReason.toolCalls,
+        raw: _rawResponse['done_reason'] as String?,
+      );
+    }
+
+    final raw = _rawResponse['done_reason'] as String?;
+    if (raw == null || raw.trim().isEmpty) return null;
+
+    final normalized = raw.trim().toLowerCase();
+    final unified = switch (normalized) {
+      'stop' => LLMUnifiedFinishReason.stop,
+      'length' => LLMUnifiedFinishReason.length,
+      'tool_calls' || 'tool-calls' => LLMUnifiedFinishReason.toolCalls,
+      'content_filter' || 'content-filter' => LLMUnifiedFinishReason.contentFilter,
+      'error' => LLMUnifiedFinishReason.error,
+      _ => LLMUnifiedFinishReason.other,
+    };
+
+    return LLMFinishReason(unified: unified, raw: raw);
   }
 
   @override

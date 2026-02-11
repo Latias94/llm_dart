@@ -16,10 +16,9 @@
     "block_ids_non_empty": true,
     "tool_input_delta_is_string": true,
     "finish_usage_present": true,
-    "finish_reason_typed": false
+    "finish_reason_typed": true
   },
   "notes": [
     "Ollama streaming tool calls do not provide stable server-assigned call ids; ids are synthesized from function names."
   ]
 }
-

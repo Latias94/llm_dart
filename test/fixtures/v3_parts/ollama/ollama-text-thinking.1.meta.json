@@ -16,11 +16,10 @@
     "block_ids_non_empty": true,
     "tool_input_delta_is_string": true,
     "finish_usage_present": true,
-    "finish_reason_typed": false
+    "finish_reason_typed": true
   },
   "notes": [
     "Ollama exposes reasoning via `message.thinking`; we map it to v3 `reasoning-*` parts.",
-    "Finish reason is provider-specific metadata (`done_reason`) and is not currently mapped to a typed unified finishReason."
+    "Finish reason is derived from `done_reason` and mapped to `LLMFinishReason`."
   ]
 }
-
