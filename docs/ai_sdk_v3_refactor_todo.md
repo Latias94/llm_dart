@@ -169,7 +169,10 @@ Remaining (recommended next targets):
 - [x] Vertex AI (non-express mode; usage + metadata)
   - Covered by `google-vertex` contract fixture
     `test/fixtures/v3_parts/google_vertex/google-vertex-non-express-model-path.1.jsonl`.
-- [ ] ElevenLabs (non-chat surfaces; define parity scope)
+- [x] ElevenLabs (non-chat surfaces; define parity scope)
+  - Scope: `docs/ai_sdk_v3_refactor_elevenlabs_scope.md`
+  - Contract fixtures: `test/fixtures/elevenlabs/`
+  - Tests: `test/providers/elevenlabs/elevenlabs_contract_fixtures_test.dart`
 
 Recommended order:
 

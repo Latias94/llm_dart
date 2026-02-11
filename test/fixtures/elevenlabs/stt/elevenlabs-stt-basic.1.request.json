@@ -1,0 +1,12 @@
+{
+  "endpoint": "speech-to-text",
+  "fields": {
+    "model_id": "scribe_v1",
+    "language_code": "en",
+    "diarize": "true",
+    "num_speakers": "2",
+    "timestamps_granularity": "character"
+  },
+  "expectsFileField": true
+}
+

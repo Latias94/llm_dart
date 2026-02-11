@@ -1,0 +1,19 @@
+{
+  "endpoint": "text-to-speech/voice_test",
+  "queryParams": {
+    "output_format": "mp3_44100_128",
+    "enable_logging": "true"
+  },
+  "body": {
+    "text": "Hello, world!",
+    "model_id": "eleven_multilingual_v2",
+    "apply_text_normalization": "auto",
+    "seed": 123,
+    "language_code": "en",
+    "voice_settings": {
+      "stability": 0.5,
+      "similarity_boost": 0.75,
+      "speed": 1.25
+    }
+  }
+}
