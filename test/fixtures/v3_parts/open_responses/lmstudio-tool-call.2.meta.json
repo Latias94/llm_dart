@@ -1,0 +1,29 @@
+{
+  "provider": "open_responses",
+  "scenario": "lmstudio-tool-call.2",
+  "description": "Open Responses (LMStudio) Responses streaming with a function tool call (variant). Guards against regression in tool call id/name/arguments aggregation and finish mapping.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/open_responses/responses/lmstudio-tool-call.2.chunks.txt",
+      "repo-ref/ai/packages/open-responses/src/responses/__fixtures__/lmstudio-tool-call.2.chunks.txt"
+    ],
+    "notes": "Replayed via FakeOpenAIClient against llm_dart_openai_compatible OpenAIResponses parser."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [],
+  "upstream": {
+    "repository": "https://github.com/vercel/ai",
+    "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
+    "license": "Apache-2.0",
+    "paths": [
+      "repo-ref/ai/packages/open-responses/src/responses/__fixtures__/lmstudio-tool-call.2.chunks.txt"
+    ]
+  }
+}

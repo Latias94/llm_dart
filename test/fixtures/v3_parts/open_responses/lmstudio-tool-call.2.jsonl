@@ -1,0 +1,23 @@
+{"type":"stream-start","warnings":[]}
+{"id":"resp_83a575a640aadab0a95a3e0649f43693892dc467e666dbd7","modelId":"zai-org/glm-4.7-flash","timestamp":"2026-02-03T14:59:22.000Z","type":"response-metadata"}
+{"id":"rs_jm2uvisepha7peu2y40spd:0","providerMetadata":{"open_responses":{"itemId":"rs_jm2uvisepha7peu2y40spd"}},"type":"reasoning-start"}
+{"id":"rs_jm2uvisepha7peu2y40spd:0","providerMetadata":{"open_responses":{"itemId":"rs_jm2uvisepha7peu2y40spd"}},"type":"reasoning-end"}
+{"id":"0","type":"text-start"}
+{"delta":"I","id":"0","type":"text-delta"}
+{"delta":"'ll","id":"0","type":"text-delta"}
+{"delta":" get","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" current","id":"0","type":"text-delta"}
+{"delta":" weather","id":"0","type":"text-delta"}
+{"delta":" information","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" San","id":"0","type":"text-delta"}
+{"delta":" Francisco","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" you","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"id":"call_3466696471230001","toolName":"weather","type":"tool-input-start"}
+{"id":"call_3466696471230001","type":"tool-input-end"}
+{"input":"","toolCallId":"call_3466696471230001","toolName":"weather","type":"tool-call"}
+{"id":"0","type":"text-end"}
+{"finishReason":{"unified":"tool-calls"},"providerMetadata":{"open_responses":{"id":"resp_83a575a640aadab0a95a3e0649f43693892dc467e666dbd7","logprobs":[[{"bytes":[73],"logprob":0,"token":"I","top_logprobs":[]}],[{"bytes":[39,108,108],"logprob":0,"token":"'ll","top_logprobs":[]}],[{"bytes":[32,103,101,116],"logprob":0,"token":" get","top_logprobs":[]}],[{"bytes":[32,116,104,101],"logprob":0,"token":" the","top_logprobs":[]}],[{"bytes":[32,99,117,114,114,101,110,116],"logprob":-0.25,"token":" current","top_logprobs":[]}],[{"bytes":[32,119,101,97,116,104,101,114],"logprob":0,"token":" weather","top_logprobs":[]}],[{"bytes":[32,105,110,102,111,114,109,97,116,105,111,110],"logprob":-0.75,"token":" information","top_logprobs":[]}],[{"bytes":[32,102,111,114],"logprob":0,"token":" for","top_logprobs":[]}],[{"bytes":[32,83,97,110],"logprob":0,"token":" San","top_logprobs":[]}],[{"bytes":[32,70,114,97,110,99,105,115,99,111],"logprob":0,"token":" Francisco","top_logprobs":[]}],[{"bytes":[32,102,111,114],"logprob":0,"token":" for","top_logprobs":[]}],[{"bytes":[32,121,111,117],"logprob":0,"token":" you","top_logprobs":[]}],[{"bytes":[46],"logprob":0,"token":".","top_logprobs":[]}]],"model":"zai-org/glm-4.7-flash","responseId":"resp_83a575a640aadab0a95a3e0649f43693892dc467e666dbd7","serviceTier":"default"}},"type":"finish","usage":{"inputTokens":{"cacheRead":52,"noCache":130,"total":182},"outputTokens":{"reasoning":47,"text":13,"total":60},"raw":{"input_tokens":182,"input_tokens_details":{"cached_tokens":52},"output_tokens":60,"output_tokens_details":{"reasoning_tokens":47},"total_tokens":242}}}
