@@ -54,24 +54,19 @@ void main() {
       expect(meta.existsSync(), isTrue);
     }
 
-    test('xai-text-streaming.1', () async {
-      await runFixtureGolden('xai-text-streaming.1');
-    });
+    final metaDir = Directory('test/fixtures/v3_parts/xai');
+    final baseNames = metaDir
+        .listSync(followLinks: false)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.meta.json'))
+        .map((f) => f.uri.pathSegments.last.replaceAll('.meta.json', ''))
+        .toList()
+      ..sort();
 
-    test('xai-text-with-reasoning-streaming.1', () async {
-      await runFixtureGolden('xai-text-with-reasoning-streaming.1');
-    });
-
-    test('xai-text-with-reasoning-streaming-store-false.1', () async {
-      await runFixtureGolden('xai-text-with-reasoning-streaming-store-false.1');
-    });
-
-    test('xai-web-search-tool.1', () async {
-      await runFixtureGolden('xai-web-search-tool.1');
-    });
-
-    test('xai-x-search-tool', () async {
-      await runFixtureGolden('xai-x-search-tool');
-    });
+    for (final baseName in baseNames) {
+      test(baseName, () async {
+        await runFixtureGolden(baseName);
+      });
+    }
   });
 }

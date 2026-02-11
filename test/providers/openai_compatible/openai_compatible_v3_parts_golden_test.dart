@@ -84,10 +84,13 @@ void main() {
       final parts = await llm_ai.streamChatParts(
           model: provider, messages: [ChatMessage.user('Hi')]).toList();
 
-      // Sanity: ensure we at least match the expected text/reasoning extraction.
-      final expected = _expectedFromDeepSeekFixture(fixturePath);
-      final finish = parts.whereType<LLMFinishPart>().last;
-      expect(finish.response.text ?? '', equals(expected.text));
+      // Sanity: ensure we at least match the expected DeepSeek extraction
+      // (for the vendored DeepSeek fixtures).
+      if (baseName.startsWith('deepseek-')) {
+        final expected = _expectedFromDeepSeekFixture(fixturePath);
+        final finish = parts.whereType<LLMFinishPart>().last;
+        expect(finish.response.text ?? '', equals(expected.text));
+      }
 
       final goldenPath =
           'test/fixtures/v3_parts/openai_compatible/$baseName.jsonl';
@@ -104,16 +107,19 @@ void main() {
       expect(meta.existsSync(), isTrue);
     }
 
-    test('deepseek-text', () async {
-      await runDeepSeekFixtureGolden('deepseek-text');
-    });
+    final metaDir = Directory('test/fixtures/v3_parts/openai_compatible');
+    final baseNames = metaDir
+        .listSync(followLinks: false)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.meta.json'))
+        .map((f) => f.uri.pathSegments.last.replaceAll('.meta.json', ''))
+        .toList()
+      ..sort();
 
-    test('deepseek-reasoning', () async {
-      await runDeepSeekFixtureGolden('deepseek-reasoning');
-    });
-
-    test('deepseek-tool-call', () async {
-      await runDeepSeekFixtureGolden('deepseek-tool-call');
-    });
+    for (final baseName in baseNames) {
+      test(baseName, () async {
+        await runDeepSeekFixtureGolden(baseName);
+      });
+    }
   });
 }
