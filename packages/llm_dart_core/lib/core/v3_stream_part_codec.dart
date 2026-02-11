@@ -22,6 +22,30 @@ import 'stream_parts.dart';
 
 typedef V3JsonMap = Map<String, dynamic>;
 
+class _DecodedChatResponse extends ChatResponse
+    implements ChatResponseWithFinishReason {
+  @override
+  final LLMFinishReason? finishReason;
+
+  @override
+  final UsageInfo? usage;
+
+  @override
+  final Map<String, dynamic>? providerMetadata;
+
+  _DecodedChatResponse({
+    this.finishReason,
+    this.usage,
+    this.providerMetadata,
+  });
+
+  @override
+  String? get text => null;
+
+  @override
+  List<ToolCall>? get toolCalls => null;
+}
+
 LLMFinishReason _defaultFinishReasonForResponse(ChatResponse response) {
   final hasToolCalls =
       response.toolCalls != null && response.toolCalls!.isNotEmpty;
@@ -64,6 +88,350 @@ List<V3JsonMap> encodeV3StreamParts(
 
   for (final part in parts) {
     out.addAll(_encodeV3Part(part, state));
+  }
+
+  return out;
+}
+
+/// Decodes AI SDK v3-style JSON objects into [LLMStreamPart]s.
+///
+/// This decoder is intended for fixture-driven tests and round-trip debugging.
+/// It is best-effort and may throw [FormatException] if the input stream is
+/// structurally invalid (e.g. missing required fields).
+List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
+  final state = _V3DecodeState();
+  final out = <LLMStreamPart>[];
+
+  for (final obj in objects) {
+    final type = obj['type'];
+    if (type is! String || type.isEmpty) {
+      throw const FormatException('v3 part missing non-empty "type".');
+    }
+
+    final providerMetadata = _asStringKeyedMap(obj['providerMetadata']);
+
+    switch (type) {
+      case 'stream-start':
+        out.add(
+          LLMStreamStartPart(
+            warnings: _asListOfStringKeyedMaps(obj['warnings']) ?? const [],
+          ),
+        );
+        break;
+
+      case 'response-metadata':
+        final id = obj['id'] as String?;
+        final timestampRaw = obj['timestamp'] as String?;
+        final modelId = obj['modelId'] as String?;
+        out.add(
+          LLMResponseMetadataPart(
+            id: (id != null && id.isNotEmpty) ? id : null,
+            timestamp:
+                timestampRaw != null ? DateTime.tryParse(timestampRaw) : null,
+            model: (modelId != null && modelId.isNotEmpty) ? modelId : null,
+            providerMetadata: providerMetadata,
+            raw: _asStringKeyedMap(obj['raw']),
+          ),
+        );
+        break;
+
+      case 'text-start':
+        final id = _requireString(obj, 'id');
+        state.text.onStart(id);
+        out.add(
+          LLMTextStartPart(blockId: id, providerMetadata: providerMetadata),
+        );
+        break;
+
+      case 'text-delta':
+        final id = _requireString(obj, 'id');
+        final delta = _requireString(obj, 'delta');
+        state.text.onDelta(id, delta);
+        out.add(
+          LLMTextDeltaPart(delta,
+              blockId: id, providerMetadata: providerMetadata),
+        );
+        break;
+
+      case 'text-end':
+        final id = _requireString(obj, 'id');
+        final text = state.text.onEnd(id);
+        out.add(
+          LLMTextEndPart(text, blockId: id, providerMetadata: providerMetadata),
+        );
+        break;
+
+      case 'reasoning-start':
+        final id = _requireString(obj, 'id');
+        state.reasoning.onStart(id);
+        out.add(
+          LLMReasoningStartPart(
+              blockId: id, providerMetadata: providerMetadata),
+        );
+        break;
+
+      case 'reasoning-delta':
+        final id = _requireString(obj, 'id');
+        final delta = _requireString(obj, 'delta');
+        state.reasoning.onDelta(id, delta);
+        out.add(
+          LLMReasoningDeltaPart(
+            delta,
+            blockId: id,
+            providerMetadata: providerMetadata,
+          ),
+        );
+        break;
+
+      case 'reasoning-end':
+        final id = obj['id'] as String?;
+        final end = state.reasoning.onEndOptionalId(id);
+        out.add(
+          LLMReasoningEndPart(
+            end.full,
+            blockId: end.id,
+            providerMetadata: providerMetadata,
+          ),
+        );
+        break;
+
+      case 'tool-input-start':
+        final id = _requireString(obj, 'id');
+        final toolName = _requireString(obj, 'toolName');
+        final providerExecuted = obj['providerExecuted'] == true ? true : null;
+        final dynamicTool = obj['dynamic'] == true ? true : null;
+        final title = obj['title'] as String?;
+
+        state.rememberTool(id: id, toolName: toolName);
+
+        out.add(
+          LLMToolInputStartPart(
+            id: id,
+            toolName: toolName,
+            providerExecuted: providerExecuted,
+            isDynamic: dynamicTool,
+            title: (title != null && title.isNotEmpty) ? title : null,
+            providerMetadata: providerMetadata,
+          ),
+        );
+        break;
+
+      case 'tool-input-delta':
+        final id = _requireString(obj, 'id');
+        final delta = _requireString(obj, 'delta');
+        state.toolInput.onDelta(id, delta);
+        out.add(
+          LLMToolInputDeltaPart(
+            id: id,
+            delta: delta,
+            providerMetadata: providerMetadata,
+          ),
+        );
+        break;
+
+      case 'tool-input-end':
+        final id = _requireString(obj, 'id');
+        state.toolInput.onEnd(id);
+        out.add(
+            LLMToolInputEndPart(id: id, providerMetadata: providerMetadata));
+        break;
+
+      case 'tool-call':
+        final toolCallId = _requireString(obj, 'toolCallId');
+        final toolName = _requireString(obj, 'toolName');
+        final inputRaw = obj['input'];
+        if (inputRaw is! String) {
+          throw const FormatException('v3 tool-call missing string "input".');
+        }
+        final providerExecuted = obj['providerExecuted'] == true ? true : null;
+        final dynamicTool = obj['dynamic'] == true ? true : null;
+
+        final parsedInput = _decodeJsonIfPossible(inputRaw);
+        state.rememberTool(
+            id: toolCallId, toolName: toolName, input: parsedInput);
+
+        out.add(
+          LLMProviderToolCallPart(
+            toolCallId: toolCallId,
+            toolName: toolName,
+            input: parsedInput,
+            providerExecuted: providerExecuted,
+            isDynamic: dynamicTool,
+            providerMetadata: providerMetadata,
+          ),
+        );
+        break;
+
+      case 'tool-result':
+        final toolCallId = _requireString(obj, 'toolCallId');
+        final toolName = _requireString(obj, 'toolName');
+        final result = obj['result'];
+        final isError = obj['isError'] == true ? true : null;
+        final preliminary = obj['preliminary'] == true ? true : null;
+        final dynamicTool = obj['dynamic'] == true ? true : null;
+
+        state.rememberTool(id: toolCallId, toolName: toolName);
+
+        out.add(
+          LLMProviderToolResultPart(
+            toolCallId: toolCallId,
+            toolName: toolName,
+            result: _normalizeJsonLike(result),
+            isError: isError,
+            preliminary: preliminary,
+            isDynamic: dynamicTool,
+            providerMetadata: providerMetadata,
+          ),
+        );
+        break;
+
+      case 'tool-approval-request':
+        final approvalId = _requireString(obj, 'approvalId');
+        final toolCallId = _requireString(obj, 'toolCallId');
+        final remembered = state.toolById[toolCallId];
+        final fallbackInput = state.toolInput.fullInputForId(toolCallId);
+
+        out.add(
+          LLMProviderToolApprovalRequestPart(
+            approvalId: approvalId,
+            toolCallId: toolCallId,
+            toolName: remembered?.toolName ?? 'unknown',
+            input: remembered?.input ??
+                (fallbackInput != null && fallbackInput.isNotEmpty
+                    ? _decodeJsonIfPossible(fallbackInput)
+                    : null),
+            providerMetadata: providerMetadata,
+          ),
+        );
+        break;
+
+      case 'source':
+        final sourceType = _requireString(obj, 'sourceType');
+        final id = _requireString(obj, 'id');
+        switch (sourceType) {
+          case 'url':
+            final url = _requireString(obj, 'url');
+            final title = obj['title'] as String?;
+            out.add(
+              LLMSourceUrlPart(
+                sourceId: id,
+                url: url,
+                title: (title != null && title.isNotEmpty) ? title : null,
+                providerMetadata: providerMetadata,
+              ),
+            );
+            break;
+          case 'document':
+            final mediaType = _requireString(obj, 'mediaType');
+            final title = _requireString(obj, 'title');
+            final filename = obj['filename'] as String?;
+            out.add(
+              LLMSourceDocumentPart(
+                sourceId: id,
+                mediaType: mediaType,
+                title: title,
+                filename:
+                    (filename != null && filename.isNotEmpty) ? filename : null,
+                providerMetadata: providerMetadata,
+              ),
+            );
+            break;
+          default:
+            throw FormatException('Unsupported v3 sourceType: $sourceType');
+        }
+        break;
+
+      case 'file':
+        final mediaType = _requireString(obj, 'mediaType');
+        final data = obj['data'];
+        if (data is! String) {
+          throw const FormatException('v3 file part missing string "data".');
+        }
+        out.add(
+          LLMFilePart(
+            mediaType: mediaType,
+            data: data,
+            providerMetadata: providerMetadata,
+          ),
+        );
+        break;
+
+      case 'finish':
+        final usageRaw = obj['usage'];
+        if (usageRaw is! Map) {
+          throw const FormatException('v3 finish missing object "usage".');
+        }
+        final finishReasonRaw = obj['finishReason'];
+        if (finishReasonRaw is! Map) {
+          throw const FormatException(
+              'v3 finish missing object "finishReason".');
+        }
+
+        final reason =
+            _decodeV3FinishReason(_asStringKeyedMap(finishReasonRaw)!);
+        final usage = _decodeV3Usage(_asStringKeyedMap(usageRaw)!);
+
+        out.add(
+          LLMFinishPart(
+            _DecodedChatResponse(
+              finishReason: reason,
+              usage: usage,
+              providerMetadata: providerMetadata,
+            ),
+            usage: usage,
+            finishReason: reason,
+          ),
+        );
+        break;
+
+      case 'raw':
+        final rawValue = obj['rawValue'];
+        if (rawValue is Map) {
+          final kind = rawValue['kind'];
+          if (kind == 'provider-metadata') {
+            final pm = _asStringKeyedMap(rawValue['providerMetadata']);
+            if (pm != null) {
+              out.add(LLMProviderMetadataPart(pm));
+              break;
+            }
+          }
+          if (kind == 'provider-tool-delta') {
+            final toolCallId = rawValue['toolCallId'] as String?;
+            final toolName = rawValue['toolName'] as String?;
+            final status = rawValue['status'] as String?;
+            final data = rawValue['data'];
+            final pm = _asStringKeyedMap(rawValue['providerMetadata']);
+            if (toolCallId != null &&
+                toolCallId.isNotEmpty &&
+                toolName != null &&
+                toolName.isNotEmpty &&
+                status != null &&
+                status.isNotEmpty) {
+              out.add(
+                LLMProviderToolDeltaPart(
+                  toolCallId: toolCallId,
+                  toolName: toolName,
+                  status: status,
+                  data: _normalizeJsonLike(data),
+                  providerMetadata: pm,
+                ),
+              );
+              break;
+            }
+          }
+        }
+        out.add(LLMRawPart(_normalizeJsonLike(rawValue)));
+        break;
+
+      case 'error':
+        out.add(LLMErrorPart(_decodeV3Error(obj['error'])));
+        break;
+
+      default:
+        // Preserve unknown parts as raw to keep decoding forward-compatible.
+        out.add(LLMRawPart(_normalizeJsonLike(obj)));
+        break;
+    }
   }
 
   return out;
@@ -510,6 +878,57 @@ V3JsonMap _encodeV3FinishReason(LLMFinishReason reason) => {
       if (reason.raw != null) 'raw': reason.raw,
     };
 
+LLMFinishReason _decodeV3FinishReason(V3JsonMap obj) {
+  final unifiedRaw = obj['unified'];
+  if (unifiedRaw is! String || unifiedRaw.isEmpty) {
+    throw const FormatException('v3 finishReason missing non-empty "unified".');
+  }
+
+  final unified = switch (unifiedRaw) {
+    'stop' => LLMUnifiedFinishReason.stop,
+    'length' => LLMUnifiedFinishReason.length,
+    'content-filter' => LLMUnifiedFinishReason.contentFilter,
+    'tool-calls' => LLMUnifiedFinishReason.toolCalls,
+    'error' => LLMUnifiedFinishReason.error,
+    'other' => LLMUnifiedFinishReason.other,
+    _ => LLMUnifiedFinishReason.other,
+  };
+
+  final raw = obj['raw'] as String?;
+  return LLMFinishReason(unified: unified, raw: raw);
+}
+
+UsageInfo _decodeV3Usage(V3JsonMap obj) {
+  final input = _asStringKeyedMap(obj['inputTokens']) ?? const {};
+  final output = _asStringKeyedMap(obj['outputTokens']) ?? const {};
+  final raw = _asStringKeyedMap(obj['raw']);
+
+  int? asInt(dynamic v) => v is int ? v : (v is num ? v.toInt() : null);
+
+  final inputTotal = asInt(input['total']);
+  final inputNoCache = asInt(input['noCache']);
+  final inputCacheRead = asInt(input['cacheRead']);
+  final inputCacheWrite = asInt(input['cacheWrite']);
+
+  final outputTotal = asInt(output['total']);
+  final outputText = asInt(output['text']);
+  final outputReasoning = asInt(output['reasoning']);
+
+  return UsageInfo(
+    promptTokens: inputTotal,
+    completionTokens: outputTotal,
+    totalTokens: (inputTotal != null && outputTotal != null)
+        ? (inputTotal + outputTotal)
+        : null,
+    reasoningTokens: outputReasoning,
+    promptTokensCacheRead: inputCacheRead,
+    promptTokensNoCache: inputNoCache,
+    promptTokensCacheWrite: inputCacheWrite,
+    completionTokensText: outputText,
+    raw: raw,
+  );
+}
+
 String _encodeUnifiedFinishReason(LLMUnifiedFinishReason reason) {
   switch (reason) {
     case LLMUnifiedFinishReason.stop:
@@ -662,4 +1081,122 @@ class _ToolInputState {
 
   String toolNameForToolCallId(String toolCallId) =>
       _toolNameById[toolCallId] ?? 'tool';
+}
+
+LLMError _decodeV3Error(Object? error) {
+  if (error is Map) {
+    final message = error['message'];
+    if (message is String && message.isNotEmpty) {
+      return ProviderError(message);
+    }
+  }
+  if (error is String && error.isNotEmpty) return ProviderError(error);
+  return const ProviderError('Unknown error');
+}
+
+class _V3DecodeState {
+  final _DeltaAccumulationState text = _DeltaAccumulationState(kind: 'text');
+  final _DeltaAccumulationState reasoning =
+      _DeltaAccumulationState(kind: 'reasoning');
+  final _ToolInputDecodeState toolInput = _ToolInputDecodeState();
+
+  final Map<String, _RememberedTool> toolById = {};
+
+  void rememberTool({
+    required String id,
+    required String toolName,
+    Object? input,
+  }) {
+    final existing = toolById[id];
+    toolById[id] = _RememberedTool(
+      toolName: toolName,
+      input: input ?? existing?.input,
+    );
+  }
+}
+
+class _RememberedTool {
+  final String toolName;
+  final Object? input;
+
+  const _RememberedTool({
+    required this.toolName,
+    required this.input,
+  });
+}
+
+class _DeltaAccumulationState {
+  final String kind;
+
+  final Map<String, StringBuffer> _buffers = {};
+  String? currentId;
+
+  _DeltaAccumulationState({required this.kind});
+
+  void onStart(String id) {
+    currentId = id;
+    _buffers.putIfAbsent(id, () => StringBuffer());
+  }
+
+  void onDelta(String id, String delta) {
+    currentId = id;
+    _buffers.putIfAbsent(id, () => StringBuffer()).write(delta);
+  }
+
+  String onEnd(String id) {
+    currentId = id;
+    final buffer = _buffers[id];
+    if (buffer == null) {
+      throw FormatException('v3 $kind-end references unknown id: $id');
+    }
+    return buffer.toString();
+  }
+
+  ({String? id, String full}) onEndOptionalId(String? id) {
+    final resolvedId = (id != null && id.isNotEmpty) ? id : currentId;
+    if (resolvedId == null || resolvedId.isEmpty) {
+      throw FormatException(
+          'v3 $kind-end missing id and no active $kind block.');
+    }
+    final full = onEnd(resolvedId);
+    currentId = null;
+    return (id: resolvedId, full: full);
+  }
+}
+
+class _ToolInputDecodeState {
+  final Map<String, StringBuffer> _buffers = {};
+
+  void onDelta(String id, String delta) {
+    _buffers.putIfAbsent(id, () => StringBuffer()).write(delta);
+  }
+
+  void onEnd(String id) {
+    // Intentionally keep buffers for later lookup (e.g. tool-approval-request).
+    _buffers.putIfAbsent(id, () => StringBuffer());
+  }
+
+  String? fullInputForId(String id) => _buffers[id]?.toString();
+}
+
+String _requireString(V3JsonMap obj, String key) {
+  final value = obj[key];
+  if (value is String && value.isNotEmpty) return value;
+  throw FormatException('v3 part missing non-empty "$key".');
+}
+
+Map<String, dynamic>? _asStringKeyedMap(dynamic value) {
+  if (value is! Map) return null;
+  return value.map((k, v) => MapEntry(k.toString(), v));
+}
+
+List<Map<String, dynamic>>? _asListOfStringKeyedMaps(dynamic value) {
+  if (value is! List) return null;
+  final out = <Map<String, dynamic>>[];
+  for (final item in value) {
+    final map = _asStringKeyedMap(item);
+    if (map == null) return null;
+    out.add(map);
+  }
+  return out;
 }

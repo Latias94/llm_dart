@@ -103,10 +103,10 @@ Tracker note: per-provider progress is tracked in `docs/provider_alignment_progr
   - [x] Stable key naming and ordering (via golden normalizer)
   - [x] Deterministic block id injection for fixtures (counter-based fallback)
   - [x] Match upstream v3 shape: `reasoning-end` has no `id` field
-- [ ] Implement AI SDK v3 JSON -> `LLMStreamPart` decoding (optional; only if needed for round-trips)
+- [x] Implement AI SDK v3 JSON -> `LLMStreamPart` decoding (optional; only if needed for round-trips)
 - [x] Provide JSONL helpers for goldens:
   - [x] parts -> `.jsonl` stable lines
-  - [ ] `.jsonl` lines -> parts (only if decoding is implemented)
+  - [x] `.jsonl` lines -> parts (only if decoding is implemented)
 
 ### 0.2.1 Golden fixtures conventions
 
