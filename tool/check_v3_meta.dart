@@ -58,6 +58,10 @@ String? _repoRefFixturePathFor(String provider, String scenario) {
       return null; // handcrafted contract fixtures (no upstream chunks).
     case 'google_vertex':
       return null; // handcrafted contract fixtures (no upstream chunks).
+    case 'minimax':
+      // MiniMax reuses the Anthropic Messages protocol. Use Anthropic fixtures
+      // as the provenance reference for parity.
+      return 'repo-ref/ai/packages/anthropic/src/__fixtures__/$filename';
   }
   return null;
 }
@@ -87,6 +91,10 @@ String? _localFixturePathFor(String provider, String scenario) {
       return 'test/fixtures/google/chat/$filename';
     case 'google_vertex':
       return 'test/fixtures/google_vertex/chat/$filename';
+    case 'minimax':
+      // MiniMax streaming is Anthropic-compatible; reuse the synced Anthropic
+      // fixture captures for v3 parts parity.
+      return 'test/fixtures/anthropic/messages/$filename';
   }
   return null;
 }

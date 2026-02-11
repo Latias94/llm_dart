@@ -5,6 +5,9 @@ import 'dart:io';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_ai/llm_dart_ai.dart' as llm_ai;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_anthropic_compatible/config.dart' as anthropic_compat;
+import 'package:llm_dart_anthropic_compatible/provider.dart'
+    as anthropic_compat_provider;
 import 'package:llm_dart_azure/config.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/chat.dart';
@@ -305,6 +308,11 @@ List<Stream<String>> _splitSessionsFor(String provider, String fixturePath) {
         fixturePath,
         isTerminalEvent: isAnthropicMessagesTerminalEvent,
       );
+    case 'minimax':
+      return sseStreamsFromChunkFileSplitByTerminalEvent(
+        fixturePath,
+        isTerminalEvent: isAnthropicMessagesTerminalEvent,
+      );
     case 'ollama':
       return [ndjsonStreamFromChunkFile(fixturePath)];
     case 'google':
@@ -329,6 +337,8 @@ _ScenarioRunner _runnerFor(String provider) {
       return _runAzureResponsesFixture;
     case 'anthropic':
       return _runAnthropicMessagesFixture;
+    case 'minimax':
+      return _runMinimaxAnthropicMessagesFixture;
     case 'openai_compatible':
       return _runDeepSeekOpenAICompatibleFixture;
     case 'xai':
@@ -358,6 +368,9 @@ String? _fixturePathFor(String provider, String scenario) {
       return 'test/fixtures/azure/responses/$filename';
     case 'anthropic':
       return 'test/fixtures/anthropic/messages/$filename';
+    case 'minimax':
+      // MiniMax uses Anthropic-compatible Messages API.
+      return 'test/fixtures/anthropic/messages/$filename';
     case 'openai_compatible':
       return 'test/fixtures/openai_compatible/$filename';
     case 'xai':
@@ -386,6 +399,9 @@ String? _repoRefFixturePathFor(String provider, String scenario) {
     case 'azure':
       return 'repo-ref/ai/packages/azure/src/__fixtures__/$filename';
     case 'anthropic':
+      return 'repo-ref/ai/packages/anthropic/src/__fixtures__/$filename';
+    case 'minimax':
+      // Reuse Anthropic fixtures as the provenance reference for parity.
       return 'repo-ref/ai/packages/anthropic/src/__fixtures__/$filename';
     case 'openai_compatible':
       return 'repo-ref/ai/packages/deepseek/src/chat/__fixtures__/$filename';
@@ -567,6 +583,44 @@ Future<List<LLMStreamPart>> _runAnthropicMessagesFixture({
 
   return llm_ai.streamChatParts(
       model: chat, messages: [ChatMessage.user('Hi')]).toList();
+}
+
+Future<List<LLMStreamPart>> _runMinimaxAnthropicMessagesFixture({
+  required String fixturePath,
+  required Stream<String> sessionStream,
+  List<ProviderTool>? providerTools,
+}) async {
+  final config = anthropic_compat.AnthropicConfig(
+    providerId: 'minimax',
+    apiKey: 'test-key',
+    baseUrl: 'https://api.minimax.io/anthropic/v1/',
+    model: 'MiniMax-M2.1',
+    stream: true,
+    originalConfig: providerTools == null
+        ? null
+        : LLMConfig(
+            baseUrl: 'https://api.minimax.io/anthropic/v1/',
+            model: 'MiniMax-M2.1',
+            providerTools: providerTools,
+          ),
+  );
+
+  final client = FakeAnthropicClient(config)..streamResponse = sessionStream;
+  final provider = anthropic_compat_provider.AnthropicCompatibleChatProvider(
+    client,
+    config,
+    const {
+      LLMCapability.chat,
+      LLMCapability.streaming,
+      LLMCapability.toolCalling,
+    },
+    providerName: 'MiniMax',
+  );
+
+  return llm_ai.streamChatParts(
+    model: provider,
+    messages: [ChatMessage.user('Hi')],
+  ).toList();
 }
 
 class _DeepSeekFakeClient extends OpenAIClient {
