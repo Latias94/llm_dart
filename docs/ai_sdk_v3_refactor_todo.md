@@ -11,6 +11,25 @@ Reference: `docs/ai_sdk_v3_refactor_purpose.md`
 
 ---
 
+## Immediate next steps (execution plan)
+
+These are the next concrete steps we should take to stay close to AI SDK v3
+semantics while keeping the public Dart APIs idiomatic.
+
+1) Enforce finish semantics in orchestration:
+   - guarantee exactly one terminal `finish` part
+   - add conformance tests for providers that may emit multiple finish-like events
+2) Tool name mapping conformance:
+   - cover tool name collisions (rewrite stability) with fixtures/tests
+   - verify provider-native tool names always round-trip through our mapping layer
+3) Sources + files parity:
+   - ensure every provider that emits citations/files maps them into canonical parts
+   - keep provider-only citation payloads under `providerMetadata` (namespaced)
+4) Optional: v3 JSON decoding (only if it unlocks faster fixture workflows):
+   - support `.jsonl` -> parts round-trips for debugging and meta checks
+
+Tracker note: per-provider progress is tracked in `docs/provider_alignment_progress.md`.
+
 ## P0 (must-do): Canonical stream parts parity
 
 ### 0.1 Complete the canonical part set in `llm_dart_core`
@@ -84,7 +103,7 @@ Reference: `docs/ai_sdk_v3_refactor_purpose.md`
 ### 0.3 Ensure orchestration emits v3-consistent boundaries
 
 - [ ] In `llm_dart_ai` (`packages/llm_dart_ai/lib/src/stream_parts.dart`):
-  - [ ] Inject `stream-start` exactly once (already done via `ensureStreamStartPart`)
+  - [x] Inject `stream-start` exactly once (via `ensureStreamStartPart`)
   - [x] Inject/normalize missing block ids (text/reasoning/tool input) via `ensure_block_ids.dart`
   - [ ] Ensure exactly one final `finish` part at end of stream (only if providers ever emit multiple finish events)
 
