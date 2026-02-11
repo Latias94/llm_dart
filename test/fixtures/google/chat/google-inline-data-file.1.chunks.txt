@@ -1,0 +1,2 @@
+{"modelVersion":"gemini-2.5-pro","candidates":[{"content":{"parts":[{"inlineData":{"mimeType":"image/png","data":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+V7wAAAABJRU5ErkJggg=="}},{"text":"Here is your image."}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":10,"candidatesTokenCount":6,"totalTokenCount":16}}
+[DONE]

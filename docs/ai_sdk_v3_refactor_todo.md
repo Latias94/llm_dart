@@ -18,10 +18,10 @@ semantics while keeping the public Dart APIs idiomatic.
 
 Rolling plan (kept up to date):
 
-- [ ] Add `file` part end-to-end for at least one real provider surface (ROI target: Google/Gemini inline data):
-  - [ ] provider adapter emits `LLMFilePart` where applicable
-  - [ ] add a small handcrafted contract fixture (if upstream has no stream capture)
-  - [ ] add/extend v3 golden(s) to include at least one `type:'file'` part
+- [x] Add `file` part end-to-end for at least one real provider surface (ROI target: Google/Gemini inline data):
+  - [x] provider adapter emits `LLMFilePart` where applicable
+  - [x] add a small handcrafted contract fixture (if upstream has no stream capture)
+  - [x] add/extend v3 golden(s) to include at least one `type:'file'` part
 - [ ] Strengthen conformance suites:
   - [ ] protocol-level tests under `test/protocols/...` for shared OpenAI-compatible + Anthropic-compatible semantics
   - [ ] ordering invariants for metadata vs first content (best-effort, document exceptions)

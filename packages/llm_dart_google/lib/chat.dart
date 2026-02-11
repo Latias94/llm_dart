@@ -704,29 +704,14 @@ class GoogleChat
             final inlineData = part['inlineData'] as Map<String, dynamic>?;
             if (inlineData != null) {
               final mimeType = inlineData['mimeType'] as String?;
-              if (mimeType != null && mimeType.startsWith('image/')) {
-                final placeholder = '[Generated image: $mimeType]';
-                if (inThinking) {
-                  inThinking = false;
-                  yield LLMReasoningEndPart(
-                    currentThinking.toString(),
-                    blockId: currentThinkingBlockId,
-                  );
-                  currentThinking.clear();
-                  currentThinkingBlockId = null;
-                }
-                if (!inText) {
-                  inText = true;
-                  currentTextBlockId ??= '${blockCounter++}';
-                  yield LLMTextStartPart(blockId: currentTextBlockId);
-                  currentText.clear();
-                }
-                fullText.write(placeholder);
-                currentText.write(placeholder);
-                yield LLMTextDeltaPart(
-                  placeholder,
-                  blockId: currentTextBlockId,
-                );
+              final data = inlineData['data'] as String?;
+              if (mimeType != null &&
+                  mimeType.isNotEmpty &&
+                  data != null &&
+                  data.isNotEmpty) {
+                // Gemini returns generated outputs (images/audio) as inlineData.
+                // Preserve the raw base64 payload as a v3 `file` part.
+                yield LLMFilePart(mediaType: mimeType, data: data);
               }
               continue;
             }

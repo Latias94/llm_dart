@@ -1,0 +1,21 @@
+{
+  "provider": "google",
+  "scenario": "google-inline-data-file.1",
+  "description": "Google (Gemini API) SSE streaming with inlineData (base64) output mapped to v3 `file` parts. Handcrafted contract fixture validating file part emission and finish usage/reason mapping.",
+  "source": {
+    "type": "handcrafted-contract-fixture",
+    "paths": [
+      "test/fixtures/google/chat/google-inline-data-file.1.chunks.txt"
+    ],
+    "notes": "Handcrafted fixture because upstream AI SDK does not ship Google `*.chunks.txt` stream captures. Uses Gemini SSE (`alt=sse`) style with `[DONE]`. Includes a tiny 1x1 PNG base64 payload."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "tool_input_delta_is_string": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  }
+}
