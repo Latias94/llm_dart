@@ -1,0 +1,25 @@
+{
+  "provider": "ollama",
+  "scenario": "ollama-text-length.1",
+  "description": "Ollama NDJSON streaming (text-only) finishing due to length. Handcrafted contract fixture validating typed finishReason mapping from `done_reason=length`.",
+  "source": {
+    "type": "handcrafted-contract-fixture",
+    "paths": [
+      "test/fixtures/ollama/chat/ollama-text-length.1.chunks.txt"
+    ],
+    "notes": "Handcrafted fixture because upstream AI SDK does not ship Ollama NDJSON streaming captures. This fixture uses Ollama's NDJSON stream format (not SSE)."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "tool_input_delta_is_string": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "This scenario ensures `done_reason=length` maps to `LLMUnifiedFinishReason.length`."
+  ]
+}
+

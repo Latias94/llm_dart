@@ -198,8 +198,8 @@ Recommended order:
   - [x] assertion: encoded canonical parts JSONL deep-equals expected JSONL
 - [ ] Add targeted “nasty stream boundaries” fuzz tests:
   - [x] out-of-order `tool-input-delta` before tool-input start (OpenAI/Azure specific)
-  - [ ] tool input JSON split across arbitrary chunk boundaries
-  - [ ] usage arriving after finish_reason (common in OpenAI-compatible/Azure)
+  - [x] tool input JSON split across arbitrary chunk boundaries (see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
+  - [x] usage arriving after finish_reason (common in OpenAI-compatible/Azure; see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
 
 ---
 
