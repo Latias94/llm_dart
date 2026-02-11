@@ -45,6 +45,7 @@ import '../test/utils/fixture_replay.dart';
 ///   dart run tool/update_v3_goldens.dart --check
 ///   dart run tool/update_v3_goldens.dart --write
 ///   dart run tool/update_v3_goldens.dart --write --only=openai,anthropic
+///   dart run tool/update_v3_goldens.dart --roundtrip-only --only=anthropic
 void main(List<String> args) async {
   final flags = _parseArgs(args);
 
@@ -73,6 +74,12 @@ void main(List<String> args) async {
       '${scenarios.map((s) => s.provider).toSet().toList()..sort()}',
     );
     exitCode = 2;
+    return;
+  }
+
+  if (flags.roundtripOnly) {
+    final ok = _checkSelectedJsonlRoundtrip(selectedFiltered);
+    if (!ok) exitCode = 1;
     return;
   }
 
@@ -993,6 +1000,7 @@ class _Flags {
   final _Scope scope;
   final Set<String> onlyProviders;
   final Set<String> onlyScenarios;
+  final bool roundtripOnly;
 
   const _Flags({
     required this.check,
@@ -1000,12 +1008,14 @@ class _Flags {
     required this.scope,
     required this.onlyProviders,
     required this.onlyScenarios,
+    required this.roundtripOnly,
   });
 }
 
 _Flags _parseArgs(List<String> args) {
   var check = false;
   var write = false;
+  var roundtripOnly = false;
   var scope = _Scope.optIn;
   final only = <String>{};
   final onlyScenarios = <String>{};
@@ -1017,6 +1027,10 @@ _Flags _parseArgs(List<String> args) {
     }
     if (a == '--write') {
       write = true;
+      continue;
+    }
+    if (a == '--roundtrip-only') {
+      roundtripOnly = true;
       continue;
     }
     if (a == '--scope=all') {
@@ -1051,6 +1065,11 @@ _Flags _parseArgs(List<String> args) {
   if (check && write) {
     throw ArgumentError('Pass at most one of --check or --write.');
   }
+  if (roundtripOnly && write) {
+    throw ArgumentError(
+        '--roundtrip-only is check-only (do not pass --write).');
+  }
+  if (roundtripOnly) check = true;
 
   return _Flags(
     check: check,
@@ -1058,6 +1077,7 @@ _Flags _parseArgs(List<String> args) {
     scope: scope,
     onlyProviders: only,
     onlyScenarios: onlyScenarios,
+    roundtripOnly: roundtripOnly,
   );
 }
 
@@ -1146,6 +1166,109 @@ String _fnv1a64Hex(String value) {
 
   final hex = hash.toRadixString(16).padLeft(16, '0');
   return 'fnv1a64:$hex';
+}
+
+bool _checkSelectedJsonlRoundtrip(List<_Scenario> scenarios) {
+  var failures = 0;
+
+  for (final scenario in scenarios) {
+    final dir = Directory('test/fixtures/v3_parts/${scenario.provider}');
+    if (!dir.existsSync()) {
+      stderr.writeln('[roundtrip] missing provider dir: ${dir.path}');
+      failures++;
+      continue;
+    }
+
+    final base = scenario.baseName;
+    final goldenFiles = dir
+        .listSync(followLinks: false)
+        .whereType<File>()
+        .where((f) {
+          final name = f.uri.pathSegments.last;
+          return (name == '$base.jsonl') ||
+              (name.startsWith('$base.session') && name.endsWith('.jsonl'));
+        })
+        .map((f) => f.path)
+        .toList(growable: false)
+      ..sort();
+
+    if (goldenFiles.isEmpty) {
+      stderr
+          .writeln('[roundtrip] missing golden(s): ${scenario.provider}/$base');
+      failures++;
+      continue;
+    }
+
+    for (final goldenPath in goldenFiles) {
+      final objects = _readJsonlObjects(goldenPath);
+      try {
+        final parts = decodeV3StreamParts(objects);
+        final encoded = encodeV3StreamParts(parts);
+
+        final expectedLines = objects
+            .map((o) => _stableJsonEncode(o, omitNulls: true))
+            .toList(growable: false);
+        final actualLines = encoded
+            .map((o) => _stableJsonEncode(o, omitNulls: true))
+            .toList(growable: false);
+
+        if (expectedLines.length != actualLines.length) {
+          stderr.writeln(
+            '[roundtrip] line count mismatch: $goldenPath '
+            '(expected ${expectedLines.length}, got ${actualLines.length})',
+          );
+          failures++;
+          continue;
+        }
+
+        var mismatch = -1;
+        for (var i = 0; i < expectedLines.length; i++) {
+          if (expectedLines[i] != actualLines[i]) {
+            mismatch = i;
+            break;
+          }
+        }
+
+        if (mismatch != -1) {
+          stderr.writeln(
+              '[roundtrip] mismatch: $goldenPath line ${mismatch + 1}');
+          stderr.writeln('  expected: ${expectedLines[mismatch]}');
+          stderr.writeln('  actual:   ${actualLines[mismatch]}');
+          failures++;
+        }
+      } catch (e) {
+        stderr.writeln('[roundtrip] decode failed: $goldenPath');
+        stderr.writeln('  $e');
+        failures++;
+      }
+    }
+  }
+
+  if (failures > 0) {
+    stderr.writeln('[roundtrip] failed: $failures file(s)');
+    return false;
+  }
+
+  stdout.writeln('[roundtrip] OK');
+  return true;
+}
+
+List<Map<String, dynamic>> _readJsonlObjects(String path) {
+  final lines = File(path)
+      .readAsLinesSync()
+      .map((l) => l.trim())
+      .where((l) => l.isNotEmpty)
+      .toList(growable: false);
+
+  final objects = <Map<String, dynamic>>[];
+  for (final line in lines) {
+    final decoded = jsonDecode(line);
+    if (decoded is! Map<String, dynamic>) {
+      throw FormatException('Expected JSON object per line, got: $decoded');
+    }
+    objects.add(decoded);
+  }
+  return objects;
 }
 
 enum _Scope { optIn, all }

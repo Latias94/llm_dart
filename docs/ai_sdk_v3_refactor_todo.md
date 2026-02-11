@@ -108,6 +108,7 @@ Tracker note: per-provider progress is tracked in `docs/provider_alignment_progr
   - [x] parts -> `.jsonl` stable lines
   - [x] `.jsonl` lines -> parts (only if decoding is implemented)
 - [x] Add v3 JSONL round-trip check tool (`tool/check_v3_jsonl_roundtrip.dart`) and run it in `melos run parity:check`
+  - Tip: for a quick targeted check, run `dart run tool/update_v3_goldens.dart --roundtrip-only --only=<provider>`
 
 ### 0.2.1 Golden fixtures conventions
 
