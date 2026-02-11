@@ -53,6 +53,36 @@ void registerAnthropicCompatibleReasoningTextStreamingConformanceTests({
       AnthropicCompatibleStreamingFixture.thinkingThenText,
 }) {
   group(groupName, () {
+    test('emits response-metadata before the first content block', () async {
+      final client = FakeAnthropicCompatibleClient(
+        config,
+        chunks: fixture.chunks,
+      );
+      final chat = createChat(client, config);
+
+      final parts =
+          await chat.chatStreamParts([ChatMessage.user('hi')]).toList();
+
+      final metaIndex =
+          parts.indexWhere((part) => part is LLMResponseMetadataPart);
+      expect(metaIndex, greaterThanOrEqualTo(0));
+
+      final firstContentIndex = parts.indexWhere((part) =>
+          part is LLMReasoningStartPart ||
+          part is LLMReasoningDeltaPart ||
+          part is LLMTextStartPart ||
+          part is LLMTextDeltaPart ||
+          part is LLMToolCallStartPart ||
+          part is LLMToolInputStartPart);
+      expect(firstContentIndex, greaterThanOrEqualTo(0));
+
+      expect(metaIndex, lessThan(firstContentIndex));
+
+      final meta = parts[metaIndex] as LLMResponseMetadataPart;
+      expect(meta.id, equals(fixture.expectedMessageId));
+      expect(meta.model, equals(fixture.expectedModel));
+    });
+
     test('emits thinking_delta and text_delta parts in order', () async {
       final client = FakeAnthropicCompatibleClient(
         config,

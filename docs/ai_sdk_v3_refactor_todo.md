@@ -24,7 +24,7 @@ Rolling plan (kept up to date):
   - [x] add/extend v3 golden(s) to include at least one `type:'file'` part
 - [ ] Strengthen conformance suites:
   - [x] protocol-level tests under `test/protocols/...` for shared OpenAI-compatible + Anthropic-compatible semantics (incremental; keep expanding)
-  - [ ] ordering invariants for metadata vs first content (best-effort, document exceptions)
+  - [x] ordering invariants for metadata vs first content (best-effort; do not reorder/delay content)
 - [ ] Keep fixtures synced with AI SDK:
   - [ ] when bumping `_upstream.json`, run `melos run fixtures:sync` then `melos run parity:check`
 
