@@ -118,6 +118,46 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
   }) {
     final fallbackProviderId = providerId == 'google-openai' ? 'google' : null;
 
+    Map<String, dynamic> mergedProviderOptionMap(
+      String key, {
+      String? fallbackKey,
+    }) {
+      final direct = readProviderOptionMap(
+        config.providerOptions,
+        providerId,
+        key,
+      );
+      final directAlt = fallbackKey == null
+          ? null
+          : readProviderOptionMap(
+              config.providerOptions,
+              providerId,
+              fallbackKey,
+            );
+
+      final fallback = fallbackProviderId == null
+          ? null
+          : readProviderOptionMap(
+              config.providerOptions,
+              fallbackProviderId,
+              key,
+            );
+      final fallbackAlt = (fallbackProviderId == null || fallbackKey == null)
+          ? null
+          : readProviderOptionMap(
+              config.providerOptions,
+              fallbackProviderId,
+              fallbackKey,
+            );
+
+      final merged = <String, dynamic>{};
+      merged.addAll(fallbackAlt ?? const {});
+      merged.addAll(fallback ?? const {});
+      merged.addAll(directAlt ?? const {});
+      merged.addAll(direct ?? const {});
+      return merged;
+    }
+
     final rawGlobalHeaders = readProviderOptionMap(
           config.providerOptions,
           'openai-compatible',
@@ -130,20 +170,8 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
           'extraHeaders',
         ) ??
         const <String, dynamic>{};
-    final rawProviderHeaders = readProviderOptionMap(
-          config.providerOptions,
-          providerId,
-          'headers',
-          fallbackProviderId: fallbackProviderId,
-        ) ??
-        const <String, dynamic>{};
-    final rawProviderExtraHeaders = readProviderOptionMap(
-          config.providerOptions,
-          providerId,
-          'extraHeaders',
-          fallbackProviderId: fallbackProviderId,
-        ) ??
-        const <String, dynamic>{};
+    final rawProviderHeaders = mergedProviderOptionMap('headers');
+    final rawProviderExtraHeaders = mergedProviderOptionMap('extraHeaders');
 
     Map<String, String>? mergedHeaders;
     if (rawGlobalHeaders.isNotEmpty ||
@@ -193,6 +221,33 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
             defaultEndpointPrefix)
         ?.trim();
 
+    final rawGlobalExtraBody = readProviderOptionMap(
+          config.providerOptions,
+          'openai-compatible',
+          'extraBody',
+        ) ??
+        readProviderOptionMap(
+          config.providerOptions,
+          'openai-compatible',
+          'extra_body',
+        );
+
+    final rawProviderExtraBody = mergedProviderOptionMap(
+      'extraBody',
+      fallbackKey: 'extra_body',
+    );
+
+    final Map<String, dynamic>? mergedExtraBody;
+    if ((rawGlobalExtraBody != null && rawGlobalExtraBody.isNotEmpty) ||
+        rawProviderExtraBody.isNotEmpty) {
+      mergedExtraBody = {
+        ...?rawGlobalExtraBody,
+        ...rawProviderExtraBody,
+      };
+    } else {
+      mergedExtraBody = null;
+    }
+
     return OpenAICompatibleConfig(
       providerId: providerId,
       providerName: providerName ?? providerId,
@@ -204,12 +259,7 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
           resolvedEndpointPrefix != null && resolvedEndpointPrefix.isNotEmpty
               ? resolvedEndpointPrefix
               : null,
-      extraBody: readProviderOptionMap(
-        config.providerOptions,
-        providerId,
-        'extraBody',
-        fallbackProviderId: fallbackProviderId,
-      ),
+      extraBody: mergedExtraBody,
       extraHeaders: mergedHeaders,
       maxTokens: config.maxTokens,
       temperature: config.temperature,

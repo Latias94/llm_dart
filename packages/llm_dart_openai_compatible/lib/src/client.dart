@@ -40,6 +40,14 @@ class OpenAIClient {
     final effectiveProviderId = providerId;
     final fallbackProviderId =
         effectiveProviderId == 'google-openai' ? 'google' : null;
+
+    Map<String, dynamic>? readQP(String providerId, String key) =>
+        readProviderOptionMap(original.providerOptions, providerId, key);
+
+    Map<String, dynamic>? readQPEitherKey(String providerId) =>
+        readQP(providerId, 'queryParams') ??
+        readQP(providerId, 'queryParameters');
+
     final rawGlobal = readProviderOptionMap(
           original.providerOptions,
           'openai-compatible',
@@ -50,18 +58,16 @@ class OpenAIClient {
           'openai-compatible',
           'queryParameters',
         );
-    final rawProvider = readProviderOptionMap(
-          original.providerOptions,
-          effectiveProviderId,
-          'queryParams',
-          fallbackProviderId: fallbackProviderId,
-        ) ??
-        readProviderOptionMap(
-          original.providerOptions,
-          effectiveProviderId,
-          'queryParameters',
-          fallbackProviderId: fallbackProviderId,
-        );
+
+    final direct = readQPEitherKey(effectiveProviderId);
+    final fallback =
+        fallbackProviderId == null ? null : readQPEitherKey(fallbackProviderId);
+    final rawProvider = (direct == null && fallback == null)
+        ? null
+        : <String, dynamic>{
+            ...?fallback,
+            ...?direct,
+          };
 
     final raw = <String, dynamic>{
       ...?rawGlobal,

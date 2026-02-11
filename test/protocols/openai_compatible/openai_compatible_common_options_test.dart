@@ -263,6 +263,106 @@ void main() {
       expect(options.uri.queryParameters['hello'], equals('world'));
     });
 
+    test('google-openai merges queryParams with providerOptions["google"]',
+        () async {
+      final llmConfig = LLMConfig(
+        apiKey: null,
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        model: 'gemini-2.0-flash',
+        providerOptions: const {
+          'google': {
+            'queryParams': {
+              'hello': 'world',
+              'foo': 'google',
+            },
+          },
+          'google-openai': {
+            'queryParams': {
+              'foo': 'google-openai',
+            },
+          },
+        },
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'google-openai',
+        providerName: 'Google Gemini (OpenAI-compatible)',
+      );
+
+      final client = OpenAIClient(config);
+      final adapter = _CapturingHttpClientAdapter();
+      client.dio.httpClientAdapter = adapter;
+
+      await client.postJson('chat/completions', {
+        'model': llmConfig.model,
+        'messages': const [],
+        'stream': false,
+      });
+
+      final options = adapter.lastOptions;
+      expect(options, isNotNull);
+      expect(options!.uri.queryParameters['foo'], equals('google-openai'));
+      expect(options.uri.queryParameters['hello'], equals('world'));
+    });
+
+    test(
+        'google-openai extraHeaders precedence is google-openai > google > openai-compatible',
+        () async {
+      final llmConfig = LLMConfig(
+        apiKey: null,
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        model: 'gemini-2.0-flash',
+        providerOptions: const {
+          'openai-compatible': {
+            'extraHeaders': {
+              'X-Foo': 'global',
+              'X-GlobalOnly': '1',
+            },
+          },
+          'google': {
+            'extraHeaders': {
+              'X-Foo': 'google',
+              'X-GoogleOnly': '1',
+            },
+          },
+          'google-openai': {
+            'extraHeaders': {
+              'X-Foo': 'google-openai',
+            },
+          },
+        },
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'google-openai',
+        providerName: 'Google Gemini (OpenAI-compatible)',
+      );
+
+      final client = OpenAIClient(config);
+      final adapter = _CapturingHttpClientAdapter();
+      client.dio.httpClientAdapter = adapter;
+
+      await client.postJson('chat/completions', {
+        'model': llmConfig.model,
+        'messages': const [],
+        'stream': false,
+      });
+
+      final options = adapter.lastOptions;
+      expect(options, isNotNull);
+
+      final headersLower = <String, String>{};
+      for (final entry in options!.headers.entries) {
+        headersLower[entry.key.toLowerCase()] = entry.value.toString();
+      }
+
+      expect(headersLower['x-foo'], equals('google-openai'));
+      expect(headersLower['x-globalonly'], equals('1'));
+      expect(headersLower['x-googleonly'], equals('1'));
+    });
+
     test('endpointPrefix can prepend an extra path segment (DeepInfra-style)',
         () async {
       final llmConfig = LLMConfig(

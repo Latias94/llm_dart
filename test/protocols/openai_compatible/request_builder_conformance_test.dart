@@ -509,5 +509,54 @@ void main() {
       expect(streamOptions, isNotNull);
       expect(streamOptions!['include_usage'], isTrue);
     });
+
+    test(
+        'google-openai merges extraBody with precedence google-openai > google > openai-compatible',
+        () {
+      final llmConfig = LLMConfig(
+        apiKey: 'k',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        model: 'gemini-2.0-flash',
+        providerOptions: const {
+          'openai-compatible': {
+            'extraBody': {
+              'foo': 'global',
+              'hello': 'world',
+            },
+          },
+          'google': {
+            'extraBody': {
+              'foo': 'google',
+              'bar': true,
+            },
+          },
+          'google-openai': {
+            'extraBody': {
+              'foo': 'google-openai',
+            },
+          },
+        },
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'google-openai',
+        providerName: 'Google Gemini (OpenAI-compatible)',
+      );
+
+      final client = OpenAIClient(config);
+      final builder = OpenAIRequestBuilder(config);
+
+      final body = builder.buildChatCompletionsRequestBody(
+        client,
+        messages: [ChatMessage.user('hi')],
+        tools: const [],
+        stream: false,
+      );
+
+      expect(body['hello'], equals('world'));
+      expect(body['foo'], equals('google-openai'));
+      expect(body['bar'], isTrue);
+    });
   });
 }
