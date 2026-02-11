@@ -150,4 +150,4 @@ Legend:
 - 2026-02-11: AI SDK v3 parity refactor guardrails expanded:
   - `llm_dart_ai` wrapper collapses/dedupes `LLMProviderMetadataPart` snapshots to reduce streaming noise.
   - Google (Gemini) streaming maps `inlineData` outputs to canonical v3 `file` parts (`LLMFilePart`).
-  - Protocol conformance tests lock in response-metadata ordering and tool/citation streaming edge cases under `test/protocols/...`.
+  - Protocol conformance tests lock in response-metadata ordering, tool call buffering/invalid-call behavior, thoughtSignature propagation, and citations mapping under `test/protocols/...`.
