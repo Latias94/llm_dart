@@ -220,6 +220,66 @@ void main() {
     });
 
     test(
+        'google-openai headers precedence is google-openai > google > openai-compatible',
+        () async {
+      final llmConfig = LLMConfig(
+        apiKey: null,
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        model: 'gemini-2.0-flash',
+        providerOptions: const {
+          'openai-compatible': {
+            'headers': {
+              'X-Foo': 'global',
+              'X-GlobalOnly': '1',
+            },
+          },
+          'google': {
+            'headers': {
+              'X-Foo': 'google',
+              'X-GoogleOnly': '1',
+            },
+          },
+          'google-openai': {
+            'headers': {
+              'X-Foo': 'google-openai',
+              'X-GoogleOpenAIOnly': '1',
+            },
+          },
+        },
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'google-openai',
+        providerName: 'Google Gemini (OpenAI-compatible)',
+      );
+
+      final client = OpenAIClient(config);
+      final adapter = _CapturingHttpClientAdapter();
+      client.dio.httpClientAdapter = adapter;
+
+      await client.postJson('chat/completions', {
+        'model': llmConfig.model,
+        'messages': const [],
+        'stream': false,
+      });
+
+      final options = adapter.lastOptions;
+      expect(options, isNotNull);
+
+      final headersLower = <String, String>{};
+      for (final entry in options!.headers.entries) {
+        headersLower[entry.key.toLowerCase()] = entry.value.toString();
+      }
+
+      expect(headersLower.containsKey('authorization'), isFalse);
+      expect(headersLower['x-foo'], equals('google-openai'));
+      expect(headersLower['x-globalonly'], equals('1'));
+      expect(headersLower['x-googleonly'], equals('1'));
+      expect(headersLower['x-googleopenaionly'], equals('1'));
+    });
+
+    test(
         'google-openai falls back to providerOptions["google"] for queryParams',
         () async {
       final llmConfig = LLMConfig(
