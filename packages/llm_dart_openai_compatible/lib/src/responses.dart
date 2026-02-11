@@ -196,13 +196,17 @@ class OpenAIResponses
     // Tool-input streaming state for provider-triggered tools that stream
     // structured inputs via dedicated delta events (AI SDK parity).
     final codeInterpreterCodeByToolCallId = <String, StringBuffer>{};
+    final codeInterpreterCodeDeltasByToolCallId = <String, List<String>>{};
     final codeInterpreterContainerIdByToolCallId = <String, String>{};
     final codeInterpreterToolNameByToolCallId = <String, String>{};
+    final startedCodeInterpreterToolInput = <String>{};
 
     final applyPatchDiffByItemId = <String, StringBuffer>{};
+    final applyPatchDiffDeltasByItemId = <String, List<String>>{};
     final applyPatchCallIdByItemId = <String, String>{};
     final applyPatchToolNameByItemId = <String, String>{};
     final applyPatchOperationByItemId = <String, Map<String, dynamic>>{};
+    final startedApplyPatchToolInput = <String>{};
 
     String jsonStringFragment(String value) {
       if (value.isEmpty) return '';
@@ -213,6 +217,43 @@ class OpenAIResponses
         return encoded.substring(1, encoded.length - 1);
       }
       return value;
+    }
+
+    Iterable<LLMToolInputDeltaPart> _drainCodeInterpreterToolInputDeltas(
+      String toolCallId,
+    ) sync* {
+      final pending = codeInterpreterCodeDeltasByToolCallId[toolCallId];
+      if (pending == null || pending.isEmpty) return;
+
+      final copy = List<String>.from(pending);
+      pending.clear();
+
+      for (final delta in copy) {
+        if (delta.isEmpty) continue;
+        yield LLMToolInputDeltaPart(
+          id: toolCallId,
+          delta: jsonStringFragment(delta),
+        );
+      }
+    }
+
+    Iterable<LLMToolInputDeltaPart> _drainApplyPatchToolInputDeltas({
+      required String itemId,
+      required String toolCallId,
+    }) sync* {
+      final pending = applyPatchDiffDeltasByItemId[itemId];
+      if (pending == null || pending.isEmpty) return;
+
+      final copy = List<String>.from(pending);
+      pending.clear();
+
+      for (final delta in copy) {
+        if (delta.isEmpty) continue;
+        yield LLMToolInputDeltaPart(
+          id: toolCallId,
+          delta: jsonStringFragment(delta),
+        );
+      }
     }
 
     var mcpApprovalSeq = 0;
@@ -359,10 +400,17 @@ class OpenAIResponses
                 .putIfAbsent(toolCallId, () => StringBuffer())
                 .write(delta);
 
-            yield LLMToolInputDeltaPart(
-              id: toolCallId,
-              delta: jsonStringFragment(delta),
-            );
+            // Robustness: if deltas arrive before `output_item.added`, buffer
+            // them and emit after the tool-input-start boundary is known.
+            if (startedCodeInterpreterToolInput.contains(toolCallId)) {
+              yield LLMToolInputDeltaPart(
+                id: toolCallId,
+                delta: jsonStringFragment(delta),
+              );
+            } else {
+              (codeInterpreterCodeDeltasByToolCallId[toolCallId] ??= <String>[])
+                  .add(delta);
+            }
             continue;
           }
 
@@ -377,17 +425,26 @@ class OpenAIResponses
               continue;
             }
 
-            final callId = applyPatchCallIdByItemId[itemId];
-            if (callId == null || callId.isEmpty) continue;
-
             applyPatchDiffByItemId
                 .putIfAbsent(itemId, () => StringBuffer())
                 .write(delta);
 
-            yield LLMToolInputDeltaPart(
-              id: callId,
-              delta: jsonStringFragment(delta),
-            );
+            final callId = applyPatchCallIdByItemId[itemId];
+            if (callId == null || callId.isEmpty) {
+              (applyPatchDiffDeltasByItemId[itemId] ??= <String>[]).add(delta);
+              continue;
+            }
+
+            // Robustness: if deltas arrive before `output_item.added`, buffer
+            // them and emit after the tool-input-start boundary is known.
+            if (startedApplyPatchToolInput.contains(callId)) {
+              yield LLMToolInputDeltaPart(
+                id: callId,
+                delta: jsonStringFragment(delta),
+              );
+            } else {
+              (applyPatchDiffDeltasByItemId[itemId] ??= <String>[]).add(delta);
+            }
             continue;
           }
 
@@ -789,6 +846,12 @@ class OpenAIResponses
                         delta:
                             '{"containerId":${jsonEncode(codeInterpreterContainerIdByToolCallId[toolCallId] ?? '')},"code":"',
                       );
+
+                      startedCodeInterpreterToolInput.add(toolCallId);
+                      for (final part
+                          in _drainCodeInterpreterToolInputDeltas(toolCallId)) {
+                        yield part;
+                      }
                       continue;
                     }
 
@@ -819,6 +882,14 @@ class OpenAIResponses
                           delta:
                               '{"callId":${jsonEncode(toolCallId)},"operation":{"type":${jsonEncode(opType)},"path":${jsonEncode(path)},"diff":"',
                         );
+
+                        startedApplyPatchToolInput.add(toolCallId);
+                        for (final part in _drainApplyPatchToolInputDeltas(
+                          itemId: id,
+                          toolCallId: toolCallId,
+                        )) {
+                          yield part;
+                        }
                       } else {
                         final input = jsonEncode({
                           'callId': toolCallId,
@@ -832,6 +903,7 @@ class OpenAIResponses
                           delta: input,
                         );
                         yield LLMToolInputEndPart(id: toolCallId);
+                        startedApplyPatchToolInput.add(toolCallId);
                       }
                       continue;
                     }
@@ -868,6 +940,28 @@ class OpenAIResponses
                               (item['container_id'] is String
                                   ? item['container_id'] as String
                                   : '');
+
+                      // Robustness: some streams may deliver code deltas before
+                      // `output_item.added`. Ensure the tool-input block has a
+                      // start boundary before we end it.
+                      if (!startedCodeInterpreterToolInput
+                          .contains(toolCallId)) {
+                        yield LLMToolInputStartPart(
+                          id: toolCallId,
+                          toolName: resolvedToolName,
+                          providerExecuted: true,
+                        );
+                        yield LLMToolInputDeltaPart(
+                          id: toolCallId,
+                          delta:
+                              '{"containerId":${jsonEncode(containerId)},"code":"',
+                        );
+                        startedCodeInterpreterToolInput.add(toolCallId);
+                        for (final part in _drainCodeInterpreterToolInputDeltas(
+                            toolCallId)) {
+                          yield part;
+                        }
+                      }
 
                       yield LLMToolInputDeltaPart(
                         id: toolCallId,
@@ -916,6 +1010,28 @@ class OpenAIResponses
 
                       final hasDiff = diff != null;
                       if (hasDiff) {
+                        // Robustness: some streams may deliver diff deltas
+                        // before `output_item.added`. Ensure the tool-input
+                        // block has a start boundary before we end it.
+                        if (!startedApplyPatchToolInput.contains(toolCallId)) {
+                          yield LLMToolInputStartPart(
+                            id: toolCallId,
+                            toolName: resolvedToolName,
+                          );
+                          yield LLMToolInputDeltaPart(
+                            id: toolCallId,
+                            delta:
+                                '{"callId":${jsonEncode(toolCallId)},"operation":{"type":${jsonEncode(opType)},"path":${jsonEncode(path)},"diff":"',
+                          );
+                          startedApplyPatchToolInput.add(toolCallId);
+                          for (final part in _drainApplyPatchToolInputDeltas(
+                            itemId: id,
+                            toolCallId: toolCallId,
+                          )) {
+                            yield part;
+                          }
+                        }
+
                         yield LLMToolInputDeltaPart(
                           id: toolCallId,
                           delta: '"}}',
