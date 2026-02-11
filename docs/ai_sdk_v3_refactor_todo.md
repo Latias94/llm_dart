@@ -228,6 +228,7 @@ Recommended order:
   - [x] interleaved multiple tool calls across chunks (see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
   - [x] tool call id arriving late (buffer by index; see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
   - [x] usage arriving after finish_reason (common in OpenAI-compatible/Azure; see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
+  - [x] response-metadata/providerMetadata never appear after finish (llm_dart_ai wrapper; see `test/ai/response_metadata_conformance_test.dart`)
 
 ---
 
