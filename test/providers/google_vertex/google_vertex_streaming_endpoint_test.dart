@@ -43,5 +43,46 @@ void main() {
       );
       expect(parts.whereType<LLMFinishPart>(), hasLength(1));
     });
+
+    test('passes through full Vertex model resource path (non-express)', () async {
+      const fullModelPath =
+          'projects/test-project/locations/us-central1/publishers/google/models/gemini-2.5-pro';
+
+      final config = GoogleConfig(
+        providerOptionsName: 'google-vertex',
+        providerId: 'google-vertex',
+        apiKey: 'test-key',
+        baseUrl: 'https://us-central1-aiplatform.googleapis.com/v1/',
+        model: fullModelPath,
+        stream: true,
+      );
+
+      final client = FakeGoogleClient(config)
+        ..streamResponse = Stream<String>.fromIterable([
+          'data: ${jsonEncode({
+                'candidates': [
+                  {
+                    'content': {
+                      'parts': [
+                        {'text': 'ok'},
+                      ],
+                    },
+                    'finishReason': 'STOP',
+                  },
+                ],
+              })}\n\n',
+        ]);
+
+      final chat = GoogleChat(client, config);
+      final parts = await chat
+          .chatStreamParts([ChatMessage.user('hi')], tools: const [])
+          .toList();
+
+      expect(
+        client.lastEndpoint,
+        equals('$fullModelPath:streamGenerateContent'),
+      );
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
+    });
   });
 }

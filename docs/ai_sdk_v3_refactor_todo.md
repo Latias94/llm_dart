@@ -165,7 +165,9 @@ Remaining (recommended next targets):
 - Note: if upstream AI SDK does not ship `*.chunks.txt` captures for a provider,
   add small handcrafted contract fixtures under `test/fixtures/<provider>/...`
   and mark `source.type = "handcrafted-contract-fixture"` in `*.meta.json`.
-- [ ] Vertex AI (non-express mode; usage + metadata)
+- [x] Vertex AI (non-express mode; usage + metadata)
+  - Covered by `google-vertex` contract fixture
+    `test/fixtures/v3_parts/google_vertex/google-vertex-non-express-model-path.1.jsonl`.
 - [ ] MiniMax / ElevenLabs (non-chat surfaces; define parity scope)
 
 Recommended order:

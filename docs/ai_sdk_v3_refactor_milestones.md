@@ -205,6 +205,7 @@ Current coverage (goldens added in this repo):
   - `test/fixtures/v3_parts/google_vertex/google-tool-call.1.jsonl`
   - `test/fixtures/v3_parts/google_vertex/google-code-execution.1.jsonl`
   - `test/fixtures/v3_parts/google_vertex/google-grounding-sources.1.jsonl`
+  - `test/fixtures/v3_parts/google_vertex/google-vertex-non-express-model-path.1.jsonl`
 
 ---
 

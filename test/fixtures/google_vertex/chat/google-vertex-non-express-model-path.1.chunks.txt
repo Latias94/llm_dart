@@ -1,0 +1,2 @@
+{"modelVersion":"projects/test-project/locations/us-central1/publishers/google/models/gemini-2.5-pro","candidates":[{"content":{"parts":[{"text":"ok"}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":3,"candidatesTokenCount":2,"totalTokenCount":5}}
+[DONE]

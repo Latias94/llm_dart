@@ -1,0 +1,22 @@
+{
+  "provider": "google_vertex",
+  "scenario": "google-vertex-non-express-model-path.1",
+  "description": "Vertex AI non-express mode (regional endpoint) with full model resource path. Contract fixture validating model path passthrough and typed finishReason/usage mapping under `google-vertex` metadata namespace.",
+  "source": {
+    "type": "handcrafted-contract-fixture",
+    "paths": [
+      "test/fixtures/google_vertex/chat/google-vertex-non-express-model-path.1.chunks.txt"
+    ],
+    "notes": "Handcrafted fixture because upstream AI SDK does not ship Google Vertex `*.chunks.txt` stream captures. Uses full Vertex model resource path as modelVersion."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "tool_input_delta_is_string": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  }
+}
+

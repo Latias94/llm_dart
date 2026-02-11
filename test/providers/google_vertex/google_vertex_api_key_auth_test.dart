@@ -83,4 +83,46 @@ void main() {
       expect(apiKeyHeader, equals('test-vertex-key'));
     });
   });
+
+  group('Vertex AI non-express API key auth (best-effort)', () {
+    test('still uses x-goog-api-key header with regional baseUrl', () async {
+      const fullModelPath =
+          'projects/test-project/locations/us-central1/publishers/google/models/gemini-2.5-pro';
+
+      final config = GoogleConfig(
+        providerOptionsName: 'google-vertex',
+        providerId: 'google-vertex',
+        apiKey: 'test-vertex-key',
+        baseUrl: 'https://us-central1-aiplatform.googleapis.com/v1/',
+        model: fullModelPath,
+      );
+
+      final client = GoogleClient(config);
+      final adapter = _CapturingAdapter();
+      client.dio.httpClientAdapter = adapter;
+
+      await client.postJson(
+        '$fullModelPath:generateContent',
+        const {'contents': []},
+      );
+
+      final uri = adapter.lastUri;
+      expect(uri, isNotNull);
+      expect(
+        uri.toString(),
+        'https://us-central1-aiplatform.googleapis.com/v1/$fullModelPath:generateContent',
+      );
+      expect(uri!.queryParameters.containsKey('key'), isFalse);
+
+      final headers = adapter.lastHeaders;
+      expect(headers, isNotNull);
+      final apiKeyHeader = headers!.entries
+          .firstWhere(
+            (e) => e.key.toLowerCase() == 'x-goog-api-key',
+            orElse: () => const MapEntry<String, dynamic>('', null),
+          )
+          .value;
+      expect(apiKeyHeader, equals('test-vertex-key'));
+    });
+  });
 }
