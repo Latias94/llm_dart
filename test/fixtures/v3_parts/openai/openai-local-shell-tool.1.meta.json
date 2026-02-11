@@ -30,5 +30,13 @@
   "notes": [
     "This golden is derived from llm_dart parsing of the vendored AI SDK fixture, not directly copied from upstream.",
     "Provider-only fields may appear under providerMetadata or raw parts."
-  ]
+  ],
+  "upstream": {
+    "repository": "https://github.com/vercel/ai",
+    "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
+    "license": "Apache-2.0",
+    "paths": [
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-local-shell-tool.1.chunks.txt"
+    ]
+  }
 }

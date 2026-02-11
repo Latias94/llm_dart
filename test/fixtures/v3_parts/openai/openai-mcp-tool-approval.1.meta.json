@@ -19,6 +19,13 @@
   },
   "notes": [
     "If the fixture contains multiple sessions, multiple `.jsonl` files may be generated (session1, session2, ...)."
-  ]
+  ],
+  "upstream": {
+    "repository": "https://github.com/vercel/ai",
+    "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
+    "license": "Apache-2.0",
+    "paths": [
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-mcp-tool-approval.1.chunks.txt"
+    ]
+  }
 }
-

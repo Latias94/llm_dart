@@ -16,6 +16,13 @@
     "single_finish": true,
     "finish_usage_present": true,
     "finish_reason_typed": true
+  },
+  "upstream": {
+    "repository": "https://github.com/vercel/ai",
+    "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
+    "license": "Apache-2.0",
+    "paths": [
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-mcp-tool.1.chunks.txt"
+    ]
   }
 }
-
