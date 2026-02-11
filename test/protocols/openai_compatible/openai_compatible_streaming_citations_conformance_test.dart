@@ -163,6 +163,7 @@ void main() {
       expect(md, isNotNull);
       expect(md!['xai']['citations'],
           equals(['https://example.com/1', 'https://example.com/2']));
+      expect(md.containsKey('xai.chat'), isTrue);
     });
   });
 }

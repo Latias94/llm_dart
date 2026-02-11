@@ -305,5 +305,95 @@ void main() {
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.toolCalls, anyOf(isNull, isEmpty));
     });
+
+    test('captures extra_content.google.thought_signature into providerOptions',
+        () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'deepseek',
+        providerName: 'DeepSeek',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.deepseek.com/v1/',
+        model: 'deepseek-chat',
+      );
+
+      final chunks = <String>[
+        _sseData({
+          'id': 'chatcmpl_4',
+          'model': 'deepseek-chat',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {
+                'tool_calls': [
+                  {
+                    'index': 0,
+                    'id': 'call_1',
+                    'function': {
+                      'name': 'sum',
+                      'arguments': '{"a":',
+                    },
+                    'extra_content': {
+                      'google': {'thought_signature': 'ts_1'}
+                    },
+                  }
+                ],
+              },
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_4',
+          'model': 'deepseek-chat',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {
+                'tool_calls': [
+                  {
+                    'index': 0,
+                    'id': 'call_1',
+                    'function': {'arguments': '1}'},
+                  }
+                ],
+              },
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_4',
+          'model': 'deepseek-chat',
+          'choices': [
+            {
+              'index': 0,
+              'delta': <String, dynamic>{},
+              'finish_reason': 'tool_calls',
+            }
+          ],
+        }),
+      ];
+
+      final client = _FakeOpenAIClient(
+        config,
+        stream: Stream<String>.fromIterable(chunks),
+      );
+      final chat = OpenAIChat(client, config);
+
+      final parts =
+          await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
+
+      final toolStart = parts.whereType<LLMToolCallStartPart>().single;
+      expect(toolStart.toolCall.id, equals('call_1'));
+      expect(toolStart.toolCall.function.name, equals('sum'));
+      expect(
+          toolStart.toolCall.providerOptions['deepseek']?['thoughtSignature'],
+          equals('ts_1'));
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      final calls = finish.response.toolCalls;
+      expect(calls, isNotNull);
+      expect(calls!, hasLength(1));
+      expect(calls.single.providerOptions['deepseek']?['thoughtSignature'],
+          equals('ts_1'));
+    });
   });
 }
