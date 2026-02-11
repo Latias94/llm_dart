@@ -48,6 +48,13 @@ void main(List<String> args) {
           Directory('repo-ref/ai/packages/xai/src/responses/__fixtures__'),
       targetDir: Directory('test/fixtures/xai/responses'),
     ),
+    _Mapping(
+      id: 'open-responses',
+      sourceDir: Directory(
+        'repo-ref/ai/packages/open-responses/src/responses/__fixtures__',
+      ),
+      targetDir: Directory('test/fixtures/open_responses/responses'),
+    ),
   ];
 
   final selected = flags.only.isEmpty
