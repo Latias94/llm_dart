@@ -122,4 +122,58 @@ void main() {
       expect(metas.single.model, equals('m1'));
     });
   });
+
+  group('provider-metadata conformance', () {
+    test('collapses consecutive provider metadata parts into one', () async {
+      final model = _FakePartsModel(
+        Stream<LLMStreamPart>.fromIterable([
+          const LLMProviderMetadataPart({
+            'openai': {'id': 'resp_1'}
+          }),
+          const LLMProviderMetadataPart({
+            'openai': {'model': 'gpt-test'}
+          }),
+          const LLMFinishPart(_FakeChatResponse(text: 'ok')),
+        ]),
+      );
+
+      final parts = await streamChatParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+      ).toList();
+
+      final metas = parts.whereType<LLMProviderMetadataPart>().toList();
+      expect(metas, hasLength(1));
+      expect(
+        metas.single.providerMetadata,
+        equals({
+          'openai': {'id': 'resp_1', 'model': 'gpt-test'}
+        }),
+      );
+    });
+
+    test('drops duplicate provider metadata snapshots', () async {
+      const snapshot = {
+        'openai': {'id': 'resp_1', 'model': 'gpt-test'}
+      };
+
+      final model = _FakePartsModel(
+        Stream<LLMStreamPart>.fromIterable([
+          const LLMProviderMetadataPart(snapshot),
+          const LLMTextDeltaPart('ok'),
+          const LLMProviderMetadataPart(snapshot),
+          const LLMFinishPart(_FakeChatResponse(text: 'ok')),
+        ]),
+      );
+
+      final parts = await streamChatParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+      ).toList();
+
+      final metas = parts.whereType<LLMProviderMetadataPart>().toList();
+      expect(metas, hasLength(1));
+      expect(metas.single.providerMetadata, equals(snapshot));
+    });
+  });
 }

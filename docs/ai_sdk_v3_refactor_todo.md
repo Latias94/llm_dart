@@ -30,6 +30,8 @@ semantics while keeping the public Dart APIs idiomatic.
 5) Response metadata conformance:
    - [x] ensure metadata does not appear after finish
    - [x] dedupe/merge consecutive response-metadata parts (best-effort)
+6) Provider metadata noise control:
+   - [x] dedupe providerMetadata snapshot parts (best-effort; wrapper-level)
 
 Tracker note: per-provider progress is tracked in `docs/provider_alignment_progress.md`.
 
