@@ -185,6 +185,171 @@ void main() {
       }
     });
 
+    test('handles interleaved multiple tool_calls with random splits',
+        () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'gpt-4o',
+      );
+
+      final sse = [
+        _sseData({
+          'id': 'chatcmpl_multi_tool_fuzz',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {'role': 'assistant'},
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_multi_tool_fuzz',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {
+                'tool_calls': [
+                  {
+                    'index': 0,
+                    'id': 'call_1',
+                    'type': 'function',
+                    'function': {
+                      'name': 'toolA',
+                      'arguments': '{"a":1',
+                    },
+                  }
+                ],
+              },
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_multi_tool_fuzz',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {
+                'tool_calls': [
+                  {
+                    'index': 1,
+                    'id': 'call_2',
+                    'type': 'function',
+                    'function': {
+                      'name': 'toolB',
+                      'arguments': '{"b":',
+                    },
+                  }
+                ],
+              },
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_multi_tool_fuzz',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {
+                'tool_calls': [
+                  {
+                    'index': 0,
+                    'function': {
+                      'arguments': ',"c":2}',
+                    },
+                  }
+                ],
+              },
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_multi_tool_fuzz',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {
+                'tool_calls': [
+                  {
+                    'index': 1,
+                    'function': {
+                      'arguments': '3}',
+                    },
+                  }
+                ],
+              },
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_multi_tool_fuzz',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': <String, dynamic>{},
+              'finish_reason': 'tool_calls',
+            }
+          ],
+        }),
+        'data: [DONE]\n\n',
+      ].join();
+
+      for (final seed in [2, 9, 77]) {
+        final client = FakeOpenAIClient(config)
+          ..streamResponse = Stream<String>.fromIterable(
+            _splitRandom(sse, seed: seed),
+          );
+        final chat = OpenAIChat(client, config);
+
+        final parts =
+            await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
+
+        final starts = parts.whereType<LLMToolCallStartPart>().toList();
+        final deltas = parts.whereType<LLMToolCallDeltaPart>().toList();
+        final ends = parts.whereType<LLMToolCallEndPart>().toList();
+
+        expect(starts, hasLength(2));
+        expect(deltas, hasLength(2));
+        expect(ends, hasLength(2));
+
+        final idsStarted = starts.map((p) => p.toolCall.id).toSet();
+        expect(idsStarted, equals({'call_1', 'call_2'}));
+
+        final idsEnded = ends.map((p) => p.toolCallId).toSet();
+        expect(idsEnded, equals({'call_1', 'call_2'}));
+
+        for (final id in ['call_1', 'call_2']) {
+          final idxStart = parts.indexWhere(
+            (p) => p is LLMToolCallStartPart && p.toolCall.id == id,
+          );
+          final idxEnd = parts.indexWhere(
+            (p) => p is LLMToolCallEndPart && p.toolCallId == id,
+          );
+          expect(idxStart, isNonNegative);
+          expect(idxEnd, isNonNegative);
+          expect(idxStart, lessThan(idxEnd));
+        }
+
+        final finish = parts.whereType<LLMFinishPart>().single;
+        final toolCalls = finish.response.toolCalls;
+        expect(toolCalls, isNotNull);
+        expect(toolCalls, hasLength(2));
+
+        final byName = {for (final c in toolCalls!) c.function.name: c};
+        expect(byName.keys.toSet(), equals({'toolA', 'toolB'}));
+        expect(byName['toolA']!.function.arguments, equals('{"a":1,"c":2}'));
+        expect(byName['toolB']!.function.arguments, equals('{"b":3}'));
+      }
+    });
+
     test(
         'captures usage from trailing chunk after finish_reason with random splits',
         () async {

@@ -225,6 +225,7 @@ Recommended order:
 - [ ] Add targeted “nasty stream boundaries” fuzz tests:
   - [x] out-of-order `tool-input-delta` before tool-input start (OpenAI/Azure specific)
   - [x] tool input JSON split across arbitrary chunk boundaries (see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
+  - [x] interleaved multiple tool calls across chunks (see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
   - [x] usage arriving after finish_reason (common in OpenAI-compatible/Azure; see `test/providers/openai_compatible/openai_compatible_streaming_chunk_fuzz_test.dart`)
 
 ---
