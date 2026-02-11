@@ -157,6 +157,7 @@ Current status (fixture-backed v3 golden tests in this repo):
 - [x] Ollama (NDJSON streaming; handcrafted contract fixtures)
 - [x] Google (Gemini API; handcrafted contract fixtures)
 - [x] Google Vertex (express mode; handcrafted contract fixtures)
+- [x] MiniMax (Anthropic-compatible; vendored Anthropic fixtures)
 - [x] xAI Responses
 - [x] Open Responses (LMStudio fixtures; OpenAI Responses stream shape)
 
@@ -168,7 +169,7 @@ Remaining (recommended next targets):
 - [x] Vertex AI (non-express mode; usage + metadata)
   - Covered by `google-vertex` contract fixture
     `test/fixtures/v3_parts/google_vertex/google-vertex-non-express-model-path.1.jsonl`.
-- [ ] MiniMax / ElevenLabs (non-chat surfaces; define parity scope)
+- [ ] ElevenLabs (non-chat surfaces; define parity scope)
 
 Recommended order:
 
