@@ -1,0 +1,5 @@
+{"id":"chatcmpl_groq_text_1","object":"chat.completion.chunk","created":1769900000,"model":"llama-3.3-70b-versatile","choices":[{"index":0,"delta":{"role":"assistant","content":""},"finish_reason":null}],"usage":null}
+{"id":"chatcmpl_groq_text_1","object":"chat.completion.chunk","created":1769900000,"model":"llama-3.3-70b-versatile","choices":[{"index":0,"delta":{"content":"Hello"},"finish_reason":null}],"usage":null}
+{"id":"chatcmpl_groq_text_1","object":"chat.completion.chunk","created":1769900000,"model":"llama-3.3-70b-versatile","choices":[{"index":0,"delta":{"content":" world"},"finish_reason":null}],"usage":null}
+{"id":"chatcmpl_groq_text_1","object":"chat.completion.chunk","created":1769900000,"model":"llama-3.3-70b-versatile","choices":[{"index":0,"delta":{"content":""},"finish_reason":"stop"}],"usage":{"prompt_tokens":7,"completion_tokens":2,"total_tokens":9,"prompt_tokens_details":{"cached_tokens":0}}}
+

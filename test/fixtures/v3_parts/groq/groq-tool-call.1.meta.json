@@ -1,0 +1,23 @@
+{
+  "provider": "groq",
+  "scenario": "groq-tool-call.1",
+  "description": "Groq (OpenAI-compatible Chat Completions) streaming with a function tool call handcrafted contract fixture. Validates v3 tool-input streaming and tool-call emission.",
+  "source": {
+    "type": "handcrafted-contract-fixture",
+    "paths": [
+      "test/fixtures/groq/chat/groq-tool-call.1.chunks.txt"
+    ],
+    "notes": "Handcrafted fixture because upstream AI SDK does not ship Groq `*.chunks.txt` captures."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "Tool call arguments are streamed as string deltas; the final v3 tool-call input is a stringified JSON object."
+  ]
+}
+
