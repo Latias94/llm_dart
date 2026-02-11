@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 /// Syncs Vercel AI SDK test fixtures from `repo-ref/ai` into `test/fixtures`.
@@ -96,7 +97,7 @@ void main(List<String> args) {
         missingInTarget.add(name);
         continue;
       }
-      if (_bytesEqual(src, dst)) {
+      if (_contentsEqualNormalized(src, dst)) {
         unchanged++;
         continue;
       }
@@ -118,13 +119,26 @@ void main(List<String> args) {
       for (final name in missingInTarget) {
         final src = File('${m.sourceDir.path}${Platform.pathSeparator}$name');
         final dst = File('${m.targetDir.path}${Platform.pathSeparator}$name');
-        src.copySync(dst.path);
+        _copyNormalizedText(src, dst);
         copied++;
       }
       for (final name in different) {
         final src = File('${m.sourceDir.path}${Platform.pathSeparator}$name');
         final dst = File('${m.targetDir.path}${Platform.pathSeparator}$name');
-        src.copySync(dst.path);
+        _copyNormalizedText(src, dst);
+        updated++;
+      }
+
+      // If content is equal after newline normalization, but the target still
+      // contains CRLF, rewrite it so `git status` remains clean with
+      // `eol=lf` gitattributes.
+      for (final src in sourceFiles) {
+        final name = _basename(src.path);
+        final dst = targetByName[name];
+        if (dst == null) continue;
+        if (!_contentsEqualNormalized(src, dst)) continue;
+        if (!_containsCarriageReturn(dst)) continue;
+        _copyNormalizedText(src, dst);
         updated++;
       }
     }
@@ -230,6 +244,46 @@ String _basename(String path) {
   final idx = path.lastIndexOf(sep);
   if (idx < 0) return path;
   return path.substring(idx + 1);
+}
+
+String _readNormalizedText(File f) {
+  final raw = f.readAsStringSync();
+  // Normalize any CRLF/CR newlines to LF.
+  return raw.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+}
+
+bool _contentsEqualNormalized(File a, File b) {
+  if (!b.existsSync()) return false;
+  try {
+    return _readNormalizedText(a) == _readNormalizedText(b);
+  } catch (_) {
+    return _bytesEqual(a, b);
+  }
+}
+
+void _copyNormalizedText(File src, File dst) {
+  // Most fixtures are UTF-8 JSON or line-based text. We normalize newlines to
+  // LF for cross-platform stability.
+  try {
+    final normalized = _readNormalizedText(src);
+    dst.parent.createSync(recursive: true);
+    dst.writeAsStringSync(normalized, encoding: const Utf8Codec());
+  } catch (_) {
+    // Fallback: byte-for-byte copy (should be rare for our fixture set).
+    src.copySync(dst.path);
+  }
+}
+
+bool _containsCarriageReturn(File f) {
+  try {
+    final bytes = f.readAsBytesSync();
+    for (final b in bytes) {
+      if (b == 13) return true; // '\r'
+    }
+    return false;
+  } catch (_) {
+    return false;
+  }
 }
 
 bool _bytesEqual(File a, File b) {
