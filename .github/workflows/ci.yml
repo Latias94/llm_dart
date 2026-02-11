@@ -14,6 +14,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Read pinned Vercel AI SDK commit
+        id: vercel_ai
+        run: |
+          python3 - << 'PY'
+          import os
+          import json
+          with open('test/fixtures/v3_parts/_upstream.json', 'r', encoding='utf-8') as f:
+            data = json.load(f)
+          commit = data.get('commit')
+          if not commit:
+            raise SystemExit('Missing commit in test/fixtures/v3_parts/_upstream.json')
+          print(f'commit={commit}')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as out:
+            out.write(f'commit={commit}\n')
+          PY
+
+      - name: Checkout Vercel AI SDK (fixtures reference)
+        uses: actions/checkout@v4
+        with:
+          repository: vercel/ai
+          ref: ${{ steps.vercel_ai.outputs.commit }}
+          path: repo-ref/ai
+          fetch-depth: 1
+
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
         with:
