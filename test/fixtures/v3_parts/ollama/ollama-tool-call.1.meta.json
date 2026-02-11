@@ -1,0 +1,25 @@
+{
+  "provider": "ollama",
+  "scenario": "ollama-tool-call.1",
+  "description": "Ollama NDJSON streaming with a single tool call. Handcrafted contract fixture validating tool-input start/end and final tool-call emission in canonical v3 parts.",
+  "source": {
+    "type": "handcrafted-contract-fixture",
+    "paths": [
+      "test/fixtures/ollama/chat/ollama-tool-call.1.chunks.txt"
+    ],
+    "notes": "Handcrafted fixture because upstream AI SDK does not ship Ollama NDJSON streaming captures. This fixture uses Ollama's NDJSON stream format (not SSE)."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "tool_input_delta_is_string": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": false
+  },
+  "notes": [
+    "Ollama streaming tool calls do not provide stable server-assigned call ids; ids are synthesized from function names."
+  ]
+}
+

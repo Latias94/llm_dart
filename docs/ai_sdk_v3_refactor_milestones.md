@@ -190,6 +190,9 @@ Current coverage (goldens added in this repo):
 - Groq (OpenAI-compatible Chat Completions; contract fixtures):
   - `test/fixtures/v3_parts/groq/groq-text.1.jsonl`
   - `test/fixtures/v3_parts/groq/groq-tool-call.1.jsonl`
+- Ollama (NDJSON streaming; contract fixtures):
+  - `test/fixtures/v3_parts/ollama/ollama-text-thinking.1.jsonl`
+  - `test/fixtures/v3_parts/ollama/ollama-tool-call.1.jsonl`
 
 ---
 

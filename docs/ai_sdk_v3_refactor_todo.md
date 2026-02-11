@@ -154,15 +154,16 @@ Current status (fixture-backed v3 golden tests in this repo):
 - [x] Anthropic (messages SSE; expand remaining fixtures)
 - [x] OpenAI-compatible baseline (DeepSeek fixtures)
 - [x] Groq (OpenAI-compatible Chat Completions; handcrafted contract fixtures)
+- [x] Ollama (NDJSON streaming; handcrafted contract fixtures)
 - [x] xAI Responses
 - [x] Open Responses (LMStudio fixtures; OpenAI Responses stream shape)
 
 Remaining (recommended next targets):
 
-- [ ] Groq (OpenAI-compatible; add fixtures + goldens)
-  - Note: AI SDK currently does not ship Groq `*.chunks.txt` fixtures; for Groq/Ollama/etc we should add small handcrafted contract fixtures under `test/fixtures/openai_compatible/` and keep `repo-ref` fixtures as the primary reference when available.
+- Note: if upstream AI SDK does not ship `*.chunks.txt` captures for a provider,
+  add small handcrafted contract fixtures under `test/fixtures/<provider>/...`
+  and mark `source.type = "handcrafted-contract-fixture"` in `*.meta.json`.
 - [ ] Google Gemini (streaming + usage; align usage mapping)
-- [ ] Ollama (streaming + usage; align usage mapping)
 - [ ] Vertex AI (Google Vertex; usage + metadata)
 - [ ] MiniMax / ElevenLabs (non-chat surfaces; define parity scope)
 

@@ -1,0 +1,26 @@
+{
+  "provider": "ollama",
+  "scenario": "ollama-text-thinking.1",
+  "description": "Ollama NDJSON streaming with a thinking block followed by text. Handcrafted contract fixture validating canonical v3 reasoning/text boundaries, response-metadata, and finish usage mapping.",
+  "source": {
+    "type": "handcrafted-contract-fixture",
+    "paths": [
+      "test/fixtures/ollama/chat/ollama-text-thinking.1.chunks.txt"
+    ],
+    "notes": "Handcrafted fixture because upstream AI SDK does not ship Ollama NDJSON streaming captures. This fixture uses Ollama's NDJSON stream format (not SSE)."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "tool_input_delta_is_string": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": false
+  },
+  "notes": [
+    "Ollama exposes reasoning via `message.thinking`; we map it to v3 `reasoning-*` parts.",
+    "Finish reason is provider-specific metadata (`done_reason`) and is not currently mapped to a typed unified finishReason."
+  ]
+}
+

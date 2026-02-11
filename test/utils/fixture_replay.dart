@@ -35,6 +35,17 @@ Stream<String> sseStreamFromJsonLines(Iterable<String> lines) async* {
 Stream<String> sseStreamFromChunkFile(String path) =>
     sseStreamFromJsonLines(readFixtureLines(path));
 
+Stream<String> ndjsonStreamFromJsonLines(Iterable<String> lines) async* {
+  for (final raw in lines) {
+    final line = raw.trim();
+    if (line.isEmpty) continue;
+    yield '$line\n';
+  }
+}
+
+Stream<String> ndjsonStreamFromChunkFile(String path) =>
+    ndjsonStreamFromJsonLines(readFixtureLines(path));
+
 List<List<String>> splitJsonLinesIntoSessions(
   Iterable<String> lines, {
   required bool Function(JsonMap json) isTerminalEvent,
@@ -67,6 +78,16 @@ List<Stream<String>> sseStreamsFromChunkFileSplitByTerminalEvent(
   final sessions =
       splitJsonLinesIntoSessions(lines, isTerminalEvent: isTerminalEvent);
   return sessions.map(sseStreamFromJsonLines).toList(growable: false);
+}
+
+List<Stream<String>> ndjsonStreamsFromChunkFileSplitByTerminalEvent(
+  String path, {
+  required bool Function(JsonMap json) isTerminalEvent,
+}) {
+  final lines = readFixtureLines(path);
+  final sessions =
+      splitJsonLinesIntoSessions(lines, isTerminalEvent: isTerminalEvent);
+  return sessions.map(ndjsonStreamFromJsonLines).toList(growable: false);
 }
 
 bool isOpenAIResponsesTerminalEvent(JsonMap json) {
