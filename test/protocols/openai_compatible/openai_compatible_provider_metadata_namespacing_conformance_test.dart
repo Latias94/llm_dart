@@ -161,5 +161,59 @@ void main() {
         equals(['https://example.com/1', 'https://example.com/2']),
       );
     });
+
+    test('uses providerId and providerId.chat keys (google-openai)', () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'google-openai',
+        providerName: 'Google Gemini (OpenAI-compatible)',
+        apiKey: 'test-key',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        model: 'gemini-2.0-flash',
+      );
+
+      final chunks = <String>[
+        _sseData({
+          'id': 'chatcmpl_g',
+          'model': 'gemini-2.0-flash',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {'content': 'Hi'},
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_g',
+          'model': 'gemini-2.0-flash',
+          'choices': [
+            {
+              'index': 0,
+              'delta': <String, dynamic>{},
+              'finish_reason': 'stop',
+            }
+          ],
+        }),
+      ];
+
+      final client = _FakeOpenAIClient(
+        config,
+        stream: Stream<String>.fromIterable(chunks),
+      );
+      final chat = OpenAIChat(client, config);
+
+      final parts =
+          await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      final meta = finish.response.providerMetadata;
+      expect(meta, isNotNull);
+
+      expect(meta!.containsKey('google-openai'), isTrue);
+      expect(meta.containsKey('google-openai.chat'), isTrue);
+      expect(meta['google-openai.chat'], equals(meta['google-openai']));
+
+      expect(meta.containsKey('google'), isFalse);
+      expect(meta.containsKey('google.chat'), isFalse);
+    });
   });
 }

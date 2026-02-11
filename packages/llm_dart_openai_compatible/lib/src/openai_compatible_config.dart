@@ -116,6 +116,8 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
     String? providerName,
     String? defaultEndpointPrefix,
   }) {
+    final fallbackProviderId = providerId == 'google-openai' ? 'google' : null;
+
     final rawGlobalHeaders = readProviderOptionMap(
           config.providerOptions,
           'openai-compatible',
@@ -132,12 +134,14 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
           config.providerOptions,
           providerId,
           'headers',
+          fallbackProviderId: fallbackProviderId,
         ) ??
         const <String, dynamic>{};
     final rawProviderExtraHeaders = readProviderOptionMap(
           config.providerOptions,
           providerId,
           'extraHeaders',
+          fallbackProviderId: fallbackProviderId,
         ) ??
         const <String, dynamic>{};
 
@@ -175,11 +179,14 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
         readProviderOption<String>(
             config.providerOptions, 'openai-compatible', 'endpoint_prefix');
     final rawProviderEndpointPrefix = readProviderOption<String>(
-            config.providerOptions, providerId, 'endpointPrefix') ??
+            config.providerOptions, providerId, 'endpointPrefix',
+            fallbackProviderId: fallbackProviderId) ??
         readProviderOption<String>(
-            config.providerOptions, providerId, 'pathPrefix') ??
+            config.providerOptions, providerId, 'pathPrefix',
+            fallbackProviderId: fallbackProviderId) ??
         readProviderOption<String>(
-            config.providerOptions, providerId, 'endpoint_prefix');
+            config.providerOptions, providerId, 'endpoint_prefix',
+            fallbackProviderId: fallbackProviderId);
 
     final resolvedEndpointPrefix = (rawProviderEndpointPrefix ??
             rawGlobalEndpointPrefix ??
@@ -197,9 +204,11 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
           resolvedEndpointPrefix != null && resolvedEndpointPrefix.isNotEmpty
               ? resolvedEndpointPrefix
               : null,
-      extraBody: config.getProviderOption<Map<String, dynamic>>(
+      extraBody: readProviderOptionMap(
+        config.providerOptions,
         providerId,
         'extraBody',
+        fallbackProviderId: fallbackProviderId,
       ),
       extraHeaders: mergedHeaders,
       maxTokens: config.maxTokens,
@@ -237,8 +246,14 @@ class OpenAICompatibleConfig implements OpenAIRequestConfig {
     final original = _originalConfig;
     if (original == null) return null;
 
-    final direct =
-        readProviderOption<T>(original.providerOptions, providerId, key);
+    final fallbackProviderId = providerId == 'google-openai' ? 'google' : null;
+
+    final direct = readProviderOption<T>(
+      original.providerOptions,
+      providerId,
+      key,
+      fallbackProviderId: fallbackProviderId,
+    );
     if (direct != null) return direct;
 
     if (providerId != 'openai-compatible') {

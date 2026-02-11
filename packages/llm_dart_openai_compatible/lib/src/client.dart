@@ -38,6 +38,8 @@ class OpenAIClient {
     if (original == null) return null;
 
     final effectiveProviderId = providerId;
+    final fallbackProviderId =
+        effectiveProviderId == 'google-openai' ? 'google' : null;
     final rawGlobal = readProviderOptionMap(
           original.providerOptions,
           'openai-compatible',
@@ -52,11 +54,13 @@ class OpenAIClient {
           original.providerOptions,
           effectiveProviderId,
           'queryParams',
+          fallbackProviderId: fallbackProviderId,
         ) ??
         readProviderOptionMap(
           original.providerOptions,
           effectiveProviderId,
           'queryParameters',
+          fallbackProviderId: fallbackProviderId,
         );
 
     final raw = <String, dynamic>{

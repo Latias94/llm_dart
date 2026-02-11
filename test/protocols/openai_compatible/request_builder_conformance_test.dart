@@ -107,7 +107,8 @@ void main() {
         providerId: 'deepseek',
         providerName: 'DeepSeek',
       );
-      final bodyNone = OpenAIRequestBuilder(configNone).buildChatCompletionsRequestBody(
+      final bodyNone =
+          OpenAIRequestBuilder(configNone).buildChatCompletionsRequestBody(
         OpenAIClient(configNone),
         messages: [ChatMessage.user('hi')],
         tools: [tool('t')],
@@ -120,7 +121,8 @@ void main() {
         providerId: 'deepseek',
         providerName: 'DeepSeek',
       );
-      final bodyReq = OpenAIRequestBuilder(configReq).buildChatCompletionsRequestBody(
+      final bodyReq =
+          OpenAIRequestBuilder(configReq).buildChatCompletionsRequestBody(
         OpenAIClient(configReq),
         messages: [ChatMessage.user('hi')],
         tools: [tool('t')],
@@ -468,6 +470,44 @@ void main() {
       final reasoning = body['reasoning'] as Map<String, dynamic>?;
       expect(reasoning, isNotNull);
       expect(reasoning!['effort'], equals('low'));
+    });
+
+    test('google-openai falls back to providerOptions["google"]', () {
+      final llmConfig = LLMConfig(
+        apiKey: 'k',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+        model: 'gemini-2.0-flash',
+        providerOptions: const {
+          'google': {
+            'includeUsage': true,
+            'extraBody': {
+              'googleOnly': true,
+            },
+          },
+        },
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'google-openai',
+        providerName: 'Google Gemini (OpenAI-compatible)',
+      );
+
+      final client = OpenAIClient(config);
+      final builder = OpenAIRequestBuilder(config);
+
+      final body = builder.buildChatCompletionsRequestBody(
+        client,
+        messages: [ChatMessage.user('hi')],
+        tools: const [],
+        stream: true,
+      );
+
+      expect(body['googleOnly'], isTrue);
+
+      final streamOptions = body['stream_options'] as Map<String, dynamic>?;
+      expect(streamOptions, isNotNull);
+      expect(streamOptions!['include_usage'], isTrue);
     });
   });
 }
