@@ -350,6 +350,112 @@ void main() {
       }
     });
 
+    test('handles tool_calls with id arriving late', () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'openai',
+        providerName: 'OpenAI',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'gpt-4o',
+      );
+
+      final sse = [
+        _sseData({
+          'id': 'chatcmpl_tool_id_late_fuzz',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {'role': 'assistant'},
+            }
+          ],
+        }),
+        // First tool delta: has index + name + args, but omits id.
+        _sseData({
+          'id': 'chatcmpl_tool_id_late_fuzz',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {
+                'tool_calls': [
+                  {
+                    'index': 0,
+                    'type': 'function',
+                    'function': {
+                      'name': 'getWeather',
+                      'arguments': '{"city":"Lon',
+                    },
+                  }
+                ],
+              },
+            }
+          ],
+        }),
+        // Second tool delta: provides id + more args (name omitted).
+        _sseData({
+          'id': 'chatcmpl_tool_id_late_fuzz',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {
+                'tool_calls': [
+                  {
+                    'index': 0,
+                    'id': 'call_1',
+                    'type': 'function',
+                    'function': {
+                      'arguments': 'don"}',
+                    },
+                  }
+                ],
+              },
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_tool_id_late_fuzz',
+          'model': 'gpt-4o',
+          'choices': [
+            {
+              'index': 0,
+              'delta': <String, dynamic>{},
+              'finish_reason': 'tool_calls',
+            }
+          ],
+        }),
+        'data: [DONE]\n\n',
+      ].join();
+
+      for (final seed in [3, 13, 91]) {
+        final client = FakeOpenAIClient(config)
+          ..streamResponse = Stream<String>.fromIterable(
+            _splitRandom(sse, seed: seed),
+          );
+        final chat = OpenAIChat(client, config);
+
+        final parts =
+            await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
+
+        final starts = parts.whereType<LLMToolCallStartPart>().toList();
+        final deltas = parts.whereType<LLMToolCallDeltaPart>().toList();
+        final ends = parts.whereType<LLMToolCallEndPart>().toList();
+        expect(starts, isNotEmpty);
+        expect(deltas, isNotEmpty);
+        expect(ends, hasLength(1));
+        expect(ends.single.toolCallId, equals('call_1'));
+
+        final finish = parts.whereType<LLMFinishPart>().single;
+        final calls = finish.response.toolCalls;
+        expect(calls, isNotNull);
+        expect(calls, hasLength(1));
+        expect(calls!.single.id, equals('call_1'));
+        expect(calls.single.function.name, equals('getWeather'));
+        expect(calls.single.function.arguments, equals('{"city":"London"}'));
+      }
+    });
+
     test(
         'captures usage from trailing chunk after finish_reason with random splits',
         () async {

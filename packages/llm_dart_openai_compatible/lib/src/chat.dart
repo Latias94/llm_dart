@@ -152,6 +152,7 @@ class OpenAIChat
     final toolAccums = <String, _ToolCallAccum>{};
     final startedToolCalls = <String>{};
     final endedToolCalls = <String>{};
+    final pendingToolAccumsByIndex = <int, _ToolCallAccum>{};
 
     String? id;
     String? model;
@@ -377,12 +378,14 @@ class OpenAIChat
               final index = rawCall['index'] as int?;
               if (index != null) {
                 final callId = rawCall['id'] as String?;
-                if (callId != null && callId.isNotEmpty) {
+                final existingId = _toolCallIds[index];
+                if ((existingId == null || existingId.isEmpty) &&
+                    callId != null &&
+                    callId.isNotEmpty) {
                   _toolCallIds[index] = callId;
                 }
 
                 final stableId = _toolCallIds[index];
-                if (stableId == null || stableId.isEmpty) continue;
 
                 final functionMap =
                     rawCall['function'] as Map<String, dynamic>?;
@@ -391,6 +394,105 @@ class OpenAIChat
                 final name = functionMap['name'] as String? ?? '';
                 final args = functionMap['arguments'] as String? ?? '';
                 if (name.isEmpty && args.isEmpty) continue;
+
+                // Some providers may omit `id` in early tool_call deltas.
+                // Buffer those deltas by index until an id becomes available.
+                if (stableId == null || stableId.isEmpty) {
+                  final pending = pendingToolAccumsByIndex.putIfAbsent(
+                    index,
+                    _ToolCallAccum.new,
+                  );
+                  if (name.isNotEmpty) pending.name = name;
+                  if (args.isNotEmpty) pending.arguments.write(args);
+                  final thoughtSignature =
+                      _extractThoughtSignatureFromExtraContent(rawCall);
+                  if (thoughtSignature != null) {
+                    pending.thoughtSignature ??= thoughtSignature;
+                  }
+                  continue;
+                }
+
+                ToolCall toolCallForDelta({
+                  required String id,
+                  required String name,
+                  required String arguments,
+                  required String? thoughtSignature,
+                }) {
+                  if (thoughtSignature == null ||
+                      thoughtSignature.isEmpty ||
+                      config.providerId.isEmpty) {
+                    return ToolCall(
+                      id: id,
+                      callType: 'function',
+                      function: FunctionCall(
+                        name: name,
+                        arguments: arguments,
+                      ),
+                    );
+                  }
+                  return ToolCall(
+                    id: id,
+                    callType: 'function',
+                    function: FunctionCall(
+                      name: name,
+                      arguments: arguments,
+                    ),
+                    providerOptions: {
+                      config.providerId: {
+                        'thoughtSignature': thoughtSignature,
+                      },
+                    },
+                  );
+                }
+
+                // Flush any buffered deltas for this index now that we have an id.
+                final pending = pendingToolAccumsByIndex.remove(index);
+                if (pending != null) {
+                  final accum = toolAccums.putIfAbsent(
+                    stableId,
+                    _ToolCallAccum.new,
+                  );
+
+                  if ((accum.name == null || accum.name!.isEmpty) &&
+                      pending.name != null &&
+                      pending.name!.isNotEmpty) {
+                    accum.name = pending.name;
+                  }
+                  if (pending.thoughtSignature != null) {
+                    accum.thoughtSignature ??= pending.thoughtSignature;
+                  }
+
+                  final pendingArgs = pending.arguments.toString();
+                  if (pendingArgs.isNotEmpty) {
+                    accum.arguments.write(pendingArgs);
+                  }
+
+                  final resolvedName = (accum.name ?? name).trim().isEmpty
+                      ? name
+                      : (accum.name ?? name);
+
+                  if (startedToolCalls.add(stableId)) {
+                    yield LLMToolCallStartPart(
+                      toolCallForDelta(
+                        id: stableId,
+                        name: resolvedName,
+                        arguments: '',
+                        thoughtSignature: accum.thoughtSignature,
+                      ),
+                    );
+                  }
+
+                  if (pendingArgs.isNotEmpty) {
+                    yield LLMToolCallDeltaPart(
+                      toolCallForDelta(
+                        id: stableId,
+                        name: resolvedName,
+                        arguments: pendingArgs,
+                        thoughtSignature: accum.thoughtSignature,
+                      ),
+                    );
+                  }
+                }
 
                 final accum =
                     toolAccums.putIfAbsent(stableId, () => _ToolCallAccum());
@@ -406,21 +508,13 @@ class OpenAIChat
                   accum.thoughtSignature ??= thoughtSignature;
                 }
 
-                final toolCall = ToolCall(
+                final resolvedName =
+                    name.isNotEmpty ? name : (accum.name ?? '');
+                final toolCall = toolCallForDelta(
                   id: stableId,
-                  callType: 'function',
-                  function: FunctionCall(
-                    name: name.isNotEmpty ? name : (accum.name ?? ''),
-                    arguments: args,
-                  ),
-                  providerOptions: accum.thoughtSignature == null ||
-                          config.providerId.isEmpty
-                      ? const {}
-                      : {
-                          config.providerId: {
-                            'thoughtSignature': accum.thoughtSignature!,
-                          },
-                        },
+                  name: resolvedName,
+                  arguments: args,
+                  thoughtSignature: accum.thoughtSignature,
                 );
 
                 if (startedToolCalls.add(stableId)) {
