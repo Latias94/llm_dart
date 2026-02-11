@@ -63,10 +63,14 @@ void main(List<String> args) {
   }
 
   var hasDiffs = false;
+  var missingSources = false;
 
   for (final m in selected) {
     if (!m.sourceDir.existsSync()) {
-      stderr.writeln('Missing source: ${m.sourceDir.path} (skip ${m.id})');
+      missingSources = true;
+      hasDiffs = true;
+      stderr
+          .writeln('Missing source: ${m.sourceDir.path} (cannot sync ${m.id})');
       continue;
     }
 
@@ -161,6 +165,15 @@ void main(List<String> args) {
         stdout.writeln('  extra (kept): $extrasInTarget');
       }
     }
+  }
+
+  if (missingSources) {
+    stderr.writeln(
+      'Missing fixture sources under `repo-ref/ai`. '
+      'Fetch the upstream Vercel AI SDK into `repo-ref/ai` and try again.',
+    );
+    exitCode = 2;
+    return;
   }
 
   if (flags.check && hasDiffs) {

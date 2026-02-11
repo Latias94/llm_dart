@@ -41,6 +41,11 @@ Approximate mapping:
 `repo-ref/ai` is used as a **read-only reference** and as a source of fixtures;
 it is not part of the published Dart API surface.
 
+Note: `repo-ref/ai` is not committed to this repository. In CI, we check out the
+Vercel AI SDK (`vercel/ai`) at the pinned commit from
+`test/fixtures/v3_parts/_upstream.json` into `repo-ref/ai` before running fixture
+sync/meta checks.
+
 ---
 
 ## Why we are doing this
