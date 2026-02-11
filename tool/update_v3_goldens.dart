@@ -38,6 +38,7 @@ void main(List<String> args) async {
   final flags = _parseArgs(args);
 
   final templateMeta = _readTemplateMeta();
+  final upstreamInfo = _readUpstreamInfo();
 
   final scenarios = flags.scope == _Scope.all
       ? _discoverAllScenarios()
@@ -108,6 +109,7 @@ void main(List<String> args) async {
     final metaStatus = _ensureMeta(
       metaPath: metaPath,
       template: templateMeta,
+      upstreamInfo: upstreamInfo,
       provider: scenario.provider,
       scenario: scenario.baseName,
       fixturePath: scenario.fixturePath,
@@ -588,6 +590,7 @@ enum _MetaStatus { ok, missing, wrote }
 _MetaStatus _ensureMeta({
   required String metaPath,
   required Map<String, dynamic> template,
+  required Map<String, dynamic>? upstreamInfo,
   required String provider,
   required String scenario,
   required String fixturePath,
@@ -623,6 +626,31 @@ _MetaStatus _ensureMeta({
       'fixture via fake clients and encoding canonical v3 parts as JSONL.';
   meta['source'] = source;
 
+  // Upstream provenance (optional but recommended). We keep it separate from
+  // `source` so scenarios can add additional provenance without losing the
+  // canonical reference to `vercel/ai`.
+  final upstream = (meta['upstream'] is Map)
+      ? (meta['upstream'] as Map).cast<String, dynamic>()
+      : <String, dynamic>{};
+  if (upstreamInfo != null) {
+    upstream['repository'] ??= upstreamInfo['repository'];
+    upstream['commit'] ??= upstreamInfo['commit'];
+    upstream['license'] ??= upstreamInfo['license'];
+  }
+  if (repoRefFixturePath != null && repoRefFixturePath.isNotEmpty) {
+    final existing = upstream['paths'];
+    if (existing is List) {
+      final list = existing.map((e) => e.toString()).toList();
+      if (!list.contains(repoRefFixturePath)) list.add(repoRefFixturePath);
+      upstream['paths'] = list;
+    } else {
+      upstream['paths'] = [repoRefFixturePath];
+    }
+  }
+  if (upstream.isNotEmpty) {
+    meta['upstream'] = upstream;
+  }
+
   file.parent.createSync(recursive: true);
   file.writeAsStringSync(_prettyJson(meta));
   stdout.writeln('Wrote meta: $metaPath');
@@ -636,6 +664,22 @@ Map<String, dynamic> _readTemplateMeta() {
     throw StateError('Expected JSON object template at $path');
   }
   return decoded.cast<String, dynamic>();
+}
+
+Map<String, dynamic>? _readUpstreamInfo() {
+  final file = File('test/fixtures/v3_parts/_upstream.json');
+  if (!file.existsSync()) return null;
+
+  final decoded = jsonDecode(file.readAsStringSync());
+  if (decoded is! Map) return null;
+  final map = decoded.cast<String, dynamic>();
+
+  // Be tolerant: keep only expected keys.
+  return <String, dynamic>{
+    if (map['repository'] is String) 'repository': map['repository'],
+    if (map['commit'] is String) 'commit': map['commit'],
+    if (map['license'] is String) 'license': map['license'],
+  };
 }
 
 String _prettyJson(Object value) =>

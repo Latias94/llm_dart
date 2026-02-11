@@ -9,6 +9,13 @@
     ],
     "notes": "Where the input comes from (vendored fixture, replay file, hand-constructed test)."
   },
+  "upstream": {
+    "repository": "https://github.com/vercel/ai",
+    "commit": "<fill-from test/fixtures/v3_parts/_upstream.json>",
+    "paths": [
+      "repo-ref/ai/packages/<provider>/src/<area>/__fixtures__/..."
+    ]
+  },
   "assertions": {
     "ordering": true,
     "single_stream_start": true,
@@ -23,4 +30,3 @@
     "If providerMetadata/raw are expected, document why."
   ]
 }
-
