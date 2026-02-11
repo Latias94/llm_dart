@@ -20,8 +20,8 @@ semantics while keeping the public Dart APIs idiomatic.
    - [x] guarantee exactly one terminal `finish` part (buffer + emit last)
    - [x] conformance test for duplicate finish events
 2) Tool name mapping conformance:
-   - cover tool name collisions (rewrite stability) with fixtures/tests
-   - verify provider-native tool names always round-trip through our mapping layer
+   - [x] cover tool name collisions (rewrite stability) with tests
+   - [x] verify provider-native tool names round-trip through mapping
 3) Sources + files parity:
    - ensure every provider that emits citations/files maps them into canonical parts
    - keep provider-only citation payloads under `providerMetadata` (namespaced)
@@ -133,9 +133,9 @@ Tracker note: per-provider progress is tracked in `docs/provider_alignment_progr
 
 ## P1: Sources/files parity and propagation
 
-- [ ] Normalize sources into the canonical parts:
-  - [ ] unify/bridge `source-url` + `source-document` into AI SDK v3 `source`
-  - [ ] keep `providerMetadata` for extra provider-specific citation data
+- [x] Normalize sources into the canonical parts:
+  - [x] unify/bridge `source-url` + `source-document` into AI SDK v3 `source`
+  - [x] keep `providerMetadata` for extra provider-specific citation data
 - [ ] Add file part support where provider returns generated binary/base64 files
 
 ---
@@ -148,10 +148,10 @@ We already have collision-safe mapping utilities:
 
 Remaining work:
 
-- [ ] Ensure every provider that supports provider-native tools uses mapping:
-  - [ ] map local function tool names -> provider request tool names (rewrite on collision)
-  - [ ] map provider tool request names -> stable provider tool ids
-- [ ] Add fixture-style tests for collisions and mapping stability
+- [x] Ensure every provider that supports provider-native tools uses mapping:
+  - [x] map local function tool names -> provider request tool names (rewrite on collision)
+  - [x] map provider tool request names -> stable provider tool ids
+- [x] Add fixture-style tests for collisions and mapping stability
 
 ---
 
