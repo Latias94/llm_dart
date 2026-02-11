@@ -20,6 +20,15 @@
 {"delta":"\"}","id":"toolu_01U8pzAHj2vNdPCA2Kf8JjeN","type":"tool-input-delta"}
 {"id":"toolu_01U8pzAHj2vNdPCA2Kf8JjeN","type":"tool-input-end"}
 {"input":"{\"noteId\": \"d10aa585-982b-4bd9-984e-420f9b3717f7\"}","toolCallId":"toolu_01U8pzAHj2vNdPCA2Kf8JjeN","toolName":"readNoteTree","type":"tool-call"}
-{"input":"{}","providerExecuted":true,"providerMetadata":{"anthropic":{"type":"server_tool_use"}},"toolCallId":"srvtoolu_01FjZe9o4YXXJjGxLmfj44Rf","toolName":"tool_search_tool_bm25","type":"tool-call"}
+{"id":"srvtoolu_01FjZe9o4YXXJjGxLmfj44Rf","providerExecuted":true,"toolName":"tool_search_tool_bm25","type":"tool-input-start"}
+{"delta":"{\"query\": \"ad","id":"srvtoolu_01FjZe9o4YXXJjGxLmfj44Rf","type":"tool-input-delta"}
+{"delta":"d bullet","id":"srvtoolu_01FjZe9o4YXXJjGxLmfj44Rf","type":"tool-input-delta"}
+{"delta":" point insert","id":"srvtoolu_01FjZe9o4YXXJjGxLmfj44Rf","type":"tool-input-delta"}
+{"delta":" text","id":"srvtoolu_01FjZe9o4YXXJjGxLmfj44Rf","type":"tool-input-delta"}
+{"delta":" editor","id":"srvtoolu_01FjZe9o4YXXJjGxLmfj44Rf","type":"tool-input-delta"}
+{"delta":"\", \"limit\": 5","id":"srvtoolu_01FjZe9o4YXXJjGxLmfj44Rf","type":"tool-input-delta"}
+{"delta":"}","id":"srvtoolu_01FjZe9o4YXXJjGxLmfj44Rf","type":"tool-input-delta"}
+{"id":"srvtoolu_01FjZe9o4YXXJjGxLmfj44Rf","type":"tool-input-end"}
+{"input":"{\"query\": \"add bullet point insert text editor\", \"limit\": 5}","providerExecuted":true,"providerMetadata":{"anthropic":{"type":"server_tool_use"}},"toolCallId":"srvtoolu_01FjZe9o4YXXJjGxLmfj44Rf","toolName":"tool_search_tool_bm25","type":"tool-call"}
 {"rawValue":{"kind":"provider-metadata","providerMetadata":{"anthropic":{"finishReason":"tool_use","id":"msg_01WUP4eZFC22KbkesuJGqVAw","model":"claude-sonnet-4-5-20250929","stopReason":"tool_use","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":879,"outputTokens":177,"serviceTier":"standard"}},"anthropic.messages":{"finishReason":"tool_use","id":"msg_01WUP4eZFC22KbkesuJGqVAw","model":"claude-sonnet-4-5-20250929","stopReason":"tool_use","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":879,"outputTokens":177,"serviceTier":"standard"}}}},"type":"raw"}
 {"finishReason":{"raw":"tool_use","unified":"tool-calls"},"providerMetadata":{"anthropic":{"finishReason":"tool_use","id":"msg_01WUP4eZFC22KbkesuJGqVAw","model":"claude-sonnet-4-5-20250929","stopReason":"tool_use","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":879,"outputTokens":177,"serviceTier":"standard"}},"anthropic.messages":{"finishReason":"tool_use","id":"msg_01WUP4eZFC22KbkesuJGqVAw","model":"claude-sonnet-4-5-20250929","stopReason":"tool_use","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":879,"outputTokens":177,"serviceTier":"standard"}}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"cacheWrite":0,"noCache":879,"total":879},"outputTokens":{"total":177},"raw":{"cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0},"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":879,"output_tokens":177,"service_tier":"standard"}}}

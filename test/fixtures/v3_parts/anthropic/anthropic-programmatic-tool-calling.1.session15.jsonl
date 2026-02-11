@@ -1,0 +1,85 @@
+{"type":"stream-start","warnings":[]}
+{"id":"msg_01CfmDducyrt61n4Q7QS8VFK","modelId":"claude-sonnet-4-5-20250929","type":"response-metadata"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"anthropic":{"id":"msg_01CfmDducyrt61n4Q7QS8VFK","model":"claude-sonnet-4-5-20250929","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":4551,"outputTokens":1,"serviceTier":"standard"}},"anthropic.messages":{"id":"msg_01CfmDducyrt61n4Q7QS8VFK","model":"claude-sonnet-4-5-20250929","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":4551,"outputTokens":1,"serviceTier":"standard"}}}},"type":"raw"}
+{"providerMetadata":{"anthropic":{"type":"code_execution_tool_result"}},"result":{"content":[],"return_code":0,"stderr":"","stdout":"=== DICE GAME: First to 3 Wins ===\n\n--- Round 1 ---\nPlayer 1 rolls: 5\nPlayer 2 rolls: 6\nPlayer 2 wins this round!\nScore: Player 1 = 0, Player 2 = 1\n\n--- Round 2 ---\nPlayer 1 rolls: 4\nPlayer 2 rolls: 6\nPlayer 2 wins this round!\nScore: Player 1 = 0, Player 2 = 2\n\n--- Round 3 ---\nPlayer 1 rolls: 5\nPlayer 2 rolls: 2\nPlayer 1 wins this round!\nScore: Player 1 = 1, Player 2 = 2\n\n--- Round 4 ---\nPlayer 1 rolls: 6\nPlayer 2 rolls: 6\nDraw! No one gets a point.\nScore: Player 1 = 1, Player 2 = 2\n\n--- Round 5 ---\nPlayer 1 rolls: 3\nPlayer 2 rolls: 2\nPlayer 1 wins this round!\nScore: Player 1 = 2, Player 2 = 2\n\n--- Round 6 ---\nPlayer 1 rolls: 6\nPlayer 2 rolls: 6\nDraw! No one gets a point.\nScore: Player 1 = 2, Player 2 = 2\n\n--- Round 7 ---\nPlayer 1 rolls: 2\nPlayer 2 rolls: 3\nPlayer 2 wins this round!\nScore: Player 1 = 2, Player 2 = 3\n\n========================================\n🏆 GAME OVER: Player 2 wins the game! (3-2)\n========================================\n\n📊 Analysis:\nTotal rounds played: 7\nPlayer 2 had better results - likely using the loaded die! 🎲\n","type":"code_execution_result"},"toolCallId":"srvtoolu_01MzSrFWsmzBdcoQkGWLyRjK","toolName":"code_execution","type":"tool-result"}
+{"id":"1","type":"text-start"}
+{"delta":"##","id":"1","type":"text-delta"}
+{"delta":" Game","id":"1","type":"text-delta"}
+{"delta":" Results","id":"1","type":"text-delta"}
+{"delta":"\n\n**Player 2","id":"1","type":"text-delta"}
+{"delta":" wins the game ","id":"1","type":"text-delta"}
+{"delta":"3-2!**","id":"1","type":"text-delta"}
+{"delta":" 🏆\n\nThe","id":"1","type":"text-delta"}
+{"delta":" game laste","id":"1","type":"text-delta"}
+{"delta":"d 7 rounds with","id":"1","type":"text-delta"}
+{"delta":" the","id":"1","type":"text-delta"}
+{"delta":" following breakdown","id":"1","type":"text-delta"}
+{"delta":":\n- **","id":"1","type":"text-delta"}
+{"delta":"Player","id":"1","type":"text-delta"}
+{"delta":" 1**:","id":"1","type":"text-delta"}
+{"delta":" 2","id":"1","type":"text-delta"}
+{"delta":" roun","id":"1","type":"text-delta"}
+{"delta":"d wins","id":"1","type":"text-delta"}
+{"delta":"\n- **Player 2**: 3","id":"1","type":"text-delta"}
+{"delta":" round wins  ","id":"1","type":"text-delta"}
+{"delta":"\n- **","id":"1","type":"text-delta"}
+{"delta":"Draws","id":"1","type":"text-delta"}
+{"delta":"**: 2 rounds","id":"1","type":"text-delta"}
+{"delta":" (both","id":"1","type":"text-delta"}
+{"delta":" rolling","id":"1","type":"text-delta"}
+{"delta":" 6","id":"1","type":"text-delta"}
+{"delta":")\n\nBase","id":"1","type":"text-delta"}
+{"delta":"d on the results","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" **","id":"1","type":"text-delta"}
+{"delta":"Player 2 ","id":"1","type":"text-delta"}
+{"delta":"appears","id":"1","type":"text-delta"}
+{"delta":" to be the one","id":"1","type":"text-delta"}
+{"delta":" using the loaded die**,","id":"1","type":"text-delta"}
+{"delta":" as they","id":"1","type":"text-delta"}
+{"delta":" manage","id":"1","type":"text-delta"}
+{"delta":"d to win the","id":"1","type":"text-delta"}
+{"delta":" game","id":"1","type":"text-delta"}
+{"delta":" an","id":"1","type":"text-delta"}
+{"delta":"d had slightly","id":"1","type":"text-delta"}
+{"delta":" better overall","id":"1","type":"text-delta"}
+{"delta":" results.","id":"1","type":"text-delta"}
+{"delta":" Player","id":"1","type":"text-delta"}
+{"delta":" 2","id":"1","type":"text-delta"}
+{"delta":" rolle","id":"1","type":"text-delta"}
+{"delta":"d high","id":"1","type":"text-delta"}
+{"delta":" numbers","id":"1","type":"text-delta"}
+{"delta":" consistently","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" including","id":"1","type":"text-delta"}
+{"delta":" multiple","id":"1","type":"text-delta"}
+{"delta":" 6s","id":"1","type":"text-delta"}
+{"delta":",","id":"1","type":"text-delta"}
+{"delta":" which helped them secure","id":"1","type":"text-delta"}
+{"delta":" the victory.\n\nThe","id":"1","type":"text-delta"}
+{"delta":" game was","id":"1","type":"text-delta"}
+{"delta":" actually","id":"1","type":"text-delta"}
+{"delta":" quite competitive","id":"1","type":"text-delta"}
+{"delta":" despite","id":"1","type":"text-delta"}
+{"delta":" the cheating,","id":"1","type":"text-delta"}
+{"delta":" with Player 1","id":"1","type":"text-delta"}
+{"delta":" managing","id":"1","type":"text-delta"}
+{"delta":" to win 2 rounds an","id":"1","type":"text-delta"}
+{"delta":"d the","id":"1","type":"text-delta"}
+{"delta":" score","id":"1","type":"text-delta"}
+{"delta":" being tied ","id":"1","type":"text-delta"}
+{"delta":"2-2 before","id":"1","type":"text-delta"}
+{"delta":" Player 2 won","id":"1","type":"text-delta"}
+{"delta":" the decisive","id":"1","type":"text-delta"}
+{"delta":" ","id":"1","type":"text-delta"}
+{"delta":"7","id":"1","type":"text-delta"}
+{"delta":"th round with","id":"1","type":"text-delta"}
+{"delta":" a roll","id":"1","type":"text-delta"}
+{"delta":" of 3","id":"1","type":"text-delta"}
+{"delta":" ","id":"1","type":"text-delta"}
+{"delta":"against","id":"1","type":"text-delta"}
+{"delta":" Player 1's 2","id":"1","type":"text-delta"}
+{"delta":".","id":"1","type":"text-delta"}
+{"id":"1","type":"text-end"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"anthropic":{"finishReason":"end_turn","id":"msg_01CfmDducyrt61n4Q7QS8VFK","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":4551,"outputTokens":197,"serverToolUse":{"webSearchRequests":0},"serviceTier":"standard"}},"anthropic.messages":{"finishReason":"end_turn","id":"msg_01CfmDducyrt61n4Q7QS8VFK","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":4551,"outputTokens":197,"serverToolUse":{"webSearchRequests":0},"serviceTier":"standard"}}}},"type":"raw"}
+{"finishReason":{"raw":"end_turn","unified":"stop"},"providerMetadata":{"anthropic":{"finishReason":"end_turn","id":"msg_01CfmDducyrt61n4Q7QS8VFK","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":4551,"outputTokens":197,"serverToolUse":{"webSearchRequests":0},"serviceTier":"standard"}},"anthropic.messages":{"finishReason":"end_turn","id":"msg_01CfmDducyrt61n4Q7QS8VFK","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":4551,"outputTokens":197,"serverToolUse":{"webSearchRequests":0},"serviceTier":"standard"}}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"cacheWrite":0,"noCache":4551,"total":4551},"outputTokens":{"total":197},"raw":{"cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0},"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":4551,"output_tokens":197,"server_tool_use":{"web_search_requests":0},"service_tier":"standard"}}}

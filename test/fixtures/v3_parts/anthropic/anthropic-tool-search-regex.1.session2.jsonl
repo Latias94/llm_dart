@@ -1,0 +1,20 @@
+{"type":"stream-start","warnings":[]}
+{"id":"msg_01L42mFXxzijtGwwfiLdKoUn","modelId":"claude-sonnet-4-5-20250929","type":"response-metadata"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"anthropic":{"id":"msg_01L42mFXxzijtGwwfiLdKoUn","model":"claude-sonnet-4-5-20250929","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1071,"outputTokens":1,"serviceTier":"standard"}},"anthropic.messages":{"id":"msg_01L42mFXxzijtGwwfiLdKoUn","model":"claude-sonnet-4-5-20250929","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1071,"outputTokens":1,"serviceTier":"standard"}}}},"type":"raw"}
+{"id":"0","type":"text-start"}
+{"delta":"Here","id":"0","type":"text-delta"}
+{"delta":"'s the current","id":"0","type":"text-delta"}
+{"delta":" weather data for San Francisco:\n\n-","id":"0","type":"text-delta"}
+{"delta":" **","id":"0","type":"text-delta"}
+{"delta":"Location:** San Francisco, CA","id":"0","type":"text-delta"}
+{"delta":"\n- **Temperature:** 64°F","id":"0","type":"text-delta"}
+{"delta":"\n- **Condition:** Partly clou","id":"0","type":"text-delta"}
+{"delta":"dy\n- **Humidity:** ","id":"0","type":"text-delta"}
+{"delta":"65%\n\nThe weather in","id":"0","type":"text-delta"}
+{"delta":" SF","id":"0","type":"text-delta"}
+{"delta":" is pleasant","id":"0","type":"text-delta"}
+{"delta":" with partly cloudy skies and moderate","id":"0","type":"text-delta"}
+{"delta":" humidity!","id":"0","type":"text-delta"}
+{"id":"0","type":"text-end"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"anthropic":{"finishReason":"end_turn","id":"msg_01L42mFXxzijtGwwfiLdKoUn","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1071,"outputTokens":67,"serviceTier":"standard"}},"anthropic.messages":{"finishReason":"end_turn","id":"msg_01L42mFXxzijtGwwfiLdKoUn","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1071,"outputTokens":67,"serviceTier":"standard"}}}},"type":"raw"}
+{"finishReason":{"raw":"end_turn","unified":"stop"},"providerMetadata":{"anthropic":{"finishReason":"end_turn","id":"msg_01L42mFXxzijtGwwfiLdKoUn","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1071,"outputTokens":67,"serviceTier":"standard"}},"anthropic.messages":{"finishReason":"end_turn","id":"msg_01L42mFXxzijtGwwfiLdKoUn","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1071,"outputTokens":67,"serviceTier":"standard"}}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"cacheWrite":0,"noCache":1071,"total":1071},"outputTokens":{"total":67},"raw":{"cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0},"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":1071,"output_tokens":67,"service_tier":"standard"}}}

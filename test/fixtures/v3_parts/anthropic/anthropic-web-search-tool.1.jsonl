@@ -1,7 +1,13 @@
 {"type":"stream-start","warnings":[]}
 {"id":"msg_01LHpEgU4KbfgXGVi3UtHQY1","modelId":"claude-sonnet-4-20250514","type":"response-metadata"}
 {"rawValue":{"kind":"provider-metadata","providerMetadata":{"anthropic":{"id":"msg_01LHpEgU4KbfgXGVi3UtHQY1","model":"claude-sonnet-4-20250514","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":2037,"outputTokens":1,"serviceTier":"standard"}},"anthropic.messages":{"id":"msg_01LHpEgU4KbfgXGVi3UtHQY1","model":"claude-sonnet-4-20250514","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":2037,"outputTokens":1,"serviceTier":"standard"}}}},"type":"raw"}
-{"input":"{}","providerExecuted":true,"providerMetadata":{"anthropic":{"type":"server_tool_use"}},"toolCallId":"srvtoolu_01Bj5uzzLcYG5hfueSLcDH8k","toolName":"web_search","type":"tool-call"}
+{"id":"srvtoolu_01Bj5uzzLcYG5hfueSLcDH8k","providerExecuted":true,"toolName":"web_search","type":"tool-input-start"}
+{"delta":"{\"query\": \"t","id":"srvtoolu_01Bj5uzzLcYG5hfueSLcDH8k","type":"tool-input-delta"}
+{"delta":"ech news tod","id":"srvtoolu_01Bj5uzzLcYG5hfueSLcDH8k","type":"tool-input-delta"}
+{"delta":"ay Septembe","id":"srvtoolu_01Bj5uzzLcYG5hfueSLcDH8k","type":"tool-input-delta"}
+{"delta":"r 26 2025\"}","id":"srvtoolu_01Bj5uzzLcYG5hfueSLcDH8k","type":"tool-input-delta"}
+{"id":"srvtoolu_01Bj5uzzLcYG5hfueSLcDH8k","type":"tool-input-end"}
+{"input":"{\"query\": \"tech news today September 26 2025\"}","providerExecuted":true,"providerMetadata":{"anthropic":{"type":"server_tool_use"}},"toolCallId":"srvtoolu_01Bj5uzzLcYG5hfueSLcDH8k","toolName":"web_search","type":"tool-call"}
 {"id":"source_0","providerMetadata":{"anthropic":{"type":"web_search_result"}},"sourceType":"url","title":"The Latest AI News and AI Breakthroughs that Matter Most: 2025 | News","type":"source","url":"https://www.crescendo.ai/news/latest-ai-news-and-updates"}
 {"id":"source_1","providerMetadata":{"anthropic":{"pageAge":"3 hours ago","type":"web_search_result"}},"sourceType":"url","title":"Fang Junyu's Technology Weekly - September 26, 2025 - Future","type":"source","url":"https://future.forem.com/junyu_fang_a216509a97501d/fang-junyus-technology-weekly-september-26-2025-2ndd"}
 {"id":"source_2","providerMetadata":{"anthropic":{"pageAge":"1 day ago","type":"web_search_result"}},"sourceType":"url","title":"The all-new Apple Ginza opens this Friday, September 26, in Tokyo - Apple","type":"source","url":"https://www.apple.com/newsroom/2025/09/the-all-new-apple-ginza-opens-this-friday-september-26-in-tokyo/"}

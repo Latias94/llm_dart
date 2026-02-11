@@ -1,0 +1,72 @@
+{"type":"stream-start","warnings":[]}
+{"id":"resp_04a97b4fce127879006949a87ab0cc8195b3175edc260d6a88","modelId":"gpt-5-mini-2025-08-07","timestamp":"2025-12-22T20:22:18.000Z","type":"response-metadata"}
+{"dynamic":true,"input":"{}","providerExecuted":true,"providerMetadata":{"openai":{"itemId":"mcp_04a97b4fce127879006949a87c14248195ac23dfe0854c03d3","serverLabel":"zip1"}},"toolCallId":"mcp_04a97b4fce127879006949a87c14248195ac23dfe0854c03d3","toolName":"mcp.create_short_url","type":"tool-call"}
+{"dynamic":true,"providerMetadata":{"openai":{"itemId":"mcp_04a97b4fce127879006949a87c14248195ac23dfe0854c03d3","serverLabel":"zip1"}},"result":{"approval_request_id":"mcpr_04a97b4fce127879006949a8672ac081959f95aa8ceedb7cd9","arguments":"{\"alias\":\"\",\"description\":\"Shortened link for ai-sdk.dev\",\"max_clicks\":100,\"password\":\"\",\"url\":\"https://ai-sdk.dev/\"}","id":"mcp_04a97b4fce127879006949a87c14248195ac23dfe0854c03d3","name":"create_short_url","output":"✅ Short URL created: https://zip1.io/UDKvlw\n🔤 Generated code: UDKvlw\n🔢 Max clicks: 100\n📄 Description: Shortened link for ai-sdk.dev\n🔗 Original URL: https://ai-sdk.dev/\n\n📊 View stats: https://zip1.io/stats/UDKvlw","server_label":"zip1","status":"completed","type":"mcp_call"},"toolCallId":"mcp_04a97b4fce127879006949a87c14248195ac23dfe0854c03d3","toolName":"mcp.create_short_url","type":"tool-result"}
+{"id":"0","type":"text-start"}
+{"delta":"Done","id":"0","type":"text-delta"}
+{"delta":" —","id":"0","type":"text-delta"}
+{"delta":" here","id":"0","type":"text-delta"}
+{"delta":"’s","id":"0","type":"text-delta"}
+{"delta":" your","id":"0","type":"text-delta"}
+{"delta":" shortened","id":"0","type":"text-delta"}
+{"delta":" link","id":"0","type":"text-delta"}
+{"delta":":\n\n","id":"0","type":"text-delta"}
+{"delta":"https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"zip","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":".io","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"UD","id":"0","type":"text-delta"}
+{"delta":"K","id":"0","type":"text-delta"}
+{"delta":"vl","id":"0","type":"text-delta"}
+{"delta":"w","id":"0","type":"text-delta"}
+{"delta":"\n\n","id":"0","type":"text-delta"}
+{"delta":"Details","id":"0","type":"text-delta"}
+{"delta":":\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" Original","id":"0","type":"text-delta"}
+{"delta":" URL","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"ai","id":"0","type":"text-delta"}
+{"delta":"-sdk","id":"0","type":"text-delta"}
+{"delta":".dev","id":"0","type":"text-delta"}
+{"delta":"/\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" Max","id":"0","type":"text-delta"}
+{"delta":" clicks","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"100","id":"0","type":"text-delta"}
+{"delta":"\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" Stats","id":"0","type":"text-delta"}
+{"delta":":","id":"0","type":"text-delta"}
+{"delta":" https","id":"0","type":"text-delta"}
+{"delta":"://","id":"0","type":"text-delta"}
+{"delta":"zip","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":".io","id":"0","type":"text-delta"}
+{"delta":"/st","id":"0","type":"text-delta"}
+{"delta":"ats","id":"0","type":"text-delta"}
+{"delta":"/","id":"0","type":"text-delta"}
+{"delta":"UD","id":"0","type":"text-delta"}
+{"delta":"K","id":"0","type":"text-delta"}
+{"delta":"vl","id":"0","type":"text-delta"}
+{"delta":"w","id":"0","type":"text-delta"}
+{"delta":"\n\n","id":"0","type":"text-delta"}
+{"delta":"Would","id":"0","type":"text-delta"}
+{"delta":" you","id":"0","type":"text-delta"}
+{"delta":" like","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" custom","id":"0","type":"text-delta"}
+{"delta":" alias","id":"0","type":"text-delta"}
+{"delta":" or","id":"0","type":"text-delta"}
+{"delta":" password","id":"0","type":"text-delta"}
+{"delta":" protection","id":"0","type":"text-delta"}
+{"delta":" added","id":"0","type":"text-delta"}
+{"delta":"?","id":"0","type":"text-delta"}
+{"id":"0","type":"text-end"}
+{"finishReason":{"unified":"stop"},"providerMetadata":{"openai":{"id":"resp_04a97b4fce127879006949a87ab0cc8195b3175edc260d6a88","logprobs":[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],"mcpCalls":[{"approval_request_id":"mcpr_04a97b4fce127879006949a8672ac081959f95aa8ceedb7cd9","arguments":"{\"alias\":\"\",\"description\":\"Shortened link for ai-sdk.dev\",\"max_clicks\":100,\"password\":\"\",\"url\":\"https://ai-sdk.dev/\"}","id":"mcp_04a97b4fce127879006949a87c14248195ac23dfe0854c03d3","name":"create_short_url","output":"✅ Short URL created: https://zip1.io/UDKvlw\n🔤 Generated code: UDKvlw\n🔢 Max clicks: 100\n📄 Description: Shortened link for ai-sdk.dev\n🔗 Original URL: https://ai-sdk.dev/\n\n📊 View stats: https://zip1.io/stats/UDKvlw","server_label":"zip1","status":"completed","type":"mcp_call"}],"mcpListTools":[{"id":"mcpl_04a97b4fce127879006949a87ac9388195b0d86b0d1f24176b","server_label":"zip1","tools":[{"annotations":{"read_only":false},"description":"Create a shortened URL using zip1.io with optional custom alias, password protection, and max clicks limit","input_schema":{"properties":{"alias":{"description":"Custom alias for the short URL (optional, alphanumeric and hyphens only)","type":"string"},"description":{"description":"Description for the short URL (optional, max 100 characters)","type":"string"},"max_clicks":{"description":"Maximum number of clicks allowed before the link expires (optional)","minimum":1,"type":"integer"},"password":{"description":"Password to protect the short URL (optional)","type":"string"},"url":{"description":"The long URL to shorten (must include http:// or https://)","type":"string"}},"required":["url"],"type":"object"},"name":"create_short_url"},{"annotations":{"read_only":false},"description":"Get detailed statistics and analytics for a shortened URL including click counts, countries, and recent activity","input_schema":{"properties":{"short_code":{"description":"The short code or custom alias of the URL to get stats for","type":"string"}},"required":["short_code"],"type":"object"},"name":"get_url_stats"},{"annotations":{"read_only":false},"description":"Check if a URL is valid and can be shortened by zip1.io","input_schema":{"properties":{"url":{"description":"The URL to validate","type":"string"}},"required":["url"],"type":"object"},"name":"validate_url"},{"annotations":{"read_only":false},"description":"Generate a random 6-character alphanumeric short code suggestion (the actual code will be generated when creating the URL)","input_schema":{"properties":{},"type":"object"},"name":"generate_short_code"}],"type":"mcp_list_tools"}],"model":"gpt-5-mini-2025-08-07","responseId":"resp_04a97b4fce127879006949a87ab0cc8195b3175edc260d6a88","serverToolCalls":[{"id":"mcpl_04a97b4fce127879006949a87ac9388195b0d86b0d1f24176b","server_label":"zip1","tools":[{"annotations":{"read_only":false},"description":"Create a shortened URL using zip1.io with optional custom alias, password protection, and max clicks limit","input_schema":{"properties":{"alias":{"description":"Custom alias for the short URL (optional, alphanumeric and hyphens only)","type":"string"},"description":{"description":"Description for the short URL (optional, max 100 characters)","type":"string"},"max_clicks":{"description":"Maximum number of clicks allowed before the link expires (optional)","minimum":1,"type":"integer"},"password":{"description":"Password to protect the short URL (optional)","type":"string"},"url":{"description":"The long URL to shorten (must include http:// or https://)","type":"string"}},"required":["url"],"type":"object"},"name":"create_short_url"},{"annotations":{"read_only":false},"description":"Get detailed statistics and analytics for a shortened URL including click counts, countries, and recent activity","input_schema":{"properties":{"short_code":{"description":"The short code or custom alias of the URL to get stats for","type":"string"}},"required":["short_code"],"type":"object"},"name":"get_url_stats"},{"annotations":{"read_only":false},"description":"Check if a URL is valid and can be shortened by zip1.io","input_schema":{"properties":{"url":{"description":"The URL to validate","type":"string"}},"required":["url"],"type":"object"},"name":"validate_url"},{"annotations":{"read_only":false},"description":"Generate a random 6-character alphanumeric short code suggestion (the actual code will be generated when creating the URL)","input_schema":{"properties":{},"type":"object"},"name":"generate_short_code"}],"type":"mcp_list_tools"},{"approval_request_id":"mcpr_04a97b4fce127879006949a8672ac081959f95aa8ceedb7cd9","arguments":"{\"alias\":\"\",\"description\":\"Shortened link for ai-sdk.dev\",\"max_clicks\":100,\"password\":\"\",\"url\":\"https://ai-sdk.dev/\"}","id":"mcp_04a97b4fce127879006949a87c14248195ac23dfe0854c03d3","name":"create_short_url","output":"✅ Short URL created: https://zip1.io/UDKvlw\n🔤 Generated code: UDKvlw\n🔢 Max clicks: 100\n📄 Description: Shortened link for ai-sdk.dev\n🔗 Original URL: https://ai-sdk.dev/\n\n📊 View stats: https://zip1.io/stats/UDKvlw","server_label":"zip1","status":"completed","type":"mcp_call"}],"serviceTier":"default"}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"noCache":779,"total":779},"outputTokens":{"reasoning":0,"text":69,"total":69},"raw":{"input_tokens":779,"input_tokens_details":{"cached_tokens":0},"output_tokens":69,"output_tokens_details":{"reasoning_tokens":0},"total_tokens":848}}}

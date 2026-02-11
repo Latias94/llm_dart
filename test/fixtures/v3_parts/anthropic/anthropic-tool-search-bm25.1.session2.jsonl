@@ -1,0 +1,15 @@
+{"type":"stream-start","warnings":[]}
+{"id":"msg_0132hQ7tpsGJhdPtEBhmKA2R","modelId":"claude-sonnet-4-5-20250929","type":"response-metadata"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"anthropic":{"id":"msg_0132hQ7tpsGJhdPtEBhmKA2R","model":"claude-sonnet-4-5-20250929","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1040,"outputTokens":1,"serviceTier":"standard"}},"anthropic.messages":{"id":"msg_0132hQ7tpsGJhdPtEBhmKA2R","model":"claude-sonnet-4-5-20250929","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1040,"outputTokens":1,"serviceTier":"standard"}}}},"type":"raw"}
+{"id":"0","type":"text-start"}
+{"delta":"The","id":"0","type":"text-delta"}
+{"delta":" current","id":"0","type":"text-delta"}
+{"delta":" weather in San Francisco,","id":"0","type":"text-delta"}
+{"delta":" CA is:\n- **Temperature:**","id":"0","type":"text-delta"}
+{"delta":" 64°F","id":"0","type":"text-delta"}
+{"delta":"\n- **Condition:** Partly clou","id":"0","type":"text-delta"}
+{"delta":"dy\n- **Humidity:** ","id":"0","type":"text-delta"}
+{"delta":"65%","id":"0","type":"text-delta"}
+{"id":"0","type":"text-end"}
+{"rawValue":{"kind":"provider-metadata","providerMetadata":{"anthropic":{"finishReason":"end_turn","id":"msg_0132hQ7tpsGJhdPtEBhmKA2R","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1040,"outputTokens":41,"serviceTier":"standard"}},"anthropic.messages":{"finishReason":"end_turn","id":"msg_0132hQ7tpsGJhdPtEBhmKA2R","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1040,"outputTokens":41,"serviceTier":"standard"}}}},"type":"raw"}
+{"finishReason":{"raw":"end_turn","unified":"stop"},"providerMetadata":{"anthropic":{"finishReason":"end_turn","id":"msg_0132hQ7tpsGJhdPtEBhmKA2R","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1040,"outputTokens":41,"serviceTier":"standard"}},"anthropic.messages":{"finishReason":"end_turn","id":"msg_0132hQ7tpsGJhdPtEBhmKA2R","model":"claude-sonnet-4-5-20250929","stopReason":"end_turn","usage":{"cacheCreationInputTokens":0,"cacheReadInputTokens":0,"inputTokens":1040,"outputTokens":41,"serviceTier":"standard"}}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"cacheWrite":0,"noCache":1040,"total":1040},"outputTokens":{"total":41},"raw":{"cache_creation":{"ephemeral_1h_input_tokens":0,"ephemeral_5m_input_tokens":0},"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"input_tokens":1040,"output_tokens":41,"service_tier":"standard"}}}

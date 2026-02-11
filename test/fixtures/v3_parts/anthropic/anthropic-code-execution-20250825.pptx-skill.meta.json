@@ -1,0 +1,32 @@
+{
+  "provider": "anthropic",
+  "scenario": "anthropic-code-execution-20250825.pptx-skill",
+  "description": "Anthropic Messages streaming with the 2025-08-25 code execution server tool and a skill-like workflow (fixture derived from AI SDK tests). Validates long tool input streaming and large tool results.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/anthropic/messages/anthropic-code-execution-20250825.pptx-skill.chunks.txt",
+      "repo-ref/ai/packages/anthropic/src/__fixtures__/anthropic-code-execution-20250825.pptx-skill.chunks.txt"
+    ],
+    "notes": "Replayed via FakeAnthropicClient; encoded as canonical AI SDK v3 JSONL via encodeV3StreamParts."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "This scenario is intentionally large to catch ordering issues between tool-input parts, tool-call, and tool-result."
+  ],
+  "upstream": {
+    "repository": "https://github.com/vercel/ai",
+    "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
+    "license": "Apache-2.0",
+    "paths": [
+      "repo-ref/ai/packages/anthropic/src/__fixtures__/anthropic-code-execution-20250825.pptx-skill.chunks.txt"
+    ]
+  }
+}

@@ -1,0 +1,116 @@
+{"type":"stream-start","warnings":[]}
+{"id":"resp_04a97b4fce127879006949a855fa68819598a2a379fd5b6c38","modelId":"gpt-5-mini-2025-08-07","timestamp":"2025-12-22T20:21:42.000Z","type":"response-metadata"}
+{"id":"rs_04a97b4fce127879006949a857b7c88195818dab6d25ff091d:0","providerMetadata":{"openai":{"itemId":"rs_04a97b4fce127879006949a857b7c88195818dab6d25ff091d"}},"type":"reasoning-start"}
+{"id":"rs_04a97b4fce127879006949a857b7c88195818dab6d25ff091d:0","providerMetadata":{"openai":{"itemId":"rs_04a97b4fce127879006949a857b7c88195818dab6d25ff091d"}},"type":"reasoning-end"}
+{"id":"0","type":"text-start"}
+{"delta":"I","id":"0","type":"text-delta"}
+{"delta":" wasn","id":"0","type":"text-delta"}
+{"delta":"’t","id":"0","type":"text-delta"}
+{"delta":" able","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" create","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" short","id":"0","type":"text-delta"}
+{"delta":" link","id":"0","type":"text-delta"}
+{"delta":" because","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" URL","id":"0","type":"text-delta"}
+{"delta":"-short","id":"0","type":"text-delta"}
+{"delta":"ening","id":"0","type":"text-delta"}
+{"delta":" tool","id":"0","type":"text-delta"}
+{"delta":" call","id":"0","type":"text-delta"}
+{"delta":" was","id":"0","type":"text-delta"}
+{"delta":" not","id":"0","type":"text-delta"}
+{"delta":" approved","id":"0","type":"text-delta"}
+{"delta":".","id":"0","type":"text-delta"}
+{"delta":" I","id":"0","type":"text-delta"}
+{"delta":" won","id":"0","type":"text-delta"}
+{"delta":"’t","id":"0","type":"text-delta"}
+{"delta":" retry","id":"0","type":"text-delta"}
+{"delta":" it","id":"0","type":"text-delta"}
+{"delta":" without","id":"0","type":"text-delta"}
+{"delta":" your","id":"0","type":"text-delta"}
+{"delta":" permission","id":"0","type":"text-delta"}
+{"delta":".\n\n","id":"0","type":"text-delta"}
+{"delta":"Options","id":"0","type":"text-delta"}
+{"delta":":\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" Appro","id":"0","type":"text-delta"}
+{"delta":"ve","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" tool","id":"0","type":"text-delta"}
+{"delta":" call","id":"0","type":"text-delta"}
+{"delta":" and","id":"0","type":"text-delta"}
+{"delta":" I","id":"0","type":"text-delta"}
+{"delta":"’ll","id":"0","type":"text-delta"}
+{"delta":" create","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" short","id":"0","type":"text-delta"}
+{"delta":" URL","id":"0","type":"text-delta"}
+{"delta":" with","id":"0","type":"text-delta"}
+{"delta":" max","id":"0","type":"text-delta"}
+{"delta":" clicks","id":"0","type":"text-delta"}
+{"delta":" =","id":"0","type":"text-delta"}
+{"delta":" ","id":"0","type":"text-delta"}
+{"delta":"100","id":"0","type":"text-delta"}
+{"delta":" now","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" I","id":"0","type":"text-delta"}
+{"delta":" can","id":"0","type":"text-delta"}
+{"delta":" suggest","id":"0","type":"text-delta"}
+{"delta":" a","id":"0","type":"text-delta"}
+{"delta":" short","id":"0","type":"text-delta"}
+{"delta":" alias","id":"0","type":"text-delta"}
+{"delta":" (","id":"0","type":"text-delta"}
+{"delta":"e","id":"0","type":"text-delta"}
+{"delta":".g","id":"0","type":"text-delta"}
+{"delta":".,","id":"0","type":"text-delta"}
+{"delta":" ai","id":"0","type":"text-delta"}
+{"delta":"-sdk","id":"0","type":"text-delta"}
+{"delta":",","id":"0","type":"text-delta"}
+{"delta":" ai","id":"0","type":"text-delta"}
+{"delta":"-sdk","id":"0","type":"text-delta"}
+{"delta":"-dev","id":"0","type":"text-delta"}
+{"delta":")","id":"0","type":"text-delta"}
+{"delta":" for","id":"0","type":"text-delta"}
+{"delta":" you","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" use","id":"0","type":"text-delta"}
+{"delta":" when","id":"0","type":"text-delta"}
+{"delta":" creating","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" short","id":"0","type":"text-delta"}
+{"delta":" link","id":"0","type":"text-delta"}
+{"delta":" yourself","id":"0","type":"text-delta"}
+{"delta":".\n","id":"0","type":"text-delta"}
+{"delta":"-","id":"0","type":"text-delta"}
+{"delta":" I","id":"0","type":"text-delta"}
+{"delta":" can","id":"0","type":"text-delta"}
+{"delta":" give","id":"0","type":"text-delta"}
+{"delta":" step","id":"0","type":"text-delta"}
+{"delta":"-by","id":"0","type":"text-delta"}
+{"delta":"-step","id":"0","type":"text-delta"}
+{"delta":" instructions","id":"0","type":"text-delta"}
+{"delta":" to","id":"0","type":"text-delta"}
+{"delta":" create","id":"0","type":"text-delta"}
+{"delta":" the","id":"0","type":"text-delta"}
+{"delta":" shortened","id":"0","type":"text-delta"}
+{"delta":" link","id":"0","type":"text-delta"}
+{"delta":" manually","id":"0","type":"text-delta"}
+{"delta":" on","id":"0","type":"text-delta"}
+{"delta":" zip","id":"0","type":"text-delta"}
+{"delta":"1","id":"0","type":"text-delta"}
+{"delta":".io","id":"0","type":"text-delta"}
+{"delta":" or","id":"0","type":"text-delta"}
+{"delta":" another","id":"0","type":"text-delta"}
+{"delta":" short","id":"0","type":"text-delta"}
+{"delta":"ener","id":"0","type":"text-delta"}
+{"delta":".\n\n","id":"0","type":"text-delta"}
+{"delta":"Which","id":"0","type":"text-delta"}
+{"delta":" would","id":"0","type":"text-delta"}
+{"delta":" you","id":"0","type":"text-delta"}
+{"delta":" like","id":"0","type":"text-delta"}
+{"delta":"?","id":"0","type":"text-delta"}
+{"id":"0","type":"text-end"}
+{"finishReason":{"unified":"stop"},"providerMetadata":{"openai":{"id":"resp_04a97b4fce127879006949a855fa68819598a2a379fd5b6c38","logprobs":[[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[],[]],"mcpListTools":[{"id":"mcpl_04a97b4fce127879006949a856328881959cdd5fda3bc888e8","server_label":"zip1","tools":[{"annotations":{"read_only":false},"description":"Create a shortened URL using zip1.io with optional custom alias, password protection, and max clicks limit","input_schema":{"properties":{"alias":{"description":"Custom alias for the short URL (optional, alphanumeric and hyphens only)","type":"string"},"description":{"description":"Description for the short URL (optional, max 100 characters)","type":"string"},"max_clicks":{"description":"Maximum number of clicks allowed before the link expires (optional)","minimum":1,"type":"integer"},"password":{"description":"Password to protect the short URL (optional)","type":"string"},"url":{"description":"The long URL to shorten (must include http:// or https://)","type":"string"}},"required":["url"],"type":"object"},"name":"create_short_url"},{"annotations":{"read_only":false},"description":"Get detailed statistics and analytics for a shortened URL including click counts, countries, and recent activity","input_schema":{"properties":{"short_code":{"description":"The short code or custom alias of the URL to get stats for","type":"string"}},"required":["short_code"],"type":"object"},"name":"get_url_stats"},{"annotations":{"read_only":false},"description":"Check if a URL is valid and can be shortened by zip1.io","input_schema":{"properties":{"url":{"description":"The URL to validate","type":"string"}},"required":["url"],"type":"object"},"name":"validate_url"},{"annotations":{"read_only":false},"description":"Generate a random 6-character alphanumeric short code suggestion (the actual code will be generated when creating the URL)","input_schema":{"properties":{},"type":"object"},"name":"generate_short_code"}],"type":"mcp_list_tools"}],"model":"gpt-5-mini-2025-08-07","responseId":"resp_04a97b4fce127879006949a855fa68819598a2a379fd5b6c38","serverToolCalls":[{"id":"mcpl_04a97b4fce127879006949a856328881959cdd5fda3bc888e8","server_label":"zip1","tools":[{"annotations":{"read_only":false},"description":"Create a shortened URL using zip1.io with optional custom alias, password protection, and max clicks limit","input_schema":{"properties":{"alias":{"description":"Custom alias for the short URL (optional, alphanumeric and hyphens only)","type":"string"},"description":{"description":"Description for the short URL (optional, max 100 characters)","type":"string"},"max_clicks":{"description":"Maximum number of clicks allowed before the link expires (optional)","minimum":1,"type":"integer"},"password":{"description":"Password to protect the short URL (optional)","type":"string"},"url":{"description":"The long URL to shorten (must include http:// or https://)","type":"string"}},"required":["url"],"type":"object"},"name":"create_short_url"},{"annotations":{"read_only":false},"description":"Get detailed statistics and analytics for a shortened URL including click counts, countries, and recent activity","input_schema":{"properties":{"short_code":{"description":"The short code or custom alias of the URL to get stats for","type":"string"}},"required":["short_code"],"type":"object"},"name":"get_url_stats"},{"annotations":{"read_only":false},"description":"Check if a URL is valid and can be shortened by zip1.io","input_schema":{"properties":{"url":{"description":"The URL to validate","type":"string"}},"required":["url"],"type":"object"},"name":"validate_url"},{"annotations":{"read_only":false},"description":"Generate a random 6-character alphanumeric short code suggestion (the actual code will be generated when creating the URL)","input_schema":{"properties":{},"type":"object"},"name":"generate_short_code"}],"type":"mcp_list_tools"}],"serviceTier":"default"}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"noCache":553,"total":553},"outputTokens":{"reasoning":256,"text":115,"total":371},"raw":{"input_tokens":553,"input_tokens_details":{"cached_tokens":0},"output_tokens":371,"output_tokens_details":{"reasoning_tokens":256},"total_tokens":924}}}

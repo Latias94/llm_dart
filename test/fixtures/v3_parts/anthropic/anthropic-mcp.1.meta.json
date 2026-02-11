@@ -1,0 +1,33 @@
+{
+  "provider": "anthropic",
+  "scenario": "anthropic-mcp.1",
+  "description": "Anthropic Messages streaming with MCP (Model Context Protocol) dynamic tools executed by the provider. Validates `dynamic=true` tool-input parts, tool-call emission, and tool-result mapping.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/anthropic/messages/anthropic-mcp.1.chunks.txt",
+      "repo-ref/ai/packages/anthropic/src/__fixtures__/anthropic-mcp.1.chunks.txt"
+    ],
+    "notes": "Replayed via FakeAnthropicClient; encoded as canonical AI SDK v3 JSONL via encodeV3StreamParts."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "MCP tool calls must be marked as dynamic in v3 parts.",
+    "Provider-executed tools must not be surfaced as locally executable function tool calls."
+  ],
+  "upstream": {
+    "repository": "https://github.com/vercel/ai",
+    "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
+    "license": "Apache-2.0",
+    "paths": [
+      "repo-ref/ai/packages/anthropic/src/__fixtures__/anthropic-mcp.1.chunks.txt"
+    ]
+  }
+}

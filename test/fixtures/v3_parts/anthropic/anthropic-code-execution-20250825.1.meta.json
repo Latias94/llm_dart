@@ -1,0 +1,32 @@
+{
+  "provider": "anthropic",
+  "scenario": "anthropic-code-execution-20250825.1",
+  "description": "Anthropic Messages streaming with the 2025-08-25 code execution server tool (text editor + bash variants). Validates provider-executed tool-input streaming, tool-call emission at block stop, and tool-result mapping.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/anthropic/messages/anthropic-code-execution-20250825.1.chunks.txt",
+      "repo-ref/ai/packages/anthropic/src/__fixtures__/anthropic-code-execution-20250825.1.chunks.txt"
+    ],
+    "notes": "Replayed via FakeAnthropicClient; encoded as canonical AI SDK v3 JSONL via encodeV3StreamParts."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "block_ids_non_empty": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [
+    "Server tool names like text_editor_code_execution and bash_code_execution are normalized to toolName=code_execution in v3 parts, while the streamed input JSON includes a `type` field describing the specific provider tool."
+  ],
+  "upstream": {
+    "repository": "https://github.com/vercel/ai",
+    "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
+    "license": "Apache-2.0",
+    "paths": [
+      "repo-ref/ai/packages/anthropic/src/__fixtures__/anthropic-code-execution-20250825.1.chunks.txt"
+    ]
+  }
+}

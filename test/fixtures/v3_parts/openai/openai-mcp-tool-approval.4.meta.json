@@ -1,0 +1,29 @@
+{
+  "provider": "openai",
+  "scenario": "openai-mcp-tool-approval.4",
+  "description": "OpenAI Responses streaming with MCP tool approval request (variant). Ensures stable v3 approval request encoding across different MCP server/tool payloads.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/openai/responses/openai-mcp-tool-approval.4.chunks.txt",
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-mcp-tool-approval.4.chunks.txt"
+    ],
+    "notes": "Replayed via FakeOpenAIClient; encoded as canonical AI SDK v3 JSONL via encodeV3StreamParts."
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [],
+  "upstream": {
+    "repository": "https://github.com/vercel/ai",
+    "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
+    "license": "Apache-2.0",
+    "paths": [
+      "repo-ref/ai/packages/openai/src/responses/__fixtures__/openai-mcp-tool-approval.4.chunks.txt"
+    ]
+  }
+}

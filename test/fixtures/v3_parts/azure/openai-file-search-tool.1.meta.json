@@ -1,0 +1,42 @@
+{
+  "provider": "azure",
+  "scenario": "openai-file-search-tool.1",
+  "description": "Azure OpenAI Responses streaming with provider-executed file_search tool (fixture name preserved from upstream). Validates canonical v3 provider tool lifecycle under Azure transport.",
+  "source": {
+    "type": "vendored-ai-sdk-fixture",
+    "paths": [
+      "test/fixtures/azure/responses/openai-file-search-tool.1.chunks.txt",
+      "repo-ref/ai/packages/azure/src/__fixtures__/openai-file-search-tool.1.chunks.txt"
+    ],
+    "notes": "Replayed via FakeOpenAIClient against OpenAIResponses (AzureOpenAIConfig)."
+  },
+  "request": {
+    "providerTools": [
+      {
+        "id": "azure.file_search",
+        "name": "fileSearch",
+        "options": {
+          "vectorStoreIds": [
+            "vs_68caad8bd5d88191ab766cf043d89a18"
+          ]
+        }
+      }
+    ]
+  },
+  "assertions": {
+    "ordering": true,
+    "single_stream_start": true,
+    "single_finish": true,
+    "finish_usage_present": true,
+    "finish_reason_typed": true
+  },
+  "notes": [],
+  "upstream": {
+    "repository": "https://github.com/vercel/ai",
+    "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
+    "license": "Apache-2.0",
+    "paths": [
+      "repo-ref/ai/packages/azure/src/__fixtures__/openai-file-search-tool.1.chunks.txt"
+    ]
+  }
+}
