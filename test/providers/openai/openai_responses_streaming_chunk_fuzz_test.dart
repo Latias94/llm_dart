@@ -389,5 +389,190 @@ void main() {
         expect(toolCall.single['input'], equals(fullArgs));
       }
     });
+
+    test('buffers tool-input deltas that arrive before output_item.added',
+        () async {
+      final config = openai_client.OpenAIConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1/',
+        model: 'gpt-5-mini',
+        useResponsesAPI: true,
+      );
+
+      final codeToolId = 'ci_early';
+      final code = 'print(\"hi\")\\n';
+
+      final applyPatchItemId = 'apc_early';
+      final applyPatchCallId = 'call_apc_1';
+      final diff = '+Hello\\n';
+
+      final sse = [
+        _sseData({
+          'type': 'response.created',
+          'response': {
+            'id': 'resp_order_fuzz',
+            'model': 'gpt-5-mini',
+            'status': 'in_progress',
+            'created_at': 1739145600,
+            'output': [],
+          },
+        }),
+
+        // Out-of-order: tool input deltas arrive before output item metadata.
+        _sseData({
+          'type': 'response.code_interpreter_call_code.delta',
+          'output_index': 0,
+          'item_id': codeToolId,
+          'delta': code,
+        }),
+        _sseData({
+          'type': 'response.apply_patch_call_operation_diff.delta',
+          'output_index': 1,
+          'item_id': applyPatchItemId,
+          'delta': diff,
+        }),
+
+        _sseData({
+          'type': 'response.output_item.added',
+          'output_index': 0,
+          'item': {
+            'id': codeToolId,
+            'type': 'code_interpreter_call',
+            'status': 'in_progress',
+            'code': '',
+            'container_id': 'cntr_1',
+            'outputs': const [],
+          },
+        }),
+        _sseData({
+          'type': 'response.output_item.added',
+          'output_index': 1,
+          'item': {
+            'id': applyPatchItemId,
+            'type': 'apply_patch_call',
+            'status': 'in_progress',
+            'call_id': applyPatchCallId,
+            'operation': {
+              'type': 'create_file',
+              'diff': '',
+              'path': 'hello.md',
+            },
+          },
+        }),
+
+        _sseData({
+          'type': 'response.output_item.done',
+          'output_index': 0,
+          'item': {
+            'id': codeToolId,
+            'type': 'code_interpreter_call',
+            'status': 'completed',
+            'code': code,
+            'container_id': 'cntr_1',
+            'outputs': const [],
+          },
+        }),
+        _sseData({
+          'type': 'response.output_item.done',
+          'output_index': 1,
+          'item': {
+            'id': applyPatchItemId,
+            'type': 'apply_patch_call',
+            'status': 'completed',
+            'call_id': applyPatchCallId,
+            'operation': {
+              'type': 'create_file',
+              'diff': diff,
+              'path': 'hello.md',
+            },
+          },
+        }),
+
+        _sseData({
+          'type': 'response.completed',
+          'response': {
+            'id': 'resp_order_fuzz',
+            'model': 'gpt-5-mini',
+            'status': 'completed',
+            'created_at': 1739145600,
+            'usage': {
+              'input_tokens': 10,
+              'output_tokens': 5,
+              'total_tokens': 15,
+            },
+            'output': [
+              {
+                'id': codeToolId,
+                'type': 'code_interpreter_call',
+                'status': 'completed',
+                'code': code,
+                'container_id': 'cntr_1',
+                'outputs': const [],
+              },
+              {
+                'id': applyPatchItemId,
+                'type': 'apply_patch_call',
+                'status': 'completed',
+                'call_id': applyPatchCallId,
+                'operation': {
+                  'type': 'create_file',
+                  'diff': diff,
+                  'path': 'hello.md',
+                },
+              },
+            ],
+          },
+        }),
+        'data: [DONE]\n\n',
+      ].join();
+
+      for (final seed in [3, 9, 27]) {
+        final client = FakeOpenAIClient(config)
+          ..streamResponse =
+              Stream<String>.fromIterable(_splitRandom(sse, seed: seed));
+        final responses = openai_responses.OpenAIResponses(client, config);
+
+        final parts =
+            await responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+
+        final toolInputStarts =
+            parts.whereType<LLMToolInputStartPart>().toList();
+        final toolInputDeltas =
+            parts.whereType<LLMToolInputDeltaPart>().toList();
+        final toolInputEnds = parts.whereType<LLMToolInputEndPart>().toList();
+
+        expect(toolInputStarts.map((p) => p.id).toSet(),
+            containsAll({codeToolId, applyPatchCallId}));
+        expect(toolInputEnds.map((p) => p.id).toSet(),
+            containsAll({codeToolId, applyPatchCallId}));
+
+        int indexOfStart(String id) =>
+            parts.indexWhere((p) => p is LLMToolInputStartPart && p.id == id);
+
+        for (final start in toolInputStarts) {
+          final startIndex = indexOfStart(start.id);
+          expect(startIndex, isNonNegative);
+          for (final d in toolInputDeltas.where((p) => p.id == start.id)) {
+            final deltaIndex = parts.indexOf(d);
+            expect(deltaIndex, greaterThan(startIndex));
+          }
+        }
+
+        final providerCalls =
+            parts.whereType<LLMProviderToolCallPart>().toList();
+        final codeCall =
+            providerCalls.singleWhere((p) => p.toolCallId == codeToolId);
+        expect(codeCall.input, isA<String>());
+        expect(codeCall.input as String, contains('\"code\"'));
+        expect(codeCall.input as String, contains('print'));
+
+        final applyPatchCall =
+            providerCalls.singleWhere((p) => p.toolCallId == applyPatchCallId);
+        expect(applyPatchCall.providerExecuted, isFalse);
+        expect(applyPatchCall.input, isA<String>());
+        expect(applyPatchCall.input as String, contains('\"operation\"'));
+        expect(applyPatchCall.input as String, contains('\"diff\"'));
+      }
+    });
   });
 }
