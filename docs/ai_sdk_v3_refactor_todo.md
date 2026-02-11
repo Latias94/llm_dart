@@ -207,7 +207,7 @@ signal spec we have for stream semantics.
   - commit hash / tag
   - original fixture path(s) in AI SDK
 - [ ] Track the pinned upstream reference commit:
-  - current `repo-ref/ai` commit: `c36a873ce00892a4c587c2e9492220b392aefd09`
+  - update `test/fixtures/v3_parts/_upstream.json` when bumping `repo-ref/ai`
 - [ ] Document the “what to copy” rule:
   - prefer copying *only* the minimal fixtures that cover a semantic edge case
   - avoid bulk-copying entire snapshot suites to keep repo size manageable

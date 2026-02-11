@@ -342,7 +342,14 @@ We explicitly test **post-parse canonical parts**, not raw network data.
    - OpenAI-compatible: `test/fixtures/openai_compatible`
 3. Add a `*.meta.json` under `test/fixtures/v3_parts/<provider>/`:
    - include both local and upstream fixture paths in `source.paths`
-   - include `request.providerTools` when tool-name mapping matters
+    - include `request.providerTools` when tool-name mapping matters
+   - ensure `upstream` points at the pinned reference in
+     `test/fixtures/v3_parts/_upstream.json`
+
+If you added `_upstream.json` or changed its commit, you can backfill all
+existing metas:
+
+- `dart run tool/backfill_v3_meta_upstream.dart --write`
 4. Generate/update goldens:
    - `dart run tool/update_v3_goldens.dart --write --only=<provider> --scenarios=<scenario1,scenario2>`
 5. Run tests:
