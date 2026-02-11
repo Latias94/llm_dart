@@ -47,11 +47,7 @@ scripts:
     run: dart run tool/backfill_v3_meta_upstream.dart --write
     description: Backfill v3 meta upstream fields from test/fixtures/v3_parts/_upstream.json.
   parity:check:
-    run: |
-      dart run tool/sync_vercel_fixtures.dart --check &&
-      dart run tool/check_v3_meta.dart --check &&
-      dart run tool/backfill_v3_meta_upstream.dart --check &&
-      dart run tool/update_v3_goldens.dart --check
+    run: dart run tool/parity_check.dart --check
     description: Verify fixtures, v3 meta, upstream provenance, and goldens in one pass.
   version:set-all:
     run: dart run tool/bump_version.dart set-all

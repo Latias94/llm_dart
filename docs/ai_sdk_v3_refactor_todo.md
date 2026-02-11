@@ -1,7 +1,7 @@
 # AI SDK v3 Parity Refactor: TODO
 
 Status: Draft (fearless refactor; breaking changes allowed)  
-Last updated: 2026-02-10
+Last updated: 2026-02-11
 
 This TODO list tracks concrete work required to reach **semantic and structural
 parity** with the Vercel AI SDK v3 stream part model, while keeping Dart public
@@ -192,6 +192,7 @@ Recommended order:
   - [x] expected: repo-local goldens under `test/fixtures/v3_parts/...`
   - [x] assertion: encoded canonical parts JSONL deep-equals expected JSONL
 - [ ] Add targeted “nasty stream boundaries” fuzz tests:
+  - [x] out-of-order `tool-input-delta` before tool-input start (OpenAI/Azure specific)
   - [ ] tool input JSON split across arbitrary chunk boundaries
   - [ ] usage arriving after finish_reason (common in OpenAI-compatible/Azure)
 
@@ -202,19 +203,19 @@ Recommended order:
 We intentionally reuse AI SDK fixtures/snapshots because they are the highest
 signal spec we have for stream semantics.
 
-- [ ] Add an optional `upstream` block to each `*.meta.json`:
+- [x] Add an optional `upstream` block to each `*.meta.json`:
   - repository (e.g. `vercel/ai`)
   - commit hash / tag
   - original fixture path(s) in AI SDK
-- [ ] Track the pinned upstream reference commit:
+- [x] Track the pinned upstream reference commit:
   - update `test/fixtures/v3_parts/_upstream.json` when bumping `repo-ref/ai`
-- [ ] Document the “what to copy” rule:
+- [x] Document the “what to copy” rule:
   - prefer copying *only* the minimal fixtures that cover a semantic edge case
   - avoid bulk-copying entire snapshot suites to keep repo size manageable
-- [ ] Add a small helper script (optional) to sync/select fixtures from `repo-ref/ai`
+- [x] Add a small helper script (optional) to sync/select fixtures from `repo-ref/ai`
   into `test/fixtures/**.chunks.txt` with stable naming.
 
-### Anthropic fixture coverage notes (as of 2026-02-10)
+### Anthropic fixture coverage notes (as of 2026-02-11)
 
 We vendor AI SDK Anthropic `*.chunks.txt` fixtures under
 `test/fixtures/anthropic/messages` and maintain matching v3 parts goldens.
@@ -224,3 +225,12 @@ Notable fixtures that validate usage and deferred tool search flows:
 - `anthropic-message-delta-input-tokens.chunks.txt`
 - `anthropic-tool-search-deferred-bm25.chunks.txt`
 - `anthropic-tool-search-deferred-regex.chunks.txt`
+
+Additional fixtures that validate provider-executed tools and dynamic tools:
+
+- `anthropic-web-search-tool.1.chunks.txt` (server tool `web_search`)
+- `anthropic-web-fetch-tool.1.chunks.txt` (server tool `web_fetch`)
+- `anthropic-mcp.1.chunks.txt` (dynamic MCP tools)
+- `anthropic-code-execution-20250825.1.chunks.txt`
+- `anthropic-code-execution-20250825.2.chunks.txt`
+- `anthropic-code-execution-20250825.pptx-skill.chunks.txt`

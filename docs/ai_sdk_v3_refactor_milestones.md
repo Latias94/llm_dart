@@ -1,7 +1,7 @@
 # AI SDK v3 Parity Refactor: Milestones
 
 Status: Draft  
-Last updated: 2026-02-10
+Last updated: 2026-02-11
 
 This document defines milestones for the refactor described in:
 
@@ -11,7 +11,7 @@ This document defines milestones for the refactor described in:
 The guiding rule: **internal data structures + semantics match AI SDK v3**,
 while **public Dart APIs remain idiomatic**.
 
-Current progress (as of 2026-02-10):
+Current progress (as of 2026-02-11):
 
 - M0: Achieved (guardrails + baseline docs + fixture policy)
 - M1: Achieved (canonical v3 part set + v3 JSONL codec + goldens)
@@ -131,10 +131,14 @@ Current coverage (goldens added in this repo):
   - `test/fixtures/v3_parts/openai/openai-reasoning-encrypted-content.1.session3.jsonl`
   - `test/fixtures/v3_parts/openai/openai-reasoning-encrypted-content.1.session4.jsonl`
   - `test/fixtures/v3_parts/openai/openai-mcp-tool-approval.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-mcp-tool-approval.2.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-mcp-tool-approval.3.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-mcp-tool-approval.4.jsonl`
   - `test/fixtures/v3_parts/openai/openai-mcp-tool.1.jsonl`
   - `test/fixtures/v3_parts/openai/openai-web-search-tool.1.jsonl`
   - `test/fixtures/v3_parts/openai/openai-image-generation-tool.1.jsonl`
   - `test/fixtures/v3_parts/openai/openai-file-search-tool.1.jsonl`
+  - `test/fixtures/v3_parts/openai/openai-file-search-tool.2.jsonl`
 - Azure OpenAI (Responses API shape):
   - `test/fixtures/v3_parts/azure/azure-code-interpreter-tool.1.jsonl`
   - `test/fixtures/v3_parts/azure/azure-web-search-preview-tool.1.jsonl`
@@ -143,16 +147,30 @@ Current coverage (goldens added in this repo):
   - `test/fixtures/v3_parts/azure/azure-reasoning-encrypted-content.1.session3.jsonl`
   - `test/fixtures/v3_parts/azure/azure-reasoning-encrypted-content.1.session4.jsonl`
   - `test/fixtures/v3_parts/azure/azure-image-generation-tool.1.jsonl`
+  - `test/fixtures/v3_parts/azure/openai-file-search-tool.1.jsonl`
+  - `test/fixtures/v3_parts/azure/openai-file-search-tool.2.jsonl`
 - Anthropic:
   - `test/fixtures/v3_parts/anthropic/anthropic-web-search-tool.1.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-web-fetch-tool.1.jsonl`
   - `test/fixtures/v3_parts/anthropic/anthropic-json-tool.1.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-json-tool.2.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-json-other-tool.1.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-json-output-format.1.jsonl`
   - `test/fixtures/v3_parts/anthropic/anthropic-message-delta-input-tokens.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-mcp.1.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-code-execution-20250825.1.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-code-execution-20250825.2.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-code-execution-20250825.pptx-skill.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-tool-no-args.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-programmatic-tool-calling.1.session1.jsonl`
   - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-bm25.session1.jsonl`
   - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-bm25.session2.jsonl`
   - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-bm25.session3.jsonl`
   - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-regex.session1.jsonl`
   - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-regex.session2.jsonl`
   - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-deferred-regex.session3.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-bm25.1.session1.jsonl`
+  - `test/fixtures/v3_parts/anthropic/anthropic-tool-search-regex.1.session1.jsonl`
 - OpenAI-compatible (DeepSeek fixtures):
   - `test/fixtures/v3_parts/openai_compatible/deepseek-text.jsonl`
   - `test/fixtures/v3_parts/openai_compatible/deepseek-reasoning.jsonl`

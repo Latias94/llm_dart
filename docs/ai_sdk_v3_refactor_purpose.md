@@ -1,7 +1,7 @@
 # AI SDK v3 Parity Refactor: Purpose
 
 Status: Draft (fearless refactor, breaking changes allowed)  
-Last updated: 2026-02-10
+Last updated: 2026-02-11
 
 This document defines the **purpose**, **goals**, and **non-goals** of the
 ongoing refactor to align `llm_dart`'s streaming/event data structures with the
