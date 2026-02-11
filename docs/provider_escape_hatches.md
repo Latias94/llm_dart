@@ -45,7 +45,7 @@ Current notable namespaces:
 - `anthropic`: Anthropic Messages API knobs (thinking/reasoning, metadata/container/mcpServers, cacheControl, web search)
 - `minimax`: Anthropic-compatible MiniMax knobs; reads `providerOptions['minimax']` first and may fall back to `providerOptions['anthropic']`
 - `google`: Gemini-native provider knobs (thinking/reasoning, web search, embeddings)
-- `google-openai`: Gemini via OpenAI-compatible interface; reads `providerOptions['google-openai']` first and falls back to `providerOptions['google']`
+- `google-openai`: Gemini via OpenAI-compatible interface; reads `providerOptions['google-openai']` first and falls back to `providerOptions['google']` (map-shaped options merge with precedence `google-openai` > `google` > `openai-compatible`)
 - `groq-openai` / `deepseek-openai` / `xai-openai`: pre-configured OpenAI-compatible provider ids (same key names as their provider-package counterparts, but namespaced by the `*-openai` provider id)
 - `openrouter`: OpenRouter web search knobs (provider-specific; `:online` suffix is an OpenRouter detail)
 - `xai`: Grok live search knobs

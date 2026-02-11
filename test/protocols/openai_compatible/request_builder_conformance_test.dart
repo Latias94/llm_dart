@@ -192,6 +192,41 @@ void main() {
       expect(body['foo'], equals('bar'));
     });
 
+    test(
+        'openai-compatible extraBody applies when provider extraBody is absent',
+        () {
+      final llmConfig = LLMConfig(
+        apiKey: 'k',
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'gpt-4o',
+        providerOptions: const {
+          'openai-compatible': {
+            'extraBody': {
+              'foo': 'bar',
+            },
+          },
+        },
+      );
+
+      final config = OpenAICompatibleConfig.fromLLMConfig(
+        llmConfig,
+        providerId: 'deepseek',
+        providerName: 'DeepSeek',
+      );
+
+      final client = OpenAIClient(config);
+      final builder = OpenAIRequestBuilder(config);
+
+      final body = builder.buildChatCompletionsRequestBody(
+        client,
+        messages: [ChatMessage.user('hi')],
+        tools: const [],
+        stream: false,
+      );
+
+      expect(body['foo'], equals('bar'));
+    });
+
     test('Groq structuredOutputs=false downgrades json_schema to json_object',
         () {
       final llmConfig = LLMConfig(

@@ -79,6 +79,14 @@ These are best-effort escape hatches used to forward provider-specific fields:
 - `providerOptions[providerId]['extraBody']`: merged into request JSON (wins on collisions)
 - `providerOptions[providerId]['extraHeaders']`: merged into request headers (wins on collisions)
 
+Google OpenAI-compatible fallback/merge rules:
+
+- When `providerId == 'google-openai'`, option reads fall back to `providerOptions['google']`.
+- For map-shaped options, we merge with precedence:
+  - `providerOptions['google-openai']` > `providerOptions['google']` > `providerOptions['openai-compatible']`
+  - Applies to: `headers`, `extraHeaders`, `queryParams`, `extraBody`.
+  - Non-map options (e.g. `includeUsage`) are best-effort fallback only (no merge).
+
 Implementation:
 
 - JSON merge happens at the end of request compilation in

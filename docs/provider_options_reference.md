@@ -291,6 +291,11 @@ Gemini via OpenAI-compatible interface reads:
 1) `providerOptions['google-openai']`
 2) fallback to `providerOptions['google']`
 
+Map-shaped options merge with precedence:
+
+- `providerOptions['google-openai']` > `providerOptions['google']` > `providerOptions['openai-compatible']`
+- Applies to: `headers`, `extraHeaders`, `queryParams`, `extraBody`.
+
 Supported keys (same as `google` thinking subset):
 
 - `includeThoughts`: `bool`
