@@ -28,10 +28,10 @@ V3PromptJson encodeV3Prompt(
   final out = <Map<String, dynamic>>[];
 
   for (final message in prompt.messages) {
-    out.add(_encodeV3PromptMessage(message, dataEncoding: dataEncoding));
+    out.addAll(_encodeV3PromptMessages(message, dataEncoding: dataEncoding));
   }
 
-  return out;
+  return List<Map<String, dynamic>>.unmodifiable(out);
 }
 
 /// Decodes AI SDK v3 `LanguageModelV3Prompt`-style JSON into a [Prompt].
@@ -92,6 +92,87 @@ Map<String, dynamic> _encodeV3PromptMessage(
     'content': content,
     if (providerOptions.isNotEmpty) 'providerOptions': providerOptions,
   };
+}
+
+List<Map<String, dynamic>> _encodeV3PromptMessages(
+  PromptMessage message, {
+  required V3PromptDataEncoding dataEncoding,
+}) {
+  if (message.role == ChatRole.system) {
+    return [
+      _encodeV3PromptMessage(message, dataEncoding: dataEncoding),
+    ];
+  }
+
+  final baseRole = switch (message.role) {
+    ChatRole.user => 'user',
+    ChatRole.assistant => 'assistant',
+    ChatRole.system => 'system',
+  };
+
+  final providerOptions = message.providerOptions;
+  final out = <Map<String, dynamic>>[];
+
+  final current = <Map<String, dynamic>>[];
+  void flushCurrent() {
+    if (current.isEmpty) return;
+    out.add({
+      'role': baseRole,
+      'content': List<Map<String, dynamic>>.unmodifiable(current),
+      if (providerOptions.isNotEmpty) 'providerOptions': providerOptions,
+    });
+    current.clear();
+  }
+
+  for (final part in message.parts) {
+    if (part is ToolResultPart) {
+      flushCurrent();
+      out.add({
+        'role': 'tool',
+        'content': _encodeV3ToolMessageParts(part: part),
+        if (providerOptions.isNotEmpty) 'providerOptions': providerOptions,
+      });
+      continue;
+    }
+
+    current.addAll(
+      _encodeV3PromptPartsForMessage(
+        role: message.role,
+        part: part,
+        dataEncoding: dataEncoding,
+      ),
+    );
+  }
+
+  flushCurrent();
+  return List<Map<String, dynamic>>.unmodifiable(out);
+}
+
+List<Map<String, dynamic>> _encodeV3ToolMessageParts({
+  required ToolResultPart part,
+}) {
+  final toolResult = part.toolResult;
+  final parsed = _decodeJsonIfPossible(toolResult.function.arguments);
+  final output = _normalizeAndValidateToolResultOutput(parsed) ??
+      _normalizeAndValidateToolResultOutput(toolResult.function.arguments) ??
+      {
+        'type': 'text',
+        'value': toolResult.function.arguments,
+      };
+
+  final mergedProviderOptions =
+      _mergeProviderOptions(toolResult.providerOptions, part.providerOptions);
+
+  return [
+    {
+      'type': 'tool-result',
+      'toolCallId': toolResult.id,
+      'toolName': toolResult.function.name,
+      'output': output,
+      if (mergedProviderOptions.isNotEmpty)
+        'providerOptions': mergedProviderOptions,
+    },
+  ];
 }
 
 List<Map<String, dynamic>> _encodeV3PromptPartsForMessage({
@@ -242,31 +323,11 @@ List<Map<String, dynamic>> _encodeV3PromptPartsForMessage({
         :final toolResult,
         providerOptions: final providerOptions,
       ):
-      if (role != ChatRole.assistant) {
-        throw const FormatException(
-          'v3 prompt: tool-result parts are only supported in assistant messages.',
-        );
-      }
-
-      final mergedProviderOptions =
-          _mergeProviderOptions(toolResult.providerOptions, providerOptions);
-      final parsed = _decodeJsonIfPossible(toolResult.function.arguments);
-      final output = _normalizeToolResultOutput(parsed) ??
-          _normalizeToolResultOutput(toolResult.function.arguments) ??
-          {
-            'type': 'text',
-            'value': toolResult.function.arguments,
-          };
-
-      out.add({
-        'type': 'tool-result',
-        'toolCallId': toolResult.id,
-        'toolName': toolResult.function.name,
-        'output': output,
-        if (mergedProviderOptions.isNotEmpty)
-          'providerOptions': mergedProviderOptions,
-      });
-      return out;
+      // Tool results are encoded as separate `role: 'tool'` messages by
+      // [_encodeV3PromptMessages] to match the AI SDK v3 prompt shape.
+      throw const FormatException(
+        'v3 prompt: ToolResultPart must be encoded via tool role messages.',
+      );
   }
 }
 
@@ -299,6 +360,7 @@ PromptMessage _decodeV3PromptMessage(Map<String, dynamic> obj) {
   final role = switch (roleRaw) {
     'user' => ChatRole.user,
     'assistant' => ChatRole.assistant,
+    'tool' => ChatRole.user,
     _ => throw FormatException('v3 prompt: unsupported role: $roleRaw'),
   };
 
@@ -310,6 +372,7 @@ PromptMessage _decodeV3PromptMessage(Map<String, dynamic> obj) {
     parts.add(
       _decodeV3PromptPart(
         role: role,
+        roleRaw: roleRaw,
         obj: item.cast<String, dynamic>(),
       ),
     );
@@ -324,6 +387,7 @@ PromptMessage _decodeV3PromptMessage(Map<String, dynamic> obj) {
 
 PromptPart _decodeV3PromptPart({
   required ChatRole role,
+  required String roleRaw,
   required Map<String, dynamic> obj,
 }) {
   final type = obj['type'];
@@ -344,6 +408,11 @@ PromptPart _decodeV3PromptPart({
       return TextPart(text, providerOptions: providerOptions);
 
     case 'file':
+      if (roleRaw == 'tool') {
+        throw const FormatException(
+          'v3 prompt: tool messages cannot contain file parts.',
+        );
+      }
       final mediaType = obj['mediaType'];
       if (mediaType is! String || mediaType.isEmpty) {
         throw const FormatException(
@@ -407,11 +476,6 @@ PromptPart _decodeV3PromptPart({
       );
 
     case 'tool-result':
-      if (role != ChatRole.assistant) {
-        throw const FormatException(
-          'v3 prompt: tool-result parts are only supported in assistant messages.',
-        );
-      }
       final toolCallId = obj['toolCallId'];
       final toolName = obj['toolName'];
       final output = obj['output'];
@@ -423,16 +487,31 @@ PromptPart _decodeV3PromptPart({
         throw const FormatException(
             'v3 prompt tool-result missing "toolName".');
       }
+      if (roleRaw != 'assistant' && roleRaw != 'tool') {
+        throw FormatException(
+          "v3 prompt: tool-result parts are not supported in role '$roleRaw'.",
+        );
+      }
+      final normalizedOutput = _normalizeAndValidateToolResultOutput(output);
+      if (normalizedOutput == null) {
+        throw const FormatException('v3 prompt tool-result missing "output".');
+      }
       return ToolResultPart(
         ToolCall(
           id: toolCallId,
           callType: 'function',
           function: FunctionCall(
             name: toolName,
-            arguments: jsonEncode(_normalizeJsonLike(output)),
+            arguments: jsonEncode(normalizedOutput),
           ),
           providerOptions: providerOptions,
         ),
+        overrideRole: ChatRole.user,
+      );
+
+    case 'tool-approval-response':
+      throw const FormatException(
+        'v3 prompt: tool-approval-response is not supported yet.',
       );
 
     default:
@@ -533,28 +612,8 @@ Object? _decodeJsonIfPossible(String content) {
   }
 }
 
-Object? _normalizeToolResultOutput(Object? parsed) {
-  if (parsed is Map) {
-    final type = parsed['type'];
-    if (type is String && type.isNotEmpty) {
-      // If it already looks like a LanguageModelV3ToolResultOutput, preserve it.
-      if (parsed.containsKey('value') || parsed.containsKey('reason')) {
-        return _normalizeJsonLike(parsed);
-      }
-    }
-    // Otherwise treat as JSON.
-    return {
-      'type': 'json',
-      'value': _normalizeJsonLike(parsed),
-    };
-  }
-
-  if (parsed is List) {
-    return {
-      'type': 'json',
-      'value': _normalizeJsonLike(parsed),
-    };
-  }
+Map<String, dynamic>? _normalizeAndValidateToolResultOutput(Object? parsed) {
+  if (parsed == null) return null;
 
   if (parsed is String) {
     return {
@@ -570,7 +629,223 @@ Object? _normalizeToolResultOutput(Object? parsed) {
     };
   }
 
-  return null;
+  if (parsed is List) {
+    return {
+      'type': 'json',
+      'value': _normalizeJsonLike(parsed),
+    };
+  }
+
+  if (parsed is! Map) return null;
+
+  final typeRaw = parsed['type'];
+  if (typeRaw is! String || typeRaw.isEmpty) {
+    return {
+      'type': 'json',
+      'value': _normalizeJsonLike(parsed),
+    };
+  }
+
+  Map<String, dynamic> normalizeMap(Map value) =>
+      value.map((k, v) => MapEntry(k.toString(), _normalizeJsonLike(v)));
+
+  switch (typeRaw) {
+    case 'text':
+      final value = parsed['value'];
+      if (value is! String) {
+        throw const FormatException(
+          'v3 prompt tool-result output type=text requires string "value".',
+        );
+      }
+      return {'type': 'text', 'value': value};
+
+    case 'json':
+      if (!parsed.containsKey('value')) {
+        throw const FormatException(
+          'v3 prompt tool-result output type=json requires "value".',
+        );
+      }
+      return {'type': 'json', 'value': _normalizeJsonLike(parsed['value'])};
+
+    case 'execution-denied':
+      final reason = parsed['reason'];
+      if (reason != null && reason is! String) {
+        throw const FormatException(
+          'v3 prompt tool-result output type=execution-denied requires string "reason" when present.',
+        );
+      }
+      return {
+        'type': 'execution-denied',
+        if (reason is String && reason.isNotEmpty) 'reason': reason,
+      };
+
+    case 'error-text':
+      final value = parsed['value'];
+      if (value is! String) {
+        throw const FormatException(
+          'v3 prompt tool-result output type=error-text requires string "value".',
+        );
+      }
+      return {'type': 'error-text', 'value': value};
+
+    case 'error-json':
+      if (!parsed.containsKey('value')) {
+        throw const FormatException(
+          'v3 prompt tool-result output type=error-json requires "value".',
+        );
+      }
+      return {
+        'type': 'error-json',
+        'value': _normalizeJsonLike(parsed['value'])
+      };
+
+    case 'content':
+      final value = parsed['value'];
+      if (value is! List) {
+        throw const FormatException(
+          'v3 prompt tool-result output type=content requires list "value".',
+        );
+      }
+
+      final items = <Map<String, dynamic>>[];
+      for (final item in value) {
+        if (item is! Map) {
+          throw const FormatException(
+            'v3 prompt tool-result output content items must be objects.',
+          );
+        }
+        final itemType = item['type'];
+        if (itemType is! String || itemType.isEmpty) {
+          throw const FormatException(
+            'v3 prompt tool-result output content item missing non-empty "type".',
+          );
+        }
+
+        switch (itemType) {
+          case 'text':
+            final text = item['text'];
+            if (text is! String) {
+              throw const FormatException(
+                'v3 prompt tool-result output content item type=text requires string "text".',
+              );
+            }
+            items.add({'type': 'text', 'text': text});
+            break;
+
+          case 'file-data':
+            final data = item['data'];
+            final mediaType = item['mediaType'];
+            if (data is! String || data.isEmpty) {
+              throw const FormatException(
+                'v3 prompt tool-result output content item type=file-data requires non-empty string "data".',
+              );
+            }
+            if (mediaType is! String || mediaType.isEmpty) {
+              throw const FormatException(
+                'v3 prompt tool-result output content item type=file-data requires non-empty string "mediaType".',
+              );
+            }
+            final filename = item['filename'];
+            if (filename != null && filename is! String) {
+              throw const FormatException(
+                'v3 prompt tool-result output content item type=file-data requires string "filename" when present.',
+              );
+            }
+            items.add({
+              'type': 'file-data',
+              'data': data,
+              'mediaType': mediaType,
+              if (filename is String && filename.isNotEmpty)
+                'filename': filename,
+            });
+            break;
+
+          case 'file-url':
+            final url = item['url'];
+            if (url is! String || url.isEmpty) {
+              throw const FormatException(
+                'v3 prompt tool-result output content item type=file-url requires non-empty string "url".',
+              );
+            }
+            items.add({'type': 'file-url', 'url': url});
+            break;
+
+          case 'image-data':
+            final data = item['data'];
+            final mediaType = item['mediaType'];
+            if (data is! String || data.isEmpty) {
+              throw const FormatException(
+                'v3 prompt tool-result output content item type=image-data requires non-empty string "data".',
+              );
+            }
+            if (mediaType is! String || mediaType.isEmpty) {
+              throw const FormatException(
+                'v3 prompt tool-result output content item type=image-data requires non-empty string "mediaType".',
+              );
+            }
+            items.add({
+              'type': 'image-data',
+              'data': data,
+              'mediaType': mediaType,
+            });
+            break;
+
+          case 'image-url':
+            final url = item['url'];
+            if (url is! String || url.isEmpty) {
+              throw const FormatException(
+                'v3 prompt tool-result output content item type=image-url requires non-empty string "url".',
+              );
+            }
+            items.add({'type': 'image-url', 'url': url});
+            break;
+
+          case 'file-id':
+          case 'image-file-id':
+            final fileId = item['fileId'];
+            if (fileId is String && fileId.isNotEmpty) {
+              items.add({'type': itemType, 'fileId': fileId});
+              break;
+            }
+            if (fileId is Map) {
+              final normalized = <String, String>{};
+              fileId.forEach((k, v) {
+                if (k is String && v is String && v.isNotEmpty) {
+                  normalized[k] = v;
+                }
+              });
+              if (normalized.isEmpty) {
+                throw const FormatException(
+                  'v3 prompt tool-result output content item fileId map must contain string values.',
+                );
+              }
+              items.add({'type': itemType, 'fileId': normalized});
+              break;
+            }
+            throw const FormatException(
+              'v3 prompt tool-result output content item requires "fileId" (string or map).',
+            );
+
+          case 'custom':
+            items.add(normalizeMap(item));
+            break;
+
+          default:
+            throw FormatException(
+              'v3 prompt tool-result output content item unsupported type: $itemType',
+            );
+        }
+      }
+
+      return {
+        'type': 'content',
+        'value': items,
+      };
+
+    default:
+      throw FormatException(
+          'v3 prompt tool-result output unsupported type: $typeRaw');
+  }
 }
 
 Object? _normalizeJsonLike(Object? value) {
