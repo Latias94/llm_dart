@@ -267,6 +267,10 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
         final toolCallId = _requireString(obj, 'toolCallId');
         final toolName = _requireString(obj, 'toolName');
         final result = obj['result'];
+        if (result == null) {
+          throw const FormatException(
+              'v3 tool-result missing non-null "result".');
+        }
         final isError = obj['isError'] == true ? true : null;
         final preliminary = obj['preliminary'] == true ? true : null;
         final dynamicTool = obj['dynamic'] == true ? true : null;
@@ -639,12 +643,20 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
       return out;
 
     case LLMToolResultPart(:final result):
+      final decoded = _decodeJsonIfPossible(result.content);
+      if (decoded == null) {
+        throw StateError(
+          'v3 tool-result.result must be non-null. '
+          'ToolResult.content decoded to null for toolCallId='
+          '${result.toolCallId}.',
+        );
+      }
       return [
         {
           'type': 'tool-result',
           'toolCallId': result.toolCallId,
           'toolName': state.toolInput.toolNameForToolCallId(result.toolCallId),
-          'result': _decodeJsonIfPossible(result.content),
+          'result': decoded,
           if (result.isError) 'isError': true,
           if (result.metadata != null && result.metadata!.isNotEmpty)
             'providerMetadata': {'tool': result.metadata},
@@ -681,6 +693,12 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         isDynamic: final dynamicTool,
         providerMetadata: final pm,
       ):
+      if (result == null) {
+        throw StateError(
+          'v3 tool-result.result must be non-null. '
+          'LLMProviderToolResultPart.result was null for toolCallId=$id.',
+        );
+      }
       return [
         {
           'type': 'tool-result',
