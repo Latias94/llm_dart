@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'package:llm_dart_provider_utils/utils/request_metadata_sanitizer.dart';
 import 'client.dart';
 import 'config.dart';
 import 'model_path.dart';
@@ -108,6 +109,22 @@ class GoogleChat
     return str.isEmpty ? null : str;
   }
 
+  bool _emitRequestMetadataEnabled() {
+    final original = config.originalConfig;
+    if (original == null) return false;
+
+    final scoped = _scopedProviderOptions(original.providerOptions);
+    if (scoped == null) return false;
+
+    final direct = scoped['emitRequestMetadata'];
+    if (direct is bool) return direct;
+
+    final legacy = scoped['emit_request_metadata'];
+    if (legacy is bool) return legacy;
+
+    return false;
+  }
+
   bool _supportedFileUrlsOnlyFromProviderOptions(
     ProviderOptions providerOptions,
   ) {
@@ -209,15 +226,22 @@ class GoogleChat
     CancelToken? cancelToken,
   }) async {
     final built = await _buildRequestAsync(messages, tools, false, cancelToken);
-    final responseData = await client.postJson(
+    final requestMetadata = _emitRequestMetadataEnabled()
+        ? LLMRequestMetadataPart(
+            body: sanitizeRequestBodyForMetadata(built.body),
+          )
+        : null;
+    final responseWithHeaders = await client.postJsonWithHeaders(
       _chatEndpoint,
       built.body,
       cancelToken: cancelToken,
     );
     return _parseResponse(
-      responseData,
+      responseWithHeaders.json,
       built.toolNameMapping,
       toolWarnings: built.toolWarnings,
+      responseHeaders: responseWithHeaders.headers,
+      requestMetadata: requestMetadata,
     );
   }
 
@@ -241,15 +265,22 @@ class GoogleChat
   }) async {
     final built =
         await _buildPromptRequestAsync(prompt, tools, false, cancelToken);
-    final responseData = await client.postJson(
+    final requestMetadata = _emitRequestMetadataEnabled()
+        ? LLMRequestMetadataPart(
+            body: sanitizeRequestBodyForMetadata(built.body),
+          )
+        : null;
+    final responseWithHeaders = await client.postJsonWithHeaders(
       _chatEndpoint,
       built.body,
       cancelToken: cancelToken,
     );
     return _parseResponse(
-      responseData,
+      responseWithHeaders.json,
       built.toolNameMapping,
       toolWarnings: built.toolWarnings,
+      responseHeaders: responseWithHeaders.headers,
+      requestMetadata: requestMetadata,
     );
   }
 
@@ -271,6 +302,12 @@ class GoogleChat
     final requestBody = built.body;
     final toolNameMapping = built.toolNameMapping;
     final toolWarnings = built.toolWarnings;
+
+    if (_emitRequestMetadataEnabled()) {
+      yield LLMRequestMetadataPart(
+        body: sanitizeRequestBodyForMetadata(requestBody),
+      );
+    }
 
     if (toolWarnings.isNotEmpty) {
       yield LLMStreamStartPart(warnings: toolWarnings);
@@ -476,11 +513,13 @@ class GoogleChat
       return parts;
     }
 
-    final stream = client.postStreamRaw(
+    final streamed = await client.postStreamRawWithHeaders(
       _chatStreamEndpoint,
       requestBody,
       cancelToken: cancelToken,
     );
+    final responseHeaders = streamed.headers;
+    final stream = streamed.stream;
 
     await for (final chunk in stream) {
       if (useSse == null) {
@@ -513,6 +552,7 @@ class GoogleChat
             didEmitResponseMetadata = true;
             yield LLMResponseMetadataPart(
               model: modelVersion,
+              headers: responseHeaders.isEmpty ? null : responseHeaders,
               raw: {'modelVersion': modelVersion},
             );
           }
@@ -1035,17 +1075,39 @@ class GoogleChat
     Map<String, dynamic> responseData,
     ToolNameMapping toolNameMapping, {
     List<Map<String, dynamic>> toolWarnings = const [],
+    Map<String, String>? responseHeaders,
+    LLMRequestMetadataPart? requestMetadata,
   }) {
     // Check for Google API errors first
     if (responseData.containsKey('error')) {
       throw _handleGoogleApiError(responseData);
     }
 
+    final mv = responseData['modelVersion'] as String?;
+    final model =
+        (mv != null && mv.isNotEmpty) ? mv : (responseData['model'] as String?);
+    final headers = (responseHeaders != null && responseHeaders.isNotEmpty)
+        ? responseHeaders
+        : null;
+
+    final responseMetadata = (model != null || headers != null)
+        ? LLMResponseMetadataPart(
+            model: model,
+            headers: headers,
+            body: responseData,
+            raw: {
+              if (mv != null && mv.isNotEmpty) 'modelVersion': mv,
+            },
+          )
+        : null;
+
     return GoogleChatResponse(
       responseData,
       toolNameMapping: toolNameMapping,
       toolWarnings: toolWarnings,
       providerOptionsName: _providerOptionsName,
+      responseMetadata: responseMetadata,
+      requestMetadata: requestMetadata,
     );
   }
 
@@ -1152,7 +1214,7 @@ class GoogleChat
     var systemMessagesAllowed = true;
 
     for (final message in prompt.messages) {
-      if (message.role == ChatRole.system) {
+      if (message.role == PromptRole.system) {
         if (!systemMessagesAllowed) {
           throw const InvalidRequestError(
             'Google system messages are only supported at the beginning of the conversation.',
@@ -1202,11 +1264,13 @@ class GoogleChat
         currentParts.clear();
       }
 
-      String roleToGoogle(ChatRole role) =>
-          role == ChatRole.user ? 'user' : 'model';
+      String roleToGoogle(PromptRole role) =>
+          (role == PromptRole.user || role == PromptRole.tool)
+              ? 'user'
+              : 'model';
 
       for (final part in message.parts) {
-        ChatRole partRole;
+        PromptRole partRole;
         if (part case ToolCallPart(:final overrideRole)) {
           partRole = overrideRole ?? message.role;
         } else if (part case ToolResultPart(:final overrideRole)) {
@@ -1223,7 +1287,7 @@ class GoogleChat
 
         final effectiveProviderOptions =
             mergeProviderOptions(message.providerOptions, part.providerOptions);
-        final thoughtSignature = partRole == ChatRole.assistant
+        final thoughtSignature = partRole == PromptRole.assistant
             ? _thoughtSignatureFromProviderOptions(effectiveProviderOptions)
             : null;
 
@@ -1379,27 +1443,25 @@ class GoogleChat
               },
             });
 
-          case ToolCallPart(:final toolCall, :final overrideRole):
+          case ToolCallPart(
+              :final toolName,
+              :final input,
+              :final overrideRole,
+            ):
             final effectiveRole = overrideRole ?? message.role;
-            if (effectiveRole != ChatRole.assistant) {
+            if (effectiveRole != PromptRole.assistant) {
               throw const InvalidRequestError(
                 'ToolCallPart must be emitted from an assistant message.',
               );
             }
             final callThoughtSignature = _thoughtSignatureFromProviderOptions(
-                    toolCall.providerOptions) ??
+                    effectiveProviderOptions) ??
                 thoughtSignature;
-            Map<String, dynamic> args;
-            try {
-              final decoded = jsonDecode(toolCall.function.arguments);
-              args = decoded is Map
-                  ? Map<String, dynamic>.from(decoded)
-                  : const <String, dynamic>{};
-            } catch (_) {
-              args = const <String, dynamic>{};
-            }
+            final args = input is Map
+                ? Map<String, dynamic>.from(input)
+                : const <String, dynamic>{};
             final requestName =
-                toolNameMapping.requestNameForFunction(toolCall.function.name);
+                toolNameMapping.requestNameForFunction(toolName);
             currentParts.add({
               'functionCall': {
                 'name': requestName,
@@ -1409,22 +1471,30 @@ class GoogleChat
                 'thoughtSignature': callThoughtSignature,
             });
 
-          case ToolResultPart(:final toolResult, :final overrideRole):
+          case ToolResultPart(
+              :final toolName,
+              :final output,
+              :final overrideRole,
+            ):
             final effectiveRole = overrideRole ?? message.role;
-            if (effectiveRole != ChatRole.user) {
+            if (effectiveRole != PromptRole.tool) {
               throw const InvalidRequestError(
-                'ToolResultPart must be emitted from a user message.',
+                'ToolResultPart must be emitted from a tool message.',
               );
             }
-            final requestName = toolNameMapping
-                .requestNameForFunction(toolResult.function.name);
-            final raw = toolResult.function.arguments;
-            Object content;
-            try {
-              content = jsonDecode(raw);
-            } catch (_) {
-              content = raw;
-            }
+            final requestName =
+                toolNameMapping.requestNameForFunction(toolName);
+            final Object content = switch (output) {
+              ToolResultTextOutput(:final value) => value,
+              ToolResultErrorTextOutput(:final value) => value,
+              ToolResultExecutionDeniedOutput(:final reason) =>
+                (reason != null && reason.trim().isNotEmpty)
+                    ? reason.trim()
+                    : 'Tool execution denied.',
+              ToolResultJsonOutput(:final value) => value,
+              ToolResultErrorJsonOutput(:final value) => value,
+              ToolResultContentOutput() => output.toJson()['value']!,
+            };
             currentParts.add({
               'functionResponse': {
                 'name': requestName,
@@ -1434,6 +1504,11 @@ class GoogleChat
                 },
               },
             });
+
+          case ToolApprovalResponsePart():
+            throw const InvalidRequestError(
+              'ToolApprovalResponsePart is not supported by the Google provider.',
+            );
         }
       }
 
@@ -2268,20 +2343,36 @@ class GoogleChat
 }
 
 /// Google chat response implementation
-class GoogleChatResponse implements ChatResponseWithFinishReason {
+class GoogleChatResponse
+    implements
+        ChatResponseWithFinishReason,
+        ChatResponseWithResponseMetadata,
+        ChatResponseWithRequestMetadata {
   final Map<String, dynamic> _rawResponse;
   final ToolNameMapping? _toolNameMapping;
   final List<Map<String, dynamic>> _toolWarnings;
   final String _providerOptionsName;
+  final LLMResponseMetadataPart? _responseMetadata;
+  final LLMRequestMetadataPart? _requestMetadata;
 
   GoogleChatResponse(
     this._rawResponse, {
     ToolNameMapping? toolNameMapping,
     List<Map<String, dynamic>> toolWarnings = const [],
     String providerOptionsName = 'google',
+    LLMResponseMetadataPart? responseMetadata,
+    LLMRequestMetadataPart? requestMetadata,
   })  : _toolNameMapping = toolNameMapping,
         _toolWarnings = List<Map<String, dynamic>>.unmodifiable(toolWarnings),
-        _providerOptionsName = providerOptionsName;
+        _providerOptionsName = providerOptionsName,
+        _responseMetadata = responseMetadata,
+        _requestMetadata = requestMetadata;
+
+  @override
+  LLMResponseMetadataPart? get responseMetadata => _responseMetadata;
+
+  @override
+  LLMRequestMetadataPart? get requestMetadata => _requestMetadata;
 
   @override
   String? get text {

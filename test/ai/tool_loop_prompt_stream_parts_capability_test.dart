@@ -113,7 +113,7 @@ void main() {
         promptIr: const Prompt(
           messages: [
             PromptMessage(
-              role: ChatRole.user,
+              role: PromptRole.user,
               parts: [
                 FileUrlPart(
                   mime: FileMime.pdf,

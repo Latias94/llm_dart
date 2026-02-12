@@ -145,7 +145,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart('Describe this image:'),
               ImagePart(

@@ -28,7 +28,7 @@ void main() {
 
       final prompt = Prompt(messages: [
         PromptMessage(
-          role: ChatRole.user,
+          role: PromptRole.user,
           parts: const [
             TextPart('A'),
             TextPart('B'),
@@ -50,7 +50,7 @@ void main() {
 
       final prompt = Prompt(messages: [
         PromptMessage(
-          role: ChatRole.user,
+          role: PromptRole.user,
           providerOptions: const {
             'anthropic': {'cacheControl': messageCache},
           },
@@ -74,7 +74,7 @@ void main() {
 
       final prompt = Prompt(messages: [
         PromptMessage(
-          role: ChatRole.user,
+          role: PromptRole.user,
           providerOptions: const {
             'anthropic': {'cacheControl': messageCache},
           },
@@ -113,12 +113,12 @@ void main() {
       final prompt = Prompt(messages: [
         PromptMessage.user('hi'),
         PromptMessage(
-          role: ChatRole.assistant,
+          role: PromptRole.assistant,
           providerOptions: const {
             'anthropic': {'cacheControl': messageCache},
           },
           parts: [
-            ToolCallPart(
+            ToolCallPart.fromToolCall(
               toolCall,
               providerOptions: const {
                 'anthropic': {'cacheControl': partCache},
@@ -159,18 +159,18 @@ void main() {
       final prompt = Prompt(messages: [
         PromptMessage.user('hi'),
         PromptMessage(
-          role: ChatRole.assistant,
+          role: PromptRole.assistant,
           parts: [
-            ToolCallPart(toolCall),
+            ToolCallPart.fromToolCall(toolCall),
           ],
         ),
         PromptMessage(
-          role: ChatRole.user,
+          role: PromptRole.tool,
           providerOptions: const {
             'anthropic': {'cacheControl': messageCache},
           },
           parts: [
-            ToolResultPart(
+            ToolResultPart.fromToolCall(
               toolResult,
               providerOptions: const {
                 'anthropic': {'cacheControl': partCache},

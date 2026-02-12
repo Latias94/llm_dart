@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'package:llm_dart_provider_utils/utils/request_metadata_options.dart';
+import 'package:llm_dart_provider_utils/utils/request_metadata_sanitizer.dart';
 import 'client.dart';
 import 'config.dart';
 
@@ -13,6 +15,7 @@ import 'config.dart';
 class OllamaChat
     implements
         ChatCapability,
+        ModelIdentityCapability,
         ChatStreamPartsCapability,
         PromptChatCapability,
         PromptChatStreamPartsCapability {
@@ -22,7 +25,20 @@ class OllamaChat
 
   OllamaChat(this.client, this.config);
 
+  @override
+  String get providerId => 'ollama';
+
+  @override
+  String get modelId => config.model;
+
   String get chatEndpoint => '/api/chat';
+
+  bool _emitRequestMetadataEnabled() {
+    final original = config.originalConfig;
+    if (original == null) return false;
+
+    return emitRequestMetadataEnabled(original.providerOptions, 'ollama');
+  }
 
   @override
   Future<ChatResponse> chatWithTools(
@@ -36,12 +52,21 @@ class OllamaChat
 
     try {
       final requestBody = _buildRequestBody(messages, tools, false);
-      final responseData = await client.postJson(
+      final requestMetadata = _emitRequestMetadataEnabled()
+          ? LLMRequestMetadataPart(
+              body: sanitizeRequestBodyForMetadata(requestBody),
+            )
+          : null;
+      final responseWithHeaders = await client.postJsonWithHeaders(
         chatEndpoint,
         requestBody,
         cancelToken: cancelToken,
       );
-      return _parseResponse(responseData);
+      return _parseResponse(
+        responseWithHeaders.json,
+        responseHeaders: responseWithHeaders.headers,
+        requestMetadata: requestMetadata,
+      );
     } on DioException catch (e) {
       throw await DioErrorHandler.handleDioError(e, 'Ollama');
     } catch (e) {
@@ -61,12 +86,21 @@ class OllamaChat
 
     try {
       final requestBody = _buildRequestBodyFromPrompt(prompt, tools, false);
-      final responseData = await client.postJson(
+      final requestMetadata = _emitRequestMetadataEnabled()
+          ? LLMRequestMetadataPart(
+              body: sanitizeRequestBodyForMetadata(requestBody),
+            )
+          : null;
+      final responseWithHeaders = await client.postJsonWithHeaders(
         chatEndpoint,
         requestBody,
         cancelToken: cancelToken,
       );
-      return _parseResponse(responseData);
+      return _parseResponse(
+        responseWithHeaders.json,
+        responseHeaders: responseWithHeaders.headers,
+        requestMetadata: requestMetadata,
+      );
     } on DioException catch (e) {
       throw await DioErrorHandler.handleDioError(e, 'Ollama');
     } catch (e) {
@@ -125,6 +159,12 @@ class OllamaChat
     Map<String, dynamic> requestBody, {
     CancelToken? cancelToken,
   }) async* {
+    if (_emitRequestMetadataEnabled()) {
+      yield LLMRequestMetadataPart(
+        body: sanitizeRequestBodyForMetadata(requestBody),
+      );
+    }
+
     final jsonlParser = JsonlChunkParser();
 
     var inText = false;
@@ -145,11 +185,13 @@ class OllamaChat
     var didEmitResponseMetadata = false;
 
     try {
-      final stream = client.postStreamRaw(
+      final streamed = await client.postStreamRawWithHeaders(
         chatEndpoint,
         requestBody,
         cancelToken: cancelToken,
       );
+      final responseHeaders = streamed.headers;
+      final stream = streamed.stream;
 
       await for (final chunk in stream) {
         for (final json in jsonlParser.parseObjects(chunk)) {
@@ -159,6 +201,7 @@ class OllamaChat
               didEmitResponseMetadata = true;
               yield LLMResponseMetadataPart(
                 model: model,
+                headers: responseHeaders.isEmpty ? null : responseHeaders,
                 raw: {'model': model},
               );
             }
@@ -398,8 +441,30 @@ class OllamaChat
   }
 
   /// Parse response from Ollama API
-  OllamaChatResponse _parseResponse(Map<String, dynamic> responseData) {
-    return OllamaChatResponse(responseData);
+  OllamaChatResponse _parseResponse(
+    Map<String, dynamic> responseData, {
+    Map<String, String>? responseHeaders,
+    LLMRequestMetadataPart? requestMetadata,
+  }) {
+    final model = responseData['model'] as String? ?? config.model;
+    final headers = (responseHeaders != null && responseHeaders.isNotEmpty)
+        ? responseHeaders
+        : null;
+
+    final responseMetadata = (model.isNotEmpty || headers != null)
+        ? LLMResponseMetadataPart(
+            model: model.isNotEmpty ? model : null,
+            headers: headers,
+            body: responseData,
+            raw: {'model': model},
+          )
+        : null;
+
+    return OllamaChatResponse(
+      responseData,
+      responseMetadata: responseMetadata,
+      requestMetadata: requestMetadata,
+    );
   }
 
   /// Build request body for Ollama API
@@ -629,7 +694,7 @@ class OllamaChat
     final out = <Map<String, dynamic>>[];
 
     void addNormalMessage({
-      required ChatRole role,
+      required PromptRole role,
       required String content,
       List<String>? images,
       List<Map<String, dynamic>>? toolCalls,
@@ -648,7 +713,7 @@ class OllamaChat
       return out;
     }
 
-    ChatRole currentRole = message.role;
+    PromptRole currentRole = message.role;
     final contentSegments = <String>[];
     final images = <String>[];
     final toolCalls = <Map<String, dynamic>>[];
@@ -672,54 +737,90 @@ class OllamaChat
 
     for (final part in message.parts) {
       switch (part) {
-        case ToolResultPart(:final toolResult, :final overrideRole):
+        case ToolResultPart(
+            :final toolName,
+            :final output,
+            :final overrideRole,
+          ):
           final effectiveRole = overrideRole ?? message.role;
-          if (effectiveRole != ChatRole.user) {
+          if (effectiveRole != PromptRole.tool) {
             throw const InvalidRequestError(
-              'ToolResultPart must be emitted from a user message.',
+              'ToolResultPart must be emitted from a tool message.',
             );
           }
 
           flushIfNotEmpty();
 
+          String content;
+          switch (output) {
+            case ToolResultTextOutput(:final value):
+            case ToolResultErrorTextOutput(:final value):
+              content = value;
+              break;
+            case ToolResultExecutionDeniedOutput(:final reason):
+              content = (reason != null && reason.trim().isNotEmpty)
+                  ? reason.trim()
+                  : 'Tool execution denied.';
+              break;
+            case ToolResultJsonOutput(:final value):
+            case ToolResultErrorJsonOutput(:final value):
+              content = jsonEncode(value);
+              break;
+            case ToolResultContentOutput():
+              content = jsonEncode(output.toJson()['value']);
+              break;
+          }
+
           out.add({
             'role': 'tool',
-            'content': toolResult.function.arguments,
-            'tool_name': toolResult.function.name,
+            'content': content,
+            'tool_name': toolName,
           });
           break;
 
-        case ToolCallPart(:final toolCall, :final overrideRole):
+        case ToolApprovalResponsePart():
+          throw const InvalidRequestError(
+            'ToolApprovalResponsePart is not supported by the Ollama Chat API.',
+          );
+
+        case ToolCallPart(
+            :final toolName,
+            :final input,
+            :final overrideRole,
+          ):
           final effectiveRole = overrideRole ?? message.role;
-          if (effectiveRole != ChatRole.assistant) {
+          if (effectiveRole != PromptRole.assistant) {
             throw const InvalidRequestError(
               'ToolCallPart must be emitted from an assistant message.',
             );
           }
 
-          if (currentRole != ChatRole.assistant) {
+          if (currentRole != PromptRole.assistant) {
             flushIfNotEmpty();
-            currentRole = ChatRole.assistant;
+            currentRole = PromptRole.assistant;
           }
 
-          dynamic args;
-          try {
-            args = jsonDecode(toolCall.function.arguments);
-          } catch (e) {
+          if (input is! Map) {
             throw InvalidRequestError(
-              'Invalid JSON tool call arguments for tool "${toolCall.function.name}": $e',
+              'Ollama tool call arguments must be an object. '
+              'Got ${input.runtimeType} for tool "$toolName".',
             );
           }
 
           toolCalls.add({
             'function': {
-              'name': toolCall.function.name,
-              'arguments': args,
+              'name': toolName,
+              'arguments': input,
             },
           });
           break;
 
         case TextPart(:final text):
+          if (message.role == PromptRole.tool) {
+            throw const InvalidRequestError(
+              "Tool role messages cannot contain text parts for the Ollama Chat API.",
+            );
+          }
           if (currentRole != message.role) {
             flushIfNotEmpty();
             currentRole = message.role;
@@ -728,6 +829,11 @@ class OllamaChat
           break;
 
         case ImagePart(:final data, :final text):
+          if (message.role == PromptRole.tool) {
+            throw const InvalidRequestError(
+              "Tool role messages cannot contain image parts for the Ollama Chat API.",
+            );
+          }
           if (currentRole != message.role) {
             flushIfNotEmpty();
             currentRole = message.role;
@@ -828,10 +934,27 @@ Map<String, dynamic> _toOllamaToolCallJson(ToolCall toolCall) {
 }
 
 /// Ollama chat response implementation
-class OllamaChatResponse implements ChatResponseWithFinishReason {
+class OllamaChatResponse
+    implements
+        ChatResponseWithFinishReason,
+        ChatResponseWithResponseMetadata,
+        ChatResponseWithRequestMetadata {
   final Map<String, dynamic> _rawResponse;
+  final LLMResponseMetadataPart? _responseMetadata;
+  final LLMRequestMetadataPart? _requestMetadata;
 
-  OllamaChatResponse(this._rawResponse);
+  OllamaChatResponse(
+    this._rawResponse, {
+    LLMResponseMetadataPart? responseMetadata,
+    LLMRequestMetadataPart? requestMetadata,
+  })  : _responseMetadata = responseMetadata,
+        _requestMetadata = requestMetadata;
+
+  @override
+  LLMResponseMetadataPart? get responseMetadata => _responseMetadata;
+
+  @override
+  LLMRequestMetadataPart? get requestMetadata => _requestMetadata;
 
   @override
   String? get text {

@@ -10,7 +10,7 @@ void main() {
         messages: [
           PromptMessage.system('You are a helpful assistant.'),
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: const [
               TextPart('hi'),
               FilePart(
@@ -24,30 +24,20 @@ void main() {
             },
           ),
           PromptMessage(
-            role: ChatRole.assistant,
+            role: PromptRole.assistant,
             parts: [
               const TextPart('ok'),
-              ToolCallPart(
-                ToolCall(
+              ToolCallPart.fromToolCall(
+                const ToolCall(
                   id: 'call_1',
                   callType: 'function',
-                  function: const FunctionCall(
+                  function: FunctionCall(
                     name: 'search',
                     arguments: '{"q":"dart"}',
                   ),
-                  providerOptions: const {
+                  providerOptions: {
                     'xai': {'mode': 'fast'}
                   },
-                ),
-              ),
-              ToolResultPart(
-                ToolCall(
-                  id: 'call_1',
-                  callType: 'function',
-                  function: const FunctionCall(
-                    name: 'search',
-                    arguments: '{"type":"json","value":{"ok":true}}',
-                  ),
                 ),
               ),
               const FileUrlPart(
@@ -57,6 +47,16 @@ void main() {
               ImagePart(
                 mime: ImageMime.png,
                 data: Uint8List.fromList([1, 2, 3]),
+              ),
+            ],
+          ),
+          PromptMessage(
+            role: PromptRole.tool,
+            parts: const [
+              ToolResultPart(
+                'call_1',
+                'search',
+                ToolResultJsonOutput({'ok': true}),
               ),
             ],
           ),

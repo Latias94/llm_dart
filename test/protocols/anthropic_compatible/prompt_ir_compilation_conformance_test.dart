@@ -15,7 +15,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: const [
               TextPart('part1'),
               TextPart('part2'),
@@ -74,11 +74,17 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart('Before'),
-              ToolCallPart(toolCall, overrideRole: ChatRole.assistant),
-              ToolResultPart(toolResult, overrideRole: ChatRole.user),
+              ToolCallPart.fromToolCall(
+                toolCall,
+                overrideRole: PromptRole.assistant,
+              ),
+              ToolResultPart.fromToolCall(
+                toolResult,
+                overrideRole: PromptRole.tool,
+              ),
               const TextPart('After'),
             ],
           ),
@@ -137,7 +143,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FileUrlPart(
                 mime: FileMime.pdf,

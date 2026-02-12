@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'package:llm_dart_provider_utils/utils/response_metadata_sanitizer.dart';
 import 'package:logging/logging.dart';
 import 'dio_strategy.dart';
 import 'openai_request_config.dart';
@@ -542,13 +543,13 @@ class OpenAIClient {
             'or send file data inline. Got id: "$id"',
           );
 
-        case ToolCallPart() || ToolResultPart():
+        case ToolCallPart() || ToolResultPart() || ToolApprovalResponsePart():
           return const [];
       }
     }
 
     for (final message in prompt.messages) {
-      if (message.role == ChatRole.system) {
+      if (message.role == PromptRole.system) {
         flush();
 
         final texts = <String>[];
@@ -572,7 +573,13 @@ class OpenAIClient {
       }
 
       for (final part in message.parts) {
-        ChatRole effectiveRole;
+        if (part case ToolApprovalResponsePart()) {
+          throw const InvalidRequestError(
+            'ToolApprovalResponsePart is not supported by OpenAI-compatible providers.',
+          );
+        }
+
+        PromptRole effectiveRole;
         if (part case ToolCallPart(:final overrideRole)) {
           effectiveRole = overrideRole ?? message.role;
         } else if (part case ToolResultPart(:final overrideRole)) {
@@ -581,8 +588,13 @@ class OpenAIClient {
           effectiveRole = message.role;
         }
 
-        if (part case ToolCallPart(:final toolCall)) {
-          if (effectiveRole != ChatRole.assistant) {
+        if (part
+            case ToolCallPart(
+              :final toolCallId,
+              :final toolName,
+              :final input,
+            )) {
+          if (effectiveRole != PromptRole.assistant) {
             throw const InvalidRequestError(
               'ToolCallPart must be emitted from an assistant message.',
             );
@@ -593,30 +605,86 @@ class OpenAIClient {
           }
           currentRole ??= 'assistant';
           currentName ??= message.name;
-          currentToolCalls.add(toolCall);
+
+          final mergedProviderOptions = <String, Map<String, dynamic>>{
+            ...message.providerOptions,
+            for (final entry in part.providerOptions.entries)
+              entry.key: {
+                ...?message.providerOptions[entry.key],
+                ...entry.value,
+              },
+          };
+
+          String args;
+          try {
+            args = jsonEncode(input);
+          } catch (_) {
+            args = jsonEncode(input.toString());
+          }
+
+          currentToolCalls.add(
+            ToolCall(
+              id: toolCallId,
+              callType: 'function',
+              function: FunctionCall(
+                name: toolName,
+                arguments: args,
+              ),
+              providerOptions: mergedProviderOptions,
+            ),
+          );
           continue;
         }
 
-        if (part case ToolResultPart(:final toolResult)) {
-          if (effectiveRole != ChatRole.user) {
+        if (part
+            case ToolResultPart(
+              :final toolCallId,
+              :final output,
+            )) {
+          if (effectiveRole != PromptRole.tool) {
             throw const InvalidRequestError(
-              'ToolResultPart must be emitted from a user message.',
+              'ToolResultPart must be emitted from a tool message.',
             );
           }
 
           flush();
+
+          String content;
+          switch (output) {
+            case ToolResultTextOutput(:final value):
+            case ToolResultErrorTextOutput(:final value):
+              content = value;
+              break;
+            case ToolResultExecutionDeniedOutput(:final reason):
+              content = (reason != null && reason.trim().isNotEmpty)
+                  ? reason.trim()
+                  : 'Tool execution denied.';
+              break;
+            case ToolResultJsonOutput(:final value):
+            case ToolResultErrorJsonOutput(:final value):
+              content = jsonEncode(value);
+              break;
+            case ToolResultContentOutput():
+              content = jsonEncode(output.toJson()['value']);
+              break;
+          }
+
           apiMessages.add({
             'role': 'tool',
-            'tool_call_id': toolResult.id,
-            'content': toolResult.function.arguments.isNotEmpty
-                ? toolResult.function.arguments
-                : 'Tool result',
+            'tool_call_id': toolCallId,
+            'content': content.isNotEmpty ? content : 'Tool result',
           });
           continue;
         }
 
-        final targetRole =
-            effectiveRole == ChatRole.user ? 'user' : 'assistant';
+        final targetRole = switch (effectiveRole) {
+          PromptRole.user => 'user',
+          PromptRole.assistant => 'assistant',
+          PromptRole.system => throw const InvalidRequestError(
+              'System messages must be handled separately.'),
+          PromptRole.tool => throw const InvalidRequestError(
+              "Tool role messages cannot contain non-tool parts."),
+        };
         if (currentRole != null && currentRole != targetRole) {
           flush();
         }
@@ -674,6 +742,21 @@ class OpenAIClient {
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
   }) async {
+    final result = await postJsonWithHeaders(
+      endpoint,
+      body,
+      cancelToken: cancelToken,
+    );
+    return result.json;
+  }
+
+  /// Make a POST request with JSON body and return JSON + response headers (best-effort).
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postJsonWithHeaders(
+    String endpoint,
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       final resolvedEndpoint = _resolveEndpoint(endpoint);
 
@@ -703,10 +786,22 @@ class OpenAIClient {
         _handleErrorResponse(response, resolvedEndpoint);
       }
 
+      final headerMap = <String, String>{};
+      response.headers.forEach((name, values) {
+        if (values.isEmpty) return;
+        headerMap[name] = values.join(',');
+      });
+      final sanitizedHeaders = sanitizeResponseHeadersForMetadata(headerMap);
+
       // Use unified response parsing while keeping OpenAI's error handling
-      return HttpResponseHandler.parseJsonResponse(
-        response.data,
-        providerName: config.providerName,
+      return (
+        json: HttpResponseHandler.parseJsonResponse(
+          response.data,
+          providerName: config.providerName,
+        ),
+        headers: sanitizedHeaders.isEmpty
+            ? const <String, String>{}
+            : Map<String, String>.unmodifiable(sanitizedHeaders),
       );
     } on DioException catch (e) {
       throw await handleDioError(e);
@@ -957,6 +1052,21 @@ class OpenAIClient {
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
   }) async* {
+    final streamed = await postStreamRawWithHeaders(
+      endpoint,
+      body,
+      cancelToken: cancelToken,
+    );
+    yield* streamed.stream;
+  }
+
+  /// Make a POST request and return SSE stream + response headers (best-effort).
+  Future<({Stream<String> stream, Map<String, String> headers})>
+      postStreamRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+  }) async {
     // Reset SSE buffer for new stream
     resetSSEBuffer();
 
@@ -988,6 +1098,13 @@ class OpenAIClient {
         _handleErrorResponse(response, resolvedEndpoint);
       }
 
+      final headerMap = <String, String>{};
+      response.headers.forEach((name, values) {
+        if (values.isEmpty) return;
+        headerMap[name] = values.join(',');
+      });
+      final sanitizedHeaders = sanitizeResponseHeadersForMetadata(headerMap);
+
       // Handle ResponseBody properly for streaming
       final responseBody = response.data;
       Stream<List<int>> stream;
@@ -1001,21 +1118,30 @@ class OpenAIClient {
             'Unexpected response type: ${responseBody.runtimeType}');
       }
 
-      // Use UTF-8 stream decoder to handle incomplete byte sequences
-      final decoder = Utf8StreamDecoder();
+      Stream<String> decodedStream() async* {
+        // Use UTF-8 stream decoder to handle incomplete byte sequences
+        final decoder = Utf8StreamDecoder();
 
-      await for (final chunk in stream) {
-        final decoded = decoder.decode(chunk);
-        if (decoded.isNotEmpty) {
-          yield decoded;
+        await for (final chunk in stream) {
+          final decoded = decoder.decode(chunk);
+          if (decoded.isNotEmpty) {
+            yield decoded;
+          }
+        }
+
+        // Flush any remaining bytes
+        final remaining = decoder.flush();
+        if (remaining.isNotEmpty) {
+          yield remaining;
         }
       }
 
-      // Flush any remaining bytes
-      final remaining = decoder.flush();
-      if (remaining.isNotEmpty) {
-        yield remaining;
-      }
+      return (
+        stream: decodedStream(),
+        headers: sanitizedHeaders.isEmpty
+            ? const <String, String>{}
+            : Map<String, String>.unmodifiable(sanitizedHeaders),
+      );
     } on DioException catch (e) {
       throw await handleDioError(e);
     } catch (e) {

@@ -15,11 +15,11 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [TextPart('Hi')],
           ),
           PromptMessage(
-            role: ChatRole.assistant,
+            role: PromptRole.assistant,
             parts: const [
               TextPart('should be ignored when contentBlocks are present'),
             ],

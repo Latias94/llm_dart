@@ -43,7 +43,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FileUrlPart(
                 mime: FileMime.pdf,
@@ -98,7 +98,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FileUrlPart(
                 mime: FileMime.pdf,

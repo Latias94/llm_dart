@@ -30,7 +30,7 @@ class OpenAIRequestBuilder {
 
     // Prefer explicit system messages over config.systemPrompt.
     final hasSystemMessage =
-        prompt.messages.any((m) => m.role == ChatRole.system);
+        prompt.messages.any((m) => m.role == PromptRole.system);
     if (!hasSystemMessage && config.systemPrompt != null) {
       apiMessages.insert(0, {'role': 'system', 'content': config.systemPrompt});
     }

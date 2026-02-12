@@ -68,7 +68,7 @@ class _FakePromptToolModel extends ChatCapability
     }
 
     final assistant = prompt.messages.firstWhere(
-      (m) => m.role == ChatRole.assistant,
+      (m) => m.role == PromptRole.assistant,
       orElse: () => throw StateError('expected assistant message in prompt'),
     );
     final anthropic = assistant.protocolPayloads['anthropic'];
@@ -166,7 +166,7 @@ void main() {
         promptIr: Prompt(
           messages: const [
             PromptMessage(
-              role: ChatRole.user,
+              role: PromptRole.user,
               parts: [
                 FileUrlPart(
                   mime: FileMime.pdf,

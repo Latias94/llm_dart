@@ -293,7 +293,7 @@ void main() {
           promptIr: const Prompt(
             messages: [
               PromptMessage(
-                role: ChatRole.user,
+                role: PromptRole.user,
                 parts: [
                   FileUrlPart(
                     mime: FileMime.pdf,
@@ -332,17 +332,23 @@ void main() {
       ).toList();
 
       expect(parts[0], isA<LLMStreamStartPart>());
-      expect(parts[1], isA<LLMTextDeltaPart>());
-      expect((parts[1] as LLMTextDeltaPart).delta, 'a');
-      expect(parts[2], isA<LLMReasoningDeltaPart>());
-      expect((parts[2] as LLMReasoningDeltaPart).delta, 'b');
-      expect(parts[3], isA<LLMToolCallStartPart>());
+      expect(parts[1], isA<LLMTextStartPart>());
+      expect(parts[2], isA<LLMTextDeltaPart>());
+      expect((parts[2] as LLMTextDeltaPart).delta, 'a');
+      expect(parts[3], isA<LLMReasoningStartPart>());
+      expect(parts[4], isA<LLMReasoningDeltaPart>());
+      expect((parts[4] as LLMReasoningDeltaPart).delta, 'b');
+      expect(parts[5], isA<LLMToolCallStartPart>());
       expect(
-        (parts[3] as LLMToolCallStartPart).toolCall.function.name,
+        (parts[5] as LLMToolCallStartPart).toolCall.function.name,
         't',
       );
-      expect(parts[4], isA<LLMFinishPart>());
-      expect((parts[4] as LLMFinishPart).response.text, 'done');
+      expect(parts[6], isA<LLMReasoningEndPart>());
+      expect((parts[6] as LLMReasoningEndPart).thinking, 'b');
+      expect(parts[7], isA<LLMTextEndPart>());
+      expect((parts[7] as LLMTextEndPart).text, 'a');
+      expect(parts[8], isA<LLMFinishPart>());
+      expect((parts[8] as LLMFinishPart).response.text, 'done');
     });
 
     test(
@@ -362,7 +368,7 @@ void main() {
           promptIr: const Prompt(
             messages: [
               PromptMessage(
-                role: ChatRole.user,
+                role: PromptRole.user,
                 parts: [
                   FileIdPart(
                     mime: FileMime.pdf,
@@ -454,7 +460,7 @@ void main() {
           promptIr: const Prompt(
             messages: [
               PromptMessage(
-                role: ChatRole.user,
+                role: PromptRole.user,
                 parts: [
                   FileUrlPart(
                     mime: FileMime.pdf,

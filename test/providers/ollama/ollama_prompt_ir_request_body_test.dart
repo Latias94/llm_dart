@@ -15,15 +15,33 @@ class _CapturingOllamaClient extends OllamaClient {
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
   }) async {
+    final responseWithHeaders = await postJsonWithHeaders(
+      endpoint,
+      data,
+      cancelToken: cancelToken,
+    );
+    return responseWithHeaders.json;
+  }
+
+  @override
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postJsonWithHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
     lastRequestBody = data;
-    return {
-      'model': 'test-model',
-      'message': {
-        'role': 'assistant',
-        'content': 'ok',
+    return (
+      json: {
+        'model': 'test-model',
+        'message': {
+          'role': 'assistant',
+          'content': 'ok',
+        },
+        'done': true,
       },
-      'done': true,
-    };
+      headers: const <String, String>{},
+    );
   }
 }
 
@@ -42,7 +60,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart('Describe:'),
               ImagePart(
@@ -87,13 +105,13 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.assistant,
+            role: PromptRole.assistant,
             parts: [
-              ToolCallPart(
-                ToolCall(
+              ToolCallPart.fromToolCall(
+                const ToolCall(
                   id: 'call_1',
                   callType: 'function',
-                  function: const FunctionCall(
+                  function: FunctionCall(
                     name: 'get_weather',
                     arguments: '{"city":"Tokyo"}',
                   ),
@@ -102,13 +120,13 @@ void main() {
             ],
           ),
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.tool,
             parts: [
-              ToolResultPart(
-                ToolCall(
+              ToolResultPart.fromToolCall(
+                const ToolCall(
                   id: 'call_1',
                   callType: 'function',
-                  function: const FunctionCall(
+                  function: FunctionCall(
                     name: 'get_weather',
                     arguments: '11 degrees celsius',
                   ),

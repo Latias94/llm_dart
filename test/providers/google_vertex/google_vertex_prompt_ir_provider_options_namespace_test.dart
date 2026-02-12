@@ -40,7 +40,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.assistant,
+            role: PromptRole.assistant,
             parts: [
               TextPart(
                 'Thinking...',

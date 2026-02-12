@@ -8,7 +8,7 @@ void main() {
         () => Prompt(
           messages: [
             PromptMessage(
-              role: ChatRole.system,
+              role: PromptRole.system,
               parts: const [
                 ImagePart(
                   mime: ImageMime.png,
@@ -25,7 +25,7 @@ void main() {
         () => Prompt(
           messages: [
             PromptMessage(
-              role: ChatRole.system,
+              role: PromptRole.system,
               parts: const [
                 ImageUrlPart(url: 'https://example.com/a.png'),
               ],
@@ -39,7 +39,7 @@ void main() {
         () => Prompt(
           messages: [
             PromptMessage(
-              role: ChatRole.system,
+              role: PromptRole.system,
               parts: const [
                 FilePart(
                   mime: FileMime.pdf,
@@ -58,17 +58,12 @@ void main() {
         () => Prompt(
           messages: [
             PromptMessage(
-              role: ChatRole.user,
+              role: PromptRole.user,
               parts: [
                 ToolCallPart(
-                  ToolCall(
-                    id: 'call_1',
-                    callType: 'function',
-                    function: const FunctionCall(
-                      name: 'get_weather',
-                      arguments: '{}',
-                    ),
-                  ),
+                  toolCallId: 'call_1',
+                  toolName: 'get_weather',
+                  input: const <String, dynamic>{},
                 ),
               ],
             ),
@@ -78,22 +73,17 @@ void main() {
       );
     });
 
-    test('ToolResultPart must be emitted from user message', () {
+    test('ToolResultPart must be emitted from tool message', () {
       expect(
         () => Prompt(
           messages: [
             PromptMessage(
-              role: ChatRole.assistant,
+              role: PromptRole.assistant,
               parts: [
                 ToolResultPart(
-                  ToolCall(
-                    id: 'call_1',
-                    callType: 'function',
-                    function: const FunctionCall(
-                      name: 'get_weather',
-                      arguments: '{"ok":true}',
-                    ),
-                  ),
+                  'call_1',
+                  'get_weather',
+                  ToolResultJsonOutput(const {'ok': true}),
                 ),
               ],
             ),
@@ -108,7 +98,7 @@ void main() {
       final messages = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             providerOptions: const {
               'openai': {'foo': 1, 'bar': 1},
               'anthropic': {
@@ -144,26 +134,27 @@ void main() {
 
     test('ToolCallPart merges providerOptions into ToolCall.providerOptions',
         () {
+      final call = ToolCall(
+        id: 'call_1',
+        callType: 'function',
+        function: const FunctionCall(
+          name: 'get_weather',
+          arguments: '{}',
+        ),
+        providerOptions: const {
+          'openai': {'existing': 1},
+        },
+      );
       final messages = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.assistant,
+            role: PromptRole.assistant,
             providerOptions: const {
               'openai': {'foo': 1},
             },
             parts: [
-              ToolCallPart(
-                ToolCall(
-                  id: 'call_1',
-                  callType: 'function',
-                  function: const FunctionCall(
-                    name: 'get_weather',
-                    arguments: '{}',
-                  ),
-                  providerOptions: const {
-                    'openai': {'existing': 1},
-                  },
-                ),
+              ToolCallPart.fromToolCall(
+                call,
                 providerOptions: const {
                   'openai': {'foo': 2},
                 },
@@ -186,7 +177,7 @@ void main() {
       );
       expect(
         msg.providerOptions['openai'],
-        equals({'foo': 2}),
+        equals({'existing': 1, 'foo': 2}),
       );
     });
 
@@ -194,7 +185,7 @@ void main() {
       final messages = Prompt(
         messages: const [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             protocolPayloads: {
               'google': {
                 'fileUri': 'gs://bucket/file.pdf',
@@ -224,7 +215,7 @@ void main() {
         () => const Prompt(
           messages: [
             PromptMessage(
-              role: ChatRole.user,
+              role: PromptRole.user,
               parts: [
                 FileUrlPart(
                   mime: FileMime.pdf,
@@ -243,7 +234,7 @@ void main() {
         () => const Prompt(
           messages: [
             PromptMessage(
-              role: ChatRole.user,
+              role: PromptRole.user,
               parts: [
                 FileIdPart(
                   mime: FileMime.pdf,

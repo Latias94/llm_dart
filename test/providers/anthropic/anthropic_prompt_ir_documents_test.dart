@@ -34,7 +34,7 @@ void main() {
 
       final prompt = Prompt(messages: [
         PromptMessage(
-          role: ChatRole.user,
+          role: PromptRole.user,
           parts: const [
             TextPart('Look:'),
             ImageUrlPart(
@@ -65,7 +65,7 @@ void main() {
 
       final prompt = Prompt(messages: [
         PromptMessage(
-          role: ChatRole.user,
+          role: PromptRole.user,
           parts: [
             FilePart(
               mime: FileMime.txt,

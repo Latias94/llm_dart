@@ -33,7 +33,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart('Describe this image:'),
               ImagePart(
@@ -91,11 +91,11 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.system,
+            role: PromptRole.system,
             parts: [TextPart('You are concise.')],
           ),
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [TextPart('Hi')],
           ),
         ],
@@ -139,7 +139,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart('Here is the document:'),
               FilePart(
@@ -195,7 +195,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.assistant,
+            role: PromptRole.assistant,
             parts: [
               TextPart(
                 'Thinking...',
@@ -251,7 +251,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.assistant,
+            role: PromptRole.assistant,
             parts: [
               ImageUrlPart(url: 'https://example.com/a.png'),
             ],
@@ -291,7 +291,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart('Here is the document:'),
               const FileUrlPart(
@@ -347,7 +347,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.assistant,
+            role: PromptRole.assistant,
             parts: [
               FileUrlPart(
                 mime: FileMime.pdf,
@@ -390,7 +390,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FileUrlPart(
                 mime: FileMime.pdf,
@@ -435,7 +435,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FileUrlPart(
                 mime: FileMime.pdf,
@@ -479,7 +479,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FileUrlPart(
                 mime: FileMime.pdf,
@@ -533,7 +533,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               ImageUrlPart(url: 'https://example.com/a.png'),
             ],
@@ -573,7 +573,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: const [
               TextPart('Here is the document:'),
               FileIdPart(

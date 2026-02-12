@@ -46,11 +46,14 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart('A'),
               const TextPart('B'),
-              ToolCallPart(call, overrideRole: ChatRole.assistant),
+              ToolCallPart.fromToolCall(
+                call,
+                overrideRole: PromptRole.assistant,
+              ),
             ],
           ),
         ],

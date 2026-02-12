@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'package:llm_dart_provider_utils/utils/request_metadata_sanitizer.dart';
 
 class _FunctionCallAccum {
   String? name;
@@ -24,6 +26,7 @@ Map<String, dynamic> _stringKeyedMap(Map input) {
 class XAIResponses
     implements
         ChatCapability,
+        ModelIdentityCapability,
         ChatStreamPartsCapability,
         PromptChatCapability,
         PromptChatStreamPartsCapability {
@@ -32,7 +35,19 @@ class XAIResponses
 
   XAIResponses(this.client, this.config);
 
+  @override
+  String get providerId => config.providerId;
+
+  @override
+  String get modelId => config.model;
+
   String get responsesEndpoint => 'responses';
+
+  bool _emitRequestMetadataEnabled() {
+    return config.getProviderOption<bool>('emitRequestMetadata') ??
+        config.getProviderOption<bool>('emit_request_metadata') ??
+        false;
+  }
 
   @override
   Future<ChatResponse> chat(
@@ -53,12 +68,19 @@ class XAIResponses
       tools: tools,
       stream: false,
     );
-    final responseData = await client.postJson(
+    final requestMetadata = _emitRequestMetadataEnabled()
+        ? LLMRequestMetadataPart(body: sanitizeRequestBodyForMetadata(body))
+        : null;
+    final responseWithHeaders = await client.postJsonWithHeaders(
       responsesEndpoint,
       body,
       cancelToken: cancelToken,
     );
-    return _parseResponse(responseData);
+    return _parseResponse(
+      responseWithHeaders.json,
+      responseHeaders: responseWithHeaders.headers,
+      requestMetadata: requestMetadata,
+    );
   }
 
   @override
@@ -72,12 +94,19 @@ class XAIResponses
       tools: tools,
       stream: false,
     );
-    final responseData = await client.postJson(
+    final requestMetadata = _emitRequestMetadataEnabled()
+        ? LLMRequestMetadataPart(body: sanitizeRequestBodyForMetadata(body))
+        : null;
+    final responseWithHeaders = await client.postJsonWithHeaders(
       responsesEndpoint,
       body,
       cancelToken: cancelToken,
     );
-    return _parseResponse(responseData);
+    return _parseResponse(
+      responseWithHeaders.json,
+      responseHeaders: responseWithHeaders.headers,
+      requestMetadata: requestMetadata,
+    );
   }
 
   @override
@@ -107,6 +136,11 @@ class XAIResponses
       tools: tools,
       stream: true,
     );
+    if (_emitRequestMetadataEnabled()) {
+      yield LLMRequestMetadataPart(
+        body: sanitizeRequestBodyForMetadata(body),
+      );
+    }
     yield* _chatStreamPartsFromBody(body, cancelToken: cancelToken);
   }
 
@@ -122,6 +156,11 @@ class XAIResponses
       tools: tools,
       stream: true,
     );
+    if (_emitRequestMetadataEnabled()) {
+      yield LLMRequestMetadataPart(
+        body: sanitizeRequestBodyForMetadata(body),
+      );
+    }
     yield* _chatStreamPartsFromBody(body, cancelToken: cancelToken);
   }
 
@@ -192,11 +231,13 @@ class XAIResponses
     String? lastProviderMetadataJson;
 
     try {
-      final stream = client.postStreamRaw(
+      final streamed = await client.postStreamRawWithHeaders(
         responsesEndpoint,
         body,
         cancelToken: cancelToken,
       );
+      final responseHeaders = streamed.headers;
+      final stream = streamed.stream;
 
       await for (final chunk in stream) {
         final jsonList = client.parseSSEChunk(chunk);
@@ -237,6 +278,7 @@ class XAIResponses
                         isUtc: true,
                       ),
                 model: responseModel,
+                headers: responseHeaders.isEmpty ? null : responseHeaders,
                 status: responseStatus,
                 raw: raw.isEmpty ? null : raw,
               );
@@ -603,6 +645,7 @@ class XAIResponses
                           isUtc: true,
                         ),
                   model: responseModel,
+                  headers: responseHeaders.isEmpty ? null : responseHeaders,
                   status: responseStatus,
                   raw: raw.isEmpty ? null : raw,
                 );
@@ -889,12 +932,12 @@ class XAIResponses
     }
 
     for (final message in prompt.messages) {
-      if (message.role == ChatRole.system) {
+      if (message.role == PromptRole.system) {
         hasSystemMessage = true;
       }
 
       for (final part in message.parts) {
-        ChatRole effectiveRole;
+        PromptRole effectiveRole;
         if (part case ToolCallPart(:final overrideRole)) {
           effectiveRole = overrideRole ?? message.role;
         } else if (part case ToolResultPart(:final overrideRole)) {
@@ -903,7 +946,7 @@ class XAIResponses
           effectiveRole = message.role;
         }
 
-        if (effectiveRole == ChatRole.system) {
+        if (effectiveRole == PromptRole.system) {
           if (part case TextPart(:final text)) {
             ensureRole('system');
             if (currentText.isNotEmpty) currentText.write('\n\n');
@@ -915,43 +958,89 @@ class XAIResponses
           );
         }
 
-        if (part case ToolCallPart(:final toolCall)) {
-          if (effectiveRole != ChatRole.assistant) {
+        if (part case ToolApprovalResponsePart()) {
+          throw const InvalidRequestError(
+            'ToolApprovalResponsePart is not supported by xAI Responses.',
+          );
+        }
+
+        if (part
+            case ToolCallPart(
+              :final toolCallId,
+              :final toolName,
+              input: final toolInput,
+            )) {
+          if (effectiveRole != PromptRole.assistant) {
             throw const InvalidRequestError(
               'ToolCallPart must be emitted from an assistant message.',
             );
           }
           flushText();
+          String arguments;
+          try {
+            arguments = jsonEncode(toolInput);
+          } catch (_) {
+            arguments = jsonEncode(toolInput.toString());
+          }
           input.add({
             'type': 'function_call',
-            'id': toolCall.id,
-            'call_id': toolCall.id,
-            'name': toolCall.function.name,
-            'arguments': toolCall.function.arguments,
+            'id': toolCallId,
+            'call_id': toolCallId,
+            'name': toolName,
+            'arguments': arguments,
             'status': 'completed',
           });
           continue;
         }
 
-        if (part case ToolResultPart(:final toolResult)) {
-          if (effectiveRole != ChatRole.user) {
+        if (part
+            case ToolResultPart(
+              :final toolCallId,
+              :final output,
+            )) {
+          if (effectiveRole != PromptRole.tool) {
             throw const InvalidRequestError(
-              'ToolResultPart must be emitted from a user message.',
+              'ToolResultPart must be emitted from a tool message.',
             );
           }
           flushText();
+          String content;
+          switch (output) {
+            case ToolResultTextOutput(:final value):
+            case ToolResultErrorTextOutput(:final value):
+              content = value;
+              break;
+            case ToolResultExecutionDeniedOutput(:final reason):
+              content = (reason != null && reason.trim().isNotEmpty)
+                  ? reason.trim()
+                  : 'Tool execution denied.';
+              break;
+            case ToolResultJsonOutput(:final value):
+            case ToolResultErrorJsonOutput(:final value):
+              content = jsonEncode(value);
+              break;
+            case ToolResultContentOutput():
+              content = jsonEncode(output.toJson()['value']);
+              break;
+          }
           input.add({
             'type': 'function_call_output',
-            'call_id': toolResult.id,
-            'output': toolResult.function.arguments.isNotEmpty
-                ? toolResult.function.arguments
-                : 'Tool result',
+            'call_id': toolCallId,
+            'output': content.isNotEmpty ? content : 'Tool result',
           });
           continue;
         }
 
         if (part case TextPart(:final text)) {
-          ensureRole(effectiveRole == ChatRole.user ? 'user' : 'assistant');
+          ensureRole(
+            switch (effectiveRole) {
+              PromptRole.user => 'user',
+              PromptRole.assistant => 'assistant',
+              PromptRole.tool => throw const InvalidRequestError(
+                  "Tool role messages cannot contain text parts."),
+              PromptRole.system => 'system',
+            },
+          );
           if (currentText.isNotEmpty) currentText.write('\n\n');
           currentText.write(text);
           continue;
@@ -1056,7 +1145,11 @@ class XAIResponses
     };
   }
 
-  ChatResponse _parseResponse(Map<String, dynamic> responseData) {
+  ChatResponse _parseResponse(
+    Map<String, dynamic> responseData, {
+    Map<String, String>? responseHeaders,
+    LLMRequestMetadataPart? requestMetadata,
+  }) {
     final output = responseData['output'] as List?;
 
     final text = StringBuffer();
@@ -1148,6 +1241,29 @@ class XAIResponses
     final model = responseData['model'] as String?;
     final status = responseData['status'] as String?;
 
+    final createdAt = responseData['created_at'];
+    DateTime? timestamp;
+    if (createdAt is int) {
+      timestamp =
+          DateTime.fromMillisecondsSinceEpoch(createdAt * 1000, isUtc: true);
+    }
+
+    final headers = (responseHeaders != null && responseHeaders.isNotEmpty)
+        ? responseHeaders
+        : null;
+
+    final responseMetadata =
+        (id != null || model != null || timestamp != null || headers != null)
+            ? LLMResponseMetadataPart(
+                id: id,
+                timestamp: timestamp,
+                model: model,
+                headers: headers,
+                body: responseData,
+                status: status,
+              )
+            : null;
+
     return XAIResponsesChatResponse(
       providerId: config.providerId,
       text: text.toString(),
@@ -1157,13 +1273,19 @@ class XAIResponses
       responseId: id,
       model: model,
       status: status,
+      responseMetadata: responseMetadata,
+      requestMetadata: requestMetadata,
       serverToolCalls: serverToolCalls.isNotEmpty ? serverToolCalls : null,
       sources: sources.isNotEmpty ? sources : null,
     );
   }
 }
 
-class XAIResponsesChatResponse implements ChatResponseWithFinishReason {
+class XAIResponsesChatResponse
+    implements
+        ChatResponseWithFinishReason,
+        ChatResponseWithResponseMetadata,
+        ChatResponseWithRequestMetadata {
   final String providerId;
   @override
   final String? text;
@@ -1177,6 +1299,8 @@ class XAIResponsesChatResponse implements ChatResponseWithFinishReason {
   final String? responseId;
   final String? model;
   final String? status;
+  final LLMResponseMetadataPart? _responseMetadata;
+  final LLMRequestMetadataPart? _requestMetadata;
   final List<Map<String, dynamic>>? serverToolCalls;
   final List<Map<String, dynamic>>? sources;
 
@@ -1189,9 +1313,18 @@ class XAIResponsesChatResponse implements ChatResponseWithFinishReason {
     this.responseId,
     this.model,
     this.status,
+    LLMResponseMetadataPart? responseMetadata,
+    LLMRequestMetadataPart? requestMetadata,
     this.serverToolCalls,
     this.sources,
-  });
+  })  : _responseMetadata = responseMetadata,
+        _requestMetadata = requestMetadata;
+
+  @override
+  LLMResponseMetadataPart? get responseMetadata => _responseMetadata;
+
+  @override
+  LLMRequestMetadataPart? get requestMetadata => _requestMetadata;
 
   @override
   LLMFinishReason? get finishReason {

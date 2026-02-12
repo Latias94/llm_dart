@@ -66,7 +66,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
     var didSeeNonSystemMessage = false;
 
     for (final message in prompt.messages) {
-      if (message.role == ChatRole.system) {
+      if (message.role == PromptRole.system) {
         if (didSeeNonSystemMessage) {
           throw const InvalidRequestError(
             'Multiple system messages that are separated by user/assistant '
@@ -123,6 +123,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
         case FileIdPart():
         case ToolCallPart():
         case ToolResultPart():
+        case ToolApprovalResponsePart():
           throw const InvalidRequestError(
             'System messages cannot contain non-text prompt parts.',
           );
@@ -136,6 +137,17 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
     PromptMessage message,
     ToolNameMapping toolNameMapping,
   ) {
+    String roleToAnthropicWire(PromptRole role) {
+      return switch (role) {
+        PromptRole.user => 'user',
+        PromptRole.assistant => 'assistant',
+        // Anthropic Messages API does not have a dedicated `tool` role.
+        // Tool results are represented as `tool_result` blocks in `user` messages.
+        PromptRole.tool => 'user',
+        PromptRole.system => 'system',
+      };
+    }
+
     // Protocol-internal: if we have provider-native Anthropic content blocks
     // attached (e.g. persisted assistant messages with thinking signatures),
     // preserve them verbatim to maintain multi-step tool use continuity.
@@ -150,7 +162,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
         if (blocks.isNotEmpty) {
           return [
             {
-              'role': message.role.name,
+              'role': roleToAnthropicWire(message.role),
               'content': blocks,
             },
           ];
@@ -161,12 +173,13 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
     final segments = <Map<String, dynamic>>[];
 
     final currentContent = <Map<String, dynamic>>[];
-    ChatRole currentRole = message.role;
+    PromptRole currentRole = message.role;
+    var currentWireRole = roleToAnthropicWire(currentRole);
 
     void flush() {
       if (currentContent.isEmpty) return;
       segments.add({
-        'role': currentRole.name,
+        'role': currentWireRole,
         'content': List<Map<String, dynamic>>.from(currentContent),
       });
       currentContent.clear();
@@ -185,16 +198,18 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
 
       Map<String, dynamic>? effectiveCacheControlForPart;
 
-      ChatRole effectiveRole = message.role;
+      PromptRole effectiveRole = message.role;
       if (part case ToolCallPart(:final overrideRole)) {
         effectiveRole = overrideRole ?? message.role;
       } else if (part case ToolResultPart(:final overrideRole)) {
         effectiveRole = overrideRole ?? message.role;
       }
 
-      if (effectiveRole != currentRole) {
+      final effectiveWireRole = roleToAnthropicWire(effectiveRole);
+      if (effectiveWireRole != currentWireRole) {
         flush();
         currentRole = effectiveRole;
+        currentWireRole = effectiveWireRole;
       }
 
       switch (part) {
@@ -376,64 +391,103 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
             'Got id: "$id"',
           );
 
-        case ToolCallPart(:final toolCall):
-          if (effectiveRole != ChatRole.assistant) {
+        case ToolCallPart(
+            :final toolCallId,
+            :final toolName,
+            :final input,
+          ):
+          if (effectiveRole != PromptRole.assistant) {
             throw const InvalidRequestError(
               'ToolCallPart must be emitted from an assistant message.',
             );
           }
 
-          final toolCallCacheControl =
-              _cacheControlFromProviderOptions(toolCall.providerOptions);
-          effectiveCacheControlForPart = partCacheControl ??
-              toolCallCacheControl ??
-              (isLastPart ? messageCacheControl : null);
+          effectiveCacheControlForPart =
+              partCacheControl ?? (isLastPart ? messageCacheControl : null);
 
-          try {
-            final input = jsonDecode(toolCall.function.arguments);
-            final requestName =
-                toolNameMapping.requestNameForFunction(toolCall.function.name);
-            currentContent.add({
-              'type': 'tool_use',
-              'id': toolCall.id,
-              'name': requestName,
-              'input': input,
-              if (effectiveCacheControlForPart != null)
-                'cache_control': effectiveCacheControlForPart,
-            });
-          } catch (e) {
+          if (input is! Map) {
             throw InvalidRequestError(
-              'Invalid JSON tool call arguments for tool '
-              '"${toolCall.function.name}": $e',
+              'Anthropic tool_use input must be an object. '
+              'Got ${input.runtimeType} for tool "$toolName".',
             );
           }
+
+          final requestName = toolNameMapping.requestNameForFunction(toolName);
+          currentContent.add({
+            'type': 'tool_use',
+            'id': toolCallId,
+            'name': requestName,
+            'input': input,
+            if (effectiveCacheControlForPart != null)
+              'cache_control': effectiveCacheControlForPart,
+          });
           break;
 
-        case ToolResultPart(:final toolResult):
-          if (effectiveRole != ChatRole.user) {
+        case ToolResultPart(
+            :final toolCallId,
+            :final output,
+          ):
+          if (effectiveRole != PromptRole.tool) {
             throw const InvalidRequestError(
-              'ToolResultPart must be emitted from a user message.',
+              'ToolResultPart must be emitted from a tool message.',
             );
           }
 
           final toolResultCacheControl =
-              _cacheControlFromProviderOptions(toolResult.providerOptions);
+              _cacheControlFromProviderOptions(output.providerOptions);
           effectiveCacheControlForPart = partCacheControl ??
               toolResultCacheControl ??
               (isLastPart ? messageCacheControl : null);
 
-          final resultContent = toolResult.function.arguments;
-          final isError = _toolResultIsError(resultContent, toolResult);
+          String resultContent;
+          switch (output) {
+            case ToolResultTextOutput(:final value):
+            case ToolResultErrorTextOutput(:final value):
+              resultContent = value;
+              break;
+
+            case ToolResultExecutionDeniedOutput(:final reason):
+              resultContent = (reason != null && reason.trim().isNotEmpty)
+                  ? reason.trim()
+                  : 'Tool execution denied.';
+              break;
+
+            case ToolResultJsonOutput(:final value):
+            case ToolResultErrorJsonOutput(:final value):
+              resultContent = jsonEncode(value);
+              break;
+
+            case ToolResultContentOutput():
+              resultContent = jsonEncode(output.toJson()['value']);
+              break;
+          }
+
+          final mergedProviderOptions = <String, Map<String, dynamic>>{
+            ...part.providerOptions,
+            for (final entry in output.providerOptions.entries)
+              entry.key: {
+                ...?part.providerOptions[entry.key],
+                ...entry.value,
+              },
+          };
+          final isError = output is ToolResultErrorTextOutput ||
+              output is ToolResultErrorJsonOutput ||
+              _toolResultIsError(resultContent, mergedProviderOptions);
 
           currentContent.add({
             'type': 'tool_result',
-            'tool_use_id': toolResult.id,
+            'tool_use_id': toolCallId,
             'content': resultContent,
             'is_error': isError,
             if (effectiveCacheControlForPart != null)
               'cache_control': effectiveCacheControlForPart,
           });
           break;
+
+        case ToolApprovalResponsePart():
+          throw const InvalidRequestError(
+            'ToolApprovalResponsePart is not supported by the Anthropic Messages API.',
+          );
       }
     }
 

@@ -30,7 +30,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart('Describe this image:'),
               ImagePart(
@@ -94,7 +94,7 @@ void main() {
       await chat.chatPrompt(
         const Prompt(
           messages: [
-            PromptMessage(role: ChatRole.user, parts: [TextPart('Hi')]),
+            PromptMessage(role: PromptRole.user, parts: [TextPart('Hi')]),
           ],
         ),
       );
@@ -139,10 +139,13 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart('Before'),
-              ToolResultPart(toolResult),
+              ToolResultPart.fromToolCall(
+                toolResult,
+                overrideRole: PromptRole.tool,
+              ),
               const TextPart('After'),
             ],
           ),
@@ -205,11 +208,11 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.assistant,
+            role: PromptRole.assistant,
             parts: [
               const TextPart('Calling tools...'),
-              ToolCallPart(call1),
-              ToolCallPart(call2),
+              ToolCallPart.fromToolCall(call1),
+              ToolCallPart.fromToolCall(call2),
             ],
           ),
         ],
@@ -261,7 +264,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: const [
               FilePart(mime: FileMime.pdf, data: [1, 2, 3]),
             ],
@@ -315,7 +318,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: const [
               TextPart('Look at this:'),
               FileUrlPart(
@@ -372,7 +375,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FileUrlPart(
                 mime: FileMime.pdf,
@@ -411,7 +414,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FileIdPart(
                 mime: FileMime.pdf,
@@ -450,7 +453,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: const [
               FilePart(mime: FileMime.wav, data: [1, 2, 3]),
             ],
@@ -503,7 +506,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FilePart(
                 mime: FileMime.txt,
@@ -560,9 +563,9 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.assistant,
+            role: PromptRole.assistant,
             parts: [
-              ToolCallPart(call),
+              ToolCallPart.fromToolCall(call),
             ],
           ),
         ],

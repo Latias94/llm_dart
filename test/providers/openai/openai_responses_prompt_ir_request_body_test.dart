@@ -36,7 +36,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart('Describe this image:'),
               ImagePart(
@@ -76,7 +76,8 @@ void main() {
       );
     });
 
-    test('splits ToolResultPart into tool-role input messages', () async {
+    test('splits ToolResultPart into function_call_output input items',
+        () async {
       final config = OpenAIConfig(
         apiKey: 'test-key',
         baseUrl: 'https://example.com',
@@ -112,10 +113,13 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart('Before'),
-              ToolResultPart(toolResult),
+              ToolResultPart.fromToolCall(
+                toolResult,
+                overrideRole: PromptRole.tool,
+              ),
               const TextPart('After'),
             ],
           ),
@@ -128,15 +132,31 @@ void main() {
       expect(input, isNotNull);
       expect(input, hasLength(3));
 
-      expect(input![0], equals({'role': 'user', 'content': 'Before'}));
+      expect(
+        input![0],
+        equals({
+          'role': 'user',
+          'content': [
+            {'type': 'input_text', 'text': 'Before'}
+          ],
+        }),
+      );
       expect(
           input[1],
           equals({
-            'role': 'tool',
-            'tool_call_id': 'call_1',
-            'content': '{"temp":25}'
+            'type': 'function_call_output',
+            'call_id': 'call_1',
+            'output': '{"temp":25}'
           }));
-      expect(input[2], equals({'role': 'user', 'content': 'After'}));
+      expect(
+        input[2],
+        equals({
+          'role': 'user',
+          'content': [
+            {'type': 'input_text', 'text': 'After'}
+          ],
+        }),
+      );
     });
 
     test('encodes PDF FilePart as input_file with data URL (AI SDK parity)',
@@ -167,7 +187,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: const [
               FilePart(mime: FileMime.pdf, data: [1, 2, 3]),
             ],
@@ -224,7 +244,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FileUrlPart(
                 mime: FileMime.pdf,
@@ -283,7 +303,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FileIdPart(
                 mime: FileMime.pdf,
@@ -342,7 +362,7 @@ void main() {
       final prompt = Prompt(
         messages: [
           const PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               FileIdPart(
                 mime: FileMime.png,

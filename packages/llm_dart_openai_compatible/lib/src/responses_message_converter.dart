@@ -146,18 +146,22 @@ class OpenAIResponsesMessageConverter {
   /// - Expands tool results into separate `tool` role messages.
   /// - Collects tool calls on assistant messages into `tool_calls`.
   static List<Map<String, dynamic>> buildInputMessagesFromPrompt(
-    Prompt prompt,
-  ) {
+    Prompt prompt, {
+    // OpenAI Responses API `store` defaults to true. This controls whether the
+    // model may emit stored items and whether tool approval responses should be
+    // referenced via `item_reference`.
+    bool store = true,
+  }) {
     final apiMessages = <Map<String, dynamic>>[];
+    final processedApprovalIds = <String>{};
 
     String? currentRole;
     String? currentName;
     final currentContentParts = <Map<String, dynamic>>[];
-    final currentToolCalls = <ToolCall>[];
 
     void flush() {
       if (currentRole == null) return;
-      if (currentContentParts.isEmpty && currentToolCalls.isEmpty) {
+      if (currentContentParts.isEmpty) {
         currentRole = null;
         currentName = null;
         return;
@@ -169,17 +173,7 @@ class OpenAIResponsesMessageConverter {
       }
 
       if (currentContentParts.isNotEmpty) {
-        if (currentContentParts.length == 1 &&
-            currentContentParts.first['type'] == 'input_text' &&
-            currentToolCalls.isEmpty) {
-          msg['content'] = currentContentParts.first['text'] ?? '';
-        } else {
-          msg['content'] = List<Map<String, dynamic>>.from(currentContentParts);
-        }
-      }
-
-      if (currentToolCalls.isNotEmpty) {
-        msg['tool_calls'] = currentToolCalls.map((t) => t.toJson()).toList();
+        msg['content'] = List<Map<String, dynamic>>.from(currentContentParts);
       }
 
       apiMessages.add(msg);
@@ -187,21 +181,28 @@ class OpenAIResponsesMessageConverter {
       currentRole = null;
       currentName = null;
       currentContentParts.clear();
-      currentToolCalls.clear();
     }
 
-    List<Map<String, dynamic>> toContentParts(PromptPart part) {
+    List<Map<String, dynamic>> toContentParts(
+      PromptPart part, {
+      required String role,
+    }) {
       switch (part) {
         case TextPart(:final text):
           if (text.isEmpty) return const [];
           return [
             {
-              'type': 'input_text',
+              'type': role == 'assistant' ? 'output_text' : 'input_text',
               'text': text,
             }
           ];
 
         case ImagePart(:final mime, :final data, :final text):
+          if (role == 'assistant') {
+            throw const InvalidRequestError(
+              'Assistant messages cannot contain inline images for the Responses API.',
+            );
+          }
           final base64Data = base64Encode(data);
           final imageDataUrl = 'data:${mime.mimeType};base64,$base64Data';
 
@@ -216,6 +217,11 @@ class OpenAIResponsesMessageConverter {
           return parts;
 
         case ImageUrlPart(:final url, :final text):
+          if (role == 'assistant') {
+            throw const InvalidRequestError(
+              'Assistant messages cannot contain image URLs for the Responses API.',
+            );
+          }
           final parts = <Map<String, dynamic>>[];
           if (text != null && text.trim().isNotEmpty) {
             parts.add({'type': 'input_text', 'text': text});
@@ -227,6 +233,11 @@ class OpenAIResponsesMessageConverter {
           return parts;
 
         case FilePart(:final mime, :final data, :final text):
+          if (role == 'assistant') {
+            throw const InvalidRequestError(
+              'Assistant messages cannot contain files for the Responses API.',
+            );
+          }
           final parts = <Map<String, dynamic>>[];
           if (text != null && text.trim().isNotEmpty) {
             parts.add({'type': 'input_text', 'text': text});
@@ -258,6 +269,11 @@ class OpenAIResponsesMessageConverter {
           );
 
         case FileUrlPart(:final mime, :final url, :final text):
+          if (role == 'assistant') {
+            throw const InvalidRequestError(
+              'Assistant messages cannot contain file URLs for the Responses API.',
+            );
+          }
           final parts = <Map<String, dynamic>>[];
           if (text != null && text.trim().isNotEmpty) {
             parts.add({'type': 'input_text', 'text': text});
@@ -287,6 +303,11 @@ class OpenAIResponsesMessageConverter {
           );
 
         case FileIdPart(:final mime, :final id, :final text):
+          if (role == 'assistant') {
+            throw const InvalidRequestError(
+              'Assistant messages cannot contain file ids for the Responses API.',
+            );
+          }
           final parts = <Map<String, dynamic>>[];
           if (text != null && text.trim().isNotEmpty) {
             parts.add({'type': 'input_text', 'text': text});
@@ -318,13 +339,101 @@ class OpenAIResponsesMessageConverter {
             'Unsupported file id media type for the Responses API: ${mime.mimeType}',
           );
 
-        case ToolCallPart() || ToolResultPart():
+        case ToolCallPart() || ToolResultPart() || ToolApprovalResponsePart():
           return const [];
       }
     }
 
+    String? openAiItemIdFromProviderOptions(ProviderOptions providerOptions) {
+      final openai = providerOptions['openai'];
+      if (openai == null) return null;
+      final itemId = openai['itemId'];
+      if (itemId is! String) return null;
+      final trimmed = itemId.trim();
+      return trimmed.isEmpty ? null : trimmed;
+    }
+
+    ProviderOptions mergeProviderOptions(
+      ProviderOptions base,
+      ProviderOptions override,
+    ) {
+      if (base.isEmpty) return override;
+      if (override.isEmpty) return base;
+
+      final merged = <String, Map<String, dynamic>>{...base};
+      for (final entry in override.entries) {
+        final existing = merged[entry.key];
+        merged[entry.key] = {...?existing, ...entry.value};
+      }
+      return merged;
+    }
+
+    Object functionCallOutputValueForToolResult(
+      ToolResultOutput output,
+      ProviderOptions mergedProviderOptions,
+    ) {
+      final openaiProviderOptions = mergedProviderOptions['openai'];
+
+      // AI SDK parity: skip execution-denied with approvalId - already handled
+      // via ToolApprovalResponsePart.
+      if (output is ToolResultExecutionDeniedOutput) {
+        final approvalId = openaiProviderOptions?['approvalId'];
+        if (approvalId is String && approvalId.trim().isNotEmpty) {
+          return const _SkipFunctionCallOutput();
+        }
+      }
+
+      return switch (output) {
+        ToolResultTextOutput(:final value) => value,
+        ToolResultErrorTextOutput(:final value) => value,
+        ToolResultExecutionDeniedOutput(:final reason) =>
+          (reason != null && reason.trim().isNotEmpty)
+              ? reason.trim()
+              : 'Tool execution denied.',
+        ToolResultJsonOutput(:final value) => jsonEncode(value),
+        ToolResultErrorJsonOutput(:final value) => jsonEncode(value),
+        ToolResultContentOutput(:final value) => value
+            .map((item) {
+              switch (item) {
+                case ToolResultContentText(:final text):
+                  return {'type': 'input_text', 'text': text};
+
+                case ToolResultContentImageData(:final data, :final mediaType):
+                  return {
+                    'type': 'input_image',
+                    'image_url': 'data:$mediaType;base64,$data',
+                  };
+
+                case ToolResultContentImageUrl(:final url):
+                  return {
+                    'type': 'input_image',
+                    'image_url': url,
+                  };
+
+                case ToolResultContentFileData(
+                    :final data,
+                    :final mediaType,
+                    :final filename,
+                  ):
+                  return {
+                    'type': 'input_file',
+                    'filename': (filename != null && filename.isNotEmpty)
+                        ? filename
+                        : 'data',
+                    'file_data': 'data:$mediaType;base64,$data',
+                  };
+
+                default:
+                  return null;
+              }
+            })
+            .whereType<Map<String, dynamic>>()
+            .toList(growable: false),
+      };
+    }
+
     for (final message in prompt.messages) {
-      if (message.role == ChatRole.system) {
+      if (message.role == PromptRole.system) {
         flush();
 
         final texts = <String>[];
@@ -348,7 +457,42 @@ class OpenAIResponsesMessageConverter {
       }
 
       for (final part in message.parts) {
-        ChatRole effectiveRole;
+        if (part
+            case ToolApprovalResponsePart(
+              :final approvalId,
+              :final approved,
+            )) {
+          if (message.role != PromptRole.tool) {
+            throw const InvalidRequestError(
+              'ToolApprovalResponsePart must be emitted from a tool message.',
+            );
+          }
+          flush();
+
+          if (approvalId.trim().isEmpty) {
+            throw const InvalidRequestError(
+              'ToolApprovalResponsePart.approvalId cannot be empty.',
+            );
+          }
+
+          if (!processedApprovalIds.add(approvalId)) {
+            continue;
+          }
+
+          // AI SDK parity: when store=true, reference the approval request item.
+          if (store) {
+            apiMessages.add({'type': 'item_reference', 'id': approvalId});
+          }
+
+          apiMessages.add({
+            'type': 'mcp_approval_response',
+            'approval_request_id': approvalId,
+            'approve': approved,
+          });
+          continue;
+        }
+
+        PromptRole effectiveRole;
         if (part case ToolCallPart(:final overrideRole)) {
           effectiveRole = overrideRole ?? message.role;
         } else if (part case ToolResultPart(:final overrideRole)) {
@@ -357,49 +501,113 @@ class OpenAIResponsesMessageConverter {
           effectiveRole = message.role;
         }
 
-        if (part case ToolCallPart(:final toolCall)) {
-          if (effectiveRole != ChatRole.assistant) {
+        if (part
+            case ToolCallPart(
+              :final toolCallId,
+              :final toolName,
+              :final input,
+              providerOptions: final po,
+            )) {
+          if (effectiveRole != PromptRole.assistant) {
             throw const InvalidRequestError(
               'ToolCallPart must be emitted from an assistant message.',
             );
           }
 
-          if (currentRole != null && currentRole != 'assistant') {
-            flush();
-          }
-          currentRole ??= 'assistant';
-          currentName ??= message.name;
-          currentToolCalls.add(toolCall);
-          continue;
-        }
-
-        if (part case ToolResultPart(:final toolResult)) {
-          if (effectiveRole != ChatRole.user) {
-            throw const InvalidRequestError(
-              'ToolResultPart must be emitted from a user message.',
-            );
-          }
-
           flush();
+
+          final itemId = openAiItemIdFromProviderOptions(
+            mergeProviderOptions(message.providerOptions, po),
+          );
+
           apiMessages.add({
-            'role': 'tool',
-            'tool_call_id': toolResult.id,
-            'content': toolResult.function.arguments.isNotEmpty
-                ? toolResult.function.arguments
-                : 'Tool result',
+            'type': 'function_call',
+            'call_id': toolCallId,
+            'name': toolName,
+            'arguments': jsonEncode(input),
+            if (itemId != null) 'id': itemId,
           });
           continue;
         }
 
-        final targetRole =
-            effectiveRole == ChatRole.user ? 'user' : 'assistant';
+        if (part
+            case ToolResultPart(
+              :final toolCallId,
+              :final output,
+              providerOptions: final po,
+            )) {
+          if (effectiveRole != PromptRole.tool) {
+            throw const InvalidRequestError(
+              'ToolResultPart must be emitted from a tool message.',
+            );
+          }
+
+          flush();
+
+          final mergedProviderOptions = mergeProviderOptions(
+            mergeProviderOptions(message.providerOptions, po),
+            output.providerOptions,
+          );
+
+          final outputValue = functionCallOutputValueForToolResult(
+            output,
+            mergedProviderOptions,
+          );
+          if (outputValue is _SkipFunctionCallOutput) {
+            continue;
+          }
+
+          apiMessages.add({
+            'type': 'function_call_output',
+            'call_id': toolCallId,
+            'output': outputValue,
+          });
+          continue;
+        }
+
+        if (effectiveRole == PromptRole.assistant && part is TextPart) {
+          final text = part.text;
+          if (text.trim().isEmpty) continue;
+
+          flush();
+
+          final itemId = openAiItemIdFromProviderOptions(
+            mergeProviderOptions(message.providerOptions, part.providerOptions),
+          );
+
+          // AI SDK parity: when store=true, reference the stored item.
+          if (store && itemId != null) {
+            apiMessages.add({'type': 'item_reference', 'id': itemId});
+            continue;
+          }
+
+          apiMessages.add({
+            'role': 'assistant',
+            if (message.name != null && message.name!.trim().isNotEmpty)
+              'name': message.name,
+            'content': [
+              {'type': 'output_text', 'text': text}
+            ],
+            if (itemId != null) 'id': itemId,
+          });
+          continue;
+        }
+
+        final targetRole = switch (effectiveRole) {
+          PromptRole.user => 'user',
+          PromptRole.assistant => 'assistant',
+          PromptRole.system => throw const InvalidRequestError(
+              'System messages must be handled separately.'),
+          PromptRole.tool => throw const InvalidRequestError(
+              "Tool role messages cannot contain non-tool parts."),
+        };
         if (currentRole != null && currentRole != targetRole) {
           flush();
         }
         currentRole ??= targetRole;
         currentName ??= message.name;
 
-        currentContentParts.addAll(toContentParts(part));
+        currentContentParts.addAll(toContentParts(part, role: targetRole));
       }
 
       flush();
@@ -407,4 +615,8 @@ class OpenAIResponsesMessageConverter {
 
     return apiMessages;
   }
+}
+
+class _SkipFunctionCallOutput {
+  const _SkipFunctionCallOutput();
 }
