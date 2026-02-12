@@ -102,6 +102,37 @@ reject them. Use `providerOptions[providerId]`:
 - `verbosity`: `String` → `verbosity`
 - `user`: `String` → `user` (overrides `LLMConfig.user` if both are set)
 
+### 1.4 Request metadata emission (debug/observability)
+
+Opt-in emission of request metadata for debug/observability, aligned with the
+AI SDK `LanguageModelRequestMetadata` concept.
+
+- `providerOptions[providerId]['emitRequestMetadata']`: `bool` (default: `false`)
+- `providerOptions[providerId]['emit_request_metadata']`: `bool` (legacy alias)
+
+When enabled, providers may:
+
+- emit a `LLMRequestMetadataPart(body: ...)` part at the beginning of a stream,
+  and/or
+- populate non-streaming task results (e.g. `GenerateTextResult.requestMetadata`)
+  (best-effort).
+
+The body is sanitized and truncated to avoid leaking secrets or large/binary
+payloads, but callers should still treat it as sensitive debug data.
+
+### 1.5 Response headers (debug/observability)
+
+Providers that use HTTP may expose response headers via
+`LLMResponseMetadataPart.headers` (best-effort) when streaming and/or via
+non-streaming task results (e.g. `GenerateTextResult.responseMetadata.headers`).
+
+Notes:
+
+- Header keys are normalized to lowercase for stability.
+- Sensitive headers (e.g. `authorization`, `cookie`, `set-cookie`, `*token*`)
+  are redacted.
+- Values may be truncated.
+
 ---
 
 ## 2) Provider namespaces
@@ -128,6 +159,11 @@ OpenAI extras (Chat/Responses):
 
 - `useResponsesAPI`: `bool`
 - `previousResponseId`: `String`
+- `store`: `bool` (Responses-only; forwarded to `store`)
+  - Note: the OpenAI Responses API defaults `store=true` when omitted.
+  - When `store=true`, `ToolApprovalResponsePart` is compiled into:
+    - `{ "type": "item_reference", "id": "<approvalId>" }` and
+    - `{ "type": "mcp_approval_response", "approval_request_id": "<approvalId>", "approve": <bool> }`
 - `builtInTools`: `List<Map<String, dynamic>>` (OpenAI Responses built-in tools)
 - `include`: `List<String>` (Responses-only; extra response fields to include)
   - The SDK also auto-includes tool-related fields when the corresponding

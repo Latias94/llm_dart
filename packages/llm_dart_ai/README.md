@@ -5,6 +5,7 @@ Provider-agnostic task APIs for `llm_dart`, inspired by Vercel AI SDK.
 This package is the recommended “standard surface” for most applications:
 
 - `generateText`
+- `streamText` (AI SDK-style convenience wrapper around `streamChatParts`)
 - `streamChatParts` (Vercel-style stream parts; recommended streaming API)
 - `generateObject`
 - `embed`
@@ -48,7 +49,28 @@ Future<void> main() async {
   final result = await generateText(model: model, promptIr: prompt);
 
   print(result.text);
+
+  // Best-effort observability metadata (provider-dependent):
+  final headers = result.responseMetadata?.headers;
+  final responseBody = result.responseMetadata?.body;
+  final requestBody = result.requestMetadata?.body;
+  final responseMessages = result.responseMessages;
 }
+```
+
+### Streaming text
+
+```dart
+final result = streamText(model: model, promptIr: prompt);
+
+result.fullStream.listen((part) {
+  if (part is LLMTextDeltaPart) {
+    stdout.write(part.delta);
+  }
+});
+
+final text = await result.text;
+print('\n\nFinal: $text');
 ```
 
 ## Notes
