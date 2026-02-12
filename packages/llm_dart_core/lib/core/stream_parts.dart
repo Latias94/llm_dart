@@ -72,6 +72,23 @@ class LLMResponseMetadataPart extends LLMStreamPart {
   });
 }
 
+/// Request metadata emitted during streaming (best-effort).
+///
+/// This mirrors the AI SDK `LanguageModelRequestMetadata` concept and provides
+/// a stable place to expose the HTTP request body that was sent to the model
+/// provider (when available).
+///
+/// Notes:
+/// - This is optional and provider-dependent.
+/// - Providers should ensure [body] is JSON-serializable and does not contain
+///   secrets or large/binary payloads.
+class LLMRequestMetadataPart extends LLMStreamPart {
+  /// Request HTTP body that was sent to the provider API (best-effort).
+  final Object? body;
+
+  const LLMRequestMetadataPart({this.body});
+}
+
 /// Marks the start of a single "step" in a multi-step generation.
 ///
 /// This mirrors the AI SDK concept of step results in `streamText`, where a

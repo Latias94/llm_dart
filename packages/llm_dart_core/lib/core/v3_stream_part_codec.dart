@@ -527,6 +527,15 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
             break;
           }
 
+          if (kind == 'request-metadata') {
+            out.add(
+              LLMRequestMetadataPart(
+                body: _normalizeJsonLike(rawValue['body']),
+              ),
+            );
+            break;
+          }
+
           // Backward compatibility: historically we wrapped non-canonical parts
           // in `rawValue.kind=...` envelopes for fixture round-trips. Newer
           // fixtures omit `kind` and use a minimal, self-describing shape.
@@ -658,6 +667,19 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
           if (id != null && id.isNotEmpty) 'id': id,
           if (timestamp != null) 'timestamp': timestamp.toIso8601String(),
           if (model != null && model.isNotEmpty) 'modelId': model,
+        },
+      ];
+
+    // Request metadata is not part of the canonical AI SDK v3 stream shape.
+    // Preserve it as a raw passthrough for fixtures/debugging.
+    case LLMRequestMetadataPart(:final body):
+      return [
+        {
+          'type': 'raw',
+          'rawValue': {
+            'kind': 'request-metadata',
+            if (body != null) 'body': _normalizeJsonLike(body),
+          },
         },
       ];
 
