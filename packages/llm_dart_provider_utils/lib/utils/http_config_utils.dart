@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'http_retry.dart';
 import 'http_client_adapter_stub.dart'
     if (dart.library.io) 'http_client_adapter_io.dart'
     if (dart.library.html) 'http_client_adapter_web.dart';
@@ -49,6 +50,9 @@ class HttpConfigUtils {
 
     // Add logging interceptor if enabled
     _configureLogging(dio, config);
+
+    // Add retry interceptor if enabled (opt-in).
+    _configureRetries(dio, config);
 
     return dio;
   }
@@ -182,6 +186,19 @@ class HttpConfigUtils {
         ),
       );
     }
+  }
+
+  static void _configureRetries(Dio dio, LLMConfig config) {
+    final retryConfig = HttpRetryConfig.fromLLMConfig(config);
+    if (!retryConfig.enabled) return;
+
+    // Avoid installing duplicates (custom Dio can already include one).
+    final hasRetry = dio.interceptors.any((i) => i is HttpRetryInterceptor);
+    if (hasRetry) return;
+
+    dio.interceptors.add(
+      HttpRetryInterceptor(dio: dio, config: retryConfig),
+    );
   }
 
   /// Create a simple Dio instance with minimal configuration

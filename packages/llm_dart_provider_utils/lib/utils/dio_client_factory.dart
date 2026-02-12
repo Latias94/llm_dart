@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../core/base_http_provider.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'http_retry.dart';
 
 /// Strategy interface for provider-specific Dio configuration
 ///
@@ -88,6 +89,17 @@ class DioClientFactory {
     ProviderDioStrategy strategy,
     dynamic config,
   ) {
+    final original = config.originalConfig;
+    if (original is LLMConfig) {
+      final retryConfig = HttpRetryConfig.fromLLMConfig(original);
+      if (retryConfig.enabled &&
+          !customDio.interceptors.any((i) => i is HttpRetryInterceptor)) {
+        customDio.interceptors.add(
+          HttpRetryInterceptor(dio: customDio, config: retryConfig),
+        );
+      }
+    }
+
     // Ensure base URL is set if not already configured
     if (customDio.options.baseUrl.isEmpty) {
       customDio.options.baseUrl =
