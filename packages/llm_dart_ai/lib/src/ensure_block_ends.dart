@@ -7,6 +7,9 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 /// Some provider adapters may forget to emit `text-end` / `reasoning-end`
 /// boundaries. AI SDK v3 consumers expect well-formed block lifecycles.
 ///
+/// This also closes open `tool-input-*` blocks (best-effort) to keep
+/// tool call input streaming structurally well-formed.
+///
 /// Behavior:
 /// - Tracks text/reasoning deltas per block id.
 /// - If a new `*-start` is seen while another block is open, the previous block
@@ -21,6 +24,9 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
 
   String? currentTextId;
   String? currentReasoningId;
+
+  final openToolInputIds = <String>[];
+  final openToolInputIdSet = <String>{};
 
   void appendText(String id, String delta) {
     (textBuffers[id] ??= StringBuffer()).write(delta);
@@ -46,6 +52,14 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
     currentReasoningId = null;
     reasoningBuffers.remove(effectiveId);
     return LLMReasoningEndPart(buffer, blockId: effectiveId);
+  }
+
+  LLMToolInputEndPart? closeToolInputIfOpen(String? id) {
+    final effectiveId = id;
+    if (effectiveId == null || effectiveId.trim().isEmpty) return null;
+    if (!openToolInputIdSet.remove(effectiveId)) return null;
+    openToolInputIds.remove(effectiveId);
+    return LLMToolInputEndPart(id: effectiveId);
   }
 
   final iterator = StreamIterator(upstream);
@@ -148,7 +162,70 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
             providerMetadata: providerMetadata,
           );
 
+        case LLMToolInputStartPart(
+            :final id,
+            :final toolName,
+            :final providerMetadata,
+            :final providerExecuted,
+            :final isDynamic,
+            :final title,
+          ):
+          if (id.trim().isNotEmpty && openToolInputIdSet.add(id)) {
+            openToolInputIds.add(id);
+          }
+          yield LLMToolInputStartPart(
+            id: id,
+            toolName: toolName,
+            providerMetadata: providerMetadata,
+            providerExecuted: providerExecuted,
+            isDynamic: isDynamic,
+            title: title,
+          );
+
+        case LLMToolInputDeltaPart(
+            :final id,
+            :final delta,
+            :final providerMetadata,
+          ):
+          // We intentionally do not synthesize a missing tool-input-start here
+          // because toolName is required. Close-on-finish still applies if a
+          // start was seen previously.
+          yield LLMToolInputDeltaPart(
+            id: id,
+            delta: delta,
+            providerMetadata: providerMetadata,
+          );
+
+        case LLMToolInputEndPart(:final id, :final providerMetadata):
+          openToolInputIdSet.remove(id);
+          openToolInputIds.remove(id);
+          yield LLMToolInputEndPart(
+            id: id,
+            providerMetadata: providerMetadata,
+          );
+
+        case LLMProviderToolCallPart(:final toolCallId):
+          final end = closeToolInputIfOpen(toolCallId);
+          if (end != null) yield end;
+          yield part;
+
+        case LLMProviderToolResultPart(:final toolCallId):
+          final end = closeToolInputIfOpen(toolCallId);
+          if (end != null) yield end;
+          yield part;
+
+        case LLMToolResultPart(:final result):
+          final end = closeToolInputIfOpen(result.toolCallId);
+          if (end != null) yield end;
+          yield part;
+
         case LLMFinishPart():
+          // Close tool-input blocks first (in a stable order).
+          while (openToolInputIds.isNotEmpty) {
+            final id = openToolInputIds.first;
+            final end = closeToolInputIfOpen(id);
+            if (end != null) yield end;
+          }
           final reasoningEnd = closeReasoningIfOpen(currentReasoningId);
           if (reasoningEnd != null) yield reasoningEnd;
           final textEnd = closeTextIfOpen(currentTextId);

@@ -128,5 +128,29 @@ void main() {
       expect(ends[0].text, equals('A'));
       expect(ends[1].text, equals('B'));
     });
+
+    test('closes an open tool-input block before finish', () async {
+      final model = _FakeChatModel(const [
+        LLMToolInputStartPart(
+          id: 'id-0',
+          toolName: 'tool',
+        ),
+        LLMToolInputDeltaPart(
+          id: 'id-0',
+          delta: '{"a":1',
+        ),
+        LLMFinishPart(_FakeChatResponse(text: 'ok')),
+      ]);
+
+      final parts = await streamChatParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+      ).toList();
+
+      expect(parts.last, isA<LLMFinishPart>());
+      expect(parts[parts.length - 2], isA<LLMToolInputEndPart>());
+      expect(
+          (parts[parts.length - 2] as LLMToolInputEndPart).id, equals('id-0'));
+    });
   });
 }
