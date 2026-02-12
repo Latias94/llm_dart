@@ -2,7 +2,7 @@
 {"modelId":"gemini-2.5-pro","type":"response-metadata"}
 {"id":"0","type":"reasoning-start"}
 {"delta":"Let me think...","id":"0","type":"reasoning-delta"}
-{"type":"reasoning-end"}
+{"id":"0","type":"reasoning-end"}
 {"id":"1","type":"text-start"}
 {"delta":"Hello world","id":"1","type":"text-delta"}
 {"id":"1","type":"text-end"}

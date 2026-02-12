@@ -65,7 +65,7 @@
 {"delta":"\n\n## Investigating Sonoran Cuisine  \n- The question focuses on what makes Sonoran food style notable, indicating an open-ended exploration of its cultural and culinary significance.","id":"0","type":"reasoning-delta"}
 {"delta":"  \n- Sonoran cuisine is part of food culture, suggesting a need for a structured, informative response to highlight its unique traits.","id":"0","type":"reasoning-delta"}
 {"delta":"  \n- The task isn't math or science, so the approach will prioritize breadth and accessibility, possibly using sections for clarity.","id":"0","type":"reasoning-delta"}
-{"type":"reasoning-end"}
+{"id":"0","type":"reasoning-end"}
 {"id":"1","type":"text-start"}
 {"delta":"###","id":"1","type":"text-delta"}
 {"delta":" Overview","id":"1","type":"text-delta"}

@@ -15,7 +15,7 @@ class SourcePartEmitter {
   SourcePartEmitter({
     required this.providerMetadataNamespace,
     this.defaultProviderMetadataPayload,
-    this.sourceIdPrefix = 'source_',
+    this.sourceIdPrefix = 'id-',
   });
 
   void reset() {

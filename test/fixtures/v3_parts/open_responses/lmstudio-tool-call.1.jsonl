@@ -1,7 +1,7 @@
 {"type":"stream-start","warnings":[]}
 {"id":"resp_cc7bfe18e2f2eca93006515c0fd19cfed16e46a93a60444a","modelId":"zai-org/glm-4.7-flash","timestamp":"2026-01-21T15:22:09.000Z","type":"response-metadata"}
 {"id":"rs_3yo6zy4vu4hq6iegqwhn1:0","providerMetadata":{"open_responses":{"itemId":"rs_3yo6zy4vu4hq6iegqwhn1"}},"type":"reasoning-start"}
-{"providerMetadata":{"open_responses":{"itemId":"rs_3yo6zy4vu4hq6iegqwhn1"}},"type":"reasoning-end"}
+{"id":"rs_3yo6zy4vu4hq6iegqwhn1:0","providerMetadata":{"open_responses":{"itemId":"rs_3yo6zy4vu4hq6iegqwhn1"}},"type":"reasoning-end"}
 {"id":"0","type":"text-start"}
 {"delta":"I","id":"0","type":"text-delta"}
 {"delta":"'ll","id":"0","type":"text-delta"}

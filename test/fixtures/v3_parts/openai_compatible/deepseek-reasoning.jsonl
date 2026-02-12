@@ -206,7 +206,7 @@
 {"delta":" ","id":"0","type":"reasoning-delta"}
 {"delta":"3","id":"0","type":"reasoning-delta"}
 {"delta":".","id":"0","type":"reasoning-delta"}
-{"type":"reasoning-end"}
+{"id":"0","type":"reasoning-end"}
 {"id":"1","type":"text-start"}
 {"delta":"The","id":"1","type":"text-delta"}
 {"delta":" word","id":"1","type":"text-delta"}

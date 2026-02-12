@@ -1,7 +1,7 @@
 {"type":"stream-start","warnings":[]}
 {"modelId":"gemini-2.5-pro","type":"response-metadata"}
-{"id":"source_0","providerMetadata":{"google-vertex":{"type":"groundingMetadata"}},"sourceType":"url","title":"Example","type":"source","url":"https://example.com"}
-{"filename":"report.pdf","id":"source_1","mediaType":"application/pdf","providerMetadata":{"google-vertex":{"type":"groundingMetadata"}},"sourceType":"document","title":"Report","type":"source"}
+{"id":"id-0","providerMetadata":{"google-vertex":{"type":"groundingMetadata"}},"sourceType":"url","title":"Example","type":"source","url":"https://example.com"}
+{"filename":"report.pdf","id":"id-1","mediaType":"application/pdf","providerMetadata":{"google-vertex":{"type":"groundingMetadata"}},"sourceType":"document","title":"Report","type":"source"}
 {"id":"0","type":"text-start"}
 {"delta":"Here are sources.","id":"0","type":"text-delta"}
 {"id":"0","type":"text-end"}

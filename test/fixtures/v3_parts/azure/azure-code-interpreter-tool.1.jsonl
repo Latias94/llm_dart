@@ -1,7 +1,7 @@
 {"type":"stream-start","warnings":[]}
 {"id":"resp_0ad69c3c5fcb01f60068eba78cacd08193bf9a57724aa55ab8","modelId":"gpt-5-mini","timestamp":"2025-10-12T13:05:16.000Z","type":"response-metadata"}
 {"id":"rs_0ad69c3c5fcb01f60068eba78f12588193872253fcce2ef954:0","providerMetadata":{"azure":{"itemId":"rs_0ad69c3c5fcb01f60068eba78f12588193872253fcce2ef954"}},"type":"reasoning-start"}
-{"providerMetadata":{"azure":{"itemId":"rs_0ad69c3c5fcb01f60068eba78f12588193872253fcce2ef954"}},"type":"reasoning-end"}
+{"id":"rs_0ad69c3c5fcb01f60068eba78f12588193872253fcce2ef954:0","providerMetadata":{"azure":{"itemId":"rs_0ad69c3c5fcb01f60068eba78f12588193872253fcce2ef954"}},"type":"reasoning-end"}
 {"id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","providerExecuted":true,"toolName":"codeExecution","type":"tool-input-start"}
 {"delta":"{\"containerId\":\"cntr_68eba78d6dc081908116b7ad7a32f52d0050b146e60e47a9\",\"code\":\"","id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","type":"tool-input-delta"}
 {"delta":"#","id":"ci_0ad69c3c5fcb01f60068eba7939b2c8193b42d4d517ca5d25f","type":"tool-input-delta"}

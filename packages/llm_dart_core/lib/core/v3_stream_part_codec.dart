@@ -183,12 +183,13 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
         break;
 
       case 'reasoning-end':
-        final id = obj['id'] as String?;
-        final end = state.reasoning.onEndOptionalId(id);
+        final id = _requireString(obj, 'id');
+        final thinking = state.reasoning.onEnd(id);
+        state.reasoning.currentId = null;
         out.add(
           LLMReasoningEndPart(
-            end.full,
-            blockId: end.id,
+            thinking,
+            blockId: id,
             providerMetadata: providerMetadata,
           ),
         );
@@ -534,11 +535,12 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         blockId: final blockId,
         providerMetadata: final pm,
       ):
-      state.reasoning.resolveId(blockId);
+      final id = state.reasoning.resolveId(blockId);
       state.reasoning.currentId = null;
       return [
         {
           'type': 'reasoning-end',
+          'id': id,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         },
       ];
