@@ -18,6 +18,16 @@ class _FakeAnthropicClient extends AnthropicClient {
   }) {
     return _stream;
   }
+
+  @override
+  Future<({Stream<String> stream, Map<String, String> headers})>
+      postStreamRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
+    return (stream: _stream, headers: const <String, String>{});
+  }
 }
 
 Map<String, dynamic> _anthropicPayload(ChatMessage message) {

@@ -30,6 +30,24 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
   final requestBody = built.body;
   final toolNameMapping = built.toolNameMapping;
 
+  final originalConfig = config.originalConfig;
+  if (originalConfig != null) {
+    final fallbackProviderId =
+        config.providerId == 'anthropic' ? null : 'anthropic';
+
+    final emitRequestMetadata = emitRequestMetadataEnabled(
+      originalConfig.providerOptions,
+      config.providerId,
+      fallbackProviderId: fallbackProviderId,
+    );
+
+    if (emitRequestMetadata) {
+      yield LLMRequestMetadataPart(
+        body: sanitizeRequestBodyForMetadata(requestBody),
+      );
+    }
+  }
+
   final sseParser = SseChunkParser();
   final activeToolCalls = <int, _ToolCallState>{};
   final activeProviderToolCalls = <int, _ProviderToolCallState>{};
@@ -187,11 +205,13 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
   }
 
   try {
-    final stream = client.postStreamRaw(
+    final streamed = await client.postStreamRawWithHeaders(
       chatEndpoint,
       requestBody,
       cancelToken: cancelToken,
     );
+    final responseHeaders = streamed.headers;
+    final stream = streamed.stream;
 
     await for (final chunk in stream) {
       final dataLines = sseParser.parse(chunk);
@@ -328,6 +348,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
               yield LLMResponseMetadataPart(
                 id: messageId,
                 model: model,
+                headers: responseHeaders.isEmpty ? null : responseHeaders,
                 raw: raw.isEmpty ? null : raw,
               );
             }

@@ -6,7 +6,9 @@ class FakeAnthropicClient extends AnthropicClient {
   Map<String, dynamic>? lastBody;
 
   Map<String, dynamic> response = const {};
+  Map<String, String> jsonHeaders = const <String, String>{};
   Stream<String> streamResponse = const Stream<String>.empty();
+  Map<String, String> streamHeaders = const <String, String>{};
 
   FakeAnthropicClient(super.config);
 
@@ -22,6 +24,18 @@ class FakeAnthropicClient extends AnthropicClient {
   }
 
   @override
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postJsonWithHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
+    lastEndpoint = endpoint;
+    lastBody = data;
+    return (json: response, headers: jsonHeaders);
+  }
+
+  @override
   Stream<String> postStreamRaw(
     String endpoint,
     Map<String, dynamic> data, {
@@ -30,5 +44,17 @@ class FakeAnthropicClient extends AnthropicClient {
     lastEndpoint = endpoint;
     lastBody = data;
     return streamResponse;
+  }
+
+  @override
+  Future<({Stream<String> stream, Map<String, String> headers})>
+      postStreamRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
+    lastEndpoint = endpoint;
+    lastBody = data;
+    return (stream: streamResponse, headers: streamHeaders);
   }
 }

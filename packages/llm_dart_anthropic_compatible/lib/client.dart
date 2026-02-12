@@ -7,6 +7,7 @@ library;
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/utils/response_metadata_sanitizer.dart';
 import 'package:logging/logging.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -51,6 +52,23 @@ class AnthropicClient {
     CancelToken? cancelToken,
   }) async {
     return HttpResponseHandler.postJson(
+      dio,
+      endpoint,
+      data,
+      providerName: providerName,
+      logger: logger,
+      cancelToken: cancelToken,
+    );
+  }
+
+  /// Make a POST request and return JSON response + response headers (best-effort).
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postJsonWithHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
+    return HttpResponseHandler.postJsonWithHeaders(
       dio,
       endpoint,
       data,
@@ -142,6 +160,21 @@ class AnthropicClient {
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
   }) async* {
+    final streamed = await postStreamRawWithHeaders(
+      endpoint,
+      data,
+      cancelToken: cancelToken,
+    );
+    yield* streamed.stream;
+  }
+
+  /// Make a POST request and return raw stream + response headers (best-effort).
+  Future<({Stream<String> stream, Map<String, String> headers})>
+      postStreamRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
     try {
       final response = await withDioCancelToken(
         cancelToken,
@@ -156,6 +189,13 @@ class AnthropicClient {
         ),
       );
 
+      final headerMap = <String, String>{};
+      response.headers.forEach((name, values) {
+        if (values.isEmpty) return;
+        headerMap[name] = values.join(',');
+      });
+      final sanitizedHeaders = sanitizeResponseHeadersForMetadata(headerMap);
+
       // Handle ResponseBody properly for streaming
       final responseBody = response.data;
       Stream<List<int>> stream;
@@ -169,21 +209,30 @@ class AnthropicClient {
             'Unexpected response type: ${responseBody.runtimeType}');
       }
 
-      // Use UTF-8 stream decoder to handle incomplete byte sequences
-      final decoder = Utf8StreamDecoder();
+      Stream<String> decodedStream() async* {
+        // Use UTF-8 stream decoder to handle incomplete byte sequences
+        final decoder = Utf8StreamDecoder();
 
-      await for (final chunk in stream) {
-        final decoded = decoder.decode(chunk);
-        if (decoded.isNotEmpty) {
-          yield decoded;
+        await for (final chunk in stream) {
+          final decoded = decoder.decode(chunk);
+          if (decoded.isNotEmpty) {
+            yield decoded;
+          }
+        }
+
+        // Flush any remaining bytes
+        final remaining = decoder.flush();
+        if (remaining.isNotEmpty) {
+          yield remaining;
         }
       }
 
-      // Flush any remaining bytes
-      final remaining = decoder.flush();
-      if (remaining.isNotEmpty) {
-        yield remaining;
-      }
+      return (
+        stream: decodedStream(),
+        headers: sanitizedHeaders.isEmpty
+            ? const <String, String>{}
+            : Map<String, String>.unmodifiable(sanitizedHeaders),
+      );
     } on DioException catch (e) {
       logger.severe('Stream request failed: ${e.message}');
       throw await DioErrorHandler.handleDioError(e, providerName);

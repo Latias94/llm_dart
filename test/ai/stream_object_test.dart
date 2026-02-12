@@ -223,6 +223,47 @@ void main() {
       expect(obj, contains('elements'));
     });
 
+    test('step boundaries reset stable result futures to last step', () async {
+      final model = _FakeStreamChatModel([
+        const LLMStepStartPart(0),
+        const LLMResponseMetadataPart(
+          id: 'resp_step_1',
+          headers: {'x-step': '1'},
+        ),
+        const LLMToolInputStartPart(
+          id: 'call_1',
+          toolName: 'return_object',
+        ),
+        const LLMToolInputDeltaPart(id: 'call_1', delta: '{"city":"SF"}'),
+        const LLMToolInputEndPart(id: 'call_1'),
+        const LLMStepStartPart(1),
+        const LLMResponseMetadataPart(
+          id: 'resp_step_2',
+          headers: {'x-step': '2'},
+        ),
+        const LLMToolInputStartPart(
+          id: 'call_2',
+          toolName: 'return_object',
+        ),
+        const LLMToolInputDeltaPart(id: 'call_2', delta: '{"city":"LA"}'),
+        const LLMToolInputEndPart(id: 'call_2'),
+        const LLMFinishPart(_FakeChatResponseWithFinishReason()),
+      ]);
+
+      final result = StreamObjectResult.fromPartsStream(
+        model.chatStreamParts([ChatMessage.user('hi')]),
+        schema: schema,
+        toolName: 'return_object',
+      );
+
+      final obj = await result.object;
+      expect(obj, containsPair('city', 'LA'));
+
+      final meta = await result.responseMetadata;
+      expect(meta?.id, equals('resp_step_2'));
+      expect(meta?.headers, containsPair('x-step', '2'));
+    });
+
     test('fails when object does not match schema', () async {
       final model = _FakeStreamChatModel([
         LLMToolCallStartPart(

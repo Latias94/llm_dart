@@ -19,6 +19,12 @@ class FakeGoogleClient extends GoogleClient {
   /// Fake raw stream returned from `postStreamRaw`.
   Stream<String> streamResponse = const Stream<String>.empty();
 
+  /// Fake response headers returned from `postStreamRawWithHeaders`.
+  Map<String, String> streamHeaders = const <String, String>{};
+
+  /// Fake response headers returned from `postJsonWithHeaders`.
+  Map<String, String> jsonHeaders = const <String, String>{};
+
   /// Fake Dio response returned from `post`.
   dio.Response? postResponse;
 
@@ -47,6 +53,21 @@ class FakeGoogleClient extends GoogleClient {
   }
 
   @override
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postJsonWithHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
+    final json = await postJson(
+      endpoint,
+      data,
+      cancelToken: cancelToken,
+    );
+    return (json: json, headers: jsonHeaders);
+  }
+
+  @override
   Stream<String> postStreamRaw(
     String endpoint,
     Map<String, dynamic> data, {
@@ -55,6 +76,18 @@ class FakeGoogleClient extends GoogleClient {
     lastEndpoint = endpoint;
     lastBody = data;
     return streamResponse;
+  }
+
+  @override
+  Future<({Stream<String> stream, Map<String, String> headers})>
+      postStreamRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
+    lastEndpoint = endpoint;
+    lastBody = data;
+    return (stream: streamResponse, headers: streamHeaders);
   }
 
   @override

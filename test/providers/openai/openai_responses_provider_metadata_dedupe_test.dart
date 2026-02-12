@@ -24,6 +24,19 @@ class _FakeOpenAIClient extends OpenAIClient {
       yield chunk;
     }
   }
+
+  @override
+  Future<({Stream<String> stream, Map<String, String> headers})>
+      postStreamRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+  }) async {
+    return (
+      stream: postStreamRaw(endpoint, body, cancelToken: cancelToken),
+      headers: const <String, String>{},
+    );
+  }
 }
 
 void main() {

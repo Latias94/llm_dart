@@ -21,6 +21,16 @@ class _FakeOllamaClient extends OllamaClient {
   }) {
     return _stream;
   }
+
+  @override
+  Future<({Stream<String> stream, Map<String, String> headers})>
+      postStreamRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
+    return (stream: _stream, headers: const <String, String>{});
+  }
 }
 
 List<String> _splitRandom(String input, {required int seed, int maxLen = 11}) {

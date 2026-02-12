@@ -203,6 +203,10 @@ void main() {
 
       final model = _SequencedStreamChatModel([
         [
+          const LLMResponseMetadataPart(
+            id: 'resp_step_1',
+            headers: {'x-step': '1'},
+          ),
           const LLMTextStartPart(),
           const LLMTextDeltaPart('Need '),
           LLMToolCallStartPart(
@@ -232,6 +236,10 @@ void main() {
           ),
         ],
         [
+          const LLMResponseMetadataPart(
+            id: 'resp_step_2',
+            headers: {'x-step': '2'},
+          ),
           const LLMTextStartPart(),
           const LLMTextDeltaPart('Done'),
           const LLMTextEndPart('Done'),
@@ -285,9 +293,15 @@ void main() {
       expect(steps, hasLength(2));
       expect(steps[0].toolCalls, hasLength(1));
       expect(steps[0].toolResults, hasLength(1));
+      expect(steps[0].responseMetadata?.headers, containsPair('x-step', '1'));
       expect(jsonDecode(steps[0].toolResults.single.content),
           equals({'temp': 70}));
       expect(steps[1].toolCalls, isEmpty);
+      expect(steps[1].responseMetadata?.headers, containsPair('x-step', '2'));
+      expect(
+        (await result.responseMetadata)?.headers,
+        containsPair('x-step', '2'),
+      );
 
       final totalUsage = await result.totalUsage;
       expect(totalUsage?.totalTokens, equals(33));

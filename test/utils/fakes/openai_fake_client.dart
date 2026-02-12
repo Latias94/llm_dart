@@ -10,9 +10,11 @@ class FakeOpenAIClient extends OpenAIClient {
   FormData? lastFormData;
 
   Map<String, dynamic> jsonResponse = const {};
+  Map<String, String> jsonHeaders = const <String, String>{};
   Map<String, dynamic> formResponse = const {'text': 'hello'};
   List<int> rawResponse = const <int>[1, 2, 3];
   Stream<String> streamResponse = const Stream<String>.empty();
+  Map<String, String> streamHeaders = const <String, String>{};
 
   FakeOpenAIClient(super.config);
 
@@ -25,6 +27,18 @@ class FakeOpenAIClient extends OpenAIClient {
     lastEndpoint = endpoint;
     lastJsonBody = body;
     return jsonResponse;
+  }
+
+  @override
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postJsonWithHeaders(
+    String endpoint,
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+  }) async {
+    lastEndpoint = endpoint;
+    lastJsonBody = body;
+    return (json: jsonResponse, headers: jsonHeaders);
   }
 
   @override
@@ -58,5 +72,17 @@ class FakeOpenAIClient extends OpenAIClient {
     lastEndpoint = endpoint;
     lastJsonBody = body;
     return streamResponse;
+  }
+
+  @override
+  Future<({Stream<String> stream, Map<String, String> headers})>
+      postStreamRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+  }) async {
+    lastEndpoint = endpoint;
+    lastJsonBody = body;
+    return (stream: streamResponse, headers: streamHeaders);
   }
 }

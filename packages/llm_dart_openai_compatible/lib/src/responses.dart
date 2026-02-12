@@ -98,14 +98,28 @@ class OpenAIResponses
     CancelToken? cancelToken,
   }) async {
     final builtRequest = _buildRequest(messages, tools, false, false);
-    final responseData = await client.postJson(
+    final emitRequestMetadata = config.getProviderOption<bool>(
+          'emitRequestMetadata',
+        ) ??
+        config.getProviderOption<bool>(
+          'emit_request_metadata',
+        ) ??
+        false;
+    final requestMetadata = emitRequestMetadata
+        ? LLMRequestMetadataPart(
+            body: sanitizeRequestBodyForMetadata(builtRequest.body),
+          )
+        : null;
+    final responseWithHeaders = await client.postJsonWithHeaders(
       responsesEndpoint,
       builtRequest.body,
       cancelToken: cancelToken,
     );
     return _parseResponse(
-      responseData,
+      responseWithHeaders.json,
       toolNameMapping: builtRequest.toolNameMapping,
+      responseHeaders: responseWithHeaders.headers,
+      requestMetadata: requestMetadata,
     );
   }
 
@@ -116,14 +130,28 @@ class OpenAIResponses
     CancelToken? cancelToken,
   }) async {
     final builtRequest = _buildPromptRequest(prompt, tools, false, false);
-    final responseData = await client.postJson(
+    final emitRequestMetadata = config.getProviderOption<bool>(
+          'emitRequestMetadata',
+        ) ??
+        config.getProviderOption<bool>(
+          'emit_request_metadata',
+        ) ??
+        false;
+    final requestMetadata = emitRequestMetadata
+        ? LLMRequestMetadataPart(
+            body: sanitizeRequestBodyForMetadata(builtRequest.body),
+          )
+        : null;
+    final responseWithHeaders = await client.postJsonWithHeaders(
       responsesEndpoint,
       builtRequest.body,
       cancelToken: cancelToken,
     );
     return _parseResponse(
-      responseData,
+      responseWithHeaders.json,
       toolNameMapping: builtRequest.toolNameMapping,
+      responseHeaders: responseWithHeaders.headers,
+      requestMetadata: requestMetadata,
     );
   }
 
@@ -137,13 +165,27 @@ class OpenAIResponses
     List<Tool>? tools,
   ) async {
     final builtRequest = _buildRequest(messages, tools, false, true);
-    final responseData = await client.postJson(
+    final emitRequestMetadata = config.getProviderOption<bool>(
+          'emitRequestMetadata',
+        ) ??
+        config.getProviderOption<bool>(
+          'emit_request_metadata',
+        ) ??
+        false;
+    final requestMetadata = emitRequestMetadata
+        ? LLMRequestMetadataPart(
+            body: sanitizeRequestBodyForMetadata(builtRequest.body),
+          )
+        : null;
+    final responseWithHeaders = await client.postJsonWithHeaders(
       responsesEndpoint,
       builtRequest.body,
     );
     return _parseResponse(
-      responseData,
+      responseWithHeaders.json,
       toolNameMapping: builtRequest.toolNameMapping,
+      responseHeaders: responseWithHeaders.headers,
+      requestMetadata: requestMetadata,
     );
   }
 
@@ -290,11 +332,13 @@ class OpenAIResponses
         );
       }
 
-      final stream = client.postStreamRaw(
+      final streamed = await client.postStreamRawWithHeaders(
         responsesEndpoint,
         builtRequest.body,
         cancelToken: cancelToken,
       );
+      final responseHeaders = streamed.headers;
+      final stream = streamed.stream;
 
       await for (final chunk in stream) {
         final jsonList = client.parseSSEChunk(chunk);
@@ -337,6 +381,7 @@ class OpenAIResponses
                           isUtc: true,
                         ),
                   model: model,
+                  headers: responseHeaders.isEmpty ? null : responseHeaders,
                   status: status,
                   systemFingerprint: systemFingerprint,
                   raw: raw.isEmpty ? null : raw,
@@ -1689,6 +1734,7 @@ class OpenAIResponses
                             isUtc: true,
                           ),
                     model: model,
+                    headers: responseHeaders.isEmpty ? null : responseHeaders,
                     status: status,
                     systemFingerprint: systemFingerprint,
                     raw: raw.isEmpty ? null : raw,
@@ -2044,8 +2090,12 @@ class OpenAIResponses
     final effectiveTools = tools ?? config.tools;
     final toolNameMapping = _createToolNameMapping(effectiveTools);
 
+    final store = config.getProviderOption<bool>('store') ?? true;
     final apiMessages =
-        OpenAIResponsesMessageConverter.buildInputMessagesFromPrompt(prompt);
+        OpenAIResponsesMessageConverter.buildInputMessagesFromPrompt(
+      prompt,
+      store: store,
+    );
     final body = _buildRequestBodyFromApiMessages(
       apiMessages,
       effectiveTools,
@@ -2131,6 +2181,12 @@ class OpenAIResponses
       'stream': stream,
       'background': background,
     };
+
+    // OpenAI Responses API: store defaults to true when omitted.
+    final store = config.getProviderOption<bool>('store');
+    if (store != null) {
+      body['store'] = store;
+    }
 
     // Add previous response ID for chaining
     final effectivePreviousResponseId =
@@ -2408,6 +2464,8 @@ class OpenAIResponses
   ChatResponse _parseResponse(
     Map<String, dynamic> responseData, {
     ToolNameMapping? toolNameMapping,
+    Map<String, String>? responseHeaders,
+    LLMRequestMetadataPart? requestMetadata,
   }) {
     // Extract thinking/reasoning content from Responses API format
     String? thinkingContent;
@@ -2444,11 +2502,39 @@ class OpenAIResponses
           responseData['reasoning_content'] as String?;
     }
 
+    final createdAt = responseData['created_at'];
+    DateTime? timestamp;
+    if (createdAt is int) {
+      timestamp =
+          DateTime.fromMillisecondsSinceEpoch(createdAt * 1000, isUtc: true);
+    }
+
+    final idRaw = responseData['id'];
+    final id = idRaw is String ? idRaw : idRaw?.toString();
+    final modelRaw = responseData['model'];
+    final model = modelRaw is String ? modelRaw : null;
+    final headers = (responseHeaders != null && responseHeaders.isNotEmpty)
+        ? responseHeaders
+        : null;
+
+    final responseMetadata =
+        (id != null || model != null || timestamp != null || headers != null)
+            ? LLMResponseMetadataPart(
+                id: id,
+                timestamp: timestamp,
+                model: model,
+                headers: headers,
+                body: responseData,
+              )
+            : null;
+
     return OpenAIResponsesResponse(
       responseData,
       thinkingContent,
       toolNameMapping,
       config.providerId,
+      responseMetadata,
+      requestMetadata,
     );
   }
 
@@ -2581,18 +2667,34 @@ class OpenAIResponses
 }
 
 /// OpenAI Responses API response implementation
-class OpenAIResponsesResponse implements ChatResponseWithFinishReason {
+class OpenAIResponsesResponse
+    implements
+        ChatResponseWithFinishReason,
+        ChatResponseWithResponseMetadata,
+        ChatResponseWithRequestMetadata {
   final Map<String, dynamic> _rawResponse;
   final String? _thinkingContent;
   final ToolNameMapping? _toolNameMapping;
   final String _providerId;
+  final LLMResponseMetadataPart? _responseMetadata;
+  final LLMRequestMetadataPart? _requestMetadata;
 
   OpenAIResponsesResponse(
     this._rawResponse, [
     this._thinkingContent,
     this._toolNameMapping,
     String providerId = 'openai',
-  ]) : _providerId = providerId;
+    LLMResponseMetadataPart? responseMetadata,
+    LLMRequestMetadataPart? requestMetadata,
+  ])  : _providerId = providerId,
+        _responseMetadata = responseMetadata,
+        _requestMetadata = requestMetadata;
+
+  @override
+  LLMResponseMetadataPart? get responseMetadata => _responseMetadata;
+
+  @override
+  LLMRequestMetadataPart? get requestMetadata => _requestMetadata;
 
   List<Map<String, dynamic>>? _extractFileSearchCalls() {
     final output = _rawResponse['output'] as List?;

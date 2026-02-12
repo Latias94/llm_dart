@@ -2,13 +2,30 @@ part of 'package:llm_dart_anthropic_compatible/chat.dart';
 
 /// Anthropic chat response implementation.
 class AnthropicChatResponse
-    implements ChatResponseWithAssistantMessage, ChatResponseWithFinishReason {
+    implements
+        ChatResponseWithAssistantMessage,
+        ChatResponseWithFinishReason,
+        ChatResponseWithResponseMetadata,
+        ChatResponseWithRequestMetadata {
   final Map<String, dynamic> _rawResponse;
   final String? _providerId;
   final ToolNameMapping? _toolNameMapping;
+  final LLMResponseMetadataPart? _responseMetadata;
+  final LLMRequestMetadataPart? _requestMetadata;
 
-  AnthropicChatResponse(this._rawResponse,
-      [this._providerId, this._toolNameMapping]);
+  AnthropicChatResponse(
+    this._rawResponse, [
+    this._providerId,
+    this._toolNameMapping,
+    this._responseMetadata,
+    this._requestMetadata,
+  ]);
+
+  @override
+  LLMResponseMetadataPart? get responseMetadata => _responseMetadata;
+
+  @override
+  LLMRequestMetadataPart? get requestMetadata => _requestMetadata;
 
   @override
   String? get text {

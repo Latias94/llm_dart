@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'package:llm_dart_provider_utils/utils/request_metadata_options.dart';
+import 'package:llm_dart_provider_utils/utils/request_metadata_sanitizer.dart';
 
 import 'client.dart';
 import 'config.dart';

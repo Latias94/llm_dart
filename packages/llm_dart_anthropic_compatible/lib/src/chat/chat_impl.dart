@@ -51,13 +51,31 @@ class AnthropicChat
     CancelToken? cancelToken,
   }) async {
     final built = _requestBuilder.buildRequest(messages, tools, false);
+    final originalConfig = config.originalConfig;
+    final requestMetadata = originalConfig == null
+        ? null
+        : (emitRequestMetadataEnabled(
+            originalConfig.providerOptions,
+            config.providerId,
+            fallbackProviderId:
+                config.providerId == 'anthropic' ? null : 'anthropic',
+          )
+            ? LLMRequestMetadataPart(
+                body: sanitizeRequestBodyForMetadata(built.body),
+              )
+            : null);
     // Headers including interleaved thinking beta are automatically handled by AnthropicClient
-    final responseData = await client.postJson(
+    final responseWithHeaders = await client.postJsonWithHeaders(
       chatEndpoint,
       built.body,
       cancelToken: cancelToken,
     );
-    return _parseResponse(responseData, built.toolNameMapping);
+    return _parseResponse(
+      responseWithHeaders.json,
+      built.toolNameMapping,
+      responseHeaders: responseWithHeaders.headers,
+      requestMetadata: requestMetadata,
+    );
   }
 
   @override
@@ -67,12 +85,30 @@ class AnthropicChat
     CancelToken? cancelToken,
   }) async {
     final built = _requestBuilder.buildRequestFromPrompt(prompt, tools, false);
-    final responseData = await client.postJson(
+    final originalConfig = config.originalConfig;
+    final requestMetadata = originalConfig == null
+        ? null
+        : (emitRequestMetadataEnabled(
+            originalConfig.providerOptions,
+            config.providerId,
+            fallbackProviderId:
+                config.providerId == 'anthropic' ? null : 'anthropic',
+          )
+            ? LLMRequestMetadataPart(
+                body: sanitizeRequestBodyForMetadata(built.body),
+              )
+            : null);
+    final responseWithHeaders = await client.postJsonWithHeaders(
       chatEndpoint,
       built.body,
       cancelToken: cancelToken,
     );
-    return _parseResponse(responseData, built.toolNameMapping);
+    return _parseResponse(
+      responseWithHeaders.json,
+      built.toolNameMapping,
+      responseHeaders: responseWithHeaders.headers,
+      requestMetadata: requestMetadata,
+    );
   }
 
   @override
@@ -168,12 +204,35 @@ class AnthropicChat
   /// Parse response from Anthropic API
   ChatResponse _parseResponse(
     Map<String, dynamic> responseData,
-    ToolNameMapping toolNameMapping,
-  ) {
+    ToolNameMapping toolNameMapping, {
+    Map<String, String>? responseHeaders,
+    LLMRequestMetadataPart? requestMetadata,
+  }) {
+    final id = responseData['id'] as String?;
+    final model = responseData['model'] as String?;
+    final headers = (responseHeaders != null && responseHeaders.isNotEmpty)
+        ? responseHeaders
+        : null;
+
+    final responseMetadata = (id != null || model != null || headers != null)
+        ? LLMResponseMetadataPart(
+            id: id,
+            model: model,
+            headers: headers,
+            body: responseData,
+            raw: {
+              if (id != null) 'id': id,
+              if (model != null) 'model': model,
+            },
+          )
+        : null;
+
     return AnthropicChatResponse(
       responseData,
       config.providerId,
       toolNameMapping,
+      responseMetadata,
+      requestMetadata,
     );
   }
 

@@ -65,14 +65,21 @@ class OpenAIChat
       tools: tools,
       stream: false,
     );
-    final responseData = await client.postJson(
+    final requestMetadata = _emitRequestMetadataEnabled()
+        ? LLMRequestMetadataPart(
+            body: sanitizeRequestBodyForMetadata(requestBody),
+          )
+        : null;
+    final responseWithHeaders = await client.postJsonWithHeaders(
       chatEndpoint,
       requestBody,
       cancelToken: cancelToken,
     );
     return _parseResponse(
-      responseData,
+      responseWithHeaders.json,
       didRequestTools: tools != null && tools.isNotEmpty,
+      responseHeaders: responseWithHeaders.headers,
+      requestMetadata: requestMetadata,
     );
   }
 
@@ -89,14 +96,21 @@ class OpenAIChat
       tools: tools,
       stream: false,
     );
-    final responseData = await client.postJson(
+    final requestMetadata = _emitRequestMetadataEnabled()
+        ? LLMRequestMetadataPart(
+            body: sanitizeRequestBodyForMetadata(requestBody),
+          )
+        : null;
+    final responseWithHeaders = await client.postJsonWithHeaders(
       chatEndpoint,
       requestBody,
       cancelToken: cancelToken,
     );
     return _parseResponse(
-      responseData,
+      responseWithHeaders.json,
       didRequestTools: tools != null && tools.isNotEmpty,
+      responseHeaders: responseWithHeaders.headers,
+      requestMetadata: requestMetadata,
     );
   }
 
@@ -189,11 +203,13 @@ class OpenAIChat
         );
       }
 
-      final stream = client.postStreamRaw(
+      final streamed = await client.postStreamRawWithHeaders(
         chatEndpoint,
         requestBody,
         cancelToken: cancelToken,
       );
+      final responseHeaders = streamed.headers;
+      final stream = streamed.stream;
 
       await for (final chunk in stream) {
         final jsonList = client.parseSSEChunk(chunk);
@@ -225,6 +241,7 @@ class OpenAIChat
                       isUtc: true,
                     ),
               model: model,
+              headers: responseHeaders.isEmpty ? null : responseHeaders,
               systemFingerprint: systemFingerprint,
               raw: raw.isEmpty ? null : raw,
             );
@@ -924,6 +941,8 @@ class OpenAIChat
   ChatResponse _parseResponse(
     Map<String, dynamic> responseData, {
     required bool didRequestTools,
+    Map<String, String>? responseHeaders,
+    LLMRequestMetadataPart? requestMetadata,
   }) {
     // Extract thinking/reasoning content from non-streaming response
     String? thinkingContent;
@@ -963,12 +982,46 @@ class OpenAIChat
       }
     }
 
+    final created = responseData['created'];
+    DateTime? timestamp;
+    if (created is int) {
+      timestamp =
+          DateTime.fromMillisecondsSinceEpoch(created * 1000, isUtc: true);
+    }
+
+    final idRaw = responseData['id'];
+    final id = idRaw is String ? idRaw : idRaw?.toString();
+    final modelRaw = responseData['model'];
+    final model = modelRaw is String ? modelRaw : null;
+    final systemFingerprint = responseData['system_fingerprint'];
+    final headers = (responseHeaders != null && responseHeaders.isNotEmpty)
+        ? responseHeaders
+        : null;
+
+    final responseMetadata = (id != null ||
+            model != null ||
+            timestamp != null ||
+            systemFingerprint is String ||
+            headers != null)
+        ? LLMResponseMetadataPart(
+            id: id,
+            timestamp: timestamp,
+            model: model,
+            headers: headers,
+            body: responseData,
+            systemFingerprint:
+                systemFingerprint is String ? systemFingerprint : null,
+          )
+        : null;
+
     return OpenAIChatResponse(
       responseData,
       thinkingContent: thinkingContent,
       providerId: config.providerId,
       parseToolCallsFromText: _parseToolCallsFromTextEnabled(),
       didRequestTools: didRequestTools,
+      responseMetadata: responseMetadata,
+      requestMetadata: requestMetadata,
     );
   }
 
@@ -1022,12 +1075,18 @@ String? _extractThoughtSignatureFromExtraContent(Map<String, dynamic> rawCall) {
 }
 
 /// OpenAI chat response implementation
-class OpenAIChatResponse implements ChatResponseWithFinishReason {
+class OpenAIChatResponse
+    implements
+        ChatResponseWithFinishReason,
+        ChatResponseWithResponseMetadata,
+        ChatResponseWithRequestMetadata {
   final Map<String, dynamic> _rawResponse;
   final String? _thinkingContent;
   final String? _providerId;
   final bool _parseToolCallsFromText;
   final bool _didRequestTools;
+  final LLMResponseMetadataPart? _responseMetadata;
+  final LLMRequestMetadataPart? _requestMetadata;
 
   OpenAIChatResponse(
     this._rawResponse, {
@@ -1035,10 +1094,20 @@ class OpenAIChatResponse implements ChatResponseWithFinishReason {
     String? providerId,
     bool parseToolCallsFromText = false,
     bool didRequestTools = false,
+    LLMResponseMetadataPart? responseMetadata,
+    LLMRequestMetadataPart? requestMetadata,
   })  : _thinkingContent = thinkingContent,
         _providerId = providerId,
         _parseToolCallsFromText = parseToolCallsFromText,
-        _didRequestTools = didRequestTools;
+        _didRequestTools = didRequestTools,
+        _responseMetadata = responseMetadata,
+        _requestMetadata = requestMetadata;
+
+  @override
+  LLMResponseMetadataPart? get responseMetadata => _responseMetadata;
+
+  @override
+  LLMRequestMetadataPart? get requestMetadata => _requestMetadata;
 
   @override
   String? get text {

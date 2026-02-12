@@ -26,6 +26,16 @@ class _FakeOpenAIClient extends OpenAIClient {
   }) {
     return _stream;
   }
+
+  @override
+  Future<({Stream<String> stream, Map<String, String> headers})>
+      postStreamRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+  }) async {
+    return (stream: _stream, headers: const <String, String>{});
+  }
 }
 
 ({String text, String reasoning}) _expectedFromDeepSeekFixture(String path) {

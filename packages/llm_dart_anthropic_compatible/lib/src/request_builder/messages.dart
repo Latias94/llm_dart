@@ -236,7 +236,7 @@ extension _AnthropicRequestBuilderMessages on AnthropicRequestBuilder {
           }
           for (final result in results) {
             final resultContent = result.function.arguments;
-            final isError = _toolResultIsError(resultContent, result);
+            final isError = _toolResultIsError(resultContent, result.providerOptions);
 
             content.add({
               'type': 'tool_result',
@@ -261,9 +261,9 @@ extension _AnthropicRequestBuilderMessages on AnthropicRequestBuilder {
     };
   }
 
-  bool _toolResultIsError(String content, ToolCall toolResult) {
+  bool _toolResultIsError(String content, ProviderOptions providerOptions) {
     final explicit = readProviderOption<bool>(
-      toolResult.providerOptions,
+      providerOptions,
       config.providerId,
       'isError',
       fallbackProviderId: _providerOptionsFallbackId,
@@ -271,7 +271,7 @@ extension _AnthropicRequestBuilderMessages on AnthropicRequestBuilder {
     if (explicit != null) return explicit;
 
     final explicitSnake = readProviderOption<bool>(
-      toolResult.providerOptions,
+      providerOptions,
       config.providerId,
       'is_error',
       fallbackProviderId: _providerOptionsFallbackId,
