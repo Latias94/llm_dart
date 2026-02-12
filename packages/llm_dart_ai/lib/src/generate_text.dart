@@ -1,6 +1,8 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'prompt_input.dart';
+import 'metadata_fallbacks.dart';
+import 'response_messages.dart';
 import 'types.dart';
 
 /// Generate text (Vercel-style prompt input).
@@ -18,8 +20,10 @@ Future<GenerateTextResult> generateText({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   List<Tool>? tools,
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) async {
+  final startedAt = DateTime.now().toUtc();
   final input = standardizePromptInput(
     system: system,
     prompt: prompt,
@@ -64,5 +68,22 @@ Future<GenerateTextResult> generateText({
     usage: response.usage,
     finishReason:
         response is ChatResponseWithFinishReason ? response.finishReason : null,
+    requestMetadata: requestMetadataWithInclude(
+      response is ChatResponseWithRequestMetadata
+          ? response.requestMetadata
+          : null,
+      include,
+    ),
+    responseMetadata: response is ChatResponseWithResponseMetadata
+        ? responseMetadataWithInclude(
+            responseMetadataWithTimestampFallback(
+              response.responseMetadata,
+              startedAt,
+            ),
+            include,
+          )
+        : null,
+    responseMessages: buildResponseMessagesBestEffort(response),
+    responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
   );
 }

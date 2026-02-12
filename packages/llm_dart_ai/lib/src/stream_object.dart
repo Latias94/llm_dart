@@ -6,7 +6,10 @@ import 'package:llm_dart_core/utils/tool_call_aggregator.dart';
 
 import 'generate_object.dart';
 import 'prompt_input.dart';
+import 'response_messages.dart';
+import 'metadata_fallbacks.dart';
 import 'stream_parts.dart';
+import 'types.dart';
 
 enum StreamObjectOutput { object, array }
 
@@ -106,6 +109,7 @@ class StreamObjectResult {
     required String toolName,
     StreamObjectOutput output = StreamObjectOutput.object,
   }) {
+    final startedAt = DateTime.now().toUtc();
     final toolSchema =
         output == StreamObjectOutput.array ? _wrapArraySchema(schema) : schema;
 
@@ -150,7 +154,7 @@ class StreamObjectResult {
       ),
     ));
 
-    final toolCallAgg = ToolCallAggregator();
+    var toolCallAgg = ToolCallAggregator();
     final endedToolCalls = <String>{};
 
     final targetToolCallIds = <String, bool>{};
@@ -227,6 +231,30 @@ class StreamObjectResult {
 
             case LLMRequestMetadataPart():
               lastRequestMetadata = part;
+
+            case LLMStepStartPart():
+              // AI SDK semantics: stable result futures are derived from the
+              // *last step* when step boundaries are present.
+              toolCallAgg = ToolCallAggregator();
+              endedToolCalls.clear();
+
+              targetToolCallIds.clear();
+              toolCallPreNameArgs.clear();
+
+              toolInputBuffers.clear();
+              toolInputNames.clear();
+              endedToolInputs.clear();
+              targetToolInputIds.clear();
+
+              textBuffer.clear();
+              objectJsonTextBuffer.clear();
+
+              lastResponseMetadata = null;
+              lastRequestMetadata = null;
+              lastProviderMetadata = null;
+
+              lastEmittedJson = null;
+              publishedElements = 0;
 
             case LLMTextDeltaPart(:final delta):
               textBuffer.write(delta);
@@ -356,7 +384,12 @@ class StreamObjectResult {
           if (!warningsCompleter.isCompleted)
             warningsCompleter.complete(const <Map<String, dynamic>>[]);
           if (!responseMetadataCompleter.isCompleted) {
-            responseMetadataCompleter.complete(lastResponseMetadata);
+            responseMetadataCompleter.complete(
+              responseMetadataWithTimestampFallback(
+                lastResponseMetadata,
+                startedAt,
+              ),
+            );
           }
           if (!requestMetadataCompleter.isCompleted) {
             requestMetadataCompleter.complete(lastRequestMetadata);
@@ -407,7 +440,12 @@ class StreamObjectResult {
           if (!warningsCompleter.isCompleted)
             warningsCompleter.complete(const <Map<String, dynamic>>[]);
           if (!responseMetadataCompleter.isCompleted) {
-            responseMetadataCompleter.complete(lastResponseMetadata);
+            responseMetadataCompleter.complete(
+              responseMetadataWithTimestampFallback(
+                lastResponseMetadata,
+                startedAt,
+              ),
+            );
           }
           if (!requestMetadataCompleter.isCompleted) {
             requestMetadataCompleter.complete(lastRequestMetadata);
@@ -433,7 +471,18 @@ class StreamObjectResult {
 
           finalResultCompleter.complete(
             GenerateObjectResult(
-                object: resolved.object, rawResponse: response),
+              object: resolved.object,
+              rawResponse: response,
+              requestMetadata: lastRequestMetadata,
+              responseMetadata: responseMetadataWithTimestampFallback(
+                lastResponseMetadata,
+                startedAt,
+              ),
+              responseMessages: buildResponseMessagesBestEffort(response),
+              responsePromptMessages: buildResponsePromptMessagesBestEffort(
+                response,
+              ),
+            ),
           );
         } catch (e) {
           final err = e is LLMError
@@ -442,7 +491,12 @@ class StreamObjectResult {
           if (!warningsCompleter.isCompleted)
             warningsCompleter.complete(const <Map<String, dynamic>>[]);
           if (!responseMetadataCompleter.isCompleted) {
-            responseMetadataCompleter.complete(lastResponseMetadata);
+            responseMetadataCompleter.complete(
+              responseMetadataWithTimestampFallback(
+                lastResponseMetadata,
+                startedAt,
+              ),
+            );
           }
           if (!requestMetadataCompleter.isCompleted) {
             requestMetadataCompleter.complete(lastRequestMetadata);
@@ -524,6 +578,7 @@ StreamObjectResult streamObject({
   String toolName = 'return_object',
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) {
   Stream<LLMStreamPart> upstream() async* {
@@ -554,11 +609,14 @@ StreamObjectResult streamObject({
         ];
 
         try {
-          yield* streamChatParts(
-            model: model,
-            messages: augmentedMessages,
-            tools: [tool],
-            cancelToken: cancelToken,
+          yield* streamPartsWithInclude(
+            streamChatParts(
+              model: model,
+              messages: augmentedMessages,
+              tools: [tool],
+              cancelToken: cancelToken,
+            ),
+            include,
           );
         } catch (e) {
           if (e is LLMError) {
@@ -583,11 +641,14 @@ StreamObjectResult streamObject({
         );
 
         try {
-          yield* streamChatParts(
-            model: model,
-            promptIr: augmentedPrompt,
-            tools: [tool],
-            cancelToken: cancelToken,
+          yield* streamPartsWithInclude(
+            streamChatParts(
+              model: model,
+              promptIr: augmentedPrompt,
+              tools: [tool],
+              cancelToken: cancelToken,
+            ),
+            include,
           );
         } catch (e) {
           if (e is LLMError) {

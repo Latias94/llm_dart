@@ -1,5 +1,22 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+/// Settings for controlling what data is retained in results.
+///
+/// This is aligned with AI SDK's `experimental_include` concept. It can help
+/// reduce memory usage when processing large payloads like images.
+class IncludeOptions {
+  /// Whether to retain the request body in results/steps.
+  final bool requestBody;
+
+  /// Whether to retain the response body in results/steps.
+  final bool responseBody;
+
+  const IncludeOptions({
+    this.requestBody = true,
+    this.responseBody = true,
+  });
+}
+
 /// Result for a non-streaming text generation call.
 class GenerateTextResult {
   final String? text;
@@ -7,6 +24,32 @@ class GenerateTextResult {
   final List<ToolCall>? toolCalls;
   final UsageInfo? usage;
   final LLMFinishReason? finishReason;
+
+  /// Best-effort request metadata for this generation (provider-dependent).
+  ///
+  /// When available, this includes the (sanitized) HTTP request body that was
+  /// sent to the provider.
+  final LLMRequestMetadataPart? requestMetadata;
+
+  /// Best-effort response metadata for this generation (provider-dependent).
+  ///
+  /// When available, this includes HTTP response headers (for HTTP providers)
+  /// and stable response identifiers/timestamps.
+  final LLMResponseMetadataPart? responseMetadata;
+
+  /// Best-effort response messages for this generation.
+  ///
+  /// This is intended to align with AI SDK's `result.response.messages` concept.
+  /// Providers that can expose an exact assistant message should implement
+  /// [ChatResponseWithAssistantMessage]. Otherwise, we derive a best-effort
+  /// message from `text` and/or `toolCalls`.
+  final List<ChatMessage> responseMessages;
+
+  /// Best-effort response prompt messages for this generation (Vercel-style IR).
+  ///
+  /// This is a closer semantic match to AI SDK `ResponseMessage` types because
+  /// it can represent tool-role messages via [PromptRole.tool].
+  final List<PromptMessage> responsePromptMessages;
 
   /// The raw provider response object for advanced use cases.
   final ChatResponse rawResponse;
@@ -18,6 +61,10 @@ class GenerateTextResult {
     this.toolCalls,
     this.usage,
     this.finishReason,
+    this.requestMetadata,
+    this.responseMetadata,
+    this.responseMessages = const <ChatMessage>[],
+    this.responsePromptMessages = const <PromptMessage>[],
   });
 
   Map<String, dynamic>? get providerMetadata => rawResponse.providerMetadata;
@@ -73,11 +120,29 @@ class ToolLoopStep {
   final List<ToolCall> toolCalls;
   final List<ToolResult> toolResults;
 
+  /// Best-effort response metadata for this step.
+  ///
+  /// When available, this includes HTTP response headers (for HTTP providers)
+  /// and stable response identifiers/timestamps.
+  final LLMResponseMetadataPart? responseMetadata;
+
+  /// Best-effort request metadata for this step (provider-dependent).
+  final LLMRequestMetadataPart? requestMetadata;
+
+  /// Best-effort response prompt messages for this step (AI SDK-style).
+  ///
+  /// When tool results are available, this can include a `tool` role message
+  /// that contains the tool outputs.
+  final List<PromptMessage> responsePromptMessages;
+
   const ToolLoopStep({
     required this.index,
     required this.result,
     required this.toolCalls,
     required this.toolResults,
+    this.responseMetadata,
+    this.requestMetadata,
+    this.responsePromptMessages = const <PromptMessage>[],
   });
 }
 
@@ -87,10 +152,17 @@ class ToolLoopResult {
   final List<ToolLoopStep> steps;
   final List<ChatMessage> messages;
 
+  /// Best-effort prompt IR for the full tool loop run.
+  ///
+  /// This preserves `tool` role messages and prompt parts more faithfully than
+  /// the legacy [messages] list.
+  final Prompt? prompt;
+
   const ToolLoopResult({
     required this.finalResult,
     required this.steps,
     required this.messages,
+    this.prompt,
   });
 }
 
@@ -103,6 +175,9 @@ class ToolLoopBlockedState {
   final List<ToolLoopStep> steps;
   final List<ChatMessage> messages;
 
+  /// Best-effort prompt IR at the point where the loop was blocked.
+  final Prompt? prompt;
+
   const ToolLoopBlockedState({
     required this.stepIndex,
     required this.stepResult,
@@ -110,6 +185,7 @@ class ToolLoopBlockedState {
     required this.toolCallsNeedingApproval,
     required this.steps,
     required this.messages,
+    this.prompt,
   });
 }
 

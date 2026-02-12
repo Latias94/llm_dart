@@ -7,6 +7,8 @@ import 'stream_parts.dart';
 import 'tool_loop.dart';
 import 'tool_types.dart';
 import 'tool_set.dart';
+import 'response_messages.dart';
+import 'metadata_fallbacks.dart';
 import 'types.dart';
 
 /// A streaming text generation result (AI SDK-inspired).
@@ -99,6 +101,7 @@ class StreamTextResult {
   });
 
   factory StreamTextResult.fromPartsStream(Stream<LLMStreamPart> upstream) {
+    final startedAt = DateTime.now().toUtc();
     final controller = StreamController<LLMStreamPart>.broadcast(sync: true);
 
     final doneCompleter = Completer<void>();
@@ -248,6 +251,22 @@ class StreamTextResult {
                   (response is ChatResponseWithFinishReason
                       ? response.finishReason
                       : null);
+              final stepResponseMetadata =
+                  responseMetadataWithTimestampFallback(
+                lastResponseMetadata,
+                startedAt,
+              );
+              final stepAssistantPromptMessages =
+                  buildResponsePromptMessagesBestEffort(response);
+              final stepResponsePromptMessages = toolResults.isNotEmpty
+                  ? [
+                      ...stepAssistantPromptMessages,
+                      buildToolResultPromptMessageBestEffort(
+                        toolCalls: toolCalls,
+                        toolResults: toolResults,
+                      ),
+                    ]
+                  : stepAssistantPromptMessages;
 
               collectedSteps.add(
                 ToolLoopStep(
@@ -259,9 +278,16 @@ class StreamTextResult {
                     toolCalls: toolCalls,
                     usage: stepUsage,
                     finishReason: stepFinishReason,
+                    requestMetadata: lastRequestMetadata,
+                    responseMetadata: stepResponseMetadata,
+                    responseMessages: buildResponseMessagesBestEffort(response),
+                    responsePromptMessages: stepAssistantPromptMessages,
                   ),
                   toolCalls: toolCalls,
                   toolResults: toolResults,
+                  responseMetadata: stepResponseMetadata,
+                  requestMetadata: lastRequestMetadata,
+                  responsePromptMessages: stepResponsePromptMessages,
                 ),
               );
 
@@ -339,7 +365,10 @@ class StreamTextResult {
             warningsCompleter.complete(const <Map<String, dynamic>>[]);
           }
           if (!responseMetadataCompleter.isCompleted) {
-            responseMetadataCompleter.complete(lastResponseMetadata);
+            responseMetadataCompleter.complete(
+              responseMetadataWithTimestampFallback(
+                  lastResponseMetadata, startedAt),
+            );
           }
           if (!requestMetadataCompleter.isCompleted) {
             requestMetadataCompleter.complete(lastRequestMetadata);
@@ -367,7 +396,10 @@ class StreamTextResult {
           warningsCompleter.complete(const <Map<String, dynamic>>[]);
         }
         if (!responseMetadataCompleter.isCompleted) {
-          responseMetadataCompleter.complete(lastResponseMetadata);
+          responseMetadataCompleter.complete(
+            responseMetadataWithTimestampFallback(
+                lastResponseMetadata, startedAt),
+          );
         }
         if (!requestMetadataCompleter.isCompleted) {
           requestMetadataCompleter.complete(lastRequestMetadata);
@@ -383,6 +415,10 @@ class StreamTextResult {
 
         if (collectedSteps.isEmpty) {
           final toolCalls = response.toolCalls ?? const <ToolCall>[];
+          final responseMetadata = responseMetadataWithTimestampFallback(
+            lastResponseMetadata,
+            startedAt,
+          );
           stepsCompleter.complete([
             ToolLoopStep(
               index: 0,
@@ -394,9 +430,18 @@ class StreamTextResult {
                 toolCalls: toolCalls,
                 usage: usage,
                 finishReason: finishReason,
+                requestMetadata: lastRequestMetadata,
+                responseMetadata: responseMetadata,
+                responseMessages: buildResponseMessagesBestEffort(response),
+                responsePromptMessages:
+                    buildResponsePromptMessagesBestEffort(response),
               ),
               toolCalls: toolCalls,
               toolResults: const [],
+              responseMetadata: responseMetadata,
+              requestMetadata: lastRequestMetadata,
+              responsePromptMessages:
+                  buildResponsePromptMessagesBestEffort(response),
             ),
           ]);
         } else {
@@ -413,6 +458,15 @@ class StreamTextResult {
             toolCalls: response.toolCalls,
             usage: usage,
             finishReason: finishReason,
+            requestMetadata: lastRequestMetadata,
+            responseMetadata: responseMetadataWithTimestampFallback(
+              lastResponseMetadata,
+              startedAt,
+            ),
+            responseMessages: buildResponseMessagesBestEffort(response),
+            responsePromptMessages: buildResponsePromptMessagesBestEffort(
+              response,
+            ),
           ),
         );
       }
@@ -481,6 +535,7 @@ StreamTextResult streamText({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) {
   Stream<LLMStreamPart> upstream() async* {
@@ -497,6 +552,7 @@ StreamTextResult streamText({
         maxSteps: maxSteps,
         continueOnToolError: continueOnToolError,
         emitStepParts: true,
+        include: include,
         cancelToken: cancelToken,
       );
       return;
@@ -539,14 +595,17 @@ StreamTextResult streamText({
     }
 
     try {
-      yield* streamChatParts(
-        model: model,
-        system: system,
-        prompt: prompt,
-        messages: messages,
-        promptIr: promptIr,
-        tools: tools,
-        cancelToken: cancelToken,
+      yield* streamPartsWithInclude(
+        streamChatParts(
+          model: model,
+          system: system,
+          prompt: prompt,
+          messages: messages,
+          promptIr: promptIr,
+          tools: tools,
+          cancelToken: cancelToken,
+        ),
+        include,
       );
     } catch (e) {
       if (e is LLMError) {

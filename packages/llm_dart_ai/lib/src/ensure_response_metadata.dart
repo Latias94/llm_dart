@@ -9,6 +9,8 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 ///   them into a single merged part.
 /// - If additional response-metadata parts appear later in the stream, they are
 ///   dropped (best-effort dedupe).
+/// - When step boundaries ([LLMStepStartPart]) are present, response metadata is
+///   allowed once per step (AI SDK-style tool loop semantics).
 ///
 /// This keeps us close to the AI SDK v3 intent that response metadata is sent
 /// once it becomes available.
@@ -28,6 +30,13 @@ Stream<LLMStreamPart> ensureResponseMetadataPart(
 
       final part = buffered;
       buffered = null;
+
+      if (part is LLMStepStartPart) {
+        // Tool loop step boundary: allow response metadata again for the next step.
+        emitted = false;
+        yield part;
+        continue;
+      }
 
       if (part is! LLMResponseMetadataPart) {
         yield part;
@@ -63,6 +72,20 @@ LLMResponseMetadataPart _mergeResponseMetadata(
   LLMResponseMetadataPart a,
   LLMResponseMetadataPart b,
 ) {
+  Map<String, String>? mergeHeaders(
+      Map<String, String>? x, Map<String, String>? y) {
+    if (x == null || x.isEmpty) {
+      return y == null ? null : Map<String, String>.from(y);
+    }
+    if (y == null || y.isEmpty) {
+      return Map<String, String>.from(x);
+    }
+    return {
+      ...x,
+      ...y,
+    };
+  }
+
   Map<String, dynamic>? mergeMap(
       Map<String, dynamic>? x, Map<String, dynamic>? y) {
     if (x == null || x.isEmpty) {
@@ -81,6 +104,8 @@ LLMResponseMetadataPart _mergeResponseMetadata(
     id: a.id ?? b.id,
     timestamp: a.timestamp ?? b.timestamp,
     model: a.model ?? b.model,
+    headers: mergeHeaders(a.headers, b.headers),
+    body: a.body ?? b.body,
     status: a.status ?? b.status,
     systemFingerprint: a.systemFingerprint ?? b.systemFingerprint,
     providerMetadata: mergeMap(a.providerMetadata, b.providerMetadata),

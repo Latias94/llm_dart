@@ -9,7 +9,10 @@ import 'ensure_block_ends.dart';
 import 'ensure_provider_metadata.dart';
 import 'ensure_response_metadata.dart';
 import 'ensure_stream_start.dart';
+import 'metadata_fallbacks.dart';
 import 'prompt_input.dart';
+import 'prompt_message_converters.dart';
+import 'response_messages.dart';
 import 'tool_set.dart';
 import 'tool_types.dart';
 import 'types.dart';
@@ -35,246 +38,9 @@ Prompt _appendChatMessageToPrompt(Prompt prompt, ChatMessage message) {
   return Prompt(
     messages: [
       ...prompt.messages,
-      _promptMessageFromChatMessage(message),
+      promptMessageFromChatMessage(message),
     ],
   );
-}
-
-PromptMessage _promptMessageFromChatMessage(ChatMessage message) {
-  final providerOptions = message.providerOptions;
-  final parts = <PromptPart>[];
-
-  void addTextIfPresent([String? text]) {
-    final effective = text ?? '';
-    if (effective.trim().isEmpty) return;
-    parts.add(TextPart(effective));
-  }
-
-  // Protocol-internal: preserve Anthropic-compatible tool_use blocks that must
-  // be persisted across requests for tool loop continuity.
-  final anthropic = message.getProtocolPayload('anthropic');
-  if (anthropic is Map) {
-    final contentBlocks = anthropic['contentBlocks'];
-    if (contentBlocks is List) {
-      for (final raw in contentBlocks) {
-        if (raw is! Map) continue;
-        final type = raw['type'];
-        if (type is! String) continue;
-
-        final cacheControl = raw['cache_control'];
-        final blockProviderOptions = cacheControl is Map<String, dynamic>
-            ? {
-                'anthropic': {'cacheControl': cacheControl},
-              }
-            : const <String, Map<String, dynamic>>{};
-
-        switch (type) {
-          case 'text':
-            final text = raw['text']?.toString() ?? '';
-            if (text.trim().isEmpty) continue;
-            parts.add(TextPart(text, providerOptions: blockProviderOptions));
-            break;
-
-          case 'tool_use':
-            if (message.role != ChatRole.assistant) {
-              throw const InvalidRequestError(
-                'Anthropic tool_use blocks must be emitted from an assistant message.',
-              );
-            }
-            final id = raw['id']?.toString() ?? '';
-            final name = raw['name']?.toString() ?? '';
-            final input = raw['input'];
-            parts.add(
-              ToolCallPart(
-                ToolCall(
-                  id: id,
-                  callType: 'function',
-                  function: FunctionCall(
-                    name: name,
-                    arguments: jsonEncode(input ?? const <String, dynamic>{}),
-                  ),
-                ),
-                providerOptions: blockProviderOptions,
-              ),
-            );
-            break;
-
-          case 'tool_result':
-            if (message.role != ChatRole.user) {
-              throw const InvalidRequestError(
-                'Anthropic tool_result blocks must be emitted from a user message.',
-              );
-            }
-            final toolUseId = raw['tool_use_id']?.toString() ?? '';
-            final content = raw['content']?.toString() ?? '';
-            final isError = raw['is_error'];
-            final toolResultProviderOptions = <String, Map<String, dynamic>>{
-              ...blockProviderOptions,
-              if (isError == true) 'anthropic': {'isError': true},
-            };
-            parts.add(
-              ToolResultPart(
-                ToolCall(
-                  id: toolUseId,
-                  callType: 'function',
-                  function: FunctionCall(
-                    name: '',
-                    arguments: content,
-                  ),
-                  providerOptions: toolResultProviderOptions,
-                ),
-                providerOptions: toolResultProviderOptions,
-              ),
-            );
-            break;
-
-          case 'thinking':
-          case 'redacted_thinking':
-            // Not part of the stable prompt surface; skip.
-            break;
-
-          case 'image':
-            if (message.role == ChatRole.system) {
-              throw const InvalidRequestError(
-                'System messages cannot contain images.',
-              );
-            }
-            final source = raw['source'];
-            if (source is Map && source['type'] == 'base64') {
-              final mediaType = source['media_type']?.toString() ?? '';
-              final data = source['data']?.toString() ?? '';
-              if (mediaType.isNotEmpty && data.isNotEmpty) {
-                parts.add(
-                  ImagePart(
-                    mime: _imageMimeFromMediaType(mediaType),
-                    data: base64Decode(data),
-                    providerOptions: blockProviderOptions,
-                  ),
-                );
-              }
-            }
-            break;
-
-          case 'document':
-            if (message.role == ChatRole.system) {
-              throw const InvalidRequestError(
-                'System messages cannot contain files.',
-              );
-            }
-            final source = raw['source'];
-            if (source is Map && source['type'] == 'base64') {
-              final mediaType = source['media_type']?.toString() ?? '';
-              final data = source['data']?.toString() ?? '';
-              if (mediaType.isNotEmpty && data.isNotEmpty) {
-                parts.add(
-                  FilePart(
-                    mime: FileMime(mediaType),
-                    data: base64Decode(data),
-                    providerOptions: blockProviderOptions,
-                  ),
-                );
-              }
-            }
-            break;
-        }
-      }
-    }
-  }
-
-  switch (message.messageType) {
-    case TextMessage():
-      if (parts.isEmpty) {
-        addTextIfPresent(message.content);
-      }
-
-    case ImageMessage(mime: final mime, data: final data):
-      if (message.role == ChatRole.system) {
-        throw const InvalidRequestError(
-          'System messages cannot contain images.',
-        );
-      }
-      if (parts.isEmpty) {
-        addTextIfPresent(message.content);
-        parts.add(ImagePart(mime: mime, data: data));
-      }
-
-    case ImageUrlMessage(url: final url):
-      if (message.role == ChatRole.system) {
-        throw const InvalidRequestError(
-          'System messages cannot contain image URLs.',
-        );
-      }
-      if (parts.isEmpty) {
-        addTextIfPresent(message.content);
-        parts.add(ImageUrlPart(url: url));
-      }
-
-    case FileMessage(mime: final mime, data: final data):
-      if (message.role == ChatRole.system) {
-        throw const InvalidRequestError(
-          'System messages cannot contain files.',
-        );
-      }
-      if (parts.isEmpty) {
-        addTextIfPresent(message.content);
-        parts.add(FilePart(mime: mime, data: data));
-      }
-
-    case ToolUseMessage(toolCalls: final toolCalls):
-      if (message.role != ChatRole.assistant) {
-        throw const InvalidRequestError(
-          'ToolUseMessage must be emitted from an assistant message.',
-        );
-      }
-      if (parts.isEmpty) {
-        addTextIfPresent(message.content);
-        for (final toolCall in toolCalls) {
-          parts.add(ToolCallPart(toolCall));
-        }
-      }
-
-    case ToolResultMessage(results: final results):
-      if (message.role != ChatRole.user) {
-        throw const InvalidRequestError(
-          'ToolResultMessage must be emitted from a user message.',
-        );
-      }
-      if (parts.isEmpty) {
-        addTextIfPresent(message.content);
-        for (final toolResult in results) {
-          parts.add(ToolResultPart(toolResult));
-        }
-      }
-  }
-
-  if (parts.isEmpty) {
-    throw InvalidRequestError(
-      'Cannot convert empty ChatMessage (${message.role.name}) to PromptMessage.',
-    );
-  }
-
-  return PromptMessage(
-    role: message.role,
-    parts: List<PromptPart>.unmodifiable(parts),
-    name: message.name,
-    providerOptions: providerOptions,
-    protocolPayloads: message.protocolPayloads,
-  );
-}
-
-ImageMime _imageMimeFromMediaType(String mediaType) {
-  switch (mediaType) {
-    case 'image/jpeg':
-      return ImageMime.jpeg;
-    case 'image/png':
-      return ImageMime.png;
-    case 'image/gif':
-      return ImageMime.gif;
-    case 'image/webp':
-      return ImageMime.webp;
-    default:
-      return ImageMime.jpeg;
-  }
 }
 
 bool _isFunctionToolCall(ToolCall toolCall) {
@@ -309,6 +75,7 @@ Future<ToolLoopResult> runToolLoop({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) async {
   final input = standardizePromptInput(
@@ -329,6 +96,7 @@ Future<ToolLoopResult> runToolLoop({
       needsApproval: needsApproval,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
+      include: include,
       cancelToken: cancelToken,
     );
   }
@@ -343,6 +111,7 @@ Future<ToolLoopResult> runToolLoop({
   final steps = <ToolLoopStep>[];
 
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
+    final startedAt = DateTime.now().toUtc();
     final response = await model.chatWithTools(
       workingMessages,
       tools,
@@ -360,6 +129,23 @@ Future<ToolLoopResult> runToolLoop({
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
+      requestMetadata: requestMetadataWithInclude(
+        response is ChatResponseWithRequestMetadata
+            ? response.requestMetadata
+            : null,
+        include,
+      ),
+      responseMetadata: response is ChatResponseWithResponseMetadata
+          ? responseMetadataWithInclude(
+              responseMetadataWithTimestampFallback(
+                response.responseMetadata,
+                startedAt,
+              ),
+              include,
+            )
+          : null,
+      responseMessages: buildResponseMessagesBestEffort(response),
+      responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
     );
 
     if (toolCalls.isEmpty) {
@@ -373,6 +159,9 @@ Future<ToolLoopResult> runToolLoop({
           result: stepResult,
           toolCalls: const [],
           toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
         ),
       );
 
@@ -380,6 +169,7 @@ Future<ToolLoopResult> runToolLoop({
         finalResult: stepResult,
         steps: steps,
         messages: List<ChatMessage>.unmodifiable(workingMessages),
+        prompt: promptFromChatMessages(workingMessages),
       );
     }
 
@@ -398,6 +188,9 @@ Future<ToolLoopResult> runToolLoop({
           result: stepResult,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
         ),
       );
 
@@ -416,6 +209,7 @@ Future<ToolLoopResult> runToolLoop({
               List<ToolCall>.unmodifiable(needingApproval),
           steps: List<ToolLoopStep>.unmodifiable(steps),
           messages: List<ChatMessage>.unmodifiable(workingMessages),
+          prompt: promptFromChatMessages(workingMessages),
         ),
       );
     }
@@ -435,6 +229,15 @@ Future<ToolLoopResult> runToolLoop({
         result: stepResult,
         toolCalls: List<ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
+        responseMetadata: stepResult.responseMetadata,
+        requestMetadata: stepResult.requestMetadata,
+        responsePromptMessages: [
+          ...stepResult.responsePromptMessages,
+          buildToolResultPromptMessageBestEffort(
+            toolCalls: toolCalls,
+            toolResults: executed,
+          ),
+        ],
       ),
     );
 
@@ -522,6 +325,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) async {
   if (model is! PromptChatCapability) {
@@ -539,6 +343,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       needsApproval: needsApproval,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
+      include: include,
       cancelToken: cancelToken,
     );
   }
@@ -556,6 +361,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   final promptCapable = model as PromptChatCapability;
 
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
+    final startedAt = DateTime.now().toUtc();
     final response = await promptCapable.chatPrompt(
       workingPrompt,
       tools: tools,
@@ -573,6 +379,23 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
+      requestMetadata: requestMetadataWithInclude(
+        response is ChatResponseWithRequestMetadata
+            ? response.requestMetadata
+            : null,
+        include,
+      ),
+      responseMetadata: response is ChatResponseWithResponseMetadata
+          ? responseMetadataWithInclude(
+              responseMetadataWithTimestampFallback(
+                response.responseMetadata,
+                startedAt,
+              ),
+              include,
+            )
+          : null,
+      responseMessages: buildResponseMessagesBestEffort(response),
+      responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
     );
 
     if (toolCalls.isEmpty) {
@@ -592,6 +415,9 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
           result: stepResult,
           toolCalls: const [],
           toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
         ),
       );
 
@@ -599,6 +425,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
         finalResult: stepResult,
         steps: steps,
         messages: List<ChatMessage>.unmodifiable(workingMessages),
+        prompt: workingPrompt,
       );
     }
 
@@ -617,6 +444,9 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
           result: stepResult,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
         ),
       );
 
@@ -640,6 +470,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
               List<ToolCall>.unmodifiable(needingApproval),
           steps: List<ToolLoopStep>.unmodifiable(steps),
           messages: List<ChatMessage>.unmodifiable(workingMessages),
+          prompt: workingPrompt,
         ),
       );
     }
@@ -659,6 +490,15 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
         result: stepResult,
         toolCalls: List<ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
+        responseMetadata: stepResult.responseMetadata,
+        requestMetadata: stepResult.requestMetadata,
+        responsePromptMessages: [
+          ...stepResult.responsePromptMessages,
+          buildToolResultPromptMessageBestEffort(
+            toolCalls: toolCalls,
+            toolResults: executed,
+          ),
+        ],
       ),
     );
 
@@ -699,6 +539,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) async {
   final input = standardizePromptInput(
@@ -719,6 +560,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       needsApproval: needsApproval,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
+      include: include,
       cancelToken: cancelToken,
     );
   }
@@ -733,6 +575,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
   final steps = <ToolLoopStep>[];
 
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
+    final startedAt = DateTime.now().toUtc();
     final response = await model.chatWithTools(
       workingMessages,
       tools,
@@ -750,6 +593,23 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
+      requestMetadata: requestMetadataWithInclude(
+        response is ChatResponseWithRequestMetadata
+            ? response.requestMetadata
+            : null,
+        include,
+      ),
+      responseMetadata: response is ChatResponseWithResponseMetadata
+          ? responseMetadataWithInclude(
+              responseMetadataWithTimestampFallback(
+                response.responseMetadata,
+                startedAt,
+              ),
+              include,
+            )
+          : null,
+      responseMessages: buildResponseMessagesBestEffort(response),
+      responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
     );
 
     if (toolCalls.isEmpty) {
@@ -763,6 +623,9 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
           result: stepResult,
           toolCalls: const [],
           toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
         ),
       );
 
@@ -771,6 +634,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
           finalResult: stepResult,
           steps: steps,
           messages: List<ChatMessage>.unmodifiable(workingMessages),
+          prompt: promptFromChatMessages(workingMessages),
         ),
       );
     }
@@ -790,6 +654,9 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
           result: stepResult,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
         ),
       );
 
@@ -808,6 +675,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
               List<ToolCall>.unmodifiable(needingApproval),
           steps: List<ToolLoopStep>.unmodifiable(steps),
           messages: List<ChatMessage>.unmodifiable(workingMessages),
+          prompt: promptFromChatMessages(workingMessages),
         ),
       );
     }
@@ -827,6 +695,15 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
         result: stepResult,
         toolCalls: List<ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
+        responseMetadata: stepResult.responseMetadata,
+        requestMetadata: stepResult.requestMetadata,
+        responsePromptMessages: [
+          ...stepResult.responsePromptMessages,
+          buildToolResultPromptMessageBestEffort(
+            toolCalls: toolCalls,
+            toolResults: executed,
+          ),
+        ],
       ),
     );
 
@@ -858,6 +735,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) async {
   if (model is! PromptChatCapability) {
@@ -875,6 +753,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       needsApproval: needsApproval,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
+      include: include,
       cancelToken: cancelToken,
     );
   }
@@ -892,6 +771,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   final promptCapable = model as PromptChatCapability;
 
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
+    final startedAt = DateTime.now().toUtc();
     final response = await promptCapable.chatPrompt(
       workingPrompt,
       tools: tools,
@@ -909,6 +789,23 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
+      requestMetadata: requestMetadataWithInclude(
+        response is ChatResponseWithRequestMetadata
+            ? response.requestMetadata
+            : null,
+        include,
+      ),
+      responseMetadata: response is ChatResponseWithResponseMetadata
+          ? responseMetadataWithInclude(
+              responseMetadataWithTimestampFallback(
+                response.responseMetadata,
+                startedAt,
+              ),
+              include,
+            )
+          : null,
+      responseMessages: buildResponseMessagesBestEffort(response),
+      responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
     );
 
     if (toolCalls.isEmpty) {
@@ -928,6 +825,9 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
           result: stepResult,
           toolCalls: const [],
           toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
         ),
       );
 
@@ -936,6 +836,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
           finalResult: stepResult,
           steps: steps,
           messages: List<ChatMessage>.unmodifiable(workingMessages),
+          prompt: workingPrompt,
         ),
       );
     }
@@ -955,6 +856,9 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
           result: stepResult,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
         ),
       );
 
@@ -977,6 +881,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
               List<ToolCall>.unmodifiable(needingApproval),
           steps: List<ToolLoopStep>.unmodifiable(steps),
           messages: List<ChatMessage>.unmodifiable(workingMessages),
+          prompt: workingPrompt,
         ),
       );
     }
@@ -996,6 +901,15 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
         result: stepResult,
         toolCalls: List<ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
+        responseMetadata: stepResult.responseMetadata,
+        requestMetadata: stepResult.requestMetadata,
+        responsePromptMessages: [
+          ...stepResult.responsePromptMessages,
+          buildToolResultPromptMessageBestEffort(
+            toolCalls: toolCalls,
+            toolResults: executed,
+          ),
+        ],
       ),
     );
 
@@ -1033,6 +947,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) {
   return runToolLoop(
@@ -1047,6 +962,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
     needsApproval: needsApproval,
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
+    include: include,
     cancelToken: cancelToken,
   );
 }
@@ -1062,6 +978,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) {
   return runToolLoopUntilBlocked(
@@ -1076,6 +993,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
     needsApproval: needsApproval,
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
+    include: include,
     cancelToken: cancelToken,
   );
 }
@@ -1136,6 +1054,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
   int maxSteps = 10,
   bool continueOnToolError = true,
   bool emitStepParts = false,
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) async* {
   Stream<LLMStreamPart> upstream() async* {
@@ -1158,6 +1077,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         maxSteps: maxSteps,
         continueOnToolError: continueOnToolError,
         emitStepParts: emitStepParts,
+        include: include,
         cancelToken: cancelToken,
       );
       return;
@@ -1355,12 +1275,18 @@ Stream<LLMStreamPart> streamToolLoopParts({
                 toolCalls: completedToolCalls,
                 usage: mergedResponse.usage,
                 finishReason: mergedResponse.finishReason,
+                responseMetadata: null,
+                responseMessages:
+                    buildResponseMessagesBestEffort(mergedResponse),
+                responsePromptMessages:
+                    buildResponsePromptMessagesBestEffort(mergedResponse),
               ),
               toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
               toolCallsNeedingApproval:
                   List<ToolCall>.unmodifiable(needingApproval),
               steps: const [],
               messages: List<ChatMessage>.unmodifiable(workingMessages),
+              prompt: promptFromChatMessages(workingMessages),
             ),
           ),
         );
@@ -1416,7 +1342,10 @@ Stream<LLMStreamPart> streamToolLoopParts({
       ensureBlockIdsPart(
         ensureSingleFinishPart(
           ensureProviderMetadataPart(
-            ensureResponseMetadataPart(upstream()),
+            streamPartsWithInclude(
+              ensureResponseMetadataPart(upstream()),
+              include,
+            ),
           ),
         ),
       ),
@@ -1435,6 +1364,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   int maxSteps = 10,
   bool continueOnToolError = true,
   bool emitStepParts = false,
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) async* {
   final hasPromptStreamParts = model is PromptChatStreamPartsCapability;
@@ -1455,6 +1385,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
       emitStepParts: emitStepParts,
+      include: include,
       cancelToken: cancelToken,
     );
     return;
@@ -1650,12 +1581,17 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
               toolCalls: completedToolCalls,
               usage: mergedResponse.usage,
               finishReason: mergedResponse.finishReason,
+              responseMetadata: null,
+              responseMessages: buildResponseMessagesBestEffort(mergedResponse),
+              responsePromptMessages:
+                  buildResponsePromptMessagesBestEffort(mergedResponse),
             ),
             toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
             toolCallsNeedingApproval:
                 List<ToolCall>.unmodifiable(needingApproval),
             steps: const [],
             messages: List<ChatMessage>.unmodifiable(workingMessages),
+            prompt: workingPrompt,
           ),
         ),
       );
@@ -1725,6 +1661,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
   int maxSteps = 10,
   bool continueOnToolError = true,
   bool emitStepParts = false,
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) {
   return streamToolLoopParts(
@@ -1741,6 +1678,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
     emitStepParts: emitStepParts,
+    include: include,
     cancelToken: cancelToken,
   );
 }

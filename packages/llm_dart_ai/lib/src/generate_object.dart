@@ -3,17 +3,36 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'prompt_input.dart';
+import 'metadata_fallbacks.dart';
+import 'response_messages.dart';
+import 'types.dart';
 
 /// Result for a non-streaming object generation call.
 class GenerateObjectResult {
   /// Parsed object. When tool calling is used, this is the tool arguments map.
   final Map<String, dynamic> object;
 
+  /// Best-effort request metadata for this generation (provider-dependent).
+  final LLMRequestMetadataPart? requestMetadata;
+
+  /// Best-effort response metadata for this generation (provider-dependent).
+  final LLMResponseMetadataPart? responseMetadata;
+
+  /// Best-effort response messages for this generation.
+  final List<ChatMessage> responseMessages;
+
+  /// Best-effort response prompt messages for this generation (Vercel-style IR).
+  final List<PromptMessage> responsePromptMessages;
+
   /// The raw provider response object for advanced use cases.
   final ChatResponse rawResponse;
 
   const GenerateObjectResult({
     required this.object,
+    this.requestMetadata,
+    this.responseMetadata,
+    this.responseMessages = const <ChatMessage>[],
+    this.responsePromptMessages = const <PromptMessage>[],
     required this.rawResponse,
   });
 }
@@ -34,8 +53,10 @@ Future<GenerateObjectResult> generateObject({
   String toolName = 'return_object',
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
+  IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) async {
+  final startedAt = DateTime.now().toUtc();
   final input = standardizePromptInput(
     system: system,
     prompt: prompt,
@@ -112,7 +133,27 @@ Future<GenerateObjectResult> generateObject({
       );
     }
 
-    return GenerateObjectResult(object: args, rawResponse: response);
+    return GenerateObjectResult(
+      object: args,
+      rawResponse: response,
+      requestMetadata: requestMetadataWithInclude(
+        response is ChatResponseWithRequestMetadata
+            ? response.requestMetadata
+            : null,
+        include,
+      ),
+      responseMetadata: response is ChatResponseWithResponseMetadata
+          ? responseMetadataWithInclude(
+              responseMetadataWithTimestampFallback(
+                response.responseMetadata,
+                startedAt,
+              ),
+              include,
+            )
+          : null,
+      responseMessages: buildResponseMessagesBestEffort(response),
+      responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
+    );
   }
 
   final text = response.text;
@@ -128,7 +169,27 @@ Future<GenerateObjectResult> generateObject({
     );
   }
 
-  return GenerateObjectResult(object: parsed, rawResponse: response);
+  return GenerateObjectResult(
+    object: parsed,
+    rawResponse: response,
+    requestMetadata: requestMetadataWithInclude(
+      response is ChatResponseWithRequestMetadata
+          ? response.requestMetadata
+          : null,
+      include,
+    ),
+    responseMetadata: response is ChatResponseWithResponseMetadata
+        ? responseMetadataWithInclude(
+            responseMetadataWithTimestampFallback(
+              response.responseMetadata,
+              startedAt,
+            ),
+            include,
+          )
+        : null,
+    responseMessages: buildResponseMessagesBestEffort(response),
+    responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
+  );
 }
 
 Map<String, dynamic>? _extractFirstJsonObject(String text) {
