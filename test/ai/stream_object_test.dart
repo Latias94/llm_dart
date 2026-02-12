@@ -92,6 +92,11 @@ void main() {
 
       final model = _FakeStreamChatModel([
         const LLMStreamStartPart(warnings: warnings),
+        LLMResponseMetadataPart(
+          id: 'resp_1',
+          timestamp: DateTime.utc(2020, 1, 1),
+          model: 'm1',
+        ),
         LLMToolCallStartPart(
           ToolCall(
             id: 'call_1',
@@ -151,6 +156,8 @@ void main() {
 
       final resolvedWarnings = await result.warnings;
       expect(resolvedWarnings, equals(warnings));
+
+      expect((await result.responseMetadata)?.id, equals('resp_1'));
 
       expect((await result.usage)?.totalTokens, equals(3));
       expect((await result.finishReason)?.unified,
