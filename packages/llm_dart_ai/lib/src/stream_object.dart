@@ -8,6 +8,8 @@ import 'generate_object.dart';
 import 'prompt_input.dart';
 import 'stream_parts.dart';
 
+enum StreamObjectOutput { object, array }
+
 /// A streaming object generation result (AI SDK-inspired).
 ///
 /// This is a lightweight wrapper around parts-first streaming (`LLMStreamPart`)
@@ -39,6 +41,17 @@ class StreamObjectResult {
   /// Resolves to the final parsed object (map).
   final Future<Map<String, dynamic>> object;
 
+  /// Resolves to the final array elements (only supported when [output] is
+  /// [StreamObjectOutput.array]).
+  ///
+  /// In array mode, the tool arguments are parsed into a wrapper object
+  /// `{ "elements": [...] }`. This future resolves to the `elements` array.
+  final Future<List<Map<String, dynamic>>> elements;
+
+  /// Stream over complete array elements (only supported when [output] is
+  /// [StreamObjectOutput.array]).
+  final Stream<Map<String, dynamic>> elementStream;
+
   /// Warnings from the model provider (e.g. unsupported settings).
   ///
   /// This is best-effort and is typically derived from the stream-start part.
@@ -65,6 +78,8 @@ class StreamObjectResult {
     required this.textStream,
     required this.text,
     required this.object,
+    required this.elements,
+    required this.elementStream,
     required this.warnings,
     required this.usage,
     required this.finishReason,
@@ -77,17 +92,24 @@ class StreamObjectResult {
     Stream<LLMStreamPart> upstream, {
     required ParametersSchema schema,
     required String toolName,
+    StreamObjectOutput output = StreamObjectOutput.object,
   }) {
+    final toolSchema =
+        output == StreamObjectOutput.array ? _wrapArraySchema(schema) : schema;
+
     final fullController =
         StreamController<LLMStreamPart>.broadcast(sync: true);
     final partialController =
         StreamController<Map<String, dynamic>>.broadcast(sync: true);
     final textController = StreamController<String>.broadcast(sync: true);
+    final elementController =
+        StreamController<Map<String, dynamic>>.broadcast(sync: true);
 
     final doneCompleter = Completer<void>();
     final warningsCompleter = Completer<List<Map<String, dynamic>>>();
     final textCompleter = Completer<String>();
     final objectCompleter = Completer<Map<String, dynamic>>();
+    final elementsCompleter = Completer<List<Map<String, dynamic>>>();
     final usageCompleter = Completer<UsageInfo?>();
     final finishReasonCompleter = Completer<LLMFinishReason?>();
     final providerMetadataCompleter = Completer<Map<String, dynamic>?>();
@@ -100,6 +122,8 @@ class StreamObjectResult {
     unawaited(textCompleter.future.catchError((_) => ''));
     unawaited(
         objectCompleter.future.catchError((_) => const <String, dynamic>{}));
+    unawaited(elementsCompleter.future
+        .catchError((_) => const <Map<String, dynamic>>[]));
     unawaited(usageCompleter.future.catchError((_) => null));
     unawaited(finishReasonCompleter.future.catchError((_) => null));
     unawaited(providerMetadataCompleter.future.catchError((_) => null));
@@ -129,25 +153,39 @@ class StreamObjectResult {
     LLMError? terminalError;
 
     String? lastEmittedJson;
+    var publishedElements = 0;
 
     void emitPartialIfParsable(String raw) {
       final parsed = _tryParseJsonObject(raw);
       if (parsed == null) return;
 
+      final normalized = output == StreamObjectOutput.array
+          ? _normalizeArrayWrapperPartial(parsed, elementSchema: schema)
+          : parsed;
+
       // Best-effort dedupe to avoid noisy re-emissions.
       try {
-        final json = jsonEncode(parsed);
+        final json = jsonEncode(normalized);
         if (json == lastEmittedJson) return;
         lastEmittedJson = json;
       } catch (_) {
         // Ignore JSON encoding failures; still emit.
       }
 
-      partialController.add(parsed);
+      if (output == StreamObjectOutput.array) {
+        final els = _extractElements(normalized);
+        if (els != null) {
+          for (; publishedElements < els.length; publishedElements++) {
+            elementController.add(els[publishedElements]);
+          }
+        }
+      }
+
+      partialController.add(normalized);
     }
 
     void validateObjectOrThrow(Map<String, dynamic> obj) {
-      final errors = ToolValidator.validateParameters(obj, schema);
+      final errors = ToolValidator.validateParameters(obj, toolSchema);
       if (errors.isNotEmpty) {
         throw InvalidRequestError(
           'Generated object does not match schema: ${errors.join(', ')}',
@@ -255,6 +293,7 @@ class StreamObjectResult {
         await fullController.close();
         await partialController.close();
         await textController.close();
+        await elementController.close();
         doneCompleter.complete();
 
         if (terminalError != null) {
@@ -264,6 +303,9 @@ class StreamObjectResult {
           }
           if (!textCompleter.isCompleted) textCompleter.completeError(err);
           if (!objectCompleter.isCompleted) objectCompleter.completeError(err);
+          if (!elementsCompleter.isCompleted) {
+            elementsCompleter.completeError(err);
+          }
           if (!usageCompleter.isCompleted) usageCompleter.completeError(err);
           if (!finishReasonCompleter.isCompleted) {
             finishReasonCompleter.completeError(err);
@@ -282,9 +324,12 @@ class StreamObjectResult {
           final err =
               const GenericError('Stream finished without a finish part.');
           if (!warningsCompleter.isCompleted)
-            warningsCompleter.complete(const []);
+            warningsCompleter.complete(const <Map<String, dynamic>>[]);
           if (!textCompleter.isCompleted) textCompleter.complete('');
           if (!objectCompleter.isCompleted) objectCompleter.completeError(err);
+          if (!elementsCompleter.isCompleted) {
+            elementsCompleter.completeError(err);
+          }
           if (!usageCompleter.isCompleted) usageCompleter.complete(null);
           if (!finishReasonCompleter.isCompleted)
             finishReasonCompleter.complete(null);
@@ -318,14 +363,32 @@ class StreamObjectResult {
             toolInputBuffers: toolInputBuffers,
             endedToolInputs: endedToolInputs,
             fallbackText: textBuffer.toString(),
+            output: output,
           );
 
           validateObjectOrThrow(resolved.object);
 
           if (!warningsCompleter.isCompleted)
-            warningsCompleter.complete(const []);
+            warningsCompleter.complete(const <Map<String, dynamic>>[]);
           textCompleter.complete(resolved.text);
           objectCompleter.complete(resolved.object);
+
+          if (output == StreamObjectOutput.array) {
+            final els = _extractElements(resolved.object);
+            if (els == null) {
+              throw const InvalidRequestError(
+                'Array output requires an "elements" array in the generated object.',
+              );
+            }
+            elementsCompleter.complete(els);
+          } else {
+            elementsCompleter.completeError(
+              UnsupportedError(
+                'elements is only available when output == StreamObjectOutput.array',
+              ),
+            );
+          }
+
           finalResultCompleter.complete(
             GenerateObjectResult(
                 object: resolved.object, rawResponse: response),
@@ -335,9 +398,12 @@ class StreamObjectResult {
               ? e
               : GenericError('Failed to parse streamed object: $e');
           if (!warningsCompleter.isCompleted)
-            warningsCompleter.complete(const []);
+            warningsCompleter.complete(const <Map<String, dynamic>>[]);
           if (!textCompleter.isCompleted) textCompleter.completeError(err);
           if (!objectCompleter.isCompleted) objectCompleter.completeError(err);
+          if (!elementsCompleter.isCompleted) {
+            elementsCompleter.completeError(err);
+          }
           if (!finalResultCompleter.isCompleted) {
             finalResultCompleter.completeError(err);
           }
@@ -354,6 +420,14 @@ class StreamObjectResult {
       textStream: textController.stream,
       text: textCompleter.future,
       object: objectCompleter.future,
+      elements: elementsCompleter.future,
+      elementStream: output == StreamObjectOutput.array
+          ? elementController.stream
+          : Stream<Map<String, dynamic>>.error(
+              UnsupportedError(
+                'elementStream is only available when output == StreamObjectOutput.array',
+              ),
+            ),
       warnings: warningsCompleter.future,
       usage: usageCompleter.future,
       finishReason: finishReasonCompleter.future,
@@ -396,6 +470,7 @@ StreamObjectResult streamObject({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   required ParametersSchema schema,
+  StreamObjectOutput output = StreamObjectOutput.object,
   String toolName = 'return_object',
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
@@ -412,14 +487,18 @@ StreamObjectResult streamObject({
     final tool = Tool.function(
       name: toolName,
       description: toolDescription,
-      parameters: schema,
+      parameters: output == StreamObjectOutput.array
+          ? _wrapArraySchema(schema)
+          : schema,
     );
 
     switch (input) {
       case StandardizedChatMessages(:final messages):
         final augmentedMessages = <ChatMessage>[
           ChatMessage.system(
-            'You must call the tool "$toolName" exactly once and only provide the JSON object via tool arguments.',
+            output == StreamObjectOutput.array
+                ? 'You must call the tool "$toolName" exactly once and only provide the JSON result via tool arguments. The arguments must be a JSON object with a single key "elements" whose value is an array of JSON objects matching the element schema.'
+                : 'You must call the tool "$toolName" exactly once and only provide the JSON object via tool arguments.',
           ),
           ...messages,
         ];
@@ -445,7 +524,9 @@ StreamObjectResult streamObject({
         final augmentedPrompt = Prompt(
           messages: [
             PromptMessage.system(
-              'You must call the tool "$toolName" exactly once and only provide the JSON object via tool arguments.',
+              output == StreamObjectOutput.array
+                  ? 'You must call the tool "$toolName" exactly once and only provide the JSON result via tool arguments. The arguments must be a JSON object with a single key "elements" whose value is an array of JSON objects matching the element schema.'
+                  : 'You must call the tool "$toolName" exactly once and only provide the JSON object via tool arguments.',
             ),
             ...prompt.messages,
           ],
@@ -474,6 +555,7 @@ StreamObjectResult streamObject({
     upstream(),
     schema: schema,
     toolName: toolName,
+    output: output,
   );
 }
 
@@ -485,6 +567,7 @@ StreamObjectResult streamObject({
   required Map<String, StringBuffer> toolInputBuffers,
   required Set<String> endedToolInputs,
   required String fallbackText,
+  required StreamObjectOutput output,
 }) {
   final toolInputMatches = <String, String>{};
   for (final entry in toolInputBuffers.entries) {
@@ -528,6 +611,14 @@ StreamObjectResult streamObject({
   final fallback = _extractFirstJsonObject(fallbackText);
   if (fallback != null) return (text: jsonEncode(fallback), object: fallback);
 
+  if (output == StreamObjectOutput.array) {
+    final fallbackArray = _extractFirstJsonArray(fallbackText);
+    if (fallbackArray != null) {
+      final wrapped = <String, dynamic>{'elements': fallbackArray};
+      return (text: jsonEncode(wrapped), object: wrapped);
+    }
+  }
+
   throw const InvalidRequestError('No tool call and no text content to parse.');
 }
 
@@ -570,6 +661,82 @@ Map<String, dynamic>? _extractFirstJsonObject(String text) {
       try {
         final decoded = jsonDecode(candidate);
         if (decoded is Map<String, dynamic>) return decoded;
+        return null;
+      } catch (_) {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
+ParametersSchema _wrapArraySchema(ParametersSchema elementSchema) {
+  final elementProperty = ParameterProperty(
+    propertyType: 'object',
+    description: 'Array element',
+    properties: elementSchema.properties,
+    required: elementSchema.required,
+  );
+
+  return ParametersSchema(
+    schemaType: 'object',
+    properties: {
+      'elements': ParameterProperty(
+        propertyType: 'array',
+        description: 'Array elements',
+        items: elementProperty,
+      ),
+    },
+    required: const ['elements'],
+  );
+}
+
+Map<String, dynamic> _normalizeArrayWrapperPartial(
+  Map<String, dynamic> obj, {
+  required ParametersSchema elementSchema,
+}) {
+  final elementsRaw = obj['elements'];
+  if (elementsRaw is! List) return obj;
+
+  final normalized = <Map<String, dynamic>>[];
+  for (final el in elementsRaw) {
+    if (el is! Map<String, dynamic>) break;
+
+    final errors = ToolValidator.validateParameters(el, elementSchema);
+    if (errors.isNotEmpty) break;
+
+    normalized.add(el);
+  }
+
+  return {'elements': normalized};
+}
+
+List<Map<String, dynamic>>? _extractElements(Map<String, dynamic> obj) {
+  final raw = obj['elements'];
+  if (raw is! List) return null;
+
+  final out = <Map<String, dynamic>>[];
+  for (final el in raw) {
+    if (el is! Map<String, dynamic>) return null;
+    out.add(el);
+  }
+  return out;
+}
+
+List<dynamic>? _extractFirstJsonArray(String text) {
+  final start = text.indexOf('[');
+  if (start == -1) return null;
+
+  var depth = 0;
+  for (var i = start; i < text.length; i++) {
+    final ch = text.codeUnitAt(i);
+    if (ch == 0x5B) depth++; // [
+    if (ch == 0x5D) depth--; // ]
+    if (depth == 0) {
+      final candidate = text.substring(start, i + 1);
+      try {
+        final decoded = jsonDecode(candidate);
+        if (decoded is List) return decoded;
         return null;
       } catch (_) {
         return null;

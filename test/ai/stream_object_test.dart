@@ -161,6 +161,53 @@ void main() {
       expect(finalResult.object, containsPair('city', 'SF'));
     });
 
+    test('array output exposes elements and elementStream', () async {
+      final model = _FakeStreamChatModel([
+        LLMToolCallStartPart(
+          ToolCall(
+            id: 'call_1',
+            callType: 'function',
+            function: FunctionCall(
+              name: 'return_object',
+              arguments: '{"elements":[{"city":"SF","temp":70},',
+            ),
+          ),
+        ),
+        LLMToolCallDeltaPart(
+          ToolCall(
+            id: 'call_1',
+            callType: 'function',
+            function: FunctionCall(
+              name: '',
+              arguments: '{"city":"LA","temp":80}]}',
+            ),
+          ),
+        ),
+        const LLMToolCallEndPart('call_1'),
+        const LLMFinishPart(_FakeChatResponseWithFinishReason()),
+      ]);
+
+      final result = streamObject(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        schema: schema,
+        output: StreamObjectOutput.array,
+      );
+
+      final elementsFromStream = await result.elementStream.toList();
+      expect(elementsFromStream, hasLength(2));
+      expect(elementsFromStream.first, containsPair('city', 'SF'));
+      expect(elementsFromStream.last, containsPair('city', 'LA'));
+
+      final elements = await result.elements;
+      expect(elements, hasLength(2));
+      expect(elements.first, containsPair('temp', 70));
+      expect(elements.last, containsPair('temp', 80));
+
+      final obj = await result.object;
+      expect(obj, contains('elements'));
+    });
+
     test('fails when object does not match schema', () async {
       final model = _FakeStreamChatModel([
         LLMToolCallStartPart(
