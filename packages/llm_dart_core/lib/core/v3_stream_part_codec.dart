@@ -202,6 +202,7 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
         final dynamicTool = obj['dynamic'] == true ? true : null;
         final title = obj['title'] as String?;
 
+        state.toolInput.onStart(id);
         state.rememberTool(id: id, toolName: toolName);
 
         out.add(
@@ -1222,12 +1223,32 @@ class _DeltaAccumulationState {
 
 class _ToolInputDecodeState {
   final Map<String, StringBuffer> _buffers = {};
+  final Set<String> _started = {};
+  final Set<String> _ended = {};
+
+  void onStart(String id) {
+    if (!_started.add(id)) {
+      throw FormatException('v3 tool-input-start duplicated for id: $id');
+    }
+    _buffers.putIfAbsent(id, () => StringBuffer());
+  }
 
   void onDelta(String id, String delta) {
+    if (!_started.contains(id)) {
+      throw FormatException(
+          'v3 tool-input-delta references unknown tool input id: $id');
+    }
     _buffers.putIfAbsent(id, () => StringBuffer()).write(delta);
   }
 
   void onEnd(String id) {
+    if (!_started.contains(id)) {
+      throw FormatException(
+          'v3 tool-input-end references unknown tool input id: $id');
+    }
+    if (!_ended.add(id)) {
+      throw FormatException('v3 tool-input-end duplicated for id: $id');
+    }
     // Intentionally keep buffers for later lookup (e.g. tool-approval-request).
     _buffers.putIfAbsent(id, () => StringBuffer());
   }
