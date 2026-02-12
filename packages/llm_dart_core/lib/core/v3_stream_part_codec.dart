@@ -491,7 +491,13 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
         break;
 
       case 'error':
-        out.add(LLMErrorPart(_decodeV3Error(obj['error'])));
+        final rawError = _normalizeJsonLike(obj['error']);
+        out.add(
+          LLMErrorRawPart(
+            rawError,
+            decodedError: _decodeV3Error(rawError),
+          ),
+        );
         break;
 
       default:
@@ -890,6 +896,14 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         {
           'type': 'error',
           'error': _encodeError(error),
+        },
+      ];
+
+    case LLMErrorRawPart(:final rawError):
+      return [
+        {
+          'type': 'error',
+          'error': _normalizeJsonLike(rawError),
         },
       ];
 

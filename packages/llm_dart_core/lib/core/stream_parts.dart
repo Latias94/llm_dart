@@ -549,3 +549,19 @@ class LLMErrorPart extends LLMStreamPart {
   final LLMError error;
   const LLMErrorPart(this.error);
 }
+
+/// An error part that preserves the raw v3 error payload.
+///
+/// This mirrors AI SDK v3 `type: 'error'` stream parts, where `error` is an
+/// unknown JSON-like payload. This is primarily used by the v3 fixture codec
+/// to keep decode -> encode round-trips stable even when providers include
+/// additional fields.
+class LLMErrorRawPart extends LLMStreamPart {
+  /// Raw error payload from the v3 stream.
+  final Object? rawError;
+
+  /// Best-effort typed error decoded from [rawError], if possible.
+  final LLMError? decodedError;
+
+  const LLMErrorRawPart(this.rawError, {this.decodedError});
+}
