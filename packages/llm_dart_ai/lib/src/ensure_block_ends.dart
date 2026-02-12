@@ -50,6 +50,35 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
   String toolNameForToolInputId(String id) =>
       toolNameByToolInputId[id] ?? 'unknown';
 
+  String? inferToolNameFromProviderMetadata(Map<String, dynamic>? metadata) {
+    if (metadata == null || metadata.isEmpty) return null;
+    for (final entry in metadata.entries) {
+      final value = entry.value;
+      if (value is! Map) continue;
+      final map = value.map((k, v) => MapEntry(k.toString(), v));
+      final toolName = map['toolName'] ?? map['tool_name'];
+      if (toolName is String && toolName.trim().isNotEmpty) {
+        return toolName.trim();
+      }
+    }
+    return null;
+  }
+
+  String? inferToolNameFromDelta(String delta) {
+    String? extract(String key) {
+      final pattern = '"$key":"';
+      final start = delta.indexOf(pattern);
+      if (start == -1) return null;
+      final valueStart = start + pattern.length;
+      final end = delta.indexOf('"', valueStart);
+      if (end == -1) return null;
+      final value = delta.substring(valueStart, end).trim();
+      return value.isEmpty ? null : value;
+    }
+
+    return extract('toolName') ?? extract('tool_name');
+  }
+
   bool hasPendingToolInputFragments(String id) =>
       pendingToolInputDeltasById.containsKey(id) ||
       pendingToolInputEnds.contains(id);
@@ -95,6 +124,12 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
       toolName: toolNameForToolInputId(id),
       providerMetadata: providerMetadata,
     );
+  }
+
+  Map<String, dynamic>? providerMetadataForPendingToolInput(String id) {
+    final deltas = pendingToolInputDeltasById[id];
+    if (deltas == null || deltas.isEmpty) return null;
+    return deltas.first.providerMetadata;
   }
 
   Iterable<LLMStreamPart> flushPendingToolInputForId(String id) sync* {
@@ -246,6 +281,14 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
               providerMetadata: providerMetadata,
             );
           } else {
+            final inferredFromMeta =
+                inferToolNameFromProviderMetadata(providerMetadata);
+            final inferredFromDelta = inferToolNameFromDelta(delta);
+            final inferred = inferredFromMeta ?? inferredFromDelta;
+            if (inferred != null && inferred.trim().isNotEmpty) {
+              toolNameByToolInputId.putIfAbsent(id, () => inferred.trim());
+            }
+
             // Buffer orphan deltas until we see a start (or until finish).
             // This preserves AI SDK v3 ordering invariants: deltas must follow a
             // tool-input-start boundary.
@@ -322,7 +365,10 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
           // Flush orphan tool-input fragments (delta/end without start) in a
           // stable order, then close any remaining open tool-input blocks.
           for (final id in pendingToolInputIds) {
-            final synthesizedStart = startToolInputIfNeeded(id: id);
+            final synthesizedStart = startToolInputIfNeeded(
+              id: id,
+              providerMetadata: providerMetadataForPendingToolInput(id),
+            );
             if (synthesizedStart == null) continue;
             yield synthesizedStart;
             for (final pending in flushPendingToolInputForId(id)) {
