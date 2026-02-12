@@ -117,8 +117,12 @@ void main() {
         unified: LLMUnifiedFinishReason.stop,
         raw: 'stop',
       );
+      const warnings = [
+        {'type': 'warning', 'message': 'test warning'}
+      ];
 
       final model = _FakeChatModel([
+        const LLMStreamStartPart(warnings: warnings),
         const LLMTextStartPart(),
         const LLMTextDeltaPart('Hel'),
         const LLMTextDeltaPart('lo'),
@@ -146,6 +150,7 @@ void main() {
 
       final partsFuture = result.fullStream.toList();
 
+      expect(await result.warnings, equals(warnings));
       expect(await result.text, equals('Hello'));
       expect((await result.usage)?.totalTokens, equals(3));
       expect((await result.totalUsage)?.totalTokens, equals(3));
@@ -255,6 +260,7 @@ void main() {
       );
 
       final parts = await result.fullStream.toList();
+      expect(await result.warnings, isEmpty);
       expect(parts.whereType<LLMStepStartPart>(), hasLength(2));
       expect(parts.whereType<LLMStepFinishPart>(), hasLength(2));
 
@@ -284,6 +290,7 @@ void main() {
       final parts = await result.fullStream.toList();
       expect(parts.whereType<LLMErrorPart>(), hasLength(1));
       expect(() async => await result.text, throwsA(isA<LLMError>()));
+      expect(() async => await result.warnings, throwsA(isA<LLMError>()));
       expect(() async => await result.steps, throwsA(isA<LLMError>()));
     });
   });

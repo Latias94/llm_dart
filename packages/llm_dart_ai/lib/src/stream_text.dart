@@ -21,6 +21,11 @@ import 'types.dart';
 class StreamTextResult {
   final Stream<LLMStreamPart> fullStream;
 
+  /// Warnings from the model provider (e.g. unsupported settings).
+  ///
+  /// This is best-effort and is typically derived from the stream-start part.
+  final Future<List<Map<String, dynamic>>> warnings;
+
   /// Resolves to the final aggregated text from text blocks.
   final Future<String> text;
 
@@ -65,6 +70,7 @@ class StreamTextResult {
 
   StreamTextResult._({
     required this.fullStream,
+    required this.warnings,
     required this.text,
     required this.thinkingText,
     required this.usage,
@@ -82,6 +88,7 @@ class StreamTextResult {
     final controller = StreamController<LLMStreamPart>.broadcast(sync: true);
 
     final doneCompleter = Completer<void>();
+    final warningsCompleter = Completer<List<Map<String, dynamic>>>();
     final textCompleter = Completer<String>();
     final thinkingCompleter = Completer<String?>();
     final usageCompleter = Completer<UsageInfo?>();
@@ -95,6 +102,8 @@ class StreamTextResult {
 
     // Prevent unhandled asynchronous errors when callers choose to only consume
     // the stream (or only await a subset of futures).
+    unawaited(warningsCompleter.future
+        .catchError((_) => const <Map<String, dynamic>>[]));
     unawaited(textCompleter.future.catchError((_) => ''));
     unawaited(thinkingCompleter.future.catchError((_) => null));
     unawaited(usageCompleter.future.catchError((_) => null));
@@ -144,6 +153,11 @@ class StreamTextResult {
           controller.add(part);
 
           switch (part) {
+            case LLMStreamStartPart(:final warnings):
+              if (!warningsCompleter.isCompleted) {
+                warningsCompleter.complete(warnings);
+              }
+
             case LLMStepStartPart():
               // AI SDK semantics: `text`/`thinkingText`/`sources`/`files` are
               // derived from the *last step*.
@@ -246,6 +260,9 @@ class StreamTextResult {
 
         if (terminalError != null) {
           final err = terminalError!;
+          if (!warningsCompleter.isCompleted) {
+            warningsCompleter.completeError(err);
+          }
           if (!textCompleter.isCompleted) textCompleter.completeError(err);
           if (!thinkingCompleter.isCompleted)
             thinkingCompleter.completeError(err);
@@ -284,6 +301,9 @@ class StreamTextResult {
 
         final finish = finishPart;
         if (finish == null) {
+          if (!warningsCompleter.isCompleted) {
+            warningsCompleter.complete(const <Map<String, dynamic>>[]);
+          }
           finalResultCompleter.completeError(
             const GenericError('Stream finished without a finish part.'),
           );
@@ -302,6 +322,10 @@ class StreamTextResult {
             (response is ChatResponseWithFinishReason
                 ? response.finishReason
                 : null);
+
+        if (!warningsCompleter.isCompleted) {
+          warningsCompleter.complete(const <Map<String, dynamic>>[]);
+        }
 
         usageCompleter.complete(usage);
         totalUsageCompleter.complete(accumulatedUsage ?? usage);
@@ -354,6 +378,7 @@ class StreamTextResult {
 
     return StreamTextResult._(
       fullStream: controller.stream,
+      warnings: warningsCompleter.future,
       text: textCompleter.future,
       thinkingText: thinkingCompleter.future,
       usage: usageCompleter.future,
