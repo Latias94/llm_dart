@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'package:llm_dart_provider_utils/utils/request_metadata_sanitizer.dart';
 import 'client.dart';
 import 'builtin_tools.dart';
 import 'models/responses_models.dart';
@@ -267,8 +268,21 @@ class OpenAIResponses
               'emitProviderToolDeltas',
             ) ??
             false;
+    final emitRequestMetadata = config.getProviderOption<bool>(
+          'emitRequestMetadata',
+        ) ??
+        config.getProviderOption<bool>(
+          'emit_request_metadata',
+        ) ??
+        false;
 
     try {
+      if (emitRequestMetadata) {
+        yield LLMRequestMetadataPart(
+          body: sanitizeRequestBodyForMetadata(builtRequest.body),
+        );
+      }
+
       final stream = client.postStreamRaw(
         responsesEndpoint,
         builtRequest.body,

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'package:llm_dart_provider_utils/utils/request_metadata_sanitizer.dart';
 import 'client.dart';
 import 'openai_request_config.dart';
 import 'request_builder.dart';
@@ -32,6 +33,12 @@ class OpenAIChat
       : _requestBuilder = OpenAIRequestBuilder(config);
 
   String get chatEndpoint => 'chat/completions';
+
+  bool _emitRequestMetadataEnabled() {
+    return config.getProviderOption<bool>('emitRequestMetadata') ??
+        config.getProviderOption<bool>('emit_request_metadata') ??
+        false;
+  }
 
   bool _parseToolCallsFromTextEnabled() {
     return config.getProviderOption<bool>('parseToolCallsFromText') ??
@@ -169,6 +176,12 @@ class OpenAIChat
     String? finishReason;
 
     try {
+      if (_emitRequestMetadataEnabled()) {
+        yield LLMRequestMetadataPart(
+          body: sanitizeRequestBodyForMetadata(requestBody),
+        );
+      }
+
       final stream = client.postStreamRaw(
         chatEndpoint,
         requestBody,
