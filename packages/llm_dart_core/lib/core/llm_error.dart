@@ -415,6 +415,17 @@ class HttpErrorMapper {
   static Duration? extractRetryAfter(Map<String, dynamic>? headers) {
     if (headers == null) return null;
 
+    final retryAfterMs =
+        headers['retry-after-ms'] ?? headers['Retry-After-Ms'];
+    if (retryAfterMs is int) {
+      return Duration(milliseconds: retryAfterMs);
+    } else if (retryAfterMs is String) {
+      final ms = int.tryParse(retryAfterMs);
+      if (ms != null) {
+        return Duration(milliseconds: ms);
+      }
+    }
+
     final retryAfter = headers['retry-after'] ?? headers['Retry-After'];
     if (retryAfter == null) return null;
 

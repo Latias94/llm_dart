@@ -9,9 +9,11 @@ import 'package:test/test.dart';
 
 class _SequenceAdapter implements HttpClientAdapter {
   final List<int> statusCodes;
+  final Map<String, List<String>> errorHeaders;
   int callCount = 0;
 
-  _SequenceAdapter(this.statusCodes);
+  _SequenceAdapter(this.statusCodes, {Map<String, List<String>>? errorHeaders})
+      : errorHeaders = errorHeaders ?? const {'retry-after': ['0']};
 
   @override
   void close({bool force = false}) {}
@@ -43,7 +45,7 @@ class _SequenceAdapter implements HttpClientAdapter {
       statusCode,
       headers: {
         Headers.contentTypeHeader: [Headers.jsonContentType],
-        'retry-after': ['0'],
+        ...errorHeaders,
       },
     );
   }
@@ -102,6 +104,98 @@ void main() {
       final response = await dio.get('/test');
       expect(response.statusCode, equals(200));
       expect(adapter.callCount, equals(2));
+    });
+
+    test('prefers retry-after-ms when present', () async {
+      final config = LLMConfig(
+        baseUrl: 'https://api.example.com/v1/',
+        apiKey: 'k',
+        model: 'm',
+      ).withTransportOptions({
+        'retry': {
+          'maxRetries': 1,
+          'baseDelayMs': 2000, // would be used if retry-after-ms is ignored
+          'maxDelayMs': 2000,
+          'jitter': 0.0,
+          'respectRetryAfter': true,
+        },
+      });
+
+      Duration? slept;
+      final dio = HttpConfigUtils.createConfiguredDio(
+        baseUrl: 'https://api.example.com/v1/',
+        defaultHeaders: {'Authorization': 'Bearer k'},
+        config: config,
+      );
+      // Replace the interceptor with a deterministic sleeper so the test is fast.
+      dio.interceptors.removeWhere((i) => i is HttpRetryInterceptor);
+      dio.interceptors.add(
+        HttpRetryInterceptor(
+          dio: dio,
+          config: HttpRetryConfig.fromLLMConfig(config),
+          sleep: (d) async {
+            slept = d;
+          },
+        ),
+      );
+
+      dio.httpClientAdapter = _SequenceAdapter(
+        [429, 200],
+        errorHeaders: const {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+          'retry-after-ms': ['123'],
+          'retry-after': ['2'],
+        },
+      );
+
+      final response = await dio.get('/test');
+      expect(response.statusCode, equals(200));
+      expect(slept, equals(const Duration(milliseconds: 123)));
+    });
+
+    test('ignores unreasonable retry-after and falls back to backoff', () async {
+      final config = LLMConfig(
+        baseUrl: 'https://api.example.com/v1/',
+        apiKey: 'k',
+        model: 'm',
+      ).withTransportOptions({
+        'retry': {
+          'maxRetries': 1,
+          'baseDelayMs': 2000,
+          'maxDelayMs': 2000,
+          'jitter': 0.0,
+          'respectRetryAfter': true,
+        },
+      });
+
+      Duration? slept;
+      final dio = HttpConfigUtils.createConfiguredDio(
+        baseUrl: 'https://api.example.com/v1/',
+        defaultHeaders: {'Authorization': 'Bearer k'},
+        config: config,
+      );
+      dio.interceptors.removeWhere((i) => i is HttpRetryInterceptor);
+      dio.interceptors.add(
+        HttpRetryInterceptor(
+          dio: dio,
+          config: HttpRetryConfig.fromLLMConfig(config),
+          sleep: (d) async {
+            slept = d;
+          },
+        ),
+      );
+
+      dio.httpClientAdapter = _SequenceAdapter(
+        [429, 200],
+        errorHeaders: const {
+          Headers.contentTypeHeader: [Headers.jsonContentType],
+          'retry-after': ['120'], // > 60s should be ignored
+        },
+      );
+
+      final response = await dio.get('/test');
+      expect(response.statusCode, equals(200));
+      expect(slept, equals(const Duration(milliseconds: 2000)));
     });
 
     test('does not retry streaming requests', () async {

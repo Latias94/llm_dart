@@ -182,12 +182,24 @@ class HttpRetryInterceptor extends Interceptor {
   static Duration? _parseRetryAfter(Headers? headers) {
     if (headers == null) return null;
 
+    // AI SDK parity: prefer retry-after-ms, then retry-after, but only accept
+    // "reasonable" values (0..60 seconds). Otherwise fall back to exponential
+    // backoff to avoid extremely long stalls.
+    final rawMs =
+        headers.value('retry-after-ms') ?? headers.value('Retry-After-Ms');
+    if (rawMs != null) {
+      final ms = int.tryParse(rawMs.trim());
+      if (ms != null && ms >= 0 && ms <= 60 * 1000) {
+        return Duration(milliseconds: ms);
+      }
+    }
+
     // Best-effort: Retry-After is usually sent as seconds.
     final raw = headers.value('retry-after') ?? headers.value('Retry-After');
     if (raw == null) return null;
 
     final seconds = int.tryParse(raw.trim());
-    if (seconds != null && seconds >= 0) {
+    if (seconds != null && seconds >= 0 && seconds <= 60) {
       return Duration(seconds: seconds);
     }
     return null;
