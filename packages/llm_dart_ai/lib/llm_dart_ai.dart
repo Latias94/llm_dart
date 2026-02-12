@@ -7,6 +7,7 @@ export 'src/tool_set.dart';
 export 'src/tool_loop.dart';
 export 'src/stream_parts.dart';
 export 'src/stream_text.dart';
+export 'src/stream_object.dart';
 export 'src/embed.dart';
 export 'src/rerank.dart';
 export 'src/generate_object.dart';
