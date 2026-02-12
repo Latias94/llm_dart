@@ -176,6 +176,9 @@ Future<void> _processStreamingToolUse(
       case LLMReasoningStartPart():
       case LLMReasoningEndPart():
       case LLMToolCallEndPart():
+      case LLMToolInputStartPart():
+      case LLMToolInputDeltaPart():
+      case LLMToolInputEndPart():
       case LLMProviderMetadataPart():
       case LLMResponseMetadataPart():
       case LLMSourceUrlPart():
@@ -185,6 +188,10 @@ Future<void> _processStreamingToolUse(
       case LLMProviderToolApprovalRequestPart():
       case LLMProviderToolResultPart():
         // Ignore for this demo.
+        break;
+
+      default:
+        // Ignore unknown parts for forward compatibility.
         break;
     }
   }

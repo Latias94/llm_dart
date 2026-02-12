@@ -4,7 +4,6 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart' show FormData;
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart';
 import 'package:test/test.dart';
 
 import '../../utils/fakes/fakes.dart';

@@ -26,7 +26,7 @@ Stream<LLMStreamPart> ensureResponseMetadataPart(
         buffered = iterator.current;
       }
 
-      final part = buffered!;
+      final part = buffered;
       buffered = null;
 
       if (part is! LLMResponseMetadataPart) {
@@ -65,9 +65,12 @@ LLMResponseMetadataPart _mergeResponseMetadata(
 ) {
   Map<String, dynamic>? mergeMap(
       Map<String, dynamic>? x, Map<String, dynamic>? y) {
-    if (x == null || x.isEmpty)
+    if (x == null || x.isEmpty) {
       return y == null ? null : Map<String, dynamic>.from(y);
-    if (y == null || y.isEmpty) return Map<String, dynamic>.from(x);
+    }
+    if (y == null || y.isEmpty) {
+      return Map<String, dynamic>.from(x);
+    }
     return {
       ...x,
       ...y,

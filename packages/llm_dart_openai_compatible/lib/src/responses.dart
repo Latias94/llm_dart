@@ -219,7 +219,7 @@ class OpenAIResponses
       return value;
     }
 
-    Iterable<LLMToolInputDeltaPart> _drainCodeInterpreterToolInputDeltas(
+    Iterable<LLMToolInputDeltaPart> drainCodeInterpreterToolInputDeltas(
       String toolCallId,
     ) sync* {
       final pending = codeInterpreterCodeDeltasByToolCallId[toolCallId];
@@ -237,7 +237,7 @@ class OpenAIResponses
       }
     }
 
-    Iterable<LLMToolInputDeltaPart> _drainApplyPatchToolInputDeltas({
+    Iterable<LLMToolInputDeltaPart> drainApplyPatchToolInputDeltas({
       required String itemId,
       required String toolCallId,
     }) sync* {
@@ -759,7 +759,7 @@ class OpenAIResponses
                     callProviderMetadataPayload = {'itemId': id};
                   }
 
-                  Object? _resolvedResultPayload(Map item) {
+                  Object? resolvedResultPayload(Map item) {
                     switch (toolType) {
                       case 'web_search':
                         final action = item['action'];
@@ -849,7 +849,7 @@ class OpenAIResponses
 
                       startedCodeInterpreterToolInput.add(toolCallId);
                       for (final part
-                          in _drainCodeInterpreterToolInputDeltas(toolCallId)) {
+                          in drainCodeInterpreterToolInputDeltas(toolCallId)) {
                         yield part;
                       }
                       continue;
@@ -884,7 +884,7 @@ class OpenAIResponses
                         );
 
                         startedApplyPatchToolInput.add(toolCallId);
-                        for (final part in _drainApplyPatchToolInputDeltas(
+                        for (final part in drainApplyPatchToolInputDeltas(
                           itemId: id,
                           toolCallId: toolCallId,
                         )) {
@@ -957,7 +957,7 @@ class OpenAIResponses
                               '{"containerId":${jsonEncode(containerId)},"code":"',
                         );
                         startedCodeInterpreterToolInput.add(toolCallId);
-                        for (final part in _drainCodeInterpreterToolInputDeltas(
+                        for (final part in drainCodeInterpreterToolInputDeltas(
                             toolCallId)) {
                           yield part;
                         }
@@ -982,7 +982,7 @@ class OpenAIResponses
                       );
                       if (callPart != null) yield callPart;
 
-                      final payload = _resolvedResultPayload(item);
+                      final payload = resolvedResultPayload(item);
                       if (payload == null) continue;
 
                       final resultPart = providerToolParts.result(
@@ -1024,7 +1024,7 @@ class OpenAIResponses
                                 '{"callId":${jsonEncode(toolCallId)},"operation":{"type":${jsonEncode(opType)},"path":${jsonEncode(path)},"diff":"',
                           );
                           startedApplyPatchToolInput.add(toolCallId);
-                          for (final part in _drainApplyPatchToolInputDeltas(
+                          for (final part in drainApplyPatchToolInputDeltas(
                             itemId: id,
                             toolCallId: toolCallId,
                           )) {
@@ -1081,7 +1081,7 @@ class OpenAIResponses
                       yield callPart;
                     }
 
-                    final payload = _resolvedResultPayload(item);
+                    final payload = resolvedResultPayload(item);
                     if (payload == null) continue;
 
                     final resultPart = providerToolParts.result(

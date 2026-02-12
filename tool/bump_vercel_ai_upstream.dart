@@ -76,7 +76,7 @@ Future<void> main(List<String> args) async {
 
   obj['commit'] = commit;
   upstreamFile.writeAsStringSync(
-    const JsonEncoder.withIndent('  ').convert(obj) + '\n',
+    '${const JsonEncoder.withIndent('  ').convert(obj)}\n',
   );
 
   final shouldCheckout = _hasFlag(args, '--checkout');

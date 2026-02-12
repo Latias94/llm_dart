@@ -26,7 +26,7 @@ Stream<LLMStreamPart> ensureProviderMetadataPart(
         buffered = iterator.current;
       }
 
-      final part = buffered!;
+      final part = buffered;
       buffered = null;
 
       if (part is! LLMProviderMetadataPart) {

@@ -307,9 +307,7 @@ class OllamaChat
             yield LLMFinishPart(
               response,
               usage: response.usage,
-              finishReason: response is ChatResponseWithFinishReason
-                  ? (response as ChatResponseWithFinishReason).finishReason
-                  : null,
+              finishReason: response.finishReason,
             );
             return;
           }
@@ -363,9 +361,7 @@ class OllamaChat
       yield LLMFinishPart(
         response,
         usage: response.usage,
-        finishReason: response is ChatResponseWithFinishReason
-            ? (response as ChatResponseWithFinishReason).finishReason
-            : null,
+        finishReason: response.finishReason,
       );
     } catch (e) {
       if (e is LLMError) {

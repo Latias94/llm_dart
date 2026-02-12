@@ -2,8 +2,6 @@ import 'dart:io';
 
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_ai/llm_dart_ai.dart' as llm_ai;
-import 'package:llm_dart_ollama/chat.dart';
-import 'package:llm_dart_ollama/config.dart';
 import 'package:test/test.dart';
 
 import '../../utils/fakes/fakes.dart';

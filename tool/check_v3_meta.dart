@@ -10,7 +10,7 @@ class _Issue {
 }
 
 String _prettyJson(Object value) =>
-    const JsonEncoder.withIndent('  ').convert(value) + '\n';
+    '${const JsonEncoder.withIndent('  ').convert(value)}\n';
 
 Map<String, dynamic>? _readUpstreamInfo() {
   final file = File('test/fixtures/v3_parts/_upstream.json');
@@ -388,8 +388,9 @@ void main(List<String> args) {
         }
 
         final upstreamPaths = _readStringList(upstream['paths']);
-        final needsRepoRefPath = expectedRepoRefFixturePath != null &&
-            !_containsPath(upstreamPaths, expectedRepoRefFixturePath);
+        final expectedPath = expectedRepoRefFixturePath;
+        final needsRepoRefPath = expectedPath != null &&
+            !_containsPath(upstreamPaths, expectedPath);
         if (upstreamPaths
             .where((p) => _normalizePath(p).startsWith('repo-ref/ai/'))
             .isEmpty) {
@@ -405,10 +406,8 @@ void main(List<String> args) {
               '`upstream.paths` missing repo-ref fixture path.',
             ),
           );
-          if (fix &&
-              expectedRepoRefFixturePath != null &&
-              File(expectedRepoRefFixturePath).existsSync()) {
-            upstream['paths'] = [...upstreamPaths, expectedRepoRefFixturePath];
+          if (fix && File(expectedPath).existsSync()) {
+            upstream['paths'] = [...upstreamPaths, expectedPath];
             fixedFields++;
           }
         }

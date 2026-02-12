@@ -177,6 +177,17 @@ void main() {
         const LLMStreamStartPart(),
         LLMFinishPart(
           const _FakeChatResponse(
+            text: 'Hello',
+            thinking: 'Thinking...',
+            usage: UsageInfo(
+              promptTokens: 3,
+              completionTokens: 5,
+              reasoningTokens: 2,
+            ),
+            finishReason: LLMFinishReason(
+              unified: LLMUnifiedFinishReason.stop,
+              raw: 'stop',
+            ),
             providerMetadata: {
               'openai': {'id': 'resp_1'},
             },

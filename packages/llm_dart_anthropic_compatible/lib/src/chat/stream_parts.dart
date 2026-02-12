@@ -464,8 +464,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                     ..providerExecuted = true
                     ..isDynamic = blockType == 'mcp_tool_use';
 
-                  final hasNonEmptyInput =
-                      input is Map && (input as Map).isNotEmpty;
+                  final hasNonEmptyInput = input is Map && input.isNotEmpty;
                   if (hasNonEmptyInput) {
                     final encoded =
                         tryStableJsonEncode(input) ?? jsonEncode(input);

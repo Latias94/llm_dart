@@ -400,11 +400,11 @@ void main() {
       );
 
       final codeToolId = 'ci_early';
-      final code = 'print(\"hi\")\\n';
+      final code = 'print("hi")\n';
 
       final applyPatchItemId = 'apc_early';
       final applyPatchCallId = 'call_apc_1';
-      final diff = '+Hello\\n';
+      final diff = '+Hello\n';
 
       final sse = [
         _sseData({
@@ -563,15 +563,15 @@ void main() {
         final codeCall =
             providerCalls.singleWhere((p) => p.toolCallId == codeToolId);
         expect(codeCall.input, isA<String>());
-        expect(codeCall.input as String, contains('\"code\"'));
+        expect(codeCall.input as String, contains('"code"'));
         expect(codeCall.input as String, contains('print'));
 
         final applyPatchCall =
             providerCalls.singleWhere((p) => p.toolCallId == applyPatchCallId);
         expect(applyPatchCall.providerExecuted, isFalse);
         expect(applyPatchCall.input, isA<String>());
-        expect(applyPatchCall.input as String, contains('\"operation\"'));
-        expect(applyPatchCall.input as String, contains('\"diff\"'));
+        expect(applyPatchCall.input as String, contains('"operation"'));
+        expect(applyPatchCall.input as String, contains('"diff"'));
       }
     });
   });

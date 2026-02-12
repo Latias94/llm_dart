@@ -480,7 +480,14 @@ Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
         case LLMProviderToolDeltaPart():
         case LLMProviderToolApprovalRequestPart():
         case LLMProviderToolResultPart():
+        case LLMToolInputStartPart():
+        case LLMToolInputDeltaPart():
+        case LLMToolInputEndPart():
           // Ignore for this demo.
+          break;
+
+        default:
+          // Ignore unknown parts for forward compatibility.
           break;
       }
     }

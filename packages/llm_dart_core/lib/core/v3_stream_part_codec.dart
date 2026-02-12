@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../models/chat_models.dart';
-import '../models/tool_models.dart';
 import 'capability.dart';
 import 'llm_error.dart';
 import 'stream_parts.dart';
@@ -984,8 +983,9 @@ Object? _decodeJsonIfPossible(String content) {
 Object? _normalizeJsonLike(Object? value) {
   if (value == null) return null;
   if (value is String || value is num || value is bool) return value;
-  if (value is List)
+  if (value is List) {
     return value.map(_normalizeJsonLike).toList(growable: false);
+  }
   if (value is Map) {
     return value.map((k, v) => MapEntry(k.toString(), _normalizeJsonLike(v)));
   }

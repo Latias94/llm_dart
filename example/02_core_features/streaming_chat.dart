@@ -163,10 +163,17 @@ Future<void> demonstrateStreamEventTypes(ChatCapability provider) async {
         case LLMProviderToolDeltaPart():
         case LLMProviderToolApprovalRequestPart():
         case LLMProviderToolResultPart():
+        case LLMToolInputStartPart():
+        case LLMToolInputDeltaPart():
+        case LLMToolInputEndPart():
         case LLMSourceUrlPart():
         case LLMSourceDocumentPart():
         case LLMResponseMetadataPart():
           // Ignore for this demo.
+          break;
+
+        default:
+          // Ignore unknown parts for forward compatibility.
           break;
       }
     }

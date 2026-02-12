@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 String _prettyJson(Object value) =>
-    const JsonEncoder.withIndent('  ').convert(value) + '\n';
+    '${const JsonEncoder.withIndent('  ').convert(value)}\n';
 
 Map<String, dynamic>? _readUpstreamInfo() {
   final file = File('test/fixtures/v3_parts/_upstream.json');

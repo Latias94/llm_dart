@@ -396,6 +396,17 @@ Future<List<_CheckResult>> _runProviderChecks(
               case LLMToolCallEndPart():
                 dump('ToolCallEnd');
 
+              case LLMToolInputStartPart(:final id, :final toolName):
+                sawAnyDelta = true;
+                dump('ToolInputStart $toolName ($id)');
+
+              case LLMToolInputDeltaPart(:final id, :final delta):
+                sawAnyDelta = true;
+                dump('ToolInputDelta id=$id len=${delta.length}');
+
+              case LLMToolInputEndPart(:final id):
+                dump('ToolInputEnd $id');
+
               case LLMToolResultPart(:final result):
                 sawAnyDelta = true;
                 dump(
@@ -480,6 +491,9 @@ Future<List<_CheckResult>> _runProviderChecks(
                   ok: false,
                   detail: redactor.redact(error.toString()),
                 );
+
+              default:
+                dump('Unknown ${part.runtimeType}');
             }
 
             if (sawFinish) break;

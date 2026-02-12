@@ -4,23 +4,14 @@ import 'dart:io';
 
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_ai/llm_dart_ai.dart' as llm_ai;
-import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_anthropic_compatible/config.dart' as anthropic_compat;
 import 'package:llm_dart_anthropic_compatible/provider.dart'
     as anthropic_compat_provider;
-import 'package:llm_dart_azure/config.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_google/chat.dart';
-import 'package:llm_dart_google/config.dart';
-import 'package:llm_dart_google_vertex/defaults.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
 import 'package:llm_dart_openai/responses.dart' as openai_responses;
-import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_openai_compatible/responses.dart' as openai_compat;
 import 'package:llm_dart_xai/responses.dart';
-import 'package:llm_dart_ollama/chat.dart';
-import 'package:llm_dart_ollama/config.dart';
 
 import '../test/utils/fakes/anthropic_fake_client.dart';
 import '../test/utils/fakes/openai_fake_client.dart';
@@ -912,7 +903,7 @@ _MetaStatus _ensureMeta({
 
   final paths = <String>[
     fixturePath.replaceAll('\\', '/'),
-    if (isVendored) repoRefFixturePath!,
+    if (isVendored) repoRefFixturePath,
   ];
   source['paths'] = paths;
   source['notes'] = isVendored
@@ -938,15 +929,13 @@ _MetaStatus _ensureMeta({
       upstream['commit'] ??= upstreamInfo['commit'];
       upstream['license'] ??= upstreamInfo['license'];
     }
-    if (repoRefFixturePath != null && repoRefFixturePath.isNotEmpty) {
-      final existing = upstream['paths'];
-      if (existing is List) {
-        final list = existing.map((e) => e.toString()).toList();
-        if (!list.contains(repoRefFixturePath)) list.add(repoRefFixturePath);
-        upstream['paths'] = list;
-      } else {
-        upstream['paths'] = [repoRefFixturePath];
-      }
+    final existing = upstream['paths'];
+    if (existing is List) {
+      final list = existing.map((e) => e.toString()).toList();
+      if (!list.contains(repoRefFixturePath)) list.add(repoRefFixturePath);
+      upstream['paths'] = list;
+    } else {
+      upstream['paths'] = [repoRefFixturePath];
     }
     if (upstream.isNotEmpty) {
       meta['upstream'] = upstream;
@@ -985,7 +974,7 @@ Map<String, dynamic>? _readUpstreamInfo() {
 }
 
 String _prettyJson(Object value) =>
-    const JsonEncoder.withIndent('  ').convert(value) + '\n';
+    '${const JsonEncoder.withIndent('  ').convert(value)}\n';
 
 String _basename(String path) {
   final sep = Platform.pathSeparator;

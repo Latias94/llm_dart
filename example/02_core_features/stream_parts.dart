@@ -98,6 +98,18 @@ void main() async {
         stdout.writeln('[tool end] $toolCallId');
         break;
 
+      case LLMToolInputStartPart(:final id, :final toolName):
+        stdout.writeln('[tool input start] $toolName ($id)');
+        break;
+
+      case LLMToolInputDeltaPart(:final id, :final delta):
+        stdout.writeln('[tool input delta] $id (+=${delta.length} chars)');
+        break;
+
+      case LLMToolInputEndPart(:final id):
+        stdout.writeln('[tool input end] $id');
+        break;
+
       case LLMToolResultPart(:final result):
         stdout.writeln('[tool result] ${result.toolCallId}');
         break;
@@ -159,6 +171,10 @@ void main() async {
 
       case LLMErrorPart(:final error):
         stderr.writeln('❌ Error: $error');
+        break;
+
+      default:
+        stdout.writeln('[unknown part] ${part.runtimeType}');
         break;
     }
   }

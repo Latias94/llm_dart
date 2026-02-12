@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_azure/config.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/responses.dart' as openai_responses;
 import 'package:test/test.dart';
 
@@ -49,7 +47,7 @@ void main() {
       );
 
       final toolId = 'ci_early_az';
-      final code = 'print(\"hi\")\\n';
+      final code = 'print("hi")\n';
 
       final sse = [
         _sseData({
@@ -153,7 +151,7 @@ void main() {
         expect(call.toolName, equals('codeExecution'));
         expect(call.providerExecuted, isTrue);
         expect(call.input, isA<String>());
-        expect(call.input as String, contains('\"code\"'));
+        expect(call.input as String, contains('"code"'));
         expect(call.input as String, contains('print'));
       }
     });

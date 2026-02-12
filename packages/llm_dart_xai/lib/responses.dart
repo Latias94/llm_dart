@@ -1141,16 +1141,6 @@ class XAIResponses
     UsageInfo? usage;
     if (usageRaw is Map) {
       final usageMap = usageRaw.cast<String, dynamic>();
-      final inputTokens = usageMap['input_tokens'] as int?;
-      final outputTokens = usageMap['output_tokens'] as int?;
-      final totalTokens = usageMap['total_tokens'] as int? ??
-          ((inputTokens ?? 0) + (outputTokens ?? 0));
-
-      final outputDetails = usageMap['output_tokens_details'];
-      final reasoningTokens = outputDetails is Map
-          ? (outputDetails['reasoning_tokens'] as int?)
-          : null;
-
       usage = UsageInfo.fromProviderUsage(usageMap);
     }
 

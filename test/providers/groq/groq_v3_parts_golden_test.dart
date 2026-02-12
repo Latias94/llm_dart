@@ -1,8 +1,6 @@
 import 'dart:io';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:test/test.dart';
 
 import '../../utils/fakes/fakes.dart';
