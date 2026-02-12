@@ -27,6 +27,11 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
 
   final openToolInputIds = <String>[];
   final openToolInputIdSet = <String>{};
+  final toolNameByToolInputId = <String, String>{};
+  final pendingToolInputIds = <String>[];
+  final pendingToolInputIdSet = <String>{};
+  final pendingToolInputDeltasById = <String, List<LLMToolInputDeltaPart>>{};
+  final pendingToolInputEnds = <String>{};
 
   void appendText(String id, String delta) {
     (textBuffers[id] ??= StringBuffer()).write(delta);
@@ -35,6 +40,19 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
   void appendReasoning(String id, String delta) {
     (reasoningBuffers[id] ??= StringBuffer()).write(delta);
   }
+
+  void rememberToolInputIdOrder(String id) {
+    if (pendingToolInputIdSet.add(id)) {
+      pendingToolInputIds.add(id);
+    }
+  }
+
+  String toolNameForToolInputId(String id) =>
+      toolNameByToolInputId[id] ?? 'unknown';
+
+  bool hasPendingToolInputFragments(String id) =>
+      pendingToolInputDeltasById.containsKey(id) ||
+      pendingToolInputEnds.contains(id);
 
   LLMTextEndPart? closeTextIfOpen(String? id) {
     final effectiveId = id;
@@ -60,6 +78,36 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
     if (!openToolInputIdSet.remove(effectiveId)) return null;
     openToolInputIds.remove(effectiveId);
     return LLMToolInputEndPart(id: effectiveId);
+  }
+
+  LLMToolInputStartPart? startToolInputIfNeeded({
+    required String id,
+    Map<String, dynamic>? providerMetadata,
+  }) {
+    if (id.trim().isEmpty) return null;
+    if (openToolInputIdSet.contains(id)) return null;
+
+    openToolInputIdSet.add(id);
+    openToolInputIds.add(id);
+
+    return LLMToolInputStartPart(
+      id: id,
+      toolName: toolNameForToolInputId(id),
+      providerMetadata: providerMetadata,
+    );
+  }
+
+  Iterable<LLMStreamPart> flushPendingToolInputForId(String id) sync* {
+    final deltas = pendingToolInputDeltasById.remove(id);
+    if (deltas != null) {
+      for (final d in deltas) {
+        yield d;
+      }
+    }
+    if (pendingToolInputEnds.remove(id)) {
+      final end = closeToolInputIfOpen(id);
+      if (end != null) yield end;
+    }
   }
 
   final iterator = StreamIterator(upstream);
@@ -170,6 +218,7 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
             :final isDynamic,
             :final title,
           ):
+          toolNameByToolInputId[id] = toolName;
           if (id.trim().isNotEmpty && openToolInputIdSet.add(id)) {
             openToolInputIds.add(id);
           }
@@ -181,45 +230,112 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
             isDynamic: isDynamic,
             title: title,
           );
+          for (final pending in flushPendingToolInputForId(id)) {
+            yield pending;
+          }
 
         case LLMToolInputDeltaPart(
             :final id,
             :final delta,
             :final providerMetadata,
           ):
-          // We intentionally do not synthesize a missing tool-input-start here
-          // because toolName is required. Close-on-finish still applies if a
-          // start was seen previously.
-          yield LLMToolInputDeltaPart(
-            id: id,
-            delta: delta,
-            providerMetadata: providerMetadata,
-          );
+          if (openToolInputIdSet.contains(id)) {
+            yield LLMToolInputDeltaPart(
+              id: id,
+              delta: delta,
+              providerMetadata: providerMetadata,
+            );
+          } else {
+            // Buffer orphan deltas until we see a start (or until finish).
+            // This preserves AI SDK v3 ordering invariants: deltas must follow a
+            // tool-input-start boundary.
+            rememberToolInputIdOrder(id);
+            (pendingToolInputDeltasById[id] ??= <LLMToolInputDeltaPart>[]).add(
+              LLMToolInputDeltaPart(
+                id: id,
+                delta: delta,
+                providerMetadata: providerMetadata,
+              ),
+            );
+          }
 
         case LLMToolInputEndPart(:final id, :final providerMetadata):
-          openToolInputIdSet.remove(id);
-          openToolInputIds.remove(id);
-          yield LLMToolInputEndPart(
-            id: id,
-            providerMetadata: providerMetadata,
-          );
+          if (openToolInputIdSet.contains(id)) {
+            openToolInputIdSet.remove(id);
+            openToolInputIds.remove(id);
+            yield LLMToolInputEndPart(
+              id: id,
+              providerMetadata: providerMetadata,
+            );
+          } else {
+            rememberToolInputIdOrder(id);
+            pendingToolInputEnds.add(id);
+          }
 
         case LLMProviderToolCallPart(:final toolCallId):
+          toolNameByToolInputId[toolCallId] = part.toolName;
+          if (hasPendingToolInputFragments(toolCallId)) {
+            final synthesizedStart = startToolInputIfNeeded(id: toolCallId);
+            if (synthesizedStart != null) {
+              yield synthesizedStart;
+              for (final pending in flushPendingToolInputForId(toolCallId)) {
+                yield pending;
+              }
+            }
+          }
           final end = closeToolInputIfOpen(toolCallId);
           if (end != null) yield end;
           yield part;
 
         case LLMProviderToolResultPart(:final toolCallId):
+          toolNameByToolInputId[toolCallId] = part.toolName;
+          if (hasPendingToolInputFragments(toolCallId)) {
+            final synthesizedStart = startToolInputIfNeeded(id: toolCallId);
+            if (synthesizedStart != null) {
+              yield synthesizedStart;
+              for (final pending in flushPendingToolInputForId(toolCallId)) {
+                yield pending;
+              }
+            }
+          }
           final end = closeToolInputIfOpen(toolCallId);
           if (end != null) yield end;
           yield part;
 
         case LLMToolResultPart(:final result):
+          if (hasPendingToolInputFragments(result.toolCallId)) {
+            final synthesizedStart =
+                startToolInputIfNeeded(id: result.toolCallId);
+            if (synthesizedStart != null) {
+              yield synthesizedStart;
+              for (final pending
+                  in flushPendingToolInputForId(result.toolCallId)) {
+                yield pending;
+              }
+            }
+          }
           final end = closeToolInputIfOpen(result.toolCallId);
           if (end != null) yield end;
           yield part;
 
         case LLMFinishPart():
+          // Flush orphan tool-input fragments (delta/end without start) in a
+          // stable order, then close any remaining open tool-input blocks.
+          for (final id in pendingToolInputIds) {
+            final synthesizedStart = startToolInputIfNeeded(id: id);
+            if (synthesizedStart == null) continue;
+            yield synthesizedStart;
+            for (final pending in flushPendingToolInputForId(id)) {
+              yield pending;
+            }
+            final end = closeToolInputIfOpen(id);
+            if (end != null) yield end;
+          }
+          pendingToolInputIds.clear();
+          pendingToolInputIdSet.clear();
+          pendingToolInputDeltasById.clear();
+          pendingToolInputEnds.clear();
+
           // Close tool-input blocks first (in a stable order).
           while (openToolInputIds.isNotEmpty) {
             final id = openToolInputIds.first;

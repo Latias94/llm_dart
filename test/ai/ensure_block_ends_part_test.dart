@@ -152,5 +152,59 @@ void main() {
       expect(
           (parts[parts.length - 2] as LLMToolInputEndPart).id, equals('id-0'));
     });
+
+    test('buffers tool-input-delta until tool-input-start arrives', () async {
+      final model = _FakeChatModel(const [
+        LLMToolInputDeltaPart(
+          id: 'id-0',
+          delta: '{"a":1',
+        ),
+        LLMToolInputStartPart(
+          id: 'id-0',
+          toolName: 'tool',
+        ),
+        LLMFinishPart(_FakeChatResponse(text: 'ok')),
+      ]);
+
+      final parts = await streamChatParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+      ).toList();
+
+      final startIndex = parts.indexWhere((p) =>
+          p is LLMToolInputStartPart &&
+          (p as LLMToolInputStartPart).id == 'id-0');
+      final deltaIndex = parts.indexWhere((p) =>
+          p is LLMToolInputDeltaPart &&
+          (p as LLMToolInputDeltaPart).id == 'id-0');
+
+      expect(startIndex, isNonNegative);
+      expect(deltaIndex, isNonNegative);
+      expect(startIndex, lessThan(deltaIndex));
+    });
+
+    test('synthesizes tool-input-start/end for orphan tool-input-end at finish',
+        () async {
+      final model = _FakeChatModel(const [
+        LLMToolInputEndPart(id: 'id-0'),
+        LLMFinishPart(_FakeChatResponse(text: 'ok')),
+      ]);
+
+      final parts = await streamChatParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+      ).toList();
+
+      final startIndex = parts.indexWhere((p) =>
+          p is LLMToolInputStartPart &&
+          (p as LLMToolInputStartPart).id == 'id-0');
+      final endIndex = parts.indexWhere((p) =>
+          p is LLMToolInputEndPart && (p as LLMToolInputEndPart).id == 'id-0');
+
+      expect(startIndex, isNonNegative);
+      expect(endIndex, isNonNegative);
+      expect(startIndex, lessThan(endIndex));
+      expect(endIndex, lessThan(parts.length - 1));
+    });
   });
 }
