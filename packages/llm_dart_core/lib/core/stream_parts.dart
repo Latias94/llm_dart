@@ -72,6 +72,61 @@ class LLMResponseMetadataPart extends LLMStreamPart {
   });
 }
 
+/// Marks the start of a single "step" in a multi-step generation.
+///
+/// This mirrors the AI SDK concept of step results in `streamText`, where a
+/// tool loop can perform multiple model calls (steps) before producing a final
+/// response.
+///
+/// Notes:
+/// - Providers typically do not emit step boundaries; orchestration layers
+///   (tool loops) may inject them.
+/// - This is intentionally lightweight and only carries a stable [stepIndex].
+class LLMStepStartPart extends LLMStreamPart {
+  /// 0-based step index within a single high-level request.
+  final int stepIndex;
+
+  const LLMStepStartPart(this.stepIndex) : assert(stepIndex >= 0);
+}
+
+/// Marks the end of a single "step" in a multi-step generation.
+///
+/// This is emitted by orchestration layers (e.g. local tool loops) once they
+/// have:
+/// - fully consumed the provider stream for the step, and
+/// - (optionally) executed local tools and produced [toolResults].
+///
+/// It provides a stable hook for aggregating per-step results and computing
+/// total usage across steps.
+class LLMStepFinishPart extends LLMStreamPart {
+  /// 0-based step index within a single high-level request.
+  final int stepIndex;
+
+  /// The raw provider response for this step.
+  final ChatResponse response;
+
+  /// Optional usage snapshot at step finish time.
+  final UsageInfo? usage;
+
+  /// Optional typed finish reason at step finish time.
+  final LLMFinishReason? finishReason;
+
+  /// Tool calls produced by the model for this step (local function tools only).
+  final List<ToolCall> toolCalls;
+
+  /// Tool results produced by local execution for this step.
+  final List<ToolResult> toolResults;
+
+  const LLMStepFinishPart({
+    required this.stepIndex,
+    required this.response,
+    required this.toolCalls,
+    required this.toolResults,
+    this.usage,
+    this.finishReason,
+  }) : assert(stepIndex >= 0);
+}
+
 /// Optional capability for providers to emit `LLMStreamPart` directly.
 ///
 /// Orchestration layers should prefer this capability for streaming.

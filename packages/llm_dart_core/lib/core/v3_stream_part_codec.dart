@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../models/chat_models.dart';
+import '../models/tool_models.dart';
 import 'capability.dart';
 import 'llm_error.dart';
 import 'stream_parts.dart';
@@ -454,6 +455,78 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
       case 'raw':
         final rawValue = obj['rawValue'];
         if (rawValue is Map) {
+          // Tool loop step boundaries (non-canonical v3; injected by llm_dart tool loops).
+          final kind = rawValue['kind'];
+          if (kind == 'step-start') {
+            final stepIndexRaw = rawValue['stepIndex'];
+            final stepIndex = stepIndexRaw is int
+                ? stepIndexRaw
+                : (stepIndexRaw is num ? stepIndexRaw.toInt() : null);
+            if (stepIndex != null && stepIndex >= 0) {
+              out.add(LLMStepStartPart(stepIndex));
+              break;
+            }
+          }
+
+          if (kind == 'step-finish') {
+            final stepIndexRaw = rawValue['stepIndex'];
+            final stepIndex = stepIndexRaw is int
+                ? stepIndexRaw
+                : (stepIndexRaw is num ? stepIndexRaw.toInt() : null);
+            if (stepIndex == null || stepIndex < 0) {
+              out.add(LLMRawPart(_normalizeJsonLike(rawValue)));
+              break;
+            }
+
+            final usageRaw = _asStringKeyedMap(rawValue['usage']);
+            final finishReasonRaw = _asStringKeyedMap(rawValue['finishReason']);
+            final usage = usageRaw != null ? _decodeV3Usage(usageRaw) : null;
+            final finishReason = finishReasonRaw != null
+                ? _decodeV3FinishReason(finishReasonRaw)
+                : null;
+
+            final responseProviderMetadata =
+                _asStringKeyedMap(rawValue['providerMetadata']);
+
+            final toolCallsRaw = rawValue['toolCalls'];
+            final toolResultsRaw = rawValue['toolResults'];
+
+            final toolCalls = <ToolCall>[];
+            if (toolCallsRaw is List) {
+              for (final v in toolCallsRaw) {
+                if (v is Map) {
+                  toolCalls.add(ToolCall.fromJson(v.cast<String, dynamic>()));
+                }
+              }
+            }
+
+            final toolResults = <ToolResult>[];
+            if (toolResultsRaw is List) {
+              for (final v in toolResultsRaw) {
+                if (v is Map) {
+                  toolResults
+                      .add(ToolResult.fromJson(v.cast<String, dynamic>()));
+                }
+              }
+            }
+
+            out.add(
+              LLMStepFinishPart(
+                stepIndex: stepIndex,
+                response: _DecodedChatResponse(
+                  finishReason: finishReason,
+                  usage: usage,
+                  providerMetadata: responseProviderMetadata,
+                ),
+                usage: usage,
+                finishReason: finishReason,
+                toolCalls: toolCalls,
+                toolResults: toolResults,
+              ),
+            );
+            break;
+          }
+
           // Backward compatibility: historically we wrapped non-canonical parts
           // in `rawValue.kind=...` envelopes for fixture round-trips. Newer
           // fixtures omit `kind` and use a minimal, self-describing shape.
@@ -495,7 +568,7 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
           }
 
           // Legacy envelopes: { kind: 'provider-metadata' | 'provider-tool-delta', ... }
-          final kind = rawValue['kind'];
+          // (Note: step boundaries are handled above.)
           if (kind == 'provider-metadata') {
             final pm = _asStringKeyedMap(rawValue['providerMetadata']);
             if (pm != null) {
@@ -585,6 +658,54 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
           if (id != null && id.isNotEmpty) 'id': id,
           if (timestamp != null) 'timestamp': timestamp.toIso8601String(),
           if (model != null && model.isNotEmpty) 'modelId': model,
+        },
+      ];
+
+    // Tool loop step boundaries are not part of the canonical AI SDK v3 stream
+    // shape. Preserve them as raw passthroughs for fixtures/debugging.
+    case LLMStepStartPart(:final stepIndex):
+      return [
+        {
+          'type': 'raw',
+          'rawValue': {
+            'kind': 'step-start',
+            'stepIndex': stepIndex,
+          },
+        },
+      ];
+
+    case LLMStepFinishPart(
+        stepIndex: final stepIndex,
+        response: final response,
+        usage: final usage,
+        finishReason: final finishReason,
+        toolCalls: final toolCalls,
+        toolResults: final toolResults,
+      ):
+      final mergedUsage = usage ?? response.usage;
+      final mergedFinishReason = finishReason ??
+          (response is ChatResponseWithFinishReason
+              ? response.finishReason
+              : null);
+      final responseProviderMetadata = response.providerMetadata;
+
+      return [
+        {
+          'type': 'raw',
+          'rawValue': {
+            'kind': 'step-finish',
+            'stepIndex': stepIndex,
+            if (mergedUsage != null) 'usage': _encodeV3Usage(mergedUsage),
+            if (mergedFinishReason != null)
+              'finishReason': _encodeV3FinishReason(mergedFinishReason),
+            if (responseProviderMetadata != null &&
+                responseProviderMetadata.isNotEmpty)
+              'providerMetadata': responseProviderMetadata,
+            if (toolCalls.isNotEmpty)
+              'toolCalls': toolCalls.map((c) => c.toJson()).toList(),
+            if (toolResults.isNotEmpty)
+              'toolResults': toolResults.map((r) => r.toJson()).toList(),
+          },
         },
       ];
 

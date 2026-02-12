@@ -1135,6 +1135,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  bool emitStepParts = false,
   CancelToken? cancelToken,
 }) async* {
   Stream<LLMStreamPart> upstream() async* {
@@ -1156,6 +1157,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         needsApproval: needsApproval,
         maxSteps: maxSteps,
         continueOnToolError: continueOnToolError,
+        emitStepParts: emitStepParts,
         cancelToken: cancelToken,
       );
       return;
@@ -1183,6 +1185,10 @@ Stream<LLMStreamPart> streamToolLoopParts({
     final workingMessages = List<ChatMessage>.from(standardizedMessages);
 
     for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
+      if (emitStepParts) {
+        yield LLMStepStartPart(stepIndex);
+      }
+
       final toolAccums = <String, _ToolCallAccum>{};
       final fullText = StringBuffer();
       final fullThinking = StringBuffer();
@@ -1303,6 +1309,17 @@ Stream<LLMStreamPart> streamToolLoopParts({
           }
         }
 
+        if (emitStepParts) {
+          yield LLMStepFinishPart(
+            stepIndex: stepIndex,
+            response: mergedResponse,
+            usage: mergedResponse.usage,
+            finishReason: mergedResponse.finishReason,
+            toolCalls: const [],
+            toolResults: const [],
+          );
+        }
+
         yield LLMFinishPart(
           mergedResponse,
           usage: mergedResponse.usage,
@@ -1363,6 +1380,17 @@ Stream<LLMStreamPart> streamToolLoopParts({
         yield LLMToolResultPart(result);
       }
 
+      if (emitStepParts) {
+        yield LLMStepFinishPart(
+          stepIndex: stepIndex,
+          response: mergedResponse,
+          usage: mergedResponse.usage,
+          finishReason: mergedResponse.finishReason,
+          toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+          toolResults: List<ToolResult>.unmodifiable(executed),
+        );
+      }
+
       if (completedResponse is ChatResponseWithAssistantMessage) {
         workingMessages.add(completedResponse.assistantMessage);
       } else {
@@ -1406,6 +1434,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  bool emitStepParts = false,
   CancelToken? cancelToken,
 }) async* {
   final hasPromptStreamParts = model is PromptChatStreamPartsCapability;
@@ -1425,6 +1454,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       needsApproval: needsApproval,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
+      emitStepParts: emitStepParts,
       cancelToken: cancelToken,
     );
     return;
@@ -1443,6 +1473,10 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   );
 
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
+    if (emitStepParts) {
+      yield LLMStepStartPart(stepIndex);
+    }
+
     final toolAccums = <String, _ToolCallAccum>{};
     final fullText = StringBuffer();
     final fullThinking = StringBuffer();
@@ -1568,6 +1602,17 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
         }
       }
 
+      if (emitStepParts) {
+        yield LLMStepFinishPart(
+          stepIndex: stepIndex,
+          response: mergedResponse,
+          usage: mergedResponse.usage,
+          finishReason: mergedResponse.finishReason,
+          toolCalls: const [],
+          toolResults: const [],
+        );
+      }
+
       yield LLMFinishPart(
         mergedResponse,
         usage: mergedResponse.usage,
@@ -1630,6 +1675,17 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       yield LLMToolResultPart(result);
     }
 
+    if (emitStepParts) {
+      yield LLMStepFinishPart(
+        stepIndex: stepIndex,
+        response: mergedResponse,
+        usage: mergedResponse.usage,
+        finishReason: mergedResponse.finishReason,
+        toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+        toolResults: List<ToolResult>.unmodifiable(executed),
+      );
+    }
+
     final assistantMessage =
         completedResponse is ChatResponseWithAssistantMessage
             ? completedResponse.assistantMessage
@@ -1668,6 +1724,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  bool emitStepParts = false,
   CancelToken? cancelToken,
 }) {
   return streamToolLoopParts(
@@ -1683,6 +1740,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     needsApproval: needsApproval,
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
+    emitStepParts: emitStepParts,
     cancelToken: cancelToken,
   );
 }
