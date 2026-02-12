@@ -57,6 +57,9 @@ Future<GenerateObjectResult> generateObject({
   CancelToken? cancelToken,
 }) async {
   final startedAt = DateTime.now().toUtc();
+  final defaultModelId = model is ModelIdentityCapability
+      ? (model as ModelIdentityCapability).modelId
+      : null;
   final input = standardizePromptInput(
     system: system,
     prompt: prompt,
@@ -142,15 +145,16 @@ Future<GenerateObjectResult> generateObject({
             : null,
         include,
       ),
-      responseMetadata: response is ChatResponseWithResponseMetadata
-          ? responseMetadataWithInclude(
-              responseMetadataWithTimestampFallback(
-                response.responseMetadata,
-                startedAt,
-              ),
-              include,
-            )
-          : null,
+      responseMetadata: responseMetadataWithInclude(
+        responseMetadataWithDefaults(
+          response is ChatResponseWithResponseMetadata
+              ? response.responseMetadata
+              : null,
+          startedAt,
+          defaultModelId: defaultModelId,
+        ),
+        include,
+      ),
       responseMessages: buildResponseMessagesBestEffort(response),
       responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
     );
@@ -178,15 +182,16 @@ Future<GenerateObjectResult> generateObject({
           : null,
       include,
     ),
-    responseMetadata: response is ChatResponseWithResponseMetadata
-        ? responseMetadataWithInclude(
-            responseMetadataWithTimestampFallback(
-              response.responseMetadata,
-              startedAt,
-            ),
-            include,
-          )
-        : null,
+    responseMetadata: responseMetadataWithInclude(
+      responseMetadataWithDefaults(
+        response is ChatResponseWithResponseMetadata
+            ? response.responseMetadata
+            : null,
+        startedAt,
+        defaultModelId: defaultModelId,
+      ),
+      include,
+    ),
     responseMessages: buildResponseMessagesBestEffort(response),
     responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
   );

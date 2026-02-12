@@ -470,6 +470,22 @@ abstract class ChatCapability {
   }
 }
 
+/// Optional capability for chat models that can expose stable model identity.
+///
+/// This is aligned with Vercel AI SDK's notion of a `LanguageModel` having a
+/// `provider` id and a `modelId`.
+///
+/// Orchestration layers (e.g. `llm_dart_ai`) can use this to provide
+/// best-effort defaults for response metadata (`id`, `timestamp`, `modelId`)
+/// even when providers do not return them.
+abstract class ModelIdentityCapability {
+  /// Provider identifier (e.g. `openai`, `anthropic`, `google-vertex`).
+  String get providerId;
+
+  /// Model identifier (e.g. `gpt-4.1-mini`, `claude-3-5-sonnet-latest`).
+  String get modelId;
+}
+
 /// Optional capability for providers to accept the `Prompt` IR directly.
 ///
 /// Providers that implement this can preserve part/message structure without

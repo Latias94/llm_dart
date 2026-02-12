@@ -100,8 +100,12 @@ class StreamTextResult {
     required this.done,
   });
 
-  factory StreamTextResult.fromPartsStream(Stream<LLMStreamPart> upstream) {
+  factory StreamTextResult.fromPartsStream(
+    Stream<LLMStreamPart> upstream, {
+    String? defaultModelId,
+  }) {
     final startedAt = DateTime.now().toUtc();
+    var currentStepStartedAt = startedAt;
     final controller = StreamController<LLMStreamPart>.broadcast(sync: true);
 
     final doneCompleter = Completer<void>();
@@ -150,11 +154,66 @@ class StreamTextResult {
     final collectedSteps = <ToolLoopStep>[];
     UsageInfo? accumulatedUsage;
 
-    LLMResponseMetadataPart? lastResponseMetadata;
+    LLMResponseMetadataPart currentResponseMetadata =
+        responseMetadataWithDefaults(
+      null,
+      currentStepStartedAt,
+      defaultModelId: defaultModelId,
+    );
     LLMRequestMetadataPart? lastRequestMetadata;
     Map<String, dynamic>? lastProviderMetadata;
     LLMFinishPart? finishPart;
     LLMError? terminalError;
+
+    LLMResponseMetadataPart mergeResponseMetadata(
+      LLMResponseMetadataPart base,
+      LLMResponseMetadataPart update,
+    ) {
+      Map<String, String>? mergeHeaders(
+        Map<String, String>? x,
+        Map<String, String>? y,
+      ) {
+        if (x == null || x.isEmpty) {
+          return y == null ? null : Map<String, String>.from(y);
+        }
+        if (y == null || y.isEmpty) {
+          return Map<String, String>.from(x);
+        }
+        return {
+          ...x,
+          ...y,
+        };
+      }
+
+      Map<String, dynamic>? mergeMap(
+        Map<String, dynamic>? x,
+        Map<String, dynamic>? y,
+      ) {
+        if (x == null || x.isEmpty) {
+          return y == null ? null : Map<String, dynamic>.from(y);
+        }
+        if (y == null || y.isEmpty) {
+          return Map<String, dynamic>.from(x);
+        }
+        return {
+          ...x,
+          ...y,
+        };
+      }
+
+      return LLMResponseMetadataPart(
+        id: update.id ?? base.id,
+        timestamp: update.timestamp ?? base.timestamp,
+        model: update.model ?? base.model,
+        headers: mergeHeaders(base.headers, update.headers),
+        body: update.body ?? base.body,
+        status: update.status ?? base.status,
+        systemFingerprint: update.systemFingerprint ?? base.systemFingerprint,
+        providerMetadata:
+            mergeMap(base.providerMetadata, update.providerMetadata),
+        raw: mergeMap(base.raw, update.raw),
+      );
+    }
 
     void ensureOrder(List<String> order, String id) {
       if (!order.contains(id)) order.add(id);
@@ -182,7 +241,11 @@ class StreamTextResult {
               }
 
             case LLMResponseMetadataPart():
-              lastResponseMetadata = part;
+              currentResponseMetadata = responseMetadataWithDefaults(
+                mergeResponseMetadata(currentResponseMetadata, part),
+                currentStepStartedAt,
+                defaultModelId: defaultModelId,
+              );
 
             case LLMRequestMetadataPart():
               lastRequestMetadata = part;
@@ -190,13 +253,18 @@ class StreamTextResult {
             case LLMStepStartPart():
               // AI SDK semantics: `text`/`thinkingText`/`sources`/`files` are
               // derived from the *last step*.
+              currentStepStartedAt = DateTime.now().toUtc();
               textBlocks.clear();
               thinkingBlocks.clear();
               textBlockOrder.clear();
               thinkingBlockOrder.clear();
               collectedSources.clear();
               collectedFiles.clear();
-              lastResponseMetadata = null;
+              currentResponseMetadata = responseMetadataWithDefaults(
+                null,
+                currentStepStartedAt,
+                defaultModelId: defaultModelId,
+              );
               lastRequestMetadata = null;
               lastProviderMetadata = null;
 
@@ -251,11 +319,7 @@ class StreamTextResult {
                   (response is ChatResponseWithFinishReason
                       ? response.finishReason
                       : null);
-              final stepResponseMetadata =
-                  responseMetadataWithTimestampFallback(
-                lastResponseMetadata,
-                startedAt,
-              );
+              final stepResponseMetadata = currentResponseMetadata;
               final stepAssistantPromptMessages =
                   buildResponsePromptMessagesBestEffort(response);
               final stepResponsePromptMessages = toolResults.isNotEmpty
@@ -365,10 +429,7 @@ class StreamTextResult {
             warningsCompleter.complete(const <Map<String, dynamic>>[]);
           }
           if (!responseMetadataCompleter.isCompleted) {
-            responseMetadataCompleter.complete(
-              responseMetadataWithTimestampFallback(
-                  lastResponseMetadata, startedAt),
-            );
+            responseMetadataCompleter.complete(currentResponseMetadata);
           }
           if (!requestMetadataCompleter.isCompleted) {
             requestMetadataCompleter.complete(lastRequestMetadata);
@@ -396,10 +457,7 @@ class StreamTextResult {
           warningsCompleter.complete(const <Map<String, dynamic>>[]);
         }
         if (!responseMetadataCompleter.isCompleted) {
-          responseMetadataCompleter.complete(
-            responseMetadataWithTimestampFallback(
-                lastResponseMetadata, startedAt),
-          );
+          responseMetadataCompleter.complete(currentResponseMetadata);
         }
         if (!requestMetadataCompleter.isCompleted) {
           requestMetadataCompleter.complete(lastRequestMetadata);
@@ -415,10 +473,7 @@ class StreamTextResult {
 
         if (collectedSteps.isEmpty) {
           final toolCalls = response.toolCalls ?? const <ToolCall>[];
-          final responseMetadata = responseMetadataWithTimestampFallback(
-            lastResponseMetadata,
-            startedAt,
-          );
+          final responseMetadata = currentResponseMetadata;
           stepsCompleter.complete([
             ToolLoopStep(
               index: 0,
@@ -459,10 +514,7 @@ class StreamTextResult {
             usage: usage,
             finishReason: finishReason,
             requestMetadata: lastRequestMetadata,
-            responseMetadata: responseMetadataWithTimestampFallback(
-              lastResponseMetadata,
-              startedAt,
-            ),
+            responseMetadata: currentResponseMetadata,
             responseMessages: buildResponseMessagesBestEffort(response),
             responsePromptMessages: buildResponsePromptMessagesBestEffort(
               response,
@@ -616,5 +668,12 @@ StreamTextResult streamText({
     }
   }
 
-  return StreamTextResult.fromPartsStream(upstream());
+  final defaultModelId = model is ModelIdentityCapability
+      ? (model as ModelIdentityCapability).modelId
+      : null;
+
+  return StreamTextResult.fromPartsStream(
+    upstream(),
+    defaultModelId: defaultModelId,
+  );
 }

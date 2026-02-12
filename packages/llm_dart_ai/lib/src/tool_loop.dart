@@ -107,6 +107,10 @@ Future<ToolLoopResult> runToolLoop({
     throw const InvalidRequestError('maxSteps must be >= 1');
   }
 
+  final defaultModelId = model is ModelIdentityCapability
+      ? (model as ModelIdentityCapability).modelId
+      : null;
+
   final workingMessages = List<ChatMessage>.from(standardizedMessages);
   final steps = <ToolLoopStep>[];
 
@@ -135,15 +139,16 @@ Future<ToolLoopResult> runToolLoop({
             : null,
         include,
       ),
-      responseMetadata: response is ChatResponseWithResponseMetadata
-          ? responseMetadataWithInclude(
-              responseMetadataWithTimestampFallback(
-                response.responseMetadata,
-                startedAt,
-              ),
-              include,
-            )
-          : null,
+      responseMetadata: responseMetadataWithInclude(
+        responseMetadataWithDefaults(
+          response is ChatResponseWithResponseMetadata
+              ? response.responseMetadata
+              : null,
+          startedAt,
+          defaultModelId: defaultModelId,
+        ),
+        include,
+      ),
       responseMessages: buildResponseMessagesBestEffort(response),
       responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
     );
@@ -352,6 +357,10 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
     throw const InvalidRequestError('maxSteps must be >= 1');
   }
 
+  final defaultModelId = model is ModelIdentityCapability
+      ? (model as ModelIdentityCapability).modelId
+      : null;
+
   var workingPrompt = prompt;
   final workingMessages = List<ChatMessage>.from(
     _promptToLegacyChatMessagesBestEffort(prompt),
@@ -385,15 +394,16 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
             : null,
         include,
       ),
-      responseMetadata: response is ChatResponseWithResponseMetadata
-          ? responseMetadataWithInclude(
-              responseMetadataWithTimestampFallback(
-                response.responseMetadata,
-                startedAt,
-              ),
-              include,
-            )
-          : null,
+      responseMetadata: responseMetadataWithInclude(
+        responseMetadataWithDefaults(
+          response is ChatResponseWithResponseMetadata
+              ? response.responseMetadata
+              : null,
+          startedAt,
+          defaultModelId: defaultModelId,
+        ),
+        include,
+      ),
       responseMessages: buildResponseMessagesBestEffort(response),
       responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
     );
@@ -571,6 +581,10 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
     throw const InvalidRequestError('maxSteps must be >= 1');
   }
 
+  final defaultModelId = model is ModelIdentityCapability
+      ? (model as ModelIdentityCapability).modelId
+      : null;
+
   final workingMessages = List<ChatMessage>.from(standardizedMessages);
   final steps = <ToolLoopStep>[];
 
@@ -599,15 +613,16 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
             : null,
         include,
       ),
-      responseMetadata: response is ChatResponseWithResponseMetadata
-          ? responseMetadataWithInclude(
-              responseMetadataWithTimestampFallback(
-                response.responseMetadata,
-                startedAt,
-              ),
-              include,
-            )
-          : null,
+      responseMetadata: responseMetadataWithInclude(
+        responseMetadataWithDefaults(
+          response is ChatResponseWithResponseMetadata
+              ? response.responseMetadata
+              : null,
+          startedAt,
+          defaultModelId: defaultModelId,
+        ),
+        include,
+      ),
       responseMessages: buildResponseMessagesBestEffort(response),
       responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
     );
@@ -762,6 +777,10 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
     throw const InvalidRequestError('maxSteps must be >= 1');
   }
 
+  final defaultModelId = model is ModelIdentityCapability
+      ? (model as ModelIdentityCapability).modelId
+      : null;
+
   var workingPrompt = prompt;
   final workingMessages = List<ChatMessage>.from(
     _promptToLegacyChatMessagesBestEffort(prompt),
@@ -795,15 +814,16 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
             : null,
         include,
       ),
-      responseMetadata: response is ChatResponseWithResponseMetadata
-          ? responseMetadataWithInclude(
-              responseMetadataWithTimestampFallback(
-                response.responseMetadata,
-                startedAt,
-              ),
-              include,
-            )
-          : null,
+      responseMetadata: responseMetadataWithInclude(
+        responseMetadataWithDefaults(
+          response is ChatResponseWithResponseMetadata
+              ? response.responseMetadata
+              : null,
+          startedAt,
+          defaultModelId: defaultModelId,
+        ),
+        include,
+      ),
       responseMessages: buildResponseMessagesBestEffort(response),
       responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
     );

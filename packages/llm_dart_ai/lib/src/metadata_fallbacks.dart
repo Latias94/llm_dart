@@ -9,6 +9,42 @@ String _generateFallbackId(DateTime startedAtUtc) {
   return 'local_${startedAtUtc.microsecondsSinceEpoch}_$n';
 }
 
+LLMResponseMetadataPart responseMetadataWithDefaults(
+  LLMResponseMetadataPart? metadata,
+  DateTime startedAtUtc, {
+  String? defaultModelId,
+}) {
+  final meta = metadata;
+
+  final id = (meta?.id == null || meta!.id!.trim().isEmpty)
+      ? _generateFallbackId(startedAtUtc)
+      : meta.id!;
+
+  final timestamp = meta?.timestamp ?? startedAtUtc;
+  final modelId = (meta?.model == null || meta!.model!.trim().isEmpty)
+      ? defaultModelId
+      : meta.model;
+
+  if (meta != null &&
+      id == meta.id &&
+      timestamp == meta.timestamp &&
+      modelId == meta.model) {
+    return meta;
+  }
+
+  return LLMResponseMetadataPart(
+    id: id,
+    timestamp: timestamp,
+    model: modelId,
+    headers: meta?.headers,
+    body: meta?.body,
+    status: meta?.status,
+    systemFingerprint: meta?.systemFingerprint,
+    providerMetadata: meta?.providerMetadata,
+    raw: meta?.raw,
+  );
+}
+
 LLMRequestMetadataPart? requestMetadataWithInclude(
   LLMRequestMetadataPart? metadata,
   IncludeOptions include,
@@ -66,24 +102,6 @@ LLMResponseMetadataPart? responseMetadataWithTimestampFallback(
   LLMResponseMetadataPart? metadata,
   DateTime startedAtUtc,
 ) {
-  final meta = metadata;
-  if (meta == null) return null;
-
-  final id = (meta.id == null || meta.id!.trim().isEmpty)
-      ? _generateFallbackId(startedAtUtc)
-      : meta.id;
-
-  if (meta.timestamp != null && id == meta.id) return meta;
-
-  return LLMResponseMetadataPart(
-    id: id,
-    timestamp: meta.timestamp ?? startedAtUtc,
-    model: meta.model,
-    headers: meta.headers,
-    body: meta.body,
-    status: meta.status,
-    systemFingerprint: meta.systemFingerprint,
-    providerMetadata: meta.providerMetadata,
-    raw: meta.raw,
-  );
+  if (metadata == null) return null;
+  return responseMetadataWithDefaults(metadata, startedAtUtc);
 }

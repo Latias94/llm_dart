@@ -108,8 +108,10 @@ class StreamObjectResult {
     required ParametersSchema schema,
     required String toolName,
     StreamObjectOutput output = StreamObjectOutput.object,
+    String? defaultModelId,
   }) {
     final startedAt = DateTime.now().toUtc();
+    var currentStepStartedAt = startedAt;
     final toolSchema =
         output == StreamObjectOutput.array ? _wrapArraySchema(schema) : schema;
 
@@ -168,11 +170,66 @@ class StreamObjectResult {
     final textBuffer = StringBuffer();
     final objectJsonTextBuffer = StringBuffer();
 
-    LLMResponseMetadataPart? lastResponseMetadata;
+    LLMResponseMetadataPart currentResponseMetadata =
+        responseMetadataWithDefaults(
+      null,
+      currentStepStartedAt,
+      defaultModelId: defaultModelId,
+    );
     LLMRequestMetadataPart? lastRequestMetadata;
     Map<String, dynamic>? lastProviderMetadata;
     LLMFinishPart? finishPart;
     LLMError? terminalError;
+
+    LLMResponseMetadataPart mergeResponseMetadata(
+      LLMResponseMetadataPart base,
+      LLMResponseMetadataPart update,
+    ) {
+      Map<String, String>? mergeHeaders(
+        Map<String, String>? x,
+        Map<String, String>? y,
+      ) {
+        if (x == null || x.isEmpty) {
+          return y == null ? null : Map<String, String>.from(y);
+        }
+        if (y == null || y.isEmpty) {
+          return Map<String, String>.from(x);
+        }
+        return {
+          ...x,
+          ...y,
+        };
+      }
+
+      Map<String, dynamic>? mergeMap(
+        Map<String, dynamic>? x,
+        Map<String, dynamic>? y,
+      ) {
+        if (x == null || x.isEmpty) {
+          return y == null ? null : Map<String, dynamic>.from(y);
+        }
+        if (y == null || y.isEmpty) {
+          return Map<String, dynamic>.from(x);
+        }
+        return {
+          ...x,
+          ...y,
+        };
+      }
+
+      return LLMResponseMetadataPart(
+        id: update.id ?? base.id,
+        timestamp: update.timestamp ?? base.timestamp,
+        model: update.model ?? base.model,
+        headers: mergeHeaders(base.headers, update.headers),
+        body: update.body ?? base.body,
+        status: update.status ?? base.status,
+        systemFingerprint: update.systemFingerprint ?? base.systemFingerprint,
+        providerMetadata:
+            mergeMap(base.providerMetadata, update.providerMetadata),
+        raw: mergeMap(base.raw, update.raw),
+      );
+    }
 
     String? lastEmittedJson;
     var publishedElements = 0;
@@ -227,7 +284,11 @@ class StreamObjectResult {
               }
 
             case LLMResponseMetadataPart():
-              lastResponseMetadata = part;
+              currentResponseMetadata = responseMetadataWithDefaults(
+                mergeResponseMetadata(currentResponseMetadata, part),
+                currentStepStartedAt,
+                defaultModelId: defaultModelId,
+              );
 
             case LLMRequestMetadataPart():
               lastRequestMetadata = part;
@@ -235,6 +296,7 @@ class StreamObjectResult {
             case LLMStepStartPart():
               // AI SDK semantics: stable result futures are derived from the
               // *last step* when step boundaries are present.
+              currentStepStartedAt = DateTime.now().toUtc();
               toolCallAgg = ToolCallAggregator();
               endedToolCalls.clear();
 
@@ -249,7 +311,11 @@ class StreamObjectResult {
               textBuffer.clear();
               objectJsonTextBuffer.clear();
 
-              lastResponseMetadata = null;
+              currentResponseMetadata = responseMetadataWithDefaults(
+                null,
+                currentStepStartedAt,
+                defaultModelId: defaultModelId,
+              );
               lastRequestMetadata = null;
               lastProviderMetadata = null;
 
@@ -385,10 +451,7 @@ class StreamObjectResult {
             warningsCompleter.complete(const <Map<String, dynamic>>[]);
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.complete(
-              responseMetadataWithTimestampFallback(
-                lastResponseMetadata,
-                startedAt,
-              ),
+              currentResponseMetadata,
             );
           }
           if (!requestMetadataCompleter.isCompleted) {
@@ -440,12 +503,7 @@ class StreamObjectResult {
           if (!warningsCompleter.isCompleted)
             warningsCompleter.complete(const <Map<String, dynamic>>[]);
           if (!responseMetadataCompleter.isCompleted) {
-            responseMetadataCompleter.complete(
-              responseMetadataWithTimestampFallback(
-                lastResponseMetadata,
-                startedAt,
-              ),
-            );
+            responseMetadataCompleter.complete(currentResponseMetadata);
           }
           if (!requestMetadataCompleter.isCompleted) {
             requestMetadataCompleter.complete(lastRequestMetadata);
@@ -474,10 +532,7 @@ class StreamObjectResult {
               object: resolved.object,
               rawResponse: response,
               requestMetadata: lastRequestMetadata,
-              responseMetadata: responseMetadataWithTimestampFallback(
-                lastResponseMetadata,
-                startedAt,
-              ),
+              responseMetadata: currentResponseMetadata,
               responseMessages: buildResponseMessagesBestEffort(response),
               responsePromptMessages: buildResponsePromptMessagesBestEffort(
                 response,
@@ -492,10 +547,7 @@ class StreamObjectResult {
             warningsCompleter.complete(const <Map<String, dynamic>>[]);
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.complete(
-              responseMetadataWithTimestampFallback(
-                lastResponseMetadata,
-                startedAt,
-              ),
+              currentResponseMetadata,
             );
           }
           if (!requestMetadataCompleter.isCompleted) {
@@ -667,6 +719,9 @@ StreamObjectResult streamObject({
     schema: schema,
     toolName: toolName,
     output: output,
+    defaultModelId: model is ModelIdentityCapability
+        ? (model as ModelIdentityCapability).modelId
+        : null,
   );
 }
 
