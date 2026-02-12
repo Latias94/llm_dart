@@ -123,6 +123,9 @@ void main() {
 
       final model = _FakeChatModel([
         const LLMStreamStartPart(warnings: warnings),
+        const LLMRequestMetadataPart(body: {
+          'messages': ['hi']
+        }),
         LLMResponseMetadataPart(
           id: 'resp_1',
           timestamp: DateTime.utc(2020, 1, 1),
@@ -157,6 +160,11 @@ void main() {
 
       expect(await result.warnings, equals(warnings));
       expect((await result.responseMetadata)?.id, equals('resp_1'));
+      expect(
+          (await result.requestMetadata)?.body,
+          equals({
+            'messages': ['hi']
+          }));
       expect(await result.text, equals('Hello'));
       expect((await result.usage)?.totalTokens, equals(3));
       expect((await result.totalUsage)?.totalTokens, equals(3));

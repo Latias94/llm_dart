@@ -62,6 +62,11 @@ class StreamObjectResult {
   /// This is derived from [LLMResponseMetadataPart].
   final Future<LLMResponseMetadataPart?> responseMetadata;
 
+  /// Request metadata emitted during streaming (best-effort).
+  ///
+  /// This is derived from [LLMRequestMetadataPart].
+  final Future<LLMRequestMetadataPart?> requestMetadata;
+
   /// Resolves to the final usage snapshot, if available.
   final Future<UsageInfo?> usage;
 
@@ -87,6 +92,7 @@ class StreamObjectResult {
     required this.elementStream,
     required this.warnings,
     required this.responseMetadata,
+    required this.requestMetadata,
     required this.usage,
     required this.finishReason,
     required this.providerMetadata,
@@ -114,6 +120,7 @@ class StreamObjectResult {
     final doneCompleter = Completer<void>();
     final warningsCompleter = Completer<List<Map<String, dynamic>>>();
     final responseMetadataCompleter = Completer<LLMResponseMetadataPart?>();
+    final requestMetadataCompleter = Completer<LLMRequestMetadataPart?>();
     final textCompleter = Completer<String>();
     final objectCompleter = Completer<Map<String, dynamic>>();
     final elementsCompleter = Completer<List<Map<String, dynamic>>>();
@@ -127,6 +134,7 @@ class StreamObjectResult {
     unawaited(warningsCompleter.future
         .catchError((_) => const <Map<String, dynamic>>[]));
     unawaited(responseMetadataCompleter.future.catchError((_) => null));
+    unawaited(requestMetadataCompleter.future.catchError((_) => null));
     unawaited(textCompleter.future.catchError((_) => ''));
     unawaited(
         objectCompleter.future.catchError((_) => const <String, dynamic>{}));
@@ -157,6 +165,7 @@ class StreamObjectResult {
     final objectJsonTextBuffer = StringBuffer();
 
     LLMResponseMetadataPart? lastResponseMetadata;
+    LLMRequestMetadataPart? lastRequestMetadata;
     Map<String, dynamic>? lastProviderMetadata;
     LLMFinishPart? finishPart;
     LLMError? terminalError;
@@ -215,6 +224,9 @@ class StreamObjectResult {
 
             case LLMResponseMetadataPart():
               lastResponseMetadata = part;
+
+            case LLMRequestMetadataPart():
+              lastRequestMetadata = part;
 
             case LLMTextDeltaPart(:final delta):
               textBuffer.write(delta);
@@ -316,6 +328,9 @@ class StreamObjectResult {
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.completeError(err);
           }
+          if (!requestMetadataCompleter.isCompleted) {
+            requestMetadataCompleter.completeError(err);
+          }
           if (!textCompleter.isCompleted) textCompleter.completeError(err);
           if (!objectCompleter.isCompleted) objectCompleter.completeError(err);
           if (!elementsCompleter.isCompleted) {
@@ -342,6 +357,9 @@ class StreamObjectResult {
             warningsCompleter.complete(const <Map<String, dynamic>>[]);
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.complete(lastResponseMetadata);
+          }
+          if (!requestMetadataCompleter.isCompleted) {
+            requestMetadataCompleter.complete(lastRequestMetadata);
           }
           if (!textCompleter.isCompleted) textCompleter.complete('');
           if (!objectCompleter.isCompleted) objectCompleter.completeError(err);
@@ -391,6 +409,9 @@ class StreamObjectResult {
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.complete(lastResponseMetadata);
           }
+          if (!requestMetadataCompleter.isCompleted) {
+            requestMetadataCompleter.complete(lastRequestMetadata);
+          }
           textCompleter.complete(resolved.text);
           objectCompleter.complete(resolved.object);
 
@@ -423,6 +444,9 @@ class StreamObjectResult {
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.complete(lastResponseMetadata);
           }
+          if (!requestMetadataCompleter.isCompleted) {
+            requestMetadataCompleter.complete(lastRequestMetadata);
+          }
           if (!textCompleter.isCompleted) textCompleter.completeError(err);
           if (!objectCompleter.isCompleted) objectCompleter.completeError(err);
           if (!elementsCompleter.isCompleted) {
@@ -454,6 +478,7 @@ class StreamObjectResult {
             ),
       warnings: warningsCompleter.future,
       responseMetadata: responseMetadataCompleter.future,
+      requestMetadata: requestMetadataCompleter.future,
       usage: usageCompleter.future,
       finishReason: finishReasonCompleter.future,
       providerMetadata: providerMetadataCompleter.future,

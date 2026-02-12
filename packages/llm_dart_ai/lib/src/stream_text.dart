@@ -32,6 +32,12 @@ class StreamTextResult {
   /// available, this is taken from the last step.
   final Future<LLMResponseMetadataPart?> responseMetadata;
 
+  /// Request metadata (best-effort).
+  ///
+  /// This is derived from [LLMRequestMetadataPart]. When step boundaries are
+  /// available, this is taken from the last step.
+  final Future<LLMRequestMetadataPart?> requestMetadata;
+
   /// Resolves to the final aggregated text from text blocks.
   final Future<String> text;
 
@@ -78,6 +84,7 @@ class StreamTextResult {
     required this.fullStream,
     required this.warnings,
     required this.responseMetadata,
+    required this.requestMetadata,
     required this.text,
     required this.thinkingText,
     required this.usage,
@@ -97,6 +104,7 @@ class StreamTextResult {
     final doneCompleter = Completer<void>();
     final warningsCompleter = Completer<List<Map<String, dynamic>>>();
     final responseMetadataCompleter = Completer<LLMResponseMetadataPart?>();
+    final requestMetadataCompleter = Completer<LLMRequestMetadataPart?>();
     final textCompleter = Completer<String>();
     final thinkingCompleter = Completer<String?>();
     final usageCompleter = Completer<UsageInfo?>();
@@ -113,6 +121,7 @@ class StreamTextResult {
     unawaited(warningsCompleter.future
         .catchError((_) => const <Map<String, dynamic>>[]));
     unawaited(responseMetadataCompleter.future.catchError((_) => null));
+    unawaited(requestMetadataCompleter.future.catchError((_) => null));
     unawaited(textCompleter.future.catchError((_) => ''));
     unawaited(thinkingCompleter.future.catchError((_) => null));
     unawaited(usageCompleter.future.catchError((_) => null));
@@ -139,6 +148,7 @@ class StreamTextResult {
     UsageInfo? accumulatedUsage;
 
     LLMResponseMetadataPart? lastResponseMetadata;
+    LLMRequestMetadataPart? lastRequestMetadata;
     Map<String, dynamic>? lastProviderMetadata;
     LLMFinishPart? finishPart;
     LLMError? terminalError;
@@ -171,6 +181,9 @@ class StreamTextResult {
             case LLMResponseMetadataPart():
               lastResponseMetadata = part;
 
+            case LLMRequestMetadataPart():
+              lastRequestMetadata = part;
+
             case LLMStepStartPart():
               // AI SDK semantics: `text`/`thinkingText`/`sources`/`files` are
               // derived from the *last step*.
@@ -181,6 +194,7 @@ class StreamTextResult {
               collectedSources.clear();
               collectedFiles.clear();
               lastResponseMetadata = null;
+              lastRequestMetadata = null;
               lastProviderMetadata = null;
 
             case LLMTextDeltaPart(:final delta, blockId: final blockId):
@@ -280,6 +294,9 @@ class StreamTextResult {
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.completeError(err);
           }
+          if (!requestMetadataCompleter.isCompleted) {
+            requestMetadataCompleter.completeError(err);
+          }
           if (!textCompleter.isCompleted) textCompleter.completeError(err);
           if (!thinkingCompleter.isCompleted)
             thinkingCompleter.completeError(err);
@@ -324,6 +341,9 @@ class StreamTextResult {
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.complete(lastResponseMetadata);
           }
+          if (!requestMetadataCompleter.isCompleted) {
+            requestMetadataCompleter.complete(lastRequestMetadata);
+          }
           finalResultCompleter.completeError(
             const GenericError('Stream finished without a finish part.'),
           );
@@ -348,6 +368,9 @@ class StreamTextResult {
         }
         if (!responseMetadataCompleter.isCompleted) {
           responseMetadataCompleter.complete(lastResponseMetadata);
+        }
+        if (!requestMetadataCompleter.isCompleted) {
+          requestMetadataCompleter.complete(lastRequestMetadata);
         }
 
         usageCompleter.complete(usage);
@@ -403,6 +426,7 @@ class StreamTextResult {
       fullStream: controller.stream,
       warnings: warningsCompleter.future,
       responseMetadata: responseMetadataCompleter.future,
+      requestMetadata: requestMetadataCompleter.future,
       text: textCompleter.future,
       thinkingText: thinkingCompleter.future,
       usage: usageCompleter.future,
