@@ -7,6 +7,7 @@ import 'config.dart';
 class XAIProvider
     implements
         ChatCapability,
+        ModelIdentityCapability,
         ChatStreamPartsCapability,
         PromptChatCapability,
         PromptChatStreamPartsCapability,
@@ -35,6 +36,12 @@ class XAIProvider
       supportedCapabilities,
     );
   }
+
+  @override
+  String get providerId => _openAIConfig.providerId;
+
+  @override
+  String get modelId => _openAIConfig.model;
 
   @override
   Future<ChatResponse> chat(

@@ -29,6 +29,7 @@ class _OpenAIResponsesBuiltRequest {
 class OpenAIResponses
     implements
         ChatCapability,
+        ModelIdentityCapability,
         OpenAIResponsesCapability,
         ChatStreamPartsCapability,
         PromptChatCapability,
@@ -81,6 +82,12 @@ class OpenAIResponses
       sourceIdPrefix: 'id-',
     );
   }
+
+  @override
+  String get providerId => config.providerId;
+
+  @override
+  String get modelId => config.model;
 
   String get responsesEndpoint => 'responses';
 

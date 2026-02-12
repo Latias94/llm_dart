@@ -10,6 +10,7 @@ import 'responses.dart';
 class XAIResponsesProvider
     implements
         ChatCapability,
+        ModelIdentityCapability,
         ChatStreamPartsCapability,
         PromptChatCapability,
         PromptChatStreamPartsCapability,
@@ -31,6 +32,12 @@ class XAIResponsesProvider
   XAIResponsesProvider._(this.config, this._client) {
     _responses = XAIResponses(_client, config);
   }
+
+  @override
+  String get providerId => config.providerId;
+
+  @override
+  String get modelId => config.model;
 
   @override
   Future<ChatResponse> chat(

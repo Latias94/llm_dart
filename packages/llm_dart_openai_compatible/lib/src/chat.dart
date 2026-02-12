@@ -15,6 +15,7 @@ import 'request_builder.dart';
 class OpenAIChat
     implements
         ChatCapability,
+        ModelIdentityCapability,
         ChatStreamPartsCapability,
         PromptChatCapability,
         PromptChatStreamPartsCapability {
@@ -31,6 +32,12 @@ class OpenAIChat
 
   OpenAIChat(this.client, this.config)
       : _requestBuilder = OpenAIRequestBuilder(config);
+
+  @override
+  String get providerId => config.providerId;
+
+  @override
+  String get modelId => config.model;
 
   String get chatEndpoint => 'chat/completions';
 

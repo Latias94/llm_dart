@@ -12,6 +12,7 @@ import 'embeddings.dart';
 class OllamaProvider
     implements
         ChatCapability,
+        ModelIdentityCapability,
         ChatStreamPartsCapability,
         PromptChatCapability,
         PromptChatStreamPartsCapability,
@@ -29,6 +30,12 @@ class OllamaProvider
     _chat = OllamaChat(_client, config);
     _embeddings = OllamaEmbeddings(_client, config);
   }
+
+  @override
+  String get providerId => 'ollama';
+
+  @override
+  String get modelId => config.model;
 
   // Chat capability methods
   @override

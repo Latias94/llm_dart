@@ -12,6 +12,7 @@ import 'openai_request_config.dart';
 class OpenAICompatibleChatProvider
     implements
         ChatCapability,
+        ModelIdentityCapability,
         ProviderCapabilities,
         ChatStreamPartsCapability,
         PromptChatCapability,
@@ -29,6 +30,12 @@ class OpenAICompatibleChatProvider
   ) {
     _chat = OpenAIChat(_client, config);
   }
+
+  @override
+  String get providerId => config.providerId;
+
+  @override
+  String get modelId => config.model;
 
   @override
   Set<LLMCapability> get supportedCapabilities => _supportedCapabilities;

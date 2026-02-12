@@ -14,6 +14,7 @@ part of 'package:llm_dart_anthropic_compatible/chat.dart';
 class AnthropicChat
     implements
         ChatCapability,
+        ModelIdentityCapability,
         PromptChatCapability,
         ChatStreamPartsCapability,
         PromptChatStreamPartsCapability {
@@ -28,6 +29,12 @@ class AnthropicChat
   }) {
     _requestBuilder = requestBuilder ?? AnthropicRequestBuilder(config);
   }
+
+  @override
+  String get providerId => config.providerId;
+
+  @override
+  String get modelId => config.model;
 
   String get chatEndpoint => 'messages';
 

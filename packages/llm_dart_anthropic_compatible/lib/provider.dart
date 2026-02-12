@@ -12,6 +12,7 @@ import 'config.dart';
 class AnthropicCompatibleChatProvider
     implements
         ChatCapability,
+        ModelIdentityCapability,
         PromptChatCapability,
         ChatStreamPartsCapability,
         PromptChatStreamPartsCapability,
@@ -32,6 +33,12 @@ class AnthropicCompatibleChatProvider
   }) {
     _chat = AnthropicChat(_client, config);
   }
+
+  @override
+  String get providerId => config.providerId;
+
+  @override
+  String get modelId => config.model;
 
   AnthropicClient get client => _client;
 

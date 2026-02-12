@@ -66,6 +66,7 @@ class GoogleFile {
 class GoogleChat
     implements
         ChatCapability,
+        ModelIdentityCapability,
         ChatStreamPartsCapability,
         PromptChatCapability,
         PromptChatStreamPartsCapability {
@@ -76,6 +77,12 @@ class GoogleChat
   static final Map<String, GoogleFile> _fileCache = {};
 
   GoogleChat(this.client, this.config);
+
+  @override
+  String get providerId => config.providerId;
+
+  @override
+  String get modelId => config.model;
 
   String get _providerOptionsId => config.providerId;
 

@@ -14,6 +14,7 @@ import 'tts.dart';
 class GoogleProvider
     implements
         ChatCapability,
+        ModelIdentityCapability,
         ChatStreamPartsCapability,
         PromptChatCapability,
         PromptChatStreamPartsCapability,
@@ -43,6 +44,12 @@ class GoogleProvider
     _images = GoogleImages(_client, config);
     _tts = GoogleTTS(_client, config);
   }
+
+  @override
+  String get providerId => config.providerId;
+
+  @override
+  String get modelId => config.model;
 
   @override
   Future<ChatResponse> chat(
