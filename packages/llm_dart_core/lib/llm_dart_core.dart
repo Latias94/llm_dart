@@ -27,3 +27,4 @@ export 'models/rerank_models.dart';
 export 'models/tool_models.dart';
 
 export 'prompt/prompt.dart';
+export 'prompt/v3_prompt_codec.dart';
