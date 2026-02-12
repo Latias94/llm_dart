@@ -21,6 +21,20 @@ import 'stream_parts.dart';
 
 typedef V3JsonMap = Map<String, dynamic>;
 
+/// How to encode [LLMFilePart.data] when it contains binary bytes ([Uint8List]).
+///
+/// AI SDK v3 represents binary file data as `Uint8Array` in memory. When
+/// serialized to JSON, it may be represented as a JSON array of bytes or a
+/// base64-encoded string. This codec defaults to base64 to keep fixtures small,
+/// but can emit byte arrays when needed for round-trip tests.
+enum V3FileDataEncoding {
+  /// Encode bytes as a base64 string.
+  base64,
+
+  /// Encode bytes as a JSON array of integers (0..255).
+  bytes,
+}
+
 class _DecodedChatResponse extends ChatResponse
     implements ChatResponseWithFinishReason {
   @override
@@ -81,8 +95,12 @@ LLMFinishReason _defaultFinishReasonForResponse(ChatResponse response) {
 List<V3JsonMap> encodeV3StreamParts(
   Iterable<LLMStreamPart> parts, {
   bool injectMissingBlockIds = true,
+  V3FileDataEncoding fileDataEncoding = V3FileDataEncoding.base64,
 }) {
-  final state = _V3EncodeState(injectMissingBlockIds: injectMissingBlockIds);
+  final state = _V3EncodeState(
+    injectMissingBlockIds: injectMissingBlockIds,
+    fileDataEncoding: fileDataEncoding,
+  );
   final out = <V3JsonMap>[];
 
   for (final part in parts) {
@@ -120,13 +138,13 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
 
       case 'response-metadata':
         final id = obj['id'] as String?;
-        final timestampRaw = obj['timestamp'] as String?;
+        final timestampRaw = obj['timestamp'];
         final modelId = obj['modelId'] as String?;
         out.add(
           LLMResponseMetadataPart(
             id: (id != null && id.isNotEmpty) ? id : null,
             timestamp:
-                timestampRaw != null ? DateTime.tryParse(timestampRaw) : null,
+                timestampRaw != null ? _decodeV3Timestamp(timestampRaw) : null,
             model: (modelId != null && modelId.isNotEmpty) ? modelId : null,
             providerMetadata: providerMetadata,
             raw: _asStringKeyedMap(obj['raw']),
@@ -357,6 +375,9 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
       case 'source':
         final sourceType = _requireString(obj, 'sourceType');
         final id = _requireString(obj, 'id');
+        if (!state.emittedSourceIds.add(id)) {
+          throw FormatException('v3 source duplicated id: $id');
+        }
         switch (sourceType) {
           case 'url':
             final url = _requireString(obj, 'url');
@@ -392,10 +413,7 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
 
       case 'file':
         final mediaType = _requireString(obj, 'mediaType');
-        final data = obj['data'];
-        if (data is! String) {
-          throw const FormatException('v3 file part missing string "data".');
-        }
+        final data = _decodeV3FileData(obj['data']);
         out.add(
           LLMFilePart(
             mediaType: mediaType,
@@ -480,6 +498,16 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
         // Preserve unknown parts as raw to keep decoding forward-compatible.
         out.add(LLMRawPart(_normalizeJsonLike(obj)));
         break;
+    }
+  }
+
+  for (final entry in state.toolResultStateByToolCallId.entries) {
+    final toolCallId = entry.key;
+    final toolState = entry.value;
+    if (toolState.seenAny && !toolState.seenFinal) {
+      throw FormatException(
+        'v3 tool-result missing final (non-preliminary) result for toolCallId: $toolCallId',
+      );
     }
   }
 
@@ -794,8 +822,15 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         data: final data,
         providerMetadata: final pm,
       ):
-      final encodedData =
-          data is Uint8List ? base64Encode(data) : data as String;
+      final Object encodedData;
+      if (data is Uint8List) {
+        encodedData = switch (state.fileDataEncoding) {
+          V3FileDataEncoding.base64 => base64Encode(data),
+          V3FileDataEncoding.bytes => data.toList(growable: false),
+        };
+      } else {
+        encodedData = data as String;
+      }
       return [
         {
           'type': 'file',
@@ -1058,12 +1093,16 @@ Object? _normalizeJsonLike(Object? value) {
 
 class _V3EncodeState {
   final bool injectMissingBlockIds;
+  final V3FileDataEncoding fileDataEncoding;
 
   final _BlockIdState text = _BlockIdState(prefix: 'text');
   final _BlockIdState reasoning = _BlockIdState(prefix: 'reasoning');
   final _ToolInputState toolInput = _ToolInputState();
 
-  _V3EncodeState({required this.injectMissingBlockIds}) {
+  _V3EncodeState({
+    required this.injectMissingBlockIds,
+    required this.fileDataEncoding,
+  }) {
     text.injectMissingIds = injectMissingBlockIds;
     reasoning.injectMissingIds = injectMissingBlockIds;
   }
@@ -1203,6 +1242,7 @@ class _V3DecodeState {
   final Map<String, _RememberedTool> toolById = {};
   final Set<String> emittedToolCallIds = {};
   final Set<String> emittedApprovalIds = {};
+  final Set<String> emittedSourceIds = {};
   final Map<String, _ToolResultDecodeState> toolResultStateByToolCallId = {};
 
   void rememberTool({
@@ -1316,6 +1356,47 @@ String _requireString(V3JsonMap obj, String key) {
 Map<String, dynamic>? _asStringKeyedMap(dynamic value) {
   if (value is! Map) return null;
   return value.map((k, v) => MapEntry(k.toString(), v));
+}
+
+DateTime? _decodeV3Timestamp(Object value) {
+  if (value is String) return DateTime.tryParse(value);
+
+  if (value is num) {
+    if (!value.isFinite) {
+      throw const FormatException(
+          'v3 response-metadata.timestamp is not finite.');
+    }
+    final asInt = value is int ? value : value.round();
+    // Heuristic:
+    // - >= 1e11 => milliseconds (e.g. 1700000000000)
+    // - otherwise => seconds (e.g. 1700000000)
+    final ms = asInt.abs() >= 100000000000 ? asInt : asInt * 1000;
+    return DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true);
+  }
+
+  throw const FormatException(
+    'v3 response-metadata.timestamp must be a string or number.',
+  );
+}
+
+Object _decodeV3FileData(Object? value) {
+  if (value is String) return value;
+  if (value is List) {
+    final bytes = <int>[];
+    for (final item in value) {
+      final n = item is int ? item : (item is num ? item.toInt() : null);
+      if (n == null || n < 0 || n > 255) {
+        throw const FormatException(
+          'v3 file.data byte array must contain integers in range 0..255.',
+        );
+      }
+      bytes.add(n);
+    }
+    return Uint8List.fromList(bytes);
+  }
+  throw const FormatException(
+    'v3 file part missing string or byte-array "data".',
+  );
 }
 
 List<Map<String, dynamic>>? _asListOfStringKeyedMaps(dynamic value) {
