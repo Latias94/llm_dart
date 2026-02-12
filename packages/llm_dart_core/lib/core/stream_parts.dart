@@ -49,6 +49,16 @@ class LLMResponseMetadataPart extends LLMStreamPart {
   /// Model identifier (if available).
   final String? model;
 
+  /// Response headers (best-effort; HTTP providers only).
+  ///
+  /// Mirrors Vercel AI SDK's `LanguageModelResponseMetadata.headers` concept.
+  final Map<String, String>? headers;
+
+  /// Response body (best-effort; HTTP providers only).
+  ///
+  /// Mirrors Vercel AI SDK's `GenerateTextResult.response.body` field.
+  final Object? body;
+
   /// Provider-specific response status (if applicable).
   final String? status;
 
@@ -65,6 +75,8 @@ class LLMResponseMetadataPart extends LLMStreamPart {
     this.id,
     this.timestamp,
     this.model,
+    this.headers,
+    this.body,
     this.status,
     this.systemFingerprint,
     this.providerMetadata,
@@ -87,6 +99,22 @@ class LLMRequestMetadataPart extends LLMStreamPart {
   final Object? body;
 
   const LLMRequestMetadataPart({this.body});
+}
+
+/// Optional interface for non-streaming responses that can expose response metadata.
+///
+/// This mirrors the AI SDK concept that `generateText` / `generateObject` results
+/// include `response` metadata (including response headers when available).
+abstract class ChatResponseWithResponseMetadata implements ChatResponse {
+  LLMResponseMetadataPart? get responseMetadata;
+}
+
+/// Optional interface for non-streaming responses that can expose request metadata.
+///
+/// This mirrors the AI SDK concept that `generateText` / `generateObject` results
+/// include `request` metadata (best-effort; provider-dependent).
+abstract class ChatResponseWithRequestMetadata implements ChatResponse {
+  LLMRequestMetadataPart? get requestMetadata;
 }
 
 /// Marks the start of a single "step" in a multi-step generation.
