@@ -95,7 +95,8 @@ class StreamObjectResult {
 
     // Prevent unhandled asynchronous errors when callers choose to only consume
     // the streams (or only await a subset of futures).
-    unawaited(warningsCompleter.future.catchError((_) => const []));
+    unawaited(warningsCompleter.future
+        .catchError((_) => const <Map<String, dynamic>>[]));
     unawaited(textCompleter.future.catchError((_) => ''));
     unawaited(
         objectCompleter.future.catchError((_) => const <String, dynamic>{}));
