@@ -86,8 +86,12 @@ void main() {
         unified: LLMUnifiedFinishReason.stop,
         raw: 'stop',
       );
+      const warnings = [
+        {'type': 'warning', 'message': 'test warning'}
+      ];
 
       final model = _FakeStreamChatModel([
+        const LLMStreamStartPart(warnings: warnings),
         LLMToolCallStartPart(
           ToolCall(
             id: 'call_1',
@@ -128,13 +132,25 @@ void main() {
         schema: schema,
       );
 
-      final partial = await result.partialObjectStream.toList();
+      final partialFuture = result.partialObjectStream.toList();
+      final textChunksFuture = result.textStream.toList();
+
+      final partial = await partialFuture;
       expect(partial, isNotEmpty);
       expect(partial.last, containsPair('city', 'SF'));
+
+      final textChunks = await textChunksFuture;
+      expect(textChunks.join(), equals('{"city":"SF","temp":70}'));
+
+      final text = await result.text;
+      expect(text, equals('{"city":"SF","temp":70}'));
 
       final obj = await result.object;
       expect(obj, containsPair('city', 'SF'));
       expect(obj, containsPair('temp', 70));
+
+      final resolvedWarnings = await result.warnings;
+      expect(resolvedWarnings, equals(warnings));
 
       expect((await result.usage)?.totalTokens, equals(3));
       expect((await result.finishReason)?.unified,
@@ -168,6 +184,7 @@ void main() {
       );
 
       expect(() async => await result.object, throwsA(isA<LLMError>()));
+      expect(() async => await result.text, throwsA(isA<LLMError>()));
     });
 
     test('falls back to parsing a JSON object from text', () async {
@@ -185,9 +202,20 @@ void main() {
         schema: schema,
       );
 
+      final textChunksFuture = result.textStream.toList();
+
+      final textChunks = await textChunksFuture;
+      expect(textChunks, isEmpty);
+
+      final text = await result.text;
+      expect(jsonDecode(text), containsPair('city', 'SF'));
+      expect(jsonDecode(text), containsPair('temp', 70));
+
       final obj = await result.object;
       expect(obj, containsPair('city', 'SF'));
       expect(obj, containsPair('temp', 70));
+
+      expect(await result.warnings, isEmpty);
     });
 
     test('emits best-effort partial objects only when valid JSON exists',

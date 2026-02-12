@@ -24,8 +24,25 @@ class StreamObjectResult {
   /// object (map). Partial/incomplete JSON chunks are ignored.
   final Stream<Map<String, dynamic>> partialObjectStream;
 
+  /// Text stream of the JSON representation of the generated object.
+  ///
+  /// This is best-effort and is typically derived from streamed tool arguments.
+  /// When the stream is finished, [text] should be valid JSON and can be
+  /// parsed into [object].
+  final Stream<String> textStream;
+
+  /// Resolves to the final JSON text for the generated object.
+  ///
+  /// This is the text that was parsed into [object].
+  final Future<String> text;
+
   /// Resolves to the final parsed object (map).
   final Future<Map<String, dynamic>> object;
+
+  /// Warnings from the model provider (e.g. unsupported settings).
+  ///
+  /// This is best-effort and is typically derived from the stream-start part.
+  final Future<List<Map<String, dynamic>>> warnings;
 
   /// Resolves to the final usage snapshot, if available.
   final Future<UsageInfo?> usage;
@@ -45,7 +62,10 @@ class StreamObjectResult {
   StreamObjectResult._({
     required this.fullStream,
     required this.partialObjectStream,
+    required this.textStream,
+    required this.text,
     required this.object,
+    required this.warnings,
     required this.usage,
     required this.finishReason,
     required this.providerMetadata,
@@ -62,8 +82,11 @@ class StreamObjectResult {
         StreamController<LLMStreamPart>.broadcast(sync: true);
     final partialController =
         StreamController<Map<String, dynamic>>.broadcast(sync: true);
+    final textController = StreamController<String>.broadcast(sync: true);
 
     final doneCompleter = Completer<void>();
+    final warningsCompleter = Completer<List<Map<String, dynamic>>>();
+    final textCompleter = Completer<String>();
     final objectCompleter = Completer<Map<String, dynamic>>();
     final usageCompleter = Completer<UsageInfo?>();
     final finishReasonCompleter = Completer<LLMFinishReason?>();
@@ -72,6 +95,8 @@ class StreamObjectResult {
 
     // Prevent unhandled asynchronous errors when callers choose to only consume
     // the streams (or only await a subset of futures).
+    unawaited(warningsCompleter.future.catchError((_) => const []));
+    unawaited(textCompleter.future.catchError((_) => ''));
     unawaited(
         objectCompleter.future.catchError((_) => const <String, dynamic>{}));
     unawaited(usageCompleter.future.catchError((_) => null));
@@ -87,11 +112,16 @@ class StreamObjectResult {
     final toolCallAgg = ToolCallAggregator();
     final endedToolCalls = <String>{};
 
+    final targetToolCallIds = <String, bool>{};
+    final toolCallPreNameArgs = <String, StringBuffer>{};
+
     final toolInputBuffers = <String, StringBuffer>{};
     final toolInputNames = <String, String>{};
     final endedToolInputs = <String>{};
+    final targetToolInputIds = <String>{};
 
     final textBuffer = StringBuffer();
+    final objectJsonTextBuffer = StringBuffer();
 
     Map<String, dynamic>? lastProviderMetadata;
     LLMFinishPart? finishPart;
@@ -130,6 +160,11 @@ class StreamObjectResult {
           fullController.add(part);
 
           switch (part) {
+            case LLMStreamStartPart(:final warnings):
+              if (!warningsCompleter.isCompleted) {
+                warningsCompleter.complete(warnings);
+              }
+
             case LLMTextDeltaPart(:final delta):
               textBuffer.write(delta);
 
@@ -144,7 +179,37 @@ class StreamObjectResult {
             case LLMToolCallStartPart(:final toolCall):
             case LLMToolCallDeltaPart(:final toolCall):
               final aggregated = toolCallAgg.addDelta(toolCall);
-              if (aggregated.function.name == toolName) {
+              final id = aggregated.id;
+              final name = aggregated.function.name;
+
+              final knownTarget = targetToolCallIds[id];
+              if (knownTarget == true) {
+                final delta = toolCall.function.arguments;
+                if (delta.isNotEmpty) {
+                  textController.add(delta);
+                  objectJsonTextBuffer.write(delta);
+                }
+              } else if (knownTarget == null) {
+                final buf =
+                    toolCallPreNameArgs.putIfAbsent(id, StringBuffer.new);
+                final delta = toolCall.function.arguments;
+                if (delta.isNotEmpty) buf.write(delta);
+
+                if (name.isNotEmpty) {
+                  final isTarget = name == toolName;
+                  targetToolCallIds[id] = isTarget;
+                  if (isTarget) {
+                    final flushed = buf.toString();
+                    if (flushed.isNotEmpty) {
+                      textController.add(flushed);
+                      objectJsonTextBuffer.write(flushed);
+                    }
+                  }
+                  toolCallPreNameArgs.remove(id);
+                }
+              }
+
+              if (name == toolName) {
                 emitPartialIfParsable(aggregated.function.arguments);
               }
 
@@ -154,6 +219,9 @@ class StreamObjectResult {
             case LLMToolInputStartPart(id: final id, toolName: final name):
               toolInputNames[id] = name;
               toolInputBuffers[id] = StringBuffer();
+              if (name == toolName) {
+                targetToolInputIds.add(id);
+              }
 
             case LLMToolInputDeltaPart(id: final id, delta: final delta):
               final buf = toolInputBuffers[id];
@@ -161,6 +229,10 @@ class StreamObjectResult {
               buf.write(delta);
               if (toolInputNames[id] == toolName) {
                 emitPartialIfParsable(buf.toString());
+                if (targetToolInputIds.contains(id) && delta.isNotEmpty) {
+                  textController.add(delta);
+                  objectJsonTextBuffer.write(delta);
+                }
               }
 
             case LLMToolInputEndPart(id: final id):
@@ -181,10 +253,15 @@ class StreamObjectResult {
       } finally {
         await fullController.close();
         await partialController.close();
+        await textController.close();
         doneCompleter.complete();
 
         if (terminalError != null) {
           final err = terminalError!;
+          if (!warningsCompleter.isCompleted) {
+            warningsCompleter.completeError(err);
+          }
+          if (!textCompleter.isCompleted) textCompleter.completeError(err);
           if (!objectCompleter.isCompleted) objectCompleter.completeError(err);
           if (!usageCompleter.isCompleted) usageCompleter.completeError(err);
           if (!finishReasonCompleter.isCompleted) {
@@ -203,6 +280,9 @@ class StreamObjectResult {
         if (finish == null) {
           final err =
               const GenericError('Stream finished without a finish part.');
+          if (!warningsCompleter.isCompleted)
+            warningsCompleter.complete(const []);
+          if (!textCompleter.isCompleted) textCompleter.complete('');
           if (!objectCompleter.isCompleted) objectCompleter.completeError(err);
           if (!usageCompleter.isCompleted) usageCompleter.complete(null);
           if (!finishReasonCompleter.isCompleted)
@@ -229,7 +309,7 @@ class StreamObjectResult {
         );
 
         try {
-          final object = _resolveFinalObject(
+          final resolved = _resolveFinalObjectAndText(
             toolName: toolName,
             toolCallAgg: toolCallAgg,
             endedToolCalls: endedToolCalls,
@@ -239,21 +319,27 @@ class StreamObjectResult {
             fallbackText: textBuffer.toString(),
           );
 
-          validateObjectOrThrow(object);
+          validateObjectOrThrow(resolved.object);
 
-          objectCompleter.complete(object);
+          if (!warningsCompleter.isCompleted)
+            warningsCompleter.complete(const []);
+          textCompleter.complete(resolved.text);
+          objectCompleter.complete(resolved.object);
           finalResultCompleter.complete(
-            GenerateObjectResult(object: object, rawResponse: response),
+            GenerateObjectResult(
+                object: resolved.object, rawResponse: response),
           );
         } catch (e) {
-          if (e is LLMError) {
-            objectCompleter.completeError(e);
-            finalResultCompleter.completeError(e);
-            return;
+          final err = e is LLMError
+              ? e
+              : GenericError('Failed to parse streamed object: $e');
+          if (!warningsCompleter.isCompleted)
+            warningsCompleter.complete(const []);
+          if (!textCompleter.isCompleted) textCompleter.completeError(err);
+          if (!objectCompleter.isCompleted) objectCompleter.completeError(err);
+          if (!finalResultCompleter.isCompleted) {
+            finalResultCompleter.completeError(err);
           }
-          final err = GenericError('Failed to parse streamed object: $e');
-          objectCompleter.completeError(err);
-          finalResultCompleter.completeError(err);
         }
       }
     }
@@ -264,7 +350,10 @@ class StreamObjectResult {
     return StreamObjectResult._(
       fullStream: fullController.stream,
       partialObjectStream: partialController.stream,
+      textStream: textController.stream,
+      text: textCompleter.future,
       object: objectCompleter.future,
+      warnings: warningsCompleter.future,
       usage: usageCompleter.future,
       finishReason: finishReasonCompleter.future,
       providerMetadata: providerMetadataCompleter.future,
@@ -387,7 +476,7 @@ StreamObjectResult streamObject({
   );
 }
 
-Map<String, dynamic> _resolveFinalObject({
+({String text, Map<String, dynamic> object}) _resolveFinalObjectAndText({
   required String toolName,
   required ToolCallAggregator toolCallAgg,
   required Set<String> endedToolCalls,
@@ -412,7 +501,7 @@ Map<String, dynamic> _resolveFinalObject({
   if (toolInputMatches.length == 1) {
     final raw = toolInputMatches.values.single;
     final parsed = _parseRequiredJsonMap(raw, context: 'tool arguments');
-    return parsed;
+    return (text: raw.trim(), object: parsed);
   }
 
   final toolCalls = toolCallAgg.completedCalls
@@ -431,12 +520,12 @@ Map<String, dynamic> _resolveFinalObject({
     }
     final parsed = _parseRequiredJsonMap(call.function.arguments,
         context: 'tool arguments');
-    return parsed;
+    return (text: call.function.arguments.trim(), object: parsed);
   }
 
   // Text fallback (best-effort).
   final fallback = _extractFirstJsonObject(fallbackText);
-  if (fallback != null) return fallback;
+  if (fallback != null) return (text: jsonEncode(fallback), object: fallback);
 
   throw const InvalidRequestError('No tool call and no text content to parse.');
 }
