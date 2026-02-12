@@ -454,6 +454,47 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
       case 'raw':
         final rawValue = obj['rawValue'];
         if (rawValue is Map) {
+          // Backward compatibility: historically we wrapped non-canonical parts
+          // in `rawValue.kind=...` envelopes for fixture round-trips. Newer
+          // fixtures omit `kind` and use a minimal, self-describing shape.
+
+          // Provider tool delta (preferred): { toolCallId, toolName, status, ... }
+          final toolCallId = rawValue['toolCallId'] as String?;
+          final toolName = rawValue['toolName'] as String?;
+          final status = rawValue['status'] as String?;
+          if (toolCallId != null &&
+              toolCallId.isNotEmpty &&
+              toolName != null &&
+              toolName.isNotEmpty &&
+              status != null &&
+              status.isNotEmpty) {
+            final data = rawValue['data'];
+            final pm = _asStringKeyedMap(rawValue['providerMetadata']);
+            out.add(
+              LLMProviderToolDeltaPart(
+                toolCallId: toolCallId,
+                toolName: toolName,
+                status: status,
+                data: _normalizeJsonLike(data),
+                providerMetadata: pm,
+              ),
+            );
+            break;
+          }
+
+          // Provider metadata snapshot (preferred): { providerMetadata: {...} }
+          // Only treat it as a metadata snapshot when the object contains *only*
+          // this single key, otherwise preserve as a raw chunk.
+          if (rawValue.length == 1 &&
+              rawValue.containsKey('providerMetadata')) {
+            final pm = _asStringKeyedMap(rawValue['providerMetadata']);
+            if (pm != null) {
+              out.add(LLMProviderMetadataPart(pm));
+              break;
+            }
+          }
+
+          // Legacy envelopes: { kind: 'provider-metadata' | 'provider-tool-delta', ... }
           final kind = rawValue['kind'];
           if (kind == 'provider-metadata') {
             final pm = _asStringKeyedMap(rawValue['providerMetadata']);
@@ -913,7 +954,6 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         {
           'type': 'raw',
           'rawValue': {
-            'kind': 'provider-metadata',
             'providerMetadata': providerMetadata,
           },
         },
@@ -941,7 +981,6 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         {
           'type': 'raw',
           'rawValue': {
-            'kind': 'provider-tool-delta',
             'toolCallId': toolCallId,
             'toolName': toolName,
             'status': status,
