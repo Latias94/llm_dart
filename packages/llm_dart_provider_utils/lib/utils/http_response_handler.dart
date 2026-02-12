@@ -6,6 +6,7 @@ import 'package:logging/logging.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'dio_cancellation.dart';
 import 'dio_error_handler.dart';
+import 'response_metadata_sanitizer.dart';
 
 /// Unified HTTP response handler for all providers
 ///
@@ -146,6 +147,77 @@ class HttpResponseHandler {
         rethrow;
       }
       log.severe('Unexpected error in $provider postJson: $e');
+      throw GenericError('Unexpected error: $e');
+    }
+  }
+
+  /// Create a standardized postJson method that also exposes response headers.
+  ///
+  /// This is useful for populating `LLMResponseMetadataPart.headers` and
+  /// aligning with AI SDK's `LanguageModelResponseMetadata.headers` concept.
+  static Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postJsonWithHeaders(
+    Dio dio,
+    String endpoint,
+    Map<String, dynamic> data, {
+    String? providerName,
+    Logger? logger,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    final provider = providerName ?? 'Unknown';
+    final log = logger ?? _logger;
+
+    try {
+      if (log.isLoggable(Level.FINE)) {
+        log.fine('$provider request: POST $endpoint');
+        log.fine('$provider request payload: ${jsonEncode(data)}');
+      }
+
+      final response = await withDioCancelToken(
+        cancelToken,
+        (dioToken) => dio.post(
+          endpoint,
+          data: data,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: dioToken,
+        ),
+      );
+
+      if (log.isLoggable(Level.FINE)) {
+        log.fine('$provider HTTP status: ${response.statusCode}');
+      }
+
+      if (response.statusCode != 200) {
+        log.severe('$provider API returned status ${response.statusCode}');
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: '$provider API returned status ${response.statusCode}',
+        );
+      }
+
+      final headerMap = <String, String>{};
+      response.headers.forEach((name, values) {
+        if (values.isEmpty) return;
+        headerMap[name] = values.join(',');
+      });
+      final sanitizedHeaders = sanitizeResponseHeadersForMetadata(headerMap);
+
+      return (
+        json: parseJsonResponse(response.data, providerName: provider),
+        headers: sanitizedHeaders.isEmpty
+            ? const <String, String>{}
+            : Map<String, String>.unmodifiable(sanitizedHeaders),
+      );
+    } on DioException catch (e) {
+      log.severe('$provider HTTP request failed: ${e.message}');
+      throw await DioErrorHandler.handleDioError(e, provider);
+    } catch (e) {
+      if (e is LLMError) rethrow;
+      log.severe('Unexpected error in $provider postJsonWithHeaders: $e');
       throw GenericError('Unexpected error: $e');
     }
   }

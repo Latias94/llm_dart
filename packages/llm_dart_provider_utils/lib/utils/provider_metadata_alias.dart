@@ -208,6 +208,8 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
           id: final id,
           timestamp: final timestamp,
           model: final model,
+          headers: final headers,
+          body: final body,
           status: final status,
           systemFingerprint: final systemFingerprint,
           providerMetadata: final providerMetadata,
@@ -217,6 +219,8 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
           id: id,
           timestamp: timestamp,
           model: model,
+          headers: headers,
+          body: body,
           status: status,
           systemFingerprint: systemFingerprint,
           raw: raw,
@@ -388,7 +392,12 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
   }
 }
 
-class _ChatResponseAliasedProviderMetadata implements ChatResponse {
+class _ChatResponseAliasedProviderMetadata
+    implements
+        ChatResponse,
+        ChatResponseWithFinishReason,
+        ChatResponseWithResponseMetadata,
+        ChatResponseWithRequestMetadata {
   final ChatResponse _inner;
   final String baseKey;
   final String aliasKey;
@@ -410,6 +419,28 @@ class _ChatResponseAliasedProviderMetadata implements ChatResponse {
 
   @override
   UsageInfo? get usage => _inner.usage;
+
+  @override
+  LLMFinishReason? get finishReason {
+    final inner = _inner;
+    return inner is ChatResponseWithFinishReason ? inner.finishReason : null;
+  }
+
+  @override
+  LLMResponseMetadataPart? get responseMetadata {
+    final inner = _inner;
+    return inner is ChatResponseWithResponseMetadata
+        ? inner.responseMetadata
+        : null;
+  }
+
+  @override
+  LLMRequestMetadataPart? get requestMetadata {
+    final inner = _inner;
+    return inner is ChatResponseWithRequestMetadata
+        ? inner.requestMetadata
+        : null;
+  }
 
   @override
   Map<String, dynamic>? get providerMetadata {
