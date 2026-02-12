@@ -2,6 +2,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'ensure_stream_start.dart';
 import 'ensure_block_ids.dart';
+import 'ensure_block_ends.dart';
 import 'ensure_provider_metadata.dart';
 import 'ensure_response_metadata.dart';
 import 'ensure_single_finish.dart';
@@ -24,18 +25,20 @@ Stream<LLMStreamPart> streamChatParts({
   CancelToken? cancelToken,
 }) async* {
   yield* ensureStreamStartPart(
-    ensureBlockIdsPart(
-      ensureSingleFinishPart(
-        ensureProviderMetadataPart(
-          ensureResponseMetadataPart(
-            _streamChatPartsInternal(
-              model: model,
-              system: system,
-              prompt: prompt,
-              messages: messages,
-              promptIr: promptIr,
-              tools: tools,
-              cancelToken: cancelToken,
+    ensureBlockEndsPart(
+      ensureBlockIdsPart(
+        ensureSingleFinishPart(
+          ensureProviderMetadataPart(
+            ensureResponseMetadataPart(
+              _streamChatPartsInternal(
+                model: model,
+                system: system,
+                prompt: prompt,
+                messages: messages,
+                promptIr: promptIr,
+                tools: tools,
+                cancelToken: cancelToken,
+              ),
             ),
           ),
         ),
