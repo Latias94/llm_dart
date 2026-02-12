@@ -10,6 +10,9 @@ coverage/
 # Reference repos / scratch
 repo-ref/
 
+# Local analysis scratch
+.analyze_machine.txt
+
 # Lockfiles (library monorepo)
 pubspec.lock
 packages/**/pubspec.lock

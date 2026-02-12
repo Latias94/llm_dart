@@ -247,6 +247,19 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
         final providerExecuted = obj['providerExecuted'] == true ? true : null;
         final dynamicTool = obj['dynamic'] == true ? true : null;
 
+        if (!state.emittedToolCallIds.add(toolCallId)) {
+          throw FormatException(
+              'v3 tool-call duplicated for toolCallId: $toolCallId');
+        }
+
+        final existing = state.toolById[toolCallId];
+        if (existing != null && existing.toolName != toolName) {
+          throw FormatException(
+            'v3 tool-call toolName mismatch for toolCallId=$toolCallId: '
+            'existing=${existing.toolName}, got=$toolName',
+          );
+        }
+
         // Preserve the original v3 shape: `tool-call.input` is a stringified JSON
         // object. Do not decode it, otherwise whitespace/minification differences
         // would break fixture round-trips.
@@ -276,6 +289,26 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
         final preliminary = obj['preliminary'] == true ? true : null;
         final dynamicTool = obj['dynamic'] == true ? true : null;
 
+        final existing = state.toolById[toolCallId];
+        if (existing != null && existing.toolName != toolName) {
+          throw FormatException(
+            'v3 tool-result toolName mismatch for toolCallId=$toolCallId: '
+            'existing=${existing.toolName}, got=$toolName',
+          );
+        }
+
+        final toolState = state.toolResultStateByToolCallId
+            .putIfAbsent(toolCallId, _ToolResultDecodeState.new);
+        if (toolState.seenFinal) {
+          throw FormatException(
+            'v3 tool-result emitted after final result for toolCallId: $toolCallId',
+          );
+        }
+        if (preliminary != true) {
+          toolState.seenFinal = true;
+        }
+        toolState.seenAny = true;
+
         state.rememberTool(id: toolCallId, toolName: toolName);
 
         out.add(
@@ -294,7 +327,17 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
       case 'tool-approval-request':
         final approvalId = _requireString(obj, 'approvalId');
         final toolCallId = _requireString(obj, 'toolCallId');
+        if (!state.emittedApprovalIds.add(approvalId)) {
+          throw FormatException(
+              'v3 tool-approval-request duplicated approvalId: $approvalId');
+        }
+
         final remembered = state.toolById[toolCallId];
+        if (remembered == null || remembered.toolName.isEmpty) {
+          throw FormatException(
+            'v3 tool-approval-request references unknown toolCallId: $toolCallId',
+          );
+        }
         final fallbackInput = state.toolInput.fullInputForId(toolCallId);
 
         out.add(
@@ -1158,6 +1201,9 @@ class _V3DecodeState {
   final _ToolInputDecodeState toolInput = _ToolInputDecodeState();
 
   final Map<String, _RememberedTool> toolById = {};
+  final Set<String> emittedToolCallIds = {};
+  final Set<String> emittedApprovalIds = {};
+  final Map<String, _ToolResultDecodeState> toolResultStateByToolCallId = {};
 
   void rememberTool({
     required String id,
@@ -1180,6 +1226,11 @@ class _RememberedTool {
     required this.toolName,
     required this.input,
   });
+}
+
+class _ToolResultDecodeState {
+  bool seenAny = false;
+  bool seenFinal = false;
 }
 
 class _DeltaAccumulationState {
