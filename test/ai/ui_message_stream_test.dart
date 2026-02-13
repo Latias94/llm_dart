@@ -236,6 +236,19 @@ void main() {
             'toolCallId': 'call1',
           },
           {
+            'type': 'data-tool-blocked',
+            'data': {
+              'kind': 'tool-loop',
+              'stepIndex': 2,
+              'approvalIds': ['call1'],
+              'toolCallIds': ['call1'],
+              'extra': {
+                'stepIndex': 2,
+                'toolCallIds': ['call1'],
+              },
+            },
+          },
+          {
             'type': 'data-tool-loop-blocked',
             'data': {
               'kind': 'tool-loop',
@@ -304,6 +317,19 @@ void main() {
             'type': 'tool-approval-request',
             'approvalId': 'apr_1',
             'toolCallId': 'call_1',
+          },
+          {
+            'type': 'data-tool-blocked',
+            'data': {
+              'kind': 'provider-tool-approval',
+              'stepIndex': 0,
+              'approvalIds': ['apr_1'],
+              'toolCallIds': ['call_1'],
+              'extra': {
+                'stepIndex': 0,
+                'approvalIds': ['apr_1'],
+              },
+            },
           },
           {
             'type': 'data-tool-approval-blocked',

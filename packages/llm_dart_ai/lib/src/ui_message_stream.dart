@@ -338,6 +338,10 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
             };
             if (data.isNotEmpty) {
               yield <String, Object?>{
+                'type': 'data-tool-blocked',
+                'data': data,
+              };
+              yield <String, Object?>{
                 'type': 'data-tool-loop-blocked',
                 'data': data,
               };
@@ -366,6 +370,10 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
               if (extra != null) 'extra': extra,
             };
             if (data.isNotEmpty) {
+              yield <String, Object?>{
+                'type': 'data-tool-blocked',
+                'data': data,
+              };
               yield <String, Object?>{
                 'type': 'data-tool-approval-blocked',
                 'data': data,
