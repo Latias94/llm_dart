@@ -67,8 +67,8 @@ void main() {
         ]),
       );
 
-      final sse = await uiMessageSseFromParts(Stream.fromIterable(partsList))
-          .toList();
+      final sse =
+          await uiMessageSseFromParts(Stream.fromIterable(partsList)).toList();
       expect(sse.last, equals('data: [DONE]\n\n'));
 
       final decoded = _decodeSseChunks(sse);
@@ -116,7 +116,8 @@ void main() {
       );
     });
 
-    test('encodes tool input deltas and emits tool-input-available on end', () async {
+    test('encodes tool input deltas and emits tool-input-available on end',
+        () async {
       final parts = Stream<LLMStreamPart>.fromIterable([
         const LLMToolInputStartPart(id: 'call1', toolName: 'calc'),
         const LLMToolInputDeltaPart(id: 'call1', delta: '{"x":1}'),
@@ -130,7 +131,8 @@ void main() {
         ),
       ]);
 
-      final chunks = await uiMessageChunksFromParts(parts, sendStart: false).toList();
+      final chunks =
+          await uiMessageChunksFromParts(parts, sendStart: false).toList();
       expect(
         chunks,
         equals([
@@ -155,7 +157,8 @@ void main() {
       );
     });
 
-    test('maps ToolApprovalRequiredError to tool-approval-request + abort', () async {
+    test('maps ToolApprovalRequiredError to tool-approval-request + abort',
+        () async {
       const toolCall = ToolCall(
         id: 'call1',
         callType: 'function',
@@ -192,6 +195,70 @@ void main() {
       );
     });
 
+    test(
+        'emits data-tool-approval-blocked when ProviderToolApprovalRequiredError is present',
+        () async {
+      final blockedState = ProviderToolApprovalBlockedState(
+        stepIndex: 0,
+        prompt: Prompt(messages: [PromptMessage.user('hi')]),
+        approvalRequests: const [
+          LLMProviderToolApprovalRequestPart(
+            approvalId: 'apr_1',
+            toolCallId: 'call_1',
+            toolName: 'mcp.web_search',
+            input: {'q': 'hello'},
+          ),
+        ],
+        assistantText: 'ok',
+        providerToolCalls: const [
+          LLMProviderToolCallPart(
+            toolCallId: 'call_1',
+            toolName: 'mcp.web_search',
+            input: {'q': 'hello'},
+            providerExecuted: true,
+          ),
+        ],
+      );
+
+      final parts = Stream<LLMStreamPart>.fromIterable([
+        const LLMProviderToolApprovalRequestPart(
+          approvalId: 'apr_1',
+          toolCallId: 'call_1',
+          toolName: 'mcp.web_search',
+          input: {'q': 'hello'},
+        ),
+        LLMErrorPart(ProviderToolApprovalRequiredError(state: blockedState)),
+      ]);
+
+      final chunks = await uiMessageChunksFromParts(
+        parts,
+        sendStart: false,
+        providerToolApprovalBlockedStateData: (s) => {
+          'stepIndex': s.stepIndex,
+          'approvalIds': s.approvalRequests.map((r) => r.approvalId).toList(),
+        },
+      ).toList();
+
+      expect(
+        chunks,
+        equals([
+          const {
+            'type': 'tool-approval-request',
+            'approvalId': 'apr_1',
+            'toolCallId': 'call_1',
+          },
+          const {
+            'type': 'data-tool-approval-blocked',
+            'data': {
+              'stepIndex': 0,
+              'approvalIds': ['apr_1'],
+            },
+          },
+          const {'type': 'abort', 'reason': 'Provider tool approval required'},
+        ]),
+      );
+    });
+
     test('maps execution-denied tool result to tool-output-denied', () async {
       final parts = Stream<LLMStreamPart>.fromIterable([
         LLMToolResultPart(
@@ -209,8 +276,8 @@ void main() {
         ),
       ]);
 
-      final chunks = await uiMessageChunksFromParts(parts, sendStart: false)
-          .toList();
+      final chunks =
+          await uiMessageChunksFromParts(parts, sendStart: false).toList();
 
       expect(
         chunks,

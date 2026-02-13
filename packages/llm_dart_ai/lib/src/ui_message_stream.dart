@@ -23,6 +23,8 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
   String? messageId,
   Object? startMessageMetadata,
   Object? Function(LLMFinishPart part)? finishMessageMetadata,
+  Object? Function(ProviderToolApprovalBlockedState state)?
+      providerToolApprovalBlockedStateData,
   String Function(Object error)? onError,
 }) async* {
   if (sendStart) {
@@ -329,6 +331,15 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
         }
 
         if (error is ProviderToolApprovalRequiredError) {
+          if (providerToolApprovalBlockedStateData != null) {
+            final data = providerToolApprovalBlockedStateData(error.state);
+            if (data != null) {
+              yield <String, Object?>{
+                'type': 'data-tool-approval-blocked',
+                'data': data,
+              };
+            }
+          }
           yield <String, Object?>{
             'type': 'abort',
             'reason': error.message,
