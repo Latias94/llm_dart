@@ -26,10 +26,15 @@ const String _openaiResponsesProviderMetadataKey = 'openai.responses';
 class OpenAIProvider
     implements
         ChatCapability,
+        ChatCallOptionsCapability,
         ChatStreamPartsCapability,
+        ChatStreamPartsCallOptionsCapability,
         PromptChatCapability,
+        PromptChatCallOptionsCapability,
         PromptChatStreamPartsCapability,
+        PromptChatStreamPartsCallOptionsCapability,
         EmbeddingCapability,
+        EmbeddingCallOptionsCapability,
         TextToSpeechCapability,
         VoiceListingCapability,
         SpeechToTextCapability,
@@ -156,6 +161,40 @@ class OpenAIProvider
   }
 
   @override
+  Future<ChatResponse> chatWithToolsWithCallOptions(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
+    if (config.useResponsesAPI && _responses != null) {
+      final response = await _responses!.chatWithToolsWithCallOptions(
+        messages,
+        tools,
+        callOptions: callOptions,
+        cancelToken: cancelToken,
+      );
+      return _wrapResponseWithProviderMetadataAlias(
+        response,
+        baseKey: config.providerId,
+        aliasKey: _openaiResponsesProviderMetadataKey,
+      );
+    }
+
+    final response = await _chat.chatWithToolsWithCallOptions(
+      messages,
+      tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+    return _wrapResponseWithProviderMetadataAlias(
+      response,
+      baseKey: config.providerId,
+      aliasKey: _openaiChatProviderMetadataKey,
+    );
+  }
+
+  @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
@@ -182,6 +221,38 @@ class OpenAIProvider
   }
 
   @override
+  Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    if (config.useResponsesAPI && _responses != null) {
+      return wrapStreamPartsWithProviderMetadataAlias(
+        _responses!.chatStreamPartsWithCallOptions(
+          messages,
+          tools: tools,
+          callOptions: callOptions,
+          cancelToken: cancelToken,
+        ),
+        baseKey: config.providerId,
+        aliasKey: _openaiResponsesProviderMetadataKey,
+      );
+    }
+
+    return wrapStreamPartsWithProviderMetadataAlias(
+      _chat.chatStreamPartsWithCallOptions(
+        messages,
+        tools: tools,
+        callOptions: callOptions,
+        cancelToken: cancelToken,
+      ),
+      baseKey: config.providerId,
+      aliasKey: _openaiChatProviderMetadataKey,
+    );
+  }
+
+  @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
     List<Tool>? tools,
@@ -199,6 +270,40 @@ class OpenAIProvider
 
     final response =
         await _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+    return _wrapResponseWithProviderMetadataAlias(
+      response,
+      baseKey: config.providerId,
+      aliasKey: _openaiChatProviderMetadataKey,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPromptWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
+    if (config.useResponsesAPI && _responses != null) {
+      final response = await _responses!.chatPromptWithCallOptions(
+        prompt,
+        tools: tools,
+        callOptions: callOptions,
+        cancelToken: cancelToken,
+      );
+      return _wrapResponseWithProviderMetadataAlias(
+        response,
+        baseKey: config.providerId,
+        aliasKey: _openaiResponsesProviderMetadataKey,
+      );
+    }
+
+    final response = await _chat.chatPromptWithCallOptions(
+      prompt,
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
     return _wrapResponseWithProviderMetadataAlias(
       response,
       baseKey: config.providerId,
@@ -236,6 +341,38 @@ class OpenAIProvider
   }
 
   @override
+  Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    if (config.useResponsesAPI && _responses != null) {
+      return wrapStreamPartsWithProviderMetadataAlias(
+        _responses!.chatPromptStreamPartsWithCallOptions(
+          prompt,
+          tools: tools,
+          callOptions: callOptions,
+          cancelToken: cancelToken,
+        ),
+        baseKey: config.providerId,
+        aliasKey: _openaiResponsesProviderMetadataKey,
+      );
+    }
+
+    return wrapStreamPartsWithProviderMetadataAlias(
+      _chat.chatPromptStreamPartsWithCallOptions(
+        prompt,
+        tools: tools,
+        callOptions: callOptions,
+        cancelToken: cancelToken,
+      ),
+      baseKey: config.providerId,
+      aliasKey: _openaiChatProviderMetadataKey,
+    );
+  }
+
+  @override
   Future<List<ChatMessage>?> memoryContents() async {
     // Use Responses API if enabled, otherwise use Chat Completions API
     if (config.useResponsesAPI && _responses != null) {
@@ -263,6 +400,25 @@ class OpenAIProvider
     CancelToken? cancelToken,
   }) async {
     return _embeddings.embed(input, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<List<List<double>>> embedWithCallOptions(
+    List<String> input, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    if (_embeddings is! EmbeddingCallOptionsCapability) {
+      throw const InvalidRequestError(
+        'This provider does not support call-level overrides (headers/body) for embeddings.',
+      );
+    }
+
+    return (_embeddings as EmbeddingCallOptionsCapability).embedWithCallOptions(
+      input,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
   }
 
   // ========== Audio capabilities (delegated to audio module) ==========

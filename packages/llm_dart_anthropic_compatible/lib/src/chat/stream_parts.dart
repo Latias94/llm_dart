@@ -25,6 +25,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
   AnthropicConfig config,
   String chatEndpoint,
   AnthropicBuiltRequest built, {
+  Map<String, String>? requestHeaders,
   CancelToken? cancelToken,
 }) async* {
   final requestBody = built.body;
@@ -208,6 +209,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
     final streamed = await client.postStreamRawWithHeaders(
       chatEndpoint,
       requestBody,
+      headers: requestHeaders,
       cancelToken: cancelToken,
     );
     final responseHeaders = streamed.headers;

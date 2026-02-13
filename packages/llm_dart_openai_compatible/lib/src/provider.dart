@@ -15,8 +15,12 @@ class OpenAICompatibleChatProvider
         ModelIdentityCapability,
         ProviderCapabilities,
         ChatStreamPartsCapability,
+        ChatStreamPartsCallOptionsCapability,
         PromptChatCapability,
-        PromptChatStreamPartsCapability {
+        PromptChatCallOptionsCapability,
+        PromptChatStreamPartsCapability,
+        PromptChatStreamPartsCallOptionsCapability,
+        ChatCallOptionsCapability {
   final OpenAIClient _client;
   final OpenAIRequestConfig config;
   final Set<LLMCapability> _supportedCapabilities;
@@ -63,6 +67,21 @@ class OpenAICompatibleChatProvider
   }
 
   @override
+  Future<ChatResponse> chatWithToolsWithCallOptions(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatWithToolsWithCallOptions(
+      messages,
+      tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
@@ -70,6 +89,21 @@ class OpenAICompatibleChatProvider
   }) {
     return _chat.chatStreamParts(messages,
         tools: tools, cancelToken: cancelToken);
+  }
+
+  @override
+  Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatStreamPartsWithCallOptions(
+      messages,
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -82,6 +116,21 @@ class OpenAICompatibleChatProvider
   }
 
   @override
+  Future<ChatResponse> chatPromptWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatPromptWithCallOptions(
+      prompt,
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
     List<Tool>? tools,
@@ -90,6 +139,21 @@ class OpenAICompatibleChatProvider
     return _chat.chatPromptStreamParts(
       prompt,
       tools: tools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatPromptStreamPartsWithCallOptions(
+      prompt,
+      tools: tools,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
   }
@@ -107,7 +171,7 @@ class OpenAICompatibleChatProvider
 
 /// OpenAI-compatible provider that also supports embeddings.
 class OpenAICompatibleChatEmbeddingProvider extends OpenAICompatibleChatProvider
-    implements EmbeddingCapability {
+    implements EmbeddingCapability, EmbeddingCallOptionsCapability {
   late final OpenAIEmbeddings _embeddings;
 
   OpenAICompatibleChatEmbeddingProvider(
@@ -124,5 +188,18 @@ class OpenAICompatibleChatEmbeddingProvider extends OpenAICompatibleChatProvider
     CancelToken? cancelToken,
   }) async {
     return _embeddings.embed(input, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<List<List<double>>> embedWithCallOptions(
+    List<String> input, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _embeddings.embedWithCallOptions(
+      input,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
   }
 }

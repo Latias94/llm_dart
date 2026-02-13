@@ -16,8 +16,12 @@ class AnthropicChat
         ChatCapability,
         ModelIdentityCapability,
         PromptChatCapability,
+        PromptChatCallOptionsCapability,
         ChatStreamPartsCapability,
-        PromptChatStreamPartsCapability {
+        ChatStreamPartsCallOptionsCapability,
+        PromptChatStreamPartsCapability,
+        PromptChatStreamPartsCallOptionsCapability,
+        ChatCallOptionsCapability {
   final AnthropicClient client;
   final AnthropicConfig config;
   late final AnthropicRequestBuilder _requestBuilder;
@@ -50,7 +54,33 @@ class AnthropicChat
     List<Tool>? tools, {
     CancelToken? cancelToken,
   }) async {
+    return chatWithToolsWithCallOptions(
+      messages,
+      tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatWithToolsWithCallOptions(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
     final built = _requestBuilder.buildRequest(messages, tools, false);
+    var requestBody = Map<String, dynamic>.from(built.body);
+    requestBody = callOptions.mergeIntoRequestBody(requestBody);
+    final embeddedExtraBody = requestBody['extra_body'];
+    if (embeddedExtraBody is Map) {
+      final merged = <String, dynamic>{};
+      embeddedExtraBody.forEach((k, v) {
+        if (k is String) merged[k] = v;
+      });
+      requestBody.addAll(merged);
+      requestBody.remove('extra_body');
+    }
     final originalConfig = config.originalConfig;
     final requestMetadata = originalConfig == null
         ? null
@@ -61,13 +91,14 @@ class AnthropicChat
                 config.providerId == 'anthropic' ? null : 'anthropic',
           )
             ? LLMRequestMetadataPart(
-                body: sanitizeRequestBodyForMetadata(built.body),
+                body: sanitizeRequestBodyForMetadata(requestBody),
               )
             : null);
     // Headers including interleaved thinking beta are automatically handled by AnthropicClient
     final responseWithHeaders = await client.postJsonWithHeaders(
       chatEndpoint,
-      built.body,
+      requestBody,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
     return _parseResponse(
@@ -84,7 +115,33 @@ class AnthropicChat
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async {
+    return chatPromptWithCallOptions(
+      prompt,
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPromptWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
     final built = _requestBuilder.buildRequestFromPrompt(prompt, tools, false);
+    var requestBody = Map<String, dynamic>.from(built.body);
+    requestBody = callOptions.mergeIntoRequestBody(requestBody);
+    final embeddedExtraBody = requestBody['extra_body'];
+    if (embeddedExtraBody is Map) {
+      final merged = <String, dynamic>{};
+      embeddedExtraBody.forEach((k, v) {
+        if (k is String) merged[k] = v;
+      });
+      requestBody.addAll(merged);
+      requestBody.remove('extra_body');
+    }
     final originalConfig = config.originalConfig;
     final requestMetadata = originalConfig == null
         ? null
@@ -95,12 +152,13 @@ class AnthropicChat
                 config.providerId == 'anthropic' ? null : 'anthropic',
           )
             ? LLMRequestMetadataPart(
-                body: sanitizeRequestBodyForMetadata(built.body),
+                body: sanitizeRequestBodyForMetadata(requestBody),
               )
             : null);
     final responseWithHeaders = await client.postJsonWithHeaders(
       chatEndpoint,
-      built.body,
+      requestBody,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
     return _parseResponse(
@@ -117,13 +175,47 @@ class AnthropicChat
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    return _anthropicChatStreamParts(
-      client,
-      config,
-      _requestBuilder,
-      chatEndpoint,
+    return chatStreamPartsWithCallOptions(
       messages,
       tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    final effectiveTools = tools ?? config.tools;
+    final built = _requestBuilder.buildRequest(messages, effectiveTools, true);
+
+    var requestBody = Map<String, dynamic>.from(built.body);
+    requestBody = callOptions.mergeIntoRequestBody(requestBody);
+    final embeddedExtraBody = requestBody['extra_body'];
+    if (embeddedExtraBody is Map) {
+      final merged = <String, dynamic>{};
+      embeddedExtraBody.forEach((k, v) {
+        if (k is String) merged[k] = v;
+      });
+      requestBody.addAll(merged);
+      requestBody.remove('extra_body');
+    }
+
+    final effectiveBuilt = AnthropicBuiltRequest(
+      body: requestBody,
+      toolNameMapping: built.toolNameMapping,
+    );
+
+    return _anthropicChatStreamPartsFromBuiltRequest(
+      client,
+      config,
+      chatEndpoint,
+      effectiveBuilt,
+      requestHeaders: callOptions.headers,
       cancelToken: cancelToken,
     );
   }
@@ -134,6 +226,21 @@ class AnthropicChat
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
+    return chatPromptStreamPartsWithCallOptions(
+      prompt,
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
     final effectiveTools = tools ?? config.tools;
     final built = _requestBuilder.buildRequestFromPrompt(
       prompt,
@@ -141,11 +248,29 @@ class AnthropicChat
       true,
     );
 
+    var requestBody = Map<String, dynamic>.from(built.body);
+    requestBody = callOptions.mergeIntoRequestBody(requestBody);
+    final embeddedExtraBody = requestBody['extra_body'];
+    if (embeddedExtraBody is Map) {
+      final merged = <String, dynamic>{};
+      embeddedExtraBody.forEach((k, v) {
+        if (k is String) merged[k] = v;
+      });
+      requestBody.addAll(merged);
+      requestBody.remove('extra_body');
+    }
+
+    final effectiveBuilt = AnthropicBuiltRequest(
+      body: requestBody,
+      toolNameMapping: built.toolNameMapping,
+    );
+
     return _anthropicChatStreamPartsFromBuiltRequest(
       client,
       config,
       chatEndpoint,
-      built,
+      effectiveBuilt,
+      requestHeaders: callOptions.headers,
       cancelToken: cancelToken,
     );
   }

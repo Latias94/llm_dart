@@ -17,8 +17,12 @@ class OpenAIChat
         ChatCapability,
         ModelIdentityCapability,
         ChatStreamPartsCapability,
+        ChatStreamPartsCallOptionsCapability,
         PromptChatCapability,
-        PromptChatStreamPartsCapability {
+        PromptChatCallOptionsCapability,
+        PromptChatStreamPartsCapability,
+        PromptChatStreamPartsCallOptionsCapability,
+        ChatCallOptionsCapability {
   final OpenAIClient client;
   final OpenAIRequestConfig config;
   final OpenAIRequestBuilder _requestBuilder;
@@ -59,12 +63,28 @@ class OpenAIChat
     List<Tool>? tools, {
     CancelToken? cancelToken,
   }) async {
-    final requestBody = _requestBuilder.buildChatCompletionsRequestBody(
+    return chatWithToolsWithCallOptions(
+      messages,
+      tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatWithToolsWithCallOptions(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
+    var requestBody = _requestBuilder.buildChatCompletionsRequestBody(
       client,
       messages: messages,
       tools: tools,
       stream: false,
     );
+    requestBody = callOptions.mergeIntoRequestBody(requestBody);
     final requestMetadata = _emitRequestMetadataEnabled()
         ? LLMRequestMetadataPart(
             body: sanitizeRequestBodyForMetadata(requestBody),
@@ -73,6 +93,7 @@ class OpenAIChat
     final responseWithHeaders = await client.postJsonWithHeaders(
       chatEndpoint,
       requestBody,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
     return _parseResponse(
@@ -89,13 +110,29 @@ class OpenAIChat
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async {
-    final requestBody =
+    return chatPromptWithCallOptions(
+      prompt,
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPromptWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
+    var requestBody =
         _requestBuilder.buildChatCompletionsRequestBodyFromPrompt(
       client,
       prompt: prompt,
       tools: tools,
       stream: false,
     );
+    requestBody = callOptions.mergeIntoRequestBody(requestBody);
     final requestMetadata = _emitRequestMetadataEnabled()
         ? LLMRequestMetadataPart(
             body: sanitizeRequestBodyForMetadata(requestBody),
@@ -104,6 +141,7 @@ class OpenAIChat
     final responseWithHeaders = await client.postJsonWithHeaders(
       chatEndpoint,
       requestBody,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
     return _parseResponse(
@@ -120,17 +158,34 @@ class OpenAIChat
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
+    yield* chatStreamPartsWithCallOptions(
+      messages,
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async* {
     final effectiveTools = tools ?? config.tools;
-    final requestBody = _requestBuilder.buildChatCompletionsRequestBody(
+    var requestBody = _requestBuilder.buildChatCompletionsRequestBody(
       client,
       messages: messages,
       tools: effectiveTools,
       stream: true,
     );
+    requestBody = callOptions.mergeIntoRequestBody(requestBody);
 
     yield* _chatStreamPartsFromRequestBody(
       requestBody,
       effectiveTools: effectiveTools,
+      requestHeaders: callOptions.headers,
       cancelToken: cancelToken,
     );
   }
@@ -141,18 +196,35 @@ class OpenAIChat
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
+    yield* chatPromptStreamPartsWithCallOptions(
+      prompt,
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async* {
     final effectiveTools = tools ?? config.tools;
-    final requestBody =
+    var requestBody =
         _requestBuilder.buildChatCompletionsRequestBodyFromPrompt(
       client,
       prompt: prompt,
       tools: effectiveTools,
       stream: true,
     );
+    requestBody = callOptions.mergeIntoRequestBody(requestBody);
 
     yield* _chatStreamPartsFromRequestBody(
       requestBody,
       effectiveTools: effectiveTools,
+      requestHeaders: callOptions.headers,
       cancelToken: cancelToken,
     );
   }
@@ -160,6 +232,7 @@ class OpenAIChat
   Stream<LLMStreamPart> _chatStreamPartsFromRequestBody(
     Map<String, dynamic> requestBody, {
     required List<Tool>? effectiveTools,
+    Map<String, String>? requestHeaders,
     CancelToken? cancelToken,
   }) async* {
     client.resetSSEBuffer();
@@ -206,6 +279,7 @@ class OpenAIChat
       final streamed = await client.postStreamRawWithHeaders(
         chatEndpoint,
         requestBody,
+        headers: requestHeaders,
         cancelToken: cancelToken,
       );
       final responseHeaders = streamed.headers;

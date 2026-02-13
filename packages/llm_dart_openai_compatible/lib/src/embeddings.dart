@@ -5,7 +5,8 @@ import 'openai_request_config.dart';
 /// OpenAI Embeddings capability implementation
 ///
 /// This module handles vector embedding generation for OpenAI providers.
-class OpenAIEmbeddings implements EmbeddingCapability {
+class OpenAIEmbeddings
+    implements EmbeddingCapability, EmbeddingCallOptionsCapability {
   final OpenAIClient client;
   final OpenAIRequestConfig config;
 
@@ -16,6 +17,19 @@ class OpenAIEmbeddings implements EmbeddingCapability {
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
+    return embedWithCallOptions(
+      input,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<List<List<double>>> embedWithCallOptions(
+    List<String> input, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
     final requestBody = {
       'model': config.model,
       'input': input,
@@ -23,18 +37,21 @@ class OpenAIEmbeddings implements EmbeddingCapability {
       if (config.embeddingDimensions != null)
         'dimensions': config.embeddingDimensions,
     };
+    final effectiveRequestBody = callOptions.mergeIntoRequestBody(requestBody);
 
-    final responseData = await client.postJson(
+    final responseData = await client.postJsonWithHeaders(
       'embeddings',
-      requestBody,
+      effectiveRequestBody,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
+    final json = responseData.json;
 
-    final data = responseData['data'] as List?;
+    final data = json['data'] as List?;
     if (data == null) {
       throw ResponseFormatError(
         'Invalid embedding response format: missing data field',
-        responseData.toString(),
+        json.toString(),
       );
     }
 
@@ -63,7 +80,7 @@ class OpenAIEmbeddings implements EmbeddingCapability {
       if (e is LLMError) rethrow;
       throw ResponseFormatError(
         'Failed to parse embedding response: $e',
-        responseData.toString(),
+        json.toString(),
       );
     }
   }

@@ -34,6 +34,32 @@ class OpenAIClient {
     );
   }
 
+  Map<String, dynamic>? _buildRequestHeaderOverrides(
+    Map<String, String>? headers,
+  ) {
+    if (headers == null || headers.isEmpty) return null;
+
+    final canonicalByLower = <String, String>{};
+    for (final entry in dio.options.headers.entries) {
+      final key = entry.key;
+      if (key is! String) continue;
+      final lower = key.trim().toLowerCase();
+      if (lower.isEmpty) continue;
+      canonicalByLower.putIfAbsent(lower, () => key);
+    }
+
+    final out = <String, dynamic>{};
+    for (final entry in headers.entries) {
+      final rawKey = entry.key.trim();
+      if (rawKey.isEmpty) continue;
+      final lower = rawKey.toLowerCase();
+      final canonical = canonicalByLower[lower] ?? rawKey;
+      out[canonical] = entry.value;
+    }
+
+    return out.isEmpty ? null : out;
+  }
+
   Map<String, dynamic>? _getDefaultQueryParameters() {
     final original = config.originalConfig;
     if (original == null) return null;
@@ -755,6 +781,7 @@ class OpenAIClient {
       postJsonWithHeaders(
     String endpoint,
     Map<String, dynamic> body, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     try {
@@ -773,6 +800,9 @@ class OpenAIClient {
           resolvedEndpoint,
           data: body,
           queryParameters: _getDefaultQueryParameters(),
+          options: headers == null || headers.isEmpty
+              ? null
+              : Options(headers: _buildRequestHeaderOverrides(headers)),
           cancelToken: dioToken,
         ),
       );
@@ -1065,6 +1095,7 @@ class OpenAIClient {
       postStreamRawWithHeaders(
     String endpoint,
     Map<String, dynamic> body, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     // Reset SSE buffer for new stream
@@ -1089,7 +1120,15 @@ class OpenAIClient {
           cancelToken: dioToken,
           options: Options(
             responseType: ResponseType.stream,
-            headers: {'Accept': 'text/event-stream'},
+            headers: () {
+              final merged = <String, String>{};
+              if (headers != null && headers.isNotEmpty) {
+                merged.addAll(headers);
+              }
+              // Ensure SSE Accept header is always set.
+              merged['Accept'] = 'text/event-stream';
+              return _buildRequestHeaderOverrides(merged);
+            }(),
           ),
         ),
       );

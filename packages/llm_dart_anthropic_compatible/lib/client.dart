@@ -45,6 +45,32 @@ class AnthropicClient {
     );
   }
 
+  Map<String, dynamic>? _buildRequestHeaderOverrides(
+    Map<String, String>? headers,
+  ) {
+    if (headers == null || headers.isEmpty) return null;
+
+    final canonicalByLower = <String, String>{};
+    for (final entry in dio.options.headers.entries) {
+      final key = entry.key;
+      if (key is! String) continue;
+      final lower = key.trim().toLowerCase();
+      if (lower.isEmpty) continue;
+      canonicalByLower.putIfAbsent(lower, () => key);
+    }
+
+    final out = <String, dynamic>{};
+    for (final entry in headers.entries) {
+      final rawKey = entry.key.trim();
+      if (rawKey.isEmpty) continue;
+      final lower = rawKey.toLowerCase();
+      final canonical = canonicalByLower[lower] ?? rawKey;
+      out[canonical] = entry.value;
+    }
+
+    return out.isEmpty ? null : out;
+  }
+
   /// Make a POST request and return JSON response
   Future<Map<String, dynamic>> postJson(
     String endpoint,
@@ -66,6 +92,7 @@ class AnthropicClient {
       postJsonWithHeaders(
     String endpoint,
     Map<String, dynamic> data, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     return HttpResponseHandler.postJsonWithHeaders(
@@ -74,6 +101,9 @@ class AnthropicClient {
       data,
       providerName: providerName,
       logger: logger,
+      options: headers == null || headers.isEmpty
+          ? null
+          : Options(headers: _buildRequestHeaderOverrides(headers)),
       cancelToken: cancelToken,
     );
   }
@@ -173,9 +203,17 @@ class AnthropicClient {
       postStreamRawWithHeaders(
     String endpoint,
     Map<String, dynamic> data, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     try {
+      final mergedHeaders = <String, String>{};
+      if (headers != null && headers.isNotEmpty) {
+        mergedHeaders.addAll(headers);
+      }
+      // Ensure SSE Accept header is always set.
+      mergedHeaders['Accept'] = 'text/event-stream';
+
       final response = await withDioCancelToken(
         cancelToken,
         (dioToken) => dio.post(
@@ -184,7 +222,7 @@ class AnthropicClient {
           cancelToken: dioToken,
           options: Options(
             responseType: ResponseType.stream,
-            headers: {'Accept': 'text/event-stream'},
+            headers: _buildRequestHeaderOverrides(mergedHeaders),
           ),
         ),
       );

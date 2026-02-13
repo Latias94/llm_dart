@@ -22,8 +22,12 @@ class AnthropicProvider
     implements
         ChatCapability,
         PromptChatCapability,
+        PromptChatCallOptionsCapability,
         ChatStreamPartsCapability,
         PromptChatStreamPartsCapability,
+        ChatCallOptionsCapability,
+        ChatStreamPartsCallOptionsCapability,
+        PromptChatStreamPartsCallOptionsCapability,
         ProviderCapabilities {
   final AnthropicClient _client;
   final AnthropicConfig config;
@@ -62,6 +66,21 @@ class AnthropicProvider
   }
 
   @override
+  Future<ChatResponse> chatWithToolsWithCallOptions(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatWithToolsWithCallOptions(
+      messages,
+      tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
@@ -70,6 +89,21 @@ class AnthropicProvider
     return _chat.chatStreamParts(
       messages,
       tools: tools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatStreamPartsWithCallOptions(
+      messages,
+      tools: tools,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
   }
@@ -84,6 +118,21 @@ class AnthropicProvider
   }
 
   @override
+  Future<ChatResponse> chatPromptWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatPromptWithCallOptions(
+      prompt,
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
     List<Tool>? tools,
@@ -92,6 +141,21 @@ class AnthropicProvider
     return _chat.chatPromptStreamParts(
       prompt,
       tools: tools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _chat.chatPromptStreamPartsWithCallOptions(
+      prompt,
+      tools: tools,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
   }
