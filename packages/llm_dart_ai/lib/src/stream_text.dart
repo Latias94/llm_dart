@@ -613,6 +613,8 @@ StreamTextResult streamText({
   List<Tool>? tools,
   ToolCallRepair? repairToolCall,
   ToolApprovalCheck? needsApproval,
+  ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  int providerToolApprovalMaxSteps = 10,
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
@@ -652,17 +654,27 @@ StreamTextResult streamText({
 
     // Best-effort: avoid throwing when a model does not support parts-first streaming.
     if (input is StandardizedChatMessages) {
-      final supportsStreaming = effectiveCallOptions.isEmpty
-          ? model is ChatStreamPartsCapability
-          : model is ChatStreamPartsCallOptionsCapability;
+      final supportsStreaming = onProviderToolApprovalRequests != null
+          ? (effectiveCallOptions.isEmpty
+              ? model is PromptChatStreamPartsCapability
+              : model is PromptChatStreamPartsCallOptionsCapability)
+          : (effectiveCallOptions.isEmpty
+              ? model is ChatStreamPartsCapability
+              : model is ChatStreamPartsCallOptionsCapability);
       if (!supportsStreaming) {
         yield LLMErrorPart(
           InvalidRequestError(
-            effectiveCallOptions.isEmpty
-                ? 'streamText requires parts-first streaming. Implement '
-                    '`ChatStreamPartsCapability.chatStreamParts()` (or use a provider that does).'
-                : 'streamText requires parts-first streaming with call-level overrides. Implement '
-                    '`ChatStreamPartsCallOptionsCapability.chatStreamPartsWithCallOptions()` (or use a provider that does).',
+            onProviderToolApprovalRequests != null
+                ? (effectiveCallOptions.isEmpty
+                    ? 'streamText with provider tool approvals requires prompt-native parts-first streaming. '
+                        'Implement `PromptChatStreamPartsCapability.chatPromptStreamParts()` (or use a provider that does).'
+                    : 'streamText with provider tool approvals requires prompt-native parts-first streaming with call-level overrides. '
+                        'Implement `PromptChatStreamPartsCallOptionsCapability.chatPromptStreamPartsWithCallOptions()` (or use a provider that does).')
+                : (effectiveCallOptions.isEmpty
+                    ? 'streamText requires parts-first streaming. Implement '
+                        '`ChatStreamPartsCapability.chatStreamParts()` (or use a provider that does).'
+                    : 'streamText requires parts-first streaming with call-level overrides. Implement '
+                        '`ChatStreamPartsCallOptionsCapability.chatStreamPartsWithCallOptions()` (or use a provider that does).'),
           ),
         );
         return;
@@ -699,6 +711,8 @@ StreamTextResult streamText({
           messages: messages,
           promptIr: promptIr,
           tools: tools,
+          onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+          providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
           callOptions: effectiveCallOptions,
           cancelToken: cancelToken,
         ),

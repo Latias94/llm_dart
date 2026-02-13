@@ -630,6 +630,8 @@ StreamObjectResult streamObject({
   String toolName = 'return_object',
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
+  ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  int providerToolApprovalMaxSteps = 10,
   IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) {
@@ -666,6 +668,8 @@ StreamObjectResult streamObject({
               model: model,
               messages: augmentedMessages,
               tools: [tool],
+              onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+              providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
               cancelToken: cancelToken,
             ),
             include,
@@ -698,6 +702,8 @@ StreamObjectResult streamObject({
               model: model,
               promptIr: augmentedPrompt,
               tools: [tool],
+              onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+              providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
               cancelToken: cancelToken,
             ),
             include,

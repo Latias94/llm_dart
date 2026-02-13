@@ -8,6 +8,8 @@ import 'ensure_provider_metadata.dart';
 import 'ensure_response_metadata.dart';
 import 'ensure_single_finish.dart';
 import 'prompt_input.dart';
+import 'provider_tool_approval_loop.dart';
+import 'types.dart';
 
 export 'package:llm_dart_core/core/stream_parts.dart';
 
@@ -23,25 +25,47 @@ Stream<LLMStreamPart> streamChatParts({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   List<Tool>? tools,
+  ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  int providerToolApprovalMaxSteps = 10,
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async* {
+  Stream<LLMStreamPart> raw() {
+    final input = standardizePromptInput(
+      system: system,
+      prompt: prompt,
+      messages: messages,
+      promptIr: promptIr,
+    );
+
+    if (onProviderToolApprovalRequests == null) {
+      return chatStreamPartsBestEffort(
+        model: model,
+        input: input,
+        tools: tools,
+        callOptions: callOptions,
+        cancelToken: cancelToken,
+      );
+    }
+
+    return streamChatPartsWithProviderToolApprovals(
+      model: model,
+      input: input,
+      tools: tools,
+      callOptions: callOptions,
+      onApprovalRequests: onProviderToolApprovalRequests!,
+      maxSteps: providerToolApprovalMaxSteps,
+      cancelToken: cancelToken,
+    );
+  }
+
   yield* ensureStreamStartPart(
     ensureBlockEndsPart(
       ensureBlockIdsPart(
         ensureSingleFinishPart(
           ensureProviderMetadataPart(
             ensureResponseMetadataPart(
-              _streamChatPartsInternal(
-                model: model,
-                system: system,
-                prompt: prompt,
-                messages: messages,
-                promptIr: promptIr,
-                tools: tools,
-                callOptions: callOptions,
-                cancelToken: cancelToken,
-              ),
+              _normalizeFinishParts(raw()),
             ),
           ),
         ),
@@ -50,31 +74,8 @@ Stream<LLMStreamPart> streamChatParts({
   );
 }
 
-Stream<LLMStreamPart> _streamChatPartsInternal({
-  required ChatCapability model,
-  String? system,
-  String? prompt,
-  List<ChatMessage>? messages,
-  Prompt? promptIr,
-  List<Tool>? tools,
-  required LLMCallOptions callOptions,
-  CancelToken? cancelToken,
-}) async* {
-  final input = standardizePromptInput(
-    system: system,
-    prompt: prompt,
-    messages: messages,
-    promptIr: promptIr,
-  );
-
-  final upstream = chatStreamPartsBestEffort(
-    model: model,
-    input: input,
-    tools: tools,
-    callOptions: callOptions,
-    cancelToken: cancelToken,
-  );
-
+Stream<LLMStreamPart> _normalizeFinishParts(
+    Stream<LLMStreamPart> upstream) async* {
   await for (final part in upstream) {
     switch (part) {
       case LLMFinishPart(

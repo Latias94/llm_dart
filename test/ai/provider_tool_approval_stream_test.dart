@@ -1,0 +1,136 @@
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:test/test.dart';
+
+class _Resp implements ChatResponseWithFinishReason {
+  @override
+  final String? text;
+
+  @override
+  final LLMFinishReason? finishReason;
+
+  const _Resp({this.text, this.finishReason});
+
+  @override
+  String? get thinking => null;
+
+  @override
+  List<ToolCall>? get toolCalls => null;
+
+  @override
+  UsageInfo? get usage => null;
+
+  @override
+  Map<String, dynamic>? get providerMetadata => null;
+}
+
+class _ProviderApprovalModel extends ChatCapability
+    implements PromptChatStreamPartsCapability {
+  var calls = 0;
+
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) {
+    throw UnsupportedError('not used');
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async* {
+    calls++;
+
+    if (calls == 1) {
+      yield const LLMStreamStartPart();
+      yield const LLMProviderToolCallPart(
+        toolCallId: 'call_1',
+        toolName: 'mcp.web_search',
+        input: {'q': 'hello'},
+        providerExecuted: true,
+      );
+      yield const LLMProviderToolApprovalRequestPart(
+        approvalId: 'apr_1',
+        toolCallId: 'call_1',
+        toolName: 'mcp.web_search',
+        input: {'q': 'hello'},
+      );
+      return;
+    }
+
+    if (calls == 2) {
+      final last = prompt.messages.last;
+      if (last.role != PromptRole.tool) {
+        throw StateError('Expected last prompt message to be tool role.');
+      }
+
+      final approvals =
+          last.parts.whereType<ToolApprovalResponsePart>().toList();
+      if (approvals.length != 1) {
+        throw StateError('Expected exactly one ToolApprovalResponsePart.');
+      }
+      final approval = approvals.single;
+      if (approval.approvalId != 'apr_1' || approval.approved != true) {
+        throw StateError('Unexpected approval response.');
+      }
+
+      yield const LLMStreamStartPart();
+      yield const LLMTextDeltaPart('ok', blockId: '1');
+      yield LLMFinishPart(
+        const _Resp(
+          text: 'ok',
+          finishReason: LLMFinishReason(
+            unified: LLMUnifiedFinishReason.stop,
+            raw: 'stop',
+          ),
+        ),
+      );
+      return;
+    }
+
+    throw StateError('Unexpected number of calls: $calls');
+  }
+}
+
+void main() {
+  group('Provider tool approval loop', () {
+    test('resumes streaming after provider tool approval', () async {
+      final model = _ProviderApprovalModel();
+
+      final result = streamText(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        onProviderToolApprovalRequests: (requests) async {
+          expect(requests, hasLength(1));
+          expect(requests.single.approvalId, equals('apr_1'));
+          return const [
+            ToolApprovalDecision(
+              approvalId: 'apr_1',
+              approved: true,
+            ),
+          ];
+        },
+        providerToolApprovalMaxSteps: 5,
+      );
+
+      final partsFuture = result.fullStream.toList();
+
+      expect(await result.text, equals('ok'));
+      expect(await result.finishReason, isNotNull);
+      expect(model.calls, equals(2));
+
+      final parts = await partsFuture;
+      expect(
+          parts.whereType<LLMProviderToolApprovalRequestPart>(), hasLength(1));
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
+
+      final stepStarts =
+          parts.whereType<LLMStepStartPart>().map((p) => p.stepIndex).toList();
+      expect(stepStarts, equals([0, 1]));
+    });
+  });
+}

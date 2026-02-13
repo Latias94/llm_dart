@@ -226,6 +226,16 @@ class ToolApprovalDecision {
   });
 }
 
+/// Callback for handling provider-emitted tool approval requests.
+///
+/// When a provider emits [LLMProviderToolApprovalRequestPart] (e.g. MCP tools),
+/// this handler can decide whether to approve/deny and return decisions that
+/// will be sent back to the model as prompt IR tool-approval responses.
+typedef ProviderToolApprovalHandler = Future<List<ToolApprovalDecision>>
+    Function(
+  List<LLMProviderToolApprovalRequestPart> requests,
+);
+
 /// Error thrown/emitted when a tool loop needs user approval to continue.
 class ToolApprovalRequiredError extends LLMError {
   final ToolLoopBlockedState state;
