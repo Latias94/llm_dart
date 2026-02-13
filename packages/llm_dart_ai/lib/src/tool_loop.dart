@@ -151,9 +151,11 @@ Future<ToolLoopResult> runToolLoop({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
   final input = standardizePromptInput(
     system: system,
     prompt: prompt,
@@ -173,7 +175,7 @@ Future<ToolLoopResult> runToolLoop({
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
       include: include,
-      callOptions: callOptions,
+      callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
   }
@@ -197,7 +199,7 @@ Future<ToolLoopResult> runToolLoop({
       model,
       workingMessages,
       tools,
-      callOptions: callOptions,
+      callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
 
@@ -631,9 +633,11 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
   final input = standardizePromptInput(
     system: system,
     prompt: prompt,
@@ -653,7 +657,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
       include: include,
-      callOptions: callOptions,
+      callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
   }
@@ -677,7 +681,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       model,
       workingMessages,
       tools,
-      callOptions: callOptions,
+      callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
 
@@ -845,9 +849,11 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
   if (maxSteps < 1) {
     throw const InvalidRequestError('maxSteps must be >= 1');
   }
@@ -943,7 +949,7 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
       include: include,
-      callOptions: callOptions,
+      callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
   }
@@ -961,7 +967,7 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
     include: include,
-    callOptions: callOptions,
+    callOptions: effectiveCallOptions,
     cancelToken: cancelToken,
   );
 }
@@ -980,6 +986,7 @@ Future<ToolLoopResult> resumeToolLoop({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
@@ -995,6 +1002,7 @@ Future<ToolLoopResult> resumeToolLoop({
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
     include: include,
+    defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );
@@ -1795,6 +1803,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
@@ -1811,6 +1820,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
     include: include,
+    defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );
@@ -1828,6 +1838,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
@@ -1844,6 +1855,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
     include: include,
+    defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );
@@ -1906,9 +1918,11 @@ Stream<LLMStreamPart> streamToolLoopParts({
   bool continueOnToolError = true,
   bool emitStepParts = false,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async* {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
   Stream<LLMStreamPart> upstream() async* {
     final input = standardizePromptInput(
       system: system,
@@ -1930,7 +1944,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         continueOnToolError: continueOnToolError,
         emitStepParts: emitStepParts,
         include: include,
-        callOptions: callOptions,
+        callOptions: effectiveCallOptions,
         cancelToken: cancelToken,
       );
       return;
@@ -1938,7 +1952,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
     final standardizedMessages = (input as StandardizedChatMessages).messages;
 
-    if (callOptions.isEmpty) {
+    if (effectiveCallOptions.isEmpty) {
       if (model is! ChatStreamPartsCapability) {
         yield const LLMErrorPart(
           InvalidRequestError(
@@ -1986,7 +2000,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
       var didEmitProviderMetadataPart = false;
 
       final Stream<LLMStreamPart> partsStream;
-      if (callOptions.isEmpty) {
+      if (effectiveCallOptions.isEmpty) {
         partsStream = (model as ChatStreamPartsCapability).chatStreamParts(
           workingMessages,
           tools: tools,
@@ -1997,7 +2011,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
             .chatStreamPartsWithCallOptions(
           workingMessages,
           tools: tools,
-          callOptions: callOptions,
+          callOptions: effectiveCallOptions,
           cancelToken: cancelToken,
         );
       }
@@ -2556,6 +2570,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
   bool continueOnToolError = true,
   bool emitStepParts = false,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
@@ -2574,6 +2589,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     continueOnToolError: continueOnToolError,
     emitStepParts: emitStepParts,
     include: include,
+    defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );

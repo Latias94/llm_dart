@@ -22,6 +22,7 @@ Future<GenerateTextResult> generateText({
   Prompt? promptIr,
   List<Tool>? tools,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
@@ -36,11 +37,13 @@ Future<GenerateTextResult> generateText({
     promptIr: promptIr,
   );
 
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+
   final response = await chatWithToolsBestEffort(
     model: model,
     input: input,
     tools: tools,
-    callOptions: callOptions,
+    callOptions: effectiveCallOptions,
     cancelToken: cancelToken,
   );
 

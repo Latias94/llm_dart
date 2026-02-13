@@ -616,9 +616,12 @@ StreamTextResult streamText({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+
   Stream<LLMStreamPart> upstream() async* {
     if (toolSet != null) {
       yield* streamToolLoopPartsWithToolSet(
@@ -634,7 +637,7 @@ StreamTextResult streamText({
         continueOnToolError: continueOnToolError,
         emitStepParts: true,
         include: include,
-        callOptions: callOptions,
+        callOptions: effectiveCallOptions,
         cancelToken: cancelToken,
       );
       return;
@@ -648,23 +651,34 @@ StreamTextResult streamText({
     );
 
     // Best-effort: avoid throwing when a model does not support parts-first streaming.
-    if (input is StandardizedChatMessages &&
-        model is! ChatStreamPartsCapability) {
-      yield const LLMErrorPart(
-        InvalidRequestError(
-          'streamText requires parts-first streaming. Implement '
-          '`ChatStreamPartsCapability.chatStreamParts()` (or use a provider that does).',
-        ),
-      );
-      return;
+    if (input is StandardizedChatMessages) {
+      final supportsStreaming = effectiveCallOptions.isEmpty
+          ? model is ChatStreamPartsCapability
+          : model is ChatStreamPartsCallOptionsCapability;
+      if (!supportsStreaming) {
+        yield LLMErrorPart(
+          InvalidRequestError(
+            effectiveCallOptions.isEmpty
+                ? 'streamText requires parts-first streaming. Implement '
+                    '`ChatStreamPartsCapability.chatStreamParts()` (or use a provider that does).'
+                : 'streamText requires parts-first streaming with call-level overrides. Implement '
+                    '`ChatStreamPartsCallOptionsCapability.chatStreamPartsWithCallOptions()` (or use a provider that does).',
+          ),
+        );
+        return;
+      }
     }
 
     if (input is StandardizedPromptIr &&
-        model is! PromptChatStreamPartsCapability) {
+        (effectiveCallOptions.isEmpty
+            ? model is! PromptChatStreamPartsCapability
+            : model is! PromptChatStreamPartsCallOptionsCapability)) {
       try {
         requirePromptCapabilityForFileReferenceParts(
           prompt: input.prompt,
-          requiredCapabilityName: '`PromptChatStreamPartsCapability`',
+          requiredCapabilityName: effectiveCallOptions.isEmpty
+              ? '`PromptChatStreamPartsCapability`'
+              : '`PromptChatStreamPartsCallOptionsCapability`',
         );
       } catch (e) {
         if (e is LLMError) {
@@ -685,7 +699,7 @@ StreamTextResult streamText({
           messages: messages,
           promptIr: promptIr,
           tools: tools,
-          callOptions: callOptions,
+          callOptions: effectiveCallOptions,
           cancelToken: cancelToken,
         ),
         include,
