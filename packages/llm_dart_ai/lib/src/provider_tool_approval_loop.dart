@@ -4,6 +4,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'prompt_input.dart';
 import 'prompt_message_converters.dart';
+import 'provider_tool_approval_prompt.dart';
 import 'types.dart';
 
 Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
@@ -143,9 +144,9 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
         currentPrompt,
         assistantText: assistantText.toString(),
         providerToolCalls: providerToolCalls,
-        decisions: approvalRequests
-            .map((r) => byId[r.approvalId]!)
-            .toList(growable: false),
+        decisions: approvalRequests.map((r) => byId[r.approvalId]!).toList(
+              growable: false,
+            ),
       );
 
       stepIndex++;
@@ -181,73 +182,10 @@ Prompt _appendProviderApprovalStepToPrompt(
   required String assistantText,
   required List<LLMProviderToolCallPart> providerToolCalls,
   required List<ToolApprovalDecision> decisions,
-}) {
-  final messages = List<PromptMessage>.from(base.messages);
-
-  final assistantParts = <PromptPart>[];
-  if (assistantText.trim().isNotEmpty) {
-    assistantParts.add(TextPart(assistantText));
-  }
-
-  for (final call in providerToolCalls) {
-    assistantParts.add(
-      ToolCallPart(
-        toolCallId: call.toolCallId,
-        toolName: call.toolName,
-        input: call.input,
-        providerExecuted: true,
-        providerOptions: _tryProviderOptions(call.providerMetadata),
-      ),
+}) =>
+    appendProviderToolApprovalsToPrompt(
+      base,
+      assistantText: assistantText,
+      providerToolCalls: providerToolCalls,
+      decisions: decisions,
     );
-  }
-
-  if (assistantParts.isNotEmpty) {
-    messages.add(
-      PromptMessage(
-        role: PromptRole.assistant,
-        parts: List<PromptPart>.unmodifiable(assistantParts),
-      ),
-    );
-  }
-
-  final approvalParts = decisions
-      .map(
-        (d) => ToolApprovalResponsePart(
-          approvalId: d.approvalId,
-          approved: d.approved,
-          reason: d.reason,
-        ),
-      )
-      .toList(growable: false);
-
-  if (messages.isNotEmpty && messages.last.role == PromptRole.tool) {
-    final last = messages.removeLast();
-    messages.add(
-      PromptMessage(
-        role: PromptRole.tool,
-        parts: List<PromptPart>.unmodifiable([...last.parts, ...approvalParts]),
-        providerOptions: last.providerOptions,
-        protocolPayloads: last.protocolPayloads,
-      ),
-    );
-  } else {
-    messages.add(PromptMessage.tool(parts: approvalParts));
-  }
-
-  return Prompt(messages: List<PromptMessage>.unmodifiable(messages));
-}
-
-ProviderOptions _tryProviderOptions(Map<String, dynamic>? metadata) {
-  if (metadata == null || metadata.isEmpty) return const {};
-  final out = <String, Map<String, dynamic>>{};
-  for (final entry in metadata.entries) {
-    final key = entry.key;
-    final value = entry.value;
-    if (value is Map<String, dynamic>) {
-      out[key] = value;
-    } else if (value is Map) {
-      out[key] = value.cast<String, dynamic>();
-    }
-  }
-  return out.isEmpty ? const {} : out;
-}
