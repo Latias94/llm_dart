@@ -3,6 +3,8 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'call_options_dispatch.dart';
 import 'middleware.dart';
 import 'prompt_input.dart';
+import 'simulate_streaming_middleware.dart';
+import 'simulated_stream_parts.dart';
 
 /// Wraps a chat model with a middleware chain (AI SDK-inspired).
 ///
@@ -38,11 +40,13 @@ class _MiddlewareLanguageModel extends ChatCapability
         PromptChatStreamPartsCallOptionsCapability {
   final ChatCapability inner;
   final List<LanguageModelMiddleware> middlewares;
+  final bool _simulateStreaming;
 
   _MiddlewareLanguageModel({
     required this.inner,
     required this.middlewares,
-  });
+  }) : _simulateStreaming =
+            middlewares.any((m) => m is SimulateStreamingMiddleware);
 
   Future<ChatResponse> _chatViaMiddleware({
     required StandardizedPromptInput input,
@@ -83,13 +87,34 @@ class _MiddlewareLanguageModel extends ChatCapability
     CancelToken? cancelToken,
   }) {
     Stream<LLMStreamPart> dispatch(ChatStreamMiddlewareContext c) {
-      return chatStreamPartsBestEffort(
-        model: inner,
-        input: c.input,
-        tools: c.tools,
-        callOptions: c.callOptions,
-        cancelToken: c.cancelToken,
-      );
+      if (!_simulateStreaming) {
+        return chatStreamPartsBestEffort(
+          model: inner,
+          input: c.input,
+          tools: c.tools,
+          callOptions: c.callOptions,
+          cancelToken: c.cancelToken,
+        );
+      }
+
+      try {
+        return chatStreamPartsBestEffort(
+          model: inner,
+          input: c.input,
+          tools: c.tools,
+          callOptions: c.callOptions,
+          cancelToken: c.cancelToken,
+        );
+      } catch (e) {
+        if (e is! UnsupportedError && e is! InvalidRequestError) rethrow;
+
+        return _simulateStreamParts(
+          input: c.input,
+          tools: c.tools,
+          callOptions: c.callOptions,
+          cancelToken: c.cancelToken,
+        );
+      }
     }
 
     ChatStreamMiddlewareNext next = dispatch;
@@ -221,6 +246,32 @@ class _MiddlewareLanguageModel extends ChatCapability
       tools: tools,
       callOptions: callOptions,
       cancelToken: cancelToken,
+    );
+  }
+
+  Stream<LLMStreamPart> _simulateStreamParts({
+    required StandardizedPromptInput input,
+    required List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async* {
+    final startedAt = DateTime.now().toUtc();
+    final defaultModelId = inner is ModelIdentityCapability
+        ? (inner as ModelIdentityCapability).modelId
+        : null;
+
+    final response = await chatWithToolsBestEffort(
+      model: inner,
+      input: input,
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+
+    yield* simulatedStreamPartsFromChatResponse(
+      response,
+      startedAtUtc: startedAt,
+      defaultModelId: defaultModelId,
     );
   }
 }
