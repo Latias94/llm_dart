@@ -196,6 +196,58 @@ void main() {
     });
 
     test(
+        'emits data-tool-loop-blocked when ToolApprovalRequiredError is present',
+        () async {
+      const toolCall = ToolCall(
+        id: 'call1',
+        callType: 'function',
+        function: FunctionCall(name: 'calc', arguments: '{"x":1}'),
+      );
+
+      final state = ToolLoopBlockedState(
+        stepIndex: 2,
+        stepResult: GenerateTextResult(rawResponse: _TestChatResponse()),
+        toolCalls: const [toolCall],
+        toolCallsNeedingApproval: const [toolCall],
+        steps: const <ToolLoopStep>[],
+        messages: const <ChatMessage>[],
+        prompt: null,
+      );
+
+      final parts = Stream<LLMStreamPart>.fromIterable([
+        LLMErrorPart(ToolApprovalRequiredError(state: state)),
+      ]);
+
+      final chunks = await uiMessageChunksFromParts(
+        parts,
+        sendStart: false,
+        toolApprovalBlockedStateData: (s) => {
+          'stepIndex': s.stepIndex,
+          'toolCallIds': s.toolCallsNeedingApproval.map((c) => c.id).toList(),
+        },
+      ).toList();
+
+      expect(
+        chunks,
+        equals([
+          const {
+            'type': 'tool-approval-request',
+            'approvalId': 'call1',
+            'toolCallId': 'call1',
+          },
+          const {
+            'type': 'data-tool-loop-blocked',
+            'data': {
+              'stepIndex': 2,
+              'toolCallIds': ['call1'],
+            },
+          },
+          const {'type': 'abort', 'reason': 'Tool approval required'},
+        ]),
+      );
+    });
+
+    test(
         'emits data-tool-approval-blocked when ProviderToolApprovalRequiredError is present',
         () async {
       final blockedState = ProviderToolApprovalBlockedState(

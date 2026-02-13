@@ -23,6 +23,7 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
   String? messageId,
   Object? startMessageMetadata,
   Object? Function(LLMFinishPart part)? finishMessageMetadata,
+  Object? Function(ToolLoopBlockedState state)? toolApprovalBlockedStateData,
   Object? Function(ProviderToolApprovalBlockedState state)?
       providerToolApprovalBlockedStateData,
   String Function(Object error)? onError,
@@ -322,6 +323,15 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
               'approvalId': call.id,
               'toolCallId': call.id,
             };
+          }
+          if (toolApprovalBlockedStateData != null) {
+            final data = toolApprovalBlockedStateData(error.state);
+            if (data != null) {
+              yield <String, Object?>{
+                'type': 'data-tool-loop-blocked',
+                'data': data,
+              };
+            }
           }
           yield <String, Object?>{
             'type': 'abort',
