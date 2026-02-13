@@ -6,9 +6,29 @@ import 'types.dart';
 Future<TranscribeResult> transcribe({
   required SpeechToTextCapability model,
   required STTRequest request,
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
-  final response = await model.speechToText(request, cancelToken: cancelToken);
+  final STTResponse response;
+
+  if (callOptions.isEmpty) {
+    response = await model.speechToText(request, cancelToken: cancelToken);
+  } else {
+    if (model is! SpeechToTextCallOptionsCapability) {
+      throw const InvalidRequestError(
+        'This model does not support call-level overrides (headers/body) for transcription. '
+        'Implement `SpeechToTextCallOptionsCapability` (or use a provider that does).',
+      );
+    }
+
+    response = await (model as SpeechToTextCallOptionsCapability)
+        .speechToTextWithCallOptions(
+      request,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
   return TranscribeResult(rawResponse: response);
 }
 
@@ -21,6 +41,7 @@ Future<TranscribeResult> transcribeFromAudioBytes({
   String? format,
   bool includeWordTiming = false,
   bool includeConfidence = false,
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
   return transcribe(
@@ -33,6 +54,7 @@ Future<TranscribeResult> transcribeFromAudioBytes({
       includeWordTiming: includeWordTiming,
       includeConfidence: includeConfidence,
     ),
+    callOptions: callOptions,
     cancelToken: cancelToken,
   );
 }
@@ -46,6 +68,7 @@ Future<TranscribeResult> transcribeFromFile({
   String? format,
   bool includeWordTiming = false,
   bool includeConfidence = false,
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
   return transcribe(
@@ -58,6 +81,7 @@ Future<TranscribeResult> transcribeFromFile({
       includeWordTiming: includeWordTiming,
       includeConfidence: includeConfidence,
     ),
+    callOptions: callOptions,
     cancelToken: cancelToken,
   );
 }
@@ -66,9 +90,28 @@ Future<TranscribeResult> transcribeFromFile({
 Future<TranscribeResult> translateAudio({
   required AudioTranslationCapability model,
   required AudioTranslationRequest request,
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
-  final response =
-      await model.translateAudio(request, cancelToken: cancelToken);
+  final STTResponse response;
+
+  if (callOptions.isEmpty) {
+    response = await model.translateAudio(request, cancelToken: cancelToken);
+  } else {
+    if (model is! AudioTranslationCallOptionsCapability) {
+      throw const InvalidRequestError(
+        'This model does not support call-level overrides (headers/body) for audio translation. '
+        'Implement `AudioTranslationCallOptionsCapability` (or use a provider that does).',
+      );
+    }
+
+    response = await (model as AudioTranslationCallOptionsCapability)
+        .translateAudioWithCallOptions(
+      request,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
   return TranscribeResult(rawResponse: response);
 }

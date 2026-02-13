@@ -6,9 +6,29 @@ import 'types.dart';
 Future<GenerateSpeechResult> generateSpeech({
   required TextToSpeechCapability model,
   required TTSRequest request,
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
-  final response = await model.textToSpeech(request, cancelToken: cancelToken);
+  final TTSResponse response;
+
+  if (callOptions.isEmpty) {
+    response = await model.textToSpeech(request, cancelToken: cancelToken);
+  } else {
+    if (model is! TextToSpeechCallOptionsCapability) {
+      throw const InvalidRequestError(
+        'This model does not support call-level overrides (headers/body) for text-to-speech. '
+        'Implement `TextToSpeechCallOptionsCapability` (or use a provider that does).',
+      );
+    }
+
+    response = await (model as TextToSpeechCallOptionsCapability)
+        .textToSpeechWithCallOptions(
+      request,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
   return GenerateSpeechResult(rawResponse: response);
 }
 
@@ -21,6 +41,7 @@ Future<GenerateSpeechResult> generateSpeechFromText({
   String? format,
   int? sampleRate,
   String? languageCode,
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
   return generateSpeech(
@@ -33,6 +54,7 @@ Future<GenerateSpeechResult> generateSpeechFromText({
       sampleRate: sampleRate,
       languageCode: languageCode,
     ),
+    callOptions: callOptions,
     cancelToken: cancelToken,
   );
 }
@@ -41,9 +63,26 @@ Future<GenerateSpeechResult> generateSpeechFromText({
 Stream<AudioStreamEvent> streamSpeech({
   required StreamingTextToSpeechCapability model,
   required TTSRequest request,
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
-  return model.textToSpeechStream(request, cancelToken: cancelToken);
+  if (callOptions.isEmpty) {
+    return model.textToSpeechStream(request, cancelToken: cancelToken);
+  }
+
+  if (model is! StreamingTextToSpeechCallOptionsCapability) {
+    throw const InvalidRequestError(
+      'This model does not support call-level overrides (headers/body) for streaming text-to-speech. '
+      'Implement `StreamingTextToSpeechCallOptionsCapability` (or use a provider that does).',
+    );
+  }
+
+  return (model as StreamingTextToSpeechCallOptionsCapability)
+      .textToSpeechStreamWithCallOptions(
+    request,
+    callOptions: callOptions,
+    cancelToken: cancelToken,
+  );
 }
 
 /// Convenience helper to stream speech from plain text.
@@ -55,6 +94,7 @@ Stream<AudioStreamEvent> streamSpeechFromText({
   String? format,
   int? sampleRate,
   String? languageCode,
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
   return streamSpeech(
@@ -68,6 +108,7 @@ Stream<AudioStreamEvent> streamSpeechFromText({
       languageCode: languageCode,
       processingMode: AudioProcessingMode.streaming,
     ),
+    callOptions: callOptions,
     cancelToken: cancelToken,
   );
 }

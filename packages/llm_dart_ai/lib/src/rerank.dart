@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'embed.dart';
 import 'types.dart';
 
 /// Wrap an embedding model as a rerank model (local cosine similarity).
@@ -59,6 +60,7 @@ Future<RerankResult> rerankByEmbedding({
   required String query,
   required List<RerankDocument> documents,
   int? topK,
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
   if (documents.isEmpty) {
@@ -68,7 +70,12 @@ Future<RerankResult> rerankByEmbedding({
   }
 
   final inputs = <String>[query, ...documents.map((d) => d.text)];
-  final vectors = await model.embed(inputs, cancelToken: cancelToken);
+  final vectors = await embed(
+    model: model,
+    input: inputs,
+    callOptions: callOptions,
+    cancelToken: cancelToken,
+  );
   if (vectors.length != inputs.length) {
     throw ResponseFormatError(
       'Invalid embedding response: expected query + documents vectors.',
