@@ -610,10 +610,31 @@ abstract class TextToSpeechCapability {
   });
 }
 
+/// Optional capability for text-to-speech models that support per-call overrides.
+///
+/// This enables AI SDK-style request-level options (headers/body) without
+/// mutating the global provider configuration.
+abstract class TextToSpeechCallOptionsCapability {
+  Future<TTSResponse> textToSpeechWithCallOptions(
+    TTSRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  });
+}
+
 /// Optional task-specific capability: streaming text-to-speech.
 abstract class StreamingTextToSpeechCapability {
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
+    CancelToken? cancelToken,
+  });
+}
+
+/// Optional capability for streaming text-to-speech with per-call overrides.
+abstract class StreamingTextToSpeechCallOptionsCapability {
+  Stream<AudioStreamEvent> textToSpeechStreamWithCallOptions(
+    TTSRequest request, {
+    required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   });
 }
@@ -631,10 +652,28 @@ abstract class SpeechToTextCapability {
   });
 }
 
+/// Optional capability for speech-to-text models that support per-call overrides.
+abstract class SpeechToTextCallOptionsCapability {
+  Future<STTResponse> speechToTextWithCallOptions(
+    STTRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  });
+}
+
 /// Optional task-specific capability: audio translation (typically speech->English).
 abstract class AudioTranslationCapability {
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
+    CancelToken? cancelToken,
+  });
+}
+
+/// Optional capability for audio translation with per-call overrides.
+abstract class AudioTranslationCallOptionsCapability {
+  Future<STTResponse> translateAudioWithCallOptions(
+    AudioTranslationRequest request, {
+    required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   });
 }
@@ -960,6 +999,24 @@ abstract class ImageGenerationCapability {
         .cast<String>()
         .toList();
   }
+}
+
+/// Optional capability for image generation models that support per-call overrides.
+abstract class ImageGenerationCallOptionsCapability {
+  Future<ImageGenerationResponse> generateImagesWithCallOptions(
+    ImageGenerationRequest request, {
+    required LLMCallOptions callOptions,
+  });
+
+  Future<ImageGenerationResponse> editImageWithCallOptions(
+    ImageEditRequest request, {
+    required LLMCallOptions callOptions,
+  });
+
+  Future<ImageGenerationResponse> createVariationWithCallOptions(
+    ImageVariationRequest request, {
+    required LLMCallOptions callOptions,
+  });
 }
 
 /// Provider capability declaration interface
