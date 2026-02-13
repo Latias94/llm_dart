@@ -25,6 +25,24 @@ class LLMCallOptions {
     this.body,
   });
 
+  /// Returns a new [LLMCallOptions] by merging this instance with [override].
+  ///
+  /// Semantics:
+  /// - Headers are merged case-insensitively; [override] wins on conflicts.
+  /// - Body is deeply merged (map merge); [override] wins on conflicts.
+  /// - Lists are replaced, not merged.
+  ///
+  /// This mirrors AI SDK-style defaults + per-call overrides.
+  LLMCallOptions mergedWith(LLMCallOptions override) {
+    if (isEmpty) return override;
+    if (override.isEmpty) return this;
+
+    return LLMCallOptions(
+      headers: _mergeHeadersCaseInsensitive(headers, override.headers),
+      body: _mergeBodiesDeep(body, override.body),
+    );
+  }
+
   /// Returns a new request body with [body] deeply merged into [requestBody].
   ///
   /// - Properties from [body] override those in [requestBody] with the same key.
@@ -44,6 +62,52 @@ class LLMCallOptions {
 
   bool get isEmpty =>
       (headers == null || headers!.isEmpty) && (body == null || body!.isEmpty);
+}
+
+Map<String, String>? _mergeHeadersCaseInsensitive(
+  Map<String, String>? base,
+  Map<String, String>? override,
+) {
+  final a = base;
+  final b = override;
+  if (a == null || a.isEmpty) return (b == null || b.isEmpty) ? null : b;
+  if (b == null || b.isEmpty) return a;
+
+  final out = <String, String>{...a};
+
+  final baseKeyByLower = <String, String>{};
+  for (final key in out.keys) {
+    final lower = key.trim().toLowerCase();
+    if (lower.isEmpty) continue;
+    baseKeyByLower.putIfAbsent(lower, () => key);
+  }
+
+  for (final entry in b.entries) {
+    final rawKey = entry.key.trim();
+    if (rawKey.isEmpty) continue;
+    final lower = rawKey.toLowerCase();
+
+    final existingKey = baseKeyByLower[lower];
+    if (existingKey != null && existingKey != rawKey) {
+      out.remove(existingKey);
+    }
+
+    out[rawKey] = entry.value;
+    baseKeyByLower[lower] = rawKey;
+  }
+
+  return out.isEmpty ? null : out;
+}
+
+Map<String, dynamic>? _mergeBodiesDeep(
+  Map<String, dynamic>? base,
+  Map<String, dynamic>? override,
+) {
+  final a = base;
+  final b = override;
+  if (a == null || a.isEmpty) return (b == null || b.isEmpty) ? null : b;
+  if (b == null || b.isEmpty) return a;
+  return _deepMergeJsonMaps(a, b);
 }
 
 Map<String, dynamic> _deepMergeJsonMaps(
