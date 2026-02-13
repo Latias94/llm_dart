@@ -325,8 +325,18 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
             };
           }
           if (toolApprovalBlockedStateData != null) {
-            final data = toolApprovalBlockedStateData(error.state);
-            if (data != null) {
+            final state = error.state;
+            final extra = toolApprovalBlockedStateData(state);
+            final data = <String, Object?>{
+              'kind': 'tool-loop',
+              'stepIndex': state.stepIndex,
+              'approvalIds':
+                  state.toolCallsNeedingApproval.map((c) => c.id).toList(),
+              'toolCallIds':
+                  state.toolCallsNeedingApproval.map((c) => c.id).toList(),
+              if (extra != null) 'extra': extra,
+            };
+            if (data.isNotEmpty) {
               yield <String, Object?>{
                 'type': 'data-tool-loop-blocked',
                 'data': data,
@@ -342,8 +352,20 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
 
         if (error is ProviderToolApprovalRequiredError) {
           if (providerToolApprovalBlockedStateData != null) {
-            final data = providerToolApprovalBlockedStateData(error.state);
-            if (data != null) {
+            final state = error.state;
+            final extra = providerToolApprovalBlockedStateData(state);
+            final data = <String, Object?>{
+              'kind': 'provider-tool-approval',
+              'stepIndex': state.stepIndex,
+              'approvalIds': state.approvalRequests
+                  .map((r) => r.approvalId)
+                  .toList(growable: false),
+              'toolCallIds': state.approvalRequests
+                  .map((r) => r.toolCallId)
+                  .toList(growable: false),
+              if (extra != null) 'extra': extra,
+            };
+            if (data.isNotEmpty) {
               yield <String, Object?>{
                 'type': 'data-tool-approval-blocked',
                 'data': data,

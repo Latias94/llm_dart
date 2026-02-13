@@ -235,11 +235,17 @@ void main() {
             'approvalId': 'call1',
             'toolCallId': 'call1',
           },
-          const {
+          {
             'type': 'data-tool-loop-blocked',
             'data': {
+              'kind': 'tool-loop',
               'stepIndex': 2,
+              'approvalIds': ['call1'],
               'toolCallIds': ['call1'],
+              'extra': {
+                'stepIndex': 2,
+                'toolCallIds': ['call1'],
+              },
             },
           },
           const {'type': 'abort', 'reason': 'Tool approval required'},
@@ -299,11 +305,17 @@ void main() {
             'approvalId': 'apr_1',
             'toolCallId': 'call_1',
           },
-          const {
+          {
             'type': 'data-tool-approval-blocked',
             'data': {
+              'kind': 'provider-tool-approval',
               'stepIndex': 0,
               'approvalIds': ['apr_1'],
+              'toolCallIds': ['call_1'],
+              'extra': {
+                'stepIndex': 0,
+                'approvalIds': ['apr_1'],
+              },
             },
           },
           const {'type': 'abort', 'reason': 'Provider tool approval required'},
