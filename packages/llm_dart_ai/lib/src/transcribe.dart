@@ -6,12 +6,15 @@ import 'types.dart';
 Future<TranscribeResult> transcribe({
   required SpeechToTextCapability model,
   required STTRequest request,
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
   final STTResponse response;
 
-  if (callOptions.isEmpty) {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+
+  if (effectiveCallOptions.isEmpty) {
     response = await model.speechToText(request, cancelToken: cancelToken);
   } else {
     if (model is! SpeechToTextCallOptionsCapability) {
@@ -24,7 +27,7 @@ Future<TranscribeResult> transcribe({
     response = await (model as SpeechToTextCallOptionsCapability)
         .speechToTextWithCallOptions(
       request,
-      callOptions: callOptions,
+      callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
   }
@@ -41,6 +44,7 @@ Future<TranscribeResult> transcribeFromAudioBytes({
   String? format,
   bool includeWordTiming = false,
   bool includeConfidence = false,
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
@@ -54,6 +58,7 @@ Future<TranscribeResult> transcribeFromAudioBytes({
       includeWordTiming: includeWordTiming,
       includeConfidence: includeConfidence,
     ),
+    defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );
@@ -68,6 +73,7 @@ Future<TranscribeResult> transcribeFromFile({
   String? format,
   bool includeWordTiming = false,
   bool includeConfidence = false,
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
@@ -81,6 +87,7 @@ Future<TranscribeResult> transcribeFromFile({
       includeWordTiming: includeWordTiming,
       includeConfidence: includeConfidence,
     ),
+    defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );
@@ -90,12 +97,15 @@ Future<TranscribeResult> transcribeFromFile({
 Future<TranscribeResult> translateAudio({
   required AudioTranslationCapability model,
   required AudioTranslationRequest request,
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
   final STTResponse response;
 
-  if (callOptions.isEmpty) {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+
+  if (effectiveCallOptions.isEmpty) {
     response = await model.translateAudio(request, cancelToken: cancelToken);
   } else {
     if (model is! AudioTranslationCallOptionsCapability) {
@@ -108,7 +118,7 @@ Future<TranscribeResult> translateAudio({
     response = await (model as AudioTranslationCallOptionsCapability)
         .translateAudioWithCallOptions(
       request,
-      callOptions: callOptions,
+      callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
   }

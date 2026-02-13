@@ -6,12 +6,15 @@ import 'types.dart';
 Future<GenerateSpeechResult> generateSpeech({
   required TextToSpeechCapability model,
   required TTSRequest request,
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
   final TTSResponse response;
 
-  if (callOptions.isEmpty) {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+
+  if (effectiveCallOptions.isEmpty) {
     response = await model.textToSpeech(request, cancelToken: cancelToken);
   } else {
     if (model is! TextToSpeechCallOptionsCapability) {
@@ -24,7 +27,7 @@ Future<GenerateSpeechResult> generateSpeech({
     response = await (model as TextToSpeechCallOptionsCapability)
         .textToSpeechWithCallOptions(
       request,
-      callOptions: callOptions,
+      callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
   }
@@ -41,6 +44,7 @@ Future<GenerateSpeechResult> generateSpeechFromText({
   String? format,
   int? sampleRate,
   String? languageCode,
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
@@ -54,6 +58,7 @@ Future<GenerateSpeechResult> generateSpeechFromText({
       sampleRate: sampleRate,
       languageCode: languageCode,
     ),
+    defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );
@@ -63,10 +68,13 @@ Future<GenerateSpeechResult> generateSpeechFromText({
 Stream<AudioStreamEvent> streamSpeech({
   required StreamingTextToSpeechCapability model,
   required TTSRequest request,
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
-  if (callOptions.isEmpty) {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+
+  if (effectiveCallOptions.isEmpty) {
     return model.textToSpeechStream(request, cancelToken: cancelToken);
   }
 
@@ -80,7 +88,7 @@ Stream<AudioStreamEvent> streamSpeech({
   return (model as StreamingTextToSpeechCallOptionsCapability)
       .textToSpeechStreamWithCallOptions(
     request,
-    callOptions: callOptions,
+    callOptions: effectiveCallOptions,
     cancelToken: cancelToken,
   );
 }
@@ -94,6 +102,7 @@ Stream<AudioStreamEvent> streamSpeechFromText({
   String? format,
   int? sampleRate,
   String? languageCode,
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
@@ -108,6 +117,7 @@ Stream<AudioStreamEvent> streamSpeechFromText({
       languageCode: languageCode,
       processingMode: AudioProcessingMode.streaming,
     ),
+    defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );

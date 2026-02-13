@@ -6,12 +6,15 @@ import 'types.dart';
 Future<GenerateImageResult> generateImage({
   required ImageGenerationCapability model,
   required ImageGenerationRequest request,
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
   final ImageGenerationResponse response;
 
-  if (callOptions.isEmpty) {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+
+  if (effectiveCallOptions.isEmpty) {
     response = await model.generateImages(request);
   } else {
     if (model is! ImageGenerationCallOptionsCapability) {
@@ -24,7 +27,7 @@ Future<GenerateImageResult> generateImage({
     response = await (model as ImageGenerationCallOptionsCapability)
         .generateImagesWithCallOptions(
       request,
-      callOptions: callOptions,
+      callOptions: effectiveCallOptions,
     );
   }
 

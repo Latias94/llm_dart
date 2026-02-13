@@ -4,10 +4,13 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 Future<List<List<double>>> embed({
   required EmbeddingCapability model,
   required List<String> input,
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
-  if (callOptions.isEmpty) {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+
+  if (effectiveCallOptions.isEmpty) {
     return model.embed(input, cancelToken: cancelToken);
   }
 
@@ -20,7 +23,7 @@ Future<List<List<double>>> embed({
 
   return (model as EmbeddingCallOptionsCapability).embedWithCallOptions(
     input,
-    callOptions: callOptions,
+    callOptions: effectiveCallOptions,
     cancelToken: cancelToken,
   );
 }

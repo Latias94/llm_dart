@@ -60,6 +60,7 @@ Future<RerankResult> rerankByEmbedding({
   required String query,
   required List<RerankDocument> documents,
   int? topK,
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
@@ -73,6 +74,7 @@ Future<RerankResult> rerankByEmbedding({
   final vectors = await embed(
     model: model,
     input: inputs,
+    defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );

@@ -55,6 +55,7 @@ Future<GenerateObjectResult> generateObject({
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
@@ -68,6 +69,8 @@ Future<GenerateObjectResult> generateObject({
     messages: messages,
     promptIr: promptIr,
   );
+
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
 
   final tool = Tool.function(
     name: toolName,
@@ -97,7 +100,7 @@ Future<GenerateObjectResult> generateObject({
     model: model,
     input: augmentedInput,
     tools: [tool],
-    callOptions: callOptions,
+    callOptions: effectiveCallOptions,
     cancelToken: cancelToken,
   );
 
