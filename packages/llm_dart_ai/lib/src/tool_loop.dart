@@ -825,6 +825,746 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
   );
 }
 
+/// Resume a previously blocked tool loop by applying tool approval decisions.
+///
+/// This is intended to close the "tool approval" loop in an AI SDK-compatible
+/// way:
+/// 1) Run [runToolLoopUntilBlocked] until it returns [ToolLoopBlocked].
+/// 2) Ask the user to approve/deny [ToolLoopBlockedState.toolCallsNeedingApproval].
+/// 3) Call this function with the collected [ToolApprovalDecision]s to execute
+///    tools (or emit execution-denied tool outputs) and continue the loop.
+Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
+  required ChatCapability model,
+  required ToolLoopBlockedState blockedState,
+  required List<ToolApprovalDecision> approvals,
+  List<Tool>? tools,
+  required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
+  Map<String, ToolApprovalCheck>? toolApprovalChecks,
+  ToolApprovalCheck? needsApproval,
+  int maxSteps = 10,
+  bool continueOnToolError = true,
+  IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
+  CancelToken? cancelToken,
+}) async {
+  if (maxSteps < 1) {
+    throw const InvalidRequestError('maxSteps must be >= 1');
+  }
+
+  final startStepIndex = blockedState.stepIndex + 1;
+  if (startStepIndex >= maxSteps) {
+    throw InvalidRequestError(
+      'Cannot resume blocked tool loop at stepIndex=${blockedState.stepIndex} '
+      'with maxSteps=$maxSteps. Increase maxSteps to allow at least one more model call.',
+    );
+  }
+
+  final decisionsByApprovalId = <String, ToolApprovalDecision>{};
+  for (final decision in approvals) {
+    final approvalId = decision.approvalId.trim();
+    if (approvalId.isEmpty) {
+      throw const InvalidRequestError('ToolApprovalDecision.approvalId must be non-empty.');
+    }
+    final existing = decisionsByApprovalId[approvalId];
+    if (existing != null) {
+      throw InvalidRequestError('Duplicate ToolApprovalDecision for approvalId "$approvalId".');
+    }
+    decisionsByApprovalId[approvalId] = decision;
+  }
+
+  final needingApprovalIds = <String>{
+    for (final call in blockedState.toolCallsNeedingApproval) call.id,
+  };
+
+  for (final approvalId in needingApprovalIds) {
+    if (!decisionsByApprovalId.containsKey(approvalId)) {
+      throw InvalidRequestError(
+        'Missing ToolApprovalDecision for approvalId "$approvalId".',
+      );
+    }
+  }
+
+  final toolResults = await _executeToolCallsWithApprovals(
+    toolCalls: blockedState.toolCalls,
+    tools: tools,
+    toolHandlers: toolHandlers,
+    repairToolCall: repairToolCall,
+    continueOnToolError: continueOnToolError,
+    needingApprovalIds: needingApprovalIds,
+    decisionsByApprovalId: decisionsByApprovalId,
+    cancelToken: cancelToken,
+  );
+
+  final toolMessage = _buildToolApprovalAndResultPromptMessageBestEffort(
+    toolCalls: blockedState.toolCalls,
+    toolResults: toolResults,
+    needingApprovalIds: needingApprovalIds,
+    decisionsByApprovalId: decisionsByApprovalId,
+  );
+
+  final updatedSteps = _patchBlockedStepWithToolResults(
+    blockedState: blockedState,
+    toolResults: toolResults,
+    toolMessage: toolMessage,
+  );
+
+  final resumedMessages = <ChatMessage>[
+    ...blockedState.messages,
+    ChatMessage.toolResult(
+      results: encodeToolResultsAsToolCalls(
+        toolCalls: blockedState.toolCalls,
+        toolResults: toolResults,
+      ),
+    ),
+  ];
+
+  final resumedPrompt = blockedState.prompt == null
+      ? null
+      : Prompt(
+          messages: [
+            ...blockedState.prompt!.messages,
+            toolMessage,
+          ],
+        );
+
+  if (resumedPrompt != null && model is PromptChatCapability) {
+    return _continueToolLoopUntilBlockedPromptIrFromState(
+      model: model,
+      prompt: resumedPrompt,
+      initialMessages: resumedMessages,
+      initialSteps: updatedSteps,
+      startStepIndex: startStepIndex,
+      tools: tools,
+      toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
+      toolApprovalChecks: toolApprovalChecks,
+      needsApproval: needsApproval,
+      maxSteps: maxSteps,
+      continueOnToolError: continueOnToolError,
+      include: include,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  return _continueToolLoopUntilBlockedFromState(
+    model: model,
+    initialMessages: resumedMessages,
+    initialSteps: updatedSteps,
+    startStepIndex: startStepIndex,
+    tools: tools,
+    toolHandlers: toolHandlers,
+    repairToolCall: repairToolCall,
+    toolApprovalChecks: toolApprovalChecks,
+    needsApproval: needsApproval,
+    maxSteps: maxSteps,
+    continueOnToolError: continueOnToolError,
+    include: include,
+    callOptions: callOptions,
+    cancelToken: cancelToken,
+  );
+}
+
+/// Resume variant of [runToolLoop] that throws [ToolApprovalRequiredError] again
+/// if the loop becomes blocked after resuming.
+Future<ToolLoopResult> resumeToolLoop({
+  required ChatCapability model,
+  required ToolLoopBlockedState blockedState,
+  required List<ToolApprovalDecision> approvals,
+  List<Tool>? tools,
+  required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
+  Map<String, ToolApprovalCheck>? toolApprovalChecks,
+  ToolApprovalCheck? needsApproval,
+  int maxSteps = 10,
+  bool continueOnToolError = true,
+  IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
+  CancelToken? cancelToken,
+}) async {
+  final outcome = await resumeToolLoopUntilBlocked(
+    model: model,
+    blockedState: blockedState,
+    approvals: approvals,
+    tools: tools,
+    toolHandlers: toolHandlers,
+    repairToolCall: repairToolCall,
+    toolApprovalChecks: toolApprovalChecks,
+    needsApproval: needsApproval,
+    maxSteps: maxSteps,
+    continueOnToolError: continueOnToolError,
+    include: include,
+    callOptions: callOptions,
+    cancelToken: cancelToken,
+  );
+
+  switch (outcome) {
+    case ToolLoopCompleted(:final result):
+      return result;
+    case ToolLoopBlocked(:final state):
+      throw ToolApprovalRequiredError(state: state);
+  }
+}
+
+ToolLoopStep _withToolResultsOnStep({
+  required ToolLoopStep step,
+  required List<ToolResult> toolResults,
+  required PromptMessage toolMessage,
+}) {
+  return ToolLoopStep(
+    index: step.index,
+    result: step.result,
+    toolCalls: step.toolCalls,
+    toolResults: List<ToolResult>.unmodifiable(toolResults),
+    responseMetadata: step.responseMetadata,
+    requestMetadata: step.requestMetadata,
+    responsePromptMessages: [
+      ...step.responsePromptMessages,
+      toolMessage,
+    ],
+  );
+}
+
+List<ToolLoopStep> _patchBlockedStepWithToolResults({
+  required ToolLoopBlockedState blockedState,
+  required List<ToolResult> toolResults,
+  required PromptMessage toolMessage,
+}) {
+  final existingSteps = blockedState.steps;
+  final updated = <ToolLoopStep>[];
+  var patched = false;
+
+  for (final step in existingSteps) {
+    if (step.index == blockedState.stepIndex) {
+      updated.add(
+        _withToolResultsOnStep(
+          step: step,
+          toolResults: toolResults,
+          toolMessage: toolMessage,
+        ),
+      );
+      patched = true;
+    } else {
+      updated.add(step);
+    }
+  }
+
+  if (!patched) {
+    updated.add(
+      ToolLoopStep(
+        index: blockedState.stepIndex,
+        result: blockedState.stepResult,
+        toolCalls: List<ToolCall>.unmodifiable(blockedState.toolCalls),
+        toolResults: List<ToolResult>.unmodifiable(toolResults),
+        responseMetadata: blockedState.stepResult.responseMetadata,
+        requestMetadata: blockedState.stepResult.requestMetadata,
+        responsePromptMessages: [
+          ...blockedState.stepResult.responsePromptMessages,
+          toolMessage,
+        ],
+      ),
+    );
+  }
+
+  return List<ToolLoopStep>.unmodifiable(updated);
+}
+
+PromptMessage _buildToolApprovalAndResultPromptMessageBestEffort({
+  required List<ToolCall> toolCalls,
+  required List<ToolResult> toolResults,
+  required Set<String> needingApprovalIds,
+  required Map<String, ToolApprovalDecision> decisionsByApprovalId,
+}) {
+  final resultsById = <String>{for (final r in toolResults) r.toolCallId};
+
+  final approvalParts = <PromptPart>[];
+  for (final call in toolCalls) {
+    if (!needingApprovalIds.contains(call.id)) continue;
+    if (!resultsById.contains(call.id)) continue;
+    final decision = decisionsByApprovalId[call.id];
+    if (decision == null) continue;
+    approvalParts.add(
+      ToolApprovalResponsePart(
+        approvalId: decision.approvalId,
+        approved: decision.approved,
+        reason: decision.reason,
+      ),
+    );
+  }
+
+  final toolResultMessage = buildToolResultPromptMessageBestEffort(
+    toolCalls: toolCalls,
+    toolResults: toolResults,
+  );
+
+  if (approvalParts.isEmpty) return toolResultMessage;
+
+  return PromptMessage.tool(
+    parts: [
+      ...approvalParts,
+      ...toolResultMessage.parts,
+    ],
+  );
+}
+
+Future<List<ToolResult>> _executeToolCallsWithApprovals({
+  required List<ToolCall> toolCalls,
+  required List<Tool>? tools,
+  required Map<String, ToolCallHandler> toolHandlers,
+  required ToolCallRepair? repairToolCall,
+  required bool continueOnToolError,
+  required Set<String> needingApprovalIds,
+  required Map<String, ToolApprovalDecision> decisionsByApprovalId,
+  CancelToken? cancelToken,
+}) async {
+  final results = <ToolResult>[];
+
+  ToolResult deniedResult(
+    ToolCall toolCall, {
+    String? reason,
+  }) {
+    final payload = <String, dynamic>{
+      'type': 'execution-denied',
+      if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
+    };
+    return ToolResult.success(
+      toolCallId: toolCall.id,
+      content: jsonEncode(payload),
+    );
+  }
+
+  for (final toolCall in toolCalls) {
+    if (needingApprovalIds.contains(toolCall.id)) {
+      final decision = decisionsByApprovalId[toolCall.id];
+      if (decision == null) {
+        throw InvalidRequestError(
+          'Missing ToolApprovalDecision for approvalId "${toolCall.id}".',
+        );
+      }
+      if (!decision.approved) {
+        results.add(deniedResult(toolCall, reason: decision.reason));
+        continue;
+      }
+    }
+
+    final executed = await _executeToolCalls(
+      toolCalls: [toolCall],
+      tools: tools,
+      toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
+      continueOnToolError: continueOnToolError,
+      cancelToken: cancelToken,
+    );
+
+    if (executed.isEmpty) {
+      continue;
+    }
+
+    final result = executed.first;
+    results.add(result);
+
+    if (result.isError && !continueOnToolError) {
+      break;
+    }
+  }
+
+  return results;
+}
+
+Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
+  required ChatCapability model,
+  required List<ChatMessage> initialMessages,
+  required List<ToolLoopStep> initialSteps,
+  required int startStepIndex,
+  List<Tool>? tools,
+  required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
+  Map<String, ToolApprovalCheck>? toolApprovalChecks,
+  ToolApprovalCheck? needsApproval,
+  required int maxSteps,
+  required bool continueOnToolError,
+  required IncludeOptions include,
+  required LLMCallOptions callOptions,
+  CancelToken? cancelToken,
+}) async {
+  final defaultModelId = model is ModelIdentityCapability
+      ? (model as ModelIdentityCapability).modelId
+      : null;
+
+  final workingMessages = List<ChatMessage>.from(initialMessages);
+  final steps = <ToolLoopStep>[...initialSteps];
+
+  for (var stepIndex = startStepIndex; stepIndex < maxSteps; stepIndex++) {
+    final startedAt = DateTime.now().toUtc();
+    final response = await _chatWithToolsBestEffort(
+      model,
+      workingMessages,
+      tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+
+    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+
+    final stepResult = GenerateTextResult(
+      rawResponse: response,
+      text: response.text,
+      thinking: response.thinking,
+      toolCalls: toolCalls,
+      usage: response.usage,
+      finishReason: response is ChatResponseWithFinishReason
+          ? response.finishReason
+          : null,
+      requestMetadata: requestMetadataWithInclude(
+        response is ChatResponseWithRequestMetadata
+            ? response.requestMetadata
+            : null,
+        include,
+      ),
+      responseMetadata: responseMetadataWithInclude(
+        responseMetadataWithDefaults(
+          response is ChatResponseWithResponseMetadata
+              ? response.responseMetadata
+              : null,
+          startedAt,
+          defaultModelId: defaultModelId,
+        ),
+        include,
+      ),
+      responseMessages: buildResponseMessagesBestEffort(response),
+      responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
+    );
+
+    if (toolCalls.isEmpty) {
+      if (response.text != null) {
+        workingMessages.add(ChatMessage.assistant(response.text!));
+      }
+
+      steps.add(
+        ToolLoopStep(
+          index: stepIndex,
+          result: stepResult,
+          toolCalls: const [],
+          toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
+        ),
+      );
+
+      return ToolLoopCompleted(
+        ToolLoopResult(
+          finalResult: stepResult,
+          steps: steps,
+          messages: List<ChatMessage>.unmodifiable(workingMessages),
+          prompt: promptFromChatMessages(workingMessages),
+        ),
+      );
+    }
+
+    final needingApproval = await _findToolCallsNeedingApproval(
+      toolCalls: toolCalls,
+      toolApprovalChecks: toolApprovalChecks,
+      needsApproval: needsApproval,
+      messages: workingMessages,
+      stepIndex: stepIndex,
+      cancelToken: cancelToken,
+    );
+    if (needingApproval.isNotEmpty) {
+      steps.add(
+        ToolLoopStep(
+          index: stepIndex,
+          result: stepResult,
+          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
+        ),
+      );
+
+      if (response is ChatResponseWithAssistantMessage) {
+        workingMessages.add(response.assistantMessage);
+      } else {
+        workingMessages.add(ChatMessage.toolUse(toolCalls: toolCalls));
+      }
+
+      return ToolLoopBlocked(
+        ToolLoopBlockedState(
+          stepIndex: stepIndex,
+          stepResult: stepResult,
+          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCallsNeedingApproval:
+              List<ToolCall>.unmodifiable(needingApproval),
+          steps: List<ToolLoopStep>.unmodifiable(steps),
+          messages: List<ChatMessage>.unmodifiable(workingMessages),
+          prompt: promptFromChatMessages(workingMessages),
+        ),
+      );
+    }
+
+    final executed = await _executeToolCalls(
+      toolCalls: toolCalls,
+      tools: tools,
+      toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
+      continueOnToolError: continueOnToolError,
+      cancelToken: cancelToken,
+    );
+
+    steps.add(
+      ToolLoopStep(
+        index: stepIndex,
+        result: stepResult,
+        toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+        toolResults: List<ToolResult>.unmodifiable(executed),
+        responseMetadata: stepResult.responseMetadata,
+        requestMetadata: stepResult.requestMetadata,
+        responsePromptMessages: [
+          ...stepResult.responsePromptMessages,
+          buildToolResultPromptMessageBestEffort(
+            toolCalls: toolCalls,
+            toolResults: executed,
+          ),
+        ],
+      ),
+    );
+
+    if (response is ChatResponseWithAssistantMessage) {
+      workingMessages.add(response.assistantMessage);
+    } else {
+      workingMessages.add(ChatMessage.toolUse(toolCalls: toolCalls));
+    }
+    workingMessages.add(
+      ChatMessage.toolResult(
+        results: _toToolResultCalls(toolCalls, executed),
+      ),
+    );
+  }
+
+  throw InvalidRequestError(
+    'Tool loop exceeded maxSteps ($maxSteps). '
+    'The model kept requesting tools and did not produce a final response.',
+  );
+}
+
+Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
+  required ChatCapability model,
+  required Prompt prompt,
+  required List<ChatMessage> initialMessages,
+  required List<ToolLoopStep> initialSteps,
+  required int startStepIndex,
+  List<Tool>? tools,
+  required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
+  Map<String, ToolApprovalCheck>? toolApprovalChecks,
+  ToolApprovalCheck? needsApproval,
+  required int maxSteps,
+  required bool continueOnToolError,
+  required IncludeOptions include,
+  required LLMCallOptions callOptions,
+  CancelToken? cancelToken,
+}) async {
+  if (model is! PromptChatCapability) {
+    requirePromptCapabilityForFileReferenceParts(
+      prompt: prompt,
+      requiredCapabilityName: '`PromptChatCapability`',
+    );
+    return _continueToolLoopUntilBlockedFromState(
+      model: model,
+      initialMessages: initialMessages,
+      initialSteps: initialSteps,
+      startStepIndex: startStepIndex,
+      tools: tools,
+      toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
+      toolApprovalChecks: toolApprovalChecks,
+      needsApproval: needsApproval,
+      maxSteps: maxSteps,
+      continueOnToolError: continueOnToolError,
+      include: include,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  final defaultModelId = model is ModelIdentityCapability
+      ? (model as ModelIdentityCapability).modelId
+      : null;
+
+  var workingPrompt = prompt;
+  final workingMessages = List<ChatMessage>.from(initialMessages);
+  final steps = <ToolLoopStep>[...initialSteps];
+
+  for (var stepIndex = startStepIndex; stepIndex < maxSteps; stepIndex++) {
+    final startedAt = DateTime.now().toUtc();
+    final response = await _chatPromptBestEffort(
+      model,
+      workingPrompt,
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+
+    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+
+    final stepResult = GenerateTextResult(
+      rawResponse: response,
+      text: response.text,
+      thinking: response.thinking,
+      toolCalls: toolCalls,
+      usage: response.usage,
+      finishReason: response is ChatResponseWithFinishReason
+          ? response.finishReason
+          : null,
+      requestMetadata: requestMetadataWithInclude(
+        response is ChatResponseWithRequestMetadata
+            ? response.requestMetadata
+            : null,
+        include,
+      ),
+      responseMetadata: responseMetadataWithInclude(
+        responseMetadataWithDefaults(
+          response is ChatResponseWithResponseMetadata
+              ? response.responseMetadata
+              : null,
+          startedAt,
+          defaultModelId: defaultModelId,
+        ),
+        include,
+      ),
+      responseMessages: buildResponseMessagesBestEffort(response),
+      responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
+    );
+
+    if (toolCalls.isEmpty) {
+      if (response is ChatResponseWithAssistantMessage) {
+        workingMessages.add(response.assistantMessage);
+        workingPrompt =
+            _appendChatMessageToPrompt(workingPrompt, response.assistantMessage);
+      } else if (response.text != null && response.text!.isNotEmpty) {
+        final assistant = ChatMessage.assistant(response.text!);
+        workingMessages.add(assistant);
+        workingPrompt = _appendChatMessageToPrompt(workingPrompt, assistant);
+      }
+
+      steps.add(
+        ToolLoopStep(
+          index: stepIndex,
+          result: stepResult,
+          toolCalls: const [],
+          toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
+        ),
+      );
+
+      return ToolLoopCompleted(
+        ToolLoopResult(
+          finalResult: stepResult,
+          steps: steps,
+          messages: List<ChatMessage>.unmodifiable(workingMessages),
+          prompt: workingPrompt,
+        ),
+      );
+    }
+
+    final needingApproval = await _findToolCallsNeedingApproval(
+      toolCalls: toolCalls,
+      toolApprovalChecks: toolApprovalChecks,
+      needsApproval: needsApproval,
+      messages: workingMessages,
+      stepIndex: stepIndex,
+      cancelToken: cancelToken,
+    );
+    if (needingApproval.isNotEmpty) {
+      steps.add(
+        ToolLoopStep(
+          index: stepIndex,
+          result: stepResult,
+          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolResults: const [],
+          responseMetadata: stepResult.responseMetadata,
+          requestMetadata: stepResult.requestMetadata,
+          responsePromptMessages: stepResult.responsePromptMessages,
+        ),
+      );
+
+      final assistantMessage = response is ChatResponseWithAssistantMessage
+          ? response.assistantMessage
+          : ChatMessage.toolUse(
+              toolCalls: toolCalls,
+              content: response.text ?? '',
+            );
+
+      workingMessages.add(assistantMessage);
+      workingPrompt = _appendChatMessageToPrompt(workingPrompt, assistantMessage);
+
+      return ToolLoopBlocked(
+        ToolLoopBlockedState(
+          stepIndex: stepIndex,
+          stepResult: stepResult,
+          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCallsNeedingApproval:
+              List<ToolCall>.unmodifiable(needingApproval),
+          steps: List<ToolLoopStep>.unmodifiable(steps),
+          messages: List<ChatMessage>.unmodifiable(workingMessages),
+          prompt: workingPrompt,
+        ),
+      );
+    }
+
+    final executed = await _executeToolCalls(
+      toolCalls: toolCalls,
+      tools: tools,
+      toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
+      continueOnToolError: continueOnToolError,
+      cancelToken: cancelToken,
+    );
+
+    steps.add(
+      ToolLoopStep(
+        index: stepIndex,
+        result: stepResult,
+        toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+        toolResults: List<ToolResult>.unmodifiable(executed),
+        responseMetadata: stepResult.responseMetadata,
+        requestMetadata: stepResult.requestMetadata,
+        responsePromptMessages: [
+          ...stepResult.responsePromptMessages,
+          buildToolResultPromptMessageBestEffort(
+            toolCalls: toolCalls,
+            toolResults: executed,
+          ),
+        ],
+      ),
+    );
+
+    final assistantMessage = response is ChatResponseWithAssistantMessage
+        ? response.assistantMessage
+        : ChatMessage.toolUse(
+            toolCalls: toolCalls,
+            content: response.text ?? '',
+          );
+    workingMessages.add(assistantMessage);
+    workingPrompt = _appendChatMessageToPrompt(workingPrompt, assistantMessage);
+
+    final toolResultMessage = ChatMessage.toolResult(
+      results: _toToolResultCalls(toolCalls, executed),
+    );
+    workingMessages.add(toolResultMessage);
+    workingPrompt = _appendChatMessageToPrompt(workingPrompt, toolResultMessage);
+  }
+
+  throw InvalidRequestError(
+    'Tool loop exceeded maxSteps ($maxSteps). '
+    'The model kept requesting tools and did not produce a final response.',
+  );
+}
+
 Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   required ChatCapability model,
   required Prompt prompt,

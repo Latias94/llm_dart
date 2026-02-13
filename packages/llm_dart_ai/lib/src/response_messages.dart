@@ -74,7 +74,25 @@ PromptMessage buildToolResultPromptMessageBestEffort({
 
     try {
       final parsed = jsonDecode(raw);
-      if (parsed is Map || parsed is List || parsed is num || parsed is bool) {
+      if (parsed is Map) {
+        final map = parsed.cast<String, dynamic>();
+
+        // Best-effort: support the v3 tool-result output envelope, e.g.
+        // `{ "type": "execution-denied", ... }`.
+        if (map['type'] is String) {
+          try {
+            return ToolResultOutput.fromJson(map);
+          } catch (_) {
+            // fall through
+          }
+        }
+
+        return result.isError
+            ? ToolResultErrorJsonOutput(map)
+            : ToolResultJsonOutput(map);
+      }
+
+      if (parsed is List || parsed is num || parsed is bool) {
         return result.isError
             ? ToolResultErrorJsonOutput(parsed)
             : ToolResultJsonOutput(parsed);

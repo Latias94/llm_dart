@@ -204,6 +204,28 @@ class ToolLoopBlocked extends ToolLoopRunOutcome {
   const ToolLoopBlocked(this.state);
 }
 
+/// A decision for a tool approval request (AI SDK-style).
+///
+/// In the UI message stream, this maps to the `tool-approval-request` chunk
+/// (`approvalId`) and can be resumed by producing a corresponding
+/// `tool-approval-response` in prompt IR (best-effort).
+class ToolApprovalDecision {
+  /// Approval request id.
+  final String approvalId;
+
+  /// Whether the tool execution is approved.
+  final bool approved;
+
+  /// Optional reason for approving/denying.
+  final String? reason;
+
+  const ToolApprovalDecision({
+    required this.approvalId,
+    required this.approved,
+    this.reason,
+  });
+}
+
 /// Error thrown/emitted when a tool loop needs user approval to continue.
 class ToolApprovalRequiredError extends LLMError {
   final ToolLoopBlockedState state;

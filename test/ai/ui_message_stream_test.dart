@@ -192,6 +192,35 @@ void main() {
       );
     });
 
+    test('maps execution-denied tool result to tool-output-denied', () async {
+      final parts = Stream<LLMStreamPart>.fromIterable([
+        LLMToolResultPart(
+          ToolResult.success(
+            toolCallId: 'call1',
+            content: jsonEncode({'type': 'execution-denied'}),
+          ),
+        ),
+        LLMFinishPart(
+          _TestChatResponse(),
+          finishReason: const LLMFinishReason(
+            unified: LLMUnifiedFinishReason.other,
+            raw: null,
+          ),
+        ),
+      ]);
+
+      final chunks = await uiMessageChunksFromParts(parts, sendStart: false)
+          .toList();
+
+      expect(
+        chunks,
+        equals([
+          const {'type': 'tool-output-denied', 'toolCallId': 'call1'},
+          const {'type': 'finish', 'finishReason': 'other'},
+        ]),
+      );
+    });
+
     test('encodes file parts as data: URLs', () async {
       final parts = Stream<LLMStreamPart>.fromIterable([
         const LLMFilePart(mediaType: 'image/png', data: 'AQID'),

@@ -751,6 +751,130 @@ void main() {
       expect(secondModel.calls.single[2].messageType, isA<ToolResultMessage>());
     });
 
+    test('blocked tool loop can be resumed with tool approvals (approved)',
+        () async {
+      final toolCall = ToolCall(
+        id: 'call_1',
+        callType: 'function',
+        function: const FunctionCall(name: 'sum', arguments: '{"a":1,"b":2}'),
+      );
+
+      final firstModel = _SequencedChatModel([
+        _FakeChatResponse(toolCalls: [toolCall]),
+      ]);
+
+      final outcome = await runToolLoopUntilBlocked(
+        model: firstModel,
+        messages: [ChatMessage.user('hi')],
+        toolHandlers: const {},
+        needsApproval: (call,
+                {required messages, required stepIndex, cancelToken}) =>
+            true,
+        maxSteps: 5,
+      );
+
+      final blocked = outcome as ToolLoopBlocked;
+
+      var handlerCalls = 0;
+      final secondModel = _SequencedChatModel([
+        const _FakeChatResponse(text: 'done'),
+      ]);
+
+      final resumed = await resumeToolLoopUntilBlocked(
+        model: secondModel,
+        blockedState: blocked.state,
+        approvals: const [
+          ToolApprovalDecision(approvalId: 'call_1', approved: true),
+        ],
+        toolHandlers: {
+          'sum': (call, {cancelToken}) {
+            handlerCalls++;
+            return {'result': 3};
+          },
+        },
+        maxSteps: 5,
+      );
+
+      expect(resumed, isA<ToolLoopCompleted>());
+      final completed = resumed as ToolLoopCompleted;
+      expect(completed.result.finalResult.text, 'done');
+      expect(completed.result.steps, hasLength(2));
+      expect(handlerCalls, equals(1));
+
+      expect(secondModel.calls, hasLength(1));
+      final resumedCall = secondModel.calls.single;
+      expect(resumedCall, hasLength(3));
+      expect(resumedCall[1].messageType, isA<ToolUseMessage>());
+      expect(resumedCall[2].messageType, isA<ToolResultMessage>());
+
+      final toolResultMessage = resumedCall[2];
+      final results =
+          (toolResultMessage.messageType as ToolResultMessage).results;
+      final parsed = jsonDecode(results.single.function.arguments);
+      expect(parsed, equals({'result': 3}));
+    });
+
+    test('blocked tool loop can be resumed with tool approvals (denied)',
+        () async {
+      final toolCall = ToolCall(
+        id: 'call_1',
+        callType: 'function',
+        function: const FunctionCall(name: 'sum', arguments: '{"a":1,"b":2}'),
+      );
+
+      final firstModel = _SequencedChatModel([
+        _FakeChatResponse(toolCalls: [toolCall]),
+      ]);
+
+      final outcome = await runToolLoopUntilBlocked(
+        model: firstModel,
+        messages: [ChatMessage.user('hi')],
+        toolHandlers: const {},
+        needsApproval: (call,
+                {required messages, required stepIndex, cancelToken}) =>
+            true,
+        maxSteps: 5,
+      );
+
+      final blocked = outcome as ToolLoopBlocked;
+
+      var handlerCalls = 0;
+      final secondModel = _SequencedChatModel([
+        const _FakeChatResponse(text: 'done'),
+      ]);
+
+      final resumed = await resumeToolLoopUntilBlocked(
+        model: secondModel,
+        blockedState: blocked.state,
+        approvals: const [
+          ToolApprovalDecision(
+            approvalId: 'call_1',
+            approved: false,
+            reason: 'no',
+          ),
+        ],
+        toolHandlers: {
+          'sum': (call, {cancelToken}) {
+            handlerCalls++;
+            return {'result': 3};
+          },
+        },
+        maxSteps: 5,
+      );
+
+      expect(resumed, isA<ToolLoopCompleted>());
+      final completed = resumed as ToolLoopCompleted;
+      expect(completed.result.finalResult.text, 'done');
+      expect(handlerCalls, equals(0));
+
+      final toolResultMessage = secondModel.calls.single[2];
+      final results =
+          (toolResultMessage.messageType as ToolResultMessage).results;
+      final parsed = jsonDecode(results.single.function.arguments) as Map;
+      expect(parsed['type'], equals('execution-denied'));
+      expect(parsed['reason'], equals('no'));
+    });
+
     test('runToolLoop encodes tool errors as JSON object', () async {
       final toolCall = ToolCall(
         id: 'call_1',

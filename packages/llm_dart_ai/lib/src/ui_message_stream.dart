@@ -249,11 +249,19 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           };
         } else {
           final parsed = _tryDecodeJson(toolResult.content);
-          yield <String, Object?>{
-            'type': 'tool-output-available',
-            'toolCallId': toolResult.toolCallId,
-            'output': parsed.error == null ? parsed.value : toolResult.content,
-          };
+          final value = parsed.error == null ? parsed.value : null;
+          if (value is Map && value['type'] == 'execution-denied') {
+            yield <String, Object?>{
+              'type': 'tool-output-denied',
+              'toolCallId': toolResult.toolCallId,
+            };
+          } else {
+            yield <String, Object?>{
+              'type': 'tool-output-available',
+              'toolCallId': toolResult.toolCallId,
+              'output': value ?? toolResult.content,
+            };
+          }
         }
 
       case LLMSourceUrlPart(
