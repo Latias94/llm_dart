@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'call_options_dispatch.dart';
 import 'prompt_input.dart';
 import 'metadata_fallbacks.dart';
 import 'response_messages.dart';
@@ -74,98 +75,31 @@ Future<GenerateObjectResult> generateObject({
     parameters: schema,
   );
 
-  final ChatResponse response;
-  switch (input) {
-    case StandardizedChatMessages(:final messages):
-      final augmentedMessages = <ChatMessage>[
-        ChatMessage.system(
-          'You must call the tool "$toolName" exactly once and only provide the JSON object via tool arguments.',
-        ),
+  final instruction =
+      'You must call the tool "$toolName" exactly once and only provide the JSON object via tool arguments.';
+
+  final augmentedInput = switch (input) {
+    StandardizedChatMessages(:final messages) => StandardizedChatMessages([
+        ChatMessage.system(instruction),
         ...messages,
-      ];
+      ]),
+    StandardizedPromptIr(:final prompt) => StandardizedPromptIr(
+        Prompt(
+          messages: [
+            PromptMessage.system(instruction),
+            ...prompt.messages,
+          ],
+        ),
+      ),
+  };
 
-      if (callOptions.isEmpty) {
-        response = await model.chatWithTools(
-          augmentedMessages,
-          [tool],
-          cancelToken: cancelToken,
-        );
-      } else {
-        if (model is! ChatCallOptionsCapability) {
-          throw const InvalidRequestError(
-            'This model does not support call-level overrides (headers/body). '
-            'Implement `ChatCallOptionsCapability` (or use a provider that does).',
-          );
-        }
-        response = await (model as ChatCallOptionsCapability)
-            .chatWithToolsWithCallOptions(
-          augmentedMessages,
-          [tool],
-          callOptions: callOptions,
-          cancelToken: cancelToken,
-        );
-      }
-
-    case StandardizedPromptIr(:final prompt):
-      final augmentedPrompt = Prompt(
-        messages: [
-          PromptMessage.system(
-            'You must call the tool "$toolName" exactly once and only provide the JSON object via tool arguments.',
-          ),
-          ...prompt.messages,
-        ],
-      );
-
-      if (model is PromptChatCapability) {
-        if (callOptions.isEmpty) {
-          response = await (model as PromptChatCapability).chatPrompt(
-            augmentedPrompt,
-            tools: [tool],
-            cancelToken: cancelToken,
-          );
-        } else {
-          if (model is! PromptChatCallOptionsCapability) {
-            throw const InvalidRequestError(
-              'This model does not support call-level overrides for Prompt IR. '
-              'Implement `PromptChatCallOptionsCapability` (or use a provider that does).',
-            );
-          }
-          response = await (model as PromptChatCallOptionsCapability)
-              .chatPromptWithCallOptions(
-            augmentedPrompt,
-            tools: [tool],
-            callOptions: callOptions,
-            cancelToken: cancelToken,
-          );
-        }
-      } else {
-        requirePromptCapabilityForFileReferenceParts(
-          prompt: augmentedPrompt,
-          requiredCapabilityName: '`PromptChatCapability`',
-        );
-        if (callOptions.isEmpty) {
-          response = await model.chatWithTools(
-            augmentedPrompt.toChatMessages(),
-            [tool],
-            cancelToken: cancelToken,
-          );
-        } else {
-          if (model is! ChatCallOptionsCapability) {
-            throw const InvalidRequestError(
-              'This model does not support call-level overrides (headers/body). '
-              'Implement `ChatCallOptionsCapability` (or use a provider that does).',
-            );
-          }
-          response = await (model as ChatCallOptionsCapability)
-              .chatWithToolsWithCallOptions(
-            augmentedPrompt.toChatMessages(),
-            [tool],
-            callOptions: callOptions,
-            cancelToken: cancelToken,
-          );
-        }
-      }
-  }
+  final response = await chatWithToolsBestEffort(
+    model: model,
+    input: augmentedInput,
+    tools: [tool],
+    callOptions: callOptions,
+    cancelToken: cancelToken,
+  );
 
   final toolCall = response.toolCalls
       ?.cast<ToolCall?>()

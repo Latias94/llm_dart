@@ -1,5 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'call_options_dispatch.dart';
 import 'prompt_input.dart';
 import 'metadata_fallbacks.dart';
 import 'response_messages.dart';
@@ -35,82 +36,13 @@ Future<GenerateTextResult> generateText({
     promptIr: promptIr,
   );
 
-  final ChatResponse response;
-  switch (input) {
-    case StandardizedChatMessages(:final messages):
-      if (callOptions.isEmpty) {
-        response = await model.chatWithTools(
-          messages,
-          tools,
-          cancelToken: cancelToken,
-        );
-      } else {
-        if (model is! ChatCallOptionsCapability) {
-          throw const InvalidRequestError(
-            'This model does not support call-level overrides (headers/body). '
-            'Implement `ChatCallOptionsCapability` (or use a provider that does).',
-          );
-        }
-        response = await (model as ChatCallOptionsCapability)
-            .chatWithToolsWithCallOptions(
-          messages,
-          tools,
-          callOptions: callOptions,
-          cancelToken: cancelToken,
-        );
-      }
-
-    case StandardizedPromptIr(:final prompt):
-      if (model is PromptChatCapability) {
-        if (callOptions.isEmpty) {
-          response = await (model as PromptChatCapability).chatPrompt(
-            prompt,
-            tools: tools,
-            cancelToken: cancelToken,
-          );
-        } else {
-          if (model is! PromptChatCallOptionsCapability) {
-            throw const InvalidRequestError(
-              'This model does not support call-level overrides for Prompt IR. '
-              'Implement `PromptChatCallOptionsCapability` (or use a provider that does).',
-            );
-          }
-          response = await (model as PromptChatCallOptionsCapability)
-              .chatPromptWithCallOptions(
-            prompt,
-            tools: tools,
-            callOptions: callOptions,
-            cancelToken: cancelToken,
-          );
-        }
-      } else {
-        requirePromptCapabilityForFileReferenceParts(
-          prompt: prompt,
-          requiredCapabilityName: '`PromptChatCapability`',
-        );
-        if (callOptions.isEmpty) {
-          response = await model.chatWithTools(
-            prompt.toChatMessages(),
-            tools,
-            cancelToken: cancelToken,
-          );
-        } else {
-          if (model is! ChatCallOptionsCapability) {
-            throw const InvalidRequestError(
-              'This model does not support call-level overrides (headers/body). '
-              'Implement `ChatCallOptionsCapability` (or use a provider that does).',
-            );
-          }
-          response = await (model as ChatCallOptionsCapability)
-              .chatWithToolsWithCallOptions(
-            prompt.toChatMessages(),
-            tools,
-            callOptions: callOptions,
-            cancelToken: cancelToken,
-          );
-        }
-      }
-  }
+  final response = await chatWithToolsBestEffort(
+    model: model,
+    input: input,
+    tools: tools,
+    callOptions: callOptions,
+    cancelToken: cancelToken,
+  );
 
   return GenerateTextResult(
     rawResponse: response,
