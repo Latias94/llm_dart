@@ -71,6 +71,53 @@ class _FlakyChatModel extends ChatCapability
   }
 }
 
+class _FlakyStreamErrorPartModel extends ChatCapability
+    implements ChatStreamPartsCallOptionsCapability, ChatCallOptionsCapability {
+  int streamAttempts = 0;
+  int failTimes;
+  final LLMError error;
+
+  _FlakyStreamErrorPartModel({
+    required this.failTimes,
+    required this.error,
+  });
+
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) {
+    throw StateError('chatWithTools should not be used in this test.');
+  }
+
+  @override
+  Future<ChatResponse> chatWithToolsWithCallOptions(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
+    return _TestChatResponse(text: 'ok');
+  }
+
+  @override
+  Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async* {
+    streamAttempts++;
+    if (streamAttempts <= failTimes) {
+      yield LLMErrorPart(error);
+      return;
+    }
+    yield const LLMTextDeltaPart('hi');
+    yield LLMFinishPart(_TestChatResponse(text: 'hi'));
+  }
+}
+
 void main() {
   group('RetryMiddleware', () {
     test('retries transient chat errors and succeeds', () async {
@@ -154,6 +201,37 @@ void main() {
           .toList();
 
       expect(inner.streamAttempts, equals(3));
+      expect(parts.whereType<LLMTextDeltaPart>(), hasLength(1));
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
+      expect(delays.length, equals(2));
+    });
+
+    test('retries streaming when first part is LLMErrorPart', () async {
+      final delays = <Duration>[];
+      final inner = _FlakyStreamErrorPartModel(
+        failTimes: 2,
+        error: const TimeoutError('timeout'),
+      );
+
+      final wrapped = wrapLanguageModelWithMiddleware(
+        inner,
+        middlewares: [
+          RetryMiddleware(
+            maxRetries: 3,
+            sleep: (d) async => delays.add(d),
+          ),
+        ],
+      ) as ChatStreamPartsCallOptionsCapability;
+
+      final parts = await wrapped
+          .chatStreamPartsWithCallOptions(
+            [ChatMessage.user('hi')],
+            callOptions: const LLMCallOptions(headers: {'X-Test': 'a'}),
+          )
+          .toList();
+
+      expect(inner.streamAttempts, equals(3));
+      expect(parts.whereType<LLMErrorPart>(), isEmpty);
       expect(parts.whereType<LLMTextDeltaPart>(), hasLength(1));
       expect(parts.whereType<LLMFinishPart>(), hasLength(1));
       expect(delays.length, equals(2));

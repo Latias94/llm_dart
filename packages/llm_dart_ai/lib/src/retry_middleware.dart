@@ -128,11 +128,52 @@ class RetryMiddleware extends LanguageModelMiddleware {
     while (true) {
       var emittedAny = false;
       try {
+        Object? retryErrorPart;
+
         await for (final part in next(context)) {
+          if (!emittedAny) {
+            if (part is LLMErrorPart && shouldRetry(part.error)) {
+              retryErrorPart = part;
+              break;
+            }
+            if (part is LLMErrorRawPart &&
+                part.decodedError != null &&
+                shouldRetry(part.decodedError!)) {
+              retryErrorPart = part;
+              break;
+            }
+          }
+
           emittedAny = true;
           yield part;
         }
-        return;
+
+        if (retryErrorPart == null) {
+          return;
+        }
+
+        attempt++;
+        if (attempt > maxRetries) {
+          yield retryErrorPart as LLMStreamPart;
+          return;
+        }
+
+        final error = switch (retryErrorPart) {
+          LLMErrorPart(:final error) => error,
+          LLMErrorRawPart(decodedError: final decoded) when decoded != null =>
+            decoded,
+          _ => null,
+        };
+
+        if (error == null || !shouldRetry(error)) {
+          yield retryErrorPart as LLMStreamPart;
+          return;
+        }
+
+        final delay = delayStrategy(attempt: attempt, error: error);
+        if (delay > Duration.zero) {
+          await sleep(delay);
+        }
       } catch (e) {
         attempt++;
         final canRetry =
@@ -147,4 +188,3 @@ class RetryMiddleware extends LanguageModelMiddleware {
     }
   }
 }
-
