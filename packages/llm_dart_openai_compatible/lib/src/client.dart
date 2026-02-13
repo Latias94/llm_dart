@@ -569,7 +569,10 @@ class OpenAIClient {
             'or send file data inline. Got id: "$id"',
           );
 
-        case ToolCallPart() || ToolResultPart() || ToolApprovalResponsePart():
+        case ToolCallPart() ||
+              ToolResultPart() ||
+              ToolApprovalResponsePart() ||
+              ToolApprovalRequestPart():
           return const [];
       }
     }

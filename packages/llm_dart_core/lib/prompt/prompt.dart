@@ -264,6 +264,13 @@ class PromptMessage {
             'Use a provider that implements PromptChatCapability / '
             'PromptChatStreamPartsCapability.',
           );
+
+        case ToolApprovalRequestPart():
+          throw ArgumentError(
+            'ToolApprovalRequestPart cannot be converted to legacy ChatMessage. '
+            'Use a provider that implements PromptChatCapability / '
+            'PromptChatStreamPartsCapability.',
+          );
       }
     }
 
@@ -543,6 +550,25 @@ class ToolApprovalResponsePart extends PromptPart {
     required this.approvalId,
     required this.approved,
     this.reason,
+    super.providerOptions,
+  });
+}
+
+/// Tool approval request prompt part (AI SDK v3-style).
+///
+/// This represents the model/provider requesting approval for a provider-executed
+/// tool call. The corresponding decision should be sent back as a
+/// [ToolApprovalResponsePart] in a subsequent tool message.
+class ToolApprovalRequestPart extends PromptPart {
+  /// Approval request id (AI SDK v3 `approvalId`).
+  final String approvalId;
+
+  /// Tool call id that this approval request is for.
+  final String toolCallId;
+
+  const ToolApprovalRequestPart({
+    required this.approvalId,
+    required this.toolCallId,
     super.providerOptions,
   });
 }

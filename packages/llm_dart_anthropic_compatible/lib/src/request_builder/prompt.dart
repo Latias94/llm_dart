@@ -124,6 +124,7 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
         case ToolCallPart():
         case ToolResultPart():
         case ToolApprovalResponsePart():
+        case ToolApprovalRequestPart():
           throw const InvalidRequestError(
             'System messages cannot contain non-text prompt parts.',
           );
@@ -488,6 +489,10 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
           throw const InvalidRequestError(
             'ToolApprovalResponsePart is not supported by the Anthropic Messages API.',
           );
+
+        case ToolApprovalRequestPart():
+          // Prompt metadata only; not required for Anthropic requests.
+          break;
       }
     }
 

@@ -1509,6 +1509,10 @@ class GoogleChat
             throw const InvalidRequestError(
               'ToolApprovalResponsePart is not supported by the Google provider.',
             );
+
+          case ToolApprovalRequestPart():
+            // Prompt metadata only; not required for provider requests.
+            break;
         }
       }
 

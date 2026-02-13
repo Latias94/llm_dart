@@ -360,6 +360,24 @@ List<Map<String, dynamic>> _encodeV3PromptPartsForMessage({
       });
       return out;
 
+    case ToolApprovalRequestPart(
+        :final approvalId,
+        :final toolCallId,
+        providerOptions: final providerOptions,
+      ):
+      if (role != PromptRole.assistant) {
+        throw const FormatException(
+          'v3 prompt: tool-approval-request parts are only supported in assistant messages.',
+        );
+      }
+      out.add({
+        'type': 'tool-approval-request',
+        'approvalId': approvalId,
+        'toolCallId': toolCallId,
+        if (providerOptions.isNotEmpty) 'providerOptions': providerOptions,
+      });
+      return out;
+
     case ToolResultPart():
       // Tool results are encoded as separate `role: 'tool'` messages by
       // [_encodeV3PromptMessages] to match the AI SDK v3 prompt shape.
@@ -548,6 +566,30 @@ PromptPart _decodeV3PromptPart({
         toolName,
         ToolResultOutput.fromJson(normalizedOutput),
         overrideRole: PromptRole.tool,
+        providerOptions: providerOptions,
+      );
+
+    case 'tool-approval-request':
+      if (roleRaw != 'assistant') {
+        throw FormatException(
+          "v3 prompt: tool-approval-request is only supported in role 'assistant', got '$roleRaw'.",
+        );
+      }
+      final approvalId = obj['approvalId'];
+      final toolCallId = obj['toolCallId'];
+      if (approvalId is! String || approvalId.isEmpty) {
+        throw const FormatException(
+          'v3 prompt tool-approval-request missing non-empty "approvalId".',
+        );
+      }
+      if (toolCallId is! String || toolCallId.isEmpty) {
+        throw const FormatException(
+          'v3 prompt tool-approval-request missing non-empty "toolCallId".',
+        );
+      }
+      return ToolApprovalRequestPart(
+        approvalId: approvalId,
+        toolCallId: toolCallId,
         providerOptions: providerOptions,
       );
 

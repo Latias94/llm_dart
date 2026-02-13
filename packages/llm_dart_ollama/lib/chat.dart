@@ -783,6 +783,10 @@ class OllamaChat
             'ToolApprovalResponsePart is not supported by the Ollama Chat API.',
           );
 
+        case ToolApprovalRequestPart():
+          // Prompt metadata only; not required for provider requests.
+          break;
+
         case ToolCallPart(
             :final toolName,
             :final input,

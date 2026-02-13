@@ -154,5 +154,64 @@ void main() {
         },
       ]);
     });
+
+    test('encodes ToolApprovalRequestPart as assistant content part', () {
+      final prompt = Prompt(
+        messages: [
+          PromptMessage(
+            role: PromptRole.assistant,
+            parts: const [
+              ToolCallPart(
+                toolCallId: 'call-1',
+                toolName: 'tool1',
+                input: {'value': 'test-input'},
+              ),
+              ToolApprovalRequestPart(
+                approvalId: 'approval-id-1',
+                toolCallId: 'call-1',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      final encoded = encodeV3Prompt(prompt);
+      expect(encoded, hasLength(1));
+      expect(encoded.single['role'], 'assistant');
+      expect(encoded.single['content'], [
+        {
+          'type': 'tool-call',
+          'toolCallId': 'call-1',
+          'toolName': 'tool1',
+          'input': {'value': 'test-input'},
+        },
+        {
+          'type': 'tool-approval-request',
+          'approvalId': 'approval-id-1',
+          'toolCallId': 'call-1',
+        },
+      ]);
+    });
+
+    test('decodes assistant tool-approval-request into ToolApprovalRequestPart',
+        () {
+      final prompt = decodeV3Prompt([
+        {
+          'role': 'assistant',
+          'content': [
+            {
+              'type': 'tool-approval-request',
+              'approvalId': 'approval-id-1',
+              'toolCallId': 'call-1',
+            },
+          ],
+        },
+      ]);
+
+      expect(prompt.messages, hasLength(1));
+      expect(prompt.messages.single.role, PromptRole.assistant);
+      expect(
+          prompt.messages.single.parts.single, isA<ToolApprovalRequestPart>());
+    });
   });
 }

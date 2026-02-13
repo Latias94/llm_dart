@@ -339,7 +339,10 @@ class OpenAIResponsesMessageConverter {
             'Unsupported file id media type for the Responses API: ${mime.mimeType}',
           );
 
-        case ToolCallPart() || ToolResultPart() || ToolApprovalResponsePart():
+        case ToolCallPart() ||
+              ToolResultPart() ||
+              ToolApprovalResponsePart() ||
+              ToolApprovalRequestPart():
           return const [];
       }
     }
