@@ -180,6 +180,7 @@ class StreamObjectResult {
     Map<String, dynamic>? lastProviderMetadata;
     LLMFinishPart? finishPart;
     LLMError? terminalError;
+    ProviderToolApprovalRequiredError? providerApprovalRequired;
 
     LLMResponseMetadataPart mergeResponseMetadata(
       LLMResponseMetadataPart base,
@@ -399,7 +400,11 @@ class StreamObjectResult {
               finishPart = part;
 
             case LLMErrorPart(error: final error):
-              terminalError ??= error;
+              if (error is ProviderToolApprovalRequiredError) {
+                providerApprovalRequired ??= error;
+              } else {
+                terminalError ??= error;
+              }
 
             default:
               break;
@@ -445,7 +450,8 @@ class StreamObjectResult {
 
         final finish = finishPart;
         if (finish == null) {
-          final err =
+          final blocked = providerApprovalRequired;
+          final err = blocked ??
               const GenericError('Stream finished without a finish part.');
           if (!warningsCompleter.isCompleted)
             warningsCompleter.complete(const <Map<String, dynamic>>[]);
@@ -457,19 +463,85 @@ class StreamObjectResult {
           if (!requestMetadataCompleter.isCompleted) {
             requestMetadataCompleter.complete(lastRequestMetadata);
           }
-          if (!textCompleter.isCompleted) textCompleter.complete('');
-          if (!objectCompleter.isCompleted) objectCompleter.completeError(err);
-          if (!elementsCompleter.isCompleted) {
-            elementsCompleter.completeError(err);
+
+          if (blocked != null) {
+            final partialText = objectJsonTextBuffer.toString();
+            if (!textCompleter.isCompleted) textCompleter.complete(partialText);
+
+            Map<String, dynamic> partialObject = const <String, dynamic>{};
+            try {
+              final parsed = _tryParseJsonObject(partialText);
+              if (parsed != null) {
+                partialObject = output == StreamObjectOutput.array
+                    ? _normalizeArrayWrapperPartial(
+                        parsed,
+                        elementSchema: schema,
+                      )
+                    : parsed;
+              }
+            } catch (_) {
+              // best-effort
+            }
+
+            if (!objectCompleter.isCompleted)
+              objectCompleter.complete(
+                partialObject,
+              );
+
+            if (!elementsCompleter.isCompleted) {
+              if (output == StreamObjectOutput.array) {
+                final els = _extractElements(partialObject);
+                elementsCompleter.complete(els ?? const []);
+              } else {
+                elementsCompleter.completeError(
+                  UnsupportedError(
+                    'elements is only available when output == StreamObjectOutput.array',
+                  ),
+                );
+              }
+            }
+
+            if (!usageCompleter.isCompleted) usageCompleter.complete(null);
+            if (!finishReasonCompleter.isCompleted)
+              finishReasonCompleter.complete(null);
+            if (!providerMetadataCompleter.isCompleted) {
+              providerMetadataCompleter.complete(lastProviderMetadata);
+            }
+
+            if (!finalResultCompleter.isCompleted) {
+              final partialResponse = _PartialStreamResponse(
+                text: textBuffer.toString(),
+                providerMetadata: lastProviderMetadata,
+              );
+              finalResultCompleter.complete(
+                GenerateObjectResult(
+                  object: partialObject,
+                  rawResponse: partialResponse,
+                  requestMetadata: lastRequestMetadata,
+                  responseMetadata: currentResponseMetadata,
+                  responseMessages:
+                      buildResponseMessagesBestEffort(partialResponse),
+                  responsePromptMessages:
+                      buildResponsePromptMessagesBestEffort(partialResponse),
+                ),
+              );
+            }
+          } else {
+            if (!textCompleter.isCompleted) textCompleter.complete('');
+            if (!objectCompleter.isCompleted)
+              objectCompleter.completeError(err);
+            if (!elementsCompleter.isCompleted) {
+              elementsCompleter.completeError(err);
+            }
+            if (!usageCompleter.isCompleted) usageCompleter.complete(null);
+            if (!finishReasonCompleter.isCompleted)
+              finishReasonCompleter.complete(null);
+            if (!providerMetadataCompleter.isCompleted) {
+              providerMetadataCompleter.complete(lastProviderMetadata);
+            }
+            if (!finalResultCompleter.isCompleted)
+              finalResultCompleter.completeError(err);
           }
-          if (!usageCompleter.isCompleted) usageCompleter.complete(null);
-          if (!finishReasonCompleter.isCompleted)
-            finishReasonCompleter.complete(null);
-          if (!providerMetadataCompleter.isCompleted) {
-            providerMetadataCompleter.complete(lastProviderMetadata);
-          }
-          if (!finalResultCompleter.isCompleted)
-            finalResultCompleter.completeError(err);
           return;
         }
 
@@ -613,6 +685,25 @@ class _UnhandledStreamErrorResponse implements ChatResponse {
   Map<String, dynamic>? get providerMetadata => null;
 }
 
+class _PartialStreamResponse implements ChatResponse {
+  @override
+  final String? text;
+
+  @override
+  String? get thinking => null;
+
+  @override
+  List<ToolCall>? get toolCalls => null;
+
+  @override
+  UsageInfo? get usage => null;
+
+  @override
+  final Map<String, dynamic>? providerMetadata;
+
+  const _PartialStreamResponse({this.text, this.providerMetadata});
+}
+
 /// Stream a JSON object using a tool-call schema (AI SDK-inspired).
 ///
 /// This uses a function tool schema (cross-provider stable) and streams the
@@ -631,6 +722,7 @@ StreamObjectResult streamObject({
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  bool stopOnProviderToolApprovalRequests = false,
   int providerToolApprovalMaxSteps = 10,
   IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
@@ -669,6 +761,8 @@ StreamObjectResult streamObject({
               messages: augmentedMessages,
               tools: [tool],
               onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+              stopOnProviderToolApprovalRequests:
+                  stopOnProviderToolApprovalRequests,
               providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
               cancelToken: cancelToken,
             ),
@@ -703,6 +797,8 @@ StreamObjectResult streamObject({
               promptIr: augmentedPrompt,
               tools: [tool],
               onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+              stopOnProviderToolApprovalRequests:
+                  stopOnProviderToolApprovalRequests,
               providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
               cancelToken: cancelToken,
             ),

@@ -12,7 +12,7 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
   required StandardizedPromptInput input,
   required List<Tool>? tools,
   required LLMCallOptions callOptions,
-  required ProviderToolApprovalHandler onApprovalRequests,
+  ProviderToolApprovalHandler? onApprovalRequests,
   int maxSteps = 10,
   CancelToken? cancelToken,
 }) async* {
@@ -100,6 +100,19 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
             approvalRequests.add(part);
             yield part;
             blocked = true;
+            // Collect any immediately following approval requests before stopping.
+            while (await iterator.moveNext()) {
+              final next = iterator.current;
+              if (next is LLMProviderToolApprovalRequestPart) {
+                approvalRequests.add(next);
+                yield next;
+                continue;
+              }
+              if (next is LLMFinishPart) {
+                finishPart = next;
+              }
+              break;
+            }
             break;
 
           case LLMTextDeltaPart(:final delta):
@@ -123,6 +136,25 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
     }
 
     if (blocked) {
+      if (onApprovalRequests == null) {
+        yield LLMErrorPart(
+          ProviderToolApprovalRequiredError(
+            state: ProviderToolApprovalBlockedState(
+              stepIndex: stepIndex,
+              prompt: currentPrompt,
+              approvalRequests:
+                  List<LLMProviderToolApprovalRequestPart>.unmodifiable(
+                approvalRequests,
+              ),
+              assistantText: assistantText.toString(),
+              providerToolCalls:
+                  List<LLMProviderToolCallPart>.unmodifiable(providerToolCalls),
+            ),
+          ),
+        );
+        return;
+      }
+
       final decisions = await onApprovalRequests(
         List<LLMProviderToolApprovalRequestPart>.unmodifiable(approvalRequests),
       );
@@ -144,6 +176,7 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
         currentPrompt,
         assistantText: assistantText.toString(),
         providerToolCalls: providerToolCalls,
+        approvalRequests: approvalRequests,
         decisions: approvalRequests.map((r) => byId[r.approvalId]!).toList(
               growable: false,
             ),
@@ -177,15 +210,103 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
   }
 }
 
+Stream<LLMStreamPart> resumeChatPartsWithProviderToolApprovals({
+  required ChatCapability model,
+  required ProviderToolApprovalBlockedState blockedState,
+  required List<ToolApprovalDecision> decisions,
+  required List<Tool>? tools,
+  required LLMCallOptions callOptions,
+  ProviderToolApprovalHandler? onApprovalRequests,
+  int maxSteps = 10,
+  CancelToken? cancelToken,
+}) async* {
+  final remainingSteps = maxSteps - (blockedState.stepIndex + 1);
+  if (remainingSteps < 1) {
+    throw InvalidRequestError(
+      'Cannot resume provider tool approvals at stepIndex=${blockedState.stepIndex} '
+      'because maxSteps ($maxSteps) would be exceeded.',
+    );
+  }
+
+  final byId = <String, ToolApprovalDecision>{};
+  for (final d in decisions) {
+    byId[d.approvalId] = d;
+  }
+
+  for (final req in blockedState.approvalRequests) {
+    if (!byId.containsKey(req.approvalId)) {
+      throw InvalidRequestError(
+        'Missing ToolApprovalDecision for approvalId="${req.approvalId}".',
+      );
+    }
+  }
+
+  final nextPrompt = _appendProviderApprovalStepToPrompt(
+    blockedState.prompt,
+    assistantText: blockedState.assistantText,
+    providerToolCalls: blockedState.providerToolCalls,
+    approvalRequests: blockedState.approvalRequests,
+    decisions: blockedState.approvalRequests
+        .map((r) => byId[r.approvalId]!)
+        .toList(growable: false),
+  );
+
+  final input = StandardizedPromptIr(nextPrompt);
+  yield* streamChatPartsWithProviderToolApprovals(
+    model: model,
+    input: input,
+    tools: tools,
+    callOptions: callOptions,
+    onApprovalRequests: onApprovalRequests,
+    maxSteps: remainingSteps,
+    cancelToken: cancelToken,
+  ).map((part) {
+    // Ensure step numbering continues from the blocked step.
+    if (part is LLMStepStartPart) {
+      return LLMStepStartPart(blockedState.stepIndex + part.stepIndex + 1);
+    }
+    if (part is LLMStepFinishPart) {
+      return LLMStepFinishPart(
+        stepIndex: blockedState.stepIndex + part.stepIndex + 1,
+        response: part.response,
+        usage: part.usage,
+        finishReason: part.finishReason,
+        toolCalls: part.toolCalls,
+        toolResults: part.toolResults,
+      );
+    }
+    if (part is LLMErrorPart &&
+        part.error is ProviderToolApprovalRequiredError) {
+      final err = part.error as ProviderToolApprovalRequiredError;
+      final state = err.state;
+      return LLMErrorPart(
+        ProviderToolApprovalRequiredError(
+          state: ProviderToolApprovalBlockedState(
+            stepIndex: blockedState.stepIndex + state.stepIndex + 1,
+            prompt: state.prompt,
+            approvalRequests: state.approvalRequests,
+            assistantText: state.assistantText,
+            providerToolCalls: state.providerToolCalls,
+          ),
+          message: err.message,
+        ),
+      );
+    }
+    return part;
+  });
+}
+
 Prompt _appendProviderApprovalStepToPrompt(
   Prompt base, {
   required String assistantText,
   required List<LLMProviderToolCallPart> providerToolCalls,
+  required List<LLMProviderToolApprovalRequestPart> approvalRequests,
   required List<ToolApprovalDecision> decisions,
 }) =>
     appendProviderToolApprovalsToPrompt(
       base,
       assistantText: assistantText,
       providerToolCalls: providerToolCalls,
+      approvalRequests: approvalRequests,
       decisions: decisions,
     );

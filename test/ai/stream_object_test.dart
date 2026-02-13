@@ -62,6 +62,87 @@ class _FakeStreamChatModel extends ChatCapability
   }
 }
 
+class _ProviderApprovalObjectModel extends ChatCapability
+    implements PromptChatStreamPartsCapability {
+  var calls = 0;
+
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) {
+    throw UnsupportedError('not used');
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async* {
+    calls++;
+
+    if (calls == 1) {
+      yield const LLMStreamStartPart();
+      yield const LLMProviderToolCallPart(
+        toolCallId: 'call_mcp_1',
+        toolName: 'mcp.web_search',
+        input: {'q': 'hello'},
+        providerExecuted: true,
+      );
+      yield const LLMProviderToolApprovalRequestPart(
+        approvalId: 'apr_1',
+        toolCallId: 'call_mcp_1',
+        toolName: 'mcp.web_search',
+        input: {'q': 'hello'},
+      );
+      return;
+    }
+
+    if (calls == 2) {
+      final last = prompt.messages.last;
+      if (last.role != PromptRole.tool) {
+        throw StateError('Expected last prompt message to be tool role.');
+      }
+
+      final approvals =
+          last.parts.whereType<ToolApprovalResponsePart>().toList();
+      if (approvals.length != 1) {
+        throw StateError('Expected exactly one ToolApprovalResponsePart.');
+      }
+      final approval = approvals.single;
+      if (approval.approvalId != 'apr_1' || approval.approved != true) {
+        throw StateError('Unexpected approval response.');
+      }
+
+      yield const LLMStreamStartPart();
+      yield LLMToolCallStartPart(
+        ToolCall(
+          id: 'call_1',
+          callType: 'function',
+          function: FunctionCall(
+            name: 'return_object',
+            arguments: '{"city":"SF","temp":70}',
+          ),
+        ),
+      );
+      yield const LLMToolCallEndPart('call_1');
+      yield const LLMFinishPart(
+        _FakeChatResponseWithFinishReason(
+          finishReason: LLMFinishReason(
+            unified: LLMUnifiedFinishReason.stop,
+            raw: 'stop',
+          ),
+        ),
+      );
+      return;
+    }
+
+    throw StateError('Unexpected number of calls: $calls');
+  }
+}
+
 void main() {
   group('streamObject', () {
     const schema = ParametersSchema(
@@ -357,6 +438,86 @@ void main() {
       final partial = await result.partialObjectStream.toList();
       expect(partial.map(jsonEncode).toList(),
           contains(jsonEncode({'city': 'SF', 'temp': 70})));
+    });
+
+    test('blocks when provider tool approval is required and stop is enabled',
+        () async {
+      final model = _ProviderApprovalObjectModel();
+
+      final result = streamObject(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        schema: schema,
+        stopOnProviderToolApprovalRequests: true,
+      );
+
+      final parts = await result.fullStream.toList();
+      expect(model.calls, equals(1));
+
+      final blocked = parts
+          .whereType<LLMErrorPart>()
+          .map((p) => p.error)
+          .whereType<ProviderToolApprovalRequiredError>()
+          .single;
+
+      expect(blocked.state.stepIndex, equals(0));
+      expect(blocked.state.approvalRequests, hasLength(1));
+      expect(blocked.state.approvalRequests.single.approvalId, equals('apr_1'));
+
+      expect(await result.finishReason, isNull);
+      expect(await result.text, equals(''));
+      expect(await result.object, equals(const <String, dynamic>{}));
+      expect((await result.finalResult).object, isEmpty);
+    });
+
+    test('can resume after provider tool approval blocked state', () async {
+      final model = _ProviderApprovalObjectModel();
+
+      final initial = streamObject(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        schema: schema,
+        stopOnProviderToolApprovalRequests: true,
+      );
+
+      final initialParts = await initial.fullStream.toList();
+      final blocked = initialParts
+          .whereType<LLMErrorPart>()
+          .map((p) => p.error)
+          .whereType<ProviderToolApprovalRequiredError>()
+          .single;
+
+      final resumedParts = resumeChatPartsAfterProviderToolApprovalRequired(
+        model: model,
+        blockedState: blocked.state,
+        decisions: const [
+          ToolApprovalDecision(
+            approvalId: 'apr_1',
+            approved: true,
+          ),
+        ],
+        providerToolApprovalMaxSteps: 5,
+      );
+
+      final resumed = StreamObjectResult.fromPartsStream(
+        resumedParts,
+        schema: schema,
+        toolName: 'return_object',
+      );
+
+      final partsFuture = resumed.fullStream.toList();
+
+      final obj = await resumed.object;
+      expect(obj, containsPair('city', 'SF'));
+      expect(obj, containsPair('temp', 70));
+      expect(model.calls, equals(2));
+
+      final parts = await partsFuture;
+      expect(
+        parts.whereType<LLMStepStartPart>().map((p) => p.stepIndex).toList(),
+        equals([1]),
+      );
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
     });
   });
 }

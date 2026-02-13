@@ -98,6 +98,35 @@ class _ProviderApprovalModel extends ChatCapability
 
 void main() {
   group('Provider tool approval loop', () {
+    test('blocks when provider tool approval is required and no handler',
+        () async {
+      final model = _ProviderApprovalModel();
+
+      final result = streamText(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        stopOnProviderToolApprovalRequests: true,
+        providerToolApprovalMaxSteps: 5,
+      );
+
+      final parts = await result.fullStream.toList();
+      expect(model.calls, equals(1));
+      expect(
+          parts.whereType<LLMProviderToolApprovalRequestPart>(), hasLength(1));
+
+      final blocked = parts
+          .whereType<LLMErrorPart>()
+          .map((p) => p.error)
+          .whereType<ProviderToolApprovalRequiredError>()
+          .single;
+
+      expect(blocked.state.stepIndex, equals(0));
+      expect(blocked.state.approvalRequests, hasLength(1));
+      expect(blocked.state.approvalRequests.single.approvalId, equals('apr_1'));
+      expect(blocked.state.prompt.messages, isNotEmpty);
+      expect(await result.finishReason, isNull);
+    });
+
     test('resumes streaming after provider tool approval', () async {
       final model = _ProviderApprovalModel();
 
@@ -131,6 +160,48 @@ void main() {
       final stepStarts =
           parts.whereType<LLMStepStartPart>().map((p) => p.stepIndex).toList();
       expect(stepStarts, equals([0, 1]));
+    });
+
+    test('can resume from blocked state with explicit decisions', () async {
+      final model = _ProviderApprovalModel();
+
+      final initial = streamText(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        stopOnProviderToolApprovalRequests: true,
+        providerToolApprovalMaxSteps: 5,
+      );
+
+      final initialParts = await initial.fullStream.toList();
+      final blocked = initialParts
+          .whereType<LLMErrorPart>()
+          .map((p) => p.error)
+          .whereType<ProviderToolApprovalRequiredError>()
+          .single;
+
+      final resumedParts = resumeChatPartsAfterProviderToolApprovalRequired(
+        model: model,
+        blockedState: blocked.state,
+        decisions: const [
+          ToolApprovalDecision(
+            approvalId: 'apr_1',
+            approved: true,
+          ),
+        ],
+        providerToolApprovalMaxSteps: 5,
+      );
+
+      final resumed = StreamTextResult.fromPartsStream(resumedParts);
+      final partsFuture = resumed.fullStream.toList();
+
+      expect(await resumed.text, equals('ok'));
+      expect(model.calls, equals(2));
+
+      final parts = await partsFuture;
+      expect(
+          parts.whereType<LLMStepStartPart>().map((p) => p.stepIndex).toList(),
+          equals([1]));
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
     });
   });
 }

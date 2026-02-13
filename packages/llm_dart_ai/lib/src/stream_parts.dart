@@ -26,6 +26,7 @@ Stream<LLMStreamPart> streamChatParts({
   Prompt? promptIr,
   List<Tool>? tools,
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  bool stopOnProviderToolApprovalRequests = false,
   int providerToolApprovalMaxSteps = 10,
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
@@ -38,7 +39,11 @@ Stream<LLMStreamPart> streamChatParts({
       promptIr: promptIr,
     );
 
-    if (onProviderToolApprovalRequests == null) {
+    final enableProviderToolApprovals =
+        onProviderToolApprovalRequests != null ||
+            stopOnProviderToolApprovalRequests;
+
+    if (!enableProviderToolApprovals) {
       return chatStreamPartsBestEffort(
         model: model,
         input: input,
@@ -53,7 +58,49 @@ Stream<LLMStreamPart> streamChatParts({
       input: input,
       tools: tools,
       callOptions: callOptions,
-      onApprovalRequests: onProviderToolApprovalRequests!,
+      onApprovalRequests: onProviderToolApprovalRequests,
+      maxSteps: providerToolApprovalMaxSteps,
+      cancelToken: cancelToken,
+    );
+  }
+
+  yield* ensureStreamStartPart(
+    ensureBlockEndsPart(
+      ensureBlockIdsPart(
+        ensureSingleFinishPart(
+          ensureProviderMetadataPart(
+            ensureResponseMetadataPart(
+              _normalizeFinishParts(raw()),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Resume a provider tool-approval-blocked parts stream.
+///
+/// This is intended to pair with [ProviderToolApprovalRequiredError] emitted by
+/// [streamChatParts] when `stopOnProviderToolApprovalRequests` is enabled.
+Stream<LLMStreamPart> resumeChatPartsAfterProviderToolApprovalRequired({
+  required ChatCapability model,
+  required ProviderToolApprovalBlockedState blockedState,
+  required List<ToolApprovalDecision> decisions,
+  List<Tool>? tools,
+  ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  int providerToolApprovalMaxSteps = 10,
+  LLMCallOptions callOptions = const LLMCallOptions(),
+  CancelToken? cancelToken,
+}) async* {
+  Stream<LLMStreamPart> raw() {
+    return resumeChatPartsWithProviderToolApprovals(
+      model: model,
+      blockedState: blockedState,
+      decisions: decisions,
+      tools: tools,
+      callOptions: callOptions,
+      onApprovalRequests: onProviderToolApprovalRequests,
       maxSteps: providerToolApprovalMaxSteps,
       cancelToken: cancelToken,
     );

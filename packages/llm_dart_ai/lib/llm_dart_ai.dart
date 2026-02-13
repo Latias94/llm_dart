@@ -35,3 +35,4 @@ export 'src/extract_reasoning_middleware.dart';
 export 'src/add_tool_input_examples_middleware.dart';
 export 'src/wrap_language_model_with_middleware.dart';
 export 'src/provider_tool_approval_prompt.dart';
+export 'src/collect_tool_approvals.dart';

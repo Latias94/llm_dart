@@ -4,7 +4,9 @@ import 'package:test/test.dart';
 
 void main() {
   group('appendProviderToolApprovalsToPrompt', () {
-    test('appends assistant tool call + tool approval responses', () {
+    test(
+        'appends assistant tool call + tool approval request + tool approval responses',
+        () {
       final base = Prompt(
         messages: [
           PromptMessage.user('hi'),
@@ -20,6 +22,14 @@ void main() {
             toolName: 'mcp.web_search',
             input: {'q': 'hello'},
             providerExecuted: true,
+          ),
+        ],
+        approvalRequests: const [
+          LLMProviderToolApprovalRequestPart(
+            approvalId: 'apr_1',
+            toolCallId: 'call_1',
+            toolName: 'mcp.web_search',
+            input: {'q': 'hello'},
           ),
         ],
         decisions: const [
@@ -38,6 +48,7 @@ void main() {
       final assistantParts = prompt.messages[1].parts;
       expect(assistantParts.whereType<TextPart>(), hasLength(1));
       expect(assistantParts.whereType<ToolCallPart>(), hasLength(1));
+      expect(assistantParts.whereType<ToolApprovalRequestPart>(), hasLength(1));
       final toolCall = assistantParts.whereType<ToolCallPart>().single;
       expect(toolCall.providerExecuted, isTrue);
       expect(toolCall.toolCallId, equals('call_1'));

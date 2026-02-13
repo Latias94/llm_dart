@@ -181,6 +181,7 @@ class StreamTextResult {
     LLMFinishPart? finishPart;
     LLMError? terminalError;
     ToolApprovalRequiredError? approvalRequired;
+    ProviderToolApprovalRequiredError? providerApprovalRequired;
 
     LLMResponseMetadataPart mergeResponseMetadata(
       LLMResponseMetadataPart base,
@@ -383,6 +384,8 @@ class StreamTextResult {
             case LLMErrorPart(error: final error):
               if (error is ToolApprovalRequiredError) {
                 approvalRequired ??= error;
+              } else if (error is ProviderToolApprovalRequiredError) {
+                providerApprovalRequired ??= error;
               } else {
                 terminalError ??= error;
               }
@@ -456,10 +459,37 @@ class StreamTextResult {
             requestMetadataCompleter.complete(lastRequestMetadata);
           }
           final blocked = approvalRequired;
+          final providerBlocked = providerApprovalRequired;
           if (blocked != null) {
             // Tool approval required: treat as a structured blocked outcome
             // rather than a hard error, similar to AI SDK tool approval requests.
             finalResultCompleter.complete(blocked.state.stepResult);
+          } else if (providerBlocked != null) {
+            // Provider tool approval required: treat as a structured blocked
+            // outcome (no finish part is available).
+            final partialThinking =
+                aggregatedThinking.trim().isEmpty ? null : aggregatedThinking;
+            final partialResponse = _PartialStreamResponse(
+              text: aggregatedText,
+              thinking: partialThinking,
+              providerMetadata: lastProviderMetadata,
+            );
+            finalResultCompleter.complete(
+              GenerateTextResult(
+                rawResponse: partialResponse,
+                text: aggregatedText,
+                thinking: partialThinking,
+                toolCalls: null,
+                usage: null,
+                finishReason: null,
+                requestMetadata: lastRequestMetadata,
+                responseMetadata: currentResponseMetadata,
+                responseMessages:
+                    buildResponseMessagesBestEffort(partialResponse),
+                responsePromptMessages:
+                    buildResponsePromptMessagesBestEffort(partialResponse),
+              ),
+            );
           } else {
             finalResultCompleter.completeError(
               const GenericError('Stream finished without a finish part.'),
@@ -595,6 +625,31 @@ class _UnhandledStreamErrorResponse implements ChatResponse {
   Map<String, dynamic>? get providerMetadata => null;
 }
 
+class _PartialStreamResponse implements ChatResponse {
+  @override
+  final String? text;
+
+  @override
+  final String? thinking;
+
+  @override
+  final List<ToolCall>? toolCalls;
+
+  @override
+  final UsageInfo? usage;
+
+  @override
+  final Map<String, dynamic>? providerMetadata;
+
+  const _PartialStreamResponse({
+    this.text,
+    this.thinking,
+    this.toolCalls,
+    this.usage,
+    this.providerMetadata,
+  });
+}
+
 /// Stream text with optional local tool execution (AI SDK-inspired).
 ///
 /// - If [toolSet] is provided, this runs a local tool loop and streams canonical
@@ -614,6 +669,7 @@ StreamTextResult streamText({
   ToolCallRepair? repairToolCall,
   ToolApprovalCheck? needsApproval,
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  bool stopOnProviderToolApprovalRequests = false,
   int providerToolApprovalMaxSteps = 10,
   int maxSteps = 10,
   bool continueOnToolError = true,
@@ -654,7 +710,8 @@ StreamTextResult streamText({
 
     // Best-effort: avoid throwing when a model does not support parts-first streaming.
     if (input is StandardizedChatMessages) {
-      final supportsStreaming = onProviderToolApprovalRequests != null
+      final supportsStreaming = (onProviderToolApprovalRequests != null ||
+              stopOnProviderToolApprovalRequests)
           ? (effectiveCallOptions.isEmpty
               ? model is PromptChatStreamPartsCapability
               : model is PromptChatStreamPartsCallOptionsCapability)
@@ -712,6 +769,8 @@ StreamTextResult streamText({
           promptIr: promptIr,
           tools: tools,
           onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+          stopOnProviderToolApprovalRequests:
+              stopOnProviderToolApprovalRequests,
           providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
           callOptions: effectiveCallOptions,
           cancelToken: cancelToken,

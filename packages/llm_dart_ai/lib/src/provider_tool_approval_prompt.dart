@@ -20,6 +20,8 @@ Prompt appendProviderToolApprovalsToPrompt(
   String assistantText = '',
   List<LLMProviderToolCallPart> providerToolCalls =
       const <LLMProviderToolCallPart>[],
+  List<LLMProviderToolApprovalRequestPart> approvalRequests =
+      const <LLMProviderToolApprovalRequestPart>[],
   required List<ToolApprovalDecision> decisions,
 }) {
   if (decisions.isEmpty) return base;
@@ -39,6 +41,16 @@ Prompt appendProviderToolApprovalsToPrompt(
         input: call.input,
         providerExecuted: true,
         providerOptions: _tryProviderOptions(call.providerMetadata),
+      ),
+    );
+  }
+
+  for (final req in approvalRequests) {
+    assistantParts.add(
+      ToolApprovalRequestPart(
+        approvalId: req.approvalId,
+        toolCallId: req.toolCallId,
+        providerOptions: _tryProviderOptions(req.providerMetadata),
       ),
     );
   }

@@ -236,6 +236,47 @@ typedef ProviderToolApprovalHandler = Future<List<ToolApprovalDecision>>
   List<LLMProviderToolApprovalRequestPart> requests,
 );
 
+/// Tool approval blocked state for provider-executed tools.
+///
+/// This is returned (via [ProviderToolApprovalRequiredError]) when streaming is
+/// paused because the provider requested tool approval.
+class ProviderToolApprovalBlockedState {
+  final int stepIndex;
+
+  /// Prompt IR at the start of the blocked step.
+  final Prompt prompt;
+
+  /// Approval requests emitted by the provider.
+  final List<LLMProviderToolApprovalRequestPart> approvalRequests;
+
+  /// Best-effort assistant text emitted before the approval request.
+  final String assistantText;
+
+  /// Provider-executed tool calls emitted in the blocked step (best-effort).
+  final List<LLMProviderToolCallPart> providerToolCalls;
+
+  const ProviderToolApprovalBlockedState({
+    required this.stepIndex,
+    required this.prompt,
+    required this.approvalRequests,
+    required this.assistantText,
+    required this.providerToolCalls,
+  });
+}
+
+/// Error thrown/emitted when provider tool approval is required to continue.
+class ProviderToolApprovalRequiredError extends LLMError {
+  final ProviderToolApprovalBlockedState state;
+
+  const ProviderToolApprovalRequiredError({
+    required this.state,
+    String message = 'Provider tool approval required',
+  }) : super(message);
+
+  @override
+  String toString() => 'Provider tool approval required: $message';
+}
+
 /// Error thrown/emitted when a tool loop needs user approval to continue.
 class ToolApprovalRequiredError extends LLMError {
   final ToolLoopBlockedState state;

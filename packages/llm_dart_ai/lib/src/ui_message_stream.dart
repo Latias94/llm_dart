@@ -328,6 +328,14 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           return;
         }
 
+        if (error is ProviderToolApprovalRequiredError) {
+          yield <String, Object?>{
+            'type': 'abort',
+            'reason': error.message,
+          };
+          return;
+        }
+
         yield <String, Object?>{
           'type': 'error',
           'errorText': onError != null ? onError(error) : error.message,
