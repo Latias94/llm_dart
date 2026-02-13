@@ -30,4 +30,7 @@ export 'src/telemetry_middleware.dart';
 export 'src/retry_middleware.dart';
 export 'src/error_normalization_middleware.dart';
 export 'src/simulate_streaming_middleware.dart';
+export 'src/extract_json_middleware.dart';
+export 'src/extract_reasoning_middleware.dart';
+export 'src/add_tool_input_examples_middleware.dart';
 export 'src/wrap_language_model_with_middleware.dart';
