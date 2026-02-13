@@ -54,6 +54,7 @@ Future<GenerateObjectResult> generateObject({
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
   final startedAt = DateTime.now().toUtc();
@@ -83,11 +84,27 @@ Future<GenerateObjectResult> generateObject({
         ...messages,
       ];
 
-      response = await model.chatWithTools(
-        augmentedMessages,
-        [tool],
-        cancelToken: cancelToken,
-      );
+      if (callOptions.isEmpty) {
+        response = await model.chatWithTools(
+          augmentedMessages,
+          [tool],
+          cancelToken: cancelToken,
+        );
+      } else {
+        if (model is! ChatCallOptionsCapability) {
+          throw const InvalidRequestError(
+            'This model does not support call-level overrides (headers/body). '
+            'Implement `ChatCallOptionsCapability` (or use a provider that does).',
+          );
+        }
+        response = await (model as ChatCallOptionsCapability)
+            .chatWithToolsWithCallOptions(
+          augmentedMessages,
+          [tool],
+          callOptions: callOptions,
+          cancelToken: cancelToken,
+        );
+      }
 
     case StandardizedPromptIr(:final prompt):
       final augmentedPrompt = Prompt(
@@ -100,21 +117,53 @@ Future<GenerateObjectResult> generateObject({
       );
 
       if (model is PromptChatCapability) {
-        response = await (model as PromptChatCapability).chatPrompt(
-          augmentedPrompt,
-          tools: [tool],
-          cancelToken: cancelToken,
-        );
+        if (callOptions.isEmpty) {
+          response = await (model as PromptChatCapability).chatPrompt(
+            augmentedPrompt,
+            tools: [tool],
+            cancelToken: cancelToken,
+          );
+        } else {
+          if (model is! PromptChatCallOptionsCapability) {
+            throw const InvalidRequestError(
+              'This model does not support call-level overrides for Prompt IR. '
+              'Implement `PromptChatCallOptionsCapability` (or use a provider that does).',
+            );
+          }
+          response = await (model as PromptChatCallOptionsCapability)
+              .chatPromptWithCallOptions(
+            augmentedPrompt,
+            tools: [tool],
+            callOptions: callOptions,
+            cancelToken: cancelToken,
+          );
+        }
       } else {
         requirePromptCapabilityForFileReferenceParts(
           prompt: augmentedPrompt,
           requiredCapabilityName: '`PromptChatCapability`',
         );
-        response = await model.chatWithTools(
-          augmentedPrompt.toChatMessages(),
-          [tool],
-          cancelToken: cancelToken,
-        );
+        if (callOptions.isEmpty) {
+          response = await model.chatWithTools(
+            augmentedPrompt.toChatMessages(),
+            [tool],
+            cancelToken: cancelToken,
+          );
+        } else {
+          if (model is! ChatCallOptionsCapability) {
+            throw const InvalidRequestError(
+              'This model does not support call-level overrides (headers/body). '
+              'Implement `ChatCallOptionsCapability` (or use a provider that does).',
+            );
+          }
+          response = await (model as ChatCallOptionsCapability)
+              .chatWithToolsWithCallOptions(
+            augmentedPrompt.toChatMessages(),
+            [tool],
+            callOptions: callOptions,
+            cancelToken: cancelToken,
+          );
+        }
       }
   }
 

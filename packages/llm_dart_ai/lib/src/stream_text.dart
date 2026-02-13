@@ -588,6 +588,7 @@ StreamTextResult streamText({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
   Stream<LLMStreamPart> upstream() async* {
@@ -605,6 +606,7 @@ StreamTextResult streamText({
         continueOnToolError: continueOnToolError,
         emitStepParts: true,
         include: include,
+        callOptions: callOptions,
         cancelToken: cancelToken,
       );
       return;
@@ -655,6 +657,7 @@ StreamTextResult streamText({
           messages: messages,
           promptIr: promptIr,
           tools: tools,
+          callOptions: callOptions,
           cancelToken: cancelToken,
         ),
         include,

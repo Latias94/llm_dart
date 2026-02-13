@@ -22,6 +22,7 @@ Stream<LLMStreamPart> streamChatParts({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   List<Tool>? tools,
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async* {
   yield* ensureStreamStartPart(
@@ -37,6 +38,7 @@ Stream<LLMStreamPart> streamChatParts({
                 messages: messages,
                 promptIr: promptIr,
                 tools: tools,
+                callOptions: callOptions,
                 cancelToken: cancelToken,
               ),
             ),
@@ -54,6 +56,7 @@ Stream<LLMStreamPart> _streamChatPartsInternal({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   List<Tool>? tools,
+  required LLMCallOptions callOptions,
   CancelToken? cancelToken,
 }) async* {
   final input = standardizePromptInput(
@@ -66,13 +69,36 @@ Stream<LLMStreamPart> _streamChatPartsInternal({
   switch (input) {
     case StandardizedChatMessages(:final messages):
       final partsCapable = model;
-      if (partsCapable is ChatStreamPartsCapability) {
-        await for (final part
-            in (partsCapable as ChatStreamPartsCapability).chatStreamParts(
+      Stream<LLMStreamPart> upstream;
+      if (callOptions.isEmpty) {
+        if (partsCapable is! ChatStreamPartsCapability) {
+          throw UnsupportedError(
+            'Model does not support parts-first streaming. Implement '
+            '`ChatStreamPartsCapability.chatStreamParts()` (or use a provider that does).',
+          );
+        }
+        upstream = (partsCapable as ChatStreamPartsCapability).chatStreamParts(
           messages,
           tools: tools,
           cancelToken: cancelToken,
-        )) {
+        );
+      } else {
+        if (partsCapable is! ChatStreamPartsCallOptionsCapability) {
+          throw const InvalidRequestError(
+            'This model does not support call-level overrides (headers/body) for streaming. '
+            'Implement `ChatStreamPartsCallOptionsCapability` (or use a provider that does).',
+          );
+        }
+        upstream = (partsCapable as ChatStreamPartsCallOptionsCapability)
+            .chatStreamPartsWithCallOptions(
+          messages,
+          tools: tools,
+          callOptions: callOptions,
+          cancelToken: cancelToken,
+        );
+      }
+
+      await for (final part in upstream) {
           switch (part) {
             case LLMFinishPart(
                 response: final response,
@@ -90,23 +116,36 @@ Stream<LLMStreamPart> _streamChatPartsInternal({
             default:
               yield part;
           }
-        }
-        return;
       }
-
-      throw UnsupportedError(
-        'Model does not support parts-first streaming. Implement '
-        '`ChatStreamPartsCapability.chatStreamParts()` (or use a provider that does).',
-      );
+      return;
 
     case StandardizedPromptIr(:final prompt):
       if (model is PromptChatStreamPartsCapability) {
-        await for (final part
-            in (model as PromptChatStreamPartsCapability).chatPromptStreamParts(
-          prompt,
-          tools: tools,
-          cancelToken: cancelToken,
-        )) {
+        Stream<LLMStreamPart> upstream;
+        if (callOptions.isEmpty) {
+          upstream = (model as PromptChatStreamPartsCapability)
+              .chatPromptStreamParts(
+            prompt,
+            tools: tools,
+            cancelToken: cancelToken,
+          );
+        } else {
+          if (model is! PromptChatStreamPartsCallOptionsCapability) {
+            throw const InvalidRequestError(
+              'This model does not support call-level overrides (headers/body) for Prompt IR streaming. '
+              'Implement `PromptChatStreamPartsCallOptionsCapability` (or use a provider that does).',
+            );
+          }
+          upstream = (model as PromptChatStreamPartsCallOptionsCapability)
+              .chatPromptStreamPartsWithCallOptions(
+            prompt,
+            tools: tools,
+            callOptions: callOptions,
+            cancelToken: cancelToken,
+          );
+        }
+
+        await for (final part in upstream) {
           switch (part) {
             case LLMFinishPart(
                 response: final response,
@@ -137,6 +176,7 @@ Stream<LLMStreamPart> _streamChatPartsInternal({
         model: model,
         messages: prompt.toChatMessages(),
         tools: tools,
+        callOptions: callOptions,
         cancelToken: cancelToken,
       );
   }

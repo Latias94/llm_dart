@@ -58,6 +58,81 @@ List<ToolCall> _onlyLocalFunctionToolCalls(List<ToolCall>? toolCalls) {
   return filtered.isEmpty ? const [] : List<ToolCall>.unmodifiable(filtered);
 }
 
+Future<ChatResponse> _chatWithToolsBestEffort(
+  ChatCapability model,
+  List<ChatMessage> messages,
+  List<Tool>? tools, {
+  required LLMCallOptions callOptions,
+  CancelToken? cancelToken,
+}) {
+  if (callOptions.isEmpty) {
+    return model.chatWithTools(
+      messages,
+      tools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  if (model is! ChatCallOptionsCapability) {
+    throw const InvalidRequestError(
+      'This model does not support call-level overrides (headers/body). '
+      'Implement `ChatCallOptionsCapability` (or use a provider that does).',
+    );
+  }
+
+  return (model as ChatCallOptionsCapability).chatWithToolsWithCallOptions(
+    messages,
+    tools,
+    callOptions: callOptions,
+    cancelToken: cancelToken,
+  );
+}
+
+Future<ChatResponse> _chatPromptBestEffort(
+  ChatCapability model,
+  Prompt prompt, {
+  required List<Tool>? tools,
+  required LLMCallOptions callOptions,
+  CancelToken? cancelToken,
+}) {
+  if (model is PromptChatCapability) {
+    if (callOptions.isEmpty) {
+      return (model as PromptChatCapability).chatPrompt(
+        prompt,
+        tools: tools,
+        cancelToken: cancelToken,
+      );
+    }
+
+    if (model is! PromptChatCallOptionsCapability) {
+      throw const InvalidRequestError(
+        'This model does not support call-level overrides for Prompt IR. '
+        'Implement `PromptChatCallOptionsCapability` (or use a provider that does).',
+      );
+    }
+
+    return (model as PromptChatCallOptionsCapability).chatPromptWithCallOptions(
+      prompt,
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  requirePromptCapabilityForFileReferenceParts(
+    prompt: prompt,
+    requiredCapabilityName: '`PromptChatCapability`',
+  );
+
+  return _chatWithToolsBestEffort(
+    model,
+    prompt.toChatMessages(),
+    tools,
+    callOptions: callOptions,
+    cancelToken: cancelToken,
+  );
+}
+
 /// Run a non-streaming tool loop:
 /// - Call the model
 /// - If tool calls are returned, execute them locally and send tool results back
@@ -76,6 +151,7 @@ Future<ToolLoopResult> runToolLoop({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
   final input = standardizePromptInput(
@@ -97,6 +173,7 @@ Future<ToolLoopResult> runToolLoop({
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
       include: include,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
   }
@@ -116,9 +193,11 @@ Future<ToolLoopResult> runToolLoop({
 
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
     final startedAt = DateTime.now().toUtc();
-    final response = await model.chatWithTools(
+    final response = await _chatWithToolsBestEffort(
+      model,
       workingMessages,
       tools,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
 
@@ -331,6 +410,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  required LLMCallOptions callOptions,
   CancelToken? cancelToken,
 }) async {
   if (model is! PromptChatCapability) {
@@ -349,6 +429,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
       include: include,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
   }
@@ -367,13 +448,13 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   );
   final steps = <ToolLoopStep>[];
 
-  final promptCapable = model as PromptChatCapability;
-
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
     final startedAt = DateTime.now().toUtc();
-    final response = await promptCapable.chatPrompt(
+    final response = await _chatPromptBestEffort(
+      model,
       workingPrompt,
       tools: tools,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
 
@@ -550,6 +631,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
   final input = standardizePromptInput(
@@ -571,6 +653,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
       include: include,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
   }
@@ -590,9 +673,11 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
 
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
     final startedAt = DateTime.now().toUtc();
-    final response = await model.chatWithTools(
+    final response = await _chatWithToolsBestEffort(
+      model,
       workingMessages,
       tools,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
 
@@ -751,6 +836,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  required LLMCallOptions callOptions,
   CancelToken? cancelToken,
 }) async {
   if (model is! PromptChatCapability) {
@@ -769,6 +855,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
       include: include,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
   }
@@ -787,13 +874,13 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   );
   final steps = <ToolLoopStep>[];
 
-  final promptCapable = model as PromptChatCapability;
-
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
     final startedAt = DateTime.now().toUtc();
-    final response = await promptCapable.chatPrompt(
+    final response = await _chatPromptBestEffort(
+      model,
       workingPrompt,
       tools: tools,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
 
@@ -968,6 +1055,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
   return runToolLoop(
@@ -983,6 +1071,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
     include: include,
+    callOptions: callOptions,
     cancelToken: cancelToken,
   );
 }
@@ -999,6 +1088,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
   int maxSteps = 10,
   bool continueOnToolError = true,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
   return runToolLoopUntilBlocked(
@@ -1014,6 +1104,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
     include: include,
+    callOptions: callOptions,
     cancelToken: cancelToken,
   );
 }
@@ -1075,6 +1166,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
   bool continueOnToolError = true,
   bool emitStepParts = false,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async* {
   Stream<LLMStreamPart> upstream() async* {
@@ -1098,6 +1190,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         continueOnToolError: continueOnToolError,
         emitStepParts: emitStepParts,
         include: include,
+        callOptions: callOptions,
         cancelToken: cancelToken,
       );
       return;
@@ -1105,14 +1198,26 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
     final standardizedMessages = (input as StandardizedChatMessages).messages;
 
-    if (model is! ChatStreamPartsCapability) {
-      yield const LLMErrorPart(
-        InvalidRequestError(
-          'streamToolLoopParts requires parts-first streaming. Implement '
-          '`ChatStreamPartsCapability.chatStreamParts()` (or use a provider that does).',
-        ),
-      );
-      return;
+    if (callOptions.isEmpty) {
+      if (model is! ChatStreamPartsCapability) {
+        yield const LLMErrorPart(
+          InvalidRequestError(
+            'streamToolLoopParts requires parts-first streaming. Implement '
+            '`ChatStreamPartsCapability.chatStreamParts()` (or use a provider that does).',
+          ),
+        );
+        return;
+      }
+    } else {
+      if (model is! ChatStreamPartsCallOptionsCapability) {
+        yield const LLMErrorPart(
+          InvalidRequestError(
+            'streamToolLoopParts requires parts-first streaming with call-level overrides. '
+            'Implement `ChatStreamPartsCallOptionsCapability` (or use a provider that does).',
+          ),
+        );
+        return;
+      }
     }
 
     if (maxSteps < 1) {
@@ -1140,13 +1245,24 @@ Stream<LLMStreamPart> streamToolLoopParts({
       final usesNativeParts = true;
       var didEmitProviderMetadataPart = false;
 
-      final partsCapable = model as ChatStreamPartsCapability;
+      final Stream<LLMStreamPart> partsStream;
+      if (callOptions.isEmpty) {
+        partsStream = (model as ChatStreamPartsCapability).chatStreamParts(
+          workingMessages,
+          tools: tools,
+          cancelToken: cancelToken,
+        );
+      } else {
+        partsStream = (model as ChatStreamPartsCallOptionsCapability)
+            .chatStreamPartsWithCallOptions(
+          workingMessages,
+          tools: tools,
+          callOptions: callOptions,
+          cancelToken: cancelToken,
+        );
+      }
 
-      await for (final part in partsCapable.chatStreamParts(
-        workingMessages,
-        tools: tools,
-        cancelToken: cancelToken,
-      )) {
+      await for (final part in partsStream) {
         switch (part) {
           case LLMTextDeltaPart(:final delta):
             fullText.write(delta);
@@ -1385,14 +1501,19 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   bool continueOnToolError = true,
   bool emitStepParts = false,
   IncludeOptions include = const IncludeOptions(),
+  required LLMCallOptions callOptions,
   CancelToken? cancelToken,
 }) async* {
-  final hasPromptStreamParts = model is PromptChatStreamPartsCapability;
+  final hasPromptStreamParts = callOptions.isEmpty
+      ? model is PromptChatStreamPartsCapability
+      : model is PromptChatStreamPartsCallOptionsCapability;
 
   if (!hasPromptStreamParts) {
     requirePromptCapabilityForFileReferenceParts(
       prompt: prompt,
-      requiredCapabilityName: '`PromptChatStreamPartsCapability`',
+      requiredCapabilityName: callOptions.isEmpty
+          ? '`PromptChatStreamPartsCapability`'
+          : '`PromptChatStreamPartsCallOptionsCapability`',
     );
     yield* streamToolLoopParts(
       model: model,
@@ -1406,6 +1527,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       continueOnToolError: continueOnToolError,
       emitStepParts: emitStepParts,
       include: include,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
     return;
@@ -1438,13 +1560,25 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
 
     var didEmitProviderMetadataPart = false;
 
-    final partsCapable = model as PromptChatStreamPartsCapability;
+    final Stream<LLMStreamPart> partsStream;
+    if (callOptions.isEmpty) {
+      partsStream = (model as PromptChatStreamPartsCapability)
+          .chatPromptStreamParts(
+        workingPrompt,
+        tools: tools,
+        cancelToken: cancelToken,
+      );
+    } else {
+      partsStream = (model as PromptChatStreamPartsCallOptionsCapability)
+          .chatPromptStreamPartsWithCallOptions(
+        workingPrompt,
+        tools: tools,
+        callOptions: callOptions,
+        cancelToken: cancelToken,
+      );
+    }
 
-    await for (final part in partsCapable.chatPromptStreamParts(
-      workingPrompt,
-      tools: tools,
-      cancelToken: cancelToken,
-    )) {
+    await for (final part in partsStream) {
       switch (part) {
         case LLMTextDeltaPart(:final delta):
           fullText.write(delta);
@@ -1682,6 +1816,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
   bool continueOnToolError = true,
   bool emitStepParts = false,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
   return streamToolLoopParts(
@@ -1699,6 +1834,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     continueOnToolError: continueOnToolError,
     emitStepParts: emitStepParts,
     include: include,
+    callOptions: callOptions,
     cancelToken: cancelToken,
   );
 }
