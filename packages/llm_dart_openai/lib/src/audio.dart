@@ -178,7 +178,8 @@ class OpenAIAudio
       'model': modelUsed,
       if (request.language != null) 'language': request.language,
       if (request.prompt != null) 'prompt': request.prompt,
-      if (request.responseFormat != null) 'response_format': request.responseFormat,
+      if (request.responseFormat != null)
+        'response_format': request.responseFormat,
       if (request.temperature != null) 'temperature': request.temperature,
     };
 
@@ -374,7 +375,8 @@ class OpenAIAudio
     final baseFields = <String, dynamic>{
       'model': modelUsed,
       if (request.prompt != null) 'prompt': request.prompt,
-      if (request.responseFormat != null) 'response_format': request.responseFormat,
+      if (request.responseFormat != null)
+        'response_format': request.responseFormat,
       if (request.temperature != null) 'temperature': request.temperature,
     };
 
@@ -404,7 +406,7 @@ class OpenAIAudio
       usage: null,
       providerMetadata: _buildProviderMetadata(
         'audio/translations',
-        capability: 'translation',
+        capability: 'transcription',
         model: modelUsed,
       ),
     );
