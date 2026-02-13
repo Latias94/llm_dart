@@ -16,3 +16,6 @@ export 'src/generate_speech.dart';
 export 'src/transcribe.dart';
 export 'src/types.dart';
 export 'src/prompt.dart';
+export 'src/ui_message_stream_headers.dart';
+export 'src/ui_message_stream.dart';
+export 'src/ui_message_chunk_builders.dart';

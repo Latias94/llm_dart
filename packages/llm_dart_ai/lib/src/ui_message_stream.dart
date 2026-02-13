@@ -1,0 +1,470 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:llm_dart_core/llm_dart_core.dart';
+
+import 'types.dart';
+
+/// Encodes [LLMStreamPart] streams into Vercel AI SDK-style UI message chunks.
+///
+/// Upstream reference schema:
+/// `repo-ref/ai/packages/ai/src/ui-message-stream/ui-message-chunks.ts`
+///
+/// This is intended for app/framework integrations that need to send an SSE
+/// stream to a browser/UI client.
+Stream<Map<String, Object?>> uiMessageChunksFromParts(
+  Stream<LLMStreamPart> parts, {
+  bool sendStart = true,
+  bool sendFinish = true,
+  bool sendReasoning = true,
+  bool sendSources = false,
+  bool sendFiles = true,
+  String? messageId,
+  Object? startMessageMetadata,
+  Object? Function(LLMFinishPart part)? finishMessageMetadata,
+  String Function(Object error)? onError,
+}) async* {
+  if (sendStart) {
+    yield <String, Object?>{
+      'type': 'start',
+      if (messageId != null && messageId.isNotEmpty) 'messageId': messageId,
+      if (startMessageMetadata != null) 'messageMetadata': startMessageMetadata,
+    };
+  }
+
+  final toolInputTextById = <String, StringBuffer>{};
+  final toolInputMetaById = <String, _ToolInputMeta>{};
+
+  void clearStepState() {
+    toolInputTextById.clear();
+    toolInputMetaById.clear();
+  }
+
+  await for (final part in parts) {
+    switch (part) {
+      case LLMStepStartPart():
+        clearStepState();
+        yield const <String, Object?>{'type': 'start-step'};
+
+      case LLMStepFinishPart():
+        yield const <String, Object?>{'type': 'finish-step'};
+
+      case LLMTextStartPart(blockId: final id, providerMetadata: final pm):
+        final blockId = _requireNonEmptyId(id);
+        yield <String, Object?>{
+          'type': 'text-start',
+          'id': blockId,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        };
+
+      case LLMTextDeltaPart(
+          :final delta,
+          blockId: final id,
+          providerMetadata: final pm,
+        ):
+        final blockId = _requireNonEmptyId(id);
+        yield <String, Object?>{
+          'type': 'text-delta',
+          'id': blockId,
+          'delta': delta,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        };
+
+      case LLMTextEndPart(blockId: final id, providerMetadata: final pm):
+        final blockId = _requireNonEmptyId(id);
+        yield <String, Object?>{
+          'type': 'text-end',
+          'id': blockId,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        };
+
+      case LLMReasoningStartPart(blockId: final id, providerMetadata: final pm):
+        if (!sendReasoning) break;
+        final blockId = _requireNonEmptyId(id);
+        yield <String, Object?>{
+          'type': 'reasoning-start',
+          'id': blockId,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        };
+
+      case LLMReasoningDeltaPart(
+          :final delta,
+          blockId: final id,
+          providerMetadata: final pm,
+        ):
+        if (!sendReasoning) break;
+        final blockId = _requireNonEmptyId(id);
+        yield <String, Object?>{
+          'type': 'reasoning-delta',
+          'id': blockId,
+          'delta': delta,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        };
+
+      case LLMReasoningEndPart(blockId: final id, providerMetadata: final pm):
+        if (!sendReasoning) break;
+        final blockId = _requireNonEmptyId(id);
+        yield <String, Object?>{
+          'type': 'reasoning-end',
+          'id': blockId,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        };
+
+      case LLMToolInputStartPart(
+          id: final toolCallId,
+          toolName: final toolName,
+          providerExecuted: final providerExecuted,
+          isDynamic: final dynamicTool,
+          title: final title,
+          providerMetadata: final pm,
+        ):
+        toolInputTextById[toolCallId] = StringBuffer();
+        toolInputMetaById[toolCallId] = _ToolInputMeta(
+          toolName: toolName,
+          providerExecuted: providerExecuted,
+          dynamicTool: dynamicTool,
+          title: title,
+          providerMetadata: pm,
+        );
+        yield <String, Object?>{
+          'type': 'tool-input-start',
+          'toolCallId': toolCallId,
+          'toolName': toolName,
+          if (providerExecuted == true) 'providerExecuted': true,
+          if (dynamicTool == true) 'dynamic': true,
+          if (title != null && title.isNotEmpty) 'title': title,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        };
+
+      case LLMToolInputDeltaPart(id: final toolCallId, delta: final delta):
+        (toolInputTextById[toolCallId] ??= StringBuffer()).write(delta);
+        yield <String, Object?>{
+          'type': 'tool-input-delta',
+          'toolCallId': toolCallId,
+          'inputTextDelta': delta,
+        };
+
+      case LLMToolInputEndPart(id: final toolCallId):
+        final meta = toolInputMetaById[toolCallId];
+        final toolName = meta?.toolName;
+        if (toolName == null || toolName.isEmpty) {
+          // Best-effort: no tool name, skip emitting input-available/error.
+          break;
+        }
+
+        final inputText = toolInputTextById[toolCallId]?.toString() ?? '';
+        final parsed = _tryDecodeJson(inputText);
+        if (parsed.error != null) {
+          yield <String, Object?>{
+            'type': 'tool-input-error',
+            'toolCallId': toolCallId,
+            'toolName': toolName,
+            'input': inputText,
+            if (meta?.providerExecuted == true) 'providerExecuted': true,
+            if (meta?.dynamicTool == true) 'dynamic': true,
+            if (meta?.title != null && meta!.title!.isNotEmpty)
+              'title': meta.title,
+            if (meta?.providerMetadata != null &&
+                meta!.providerMetadata!.isNotEmpty)
+              'providerMetadata': meta.providerMetadata!,
+            'errorText': parsed.error!,
+          };
+        } else {
+          yield <String, Object?>{
+            'type': 'tool-input-available',
+            'toolCallId': toolCallId,
+            'toolName': toolName,
+            'input': parsed.value,
+            if (meta?.providerExecuted == true) 'providerExecuted': true,
+            if (meta?.dynamicTool == true) 'dynamic': true,
+            if (meta?.title != null && meta!.title!.isNotEmpty)
+              'title': meta.title,
+            if (meta?.providerMetadata != null &&
+                meta!.providerMetadata!.isNotEmpty)
+              'providerMetadata': meta.providerMetadata!,
+          };
+        }
+
+      case LLMProviderToolCallPart(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          input: final input,
+          providerExecuted: final providerExecuted,
+          isDynamic: final dynamicTool,
+          providerMetadata: final pm,
+        ):
+        yield <String, Object?>{
+          'type': 'tool-input-available',
+          'toolCallId': toolCallId,
+          'toolName': toolName,
+          'input': input,
+          if (providerExecuted == true) 'providerExecuted': true,
+          if (dynamicTool == true) 'dynamic': true,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        };
+
+      case LLMProviderToolApprovalRequestPart(
+          approvalId: final approvalId,
+          toolCallId: final toolCallId,
+        ):
+        yield <String, Object?>{
+          'type': 'tool-approval-request',
+          'approvalId': approvalId,
+          'toolCallId': toolCallId,
+        };
+
+      case LLMProviderToolResultPart(
+          toolCallId: final toolCallId,
+          result: final result,
+          isError: final isError,
+          preliminary: final preliminary,
+          isDynamic: final dynamicTool,
+        ):
+        if (isError == true) {
+          yield <String, Object?>{
+            'type': 'tool-output-error',
+            'toolCallId': toolCallId,
+            'errorText': _stringifyUnknown(result),
+            'providerExecuted': true,
+            if (dynamicTool == true) 'dynamic': true,
+          };
+        } else {
+          yield <String, Object?>{
+            'type': 'tool-output-available',
+            'toolCallId': toolCallId,
+            'output': result,
+            'providerExecuted': true,
+            if (dynamicTool == true) 'dynamic': true,
+            if (preliminary == true) 'preliminary': true,
+          };
+        }
+
+      case LLMToolResultPart(result: final toolResult):
+        if (toolResult.isError) {
+          yield <String, Object?>{
+            'type': 'tool-output-error',
+            'toolCallId': toolResult.toolCallId,
+            'errorText': toolResult.content,
+          };
+        } else {
+          final parsed = _tryDecodeJson(toolResult.content);
+          yield <String, Object?>{
+            'type': 'tool-output-available',
+            'toolCallId': toolResult.toolCallId,
+            'output': parsed.error == null ? parsed.value : toolResult.content,
+          };
+        }
+
+      case LLMSourceUrlPart(
+          sourceId: final sourceId,
+          url: final url,
+          title: final title,
+          providerMetadata: final pm,
+        ):
+        if (!sendSources) break;
+        yield <String, Object?>{
+          'type': 'source-url',
+          'sourceId': sourceId,
+          'url': url,
+          if (title != null && title.isNotEmpty) 'title': title,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        };
+
+      case LLMSourceDocumentPart(
+          sourceId: final sourceId,
+          mediaType: final mediaType,
+          title: final title,
+          filename: final filename,
+          providerMetadata: final pm,
+        ):
+        if (!sendSources) break;
+        yield <String, Object?>{
+          'type': 'source-document',
+          'sourceId': sourceId,
+          'mediaType': mediaType,
+          'title': title,
+          if (filename != null && filename.isNotEmpty) 'filename': filename,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        };
+
+      case LLMFilePart(
+          mediaType: final mediaType,
+          data: final data,
+          providerMetadata: final pm,
+        ):
+        if (!sendFiles) break;
+        final url = _toDataUri(mediaType: mediaType, data: data);
+        yield <String, Object?>{
+          'type': 'file',
+          'url': url,
+          'mediaType': mediaType,
+          if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+        };
+
+      case LLMErrorPart(error: final error):
+        if (error is ToolApprovalRequiredError) {
+          for (final call in error.state.toolCallsNeedingApproval) {
+            yield <String, Object?>{
+              'type': 'tool-output-denied',
+              'toolCallId': call.id,
+            };
+          }
+          yield <String, Object?>{
+            'type': 'abort',
+            'reason': error.message,
+          };
+          return;
+        }
+
+        yield <String, Object?>{
+          'type': 'error',
+          'errorText': onError != null ? onError(error) : error.message,
+        };
+
+      case LLMErrorRawPart(:final rawError, decodedError: final decoded):
+        yield <String, Object?>{
+          'type': 'error',
+          'errorText': onError != null
+              ? onError(decoded ?? rawError ?? 'Unknown error')
+              : (decoded?.message ?? _stringifyUnknown(rawError)),
+        };
+
+      case LLMFinishPart(finishReason: final reason):
+        if (!sendFinish) break;
+        final meta =
+            finishMessageMetadata != null ? finishMessageMetadata(part) : null;
+        yield <String, Object?>{
+          'type': 'finish',
+          if (reason != null) 'finishReason': _encodeFinishReason(reason),
+          if (meta != null) 'messageMetadata': meta,
+        };
+
+      default:
+        // Ignore parts that are not part of the UI message stream contract
+        // (e.g. request/response metadata snapshots, provider tool deltas).
+        break;
+    }
+  }
+}
+
+/// Encodes UI message chunks into an SSE stream (`data: <json>\n\n`).
+///
+/// Upstream reference:
+/// `repo-ref/ai/packages/ai/src/ui-message-stream/json-to-sse-transform-stream.ts`
+Stream<String> uiMessageSseFromChunks(
+  Stream<Map<String, Object?>> chunks,
+) async* {
+  await for (final chunk in chunks) {
+    yield 'data: ${jsonEncode(chunk)}\n\n';
+  }
+  yield 'data: [DONE]\n\n';
+}
+
+/// Convenience: [LLMStreamPart] -> UI message chunks -> SSE.
+Stream<String> uiMessageSseFromParts(
+  Stream<LLMStreamPart> parts, {
+  bool sendStart = true,
+  bool sendFinish = true,
+  bool sendReasoning = true,
+  bool sendSources = false,
+  bool sendFiles = true,
+}) {
+  return uiMessageSseFromChunks(
+    uiMessageChunksFromParts(
+      parts,
+      sendStart: sendStart,
+      sendFinish: sendFinish,
+      sendReasoning: sendReasoning,
+      sendSources: sendSources,
+      sendFiles: sendFiles,
+    ),
+  );
+}
+
+String _requireNonEmptyId(String? id) {
+  final trimmed = id?.trim();
+  return (trimmed == null || trimmed.isEmpty) ? '1' : trimmed;
+}
+
+String _encodeFinishReason(LLMFinishReason reason) {
+  switch (reason.unified) {
+    case LLMUnifiedFinishReason.stop:
+      return 'stop';
+    case LLMUnifiedFinishReason.length:
+      return 'length';
+    case LLMUnifiedFinishReason.contentFilter:
+      return 'content-filter';
+    case LLMUnifiedFinishReason.toolCalls:
+      return 'tool-calls';
+    case LLMUnifiedFinishReason.error:
+      return 'error';
+    case LLMUnifiedFinishReason.other:
+      return 'other';
+  }
+}
+
+({Object value, String? error}) _tryDecodeJson(String content) {
+  final trimmed = content.trim();
+  if (trimmed.isEmpty) {
+    return (value: const <String, dynamic>{}, error: null);
+  }
+
+  final looksJsonLike = trimmed.startsWith('{') ||
+      trimmed.startsWith('[') ||
+      trimmed == 'null' ||
+      trimmed == 'true' ||
+      trimmed == 'false' ||
+      num.tryParse(trimmed) != null;
+
+  if (!looksJsonLike) return (value: content, error: null);
+
+  try {
+    return (value: jsonDecode(trimmed), error: null);
+  } catch (e) {
+    return (value: content, error: 'Invalid JSON: $e');
+  }
+}
+
+String _stringifyUnknown(Object? value) {
+  if (value == null) return 'null';
+  if (value is String) return value;
+  try {
+    return jsonEncode(value);
+  } catch (_) {
+    return value.toString();
+  }
+}
+
+String _toDataUri({required String mediaType, required Object data}) {
+  final String base64Data;
+  if (data is String) {
+    base64Data = data;
+  } else if (data is Uint8List) {
+    base64Data = base64Encode(data);
+  } else {
+    throw ArgumentError.value(
+      data,
+      'data',
+      'LLMFilePart.data must be a String (base64) or Uint8List (bytes).',
+    );
+  }
+
+  return 'data:$mediaType;base64,$base64Data';
+}
+
+class _ToolInputMeta {
+  final String toolName;
+  final bool? providerExecuted;
+  final bool? dynamicTool;
+  final String? title;
+  final Map<String, dynamic>? providerMetadata;
+
+  const _ToolInputMeta({
+    required this.toolName,
+    this.providerExecuted,
+    this.dynamicTool,
+    this.title,
+    this.providerMetadata,
+  });
+}
