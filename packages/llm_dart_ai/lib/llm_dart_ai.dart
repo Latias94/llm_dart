@@ -26,4 +26,5 @@ export 'src/text_stream.dart';
 export 'src/prepare_headers.dart';
 export 'src/wrap_language_model.dart';
 export 'src/middleware.dart';
+export 'src/telemetry_middleware.dart';
 export 'src/wrap_language_model_with_middleware.dart';
