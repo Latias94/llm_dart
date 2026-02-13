@@ -180,6 +180,7 @@ class StreamTextResult {
     Map<String, dynamic>? lastProviderMetadata;
     LLMFinishPart? finishPart;
     LLMError? terminalError;
+    ToolApprovalRequiredError? approvalRequired;
 
     LLMResponseMetadataPart mergeResponseMetadata(
       LLMResponseMetadataPart base,
@@ -380,7 +381,11 @@ class StreamTextResult {
               finishPart = part;
 
             case LLMErrorPart(error: final error):
-              terminalError ??= error;
+              if (error is ToolApprovalRequiredError) {
+                approvalRequired ??= error;
+              } else {
+                terminalError ??= error;
+              }
 
             default:
               break;
@@ -450,9 +455,16 @@ class StreamTextResult {
           if (!requestMetadataCompleter.isCompleted) {
             requestMetadataCompleter.complete(lastRequestMetadata);
           }
-          finalResultCompleter.completeError(
-            const GenericError('Stream finished without a finish part.'),
-          );
+          final blocked = approvalRequired;
+          if (blocked != null) {
+            // Tool approval required: treat as a structured blocked outcome
+            // rather than a hard error, similar to AI SDK tool approval requests.
+            finalResultCompleter.complete(blocked.state.stepResult);
+          } else {
+            finalResultCompleter.completeError(
+              const GenericError('Stream finished without a finish part.'),
+            );
+          }
           usageCompleter.complete(null);
           totalUsageCompleter.complete(accumulatedUsage);
           finishReasonCompleter.complete(null);
