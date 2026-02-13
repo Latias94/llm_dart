@@ -155,7 +155,7 @@ void main() {
       );
     });
 
-    test('maps ToolApprovalRequiredError to tool-output-denied + abort', () async {
+    test('maps ToolApprovalRequiredError to tool-approval-request + abort', () async {
       const toolCall = ToolCall(
         id: 'call1',
         callType: 'function',
@@ -182,7 +182,11 @@ void main() {
       expect(
         chunks,
         equals([
-          const {'type': 'tool-output-denied', 'toolCallId': 'call1'},
+          const {
+            'type': 'tool-approval-request',
+            'approvalId': 'call1',
+            'toolCallId': 'call1',
+          },
           const {'type': 'abort', 'reason': 'Tool approval required'},
         ]),
       );

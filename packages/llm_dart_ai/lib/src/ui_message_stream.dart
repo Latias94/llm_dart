@@ -306,7 +306,10 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
         if (error is ToolApprovalRequiredError) {
           for (final call in error.state.toolCallsNeedingApproval) {
             yield <String, Object?>{
-              'type': 'tool-output-denied',
+              'type': 'tool-approval-request',
+              // Some runtimes do not distinguish approvalId vs toolCallId.
+              // Reuse toolCallId as a stable approvalId.
+              'approvalId': call.id,
               'toolCallId': call.id,
             };
           }
