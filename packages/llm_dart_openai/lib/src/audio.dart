@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart' hide CancelToken;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
@@ -12,9 +14,12 @@ import '../defaults.dart';
 class OpenAIAudio
     implements
         TextToSpeechCapability,
+        TextToSpeechCallOptionsCapability,
         VoiceListingCapability,
         SpeechToTextCapability,
+        SpeechToTextCallOptionsCapability,
         AudioTranslationCapability,
+        AudioTranslationCallOptionsCapability,
         TranscriptionLanguageListingCapability {
   final OpenAIClient client;
   final OpenAIConfig config;
@@ -41,13 +46,26 @@ class OpenAIAudio
     TTSRequest request, {
     CancelToken? cancelToken,
   }) async {
+    return textToSpeechWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<TTSResponse> textToSpeechWithCallOptions(
+    TTSRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
     // Basic validation - let the provider handle specific limits
     if (request.text.isEmpty) {
       throw const InvalidRequestError('Text input cannot be empty');
     }
 
     final modelUsed = request.model ?? openaiDefaultTTSModel;
-    final requestBody = <String, dynamic>{
+    var requestBody = <String, dynamic>{
       'model': modelUsed,
       'input': request.text,
       'voice': request.voice ?? openaiDefaultVoice,
@@ -55,9 +73,12 @@ class OpenAIAudio
       if (request.speed != null) 'speed': request.speed,
     };
 
-    final audioData = await client.postRaw(
+    requestBody = callOptions.mergeIntoRequestBody(requestBody);
+
+    final audioData = await client.postRawWithHeaders(
       'audio/speech',
       requestBody,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
 
@@ -132,6 +153,19 @@ class OpenAIAudio
     STTRequest request, {
     CancelToken? cancelToken,
   }) async {
+    return speechToTextWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<STTResponse> speechToTextWithCallOptions(
+    STTRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
     // Basic validation - let the provider handle specific limits
     if (request.audioData == null && request.filePath == null) {
       throw const InvalidRequestError(
@@ -140,59 +174,36 @@ class OpenAIAudio
     }
 
     final modelUsed = request.model ?? openaiDefaultSTTModel;
-    final formData = FormData();
+    final baseFields = <String, dynamic>{
+      'model': modelUsed,
+      if (request.language != null) 'language': request.language,
+      if (request.prompt != null) 'prompt': request.prompt,
+      if (request.responseFormat != null) 'response_format': request.responseFormat,
+      if (request.temperature != null) 'temperature': request.temperature,
+    };
 
-    if (request.audioData != null) {
-      formData.files.add(
-        MapEntry(
-          'file',
-          MultipartFile.fromBytes(
-            request.audioData!,
-            filename: 'audio.${request.format ?? 'wav'}',
-          ),
-        ),
-      );
-    } else if (request.filePath != null) {
-      formData.files.add(
-        MapEntry('file', await MultipartFile.fromFile(request.filePath!)),
-      );
-    }
-
-    formData.fields.add(MapEntry('model', modelUsed));
-    if (request.language != null) {
-      formData.fields.add(MapEntry('language', request.language!));
-    }
-    if (request.prompt != null) {
-      formData.fields.add(MapEntry('prompt', request.prompt!));
-    }
-    if (request.responseFormat != null) {
-      formData.fields.add(MapEntry('response_format', request.responseFormat!));
-    }
-    if (request.temperature != null) {
-      formData.fields.add(
-        MapEntry('temperature', request.temperature.toString()),
-      );
-    }
-
-    // Handle timestamp granularities
-    // Reference: https://platform.openai.com/docs/api-reference/audio/createTranscription
-    final granularities = <String>[];
+    final derivedGranularities = <String>[];
     if (request.includeWordTiming ||
         request.timestampGranularity == TimestampGranularity.word) {
-      granularities.add('word');
+      derivedGranularities.add('word');
     }
     if (request.timestampGranularity == TimestampGranularity.segment) {
-      granularities.add('segment');
+      derivedGranularities.add('segment');
     }
 
-    // Add each granularity as a separate field
-    for (final granularity in granularities) {
-      formData.fields.add(MapEntry('timestamp_granularities[]', granularity));
-    }
+    final formData = await _buildSttFormData(
+      audioData: request.audioData,
+      filePath: request.filePath,
+      filename: 'audio.${request.format ?? 'wav'}',
+      fields: baseFields,
+      derivedTimestampGranularities: derivedGranularities,
+      callOptions: callOptions,
+    );
 
-    final responseData = await client.postForm(
+    final responseData = await client.postFormWithHeaders(
       'audio/transcriptions',
       formData,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
 
@@ -335,14 +346,24 @@ class OpenAIAudio
     ];
   }
 
-  // Audio translation implementation (OpenAI specific)
-
   @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
     CancelToken? cancelToken,
   }) async {
-    // Basic validation
+    return translateAudioWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<STTResponse> translateAudioWithCallOptions(
+    AudioTranslationRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
     if (request.audioData == null && request.filePath == null) {
       throw const InvalidRequestError(
         'Either audioData or filePath must be provided',
@@ -350,56 +371,98 @@ class OpenAIAudio
     }
 
     final modelUsed = request.model ?? openaiDefaultSTTModel;
-    final formData = FormData();
+    final baseFields = <String, dynamic>{
+      'model': modelUsed,
+      if (request.prompt != null) 'prompt': request.prompt,
+      if (request.responseFormat != null) 'response_format': request.responseFormat,
+      if (request.temperature != null) 'temperature': request.temperature,
+    };
 
-    if (request.audioData != null) {
-      formData.files.add(
-        MapEntry(
-          'file',
-          MultipartFile.fromBytes(
-            request.audioData!,
-            filename: 'audio.${request.format ?? 'wav'}',
-          ),
-        ),
-      );
-    } else if (request.filePath != null) {
-      formData.files.add(
-        MapEntry('file', await MultipartFile.fromFile(request.filePath!)),
-      );
-    }
+    final formData = await _buildSttFormData(
+      audioData: request.audioData,
+      filePath: request.filePath,
+      filename: 'audio.${request.format ?? 'wav'}',
+      fields: baseFields,
+      derivedTimestampGranularities: const <String>[],
+      callOptions: callOptions,
+    );
 
-    formData.fields.add(MapEntry('model', modelUsed));
-    if (request.prompt != null) {
-      formData.fields.add(MapEntry('prompt', request.prompt!));
-    }
-    if (request.responseFormat != null) {
-      formData.fields.add(MapEntry('response_format', request.responseFormat!));
-    }
-    if (request.temperature != null) {
-      formData.fields.add(
-        MapEntry('temperature', request.temperature.toString()),
-      );
-    }
-
-    final responseData = await client.postForm(
+    final responseData = await client.postFormWithHeaders(
       'audio/translations',
       formData,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
 
     return STTResponse(
       text: responseData['text'] as String,
-      language: 'en', // Translations are always to English
+      language: 'en',
       confidence: null,
-      words: null, // Translation doesn't provide word timing
+      words: null,
       model: modelUsed,
       duration: responseData['duration'] as double?,
       usage: null,
       providerMetadata: _buildProviderMetadata(
         'audio/translations',
-        capability: 'transcription',
+        capability: 'translation',
         model: modelUsed,
       ),
     );
+  }
+
+  Future<FormData> _buildSttFormData({
+    required List<int>? audioData,
+    required String? filePath,
+    required String filename,
+    required Map<String, dynamic> fields,
+    required List<String> derivedTimestampGranularities,
+    required LLMCallOptions callOptions,
+  }) async {
+    final mergedFields = callOptions.mergeIntoRequestBody(fields);
+
+    // Allow overrides via callOptions.body:
+    // - `timestamp_granularities[]`: list of strings (preferred)
+    // - `timestamp_granularities`: list of strings (fallback)
+    List<String> granularities = derivedTimestampGranularities;
+    final raw1 = mergedFields.remove('timestamp_granularities[]');
+    final raw2 = mergedFields.remove('timestamp_granularities');
+    final fromOverride = raw1 ?? raw2;
+    if (fromOverride is List) {
+      final items =
+          fromOverride.whereType<Object>().map((e) => e.toString()).toList();
+      if (items.isNotEmpty) granularities = items;
+    }
+
+    final formData = FormData();
+
+    if (audioData != null) {
+      formData.files.add(
+        MapEntry(
+          'file',
+          MultipartFile.fromBytes(audioData, filename: filename),
+        ),
+      );
+    } else if (filePath != null) {
+      formData.files.add(
+        MapEntry('file', await MultipartFile.fromFile(filePath)),
+      );
+    }
+
+    for (final entry in mergedFields.entries) {
+      final key = entry.key;
+      final value = entry.value;
+      if (value == null) continue;
+      if (value is String || value is num || value is bool) {
+        formData.fields.add(MapEntry(key, value.toString()));
+      } else {
+        formData.fields.add(MapEntry(key, jsonEncode(value)));
+      }
+    }
+
+    for (final granularity in granularities) {
+      formData.fields.add(MapEntry('timestamp_granularities[]', granularity));
+    }
+
+    return formData;
   }
 }

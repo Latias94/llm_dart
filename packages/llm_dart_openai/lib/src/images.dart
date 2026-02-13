@@ -11,7 +11,8 @@ import '../defaults.dart';
 /// OpenAI Image Generation capability implementation
 ///
 /// This module handles image generation functionality for OpenAI providers.
-class OpenAIImages implements ImageGenerationCapability {
+class OpenAIImages
+    implements ImageGenerationCapability, ImageGenerationCallOptionsCapability {
   final OpenAIClient client;
   final OpenAIConfig config;
 
@@ -35,8 +36,19 @@ class OpenAIImages implements ImageGenerationCapability {
   Future<ImageGenerationResponse> generateImages(
     ImageGenerationRequest request,
   ) async {
+    return generateImagesWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
+    );
+  }
+
+  @override
+  Future<ImageGenerationResponse> generateImagesWithCallOptions(
+    ImageGenerationRequest request, {
+    required LLMCallOptions callOptions,
+  }) async {
     final modelUsed = request.model ?? config.model;
-    final requestBody = <String, dynamic>{
+    var requestBody = <String, dynamic>{
       'model': modelUsed,
       'prompt': request.prompt,
       if (request.negativePrompt != null)
@@ -53,14 +65,20 @@ class OpenAIImages implements ImageGenerationCapability {
       if (request.quality != null) 'quality': request.quality,
     };
 
-    final responseData =
-        await client.postJson('images/generations', requestBody);
+    requestBody = callOptions.mergeIntoRequestBody(requestBody);
 
-    final data = responseData['data'] as List?;
+    final responseData = await client.postJsonWithHeaders(
+      'images/generations',
+      requestBody,
+      headers: callOptions.headers,
+    );
+    final json = responseData.json;
+
+    final data = json['data'] as List?;
     if (data == null) {
       throw ResponseFormatError(
         'Invalid response format from OpenAI image generation API: missing data field',
-        responseData.toString(),
+        json.toString(),
       );
     }
 
@@ -119,13 +137,24 @@ class OpenAIImages implements ImageGenerationCapability {
       if (e is LLMError) rethrow;
       throw ResponseFormatError(
         'Failed to parse image generation response: $e',
-        responseData.toString(),
+        json.toString(),
       );
     }
   }
 
   @override
   Future<ImageGenerationResponse> editImage(ImageEditRequest request) async {
+    return editImageWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
+    );
+  }
+
+  @override
+  Future<ImageGenerationResponse> editImageWithCallOptions(
+    ImageEditRequest request, {
+    required LLMCallOptions callOptions,
+  }) async {
     final modelUsed = request.model ?? config.model;
     // Prepare multipart form data for image editing
     final formData = <String, dynamic>{
@@ -155,7 +184,11 @@ class OpenAIImages implements ImageGenerationCapability {
       // Note: filePath support removed for Web platform compatibility
     }
 
-    final responseData = await _postMultipartForm('images/edits', formData);
+    final responseData = await _postMultipartFormWithCallOptions(
+      'images/edits',
+      callOptions.mergeIntoRequestBody(formData),
+      callOptions: callOptions,
+    );
     return _parseImageResponse(
       responseData,
       request.model,
@@ -169,6 +202,17 @@ class OpenAIImages implements ImageGenerationCapability {
   @override
   Future<ImageGenerationResponse> createVariation(
       ImageVariationRequest request) async {
+    return createVariationWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
+    );
+  }
+
+  @override
+  Future<ImageGenerationResponse> createVariationWithCallOptions(
+    ImageVariationRequest request, {
+    required LLMCallOptions callOptions,
+  }) async {
     final modelUsed = request.model ?? config.model;
     // Prepare multipart form data for image variation
     final formData = <String, dynamic>{
@@ -189,8 +233,11 @@ class OpenAIImages implements ImageGenerationCapability {
       );
     }
 
-    final responseData =
-        await _postMultipartForm('images/variations', formData);
+    final responseData = await _postMultipartFormWithCallOptions(
+      'images/variations',
+      callOptions.mergeIntoRequestBody(formData),
+      callOptions: callOptions,
+    );
     return _parseImageResponse(
       responseData,
       request.model,
@@ -255,6 +302,18 @@ class OpenAIImages implements ImageGenerationCapability {
     String endpoint,
     Map<String, dynamic> formData,
   ) async {
+    return _postMultipartFormWithCallOptions(
+      endpoint,
+      formData,
+      callOptions: const LLMCallOptions(),
+    );
+  }
+
+  Future<Map<String, dynamic>> _postMultipartFormWithCallOptions(
+    String endpoint,
+    Map<String, dynamic> formData, {
+    required LLMCallOptions callOptions,
+  }) async {
     // Convert form data to Dio FormData
     final dioFormData = FormData();
 
@@ -276,7 +335,11 @@ class OpenAIImages implements ImageGenerationCapability {
       }
     }
 
-    return await client.postForm(endpoint, dioFormData);
+    return await client.postFormWithHeaders(
+      endpoint,
+      dioFormData,
+      headers: callOptions.headers,
+    );
   }
 
   /// Helper method to parse image generation response

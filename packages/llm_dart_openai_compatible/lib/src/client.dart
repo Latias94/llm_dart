@@ -896,6 +896,20 @@ class OpenAIClient {
     FormData formData, {
     CancelToken? cancelToken,
   }) async {
+    return postFormWithHeaders(
+      endpoint,
+      formData,
+      cancelToken: cancelToken,
+    );
+  }
+
+  /// Make a POST request with form data and allow per-call header overrides.
+  Future<Map<String, dynamic>> postFormWithHeaders(
+    String endpoint,
+    FormData formData, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
     try {
       final resolvedEndpoint = _resolveEndpoint(endpoint);
 
@@ -912,6 +926,9 @@ class OpenAIClient {
           resolvedEndpoint,
           data: formData,
           queryParameters: _getDefaultQueryParameters(),
+          options: headers == null || headers.isEmpty
+              ? null
+              : Options(headers: _buildRequestHeaderOverrides(headers)),
           cancelToken: dioToken,
         ),
       );
@@ -939,6 +956,20 @@ class OpenAIClient {
     Map<String, dynamic> body, {
     CancelToken? cancelToken,
   }) async {
+    return postRawWithHeaders(
+      endpoint,
+      body,
+      cancelToken: cancelToken,
+    );
+  }
+
+  /// Make a POST request and return raw bytes, with per-call header overrides.
+  Future<List<int>> postRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> body, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
     try {
       final resolvedEndpoint = _resolveEndpoint(endpoint);
 
@@ -949,7 +980,12 @@ class OpenAIClient {
           data: body,
           queryParameters: _getDefaultQueryParameters(),
           cancelToken: dioToken,
-          options: Options(responseType: ResponseType.bytes),
+          options: Options(
+            responseType: ResponseType.bytes,
+            headers: headers == null || headers.isEmpty
+                ? null
+                : _buildRequestHeaderOverrides(headers),
+          ),
         ),
       );
 

@@ -36,11 +36,15 @@ class OpenAIProvider
         EmbeddingCapability,
         EmbeddingCallOptionsCapability,
         TextToSpeechCapability,
+        TextToSpeechCallOptionsCapability,
         VoiceListingCapability,
         SpeechToTextCapability,
+        SpeechToTextCallOptionsCapability,
         AudioTranslationCapability,
+        AudioTranslationCallOptionsCapability,
         TranscriptionLanguageListingCapability,
         ImageGenerationCapability,
+        ImageGenerationCallOptionsCapability,
         ProviderCapabilities {
   final OpenAIClient _client;
   final OpenAIConfig config;
@@ -432,6 +436,26 @@ class OpenAIProvider
   }
 
   @override
+  Future<TTSResponse> textToSpeechWithCallOptions(
+    TTSRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    if (_audio is! TextToSpeechCallOptionsCapability) {
+      throw const InvalidRequestError(
+        'This provider does not support call-level overrides (headers/body) for text-to-speech.',
+      );
+    }
+
+    return (_audio as TextToSpeechCallOptionsCapability)
+        .textToSpeechWithCallOptions(
+      request,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
   Future<List<VoiceInfo>> getVoices() async {
     return _audio.getVoices();
   }
@@ -445,11 +469,51 @@ class OpenAIProvider
   }
 
   @override
+  Future<STTResponse> speechToTextWithCallOptions(
+    STTRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    if (_audio is! SpeechToTextCallOptionsCapability) {
+      throw const InvalidRequestError(
+        'This provider does not support call-level overrides (headers/body) for transcription.',
+      );
+    }
+
+    return (_audio as SpeechToTextCallOptionsCapability)
+        .speechToTextWithCallOptions(
+      request,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
     CancelToken? cancelToken,
   }) async {
     return _audio.translateAudio(request, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<STTResponse> translateAudioWithCallOptions(
+    AudioTranslationRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    if (_audio is! AudioTranslationCallOptionsCapability) {
+      throw const InvalidRequestError(
+        'This provider does not support call-level overrides (headers/body) for audio translation.',
+      );
+    }
+
+    return (_audio as AudioTranslationCallOptionsCapability)
+        .translateAudioWithCallOptions(
+      request,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -466,14 +530,68 @@ class OpenAIProvider
   }
 
   @override
+  Future<ImageGenerationResponse> generateImagesWithCallOptions(
+    ImageGenerationRequest request, {
+    required LLMCallOptions callOptions,
+  }) {
+    if (_images is! ImageGenerationCallOptionsCapability) {
+      throw const InvalidRequestError(
+        'This provider does not support call-level overrides (headers/body) for image generation.',
+      );
+    }
+
+    return (_images as ImageGenerationCallOptionsCapability)
+        .generateImagesWithCallOptions(
+      request,
+      callOptions: callOptions,
+    );
+  }
+
+  @override
   Future<ImageGenerationResponse> editImage(ImageEditRequest request) async {
     return _images.editImage(request);
+  }
+
+  @override
+  Future<ImageGenerationResponse> editImageWithCallOptions(
+    ImageEditRequest request, {
+    required LLMCallOptions callOptions,
+  }) {
+    if (_images is! ImageGenerationCallOptionsCapability) {
+      throw const InvalidRequestError(
+        'This provider does not support call-level overrides (headers/body) for image generation.',
+      );
+    }
+
+    return (_images as ImageGenerationCallOptionsCapability)
+        .editImageWithCallOptions(
+      request,
+      callOptions: callOptions,
+    );
   }
 
   @override
   Future<ImageGenerationResponse> createVariation(
       ImageVariationRequest request) async {
     return _images.createVariation(request);
+  }
+
+  @override
+  Future<ImageGenerationResponse> createVariationWithCallOptions(
+    ImageVariationRequest request, {
+    required LLMCallOptions callOptions,
+  }) {
+    if (_images is! ImageGenerationCallOptionsCapability) {
+      throw const InvalidRequestError(
+        'This provider does not support call-level overrides (headers/body) for image generation.',
+      );
+    }
+
+    return (_images as ImageGenerationCallOptionsCapability)
+        .createVariationWithCallOptions(
+      request,
+      callOptions: callOptions,
+    );
   }
 
   @override

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
 
@@ -14,9 +16,12 @@ import 'openai_request_config.dart';
 class OpenAIStyleAudio
     implements
         TextToSpeechCapability,
+        TextToSpeechCallOptionsCapability,
         VoiceListingCapability,
         SpeechToTextCapability,
+        SpeechToTextCallOptionsCapability,
         AudioTranslationCapability,
+        AudioTranslationCallOptionsCapability,
         TranscriptionLanguageListingCapability {
   final OpenAIClient client;
   final OpenAIRequestConfig config;
@@ -46,12 +51,25 @@ class OpenAIStyleAudio
     TTSRequest request, {
     CancelToken? cancelToken,
   }) async {
+    return textToSpeechWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<TTSResponse> textToSpeechWithCallOptions(
+    TTSRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
     if (request.text.isEmpty) {
       throw const InvalidRequestError('Text input cannot be empty');
     }
 
     final modelUsed = request.model ?? openaiStyleDefaultTTSModel;
-    final requestBody = <String, dynamic>{
+    var requestBody = <String, dynamic>{
       'model': modelUsed,
       'input': request.text,
       'voice': request.voice ?? openaiStyleDefaultVoice,
@@ -59,9 +77,12 @@ class OpenAIStyleAudio
       if (request.speed != null) 'speed': request.speed,
     };
 
-    final audioData = await client.postRaw(
+    requestBody = callOptions.mergeIntoRequestBody(requestBody);
+
+    final audioData = await client.postRawWithHeaders(
       'audio/speech',
       requestBody,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
 
@@ -134,66 +155,17 @@ class OpenAIStyleAudio
     STTRequest request, {
     CancelToken? cancelToken,
   }) async {
-    if (request.audioData == null && request.filePath == null) {
-      throw const InvalidRequestError(
-        'Either audioData or filePath must be provided',
-      );
-    }
-
-    final formData = FormData();
-
-    if (request.audioData != null) {
-      formData.files.add(
-        MapEntry(
-          'file',
-          MultipartFile.fromBytes(
-            request.audioData!,
-            filename: 'audio.${request.format ?? 'wav'}',
-          ),
-        ),
-      );
-    } else if (request.filePath != null) {
-      formData.files.add(
-        MapEntry('file', await MultipartFile.fromFile(request.filePath!)),
-      );
-    }
-
-    formData.fields.add(
-      MapEntry('model', request.model ?? openaiStyleDefaultSTTModel),
-    );
-    if (request.language != null) {
-      formData.fields.add(MapEntry('language', request.language!));
-    }
-    if (request.prompt != null) {
-      formData.fields.add(MapEntry('prompt', request.prompt!));
-    }
-    if (request.responseFormat != null) {
-      formData.fields.add(
-        MapEntry('response_format', request.responseFormat!),
-      );
-    }
-    if (request.temperature != null) {
-      formData.fields.add(
-        MapEntry('temperature', request.temperature.toString()),
-      );
-    }
-
-    final responseData = await client.postForm(
-      'audio/transcriptions',
-      formData,
+    return speechToTextWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
-    );
-
-    return _parseSttResponse(
-      responseData,
-      endpoint: 'audio/transcriptions',
-      modelUsed: request.model ?? openaiStyleDefaultSTTModel,
     );
   }
 
   @override
-  Future<STTResponse> translateAudio(
-    AudioTranslationRequest request, {
+  Future<STTResponse> speechToTextWithCallOptions(
+    STTRequest request, {
+    required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
     if (request.audioData == null && request.filePath == null) {
@@ -202,52 +174,125 @@ class OpenAIStyleAudio
       );
     }
 
-    final formData = FormData();
-
-    if (request.audioData != null) {
-      formData.files.add(
-        MapEntry(
-          'file',
-          MultipartFile.fromBytes(
-            request.audioData!,
-            filename: 'audio.${request.format ?? 'wav'}',
-          ),
-        ),
-      );
-    } else if (request.filePath != null) {
-      formData.files.add(
-        MapEntry('file', await MultipartFile.fromFile(request.filePath!)),
-      );
-    }
-
-    formData.fields.add(
-      MapEntry('model', request.model ?? openaiStyleDefaultSTTModel),
+    final modelUsed = request.model ?? openaiStyleDefaultSTTModel;
+    final formData = await _buildSttFormData(
+      audioData: request.audioData,
+      filePath: request.filePath,
+      filename: 'audio.${request.format ?? 'wav'}',
+      fields: <String, dynamic>{
+        'model': modelUsed,
+        if (request.language != null) 'language': request.language,
+        if (request.prompt != null) 'prompt': request.prompt,
+        if (request.responseFormat != null)
+          'response_format': request.responseFormat,
+        if (request.temperature != null) 'temperature': request.temperature,
+      },
+      callOptions: callOptions,
     );
-    if (request.prompt != null) {
-      formData.fields.add(MapEntry('prompt', request.prompt!));
-    }
-    if (request.responseFormat != null) {
-      formData.fields.add(
-        MapEntry('response_format', request.responseFormat!),
-      );
-    }
-    if (request.temperature != null) {
-      formData.fields.add(
-        MapEntry('temperature', request.temperature.toString()),
+
+    final responseData = await client.postFormWithHeaders(
+      'audio/transcriptions',
+      formData,
+      headers: callOptions.headers,
+      cancelToken: cancelToken,
+    );
+
+    return _parseSttResponse(
+      responseData,
+      endpoint: 'audio/transcriptions',
+      modelUsed: modelUsed,
+    );
+  }
+
+  @override
+  Future<STTResponse> translateAudio(
+    AudioTranslationRequest request, {
+    CancelToken? cancelToken,
+  }) async {
+    return translateAudioWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<STTResponse> translateAudioWithCallOptions(
+    AudioTranslationRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
+    if (request.audioData == null && request.filePath == null) {
+      throw const InvalidRequestError(
+        'Either audioData or filePath must be provided',
       );
     }
 
-    final responseData = await client.postForm(
+    final modelUsed = request.model ?? openaiStyleDefaultSTTModel;
+    final formData = await _buildSttFormData(
+      audioData: request.audioData,
+      filePath: request.filePath,
+      filename: 'audio.${request.format ?? 'wav'}',
+      fields: <String, dynamic>{
+        'model': modelUsed,
+        if (request.prompt != null) 'prompt': request.prompt,
+        if (request.responseFormat != null)
+          'response_format': request.responseFormat,
+        if (request.temperature != null) 'temperature': request.temperature,
+      },
+      callOptions: callOptions,
+    );
+
+    final responseData = await client.postFormWithHeaders(
       'audio/translations',
       formData,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
 
     return _parseSttResponse(
       responseData,
       endpoint: 'audio/translations',
-      modelUsed: request.model ?? openaiStyleDefaultSTTModel,
+      modelUsed: modelUsed,
     );
+  }
+
+  Future<FormData> _buildSttFormData({
+    required List<int>? audioData,
+    required String? filePath,
+    required String filename,
+    required Map<String, dynamic> fields,
+    required LLMCallOptions callOptions,
+  }) async {
+    final mergedFields = callOptions.mergeIntoRequestBody(fields);
+
+    final formData = FormData();
+
+    if (audioData != null) {
+      formData.files.add(
+        MapEntry(
+          'file',
+          MultipartFile.fromBytes(audioData, filename: filename),
+        ),
+      );
+    } else if (filePath != null) {
+      formData.files.add(
+        MapEntry('file', await MultipartFile.fromFile(filePath)),
+      );
+    }
+
+    for (final entry in mergedFields.entries) {
+      final key = entry.key;
+      final value = entry.value;
+      if (value == null) continue;
+      if (value is String || value is num || value is bool) {
+        formData.fields.add(MapEntry(key, value.toString()));
+      } else {
+        formData.fields.add(MapEntry(key, jsonEncode(value)));
+      }
+    }
+
+    return formData;
   }
 
   STTResponse _parseSttResponse(
