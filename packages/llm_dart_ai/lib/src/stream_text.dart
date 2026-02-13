@@ -23,6 +23,22 @@ import 'types.dart';
 class StreamTextResult {
   final Stream<LLMStreamPart> fullStream;
 
+  /// Text-only stream (AI SDK-style).
+  ///
+  /// This yields the deltas from `text-delta` parts.
+  Stream<String> get textStream => fullStream
+      .where((part) => part is LLMTextDeltaPart)
+      .cast<LLMTextDeltaPart>()
+      .map((p) => p.delta);
+
+  /// Reasoning-only stream (AI SDK-style).
+  ///
+  /// This yields the deltas from `reasoning-delta` parts.
+  Stream<String> get reasoningStream => fullStream
+      .where((part) => part is LLMReasoningDeltaPart)
+      .cast<LLMReasoningDeltaPart>()
+      .map((p) => p.delta);
+
   /// Warnings from the model provider (e.g. unsupported settings).
   ///
   /// This is best-effort and is typically derived from the stream-start part.
