@@ -193,12 +193,10 @@ void main() {
         ],
       ) as ChatStreamPartsCallOptionsCapability;
 
-      final parts = await wrapped
-          .chatStreamPartsWithCallOptions(
-            [ChatMessage.user('hi')],
-            callOptions: const LLMCallOptions(headers: {'X-Test': 'a'}),
-          )
-          .toList();
+      final parts = await wrapped.chatStreamPartsWithCallOptions(
+        [ChatMessage.user('hi')],
+        callOptions: const LLMCallOptions(headers: {'X-Test': 'a'}),
+      ).toList();
 
       expect(inner.streamAttempts, equals(3));
       expect(parts.whereType<LLMTextDeltaPart>(), hasLength(1));
@@ -223,18 +221,56 @@ void main() {
         ],
       ) as ChatStreamPartsCallOptionsCapability;
 
-      final parts = await wrapped
-          .chatStreamPartsWithCallOptions(
-            [ChatMessage.user('hi')],
-            callOptions: const LLMCallOptions(headers: {'X-Test': 'a'}),
-          )
-          .toList();
+      final parts = await wrapped.chatStreamPartsWithCallOptions(
+        [ChatMessage.user('hi')],
+        callOptions: const LLMCallOptions(headers: {'X-Test': 'a'}),
+      ).toList();
 
       expect(inner.streamAttempts, equals(3));
       expect(parts.whereType<LLMErrorPart>(), isEmpty);
       expect(parts.whereType<LLMTextDeltaPart>(), hasLength(1));
       expect(parts.whereType<LLMFinishPart>(), hasLength(1));
       expect(delays.length, equals(2));
+    });
+
+    test('cancels during backoff sleep', () async {
+      final sleepCalled = Completer<void>();
+      final sleepCompleter = Completer<void>();
+
+      final inner = _FlakyChatModel(
+        failTimes: 100,
+        error: const TimeoutError('timeout'),
+      );
+
+      final wrapped = wrapLanguageModelWithMiddleware(
+        inner,
+        middlewares: [
+          RetryMiddleware(
+            maxRetries: 3,
+            sleep: (_) async {
+              if (!sleepCalled.isCompleted) sleepCalled.complete();
+              return sleepCompleter.future;
+            },
+          ),
+        ],
+      ) as ChatCallOptionsCapability;
+
+      final token = CancelToken();
+
+      final future = wrapped.chatWithToolsWithCallOptions(
+        [ChatMessage.user('hi')],
+        null,
+        callOptions: const LLMCallOptions(headers: {'X-Test': 'a'}),
+        cancelToken: token,
+      );
+
+      await sleepCalled.future;
+      token.cancel('stop');
+
+      await expectLater(
+        future,
+        throwsA(isA<CancelledError>()),
+      );
     });
   });
 }

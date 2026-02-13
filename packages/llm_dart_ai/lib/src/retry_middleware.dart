@@ -14,6 +14,12 @@ typedef RetryPredicate = bool Function(Object error);
 
 typedef RetrySleep = Future<void> Function(Duration delay);
 
+CancelledError _cancelledErrorFromToken(CancelToken token) {
+  final reason = token.reason;
+  if (reason == null) return const CancelledError();
+  return CancelledError(reason.toString());
+}
+
 Duration _defaultDelayStrategy({
   required int attempt,
   required Object error,
@@ -56,8 +62,8 @@ bool _defaultShouldRetry(Object error) {
     ToolConfigError() ||
     ToolValidationError() ||
     QuotaExceededError() ||
-    ModelNotAvailableError() => false,
-
+    ModelNotAvailableError() =>
+      false,
     _ => false,
   };
 }
@@ -105,6 +111,11 @@ class RetryMiddleware extends LanguageModelMiddleware {
   ) async {
     var attempt = 0;
     while (true) {
+      final token = context.cancelToken;
+      if (token != null && token.isCancelled) {
+        throw _cancelledErrorFromToken(token);
+      }
+
       try {
         return await next(context);
       } catch (e) {
@@ -113,7 +124,7 @@ class RetryMiddleware extends LanguageModelMiddleware {
 
         final delay = delayStrategy(attempt: attempt, error: e);
         if (delay > Duration.zero) {
-          await sleep(delay);
+          await _sleepOrCancel(delay, token);
         }
       }
     }
@@ -126,6 +137,11 @@ class RetryMiddleware extends LanguageModelMiddleware {
   ) async* {
     var attempt = 0;
     while (true) {
+      final token = context.cancelToken;
+      if (token != null && token.isCancelled) {
+        throw _cancelledErrorFromToken(token);
+      }
+
       var emittedAny = false;
       try {
         Object? retryErrorPart;
@@ -172,19 +188,41 @@ class RetryMiddleware extends LanguageModelMiddleware {
 
         final delay = delayStrategy(attempt: attempt, error: error);
         if (delay > Duration.zero) {
-          await sleep(delay);
+          await _sleepOrCancel(delay, token);
         }
       } catch (e) {
         attempt++;
-        final canRetry =
-            !emittedAny && attempt <= maxRetries && shouldRetry(e);
+        final canRetry = !emittedAny && attempt <= maxRetries && shouldRetry(e);
         if (!canRetry) rethrow;
 
         final delay = delayStrategy(attempt: attempt, error: e);
         if (delay > Duration.zero) {
-          await sleep(delay);
+          await _sleepOrCancel(delay, token);
         }
       }
+    }
+  }
+
+  Future<void> _sleepOrCancel(Duration delay, CancelToken? cancelToken) async {
+    if (delay <= Duration.zero) return;
+    if (cancelToken == null) return sleep(delay);
+    if (cancelToken.isCancelled) {
+      throw _cancelledErrorFromToken(cancelToken);
+    }
+
+    final cancelCompleter = Completer<void>();
+    final dispose = cancelToken.addListener((_) {
+      if (cancelCompleter.isCompleted) return;
+      cancelCompleter.completeError(_cancelledErrorFromToken(cancelToken));
+    });
+
+    try {
+      await Future.any<void>([
+        sleep(delay),
+        cancelCompleter.future,
+      ]);
+    } finally {
+      dispose();
     }
   }
 }
