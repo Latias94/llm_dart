@@ -1,0 +1,242 @@
+import 'package:llm_dart_core/llm_dart_core.dart';
+
+import 'call_options_dispatch.dart';
+import 'middleware.dart';
+import 'prompt_input.dart';
+
+/// Wraps a chat model with a middleware chain (AI SDK-inspired).
+///
+/// Middlewares can:
+/// - Inject defaults (e.g. headers/body) per call
+/// - Observe/transform streamed parts
+ChatCapability wrapLanguageModelWithMiddleware(
+  ChatCapability model, {
+  required List<LanguageModelMiddleware> middlewares,
+}) {
+  if (middlewares.isEmpty) return model;
+  final list = List<LanguageModelMiddleware>.unmodifiable(middlewares);
+  if (model is ModelIdentityCapability) {
+    return _MiddlewareLanguageModelWithIdentity(
+      inner: model,
+      middlewares: list,
+    );
+  }
+  return _MiddlewareLanguageModel(
+    inner: model,
+    middlewares: list,
+  );
+}
+
+class _MiddlewareLanguageModel extends ChatCapability
+    implements
+        ChatCallOptionsCapability,
+        PromptChatCapability,
+        PromptChatCallOptionsCapability,
+        ChatStreamPartsCapability,
+        ChatStreamPartsCallOptionsCapability,
+        PromptChatStreamPartsCapability,
+        PromptChatStreamPartsCallOptionsCapability {
+  final ChatCapability inner;
+  final List<LanguageModelMiddleware> middlewares;
+
+  _MiddlewareLanguageModel({
+    required this.inner,
+    required this.middlewares,
+  });
+
+  Future<ChatResponse> _chatViaMiddleware({
+    required StandardizedPromptInput input,
+    required List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    Future<ChatResponse> dispatch(ChatMiddlewareContext c) {
+      return chatWithToolsBestEffort(
+        model: inner,
+        input: c.input,
+        tools: c.tools,
+        callOptions: c.callOptions,
+        cancelToken: c.cancelToken,
+      );
+    }
+
+    ChatMiddlewareNext next = dispatch;
+    for (final middleware in middlewares.reversed) {
+      final prev = next;
+      next = (c) => middleware.chat(c, prev);
+    }
+
+    return next(
+      ChatMiddlewareContext(
+        input: input,
+        tools: tools,
+        callOptions: callOptions,
+        cancelToken: cancelToken,
+      ),
+    );
+  }
+
+  Stream<LLMStreamPart> _streamViaMiddleware({
+    required StandardizedPromptInput input,
+    required List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    Stream<LLMStreamPart> dispatch(ChatStreamMiddlewareContext c) {
+      return chatStreamPartsBestEffort(
+        model: inner,
+        input: c.input,
+        tools: c.tools,
+        callOptions: c.callOptions,
+        cancelToken: c.cancelToken,
+      );
+    }
+
+    ChatStreamMiddlewareNext next = dispatch;
+    for (final middleware in middlewares.reversed) {
+      final prev = next;
+      next = (c) => middleware.stream(c, prev);
+    }
+
+    return next(
+      ChatStreamMiddlewareContext(
+        input: input,
+        tools: tools,
+        callOptions: callOptions,
+        cancelToken: cancelToken,
+      ),
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    CancelToken? cancelToken,
+  }) {
+    return _chatViaMiddleware(
+      input: StandardizedChatMessages(messages),
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatWithToolsWithCallOptions(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _chatViaMiddleware(
+      input: StandardizedChatMessages(messages),
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPrompt(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    return _chatViaMiddleware(
+      input: StandardizedPromptIr(prompt),
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPromptWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _chatViaMiddleware(
+      input: StandardizedPromptIr(prompt),
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatStreamParts(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    return _streamViaMiddleware(
+      input: StandardizedChatMessages(messages),
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _streamViaMiddleware(
+      input: StandardizedChatMessages(messages),
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamParts(
+    Prompt prompt, {
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) {
+    return _streamViaMiddleware(
+      input: StandardizedPromptIr(prompt),
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _streamViaMiddleware(
+      input: StandardizedPromptIr(prompt),
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+}
+
+class _MiddlewareLanguageModelWithIdentity extends _MiddlewareLanguageModel
+    implements ModelIdentityCapability {
+  _MiddlewareLanguageModelWithIdentity({
+    required ChatCapability inner,
+    required List<LanguageModelMiddleware> middlewares,
+  }) : super(inner: inner, middlewares: middlewares);
+
+  ModelIdentityCapability get _identity => inner as ModelIdentityCapability;
+
+  @override
+  String get providerId => _identity.providerId;
+
+  @override
+  String get modelId => _identity.modelId;
+}
