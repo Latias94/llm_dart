@@ -28,4 +28,5 @@ export 'src/wrap_language_model.dart';
 export 'src/middleware.dart';
 export 'src/telemetry_middleware.dart';
 export 'src/retry_middleware.dart';
+export 'src/error_normalization_middleware.dart';
 export 'src/wrap_language_model_with_middleware.dart';
