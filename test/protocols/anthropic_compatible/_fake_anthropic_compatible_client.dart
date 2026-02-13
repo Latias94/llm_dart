@@ -27,11 +27,12 @@ class FakeAnthropicCompatibleClient extends AnthropicClient {
       postStreamRawWithHeaders(
     String endpoint,
     Map<String, dynamic> data, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     return (
       stream: postStreamRaw(endpoint, data, cancelToken: cancelToken),
-      headers: headers
+      headers: this.headers
     );
   }
 }

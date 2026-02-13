@@ -21,6 +21,7 @@ class _FakeClient extends OpenAIClient {
       postJsonWithHeaders(
     String endpoint,
     Map<String, dynamic> body, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     return (json: response, headers: const <String, String>{});

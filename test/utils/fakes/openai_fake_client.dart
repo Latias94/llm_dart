@@ -8,6 +8,7 @@ class FakeOpenAIClient extends OpenAIClient {
   String? lastEndpoint;
   Map<String, dynamic>? lastJsonBody;
   FormData? lastFormData;
+  Map<String, String>? lastRequestHeaders;
 
   Map<String, dynamic> jsonResponse = const {};
   Map<String, String> jsonHeaders = const <String, String>{};
@@ -34,10 +35,12 @@ class FakeOpenAIClient extends OpenAIClient {
       postJsonWithHeaders(
     String endpoint,
     Map<String, dynamic> body, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     lastEndpoint = endpoint;
     lastJsonBody = body;
+    lastRequestHeaders = headers;
     return (json: jsonResponse, headers: jsonHeaders);
   }
 
@@ -79,10 +82,12 @@ class FakeOpenAIClient extends OpenAIClient {
       postStreamRawWithHeaders(
     String endpoint,
     Map<String, dynamic> body, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     lastEndpoint = endpoint;
     lastJsonBody = body;
+    lastRequestHeaders = headers;
     return (stream: streamResponse, headers: streamHeaders);
   }
 }

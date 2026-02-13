@@ -35,6 +35,7 @@ class FakeAnthropicCompatibleJsonClient extends AnthropicClient {
       postJsonWithHeaders(
     String endpoint,
     Map<String, dynamic> data, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     return (

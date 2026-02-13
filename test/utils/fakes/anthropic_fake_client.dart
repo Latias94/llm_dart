@@ -28,6 +28,7 @@ class FakeAnthropicClient extends AnthropicClient {
       postJsonWithHeaders(
     String endpoint,
     Map<String, dynamic> data, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     lastEndpoint = endpoint;
@@ -51,6 +52,7 @@ class FakeAnthropicClient extends AnthropicClient {
       postStreamRawWithHeaders(
     String endpoint,
     Map<String, dynamic> data, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     lastEndpoint = endpoint;

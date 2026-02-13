@@ -24,6 +24,7 @@ class _FakeAnthropicClient extends AnthropicClient {
       postStreamRawWithHeaders(
     String endpoint,
     Map<String, dynamic> data, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     return (stream: _stream, headers: const <String, String>{});

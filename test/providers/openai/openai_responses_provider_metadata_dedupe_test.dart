@@ -30,6 +30,7 @@ class _FakeOpenAIClient extends OpenAIClient {
       postStreamRawWithHeaders(
     String endpoint,
     Map<String, dynamic> body, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     return (
