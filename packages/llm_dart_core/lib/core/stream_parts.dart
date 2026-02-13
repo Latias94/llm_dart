@@ -6,6 +6,7 @@ import 'llm_error.dart';
 import '../models/chat_models.dart';
 import '../models/tool_models.dart';
 import '../prompt/prompt.dart';
+import 'call_options.dart';
 
 /// Provider-agnostic stream parts (Vercel-style).
 ///
@@ -189,6 +190,29 @@ abstract class PromptChatStreamPartsCapability {
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
     List<Tool>? tools,
+    CancelToken? cancelToken,
+  });
+}
+
+/// Optional capability for parts-first streaming with per-call overrides.
+///
+/// This enables AI SDK-style request-level options (headers/body) for streaming
+/// without mutating the global provider configuration.
+abstract class ChatStreamPartsCallOptionsCapability {
+  Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  });
+}
+
+/// Optional capability for prompt IR parts-first streaming with per-call overrides.
+abstract class PromptChatStreamPartsCallOptionsCapability {
+  Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   });
 }

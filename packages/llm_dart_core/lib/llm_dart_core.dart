@@ -5,6 +5,7 @@
 library;
 
 export 'core/capability.dart';
+export 'core/call_options.dart';
 export 'core/cancellation.dart';
 export 'core/config.dart';
 export 'core/llm_error.dart';

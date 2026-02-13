@@ -6,6 +6,7 @@ import '../models/rerank_models.dart';
 import '../prompt/prompt.dart';
 import 'llm_error.dart';
 import 'cancellation.dart';
+import 'call_options.dart';
 
 /// Enumeration of LLM capabilities that providers can support
 ///
@@ -501,6 +502,29 @@ abstract class PromptChatCapability {
   });
 }
 
+/// Optional capability for chat models that support per-call headers/body overrides.
+///
+/// This enables AI SDK-style request-level options without requiring global
+/// config mutation or provider re-instantiation.
+abstract class ChatCallOptionsCapability {
+  Future<ChatResponse> chatWithToolsWithCallOptions(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  });
+}
+
+/// Optional capability for prompt IR chat models that support per-call overrides.
+abstract class PromptChatCallOptionsCapability {
+  Future<ChatResponse> chatPromptWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  });
+}
+
 /// Completion request for text completion providers
 class CompletionRequest {
   final String prompt;
@@ -551,6 +575,18 @@ abstract class EmbeddingCapability {
   /// Returns a list of embedding vectors or throws an LLMError
   Future<List<List<double>>> embed(
     List<String> input, {
+    CancelToken? cancelToken,
+  });
+}
+
+/// Optional capability for embedding models that support per-call overrides.
+///
+/// This enables AI SDK-style request-level options (headers/body) without
+/// mutating the global provider configuration.
+abstract class EmbeddingCallOptionsCapability {
+  Future<List<List<double>>> embedWithCallOptions(
+    List<String> input, {
+    required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   });
 }
