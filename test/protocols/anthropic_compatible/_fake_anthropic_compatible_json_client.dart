@@ -10,16 +10,36 @@ class FakeAnthropicCompatibleJsonClient extends AnthropicClient {
     required List<Map<String, dynamic>> responses,
   }) : _responses = List<Map<String, dynamic>>.from(responses);
 
+  Map<String, dynamic> _consumeNextResponse(
+    String endpoint,
+    Map<String, dynamic> data,
+  ) {
+    requests.add(Map<String, dynamic>.from(data));
+    if (_responses.isEmpty) {
+      throw StateError('No more fake responses configured for $endpoint');
+    }
+    return _responses.removeAt(0);
+  }
+
   @override
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> data, {
     CancelToken? cancelToken,
   }) async {
-    requests.add(Map<String, dynamic>.from(data));
-    if (_responses.isEmpty) {
-      throw StateError('No more fake responses configured for $endpoint');
-    }
-    return _responses.removeAt(0);
+    return _consumeNextResponse(endpoint, data);
+  }
+
+  @override
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postJsonWithHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    CancelToken? cancelToken,
+  }) async {
+    return (
+      json: _consumeNextResponse(endpoint, data),
+      headers: const <String, String>{},
+    );
   }
 }

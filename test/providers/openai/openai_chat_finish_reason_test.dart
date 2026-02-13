@@ -15,6 +15,16 @@ class _FakeClient extends OpenAIClient {
   }) async {
     return response;
   }
+
+  @override
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postJsonWithHeaders(
+    String endpoint,
+    Map<String, dynamic> body, {
+    CancelToken? cancelToken,
+  }) async {
+    return (json: response, headers: const <String, String>{});
+  }
 }
 
 void main() {
