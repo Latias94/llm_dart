@@ -56,6 +56,19 @@ class FakeOpenAIClient extends OpenAIClient {
   }
 
   @override
+  Future<Map<String, dynamic>> postFormWithHeaders(
+    String endpoint,
+    FormData formData, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
+    lastEndpoint = endpoint;
+    lastFormData = formData;
+    lastRequestHeaders = headers;
+    return formResponse;
+  }
+
+  @override
   Future<List<int>> postRaw(
     String endpoint,
     Map<String, dynamic> body, {
@@ -63,6 +76,19 @@ class FakeOpenAIClient extends OpenAIClient {
   }) async {
     lastEndpoint = endpoint;
     lastJsonBody = body;
+    return rawResponse;
+  }
+
+  @override
+  Future<List<int>> postRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> body, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
+    lastEndpoint = endpoint;
+    lastJsonBody = body;
+    lastRequestHeaders = headers;
     return rawResponse;
   }
 
