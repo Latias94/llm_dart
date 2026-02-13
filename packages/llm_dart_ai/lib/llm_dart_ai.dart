@@ -21,3 +21,5 @@ export 'src/ui_message_stream.dart';
 export 'src/ui_message_chunk_builders.dart';
 export 'src/ui_message_stream_writer.dart';
 export 'src/create_ui_message_stream.dart';
+export 'src/text_stream_headers.dart';
+export 'src/text_stream.dart';
