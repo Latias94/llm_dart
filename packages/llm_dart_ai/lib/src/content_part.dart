@@ -137,6 +137,30 @@ final class ProviderToolCallContentPart extends ContentPart {
   String get type => 'tool-call';
 }
 
+/// Provider-executed tool progress/status update (server-side).
+///
+/// This is a Dart-only extension that mirrors [LLMProviderToolDeltaPart].
+final class ProviderToolDeltaContentPart extends ContentPart {
+  final String toolCallId;
+  final String toolName;
+  final String status;
+  final Object? data;
+
+  @override
+  final Map<String, dynamic>? providerMetadata;
+
+  const ProviderToolDeltaContentPart({
+    required this.toolCallId,
+    required this.toolName,
+    required this.status,
+    this.data,
+    this.providerMetadata,
+  });
+
+  @override
+  String get type => 'provider-tool-delta';
+}
+
 final class ToolResultContentPart extends ContentPart {
   final ToolResult toolResult;
 

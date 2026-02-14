@@ -288,6 +288,31 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           };
         }
 
+      case LLMProviderToolDeltaPart(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          status: final status,
+          data: final data,
+          providerMetadata: final pm,
+        ):
+        yield <String, Object?>{
+          'type': 'data-provider-tool-delta',
+          'id': toolCallId,
+          'data': <String, Object?>{
+            'toolCallId': toolCallId,
+            'toolName': toolName,
+            'status': status,
+            if (data != null) 'data': data,
+            if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
+          },
+        };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
+
       case LLMProviderToolApprovalRequestPart(
           approvalId: final approvalId,
           toolCallId: final toolCallId,

@@ -523,6 +523,70 @@ void main() {
       expect(toolResult.toolName, equals('web_search'));
     });
 
+    test('content includes provider tool delta (status update)', () async {
+      const usage =
+          UsageInfo(promptTokens: 1, completionTokens: 2, totalTokens: 3);
+      const finishReason = LLMFinishReason(
+        unified: LLMUnifiedFinishReason.stop,
+        raw: 'stop',
+      );
+
+      const response = _FakeChatResponseWithFinishReason(
+        text: 'done',
+        usage: usage,
+        finishReason: finishReason,
+      );
+
+      final model = _FakeChatModel([
+        const LLMProviderToolCallPart(
+          toolCallId: 'pt1',
+          toolName: 'web_search',
+          input: {'query': 'dart'},
+          providerExecuted: true,
+        ),
+        const LLMProviderToolDeltaPart(
+          toolCallId: 'pt1',
+          toolName: 'web_search',
+          status: 'in_progress',
+          data: {'phase': 'searching'},
+        ),
+        const LLMProviderToolResultPart(
+          toolCallId: 'pt1',
+          toolName: 'web_search',
+          result: {
+            'results': [
+              {'title': 'Dart', 'url': 'https://dart.dev'}
+            ],
+          },
+          isError: false,
+        ),
+        const LLMFinishPart(
+          response,
+          usage: usage,
+          finishReason: finishReason,
+        ),
+      ]);
+
+      final result = streamText(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+      );
+
+      final content = await result.content;
+      expect(content.map((p) => p.type).toList(), [
+        'text',
+        'tool-call',
+        'provider-tool-delta',
+        'tool-result',
+      ]);
+      expect(content[2], isA<ProviderToolDeltaContentPart>());
+      final delta = content[2] as ProviderToolDeltaContentPart;
+      expect(delta.toolCallId, equals('pt1'));
+      expect(delta.toolName, equals('web_search'));
+      expect(delta.status, equals('in_progress'));
+      expect(delta.data, isA<Map<String, Object?>>());
+    });
+
     test('content includes provider tool approval request when blocked',
         () async {
       final parts = <LLMStreamPart>[

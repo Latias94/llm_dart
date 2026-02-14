@@ -427,7 +427,8 @@ class StreamTextResult {
               if (stepFinishCallback != null) {
                 final step = collectedSteps.last;
                 unawaited(
-                  Future.sync(() => stepFinishCallback(step)).catchError((_) {}),
+                  Future.sync(() => stepFinishCallback(step))
+                      .catchError((_) {}),
                 );
               }
 
@@ -909,6 +910,25 @@ class _StepContentCollector {
         }
         return;
 
+      case LLMProviderToolDeltaPart(
+          :final toolCallId,
+          :final toolName,
+          :final status,
+          :final data,
+          :final providerMetadata,
+        ):
+        _providerToolCallIds.add(toolCallId);
+        _parts.add(
+          ProviderToolDeltaContentPart(
+            toolCallId: toolCallId,
+            toolName: toolName,
+            status: status,
+            data: data,
+            providerMetadata: providerMetadata,
+          ),
+        );
+        return;
+
       case LLMProviderToolApprovalRequestPart(
           :final approvalId,
           :final toolCallId,
@@ -996,9 +1016,8 @@ class _StepContentCollector {
 
     if (!_hasReasoningPart(out)) {
       final reasoning = _joinBlocks(_reasoningOrder, _reasoningBlocks);
-      final effectiveReasoning = reasoning.trim().isNotEmpty
-          ? reasoning
-          : (fallbackReasoning ?? '');
+      final effectiveReasoning =
+          reasoning.trim().isNotEmpty ? reasoning : (fallbackReasoning ?? '');
       if (effectiveReasoning.trim().isNotEmpty) {
         out.insert(0, ReasoningContentPart(effectiveReasoning));
       }
@@ -1006,12 +1025,10 @@ class _StepContentCollector {
 
     if (!_hasTextPart(out)) {
       final text = _joinBlocks(_textOrder, _textBlocks);
-      final effectiveText =
-          text.isNotEmpty ? text : (fallbackText ?? '');
+      final effectiveText = text.isNotEmpty ? text : (fallbackText ?? '');
       if (effectiveText.isNotEmpty) {
-        final insertAt = out.isNotEmpty && out.first is ReasoningContentPart
-            ? 1
-            : 0;
+        final insertAt =
+            out.isNotEmpty && out.first is ReasoningContentPart ? 1 : 0;
         out.insert(insertAt, TextContentPart(effectiveText));
       }
     }

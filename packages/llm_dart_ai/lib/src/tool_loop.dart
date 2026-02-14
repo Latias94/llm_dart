@@ -2339,6 +2339,8 @@ Stream<LLMStreamPart> streamToolLoopParts({
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
   bool continueOnToolError = true,
   bool emitStepParts = false,
   IncludeOptions include = const IncludeOptions(),
@@ -2365,6 +2367,9 @@ Stream<LLMStreamPart> streamToolLoopParts({
         toolApprovalChecks: toolApprovalChecks,
         needsApproval: needsApproval,
         maxSteps: maxSteps,
+        waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+        maxAdditionalProviderToolResultSteps:
+            maxAdditionalProviderToolResultSteps,
         continueOnToolError: continueOnToolError,
         emitStepParts: emitStepParts,
         include: include,
@@ -2406,7 +2411,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
     }
 
     final workingMessages = List<ChatMessage>.from(standardizedMessages);
-    final pendingProviderToolCallIds = <String>{};
+    final pendingProviderToolCallFirstStep = <String, int>{};
 
     for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
       if (emitStepParts) {
@@ -2486,14 +2491,19 @@ Stream<LLMStreamPart> streamToolLoopParts({
               :final toolCallId,
               :final providerExecuted,
             ):
-            if (toolCallId.trim().isNotEmpty && providerExecuted != false) {
-              pendingProviderToolCallIds.add(toolCallId);
+            if (waitForDeferredProviderToolResults &&
+                toolCallId.trim().isNotEmpty &&
+                providerExecuted != false) {
+              pendingProviderToolCallFirstStep.putIfAbsent(
+                toolCallId,
+                () => stepIndex,
+              );
             }
             yield part;
 
           case LLMProviderToolResultPart(:final toolCallId, :final preliminary):
             if (toolCallId.trim().isNotEmpty && preliminary != true) {
-              pendingProviderToolCallIds.remove(toolCallId);
+              pendingProviderToolCallFirstStep.remove(toolCallId);
             }
             yield part;
 
@@ -2570,10 +2580,19 @@ Stream<LLMStreamPart> streamToolLoopParts({
           );
         }
 
-        if (pendingProviderToolCallIds.isNotEmpty) {
-          // Provider-native tools may defer their results to a subsequent step.
-          // Continue until all pending provider tool calls have a non-preliminary result.
-          continue;
+        if (waitForDeferredProviderToolResults &&
+            pendingProviderToolCallFirstStep.isNotEmpty &&
+            maxAdditionalProviderToolResultSteps > 0) {
+          pendingProviderToolCallFirstStep.removeWhere(
+            (_, firstStep) =>
+                (stepIndex - firstStep) >= maxAdditionalProviderToolResultSteps,
+          );
+          if (pendingProviderToolCallFirstStep.isNotEmpty) {
+            // Provider-native tools may defer their results to a subsequent step.
+            // Continue until all pending provider tool calls have a non-preliminary
+            // result, or the wait budget is exhausted.
+            continue;
+          }
         }
 
         yield LLMFinishPart(
@@ -2739,6 +2758,8 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
   bool continueOnToolError = true,
   bool emitStepParts = false,
   IncludeOptions include = const IncludeOptions(),
@@ -2765,6 +2786,9 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
+      waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+      maxAdditionalProviderToolResultSteps:
+          maxAdditionalProviderToolResultSteps,
       continueOnToolError: continueOnToolError,
       emitStepParts: emitStepParts,
       include: include,
@@ -2785,7 +2809,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   final workingMessages = List<ChatMessage>.from(
     _promptToLegacyChatMessagesBestEffort(prompt),
   );
-  final pendingProviderToolCallIds = <String>{};
+  final pendingProviderToolCallFirstStep = <String, int>{};
 
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
     if (emitStepParts) {
@@ -2865,14 +2889,19 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
             :final toolCallId,
             :final providerExecuted,
           ):
-          if (toolCallId.trim().isNotEmpty && providerExecuted != false) {
-            pendingProviderToolCallIds.add(toolCallId);
+          if (waitForDeferredProviderToolResults &&
+              toolCallId.trim().isNotEmpty &&
+              providerExecuted != false) {
+            pendingProviderToolCallFirstStep.putIfAbsent(
+              toolCallId,
+              () => stepIndex,
+            );
           }
           yield part;
 
         case LLMProviderToolResultPart(:final toolCallId, :final preliminary):
           if (toolCallId.trim().isNotEmpty && preliminary != true) {
-            pendingProviderToolCallIds.remove(toolCallId);
+            pendingProviderToolCallFirstStep.remove(toolCallId);
           }
           yield part;
 
@@ -2955,10 +2984,19 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
         );
       }
 
-      if (pendingProviderToolCallIds.isNotEmpty) {
-        // Provider-native tools may defer their results to a subsequent step.
-        // Continue until all pending provider tool calls have a non-preliminary result.
-        continue;
+      if (waitForDeferredProviderToolResults &&
+          pendingProviderToolCallFirstStep.isNotEmpty &&
+          maxAdditionalProviderToolResultSteps > 0) {
+        pendingProviderToolCallFirstStep.removeWhere(
+          (_, firstStep) =>
+              (stepIndex - firstStep) >= maxAdditionalProviderToolResultSteps,
+        );
+        if (pendingProviderToolCallFirstStep.isNotEmpty) {
+          // Provider-native tools may defer their results to a subsequent step.
+          // Continue until all pending provider tool calls have a non-preliminary
+          // result, or the wait budget is exhausted.
+          continue;
+        }
       }
 
       yield LLMFinishPart(
