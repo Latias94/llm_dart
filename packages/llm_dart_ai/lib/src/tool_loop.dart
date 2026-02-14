@@ -2406,6 +2406,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
     }
 
     final workingMessages = List<ChatMessage>.from(standardizedMessages);
+    final pendingProviderToolCallIds = <String>{};
 
     for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
       if (emitStepParts) {
@@ -2481,6 +2482,21 @@ Stream<LLMStreamPart> streamToolLoopParts({
             startedToolCalls.add(toolCall.id);
             yield part;
 
+          case LLMProviderToolCallPart(
+              :final toolCallId,
+              :final providerExecuted,
+            ):
+            if (toolCallId.trim().isNotEmpty && providerExecuted != false) {
+              pendingProviderToolCallIds.add(toolCallId);
+            }
+            yield part;
+
+          case LLMProviderToolResultPart(:final toolCallId, :final preliminary):
+            if (toolCallId.trim().isNotEmpty && preliminary != true) {
+              pendingProviderToolCallIds.remove(toolCallId);
+            }
+            yield part;
+
           case LLMProviderMetadataPart():
             didEmitProviderMetadataPart = true;
             yield part;
@@ -2552,6 +2568,12 @@ Stream<LLMStreamPart> streamToolLoopParts({
             toolCalls: const [],
             toolResults: const [],
           );
+        }
+
+        if (pendingProviderToolCallIds.isNotEmpty) {
+          // Provider-native tools may defer their results to a subsequent step.
+          // Continue until all pending provider tool calls have a non-preliminary result.
+          continue;
         }
 
         yield LLMFinishPart(
@@ -2763,6 +2785,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   final workingMessages = List<ChatMessage>.from(
     _promptToLegacyChatMessagesBestEffort(prompt),
   );
+  final pendingProviderToolCallIds = <String>{};
 
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
     if (emitStepParts) {
@@ -2836,6 +2859,21 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
             accum.arguments.write(toolCall.function.arguments);
           }
           startedToolCalls.add(toolCall.id);
+          yield part;
+
+        case LLMProviderToolCallPart(
+            :final toolCallId,
+            :final providerExecuted,
+          ):
+          if (toolCallId.trim().isNotEmpty && providerExecuted != false) {
+            pendingProviderToolCallIds.add(toolCallId);
+          }
+          yield part;
+
+        case LLMProviderToolResultPart(:final toolCallId, :final preliminary):
+          if (toolCallId.trim().isNotEmpty && preliminary != true) {
+            pendingProviderToolCallIds.remove(toolCallId);
+          }
           yield part;
 
         case LLMProviderMetadataPart():
@@ -2915,6 +2953,12 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
           toolCalls: const [],
           toolResults: const [],
         );
+      }
+
+      if (pendingProviderToolCallIds.isNotEmpty) {
+        // Provider-native tools may defer their results to a subsequent step.
+        // Continue until all pending provider tool calls have a non-preliminary result.
+        continue;
       }
 
       yield LLMFinishPart(

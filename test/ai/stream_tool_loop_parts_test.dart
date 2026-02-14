@@ -232,6 +232,57 @@ void main() {
       expect(parts.whereType<LLMFinishPart>(), hasLength(1));
     });
 
+    test('continues when provider tool result is deferred to next step',
+        () async {
+      final model = _SequencedStreamChatModel([
+        [
+          const LLMProviderToolCallPart(
+            toolCallId: 'prov_1',
+            toolName: 'web_search',
+            input: {'q': 'dart'},
+            providerExecuted: true,
+          ),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_1'}
+              },
+            ),
+          ),
+        ],
+        [
+          const LLMProviderToolResultPart(
+            toolCallId: 'prov_1',
+            toolName: 'web_search',
+            result: {'ok': true},
+          ),
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Done'),
+          const LLMTextEndPart('Done'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_2'}
+              },
+            ),
+          ),
+        ],
+      ]);
+
+      final parts = await streamToolLoopParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        toolHandlers: const {},
+        maxSteps: 3,
+      ).toList();
+
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
+      expect(parts.whereType<LLMProviderToolCallPart>(), hasLength(1));
+      expect(parts.whereType<LLMProviderToolResultPart>(), hasLength(1));
+      expect(parts.whereType<LLMFinishPart>().single.response.text,
+          equals('Done'));
+    });
+
     test('ToolSet tool input hooks are invoked (start/delta/available)',
         () async {
       final model = _SequencedStreamChatModel([
