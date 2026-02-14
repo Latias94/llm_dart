@@ -558,8 +558,11 @@ class ToolResult {
   /// The ID of the tool call this result corresponds to
   final String toolCallId;
 
-  /// The result content (can be text, JSON, or error message)
-  final String content;
+  /// The tool output payload (JSON-like).
+  ///
+  /// This is aligned with AI SDK v3 `tool-result.result`, i.e. a JSON value.
+  /// For simple tools, this can be a string/number/bool/map/list/null.
+  final Object? result;
 
   /// Whether this result represents an error
   final bool isError;
@@ -569,7 +572,7 @@ class ToolResult {
 
   const ToolResult({
     required this.toolCallId,
-    required this.content,
+    required this.result,
     this.isError = false,
     this.metadata,
   });
@@ -577,12 +580,12 @@ class ToolResult {
   /// Create a successful tool result
   factory ToolResult.success({
     required String toolCallId,
-    required String content,
+    required Object? result,
     Map<String, dynamic>? metadata,
   }) =>
       ToolResult(
         toolCallId: toolCallId,
-        content: content,
+        result: result,
         isError: false,
         metadata: metadata,
       );
@@ -590,29 +593,44 @@ class ToolResult {
   /// Create an error tool result
   factory ToolResult.error({
     required String toolCallId,
-    required String errorMessage,
+    required Object? error,
     Map<String, dynamic>? metadata,
   }) =>
       ToolResult(
         toolCallId: toolCallId,
-        content: errorMessage,
+        result: error,
         isError: true,
         metadata: metadata,
       );
 
   Map<String, dynamic> toJson() => {
         'tool_call_id': toolCallId,
-        'content': content,
+        'result': result,
         'is_error': isError,
         if (metadata != null) 'metadata': metadata,
       };
 
-  factory ToolResult.fromJson(Map<String, dynamic> json) => ToolResult(
-        toolCallId: json['tool_call_id'] as String,
-        content: json['content'] as String,
-        isError: json['is_error'] as bool? ?? false,
-        metadata: json['metadata'] as Map<String, dynamic>?,
+  factory ToolResult.fromJson(Map<String, dynamic> json) {
+    final toolCallId =
+        (json['tool_call_id'] as String?) ?? (json['toolCallId'] as String?);
+    if (toolCallId == null || toolCallId.trim().isEmpty) {
+      throw ArgumentError.value(
+        json,
+        'json',
+        'ToolResult requires tool_call_id/toolCallId',
       );
+    }
+
+    // Backward compatibility: older encodings used `content` as a string.
+    final result = json.containsKey('result') ? json['result'] : json['content'];
+
+    return ToolResult(
+      toolCallId: toolCallId,
+      result: result,
+      isError: (json['is_error'] as bool?) ?? (json['isError'] as bool?) ?? false,
+      metadata: json['metadata'] as Map<String, dynamic>?,
+    );
+  }
 }
 
 /// Parallel tool execution configuration

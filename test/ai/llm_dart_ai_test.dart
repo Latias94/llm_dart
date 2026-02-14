@@ -338,17 +338,43 @@ void main() {
       expect(parts[3], isA<LLMReasoningStartPart>());
       expect(parts[4], isA<LLMReasoningDeltaPart>());
       expect((parts[4] as LLMReasoningDeltaPart).delta, 'b');
-      expect(parts[5], isA<LLMToolCallStartPart>());
-      expect(
-        (parts[5] as LLMToolCallStartPart).toolCall.function.name,
-        't',
+
+      final toolInputStarts = parts.whereType<LLMToolInputStartPart>().toList();
+      expect(toolInputStarts, hasLength(1));
+      final toolInputStart = toolInputStarts.single;
+      expect(toolInputStart.id, 'call_1');
+      expect(toolInputStart.toolName, 't');
+
+      final toolInputDeltaText = parts
+          .whereType<LLMToolInputDeltaPart>()
+          .where((p) => p.id == 'call_1')
+          .map((p) => p.delta)
+          .join();
+      expect(toolInputDeltaText, '{}');
+
+      final toolCallStarts = parts.whereType<LLMToolCallStartPart>().toList();
+      expect(toolCallStarts, hasLength(1));
+      final toolCallStart = toolCallStarts.single;
+      expect(toolCallStart.toolCall.function.name, 't');
+
+      final inputStartIndex =
+          parts.indexWhere((p) => p is LLMToolInputStartPart);
+      final toolCallStartIndex =
+          parts.indexWhere((p) => p is LLMToolCallStartPart);
+      expect(inputStartIndex, lessThan(toolCallStartIndex));
+
+      final inputEndIndex = parts.indexWhere(
+        (p) =>
+            p is LLMToolInputEndPart && (p as LLMToolInputEndPart).id == 'call_1',
       );
-      expect(parts[6], isA<LLMReasoningEndPart>());
-      expect((parts[6] as LLMReasoningEndPart).thinking, 'b');
-      expect(parts[7], isA<LLMTextEndPart>());
-      expect((parts[7] as LLMTextEndPart).text, 'a');
-      expect(parts[8], isA<LLMFinishPart>());
-      expect((parts[8] as LLMFinishPart).response.text, 'done');
+      final finishIndex = parts.indexWhere((p) => p is LLMFinishPart);
+      expect(inputEndIndex, greaterThanOrEqualTo(0));
+      expect(inputEndIndex, lessThan(finishIndex));
+
+      expect(parts.whereType<LLMReasoningEndPart>(), hasLength(1));
+      expect(parts.whereType<LLMTextEndPart>(), hasLength(1));
+      expect(parts.last, isA<LLMFinishPart>());
+      expect((parts.last as LLMFinishPart).response.text, 'done');
     });
 
     test(
@@ -388,7 +414,7 @@ void main() {
         [0.1, 0.2],
       ]);
 
-      final vectors = await embed(model: model, input: const ['x']);
+      final vectors = await embedMany(model: model, values: const ['x']);
 
       expect(vectors, hasLength(1));
       expect(vectors.single, [0.1, 0.2]);
@@ -650,6 +676,11 @@ void main() {
       final blocked = outcome as ToolLoopBlocked;
       expect(blocked.state.toolCallsNeedingApproval, hasLength(1));
       expect(blocked.state.toolCallsNeedingApproval.single.id, 'call_1');
+      expect(blocked.state.stepResult.content.map((p) => p.type).toList(), [
+        'tool-call',
+        'tool-approval-request',
+      ]);
+      expect(blocked.state.stepResult.content[1], isA<ToolApprovalRequestContentPart>());
       expect(blocked.state.messages.last.messageType, isA<ToolUseMessage>());
       expect(
         blocked.state.messages.where((m) => m.messageType is ToolResultMessage),
@@ -686,7 +717,10 @@ void main() {
           predicate(
             (e) =>
                 e is ToolApprovalRequiredError &&
-                e.state.toolCallsNeedingApproval.single.id == 'call_1',
+                e.state.toolCallsNeedingApproval.single.id == 'call_1' &&
+                e.state.stepResult.content.any(
+                  (p) => p is ToolApprovalRequestContentPart,
+                ),
           ),
         ),
       );

@@ -28,7 +28,7 @@ class MockToolExecutionCapability extends ToolExecutionCapability {
     // Default behavior - return error for unknown tools
     return ToolResult.error(
       toolCallId: toolCall.id,
-      errorMessage: 'Unknown tool: $toolName',
+      error: 'Unknown tool: $toolName',
     );
   }
 
@@ -76,14 +76,14 @@ void main() {
           if (expression == '2+2') {
             return ToolResult.success(
               toolCallId: toolCall.id,
-              content: '4',
+              result: '4',
               metadata: {'calculation': expression},
             );
           }
 
           return ToolResult.error(
             toolCallId: toolCall.id,
-            errorMessage: 'Unsupported expression: $expression',
+            error: 'Unsupported expression: $expression',
           );
         });
 
@@ -99,7 +99,7 @@ void main() {
         final result = await capability.executeTool(toolCall);
 
         expect(result.toolCallId, equals('call_123'));
-        expect(result.content, equals('4'));
+        expect(result.result, equals('4'));
         expect(result.isError, isFalse);
         expect(result.metadata?['calculation'], equals('2+2'));
       });
@@ -108,7 +108,7 @@ void main() {
         capability.registerToolExecutor('failing_tool', (toolCall) async {
           return ToolResult.error(
             toolCallId: toolCall.id,
-            errorMessage: 'Tool execution failed',
+            error: 'Tool execution failed',
             metadata: {'error_type': 'execution_error'},
           );
         });
@@ -126,7 +126,7 @@ void main() {
 
         expect(result.toolCallId, equals('call_456'));
         expect(result.isError, isTrue);
-        expect(result.content, equals('Tool execution failed'));
+        expect(result.result, equals('Tool execution failed'));
         expect(result.metadata?['error_type'], equals('execution_error'));
       });
 
@@ -144,7 +144,7 @@ void main() {
 
         expect(result.toolCallId, equals('call_789'));
         expect(result.isError, isTrue);
-        expect(result.content, contains('Unknown tool'));
+        expect(result.result.toString(), contains('Unknown tool'));
       });
 
       test('should handle executor throwing exception', () async {
@@ -174,7 +174,7 @@ void main() {
           final b = args['b'] as num;
           return ToolResult.success(
             toolCallId: toolCall.id,
-            content: (a + b).toString(),
+            result: (a + b).toString(),
           );
         });
 
@@ -185,7 +185,7 @@ void main() {
           final b = args['b'] as num;
           return ToolResult.success(
             toolCallId: toolCall.id,
-            content: (a * b).toString(),
+            result: (a * b).toString(),
           );
         });
 
@@ -211,8 +211,8 @@ void main() {
         final results = await capability.executeToolsParallel(toolCalls);
 
         expect(results, hasLength(2));
-        expect(results[0].content, equals('8'));
-        expect(results[1].content, equals('28'));
+        expect(results[0].result, equals('8'));
+        expect(results[1].result, equals('28'));
         expect(results.every((r) => !r.isError), isTrue);
       });
 
@@ -220,14 +220,14 @@ void main() {
         capability.registerToolExecutor('success_tool', (toolCall) async {
           return ToolResult.success(
             toolCallId: toolCall.id,
-            content: 'Success!',
+            result: 'Success!',
           );
         });
 
         capability.registerToolExecutor('failure_tool', (toolCall) async {
           return ToolResult.error(
             toolCallId: toolCall.id,
-            errorMessage: 'Failed!',
+            error: 'Failed!',
           );
         });
 
@@ -254,16 +254,16 @@ void main() {
 
         expect(results, hasLength(2));
         expect(results[0].isError, isFalse);
-        expect(results[0].content, equals('Success!'));
+        expect(results[0].result, equals('Success!'));
         expect(results[1].isError, isTrue);
-        expect(results[1].content, equals('Failed!'));
+        expect(results[1].result, equals('Failed!'));
       });
 
       test('should handle execution with continue on error', () async {
         capability.registerToolExecutor('normal_tool', (toolCall) async {
           return ToolResult.success(
             toolCallId: toolCall.id,
-            content: 'Normal execution',
+            result: 'Normal execution',
           );
         });
 
@@ -305,7 +305,7 @@ void main() {
         expect(results, hasLength(3));
         expect(results[0].isError, isFalse);
         expect(results[1].isError, isTrue);
-        expect(results[1].content, contains('Tool execution failed'));
+        expect(results[1].result.toString(), contains('Tool execution failed'));
         expect(results[2].isError, isFalse);
       });
 
@@ -314,7 +314,7 @@ void main() {
         capability.registerToolExecutor('normal_tool', (toolCall) async {
           return ToolResult.success(
             toolCallId: toolCall.id,
-            content: 'Normal execution',
+            result: 'Normal execution',
           );
         });
 
@@ -367,7 +367,7 @@ void main() {
           executorCalled = true;
           return ToolResult.success(
             toolCallId: toolCall.id,
-            content: 'Executor called',
+            result: 'Executor called',
           );
         });
 
@@ -383,7 +383,7 @@ void main() {
         final result = await capability.executeTool(toolCall);
 
         expect(executorCalled, isTrue);
-        expect(result.content, equals('Executor called'));
+        expect(result.result, equals('Executor called'));
       });
 
       test('should override existing executor', () async {
@@ -391,7 +391,7 @@ void main() {
         capability.registerToolExecutor('override_tool', (toolCall) async {
           return ToolResult.success(
             toolCallId: toolCall.id,
-            content: 'First executor',
+            result: 'First executor',
           );
         });
 
@@ -399,7 +399,7 @@ void main() {
         capability.registerToolExecutor('override_tool', (toolCall) async {
           return ToolResult.success(
             toolCallId: toolCall.id,
-            content: 'Second executor',
+            result: 'Second executor',
           );
         });
 
@@ -414,7 +414,7 @@ void main() {
 
         final result = await capability.executeTool(toolCall);
 
-        expect(result.content, equals('Second executor'));
+        expect(result.result, equals('Second executor'));
       });
     });
   });

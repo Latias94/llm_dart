@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'prompt_message_converters.dart';
@@ -70,40 +68,36 @@ PromptMessage buildToolResultPromptMessageBestEffort({
   }
 
   ToolResultOutput toOutput(ToolResult result) {
-    final raw = result.content;
+    final raw = result.result;
 
-    try {
-      final parsed = jsonDecode(raw);
-      if (parsed is Map) {
-        final map = parsed.cast<String, dynamic>();
+    if (raw is Map) {
+      final map = raw.cast<String, dynamic>();
 
-        // Best-effort: support the v3 tool-result output envelope, e.g.
-        // `{ "type": "execution-denied", ... }`.
-        if (map['type'] is String) {
-          try {
-            return ToolResultOutput.fromJson(map);
-          } catch (_) {
-            // fall through
-          }
+      // Best-effort: support the v3 tool-result output envelope, e.g.
+      // `{ "type": "execution-denied", ... }`.
+      if (map['type'] is String) {
+        try {
+          return ToolResultOutput.fromJson(map);
+        } catch (_) {
+          // fall through
         }
-
-        return result.isError
-            ? ToolResultErrorJsonOutput(map)
-            : ToolResultJsonOutput(map);
       }
 
-      if (parsed is List || parsed is num || parsed is bool) {
-        return result.isError
-            ? ToolResultErrorJsonOutput(parsed)
-            : ToolResultJsonOutput(parsed);
-      }
-    } catch (_) {
-      // fall through
+      return result.isError
+          ? ToolResultErrorJsonOutput(map)
+          : ToolResultJsonOutput(map);
     }
 
+    if (raw is List || raw is num || raw is bool) {
+      return result.isError
+          ? ToolResultErrorJsonOutput(raw)
+          : ToolResultJsonOutput(raw);
+    }
+
+    final text = raw?.toString() ?? 'null';
     return result.isError
-        ? ToolResultErrorTextOutput(raw)
-        : ToolResultTextOutput(raw);
+        ? ToolResultErrorTextOutput(text)
+        : ToolResultTextOutput(text);
   }
 
   final parts = toolResults

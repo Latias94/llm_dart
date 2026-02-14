@@ -353,12 +353,12 @@ void main() {
       test('should create successful result', () {
         final result = ToolResult.success(
           toolCallId: 'call_123',
-          content: 'Operation completed successfully',
+          result: 'Operation completed successfully',
           metadata: {'duration': 150},
         );
 
         expect(result.toolCallId, equals('call_123'));
-        expect(result.content, equals('Operation completed successfully'));
+        expect(result.result, equals('Operation completed successfully'));
         expect(result.isError, isFalse);
         expect(result.metadata?['duration'], equals(150));
       });
@@ -366,12 +366,12 @@ void main() {
       test('should create error result', () {
         final result = ToolResult.error(
           toolCallId: 'call_456',
-          errorMessage: 'Tool execution failed',
+          error: 'Tool execution failed',
           metadata: {'error_code': 500},
         );
 
         expect(result.toolCallId, equals('call_456'));
-        expect(result.content, equals('Tool execution failed'));
+        expect(result.result, equals('Tool execution failed'));
         expect(result.isError, isTrue);
         expect(result.metadata?['error_code'], equals(500));
       });
@@ -379,14 +379,14 @@ void main() {
       test('should serialize to JSON correctly', () {
         final result = ToolResult(
           toolCallId: 'call_789',
-          content: 'Test result',
+          result: 'Test result',
           isError: false,
           metadata: {'key': 'value'},
         );
 
         final json = result.toJson();
         expect(json['tool_call_id'], equals('call_789'));
-        expect(json['content'], equals('Test result'));
+        expect(json['result'], equals('Test result'));
         expect(json['is_error'], isFalse);
         expect(json['metadata']['key'], equals('value'));
       });
@@ -394,14 +394,14 @@ void main() {
       test('should deserialize from JSON correctly', () {
         final json = {
           'tool_call_id': 'call_999',
-          'content': 'Deserialized result',
+          'result': 'Deserialized result',
           'is_error': true,
           'metadata': {'source': 'test'},
         };
 
         final result = ToolResult.fromJson(json);
         expect(result.toolCallId, equals('call_999'));
-        expect(result.content, equals('Deserialized result'));
+        expect(result.result, equals('Deserialized result'));
         expect(result.isError, isTrue);
         expect(result.metadata?['source'], equals('test'));
       });
@@ -409,14 +409,26 @@ void main() {
       test('should handle missing optional fields in JSON', () {
         final json = {
           'tool_call_id': 'call_minimal',
-          'content': 'Minimal result',
+          'result': 'Minimal result',
         };
 
         final result = ToolResult.fromJson(json);
         expect(result.toolCallId, equals('call_minimal'));
-        expect(result.content, equals('Minimal result'));
+        expect(result.result, equals('Minimal result'));
         expect(result.isError, isFalse); // Default value
         expect(result.metadata, isNull);
+      });
+
+      test('should deserialize legacy content payloads', () {
+        final json = {
+          'tool_call_id': 'call_legacy',
+          'content': '{"ok":true}',
+        };
+
+        final result = ToolResult.fromJson(json);
+        expect(result.toolCallId, equals('call_legacy'));
+        expect(result.result, equals('{"ok":true}'));
+        expect(result.isError, isFalse);
       });
     });
   });

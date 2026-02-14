@@ -31,9 +31,9 @@ void main() {
     test('uses defaultCallOptions when per-call callOptions is empty', () async {
       final model = _CapturingCallOptionsEmbeddingModel();
 
-      final vectors = await embed(
+      final vectors = await embedMany(
         model: model,
-        input: const ['hi'],
+        values: const ['hi'],
         defaultCallOptions: const LLMCallOptions(headers: {'X-Test': 'a'}),
       );
 
@@ -43,4 +43,3 @@ void main() {
     });
   });
 }
-

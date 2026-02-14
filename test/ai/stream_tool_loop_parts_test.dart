@@ -1,7 +1,5 @@
 library;
 
-import 'dart:convert';
-
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
@@ -128,40 +126,146 @@ void main() {
       expect(parts[2], isA<LLMTextDeltaPart>());
       expect((parts[2] as LLMTextDeltaPart).delta, equals('Need '));
 
-      expect(parts[3], isA<LLMToolCallStartPart>());
-      expect((parts[3] as LLMToolCallStartPart).toolCall.id, equals('call_1'));
-      expect(parts[4], isA<LLMToolCallDeltaPart>());
+      final toolInputStart =
+          parts.whereType<LLMToolInputStartPart>().singleWhere(
+                (p) => p.id == 'call_1',
+              );
+      expect(toolInputStart.toolName, equals('get_weather'));
 
-      expect(parts[5], isA<LLMTextEndPart>());
-      expect((parts[5] as LLMTextEndPart).text, equals('Need '));
-      expect(parts[6], isA<LLMToolCallEndPart>());
+      final toolInputDeltas = parts
+          .whereType<LLMToolInputDeltaPart>()
+          .where((p) => p.id == 'call_1')
+          .map((p) => p.delta)
+          .join();
+      expect(toolInputDeltas, equals('{"city":"SF"}'));
 
-      expect(parts[7], isA<LLMProviderMetadataPart>());
       expect(
-        (parts[7] as LLMProviderMetadataPart).providerMetadata,
+        parts.whereType<LLMToolInputEndPart>().where((p) => p.id == 'call_1'),
+        hasLength(1),
+      );
+
+      expect(
+        parts.whereType<LLMToolCallStartPart>().where(
+              (p) => p.toolCall.id == 'call_1',
+            ),
+        hasLength(1),
+      );
+      expect(parts.whereType<LLMToolCallDeltaPart>(), hasLength(1));
+      expect(
+        parts.whereType<LLMToolCallEndPart>().where(
+              (p) => p.toolCallId == 'call_1',
+            ),
+        hasLength(1),
+      );
+
+      final toolCallStartIndex =
+          parts.indexWhere((p) => p is LLMToolCallStartPart);
+      final toolInputStartIndex =
+          parts.indexWhere((p) => p is LLMToolInputStartPart);
+      final toolInputEndIndex =
+          parts.indexWhere((p) => p is LLMToolInputEndPart);
+      final toolCallEndIndex = parts.indexWhere((p) => p is LLMToolCallEndPart);
+      expect(toolInputStartIndex, lessThan(toolCallStartIndex));
+      expect(toolCallStartIndex, lessThan(toolInputEndIndex));
+      expect(toolInputEndIndex, lessThan(toolCallEndIndex));
+
+      final providerMetadataIndex =
+          parts.indexWhere((p) => p is LLMProviderMetadataPart);
+      expect(providerMetadataIndex, isNonNegative);
+      expect(parts[providerMetadataIndex], isA<LLMProviderMetadataPart>());
+      expect(
+        (parts[providerMetadataIndex] as LLMProviderMetadataPart)
+            .providerMetadata,
         containsPair('openai', {'id': 'resp_step_1'}),
       );
 
-      expect(parts[8], isA<LLMToolResultPart>());
-      final toolResult = (parts[8] as LLMToolResultPart).result;
+      final toolResultPart = parts.whereType<LLMToolResultPart>().first;
+      final toolResult = toolResultPart.result;
       expect(toolResult.toolCallId, equals('call_1'));
       expect(toolResult.isError, isFalse);
-      expect(jsonDecode(toolResult.content), equals({'temp': 70}));
+      expect(toolResult.result, equals({'temp': 70}));
 
       // Step 2 (final)
-      expect(parts[9], isA<LLMTextStartPart>());
-      expect(parts[10], isA<LLMTextDeltaPart>());
-      expect((parts[10] as LLMTextDeltaPart).delta, equals('Done'));
-      expect(parts[11], isA<LLMTextEndPart>());
-      expect((parts[11] as LLMTextEndPart).text, equals('Done'));
-      expect(parts[12], isA<LLMProviderMetadataPart>());
-      expect(
-        (parts[12] as LLMProviderMetadataPart).providerMetadata,
-        containsPair('openai', {'id': 'resp_step_2'}),
-      );
+      expect(parts.whereType<LLMTextEndPart>().last.text, equals('Done'));
+      expect(parts.whereType<LLMFinishPart>().single.response.text, equals('Done'));
+    });
 
-      expect(parts[13], isA<LLMFinishPart>());
-      expect((parts[13] as LLMFinishPart).response.text, equals('Done'));
+    test('ToolSet tool input hooks are invoked (start/delta/available)',
+        () async {
+      final model = _SequencedStreamChatModel([
+        [
+          LLMToolCallStartPart(
+            ToolCall(
+              id: 'call_1',
+              callType: 'function',
+              function: FunctionCall(name: 'get_weather', arguments: '{'),
+            ),
+          ),
+          LLMToolCallDeltaPart(
+            ToolCall(
+              id: 'call_1',
+              callType: 'function',
+              function: FunctionCall(name: '', arguments: '"city":"SF"}'),
+            ),
+          ),
+          const LLMToolCallEndPart('call_1'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_1'}
+              },
+            ),
+          ),
+        ],
+        [
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Done'),
+          const LLMTextEndPart('Done'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_2'}
+              },
+            ),
+          ),
+        ],
+      ]);
+
+      final started = <String>[];
+      final deltas = <String>[];
+      Object? available;
+
+      final toolSet = ToolSet([
+        functionTool(
+          name: 'get_weather',
+          description: 'Get weather',
+          parameters: const ParametersSchema(
+            schemaType: 'object',
+            properties: {
+              'city': ParameterProperty(
+                propertyType: 'string',
+                description: 'City name',
+              ),
+            },
+            required: ['city'],
+          ),
+          handler: (toolCall, {cancelToken}) => {'temp': 70},
+          onInputStart: (toolCallId) => started.add(toolCallId),
+          onInputDelta: (toolCallId, delta) => deltas.add(delta),
+          onInputAvailable: (toolCallId, input) => available = input,
+        ),
+      ]);
+
+      await streamToolLoopPartsWithToolSet(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        toolSet: toolSet,
+        maxSteps: 3,
+      ).toList();
+
+      expect(started, equals(['call_1']));
+      expect(deltas.join(), equals('{"city":"SF"}'));
+      expect(available, equals({'city': 'SF'}));
     });
 
     Tool getWeatherToolDefinition() {
@@ -238,7 +342,7 @@ void main() {
       final toolResult = parts.whereType<LLMToolResultPart>().single.result;
       expect(toolResult.toolCallId, equals('call_bad_json'));
       expect(toolResult.isError, isTrue);
-      expect(toolResult.content, contains('Invalid JSON'));
+      expect(toolResult.result.toString(), contains('Invalid JSON'));
 
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.text, equals('Done'));
@@ -311,7 +415,7 @@ void main() {
       expect(toolResult.toolCallId, equals('call_bad_json'));
       expect(toolResult.isError, isFalse);
       expect(
-          jsonDecode(toolResult.content), equals({'temp': 70, 'city': 'SF'}));
+          toolResult.result, equals({'temp': 70, 'city': 'SF'}));
 
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.text, equals('Done'));
@@ -446,7 +550,7 @@ void main() {
       final toolResult = parts.whereType<LLMToolResultPart>().single.result;
       expect(toolResult.toolCallId, equals('call_schema'));
       expect(toolResult.isError, isTrue);
-      expect(toolResult.content, contains('Parameter'));
+      expect(toolResult.result.toString(), contains('Parameter'));
 
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.text, equals('Done'));
@@ -522,7 +626,7 @@ void main() {
       expect(toolResult.toolCallId, equals('call_schema'));
       expect(toolResult.isError, isFalse);
       expect(
-        jsonDecode(toolResult.content),
+        toolResult.result,
         equals({'temp': 71, 'city': 'SF'}),
       );
 
@@ -585,7 +689,7 @@ void main() {
       final toolResult = parts.whereType<LLMToolResultPart>().single.result;
       expect(toolResult.toolCallId, equals('call_unknown'));
       expect(toolResult.isError, isTrue);
-      expect(toolResult.content, contains('No such tool'));
+      expect(toolResult.result.toString(), contains('No such tool'));
 
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.text, equals('Done'));

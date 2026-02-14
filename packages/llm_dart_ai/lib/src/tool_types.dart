@@ -8,6 +8,30 @@ typedef ToolCallHandler = FutureOr<Object?> Function(
   CancelToken? cancelToken,
 });
 
+/// Callback invoked when tool input streaming starts for a tool call.
+typedef ToolInputStartHandler = FutureOr<void> Function(
+  String toolCallId,
+);
+
+/// Callback invoked for each streamed tool input delta.
+typedef ToolInputDeltaHandler = FutureOr<void> Function(
+  String toolCallId,
+  String inputTextDelta,
+);
+
+/// Callback invoked when full tool input becomes available (best-effort).
+typedef ToolInputAvailableHandler = FutureOr<void> Function(
+  String toolCallId,
+  Object? input,
+);
+
+/// Callback invoked when tool input is available but invalid (best-effort).
+typedef ToolInputErrorHandler = FutureOr<void> Function(
+  String toolCallId,
+  Object? input,
+  String errorText,
+);
+
 /// A predicate for determining whether a tool call needs user approval.
 ///
 /// If it returns `true`, a tool loop can stop early and surface a

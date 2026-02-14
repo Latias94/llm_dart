@@ -2,8 +2,12 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'call_options_dispatch.dart';
 import 'prompt_input.dart';
+import 'content_part_builders.dart';
 import 'metadata_fallbacks.dart';
 import 'response_messages.dart';
+import 'tool_loop.dart';
+import 'tool_set.dart';
+import 'tool_types.dart';
 import 'types.dart';
 
 /// Generate text (Vercel-style prompt input).
@@ -20,7 +24,14 @@ Future<GenerateTextResult> generateText({
   String? prompt,
   List<ChatMessage>? messages,
   Prompt? promptIr,
+  ToolSet? toolSet,
   List<Tool>? tools,
+  ToolCallRepair? repairToolCall,
+  ToolApprovalCheck? needsApproval,
+  int maxSteps = 10,
+  bool continueOnToolError = true,
+  GenerateTextOnStepFinishCallback? onStepFinish,
+  GenerateTextOnFinishCallback? onFinish,
   IncludeOptions include = const IncludeOptions(),
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
@@ -39,6 +50,84 @@ Future<GenerateTextResult> generateText({
 
   final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
 
+  UsageInfo? sumUsage(Iterable<UsageInfo?> usages) {
+    UsageInfo? acc;
+    for (final u in usages) {
+      if (u == null) continue;
+      acc = acc == null ? u : (acc + u);
+    }
+    return acc;
+  }
+
+  Future<void> runCallbacksBestEffort(
+    List<ToolLoopStep> steps,
+    GenerateTextResult result,
+  ) async {
+    final stepCallback = onStepFinish;
+    if (stepCallback != null) {
+      for (final step in steps) {
+        try {
+          await Future.sync(() => stepCallback(step));
+        } catch (_) {}
+      }
+    }
+
+    final finishCallback = onFinish;
+    if (finishCallback != null) {
+      final event = GenerateTextFinishEvent(
+        result: result,
+        steps: steps,
+        totalUsage: result.totalUsage,
+      );
+      try {
+        await Future.sync(() => finishCallback(event));
+      } catch (_) {}
+    }
+  }
+
+  if (toolSet != null) {
+    final loop = await runToolLoopWithToolSet(
+      model: model,
+      system: system,
+      prompt: prompt,
+      messages: messages,
+      promptIr: promptIr,
+      toolSet: toolSet,
+      repairToolCall: repairToolCall,
+      needsApproval: needsApproval,
+      maxSteps: maxSteps,
+      continueOnToolError: continueOnToolError,
+      include: include,
+      defaultCallOptions: defaultCallOptions,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+
+    final steps = loop.steps;
+    final finalResult = loop.finalResult;
+    final totalUsage = sumUsage(steps.map((s) => s.result.usage));
+
+    final wrapped = GenerateTextResult(
+      rawResponse: finalResult.rawResponse,
+      content: finalResult.content,
+      text: finalResult.text,
+      thinking: finalResult.thinking,
+      toolCalls: finalResult.toolCalls,
+      toolResults: steps.isNotEmpty ? steps.last.toolResults : const [],
+      usage: finalResult.usage,
+      totalUsage: totalUsage ?? finalResult.usage,
+      finishReason: finalResult.finishReason,
+      requestMetadata: finalResult.requestMetadata,
+      responseMetadata: finalResult.responseMetadata,
+      responseMessages: finalResult.responseMessages,
+      responsePromptMessages: finalResult.responsePromptMessages,
+      steps: steps,
+    );
+
+    await runCallbacksBestEffort(steps, wrapped);
+    return wrapped;
+  }
+
   final response = await chatWithToolsBestEffort(
     model: model,
     input: input,
@@ -47,12 +136,20 @@ Future<GenerateTextResult> generateText({
     cancelToken: cancelToken,
   );
 
-  return GenerateTextResult(
+  final toolCalls = response.toolCalls ?? const <ToolCall>[];
+  final result = GenerateTextResult(
     rawResponse: response,
+    content: buildContentPartsBestEffort(
+      text: response.text,
+      thinking: response.thinking,
+      toolCalls: toolCalls,
+      toolResults: const <ToolResult>[],
+    ),
     text: response.text,
     thinking: response.thinking,
     toolCalls: response.toolCalls,
     usage: response.usage,
+    totalUsage: response.usage,
     finishReason:
         response is ChatResponseWithFinishReason ? response.finishReason : null,
     requestMetadata: requestMetadataWithInclude(
@@ -73,5 +170,67 @@ Future<GenerateTextResult> generateText({
     ),
     responseMessages: buildResponseMessagesBestEffort(response),
     responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
+    steps: [
+      ToolLoopStep(
+        index: 0,
+        result: GenerateTextResult(
+          rawResponse: response,
+          content: buildContentPartsBestEffort(
+            text: response.text,
+            thinking: response.thinking,
+            toolCalls: toolCalls,
+            toolResults: const <ToolResult>[],
+          ),
+          text: response.text,
+          thinking: response.thinking,
+          toolCalls: response.toolCalls,
+          toolResults: const <ToolResult>[],
+          usage: response.usage,
+          finishReason: response is ChatResponseWithFinishReason
+              ? response.finishReason
+              : null,
+          requestMetadata: requestMetadataWithInclude(
+            response is ChatResponseWithRequestMetadata
+                ? response.requestMetadata
+                : null,
+            include,
+          ),
+          responseMetadata: responseMetadataWithInclude(
+            responseMetadataWithDefaults(
+              response is ChatResponseWithResponseMetadata
+                  ? response.responseMetadata
+                  : null,
+              startedAt,
+              defaultModelId: defaultModelId,
+            ),
+            include,
+          ),
+          responseMessages: buildResponseMessagesBestEffort(response),
+          responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
+        ),
+        toolCalls: toolCalls,
+        toolResults: const <ToolResult>[],
+        responseMetadata: responseMetadataWithInclude(
+          responseMetadataWithDefaults(
+            response is ChatResponseWithResponseMetadata
+                ? response.responseMetadata
+                : null,
+            startedAt,
+            defaultModelId: defaultModelId,
+          ),
+          include,
+        ),
+        requestMetadata: requestMetadataWithInclude(
+          response is ChatResponseWithRequestMetadata
+              ? response.requestMetadata
+              : null,
+          include,
+        ),
+        responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
+      ),
+    ],
   );
+
+  await runCallbacksBestEffort(result.steps, result);
+  return result;
 }

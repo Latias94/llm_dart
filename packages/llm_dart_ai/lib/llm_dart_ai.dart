@@ -1,6 +1,8 @@
 library;
 
 export 'src/generate_text.dart';
+export 'src/agent.dart';
+export 'src/content_part.dart';
 export 'src/tool_types.dart';
 export 'src/tool_repair_strategies.dart';
 export 'src/tool_set.dart';

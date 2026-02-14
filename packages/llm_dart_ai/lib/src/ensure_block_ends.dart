@@ -145,6 +145,58 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
     }
   }
 
+  Iterable<LLMStreamPart> handleToolInputDelta({
+    required String id,
+    required String delta,
+    Map<String, dynamic>? providerMetadata,
+  }) sync* {
+    if (openToolInputIdSet.contains(id)) {
+      yield LLMToolInputDeltaPart(
+        id: id,
+        delta: delta,
+        providerMetadata: providerMetadata,
+      );
+      return;
+    }
+
+    final inferredFromMeta = inferToolNameFromProviderMetadata(providerMetadata);
+    final inferredFromDelta = inferToolNameFromDelta(delta);
+    final inferred = inferredFromMeta ?? inferredFromDelta;
+    if (inferred != null && inferred.trim().isNotEmpty) {
+      toolNameByToolInputId.putIfAbsent(id, () => inferred.trim());
+    }
+
+    // Buffer orphan deltas until we see a start (or until finish).
+    // This preserves AI SDK v3 ordering invariants: deltas must follow a
+    // tool-input-start boundary.
+    rememberToolInputIdOrder(id);
+    (pendingToolInputDeltasById[id] ??= <LLMToolInputDeltaPart>[]).add(
+      LLMToolInputDeltaPart(
+        id: id,
+        delta: delta,
+        providerMetadata: providerMetadata,
+      ),
+    );
+  }
+
+  Iterable<LLMStreamPart> handleToolInputEnd({
+    required String id,
+    Map<String, dynamic>? providerMetadata,
+  }) sync* {
+    if (openToolInputIdSet.contains(id)) {
+      openToolInputIdSet.remove(id);
+      openToolInputIds.remove(id);
+      yield LLMToolInputEndPart(
+        id: id,
+        providerMetadata: providerMetadata,
+      );
+      return;
+    }
+
+    rememberToolInputIdOrder(id);
+    pendingToolInputEnds.add(id);
+  }
+
   final iterator = StreamIterator(upstream);
   try {
     while (await iterator.moveNext()) {
@@ -245,6 +297,59 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
             providerMetadata: providerMetadata,
           );
 
+        case LLMToolCallStartPart(:final toolCall):
+        case LLMToolCallDeltaPart(:final toolCall):
+          final callType = toolCall.callType.trim().toLowerCase();
+          if (callType != 'function') {
+            yield part;
+            break;
+          }
+          final id = toolCall.id.trim();
+          if (id.isNotEmpty) {
+            final name = toolCall.function.name.trim();
+            if (name.isNotEmpty) {
+              toolNameByToolInputId[id] = name;
+              final synthesizedStart = startToolInputIfNeeded(id: id);
+              if (synthesizedStart != null) {
+                yield synthesizedStart;
+                for (final pending in flushPendingToolInputForId(id)) {
+                  yield pending;
+                }
+              }
+            }
+
+            final delta = toolCall.function.arguments;
+            if (delta.isNotEmpty) {
+              for (final p in handleToolInputDelta(id: id, delta: delta)) {
+                yield p;
+              }
+            }
+          }
+          yield part;
+
+        case LLMToolCallEndPart(:final toolCallId):
+          final id = toolCallId.trim();
+          if (id.isNotEmpty) {
+            // Ensure any buffered deltas are preceded by a start boundary.
+            if (hasPendingToolInputFragments(id) &&
+                !openToolInputIdSet.contains(id)) {
+              final synthesizedStart = startToolInputIfNeeded(
+                id: id,
+                providerMetadata: providerMetadataForPendingToolInput(id),
+              );
+              if (synthesizedStart != null) {
+                yield synthesizedStart;
+                for (final pending in flushPendingToolInputForId(id)) {
+                  yield pending;
+                }
+              }
+            }
+            for (final p in handleToolInputEnd(id: id)) {
+              yield p;
+            }
+          }
+          yield part;
+
         case LLMToolInputStartPart(
             :final id,
             :final toolName,
@@ -274,45 +379,20 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
             :final delta,
             :final providerMetadata,
           ):
-          if (openToolInputIdSet.contains(id)) {
-            yield LLMToolInputDeltaPart(
-              id: id,
-              delta: delta,
-              providerMetadata: providerMetadata,
-            );
-          } else {
-            final inferredFromMeta =
-                inferToolNameFromProviderMetadata(providerMetadata);
-            final inferredFromDelta = inferToolNameFromDelta(delta);
-            final inferred = inferredFromMeta ?? inferredFromDelta;
-            if (inferred != null && inferred.trim().isNotEmpty) {
-              toolNameByToolInputId.putIfAbsent(id, () => inferred.trim());
-            }
-
-            // Buffer orphan deltas until we see a start (or until finish).
-            // This preserves AI SDK v3 ordering invariants: deltas must follow a
-            // tool-input-start boundary.
-            rememberToolInputIdOrder(id);
-            (pendingToolInputDeltasById[id] ??= <LLMToolInputDeltaPart>[]).add(
-              LLMToolInputDeltaPart(
-                id: id,
-                delta: delta,
-                providerMetadata: providerMetadata,
-              ),
-            );
+          for (final p in handleToolInputDelta(
+            id: id,
+            delta: delta,
+            providerMetadata: providerMetadata,
+          )) {
+            yield p;
           }
 
         case LLMToolInputEndPart(:final id, :final providerMetadata):
-          if (openToolInputIdSet.contains(id)) {
-            openToolInputIdSet.remove(id);
-            openToolInputIds.remove(id);
-            yield LLMToolInputEndPart(
-              id: id,
-              providerMetadata: providerMetadata,
-            );
-          } else {
-            rememberToolInputIdOrder(id);
-            pendingToolInputEnds.add(id);
+          for (final p in handleToolInputEnd(
+            id: id,
+            providerMetadata: providerMetadata,
+          )) {
+            yield p;
           }
 
         case LLMProviderToolCallPart(:final toolCallId):

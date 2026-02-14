@@ -7,11 +7,19 @@ class LocalTool {
   final Tool tool;
   final ToolCallHandler handler;
   final ToolApprovalCheck? needsApproval;
+  final ToolInputStartHandler? onInputStart;
+  final ToolInputDeltaHandler? onInputDelta;
+  final ToolInputAvailableHandler? onInputAvailable;
+  final ToolInputErrorHandler? onInputError;
 
   const LocalTool({
     required this.tool,
     required this.handler,
     this.needsApproval,
+    this.onInputStart,
+    this.onInputDelta,
+    this.onInputAvailable,
+    this.onInputError,
   });
 
   String get name => tool.function.name;
@@ -37,6 +45,9 @@ class ToolSet {
   /// Tool definitions for passing to providers.
   List<Tool> get tools =>
       _toolsByName.values.map((t) => t.tool).toList(growable: false);
+
+  /// Returns the local tool definition for [name], if present.
+  LocalTool? toolByName(String name) => _toolsByName[name];
 
   /// Local tool handlers keyed by tool name.
   Map<String, ToolCallHandler> get handlers => {
@@ -67,6 +78,10 @@ LocalTool functionTool({
   required ParametersSchema parameters,
   required ToolCallHandler handler,
   ToolApprovalCheck? needsApproval,
+  ToolInputStartHandler? onInputStart,
+  ToolInputDeltaHandler? onInputDelta,
+  ToolInputAvailableHandler? onInputAvailable,
+  ToolInputErrorHandler? onInputError,
 }) {
   return LocalTool(
     tool: Tool.function(
@@ -76,5 +91,9 @@ LocalTool functionTool({
     ),
     handler: handler,
     needsApproval: needsApproval,
+    onInputStart: onInputStart,
+    onInputDelta: onInputDelta,
+    onInputAvailable: onInputAvailable,
+    onInputError: onInputError,
   );
 }

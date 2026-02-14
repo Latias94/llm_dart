@@ -22,6 +22,7 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
   bool sendFiles = true,
   String? messageId,
   Object? startMessageMetadata,
+  Object? Function(LLMStreamPart part)? messageMetadata,
   Object? Function(LLMFinishPart part)? finishMessageMetadata,
   Object? Function(ToolLoopBlockedState state)? toolApprovalBlockedStateData,
   Object? Function(ProviderToolApprovalBlockedState state)?
@@ -45,13 +46,27 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
   }
 
   await for (final part in parts) {
+    final messageMeta = messageMetadata != null ? messageMetadata(part) : null;
+
     switch (part) {
       case LLMStepStartPart():
         clearStepState();
         yield const <String, Object?>{'type': 'start-step'};
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMStepFinishPart():
         yield const <String, Object?>{'type': 'finish-step'};
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMTextStartPart(blockId: final id, providerMetadata: final pm):
         final blockId = _requireNonEmptyId(id);
@@ -60,6 +75,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           'id': blockId,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMTextDeltaPart(
           :final delta,
@@ -73,6 +94,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           'delta': delta,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMTextEndPart(blockId: final id, providerMetadata: final pm):
         final blockId = _requireNonEmptyId(id);
@@ -81,6 +108,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           'id': blockId,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMReasoningStartPart(blockId: final id, providerMetadata: final pm):
         if (!sendReasoning) break;
@@ -90,6 +123,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           'id': blockId,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMReasoningDeltaPart(
           :final delta,
@@ -104,6 +143,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           'delta': delta,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMReasoningEndPart(blockId: final id, providerMetadata: final pm):
         if (!sendReasoning) break;
@@ -113,6 +158,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           'id': blockId,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMToolInputStartPart(
           id: final toolCallId,
@@ -139,6 +190,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           if (title != null && title.isNotEmpty) 'title': title,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMToolInputDeltaPart(id: final toolCallId, delta: final delta):
         (toolInputTextById[toolCallId] ??= StringBuffer()).write(delta);
@@ -147,6 +204,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           'toolCallId': toolCallId,
           'inputTextDelta': delta,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMToolInputEndPart(id: final toolCallId):
         final meta = toolInputMetaById[toolCallId];
@@ -173,6 +236,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
               'providerMetadata': meta.providerMetadata!,
             'errorText': parsed.error!,
           };
+          if (messageMeta != null) {
+            yield <String, Object?>{
+              'type': 'message-metadata',
+              'messageMetadata': messageMeta,
+            };
+          }
         } else {
           yield <String, Object?>{
             'type': 'tool-input-available',
@@ -187,6 +256,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
                 meta!.providerMetadata!.isNotEmpty)
               'providerMetadata': meta.providerMetadata!,
           };
+          if (messageMeta != null) {
+            yield <String, Object?>{
+              'type': 'message-metadata',
+              'messageMetadata': messageMeta,
+            };
+          }
         }
 
       case LLMProviderToolCallPart(
@@ -206,6 +281,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           if (dynamicTool == true) 'dynamic': true,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMProviderToolApprovalRequestPart(
           approvalId: final approvalId,
@@ -216,6 +297,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           'approvalId': approvalId,
           'toolCallId': toolCallId,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMProviderToolResultPart(
           toolCallId: final toolCallId,
@@ -232,6 +319,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
             'providerExecuted': true,
             if (dynamicTool == true) 'dynamic': true,
           };
+          if (messageMeta != null) {
+            yield <String, Object?>{
+              'type': 'message-metadata',
+              'messageMetadata': messageMeta,
+            };
+          }
         } else {
           yield <String, Object?>{
             'type': 'tool-output-available',
@@ -241,6 +334,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
             if (dynamicTool == true) 'dynamic': true,
             if (preliminary == true) 'preliminary': true,
           };
+          if (messageMeta != null) {
+            yield <String, Object?>{
+              'type': 'message-metadata',
+              'messageMetadata': messageMeta,
+            };
+          }
         }
 
       case LLMToolResultPart(result: final toolResult):
@@ -248,22 +347,45 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           yield <String, Object?>{
             'type': 'tool-output-error',
             'toolCallId': toolResult.toolCallId,
-            'errorText': toolResult.content,
+            'errorText': _stringifyUnknown(toolResult.result),
           };
+          if (messageMeta != null) {
+            yield <String, Object?>{
+              'type': 'message-metadata',
+              'messageMetadata': messageMeta,
+            };
+          }
         } else {
-          final parsed = _tryDecodeJson(toolResult.content);
-          final value = parsed.error == null ? parsed.value : null;
+          Object? value = toolResult.result;
+          if (value is String) {
+            final parsed = _tryDecodeJson(value);
+            if (parsed.error == null) {
+              value = parsed.value;
+            }
+          }
           if (value is Map && value['type'] == 'execution-denied') {
             yield <String, Object?>{
               'type': 'tool-output-denied',
               'toolCallId': toolResult.toolCallId,
             };
+            if (messageMeta != null) {
+              yield <String, Object?>{
+                'type': 'message-metadata',
+                'messageMetadata': messageMeta,
+              };
+            }
           } else {
             yield <String, Object?>{
               'type': 'tool-output-available',
               'toolCallId': toolResult.toolCallId,
-              'output': value ?? toolResult.content,
+              'output': value,
             };
+            if (messageMeta != null) {
+              yield <String, Object?>{
+                'type': 'message-metadata',
+                'messageMetadata': messageMeta,
+              };
+            }
           }
         }
 
@@ -281,6 +403,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           if (title != null && title.isNotEmpty) 'title': title,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMSourceDocumentPart(
           sourceId: final sourceId,
@@ -298,6 +426,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           if (filename != null && filename.isNotEmpty) 'filename': filename,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMFilePart(
           mediaType: final mediaType,
@@ -312,6 +446,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           'mediaType': mediaType,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMErrorPart(error: final error):
         if (error is ToolApprovalRequiredError) {
@@ -391,6 +531,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           'type': 'error',
           'errorText': onError != null ? onError(error) : error.message,
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMErrorRawPart(:final rawError, decodedError: final decoded):
         yield <String, Object?>{
@@ -399,6 +545,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
               ? onError(decoded ?? rawError ?? 'Unknown error')
               : (decoded?.message ?? _stringifyUnknown(rawError)),
         };
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
 
       case LLMFinishPart(finishReason: final reason):
         if (!sendFinish) break;

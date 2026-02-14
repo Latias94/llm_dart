@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'content_part.dart';
+import 'content_part_builders.dart';
 import 'ensure_single_finish.dart';
 import 'ensure_block_ids.dart';
 import 'ensure_block_ends.dart';
@@ -50,6 +52,125 @@ bool _isFunctionToolCall(ToolCall toolCall) {
 bool _isExecutableFunctionToolCall(ToolCall toolCall) {
   if (!_isFunctionToolCall(toolCall)) return false;
   return toolCall.function.name.trim().isNotEmpty;
+}
+
+GenerateTextResult _attachToolResultsToStepResult(
+  GenerateTextResult base, {
+  required List<ToolCall> toolCalls,
+  required List<ToolResult> toolResults,
+  required List<PromptMessage> responsePromptMessages,
+}) {
+  return GenerateTextResult(
+    rawResponse: base.rawResponse,
+    content: buildContentPartsBestEffort(
+      text: base.text,
+      thinking: base.thinking,
+      sources: base.sources,
+      files: base.files,
+      toolCalls: toolCalls,
+      toolResults: toolResults,
+    ),
+    text: base.text,
+    thinking: base.thinking,
+    toolCalls: toolCalls,
+    toolResults: toolResults,
+    usage: base.usage,
+    totalUsage: base.totalUsage,
+    finishReason: base.finishReason,
+    requestMetadata: base.requestMetadata,
+    responseMetadata: base.responseMetadata,
+    responseMessages: base.responseMessages,
+    responsePromptMessages: responsePromptMessages,
+    steps: base.steps,
+    sources: base.sources,
+    files: base.files,
+  );
+}
+
+Object? _decodeJsonIfPossible(String raw) {
+  final trimmed = raw.trim();
+  if (trimmed.isEmpty) return const <String, dynamic>{};
+  try {
+    return jsonDecode(trimmed);
+  } catch (_) {
+    return raw;
+  }
+}
+
+GenerateTextResult _attachToolApprovalRequestsToStepResult(
+  GenerateTextResult base, {
+  required List<ToolCall> toolCallsNeedingApproval,
+}) {
+  if (toolCallsNeedingApproval.isEmpty) return base;
+
+  final existing = base.content;
+  final out = <ContentPart>[];
+
+  bool hasApprovalFor(String toolCallId) {
+    for (final p in existing) {
+      if (p is ToolApprovalRequestContentPart && p.toolCall.id == toolCallId) {
+        return true;
+      }
+      if (p is ProviderToolApprovalRequestContentPart && p.toolCallId == toolCallId) {
+        return true;
+      }
+    }
+    for (final p in out) {
+      if (p is ToolApprovalRequestContentPart && p.toolCall.id == toolCallId) {
+        return true;
+      }
+      if (p is ProviderToolApprovalRequestContentPart && p.toolCallId == toolCallId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  for (final part in existing) {
+    out.add(part);
+    if (part is! ToolCallContentPart) continue;
+    final id = part.toolCall.id;
+    final needing = toolCallsNeedingApproval.where((c) => c.id == id);
+    for (final call in needing) {
+      if (hasApprovalFor(call.id)) continue;
+      out.add(
+        ToolApprovalRequestContentPart(
+          approvalId: call.id,
+          toolCall: call,
+        ),
+      );
+    }
+  }
+
+  // If any approval requests couldn't be attached to a tool-call part, append them.
+  for (final call in toolCallsNeedingApproval) {
+    if (hasApprovalFor(call.id)) continue;
+    out.add(
+      ToolApprovalRequestContentPart(
+        approvalId: call.id,
+        toolCall: call,
+      ),
+    );
+  }
+
+  return GenerateTextResult(
+    rawResponse: base.rawResponse,
+    content: List<ContentPart>.unmodifiable(out),
+    text: base.text,
+    thinking: base.thinking,
+    toolCalls: base.toolCalls,
+    toolResults: base.toolResults,
+    usage: base.usage,
+    totalUsage: base.totalUsage,
+    finishReason: base.finishReason,
+    requestMetadata: base.requestMetadata,
+    responseMetadata: base.responseMetadata,
+    responseMessages: base.responseMessages,
+    responsePromptMessages: base.responsePromptMessages,
+    steps: base.steps,
+    sources: base.sources,
+    files: base.files,
+  );
 }
 
 List<ToolCall> _onlyLocalFunctionToolCalls(List<ToolCall>? toolCalls) {
@@ -207,6 +328,12 @@ Future<ToolLoopResult> runToolLoop({
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
+      content: buildContentPartsBestEffort(
+        text: response.text,
+        thinking: response.thinking,
+        toolCalls: toolCalls,
+        toolResults: const <ToolResult>[],
+      ),
       text: response.text,
       thinking: response.thinking,
       toolCalls: toolCalls,
@@ -268,15 +395,19 @@ Future<ToolLoopResult> runToolLoop({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
+      final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
+        stepResult,
+        toolCallsNeedingApproval: needingApproval,
+      );
       steps.add(
         ToolLoopStep(
           index: stepIndex,
-          result: stepResult,
+          result: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolResults: const [],
-          responseMetadata: stepResult.responseMetadata,
-          requestMetadata: stepResult.requestMetadata,
-          responsePromptMessages: stepResult.responsePromptMessages,
+          responseMetadata: stepResultWithApprovals.responseMetadata,
+          requestMetadata: stepResultWithApprovals.requestMetadata,
+          responsePromptMessages: stepResultWithApprovals.responsePromptMessages,
         ),
       );
 
@@ -289,7 +420,7 @@ Future<ToolLoopResult> runToolLoop({
       throw ToolApprovalRequiredError(
         state: ToolLoopBlockedState(
           stepIndex: stepIndex,
-          stepResult: stepResult,
+          stepResult: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolCallsNeedingApproval:
               List<ToolCall>.unmodifiable(needingApproval),
@@ -309,21 +440,28 @@ Future<ToolLoopResult> runToolLoop({
       cancelToken: cancelToken,
     );
 
+    final stepResponsePromptMessages = [
+      ...stepResult.responsePromptMessages,
+      buildToolResultPromptMessageBestEffort(
+        toolCalls: toolCalls,
+        toolResults: executed,
+      ),
+    ];
+
     steps.add(
       ToolLoopStep(
         index: stepIndex,
-        result: stepResult,
+        result: _attachToolResultsToStepResult(
+          stepResult,
+          toolCalls: toolCalls,
+          toolResults: executed,
+          responsePromptMessages: stepResponsePromptMessages,
+        ),
         toolCalls: List<ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
-        responsePromptMessages: [
-          ...stepResult.responsePromptMessages,
-          buildToolResultPromptMessageBestEffort(
-            toolCalls: toolCalls,
-            toolResults: executed,
-          ),
-        ],
+        responsePromptMessages: stepResponsePromptMessages,
       ),
     );
 
@@ -464,6 +602,12 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
+      content: buildContentPartsBestEffort(
+        text: response.text,
+        thinking: response.thinking,
+        toolCalls: toolCalls,
+        toolResults: const <ToolResult>[],
+      ),
       text: response.text,
       thinking: response.thinking,
       toolCalls: toolCalls,
@@ -531,15 +675,19 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
+      final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
+        stepResult,
+        toolCallsNeedingApproval: needingApproval,
+      );
       steps.add(
         ToolLoopStep(
           index: stepIndex,
-          result: stepResult,
+          result: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolResults: const [],
-          responseMetadata: stepResult.responseMetadata,
-          requestMetadata: stepResult.requestMetadata,
-          responsePromptMessages: stepResult.responsePromptMessages,
+          responseMetadata: stepResultWithApprovals.responseMetadata,
+          requestMetadata: stepResultWithApprovals.requestMetadata,
+          responsePromptMessages: stepResultWithApprovals.responsePromptMessages,
         ),
       );
 
@@ -557,7 +705,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       throw ToolApprovalRequiredError(
         state: ToolLoopBlockedState(
           stepIndex: stepIndex,
-          stepResult: stepResult,
+          stepResult: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolCallsNeedingApproval:
               List<ToolCall>.unmodifiable(needingApproval),
@@ -577,21 +725,28 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       cancelToken: cancelToken,
     );
 
+    final stepResponsePromptMessages = [
+      ...stepResult.responsePromptMessages,
+      buildToolResultPromptMessageBestEffort(
+        toolCalls: toolCalls,
+        toolResults: executed,
+      ),
+    ];
+
     steps.add(
       ToolLoopStep(
         index: stepIndex,
-        result: stepResult,
+        result: _attachToolResultsToStepResult(
+          stepResult,
+          toolCalls: toolCalls,
+          toolResults: executed,
+          responsePromptMessages: stepResponsePromptMessages,
+        ),
         toolCalls: List<ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
-        responsePromptMessages: [
-          ...stepResult.responsePromptMessages,
-          buildToolResultPromptMessageBestEffort(
-            toolCalls: toolCalls,
-            toolResults: executed,
-          ),
-        ],
+        responsePromptMessages: stepResponsePromptMessages,
       ),
     );
 
@@ -689,6 +844,12 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
+      content: buildContentPartsBestEffort(
+        text: response.text,
+        thinking: response.thinking,
+        toolCalls: toolCalls,
+        toolResults: const <ToolResult>[],
+      ),
       text: response.text,
       thinking: response.thinking,
       toolCalls: toolCalls,
@@ -752,15 +913,19 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
+      final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
+        stepResult,
+        toolCallsNeedingApproval: needingApproval,
+      );
       steps.add(
         ToolLoopStep(
           index: stepIndex,
-          result: stepResult,
+          result: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolResults: const [],
-          responseMetadata: stepResult.responseMetadata,
-          requestMetadata: stepResult.requestMetadata,
-          responsePromptMessages: stepResult.responsePromptMessages,
+          responseMetadata: stepResultWithApprovals.responseMetadata,
+          requestMetadata: stepResultWithApprovals.requestMetadata,
+          responsePromptMessages: stepResultWithApprovals.responsePromptMessages,
         ),
       );
 
@@ -773,7 +938,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       return ToolLoopBlocked(
         ToolLoopBlockedState(
           stepIndex: stepIndex,
-          stepResult: stepResult,
+          stepResult: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolCallsNeedingApproval:
               List<ToolCall>.unmodifiable(needingApproval),
@@ -793,21 +958,28 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       cancelToken: cancelToken,
     );
 
+    final stepResponsePromptMessages = [
+      ...stepResult.responsePromptMessages,
+      buildToolResultPromptMessageBestEffort(
+        toolCalls: toolCalls,
+        toolResults: executed,
+      ),
+    ];
+
     steps.add(
       ToolLoopStep(
         index: stepIndex,
-        result: stepResult,
+        result: _attachToolResultsToStepResult(
+          stepResult,
+          toolCalls: toolCalls,
+          toolResults: executed,
+          responsePromptMessages: stepResponsePromptMessages,
+        ),
         toolCalls: List<ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
-        responsePromptMessages: [
-          ...stepResult.responsePromptMessages,
-          buildToolResultPromptMessageBestEffort(
-            toolCalls: toolCalls,
-            toolResults: executed,
-          ),
-        ],
+        responsePromptMessages: stepResponsePromptMessages,
       ),
     );
 
@@ -1138,7 +1310,7 @@ Future<List<ToolResult>> _executeToolCallsWithApprovals({
     };
     return ToolResult.success(
       toolCallId: toolCall.id,
-      content: jsonEncode(payload),
+      result: payload,
     );
   }
 
@@ -1217,6 +1389,12 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
+      content: buildContentPartsBestEffort(
+        text: response.text,
+        thinking: response.thinking,
+        toolCalls: toolCalls,
+        toolResults: const <ToolResult>[],
+      ),
       text: response.text,
       thinking: response.thinking,
       toolCalls: toolCalls,
@@ -1280,15 +1458,19 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
+      final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
+        stepResult,
+        toolCallsNeedingApproval: needingApproval,
+      );
       steps.add(
         ToolLoopStep(
           index: stepIndex,
-          result: stepResult,
+          result: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolResults: const [],
-          responseMetadata: stepResult.responseMetadata,
-          requestMetadata: stepResult.requestMetadata,
-          responsePromptMessages: stepResult.responsePromptMessages,
+          responseMetadata: stepResultWithApprovals.responseMetadata,
+          requestMetadata: stepResultWithApprovals.requestMetadata,
+          responsePromptMessages: stepResultWithApprovals.responsePromptMessages,
         ),
       );
 
@@ -1301,7 +1483,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
       return ToolLoopBlocked(
         ToolLoopBlockedState(
           stepIndex: stepIndex,
-          stepResult: stepResult,
+          stepResult: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolCallsNeedingApproval:
               List<ToolCall>.unmodifiable(needingApproval),
@@ -1321,21 +1503,28 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
       cancelToken: cancelToken,
     );
 
+    final stepResponsePromptMessages = [
+      ...stepResult.responsePromptMessages,
+      buildToolResultPromptMessageBestEffort(
+        toolCalls: toolCalls,
+        toolResults: executed,
+      ),
+    ];
+
     steps.add(
       ToolLoopStep(
         index: stepIndex,
-        result: stepResult,
+        result: _attachToolResultsToStepResult(
+          stepResult,
+          toolCalls: toolCalls,
+          toolResults: executed,
+          responsePromptMessages: stepResponsePromptMessages,
+        ),
         toolCalls: List<ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
-        responsePromptMessages: [
-          ...stepResult.responsePromptMessages,
-          buildToolResultPromptMessageBestEffort(
-            toolCalls: toolCalls,
-            toolResults: executed,
-          ),
-        ],
+        responsePromptMessages: stepResponsePromptMessages,
       ),
     );
 
@@ -1419,6 +1608,12 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
+      content: buildContentPartsBestEffort(
+        text: response.text,
+        thinking: response.thinking,
+        toolCalls: toolCalls,
+        toolResults: const <ToolResult>[],
+      ),
       text: response.text,
       thinking: response.thinking,
       toolCalls: toolCalls,
@@ -1488,15 +1683,19 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
+      final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
+        stepResult,
+        toolCallsNeedingApproval: needingApproval,
+      );
       steps.add(
         ToolLoopStep(
           index: stepIndex,
-          result: stepResult,
+          result: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolResults: const [],
-          responseMetadata: stepResult.responseMetadata,
-          requestMetadata: stepResult.requestMetadata,
-          responsePromptMessages: stepResult.responsePromptMessages,
+          responseMetadata: stepResultWithApprovals.responseMetadata,
+          requestMetadata: stepResultWithApprovals.requestMetadata,
+          responsePromptMessages: stepResultWithApprovals.responsePromptMessages,
         ),
       );
 
@@ -1513,7 +1712,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       return ToolLoopBlocked(
         ToolLoopBlockedState(
           stepIndex: stepIndex,
-          stepResult: stepResult,
+          stepResult: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
           toolCallsNeedingApproval:
               List<ToolCall>.unmodifiable(needingApproval),
@@ -1533,21 +1732,28 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       cancelToken: cancelToken,
     );
 
+    final stepResponsePromptMessages = [
+      ...stepResult.responsePromptMessages,
+      buildToolResultPromptMessageBestEffort(
+        toolCalls: toolCalls,
+        toolResults: executed,
+      ),
+    ];
+
     steps.add(
       ToolLoopStep(
         index: stepIndex,
-        result: stepResult,
+        result: _attachToolResultsToStepResult(
+          stepResult,
+          toolCalls: toolCalls,
+          toolResults: executed,
+          responsePromptMessages: stepResponsePromptMessages,
+        ),
         toolCalls: List<ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
-        responsePromptMessages: [
-          ...stepResult.responsePromptMessages,
-          buildToolResultPromptMessageBestEffort(
-            toolCalls: toolCalls,
-            toolResults: executed,
-          ),
-        ],
+        responsePromptMessages: stepResponsePromptMessages,
       ),
     );
 
@@ -1636,6 +1842,12 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
+      content: buildContentPartsBestEffort(
+        text: response.text,
+        thinking: response.thinking,
+        toolCalls: toolCalls,
+        toolResults: const <ToolResult>[],
+      ),
       text: response.text,
       thinking: response.thinking,
       toolCalls: toolCalls,
@@ -1750,21 +1962,28 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       cancelToken: cancelToken,
     );
 
+    final stepResponsePromptMessages = [
+      ...stepResult.responsePromptMessages,
+      buildToolResultPromptMessageBestEffort(
+        toolCalls: toolCalls,
+        toolResults: executed,
+      ),
+    ];
+
     steps.add(
       ToolLoopStep(
         index: stepIndex,
-        result: stepResult,
+        result: _attachToolResultsToStepResult(
+          stepResult,
+          toolCalls: toolCalls,
+          toolResults: executed,
+          responsePromptMessages: stepResponsePromptMessages,
+        ),
         toolCalls: List<ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
-        responsePromptMessages: [
-          ...stepResult.responsePromptMessages,
-          buildToolResultPromptMessageBestEffort(
-            toolCalls: toolCalls,
-            toolResults: executed,
-          ),
-        ],
+        responsePromptMessages: stepResponsePromptMessages,
       ),
     );
 
@@ -1799,6 +2018,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   required ToolSet toolSet,
+  ToolCallRepair? repairToolCall,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
@@ -1815,6 +2035,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
     promptIr: promptIr,
     tools: toolSet.tools,
     toolHandlers: toolSet.handlers,
+    repairToolCall: repairToolCall,
     toolApprovalChecks: toolSet.approvalChecks,
     needsApproval: needsApproval,
     maxSteps: maxSteps,
@@ -1834,6 +2055,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   required ToolSet toolSet,
+  ToolCallRepair? repairToolCall,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
@@ -1850,6 +2072,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
     promptIr: promptIr,
     tools: toolSet.tools,
     toolHandlers: toolSet.handlers,
+    repairToolCall: repairToolCall,
     toolApprovalChecks: toolSet.approvalChecks,
     needsApproval: needsApproval,
     maxSteps: maxSteps,
@@ -2154,23 +2377,44 @@ Stream<LLMStreamPart> streamToolLoopParts({
               .add(ChatMessage.toolUse(toolCalls: completedToolCalls));
         }
 
+        for (final call in needingApproval) {
+          yield LLMProviderToolApprovalRequestPart(
+            approvalId: call.id,
+            toolCallId: call.id,
+            toolName: call.function.name,
+            input: _decodeJsonIfPossible(call.function.arguments),
+          );
+        }
+
+        final stepResultBase = GenerateTextResult(
+          rawResponse: mergedResponse,
+          content: buildContentPartsBestEffort(
+            text: mergedResponse.text,
+            thinking: mergedResponse.thinking,
+            toolCalls: completedToolCalls,
+            toolResults: const <ToolResult>[],
+          ),
+          text: mergedResponse.text,
+          thinking: mergedResponse.thinking,
+          toolCalls: completedToolCalls,
+          usage: mergedResponse.usage,
+          finishReason: mergedResponse.finishReason,
+          responseMetadata: null,
+          responseMessages: buildResponseMessagesBestEffort(mergedResponse),
+          responsePromptMessages: buildResponsePromptMessagesBestEffort(
+            mergedResponse,
+          ),
+        );
+        final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
+          stepResultBase,
+          toolCallsNeedingApproval: needingApproval,
+        );
+
         yield LLMErrorPart(
           ToolApprovalRequiredError(
             state: ToolLoopBlockedState(
               stepIndex: stepIndex,
-              stepResult: GenerateTextResult(
-                rawResponse: mergedResponse,
-                text: mergedResponse.text,
-                thinking: mergedResponse.thinking,
-                toolCalls: completedToolCalls,
-                usage: mergedResponse.usage,
-                finishReason: mergedResponse.finishReason,
-                responseMetadata: null,
-                responseMessages:
-                    buildResponseMessagesBestEffort(mergedResponse),
-                responsePromptMessages:
-                    buildResponsePromptMessagesBestEffort(mergedResponse),
-              ),
+              stepResult: stepResultWithApprovals,
               toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
               toolCallsNeedingApproval:
                   List<ToolCall>.unmodifiable(needingApproval),
@@ -2478,22 +2722,44 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       workingPrompt =
           _appendChatMessageToPrompt(workingPrompt, assistantMessage);
 
+      for (final call in needingApproval) {
+        yield LLMProviderToolApprovalRequestPart(
+          approvalId: call.id,
+          toolCallId: call.id,
+          toolName: call.function.name,
+          input: _decodeJsonIfPossible(call.function.arguments),
+        );
+      }
+
+      final stepResultBase = GenerateTextResult(
+        rawResponse: mergedResponse,
+        content: buildContentPartsBestEffort(
+          text: mergedResponse.text,
+          thinking: mergedResponse.thinking,
+          toolCalls: completedToolCalls,
+          toolResults: const <ToolResult>[],
+        ),
+        text: mergedResponse.text,
+        thinking: mergedResponse.thinking,
+        toolCalls: completedToolCalls,
+        usage: mergedResponse.usage,
+        finishReason: mergedResponse.finishReason,
+        responseMetadata: null,
+        responseMessages: buildResponseMessagesBestEffort(mergedResponse),
+        responsePromptMessages: buildResponsePromptMessagesBestEffort(
+          mergedResponse,
+        ),
+      );
+      final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
+        stepResultBase,
+        toolCallsNeedingApproval: needingApproval,
+      );
+
       yield LLMErrorPart(
         ToolApprovalRequiredError(
           state: ToolLoopBlockedState(
             stepIndex: stepIndex,
-            stepResult: GenerateTextResult(
-              rawResponse: mergedResponse,
-              text: mergedResponse.text,
-              thinking: mergedResponse.thinking,
-              toolCalls: completedToolCalls,
-              usage: mergedResponse.usage,
-              finishReason: mergedResponse.finishReason,
-              responseMetadata: null,
-              responseMessages: buildResponseMessagesBestEffort(mergedResponse),
-              responsePromptMessages:
-                  buildResponsePromptMessagesBestEffort(mergedResponse),
-            ),
+            stepResult: stepResultWithApprovals,
             toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
             toolCallsNeedingApproval:
                 List<ToolCall>.unmodifiable(needingApproval),
@@ -2573,8 +2839,8 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
-}) {
-  return streamToolLoopParts(
+}) async* {
+  final upstream = streamToolLoopParts(
     model: model,
     system: system,
     prompt: prompt,
@@ -2593,6 +2859,94 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     callOptions: callOptions,
     cancelToken: cancelToken,
   );
+
+  final toolNameByCallId = <String, String>{};
+  final toolInputTextByCallId = <String, StringBuffer>{};
+
+  ({Object value, String? error}) tryDecodeJsonLike(String content) {
+    final trimmed = content.trim();
+    if (trimmed.isEmpty) {
+      return (value: const <String, dynamic>{}, error: null);
+    }
+
+    final looksJsonLike = trimmed.startsWith('{') ||
+        trimmed.startsWith('[') ||
+        trimmed == 'null' ||
+        trimmed == 'true' ||
+        trimmed == 'false' ||
+        num.tryParse(trimmed) != null;
+
+    if (!looksJsonLike) return (value: content, error: null);
+
+    try {
+      return (value: jsonDecode(trimmed), error: null);
+    } catch (e) {
+      return (value: content, error: 'Invalid JSON: $e');
+    }
+  }
+
+  Future<void> safeCall(FutureOr<void> Function() fn) async {
+    try {
+      await Future.value(fn());
+    } catch (_) {
+      // Best-effort: tool input hooks must not break streaming.
+    }
+  }
+
+  await for (final part in upstream) {
+    switch (part) {
+      case LLMToolInputStartPart(:final id, :final toolName):
+        toolNameByCallId[id] = toolName;
+        toolInputTextByCallId[id] = StringBuffer();
+        final tool = toolSet.toolByName(toolName);
+        final onStart = tool?.onInputStart;
+        if (onStart != null) {
+          await safeCall(() => onStart(id));
+        }
+        break;
+
+      case LLMToolInputDeltaPart(:final id, :final delta):
+        (toolInputTextByCallId[id] ??= StringBuffer()).write(delta);
+        final toolName = toolNameByCallId[id];
+        if (toolName != null && toolName.isNotEmpty) {
+          final tool = toolSet.toolByName(toolName);
+          final onDelta = tool?.onInputDelta;
+          if (onDelta != null) {
+            await safeCall(() => onDelta(id, delta));
+          }
+        }
+        break;
+
+      case LLMToolInputEndPart(:final id):
+        final toolName = toolNameByCallId[id];
+        if (toolName != null && toolName.isNotEmpty) {
+          final tool = toolSet.toolByName(toolName);
+          final onAvailable = tool?.onInputAvailable;
+          final onError = tool?.onInputError;
+          if (onAvailable != null || onError != null) {
+            final raw = toolInputTextByCallId[id]?.toString() ?? '';
+            final parsed = tryDecodeJsonLike(raw);
+            if (parsed.error != null) {
+              if (onError != null) {
+                await safeCall(() => onError(id, raw, parsed.error!));
+              }
+            } else {
+              if (onAvailable != null) {
+                await safeCall(() => onAvailable(id, parsed.value));
+              }
+            }
+          }
+        }
+        toolInputTextByCallId.remove(id);
+        toolNameByCallId.remove(id);
+        break;
+
+      default:
+        break;
+    }
+
+    yield part;
+  }
 }
 
 /// Execute tool calls locally and return a list of tool results.
@@ -2721,7 +3075,7 @@ Future<List<ToolResult>> _executeToolCalls({
       results.add(
         ToolResult.error(
           toolCallId: toolCall.id,
-          errorMessage:
+          error:
               'Only "function" ToolCall can be executed locally (got: ${toolCall.callType})',
         ),
       );
@@ -2761,7 +3115,7 @@ Future<List<ToolResult>> _executeToolCalls({
           results.add(
             ToolResult.error(
               toolCallId: effectiveToolCall.id,
-              errorMessage:
+              error:
                   '${repairedParsed.error}: "${effectiveToolCall.function.name}"',
               metadata: {
                 'kind': 'invalid_tool_call',
@@ -2781,7 +3135,7 @@ Future<List<ToolResult>> _executeToolCalls({
         results.add(
           ToolResult.error(
             toolCallId: effectiveToolCall.id,
-            errorMessage:
+            error:
                 '${parsed.error}: "${effectiveToolCall.function.name}"',
             metadata: {
               'kind': 'invalid_tool_call',
@@ -2801,7 +3155,7 @@ Future<List<ToolResult>> _executeToolCalls({
       results.add(
         ToolResult.error(
           toolCallId: effectiveToolCall.id,
-          errorMessage: 'No such tool: "${effectiveToolCall.function.name}"',
+          error: 'No such tool: "${effectiveToolCall.function.name}"',
           metadata: {
             'kind': 'invalid_tool_call',
             'reason': 'no_such_tool',
@@ -2852,8 +3206,7 @@ Future<List<ToolResult>> _executeToolCalls({
               results.add(
                 ToolResult.error(
                   toolCallId: effectiveToolCall.id,
-                  errorMessage:
-                      'Parameter validation failed: ${errors.join('; ')}',
+                  error: 'Parameter validation failed: ${errors.join('; ')}',
                   metadata: {
                     'kind': 'invalid_tool_call',
                     'reason': 'schema_validation_failed',
@@ -2873,7 +3226,7 @@ Future<List<ToolResult>> _executeToolCalls({
             results.add(
               ToolResult.error(
                 toolCallId: effectiveToolCall.id,
-                errorMessage:
+                error:
                     '${repairedParsed.error}: "${effectiveToolCall.function.name}"',
                 metadata: {
                   'kind': 'invalid_tool_call',
@@ -2894,7 +3247,7 @@ Future<List<ToolResult>> _executeToolCalls({
           results.add(
             ToolResult.error(
               toolCallId: effectiveToolCall.id,
-              errorMessage: 'Parameter validation failed: ${errors.join('; ')}',
+              error: 'Parameter validation failed: ${errors.join('; ')}',
               metadata: {
                 'kind': 'invalid_tool_call',
                 'reason': 'schema_validation_failed',
@@ -2915,7 +3268,7 @@ Future<List<ToolResult>> _executeToolCalls({
       results.add(
         ToolResult.error(
           toolCallId: effectiveToolCall.id,
-          errorMessage:
+          error:
               'No tool handler registered for "${effectiveToolCall.function.name}"',
         ),
       );
@@ -2925,15 +3278,17 @@ Future<List<ToolResult>> _executeToolCalls({
 
     try {
       final output = await handler(effectiveToolCall, cancelToken: cancelToken);
-      final content = _stringifyToolOutput(output);
       results.add(
-        ToolResult.success(toolCallId: effectiveToolCall.id, content: content),
+        ToolResult.success(
+          toolCallId: effectiveToolCall.id,
+          result: _normalizeToolOutput(output),
+        ),
       );
     } catch (e) {
       results.add(
         ToolResult.error(
           toolCallId: effectiveToolCall.id,
-          errorMessage: 'Tool execution failed: $e',
+          error: 'Tool execution failed: $e',
         ),
       );
       if (!continueOnToolError) break;
@@ -2956,7 +3311,7 @@ List<ToolCall> _toToolResultCalls(
     final toolName = original?.function.name ?? 'tool';
     final callType = original?.callType ?? 'function';
 
-    final content = r.isError ? jsonEncode({'error': r.content}) : r.content;
+    final content = _toolCallArgumentsForToolResult(r);
 
     return ToolCall(
       id: r.toolCallId,
@@ -2969,15 +3324,41 @@ List<ToolCall> _toToolResultCalls(
   }).toList();
 }
 
-String _stringifyToolOutput(Object? output) {
-  if (output == null) return 'null';
-  if (output is String) return output;
-  if (output is num || output is bool) return output.toString();
+Object? _normalizeToolOutput(Object? output) {
+  // AI SDK v3 `tool-result.result` is non-null. Preserve "no output" as empty
+  // string rather than JSON null.
+  if (output == null) return '';
+  if (output is String || output is num || output is bool) return output;
+
+  if (output is Map) {
+    final out = <String, Object?>{};
+    output.forEach((k, v) {
+      out[k.toString()] = _normalizeToolOutput(v);
+    });
+    return out;
+  }
+
+  if (output is List) {
+    return output.map(_normalizeToolOutput).toList(growable: false);
+  }
+
+  // Best-effort fallback: preserve something JSON-safe.
+  return output.toString();
+}
+
+String _toolCallArgumentsForToolResult(ToolResult result) {
+  if (result.isError) {
+    return jsonEncode({'error': result.result});
+  }
+
+  final value = result.result;
+  if (value == null) return 'null';
+  if (value is String) return value;
 
   try {
-    return jsonEncode(output);
+    return jsonEncode(value);
   } catch (_) {
-    return output.toString();
+    return value.toString();
   }
 }
 

@@ -1109,7 +1109,7 @@ abstract class ToolExecutionCapability {
       } catch (e) {
         results.add(ToolResult.error(
           toolCallId: toolCall.id,
-          errorMessage: 'Tool execution failed: $e',
+          error: 'Tool execution failed: $e',
         ));
         if (!effectiveConfig.continueOnError) break;
       }

@@ -1,7 +1,5 @@
 library;
 
-import 'dart:convert';
-
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
@@ -185,6 +183,33 @@ void main() {
       expect(parts.last, isA<LLMFinishPart>());
     });
 
+    test('filters raw chunks unless includeRawChunks is enabled', () async {
+      final parts = <LLMStreamPart>[
+        const LLMTextStartPart(),
+        const LLMTextDeltaPart('Hi'),
+        const LLMRawPart({'raw': true}),
+        const LLMTextEndPart('Hi'),
+        LLMFinishPart(const _FakeChatResponse(text: 'Hi')),
+      ];
+
+      final modelNoRaw = _FakeChatModel(parts);
+      final resultNoRaw = streamText(
+        model: modelNoRaw,
+        messages: [ChatMessage.user('hi')],
+      );
+      final collectedNoRaw = await resultNoRaw.fullStream.toList();
+      expect(collectedNoRaw.whereType<LLMRawPart>(), isEmpty);
+
+      final modelWithRaw = _FakeChatModel(parts);
+      final resultWithRaw = streamText(
+        model: modelWithRaw,
+        messages: [ChatMessage.user('hi')],
+        includeRawChunks: true,
+      );
+      final collectedWithRaw = await resultWithRaw.fullStream.toList();
+      expect(collectedWithRaw.whereType<LLMRawPart>(), hasLength(1));
+    });
+
     test('toolSet path exposes steps and totalUsage', () async {
       final usage1 =
           UsageInfo(promptTokens: 1, completionTokens: 2, totalTokens: 3);
@@ -274,17 +299,24 @@ void main() {
         ),
       ]);
 
+      final finishedSteps = <int>[];
+      StreamTextFinishEvent? finishEvent;
+
       final result = streamText(
         model: model,
         messages: [ChatMessage.user('hi')],
         toolSet: toolSet,
         maxSteps: 5,
+        onStepFinish: (step) => finishedSteps.add(step.index),
+        onFinish: (event) => finishEvent = event,
       );
 
       final parts = await result.fullStream.toList();
+      await result.done;
       expect(await result.warnings, isEmpty);
       expect(parts.whereType<LLMStepStartPart>(), hasLength(2));
       expect(parts.whereType<LLMStepFinishPart>(), hasLength(2));
+      expect(finishedSteps, equals([0, 1]));
 
       // AI SDK semantics: `text` is from the last step.
       expect(await result.text, equals('Done'));
@@ -294,8 +326,7 @@ void main() {
       expect(steps[0].toolCalls, hasLength(1));
       expect(steps[0].toolResults, hasLength(1));
       expect(steps[0].responseMetadata?.headers, containsPair('x-step', '1'));
-      expect(jsonDecode(steps[0].toolResults.single.content),
-          equals({'temp': 70}));
+      expect(steps[0].toolResults.single.result, equals({'temp': 70}));
       expect(steps[1].toolCalls, isEmpty);
       expect(steps[1].responseMetadata?.headers, containsPair('x-step', '2'));
       expect(
@@ -305,6 +336,10 @@ void main() {
 
       final totalUsage = await result.totalUsage;
       expect(totalUsage?.totalTokens, equals(33));
+
+      expect(finishEvent, isNotNull);
+      expect(finishEvent!.steps, hasLength(2));
+      expect(finishEvent!.totalUsage?.totalTokens, equals(33));
     });
 
     test('yields error part when model lacks parts-first streaming', () async {
@@ -320,6 +355,233 @@ void main() {
       expect(() async => await result.text, throwsA(isA<LLMError>()));
       expect(() async => await result.warnings, throwsA(isA<LLMError>()));
       expect(() async => await result.steps, throwsA(isA<LLMError>()));
+    });
+
+    test('content preserves stream order within a step', () async {
+      const toolCallId = 'call_1';
+      const usage =
+          UsageInfo(promptTokens: 1, completionTokens: 2, totalTokens: 3);
+      const finishReason = LLMFinishReason(
+        unified: LLMUnifiedFinishReason.stop,
+        raw: 'stop',
+      );
+
+      final mergedToolCall = ToolCall(
+        id: toolCallId,
+        callType: 'function',
+        function: const FunctionCall(
+          name: 'myTool',
+          arguments: '{"x":1}',
+        ),
+      );
+
+      final toolResult = ToolResult.success(
+        toolCallId: toolCallId,
+        result: const {'ok': true},
+      );
+
+      final response = const _FakeChatResponseWithFinishReason(
+        text: 'done',
+        usage: usage,
+        finishReason: finishReason,
+      );
+
+      final model = _FakeChatModel([
+        const LLMStepStartPart(0),
+        const LLMTextStartPart(blockId: 't1'),
+        const LLMTextDeltaPart('hi', blockId: 't1'),
+        const LLMTextEndPart('hi', blockId: 't1'),
+        LLMToolCallStartPart(
+          ToolCall(
+            id: toolCallId,
+            callType: 'function',
+            function: const FunctionCall(
+              name: 'myTool',
+              arguments: '{',
+            ),
+          ),
+        ),
+        LLMToolCallDeltaPart(
+          ToolCall(
+            id: toolCallId,
+            callType: 'function',
+            function: const FunctionCall(
+              name: '',
+              arguments: '"x":1}',
+            ),
+          ),
+        ),
+        const LLMToolCallEndPart(toolCallId),
+        LLMToolResultPart(toolResult),
+        LLMStepFinishPart(
+          stepIndex: 0,
+          response: response,
+          usage: usage,
+          finishReason: finishReason,
+          toolCalls: [mergedToolCall],
+          toolResults: [toolResult],
+        ),
+        LLMFinishPart(
+          response,
+          usage: usage,
+          finishReason: finishReason,
+        ),
+      ]);
+
+      final result = streamText(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+      );
+
+      final steps = await result.steps;
+      expect(steps, hasLength(1));
+
+      final stepContent = steps.single.result.content;
+      expect(stepContent.map((p) => p.type).toList(), [
+        'text',
+        'tool-call',
+        'tool-result',
+      ]);
+
+      final toolCallPart = stepContent[1] as ToolCallContentPart;
+      expect(toolCallPart.toolCall.id, equals(toolCallId));
+      expect(toolCallPart.toolCall.function.name, equals('myTool'));
+      expect(toolCallPart.toolCall.function.arguments, equals('{"x":1}'));
+
+      final toolResultPart = stepContent[2] as ToolResultContentPart;
+      expect(toolResultPart.toolResult.toolCallId, equals(toolCallId));
+
+      final finalContent = await result.content;
+      expect(finalContent.map((p) => p.type).toList(), [
+        'text',
+        'tool-call',
+        'tool-result',
+      ]);
+    });
+
+    test('content includes provider tool call and result', () async {
+      const usage =
+          UsageInfo(promptTokens: 1, completionTokens: 2, totalTokens: 3);
+      const finishReason = LLMFinishReason(
+        unified: LLMUnifiedFinishReason.stop,
+        raw: 'stop',
+      );
+
+      const response = _FakeChatResponseWithFinishReason(
+        text: 'done',
+        usage: usage,
+        finishReason: finishReason,
+      );
+
+      final model = _FakeChatModel([
+        const LLMProviderToolCallPart(
+          toolCallId: 'pt1',
+          toolName: 'web_search',
+          input: {'query': 'dart'},
+          providerExecuted: true,
+        ),
+        const LLMProviderToolResultPart(
+          toolCallId: 'pt1',
+          toolName: 'web_search',
+          result: {
+            'results': [
+              {'title': 'Dart', 'url': 'https://dart.dev'}
+            ],
+          },
+          isError: false,
+        ),
+        const LLMFinishPart(
+          response,
+          usage: usage,
+          finishReason: finishReason,
+        ),
+      ]);
+
+      final result = streamText(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+      );
+
+      final content = await result.content;
+      expect(content.map((p) => p.type).toList(), [
+        'text',
+        'tool-call',
+        'tool-result',
+      ]);
+      expect(content[0], isA<TextContentPart>());
+      expect((content[0] as TextContentPart).text, equals('done'));
+      expect(content[1], isA<ProviderToolCallContentPart>());
+      expect(content[2], isA<ProviderToolResultContentPart>());
+
+      final call = content[1] as ProviderToolCallContentPart;
+      expect(call.toolCallId, equals('pt1'));
+      expect(call.toolName, equals('web_search'));
+      expect(call.input, isA<Map<String, Object?>>());
+
+      final toolResult = content[2] as ProviderToolResultContentPart;
+      expect(toolResult.toolCallId, equals('pt1'));
+      expect(toolResult.toolName, equals('web_search'));
+    });
+
+    test('content includes provider tool approval request when blocked',
+        () async {
+      final parts = <LLMStreamPart>[
+        const LLMProviderToolCallPart(
+          toolCallId: 'pt1',
+          toolName: 'mcp_server.doThing',
+          input: {'x': 1},
+          providerExecuted: true,
+        ),
+        const LLMProviderToolApprovalRequestPart(
+          approvalId: 'appr_1',
+          toolCallId: 'pt1',
+          toolName: 'mcp_server.doThing',
+          input: {'x': 1},
+        ),
+        LLMErrorPart(
+          ProviderToolApprovalRequiredError(
+            state: ProviderToolApprovalBlockedState(
+              stepIndex: 0,
+              prompt: const Prompt(messages: []),
+              approvalRequests: const [
+                LLMProviderToolApprovalRequestPart(
+                  approvalId: 'appr_1',
+                  toolCallId: 'pt1',
+                  toolName: 'mcp_server.doThing',
+                  input: {'x': 1},
+                ),
+              ],
+              assistantText: '',
+              providerToolCalls: const [
+                LLMProviderToolCallPart(
+                  toolCallId: 'pt1',
+                  toolName: 'mcp_server.doThing',
+                  input: {'x': 1},
+                  providerExecuted: true,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ];
+
+      final result = StreamTextResult.fromPartsStream(
+        Stream<LLMStreamPart>.fromIterable(parts),
+      );
+
+      final content = await result.content;
+      expect(content.map((p) => p.type).toList(), [
+        'tool-call',
+        'tool-approval-request',
+      ]);
+      expect(content[0], isA<ProviderToolCallContentPart>());
+      expect(content[1], isA<ProviderToolApprovalRequestContentPart>());
+
+      final request = content[1] as ProviderToolApprovalRequestContentPart;
+      expect(request.approvalId, equals('appr_1'));
+      expect(request.toolCallId, equals('pt1'));
+      expect(request.toolName, equals('mcp_server.doThing'));
+      expect(request.input, equals({'x': 1}));
     });
   });
 }

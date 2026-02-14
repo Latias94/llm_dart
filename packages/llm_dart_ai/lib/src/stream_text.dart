@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'content_part.dart';
 import 'prompt_input.dart';
 import 'stream_parts.dart';
 import 'tool_loop.dart';
@@ -10,6 +11,26 @@ import 'tool_set.dart';
 import 'response_messages.dart';
 import 'metadata_fallbacks.dart';
 import 'types.dart';
+
+typedef StreamTextOnStepFinishCallback = FutureOr<void> Function(
+  ToolLoopStep step,
+);
+
+class StreamTextFinishEvent {
+  final GenerateTextResult result;
+  final List<ToolLoopStep> steps;
+  final UsageInfo? totalUsage;
+
+  const StreamTextFinishEvent({
+    required this.result,
+    required this.steps,
+    required this.totalUsage,
+  });
+}
+
+typedef StreamTextOnFinishCallback = FutureOr<void> Function(
+  StreamTextFinishEvent event,
+);
 
 /// A streaming text generation result (AI SDK-inspired).
 ///
@@ -22,6 +43,11 @@ import 'types.dart';
 /// full TypeScript AI SDK surface.
 class StreamTextResult {
   final Stream<LLMStreamPart> fullStream;
+
+  /// Content parts produced in the last step (AI SDK-style).
+  ///
+  /// Automatically consumes the stream.
+  final Future<List<ContentPart>> content;
 
   /// Text-only stream (AI SDK-style).
   ///
@@ -100,6 +126,7 @@ class StreamTextResult {
 
   StreamTextResult._({
     required this.fullStream,
+    required this.content,
     required this.warnings,
     required this.responseMetadata,
     required this.requestMetadata,
@@ -119,9 +146,12 @@ class StreamTextResult {
   factory StreamTextResult.fromPartsStream(
     Stream<LLMStreamPart> upstream, {
     String? defaultModelId,
+    StreamTextOnStepFinishCallback? onStepFinish,
+    StreamTextOnFinishCallback? onFinish,
   }) {
     final startedAt = DateTime.now().toUtc();
     var currentStepStartedAt = startedAt;
+    var contentCollector = _StepContentCollector();
     final controller = StreamController<LLMStreamPart>.broadcast(sync: true);
 
     final doneCompleter = Completer<void>();
@@ -141,6 +171,8 @@ class StreamTextResult {
 
     // Prevent unhandled asynchronous errors when callers choose to only consume
     // the stream (or only await a subset of futures).
+    final contentFuture = finalResultCompleter.future.then((r) => r.content);
+    unawaited(contentFuture.catchError((_) => const <ContentPart>[]));
     unawaited(warningsCompleter.future
         .catchError((_) => const <Map<String, dynamic>>[]));
     unawaited(responseMetadataCompleter.future.catchError((_) => null));
@@ -169,6 +201,7 @@ class StreamTextResult {
     final collectedFiles = <LLMFilePart>[];
     final collectedSteps = <ToolLoopStep>[];
     UsageInfo? accumulatedUsage;
+    List<ContentPart>? lastStepContent;
 
     LLMResponseMetadataPart currentResponseMetadata =
         responseMetadataWithDefaults(
@@ -250,6 +283,11 @@ class StreamTextResult {
     Future<void> pump() async {
       try {
         await for (final part in upstream) {
+          if (part is LLMStepStartPart) {
+            // AI SDK semantics: `content` is derived from the last step.
+            contentCollector = _StepContentCollector();
+          }
+          contentCollector.onPart(part);
           controller.add(part);
 
           switch (part) {
@@ -332,6 +370,14 @@ class StreamTextResult {
                 toolCalls: final toolCalls,
                 toolResults: final toolResults,
               ):
+              final stepContent = contentCollector.finalize(
+                toolCalls: toolCalls,
+                toolResults: toolResults,
+                fallbackText: response.text,
+                fallbackReasoning: response.thinking,
+              );
+              lastStepContent = stepContent;
+
               final stepUsage = stepUsageRaw ?? response.usage;
               final stepFinishReason = stepFinishReasonRaw ??
                   (response is ChatResponseWithFinishReason
@@ -355,15 +401,19 @@ class StreamTextResult {
                   index: stepIndex,
                   result: GenerateTextResult(
                     rawResponse: response,
+                    content: stepContent,
                     text: response.text,
                     thinking: response.thinking,
                     toolCalls: toolCalls,
+                    toolResults: toolResults,
                     usage: stepUsage,
                     finishReason: stepFinishReason,
                     requestMetadata: lastRequestMetadata,
                     responseMetadata: stepResponseMetadata,
                     responseMessages: buildResponseMessagesBestEffort(response),
                     responsePromptMessages: stepAssistantPromptMessages,
+                    sources: List<LLMStreamPart>.unmodifiable(collectedSources),
+                    files: List<LLMFilePart>.unmodifiable(collectedFiles),
                   ),
                   toolCalls: toolCalls,
                   toolResults: toolResults,
@@ -372,6 +422,14 @@ class StreamTextResult {
                   responsePromptMessages: stepResponsePromptMessages,
                 ),
               );
+
+              final stepFinishCallback = onStepFinish;
+              if (stepFinishCallback != null) {
+                final step = collectedSteps.last;
+                unawaited(
+                  Future.sync(() => stepFinishCallback(step)).catchError((_) {}),
+                );
+              }
 
               if (stepUsage != null) {
                 accumulatedUsage =
@@ -474,9 +532,17 @@ class StreamTextResult {
               thinking: partialThinking,
               providerMetadata: lastProviderMetadata,
             );
+            final partialContent = contentCollector.finalize(
+              toolCalls: const <ToolCall>[],
+              toolResults: const <ToolResult>[],
+              fallbackText: aggregatedText,
+              fallbackReasoning:
+                  aggregatedThinking.trim().isEmpty ? null : aggregatedThinking,
+            );
             finalResultCompleter.complete(
               GenerateTextResult(
                 rawResponse: partialResponse,
+                content: partialContent,
                 text: aggregatedText,
                 thinking: partialThinking,
                 toolCalls: null,
@@ -488,6 +554,8 @@ class StreamTextResult {
                     buildResponseMessagesBestEffort(partialResponse),
                 responsePromptMessages:
                     buildResponsePromptMessagesBestEffort(partialResponse),
+                sources: List<LLMStreamPart>.unmodifiable(collectedSources),
+                files: List<LLMFilePart>.unmodifiable(collectedFiles),
               ),
             );
           } else {
@@ -529,18 +597,29 @@ class StreamTextResult {
           response.providerMetadata ?? lastProviderMetadata,
         );
 
+        late final List<ToolLoopStep> stepsSnapshot;
         if (collectedSteps.isEmpty) {
           final toolCalls = response.toolCalls ?? const <ToolCall>[];
           final responseMetadata = currentResponseMetadata;
-          stepsCompleter.complete([
+          final content = contentCollector.finalize(
+            toolCalls: toolCalls,
+            toolResults: const <ToolResult>[],
+            fallbackText: response.text ?? aggregatedText,
+            fallbackReasoning: response.thinking ??
+                (aggregatedThinking.isEmpty ? null : aggregatedThinking),
+          );
+          lastStepContent = content;
+          stepsSnapshot = List<ToolLoopStep>.unmodifiable([
             ToolLoopStep(
               index: 0,
               result: GenerateTextResult(
                 rawResponse: response,
+                content: content,
                 text: response.text ?? aggregatedText,
                 thinking: response.thinking ??
                     (aggregatedThinking.isEmpty ? null : aggregatedThinking),
                 toolCalls: toolCalls,
+                toolResults: const <ToolResult>[],
                 usage: usage,
                 finishReason: finishReason,
                 requestMetadata: lastRequestMetadata,
@@ -548,6 +627,8 @@ class StreamTextResult {
                 responseMessages: buildResponseMessagesBestEffort(response),
                 responsePromptMessages:
                     buildResponsePromptMessagesBestEffort(response),
+                sources: List<LLMStreamPart>.unmodifiable(collectedSources),
+                files: List<LLMFilePart>.unmodifiable(collectedFiles),
               ),
               toolCalls: toolCalls,
               toolResults: const [],
@@ -557,28 +638,59 @@ class StreamTextResult {
                   buildResponsePromptMessagesBestEffort(response),
             ),
           ]);
+          stepsCompleter.complete(stepsSnapshot);
         } else {
-          stepsCompleter
-              .complete(List<ToolLoopStep>.unmodifiable(collectedSteps));
+          stepsSnapshot = List<ToolLoopStep>.unmodifiable(collectedSteps);
+          stepsCompleter.complete(stepsSnapshot);
         }
 
-        finalResultCompleter.complete(
-          GenerateTextResult(
-            rawResponse: response,
-            text: response.text ?? aggregatedText,
-            thinking: response.thinking ??
-                (aggregatedThinking.isEmpty ? null : aggregatedThinking),
-            toolCalls: response.toolCalls,
-            usage: usage,
-            finishReason: finishReason,
-            requestMetadata: lastRequestMetadata,
-            responseMetadata: currentResponseMetadata,
-            responseMessages: buildResponseMessagesBestEffort(response),
-            responsePromptMessages: buildResponsePromptMessagesBestEffort(
-              response,
-            ),
+        final totalUsage = accumulatedUsage ?? usage;
+        final lastToolResults = stepsSnapshot.isEmpty
+            ? const <ToolResult>[]
+            : stepsSnapshot.last.toolResults;
+        final content = lastStepContent ??
+            contentCollector.finalize(
+              toolCalls: response.toolCalls ?? const <ToolCall>[],
+              toolResults: lastToolResults,
+              fallbackText: response.text ?? aggregatedText,
+              fallbackReasoning: response.thinking ??
+                  (aggregatedThinking.isEmpty ? null : aggregatedThinking),
+            );
+
+        final finalResult = GenerateTextResult(
+          rawResponse: response,
+          content: content,
+          text: response.text ?? aggregatedText,
+          thinking: response.thinking ??
+              (aggregatedThinking.isEmpty ? null : aggregatedThinking),
+          toolCalls: response.toolCalls,
+          toolResults: lastToolResults,
+          usage: usage,
+          totalUsage: totalUsage,
+          finishReason: finishReason,
+          requestMetadata: lastRequestMetadata,
+          responseMetadata: currentResponseMetadata,
+          responseMessages: buildResponseMessagesBestEffort(response),
+          responsePromptMessages: buildResponsePromptMessagesBestEffort(
+            response,
           ),
+          steps: stepsSnapshot,
+          sources: List<LLMStreamPart>.unmodifiable(collectedSources),
+          files: List<LLMFilePart>.unmodifiable(collectedFiles),
         );
+        finalResultCompleter.complete(finalResult);
+
+        final finishCallback = onFinish;
+        if (finishCallback != null) {
+          final event = StreamTextFinishEvent(
+            result: finalResult,
+            steps: stepsSnapshot,
+            totalUsage: totalUsage,
+          );
+          unawaited(
+            Future.sync(() => finishCallback(event)).catchError((_) {}),
+          );
+        }
       }
     }
 
@@ -588,6 +700,7 @@ class StreamTextResult {
 
     return StreamTextResult._(
       fullStream: controller.stream,
+      content: contentFuture,
       warnings: warningsCompleter.future,
       responseMetadata: responseMetadataCompleter.future,
       requestMetadata: requestMetadataCompleter.future,
@@ -603,6 +716,323 @@ class StreamTextResult {
       finalResult: finalResultCompleter.future,
       done: doneCompleter.future,
     );
+  }
+}
+
+class _StepContentCollector {
+  final List<ContentPart> _parts = <ContentPart>[];
+
+  final ToolCallAggregator _toolCallAggregator = ToolCallAggregator();
+  final Map<String, ToolCall> _toolCallsById = <String, ToolCall>{};
+  final Set<String> _emittedToolCallIds = <String>{};
+
+  final Map<String, StringBuffer> _textBlocks = <String, StringBuffer>{};
+  final List<String> _textOrder = <String>[];
+  final Map<String, StringBuffer> _reasoningBlocks = <String, StringBuffer>{};
+  final List<String> _reasoningOrder = <String>[];
+
+  final Set<String> _providerToolCallIds = <String>{};
+
+  void _ensureOrder(List<String> order, String id) {
+    if (!order.contains(id)) order.add(id);
+  }
+
+  String _blockId(String? id) => (id == null || id.isEmpty) ? '1' : id;
+
+  String _joinBlocks(List<String> order, Map<String, StringBuffer> blocks) {
+    final out = StringBuffer();
+    for (final id in order) {
+      final buf = blocks[id];
+      if (buf == null) continue;
+      out.write(buf.toString());
+    }
+    return out.toString();
+  }
+
+  bool _hasTextPart(List<ContentPart> parts) =>
+      parts.any((p) => p is TextContentPart);
+
+  bool _hasReasoningPart(List<ContentPart> parts) =>
+      parts.any((p) => p is ReasoningContentPart);
+
+  void onPart(LLMStreamPart part) {
+    switch (part) {
+      case LLMTextDeltaPart(:final delta, blockId: final blockId):
+        final id = _blockId(blockId);
+        _ensureOrder(_textOrder, id);
+        (_textBlocks[id] ??= StringBuffer()).write(delta);
+        return;
+
+      case LLMTextEndPart(
+          :final text,
+          blockId: final blockId,
+          :final providerMetadata,
+        ):
+        // Track best-effort text even when providers don't emit deltas.
+        final id = _blockId(blockId);
+        _ensureOrder(_textOrder, id);
+        final buf = (_textBlocks[id] ??= StringBuffer());
+        if (buf.isEmpty && text.isNotEmpty) buf.write(text);
+        _parts.add(TextContentPart(text, providerMetadata: providerMetadata));
+        return;
+
+      case LLMReasoningDeltaPart(:final delta, blockId: final blockId):
+        final id = _blockId(blockId);
+        _ensureOrder(_reasoningOrder, id);
+        (_reasoningBlocks[id] ??= StringBuffer()).write(delta);
+        return;
+
+      case LLMReasoningEndPart(
+          :final thinking,
+          blockId: final blockId,
+          :final providerMetadata,
+        ):
+        final id = _blockId(blockId);
+        _ensureOrder(_reasoningOrder, id);
+        final buf = (_reasoningBlocks[id] ??= StringBuffer());
+        if (buf.isEmpty && thinking.isNotEmpty) buf.write(thinking);
+        _parts.add(
+          ReasoningContentPart(thinking, providerMetadata: providerMetadata),
+        );
+        return;
+
+      case LLMSourceUrlPart():
+        _parts.add(
+          SourceUrlContentPart(
+            sourceId: part.sourceId,
+            url: part.url,
+            title: part.title,
+            providerMetadata: part.providerMetadata,
+          ),
+        );
+        return;
+
+      case LLMSourceDocumentPart():
+        _parts.add(
+          SourceDocumentContentPart(
+            sourceId: part.sourceId,
+            mediaType: part.mediaType,
+            title: part.title,
+            filename: part.filename,
+            providerMetadata: part.providerMetadata,
+          ),
+        );
+        return;
+
+      case LLMFilePart():
+        _parts.add(FileContentPart(part));
+        return;
+
+      case LLMToolCallStartPart(:final toolCall):
+      case LLMToolCallDeltaPart(:final toolCall):
+        final merged = _toolCallAggregator.addDelta(toolCall);
+        _toolCallsById[merged.id] = merged;
+        return;
+
+      case LLMToolCallEndPart(:final toolCallId):
+        _emitToolCallIfPossible(toolCallId);
+        return;
+
+      case LLMToolResultPart(:final result):
+        _parts.add(
+          result.isError
+              ? ToolErrorContentPart(result)
+              : ToolResultContentPart(result),
+        );
+        return;
+
+      case LLMProviderToolCallPart(
+          :final toolCallId,
+          :final toolName,
+          :final input,
+          :final providerExecuted,
+          :final isDynamic,
+          :final providerMetadata,
+        ):
+        _providerToolCallIds.add(toolCallId);
+        _parts.add(
+          ProviderToolCallContentPart(
+            toolCallId: toolCallId,
+            toolName: toolName,
+            input: input,
+            providerExecuted: providerExecuted,
+            isDynamic: isDynamic,
+            providerMetadata: providerMetadata,
+          ),
+        );
+        return;
+
+      case LLMProviderToolResultPart(
+          :final toolCallId,
+          :final toolName,
+          :final result,
+          :final isError,
+          :final preliminary,
+          :final isDynamic,
+          :final providerMetadata,
+        ):
+        if (!_providerToolCallIds.contains(toolCallId)) {
+          _providerToolCallIds.add(toolCallId);
+          _parts.add(
+            ProviderToolCallContentPart(
+              toolCallId: toolCallId,
+              toolName: toolName,
+              input: null,
+              providerExecuted: true,
+              isDynamic: isDynamic,
+              providerMetadata: null,
+            ),
+          );
+        }
+        if (isError == true) {
+          _parts.add(
+            ProviderToolErrorContentPart(
+              toolCallId: toolCallId,
+              toolName: toolName,
+              error: result,
+              preliminary: preliminary,
+              isDynamic: isDynamic,
+              providerMetadata: providerMetadata,
+            ),
+          );
+        } else {
+          _parts.add(
+            ProviderToolResultContentPart(
+              toolCallId: toolCallId,
+              toolName: toolName,
+              result: result,
+              preliminary: preliminary,
+              isDynamic: isDynamic,
+              providerMetadata: providerMetadata,
+            ),
+          );
+        }
+        return;
+
+      case LLMProviderToolApprovalRequestPart(
+          :final approvalId,
+          :final toolCallId,
+          :final toolName,
+          :final input,
+          :final providerMetadata,
+        ):
+        _providerToolCallIds.add(toolCallId);
+        final localToolCall = _toolCallsById[toolCallId];
+        if (localToolCall != null &&
+            localToolCall.callType.trim().toLowerCase() == 'function' &&
+            localToolCall.function.name.trim().isNotEmpty) {
+          _parts.add(
+            ToolApprovalRequestContentPart(
+              approvalId: approvalId,
+              toolCall: localToolCall,
+            ),
+          );
+        } else {
+          _parts.add(
+            ProviderToolApprovalRequestContentPart(
+              approvalId: approvalId,
+              toolCallId: toolCallId,
+              toolName: toolName,
+              input: input,
+              providerMetadata: providerMetadata,
+            ),
+          );
+        }
+        return;
+
+      default:
+        return;
+    }
+  }
+
+  void _emitToolCallIfPossible(String toolCallId) {
+    final id = toolCallId.trim();
+    if (id.isEmpty) return;
+    if (_emittedToolCallIds.contains(id)) return;
+
+    final call = _toolCallsById[id];
+    if (call == null) return;
+    if (call.function.name.trim().isEmpty) return;
+
+    _emittedToolCallIds.add(id);
+    _parts.add(ToolCallContentPart(call));
+  }
+
+  bool _hasToolCallPart(List<ContentPart> parts, String toolCallId) {
+    for (final p in parts) {
+      if (p is ToolCallContentPart && p.toolCall.id == toolCallId) return true;
+    }
+    return false;
+  }
+
+  int _indexOfToolResultPart(List<ContentPart> parts, String toolCallId) {
+    for (var i = 0; i < parts.length; i++) {
+      final p = parts[i];
+      if (p is ToolResultContentPart && p.toolResult.toolCallId == toolCallId) {
+        return i;
+      }
+      if (p is ToolErrorContentPart && p.toolResult.toolCallId == toolCallId) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  bool _hasToolResultPart(List<ContentPart> parts, String toolCallId) {
+    return _indexOfToolResultPart(parts, toolCallId) != -1;
+  }
+
+  /// Finalize the current step content, ensuring tool calls/results exist.
+  ///
+  /// This is used for both single-step streams (no step boundary parts) and for
+  /// tool-loop steps (using [LLMStepFinishPart.toolCalls]/[toolResults]).
+  List<ContentPart> finalize({
+    required List<ToolCall> toolCalls,
+    List<ToolResult> toolResults = const <ToolResult>[],
+    String? fallbackText,
+    String? fallbackReasoning,
+  }) {
+    final out = List<ContentPart>.from(_parts);
+
+    if (!_hasReasoningPart(out)) {
+      final reasoning = _joinBlocks(_reasoningOrder, _reasoningBlocks);
+      final effectiveReasoning = reasoning.trim().isNotEmpty
+          ? reasoning
+          : (fallbackReasoning ?? '');
+      if (effectiveReasoning.trim().isNotEmpty) {
+        out.insert(0, ReasoningContentPart(effectiveReasoning));
+      }
+    }
+
+    if (!_hasTextPart(out)) {
+      final text = _joinBlocks(_textOrder, _textBlocks);
+      final effectiveText =
+          text.isNotEmpty ? text : (fallbackText ?? '');
+      if (effectiveText.isNotEmpty) {
+        final insertAt = out.isNotEmpty && out.first is ReasoningContentPart
+            ? 1
+            : 0;
+        out.insert(insertAt, TextContentPart(effectiveText));
+      }
+    }
+
+    for (final r in toolResults) {
+      if (_hasToolResultPart(out, r.toolCallId)) continue;
+      out.add(r.isError ? ToolErrorContentPart(r) : ToolResultContentPart(r));
+    }
+
+    for (final c in toolCalls) {
+      if (_hasToolCallPart(out, c.id)) continue;
+      final idx = _indexOfToolResultPart(out, c.id);
+      final callPart = ToolCallContentPart(c);
+      if (idx == -1) {
+        out.add(callPart);
+      } else {
+        out.insert(idx, callPart);
+      }
+    }
+
+    return List<ContentPart>.unmodifiable(out);
   }
 }
 
@@ -673,6 +1103,9 @@ StreamTextResult streamText({
   int providerToolApprovalMaxSteps = 10,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  bool includeRawChunks = false,
+  StreamTextOnStepFinishCallback? onStepFinish,
+  StreamTextOnFinishCallback? onFinish,
   IncludeOptions include = const IncludeOptions(),
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
@@ -790,8 +1223,15 @@ StreamTextResult streamText({
       ? (model as ModelIdentityCapability).modelId
       : null;
 
+  Stream<LLMStreamPart> filteredUpstream() {
+    if (includeRawChunks) return upstream();
+    return upstream().where((part) => part is! LLMRawPart);
+  }
+
   return StreamTextResult.fromPartsStream(
-    upstream(),
+    filteredUpstream(),
     defaultModelId: defaultModelId,
+    onStepFinish: onStepFinish,
+    onFinish: onFinish,
   );
 }

@@ -296,9 +296,9 @@ void main() {
         () async {
       final model = _EmbeddingCallOptionsModel();
 
-      final vectors = await embed(
+      final vectors = await embedMany(
         model: model,
-        input: const ['hi'],
+        values: const ['hi'],
         callOptions: const LLMCallOptions(headers: {'x-test': '1'}),
       );
 
@@ -426,9 +426,9 @@ void main() {
         const {LLMCapability.chat, LLMCapability.embedding},
       );
 
-      final vectors = await embed(
+      final vectors = await embedMany(
         model: provider,
-        input: const ['hello'],
+        values: const ['hello'],
         callOptions: const LLMCallOptions(
           headers: {'x-test': '1'},
           body: {'model': 'override-embedding-model'},

@@ -71,9 +71,9 @@ Future<RerankResult> rerankByEmbedding({
   }
 
   final inputs = <String>[query, ...documents.map((d) => d.text)];
-  final vectors = await embed(
+  final vectors = await embedMany(
     model: model,
-    input: inputs,
+    values: inputs,
     defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,

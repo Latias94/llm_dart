@@ -118,20 +118,42 @@ void main() {
       expect(parts[8], isA<LLMReasoningEndPart>());
       expect((parts[8] as LLMReasoningEndPart).thinking, equals('Think'));
 
-      expect(parts[9], isA<LLMToolCallStartPart>());
-      expect((parts[9] as LLMToolCallStartPart).toolCall.id, equals('call_1'));
+      final toolInputStart = parts.whereType<LLMToolInputStartPart>().single;
+      expect(toolInputStart.id, equals('call_1'));
+      expect(toolInputStart.toolName, equals('getWeather'));
 
-      expect(parts[10], isA<LLMToolCallEndPart>());
-      expect((parts[10] as LLMToolCallEndPart).toolCallId, equals('call_1'));
+      final toolInputDelta = parts.whereType<LLMToolInputDeltaPart>().single;
+      expect(toolInputDelta.id, equals('call_1'));
+      expect(toolInputDelta.delta, equals('{"q":"a"}'));
 
-      expect(parts[11], isA<LLMProviderMetadataPart>());
+      expect(parts.whereType<LLMToolCallStartPart>(), hasLength(1));
+      expect(parts.whereType<LLMToolCallEndPart>(), hasLength(1));
+      expect(parts.whereType<LLMToolInputEndPart>(), hasLength(1));
+
+      final toolCallStartIndex =
+          parts.indexWhere((p) => p is LLMToolCallStartPart);
+      final toolInputStartIndex =
+          parts.indexWhere((p) => p is LLMToolInputStartPart);
+      final toolInputEndIndex =
+          parts.indexWhere((p) => p is LLMToolInputEndPart);
+      final toolCallEndIndex = parts.indexWhere((p) => p is LLMToolCallEndPart);
+      expect(toolInputStartIndex, lessThan(toolCallStartIndex));
+      expect(toolCallStartIndex, lessThan(toolInputEndIndex));
+      expect(toolInputEndIndex, lessThan(toolCallEndIndex));
+
+      final providerMetadataIndex =
+          parts.indexWhere((p) => p is LLMProviderMetadataPart);
+      expect(providerMetadataIndex, isNonNegative);
+
+      expect(parts[providerMetadataIndex], isA<LLMProviderMetadataPart>());
       expect(
-        (parts[11] as LLMProviderMetadataPart).providerMetadata,
+        (parts[providerMetadataIndex] as LLMProviderMetadataPart)
+            .providerMetadata,
         containsPair('openai', {'id': 'resp_1'}),
       );
 
-      expect(parts[12], isA<LLMFinishPart>());
-      expect((parts[12] as LLMFinishPart).response.text, equals('Hello'));
+      expect(parts.last, isA<LLMFinishPart>());
+      expect((parts.last as LLMFinishPart).response.text, equals('Hello'));
     });
 
     test('deduplicates finish and ensures it is last', () async {

@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:llm_dart_core/llm_dart_core.dart';
+
+import 'content_part.dart';
 
 /// Settings for controlling what data is retained in results.
 ///
@@ -19,11 +23,18 @@ class IncludeOptions {
 
 /// Result for a non-streaming text generation call.
 class GenerateTextResult {
+  final List<ContentPart>? _contentParts;
+
   final String? text;
   final String? thinking;
   final List<ToolCall>? toolCalls;
+  final List<ToolResult> toolResults;
   final UsageInfo? usage;
+  final UsageInfo? totalUsage;
   final LLMFinishReason? finishReason;
+  final List<ToolLoopStep> steps;
+  final List<LLMStreamPart> sources;
+  final List<LLMFilePart> files;
 
   /// Best-effort request metadata for this generation (provider-dependent).
   ///
@@ -56,19 +67,108 @@ class GenerateTextResult {
 
   const GenerateTextResult({
     required this.rawResponse,
+    List<ContentPart>? content,
     this.text,
     this.thinking,
     this.toolCalls,
+    this.toolResults = const <ToolResult>[],
     this.usage,
+    this.totalUsage,
     this.finishReason,
     this.requestMetadata,
     this.responseMetadata,
     this.responseMessages = const <ChatMessage>[],
     this.responsePromptMessages = const <PromptMessage>[],
-  });
+    this.steps = const <ToolLoopStep>[],
+    this.sources = const <LLMStreamPart>[],
+    this.files = const <LLMFilePart>[],
+  }) : _contentParts = content;
+
+  /// AI SDK-inspired content parts for the last step.
+  ///
+  /// If [content] was provided in the constructor, it is returned as-is.
+  /// Otherwise, this is derived best-effort from [text], [thinking],
+  /// [toolCalls], [toolResults], [sources], and [files].
+  List<ContentPart> get content => _contentParts ?? _deriveContentParts();
+
+  List<ContentPart> _deriveContentParts() {
+    final out = <ContentPart>[];
+
+    final thinkingText = thinking;
+    if (thinkingText != null && thinkingText.trim().isNotEmpty) {
+      out.add(ReasoningContentPart(thinkingText));
+    }
+
+    final textValue = text;
+    if (textValue != null && textValue.isNotEmpty) {
+      out.add(TextContentPart(textValue));
+    }
+
+    for (final part in sources) {
+      if (part is LLMSourceUrlPart) {
+        out.add(
+          SourceUrlContentPart(
+            sourceId: part.sourceId,
+            url: part.url,
+            title: part.title,
+            providerMetadata: part.providerMetadata,
+          ),
+        );
+      } else if (part is LLMSourceDocumentPart) {
+        out.add(
+          SourceDocumentContentPart(
+            sourceId: part.sourceId,
+            mediaType: part.mediaType,
+            title: part.title,
+            filename: part.filename,
+            providerMetadata: part.providerMetadata,
+          ),
+        );
+      }
+    }
+
+    for (final f in files) {
+      out.add(FileContentPart(f));
+    }
+
+    final calls = toolCalls;
+    if (calls != null && calls.isNotEmpty) {
+      for (final c in calls) {
+        out.add(ToolCallContentPart(c));
+      }
+    }
+
+    if (toolResults.isNotEmpty) {
+      for (final r in toolResults) {
+        out.add(r.isError ? ToolErrorContentPart(r) : ToolResultContentPart(r));
+      }
+    }
+
+    return List<ContentPart>.unmodifiable(out);
+  }
 
   Map<String, dynamic>? get providerMetadata => rawResponse.providerMetadata;
 }
+
+typedef GenerateTextOnStepFinishCallback = FutureOr<void> Function(
+  ToolLoopStep step,
+);
+
+class GenerateTextFinishEvent {
+  final GenerateTextResult result;
+  final List<ToolLoopStep> steps;
+  final UsageInfo? totalUsage;
+
+  const GenerateTextFinishEvent({
+    required this.result,
+    required this.steps,
+    required this.totalUsage,
+  });
+}
+
+typedef GenerateTextOnFinishCallback = FutureOr<void> Function(
+  GenerateTextFinishEvent event,
+);
 
 /// Result for an image generation call.
 class GenerateImageResult {
@@ -145,6 +245,9 @@ class ToolLoopStep {
     this.responsePromptMessages = const <PromptMessage>[],
   });
 }
+
+/// Alias for naming parity with AI SDK (`StepResult`).
+typedef StepResult = ToolLoopStep;
 
 /// Result for a non-streaming tool loop run.
 class ToolLoopResult {

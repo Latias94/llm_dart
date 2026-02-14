@@ -116,6 +116,41 @@ void main() {
       );
     });
 
+    test('emits message-metadata chunks when messageMetadata callback is set',
+        () async {
+      final partsList = <LLMStreamPart>[
+        const LLMTextStartPart(blockId: 't1'),
+        const LLMTextDeltaPart('Hello', blockId: 't1'),
+        const LLMTextEndPart('Hello', blockId: 't1'),
+        LLMFinishPart(
+          _TestChatResponse(text: 'Hello'),
+          finishReason: const LLMFinishReason(
+            unified: LLMUnifiedFinishReason.stop,
+            raw: null,
+          ),
+        ),
+      ];
+
+      final chunks = await uiMessageChunksFromParts(
+        Stream.fromIterable(partsList),
+        sendStart: false,
+        messageMetadata: (_) => const {'traceId': 't'},
+      ).toList();
+
+      expect(
+        chunks,
+        equals([
+          const {'type': 'text-start', 'id': 't1'},
+          const {'type': 'message-metadata', 'messageMetadata': {'traceId': 't'}},
+          const {'type': 'text-delta', 'id': 't1', 'delta': 'Hello'},
+          const {'type': 'message-metadata', 'messageMetadata': {'traceId': 't'}},
+          const {'type': 'text-end', 'id': 't1'},
+          const {'type': 'message-metadata', 'messageMetadata': {'traceId': 't'}},
+          const {'type': 'finish', 'finishReason': 'stop'},
+        ]),
+      );
+    });
+
     test('encodes tool input deltas and emits tool-input-available on end',
         () async {
       final parts = Stream<LLMStreamPart>.fromIterable([
@@ -354,7 +389,7 @@ void main() {
         LLMToolResultPart(
           ToolResult.success(
             toolCallId: 'call1',
-            content: jsonEncode({'type': 'execution-denied'}),
+            result: {'type': 'execution-denied'},
           ),
         ),
         LLMFinishPart(

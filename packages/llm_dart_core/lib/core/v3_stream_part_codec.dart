@@ -820,6 +820,11 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         isDynamic: final dynamicTool,
         title: final title,
       ):
+      state.toolInput.onToolInputStart(
+        id: id,
+        toolName: toolName,
+        providerExecuted: providerExecuted,
+      );
       return [
         {
           'type': 'tool-input-start',
@@ -837,6 +842,7 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         delta: final delta,
         providerMetadata: final pm,
       ):
+      state.toolInput.onToolInputDelta(id: id, delta: delta);
       return [
         {
           'type': 'tool-input-delta',
@@ -847,16 +853,28 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
       ];
 
     case LLMToolInputEndPart(id: final id, providerMetadata: final pm):
-      return [
+      final completed = state.toolInput.onToolInputEnd(id);
+      final out = <V3JsonMap>[
         {
           'type': 'tool-input-end',
           'id': id,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         },
       ];
+      if (completed != null && !completed.providerExecuted) {
+        out.add({
+          'type': 'tool-call',
+          'toolCallId': completed.id,
+          'toolName': completed.toolName,
+          'input': completed.input,
+          // client-executed tool call: omit providerExecuted
+        });
+      }
+      return out;
 
     // Local tool call lifecycle (client-executed function tools):
     case LLMToolCallStartPart(:final toolCall):
+      if (state.toolInput.hasSeenToolInputPart(toolCall.id)) return const [];
       state.toolInput.onStart(toolCall);
       final out = <V3JsonMap>[
         {
@@ -876,6 +894,7 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
       return out;
 
     case LLMToolCallDeltaPart(:final toolCall):
+      if (state.toolInput.hasSeenToolInputPart(toolCall.id)) return const [];
       state.toolInput.onDelta(toolCall);
       return [
         {
@@ -886,6 +905,7 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
       ];
 
     case LLMToolCallEndPart(:final toolCallId):
+      if (state.toolInput.hasSeenToolInputPart(toolCallId)) return const [];
       final completed = state.toolInput.onEnd(toolCallId);
       final out = <V3JsonMap>[
         {
@@ -905,11 +925,13 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
       return out;
 
     case LLMToolResultPart(:final result):
-      final decoded = _decodeJsonIfPossible(result.content);
-      if (decoded == null) {
+      final raw = result.result;
+      final decoded = raw is String ? _decodeJsonIfPossible(raw) : raw;
+      final normalized = _normalizeJsonLike(decoded);
+      if (normalized == null) {
         throw StateError(
           'v3 tool-result.result must be non-null. '
-          'ToolResult.content decoded to null for toolCallId='
+          'ToolResult.result normalized to null for toolCallId='
           '${result.toolCallId}.',
         );
       }
@@ -918,7 +940,7 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
           'type': 'tool-result',
           'toolCallId': result.toolCallId,
           'toolName': state.toolInput.toolNameForToolCallId(result.toolCallId),
-          'result': decoded,
+          'result': normalized,
           if (result.isError) 'isError': true,
           if (result.metadata != null && result.metadata!.isNotEmpty)
             'providerMetadata': {'tool': result.metadata},
@@ -1344,17 +1366,21 @@ class _CompletedToolCall {
   final String id;
   final String toolName;
   final String input;
+  final bool providerExecuted;
 
   const _CompletedToolCall({
     required this.id,
     required this.toolName,
     required this.input,
+    required this.providerExecuted,
   });
 }
 
 class _ToolInputState {
   final Map<String, String> _toolNameById = {};
   final Map<String, StringBuffer> _argsById = {};
+  final Map<String, bool> _providerExecutedById = {};
+  final Set<String> _seenToolInputParts = {};
 
   void onStart(ToolCall toolCall) {
     _toolNameById[toolCall.id] = toolCall.function.name;
@@ -1367,6 +1393,45 @@ class _ToolInputState {
         .write(toolCall.function.arguments);
   }
 
+  void onToolInputStart({
+    required String id,
+    required String toolName,
+    bool? providerExecuted,
+  }) {
+    _seenToolInputParts.add(id);
+    if (toolName.trim().isNotEmpty) {
+      _toolNameById[id] = toolName;
+    }
+    if (providerExecuted != null) {
+      _providerExecutedById[id] = providerExecuted;
+    }
+    _argsById.putIfAbsent(id, StringBuffer.new);
+  }
+
+  void onToolInputDelta({
+    required String id,
+    required String delta,
+  }) {
+    _seenToolInputParts.add(id);
+    (_argsById[id] ??= StringBuffer()).write(delta);
+  }
+
+  _CompletedToolCall? onToolInputEnd(String id) {
+    _seenToolInputParts.add(id);
+    final toolName = _toolNameById[id] ?? '';
+    final input = _argsById[id]?.toString() ?? '';
+    if (toolName.isEmpty) return null;
+
+    return _CompletedToolCall(
+      id: id,
+      toolName: toolName,
+      input: input,
+      providerExecuted: _providerExecutedById[id] ?? false,
+    );
+  }
+
+  bool hasSeenToolInputPart(String id) => _seenToolInputParts.contains(id);
+
   _CompletedToolCall? onEnd(String toolCallId) {
     final toolName = _toolNameById[toolCallId] ?? '';
     final input = _argsById[toolCallId]?.toString() ?? '';
@@ -1376,6 +1441,7 @@ class _ToolInputState {
       id: toolCallId,
       toolName: toolName,
       input: input,
+      providerExecuted: _providerExecutedById[toolCallId] ?? false,
     );
   }
 

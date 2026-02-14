@@ -166,6 +166,7 @@ class StreamObjectResult {
     final toolInputNames = <String, String>{};
     final endedToolInputs = <String>{};
     final targetToolInputIds = <String>{};
+    var hasTargetToolInputs = false;
 
     final textBuffer = StringBuffer();
     final objectJsonTextBuffer = StringBuffer();
@@ -340,6 +341,13 @@ class StreamObjectResult {
               final id = aggregated.id;
               final name = aggregated.function.name;
 
+              // AI SDK v3 semantics: prefer tool-input-* parts when available.
+              // `ensureBlockEndsPart` may mirror tool-call deltas into tool-input
+              // deltas; consuming both would duplicate JSON fragments.
+              if (hasTargetToolInputs) {
+                break;
+              }
+
               final knownTarget = targetToolCallIds[id];
               if (knownTarget == true) {
                 final delta = toolCall.function.arguments;
@@ -379,6 +387,7 @@ class StreamObjectResult {
               toolInputBuffers[id] = StringBuffer();
               if (name == toolName) {
                 targetToolInputIds.add(id);
+                hasTargetToolInputs = true;
               }
 
             case LLMToolInputDeltaPart(id: final id, delta: final delta):
