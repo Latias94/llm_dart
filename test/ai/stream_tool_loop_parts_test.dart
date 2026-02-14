@@ -187,7 +187,49 @@ void main() {
 
       // Step 2 (final)
       expect(parts.whereType<LLMTextEndPart>().last.text, equals('Done'));
-      expect(parts.whereType<LLMFinishPart>().single.response.text, equals('Done'));
+      expect(parts.whereType<LLMFinishPart>().single.response.text,
+          equals('Done'));
+    });
+
+    test('should stop when a tool handler is missing (schema-only tool)',
+        () async {
+      final model = _SequencedStreamChatModel([
+        [
+          LLMToolCallStartPart(
+            ToolCall(
+              id: 'call_1',
+              callType: 'function',
+              function: FunctionCall(name: 'search_web', arguments: '{'),
+            ),
+          ),
+          LLMToolCallDeltaPart(
+            ToolCall(
+              id: 'call_1',
+              callType: 'function',
+              function: FunctionCall(name: '', arguments: '"q":"dart"}'),
+            ),
+          ),
+          const LLMToolCallEndPart('call_1'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_1'}
+              },
+            ),
+          ),
+        ],
+      ]);
+
+      final parts = await streamToolLoopParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        toolHandlers: {},
+        maxSteps: 3,
+      ).toList();
+
+      expect(parts.whereType<LLMToolResultPart>(), isEmpty);
+      expect(parts.whereType<LLMErrorPart>(), isEmpty);
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
     });
 
     test('ToolSet tool input hooks are invoked (start/delta/available)',
@@ -414,8 +456,7 @@ void main() {
       final toolResult = parts.whereType<LLMToolResultPart>().single.result;
       expect(toolResult.toolCallId, equals('call_bad_json'));
       expect(toolResult.isError, isFalse);
-      expect(
-          toolResult.result, equals({'temp': 70, 'city': 'SF'}));
+      expect(toolResult.result, equals({'temp': 70, 'city': 'SF'}));
 
       final finish = parts.whereType<LLMFinishPart>().single;
       expect(finish.response.text, equals('Done'));

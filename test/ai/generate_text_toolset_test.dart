@@ -130,5 +130,140 @@ void main() {
       final step1 = result.steps.last;
       expect(step1.result.content.map((p) => p.type).toList(), ['text']);
     });
+
+    test('schema-only tools stop after tool call (no local execution)',
+        () async {
+      final model = _SequencedChatModel([
+        const _Response(
+          toolCalls: [
+            ToolCall(
+              id: 'call_1',
+              callType: 'function',
+              function: FunctionCall(
+                name: 'search_web',
+                arguments: '{"q":"dart"}',
+              ),
+            ),
+          ],
+          usage: UsageInfo(totalTokens: 3),
+          finishReason: LLMFinishReason(
+            unified: LLMUnifiedFinishReason.toolCalls,
+            raw: 'tool_calls',
+          ),
+        ),
+      ]);
+
+      final toolSet = ToolSet([
+        schemaOnlyFunctionTool(
+          name: 'search_web',
+          description: 'search',
+          parameters: const ParametersSchema(
+            schemaType: 'object',
+            properties: {
+              'q': ParameterProperty(
+                propertyType: 'string',
+                description: 'query',
+              ),
+            },
+            required: ['q'],
+          ),
+        ),
+      ]);
+
+      final result = await generateText(
+        model: model,
+        prompt: 'hi',
+        toolSet: toolSet,
+        maxSteps: 3,
+      );
+
+      expect(result.steps, hasLength(1));
+      final step0 = result.steps.single;
+      expect(step0.toolCalls, hasLength(1));
+      expect(step0.toolResults, isEmpty);
+      expect(step0.result.content.map((p) => p.type).toList(), ['tool-call']);
+    });
+
+    test('executes local subset and stops when some tools are schema-only',
+        () async {
+      final model = _SequencedChatModel([
+        const _Response(
+          toolCalls: [
+            ToolCall(
+              id: 'call_1',
+              callType: 'function',
+              function: FunctionCall(
+                name: 'get_weather',
+                arguments: '{"city":"SF"}',
+              ),
+            ),
+            ToolCall(
+              id: 'call_2',
+              callType: 'function',
+              function: FunctionCall(
+                name: 'search_web',
+                arguments: '{"q":"dart"}',
+              ),
+            ),
+          ],
+          usage: UsageInfo(totalTokens: 3),
+          finishReason: LLMFinishReason(
+            unified: LLMUnifiedFinishReason.toolCalls,
+            raw: 'tool_calls',
+          ),
+        ),
+      ]);
+
+      final toolSet = ToolSet([
+        functionTool(
+          name: 'get_weather',
+          description: 'get weather',
+          parameters: const ParametersSchema(
+            schemaType: 'object',
+            properties: {
+              'city': ParameterProperty(
+                propertyType: 'string',
+                description: 'city',
+              ),
+            },
+            required: ['city'],
+          ),
+          handler: (toolCall, {cancelToken}) => {'temp': 70},
+        ),
+        schemaOnlyFunctionTool(
+          name: 'search_web',
+          description: 'search',
+          parameters: const ParametersSchema(
+            schemaType: 'object',
+            properties: {
+              'q': ParameterProperty(
+                propertyType: 'string',
+                description: 'query',
+              ),
+            },
+            required: ['q'],
+          ),
+        ),
+      ]);
+
+      final result = await generateText(
+        model: model,
+        prompt: 'hi',
+        toolSet: toolSet,
+        maxSteps: 3,
+      );
+
+      expect(result.steps, hasLength(1));
+      final step0 = result.steps.single;
+      expect(step0.toolCalls, hasLength(2));
+      expect(step0.toolResults, hasLength(1));
+      expect(step0.toolResults.single.toolCallId, equals('call_1'));
+      expect(step0.toolResults.single.result, equals({'temp': 70}));
+      expect(step0.result.content.map((p) => p.type).toList(), [
+        'tool-call',
+        'tool-call',
+        'tool-result',
+      ]);
+    });
   });
 }

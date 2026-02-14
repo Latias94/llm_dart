@@ -49,27 +49,13 @@ List<ContentPart> buildContentPartsBestEffort({
     out.add(FileContentPart(f));
   }
 
-  final resultsByCallId = <String, List<ToolResult>>{};
-  for (final r in toolResults) {
-    (resultsByCallId[r.toolCallId] ??= <ToolResult>[]).add(r);
-  }
-
   for (final call in toolCalls) {
     out.add(ToolCallContentPart(call));
-    final results = resultsByCallId.remove(call.id);
-    if (results == null) continue;
-    for (final r in results) {
-      out.add(r.isError ? ToolErrorContentPart(r) : ToolResultContentPart(r));
-    }
   }
 
-  // Any extra results that don't have a matching tool call in the last step.
-  for (final entry in resultsByCallId.entries) {
-    for (final r in entry.value) {
-      out.add(r.isError ? ToolErrorContentPart(r) : ToolResultContentPart(r));
-    }
+  for (final r in toolResults) {
+    out.add(r.isError ? ToolErrorContentPart(r) : ToolResultContentPart(r));
   }
 
   return List<ContentPart>.unmodifiable(out);
 }
-

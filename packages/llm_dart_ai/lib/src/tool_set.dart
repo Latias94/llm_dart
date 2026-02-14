@@ -5,7 +5,12 @@ import 'tool_types.dart';
 /// A local tool definition bundling a tool schema and a local executor.
 class LocalTool {
   final Tool tool;
-  final ToolCallHandler handler;
+
+  /// Optional local executor for this tool.
+  ///
+  /// When null, the tool is schema-only: it can be advertised to the model, but
+  /// will not be executed by local tool loops.
+  final ToolCallHandler? handler;
   final ToolApprovalCheck? needsApproval;
   final ToolInputStartHandler? onInputStart;
   final ToolInputDeltaHandler? onInputDelta;
@@ -14,7 +19,7 @@ class LocalTool {
 
   const LocalTool({
     required this.tool,
-    required this.handler,
+    this.handler,
     this.needsApproval,
     this.onInputStart,
     this.onInputDelta,
@@ -25,7 +30,7 @@ class LocalTool {
   String get name => tool.function.name;
 }
 
-/// A set of locally executable tools.
+/// A set of tool definitions (optionally locally executable).
 ///
 /// This mirrors the spirit of Vercel AI SDK tool sets: users define tools once,
 /// and higher-level orchestration (tool loops) uses both the schema and handler.
@@ -52,7 +57,7 @@ class ToolSet {
   /// Local tool handlers keyed by tool name.
   Map<String, ToolCallHandler> get handlers => {
         for (final entry in _toolsByName.entries)
-          entry.key: entry.value.handler,
+          if (entry.value.handler != null) entry.key: entry.value.handler!,
       };
 
   /// Optional approval checks keyed by tool name.
@@ -90,6 +95,32 @@ LocalTool functionTool({
       parameters: parameters,
     ),
     handler: handler,
+    needsApproval: needsApproval,
+    onInputStart: onInputStart,
+    onInputDelta: onInputDelta,
+    onInputAvailable: onInputAvailable,
+    onInputError: onInputError,
+  );
+}
+
+/// Convenience builder for a schema-only function tool (no local executor).
+LocalTool schemaOnlyFunctionTool({
+  required String name,
+  required String description,
+  required ParametersSchema parameters,
+  ToolApprovalCheck? needsApproval,
+  ToolInputStartHandler? onInputStart,
+  ToolInputDeltaHandler? onInputDelta,
+  ToolInputAvailableHandler? onInputAvailable,
+  ToolInputErrorHandler? onInputError,
+}) {
+  return LocalTool(
+    tool: Tool.function(
+      name: name,
+      description: description,
+      parameters: parameters,
+    ),
+    handler: null,
     needsApproval: needsApproval,
     onInputStart: onInputStart,
     onInputDelta: onInputDelta,
