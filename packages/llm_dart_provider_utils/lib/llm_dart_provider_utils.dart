@@ -25,6 +25,7 @@ export 'utils/log_redactor.dart';
 export 'utils/log_utils.dart';
 export 'utils/provider_metadata_alias.dart';
 export 'utils/provider_tool_part_emitter.dart';
+export 'utils/provider_tool_name_resolver.dart';
 export 'utils/reasoning_utils.dart';
 export 'utils/think_tag_splitter.dart';
 export 'utils/sse_line_buffer.dart';
