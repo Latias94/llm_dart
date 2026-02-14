@@ -41,6 +41,20 @@ void main() {
       );
     });
 
+    test('prefers exact tool id over preview tool id', () {
+      expect(
+        resolveProviderToolName(
+          providerId: 'openai',
+          rawToolName: 'web_search',
+          providerTools: const [
+            ProviderTool(id: 'openai.web_search_preview', name: 'preview'),
+            ProviderTool(id: 'openai.web_search', name: 'full'),
+          ],
+        ),
+        equals('full'),
+      );
+    });
+
     test('matches versioned tool ids by underscore prefix', () {
       expect(
         resolveProviderToolName(

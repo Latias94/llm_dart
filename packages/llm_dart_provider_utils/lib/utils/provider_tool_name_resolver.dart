@@ -17,7 +17,14 @@ String resolveProviderToolName({
   final tools = providerTools;
   if (tools == null || tools.isEmpty) return trimmed;
 
-  final basePrefix = '$providerId.$trimmed';
+  final exactId = '$providerId.$trimmed';
+  for (final t in tools) {
+    if (t.id != exactId) continue;
+    final name = t.name;
+    if (name != null && name.trim().isNotEmpty) return name;
+  }
+
+  final basePrefix = exactId;
   for (final t in tools) {
     final name = t.name;
     if (name == null || name.trim().isEmpty) continue;
