@@ -295,9 +295,15 @@ class XAIResponses
                 final toolCallId = json['item_id']?.toString();
                 if (toolCallId != null && toolCallId.isNotEmpty) {
                   providerToolTypeById[toolCallId] = rawToolType;
+                  final toolName = resolveProviderToolName(
+                    providerId: config.providerId,
+                    rawToolName:
+                        rawToolType.substring(0, rawToolType.length - 5),
+                    providerTools: config.originalConfig?.providerTools,
+                  );
                   yield LLMProviderToolDeltaPart(
                     toolCallId: toolCallId,
-                    toolName: rawToolType.substring(0, rawToolType.length - 5),
+                    toolName: toolName,
                     status: status,
                     data: _stringKeyedMap(json),
                     providerMetadata: {
@@ -324,7 +330,12 @@ class XAIResponses
 
               yield LLMProviderToolDeltaPart(
                 toolCallId: toolCallId,
-                toolName: providerToolNameById[toolCallId] ?? 'custom_tool',
+                toolName: resolveProviderToolName(
+                  providerId: config.providerId,
+                  rawToolName:
+                      providerToolNameById[toolCallId] ?? 'custom_tool',
+                  providerTools: config.originalConfig?.providerTools,
+                ),
                 status: 'input_delta',
                 data: _stringKeyedMap(json),
                 providerMetadata: {
@@ -345,7 +356,12 @@ class XAIResponses
 
               yield LLMProviderToolDeltaPart(
                 toolCallId: toolCallId,
-                toolName: providerToolNameById[toolCallId] ?? 'custom_tool',
+                toolName: resolveProviderToolName(
+                  providerId: config.providerId,
+                  rawToolName:
+                      providerToolNameById[toolCallId] ?? 'custom_tool',
+                  providerTools: config.originalConfig?.providerTools,
+                ),
                 status: 'input_done',
                 data: _stringKeyedMap(json),
                 providerMetadata: {

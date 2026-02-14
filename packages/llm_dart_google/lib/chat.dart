@@ -669,9 +669,14 @@ class GoogleChat
               if (code != null && code.isNotEmpty) {
                 final id = 'code_execution_${codeExecutionSeq++}';
                 lastCodeExecutionToolCallId = id;
+                final toolName = resolveProviderToolName(
+                  providerId: config.providerId,
+                  rawToolName: 'code_execution',
+                  providerTools: config.originalConfig?.providerTools,
+                );
                 final part = providerToolParts.call(
                   toolCallId: id,
-                  toolName: 'code_execution',
+                  toolName: toolName,
                   input: executableCode,
                   providerExecuted: true,
                   supportsDeferredResults: true,
