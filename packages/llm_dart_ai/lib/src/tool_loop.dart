@@ -2490,10 +2490,12 @@ Stream<LLMStreamPart> streamToolLoopParts({
           case LLMProviderToolCallPart(
               :final toolCallId,
               :final providerExecuted,
+              :final supportsDeferredResults,
             ):
             if (waitForDeferredProviderToolResults &&
                 toolCallId.trim().isNotEmpty &&
-                providerExecuted != false) {
+                providerExecuted != false &&
+                supportsDeferredResults == true) {
               pendingProviderToolCallFirstStep.putIfAbsent(
                 toolCallId,
                 () => stepIndex,
@@ -2888,10 +2890,12 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
         case LLMProviderToolCallPart(
             :final toolCallId,
             :final providerExecuted,
+            :final supportsDeferredResults,
           ):
           if (waitForDeferredProviderToolResults &&
               toolCallId.trim().isNotEmpty &&
-              providerExecuted != false) {
+              providerExecuted != false &&
+              supportsDeferredResults == true) {
             pendingProviderToolCallFirstStep.putIfAbsent(
               toolCallId,
               () => stepIndex,

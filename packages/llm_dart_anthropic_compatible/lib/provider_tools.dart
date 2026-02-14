@@ -25,6 +25,7 @@ class AnthropicProviderTools {
         (options ?? const AnthropicWebSearchToolOptions()).toJson();
     return ProviderTool(
       id: 'anthropic.$normalizedType',
+      name: 'web_search',
       options: {
         ...toolOptions,
         'enabled': true,
@@ -45,6 +46,7 @@ class AnthropicProviderTools {
 
     return ProviderTool(
       id: 'anthropic.$normalizedType',
+      name: 'web_fetch',
       options: {
         ...?options?.toJson(),
         'enabled': true,

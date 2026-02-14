@@ -26,6 +26,7 @@ class OpenAIProviderTools {
   static ProviderTool webSearch({OpenAIWebSearchContextSize? contextSize}) {
     return ProviderTool(
       id: '${_prefix}web_search_preview',
+      name: 'web_search',
       options: {
         if (contextSize != null) 'search_context_size': contextSize.apiValue,
       },
@@ -51,6 +52,7 @@ class OpenAIProviderTools {
 
     return ProviderTool(
       id: '${_prefix}web_search',
+      name: 'web_search',
       options: options,
     );
   }
@@ -61,6 +63,7 @@ class OpenAIProviderTools {
   }) {
     return ProviderTool(
       id: '${_prefix}file_search',
+      name: 'file_search',
       options: {
         if (vectorStoreIds != null && vectorStoreIds.isNotEmpty)
           'vector_store_ids': vectorStoreIds,
@@ -77,6 +80,7 @@ class OpenAIProviderTools {
   }) {
     return ProviderTool(
       id: '${_prefix}computer_use',
+      name: 'computer_use',
       options: {
         'display_width': displayWidth,
         'display_height': displayHeight,
@@ -92,6 +96,7 @@ class OpenAIProviderTools {
   }) {
     return ProviderTool(
       id: '${_prefix}code_interpreter',
+      name: 'code_interpreter',
       options: {
         if (container != null) 'container': container,
         ...?parameters,
@@ -102,6 +107,7 @@ class OpenAIProviderTools {
   static ProviderTool imageGeneration({Map<String, dynamic>? parameters}) {
     return ProviderTool(
       id: '${_prefix}image_generation',
+      name: 'image_generation',
       options: {...?parameters},
     );
   }
@@ -109,15 +115,17 @@ class OpenAIProviderTools {
   static ProviderTool mcp({Map<String, dynamic>? parameters}) {
     return ProviderTool(
       id: '${_prefix}mcp',
+      name: 'mcp',
       options: {...?parameters},
     );
   }
 
   static ProviderTool applyPatch() =>
-      const ProviderTool(id: '${_prefix}apply_patch');
+      const ProviderTool(id: '${_prefix}apply_patch', name: 'apply_patch');
 
-  static ProviderTool shell() => const ProviderTool(id: '${_prefix}shell');
+  static ProviderTool shell() =>
+      const ProviderTool(id: '${_prefix}shell', name: 'shell');
 
   static ProviderTool localShell() =>
-      const ProviderTool(id: '${_prefix}local_shell');
+      const ProviderTool(id: '${_prefix}local_shell', name: 'local_shell');
 }

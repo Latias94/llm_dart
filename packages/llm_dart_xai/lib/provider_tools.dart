@@ -29,6 +29,7 @@ class XAIProviderTools {
   }) {
     return ProviderTool(
       id: '${_prefix}web_search',
+      name: 'web_search',
       options: {
         ...?options?.toJson(),
         ...?parameters,
@@ -42,6 +43,7 @@ class XAIProviderTools {
   }) {
     return ProviderTool(
       id: '${_prefix}x_search',
+      name: 'x_search',
       options: {
         ...?options?.toJson(),
         ...?parameters,
@@ -49,14 +51,17 @@ class XAIProviderTools {
     );
   }
 
-  static ProviderTool codeExecution() =>
-      const ProviderTool(id: '${_prefix}code_execution', options: {});
+  static ProviderTool codeExecution() => const ProviderTool(
+        id: '${_prefix}code_execution',
+        name: 'code_execution',
+        supportsDeferredResults: true,
+      );
 
   static ProviderTool viewImage() =>
-      const ProviderTool(id: '${_prefix}view_image', options: {});
+      const ProviderTool(id: '${_prefix}view_image', name: 'view_image');
 
   static ProviderTool viewXVideo() =>
-      const ProviderTool(id: '${_prefix}view_x_video', options: {});
+      const ProviderTool(id: '${_prefix}view_x_video', name: 'view_x_video');
 
   static ProviderTool fileSearch({
     XAIFileSearchToolOptions? options,
@@ -64,6 +69,7 @@ class XAIProviderTools {
   }) {
     return ProviderTool(
       id: '${_prefix}file_search',
+      name: 'file_search',
       options: {
         ...?options?.toJson(),
         ...?parameters,
@@ -77,6 +83,7 @@ class XAIProviderTools {
   }) {
     return ProviderTool(
       id: '${_prefix}mcp',
+      name: 'mcp',
       options: {
         ...?options?.toJson(),
         ...?parameters,

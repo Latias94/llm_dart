@@ -553,12 +553,16 @@ class XAIResponses
                     ? (item['input'] ?? customToolInputById[id]?.toString())
                     : (item['arguments'] ?? item['action']);
 
+                final supportsDeferredResults =
+                    toolName == 'code_execution' ? true : null;
+
                 if (eventType == 'response.output_item.added') {
                   final part = providerToolParts.call(
                     toolCallId: id,
                     toolName: toolName,
                     input: input,
                     providerExecuted: true,
+                    supportsDeferredResults: supportsDeferredResults,
                     providerMetadataPayload: {'type': type},
                   );
                   if (part != null) yield part;
@@ -568,6 +572,7 @@ class XAIResponses
                     toolName: toolName,
                     input: input,
                     providerExecuted: true,
+                    supportsDeferredResults: supportsDeferredResults,
                     providerMetadataPayload: {'type': type},
                   );
                   if (callPart != null) yield callPart;

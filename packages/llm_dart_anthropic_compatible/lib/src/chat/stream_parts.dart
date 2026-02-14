@@ -770,6 +770,8 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                   toolName: state.toolName!,
                   input: inputString,
                   providerExecuted: state.providerExecuted ? true : null,
+                  supportsDeferredResults:
+                      state.toolName == 'code_execution' ? true : null,
                   isDynamic: state.isDynamic ? true : null,
                   providerMetadataPayload: {'type': blockType},
                 );

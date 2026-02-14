@@ -16,6 +16,7 @@ class GoogleProviderTools {
         (options ?? const GoogleWebSearchToolOptions()).toJson();
     return ProviderTool(
       id: 'google.google_search',
+      name: 'google_search',
       options: {
         ...toolOptions,
         'enabled': true,
@@ -29,7 +30,7 @@ class GoogleProviderTools {
   static ProviderTool codeExecution() {
     return const ProviderTool(
       id: 'google.code_execution',
-      options: {},
+      name: 'code_execution',
     );
   }
 
@@ -39,7 +40,7 @@ class GoogleProviderTools {
   static ProviderTool urlContext() {
     return const ProviderTool(
       id: 'google.url_context',
-      options: {},
+      name: 'url_context',
     );
   }
 
@@ -49,7 +50,7 @@ class GoogleProviderTools {
   static ProviderTool enterpriseWebSearch() {
     return const ProviderTool(
       id: 'google.enterprise_web_search',
-      options: {},
+      name: 'enterprise_web_search',
     );
   }
 
@@ -59,7 +60,7 @@ class GoogleProviderTools {
   static ProviderTool googleMaps() {
     return const ProviderTool(
       id: 'google.google_maps',
-      options: {},
+      name: 'google_maps',
     );
   }
 
@@ -73,6 +74,7 @@ class GoogleProviderTools {
   }) {
     return ProviderTool(
       id: 'google.file_search',
+      name: 'file_search',
       options: {
         'fileSearchStoreNames': fileSearchStoreNames,
         if (metadataFilter != null) 'metadataFilter': metadataFilter,
@@ -90,6 +92,7 @@ class GoogleProviderTools {
   }) {
     return ProviderTool(
       id: 'google.vertex_rag_store',
+      name: 'vertex_rag_store',
       options: {
         'ragCorpus': ragCorpus,
         if (topK != null) 'topK': topK,

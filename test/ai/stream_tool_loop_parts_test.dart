@@ -238,9 +238,10 @@ void main() {
         [
           const LLMProviderToolCallPart(
             toolCallId: 'prov_1',
-            toolName: 'web_search',
-            input: {'q': 'dart'},
+            toolName: 'code_execution',
+            input: {'code': 'print(\"hi\")'},
             providerExecuted: true,
+            supportsDeferredResults: true,
           ),
           const LLMFinishPart(
             _FakeChatResponse(
@@ -253,7 +254,7 @@ void main() {
         [
           const LLMProviderToolResultPart(
             toolCallId: 'prov_1',
-            toolName: 'web_search',
+            toolName: 'code_execution',
             result: {'ok': true},
           ),
           const LLMTextStartPart(),
@@ -279,6 +280,54 @@ void main() {
       expect(parts.whereType<LLMFinishPart>(), hasLength(1));
       expect(parts.whereType<LLMProviderToolCallPart>(), hasLength(1));
       expect(parts.whereType<LLMProviderToolResultPart>(), hasLength(1));
+      expect(parts.whereType<LLMFinishPart>().single.response.text,
+          equals('Done'));
+    });
+
+    test('stops waiting when deferred provider tool wait budget is exhausted',
+        () async {
+      final model = _SequencedStreamChatModel([
+        [
+          const LLMProviderToolCallPart(
+            toolCallId: 'prov_1',
+            toolName: 'code_execution',
+            input: {'code': 'print(\"hi\")'},
+            providerExecuted: true,
+            supportsDeferredResults: true,
+          ),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_1'}
+              },
+            ),
+          ),
+        ],
+        [
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Done'),
+          const LLMTextEndPart('Done'),
+          const LLMFinishPart(
+            _FakeChatResponse(
+              providerMetadata: {
+                'openai': {'id': 'resp_step_2'}
+              },
+            ),
+          ),
+        ],
+      ]);
+
+      final parts = await streamToolLoopParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        toolHandlers: const {},
+        maxSteps: 10,
+        maxAdditionalProviderToolResultSteps: 1,
+      ).toList();
+
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
+      expect(parts.whereType<LLMProviderToolCallPart>(), hasLength(1));
+      expect(parts.whereType<LLMProviderToolResultPart>(), isEmpty);
       expect(parts.whereType<LLMFinishPart>().single.response.text,
           equals('Done'));
     });
