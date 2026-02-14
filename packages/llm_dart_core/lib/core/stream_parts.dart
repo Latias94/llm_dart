@@ -435,6 +435,16 @@ class LLMProviderToolCallPart extends LLMStreamPart {
   /// client-executed tools (e.g. "local shell" style calls).
   final bool? providerExecuted;
 
+  /// Whether this provider tool may return its results in a later step/turn.
+  ///
+  /// This is an orchestration hint aligned with AI SDK's
+  /// `supportsDeferredResults` provider tool property.
+  ///
+  /// When `true`, higher-level loops may continue even when the current step
+  /// produced no client-side tool calls, in order to wait for a non-preliminary
+  /// tool result in a subsequent step.
+  final bool? supportsDeferredResults;
+
   /// Whether the tool is dynamic (defined at runtime).
   final bool? isDynamic;
 
@@ -449,6 +459,7 @@ class LLMProviderToolCallPart extends LLMStreamPart {
     required this.toolName,
     this.input,
     this.providerExecuted,
+    this.supportsDeferredResults,
     this.isDynamic,
     this.providerMetadata,
   });

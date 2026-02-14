@@ -32,6 +32,7 @@ class ProviderToolPartEmitter {
     required String toolName,
     Object? input,
     bool? providerExecuted,
+    bool? supportsDeferredResults,
     bool? isDynamic,
     Map<String, dynamic>? providerMetadataPayload,
   }) {
@@ -41,6 +42,7 @@ class ProviderToolPartEmitter {
       toolName: toolName,
       input: input,
       providerExecuted: providerExecuted,
+      supportsDeferredResults: supportsDeferredResults,
       isDynamic: isDynamic,
       providerMetadata: _providerMetadata(providerMetadataPayload),
     );

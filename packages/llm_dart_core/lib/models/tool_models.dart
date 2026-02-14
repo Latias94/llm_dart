@@ -338,10 +338,20 @@ class ProviderTool {
   /// Optional provider-specific tool configuration (JSON-like).
   final Map<String, dynamic> options;
 
+  /// Whether this provider tool may return its results in a later step/turn.
+  ///
+  /// This mirrors the Vercel AI SDK `supportsDeferredResults` flag for provider
+  /// tools (e.g. programmatic tool calling scenarios such as code execution).
+  ///
+  /// Orchestration layers may use this signal to decide whether to continue a
+  /// multi-step loop even when no client-side tool calls are pending.
+  final bool supportsDeferredResults;
+
   const ProviderTool({
     required this.id,
     this.name,
     this.options = const {},
+    this.supportsDeferredResults = false,
   });
 
   /// Best-effort provider id inference from `[providerId].[toolName...]`.
@@ -357,16 +367,19 @@ class ProviderTool {
         'id': id,
         if (name != null && name!.isNotEmpty) 'name': name,
         if (options.isNotEmpty) 'options': options,
+        if (supportsDeferredResults) 'supportsDeferredResults': true,
       };
 
   factory ProviderTool.fromJson(Map<String, dynamic> json) => ProviderTool(
         id: json['id'] as String,
         name: json['name'] as String?,
         options: (json['options'] as Map?)?.cast<String, dynamic>() ?? const {},
+        supportsDeferredResults: json['supportsDeferredResults'] == true,
       );
 
   @override
-  String toString() => 'ProviderTool(id: $id, name: $name, options: $options)';
+  String toString() =>
+      'ProviderTool(id: $id, name: $name, options: $options, supportsDeferredResults: $supportsDeferredResults)';
 }
 
 /// Tool choice determines how the LLM uses available tools.
@@ -622,12 +635,14 @@ class ToolResult {
     }
 
     // Backward compatibility: older encodings used `content` as a string.
-    final result = json.containsKey('result') ? json['result'] : json['content'];
+    final result =
+        json.containsKey('result') ? json['result'] : json['content'];
 
     return ToolResult(
       toolCallId: toolCallId,
       result: result,
-      isError: (json['is_error'] as bool?) ?? (json['isError'] as bool?) ?? false,
+      isError:
+          (json['is_error'] as bool?) ?? (json['isError'] as bool?) ?? false,
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
   }

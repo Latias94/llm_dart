@@ -123,6 +123,7 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
           toolName: final toolName,
           input: final input,
           providerExecuted: final providerExecuted,
+          supportsDeferredResults: final supportsDeferredResults,
           isDynamic: final isDynamic,
           providerMetadata: final providerMetadata,
         ):
@@ -131,6 +132,7 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
           toolName: toolName,
           input: input,
           providerExecuted: providerExecuted,
+          supportsDeferredResults: supportsDeferredResults,
           isDynamic: isDynamic,
           providerMetadata: providerMetadata == null
               ? null
