@@ -539,13 +539,21 @@ class XAIResponses
               final id = item['id']?.toString() ?? '';
               if (id.isNotEmpty) {
                 final rawName = item['name'] as String? ?? '';
-                final toolName = type == 'custom_tool_call'
+                final toolType = type == 'custom_tool_call'
+                    ? null
+                    : type.substring(0, type.length - 5);
+
+                final rawToolName = type == 'custom_tool_call'
                     ? (rawName.isNotEmpty
                         ? normalizeCustomToolName(rawName)
                         : 'custom_tool')
-                    : (rawName.isNotEmpty
-                        ? rawName
-                        : type.substring(0, type.length - 5));
+                    : (rawName.isNotEmpty ? rawName : toolType!);
+
+                final toolName = resolveProviderToolName(
+                  providerId: config.providerId,
+                  rawToolName: rawToolName,
+                  providerTools: config.originalConfig?.providerTools,
+                );
                 providerToolTypeById[id] = type;
                 providerToolNameById[id] = toolName;
 
@@ -554,7 +562,7 @@ class XAIResponses
                     : (item['arguments'] ?? item['action']);
 
                 final supportsDeferredResults =
-                    toolName == 'code_execution' ? true : null;
+                    toolType == 'code_execution' ? true : null;
 
                 if (eventType == 'response.output_item.added') {
                   final part = providerToolParts.call(

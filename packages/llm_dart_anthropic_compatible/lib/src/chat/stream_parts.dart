@@ -474,9 +474,15 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                     id.isNotEmpty &&
                     name is String &&
                     name.isNotEmpty) {
-                  final toolName = blockType == 'server_tool_use'
+                  final rawToolName = blockType == 'server_tool_use'
                       ? normalizeServerToolName(name)
                       : name;
+
+                  final toolName = resolveProviderToolName(
+                    providerId: config.providerId,
+                    rawToolName: rawToolName,
+                    providerTools: originalConfig?.providerTools,
+                  );
 
                   providerToolNameById[id] = toolName;
 
@@ -509,9 +515,15 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
 
               final toolUseId = contentBlock['tool_use_id'];
               if (toolUseId is String && toolUseId.isNotEmpty) {
-                final toolName = providerToolNameById[toolUseId] ??
+                var toolName = providerToolNameById[toolUseId] ??
                     inferProviderToolNameFromResultBlockType(blockType) ??
                     'tool';
+
+                toolName = resolveProviderToolName(
+                  providerId: config.providerId,
+                  rawToolName: toolName,
+                  providerTools: originalConfig?.providerTools,
+                );
 
                 final content = contentBlock['content'];
                 final isError = isLikelyToolResultError(content);
@@ -771,7 +783,10 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                   input: inputString,
                   providerExecuted: state.providerExecuted ? true : null,
                   supportsDeferredResults:
-                      state.toolName == 'code_execution' ? true : null,
+                      normalizeServerToolName(state.providerToolName ?? '') ==
+                              'code_execution'
+                          ? true
+                          : null,
                   isDynamic: state.isDynamic ? true : null,
                   providerMetadataPayload: {'type': blockType},
                 );

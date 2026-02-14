@@ -494,20 +494,11 @@ class OpenAIResponses
                       status == 'partial_image') {
                     final partial = json['partial_image_b64'];
                     if (partial is String && partial.isNotEmpty) {
-                      var toolName = toolType;
-                      final providerTools =
-                          config.originalConfig?.providerTools;
-                      if (providerTools != null && providerTools.isNotEmpty) {
-                        final id = '${config.providerId}.$toolType';
-                        for (final t in providerTools) {
-                          if (t.id == id &&
-                              t.name != null &&
-                              t.name!.isNotEmpty) {
-                            toolName = t.name!;
-                            break;
-                          }
-                        }
-                      }
+                      final toolName = resolveProviderToolName(
+                        providerId: config.providerId,
+                        rawToolName: toolType,
+                        providerTools: config.originalConfig?.providerTools,
+                      );
 
                       yield LLMProviderToolResultPart(
                         toolCallId: toolCallId,
@@ -520,9 +511,14 @@ class OpenAIResponses
                   }
 
                   if (emitProviderToolDeltas) {
+                    final toolName = resolveProviderToolName(
+                      providerId: config.providerId,
+                      rawToolName: toolType,
+                      providerTools: config.originalConfig?.providerTools,
+                    );
                     yield LLMProviderToolDeltaPart(
                       toolCallId: toolCallId,
-                      toolName: toolType,
+                      toolName: toolName,
                       status: status,
                       data: json,
                       providerMetadata: {
@@ -858,40 +854,11 @@ class OpenAIResponses
                     continue;
                   }
 
-                  String resolvedToolName = toolType;
-
-                  final providerTools = config.originalConfig?.providerTools;
-                  ProviderTool? matchedProviderTool;
-                  final providerToolId = '${config.providerId}.$toolType';
-
-                  if (providerTools != null && providerTools.isNotEmpty) {
-                    for (final t in providerTools) {
-                      if (t.id == providerToolId) {
-                        matchedProviderTool = t;
-                        break;
-                      }
-                    }
-
-                    // Best-effort: `web_search_call` does not disambiguate
-                    // preview vs full web search. Prefer preview config if
-                    // that's the only one provided.
-                    if (matchedProviderTool == null &&
-                        toolType == 'web_search') {
-                      final previewId =
-                          '${config.providerId}.web_search_preview';
-                      for (final t in providerTools) {
-                        if (t.id == previewId) {
-                          matchedProviderTool = t;
-                          break;
-                        }
-                      }
-                    }
-                  }
-
-                  if (matchedProviderTool?.name != null &&
-                      matchedProviderTool!.name!.isNotEmpty) {
-                    resolvedToolName = matchedProviderTool.name!;
-                  }
+                  final resolvedToolName = resolveProviderToolName(
+                    providerId: config.providerId,
+                    rawToolName: toolType,
+                    providerTools: config.originalConfig?.providerTools,
+                  );
 
                   final callId = item['call_id'] as String?;
                   final toolCallId =
