@@ -191,5 +191,44 @@ void main() {
       expect(approvalResponses, hasLength(1));
       expect(approvalResponses.single.approved, isTrue);
     });
+
+    test('stops waiting when deferred wait budget is exhausted', () async {
+      final model = _SequencedPromptStreamModel([
+        [
+          const LLMStreamStartPart(),
+          const LLMProviderToolCallPart(
+            toolCallId: 'prov_1',
+            toolName: 'code_execution',
+            input: {'code': 'print("hi")'},
+            providerExecuted: true,
+            supportsDeferredResults: true,
+          ),
+          const LLMFinishPart(_FakeChatResponse()),
+        ],
+        [
+          const LLMStreamStartPart(),
+          const LLMTextStartPart(),
+          const LLMTextDeltaPart('Done'),
+          const LLMTextEndPart('Done'),
+          const LLMFinishPart(_FakeChatResponse(text: 'Done')),
+        ],
+      ]);
+
+      final parts = await streamChatPartsWithProviderToolApprovals(
+        model: model,
+        input: StandardizedChatMessages([ChatMessage.user('hi')]),
+        tools: null,
+        callOptions: const LLMCallOptions(),
+        maxSteps: 10,
+        maxAdditionalProviderToolResultSteps: 1,
+      ).toList();
+
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
+      expect(parts.whereType<LLMProviderToolCallPart>(), hasLength(1));
+      expect(parts.whereType<LLMProviderToolResultPart>(), isEmpty);
+      expect(parts.whereType<LLMStepStartPart>(), hasLength(2));
+      expect(parts.whereType<LLMFinishPart>().single.response.text,
+          equals('Done'));
+    });
   });
 }
