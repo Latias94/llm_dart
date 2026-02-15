@@ -55,6 +55,19 @@ class _Response implements ChatResponseWithFinishReason {
 
 void main() {
   group('Agent', () {
+    test('streamText forwards providerTools', () async {
+      final model = _CapturingProviderToolsStreamModel();
+      final agent = Agent(model: model);
+
+      final result = agent.streamText(
+        messages: [ChatMessage.user('hi')],
+        providerTools: const [ProviderTool(id: 'openai.web_search')],
+      );
+
+      await result.text;
+      expect(model.lastProviderTools?.single.id, equals('openai.web_search'));
+    });
+
     test('generateText(toolSet) runs tool loop and returns steps', () async {
       final model = _SequencedChatModel([
         _Response(
@@ -62,7 +75,8 @@ void main() {
             ToolCall(
               id: 'call_1',
               callType: 'function',
-              function: FunctionCall(name: 'get_weather', arguments: '{"city":"SF"}'),
+              function:
+                  FunctionCall(name: 'get_weather', arguments: '{"city":"SF"}'),
             ),
           ],
           finishReason: const LLMFinishReason(
@@ -108,7 +122,8 @@ void main() {
       expect(result.steps[0].toolResults.single.result, equals({'temp': 70}));
     });
 
-    test('generateText without toolSet returns a single-step ToolLoopResult', () async {
+    test('generateText without toolSet returns a single-step ToolLoopResult',
+        () async {
       final model = _SequencedChatModel([
         _Response(
           text: 'Hello',
@@ -132,4 +147,34 @@ void main() {
       );
     });
   });
+}
+
+class _CapturingProviderToolsStreamModel extends ChatCapability
+    implements ChatStreamPartsCapability {
+  List<ProviderTool>? lastProviderTools;
+
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
+    CancelToken? cancelToken,
+  }) async {
+    throw UnsupportedError('not used');
+  }
+
+  @override
+  Stream<LLMStreamPart> chatStreamParts(
+    List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
+    List<Tool>? tools,
+    CancelToken? cancelToken,
+  }) async* {
+    lastProviderTools = providerTools;
+    yield const LLMStreamStartPart();
+    yield const LLMTextStartPart();
+    yield const LLMTextDeltaPart('ok');
+    yield const LLMTextEndPart('ok');
+    yield const LLMFinishPart(_Response(text: 'ok'));
+  }
 }
