@@ -47,6 +47,7 @@ class MinimaxProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) =>
       _delegate.chat(messages, cancelToken: cancelToken);
@@ -55,6 +56,7 @@ class MinimaxProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) =>
       _delegate.chatWithTools(messages, tools, cancelToken: cancelToken);
@@ -75,6 +77,7 @@ class MinimaxProvider
   @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) =>

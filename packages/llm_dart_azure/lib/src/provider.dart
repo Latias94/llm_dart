@@ -76,11 +76,15 @@ class AzureOpenAIProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    if (config.useResponsesAPI) {
-      final response =
-          await _responses.chat(messages, cancelToken: cancelToken);
+    final shouldUseResponses = config.useResponsesAPI ||
+        (providerTools != null && providerTools.isNotEmpty);
+
+    if (shouldUseResponses) {
+      final response = await _responses.chat(messages,
+          providerTools: providerTools, cancelToken: cancelToken);
       return _wrapResponseWithProviderMetadataAlias(
         response,
         baseKey: config.providerId,
@@ -100,12 +104,17 @@ class AzureOpenAIProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    if (config.useResponsesAPI) {
+    final shouldUseResponses = config.useResponsesAPI ||
+        (providerTools != null && providerTools.isNotEmpty);
+
+    if (shouldUseResponses) {
       final response = await _responses.chatWithTools(
         messages,
         tools,
+        providerTools: providerTools,
         cancelToken: cancelToken,
       );
       return _wrapResponseWithProviderMetadataAlias(
@@ -161,12 +170,17 @@ class AzureOpenAIProvider
   @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async {
-    if (config.useResponsesAPI) {
+    final shouldUseResponses = config.useResponsesAPI ||
+        (providerTools != null && providerTools.isNotEmpty);
+
+    if (shouldUseResponses) {
       final response = await _responses.chatPrompt(
         prompt,
+        providerTools: providerTools,
         tools: tools,
         cancelToken: cancelToken,
       );

@@ -45,6 +45,7 @@ class _FakeStreamChatModel extends ChatCapability
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     throw UnsupportedError('chatWithTools not used in this test');
@@ -71,6 +72,7 @@ class _ProviderApprovalObjectModel extends ChatCapability
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     throw UnsupportedError('not used');

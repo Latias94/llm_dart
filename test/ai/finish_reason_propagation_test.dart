@@ -30,6 +30,7 @@ class _FakeModel implements ChatCapability, ChatStreamPartsCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     return _FakeResponse();
@@ -38,9 +39,15 @@ class _FakeModel implements ChatCapability, ChatStreamPartsCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) =>
-      chatWithTools(messages, null, cancelToken: cancelToken);
+      chatWithTools(
+        messages,
+        null,
+        providerTools: providerTools,
+        cancelToken: cancelToken,
+      );
 
   @override
   Future<List<ChatMessage>?> memoryContents() async => null;

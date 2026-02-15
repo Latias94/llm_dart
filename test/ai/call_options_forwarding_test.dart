@@ -44,6 +44,7 @@ class _CallOptionsModel extends ChatCapability
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     calledPlain = true;
@@ -54,6 +55,7 @@ class _CallOptionsModel extends ChatCapability
   Future<ChatResponse> chatWithToolsWithCallOptions(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
@@ -72,6 +74,7 @@ class _StreamingCallOptionsModel extends ChatCapability
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     return const _TextResponse(text: 'ok');

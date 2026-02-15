@@ -51,6 +51,7 @@ class AnthropicProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     return _chat.chat(messages, cancelToken: cancelToken);
@@ -60,6 +61,7 @@ class AnthropicProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
@@ -69,6 +71,7 @@ class AnthropicProvider
   Future<ChatResponse> chatWithToolsWithCallOptions(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
@@ -113,6 +116,7 @@ class AnthropicProvider
   @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
@@ -122,6 +126,7 @@ class AnthropicProvider
   @override
   Future<ChatResponse> chatPromptWithCallOptions(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,

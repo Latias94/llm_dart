@@ -213,6 +213,7 @@ class MockChatProvider implements ChatCapability, ChatStreamPartsCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     // Simulate API delay
@@ -275,9 +276,14 @@ class MockChatProvider implements ChatCapability, ChatStreamPartsCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return chat(messages, cancelToken: cancelToken); // Simple implementation
+    return chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    ); // Simple implementation
   }
 
   @override
@@ -309,6 +315,7 @@ class LoggingChatProvider implements ChatCapability, ChatStreamPartsCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     final stopwatch = Stopwatch()..start();
@@ -316,8 +323,11 @@ class LoggingChatProvider implements ChatCapability, ChatStreamPartsCapability {
     print('   📝 [LOG] Starting chat request with ${messages.length} messages');
 
     try {
-      final response =
-          await _baseProvider.chat(messages, cancelToken: cancelToken);
+      final response = await _baseProvider.chat(
+        messages,
+        providerTools: providerTools,
+        cancelToken: cancelToken,
+      );
       stopwatch.stop();
 
       print('   📝 [LOG] Chat completed in ${stopwatch.elapsedMilliseconds}ms');
@@ -382,11 +392,16 @@ class LoggingChatProvider implements ChatCapability, ChatStreamPartsCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     print('   📝 [LOG] Chat with ${tools?.length ?? 0} tools');
-    return _baseProvider.chatWithTools(messages, tools,
-        cancelToken: cancelToken);
+    return _baseProvider.chatWithTools(
+      messages,
+      tools,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -412,6 +427,7 @@ class CachingChatProvider implements ChatCapability, ChatStreamPartsCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     final cacheKey = _generateCacheKey(messages);
@@ -422,8 +438,11 @@ class CachingChatProvider implements ChatCapability, ChatStreamPartsCapability {
     }
 
     print('   💾 [CACHE] Cache miss, calling base provider');
-    final response =
-        await _baseProvider.chat(messages, cancelToken: cancelToken);
+    final response = await _baseProvider.chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
     _cache[cacheKey] = response;
 
     return response;
@@ -457,11 +476,16 @@ class CachingChatProvider implements ChatCapability, ChatStreamPartsCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     // Tools bypass cache for safety
-    return _baseProvider.chatWithTools(messages, tools,
-        cancelToken: cancelToken);
+    return _baseProvider.chatWithTools(
+      messages,
+      tools,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -494,6 +518,7 @@ class CustomAPIProvider implements ChatCapability, ChatStreamPartsCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     // Simulate custom API call
@@ -512,7 +537,11 @@ class CustomAPIProvider implements ChatCapability, ChatStreamPartsCapability {
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
-    final response = await chat(messages, cancelToken: cancelToken);
+    final response = await chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
     final text = response.text ?? '';
 
     yield const LLMStreamStartPart();
@@ -526,9 +555,14 @@ class CustomAPIProvider implements ChatCapability, ChatStreamPartsCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
-    return chat(messages, cancelToken: cancelToken);
+    return chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override

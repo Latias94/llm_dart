@@ -61,6 +61,7 @@ class OpenAIChat
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     return chatWithToolsWithCallOptions(
@@ -75,6 +76,7 @@ class OpenAIChat
   Future<ChatResponse> chatWithToolsWithCallOptions(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
@@ -107,6 +109,7 @@ class OpenAIChat
   @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async {
@@ -121,6 +124,7 @@ class OpenAIChat
   @override
   Future<ChatResponse> chatPromptWithCallOptions(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
@@ -992,9 +996,15 @@ class OpenAIChat
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override

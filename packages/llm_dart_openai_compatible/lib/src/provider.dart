@@ -52,30 +52,43 @@ class OpenAICompatibleChatProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return _chat.chat(messages, cancelToken: cancelToken);
+    return _chat.chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
+    return _chat.chatWithTools(
+      messages,
+      tools,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Future<ChatResponse> chatWithToolsWithCallOptions(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
     return _chat.chatWithToolsWithCallOptions(
       messages,
       tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -116,21 +129,29 @@ class OpenAICompatibleChatProvider
   @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+    return _chat.chatPrompt(
+      prompt,
+      providerTools: providerTools,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Future<ChatResponse> chatPromptWithCallOptions(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
     return _chat.chatPromptWithCallOptions(
       prompt,
+      providerTools: providerTools,
       tools: tools,
       callOptions: callOptions,
       cancelToken: cancelToken,

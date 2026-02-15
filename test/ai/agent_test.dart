@@ -14,6 +14,7 @@ class _SequencedChatModel extends ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     if (_index >= responses.length) {

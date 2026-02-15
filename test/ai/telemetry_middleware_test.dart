@@ -24,6 +24,7 @@ class _CallOptionsChatModel extends ChatCapability
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     throw StateError('chatWithTools should not be used in this test.');
@@ -33,6 +34,7 @@ class _CallOptionsChatModel extends ChatCapability
   Future<ChatResponse> chatWithToolsWithCallOptions(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {

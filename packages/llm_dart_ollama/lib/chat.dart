@@ -44,6 +44,7 @@ class OllamaChat
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     if (config.baseUrl.isEmpty) {
@@ -77,6 +78,7 @@ class OllamaChat
   @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async {
@@ -421,9 +423,15 @@ class OllamaChat
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override

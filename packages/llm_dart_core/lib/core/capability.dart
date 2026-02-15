@@ -427,19 +427,27 @@ abstract class ChatCapability {
   /// Sends a chat request to the provider with a sequence of messages.
   ///
   /// [messages] - The conversation history as a list of chat messages
+  /// [providerTools] - Optional provider-native tools (e.g. OpenAI web search)
   /// [cancelToken] - Optional token to cancel the request
   ///
   /// Returns the provider's response or throws an LLMError
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   /// Sends a chat request to the provider with a sequence of messages and tools.
   ///
   /// [messages] - The conversation history as a list of chat messages
+  /// [providerTools] - Optional provider-native tools (e.g. OpenAI web search)
   /// [tools] - Optional list of tools to use in the chat
   /// [cancelToken] - Optional token to cancel the request
   ///
@@ -447,6 +455,7 @@ abstract class ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   });
 
@@ -497,6 +506,7 @@ abstract class ModelIdentityCapability {
 abstract class PromptChatCapability {
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   });
@@ -510,6 +520,7 @@ abstract class ChatCallOptionsCapability {
   Future<ChatResponse> chatWithToolsWithCallOptions(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   });
@@ -519,6 +530,7 @@ abstract class ChatCallOptionsCapability {
 abstract class PromptChatCallOptionsCapability {
   Future<ChatResponse> chatPromptWithCallOptions(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,

@@ -44,6 +44,7 @@ class _SequencedPromptStreamModel extends ChatCapability
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     throw UnsupportedError('chatWithTools not used in this test');

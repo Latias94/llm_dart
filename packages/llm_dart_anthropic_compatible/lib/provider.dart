@@ -53,6 +53,7 @@ class AnthropicCompatibleChatProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     return _chat.chat(messages, cancelToken: cancelToken);
@@ -62,6 +63,7 @@ class AnthropicCompatibleChatProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
@@ -81,6 +83,7 @@ class AnthropicCompatibleChatProvider
   @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {

@@ -33,6 +33,7 @@ class _FakePartsModel extends ChatCapability
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) =>
       throw UnsupportedError('not used');

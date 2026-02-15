@@ -29,6 +29,7 @@ class MockProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     return MockChatResponse('Mock response');
@@ -38,9 +39,14 @@ class MockProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return chat(messages, cancelToken: cancelToken);
+    return chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override

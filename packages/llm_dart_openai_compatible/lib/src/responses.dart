@@ -102,11 +102,13 @@ class OpenAIResponses
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     return chatWithToolsWithCallOptions(
       messages,
       tools,
+      providerTools: providerTools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -116,10 +118,17 @@ class OpenAIResponses
   Future<ChatResponse> chatWithToolsWithCallOptions(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
-    final builtRequest = _buildRequest(messages, tools, false, false);
+    final builtRequest = _buildRequest(
+      messages,
+      tools,
+      false,
+      false,
+      providerTools: providerTools,
+    );
     var requestBody = Map<String, dynamic>.from(builtRequest.body);
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
     final emitRequestMetadata = config.getProviderOption<bool>(
@@ -151,11 +160,13 @@ class OpenAIResponses
   @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async {
     return chatPromptWithCallOptions(
       prompt,
+      providerTools: providerTools,
       tools: tools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
@@ -165,11 +176,18 @@ class OpenAIResponses
   @override
   Future<ChatResponse> chatPromptWithCallOptions(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
-    final builtRequest = _buildPromptRequest(prompt, tools, false, false);
+    final builtRequest = _buildPromptRequest(
+      prompt,
+      tools,
+      false,
+      false,
+      providerTools: providerTools,
+    );
     var requestBody = Map<String, dynamic>.from(builtRequest.body);
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
     final emitRequestMetadata = config.getProviderOption<bool>(
@@ -1956,9 +1974,15 @@ class OpenAIResponses
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return chatWithTools(
+      messages,
+      null,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override

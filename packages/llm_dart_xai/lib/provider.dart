@@ -46,6 +46,7 @@ class XAIProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     return _provider.chat(messages, cancelToken: cancelToken);
@@ -55,6 +56,7 @@ class XAIProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     return _provider.chatWithTools(messages, tools, cancelToken: cancelToken);
@@ -78,6 +80,7 @@ class XAIProvider
   @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {

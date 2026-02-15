@@ -46,6 +46,7 @@ class _FakeChatModel extends ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     return response;
@@ -167,6 +168,7 @@ class _SequencedChatModel extends ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
     calls.add(List<ChatMessage>.from(messages));
@@ -190,6 +192,7 @@ class _SequencedStreamChatModel extends ChatCapability
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     throw UnsupportedError('chatWithTools not used in this fake');

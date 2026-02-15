@@ -35,6 +35,7 @@ class _FakePartsModel
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) =>
       throw UnsupportedError('not used');
@@ -43,6 +44,7 @@ class _FakePartsModel
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) =>
       throw UnsupportedError('not used');

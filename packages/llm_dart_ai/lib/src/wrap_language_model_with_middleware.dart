@@ -143,12 +143,13 @@ class _MiddlewareLanguageModel extends ChatCapability
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     return _chatViaMiddleware(
       input: StandardizedChatMessages(messages),
       tools: tools,
-      providerTools: null,
+      providerTools: providerTools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -158,13 +159,14 @@ class _MiddlewareLanguageModel extends ChatCapability
   Future<ChatResponse> chatWithToolsWithCallOptions(
     List<ChatMessage> messages,
     List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
     return _chatViaMiddleware(
       input: StandardizedChatMessages(messages),
       tools: tools,
-      providerTools: null,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -173,13 +175,14 @@ class _MiddlewareLanguageModel extends ChatCapability
   @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
     return _chatViaMiddleware(
       input: StandardizedPromptIr(prompt),
       tools: tools,
-      providerTools: null,
+      providerTools: providerTools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -188,6 +191,7 @@ class _MiddlewareLanguageModel extends ChatCapability
   @override
   Future<ChatResponse> chatPromptWithCallOptions(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
@@ -195,7 +199,7 @@ class _MiddlewareLanguageModel extends ChatCapability
     return _chatViaMiddleware(
       input: StandardizedPromptIr(prompt),
       tools: tools,
-      providerTools: null,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
