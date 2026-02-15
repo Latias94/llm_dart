@@ -1118,6 +1118,8 @@ StreamTextResult streamText({
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
   bool stopOnProviderToolApprovalRequests = false,
   int providerToolApprovalMaxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
   int maxSteps = 10,
   bool continueOnToolError = true,
   bool includeRawChunks = false,
@@ -1222,6 +1224,10 @@ StreamTextResult streamText({
           stopOnProviderToolApprovalRequests:
               stopOnProviderToolApprovalRequests,
           providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
+          waitForDeferredProviderToolResults:
+              waitForDeferredProviderToolResults,
+          maxAdditionalProviderToolResultSteps:
+              maxAdditionalProviderToolResultSteps,
           callOptions: effectiveCallOptions,
           cancelToken: cancelToken,
         ),
