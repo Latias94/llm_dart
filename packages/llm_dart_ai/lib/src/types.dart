@@ -274,7 +274,11 @@ class ToolLoopBlockedState {
   final int stepIndex;
   final GenerateTextResult stepResult;
   final List<ToolCall> toolCalls;
-  final List<ToolCall> toolCallsNeedingApproval;
+
+  /// Tool approval requests that must be approved/denied to continue.
+  ///
+  /// Mirrors AI SDK `toolApprovalRequests` / `tool-approval-request` parts.
+  final List<ToolApprovalRequest> toolApprovalRequests;
   final List<ToolLoopStep> steps;
   final List<ChatMessage> messages;
 
@@ -285,10 +289,23 @@ class ToolLoopBlockedState {
     required this.stepIndex,
     required this.stepResult,
     required this.toolCalls,
-    required this.toolCallsNeedingApproval,
+    required this.toolApprovalRequests,
     required this.steps,
     required this.messages,
     this.prompt,
+  });
+}
+
+/// Tool approval request (AI SDK-style).
+///
+/// The user should respond with a [ToolApprovalDecision] referencing [approvalId].
+class ToolApprovalRequest {
+  final String approvalId;
+  final ToolCall toolCall;
+
+  const ToolApprovalRequest({
+    required this.approvalId,
+    required this.toolCall,
   });
 }
 

@@ -26,8 +26,7 @@ class _TestChatResponse extends ChatResponse {
 
 void main() {
   group('StreamTextResult tool approval', () {
-    test('completes finalResult with blocked state when approval required',
-        () async {
+    test('exposes toolLoopBlockedState when emitted', () async {
       const toolCall = ToolCall(
         id: 'call1',
         callType: 'function',
@@ -44,7 +43,9 @@ void main() {
         stepIndex: 0,
         stepResult: stepResult,
         toolCalls: const [toolCall],
-        toolCallsNeedingApproval: const [toolCall],
+        toolApprovalRequests: const [
+          ToolApprovalRequest(approvalId: 'a1', toolCall: toolCall),
+        ],
         steps: const <ToolLoopStep>[],
         messages: const <ChatMessage>[],
         prompt: null,
@@ -54,16 +55,16 @@ void main() {
         const LLMTextStartPart(blockId: 't1'),
         const LLMTextDeltaPart('Hello', blockId: 't1'),
         const LLMTextEndPart('Hello', blockId: 't1'),
-        LLMErrorPart(ToolApprovalRequiredError(state: blockedState)),
+        LLMRawPart(blockedState),
+        LLMFinishPart(_TestChatResponse(text: 'Hello')),
       ]);
 
       final result = StreamTextResult.fromPartsStream(upstream);
 
       expect(await result.text, equals('Hello'));
-      final finalResult = await result.finalResult;
-      expect(identical(finalResult, stepResult), isTrue);
+      expect(await result.toolLoopBlockedState, same(blockedState));
+      expect(await result.finalResult, isA<GenerateTextResult>());
       await result.done;
     });
   });
 }
-

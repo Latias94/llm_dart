@@ -228,7 +228,9 @@ void main() {
             ),
           ),
         ],
-        toolHandlers: const {},
+        toolHandlers: {
+          'get_weather': (call, {cancelToken}) async => {'ok': true},
+        },
         needsApproval: (
           call, {
           required messages,

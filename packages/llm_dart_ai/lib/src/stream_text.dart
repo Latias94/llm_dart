@@ -110,6 +110,12 @@ class StreamTextResult {
   /// from the final finish part.
   final Future<List<ToolLoopStep>> steps;
 
+  /// Resolves to the tool-loop blocked state when local tool approval is needed.
+  ///
+  /// This is best-effort and is populated when the upstream stream emits
+  /// an [LLMRawPart] whose `rawValue` is a [ToolLoopBlockedState].
+  final Future<ToolLoopBlockedState?> toolLoopBlockedState;
+
   /// Resolves to the collected source parts (URL + document).
   final Future<List<LLMStreamPart>> sources;
 
@@ -137,6 +143,7 @@ class StreamTextResult {
     required this.finishReason,
     required this.providerMetadata,
     required this.steps,
+    required this.toolLoopBlockedState,
     required this.sources,
     required this.files,
     required this.finalResult,
@@ -165,6 +172,7 @@ class StreamTextResult {
     final finishReasonCompleter = Completer<LLMFinishReason?>();
     final providerMetadataCompleter = Completer<Map<String, dynamic>?>();
     final stepsCompleter = Completer<List<ToolLoopStep>>();
+    final toolLoopBlockedStateCompleter = Completer<ToolLoopBlockedState?>();
     final sourcesCompleter = Completer<List<LLMStreamPart>>();
     final filesCompleter = Completer<List<LLMFilePart>>();
     final finalResultCompleter = Completer<GenerateTextResult>();
@@ -184,6 +192,7 @@ class StreamTextResult {
     unawaited(finishReasonCompleter.future.catchError((_) => null));
     unawaited(providerMetadataCompleter.future.catchError((_) => null));
     unawaited(stepsCompleter.future.catchError((_) => const <ToolLoopStep>[]));
+    unawaited(toolLoopBlockedStateCompleter.future.catchError((_) => null));
     unawaited(
         sourcesCompleter.future.catchError((_) => const <LLMStreamPart>[]));
     unawaited(filesCompleter.future.catchError((_) => const <LLMFilePart>[]));
@@ -215,6 +224,7 @@ class StreamTextResult {
     LLMError? terminalError;
     ToolApprovalRequiredError? approvalRequired;
     ProviderToolApprovalRequiredError? providerApprovalRequired;
+    ToolLoopBlockedState? toolLoopBlockedState;
 
     LLMResponseMetadataPart mergeResponseMetadata(
       LLMResponseMetadataPart base,
@@ -449,6 +459,11 @@ class StreamTextResult {
                 terminalError ??= error;
               }
 
+            case LLMRawPart(:final rawValue):
+              if (rawValue is ToolLoopBlockedState) {
+                toolLoopBlockedState ??= rawValue;
+              }
+
             default:
               break;
           }
@@ -484,6 +499,9 @@ class StreamTextResult {
             providerMetadataCompleter.completeError(err);
           }
           if (!stepsCompleter.isCompleted) stepsCompleter.completeError(err);
+          if (!toolLoopBlockedStateCompleter.isCompleted) {
+            toolLoopBlockedStateCompleter.completeError(err);
+          }
           if (!sourcesCompleter.isCompleted)
             sourcesCompleter.completeError(err);
           if (!filesCompleter.isCompleted) filesCompleter.completeError(err);
@@ -523,6 +541,9 @@ class StreamTextResult {
             // Tool approval required: treat as a structured blocked outcome
             // rather than a hard error, similar to AI SDK tool approval requests.
             finalResultCompleter.complete(blocked.state.stepResult);
+            if (!toolLoopBlockedStateCompleter.isCompleted) {
+              toolLoopBlockedStateCompleter.complete(blocked.state);
+            }
           } else if (providerBlocked != null) {
             // Provider tool approval required: treat as a structured blocked
             // outcome (no finish part is available).
@@ -559,10 +580,16 @@ class StreamTextResult {
                 files: List<LLMFilePart>.unmodifiable(collectedFiles),
               ),
             );
+            if (!toolLoopBlockedStateCompleter.isCompleted) {
+              toolLoopBlockedStateCompleter.complete(null);
+            }
           } else {
             finalResultCompleter.completeError(
               const GenericError('Stream finished without a finish part.'),
             );
+            if (!toolLoopBlockedStateCompleter.isCompleted) {
+              toolLoopBlockedStateCompleter.complete(toolLoopBlockedState);
+            }
           }
           usageCompleter.complete(null);
           totalUsageCompleter.complete(accumulatedUsage);
@@ -570,6 +597,9 @@ class StreamTextResult {
           providerMetadataCompleter.complete(lastProviderMetadata);
           stepsCompleter
               .complete(List<ToolLoopStep>.unmodifiable(collectedSteps));
+          if (!toolLoopBlockedStateCompleter.isCompleted) {
+            toolLoopBlockedStateCompleter.complete(toolLoopBlockedState);
+          }
           return;
         }
 
@@ -645,6 +675,10 @@ class StreamTextResult {
           stepsCompleter.complete(stepsSnapshot);
         }
 
+        if (!toolLoopBlockedStateCompleter.isCompleted) {
+          toolLoopBlockedStateCompleter.complete(toolLoopBlockedState);
+        }
+
         final totalUsage = accumulatedUsage ?? usage;
         final lastToolResults = stepsSnapshot.isEmpty
             ? const <ToolResult>[]
@@ -712,6 +746,7 @@ class StreamTextResult {
       finishReason: finishReasonCompleter.future,
       providerMetadata: providerMetadataCompleter.future,
       steps: stepsCompleter.future,
+      toolLoopBlockedState: toolLoopBlockedStateCompleter.future,
       sources: sourcesCompleter.future,
       files: filesCompleter.future,
       finalResult: finalResultCompleter.future,
@@ -1256,5 +1291,68 @@ StreamTextResult streamText({
     defaultModelId: defaultModelId,
     onStepFinish: onStepFinish,
     onFinish: onFinish,
+  );
+}
+
+/// Resume a tool-loop `streamText` run that finished because tool approval was required.
+///
+/// This executes locally executable tool calls according to [approvals], then
+/// continues streaming from the updated message/prompt history.
+Future<StreamTextResult> resumeStreamTextAfterToolApprovalBlocked({
+  required ChatCapability model,
+  required ToolLoopBlockedState blockedState,
+  required List<ToolApprovalDecision> approvals,
+  required ToolSet toolSet,
+  ToolCallRepair? repairToolCall,
+  ToolApprovalCheck? needsApproval,
+  ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  bool stopOnProviderToolApprovalRequests = false,
+  int providerToolApprovalMaxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
+  int maxSteps = 10,
+  bool continueOnToolError = true,
+  bool includeRawChunks = false,
+  StreamTextOnStepFinishCallback? onStepFinish,
+  StreamTextOnFinishCallback? onFinish,
+  IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
+  CancelToken? cancelToken,
+}) async {
+  final applied = await applyToolApprovalsToBlockedState(
+    blockedState: blockedState,
+    approvals: approvals,
+    tools: toolSet.tools,
+    toolHandlers: toolSet.handlers,
+    repairToolCall: repairToolCall,
+    continueOnToolError: continueOnToolError,
+    cancelToken: cancelToken,
+  );
+
+  final Prompt? promptIr = applied.prompt;
+  final List<ChatMessage> messages = applied.messages;
+
+  return streamText(
+    model: model,
+    messages: promptIr == null ? messages : null,
+    promptIr: promptIr,
+    toolSet: toolSet,
+    repairToolCall: repairToolCall,
+    needsApproval: needsApproval,
+    onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+    stopOnProviderToolApprovalRequests: stopOnProviderToolApprovalRequests,
+    providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
+    waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+    maxAdditionalProviderToolResultSteps: maxAdditionalProviderToolResultSteps,
+    maxSteps: maxSteps,
+    continueOnToolError: continueOnToolError,
+    includeRawChunks: includeRawChunks,
+    onStepFinish: onStepFinish,
+    onFinish: onFinish,
+    include: include,
+    defaultCallOptions: defaultCallOptions,
+    callOptions: callOptions,
+    cancelToken: cancelToken,
   );
 }

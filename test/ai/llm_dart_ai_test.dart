@@ -365,7 +365,8 @@ void main() {
 
       final inputEndIndex = parts.indexWhere(
         (p) =>
-            p is LLMToolInputEndPart && (p as LLMToolInputEndPart).id == 'call_1',
+            p is LLMToolInputEndPart &&
+            (p as LLMToolInputEndPart).id == 'call_1',
       );
       final finishIndex = parts.indexWhere((p) => p is LLMFinishPart);
       expect(inputEndIndex, greaterThanOrEqualTo(0));
@@ -674,13 +675,20 @@ void main() {
 
       expect(outcome, isA<ToolLoopBlocked>());
       final blocked = outcome as ToolLoopBlocked;
-      expect(blocked.state.toolCallsNeedingApproval, hasLength(1));
-      expect(blocked.state.toolCallsNeedingApproval.single.id, 'call_1');
+      expect(blocked.state.toolApprovalRequests, hasLength(1));
+      expect(
+        blocked.state.toolApprovalRequests.single.toolCall.id,
+        'call_1',
+      );
+      expect(blocked.state.toolApprovalRequests.single.approvalId, isNotEmpty);
       expect(blocked.state.stepResult.content.map((p) => p.type).toList(), [
         'tool-call',
         'tool-approval-request',
       ]);
-      expect(blocked.state.stepResult.content[1], isA<ToolApprovalRequestContentPart>());
+      expect(
+        blocked.state.stepResult.content[1],
+        isA<ToolApprovalRequestContentPart>(),
+      );
       expect(blocked.state.messages.last.messageType, isA<ToolUseMessage>());
       expect(
         blocked.state.messages.where((m) => m.messageType is ToolResultMessage),
@@ -717,7 +725,7 @@ void main() {
           predicate(
             (e) =>
                 e is ToolApprovalRequiredError &&
-                e.state.toolCallsNeedingApproval.single.id == 'call_1' &&
+                e.state.toolApprovalRequests.single.toolCall.id == 'call_1' &&
                 e.state.stepResult.content.any(
                   (p) => p is ToolApprovalRequestContentPart,
                 ),
@@ -800,7 +808,9 @@ void main() {
       final outcome = await runToolLoopUntilBlocked(
         model: firstModel,
         messages: [ChatMessage.user('hi')],
-        toolHandlers: const {},
+        toolHandlers: {
+          'sum': (call, {cancelToken}) => {'result': 3},
+        },
         needsApproval: (call,
                 {required messages, required stepIndex, cancelToken}) =>
             true,
@@ -817,8 +827,11 @@ void main() {
       final resumed = await resumeToolLoopUntilBlocked(
         model: secondModel,
         blockedState: blocked.state,
-        approvals: const [
-          ToolApprovalDecision(approvalId: 'call_1', approved: true),
+        approvals: [
+          ToolApprovalDecision(
+            approvalId: blocked.state.toolApprovalRequests.single.approvalId,
+            approved: true,
+          ),
         ],
         toolHandlers: {
           'sum': (call, {cancelToken}) {
@@ -863,7 +876,9 @@ void main() {
       final outcome = await runToolLoopUntilBlocked(
         model: firstModel,
         messages: [ChatMessage.user('hi')],
-        toolHandlers: const {},
+        toolHandlers: {
+          'sum': (call, {cancelToken}) => {'result': 3},
+        },
         needsApproval: (call,
                 {required messages, required stepIndex, cancelToken}) =>
             true,
@@ -880,9 +895,9 @@ void main() {
       final resumed = await resumeToolLoopUntilBlocked(
         model: secondModel,
         blockedState: blocked.state,
-        approvals: const [
+        approvals: [
           ToolApprovalDecision(
-            approvalId: 'call_1',
+            approvalId: blocked.state.toolApprovalRequests.single.approvalId,
             approved: false,
             reason: 'no',
           ),
@@ -1028,7 +1043,7 @@ void main() {
     });
 
     test(
-        'streamToolLoopParts yields ToolApprovalRequiredError when approval is required',
+        'streamToolLoopParts yields blocked state + finish when approval is required',
         () async {
       final toolCall = ToolCall(
         id: 'call_1',
@@ -1046,7 +1061,9 @@ void main() {
       final parts = await streamToolLoopParts(
         model: model,
         messages: [ChatMessage.user('hi')],
-        toolHandlers: const {},
+        toolHandlers: {
+          'sum': (call, {cancelToken}) => {'result': 3},
+        },
         needsApproval: (call,
                 {required messages, required stepIndex, cancelToken}) =>
             true,
@@ -1054,11 +1071,21 @@ void main() {
       ).toList();
 
       expect(parts.whereType<LLMToolCallStartPart>(), hasLength(1));
-      expect(parts.last, isA<LLMErrorPart>());
-      final err = (parts.last as LLMErrorPart).error;
-      expect(err, isA<ToolApprovalRequiredError>());
-      final approval = err as ToolApprovalRequiredError;
-      expect(approval.state.toolCallsNeedingApproval.single.id, 'call_1');
+      expect(
+          parts.whereType<LLMProviderToolApprovalRequestPart>(), hasLength(1));
+      final blockedRawParts = parts
+          .whereType<LLMRawPart>()
+          .where((p) => p.rawValue is ToolLoopBlockedState)
+          .toList(growable: false);
+      expect(blockedRawParts, hasLength(1));
+
+      final blocked = blockedRawParts.single.rawValue as ToolLoopBlockedState;
+      expect(blocked.toolApprovalRequests, hasLength(1));
+      expect(blocked.toolApprovalRequests.single.toolCall.id, 'call_1');
+      expect(blocked.toolApprovalRequests.single.approvalId, isNotEmpty);
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.finishReason?.unified, LLMUnifiedFinishReason.toolCalls);
     });
 
     test('streamToolLoopParts yields ErrorPart when exceeding maxSteps',

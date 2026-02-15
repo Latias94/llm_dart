@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
@@ -97,14 +98,37 @@ Object? _decodeJsonIfPossible(String raw) {
   }
 }
 
+String _generateToolApprovalId() {
+  final now = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
+  final rnd = Random().nextInt(0x7fffffff).toRadixString(36);
+  return 'approval_${now}_$rnd';
+}
+
+List<ToolApprovalRequest> _buildToolApprovalRequests(
+  List<ToolCall> toolCallsNeedingApproval,
+) {
+  return toolCallsNeedingApproval
+      .map(
+        (c) => ToolApprovalRequest(
+          approvalId: _generateToolApprovalId(),
+          toolCall: c,
+        ),
+      )
+      .toList(growable: false);
+}
+
 GenerateTextResult _attachToolApprovalRequestsToStepResult(
   GenerateTextResult base, {
-  required List<ToolCall> toolCallsNeedingApproval,
+  required List<ToolApprovalRequest> toolApprovalRequests,
 }) {
-  if (toolCallsNeedingApproval.isEmpty) return base;
+  if (toolApprovalRequests.isEmpty) return base;
 
   final existing = base.content;
   final out = <ContentPart>[];
+
+  final approvalIdByToolCallId = <String, String>{
+    for (final r in toolApprovalRequests) r.toolCall.id: r.approvalId,
+  };
 
   bool hasApprovalFor(String toolCallId) {
     for (final p in existing) {
@@ -132,25 +156,27 @@ GenerateTextResult _attachToolApprovalRequestsToStepResult(
     out.add(part);
     if (part is! ToolCallContentPart) continue;
     final id = part.toolCall.id;
-    final needing = toolCallsNeedingApproval.where((c) => c.id == id);
-    for (final call in needing) {
-      if (hasApprovalFor(call.id)) continue;
+    final approvalId = approvalIdByToolCallId[id];
+    if (approvalId == null || approvalId.isEmpty) continue;
+    if (hasApprovalFor(id)) continue;
+    final request = toolApprovalRequests.where((r) => r.toolCall.id == id);
+    for (final r in request) {
       out.add(
         ToolApprovalRequestContentPart(
-          approvalId: call.id,
-          toolCall: call,
+          approvalId: approvalId,
+          toolCall: r.toolCall,
         ),
       );
     }
   }
 
   // If any approval requests couldn't be attached to a tool-call part, append them.
-  for (final call in toolCallsNeedingApproval) {
-    if (hasApprovalFor(call.id)) continue;
+  for (final r in toolApprovalRequests) {
+    if (hasApprovalFor(r.toolCall.id)) continue;
     out.add(
       ToolApprovalRequestContentPart(
-        approvalId: call.id,
-        toolCall: call,
+        approvalId: r.approvalId,
+        toolCall: r.toolCall,
       ),
     );
   }
@@ -422,7 +448,7 @@ Future<ToolLoopResult> runToolLoop({
     final hasUnexecutableToolCalls = partition.unexecutable.isNotEmpty;
 
     final needingApproval = await _findToolCallsNeedingApproval(
-      toolCalls: toolCalls,
+      toolCalls: executableToolCalls,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       messages: workingMessages,
@@ -430,16 +456,50 @@ Future<ToolLoopResult> runToolLoop({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
+      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final autoApprovedToolCalls = executableToolCalls
+          .where((c) => !needingIds.contains(c.id))
+          .toList(growable: false);
+
+      final executed = await _executeToolCalls(
+        toolCalls: autoApprovedToolCalls,
+        tools: tools,
+        toolHandlers: toolHandlers,
+        repairToolCall: repairToolCall,
+        continueOnToolError: continueOnToolError,
+        cancelToken: cancelToken,
+      );
+
+      final stepResponsePromptMessages = executed.isEmpty
+          ? stepResult.responsePromptMessages
+          : [
+              ...stepResult.responsePromptMessages,
+              buildToolResultPromptMessageBestEffort(
+                toolCalls: toolCalls,
+                toolResults: executed,
+              ),
+            ];
+
+      final stepResultWithTools = executed.isEmpty
+          ? stepResult
+          : _attachToolResultsToStepResult(
+              stepResult,
+              toolCalls: toolCalls,
+              toolResults: executed,
+              responsePromptMessages: stepResponsePromptMessages,
+            );
+
+      final approvalRequests = _buildToolApprovalRequests(needingApproval);
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
-        stepResult,
-        toolCallsNeedingApproval: needingApproval,
+        stepResultWithTools,
+        toolApprovalRequests: approvalRequests,
       );
       steps.add(
         ToolLoopStep(
           index: stepIndex,
           result: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolResults: const [],
+          toolResults: List<ToolResult>.unmodifiable(executed),
           responseMetadata: stepResultWithApprovals.responseMetadata,
           requestMetadata: stepResultWithApprovals.requestMetadata,
           responsePromptMessages:
@@ -458,8 +518,8 @@ Future<ToolLoopResult> runToolLoop({
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolCallsNeedingApproval:
-              List<ToolCall>.unmodifiable(needingApproval),
+          toolApprovalRequests:
+              List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
           messages: List<ChatMessage>.unmodifiable(workingMessages),
           prompt: promptFromChatMessages(workingMessages),
@@ -729,7 +789,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
     final hasUnexecutableToolCalls = partition.unexecutable.isNotEmpty;
 
     final needingApproval = await _findToolCallsNeedingApproval(
-      toolCalls: toolCalls,
+      toolCalls: executableToolCalls,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       messages: workingMessages,
@@ -737,16 +797,50 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
+      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final autoApprovedToolCalls = executableToolCalls
+          .where((c) => !needingIds.contains(c.id))
+          .toList(growable: false);
+
+      final executed = await _executeToolCalls(
+        toolCalls: autoApprovedToolCalls,
+        tools: tools,
+        toolHandlers: toolHandlers,
+        repairToolCall: repairToolCall,
+        continueOnToolError: continueOnToolError,
+        cancelToken: cancelToken,
+      );
+
+      final stepResponsePromptMessages = executed.isEmpty
+          ? stepResult.responsePromptMessages
+          : [
+              ...stepResult.responsePromptMessages,
+              buildToolResultPromptMessageBestEffort(
+                toolCalls: toolCalls,
+                toolResults: executed,
+              ),
+            ];
+
+      final stepResultWithTools = executed.isEmpty
+          ? stepResult
+          : _attachToolResultsToStepResult(
+              stepResult,
+              toolCalls: toolCalls,
+              toolResults: executed,
+              responsePromptMessages: stepResponsePromptMessages,
+            );
+
+      final approvalRequests = _buildToolApprovalRequests(needingApproval);
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
-        stepResult,
-        toolCallsNeedingApproval: needingApproval,
+        stepResultWithTools,
+        toolApprovalRequests: approvalRequests,
       );
       steps.add(
         ToolLoopStep(
           index: stepIndex,
           result: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolResults: const [],
+          toolResults: List<ToolResult>.unmodifiable(executed),
           responseMetadata: stepResultWithApprovals.responseMetadata,
           requestMetadata: stepResultWithApprovals.requestMetadata,
           responsePromptMessages:
@@ -770,8 +864,8 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolCallsNeedingApproval:
-              List<ToolCall>.unmodifiable(needingApproval),
+          toolApprovalRequests:
+              List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
           messages: List<ChatMessage>.unmodifiable(workingMessages),
           prompt: workingPrompt,
@@ -994,7 +1088,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
     final hasUnexecutableToolCalls = partition.unexecutable.isNotEmpty;
 
     final needingApproval = await _findToolCallsNeedingApproval(
-      toolCalls: toolCalls,
+      toolCalls: executableToolCalls,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       messages: workingMessages,
@@ -1002,16 +1096,50 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
+      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final autoApprovedToolCalls = executableToolCalls
+          .where((c) => !needingIds.contains(c.id))
+          .toList(growable: false);
+
+      final executed = await _executeToolCalls(
+        toolCalls: autoApprovedToolCalls,
+        tools: tools,
+        toolHandlers: toolHandlers,
+        repairToolCall: repairToolCall,
+        continueOnToolError: continueOnToolError,
+        cancelToken: cancelToken,
+      );
+
+      final stepResponsePromptMessages = executed.isEmpty
+          ? stepResult.responsePromptMessages
+          : [
+              ...stepResult.responsePromptMessages,
+              buildToolResultPromptMessageBestEffort(
+                toolCalls: toolCalls,
+                toolResults: executed,
+              ),
+            ];
+
+      final stepResultWithTools = executed.isEmpty
+          ? stepResult
+          : _attachToolResultsToStepResult(
+              stepResult,
+              toolCalls: toolCalls,
+              toolResults: executed,
+              responsePromptMessages: stepResponsePromptMessages,
+            );
+
+      final approvalRequests = _buildToolApprovalRequests(needingApproval);
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
-        stepResult,
-        toolCallsNeedingApproval: needingApproval,
+        stepResultWithTools,
+        toolApprovalRequests: approvalRequests,
       );
       steps.add(
         ToolLoopStep(
           index: stepIndex,
           result: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolResults: const [],
+          toolResults: List<ToolResult>.unmodifiable(executed),
           responseMetadata: stepResultWithApprovals.responseMetadata,
           requestMetadata: stepResultWithApprovals.requestMetadata,
           responsePromptMessages:
@@ -1030,8 +1158,8 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolCallsNeedingApproval:
-              List<ToolCall>.unmodifiable(needingApproval),
+          toolApprovalRequests:
+              List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
           messages: List<ChatMessage>.unmodifiable(workingMessages),
           prompt: promptFromChatMessages(workingMessages),
@@ -1117,7 +1245,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
 /// This is intended to close the "tool approval" loop in an AI SDK-compatible
 /// way:
 /// 1) Run [runToolLoopUntilBlocked] until it returns [ToolLoopBlocked].
-/// 2) Ask the user to approve/deny [ToolLoopBlockedState.toolCallsNeedingApproval].
+/// 2) Ask the user to approve/deny [ToolLoopBlockedState.toolApprovalRequests].
 /// 3) Call this function with the collected [ToolApprovalDecision]s to execute
 ///    tools (or emit execution-denied tool outputs) and continue the loop.
 Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
@@ -1149,6 +1277,80 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
     );
   }
 
+  final applied = await applyToolApprovalsToBlockedState(
+    blockedState: blockedState,
+    approvals: approvals,
+    tools: tools,
+    toolHandlers: toolHandlers,
+    repairToolCall: repairToolCall,
+    continueOnToolError: continueOnToolError,
+    cancelToken: cancelToken,
+  );
+
+  if (applied.prompt != null && model is PromptChatCapability) {
+    return _continueToolLoopUntilBlockedPromptIrFromState(
+      model: model,
+      prompt: applied.prompt!,
+      initialMessages: applied.messages,
+      initialSteps: applied.steps,
+      startStepIndex: startStepIndex,
+      tools: tools,
+      toolHandlers: toolHandlers,
+      repairToolCall: repairToolCall,
+      toolApprovalChecks: toolApprovalChecks,
+      needsApproval: needsApproval,
+      maxSteps: maxSteps,
+      continueOnToolError: continueOnToolError,
+      include: include,
+      callOptions: effectiveCallOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  return _continueToolLoopUntilBlockedFromState(
+    model: model,
+    initialMessages: applied.messages,
+    initialSteps: applied.steps,
+    startStepIndex: startStepIndex,
+    tools: tools,
+    toolHandlers: toolHandlers,
+    repairToolCall: repairToolCall,
+    toolApprovalChecks: toolApprovalChecks,
+    needsApproval: needsApproval,
+    maxSteps: maxSteps,
+    continueOnToolError: continueOnToolError,
+    include: include,
+    callOptions: effectiveCallOptions,
+    cancelToken: cancelToken,
+  );
+}
+
+class ToolLoopAppliedToolApprovals {
+  final List<ToolResult> toolResults;
+  final PromptMessage toolMessage;
+  final List<ToolLoopStep> steps;
+  final List<ChatMessage> messages;
+  final Prompt? prompt;
+
+  const ToolLoopAppliedToolApprovals({
+    required this.toolResults,
+    required this.toolMessage,
+    required this.steps,
+    required this.messages,
+    required this.prompt,
+  });
+}
+
+/// Apply tool approval decisions to a blocked tool loop without making a model call.
+Future<ToolLoopAppliedToolApprovals> applyToolApprovalsToBlockedState({
+  required ToolLoopBlockedState blockedState,
+  required List<ToolApprovalDecision> approvals,
+  List<Tool>? tools,
+  required Map<String, ToolCallHandler> toolHandlers,
+  ToolCallRepair? repairToolCall,
+  bool continueOnToolError = true,
+  CancelToken? cancelToken,
+}) async {
   final decisionsByApprovalId = <String, ToolApprovalDecision>{};
   for (final decision in approvals) {
     final approvalId = decision.approvalId.trim();
@@ -1164,11 +1366,10 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
     decisionsByApprovalId[approvalId] = decision;
   }
 
-  final needingApprovalIds = <String>{
-    for (final call in blockedState.toolCallsNeedingApproval) call.id,
-  };
+  final approvalRequests = blockedState.toolApprovalRequests;
+  final approvalIds = <String>{for (final r in approvalRequests) r.approvalId};
 
-  for (final approvalId in needingApprovalIds) {
+  for (final approvalId in approvalIds) {
     if (!decisionsByApprovalId.containsKey(approvalId)) {
       throw InvalidRequestError(
         'Missing ToolApprovalDecision for approvalId "$approvalId".',
@@ -1176,22 +1377,30 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
     }
   }
 
-  final toolResults = await _executeToolCallsWithApprovals(
-    toolCalls: blockedState.toolCalls,
+  final remainingToolCalls =
+      approvalRequests.map((r) => r.toolCall).toList(growable: false);
+
+  final newToolResults = await _executeToolCallsWithApprovals(
+    toolCalls: remainingToolCalls,
     tools: tools,
     toolHandlers: toolHandlers,
     repairToolCall: repairToolCall,
     continueOnToolError: continueOnToolError,
-    needingApprovalIds: needingApprovalIds,
+    toolApprovalRequests: approvalRequests,
     decisionsByApprovalId: decisionsByApprovalId,
     cancelToken: cancelToken,
   );
 
+  final toolResults = <ToolResult>[
+    ...blockedState.stepResult.toolResults,
+    ...newToolResults,
+  ];
+
   final toolMessage = _buildToolApprovalAndResultPromptMessageBestEffort(
+    toolApprovalRequests: approvalRequests,
+    decisionsByApprovalId: decisionsByApprovalId,
     toolCalls: blockedState.toolCalls,
     toolResults: toolResults,
-    needingApprovalIds: needingApprovalIds,
-    decisionsByApprovalId: decisionsByApprovalId,
   );
 
   final updatedSteps = _patchBlockedStepWithToolResults(
@@ -1219,41 +1428,12 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
           ],
         );
 
-  if (resumedPrompt != null && model is PromptChatCapability) {
-    return _continueToolLoopUntilBlockedPromptIrFromState(
-      model: model,
-      prompt: resumedPrompt,
-      initialMessages: resumedMessages,
-      initialSteps: updatedSteps,
-      startStepIndex: startStepIndex,
-      tools: tools,
-      toolHandlers: toolHandlers,
-      repairToolCall: repairToolCall,
-      toolApprovalChecks: toolApprovalChecks,
-      needsApproval: needsApproval,
-      maxSteps: maxSteps,
-      continueOnToolError: continueOnToolError,
-      include: include,
-      callOptions: effectiveCallOptions,
-      cancelToken: cancelToken,
-    );
-  }
-
-  return _continueToolLoopUntilBlockedFromState(
-    model: model,
-    initialMessages: resumedMessages,
-    initialSteps: updatedSteps,
-    startStepIndex: startStepIndex,
-    tools: tools,
-    toolHandlers: toolHandlers,
-    repairToolCall: repairToolCall,
-    toolApprovalChecks: toolApprovalChecks,
-    needsApproval: needsApproval,
-    maxSteps: maxSteps,
-    continueOnToolError: continueOnToolError,
-    include: include,
-    callOptions: effectiveCallOptions,
-    cancelToken: cancelToken,
+  return ToolLoopAppliedToolApprovals(
+    toolResults: List<ToolResult>.unmodifiable(toolResults),
+    toolMessage: toolMessage,
+    steps: updatedSteps,
+    messages: List<ChatMessage>.unmodifiable(resumedMessages),
+    prompt: resumedPrompt,
   );
 }
 
@@ -1304,18 +1484,33 @@ ToolLoopStep _withToolResultsOnStep({
   required ToolLoopStep step,
   required List<ToolResult> toolResults,
   required PromptMessage toolMessage,
+  required List<ToolApprovalRequest> toolApprovalRequests,
 }) {
+  final responsePromptMessages = [
+    ...step.responsePromptMessages,
+    toolMessage,
+  ];
+
+  final withTools = _attachToolResultsToStepResult(
+    step.result,
+    toolCalls: step.toolCalls,
+    toolResults: toolResults,
+    responsePromptMessages: responsePromptMessages,
+  );
+
+  final patchedResult = _attachToolApprovalRequestsToStepResult(
+    withTools,
+    toolApprovalRequests: toolApprovalRequests,
+  );
+
   return ToolLoopStep(
     index: step.index,
-    result: step.result,
+    result: patchedResult,
     toolCalls: step.toolCalls,
     toolResults: List<ToolResult>.unmodifiable(toolResults),
     responseMetadata: step.responseMetadata,
     requestMetadata: step.requestMetadata,
-    responsePromptMessages: [
-      ...step.responsePromptMessages,
-      toolMessage,
-    ],
+    responsePromptMessages: responsePromptMessages,
   );
 }
 
@@ -1335,6 +1530,7 @@ List<ToolLoopStep> _patchBlockedStepWithToolResults({
           step: step,
           toolResults: toolResults,
           toolMessage: toolMessage,
+          toolApprovalRequests: blockedState.toolApprovalRequests,
         ),
       );
       patched = true;
@@ -1344,18 +1540,29 @@ List<ToolLoopStep> _patchBlockedStepWithToolResults({
   }
 
   if (!patched) {
+    final responsePromptMessages = [
+      ...blockedState.stepResult.responsePromptMessages,
+      toolMessage,
+    ];
+    final withTools = _attachToolResultsToStepResult(
+      blockedState.stepResult,
+      toolCalls: blockedState.toolCalls,
+      toolResults: toolResults,
+      responsePromptMessages: responsePromptMessages,
+    );
+    final patchedResult = _attachToolApprovalRequestsToStepResult(
+      withTools,
+      toolApprovalRequests: blockedState.toolApprovalRequests,
+    );
     updated.add(
       ToolLoopStep(
         index: blockedState.stepIndex,
-        result: blockedState.stepResult,
+        result: patchedResult,
         toolCalls: List<ToolCall>.unmodifiable(blockedState.toolCalls),
         toolResults: List<ToolResult>.unmodifiable(toolResults),
-        responseMetadata: blockedState.stepResult.responseMetadata,
-        requestMetadata: blockedState.stepResult.requestMetadata,
-        responsePromptMessages: [
-          ...blockedState.stepResult.responsePromptMessages,
-          toolMessage,
-        ],
+        responseMetadata: patchedResult.responseMetadata,
+        requestMetadata: patchedResult.requestMetadata,
+        responsePromptMessages: responsePromptMessages,
       ),
     );
   }
@@ -1364,18 +1571,14 @@ List<ToolLoopStep> _patchBlockedStepWithToolResults({
 }
 
 PromptMessage _buildToolApprovalAndResultPromptMessageBestEffort({
+  required List<ToolApprovalRequest> toolApprovalRequests,
+  required Map<String, ToolApprovalDecision> decisionsByApprovalId,
   required List<ToolCall> toolCalls,
   required List<ToolResult> toolResults,
-  required Set<String> needingApprovalIds,
-  required Map<String, ToolApprovalDecision> decisionsByApprovalId,
 }) {
-  final resultsById = <String>{for (final r in toolResults) r.toolCallId};
-
   final approvalParts = <PromptPart>[];
-  for (final call in toolCalls) {
-    if (!needingApprovalIds.contains(call.id)) continue;
-    if (!resultsById.contains(call.id)) continue;
-    final decision = decisionsByApprovalId[call.id];
+  for (final r in toolApprovalRequests) {
+    final decision = decisionsByApprovalId[r.approvalId];
     if (decision == null) continue;
     approvalParts.add(
       ToolApprovalResponsePart(
@@ -1407,11 +1610,15 @@ Future<List<ToolResult>> _executeToolCallsWithApprovals({
   required Map<String, ToolCallHandler> toolHandlers,
   required ToolCallRepair? repairToolCall,
   required bool continueOnToolError,
-  required Set<String> needingApprovalIds,
+  required List<ToolApprovalRequest> toolApprovalRequests,
   required Map<String, ToolApprovalDecision> decisionsByApprovalId,
   CancelToken? cancelToken,
 }) async {
   final results = <ToolResult>[];
+
+  final approvalIdByToolCallId = <String, String>{
+    for (final r in toolApprovalRequests) r.toolCall.id: r.approvalId,
+  };
 
   ToolResult deniedResult(
     ToolCall toolCall, {
@@ -1428,11 +1635,12 @@ Future<List<ToolResult>> _executeToolCallsWithApprovals({
   }
 
   for (final toolCall in toolCalls) {
-    if (needingApprovalIds.contains(toolCall.id)) {
-      final decision = decisionsByApprovalId[toolCall.id];
+    final approvalId = approvalIdByToolCallId[toolCall.id];
+    if (approvalId != null && approvalId.isNotEmpty) {
+      final decision = decisionsByApprovalId[approvalId];
       if (decision == null) {
         throw InvalidRequestError(
-          'Missing ToolApprovalDecision for approvalId "${toolCall.id}".',
+          'Missing ToolApprovalDecision for approvalId "$approvalId".',
         );
       }
       if (!decision.approved) {
@@ -1570,7 +1778,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
     final hasUnexecutableToolCalls = partition.unexecutable.isNotEmpty;
 
     final needingApproval = await _findToolCallsNeedingApproval(
-      toolCalls: toolCalls,
+      toolCalls: executableToolCalls,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       messages: workingMessages,
@@ -1578,16 +1786,50 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
+      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final autoApprovedToolCalls = executableToolCalls
+          .where((c) => !needingIds.contains(c.id))
+          .toList(growable: false);
+
+      final executed = await _executeToolCalls(
+        toolCalls: autoApprovedToolCalls,
+        tools: tools,
+        toolHandlers: toolHandlers,
+        repairToolCall: repairToolCall,
+        continueOnToolError: continueOnToolError,
+        cancelToken: cancelToken,
+      );
+
+      final stepResponsePromptMessages = executed.isEmpty
+          ? stepResult.responsePromptMessages
+          : [
+              ...stepResult.responsePromptMessages,
+              buildToolResultPromptMessageBestEffort(
+                toolCalls: toolCalls,
+                toolResults: executed,
+              ),
+            ];
+
+      final stepResultWithTools = executed.isEmpty
+          ? stepResult
+          : _attachToolResultsToStepResult(
+              stepResult,
+              toolCalls: toolCalls,
+              toolResults: executed,
+              responsePromptMessages: stepResponsePromptMessages,
+            );
+
+      final approvalRequests = _buildToolApprovalRequests(needingApproval);
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
-        stepResult,
-        toolCallsNeedingApproval: needingApproval,
+        stepResultWithTools,
+        toolApprovalRequests: approvalRequests,
       );
       steps.add(
         ToolLoopStep(
           index: stepIndex,
           result: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolResults: const [],
+          toolResults: List<ToolResult>.unmodifiable(executed),
           responseMetadata: stepResultWithApprovals.responseMetadata,
           requestMetadata: stepResultWithApprovals.requestMetadata,
           responsePromptMessages:
@@ -1606,8 +1848,8 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolCallsNeedingApproval:
-              List<ToolCall>.unmodifiable(needingApproval),
+          toolApprovalRequests:
+              List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
           messages: List<ChatMessage>.unmodifiable(workingMessages),
           prompt: promptFromChatMessages(workingMessages),
@@ -1824,7 +2066,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
     final hasUnexecutableToolCalls = partition.unexecutable.isNotEmpty;
 
     final needingApproval = await _findToolCallsNeedingApproval(
-      toolCalls: toolCalls,
+      toolCalls: executableToolCalls,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       messages: workingMessages,
@@ -1832,16 +2074,50 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
+      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final autoApprovedToolCalls = executableToolCalls
+          .where((c) => !needingIds.contains(c.id))
+          .toList(growable: false);
+
+      final executed = await _executeToolCalls(
+        toolCalls: autoApprovedToolCalls,
+        tools: tools,
+        toolHandlers: toolHandlers,
+        repairToolCall: repairToolCall,
+        continueOnToolError: continueOnToolError,
+        cancelToken: cancelToken,
+      );
+
+      final stepResponsePromptMessages = executed.isEmpty
+          ? stepResult.responsePromptMessages
+          : [
+              ...stepResult.responsePromptMessages,
+              buildToolResultPromptMessageBestEffort(
+                toolCalls: toolCalls,
+                toolResults: executed,
+              ),
+            ];
+
+      final stepResultWithTools = executed.isEmpty
+          ? stepResult
+          : _attachToolResultsToStepResult(
+              stepResult,
+              toolCalls: toolCalls,
+              toolResults: executed,
+              responsePromptMessages: stepResponsePromptMessages,
+            );
+
+      final approvalRequests = _buildToolApprovalRequests(needingApproval);
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
-        stepResult,
-        toolCallsNeedingApproval: needingApproval,
+        stepResultWithTools,
+        toolApprovalRequests: approvalRequests,
       );
       steps.add(
         ToolLoopStep(
           index: stepIndex,
           result: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolResults: const [],
+          toolResults: List<ToolResult>.unmodifiable(executed),
           responseMetadata: stepResultWithApprovals.responseMetadata,
           requestMetadata: stepResultWithApprovals.requestMetadata,
           responsePromptMessages:
@@ -1865,8 +2141,8 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolCallsNeedingApproval:
-              List<ToolCall>.unmodifiable(needingApproval),
+          toolApprovalRequests:
+              List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
           messages: List<ChatMessage>.unmodifiable(workingMessages),
           prompt: workingPrompt,
@@ -2089,7 +2365,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
     final hasUnexecutableToolCalls = partition.unexecutable.isNotEmpty;
 
     final needingApproval = await _findToolCallsNeedingApproval(
-      toolCalls: toolCalls,
+      toolCalls: executableToolCalls,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       messages: workingMessages,
@@ -2097,15 +2373,54 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
+      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final autoApprovedToolCalls = executableToolCalls
+          .where((c) => !needingIds.contains(c.id))
+          .toList(growable: false);
+
+      final executed = await _executeToolCalls(
+        toolCalls: autoApprovedToolCalls,
+        tools: tools,
+        toolHandlers: toolHandlers,
+        repairToolCall: repairToolCall,
+        continueOnToolError: continueOnToolError,
+        cancelToken: cancelToken,
+      );
+
+      final stepResponsePromptMessages = executed.isEmpty
+          ? stepResult.responsePromptMessages
+          : [
+              ...stepResult.responsePromptMessages,
+              buildToolResultPromptMessageBestEffort(
+                toolCalls: toolCalls,
+                toolResults: executed,
+              ),
+            ];
+
+      final stepResultWithTools = executed.isEmpty
+          ? stepResult
+          : _attachToolResultsToStepResult(
+              stepResult,
+              toolCalls: toolCalls,
+              toolResults: executed,
+              responsePromptMessages: stepResponsePromptMessages,
+            );
+
+      final approvalRequests = _buildToolApprovalRequests(needingApproval);
+      final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
+        stepResultWithTools,
+        toolApprovalRequests: approvalRequests,
+      );
       steps.add(
         ToolLoopStep(
           index: stepIndex,
-          result: stepResult,
+          result: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolResults: const [],
-          responseMetadata: stepResult.responseMetadata,
-          requestMetadata: stepResult.requestMetadata,
-          responsePromptMessages: stepResult.responsePromptMessages,
+          toolResults: List<ToolResult>.unmodifiable(executed),
+          responseMetadata: stepResultWithApprovals.responseMetadata,
+          requestMetadata: stepResultWithApprovals.requestMetadata,
+          responsePromptMessages:
+              stepResultWithApprovals.responsePromptMessages,
         ),
       );
 
@@ -2122,10 +2437,10 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       return ToolLoopBlocked(
         ToolLoopBlockedState(
           stepIndex: stepIndex,
-          stepResult: stepResult,
+          stepResult: stepResultWithApprovals,
           toolCalls: List<ToolCall>.unmodifiable(toolCalls),
-          toolCallsNeedingApproval:
-              List<ToolCall>.unmodifiable(needingApproval),
+          toolApprovalRequests:
+              List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
           messages: List<ChatMessage>.unmodifiable(workingMessages),
           prompt: workingPrompt,
@@ -2612,8 +2927,46 @@ Stream<LLMStreamPart> streamToolLoopParts({
       final executableToolCalls = partition.executable;
       final hasUnexecutableToolCalls = partition.unexecutable.isNotEmpty;
 
+      if (hasUnexecutableToolCalls) {
+        final executed = await _executeToolCalls(
+          toolCalls: executableToolCalls,
+          tools: tools,
+          toolHandlers: toolHandlers,
+          repairToolCall: repairToolCall,
+          continueOnToolError: continueOnToolError,
+          cancelToken: cancelToken,
+        );
+
+        for (final result in executed) {
+          yield LLMToolResultPart(result);
+        }
+
+        final finishReason = const LLMFinishReason(
+          unified: LLMUnifiedFinishReason.toolCalls,
+          raw: null,
+        );
+
+        if (emitStepParts) {
+          yield LLMStepFinishPart(
+            stepIndex: stepIndex,
+            response: mergedResponse,
+            usage: mergedResponse.usage,
+            finishReason: finishReason,
+            toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+            toolResults: List<ToolResult>.unmodifiable(executed),
+          );
+        }
+
+        yield LLMFinishPart(
+          mergedResponse,
+          usage: mergedResponse.usage,
+          finishReason: finishReason,
+        );
+        return;
+      }
+
       final needingApproval = await _findToolCallsNeedingApproval(
-        toolCalls: completedToolCalls,
+        toolCalls: executableToolCalls,
         toolApprovalChecks: toolApprovalChecks,
         needsApproval: needsApproval,
         messages: workingMessages,
@@ -2628,9 +2981,29 @@ Stream<LLMStreamPart> streamToolLoopParts({
               .add(ChatMessage.toolUse(toolCalls: completedToolCalls));
         }
 
-        for (final call in needingApproval) {
+        final needingIds = needingApproval.map((c) => c.id).toSet();
+        final autoApprovedToolCalls = executableToolCalls
+            .where((c) => !needingIds.contains(c.id))
+            .toList(growable: false);
+
+        final executed = await _executeToolCalls(
+          toolCalls: autoApprovedToolCalls,
+          tools: tools,
+          toolHandlers: toolHandlers,
+          repairToolCall: repairToolCall,
+          continueOnToolError: continueOnToolError,
+          cancelToken: cancelToken,
+        );
+
+        for (final result in executed) {
+          yield LLMToolResultPart(result);
+        }
+
+        final approvalRequests = _buildToolApprovalRequests(needingApproval);
+        for (final r in approvalRequests) {
+          final call = r.toolCall;
           yield LLMProviderToolApprovalRequestPart(
-            approvalId: call.id,
+            approvalId: r.approvalId,
             toolCallId: call.id,
             toolName: call.function.name,
             input: _decodeJsonIfPossible(call.function.arguments),
@@ -2643,11 +3016,12 @@ Stream<LLMStreamPart> streamToolLoopParts({
             text: mergedResponse.text,
             thinking: mergedResponse.thinking,
             toolCalls: completedToolCalls,
-            toolResults: const <ToolResult>[],
+            toolResults: executed,
           ),
           text: mergedResponse.text,
           thinking: mergedResponse.thinking,
           toolCalls: completedToolCalls,
+          toolResults: executed,
           usage: mergedResponse.usage,
           finishReason: mergedResponse.finishReason,
           responseMetadata: null,
@@ -2658,22 +3032,42 @@ Stream<LLMStreamPart> streamToolLoopParts({
         );
         final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
           stepResultBase,
-          toolCallsNeedingApproval: needingApproval,
+          toolApprovalRequests: approvalRequests,
         );
 
-        yield LLMErrorPart(
-          ToolApprovalRequiredError(
-            state: ToolLoopBlockedState(
-              stepIndex: stepIndex,
-              stepResult: stepResultWithApprovals,
-              toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
-              toolCallsNeedingApproval:
-                  List<ToolCall>.unmodifiable(needingApproval),
-              steps: const [],
-              messages: List<ChatMessage>.unmodifiable(workingMessages),
-              prompt: promptFromChatMessages(workingMessages),
-            ),
-          ),
+        final blockedState = ToolLoopBlockedState(
+          stepIndex: stepIndex,
+          stepResult: stepResultWithApprovals,
+          toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+          toolApprovalRequests:
+              List<ToolApprovalRequest>.unmodifiable(approvalRequests),
+          steps: const [],
+          messages: List<ChatMessage>.unmodifiable(workingMessages),
+          prompt: promptFromChatMessages(workingMessages),
+        );
+
+        yield LLMRawPart(blockedState);
+
+        final finishReason = const LLMFinishReason(
+          unified: LLMUnifiedFinishReason.toolCalls,
+          raw: null,
+        );
+
+        if (emitStepParts) {
+          yield LLMStepFinishPart(
+            stepIndex: stepIndex,
+            response: mergedResponse,
+            usage: mergedResponse.usage,
+            finishReason: finishReason,
+            toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+            toolResults: List<ToolResult>.unmodifiable(executed),
+          );
+        }
+
+        yield LLMFinishPart(
+          mergedResponse,
+          usage: mergedResponse.usage,
+          finishReason: finishReason,
         );
         return;
       }
@@ -3018,8 +3412,46 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
     final executableToolCalls = partition.executable;
     final hasUnexecutableToolCalls = partition.unexecutable.isNotEmpty;
 
+    if (hasUnexecutableToolCalls) {
+      final executed = await _executeToolCalls(
+        toolCalls: executableToolCalls,
+        tools: tools,
+        toolHandlers: toolHandlers,
+        repairToolCall: repairToolCall,
+        continueOnToolError: continueOnToolError,
+        cancelToken: cancelToken,
+      );
+
+      for (final result in executed) {
+        yield LLMToolResultPart(result);
+      }
+
+      final finishReason = const LLMFinishReason(
+        unified: LLMUnifiedFinishReason.toolCalls,
+        raw: null,
+      );
+
+      if (emitStepParts) {
+        yield LLMStepFinishPart(
+          stepIndex: stepIndex,
+          response: mergedResponse,
+          usage: mergedResponse.usage,
+          finishReason: finishReason,
+          toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+          toolResults: List<ToolResult>.unmodifiable(executed),
+        );
+      }
+
+      yield LLMFinishPart(
+        mergedResponse,
+        usage: mergedResponse.usage,
+        finishReason: finishReason,
+      );
+      return;
+    }
+
     final needingApproval = await _findToolCallsNeedingApproval(
-      toolCalls: completedToolCalls,
+      toolCalls: executableToolCalls,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       messages: workingMessages,
@@ -3036,9 +3468,29 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       workingPrompt =
           _appendChatMessageToPrompt(workingPrompt, assistantMessage);
 
-      for (final call in needingApproval) {
+      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final autoApprovedToolCalls = executableToolCalls
+          .where((c) => !needingIds.contains(c.id))
+          .toList(growable: false);
+
+      final executed = await _executeToolCalls(
+        toolCalls: autoApprovedToolCalls,
+        tools: tools,
+        toolHandlers: toolHandlers,
+        repairToolCall: repairToolCall,
+        continueOnToolError: continueOnToolError,
+        cancelToken: cancelToken,
+      );
+
+      for (final result in executed) {
+        yield LLMToolResultPart(result);
+      }
+
+      final approvalRequests = _buildToolApprovalRequests(needingApproval);
+      for (final r in approvalRequests) {
+        final call = r.toolCall;
         yield LLMProviderToolApprovalRequestPart(
-          approvalId: call.id,
+          approvalId: r.approvalId,
           toolCallId: call.id,
           toolName: call.function.name,
           input: _decodeJsonIfPossible(call.function.arguments),
@@ -3051,11 +3503,12 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
           text: mergedResponse.text,
           thinking: mergedResponse.thinking,
           toolCalls: completedToolCalls,
-          toolResults: const <ToolResult>[],
+          toolResults: executed,
         ),
         text: mergedResponse.text,
         thinking: mergedResponse.thinking,
         toolCalls: completedToolCalls,
+        toolResults: executed,
         usage: mergedResponse.usage,
         finishReason: mergedResponse.finishReason,
         responseMetadata: null,
@@ -3066,22 +3519,41 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       );
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
         stepResultBase,
-        toolCallsNeedingApproval: needingApproval,
+        toolApprovalRequests: approvalRequests,
       );
 
-      yield LLMErrorPart(
-        ToolApprovalRequiredError(
-          state: ToolLoopBlockedState(
-            stepIndex: stepIndex,
-            stepResult: stepResultWithApprovals,
-            toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
-            toolCallsNeedingApproval:
-                List<ToolCall>.unmodifiable(needingApproval),
-            steps: const [],
-            messages: List<ChatMessage>.unmodifiable(workingMessages),
-            prompt: workingPrompt,
-          ),
-        ),
+      final blockedState = ToolLoopBlockedState(
+        stepIndex: stepIndex,
+        stepResult: stepResultWithApprovals,
+        toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+        toolApprovalRequests:
+            List<ToolApprovalRequest>.unmodifiable(approvalRequests),
+        steps: const [],
+        messages: List<ChatMessage>.unmodifiable(workingMessages),
+        prompt: workingPrompt,
+      );
+      yield LLMRawPart(blockedState);
+
+      final finishReason = const LLMFinishReason(
+        unified: LLMUnifiedFinishReason.toolCalls,
+        raw: null,
+      );
+
+      if (emitStepParts) {
+        yield LLMStepFinishPart(
+          stepIndex: stepIndex,
+          response: mergedResponse,
+          usage: mergedResponse.usage,
+          finishReason: finishReason,
+          toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+          toolResults: List<ToolResult>.unmodifiable(executed),
+        );
+      }
+
+      yield LLMFinishPart(
+        mergedResponse,
+        usage: mergedResponse.usage,
+        finishReason: finishReason,
       );
       return;
     }

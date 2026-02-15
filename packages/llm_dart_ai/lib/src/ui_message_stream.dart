@@ -414,6 +414,41 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           }
         }
 
+      case LLMRawPart(:final rawValue):
+        if (rawValue is ToolLoopBlockedState) {
+          final state = rawValue;
+          if (toolApprovalBlockedStateData != null) {
+            final extra = toolApprovalBlockedStateData(state);
+            final data = <String, Object?>{
+              'kind': 'tool-loop',
+              'stepIndex': state.stepIndex,
+              'approvalIds': state.toolApprovalRequests
+                  .map((r) => r.approvalId)
+                  .toList(growable: false),
+              'toolCallIds': state.toolApprovalRequests
+                  .map((r) => r.toolCall.id)
+                  .toList(growable: false),
+              if (extra != null) 'extra': extra,
+            };
+            if (data.isNotEmpty) {
+              yield <String, Object?>{
+                'type': 'data-tool-blocked',
+                'data': data,
+              };
+              yield <String, Object?>{
+                'type': 'data-tool-loop-blocked',
+                'data': data,
+              };
+            }
+          }
+          if (messageMeta != null) {
+            yield <String, Object?>{
+              'type': 'message-metadata',
+              'messageMetadata': messageMeta,
+            };
+          }
+        }
+
       case LLMSourceUrlPart(
           sourceId: final sourceId,
           url: final url,
@@ -480,13 +515,13 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
 
       case LLMErrorPart(error: final error):
         if (error is ToolApprovalRequiredError) {
-          for (final call in error.state.toolCallsNeedingApproval) {
+          for (final req in error.state.toolApprovalRequests) {
             yield <String, Object?>{
               'type': 'tool-approval-request',
               // Some runtimes do not distinguish approvalId vs toolCallId.
               // Reuse toolCallId as a stable approvalId.
-              'approvalId': call.id,
-              'toolCallId': call.id,
+              'approvalId': req.approvalId,
+              'toolCallId': req.toolCall.id,
             };
           }
           if (toolApprovalBlockedStateData != null) {
@@ -495,10 +530,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
             final data = <String, Object?>{
               'kind': 'tool-loop',
               'stepIndex': state.stepIndex,
-              'approvalIds':
-                  state.toolCallsNeedingApproval.map((c) => c.id).toList(),
-              'toolCallIds':
-                  state.toolCallsNeedingApproval.map((c) => c.id).toList(),
+              'approvalIds': state.toolApprovalRequests
+                  .map((r) => r.approvalId)
+                  .toList(growable: false),
+              'toolCallIds': state.toolApprovalRequests
+                  .map((r) => r.toolCall.id)
+                  .toList(growable: false),
               if (extra != null) 'extra': extra,
             };
             if (data.isNotEmpty) {
@@ -512,10 +549,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
               };
             }
           }
-          yield <String, Object?>{
-            'type': 'abort',
-            'reason': error.message,
-          };
+          if (sendFinish) {
+            yield const <String, Object?>{
+              'type': 'finish',
+              'finishReason': 'tool-calls',
+            };
+          }
           return;
         }
 
@@ -545,10 +584,12 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
               };
             }
           }
-          yield <String, Object?>{
-            'type': 'abort',
-            'reason': error.message,
-          };
+          if (sendFinish) {
+            yield const <String, Object?>{
+              'type': 'finish',
+              'finishReason': 'tool-calls',
+            };
+          }
           return;
         }
 

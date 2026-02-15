@@ -117,7 +117,7 @@ Future<void> main() async {
     ),
     tools: toolSet.tools,
     maxSteps: 3,
-    toolHandlers: const {},
+    toolHandlers: toolSet.handlers,
     toolApprovalChecks: toolSet.approvalChecks,
   );
 
@@ -131,7 +131,8 @@ Future<void> main() async {
   final blocked = outcome as ToolLoopBlocked;
   stdout.writeln('Tool approval required.');
   stdout.writeln('Requested tool calls:');
-  for (final call in blocked.state.toolCallsNeedingApproval) {
+  for (final req in blocked.state.toolApprovalRequests) {
+    final call = req.toolCall;
     stdout.writeln('- ${call.function.name}(${call.function.arguments})');
   }
 
@@ -143,49 +144,32 @@ Future<void> main() async {
     return;
   }
 
-  // Manual resume: execute tools locally, append ToolResultMessage, continue with a normal loop.
-  final toolResults = await executeToolCalls(
-    toolCalls: blocked.state.toolCalls,
-    toolHandlers: toolSet.handlers,
-  );
-
-  final resumedMessages = [
-    ...blocked.state.messages,
-    ChatMessage.toolResult(
-      results: encodeToolResultsAsToolCalls(
-        toolCalls: blocked.state.toolCalls,
-        toolResults: toolResults,
+  final decisions = [
+    for (final req in blocked.state.toolApprovalRequests)
+      ToolApprovalDecision(
+        approvalId: req.approvalId,
+        approved: true,
       ),
-    ),
   ];
 
-  // Step 2: continue normally.
-  final modelAuto = await LLMBuilder()
-      .provider(minimaxProviderId)
-      .apiKey(apiKey)
-      .baseUrl(baseUrl ?? minimaxAnthropicBaseUrl)
-      .model(minimaxDefaultModel)
-      .maxTokens(800)
-      .tools(toolSet.tools)
-      .toolChoice(const AutoToolChoice())
-      .providerOptions(minimaxProviderId, const {
-    'cacheControl': {'type': 'ephemeral'},
-    'extraHeaders': {'x-llm-dart-example': 'minimax-tool-approval'},
-    'extraBody': {
-      'metadata': {'user_id': 'llm_dart_example'},
-    },
-  }).build();
-
-  final finalResult = await runToolLoop(
-    model: modelAuto,
-    messages: resumedMessages,
+  final resumed = await resumeToolLoopUntilBlocked(
+    model: modelForToolRequest,
+    blockedState: blocked.state,
+    approvals: decisions,
     tools: toolSet.tools,
     toolHandlers: toolSet.handlers,
+    toolApprovalChecks: toolSet.approvalChecks,
     maxSteps: 5,
   );
 
-  stdout.writeln(
-      '\nFinal answer:\n${finalResult.finalResult.text ?? '(no text)'}');
-  stdout
-      .writeln('providerMetadata: ${finalResult.finalResult.providerMetadata}');
+  switch (resumed) {
+    case ToolLoopCompleted(:final result):
+      stdout.writeln(
+        '\nFinal answer:\n${result.finalResult.text ?? '(no text)'}',
+      );
+      stdout
+          .writeln('providerMetadata: ${result.finalResult.providerMetadata}');
+    case ToolLoopBlocked(:final state):
+      stdout.writeln('Blocked again at stepIndex=${state.stepIndex}.');
+  }
 }

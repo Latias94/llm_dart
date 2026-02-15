@@ -141,11 +141,20 @@ void main() {
         chunks,
         equals([
           const {'type': 'text-start', 'id': 't1'},
-          const {'type': 'message-metadata', 'messageMetadata': {'traceId': 't'}},
+          const {
+            'type': 'message-metadata',
+            'messageMetadata': {'traceId': 't'}
+          },
           const {'type': 'text-delta', 'id': 't1', 'delta': 'Hello'},
-          const {'type': 'message-metadata', 'messageMetadata': {'traceId': 't'}},
+          const {
+            'type': 'message-metadata',
+            'messageMetadata': {'traceId': 't'}
+          },
           const {'type': 'text-end', 'id': 't1'},
-          const {'type': 'message-metadata', 'messageMetadata': {'traceId': 't'}},
+          const {
+            'type': 'message-metadata',
+            'messageMetadata': {'traceId': 't'}
+          },
           const {'type': 'finish', 'finishReason': 'stop'},
         ]),
       );
@@ -192,26 +201,21 @@ void main() {
       );
     });
 
-    test('maps ToolApprovalRequiredError to tool-approval-request + abort',
-        () async {
-      const toolCall = ToolCall(
-        id: 'call1',
-        callType: 'function',
-        function: FunctionCall(name: 'calc', arguments: '{"x":1}'),
-      );
-
-      final state = ToolLoopBlockedState(
-        stepIndex: 0,
-        stepResult: GenerateTextResult(rawResponse: _TestChatResponse()),
-        toolCalls: const [toolCall],
-        toolCallsNeedingApproval: const [toolCall],
-        steps: const <ToolLoopStep>[],
-        messages: const <ChatMessage>[],
-        prompt: null,
-      );
-
+    test('maps tool approval request to tool-approval-request', () async {
       final parts = Stream<LLMStreamPart>.fromIterable([
-        LLMErrorPart(ToolApprovalRequiredError(state: state)),
+        const LLMProviderToolApprovalRequestPart(
+          approvalId: 'apr_1',
+          toolCallId: 'call1',
+          toolName: 'calc',
+          input: {'x': 1},
+        ),
+        LLMFinishPart(
+          _TestChatResponse(),
+          finishReason: const LLMFinishReason(
+            unified: LLMUnifiedFinishReason.toolCalls,
+            raw: null,
+          ),
+        ),
       ]);
 
       final chunks =
@@ -222,16 +226,16 @@ void main() {
         equals([
           const {
             'type': 'tool-approval-request',
-            'approvalId': 'call1',
+            'approvalId': 'apr_1',
             'toolCallId': 'call1',
           },
-          const {'type': 'abort', 'reason': 'Tool approval required'},
+          const {'type': 'finish', 'finishReason': 'tool-calls'},
         ]),
       );
     });
 
     test(
-        'emits data-tool-loop-blocked when ToolApprovalRequiredError is present',
+        'emits data-tool-loop-blocked when ToolLoopBlockedState raw part is present',
         () async {
       const toolCall = ToolCall(
         id: 'call1',
@@ -243,14 +247,32 @@ void main() {
         stepIndex: 2,
         stepResult: GenerateTextResult(rawResponse: _TestChatResponse()),
         toolCalls: const [toolCall],
-        toolCallsNeedingApproval: const [toolCall],
+        toolApprovalRequests: const [
+          ToolApprovalRequest(
+            approvalId: 'apr_1',
+            toolCall: toolCall,
+          ),
+        ],
         steps: const <ToolLoopStep>[],
         messages: const <ChatMessage>[],
         prompt: null,
       );
 
       final parts = Stream<LLMStreamPart>.fromIterable([
-        LLMErrorPart(ToolApprovalRequiredError(state: state)),
+        const LLMProviderToolApprovalRequestPart(
+          approvalId: 'apr_1',
+          toolCallId: 'call1',
+          toolName: 'calc',
+          input: {'x': 1},
+        ),
+        LLMRawPart(state),
+        LLMFinishPart(
+          _TestChatResponse(),
+          finishReason: const LLMFinishReason(
+            unified: LLMUnifiedFinishReason.toolCalls,
+            raw: null,
+          ),
+        ),
       ]);
 
       final chunks = await uiMessageChunksFromParts(
@@ -258,7 +280,8 @@ void main() {
         sendStart: false,
         toolApprovalBlockedStateData: (s) => {
           'stepIndex': s.stepIndex,
-          'toolCallIds': s.toolCallsNeedingApproval.map((c) => c.id).toList(),
+          'toolCallIds':
+              s.toolApprovalRequests.map((r) => r.toolCall.id).toList(),
         },
       ).toList();
 
@@ -267,7 +290,7 @@ void main() {
         equals([
           const {
             'type': 'tool-approval-request',
-            'approvalId': 'call1',
+            'approvalId': 'apr_1',
             'toolCallId': 'call1',
           },
           {
@@ -275,7 +298,7 @@ void main() {
             'data': {
               'kind': 'tool-loop',
               'stepIndex': 2,
-              'approvalIds': ['call1'],
+              'approvalIds': ['apr_1'],
               'toolCallIds': ['call1'],
               'extra': {
                 'stepIndex': 2,
@@ -288,7 +311,7 @@ void main() {
             'data': {
               'kind': 'tool-loop',
               'stepIndex': 2,
-              'approvalIds': ['call1'],
+              'approvalIds': ['apr_1'],
               'toolCallIds': ['call1'],
               'extra': {
                 'stepIndex': 2,
@@ -296,7 +319,7 @@ void main() {
               },
             },
           },
-          const {'type': 'abort', 'reason': 'Tool approval required'},
+          const {'type': 'finish', 'finishReason': 'tool-calls'},
         ]),
       );
     });
@@ -379,7 +402,7 @@ void main() {
               },
             },
           },
-          const {'type': 'abort', 'reason': 'Provider tool approval required'},
+          const {'type': 'finish', 'finishReason': 'tool-calls'},
         ]),
       );
     });
