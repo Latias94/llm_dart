@@ -14,6 +14,8 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
   required LLMCallOptions callOptions,
   ProviderToolApprovalHandler? onApprovalRequests,
   int maxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
   CancelToken? cancelToken,
 }) async* {
   if (maxSteps < 1) {
@@ -62,6 +64,7 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
 
   Prompt currentPrompt = toPrompt(input);
   var stepIndex = 0;
+  final pendingProviderToolCallFirstStep = <String, int>{};
 
   while (true) {
     if (cancelToken?.isCancelled == true) {
@@ -78,6 +81,7 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
     final approvalRequests = <LLMProviderToolApprovalRequestPart>[];
     final assistantText = StringBuffer();
     final providerToolCalls = <LLMProviderToolCallPart>[];
+    final providerToolResults = <LLMProviderToolResultPart>[];
 
     LLMFinishPart? finishPart;
     var blocked = false;
@@ -93,6 +97,23 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
 
           case LLMProviderToolCallPart():
             providerToolCalls.add(part);
+            if (waitForDeferredProviderToolResults &&
+                part.toolCallId.trim().isNotEmpty &&
+                part.providerExecuted != false &&
+                part.supportsDeferredResults == true) {
+              pendingProviderToolCallFirstStep.putIfAbsent(
+                part.toolCallId,
+                () => stepIndex,
+              );
+            }
+            yield part;
+            continue;
+
+          case LLMProviderToolResultPart(:final toolCallId, :final preliminary):
+            providerToolResults.add(part);
+            if (toolCallId.trim().isNotEmpty && preliminary != true) {
+              pendingProviderToolCallFirstStep.remove(toolCallId);
+            }
             yield part;
             continue;
 
@@ -204,6 +225,26 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
       toolCalls: const <ToolCall>[],
       toolResults: const <ToolResult>[],
     );
+
+    if (waitForDeferredProviderToolResults &&
+        pendingProviderToolCallFirstStep.isNotEmpty &&
+        maxAdditionalProviderToolResultSteps > 0) {
+      pendingProviderToolCallFirstStep.removeWhere(
+        (_, firstStep) =>
+            (stepIndex - firstStep) >= maxAdditionalProviderToolResultSteps,
+      );
+
+      if (pendingProviderToolCallFirstStep.isNotEmpty) {
+        currentPrompt = appendProviderToolStepToPrompt(
+          currentPrompt,
+          assistantText: assistantText.toString(),
+          providerToolCalls: providerToolCalls,
+          providerToolResults: providerToolResults,
+        );
+        stepIndex++;
+        continue;
+      }
+    }
 
     yield finishPart;
     return;

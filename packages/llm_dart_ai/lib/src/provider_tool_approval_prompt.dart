@@ -91,6 +91,120 @@ Prompt appendProviderToolApprovalsToPrompt(
   return Prompt(messages: List<PromptMessage>.unmodifiable(messages));
 }
 
+/// Appends provider tool calls and (non-preliminary) tool results to a Prompt IR.
+///
+/// This is intended for multi-step continuation scenarios where the provider
+/// defers tool results (AI SDK-style deferred provider-native tools).
+Prompt appendProviderToolStepToPrompt(
+  Prompt base, {
+  String assistantText = '',
+  List<LLMProviderToolCallPart> providerToolCalls =
+      const <LLMProviderToolCallPart>[],
+  List<LLMProviderToolResultPart> providerToolResults =
+      const <LLMProviderToolResultPart>[],
+  List<LLMProviderToolApprovalRequestPart> approvalRequests =
+      const <LLMProviderToolApprovalRequestPart>[],
+}) {
+  if (assistantText.trim().isEmpty &&
+      providerToolCalls.isEmpty &&
+      providerToolResults.isEmpty &&
+      approvalRequests.isEmpty) {
+    return base;
+  }
+
+  final messages = List<PromptMessage>.from(base.messages);
+
+  final assistantParts = <PromptPart>[];
+  if (assistantText.trim().isNotEmpty) {
+    assistantParts.add(TextPart(assistantText));
+  }
+
+  for (final call in providerToolCalls) {
+    assistantParts.add(
+      ToolCallPart(
+        toolCallId: call.toolCallId,
+        toolName: call.toolName,
+        input: call.input,
+        providerExecuted: true,
+        providerOptions: _tryProviderOptions(call.providerMetadata),
+      ),
+    );
+  }
+
+  for (final req in approvalRequests) {
+    assistantParts.add(
+      ToolApprovalRequestPart(
+        approvalId: req.approvalId,
+        toolCallId: req.toolCallId,
+        providerOptions: _tryProviderOptions(req.providerMetadata),
+      ),
+    );
+  }
+
+  if (assistantParts.isNotEmpty) {
+    messages.add(
+      PromptMessage(
+        role: PromptRole.assistant,
+        parts: List<PromptPart>.unmodifiable(assistantParts),
+      ),
+    );
+  }
+
+  ToolResultOutput toOutput(LLMProviderToolResultPart r) {
+    final raw = r.result;
+    final providerOptions = _tryProviderOptions(r.providerMetadata);
+    final isError = r.isError == true;
+
+    if (raw is Map) {
+      final map = raw.cast<String, dynamic>();
+      return isError
+          ? ToolResultErrorJsonOutput(map, providerOptions: providerOptions)
+          : ToolResultJsonOutput(map, providerOptions: providerOptions);
+    }
+
+    if (raw is List || raw is num || raw is bool) {
+      return isError
+          ? ToolResultErrorJsonOutput(raw, providerOptions: providerOptions)
+          : ToolResultJsonOutput(raw, providerOptions: providerOptions);
+    }
+
+    final text = raw?.toString() ?? 'null';
+    return isError
+        ? ToolResultErrorTextOutput(text, providerOptions: providerOptions)
+        : ToolResultTextOutput(text, providerOptions: providerOptions);
+  }
+
+  final finalToolResults = providerToolResults
+      .where((r) => r.preliminary != true)
+      .map(
+        (r) => ToolResultPart(
+          r.toolCallId,
+          r.toolName,
+          toOutput(r),
+        ),
+      )
+      .toList(growable: false);
+
+  if (finalToolResults.isNotEmpty) {
+    if (messages.isNotEmpty && messages.last.role == PromptRole.tool) {
+      final last = messages.removeLast();
+      messages.add(
+        PromptMessage(
+          role: PromptRole.tool,
+          parts: List<PromptPart>.unmodifiable(
+              [...last.parts, ...finalToolResults]),
+          providerOptions: last.providerOptions,
+          protocolPayloads: last.protocolPayloads,
+        ),
+      );
+    } else {
+      messages.add(PromptMessage.tool(parts: finalToolResults));
+    }
+  }
+
+  return Prompt(messages: List<PromptMessage>.unmodifiable(messages));
+}
+
 ProviderOptions _tryProviderOptions(Map<String, dynamic>? metadata) {
   if (metadata == null || metadata.isEmpty) return const {};
   final out = <String, Map<String, dynamic>>{};
