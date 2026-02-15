@@ -53,4 +53,18 @@ class AnthropicProviderTools {
       },
     );
   }
+
+  /// Anthropic code execution server tool (provider-native).
+  ///
+  /// Anthropic may emit tool names like `bash_code_execution` or
+  /// `text_editor_code_execution`; streaming parsers normalize them to
+  /// `code_execution` and then resolve this tool id.
+  static ProviderTool codeExecution() {
+    return const ProviderTool(
+      id: 'anthropic.code_execution',
+      name: 'code_execution',
+      supportsDeferredResults: true,
+      options: {},
+    );
+  }
 }

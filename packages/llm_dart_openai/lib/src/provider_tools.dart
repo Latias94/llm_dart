@@ -97,6 +97,7 @@ class OpenAIProviderTools {
     return ProviderTool(
       id: '${_prefix}code_interpreter',
       name: 'code_interpreter',
+      supportsDeferredResults: true,
       options: {
         if (container != null) 'container': container,
         ...?parameters,

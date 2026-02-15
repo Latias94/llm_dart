@@ -31,6 +31,7 @@ class GoogleProviderTools {
     return const ProviderTool(
       id: 'google.code_execution',
       name: 'code_execution',
+      supportsDeferredResults: true,
     );
   }
 
