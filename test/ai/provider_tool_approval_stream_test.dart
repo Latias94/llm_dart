@@ -199,5 +199,72 @@ void main() {
           equals([1]));
       expect(parts.whereType<LLMFinishPart>(), hasLength(1));
     });
+
+    test(
+        'toolSet blocks when provider tool approval is required and stop is enabled',
+        () async {
+      final model = _ProviderApprovalModel();
+      final toolSet = ToolSet(const <LocalTool>[]);
+
+      final result = streamText(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        toolSet: toolSet,
+        stopOnProviderToolApprovalRequests: true,
+        providerToolApprovalMaxSteps: 5,
+      );
+
+      final parts = await result.fullStream.toList();
+      expect(model.calls, equals(1));
+      expect(
+        parts.whereType<LLMProviderToolApprovalRequestPart>(),
+        hasLength(1),
+      );
+
+      final blocked = await result.providerToolApprovalBlockedState;
+      expect(blocked, isNotNull);
+      expect(blocked!.approvalRequests.single.approvalId, equals('apr_1'));
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.finishReason?.unified, LLMUnifiedFinishReason.toolCalls);
+    });
+
+    test('toolSet can resume after provider tool approval blocked state',
+        () async {
+      final model = _ProviderApprovalModel();
+      final toolSet = ToolSet(const <LocalTool>[]);
+
+      final initial = streamText(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        toolSet: toolSet,
+        stopOnProviderToolApprovalRequests: true,
+        providerToolApprovalMaxSteps: 5,
+      );
+
+      await initial.fullStream.toList();
+      final blocked = await initial.providerToolApprovalBlockedState;
+      expect(blocked, isNotNull);
+
+      final resumed = resumeStreamTextToolLoopAfterProviderToolApprovalBlocked(
+        model: model,
+        blockedState: blocked!,
+        decisions: const [
+          ToolApprovalDecision(
+            approvalId: 'apr_1',
+            approved: true,
+          ),
+        ],
+        toolSet: toolSet,
+        providerToolApprovalMaxSteps: 5,
+      );
+
+      final partsFuture = resumed.fullStream.toList();
+      expect(await resumed.text, equals('ok'));
+      expect(model.calls, equals(2));
+
+      final parts = await partsFuture;
+      expect(parts.whereType<LLMFinishPart>(), hasLength(1));
+    });
   });
 }

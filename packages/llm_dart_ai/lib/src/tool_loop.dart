@@ -15,6 +15,7 @@ import 'ensure_stream_start.dart';
 import 'metadata_fallbacks.dart';
 import 'prompt_input.dart';
 import 'prompt_message_converters.dart';
+import 'provider_tool_approval_prompt.dart';
 import 'response_messages.dart';
 import 'tool_set.dart';
 import 'tool_types.dart';
@@ -606,6 +607,12 @@ Prompt _sanitizePromptForLegacyChat(Prompt prompt) {
     final sanitizedParts = <PromptPart>[];
     for (final part in message.parts) {
       switch (part) {
+        case ToolApprovalRequestPart():
+        case ToolApprovalResponsePart():
+          // Tool approval parts are orchestration-level signals and are not
+          // representable in legacy chat messages.
+          break;
+
         case FileUrlPart(:final mime, :final text):
           final trimmedText = text?.trim() ?? '';
           sanitizedParts.add(
@@ -2653,6 +2660,8 @@ Stream<LLMStreamPart> streamToolLoopParts({
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
+  ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  bool stopOnProviderToolApprovalRequests = false,
   int maxSteps = 10,
   bool waitForDeferredProviderToolResults = true,
   int maxAdditionalProviderToolResultSteps = 1,
@@ -2672,6 +2681,10 @@ Stream<LLMStreamPart> streamToolLoopParts({
       promptIr: promptIr,
     );
 
+    final enableProviderToolApprovals =
+        onProviderToolApprovalRequests != null ||
+            stopOnProviderToolApprovalRequests;
+
     if (input is StandardizedPromptIr) {
       yield* _streamToolLoopPartsPromptIr(
         model: model,
@@ -2681,6 +2694,8 @@ Stream<LLMStreamPart> streamToolLoopParts({
         repairToolCall: repairToolCall,
         toolApprovalChecks: toolApprovalChecks,
         needsApproval: needsApproval,
+        onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+        stopOnProviderToolApprovalRequests: stopOnProviderToolApprovalRequests,
         maxSteps: maxSteps,
         waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
         maxAdditionalProviderToolResultSteps:
@@ -2695,6 +2710,46 @@ Stream<LLMStreamPart> streamToolLoopParts({
     }
 
     final standardizedMessages = (input as StandardizedChatMessages).messages;
+
+    if (enableProviderToolApprovals) {
+      final supportsPromptStreaming = effectiveCallOptions.isEmpty
+          ? model is PromptChatStreamPartsCapability
+          : model is PromptChatStreamPartsCallOptionsCapability;
+      if (!supportsPromptStreaming) {
+        yield LLMErrorPart(
+          InvalidRequestError(
+            effectiveCallOptions.isEmpty
+                ? 'streamToolLoopParts with provider tool approvals requires prompt-native parts-first streaming. '
+                    'Implement `PromptChatStreamPartsCapability.chatPromptStreamParts()` (or use a provider that does).'
+                : 'streamToolLoopParts with provider tool approvals requires prompt-native parts-first streaming with call-level overrides. '
+                    'Implement `PromptChatStreamPartsCallOptionsCapability.chatPromptStreamPartsWithCallOptions()` (or use a provider that does).',
+          ),
+        );
+        return;
+      }
+
+      yield* _streamToolLoopPartsPromptIr(
+        model: model,
+        prompt: promptFromChatMessages(standardizedMessages),
+        tools: tools,
+        toolHandlers: toolHandlers,
+        repairToolCall: repairToolCall,
+        toolApprovalChecks: toolApprovalChecks,
+        needsApproval: needsApproval,
+        onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+        stopOnProviderToolApprovalRequests: stopOnProviderToolApprovalRequests,
+        maxSteps: maxSteps,
+        waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+        maxAdditionalProviderToolResultSteps:
+            maxAdditionalProviderToolResultSteps,
+        continueOnToolError: continueOnToolError,
+        emitStepParts: emitStepParts,
+        include: include,
+        callOptions: effectiveCallOptions,
+        cancelToken: cancelToken,
+      );
+      return;
+    }
 
     if (effectiveCallOptions.isEmpty) {
       if (model is! ChatStreamPartsCapability) {
@@ -3153,6 +3208,8 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
+  ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  bool stopOnProviderToolApprovalRequests = false,
   int maxSteps = 10,
   bool waitForDeferredProviderToolResults = true,
   int maxAdditionalProviderToolResultSteps = 1,
@@ -3167,6 +3224,19 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       : model is PromptChatStreamPartsCallOptionsCapability;
 
   if (!hasPromptStreamParts) {
+    if (onProviderToolApprovalRequests != null ||
+        stopOnProviderToolApprovalRequests) {
+      yield LLMErrorPart(
+        InvalidRequestError(
+          callOptions.isEmpty
+              ? 'Provider tool approvals require prompt-native parts-first streaming. '
+                  'Implement `PromptChatStreamPartsCapability` (or use a provider that does).'
+              : 'Provider tool approvals require prompt-native parts-first streaming with call-level overrides. '
+                  'Implement `PromptChatStreamPartsCallOptionsCapability` (or use a provider that does).',
+        ),
+      );
+      return;
+    }
     requirePromptCapabilityForFileReferenceParts(
       prompt: prompt,
       requiredCapabilityName: callOptions.isEmpty
@@ -3218,6 +3288,10 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
     UsageInfo? usage;
     ChatResponse? completedResponse;
 
+    final providerToolCalls = <LLMProviderToolCallPart>[];
+    final approvalRequests = <LLMProviderToolApprovalRequestPart>[];
+    var providerApprovalBlocked = false;
+
     final startedToolCalls = <String>{};
 
     var didEmitProviderMetadataPart = false;
@@ -3241,6 +3315,24 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
     }
 
     await for (final part in partsStream) {
+      if (providerApprovalBlocked) {
+        if (part is LLMProviderToolApprovalRequestPart) {
+          approvalRequests.add(part);
+          yield part;
+          continue;
+        }
+        if (part is LLMFinishPart) {
+          completedResponse = part.response;
+          usage = part.usage ?? part.response.usage;
+          break;
+        }
+        if (part is LLMErrorPart) {
+          yield part;
+          return;
+        }
+        continue;
+      }
+
       switch (part) {
         case LLMTextDeltaPart(:final delta):
           fullText.write(delta);
@@ -3286,6 +3378,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
             :final providerExecuted,
             :final supportsDeferredResults,
           ):
+          providerToolCalls.add(part);
           if (waitForDeferredProviderToolResults &&
               toolCallId.trim().isNotEmpty &&
               providerExecuted != false &&
@@ -3302,6 +3395,12 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
             pendingProviderToolCallFirstStep.remove(toolCallId);
           }
           yield part;
+
+        case LLMProviderToolApprovalRequestPart():
+          approvalRequests.add(part);
+          yield part;
+          providerApprovalBlocked = true;
+          continue;
 
         case LLMProviderMetadataPart():
           didEmitProviderMetadataPart = true;
@@ -3352,6 +3451,92 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       if (providerMetadata != null && providerMetadata.isNotEmpty) {
         yield LLMProviderMetadataPart(providerMetadata);
       }
+    }
+
+    if (providerApprovalBlocked) {
+      final toolCallsReason = const LLMFinishReason(
+        unified: LLMUnifiedFinishReason.toolCalls,
+        raw: null,
+      );
+
+      final response = completedResponse ??
+          _FakeChatResponseForStreaming(
+            text: fullText.isNotEmpty ? fullText.toString() : null,
+            thinking: fullThinking.isNotEmpty ? fullThinking.toString() : null,
+            usage: usage,
+          );
+      final responseUsage = usage ?? response.usage;
+
+      if (emitStepParts) {
+        yield LLMStepFinishPart(
+          stepIndex: stepIndex,
+          response: response,
+          usage: responseUsage,
+          finishReason: toolCallsReason,
+          toolCalls: const <ToolCall>[],
+          toolResults: const <ToolResult>[],
+        );
+      }
+
+      final onApprovalRequests = onProviderToolApprovalRequests;
+      if (onApprovalRequests == null) {
+        final blockedState = ProviderToolApprovalBlockedState(
+          stepIndex: stepIndex,
+          prompt: workingPrompt,
+          approvalRequests:
+              List<LLMProviderToolApprovalRequestPart>.unmodifiable(
+            approvalRequests,
+          ),
+          assistantText: fullText.toString(),
+          providerToolCalls:
+              List<LLMProviderToolCallPart>.unmodifiable(providerToolCalls),
+        );
+
+        yield LLMProviderToolApprovalBlockedPart(blockedState);
+
+        yield LLMFinishPart(
+          response,
+          usage: responseUsage,
+          finishReason: toolCallsReason,
+        );
+        return;
+      }
+
+      final decisions = await onApprovalRequests(
+        List<LLMProviderToolApprovalRequestPart>.unmodifiable(approvalRequests),
+      );
+
+      final byId = <String, ToolApprovalDecision>{};
+      for (final d in decisions) {
+        byId[d.approvalId] = d;
+      }
+
+      for (final req in approvalRequests) {
+        if (!byId.containsKey(req.approvalId)) {
+          throw InvalidRequestError(
+            'Missing ToolApprovalDecision for approvalId="${req.approvalId}".',
+          );
+        }
+      }
+
+      workingPrompt = appendProviderToolApprovalsToPrompt(
+        workingPrompt,
+        assistantText: fullText.toString(),
+        providerToolCalls: providerToolCalls,
+        approvalRequests: approvalRequests,
+        decisions: approvalRequests.map((r) => byId[r.approvalId]!).toList(
+              growable: false,
+            ),
+      );
+
+      // Best-effort: preserve assistant text context for local tool approval
+      // checks. Provider tool approval parts are not representable in legacy
+      // chat messages.
+      if (fullText.toString().trim().isNotEmpty) {
+        workingMessages.add(ChatMessage.assistant(fullText.toString()));
+      }
+
+      continue;
     }
 
     // If no tool calls, we're done.
@@ -3631,6 +3816,8 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
   required ToolSet toolSet,
   ToolCallRepair? repairToolCall,
   ToolApprovalCheck? needsApproval,
+  ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  bool stopOnProviderToolApprovalRequests = false,
   int maxSteps = 10,
   bool continueOnToolError = true,
   bool emitStepParts = false,
@@ -3650,6 +3837,8 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     repairToolCall: repairToolCall,
     toolApprovalChecks: toolSet.approvalChecks,
     needsApproval: needsApproval,
+    onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+    stopOnProviderToolApprovalRequests: stopOnProviderToolApprovalRequests,
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
     emitStepParts: emitStepParts,

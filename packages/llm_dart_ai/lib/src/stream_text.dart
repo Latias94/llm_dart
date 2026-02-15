@@ -10,6 +10,7 @@ import 'tool_types.dart';
 import 'tool_set.dart';
 import 'response_messages.dart';
 import 'metadata_fallbacks.dart';
+import 'provider_tool_approval_prompt.dart';
 import 'types.dart';
 
 typedef StreamTextOnStepFinishCallback = FutureOr<void> Function(
@@ -1224,6 +1225,8 @@ StreamTextResult streamText({
         toolSet: toolSet,
         repairToolCall: repairToolCall,
         needsApproval: needsApproval,
+        onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+        stopOnProviderToolApprovalRequests: stopOnProviderToolApprovalRequests,
         maxSteps: maxSteps,
         continueOnToolError: continueOnToolError,
         emitStepParts: true,
@@ -1437,7 +1440,8 @@ StreamTextResult resumeStreamTextAfterProviderToolApprovalBlocked({
           tools: tools,
           onProviderToolApprovalRequests: onProviderToolApprovalRequests,
           providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
-          waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+          waitForDeferredProviderToolResults:
+              waitForDeferredProviderToolResults,
           maxAdditionalProviderToolResultSteps:
               maxAdditionalProviderToolResultSteps,
           callOptions: effectiveCallOptions,
@@ -1468,5 +1472,78 @@ StreamTextResult resumeStreamTextAfterProviderToolApprovalBlocked({
     defaultModelId: defaultModelId,
     onStepFinish: onStepFinish,
     onFinish: onFinish,
+  );
+}
+
+/// Resume a tool-loop `streamText` run that finished because a provider-executed
+/// tool required explicit approval.
+///
+/// This is intended to pair with [StreamTextResult.providerToolApprovalBlockedState]
+/// when `streamText(..., toolSet: ...)` was used.
+StreamTextResult resumeStreamTextToolLoopAfterProviderToolApprovalBlocked({
+  required ChatCapability model,
+  required ProviderToolApprovalBlockedState blockedState,
+  required List<ToolApprovalDecision> decisions,
+  required ToolSet toolSet,
+  ToolCallRepair? repairToolCall,
+  ToolApprovalCheck? needsApproval,
+  ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  bool stopOnProviderToolApprovalRequests = false,
+  int providerToolApprovalMaxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
+  int maxSteps = 10,
+  bool continueOnToolError = true,
+  bool includeRawChunks = false,
+  StreamTextOnStepFinishCallback? onStepFinish,
+  StreamTextOnFinishCallback? onFinish,
+  IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
+  CancelToken? cancelToken,
+}) {
+  final byId = <String, ToolApprovalDecision>{};
+  for (final d in decisions) {
+    byId[d.approvalId] = d;
+  }
+
+  for (final req in blockedState.approvalRequests) {
+    if (!byId.containsKey(req.approvalId)) {
+      throw InvalidRequestError(
+        'Missing ToolApprovalDecision for approvalId="${req.approvalId}".',
+      );
+    }
+  }
+
+  final nextPrompt = appendProviderToolApprovalsToPrompt(
+    blockedState.prompt,
+    assistantText: blockedState.assistantText,
+    providerToolCalls: blockedState.providerToolCalls,
+    approvalRequests: blockedState.approvalRequests,
+    decisions: blockedState.approvalRequests
+        .map((r) => byId[r.approvalId]!)
+        .toList(growable: false),
+  );
+
+  return streamText(
+    model: model,
+    promptIr: nextPrompt,
+    toolSet: toolSet,
+    repairToolCall: repairToolCall,
+    needsApproval: needsApproval,
+    onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+    stopOnProviderToolApprovalRequests: stopOnProviderToolApprovalRequests,
+    providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
+    waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+    maxAdditionalProviderToolResultSteps: maxAdditionalProviderToolResultSteps,
+    maxSteps: maxSteps,
+    continueOnToolError: continueOnToolError,
+    includeRawChunks: includeRawChunks,
+    onStepFinish: onStepFinish,
+    onFinish: onFinish,
+    include: include,
+    defaultCallOptions: defaultCallOptions,
+    callOptions: callOptions,
+    cancelToken: cancelToken,
   );
 }
