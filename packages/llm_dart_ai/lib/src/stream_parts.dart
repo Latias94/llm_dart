@@ -28,6 +28,8 @@ Stream<LLMStreamPart> streamChatParts({
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
   bool stopOnProviderToolApprovalRequests = false,
   int providerToolApprovalMaxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async* {
@@ -60,6 +62,9 @@ Stream<LLMStreamPart> streamChatParts({
       callOptions: callOptions,
       onApprovalRequests: onProviderToolApprovalRequests,
       maxSteps: providerToolApprovalMaxSteps,
+      waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+      maxAdditionalProviderToolResultSteps:
+          maxAdditionalProviderToolResultSteps,
       cancelToken: cancelToken,
     );
   }
@@ -90,6 +95,8 @@ Stream<LLMStreamPart> resumeChatPartsAfterProviderToolApprovalRequired({
   List<Tool>? tools,
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
   int providerToolApprovalMaxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async* {
@@ -102,6 +109,9 @@ Stream<LLMStreamPart> resumeChatPartsAfterProviderToolApprovalRequired({
       callOptions: callOptions,
       onApprovalRequests: onProviderToolApprovalRequests,
       maxSteps: providerToolApprovalMaxSteps,
+      waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+      maxAdditionalProviderToolResultSteps:
+          maxAdditionalProviderToolResultSteps,
       cancelToken: cancelToken,
     );
   }

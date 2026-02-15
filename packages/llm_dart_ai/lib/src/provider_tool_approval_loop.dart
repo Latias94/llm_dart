@@ -259,6 +259,8 @@ Stream<LLMStreamPart> resumeChatPartsWithProviderToolApprovals({
   required LLMCallOptions callOptions,
   ProviderToolApprovalHandler? onApprovalRequests,
   int maxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
   CancelToken? cancelToken,
 }) async* {
   final remainingSteps = maxSteps - (blockedState.stepIndex + 1);
@@ -300,6 +302,8 @@ Stream<LLMStreamPart> resumeChatPartsWithProviderToolApprovals({
     callOptions: callOptions,
     onApprovalRequests: onApprovalRequests,
     maxSteps: remainingSteps,
+    waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+    maxAdditionalProviderToolResultSteps: maxAdditionalProviderToolResultSteps,
     cancelToken: cancelToken,
   ).map((part) {
     // Ensure step numbering continues from the blocked step.
