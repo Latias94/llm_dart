@@ -7,6 +7,25 @@ import 'prompt_message_converters.dart';
 import 'provider_tool_approval_prompt.dart';
 import 'types.dart';
 
+class _ProviderToolApprovalBlockedResponse extends ChatResponse {
+  @override
+  final String? text;
+
+  _ProviderToolApprovalBlockedResponse({this.text});
+
+  @override
+  String? get thinking => null;
+
+  @override
+  List<ToolCall>? get toolCalls => null;
+
+  @override
+  UsageInfo? get usage => null;
+
+  @override
+  Map<String, dynamic>? get providerMetadata => null;
+}
+
 Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
   required ChatCapability model,
   required StandardizedPromptInput input,
@@ -158,20 +177,44 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
 
     if (blocked) {
       if (onApprovalRequests == null) {
-        yield LLMErrorPart(
-          ProviderToolApprovalRequiredError(
-            state: ProviderToolApprovalBlockedState(
-              stepIndex: stepIndex,
-              prompt: currentPrompt,
-              approvalRequests:
-                  List<LLMProviderToolApprovalRequestPart>.unmodifiable(
-                approvalRequests,
-              ),
-              assistantText: assistantText.toString(),
-              providerToolCalls:
-                  List<LLMProviderToolCallPart>.unmodifiable(providerToolCalls),
-            ),
+        final blockedState = ProviderToolApprovalBlockedState(
+          stepIndex: stepIndex,
+          prompt: currentPrompt,
+          approvalRequests:
+              List<LLMProviderToolApprovalRequestPart>.unmodifiable(
+            approvalRequests,
           ),
+          assistantText: assistantText.toString(),
+          providerToolCalls:
+              List<LLMProviderToolCallPart>.unmodifiable(providerToolCalls),
+        );
+
+        // AI SDK parity: treat tool approval as a structured finish rather than
+        // a terminal error when stopOnProviderToolApprovalRequests is enabled.
+        yield LLMRawPart(blockedState);
+
+        final response = finishPart?.response ??
+            _ProviderToolApprovalBlockedResponse(
+                text: assistantText.toString());
+        final usage = finishPart?.usage ?? response.usage;
+        final toolCallsReason = const LLMFinishReason(
+          unified: LLMUnifiedFinishReason.toolCalls,
+          raw: null,
+        );
+
+        yield LLMStepFinishPart(
+          stepIndex: stepIndex,
+          response: response,
+          usage: usage,
+          finishReason: toolCallsReason,
+          toolCalls: const <ToolCall>[],
+          toolResults: const <ToolResult>[],
+        );
+
+        yield LLMFinishPart(
+          response,
+          usage: usage,
+          finishReason: toolCallsReason,
         );
         return;
       }

@@ -114,17 +114,18 @@ void main() {
       expect(
           parts.whereType<LLMProviderToolApprovalRequestPart>(), hasLength(1));
 
-      final blocked = parts
-          .whereType<LLMErrorPart>()
-          .map((p) => p.error)
-          .whereType<ProviderToolApprovalRequiredError>()
-          .single;
+      final blocked = await result.providerToolApprovalBlockedState;
+      expect(blocked, isNotNull);
+      final state = blocked!;
 
-      expect(blocked.state.stepIndex, equals(0));
-      expect(blocked.state.approvalRequests, hasLength(1));
-      expect(blocked.state.approvalRequests.single.approvalId, equals('apr_1'));
-      expect(blocked.state.prompt.messages, isNotEmpty);
-      expect(await result.finishReason, isNull);
+      expect(state.stepIndex, equals(0));
+      expect(state.approvalRequests, hasLength(1));
+      expect(state.approvalRequests.single.approvalId, equals('apr_1'));
+      expect(state.prompt.messages, isNotEmpty);
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.finishReason?.unified, LLMUnifiedFinishReason.toolCalls);
+      expect(await result.finishReason, isNotNull);
     });
 
     test('resumes streaming after provider tool approval', () async {
@@ -172,16 +173,13 @@ void main() {
         providerToolApprovalMaxSteps: 5,
       );
 
-      final initialParts = await initial.fullStream.toList();
-      final blocked = initialParts
-          .whereType<LLMErrorPart>()
-          .map((p) => p.error)
-          .whereType<ProviderToolApprovalRequiredError>()
-          .single;
+      await initial.fullStream.toList();
+      final blocked = await initial.providerToolApprovalBlockedState;
+      expect(blocked, isNotNull);
 
       final resumedParts = resumeChatPartsAfterProviderToolApprovalRequired(
         model: model,
-        blockedState: blocked.state,
+        blockedState: blocked!,
         decisions: const [
           ToolApprovalDecision(
             approvalId: 'apr_1',

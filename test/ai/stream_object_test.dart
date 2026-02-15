@@ -455,16 +455,17 @@ void main() {
       expect(model.calls, equals(1));
 
       final blocked = parts
-          .whereType<LLMErrorPart>()
-          .map((p) => p.error)
-          .whereType<ProviderToolApprovalRequiredError>()
+          .whereType<LLMRawPart>()
+          .map((p) => p.rawValue)
+          .whereType<ProviderToolApprovalBlockedState>()
           .single;
 
-      expect(blocked.state.stepIndex, equals(0));
-      expect(blocked.state.approvalRequests, hasLength(1));
-      expect(blocked.state.approvalRequests.single.approvalId, equals('apr_1'));
+      expect(blocked.stepIndex, equals(0));
+      expect(blocked.approvalRequests, hasLength(1));
+      expect(blocked.approvalRequests.single.approvalId, equals('apr_1'));
 
-      expect(await result.finishReason, isNull);
+      expect((await result.finishReason)?.unified,
+          equals(LLMUnifiedFinishReason.toolCalls));
       expect(await result.text, equals(''));
       expect(await result.object, equals(const <String, dynamic>{}));
       expect((await result.finalResult).object, isEmpty);
@@ -482,14 +483,14 @@ void main() {
 
       final initialParts = await initial.fullStream.toList();
       final blocked = initialParts
-          .whereType<LLMErrorPart>()
-          .map((p) => p.error)
-          .whereType<ProviderToolApprovalRequiredError>()
+          .whereType<LLMRawPart>()
+          .map((p) => p.rawValue)
+          .whereType<ProviderToolApprovalBlockedState>()
           .single;
 
       final resumedParts = resumeChatPartsAfterProviderToolApprovalRequired(
         model: model,
-        blockedState: blocked.state,
+        blockedState: blocked,
         decisions: const [
           ToolApprovalDecision(
             approvalId: 'apr_1',

@@ -116,6 +116,14 @@ class StreamTextResult {
   /// an [LLMRawPart] whose `rawValue` is a [ToolLoopBlockedState].
   final Future<ToolLoopBlockedState?> toolLoopBlockedState;
 
+  /// Resolves to the provider tool-approval blocked state when provider-executed
+  /// tools require explicit approval and streaming stops early.
+  ///
+  /// This is best-effort and is populated when the upstream stream emits
+  /// an [LLMRawPart] whose `rawValue` is a [ProviderToolApprovalBlockedState].
+  final Future<ProviderToolApprovalBlockedState?>
+      providerToolApprovalBlockedState;
+
   /// Resolves to the collected source parts (URL + document).
   final Future<List<LLMStreamPart>> sources;
 
@@ -144,6 +152,7 @@ class StreamTextResult {
     required this.providerMetadata,
     required this.steps,
     required this.toolLoopBlockedState,
+    required this.providerToolApprovalBlockedState,
     required this.sources,
     required this.files,
     required this.finalResult,
@@ -173,6 +182,8 @@ class StreamTextResult {
     final providerMetadataCompleter = Completer<Map<String, dynamic>?>();
     final stepsCompleter = Completer<List<ToolLoopStep>>();
     final toolLoopBlockedStateCompleter = Completer<ToolLoopBlockedState?>();
+    final providerToolApprovalBlockedStateCompleter =
+        Completer<ProviderToolApprovalBlockedState?>();
     final sourcesCompleter = Completer<List<LLMStreamPart>>();
     final filesCompleter = Completer<List<LLMFilePart>>();
     final finalResultCompleter = Completer<GenerateTextResult>();
@@ -193,6 +204,9 @@ class StreamTextResult {
     unawaited(providerMetadataCompleter.future.catchError((_) => null));
     unawaited(stepsCompleter.future.catchError((_) => const <ToolLoopStep>[]));
     unawaited(toolLoopBlockedStateCompleter.future.catchError((_) => null));
+    unawaited(
+      providerToolApprovalBlockedStateCompleter.future.catchError((_) => null),
+    );
     unawaited(
         sourcesCompleter.future.catchError((_) => const <LLMStreamPart>[]));
     unawaited(filesCompleter.future.catchError((_) => const <LLMFilePart>[]));
@@ -225,6 +239,7 @@ class StreamTextResult {
     ToolApprovalRequiredError? approvalRequired;
     ProviderToolApprovalRequiredError? providerApprovalRequired;
     ToolLoopBlockedState? toolLoopBlockedState;
+    ProviderToolApprovalBlockedState? providerToolApprovalBlockedState;
 
     LLMResponseMetadataPart mergeResponseMetadata(
       LLMResponseMetadataPart base,
@@ -298,7 +313,12 @@ class StreamTextResult {
             contentCollector = _StepContentCollector();
           }
           contentCollector.onPart(part);
-          controller.add(part);
+          final isInternalBlockedRaw = part is LLMRawPart &&
+              (part.rawValue is ToolLoopBlockedState ||
+                  part.rawValue is ProviderToolApprovalBlockedState);
+          if (!isInternalBlockedRaw) {
+            controller.add(part);
+          }
 
           switch (part) {
             case LLMStreamStartPart(:final warnings):
@@ -462,6 +482,8 @@ class StreamTextResult {
             case LLMRawPart(:final rawValue):
               if (rawValue is ToolLoopBlockedState) {
                 toolLoopBlockedState ??= rawValue;
+              } else if (rawValue is ProviderToolApprovalBlockedState) {
+                providerToolApprovalBlockedState ??= rawValue;
               }
 
             default:
@@ -501,6 +523,9 @@ class StreamTextResult {
           if (!stepsCompleter.isCompleted) stepsCompleter.completeError(err);
           if (!toolLoopBlockedStateCompleter.isCompleted) {
             toolLoopBlockedStateCompleter.completeError(err);
+          }
+          if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+            providerToolApprovalBlockedStateCompleter.completeError(err);
           }
           if (!sourcesCompleter.isCompleted)
             sourcesCompleter.completeError(err);
@@ -544,6 +569,9 @@ class StreamTextResult {
             if (!toolLoopBlockedStateCompleter.isCompleted) {
               toolLoopBlockedStateCompleter.complete(blocked.state);
             }
+            if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+              providerToolApprovalBlockedStateCompleter.complete(null);
+            }
           } else if (providerBlocked != null) {
             // Provider tool approval required: treat as a structured blocked
             // outcome (no finish part is available).
@@ -583,12 +611,20 @@ class StreamTextResult {
             if (!toolLoopBlockedStateCompleter.isCompleted) {
               toolLoopBlockedStateCompleter.complete(null);
             }
+            if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+              providerToolApprovalBlockedStateCompleter
+                  .complete(providerBlocked.state);
+            }
           } else {
             finalResultCompleter.completeError(
               const GenericError('Stream finished without a finish part.'),
             );
             if (!toolLoopBlockedStateCompleter.isCompleted) {
               toolLoopBlockedStateCompleter.complete(toolLoopBlockedState);
+            }
+            if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+              providerToolApprovalBlockedStateCompleter
+                  .complete(providerToolApprovalBlockedState);
             }
           }
           usageCompleter.complete(null);
@@ -599,6 +635,10 @@ class StreamTextResult {
               .complete(List<ToolLoopStep>.unmodifiable(collectedSteps));
           if (!toolLoopBlockedStateCompleter.isCompleted) {
             toolLoopBlockedStateCompleter.complete(toolLoopBlockedState);
+          }
+          if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+            providerToolApprovalBlockedStateCompleter
+                .complete(providerToolApprovalBlockedState);
           }
           return;
         }
@@ -678,6 +718,10 @@ class StreamTextResult {
         if (!toolLoopBlockedStateCompleter.isCompleted) {
           toolLoopBlockedStateCompleter.complete(toolLoopBlockedState);
         }
+        if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+          providerToolApprovalBlockedStateCompleter
+              .complete(providerToolApprovalBlockedState);
+        }
 
         final totalUsage = accumulatedUsage ?? usage;
         final lastToolResults = stepsSnapshot.isEmpty
@@ -747,6 +791,8 @@ class StreamTextResult {
       providerMetadata: providerMetadataCompleter.future,
       steps: stepsCompleter.future,
       toolLoopBlockedState: toolLoopBlockedStateCompleter.future,
+      providerToolApprovalBlockedState:
+          providerToolApprovalBlockedStateCompleter.future,
       sources: sourcesCompleter.future,
       files: filesCompleter.future,
       finalResult: finalResultCompleter.future,
@@ -1283,7 +1329,11 @@ StreamTextResult streamText({
 
   Stream<LLMStreamPart> filteredUpstream() {
     if (includeRawChunks) return upstream();
-    return upstream().where((part) => part is! LLMRawPart);
+    return upstream().where((part) {
+      if (part is! LLMRawPart) return true;
+      final v = part.rawValue;
+      return v is ToolLoopBlockedState || v is ProviderToolApprovalBlockedState;
+    });
   }
 
   return StreamTextResult.fromPartsStream(

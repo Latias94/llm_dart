@@ -602,29 +602,11 @@ void main() {
           toolName: 'mcp_server.doThing',
           input: {'x': 1},
         ),
-        LLMErrorPart(
-          ProviderToolApprovalRequiredError(
-            state: ProviderToolApprovalBlockedState(
-              stepIndex: 0,
-              prompt: const Prompt(messages: []),
-              approvalRequests: const [
-                LLMProviderToolApprovalRequestPart(
-                  approvalId: 'appr_1',
-                  toolCallId: 'pt1',
-                  toolName: 'mcp_server.doThing',
-                  input: {'x': 1},
-                ),
-              ],
-              assistantText: '',
-              providerToolCalls: const [
-                LLMProviderToolCallPart(
-                  toolCallId: 'pt1',
-                  toolName: 'mcp_server.doThing',
-                  input: {'x': 1},
-                  providerExecuted: true,
-                ),
-              ],
-            ),
+        LLMFinishPart(
+          const _FakeChatResponse(text: ''),
+          finishReason: const LLMFinishReason(
+            unified: LLMUnifiedFinishReason.toolCalls,
+            raw: null,
           ),
         ),
       ];

@@ -567,6 +567,55 @@ class StreamObjectResult {
           response.providerMetadata ?? lastProviderMetadata,
         );
 
+        final didSeeTargetToolCall = targetToolCallIds.values.any((v) => v);
+        final didSeeTargetToolInput = targetToolInputIds.isNotEmpty;
+        if (finishReason?.unified == LLMUnifiedFinishReason.toolCalls &&
+            !didSeeTargetToolCall &&
+            !didSeeTargetToolInput) {
+          // Provider-native tool flows (e.g. provider tool approvals) can
+          // finish with `tool-calls` without ever producing the target
+          // return_object tool call. Treat this as a blocked/partial outcome
+          // rather than failing schema validation.
+          if (!warningsCompleter.isCompleted) {
+            warningsCompleter.complete(const <Map<String, dynamic>>[]);
+          }
+          if (!responseMetadataCompleter.isCompleted) {
+            responseMetadataCompleter.complete(currentResponseMetadata);
+          }
+          if (!requestMetadataCompleter.isCompleted) {
+            requestMetadataCompleter.complete(lastRequestMetadata);
+          }
+          if (!textCompleter.isCompleted) textCompleter.complete('');
+          if (!objectCompleter.isCompleted) {
+            objectCompleter.complete(const <String, dynamic>{});
+          }
+          if (!elementsCompleter.isCompleted) {
+            if (output == StreamObjectOutput.array) {
+              elementsCompleter.complete(const []);
+            } else {
+              elementsCompleter.completeError(
+                UnsupportedError(
+                  'elements is only available when output == StreamObjectOutput.array',
+                ),
+              );
+            }
+          }
+          if (!finalResultCompleter.isCompleted) {
+            finalResultCompleter.complete(
+              GenerateObjectResult(
+                object: const <String, dynamic>{},
+                rawResponse: response,
+                requestMetadata: lastRequestMetadata,
+                responseMetadata: currentResponseMetadata,
+                responseMessages: buildResponseMessagesBestEffort(response),
+                responsePromptMessages:
+                    buildResponsePromptMessagesBestEffort(response),
+              ),
+            );
+          }
+          return;
+        }
+
         try {
           final resolved = _resolveFinalObjectAndText(
             toolName: toolName,

@@ -447,6 +447,40 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
               'messageMetadata': messageMeta,
             };
           }
+          break;
+        }
+        if (rawValue is ProviderToolApprovalBlockedState) {
+          final state = rawValue;
+          if (providerToolApprovalBlockedStateData != null) {
+            final extra = providerToolApprovalBlockedStateData(state);
+            final data = <String, Object?>{
+              'kind': 'provider-tool-approval',
+              'stepIndex': state.stepIndex,
+              'approvalIds': state.approvalRequests
+                  .map((r) => r.approvalId)
+                  .toList(growable: false),
+              'toolCallIds': state.approvalRequests
+                  .map((r) => r.toolCallId)
+                  .toList(growable: false),
+              if (extra != null) 'extra': extra,
+            };
+            if (data.isNotEmpty) {
+              yield <String, Object?>{
+                'type': 'data-tool-blocked',
+                'data': data,
+              };
+              yield <String, Object?>{
+                'type': 'data-tool-approval-blocked',
+                'data': data,
+              };
+            }
+          }
+          if (messageMeta != null) {
+            yield <String, Object?>{
+              'type': 'message-metadata',
+              'messageMetadata': messageMeta,
+            };
+          }
         }
 
       case LLMSourceUrlPart(

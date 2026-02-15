@@ -325,7 +325,7 @@ void main() {
     });
 
     test(
-        'emits data-tool-approval-blocked when ProviderToolApprovalRequiredError is present',
+        'emits data-tool-approval-blocked when provider tool approval state is present',
         () async {
       final blockedState = ProviderToolApprovalBlockedState(
         stepIndex: 0,
@@ -356,7 +356,14 @@ void main() {
           toolName: 'mcp.web_search',
           input: {'q': 'hello'},
         ),
-        LLMErrorPart(ProviderToolApprovalRequiredError(state: blockedState)),
+        LLMRawPart(blockedState),
+        LLMFinishPart(
+          _TestChatResponse(),
+          finishReason: const LLMFinishReason(
+            unified: LLMUnifiedFinishReason.toolCalls,
+            raw: null,
+          ),
+        ),
       ]);
 
       final chunks = await uiMessageChunksFromParts(
@@ -460,6 +467,124 @@ void main() {
       expect(
         chunks.single['url'],
         startsWith('data:image/png;base64,'),
+      );
+    });
+
+    test('maps provider tool call to tool-input-available', () async {
+      final parts = Stream<LLMStreamPart>.fromIterable([
+        const LLMProviderToolCallPart(
+          toolCallId: 'prov_1',
+          toolName: 'web_search',
+          input: {'q': 'hello'},
+          providerExecuted: true,
+          supportsDeferredResults: true,
+          isDynamic: false,
+          providerMetadata: {
+            'openai': {'event': 'response.output_item.added'},
+          },
+        ),
+        LLMFinishPart(_TestChatResponse()),
+      ]);
+
+      final chunks =
+          await uiMessageChunksFromParts(parts, sendStart: false).toList();
+
+      expect(
+        chunks,
+        equals([
+          {
+            'type': 'tool-input-available',
+            'toolCallId': 'prov_1',
+            'toolName': 'web_search',
+            'input': {'q': 'hello'},
+            'providerExecuted': true,
+            'providerMetadata': {
+              'openai': {'event': 'response.output_item.added'},
+            },
+          },
+          const {'type': 'finish'},
+        ]),
+      );
+    });
+
+    test('maps provider tool delta to data-provider-tool-delta', () async {
+      final parts = Stream<LLMStreamPart>.fromIterable([
+        const LLMProviderToolDeltaPart(
+          toolCallId: 'prov_1',
+          toolName: 'web_search',
+          status: 'in_progress',
+          data: {'n': 1},
+          providerMetadata: {
+            'openai': {'event': 'response.web_search_call.in_progress'},
+          },
+        ),
+        LLMFinishPart(_TestChatResponse()),
+      ]);
+
+      final chunks =
+          await uiMessageChunksFromParts(parts, sendStart: false).toList();
+
+      expect(
+        chunks,
+        equals([
+          {
+            'type': 'data-provider-tool-delta',
+            'id': 'prov_1',
+            'data': {
+              'toolCallId': 'prov_1',
+              'toolName': 'web_search',
+              'status': 'in_progress',
+              'data': {'n': 1},
+              'providerMetadata': {
+                'openai': {'event': 'response.web_search_call.in_progress'},
+              },
+            },
+          },
+          const {'type': 'finish'},
+        ]),
+      );
+    });
+
+    test('maps provider tool result to tool-output-*', () async {
+      final parts = Stream<LLMStreamPart>.fromIterable([
+        const LLMProviderToolResultPart(
+          toolCallId: 'prov_1',
+          toolName: 'web_search',
+          result: {'sources': []},
+          preliminary: true,
+          isDynamic: true,
+        ),
+        const LLMProviderToolResultPart(
+          toolCallId: 'prov_2',
+          toolName: 'web_search',
+          result: {'sources': []},
+          isError: true,
+        ),
+        LLMFinishPart(_TestChatResponse()),
+      ]);
+
+      final chunks =
+          await uiMessageChunksFromParts(parts, sendStart: false).toList();
+
+      expect(
+        chunks,
+        equals([
+          {
+            'type': 'tool-output-available',
+            'toolCallId': 'prov_1',
+            'output': {'sources': []},
+            'providerExecuted': true,
+            'dynamic': true,
+            'preliminary': true,
+          },
+          const {
+            'type': 'tool-output-error',
+            'toolCallId': 'prov_2',
+            'errorText': '{"sources":[]}',
+            'providerExecuted': true,
+          },
+          const {'type': 'finish'},
+        ]),
       );
     });
   });
