@@ -48,6 +48,7 @@ class _ThrowingChatModel extends ChatCapability
   @override
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
@@ -80,16 +81,14 @@ void main() {
         middlewares: const [ErrorNormalizationMiddleware()],
       ) as ChatStreamPartsCallOptionsCapability;
 
-      final parts = await wrapped
-          .chatStreamPartsWithCallOptions(
-            [ChatMessage.user('hi')],
-            callOptions: const LLMCallOptions(headers: {'X-Test': 'a'}),
-          )
-          .toList();
+      final parts = await wrapped.chatStreamPartsWithCallOptions(
+        [ChatMessage.user('hi')],
+        callOptions: const LLMCallOptions(headers: {'X-Test': 'a'}),
+      ).toList();
 
       expect(parts.whereType<LLMErrorPart>(), hasLength(1));
-      expect((parts.whereType<LLMErrorPart>().single).error, isA<TimeoutError>());
+      expect(
+          (parts.whereType<LLMErrorPart>().single).error, isA<TimeoutError>());
     });
   });
 }
-

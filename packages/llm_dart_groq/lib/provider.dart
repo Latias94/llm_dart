@@ -59,6 +59,7 @@ class GroqProvider
   @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
@@ -81,6 +82,7 @@ class GroqProvider
   @override
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {

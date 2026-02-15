@@ -63,11 +63,13 @@ class XAIProvider
   @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
     return _provider.chatStreamParts(
       messages,
+      providerTools: providerTools,
       tools: tools,
       cancelToken: cancelToken,
     );
@@ -85,11 +87,13 @@ class XAIProvider
   @override
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
     return _provider.chatPromptStreamParts(
       prompt,
+      providerTools: providerTools,
       tools: tools,
       cancelToken: cancelToken,
     );

@@ -10,14 +10,17 @@ import 'models/responses_models.dart';
 import 'openai_responses_config.dart';
 import 'responses_capability.dart';
 import 'responses_message_converter.dart';
+import 'web_search_context_size.dart';
 
 class _OpenAIResponsesBuiltRequest {
   final Map<String, dynamic> body;
   final ToolNameMapping toolNameMapping;
+  final List<ProviderTool>? providerTools;
 
   const _OpenAIResponsesBuiltRequest({
     required this.body,
     required this.toolNameMapping,
+    required this.providerTools,
   });
 }
 
@@ -233,11 +236,13 @@ class OpenAIResponses
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async* {
     yield* chatStreamPartsWithCallOptions(
       messages,
       tools: tools,
+      providerTools: providerTools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -247,16 +252,24 @@ class OpenAIResponses
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async* {
     yield const LLMStreamStartPart();
-    final builtRequest = _buildRequest(messages, tools, true, false);
+    final builtRequest = _buildRequest(
+      messages,
+      tools,
+      true,
+      false,
+      providerTools: providerTools,
+    );
     var requestBody = Map<String, dynamic>.from(builtRequest.body);
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
     final effectiveBuiltRequest = _OpenAIResponsesBuiltRequest(
       body: requestBody,
       toolNameMapping: builtRequest.toolNameMapping,
+      providerTools: builtRequest.providerTools,
     );
     yield* _chatStreamPartsFromBuiltRequest(
       effectiveBuiltRequest,
@@ -269,11 +282,13 @@ class OpenAIResponses
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async* {
     yield* chatPromptStreamPartsWithCallOptions(
       prompt,
       tools: tools,
+      providerTools: providerTools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -283,16 +298,24 @@ class OpenAIResponses
   Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
     Prompt prompt, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async* {
     yield const LLMStreamStartPart();
-    final builtRequest = _buildPromptRequest(prompt, tools, true, false);
+    final builtRequest = _buildPromptRequest(
+      prompt,
+      tools,
+      true,
+      false,
+      providerTools: providerTools,
+    );
     var requestBody = Map<String, dynamic>.from(builtRequest.body);
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
     final effectiveBuiltRequest = _OpenAIResponsesBuiltRequest(
       body: requestBody,
       toolNameMapping: builtRequest.toolNameMapping,
+      providerTools: builtRequest.providerTools,
     );
     yield* _chatStreamPartsFromBuiltRequest(
       effectiveBuiltRequest,
@@ -307,6 +330,7 @@ class OpenAIResponses
     CancelToken? cancelToken,
   }) async* {
     final toolNameMapping = builtRequest.toolNameMapping;
+    final requestProviderTools = builtRequest.providerTools;
 
     _resetStreamState();
 
@@ -497,7 +521,7 @@ class OpenAIResponses
                       final toolName = resolveProviderToolName(
                         providerId: config.providerId,
                         rawToolName: toolType,
-                        providerTools: config.originalConfig?.providerTools,
+                        providerTools: requestProviderTools,
                       );
 
                       yield LLMProviderToolResultPart(
@@ -514,7 +538,7 @@ class OpenAIResponses
                     final toolName = resolveProviderToolName(
                       providerId: config.providerId,
                       rawToolName: toolType,
-                      providerTools: config.originalConfig?.providerTools,
+                      providerTools: requestProviderTools,
                     );
                     yield LLMProviderToolDeltaPart(
                       toolCallId: toolCallId,
@@ -857,12 +881,12 @@ class OpenAIResponses
                   final resolvedToolName = resolveProviderToolName(
                     providerId: config.providerId,
                     rawToolName: toolType,
-                    providerTools: config.originalConfig?.providerTools,
+                    providerTools: requestProviderTools,
                   );
                   final providerTool = findProviderToolByRawName(
                     providerId: config.providerId,
                     rawToolName: toolType,
-                    providerTools: config.originalConfig?.providerTools,
+                    providerTools: requestProviderTools,
                   );
                   final supportsDeferredResults =
                       providerTool?.supportsDeferredResults == true
@@ -2126,9 +2150,22 @@ class OpenAIResponses
     bool stream,
     bool background, {
     String? previousResponseId,
+    List<ProviderTool>? providerTools,
   }) {
     final effectiveTools = tools ?? config.tools;
-    final toolNameMapping = _createToolNameMapping(effectiveTools);
+    final effectiveProviderTools = _mergeProviderTools(
+        config.originalConfig?.providerTools, providerTools);
+    final builtInToolJson = _mergeToolJsonByType(
+      (config.builtInTools ?? const <OpenAIBuiltInTool>[])
+          .map((t) => t.toJson())
+          .toList(growable: false),
+      _openaiBuiltInToolJsonFromProviderTools(effectiveProviderTools),
+    );
+    final toolNameMapping = _createToolNameMapping(
+      effectiveTools,
+      builtInToolJson: builtInToolJson,
+      providerTools: effectiveProviderTools,
+    );
     final body = _buildRequestBody(
       messages,
       effectiveTools,
@@ -2136,11 +2173,13 @@ class OpenAIResponses
       background,
       toolNameMapping,
       previousResponseId: previousResponseId,
+      builtInToolJson: builtInToolJson,
     );
 
     return _OpenAIResponsesBuiltRequest(
       body: body,
       toolNameMapping: toolNameMapping,
+      providerTools: effectiveProviderTools,
     );
   }
 
@@ -2150,9 +2189,22 @@ class OpenAIResponses
     bool stream,
     bool background, {
     String? previousResponseId,
+    List<ProviderTool>? providerTools,
   }) {
     final effectiveTools = tools ?? config.tools;
-    final toolNameMapping = _createToolNameMapping(effectiveTools);
+    final effectiveProviderTools = _mergeProviderTools(
+        config.originalConfig?.providerTools, providerTools);
+    final builtInToolJson = _mergeToolJsonByType(
+      (config.builtInTools ?? const <OpenAIBuiltInTool>[])
+          .map((t) => t.toJson())
+          .toList(growable: false),
+      _openaiBuiltInToolJsonFromProviderTools(effectiveProviderTools),
+    );
+    final toolNameMapping = _createToolNameMapping(
+      effectiveTools,
+      builtInToolJson: builtInToolJson,
+      providerTools: effectiveProviderTools,
+    );
 
     final store = config.getProviderOption<bool>('store') ?? true;
     final apiMessages =
@@ -2167,34 +2219,274 @@ class OpenAIResponses
       background,
       toolNameMapping,
       previousResponseId: previousResponseId,
+      builtInToolJson: builtInToolJson,
     );
 
     return _OpenAIResponsesBuiltRequest(
       body: body,
       toolNameMapping: toolNameMapping,
+      providerTools: effectiveProviderTools,
     );
   }
 
-  ToolNameMapping _createToolNameMapping(List<Tool>? tools) {
+  ToolNameMapping _createToolNameMapping(
+    List<Tool>? tools, {
+    required List<Map<String, dynamic>> builtInToolJson,
+    List<ProviderTool>? providerTools,
+  }) {
     final functionToolNames = (tools ?? const <Tool>[]).map(
       (t) => t.function.name,
     );
 
     final providerToolRequestNamesById = <String, String>{};
-    final builtInTools = config.builtInTools;
-    if (builtInTools != null) {
-      for (final tool in builtInTools) {
-        final rawType = tool.toJson()['type'];
-        if (rawType is String && rawType.isNotEmpty) {
-          providerToolRequestNamesById['openai.$rawType'] = rawType;
-        }
+    for (final tool in builtInToolJson) {
+      final rawType = tool['type'];
+      if (rawType is String && rawType.isNotEmpty) {
+        providerToolRequestNamesById['openai.$rawType'] = rawType;
       }
+    }
+
+    final toolsForMapping = providerTools ?? const <ProviderTool>[];
+    for (final t in toolsForMapping) {
+      final id = t.id.trim();
+      if (!id.startsWith('openai.')) continue;
+      final requestName = _openaiRequestToolTypeForProviderToolId(id);
+      if (requestName == null) continue;
+      providerToolRequestNamesById[id] = requestName;
     }
 
     return createToolNameMapping(
       functionToolNames: functionToolNames,
       providerToolRequestNamesById: providerToolRequestNamesById,
     );
+  }
+
+  List<ProviderTool>? _mergeProviderTools(
+    List<ProviderTool>? base,
+    List<ProviderTool>? override,
+  ) {
+    final a = base;
+    final b = override;
+    if ((a == null || a.isEmpty) && (b == null || b.isEmpty)) return null;
+
+    final byId = <String, ProviderTool>{};
+    if (a != null) {
+      for (final t in a) {
+        final id = t.id.trim();
+        if (id.isEmpty) continue;
+        byId[id] = t;
+      }
+    }
+    if (b != null) {
+      for (final t in b) {
+        final id = t.id.trim();
+        if (id.isEmpty) continue;
+        byId[id] = t; // override wins
+      }
+    }
+
+    return byId.isEmpty ? null : byId.values.toList(growable: false);
+  }
+
+  List<Map<String, dynamic>> _mergeToolJsonByType(
+    List<Map<String, dynamic>> base,
+    List<Map<String, dynamic>> override,
+  ) {
+    if (base.isEmpty && override.isEmpty) return const [];
+
+    final byType = <String, Map<String, dynamic>>{};
+    for (final item in base) {
+      final type = item['type'];
+      if (type is! String || type.trim().isEmpty) continue;
+      byType[type] = Map<String, dynamic>.from(item);
+    }
+    for (final item in override) {
+      final type = item['type'];
+      if (type is! String || type.trim().isEmpty) continue;
+      byType[type] = Map<String, dynamic>.from(item); // override wins
+    }
+
+    return byType.values.toList(growable: false);
+  }
+
+  String? _openaiRequestToolTypeForProviderToolId(String id) {
+    if (!id.startsWith('openai.')) return null;
+    final raw = id.substring('openai.'.length).trim();
+    if (raw.isEmpty) return null;
+    // Alias: OpenAI's built-in tool type for computer use is `computer_use_preview`.
+    if (raw == 'computer_use') return 'computer_use_preview';
+    return raw;
+  }
+
+  List<Map<String, dynamic>> _openaiBuiltInToolJsonFromProviderTools(
+    List<ProviderTool>? providerTools,
+  ) {
+    final tools = providerTools;
+    if (tools == null || tools.isEmpty) return const [];
+
+    Map<String, dynamic> asStringDynamicMap(Object? raw) {
+      if (raw is Map<String, dynamic>) return raw;
+      if (raw is Map) return raw.cast<String, dynamic>();
+      return const <String, dynamic>{};
+    }
+
+    List<String>? asStringList(Object? raw) {
+      if (raw is! List) return null;
+      final out = <String>[];
+      for (final item in raw) {
+        final s = item?.toString();
+        if (s == null) continue;
+        final trimmed = s.trim();
+        if (trimmed.isEmpty) continue;
+        out.add(trimmed);
+      }
+      return out.isEmpty ? null : out;
+    }
+
+    final out = <Map<String, dynamic>>[];
+
+    for (final t in tools) {
+      final id = t.id.trim();
+      if (!id.startsWith('openai.')) continue;
+
+      final type = _openaiRequestToolTypeForProviderToolId(id);
+      if (type == null) continue;
+
+      final options = Map<String, dynamic>.from(t.options);
+      final json = <String, dynamic>{'type': type};
+
+      switch (type) {
+        case 'web_search_preview':
+          final rawContext = options.remove('searchContextSize') ??
+              options.remove('search_context_size');
+          final ctx = rawContext?.toString();
+          final parsed = OpenAIWebSearchContextSize.tryParse(ctx);
+          if (parsed != null) {
+            json['search_context_size'] = parsed.apiValue;
+          } else if (ctx != null && ctx.trim().isNotEmpty) {
+            json['search_context_size'] = ctx.trim();
+          }
+          break;
+
+        case 'web_search':
+          final allowedDomains =
+              asStringList(options.remove('allowedDomains')) ??
+                  asStringList(
+                    asStringDynamicMap(options['filters'])['allowed_domains'],
+                  ) ??
+                  asStringList(options['allowed_domains']);
+          if (allowedDomains != null) {
+            json['filters'] = {'allowed_domains': allowedDomains};
+          }
+
+          final externalWebAccess = options.remove('externalWebAccess') ??
+              options.remove('external_web_access');
+          if (externalWebAccess is bool) {
+            json['external_web_access'] = externalWebAccess;
+          }
+
+          final rawContext = options.remove('searchContextSize') ??
+              options.remove('search_context_size');
+          final ctx = rawContext?.toString();
+          final parsed = OpenAIWebSearchContextSize.tryParse(ctx);
+          if (parsed != null) {
+            json['search_context_size'] = parsed.apiValue;
+          } else if (ctx != null && ctx.trim().isNotEmpty) {
+            json['search_context_size'] = ctx.trim();
+          }
+
+          final userLocation =
+              options.remove('userLocation') ?? options.remove('user_location');
+          final userLocationMap = asStringDynamicMap(userLocation);
+          if (userLocationMap.isNotEmpty) {
+            json['user_location'] = userLocationMap;
+          }
+
+          final parameters = asStringDynamicMap(options.remove('parameters'));
+          if (parameters.isNotEmpty) {
+            json.addAll(parameters);
+          }
+          break;
+
+        case 'file_search':
+          final vectorStoreIds =
+              asStringList(options.remove('vectorStoreIds')) ??
+                  asStringList(options.remove('vector_store_ids'));
+          if (vectorStoreIds != null) {
+            json['vector_store_ids'] = vectorStoreIds;
+          }
+
+          final parameters = asStringDynamicMap(options.remove('parameters'));
+          if (parameters.isNotEmpty) {
+            json.addAll(parameters);
+          }
+          break;
+
+        case 'computer_use_preview':
+          int? readInt(Object? v) {
+            if (v is int) return v;
+            if (v is num) return v.toInt();
+            return int.tryParse(v?.toString() ?? '');
+          }
+
+          final displayWidth = readInt(options.remove('displayWidth') ??
+              options.remove('display_width'));
+          final displayHeight = readInt(options.remove('displayHeight') ??
+              options.remove('display_height'));
+          final environment = (options.remove('environment') ?? '').toString();
+
+          if (displayWidth == null ||
+              displayHeight == null ||
+              environment.trim().isEmpty) {
+            throw InvalidRequestError(
+              'ProviderTool "$id" requires displayWidth/displayHeight/environment in options.',
+            );
+          }
+
+          json['display_width'] = displayWidth;
+          json['display_height'] = displayHeight;
+          json['environment'] = environment.trim();
+
+          final parameters = asStringDynamicMap(options.remove('parameters'));
+          if (parameters.isNotEmpty) {
+            json.addAll(parameters);
+          }
+          break;
+
+        case 'code_interpreter':
+          final container = options.remove('container');
+          if (container != null) {
+            json['container'] = container;
+          }
+          final parameters = asStringDynamicMap(options.remove('parameters'));
+          if (parameters.isNotEmpty) {
+            json.addAll(parameters);
+          }
+          break;
+
+        case 'image_generation':
+        case 'mcp':
+          final parameters = asStringDynamicMap(options.remove('parameters'));
+          if (parameters.isNotEmpty) {
+            json.addAll(parameters);
+          }
+          break;
+
+        case 'apply_patch':
+        case 'shell':
+        case 'local_shell':
+          break;
+      }
+
+      // Best-effort: forward any remaining tool-specific options.
+      if (options.isNotEmpty) {
+        json.addAll(options);
+      }
+
+      out.add(json);
+    }
+
+    return out;
   }
 
   /// Build request body for Responses API
@@ -2205,6 +2497,7 @@ class OpenAIResponses
     bool background,
     ToolNameMapping toolNameMapping, {
     String? previousResponseId,
+    required List<Map<String, dynamic>> builtInToolJson,
   }) {
     final apiMessages = OpenAIResponsesMessageConverter.buildInputMessages(
       messages,
@@ -2216,6 +2509,7 @@ class OpenAIResponses
       background,
       toolNameMapping,
       previousResponseId: previousResponseId,
+      builtInToolJson: builtInToolJson,
     );
   }
 
@@ -2226,6 +2520,7 @@ class OpenAIResponses
     bool background,
     ToolNameMapping toolNameMapping, {
     String? previousResponseId,
+    required List<Map<String, dynamic>> builtInToolJson,
   }) {
     final inputMessages = List<Map<String, dynamic>>.from(apiMessages);
 
@@ -2298,8 +2593,14 @@ class OpenAIResponses
     }
 
     // Add built-in tools
-    if (config.builtInTools != null && config.builtInTools!.isNotEmpty) {
-      allTools.addAll(config.builtInTools!.map((t) => t.toJson()));
+    if (builtInToolJson.isNotEmpty) {
+      final byType = <String, Map<String, dynamic>>{};
+      for (final item in builtInToolJson) {
+        final type = item['type'];
+        if (type is! String || type.isEmpty) continue;
+        byType[type] = item;
+      }
+      allTools.addAll(byType.values);
     }
 
     if (allTools.isNotEmpty) {
@@ -2339,36 +2640,28 @@ class OpenAIResponses
       include.addAll(rawInclude.whereType<String>());
     }
 
-    final builtInTools = config.builtInTools;
-
-    final hasWebSearchTool = builtInTools?.any(
-          (t) =>
-              t.type == OpenAIBuiltInToolType.webSearch ||
-              t.type == OpenAIBuiltInToolType.webSearchFull,
-        ) ??
-        false;
+    final hasWebSearchTool = builtInToolJson.any((t) {
+      final type = t['type'];
+      return type == 'web_search_preview' || type == 'web_search';
+    });
     if (hasWebSearchTool) {
       include.add('web_search_call.action.sources');
     }
 
     final hasFileSearchTool =
-        builtInTools?.any((t) => t.type == OpenAIBuiltInToolType.fileSearch) ??
-            false;
+        builtInToolJson.any((t) => t['type'] == 'file_search');
     if (hasFileSearchTool) {
       include.add('file_search_call.results');
     }
 
     final hasComputerUseTool =
-        builtInTools?.any((t) => t.type == OpenAIBuiltInToolType.computerUse) ??
-            false;
+        builtInToolJson.any((t) => t['type'] == 'computer_use_preview');
     if (hasComputerUseTool) {
       include.add('computer_call_output.output.image_url');
     }
 
-    final hasCodeInterpreterTool = builtInTools?.any(
-          (t) => t.type == OpenAIBuiltInToolType.codeInterpreter,
-        ) ??
-        false;
+    final hasCodeInterpreterTool =
+        builtInToolJson.any((t) => t['type'] == 'code_interpreter');
     if (hasCodeInterpreterTool) {
       include.add('code_interpreter_call.outputs');
     }

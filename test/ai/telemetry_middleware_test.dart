@@ -42,6 +42,7 @@ class _CallOptionsChatModel extends ChatCapability
   @override
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
@@ -96,15 +97,14 @@ void main() {
         ],
       ) as ChatStreamPartsCallOptionsCapability;
 
-      await model
-          .chatStreamPartsWithCallOptions(
-            [ChatMessage.user('hi')],
-            callOptions: const LLMCallOptions(),
-          )
-          .toList();
+      await model.chatStreamPartsWithCallOptions(
+        [ChatMessage.user('hi')],
+        callOptions: const LLMCallOptions(),
+      ).toList();
 
       expect(events.whereType<LanguageModelStreamStartEvent>(), hasLength(1));
-      expect(events.whereType<LanguageModelStreamPartEvent>().length, greaterThanOrEqualTo(2));
+      expect(events.whereType<LanguageModelStreamPartEvent>().length,
+          greaterThanOrEqualTo(2));
       expect(events.whereType<LanguageModelStreamFinishEvent>(), hasLength(1));
     });
   });

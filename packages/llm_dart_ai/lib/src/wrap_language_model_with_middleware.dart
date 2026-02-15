@@ -51,6 +51,7 @@ class _MiddlewareLanguageModel extends ChatCapability
   Future<ChatResponse> _chatViaMiddleware({
     required StandardizedPromptInput input,
     required List<Tool>? tools,
+    required List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
@@ -74,6 +75,7 @@ class _MiddlewareLanguageModel extends ChatCapability
       ChatMiddlewareContext(
         input: input,
         tools: tools,
+        providerTools: providerTools,
         callOptions: callOptions,
         cancelToken: cancelToken,
       ),
@@ -83,6 +85,7 @@ class _MiddlewareLanguageModel extends ChatCapability
   Stream<LLMStreamPart> _streamViaMiddleware({
     required StandardizedPromptInput input,
     required List<Tool>? tools,
+    required List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
@@ -92,6 +95,7 @@ class _MiddlewareLanguageModel extends ChatCapability
           model: inner,
           input: c.input,
           tools: c.tools,
+          providerTools: c.providerTools,
           callOptions: c.callOptions,
           cancelToken: c.cancelToken,
         );
@@ -102,6 +106,7 @@ class _MiddlewareLanguageModel extends ChatCapability
           model: inner,
           input: c.input,
           tools: c.tools,
+          providerTools: c.providerTools,
           callOptions: c.callOptions,
           cancelToken: c.cancelToken,
         );
@@ -127,6 +132,7 @@ class _MiddlewareLanguageModel extends ChatCapability
       ChatStreamMiddlewareContext(
         input: input,
         tools: tools,
+        providerTools: providerTools,
         callOptions: callOptions,
         cancelToken: cancelToken,
       ),
@@ -142,6 +148,7 @@ class _MiddlewareLanguageModel extends ChatCapability
     return _chatViaMiddleware(
       input: StandardizedChatMessages(messages),
       tools: tools,
+      providerTools: null,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -157,6 +164,7 @@ class _MiddlewareLanguageModel extends ChatCapability
     return _chatViaMiddleware(
       input: StandardizedChatMessages(messages),
       tools: tools,
+      providerTools: null,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -171,6 +179,7 @@ class _MiddlewareLanguageModel extends ChatCapability
     return _chatViaMiddleware(
       input: StandardizedPromptIr(prompt),
       tools: tools,
+      providerTools: null,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -186,6 +195,7 @@ class _MiddlewareLanguageModel extends ChatCapability
     return _chatViaMiddleware(
       input: StandardizedPromptIr(prompt),
       tools: tools,
+      providerTools: null,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -195,11 +205,13 @@ class _MiddlewareLanguageModel extends ChatCapability
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     return _streamViaMiddleware(
       input: StandardizedChatMessages(messages),
       tools: tools,
+      providerTools: providerTools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -209,12 +221,14 @@ class _MiddlewareLanguageModel extends ChatCapability
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
     return _streamViaMiddleware(
       input: StandardizedChatMessages(messages),
       tools: tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -224,11 +238,13 @@ class _MiddlewareLanguageModel extends ChatCapability
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     return _streamViaMiddleware(
       input: StandardizedPromptIr(prompt),
       tools: tools,
+      providerTools: providerTools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -238,12 +254,14 @@ class _MiddlewareLanguageModel extends ChatCapability
   Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
     Prompt prompt, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
     return _streamViaMiddleware(
       input: StandardizedPromptIr(prompt),
       tools: tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );

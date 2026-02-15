@@ -2656,6 +2656,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
@@ -2690,6 +2691,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         model: model,
         prompt: input.prompt,
         tools: tools,
+        providerTools: providerTools,
         toolHandlers: toolHandlers,
         repairToolCall: repairToolCall,
         toolApprovalChecks: toolApprovalChecks,
@@ -2732,6 +2734,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         model: model,
         prompt: promptFromChatMessages(standardizedMessages),
         tools: tools,
+        providerTools: providerTools,
         toolHandlers: toolHandlers,
         repairToolCall: repairToolCall,
         toolApprovalChecks: toolApprovalChecks,
@@ -2804,6 +2807,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         partsStream = (model as ChatStreamPartsCapability).chatStreamParts(
           workingMessages,
           tools: tools,
+          providerTools: providerTools,
           cancelToken: cancelToken,
         );
       } else {
@@ -2811,6 +2815,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
             .chatStreamPartsWithCallOptions(
           workingMessages,
           tools: tools,
+          providerTools: providerTools,
           callOptions: effectiveCallOptions,
           cancelToken: cancelToken,
         );
@@ -3204,6 +3209,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   required ChatCapability model,
   required Prompt prompt,
   List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
@@ -3302,6 +3308,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
           (model as PromptChatStreamPartsCapability).chatPromptStreamParts(
         workingPrompt,
         tools: tools,
+        providerTools: providerTools,
         cancelToken: cancelToken,
       );
     } else {
@@ -3309,6 +3316,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
           .chatPromptStreamPartsWithCallOptions(
         workingPrompt,
         tools: tools,
+        providerTools: providerTools,
         callOptions: callOptions,
         cancelToken: cancelToken,
       );
@@ -3814,6 +3822,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   required ToolSet toolSet,
+  List<ProviderTool>? providerTools,
   ToolCallRepair? repairToolCall,
   ToolApprovalCheck? needsApproval,
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
@@ -3833,6 +3842,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     messages: messages,
     promptIr: promptIr,
     tools: toolSet.tools,
+    providerTools: providerTools,
     toolHandlers: toolSet.handlers,
     repairToolCall: repairToolCall,
     toolApprovalChecks: toolSet.approvalChecks,

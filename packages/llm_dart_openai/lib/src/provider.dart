@@ -201,14 +201,21 @@ class OpenAIProvider
   @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    // Use Responses API if enabled, otherwise use Chat Completions API
-    if (config.useResponsesAPI && _responses != null) {
+    final shouldUseResponses =
+        (providerTools != null && providerTools.isNotEmpty) ||
+            (config.useResponsesAPI && _responses != null);
+
+    // Provider-native tools (e.g. web search) require Responses API.
+    if (shouldUseResponses) {
+      final responses = _responses ?? OpenAIResponses(_client, config);
       return wrapStreamPartsWithProviderMetadataAlias(
-        _responses.chatStreamParts(
+        responses.chatStreamParts(
           messages,
+          providerTools: providerTools,
           tools: tools,
           cancelToken: cancelToken,
         ),
@@ -227,14 +234,21 @@ class OpenAIProvider
   @override
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
-    if (config.useResponsesAPI && _responses != null) {
+    final shouldUseResponses =
+        (providerTools != null && providerTools.isNotEmpty) ||
+            (config.useResponsesAPI && _responses != null);
+
+    if (shouldUseResponses) {
+      final responses = _responses ?? OpenAIResponses(_client, config);
       return wrapStreamPartsWithProviderMetadataAlias(
-        _responses!.chatStreamPartsWithCallOptions(
+        responses.chatStreamPartsWithCallOptions(
           messages,
+          providerTools: providerTools,
           tools: tools,
           callOptions: callOptions,
           cancelToken: cancelToken,
@@ -318,13 +332,20 @@ class OpenAIProvider
   @override
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    if (config.useResponsesAPI && _responses != null) {
+    final shouldUseResponses =
+        (providerTools != null && providerTools.isNotEmpty) ||
+            (config.useResponsesAPI && _responses != null);
+
+    if (shouldUseResponses) {
+      final responses = _responses ?? OpenAIResponses(_client, config);
       return wrapStreamPartsWithProviderMetadataAlias(
-        _responses.chatPromptStreamParts(
+        responses.chatPromptStreamParts(
           prompt,
+          providerTools: providerTools,
           tools: tools,
           cancelToken: cancelToken,
         ),
@@ -347,14 +368,21 @@ class OpenAIProvider
   @override
   Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
-    if (config.useResponsesAPI && _responses != null) {
+    final shouldUseResponses =
+        (providerTools != null && providerTools.isNotEmpty) ||
+            (config.useResponsesAPI && _responses != null);
+
+    if (shouldUseResponses) {
+      final responses = _responses ?? OpenAIResponses(_client, config);
       return wrapStreamPartsWithProviderMetadataAlias(
-        _responses!.chatPromptStreamPartsWithCallOptions(
+        responses.chatPromptStreamPartsWithCallOptions(
           prompt,
+          providerTools: providerTools,
           tools: tools,
           callOptions: callOptions,
           cancelToken: cancelToken,

@@ -58,6 +58,7 @@ class _FlakyChatModel extends ChatCapability
   @override
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
@@ -104,6 +105,7 @@ class _FlakyStreamErrorPartModel extends ChatCapability
   @override
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,

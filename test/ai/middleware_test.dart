@@ -69,6 +69,7 @@ class _CapturingCallOptionsStreamModel extends ChatCapability
   @override
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
@@ -132,12 +133,10 @@ void main() {
         ],
       ) as ChatStreamPartsCallOptionsCapability;
 
-      await wrapped
-          .chatStreamPartsWithCallOptions(
-            [ChatMessage.user('hi')],
-            callOptions: const LLMCallOptions(headers: {'x-test': 'b'}),
-          )
-          .toList();
+      await wrapped.chatStreamPartsWithCallOptions(
+        [ChatMessage.user('hi')],
+        callOptions: const LLMCallOptions(headers: {'x-test': 'b'}),
+      ).toList();
 
       final effective = inner.lastStreamCallOptions!;
       expect(effective.headers, equals({'x-test': 'b'}));

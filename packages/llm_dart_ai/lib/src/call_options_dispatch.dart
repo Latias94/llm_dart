@@ -84,6 +84,7 @@ Stream<LLMStreamPart> chatStreamPartsBestEffort({
   required ChatCapability model,
   required StandardizedPromptInput input,
   List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
 }) {
@@ -99,6 +100,7 @@ Stream<LLMStreamPart> chatStreamPartsBestEffort({
         return (model as ChatStreamPartsCapability).chatStreamParts(
           messages,
           tools: tools,
+          providerTools: providerTools,
           cancelToken: cancelToken,
         );
       }
@@ -114,6 +116,7 @@ Stream<LLMStreamPart> chatStreamPartsBestEffort({
           .chatStreamPartsWithCallOptions(
         messages,
         tools: tools,
+        providerTools: providerTools,
         callOptions: callOptions,
         cancelToken: cancelToken,
       );
@@ -121,9 +124,11 @@ Stream<LLMStreamPart> chatStreamPartsBestEffort({
     case StandardizedPromptIr(:final prompt):
       if (model is PromptChatStreamPartsCapability) {
         if (callOptions.isEmpty) {
-          return (model as PromptChatStreamPartsCapability).chatPromptStreamParts(
+          return (model as PromptChatStreamPartsCapability)
+              .chatPromptStreamParts(
             prompt,
             tools: tools,
+            providerTools: providerTools,
             cancelToken: cancelToken,
           );
         }
@@ -139,6 +144,7 @@ Stream<LLMStreamPart> chatStreamPartsBestEffort({
             .chatPromptStreamPartsWithCallOptions(
           prompt,
           tools: tools,
+          providerTools: providerTools,
           callOptions: callOptions,
           cancelToken: cancelToken,
         );
@@ -153,9 +159,9 @@ Stream<LLMStreamPart> chatStreamPartsBestEffort({
         model: model,
         input: StandardizedChatMessages(prompt.toChatMessages()),
         tools: tools,
+        providerTools: providerTools,
         callOptions: callOptions,
         cancelToken: cancelToken,
       );
   }
 }
-

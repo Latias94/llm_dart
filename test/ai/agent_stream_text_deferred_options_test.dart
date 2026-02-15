@@ -52,6 +52,7 @@ class _SequencedPromptStreamModel extends ChatCapability
   @override
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {

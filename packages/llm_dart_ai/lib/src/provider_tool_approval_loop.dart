@@ -30,6 +30,7 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
   required ChatCapability model,
   required StandardizedPromptInput input,
   required List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required LLMCallOptions callOptions,
   ProviderToolApprovalHandler? onApprovalRequests,
   int maxSteps = 10,
@@ -61,6 +62,7 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
       return (model as PromptChatStreamPartsCapability).chatPromptStreamParts(
         prompt,
         tools: tools,
+        providerTools: providerTools,
         cancelToken: cancelToken,
       );
     }
@@ -76,6 +78,7 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
         .chatPromptStreamPartsWithCallOptions(
       prompt,
       tools: tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -299,6 +302,7 @@ Stream<LLMStreamPart> resumeChatPartsWithProviderToolApprovals({
   required ProviderToolApprovalBlockedState blockedState,
   required List<ToolApprovalDecision> decisions,
   required List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required LLMCallOptions callOptions,
   ProviderToolApprovalHandler? onApprovalRequests,
   int maxSteps = 10,
@@ -342,6 +346,7 @@ Stream<LLMStreamPart> resumeChatPartsWithProviderToolApprovals({
     model: model,
     input: input,
     tools: tools,
+    providerTools: providerTools,
     callOptions: callOptions,
     onApprovalRequests: onApprovalRequests,
     maxSteps: remainingSteps,

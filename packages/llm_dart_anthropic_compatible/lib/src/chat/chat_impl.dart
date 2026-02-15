@@ -172,6 +172,7 @@ class AnthropicChat
   @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
@@ -186,6 +187,7 @@ class AnthropicChat
   @override
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
@@ -223,6 +225,7 @@ class AnthropicChat
   @override
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
@@ -237,6 +240,7 @@ class AnthropicChat
   @override
   Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,

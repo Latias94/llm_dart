@@ -238,6 +238,7 @@ class MockChatProvider implements ChatCapability, ChatStreamPartsCapability {
   @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
@@ -336,6 +337,7 @@ class LoggingChatProvider implements ChatCapability, ChatStreamPartsCapability {
   @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
@@ -352,6 +354,7 @@ class LoggingChatProvider implements ChatCapability, ChatStreamPartsCapability {
 
     await for (final part in partsCap.chatStreamParts(
       messages,
+      providerTools: providerTools,
       tools: tools,
       cancelToken: cancelToken,
     )) {
@@ -429,6 +432,7 @@ class CachingChatProvider implements ChatCapability, ChatStreamPartsCapability {
   @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
@@ -443,6 +447,7 @@ class CachingChatProvider implements ChatCapability, ChatStreamPartsCapability {
     }
     return partsCap.chatStreamParts(
       messages,
+      providerTools: providerTools,
       tools: tools,
       cancelToken: cancelToken,
     );
@@ -503,6 +508,7 @@ class CustomAPIProvider implements ChatCapability, ChatStreamPartsCapability {
   @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {

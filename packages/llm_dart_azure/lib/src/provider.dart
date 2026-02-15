@@ -130,6 +130,7 @@ class AzureOpenAIProvider
   @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
@@ -137,6 +138,7 @@ class AzureOpenAIProvider
       return _wrapStreamPartsWithProviderMetadataAlias(
         _responses.chatStreamParts(
           messages,
+          providerTools: providerTools,
           tools: tools,
           cancelToken: cancelToken,
         ),
@@ -187,6 +189,7 @@ class AzureOpenAIProvider
   @override
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
@@ -194,6 +197,7 @@ class AzureOpenAIProvider
       return _wrapStreamPartsWithProviderMetadataAlias(
         _responses.chatPromptStreamParts(
           prompt,
+          providerTools: providerTools,
           tools: tools,
           cancelToken: cancelToken,
         ),

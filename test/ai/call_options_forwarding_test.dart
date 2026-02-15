@@ -34,7 +34,8 @@ class _TextResponse implements ChatResponse {
   });
 }
 
-class _CallOptionsModel extends ChatCapability implements ChatCallOptionsCapability {
+class _CallOptionsModel extends ChatCapability
+    implements ChatCallOptionsCapability {
   bool calledPlain = false;
   bool calledWithOptions = false;
   LLMCallOptions? lastOptions;
@@ -62,8 +63,7 @@ class _CallOptionsModel extends ChatCapability implements ChatCallOptionsCapabil
   }
 }
 
-class _StreamingCallOptionsModel
-    extends ChatCapability
+class _StreamingCallOptionsModel extends ChatCapability
     implements ChatStreamPartsCallOptionsCapability {
   bool calledWithOptions = false;
   LLMCallOptions? lastOptions;
@@ -80,6 +80,7 @@ class _StreamingCallOptionsModel
   @override
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
@@ -183,7 +184,8 @@ class _ImageCallOptionsModel
       throw UnimplementedError();
 
   @override
-  Future<ImageGenerationResponse> createVariation(ImageVariationRequest request) =>
+  Future<ImageGenerationResponse> createVariation(
+          ImageVariationRequest request) =>
       throw UnimplementedError();
 
   @override
@@ -302,9 +304,11 @@ void main() {
         callOptions: const LLMCallOptions(headers: {'x-test': '1'}),
       );
 
-      expect(vectors, equals(const [
-        [1.0]
-      ]));
+      expect(
+          vectors,
+          equals(const [
+            [1.0]
+          ]));
       expect(model.calledPlain, isFalse);
       expect(model.calledWithOptions, isTrue);
       expect(model.lastOptions?.headers, equals({'x-test': '1'}));
@@ -435,9 +439,11 @@ void main() {
         ),
       );
 
-      expect(vectors, equals(const [
-        [0.1, 0.2]
-      ]));
+      expect(
+          vectors,
+          equals(const [
+            [0.1, 0.2]
+          ]));
       expect(client.lastEndpoint, equals('embeddings'));
       expect(client.lastRequestHeaders, equals({'x-test': '1'}));
       expect(client.lastJsonBody, isNotNull);

@@ -125,8 +125,7 @@ class OpenAIChat
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
-    var requestBody =
-        _requestBuilder.buildChatCompletionsRequestBodyFromPrompt(
+    var requestBody = _requestBuilder.buildChatCompletionsRequestBodyFromPrompt(
       client,
       prompt: prompt,
       tools: tools,
@@ -156,11 +155,13 @@ class OpenAIChat
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async* {
     yield* chatStreamPartsWithCallOptions(
       messages,
       tools: tools,
+      providerTools: providerTools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -170,6 +171,7 @@ class OpenAIChat
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async* {
@@ -194,11 +196,13 @@ class OpenAIChat
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async* {
     yield* chatPromptStreamPartsWithCallOptions(
       prompt,
       tools: tools,
+      providerTools: providerTools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -208,12 +212,12 @@ class OpenAIChat
   Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
     Prompt prompt, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async* {
     final effectiveTools = tools ?? config.tools;
-    var requestBody =
-        _requestBuilder.buildChatCompletionsRequestBodyFromPrompt(
+    var requestBody = _requestBuilder.buildChatCompletionsRequestBodyFromPrompt(
       client,
       prompt: prompt,
       tools: effectiveTools,

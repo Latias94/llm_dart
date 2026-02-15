@@ -51,6 +51,7 @@ class _SequencedStreamChatModel extends ChatCapability
   @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {

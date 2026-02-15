@@ -85,22 +85,29 @@ class OpenAICompatibleChatProvider
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chatStreamParts(messages,
-        tools: tools, cancelToken: cancelToken);
+    return _chat.chatStreamParts(
+      messages,
+      tools: tools,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
     return _chat.chatStreamPartsWithCallOptions(
       messages,
       tools: tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -134,11 +141,13 @@ class OpenAICompatibleChatProvider
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
     return _chat.chatPromptStreamParts(
       prompt,
       tools: tools,
+      providerTools: providerTools,
       cancelToken: cancelToken,
     );
   }
@@ -147,12 +156,14 @@ class OpenAICompatibleChatProvider
   Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
     Prompt prompt, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
     return _chat.chatPromptStreamPartsWithCallOptions(
       prompt,
       tools: tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );

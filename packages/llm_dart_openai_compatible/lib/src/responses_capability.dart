@@ -37,6 +37,7 @@ abstract class OpenAIResponsesCapability {
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   });
 

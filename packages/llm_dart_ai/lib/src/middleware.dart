@@ -13,12 +13,14 @@ typedef ChatStreamMiddlewareNext = Stream<LLMStreamPart> Function(
 class ChatMiddlewareContext {
   final StandardizedPromptInput input;
   final List<Tool>? tools;
+  final List<ProviderTool>? providerTools;
   final LLMCallOptions callOptions;
   final CancelToken? cancelToken;
 
   const ChatMiddlewareContext({
     required this.input,
     required this.tools,
+    required this.providerTools,
     required this.callOptions,
     required this.cancelToken,
   });
@@ -26,12 +28,14 @@ class ChatMiddlewareContext {
   ChatMiddlewareContext copyWith({
     StandardizedPromptInput? input,
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     LLMCallOptions? callOptions,
     CancelToken? cancelToken,
   }) {
     return ChatMiddlewareContext(
       input: input ?? this.input,
       tools: tools ?? this.tools,
+      providerTools: providerTools ?? this.providerTools,
       callOptions: callOptions ?? this.callOptions,
       cancelToken: cancelToken ?? this.cancelToken,
     );
@@ -41,12 +45,14 @@ class ChatMiddlewareContext {
 class ChatStreamMiddlewareContext {
   final StandardizedPromptInput input;
   final List<Tool>? tools;
+  final List<ProviderTool>? providerTools;
   final LLMCallOptions callOptions;
   final CancelToken? cancelToken;
 
   const ChatStreamMiddlewareContext({
     required this.input,
     required this.tools,
+    required this.providerTools,
     required this.callOptions,
     required this.cancelToken,
   });
@@ -54,12 +60,14 @@ class ChatStreamMiddlewareContext {
   ChatStreamMiddlewareContext copyWith({
     StandardizedPromptInput? input,
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     LLMCallOptions? callOptions,
     CancelToken? cancelToken,
   }) {
     return ChatStreamMiddlewareContext(
       input: input ?? this.input,
       tools: tools ?? this.tools,
+      providerTools: providerTools ?? this.providerTools,
       callOptions: callOptions ?? this.callOptions,
       cancelToken: cancelToken ?? this.cancelToken,
     );
@@ -120,4 +128,3 @@ class DefaultCallOptionsMiddleware extends LanguageModelMiddleware {
     );
   }
 }
-

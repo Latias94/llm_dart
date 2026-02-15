@@ -53,6 +53,7 @@ class _FakeStreamChatModel extends ChatCapability
   @override
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
@@ -78,6 +79,7 @@ class _ProviderApprovalObjectModel extends ChatCapability
   @override
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
+    List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {

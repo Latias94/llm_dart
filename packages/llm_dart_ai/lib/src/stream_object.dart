@@ -809,6 +809,7 @@ StreamObjectResult streamObject({
   String toolName = 'return_object',
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
+  List<ProviderTool>? providerTools,
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
   bool stopOnProviderToolApprovalRequests = false,
   int providerToolApprovalMaxSteps = 10,
@@ -850,6 +851,7 @@ StreamObjectResult streamObject({
               model: model,
               messages: augmentedMessages,
               tools: [tool],
+              providerTools: providerTools,
               onProviderToolApprovalRequests: onProviderToolApprovalRequests,
               stopOnProviderToolApprovalRequests:
                   stopOnProviderToolApprovalRequests,
@@ -890,6 +892,7 @@ StreamObjectResult streamObject({
               model: model,
               promptIr: augmentedPrompt,
               tools: [tool],
+              providerTools: providerTools,
               onProviderToolApprovalRequests: onProviderToolApprovalRequests,
               stopOnProviderToolApprovalRequests:
                   stopOnProviderToolApprovalRequests,
@@ -939,6 +942,7 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
   String toolName = 'return_object',
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
+  List<ProviderTool>? providerTools,
   int providerToolApprovalMaxSteps = 10,
   bool waitForDeferredProviderToolResults = true,
   int maxAdditionalProviderToolResultSteps = 1,
@@ -961,8 +965,10 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
           blockedState: blockedState,
           decisions: decisions,
           tools: [tool],
+          providerTools: providerTools,
           providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
-          waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+          waitForDeferredProviderToolResults:
+              waitForDeferredProviderToolResults,
           maxAdditionalProviderToolResultSteps:
               maxAdditionalProviderToolResultSteps,
           cancelToken: cancelToken,
