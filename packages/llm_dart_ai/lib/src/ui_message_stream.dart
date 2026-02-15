@@ -414,74 +414,76 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
           }
         }
 
-      case LLMRawPart(:final rawValue):
-        if (rawValue is ToolLoopBlockedState) {
-          final state = rawValue;
-          if (toolApprovalBlockedStateData != null) {
-            final extra = toolApprovalBlockedStateData(state);
-            final data = <String, Object?>{
-              'kind': 'tool-loop',
-              'stepIndex': state.stepIndex,
-              'approvalIds': state.toolApprovalRequests
-                  .map((r) => r.approvalId)
-                  .toList(growable: false),
-              'toolCallIds': state.toolApprovalRequests
-                  .map((r) => r.toolCall.id)
-                  .toList(growable: false),
-              if (extra != null) 'extra': extra,
-            };
-            if (data.isNotEmpty) {
-              yield <String, Object?>{
-                'type': 'data-tool-blocked',
-                'data': data,
-              };
-              yield <String, Object?>{
-                'type': 'data-tool-loop-blocked',
-                'data': data,
-              };
-            }
-          }
-          if (messageMeta != null) {
+      case LLMToolLoopBlockedPart(:final state):
+        if (state is! ToolLoopBlockedState) break;
+        if (toolApprovalBlockedStateData != null) {
+          final extra = toolApprovalBlockedStateData(state);
+          final data = <String, Object?>{
+            'kind': 'tool-loop',
+            'stepIndex': state.stepIndex,
+            'approvalIds': state.toolApprovalRequests
+                .map((r) => r.approvalId)
+                .toList(growable: false),
+            'toolCallIds': state.toolApprovalRequests
+                .map((r) => r.toolCall.id)
+                .toList(growable: false),
+            if (extra != null) 'extra': extra,
+          };
+          if (data.isNotEmpty) {
             yield <String, Object?>{
-              'type': 'message-metadata',
-              'messageMetadata': messageMeta,
+              'type': 'data-tool-blocked',
+              'data': data,
             };
-          }
-          break;
-        }
-        if (rawValue is ProviderToolApprovalBlockedState) {
-          final state = rawValue;
-          if (providerToolApprovalBlockedStateData != null) {
-            final extra = providerToolApprovalBlockedStateData(state);
-            final data = <String, Object?>{
-              'kind': 'provider-tool-approval',
-              'stepIndex': state.stepIndex,
-              'approvalIds': state.approvalRequests
-                  .map((r) => r.approvalId)
-                  .toList(growable: false),
-              'toolCallIds': state.approvalRequests
-                  .map((r) => r.toolCallId)
-                  .toList(growable: false),
-              if (extra != null) 'extra': extra,
-            };
-            if (data.isNotEmpty) {
-              yield <String, Object?>{
-                'type': 'data-tool-blocked',
-                'data': data,
-              };
-              yield <String, Object?>{
-                'type': 'data-tool-approval-blocked',
-                'data': data,
-              };
-            }
-          }
-          if (messageMeta != null) {
             yield <String, Object?>{
-              'type': 'message-metadata',
-              'messageMetadata': messageMeta,
+              'type': 'data-tool-loop-blocked',
+              'data': data,
             };
           }
         }
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
+
+      case LLMProviderToolApprovalBlockedPart(:final state):
+        if (state is! ProviderToolApprovalBlockedState) break;
+        if (providerToolApprovalBlockedStateData != null) {
+          final extra = providerToolApprovalBlockedStateData(state);
+          final data = <String, Object?>{
+            'kind': 'provider-tool-approval',
+            'stepIndex': state.stepIndex,
+            'approvalIds': state.approvalRequests
+                .map((r) => r.approvalId)
+                .toList(growable: false),
+            'toolCallIds': state.approvalRequests
+                .map((r) => r.toolCallId)
+                .toList(growable: false),
+            if (extra != null) 'extra': extra,
+          };
+          if (data.isNotEmpty) {
+            yield <String, Object?>{
+              'type': 'data-tool-blocked',
+              'data': data,
+            };
+            yield <String, Object?>{
+              'type': 'data-tool-approval-blocked',
+              'data': data,
+            };
+          }
+        }
+        if (messageMeta != null) {
+          yield <String, Object?>{
+            'type': 'message-metadata',
+            'messageMetadata': messageMeta,
+          };
+        }
+
+      case LLMRawPart():
+        // Only emitted when includeRawChunks is enabled. UI chunk schema does
+        // not include raw chunks, so we ignore them here.
+        break;
 
       case LLMSourceUrlPart(
           sourceId: final sourceId,

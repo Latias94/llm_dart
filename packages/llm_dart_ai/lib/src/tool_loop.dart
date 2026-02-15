@@ -3046,7 +3046,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
           prompt: promptFromChatMessages(workingMessages),
         );
 
-        yield LLMRawPart(blockedState);
+        yield LLMToolLoopBlockedPart(blockedState);
 
         final finishReason = const LLMFinishReason(
           unified: LLMUnifiedFinishReason.toolCalls,
@@ -3532,7 +3532,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
         messages: List<ChatMessage>.unmodifiable(workingMessages),
         prompt: workingPrompt,
       );
-      yield LLMRawPart(blockedState);
+      yield LLMToolLoopBlockedPart(blockedState);
 
       final finishReason = const LLMFinishReason(
         unified: LLMUnifiedFinishReason.toolCalls,

@@ -1073,13 +1073,14 @@ void main() {
       expect(parts.whereType<LLMToolCallStartPart>(), hasLength(1));
       expect(
           parts.whereType<LLMProviderToolApprovalRequestPart>(), hasLength(1));
-      final blockedRawParts = parts
-          .whereType<LLMRawPart>()
-          .where((p) => p.rawValue is ToolLoopBlockedState)
+      final blockedParts = parts
+          .whereType<LLMToolLoopBlockedPart>()
+          .map((p) => p.state)
+          .whereType<ToolLoopBlockedState>()
           .toList(growable: false);
-      expect(blockedRawParts, hasLength(1));
+      expect(blockedParts, hasLength(1));
 
-      final blocked = blockedRawParts.single.rawValue as ToolLoopBlockedState;
+      final blocked = blockedParts.single;
       expect(blocked.toolApprovalRequests, hasLength(1));
       expect(blocked.toolApprovalRequests.single.toolCall.id, 'call_1');
       expect(blocked.toolApprovalRequests.single.approvalId, isNotEmpty);

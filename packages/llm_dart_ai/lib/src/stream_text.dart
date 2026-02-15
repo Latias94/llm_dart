@@ -113,14 +113,14 @@ class StreamTextResult {
   /// Resolves to the tool-loop blocked state when local tool approval is needed.
   ///
   /// This is best-effort and is populated when the upstream stream emits
-  /// an [LLMRawPart] whose `rawValue` is a [ToolLoopBlockedState].
+  /// an [LLMToolLoopBlockedPart].
   final Future<ToolLoopBlockedState?> toolLoopBlockedState;
 
   /// Resolves to the provider tool-approval blocked state when provider-executed
   /// tools require explicit approval and streaming stops early.
   ///
   /// This is best-effort and is populated when the upstream stream emits
-  /// an [LLMRawPart] whose `rawValue` is a [ProviderToolApprovalBlockedState].
+  /// an [LLMProviderToolApprovalBlockedPart].
   final Future<ProviderToolApprovalBlockedState?>
       providerToolApprovalBlockedState;
 
@@ -313,12 +313,9 @@ class StreamTextResult {
             contentCollector = _StepContentCollector();
           }
           contentCollector.onPart(part);
-          final isInternalBlockedRaw = part is LLMRawPart &&
-              (part.rawValue is ToolLoopBlockedState ||
-                  part.rawValue is ProviderToolApprovalBlockedState);
-          if (!isInternalBlockedRaw) {
-            controller.add(part);
-          }
+          final isInternalBlockedPart = part is LLMToolLoopBlockedPart ||
+              part is LLMProviderToolApprovalBlockedPart;
+          if (!isInternalBlockedPart) controller.add(part);
 
           switch (part) {
             case LLMStreamStartPart(:final warnings):
@@ -479,11 +476,14 @@ class StreamTextResult {
                 terminalError ??= error;
               }
 
-            case LLMRawPart(:final rawValue):
-              if (rawValue is ToolLoopBlockedState) {
-                toolLoopBlockedState ??= rawValue;
-              } else if (rawValue is ProviderToolApprovalBlockedState) {
-                providerToolApprovalBlockedState ??= rawValue;
+            case LLMToolLoopBlockedPart(:final state):
+              if (state is ToolLoopBlockedState) {
+                toolLoopBlockedState ??= state;
+              }
+
+            case LLMProviderToolApprovalBlockedPart(:final state):
+              if (state is ProviderToolApprovalBlockedState) {
+                providerToolApprovalBlockedState ??= state;
               }
 
             default:
@@ -1329,11 +1329,7 @@ StreamTextResult streamText({
 
   Stream<LLMStreamPart> filteredUpstream() {
     if (includeRawChunks) return upstream();
-    return upstream().where((part) {
-      if (part is! LLMRawPart) return true;
-      final v = part.rawValue;
-      return v is ToolLoopBlockedState || v is ProviderToolApprovalBlockedState;
-    });
+    return upstream().where((part) => part is! LLMRawPart);
   }
 
   return StreamTextResult.fromPartsStream(

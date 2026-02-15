@@ -265,7 +265,7 @@ void main() {
           toolName: 'calc',
           input: {'x': 1},
         ),
-        LLMRawPart(state),
+        LLMToolLoopBlockedPart(state),
         LLMFinishPart(
           _TestChatResponse(),
           finishReason: const LLMFinishReason(
@@ -356,7 +356,7 @@ void main() {
           toolName: 'mcp.web_search',
           input: {'q': 'hello'},
         ),
-        LLMRawPart(blockedState),
+        LLMProviderToolApprovalBlockedPart(blockedState),
         LLMFinishPart(
           _TestChatResponse(),
           finishReason: const LLMFinishReason(

@@ -191,7 +191,7 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
 
         // AI SDK parity: treat tool approval as a structured finish rather than
         // a terminal error when stopOnProviderToolApprovalRequests is enabled.
-        yield LLMRawPart(blockedState);
+        yield LLMProviderToolApprovalBlockedPart(blockedState);
 
         final response = finishPart?.response ??
             _ProviderToolApprovalBlockedResponse(

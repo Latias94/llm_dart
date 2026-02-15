@@ -55,7 +55,7 @@ void main() {
         const LLMTextStartPart(blockId: 't1'),
         const LLMTextDeltaPart('Hello', blockId: 't1'),
         const LLMTextEndPart('Hello', blockId: 't1'),
-        LLMRawPart(blockedState),
+        LLMToolLoopBlockedPart(blockedState),
         LLMFinishPart(_TestChatResponse(text: 'Hello')),
       ]);
 

@@ -455,8 +455,8 @@ void main() {
       expect(model.calls, equals(1));
 
       final blocked = parts
-          .whereType<LLMRawPart>()
-          .map((p) => p.rawValue)
+          .whereType<LLMProviderToolApprovalBlockedPart>()
+          .map((p) => p.state)
           .whereType<ProviderToolApprovalBlockedState>()
           .single;
 
@@ -483,8 +483,8 @@ void main() {
 
       final initialParts = await initial.fullStream.toList();
       final blocked = initialParts
-          .whereType<LLMRawPart>()
-          .map((p) => p.rawValue)
+          .whereType<LLMProviderToolApprovalBlockedPart>()
+          .map((p) => p.state)
           .whereType<ProviderToolApprovalBlockedState>()
           .single;
 

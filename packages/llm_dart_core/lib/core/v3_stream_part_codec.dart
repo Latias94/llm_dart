@@ -696,6 +696,31 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         },
       ];
 
+    // Tool loop blocked states are orchestration-internal and not part of the
+    // canonical AI SDK v3 stream shape. Preserve a minimal raw marker for
+    // fixtures/debugging.
+    case LLMToolLoopBlockedPart(:final state):
+      return [
+        {
+          'type': 'raw',
+          'rawValue': {
+            'kind': 'tool-loop-blocked',
+            'stateType': state.runtimeType.toString(),
+          },
+        },
+      ];
+
+    case LLMProviderToolApprovalBlockedPart(:final state):
+      return [
+        {
+          'type': 'raw',
+          'rawValue': {
+            'kind': 'provider-tool-approval-blocked',
+            'stateType': state.runtimeType.toString(),
+          },
+        },
+      ];
+
     case LLMStepFinishPart(
         stepIndex: final stepIndex,
         response: final response,

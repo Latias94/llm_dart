@@ -173,6 +173,33 @@ class LLMStepFinishPart extends LLMStreamPart {
   }) : assert(stepIndex >= 0);
 }
 
+/// Emitted when a local tool loop finishes early because tool approval is needed.
+///
+/// This part is emitted by orchestration layers (e.g. `llm_dart_ai` tool loops)
+/// and carries an orchestration-specific state object that can be used to
+/// resume the loop.
+///
+/// Note: the exact shape of [state] is defined by the orchestrator package.
+class LLMToolLoopBlockedPart extends LLMStreamPart {
+  final Object state;
+
+  const LLMToolLoopBlockedPart(this.state);
+}
+
+/// Emitted when a provider-executed tool requires explicit approval and the
+/// orchestration layer stops early.
+///
+/// This part is emitted by orchestration layers (e.g. provider tool approval
+/// loops) and carries an orchestration-specific state object that can be used
+/// to resume the loop.
+///
+/// Note: the exact shape of [state] is defined by the orchestrator package.
+class LLMProviderToolApprovalBlockedPart extends LLMStreamPart {
+  final Object state;
+
+  const LLMProviderToolApprovalBlockedPart(this.state);
+}
+
 /// Optional capability for providers to emit `LLMStreamPart` directly.
 ///
 /// Orchestration layers should prefer this capability for streaming.
