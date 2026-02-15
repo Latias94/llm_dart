@@ -1402,3 +1402,71 @@ Future<StreamTextResult> resumeStreamTextAfterToolApprovalBlocked({
     cancelToken: cancelToken,
   );
 }
+
+/// Resume a `streamText` run that finished because a provider-executed tool
+/// required explicit approval.
+///
+/// This is intended to pair with [StreamTextResult.providerToolApprovalBlockedState]
+/// when `stopOnProviderToolApprovalRequests` was enabled.
+StreamTextResult resumeStreamTextAfterProviderToolApprovalBlocked({
+  required ChatCapability model,
+  required ProviderToolApprovalBlockedState blockedState,
+  required List<ToolApprovalDecision> decisions,
+  List<Tool>? tools,
+  ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+  int providerToolApprovalMaxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
+  bool includeRawChunks = false,
+  StreamTextOnStepFinishCallback? onStepFinish,
+  StreamTextOnFinishCallback? onFinish,
+  IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
+  CancelToken? cancelToken,
+}) {
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+
+  Stream<LLMStreamPart> upstream() async* {
+    try {
+      yield* streamPartsWithInclude(
+        resumeChatPartsAfterProviderToolApprovalRequired(
+          model: model,
+          blockedState: blockedState,
+          decisions: decisions,
+          tools: tools,
+          onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+          providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
+          waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+          maxAdditionalProviderToolResultSteps:
+              maxAdditionalProviderToolResultSteps,
+          callOptions: effectiveCallOptions,
+          cancelToken: cancelToken,
+        ),
+        include,
+      );
+    } catch (e) {
+      if (e is LLMError) {
+        yield LLMErrorPart(e);
+        return;
+      }
+      yield LLMErrorPart(GenericError('Unexpected error: $e'));
+    }
+  }
+
+  final defaultModelId = model is ModelIdentityCapability
+      ? (model as ModelIdentityCapability).modelId
+      : null;
+
+  Stream<LLMStreamPart> filteredUpstream() {
+    if (includeRawChunks) return upstream();
+    return upstream().where((part) => part is! LLMRawPart);
+  }
+
+  return StreamTextResult.fromPartsStream(
+    filteredUpstream(),
+    defaultModelId: defaultModelId,
+    onStepFinish: onStepFinish,
+    onFinish: onFinish,
+  );
+}

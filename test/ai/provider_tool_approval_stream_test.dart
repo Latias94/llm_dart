@@ -177,7 +177,7 @@ void main() {
       final blocked = await initial.providerToolApprovalBlockedState;
       expect(blocked, isNotNull);
 
-      final resumedParts = resumeChatPartsAfterProviderToolApprovalRequired(
+      final resumed = resumeStreamTextAfterProviderToolApprovalBlocked(
         model: model,
         blockedState: blocked!,
         decisions: const [
@@ -188,8 +188,6 @@ void main() {
         ],
         providerToolApprovalMaxSteps: 5,
       );
-
-      final resumed = StreamTextResult.fromPartsStream(resumedParts);
       final partsFuture = resumed.fullStream.toList();
 
       expect(await resumed.text, equals('ok'));
