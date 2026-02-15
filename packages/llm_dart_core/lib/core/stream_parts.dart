@@ -207,6 +207,7 @@ abstract class ChatStreamPartsCapability {
   Stream<LLMStreamPart> chatStreamParts(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   });
 }
@@ -217,6 +218,7 @@ abstract class PromptChatStreamPartsCapability {
   Stream<LLMStreamPart> chatPromptStreamParts(
     Prompt prompt, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   });
 }
@@ -229,6 +231,7 @@ abstract class ChatStreamPartsCallOptionsCapability {
   Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
     List<ChatMessage> messages, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   });
@@ -239,6 +242,7 @@ abstract class PromptChatStreamPartsCallOptionsCapability {
   Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
     Prompt prompt, {
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   });
