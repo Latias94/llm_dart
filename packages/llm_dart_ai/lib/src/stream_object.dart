@@ -82,6 +82,14 @@ class StreamObjectResult {
   /// Resolves to the final non-streaming view of the response.
   final Future<GenerateObjectResult> finalResult;
 
+  /// Resolves to the provider tool-approval blocked state when provider-executed
+  /// tools require explicit approval and streaming stops early.
+  ///
+  /// This is best-effort and is populated when the upstream stream emits an
+  /// [LLMProviderToolApprovalBlockedPart].
+  final Future<ProviderToolApprovalBlockedState?>
+      providerToolApprovalBlockedState;
+
   /// Resolves when the stream completes (success or error).
   final Future<void> done;
 
@@ -100,6 +108,7 @@ class StreamObjectResult {
     required this.finishReason,
     required this.providerMetadata,
     required this.finalResult,
+    required this.providerToolApprovalBlockedState,
     required this.done,
   });
 
@@ -134,6 +143,8 @@ class StreamObjectResult {
     final finishReasonCompleter = Completer<LLMFinishReason?>();
     final providerMetadataCompleter = Completer<Map<String, dynamic>?>();
     final finalResultCompleter = Completer<GenerateObjectResult>();
+    final providerToolApprovalBlockedStateCompleter =
+        Completer<ProviderToolApprovalBlockedState?>();
 
     // Prevent unhandled asynchronous errors when callers choose to only consume
     // the streams (or only await a subset of futures).
@@ -149,6 +160,8 @@ class StreamObjectResult {
     unawaited(usageCompleter.future.catchError((_) => null));
     unawaited(finishReasonCompleter.future.catchError((_) => null));
     unawaited(providerMetadataCompleter.future.catchError((_) => null));
+    unawaited(providerToolApprovalBlockedStateCompleter.future
+        .catchError((_) => null));
     unawaited(finalResultCompleter.future.catchError(
       (_) => GenerateObjectResult(
         object: const <String, dynamic>{},
@@ -181,7 +194,7 @@ class StreamObjectResult {
     Map<String, dynamic>? lastProviderMetadata;
     LLMFinishPart? finishPart;
     LLMError? terminalError;
-    ProviderToolApprovalRequiredError? providerApprovalRequired;
+    ProviderToolApprovalBlockedState? providerToolApprovalBlockedState;
 
     LLMResponseMetadataPart mergeResponseMetadata(
       LLMResponseMetadataPart base,
@@ -277,7 +290,11 @@ class StreamObjectResult {
     Future<void> pump() async {
       try {
         await for (final part in upstream) {
-          fullController.add(part);
+          final isInternalBlockedPart =
+              part is LLMProviderToolApprovalBlockedPart;
+          if (!isInternalBlockedPart) {
+            fullController.add(part);
+          }
 
           switch (part) {
             case LLMStreamStartPart(:final warnings):
@@ -409,10 +426,11 @@ class StreamObjectResult {
               finishPart = part;
 
             case LLMErrorPart(error: final error):
-              if (error is ProviderToolApprovalRequiredError) {
-                providerApprovalRequired ??= error;
-              } else {
-                terminalError ??= error;
+              terminalError ??= error;
+
+            case LLMProviderToolApprovalBlockedPart(:final state):
+              if (state is ProviderToolApprovalBlockedState) {
+                providerToolApprovalBlockedState ??= state;
               }
 
             default:
@@ -451,6 +469,9 @@ class StreamObjectResult {
           if (!providerMetadataCompleter.isCompleted) {
             providerMetadataCompleter.completeError(err);
           }
+          if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+            providerToolApprovalBlockedStateCompleter.completeError(err);
+          }
           if (!finalResultCompleter.isCompleted) {
             finalResultCompleter.completeError(err);
           }
@@ -459,7 +480,7 @@ class StreamObjectResult {
 
         final finish = finishPart;
         if (finish == null) {
-          final blocked = providerApprovalRequired;
+          final blocked = providerToolApprovalBlockedState;
           final err = blocked ??
               const GenericError('Stream finished without a finish part.');
           if (!warningsCompleter.isCompleted)
@@ -471,6 +492,9 @@ class StreamObjectResult {
           }
           if (!requestMetadataCompleter.isCompleted) {
             requestMetadataCompleter.complete(lastRequestMetadata);
+          }
+          if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+            providerToolApprovalBlockedStateCompleter.complete(blocked);
           }
 
           if (blocked != null) {
@@ -566,6 +590,10 @@ class StreamObjectResult {
         providerMetadataCompleter.complete(
           response.providerMetadata ?? lastProviderMetadata,
         );
+        if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+          providerToolApprovalBlockedStateCompleter
+              .complete(providerToolApprovalBlockedState);
+        }
 
         final didSeeTargetToolCall = targetToolCallIds.values.any((v) => v);
         final didSeeTargetToolInput = targetToolInputIds.isNotEmpty;
@@ -719,6 +747,8 @@ class StreamObjectResult {
       finishReason: finishReasonCompleter.future,
       providerMetadata: providerMetadataCompleter.future,
       finalResult: finalResultCompleter.future,
+      providerToolApprovalBlockedState:
+          providerToolApprovalBlockedStateCompleter.future,
       done: doneCompleter.future,
     );
   }

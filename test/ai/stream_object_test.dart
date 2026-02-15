@@ -454,15 +454,13 @@ void main() {
       final parts = await result.fullStream.toList();
       expect(model.calls, equals(1));
 
-      final blocked = parts
-          .whereType<LLMProviderToolApprovalBlockedPart>()
-          .map((p) => p.state)
-          .whereType<ProviderToolApprovalBlockedState>()
-          .single;
+      final blocked = await result.providerToolApprovalBlockedState;
+      expect(blocked, isNotNull);
+      final blockedState = blocked!;
 
-      expect(blocked.stepIndex, equals(0));
-      expect(blocked.approvalRequests, hasLength(1));
-      expect(blocked.approvalRequests.single.approvalId, equals('apr_1'));
+      expect(blockedState.stepIndex, equals(0));
+      expect(blockedState.approvalRequests, hasLength(1));
+      expect(blockedState.approvalRequests.single.approvalId, equals('apr_1'));
 
       expect((await result.finishReason)?.unified,
           equals(LLMUnifiedFinishReason.toolCalls));
@@ -481,16 +479,13 @@ void main() {
         stopOnProviderToolApprovalRequests: true,
       );
 
-      final initialParts = await initial.fullStream.toList();
-      final blocked = initialParts
-          .whereType<LLMProviderToolApprovalBlockedPart>()
-          .map((p) => p.state)
-          .whereType<ProviderToolApprovalBlockedState>()
-          .single;
+      await initial.fullStream.toList();
+      final blocked = await initial.providerToolApprovalBlockedState;
+      expect(blocked, isNotNull);
 
       final resumedParts = resumeChatPartsAfterProviderToolApprovalRequired(
         model: model,
-        blockedState: blocked,
+        blockedState: blocked!,
         decisions: const [
           ToolApprovalDecision(
             approvalId: 'apr_1',
