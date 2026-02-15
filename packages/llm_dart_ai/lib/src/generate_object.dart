@@ -7,6 +7,7 @@ import 'prompt_input.dart';
 import 'metadata_fallbacks.dart';
 import 'response_messages.dart';
 import 'types.dart';
+import 'openai_tool_control.dart';
 
 /// Result for a non-streaming object generation call.
 class GenerateObjectResult {
@@ -51,6 +52,8 @@ Future<GenerateObjectResult> generateObject({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   List<ProviderTool>? providerTools,
+  ToolChoice? toolChoice,
+  bool? parallelToolCalls,
   required ParametersSchema schema,
   String toolName = 'return_object',
   String toolDescription =
@@ -71,7 +74,11 @@ Future<GenerateObjectResult> generateObject({
     promptIr: promptIr,
   );
 
-  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+  final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
+    defaultCallOptions.mergedWith(callOptions),
+    toolChoice: toolChoice,
+    parallelToolCalls: parallelToolCalls,
+  );
 
   final tool = Tool.function(
     name: toolName,

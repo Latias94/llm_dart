@@ -279,6 +279,26 @@ void main() {
       expect(model.lastOptions?.body, equals({'temperature': 0.123}));
     });
 
+    test('generateText injects toolChoice/parallelToolCalls via callOptions',
+        () async {
+      final model = _CallOptionsModel();
+
+      final result = await generateText(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        toolChoice: const AnyToolChoice(),
+        parallelToolCalls: false,
+      );
+
+      expect(result.text, equals('ok'));
+      expect(model.calledPlain, isFalse);
+      expect(model.calledWithOptions, isTrue);
+      expect(
+        model.lastOptions?.body,
+        equals({'tool_choice': 'required', 'parallel_tool_calls': false}),
+      );
+    });
+
     test('streamChatParts uses ChatStreamPartsCallOptionsCapability when set',
         () async {
       final model = _StreamingCallOptionsModel();
@@ -295,6 +315,23 @@ void main() {
           equals('ok'));
       expect(model.calledWithOptions, isTrue);
       expect(model.lastOptions?.headers, equals({'x-test': '1'}));
+    });
+
+    test('streamChatParts injects toolChoice via callOptions', () async {
+      final model = _StreamingCallOptionsModel();
+
+      final parts = await streamChatParts(
+        model: model,
+        messages: [ChatMessage.user('hi')],
+        toolChoice: const NoneToolChoice(),
+      ).toList();
+
+      expect(
+        parts.whereType<LLMTextDeltaPart>().map((p) => p.delta).join(),
+        equals('ok'),
+      );
+      expect(model.calledWithOptions, isTrue);
+      expect(model.lastOptions?.body, equals({'tool_choice': 'none'}));
     });
 
     test('embed uses EmbeddingCallOptionsCapability when callOptions set',

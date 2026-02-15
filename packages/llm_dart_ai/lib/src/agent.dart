@@ -1,6 +1,7 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'generate_text.dart' as low_level;
+import 'openai_tool_control.dart';
 import 'prompt_input.dart';
 import 'prompt_message_converters.dart';
 import 'stream_object.dart' as object_streaming;
@@ -52,6 +53,8 @@ class Agent {
     Prompt? promptIr,
     ToolSet? toolSet,
     List<ProviderTool>? providerTools,
+    ToolChoice? toolChoice,
+    bool? parallelToolCalls,
     ToolCallRepair? repairToolCall,
     ToolApprovalCheck? needsApproval,
     int? maxSteps,
@@ -67,6 +70,11 @@ class Agent {
         continueOnToolError ?? this.continueOnToolError;
 
     if (effectiveToolSet != null) {
+      final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
+        defaultCallOptions.mergedWith(callOptions),
+        toolChoice: toolChoice,
+        parallelToolCalls: parallelToolCalls,
+      );
       return runToolLoopWithToolSet(
         model: model,
         system: system,
@@ -80,8 +88,8 @@ class Agent {
         maxSteps: effectiveMaxSteps,
         continueOnToolError: effectiveContinueOnToolError,
         include: include,
-        defaultCallOptions: defaultCallOptions,
-        callOptions: callOptions,
+        defaultCallOptions: const LLMCallOptions(),
+        callOptions: effectiveCallOptions,
         cancelToken: cancelToken,
       );
     }
@@ -93,6 +101,8 @@ class Agent {
       messages: messages,
       promptIr: promptIr,
       toolSet: null,
+      toolChoice: toolChoice,
+      parallelToolCalls: parallelToolCalls,
       providerTools: providerTools,
       tools: null,
       include: include,
@@ -152,6 +162,8 @@ class Agent {
     ToolSet? toolSet,
     List<Tool>? tools,
     List<ProviderTool>? providerTools,
+    ToolChoice? toolChoice,
+    bool? parallelToolCalls,
     ToolCallRepair? repairToolCall,
     ToolApprovalCheck? needsApproval,
     ProviderToolApprovalHandler? onProviderToolApprovalRequests,
@@ -176,6 +188,8 @@ class Agent {
       toolSet: toolSet ?? this.toolSet,
       tools: tools,
       providerTools: providerTools,
+      toolChoice: toolChoice,
+      parallelToolCalls: parallelToolCalls,
       repairToolCall: repairToolCall ?? this.repairToolCall,
       needsApproval: needsApproval ?? this.needsApproval,
       onProviderToolApprovalRequests: onProviderToolApprovalRequests,
@@ -209,6 +223,8 @@ class Agent {
     String toolDescription =
         'Return the result as a JSON object that matches the schema.',
     List<ProviderTool>? providerTools,
+    ToolChoice? toolChoice,
+    bool? parallelToolCalls,
     ProviderToolApprovalHandler? onProviderToolApprovalRequests,
     bool stopOnProviderToolApprovalRequests = false,
     int providerToolApprovalMaxSteps = 10,
@@ -231,6 +247,8 @@ class Agent {
       toolName: toolName,
       toolDescription: toolDescription,
       providerTools: providerTools,
+      toolChoice: toolChoice,
+      parallelToolCalls: parallelToolCalls,
       onProviderToolApprovalRequests: onProviderToolApprovalRequests,
       stopOnProviderToolApprovalRequests: stopOnProviderToolApprovalRequests,
       providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,

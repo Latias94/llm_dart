@@ -10,6 +10,7 @@ import 'ensure_single_finish.dart';
 import 'prompt_input.dart';
 import 'provider_tool_approval_loop.dart';
 import 'types.dart';
+import 'openai_tool_control.dart';
 
 export 'package:llm_dart_core/core/stream_parts.dart';
 
@@ -26,6 +27,8 @@ Stream<LLMStreamPart> streamChatParts({
   Prompt? promptIr,
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
+  ToolChoice? toolChoice,
+  bool? parallelToolCalls,
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
   bool stopOnProviderToolApprovalRequests = false,
   int providerToolApprovalMaxSteps = 10,
@@ -35,6 +38,11 @@ Stream<LLMStreamPart> streamChatParts({
   CancelToken? cancelToken,
 }) async* {
   Stream<LLMStreamPart> raw() {
+    final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
+      callOptions,
+      toolChoice: toolChoice,
+      parallelToolCalls: parallelToolCalls,
+    );
     final input = standardizePromptInput(
       system: system,
       prompt: prompt,
@@ -52,7 +60,7 @@ Stream<LLMStreamPart> streamChatParts({
         input: input,
         tools: tools,
         providerTools: providerTools,
-        callOptions: callOptions,
+        callOptions: effectiveCallOptions,
         cancelToken: cancelToken,
       );
     }
@@ -62,7 +70,7 @@ Stream<LLMStreamPart> streamChatParts({
       input: input,
       tools: tools,
       providerTools: providerTools,
-      callOptions: callOptions,
+      callOptions: effectiveCallOptions,
       onApprovalRequests: onProviderToolApprovalRequests,
       maxSteps: providerToolApprovalMaxSteps,
       waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
@@ -97,6 +105,8 @@ Stream<LLMStreamPart> resumeChatPartsAfterProviderToolApprovalRequired({
   required List<ToolApprovalDecision> decisions,
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
+  ToolChoice? toolChoice,
+  bool? parallelToolCalls,
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
   int providerToolApprovalMaxSteps = 10,
   bool waitForDeferredProviderToolResults = true,
@@ -105,13 +115,18 @@ Stream<LLMStreamPart> resumeChatPartsAfterProviderToolApprovalRequired({
   CancelToken? cancelToken,
 }) async* {
   Stream<LLMStreamPart> raw() {
+    final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
+      callOptions,
+      toolChoice: toolChoice,
+      parallelToolCalls: parallelToolCalls,
+    );
     return resumeChatPartsWithProviderToolApprovals(
       model: model,
       blockedState: blockedState,
       decisions: decisions,
       tools: tools,
       providerTools: providerTools,
-      callOptions: callOptions,
+      callOptions: effectiveCallOptions,
       onApprovalRequests: onProviderToolApprovalRequests,
       maxSteps: providerToolApprovalMaxSteps,
       waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,

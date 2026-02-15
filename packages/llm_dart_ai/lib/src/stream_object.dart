@@ -10,6 +10,7 @@ import 'response_messages.dart';
 import 'metadata_fallbacks.dart';
 import 'stream_parts.dart';
 import 'types.dart';
+import 'openai_tool_control.dart';
 
 enum StreamObjectOutput { object, array }
 
@@ -810,6 +811,8 @@ StreamObjectResult streamObject({
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
   List<ProviderTool>? providerTools,
+  ToolChoice? toolChoice,
+  bool? parallelToolCalls,
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
   bool stopOnProviderToolApprovalRequests = false,
   int providerToolApprovalMaxSteps = 10,
@@ -820,6 +823,11 @@ StreamObjectResult streamObject({
   CancelToken? cancelToken,
 }) {
   Stream<LLMStreamPart> upstream() async* {
+    final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
+      callOptions,
+      toolChoice: toolChoice,
+      parallelToolCalls: parallelToolCalls,
+    );
     final input = standardizePromptInput(
       system: system,
       prompt: prompt,
@@ -853,6 +861,8 @@ StreamObjectResult streamObject({
               messages: augmentedMessages,
               tools: [tool],
               providerTools: providerTools,
+              toolChoice: toolChoice,
+              parallelToolCalls: parallelToolCalls,
               onProviderToolApprovalRequests: onProviderToolApprovalRequests,
               stopOnProviderToolApprovalRequests:
                   stopOnProviderToolApprovalRequests,
@@ -861,7 +871,7 @@ StreamObjectResult streamObject({
                   waitForDeferredProviderToolResults,
               maxAdditionalProviderToolResultSteps:
                   maxAdditionalProviderToolResultSteps,
-              callOptions: callOptions,
+              callOptions: effectiveCallOptions,
               cancelToken: cancelToken,
             ),
             include,
@@ -895,6 +905,8 @@ StreamObjectResult streamObject({
               promptIr: augmentedPrompt,
               tools: [tool],
               providerTools: providerTools,
+              toolChoice: toolChoice,
+              parallelToolCalls: parallelToolCalls,
               onProviderToolApprovalRequests: onProviderToolApprovalRequests,
               stopOnProviderToolApprovalRequests:
                   stopOnProviderToolApprovalRequests,
@@ -903,7 +915,7 @@ StreamObjectResult streamObject({
                   waitForDeferredProviderToolResults,
               maxAdditionalProviderToolResultSteps:
                   maxAdditionalProviderToolResultSteps,
-              callOptions: callOptions,
+              callOptions: effectiveCallOptions,
               cancelToken: cancelToken,
             ),
             include,
@@ -946,6 +958,8 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
   List<ProviderTool>? providerTools,
+  ToolChoice? toolChoice,
+  bool? parallelToolCalls,
   int providerToolApprovalMaxSteps = 10,
   bool waitForDeferredProviderToolResults = true,
   int maxAdditionalProviderToolResultSteps = 1,
@@ -954,6 +968,11 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
   CancelToken? cancelToken,
 }) {
   Stream<LLMStreamPart> upstream() async* {
+    final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
+      callOptions,
+      toolChoice: toolChoice,
+      parallelToolCalls: parallelToolCalls,
+    );
     final tool = Tool.function(
       name: toolName,
       description: toolDescription,
@@ -970,12 +989,14 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
           decisions: decisions,
           tools: [tool],
           providerTools: providerTools,
+          toolChoice: toolChoice,
+          parallelToolCalls: parallelToolCalls,
           providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
           waitForDeferredProviderToolResults:
               waitForDeferredProviderToolResults,
           maxAdditionalProviderToolResultSteps:
               maxAdditionalProviderToolResultSteps,
-          callOptions: callOptions,
+          callOptions: effectiveCallOptions,
           cancelToken: cancelToken,
         ),
         include,

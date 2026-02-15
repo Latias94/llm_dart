@@ -5,6 +5,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'content_part.dart';
 import 'prompt_input.dart';
 import 'stream_parts.dart';
+import 'openai_tool_control.dart';
 import 'tool_loop.dart';
 import 'tool_types.dart';
 import 'tool_set.dart';
@@ -1196,6 +1197,8 @@ StreamTextResult streamText({
   ToolSet? toolSet,
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
+  ToolChoice? toolChoice,
+  bool? parallelToolCalls,
   ToolCallRepair? repairToolCall,
   ToolApprovalCheck? needsApproval,
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
@@ -1213,7 +1216,11 @@ StreamTextResult streamText({
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
-  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+  final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
+    defaultCallOptions.mergedWith(callOptions),
+    toolChoice: toolChoice,
+    parallelToolCalls: parallelToolCalls,
+  );
 
   Stream<LLMStreamPart> upstream() async* {
     if (toolSet != null) {
@@ -1307,6 +1314,8 @@ StreamTextResult streamText({
           promptIr: promptIr,
           tools: tools,
           providerTools: providerTools,
+          toolChoice: toolChoice,
+          parallelToolCalls: parallelToolCalls,
           onProviderToolApprovalRequests: onProviderToolApprovalRequests,
           stopOnProviderToolApprovalRequests:
               stopOnProviderToolApprovalRequests,

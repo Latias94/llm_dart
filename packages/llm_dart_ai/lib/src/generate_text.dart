@@ -9,6 +9,7 @@ import 'tool_loop.dart';
 import 'tool_set.dart';
 import 'tool_types.dart';
 import 'types.dart';
+import 'openai_tool_control.dart';
 
 /// Generate text (Vercel-style prompt input).
 ///
@@ -25,6 +26,8 @@ Future<GenerateTextResult> generateText({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   ToolSet? toolSet,
+  ToolChoice? toolChoice,
+  bool? parallelToolCalls,
   List<ProviderTool>? providerTools,
   List<Tool>? tools,
   ToolCallRepair? repairToolCall,
@@ -49,7 +52,11 @@ Future<GenerateTextResult> generateText({
     promptIr: promptIr,
   );
 
-  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+  final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
+    defaultCallOptions.mergedWith(callOptions),
+    toolChoice: toolChoice,
+    parallelToolCalls: parallelToolCalls,
+  );
 
   UsageInfo? sumUsage(Iterable<UsageInfo?> usages) {
     UsageInfo? acc;
@@ -100,8 +107,8 @@ Future<GenerateTextResult> generateText({
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
       include: include,
-      defaultCallOptions: defaultCallOptions,
-      callOptions: callOptions,
+      defaultCallOptions: const LLMCallOptions(),
+      callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
 
