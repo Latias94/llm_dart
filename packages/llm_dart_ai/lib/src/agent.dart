@@ -152,6 +152,8 @@ class Agent {
     ProviderToolApprovalHandler? onProviderToolApprovalRequests,
     bool stopOnProviderToolApprovalRequests = false,
     int providerToolApprovalMaxSteps = 10,
+    bool waitForDeferredProviderToolResults = true,
+    int maxAdditionalProviderToolResultSteps = 1,
     int? maxSteps,
     bool? continueOnToolError,
     bool includeRawChunks = false,
@@ -173,6 +175,9 @@ class Agent {
       onProviderToolApprovalRequests: onProviderToolApprovalRequests,
       stopOnProviderToolApprovalRequests: stopOnProviderToolApprovalRequests,
       providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
+      waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+      maxAdditionalProviderToolResultSteps:
+          maxAdditionalProviderToolResultSteps,
       maxSteps: maxSteps ?? this.maxSteps,
       continueOnToolError: continueOnToolError ?? this.continueOnToolError,
       includeRawChunks: includeRawChunks,

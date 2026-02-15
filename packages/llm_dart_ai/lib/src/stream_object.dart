@@ -733,6 +733,8 @@ StreamObjectResult streamObject({
   ProviderToolApprovalHandler? onProviderToolApprovalRequests,
   bool stopOnProviderToolApprovalRequests = false,
   int providerToolApprovalMaxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
   IncludeOptions include = const IncludeOptions(),
   CancelToken? cancelToken,
 }) {
@@ -773,6 +775,10 @@ StreamObjectResult streamObject({
               stopOnProviderToolApprovalRequests:
                   stopOnProviderToolApprovalRequests,
               providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
+              waitForDeferredProviderToolResults:
+                  waitForDeferredProviderToolResults,
+              maxAdditionalProviderToolResultSteps:
+                  maxAdditionalProviderToolResultSteps,
               cancelToken: cancelToken,
             ),
             include,
@@ -809,6 +815,10 @@ StreamObjectResult streamObject({
               stopOnProviderToolApprovalRequests:
                   stopOnProviderToolApprovalRequests,
               providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
+              waitForDeferredProviderToolResults:
+                  waitForDeferredProviderToolResults,
+              maxAdditionalProviderToolResultSteps:
+                  maxAdditionalProviderToolResultSteps,
               cancelToken: cancelToken,
             ),
             include,
