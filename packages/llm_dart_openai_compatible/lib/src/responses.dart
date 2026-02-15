@@ -553,20 +553,19 @@ class OpenAIResponses
                   }
 
                   if (emitProviderToolDeltas) {
-                    final toolName = resolveProviderToolName(
-                      providerId: config.providerId,
-                      rawToolName: toolType,
-                      providerTools: requestProviderTools,
+                    final evt = parseResponsesToolDeltaEvent(
+                      eventType: eventType,
+                      json: json,
                     );
-                    yield LLMProviderToolDeltaPart(
-                      toolCallId: toolCallId,
-                      toolName: toolName,
-                      status: status,
-                      data: json,
-                      providerMetadata: {
-                        config.providerId: {'type': eventType},
-                      },
-                    );
+                    if (evt != null) {
+                      yield providerToolDeltaPartFromResponsesEvent(
+                        providerId: config.providerId,
+                        event: evt,
+                        providerTools: requestProviderTools,
+                        data: json,
+                        providerMetadataPayload: {'type': eventType},
+                      );
+                    }
                   }
                 }
               }
@@ -2177,8 +2176,10 @@ class OpenAIResponses
     List<ProviderTool>? providerTools,
   }) {
     final effectiveTools = tools ?? config.tools;
-    final effectiveProviderTools = _mergeProviderTools(
-        config.originalConfig?.providerTools, providerTools);
+    final effectiveProviderTools = mergeProviderToolsById(
+      config.originalConfig?.providerTools,
+      providerTools,
+    );
     final builtInToolJson = _mergeToolJsonByType(
       (config.builtInTools ?? const <OpenAIBuiltInTool>[])
           .map((t) => t.toJson())
@@ -2216,8 +2217,10 @@ class OpenAIResponses
     List<ProviderTool>? providerTools,
   }) {
     final effectiveTools = tools ?? config.tools;
-    final effectiveProviderTools = _mergeProviderTools(
-        config.originalConfig?.providerTools, providerTools);
+    final effectiveProviderTools = mergeProviderToolsById(
+      config.originalConfig?.providerTools,
+      providerTools,
+    );
     final builtInToolJson = _mergeToolJsonByType(
       (config.builtInTools ?? const <OpenAIBuiltInTool>[])
           .map((t) => t.toJson())
@@ -2283,33 +2286,6 @@ class OpenAIResponses
       functionToolNames: functionToolNames,
       providerToolRequestNamesById: providerToolRequestNamesById,
     );
-  }
-
-  List<ProviderTool>? _mergeProviderTools(
-    List<ProviderTool>? base,
-    List<ProviderTool>? override,
-  ) {
-    final a = base;
-    final b = override;
-    if ((a == null || a.isEmpty) && (b == null || b.isEmpty)) return null;
-
-    final byId = <String, ProviderTool>{};
-    if (a != null) {
-      for (final t in a) {
-        final id = t.id.trim();
-        if (id.isEmpty) continue;
-        byId[id] = t;
-      }
-    }
-    if (b != null) {
-      for (final t in b) {
-        final id = t.id.trim();
-        if (id.isEmpty) continue;
-        byId[id] = t; // override wins
-      }
-    }
-
-    return byId.isEmpty ? null : byId.values.toList(growable: false);
   }
 
   List<Map<String, dynamic>> _mergeToolJsonByType(

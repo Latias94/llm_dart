@@ -39,28 +39,6 @@ class XAIResponses
 
   XAIResponses(this.client, this.config);
 
-  List<ProviderTool>? _mergedProviderTools(List<ProviderTool>? providerTools) {
-    final base = config.originalConfig?.providerTools;
-    final override = providerTools;
-    if ((base == null || base.isEmpty) &&
-        (override == null || override.isEmpty)) {
-      return null;
-    }
-
-    final merged = <String, ProviderTool>{};
-    if (base != null) {
-      for (final t in base) {
-        merged[t.id] = t;
-      }
-    }
-    if (override != null) {
-      for (final t in override) {
-        merged[t.id] = t;
-      }
-    }
-    return merged.isEmpty ? null : merged.values.toList(growable: false);
-  }
-
   @override
   String get providerId => config.providerId;
 
@@ -113,7 +91,10 @@ class XAIResponses
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
-    final requestProviderTools = _mergedProviderTools(providerTools);
+    final requestProviderTools = mergeProviderToolsById(
+      config.originalConfig?.providerTools,
+      providerTools,
+    );
     final built = _buildRequestBody(
       messages: messages,
       tools: tools,
@@ -162,7 +143,10 @@ class XAIResponses
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
-    final requestProviderTools = _mergedProviderTools(providerTools);
+    final requestProviderTools = mergeProviderToolsById(
+      config.originalConfig?.providerTools,
+      providerTools,
+    );
     final built = _buildRequestBodyFromPrompt(
       prompt: prompt,
       tools: tools,
@@ -227,7 +211,10 @@ class XAIResponses
     CancelToken? cancelToken,
   }) async* {
     yield const LLMStreamStartPart();
-    final requestProviderTools = _mergedProviderTools(providerTools);
+    final requestProviderTools = mergeProviderToolsById(
+      config.originalConfig?.providerTools,
+      providerTools,
+    );
     final built = _buildRequestBody(
       messages: messages,
       tools: tools,
@@ -274,7 +261,10 @@ class XAIResponses
     CancelToken? cancelToken,
   }) async* {
     yield const LLMStreamStartPart();
-    final requestProviderTools = _mergedProviderTools(providerTools);
+    final requestProviderTools = mergeProviderToolsById(
+      config.originalConfig?.providerTools,
+      providerTools,
+    );
     final built = _buildRequestBodyFromPrompt(
       prompt: prompt,
       tools: tools,
@@ -421,33 +411,19 @@ class XAIResponses
             continue;
           }
 
-          if (eventType.startsWith('response.')) {
-            final segments = eventType.split('.');
-            if (segments.length == 3) {
-              final rawToolType = segments[1];
-              final status = segments[2];
-              if (rawToolType.endsWith('_call')) {
-                final toolCallId = json['item_id']?.toString();
-                if (toolCallId != null && toolCallId.isNotEmpty) {
-                  providerToolTypeById[toolCallId] = rawToolType;
-                  final toolName = resolveProviderToolName(
-                    providerId: config.providerId,
-                    rawToolName:
-                        rawToolType.substring(0, rawToolType.length - 5),
-                    providerTools: requestProviderTools,
-                  );
-                  yield LLMProviderToolDeltaPart(
-                    toolCallId: toolCallId,
-                    toolName: toolName,
-                    status: status,
-                    data: _stringKeyedMap(json),
-                    providerMetadata: {
-                      config.providerId: {'type': eventType},
-                    },
-                  );
-                }
-              }
-            }
+          final toolDelta = parseResponsesToolDeltaEvent(
+            eventType: eventType,
+            json: _stringKeyedMap(json),
+          );
+          if (toolDelta != null) {
+            providerToolTypeById[toolDelta.toolCallId] = toolDelta.rawToolType;
+            yield providerToolDeltaPartFromResponsesEvent(
+              providerId: config.providerId,
+              event: toolDelta,
+              providerTools: requestProviderTools,
+              data: _stringKeyedMap(json),
+              providerMetadataPayload: {'type': eventType},
+            );
           }
 
           if (eventType == 'response.custom_tool_call_input.delta') {
