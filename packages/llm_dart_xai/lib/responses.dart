@@ -577,8 +577,13 @@ class XAIResponses
                     ? (item['input'] ?? customToolInputById[id]?.toString())
                     : (item['arguments'] ?? item['action']);
 
+                final providerTool = findProviderToolByRawName(
+                  providerId: config.providerId,
+                  rawToolName: rawToolName,
+                  providerTools: config.originalConfig?.providerTools,
+                );
                 final supportsDeferredResults =
-                    toolType == 'code_execution' ? true : null;
+                    providerTool?.supportsDeferredResults == true ? true : null;
 
                 if (eventType == 'response.output_item.added') {
                   final part = providerToolParts.call(

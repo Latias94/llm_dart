@@ -859,6 +859,15 @@ class OpenAIResponses
                     rawToolName: toolType,
                     providerTools: config.originalConfig?.providerTools,
                   );
+                  final providerTool = findProviderToolByRawName(
+                    providerId: config.providerId,
+                    rawToolName: toolType,
+                    providerTools: config.originalConfig?.providerTools,
+                  );
+                  final supportsDeferredResults =
+                      providerTool?.supportsDeferredResults == true
+                          ? true
+                          : null;
 
                   final callId = item['call_id'] as String?;
                   final toolCallId =
@@ -1034,6 +1043,7 @@ class OpenAIResponses
                       providerExecuted: toolType != 'local_shell' &&
                           toolType != 'shell' &&
                           toolType != 'apply_patch',
+                      supportsDeferredResults: supportsDeferredResults,
                       providerMetadataPayload: callProviderMetadataPayload,
                     );
                     if (part != null) {
@@ -1098,6 +1108,7 @@ class OpenAIResponses
                         toolName: resolvedToolName,
                         input: input,
                         providerExecuted: true,
+                        supportsDeferredResults: supportsDeferredResults,
                       );
                       if (callPart != null) yield callPart;
 

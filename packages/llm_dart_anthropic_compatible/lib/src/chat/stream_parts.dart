@@ -478,6 +478,11 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                       ? normalizeServerToolName(name)
                       : name;
 
+                  final providerTool = findProviderToolByRawName(
+                    providerId: config.providerId,
+                    rawToolName: rawToolName,
+                    providerTools: originalConfig?.providerTools,
+                  );
                   final toolName = resolveProviderToolName(
                     providerId: config.providerId,
                     rawToolName: rawToolName,
@@ -491,7 +496,9 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                     ..toolName = toolName
                     ..providerToolName = name
                     ..providerExecuted = true
-                    ..isDynamic = blockType == 'mcp_tool_use';
+                    ..isDynamic = blockType == 'mcp_tool_use'
+                    ..supportsDeferredResults =
+                        providerTool?.supportsDeferredResults == true;
 
                   final hasNonEmptyInput = input is Map && input.isNotEmpty;
                   if (hasNonEmptyInput) {
@@ -783,10 +790,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                   input: inputString,
                   providerExecuted: state.providerExecuted ? true : null,
                   supportsDeferredResults:
-                      normalizeServerToolName(state.providerToolName ?? '') ==
-                              'code_execution'
-                          ? true
-                          : null,
+                      state.supportsDeferredResults ? true : null,
                   isDynamic: state.isDynamic ? true : null,
                   providerMetadataPayload: {'type': blockType},
                 );

@@ -669,6 +669,11 @@ class GoogleChat
               if (code != null && code.isNotEmpty) {
                 final id = 'code_execution_${codeExecutionSeq++}';
                 lastCodeExecutionToolCallId = id;
+                final providerTool = findProviderToolByRawName(
+                  providerId: config.providerId,
+                  rawToolName: 'code_execution',
+                  providerTools: config.originalConfig?.providerTools,
+                );
                 final toolName = resolveProviderToolName(
                   providerId: config.providerId,
                   rawToolName: 'code_execution',
@@ -679,7 +684,10 @@ class GoogleChat
                   toolName: toolName,
                   input: executableCode,
                   providerExecuted: true,
-                  supportsDeferredResults: true,
+                  supportsDeferredResults:
+                      providerTool?.supportsDeferredResults == true
+                          ? true
+                          : null,
                   providerMetadataPayload: const {'type': 'code_execution'},
                 );
                 if (part != null) yield part;

@@ -22,6 +22,7 @@ class _ProviderToolCallState {
   String? providerToolName;
   bool providerExecuted = true;
   bool isDynamic = false;
+  bool supportsDeferredResults = false;
 
   final StringBuffer inputBuffer = StringBuffer();
   bool firstDelta = true;
