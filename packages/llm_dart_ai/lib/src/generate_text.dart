@@ -25,6 +25,7 @@ Future<GenerateTextResult> generateText({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   ToolSet? toolSet,
+  List<ProviderTool>? providerTools,
   List<Tool>? tools,
   ToolCallRepair? repairToolCall,
   ToolApprovalCheck? needsApproval,
@@ -93,6 +94,7 @@ Future<GenerateTextResult> generateText({
       messages: messages,
       promptIr: promptIr,
       toolSet: toolSet,
+      providerTools: providerTools,
       repairToolCall: repairToolCall,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
@@ -132,6 +134,7 @@ Future<GenerateTextResult> generateText({
     model: model,
     input: input,
     tools: tools,
+    providerTools: providerTools,
     callOptions: effectiveCallOptions,
     cancelToken: cancelToken,
   );
@@ -206,7 +209,8 @@ Future<GenerateTextResult> generateText({
             include,
           ),
           responseMessages: buildResponseMessagesBestEffort(response),
-          responsePromptMessages: buildResponsePromptMessagesBestEffort(response),
+          responsePromptMessages:
+              buildResponsePromptMessagesBestEffort(response),
         ),
         toolCalls: toolCalls,
         toolResults: const <ToolResult>[],

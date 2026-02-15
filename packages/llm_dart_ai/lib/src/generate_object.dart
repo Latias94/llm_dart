@@ -50,6 +50,7 @@ Future<GenerateObjectResult> generateObject({
   String? prompt,
   List<ChatMessage>? messages,
   Prompt? promptIr,
+  List<ProviderTool>? providerTools,
   required ParametersSchema schema,
   String toolName = 'return_object',
   String toolDescription =
@@ -100,6 +101,7 @@ Future<GenerateObjectResult> generateObject({
     model: model,
     input: augmentedInput,
     tools: [tool],
+    providerTools: providerTools,
     callOptions: effectiveCallOptions,
     cancelToken: cancelToken,
   );

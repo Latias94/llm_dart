@@ -238,6 +238,7 @@ Future<ChatResponse> _chatWithToolsBestEffort(
   ChatCapability model,
   List<ChatMessage> messages,
   List<Tool>? tools, {
+  List<ProviderTool>? providerTools,
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
 }) {
@@ -245,6 +246,7 @@ Future<ChatResponse> _chatWithToolsBestEffort(
     return model.chatWithTools(
       messages,
       tools,
+      providerTools: providerTools,
       cancelToken: cancelToken,
     );
   }
@@ -259,6 +261,7 @@ Future<ChatResponse> _chatWithToolsBestEffort(
   return (model as ChatCallOptionsCapability).chatWithToolsWithCallOptions(
     messages,
     tools,
+    providerTools: providerTools,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );
@@ -268,6 +271,7 @@ Future<ChatResponse> _chatPromptBestEffort(
   ChatCapability model,
   Prompt prompt, {
   required List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
 }) {
@@ -275,6 +279,7 @@ Future<ChatResponse> _chatPromptBestEffort(
     if (callOptions.isEmpty) {
       return (model as PromptChatCapability).chatPrompt(
         prompt,
+        providerTools: providerTools,
         tools: tools,
         cancelToken: cancelToken,
       );
@@ -289,6 +294,7 @@ Future<ChatResponse> _chatPromptBestEffort(
 
     return (model as PromptChatCallOptionsCapability).chatPromptWithCallOptions(
       prompt,
+      providerTools: providerTools,
       tools: tools,
       callOptions: callOptions,
       cancelToken: cancelToken,
@@ -304,6 +310,7 @@ Future<ChatResponse> _chatPromptBestEffort(
     model,
     prompt.toChatMessages(),
     tools,
+    providerTools: providerTools,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );
@@ -320,6 +327,7 @@ Future<ToolLoopResult> runToolLoop({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
@@ -344,6 +352,7 @@ Future<ToolLoopResult> runToolLoop({
       model: model,
       prompt: input.prompt,
       tools: tools,
+      providerTools: providerTools,
       toolHandlers: toolHandlers,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
@@ -375,6 +384,7 @@ Future<ToolLoopResult> runToolLoop({
       model,
       workingMessages,
       tools,
+      providerTools: providerTools,
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
@@ -665,6 +675,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   required ChatCapability model,
   required Prompt prompt,
   List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
@@ -684,6 +695,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       model: model,
       messages: prompt.toChatMessages(),
       tools: tools,
+      providerTools: providerTools,
       toolHandlers: toolHandlers,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
@@ -716,6 +728,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       model,
       workingPrompt,
       tools: tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -964,6 +977,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
@@ -988,6 +1002,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       model: model,
       prompt: input.prompt,
       tools: tools,
+      providerTools: providerTools,
       toolHandlers: toolHandlers,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
@@ -1019,6 +1034,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       model,
       workingMessages,
       tools,
+      providerTools: providerTools,
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
@@ -1260,6 +1276,7 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
   required ToolLoopBlockedState blockedState,
   required List<ToolApprovalDecision> approvals,
   List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
@@ -1302,6 +1319,7 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
       initialSteps: applied.steps,
       startStepIndex: startStepIndex,
       tools: tools,
+      providerTools: providerTools,
       toolHandlers: toolHandlers,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
@@ -1320,6 +1338,7 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
     initialSteps: applied.steps,
     startStepIndex: startStepIndex,
     tools: tools,
+    providerTools: providerTools,
     toolHandlers: toolHandlers,
     repairToolCall: repairToolCall,
     toolApprovalChecks: toolApprovalChecks,
@@ -1686,6 +1705,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
   required List<ToolLoopStep> initialSteps,
   required int startStepIndex,
   List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
@@ -1709,6 +1729,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
       model,
       workingMessages,
       tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -1944,6 +1965,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
   required List<ToolLoopStep> initialSteps,
   required int startStepIndex,
   List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
@@ -1965,6 +1987,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       initialSteps: initialSteps,
       startStepIndex: startStepIndex,
       tools: tools,
+      providerTools: providerTools,
       toolHandlers: toolHandlers,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
@@ -1991,6 +2014,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       model,
       workingPrompt,
       tools: tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -2239,6 +2263,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   required ChatCapability model,
   required Prompt prompt,
   List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
@@ -2258,6 +2283,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       model: model,
       messages: prompt.toChatMessages(),
       tools: tools,
+      providerTools: providerTools,
       toolHandlers: toolHandlers,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
@@ -2290,6 +2316,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       model,
       workingPrompt,
       tools: tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -2541,6 +2568,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   required ToolSet toolSet,
+  List<ProviderTool>? providerTools,
   ToolCallRepair? repairToolCall,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
@@ -2557,6 +2585,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
     messages: messages,
     promptIr: promptIr,
     tools: toolSet.tools,
+    providerTools: providerTools,
     toolHandlers: toolSet.handlers,
     repairToolCall: repairToolCall,
     toolApprovalChecks: toolSet.approvalChecks,
@@ -2578,6 +2607,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
   List<ChatMessage>? messages,
   Prompt? promptIr,
   required ToolSet toolSet,
+  List<ProviderTool>? providerTools,
   ToolCallRepair? repairToolCall,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
@@ -2594,6 +2624,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
     messages: messages,
     promptIr: promptIr,
     tools: toolSet.tools,
+    providerTools: providerTools,
     toolHandlers: toolSet.handlers,
     repairToolCall: repairToolCall,
     toolApprovalChecks: toolSet.approvalChecks,

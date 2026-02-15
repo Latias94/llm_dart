@@ -11,6 +11,7 @@ Future<ChatResponse> chatWithToolsBestEffort({
   required ChatCapability model,
   required StandardizedPromptInput input,
   List<Tool>? tools,
+  List<ProviderTool>? providerTools,
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
 }) {
@@ -20,6 +21,7 @@ Future<ChatResponse> chatWithToolsBestEffort({
         return model.chatWithTools(
           messages,
           tools,
+          providerTools: providerTools,
           cancelToken: cancelToken,
         );
       }
@@ -34,6 +36,7 @@ Future<ChatResponse> chatWithToolsBestEffort({
       return (model as ChatCallOptionsCapability).chatWithToolsWithCallOptions(
         messages,
         tools,
+        providerTools: providerTools,
         callOptions: callOptions,
         cancelToken: cancelToken,
       );
@@ -43,6 +46,7 @@ Future<ChatResponse> chatWithToolsBestEffort({
         if (callOptions.isEmpty) {
           return (model as PromptChatCapability).chatPrompt(
             prompt,
+            providerTools: providerTools,
             tools: tools,
             cancelToken: cancelToken,
           );
@@ -58,6 +62,7 @@ Future<ChatResponse> chatWithToolsBestEffort({
         return (model as PromptChatCallOptionsCapability)
             .chatPromptWithCallOptions(
           prompt,
+          providerTools: providerTools,
           tools: tools,
           callOptions: callOptions,
           cancelToken: cancelToken,
@@ -73,6 +78,7 @@ Future<ChatResponse> chatWithToolsBestEffort({
         model: model,
         input: StandardizedChatMessages(prompt.toChatMessages()),
         tools: tools,
+        providerTools: providerTools,
         callOptions: callOptions,
         cancelToken: cancelToken,
       );
