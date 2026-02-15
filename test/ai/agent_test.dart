@@ -68,6 +68,32 @@ void main() {
       expect(model.lastProviderTools?.single.id, equals('openai.web_search'));
     });
 
+    test('streamObject forwards providerTools and callOptions', () async {
+      final model = _CapturingProviderToolsStreamObjectModel();
+      final agent = Agent(model: model);
+
+      final result = agent.streamObject(
+        messages: [ChatMessage.user('hi')],
+        schema: const ParametersSchema(
+          schemaType: 'object',
+          properties: {
+            'answer': ParameterProperty(
+              propertyType: 'string',
+              description: 'answer',
+            ),
+          },
+          required: ['answer'],
+        ),
+        providerTools: const [ProviderTool(id: 'openai.web_search')],
+        callOptions: const LLMCallOptions(headers: {'x-test': '1'}),
+      );
+
+      final obj = await result.object;
+      expect(obj['answer'], equals('ok'));
+      expect(model.lastProviderTools?.single.id, equals('openai.web_search'));
+      expect(model.lastCallOptions?.headers?['x-test'], equals('1'));
+    });
+
     test('generateText(toolSet) runs tool loop and returns steps', () async {
       final model = _SequencedChatModel([
         _Response(
@@ -176,5 +202,59 @@ class _CapturingProviderToolsStreamModel extends ChatCapability
     yield const LLMTextDeltaPart('ok');
     yield const LLMTextEndPart('ok');
     yield const LLMFinishPart(_Response(text: 'ok'));
+  }
+}
+
+class _CapturingProviderToolsStreamObjectModel extends ChatCapability
+    implements ChatStreamPartsCallOptionsCapability {
+  List<ProviderTool>? lastProviderTools;
+  LLMCallOptions? lastCallOptions;
+
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
+    CancelToken? cancelToken,
+  }) async {
+    throw UnsupportedError('not used');
+  }
+
+  @override
+  Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    List<ProviderTool>? providerTools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async* {
+    lastProviderTools = providerTools;
+    lastCallOptions = callOptions;
+
+    const toolName = 'return_object';
+    const args = '{"answer":"ok"}';
+    const callId = 'call_1';
+
+    yield const LLMStreamStartPart();
+    yield const LLMToolCallStartPart(
+      ToolCall(
+        id: callId,
+        callType: 'function',
+        function: FunctionCall(name: toolName, arguments: args),
+      ),
+    );
+    yield const LLMToolCallEndPart(callId);
+    yield const LLMFinishPart(
+      _Response(
+        text: '',
+        toolCalls: [
+          ToolCall(
+            id: callId,
+            callType: 'function',
+            function: FunctionCall(name: toolName, arguments: args),
+          ),
+        ],
+      ),
+    );
   }
 }

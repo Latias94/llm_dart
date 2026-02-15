@@ -816,6 +816,7 @@ StreamObjectResult streamObject({
   bool waitForDeferredProviderToolResults = true,
   int maxAdditionalProviderToolResultSteps = 1,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
   Stream<LLMStreamPart> upstream() async* {
@@ -860,6 +861,7 @@ StreamObjectResult streamObject({
                   waitForDeferredProviderToolResults,
               maxAdditionalProviderToolResultSteps:
                   maxAdditionalProviderToolResultSteps,
+              callOptions: callOptions,
               cancelToken: cancelToken,
             ),
             include,
@@ -901,6 +903,7 @@ StreamObjectResult streamObject({
                   waitForDeferredProviderToolResults,
               maxAdditionalProviderToolResultSteps:
                   maxAdditionalProviderToolResultSteps,
+              callOptions: callOptions,
               cancelToken: cancelToken,
             ),
             include,
@@ -947,6 +950,7 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
   bool waitForDeferredProviderToolResults = true,
   int maxAdditionalProviderToolResultSteps = 1,
   IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
   Stream<LLMStreamPart> upstream() async* {
@@ -971,6 +975,7 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
               waitForDeferredProviderToolResults,
           maxAdditionalProviderToolResultSteps:
               maxAdditionalProviderToolResultSteps,
+          callOptions: callOptions,
           cancelToken: cancelToken,
         ),
         include,

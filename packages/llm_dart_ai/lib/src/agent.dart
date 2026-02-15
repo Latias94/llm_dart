@@ -3,6 +3,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'generate_text.dart' as low_level;
 import 'prompt_input.dart';
 import 'prompt_message_converters.dart';
+import 'stream_object.dart' as object_streaming;
 import 'stream_text.dart' as streaming;
 import 'tool_loop.dart';
 import 'tool_set.dart';
@@ -191,6 +192,53 @@ class Agent {
       include: include,
       defaultCallOptions: defaultCallOptions,
       callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  /// Stream a JSON object using a tool-call schema (AI SDK-inspired).
+  object_streaming.StreamObjectResult streamObject({
+    String? system,
+    String? prompt,
+    List<ChatMessage>? messages,
+    Prompt? promptIr,
+    required ParametersSchema schema,
+    object_streaming.StreamObjectOutput output =
+        object_streaming.StreamObjectOutput.object,
+    String toolName = 'return_object',
+    String toolDescription =
+        'Return the result as a JSON object that matches the schema.',
+    List<ProviderTool>? providerTools,
+    ProviderToolApprovalHandler? onProviderToolApprovalRequests,
+    bool stopOnProviderToolApprovalRequests = false,
+    int providerToolApprovalMaxSteps = 10,
+    bool waitForDeferredProviderToolResults = true,
+    int maxAdditionalProviderToolResultSteps = 1,
+    IncludeOptions? include,
+    LLMCallOptions callOptions = const LLMCallOptions(),
+    CancelToken? cancelToken,
+  }) {
+    final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+
+    return object_streaming.streamObject(
+      model: model,
+      system: system,
+      prompt: prompt,
+      messages: messages,
+      promptIr: promptIr,
+      schema: schema,
+      output: output,
+      toolName: toolName,
+      toolDescription: toolDescription,
+      providerTools: providerTools,
+      onProviderToolApprovalRequests: onProviderToolApprovalRequests,
+      stopOnProviderToolApprovalRequests: stopOnProviderToolApprovalRequests,
+      providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
+      waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+      maxAdditionalProviderToolResultSteps:
+          maxAdditionalProviderToolResultSteps,
+      include: include ?? this.include,
+      callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
   }
