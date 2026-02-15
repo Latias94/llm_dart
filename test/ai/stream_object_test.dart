@@ -483,7 +483,7 @@ void main() {
       final blocked = await initial.providerToolApprovalBlockedState;
       expect(blocked, isNotNull);
 
-      final resumedParts = resumeChatPartsAfterProviderToolApprovalRequired(
+      final resumed = resumeStreamObjectAfterProviderToolApprovalBlocked(
         model: model,
         blockedState: blocked!,
         decisions: const [
@@ -492,13 +492,8 @@ void main() {
             approved: true,
           ),
         ],
-        providerToolApprovalMaxSteps: 5,
-      );
-
-      final resumed = StreamObjectResult.fromPartsStream(
-        resumedParts,
         schema: schema,
-        toolName: 'return_object',
+        providerToolApprovalMaxSteps: 5,
       );
 
       final partsFuture = resumed.fullStream.toList();

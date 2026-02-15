@@ -925,6 +925,71 @@ StreamObjectResult streamObject({
   );
 }
 
+/// Resume a `streamObject` run that finished because a provider-executed tool
+/// required explicit approval.
+///
+/// This is intended to pair with [StreamObjectResult.providerToolApprovalBlockedState]
+/// when `stopOnProviderToolApprovalRequests` was enabled.
+StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
+  required ChatCapability model,
+  required ProviderToolApprovalBlockedState blockedState,
+  required List<ToolApprovalDecision> decisions,
+  required ParametersSchema schema,
+  StreamObjectOutput output = StreamObjectOutput.object,
+  String toolName = 'return_object',
+  String toolDescription =
+      'Return the result as a JSON object that matches the schema.',
+  int providerToolApprovalMaxSteps = 10,
+  bool waitForDeferredProviderToolResults = true,
+  int maxAdditionalProviderToolResultSteps = 1,
+  IncludeOptions include = const IncludeOptions(),
+  CancelToken? cancelToken,
+}) {
+  Stream<LLMStreamPart> upstream() async* {
+    final tool = Tool.function(
+      name: toolName,
+      description: toolDescription,
+      parameters: output == StreamObjectOutput.array
+          ? _wrapArraySchema(schema)
+          : schema,
+    );
+
+    try {
+      yield* streamPartsWithInclude(
+        resumeChatPartsAfterProviderToolApprovalRequired(
+          model: model,
+          blockedState: blockedState,
+          decisions: decisions,
+          tools: [tool],
+          providerToolApprovalMaxSteps: providerToolApprovalMaxSteps,
+          waitForDeferredProviderToolResults: waitForDeferredProviderToolResults,
+          maxAdditionalProviderToolResultSteps:
+              maxAdditionalProviderToolResultSteps,
+          cancelToken: cancelToken,
+        ),
+        include,
+      );
+    } catch (e) {
+      if (e is LLMError) {
+        yield LLMErrorPart(e);
+        return;
+      }
+      yield LLMErrorPart(GenericError('Unexpected error: $e'));
+      return;
+    }
+  }
+
+  return StreamObjectResult.fromPartsStream(
+    upstream(),
+    schema: schema,
+    toolName: toolName,
+    output: output,
+    defaultModelId: model is ModelIdentityCapability
+        ? (model as ModelIdentityCapability).modelId
+        : null,
+  );
+}
+
 ({String text, Map<String, dynamic> object}) _resolveFinalObjectAndText({
   required String toolName,
   required ToolCallAggregator toolCallAgg,
