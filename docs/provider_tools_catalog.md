@@ -109,6 +109,50 @@ final provider = await LLMBuilder()
     .build();
 ```
 
+### Per-call `providerTools` (recommended during refactors)
+
+Most high-level APIs in `llm_dart_ai` accept `providerTools` as a **per-call**
+override. This mirrors Vercel AI SDK’s “provider-native tools” model and is
+useful when you want to opt into provider tools for a single request without
+mutating global provider config.
+
+Per-call tools are merged with config tools (by id); the per-call tool wins on
+conflicts.
+
+```dart
+final result = await generateText(
+  model: model,
+  messages: [ChatMessage.user('What is the latest Dart stable version?')],
+  providerTools: [
+    OpenAIProviderTools.webSearchFull(externalWebAccess: true),
+  ],
+);
+```
+
+```dart
+final stream = streamText(
+  model: model,
+  prompt: 'Summarize today’s AI SDK changes.',
+  providerTools: const [ProviderTool(id: 'openai.web_search')],
+);
+```
+
+```dart
+final agent = Agent(model: model, toolSet: toolSet);
+final run = agent.streamText(
+  messages: [ChatMessage.user('Find sources, then call get_weather().')],
+  providerTools: const [ProviderTool(id: 'openai.web_search')],
+);
+```
+
+Notes:
+
+- OpenAI/Azure: provider-native tools are supported via the Responses API. When
+  per-call `providerTools` are provided, the provider may route the request
+  through Responses even if chat completions are otherwise enabled.
+- xAI: use `xai.responses` when you want built-in Responses tools (web search,
+  x_search, code_execution, etc.).
+
 ## Compatibility notes
 
 - `providerOptions` remains supported as an escape hatch and for gradual migration.

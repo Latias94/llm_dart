@@ -203,6 +203,39 @@ Notes:
 - `extraBody/extraHeaders` should be provided via `providerOptions[providerId]`.
 - Legacy `extensions['extraBody']` / `extensions['extraHeaders']` are not supported.
 
+### 2.3 Call-level overrides (`LLMCallOptions`)
+
+Some orchestration APIs (notably `llm_dart_ai`) accept an additional *per-call*
+override object, `LLMCallOptions`, to mirror the Vercel AI SDK idea of
+request-level overrides without mutating global provider configuration.
+
+`LLMCallOptions` supports:
+
+- `headers`: additional HTTP headers for the call (best-effort)
+- `body`: additional JSON fields merged into the provider request payload
+  (deep-merge semantics; lists are replaced)
+
+Example:
+
+```dart
+final result = await generateText(
+  model: model,
+  messages: [ChatMessage.user('hi')],
+  callOptions: const LLMCallOptions(
+    headers: {'x-trace-id': 'abc'},
+    body: {'temperature': 0.2},
+  ),
+);
+```
+
+Tool control notes (OpenAI-style providers):
+
+- `llm_dart_ai` exposes `toolChoice` / `parallelToolCalls` on `generateText`,
+  `streamText`, `streamChatParts`, `generateObject`, and `Agent` methods.
+- These are forwarded as OpenAI-compatible request fields:
+  - `tool_choice`: `auto` / `none` / `required` / specific tool object
+  - `parallel_tool_calls`: boolean
+
 ### 2.2.1 Legacy `ChatMessage.extensions` (deprecated)
 
 `ChatMessage.extensions` is reserved for **protocol-internal** use (e.g. carrying

@@ -73,6 +73,21 @@ final text = await result.text;
 print('\n\nFinal: $text');
 ```
 
+### Per-call provider tools
+
+Provider-native tools (server-side) can be enabled per call via `providerTools`:
+
+```dart
+final result = await generateText(
+  model: model,
+  messages: [ChatMessage.user('Find sources about Vercel AI SDK tools.')],
+  providerTools: const [ProviderTool(id: 'openai.web_search')],
+);
+```
+
+For OpenAI/xAI, prefer typed catalogs from the provider packages (e.g.
+`OpenAIProviderTools.webSearchFull(...)`, `XAIProviderTools.webSearch(...)`).
+
 ## Notes
 
 - Provider-only features should be configured via `providerOptions` / `providerTools` and read via `providerMetadata`.
