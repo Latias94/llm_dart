@@ -28,12 +28,38 @@ class XAIResponses
         ChatCapability,
         ModelIdentityCapability,
         ChatStreamPartsCapability,
+        ChatStreamPartsCallOptionsCapability,
         PromptChatCapability,
-        PromptChatStreamPartsCapability {
+        PromptChatStreamPartsCapability,
+        ChatCallOptionsCapability,
+        PromptChatCallOptionsCapability,
+        PromptChatStreamPartsCallOptionsCapability {
   final OpenAIClient client;
   final OpenAICompatibleConfig config;
 
   XAIResponses(this.client, this.config);
+
+  List<ProviderTool>? _mergedProviderTools(List<ProviderTool>? providerTools) {
+    final base = config.originalConfig?.providerTools;
+    final override = providerTools;
+    if ((base == null || base.isEmpty) &&
+        (override == null || override.isEmpty)) {
+      return null;
+    }
+
+    final merged = <String, ProviderTool>{};
+    if (base != null) {
+      for (final t in base) {
+        merged[t.id] = t;
+      }
+    }
+    if (override != null) {
+      for (final t in override) {
+        merged[t.id] = t;
+      }
+    }
+    return merged.isEmpty ? null : merged.values.toList(growable: false);
+  }
 
   @override
   String get providerId => config.providerId;
@@ -70,17 +96,39 @@ class XAIResponses
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    final body = _buildRequestBody(
+    return chatWithToolsWithCallOptions(
+      messages,
+      tools,
+      providerTools: providerTools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatWithToolsWithCallOptions(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
+    final requestProviderTools = _mergedProviderTools(providerTools);
+    final built = _buildRequestBody(
       messages: messages,
       tools: tools,
       stream: false,
+      providerTools: requestProviderTools,
     );
+    var body = Map<String, dynamic>.from(built);
+    body = callOptions.mergeIntoRequestBody(body);
     final requestMetadata = _emitRequestMetadataEnabled()
         ? LLMRequestMetadataPart(body: sanitizeRequestBodyForMetadata(body))
         : null;
     final responseWithHeaders = await client.postJsonWithHeaders(
       responsesEndpoint,
       body,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
     return _parseResponse(
@@ -97,17 +145,39 @@ class XAIResponses
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async {
-    final body = _buildRequestBodyFromPrompt(
+    return chatPromptWithCallOptions(
+      prompt,
+      providerTools: providerTools,
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPromptWithCallOptions(
+    Prompt prompt, {
+    List<ProviderTool>? providerTools,
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
+    final requestProviderTools = _mergedProviderTools(providerTools);
+    final built = _buildRequestBodyFromPrompt(
       prompt: prompt,
       tools: tools,
       stream: false,
+      providerTools: requestProviderTools,
     );
+    var body = Map<String, dynamic>.from(built);
+    body = callOptions.mergeIntoRequestBody(body);
     final requestMetadata = _emitRequestMetadataEnabled()
         ? LLMRequestMetadataPart(body: sanitizeRequestBodyForMetadata(body))
         : null;
     final responseWithHeaders = await client.postJsonWithHeaders(
       responsesEndpoint,
       body,
+      headers: callOptions.headers,
       cancelToken: cancelToken,
     );
     return _parseResponse(
@@ -139,18 +209,44 @@ class XAIResponses
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
+    yield* chatStreamPartsWithCallOptions(
+      messages,
+      providerTools: providerTools,
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
+    List<ChatMessage> messages, {
+    List<ProviderTool>? providerTools,
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async* {
     yield const LLMStreamStartPart();
-    final body = _buildRequestBody(
+    final requestProviderTools = _mergedProviderTools(providerTools);
+    final built = _buildRequestBody(
       messages: messages,
       tools: tools,
       stream: true,
+      providerTools: requestProviderTools,
     );
+    var body = Map<String, dynamic>.from(built);
+    body = callOptions.mergeIntoRequestBody(body);
     if (_emitRequestMetadataEnabled()) {
       yield LLMRequestMetadataPart(
         body: sanitizeRequestBodyForMetadata(body),
       );
     }
-    yield* _chatStreamPartsFromBody(body, cancelToken: cancelToken);
+    yield* _chatStreamPartsFromBody(
+      body,
+      requestProviderTools: requestProviderTools,
+      headers: callOptions.headers,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -160,22 +256,50 @@ class XAIResponses
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
+    yield* chatPromptStreamPartsWithCallOptions(
+      prompt,
+      providerTools: providerTools,
+      tools: tools,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
+    Prompt prompt, {
+    List<ProviderTool>? providerTools,
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async* {
     yield const LLMStreamStartPart();
-    final body = _buildRequestBodyFromPrompt(
+    final requestProviderTools = _mergedProviderTools(providerTools);
+    final built = _buildRequestBodyFromPrompt(
       prompt: prompt,
       tools: tools,
       stream: true,
+      providerTools: requestProviderTools,
     );
+    var body = Map<String, dynamic>.from(built);
+    body = callOptions.mergeIntoRequestBody(body);
     if (_emitRequestMetadataEnabled()) {
       yield LLMRequestMetadataPart(
         body: sanitizeRequestBodyForMetadata(body),
       );
     }
-    yield* _chatStreamPartsFromBody(body, cancelToken: cancelToken);
+    yield* _chatStreamPartsFromBody(
+      body,
+      requestProviderTools: requestProviderTools,
+      headers: callOptions.headers,
+      cancelToken: cancelToken,
+    );
   }
 
   Stream<LLMStreamPart> _chatStreamPartsFromBody(
     Map<String, dynamic> body, {
+    List<ProviderTool>? requestProviderTools,
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async* {
     client.resetSSEBuffer();
@@ -244,6 +368,7 @@ class XAIResponses
       final streamed = await client.postStreamRawWithHeaders(
         responsesEndpoint,
         body,
+        headers: headers,
         cancelToken: cancelToken,
       );
       final responseHeaders = streamed.headers;
@@ -309,7 +434,7 @@ class XAIResponses
                     providerId: config.providerId,
                     rawToolName:
                         rawToolType.substring(0, rawToolType.length - 5),
-                    providerTools: config.originalConfig?.providerTools,
+                    providerTools: requestProviderTools,
                   );
                   yield LLMProviderToolDeltaPart(
                     toolCallId: toolCallId,
@@ -344,7 +469,7 @@ class XAIResponses
                   providerId: config.providerId,
                   rawToolName:
                       providerToolNameById[toolCallId] ?? 'custom_tool',
-                  providerTools: config.originalConfig?.providerTools,
+                  providerTools: requestProviderTools,
                 ),
                 status: 'input_delta',
                 data: _stringKeyedMap(json),
@@ -370,7 +495,7 @@ class XAIResponses
                   providerId: config.providerId,
                   rawToolName:
                       providerToolNameById[toolCallId] ?? 'custom_tool',
-                  providerTools: config.originalConfig?.providerTools,
+                  providerTools: requestProviderTools,
                 ),
                 status: 'input_done',
                 data: _stringKeyedMap(json),
@@ -578,7 +703,7 @@ class XAIResponses
                 final toolName = resolveProviderToolName(
                   providerId: config.providerId,
                   rawToolName: rawToolName,
-                  providerTools: config.originalConfig?.providerTools,
+                  providerTools: requestProviderTools,
                 );
                 providerToolTypeById[id] = type;
                 providerToolNameById[id] = toolName;
@@ -590,7 +715,7 @@ class XAIResponses
                 final providerTool = findProviderToolByRawName(
                   providerId: config.providerId,
                   rawToolName: rawToolName,
-                  providerTools: config.originalConfig?.providerTools,
+                  providerTools: requestProviderTools,
                 );
                 final supportsDeferredResults =
                     providerTool?.supportsDeferredResults == true ? true : null;
@@ -794,12 +919,14 @@ class XAIResponses
     required List<ChatMessage> messages,
     required List<Tool>? tools,
     required bool stream,
+    List<ProviderTool>? providerTools,
   }) {
     final input = _buildInputMessages(messages);
     return _buildRequestBodyFromInput(
       input: input,
       tools: tools,
       stream: stream,
+      providerTools: providerTools,
     );
   }
 
@@ -807,12 +934,14 @@ class XAIResponses
     required Prompt prompt,
     required List<Tool>? tools,
     required bool stream,
+    List<ProviderTool>? providerTools,
   }) {
     final input = _buildInputMessagesFromPrompt(prompt);
     return _buildRequestBodyFromInput(
       input: input,
       tools: tools,
       stream: stream,
+      providerTools: providerTools,
     );
   }
 
@@ -820,6 +949,7 @@ class XAIResponses
     required List<Map<String, dynamic>> input,
     required List<Tool>? tools,
     required bool stream,
+    List<ProviderTool>? providerTools,
   }) {
     final effectiveTools = tools ?? config.tools;
 
@@ -856,9 +986,10 @@ class XAIResponses
 
     final toolsJson = <Map<String, dynamic>>[];
 
-    final providerTools = config.originalConfig?.providerTools;
-    if (providerTools != null && providerTools.isNotEmpty) {
-      toolsJson.addAll(providerTools.map(_convertProviderTool));
+    final effectiveProviderTools =
+        providerTools ?? config.originalConfig?.providerTools;
+    if (effectiveProviderTools != null && effectiveProviderTools.isNotEmpty) {
+      toolsJson.addAll(effectiveProviderTools.map(_convertProviderTool));
     }
 
     if (effectiveTools != null && effectiveTools.isNotEmpty) {

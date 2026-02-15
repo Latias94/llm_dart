@@ -12,8 +12,12 @@ class XAIResponsesProvider
         ChatCapability,
         ModelIdentityCapability,
         ChatStreamPartsCapability,
+        ChatStreamPartsCallOptionsCapability,
         PromptChatCapability,
         PromptChatStreamPartsCapability,
+        PromptChatStreamPartsCallOptionsCapability,
+        ChatCallOptionsCapability,
+        PromptChatCallOptionsCapability,
         ProviderCapabilities {
   final OpenAICompatibleConfig config;
   final OpenAIClient _client;
@@ -45,7 +49,11 @@ class XAIResponsesProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
-    return _responses.chat(messages, cancelToken: cancelToken);
+    return _responses.chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -55,7 +63,29 @@ class XAIResponsesProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
-    return _responses.chatWithTools(messages, tools, cancelToken: cancelToken);
+    return _responses.chatWithTools(
+      messages,
+      tools,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatWithToolsWithCallOptions(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _responses.chatWithToolsWithCallOptions(
+      messages,
+      tools,
+      providerTools: providerTools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -74,14 +104,52 @@ class XAIResponsesProvider
   }
 
   @override
+  Stream<LLMStreamPart> chatStreamPartsWithCallOptions(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    List<ProviderTool>? providerTools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _responses.chatStreamPartsWithCallOptions(
+      messages,
+      tools: tools,
+      providerTools: providerTools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
   Future<ChatResponse> chatPrompt(
     Prompt prompt, {
     List<ProviderTool>? providerTools,
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    return _responses.chatPrompt(prompt,
-        tools: tools, cancelToken: cancelToken);
+    return _responses.chatPrompt(
+      prompt,
+      providerTools: providerTools,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<ChatResponse> chatPromptWithCallOptions(
+    Prompt prompt, {
+    List<ProviderTool>? providerTools,
+    List<Tool>? tools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _responses.chatPromptWithCallOptions(
+      prompt,
+      providerTools: providerTools,
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -95,6 +163,23 @@ class XAIResponsesProvider
       prompt,
       providerTools: providerTools,
       tools: tools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Stream<LLMStreamPart> chatPromptStreamPartsWithCallOptions(
+    Prompt prompt, {
+    List<Tool>? tools,
+    List<ProviderTool>? providerTools,
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _responses.chatPromptStreamPartsWithCallOptions(
+      prompt,
+      tools: tools,
+      providerTools: providerTools,
+      callOptions: callOptions,
       cancelToken: cancelToken,
     );
   }
