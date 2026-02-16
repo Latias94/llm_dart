@@ -24,12 +24,15 @@ class MinimaxProvider
   final AnthropicConfig config;
   final AnthropicCompatibleChatProvider _delegate;
 
-  MinimaxProvider(this.config)
-      : _delegate = AnthropicCompatibleChatProvider(
-          AnthropicClient(
-            config,
-            strategy: AnthropicDioStrategy(providerName: 'MiniMax'),
-          ),
+  MinimaxProvider(
+    this.config, {
+    AnthropicClient? client,
+  }) : _delegate = AnthropicCompatibleChatProvider(
+          client ??
+              AnthropicClient(
+                config,
+                strategy: AnthropicDioStrategy(providerName: 'MiniMax'),
+              ),
           config,
           _supportedCapabilities,
           providerName: 'MiniMax',
@@ -50,7 +53,11 @@ class MinimaxProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) =>
-      _delegate.chat(messages, cancelToken: cancelToken);
+      _delegate.chat(
+        messages,
+        providerTools: providerTools,
+        cancelToken: cancelToken,
+      );
 
   @override
   Future<ChatResponse> chatWithTools(
@@ -59,7 +66,12 @@ class MinimaxProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) =>
-      _delegate.chatWithTools(messages, tools, cancelToken: cancelToken);
+      _delegate.chatWithTools(
+        messages,
+        tools,
+        providerTools: providerTools,
+        cancelToken: cancelToken,
+      );
 
   @override
   Stream<LLMStreamPart> chatStreamParts(
@@ -70,6 +82,7 @@ class MinimaxProvider
   }) =>
       _delegate.chatStreamParts(
         messages,
+        providerTools: providerTools,
         tools: tools,
         cancelToken: cancelToken,
       );
@@ -81,7 +94,12 @@ class MinimaxProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) =>
-      _delegate.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+      _delegate.chatPrompt(
+        prompt,
+        providerTools: providerTools,
+        tools: tools,
+        cancelToken: cancelToken,
+      );
 
   @override
   Stream<LLMStreamPart> chatPromptStreamParts(
@@ -92,6 +110,7 @@ class MinimaxProvider
   }) =>
       _delegate.chatPromptStreamParts(
         prompt,
+        providerTools: providerTools,
         tools: tools,
         cancelToken: cancelToken,
       );

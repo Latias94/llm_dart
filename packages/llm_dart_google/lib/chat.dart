@@ -11,12 +11,14 @@ import 'model_path.dart';
 class _GoogleBuiltRequest {
   final Map<String, dynamic> body;
   final ToolNameMapping toolNameMapping;
-  final List<Map<String, dynamic>> toolWarnings;
+  final List<LLMWarning> toolWarnings;
+  final List<ProviderTool> providerTools;
 
   const _GoogleBuiltRequest({
     required this.body,
     required this.toolNameMapping,
     required this.toolWarnings,
+    required this.providerTools,
   });
 }
 
@@ -169,34 +171,49 @@ class GoogleChat
   Future<_GoogleBuiltRequest> _buildRequestAsync(
     List<ChatMessage> messages,
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     bool stream,
     CancelToken? cancelToken,
   ) async {
     final effectiveTools = tools ?? config.tools;
-    final toolNameMapping = _createToolNameMapping(effectiveTools);
+    final effectiveProviderTools =
+        providerTools ?? config.originalConfig?.providerTools;
+    final toolNameMapping = _createToolNameMapping(
+      effectiveTools,
+      providerTools: effectiveProviderTools ?? const <ProviderTool>[],
+    );
     final preparedMessages = await _prepareMessages(
       messages,
       toolNameMapping: toolNameMapping,
       cancelToken: cancelToken,
     );
-    final toolWarnings = <Map<String, dynamic>>[];
+    final toolWarnings = <LLMWarning>[];
     return _GoogleBuiltRequest(
       body: _buildRequestBody(
           preparedMessages, effectiveTools, stream, toolNameMapping,
-          toolWarnings: toolWarnings),
+          providerTools: effectiveProviderTools, toolWarnings: toolWarnings),
       toolNameMapping: toolNameMapping,
-      toolWarnings: List<Map<String, dynamic>>.unmodifiable(toolWarnings),
+      toolWarnings: List<LLMWarning>.unmodifiable(toolWarnings),
+      providerTools: List<ProviderTool>.unmodifiable(
+        effectiveProviderTools ?? const <ProviderTool>[],
+      ),
     );
   }
 
   Future<_GoogleBuiltRequest> _buildPromptRequestAsync(
     Prompt prompt,
     List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     bool stream,
     CancelToken? cancelToken,
   ) async {
     final effectiveTools = tools ?? config.tools;
-    final toolNameMapping = _createToolNameMapping(effectiveTools);
+    final effectiveProviderTools =
+        providerTools ?? config.originalConfig?.providerTools;
+    final toolNameMapping = _createToolNameMapping(
+      effectiveTools,
+      providerTools: effectiveProviderTools ?? const <ProviderTool>[],
+    );
 
     final built = await _buildPromptContentsAsync(
       prompt,
@@ -204,7 +221,7 @@ class GoogleChat
       cancelToken: cancelToken,
     );
 
-    final toolWarnings = <Map<String, dynamic>>[];
+    final toolWarnings = <LLMWarning>[];
     return _GoogleBuiltRequest(
       body: _buildRequestBodyFromContents(
         built.contents,
@@ -212,10 +229,14 @@ class GoogleChat
         effectiveTools,
         stream,
         toolNameMapping,
+        providerTools: effectiveProviderTools,
         toolWarnings: toolWarnings,
       ),
       toolNameMapping: toolNameMapping,
-      toolWarnings: List<Map<String, dynamic>>.unmodifiable(toolWarnings),
+      toolWarnings: List<LLMWarning>.unmodifiable(toolWarnings),
+      providerTools: List<ProviderTool>.unmodifiable(
+        effectiveProviderTools ?? const <ProviderTool>[],
+      ),
     );
   }
 
@@ -226,7 +247,13 @@ class GoogleChat
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    final built = await _buildRequestAsync(messages, tools, false, cancelToken);
+    final built = await _buildRequestAsync(
+      messages,
+      tools,
+      providerTools,
+      false,
+      cancelToken,
+    );
     final requestMetadata = _emitRequestMetadataEnabled()
         ? LLMRequestMetadataPart(
             body: sanitizeRequestBodyForMetadata(built.body),
@@ -254,8 +281,8 @@ class GoogleChat
     CancelToken? cancelToken,
   }) async* {
     final effectiveTools = tools ?? config.tools;
-    final built =
-        await _buildRequestAsync(messages, effectiveTools, true, cancelToken);
+    final built = await _buildRequestAsync(
+        messages, effectiveTools, providerTools, true, cancelToken);
     yield* _chatStreamPartsFromBuilt(built, cancelToken: cancelToken);
   }
 
@@ -266,8 +293,13 @@ class GoogleChat
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async {
-    final built =
-        await _buildPromptRequestAsync(prompt, tools, false, cancelToken);
+    final built = await _buildPromptRequestAsync(
+      prompt,
+      tools,
+      providerTools,
+      false,
+      cancelToken,
+    );
     final requestMetadata = _emitRequestMetadataEnabled()
         ? LLMRequestMetadataPart(
             body: sanitizeRequestBodyForMetadata(built.body),
@@ -294,8 +326,8 @@ class GoogleChat
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async* {
-    final built =
-        await _buildPromptRequestAsync(prompt, tools, true, cancelToken);
+    final built = await _buildPromptRequestAsync(
+        prompt, tools, providerTools, true, cancelToken);
     yield* _chatStreamPartsFromBuilt(built, cancelToken: cancelToken);
   }
 
@@ -306,6 +338,7 @@ class GoogleChat
     final requestBody = built.body;
     final toolNameMapping = built.toolNameMapping;
     final toolWarnings = built.toolWarnings;
+    final providerTools = built.providerTools;
 
     if (_emitRequestMetadataEnabled()) {
       yield LLMRequestMetadataPart(
@@ -525,375 +558,394 @@ class GoogleChat
     final responseHeaders = streamed.headers;
     final stream = streamed.stream;
 
-    await for (final chunk in stream) {
-      if (useSse == null) {
-        final trimmed = chunk.trimLeft();
-        if (trimmed.isEmpty) continue;
-        useSse = !(trimmed.startsWith('[') || trimmed.startsWith('{'));
-      }
-
-      for (final json in jsonObjectsFromChunk(chunk)) {
-        if (json.containsKey('error')) {
-          try {
-            throw _handleGoogleApiError(json);
-          } catch (e) {
-            final err =
-                e is LLMError ? e : ProviderError('Google API error: $e');
-            yield LLMErrorPart(err);
-            return;
-          }
+    Map<String, dynamic>? lastStreamChunk;
+    try {
+      await for (final chunk in stream) {
+        if (useSse == null) {
+          final trimmed = chunk.trimLeft();
+          if (trimmed.isEmpty) continue;
+          useSse = !(trimmed.startsWith('[') || trimmed.startsWith('{'));
         }
 
-        final candidates = json['candidates'] as List?;
-        if (candidates == null || candidates.isEmpty) continue;
-
-        final candidate = candidates.first as Map<String, dynamic>;
-
-        final mv = json['modelVersion'] as String?;
-        if (mv != null && mv.isNotEmpty) {
-          modelVersion = mv;
-          if (!didEmitResponseMetadata) {
-            didEmitResponseMetadata = true;
-            yield LLMResponseMetadataPart(
-              model: modelVersion,
-              headers: responseHeaders.isEmpty ? null : responseHeaders,
-              raw: {'modelVersion': modelVersion},
-            );
+        for (final json in jsonObjectsFromChunk(chunk)) {
+          lastStreamChunk = json;
+          if (json.containsKey('error')) {
+            try {
+              throw _handleGoogleApiError(json);
+            } catch (e) {
+              final err =
+                  e is LLMError ? e : ProviderError('Google API error: $e');
+              yield LLMErrorPart(err);
+              return;
+            }
           }
-        }
 
-        final pf = json['promptFeedback'];
-        if (pf != null) promptFeedback = pf;
+          final candidates = json['candidates'] as List?;
+          if (candidates == null || candidates.isEmpty) continue;
 
-        final sr = candidate['safetyRatings'];
-        if (sr != null) safetyRatings = sr;
+          final candidate = candidates.first as Map<String, dynamic>;
 
-        final gm = candidate['groundingMetadata'];
-        if (gm != null) {
-          groundingMetadata = gm;
-          if (gm is Map) {
-            final chunks = gm['groundingChunks'];
-            if (chunks is List) {
-              for (final chunk in chunks) {
-                if (chunk is! Map) continue;
+          final mv = json['modelVersion'] as String?;
+          if (mv != null && mv.isNotEmpty) {
+            modelVersion = mv;
+            if (!didEmitResponseMetadata) {
+              didEmitResponseMetadata = true;
+              yield LLMResponseMetadataPart(
+                model: modelVersion,
+                headers: responseHeaders.isEmpty ? null : responseHeaders,
+                raw: {'modelVersion': modelVersion},
+              );
+            }
+          }
 
-                final web = chunk['web'];
-                if (web is Map) {
-                  final uri = web['uri'];
-                  if (uri is String && uri.isNotEmpty) {
-                    final p = sources.url(
-                      uri,
-                      title: web['title'] is String
-                          ? web['title'] as String
-                          : null,
-                    );
-                    if (p != null) yield p;
-                  }
-                }
+          final pf = json['promptFeedback'];
+          if (pf != null) promptFeedback = pf;
 
-                final retrieved = chunk['retrievedContext'];
-                if (retrieved is Map) {
-                  final uri = retrieved['uri'];
-                  final fileSearchStore = retrieved['fileSearchStore'];
-                  final urlTitle = retrieved['title'] is String
-                      ? retrieved['title'] as String
-                      : null;
-                  final docTitle = urlTitle ?? 'Unknown Document';
+          final sr = candidate['safetyRatings'];
+          if (sr != null) safetyRatings = sr;
 
-                  if (uri is String && uri.isNotEmpty) {
-                    if (uri.startsWith('http://') ||
-                        uri.startsWith('https://')) {
-                      final p = sources.url(uri, title: urlTitle);
-                      if (p != null) yield p;
-                    } else {
-                      final filename =
-                          uri.split('/').isEmpty ? null : uri.split('/').last;
-                      final p = sources.document(
-                        docTitle,
-                        mediaType: mediaTypeForUri(uri),
-                        filename: filename,
-                        dedupeKey: 'docUri:$uri',
+          final gm = candidate['groundingMetadata'];
+          if (gm != null) {
+            groundingMetadata = gm;
+            if (gm is Map) {
+              final chunks = gm['groundingChunks'];
+              if (chunks is List) {
+                for (final chunk in chunks) {
+                  if (chunk is! Map) continue;
+
+                  final web = chunk['web'];
+                  if (web is Map) {
+                    final uri = web['uri'];
+                    if (uri is String && uri.isNotEmpty) {
+                      final p = sources.url(
+                        uri,
+                        title: web['title'] is String
+                            ? web['title'] as String
+                            : null,
                       );
                       if (p != null) yield p;
                     }
-                  } else if (fileSearchStore is String &&
-                      fileSearchStore.isNotEmpty) {
-                    final filename = fileSearchStore.split('/').isEmpty
-                        ? null
-                        : fileSearchStore.split('/').last;
-                    final p = sources.document(
-                      docTitle,
-                      mediaType: 'application/octet-stream',
-                      filename: filename,
-                      dedupeKey: 'fileSearchStore:$fileSearchStore',
-                    );
-                    if (p != null) yield p;
                   }
-                }
 
-                final maps = chunk['maps'];
-                if (maps is Map) {
-                  final uri = maps['uri'];
-                  if (uri is String && uri.isNotEmpty) {
-                    final p = sources.url(
-                      uri,
-                      title: maps['title'] is String
-                          ? maps['title'] as String
-                          : null,
-                    );
-                    if (p != null) yield p;
+                  final retrieved = chunk['retrievedContext'];
+                  if (retrieved is Map) {
+                    final uri = retrieved['uri'];
+                    final fileSearchStore = retrieved['fileSearchStore'];
+                    final urlTitle = retrieved['title'] is String
+                        ? retrieved['title'] as String
+                        : null;
+                    final docTitle = urlTitle ?? 'Unknown Document';
+
+                    if (uri is String && uri.isNotEmpty) {
+                      if (uri.startsWith('http://') ||
+                          uri.startsWith('https://')) {
+                        final p = sources.url(uri, title: urlTitle);
+                        if (p != null) yield p;
+                      } else {
+                        final filename =
+                            uri.split('/').isEmpty ? null : uri.split('/').last;
+                        final p = sources.document(
+                          docTitle,
+                          mediaType: mediaTypeForUri(uri),
+                          filename: filename,
+                          dedupeKey: 'docUri:$uri',
+                        );
+                        if (p != null) yield p;
+                      }
+                    } else if (fileSearchStore is String &&
+                        fileSearchStore.isNotEmpty) {
+                      final filename = fileSearchStore.split('/').isEmpty
+                          ? null
+                          : fileSearchStore.split('/').last;
+                      final p = sources.document(
+                        docTitle,
+                        mediaType: 'application/octet-stream',
+                        filename: filename,
+                        dedupeKey: 'fileSearchStore:$fileSearchStore',
+                      );
+                      if (p != null) yield p;
+                    }
+                  }
+
+                  final maps = chunk['maps'];
+                  if (maps is Map) {
+                    final uri = maps['uri'];
+                    if (uri is String && uri.isNotEmpty) {
+                      final p = sources.url(
+                        uri,
+                        title: maps['title'] is String
+                            ? maps['title'] as String
+                            : null,
+                      );
+                      if (p != null) yield p;
+                    }
                   }
                 }
               }
             }
           }
-        }
 
-        final ucm = candidate['urlContextMetadata'];
-        if (ucm != null) urlContextMetadata = ucm;
+          final ucm = candidate['urlContextMetadata'];
+          if (ucm != null) urlContextMetadata = ucm;
 
-        final content = candidate['content'] as Map<String, dynamic>?;
-        final parts = content?['parts'] as List?;
+          final content = candidate['content'] as Map<String, dynamic>?;
+          final parts = content?['parts'] as List?;
 
-        if (json['usageMetadata'] is Map<String, dynamic>) {
-          usageMetadata = json['usageMetadata'] as Map<String, dynamic>;
-        } else if (json['usageMetadata'] is Map) {
-          usageMetadata =
-              Map<String, dynamic>.from(json['usageMetadata'] as Map);
-        }
+          if (json['usageMetadata'] is Map<String, dynamic>) {
+            usageMetadata = json['usageMetadata'] as Map<String, dynamic>;
+          } else if (json['usageMetadata'] is Map) {
+            usageMetadata =
+                Map<String, dynamic>.from(json['usageMetadata'] as Map);
+          }
 
-        if (parts != null) {
-          for (final part in parts) {
-            if (part is! Map<String, dynamic>) continue;
+          if (parts != null) {
+            for (final part in parts) {
+              if (part is! Map<String, dynamic>) continue;
 
-            final executableCode =
-                part['executableCode'] as Map<String, dynamic>?;
-            if (executableCode != null) {
-              final code = executableCode['code'] as String?;
-              if (code != null && code.isNotEmpty) {
-                final id = 'code_execution_${codeExecutionSeq++}';
-                lastCodeExecutionToolCallId = id;
-                final providerTool = findProviderToolByRawName(
-                  providerId: config.providerId,
-                  rawToolName: 'code_execution',
-                  providerTools: config.originalConfig?.providerTools,
-                );
-                final toolName = resolveProviderToolName(
-                  providerId: config.providerId,
-                  rawToolName: 'code_execution',
-                  providerTools: config.originalConfig?.providerTools,
-                );
-                final part = providerToolParts.call(
-                  toolCallId: id,
-                  toolName: toolName,
-                  input: executableCode,
-                  providerExecuted: true,
-                  supportsDeferredResults:
-                      providerTool?.supportsDeferredResults == true
-                          ? true
-                          : null,
-                  providerMetadataPayload: const {'type': 'code_execution'},
-                );
-                if (part != null) yield part;
-              }
-              continue;
-            }
-
-            final codeExecutionResult =
-                part['codeExecutionResult'] as Map<String, dynamic>?;
-            if (codeExecutionResult != null) {
-              final toolCallId = lastCodeExecutionToolCallId;
-              if (toolCallId != null) {
-                final part = providerToolParts.result(
-                  toolCallId: toolCallId,
-                  toolName: 'code_execution',
-                  result: {
-                    'outcome': codeExecutionResult['outcome'],
-                    'output': codeExecutionResult['output'],
-                  },
-                  providerMetadataPayload: const {
-                    'type': 'code_execution_result',
-                  },
-                );
-                if (part != null) yield part;
-                lastCodeExecutionToolCallId = null;
-              }
-              continue;
-            }
-
-            final functionCall = part['functionCall'] as Map<String, dynamic>?;
-            if (functionCall != null) {
-              final requestName = functionCall['name'] as String? ?? '';
-              final args = functionCall['args'] as Map<String, dynamic>? ?? {};
-              if (requestName.isNotEmpty) {
-                if (toolNameMapping.providerToolIdForRequestName(requestName) !=
-                    null) {
-                  continue;
+              final executableCode =
+                  part['executableCode'] as Map<String, dynamic>?;
+              if (executableCode != null) {
+                final code = executableCode['code'] as String?;
+                if (code != null && code.isNotEmpty) {
+                  final id = 'code_execution_${codeExecutionSeq++}';
+                  lastCodeExecutionToolCallId = id;
+                  final providerTool = findProviderToolByRawName(
+                    providerId: config.providerId,
+                    rawToolName: 'code_execution',
+                    providerTools: providerTools,
+                  );
+                  final toolName = resolveProviderToolName(
+                    providerId: config.providerId,
+                    rawToolName: 'code_execution',
+                    providerTools: providerTools,
+                  );
+                  final part = providerToolParts.call(
+                    toolCallId: id,
+                    toolName: toolName,
+                    input: executableCode,
+                    providerExecuted: true,
+                    supportsDeferredResults:
+                        providerTool?.supportsDeferredResults == true
+                            ? true
+                            : null,
+                    providerMetadataPayload: const {'type': 'code_execution'},
+                  );
+                  if (part != null) yield part;
                 }
-                final name = toolNameMapping
-                        .originalFunctionNameForRequestName(requestName) ??
-                    requestName;
-                final id = nextToolCallId(name);
+                continue;
+              }
+
+              final codeExecutionResult =
+                  part['codeExecutionResult'] as Map<String, dynamic>?;
+              if (codeExecutionResult != null) {
+                final toolCallId = lastCodeExecutionToolCallId;
+                if (toolCallId != null) {
+                  final part = providerToolParts.result(
+                    toolCallId: toolCallId,
+                    toolName: 'code_execution',
+                    result: {
+                      'outcome': codeExecutionResult['outcome'],
+                      'output': codeExecutionResult['output'],
+                    },
+                    providerMetadataPayload: const {
+                      'type': 'code_execution_result',
+                    },
+                  );
+                  if (part != null) yield part;
+                  lastCodeExecutionToolCallId = null;
+                }
+                continue;
+              }
+
+              final functionCall =
+                  part['functionCall'] as Map<String, dynamic>?;
+              if (functionCall != null) {
+                final requestName = functionCall['name'] as String? ?? '';
+                final args =
+                    functionCall['args'] as Map<String, dynamic>? ?? {};
+                if (requestName.isNotEmpty) {
+                  if (toolNameMapping
+                          .providerToolIdForRequestName(requestName) !=
+                      null) {
+                    continue;
+                  }
+                  final name = toolNameMapping
+                          .originalFunctionNameForRequestName(requestName) ??
+                      requestName;
+                  final id = nextToolCallId(name);
+                  final thoughtSignature = part['thoughtSignature'];
+                  final providerOptions = thoughtSignature == null
+                      ? const <String, Map<String, dynamic>>{}
+                      : <String, Map<String, dynamic>>{
+                          _providerOptionsName: {
+                            'thoughtSignature': thoughtSignature.toString(),
+                          },
+                        };
+                  final toolCall = ToolCall(
+                    id: id,
+                    callType: 'function',
+                    function: FunctionCall(
+                      name: name,
+                      arguments: jsonEncode(args),
+                    ),
+                    providerOptions: providerOptions,
+                  );
+                  startedToolCalls.add(id);
+                  functionCallParts.add({
+                    'functionCall': {
+                      'name': name,
+                      'args': args,
+                    },
+                  });
+                  yield LLMToolCallStartPart(toolCall);
+                  if (endedToolCalls.add(id)) {
+                    yield LLMToolCallEndPart(id);
+                  }
+                }
+                continue;
+              }
+
+              final inlineData = part['inlineData'] as Map<String, dynamic>?;
+              if (inlineData != null) {
+                final mimeType = inlineData['mimeType'] as String?;
+                final data = inlineData['data'] as String?;
+                if (mimeType != null &&
+                    mimeType.isNotEmpty &&
+                    data != null &&
+                    data.isNotEmpty) {
+                  // Gemini returns generated outputs (images/audio) as inlineData.
+                  // Preserve the raw base64 payload as a v3 `file` part.
+                  yield LLMFilePart(mediaType: mimeType, data: data);
+                }
+                continue;
+              }
+
+              final isThought = part['thought'] as bool? ?? false;
+              final text = part['text'] as String?;
+              if (text != null && text.isNotEmpty) {
                 final thoughtSignature = part['thoughtSignature'];
-                final providerOptions = thoughtSignature == null
-                    ? const <String, Map<String, dynamic>>{}
-                    : <String, Map<String, dynamic>>{
+                final partProviderMetadata = thoughtSignature == null
+                    ? null
+                    : <String, dynamic>{
                         _providerOptionsName: {
                           'thoughtSignature': thoughtSignature.toString(),
                         },
                       };
-                final toolCall = ToolCall(
-                  id: id,
-                  callType: 'function',
-                  function: FunctionCall(
-                    name: name,
-                    arguments: jsonEncode(args),
-                  ),
-                  providerOptions: providerOptions,
-                );
-                startedToolCalls.add(id);
-                functionCallParts.add({
-                  'functionCall': {
-                    'name': name,
-                    'args': args,
-                  },
-                });
-                yield LLMToolCallStartPart(toolCall);
-                if (endedToolCalls.add(id)) {
-                  yield LLMToolCallEndPart(id);
-                }
-              }
-              continue;
-            }
-
-            final inlineData = part['inlineData'] as Map<String, dynamic>?;
-            if (inlineData != null) {
-              final mimeType = inlineData['mimeType'] as String?;
-              final data = inlineData['data'] as String?;
-              if (mimeType != null &&
-                  mimeType.isNotEmpty &&
-                  data != null &&
-                  data.isNotEmpty) {
-                // Gemini returns generated outputs (images/audio) as inlineData.
-                // Preserve the raw base64 payload as a v3 `file` part.
-                yield LLMFilePart(mediaType: mimeType, data: data);
-              }
-              continue;
-            }
-
-            final isThought = part['thought'] as bool? ?? false;
-            final text = part['text'] as String?;
-            if (text != null && text.isNotEmpty) {
-              final thoughtSignature = part['thoughtSignature'];
-              final partProviderMetadata = thoughtSignature == null
-                  ? null
-                  : <String, dynamic>{
-                      _providerOptionsName: {
-                        'thoughtSignature': thoughtSignature.toString(),
-                      },
-                    };
-              if (isThought) {
-                if (inText) {
-                  inText = false;
-                  yield LLMTextEndPart(
-                    currentText.toString(),
-                    blockId: currentTextBlockId,
-                  );
-                  currentText.clear();
-                  currentTextBlockId = null;
-                }
-                if (!inThinking) {
-                  inThinking = true;
-                  currentThinkingBlockId ??= '${blockCounter++}';
-                  yield LLMReasoningStartPart(
+                if (isThought) {
+                  if (inText) {
+                    inText = false;
+                    yield LLMTextEndPart(
+                      currentText.toString(),
+                      blockId: currentTextBlockId,
+                    );
+                    currentText.clear();
+                    currentTextBlockId = null;
+                  }
+                  if (!inThinking) {
+                    inThinking = true;
+                    currentThinkingBlockId ??= '${blockCounter++}';
+                    yield LLMReasoningStartPart(
+                      blockId: currentThinkingBlockId,
+                      providerMetadata: partProviderMetadata,
+                    );
+                    currentThinking.clear();
+                  }
+                  fullThinking.write(text);
+                  currentThinking.write(text);
+                  yield LLMReasoningDeltaPart(
+                    text,
                     blockId: currentThinkingBlockId,
                     providerMetadata: partProviderMetadata,
                   );
-                  currentThinking.clear();
-                }
-                fullThinking.write(text);
-                currentThinking.write(text);
-                yield LLMReasoningDeltaPart(
-                  text,
-                  blockId: currentThinkingBlockId,
-                  providerMetadata: partProviderMetadata,
-                );
-              } else {
-                if (inThinking) {
-                  inThinking = false;
-                  yield LLMReasoningEndPart(
-                    currentThinking.toString(),
-                    blockId: currentThinkingBlockId,
-                  );
-                  currentThinking.clear();
-                  currentThinkingBlockId = null;
-                }
-                if (!inText) {
-                  inText = true;
-                  currentTextBlockId ??= '${blockCounter++}';
-                  yield LLMTextStartPart(
+                } else {
+                  if (inThinking) {
+                    inThinking = false;
+                    yield LLMReasoningEndPart(
+                      currentThinking.toString(),
+                      blockId: currentThinkingBlockId,
+                    );
+                    currentThinking.clear();
+                    currentThinkingBlockId = null;
+                  }
+                  if (!inText) {
+                    inText = true;
+                    currentTextBlockId ??= '${blockCounter++}';
+                    yield LLMTextStartPart(
+                      blockId: currentTextBlockId,
+                      providerMetadata: partProviderMetadata,
+                    );
+                    currentText.clear();
+                  }
+                  fullText.write(text);
+                  currentText.write(text);
+                  yield LLMTextDeltaPart(
+                    text,
                     blockId: currentTextBlockId,
                     providerMetadata: partProviderMetadata,
                   );
-                  currentText.clear();
                 }
-                fullText.write(text);
-                currentText.write(text);
-                yield LLMTextDeltaPart(
-                  text,
-                  blockId: currentTextBlockId,
-                  providerMetadata: partProviderMetadata,
-                );
               }
             }
           }
-        }
 
-        final finishReason = candidate['finishReason'] as String?;
-        if (finishReason != null) {
-          for (final part in closeOpenBlocks()) {
-            yield part;
+          final finishReason = candidate['finishReason'] as String?;
+          if (finishReason != null) {
+            for (final part in closeOpenBlocks()) {
+              yield part;
+            }
+
+            final responseParts = <Map<String, dynamic>>[
+              if (fullThinking.isNotEmpty)
+                {'text': fullThinking.toString(), 'thought': true},
+              if (fullText.isNotEmpty) {'text': fullText.toString()},
+              ...functionCallParts,
+            ];
+
+            final response = GoogleChatResponse({
+              'modelVersion': modelVersion ?? config.model,
+              'candidates': [
+                {
+                  'content': {'parts': responseParts},
+                  'finishReason': finishReason,
+                  if (safetyRatings != null) 'safetyRatings': safetyRatings,
+                  if (groundingMetadata != null)
+                    'groundingMetadata': groundingMetadata,
+                  if (urlContextMetadata != null)
+                    'urlContextMetadata': urlContextMetadata,
+                },
+              ],
+              if (promptFeedback != null) 'promptFeedback': promptFeedback,
+              if (usageMetadata != null) 'usageMetadata': usageMetadata,
+            },
+                toolNameMapping: toolNameMapping,
+                toolWarnings: toolWarnings,
+                providerOptionsName: _providerOptionsName);
+
+            final metadata = response.providerMetadata;
+            if (metadata != null && metadata.isNotEmpty) {
+              yield LLMProviderMetadataPart(metadata);
+            }
+            yield LLMFinishPart(
+              response,
+              usage: response.usage,
+              finishReason: response.finishReason,
+            );
+            return;
           }
-
-          final responseParts = <Map<String, dynamic>>[
-            if (fullThinking.isNotEmpty)
-              {'text': fullThinking.toString(), 'thought': true},
-            if (fullText.isNotEmpty) {'text': fullText.toString()},
-            ...functionCallParts,
-          ];
-
-          final response = GoogleChatResponse({
-            'modelVersion': modelVersion ?? config.model,
-            'candidates': [
-              {
-                'content': {'parts': responseParts},
-                'finishReason': finishReason,
-                if (safetyRatings != null) 'safetyRatings': safetyRatings,
-                if (groundingMetadata != null)
-                  'groundingMetadata': groundingMetadata,
-                if (urlContextMetadata != null)
-                  'urlContextMetadata': urlContextMetadata,
-              },
-            ],
-            if (promptFeedback != null) 'promptFeedback': promptFeedback,
-            if (usageMetadata != null) 'usageMetadata': usageMetadata,
-          },
-              toolNameMapping: toolNameMapping,
-              toolWarnings: toolWarnings,
-              providerOptionsName: _providerOptionsName);
-
-          final metadata = response.providerMetadata;
-          if (metadata != null && metadata.isNotEmpty) {
-            yield LLMProviderMetadataPart(metadata);
-          }
-          yield LLMFinishPart(
-            response,
-            usage: response.usage,
-            finishReason: response.finishReason,
-          );
-          return;
         }
       }
+    } catch (e) {
+      if (e is LLMError) {
+        yield LLMErrorPart(e);
+        return;
+      }
+      yield LLMErrorPart(
+        InvalidStreamPartError(
+          chunk: lastStreamChunk ?? const <String, dynamic>{},
+          message: 'Stream part decode error: $e',
+        ),
+      );
+      return;
     }
 
     // Best-effort finish if stream ends unexpectedly.
@@ -1098,7 +1150,7 @@ class GoogleChat
   GoogleChatResponse _parseResponse(
     Map<String, dynamic> responseData,
     ToolNameMapping toolNameMapping, {
-    List<Map<String, dynamic>> toolWarnings = const [],
+    List<LLMWarning> toolWarnings = const [],
     Map<String, String>? responseHeaders,
     LLMRequestMetadataPart? requestMetadata,
   }) {
@@ -1141,7 +1193,8 @@ class GoogleChat
     List<Tool>? tools,
     bool stream,
     ToolNameMapping toolNameMapping, {
-    required List<Map<String, dynamic>> toolWarnings,
+    List<ProviderTool>? providerTools,
+    required List<LLMWarning> toolWarnings,
   }) {
     final contents = <Map<String, dynamic>>[];
 
@@ -1178,6 +1231,7 @@ class GoogleChat
       tools,
       stream,
       toolNameMapping,
+      providerTools: providerTools,
       toolWarnings: toolWarnings,
     );
   }
@@ -1188,7 +1242,8 @@ class GoogleChat
     List<Tool>? tools,
     bool stream,
     ToolNameMapping toolNameMapping, {
-    required List<Map<String, dynamic>> toolWarnings,
+    List<ProviderTool>? providerTools,
+    required List<LLMWarning> toolWarnings,
   }) {
     // Prefer explicit system messages over config.systemPrompt.
     if (systemInstructionParts.isEmpty &&
@@ -1217,6 +1272,7 @@ class GoogleChat
       tools,
       stream,
       toolNameMapping,
+      providerTools: providerTools,
       toolWarnings: toolWarnings,
     );
     if (!_isGemmaModel() && systemInstructionParts.isNotEmpty) {
@@ -1556,7 +1612,8 @@ class GoogleChat
     List<Tool>? tools,
     bool isStreaming,
     ToolNameMapping toolNameMapping, {
-    required List<Map<String, dynamic>> toolWarnings,
+    List<ProviderTool>? providerTools,
+    required List<LLMWarning> toolWarnings,
   }) {
     final body = <String, dynamic>{'contents': contents};
 
@@ -1649,18 +1706,21 @@ class GoogleChat
 
     // Add tools if provided
     final effectiveTools = tools ?? config.tools;
+    final effectiveProviderTools =
+        providerTools ?? config.originalConfig?.providerTools;
     final providerToolsEnabled =
-        (config.originalConfig?.providerTools ?? const <ProviderTool>[])
+        (effectiveProviderTools ?? const <ProviderTool>[])
             .any(_isProviderToolEnabled);
     final hasProviderDefinedTools =
         providerToolsEnabled || config.webSearchEnabled;
 
     if (hasProviderDefinedTools) {
       if (effectiveTools != null && effectiveTools.isNotEmpty) {
-        toolWarnings.add({
-          'type': 'unsupported',
-          'feature': 'combination of function and provider-defined tools',
-        });
+        toolWarnings.add(
+          const LLMUnsupportedWarning(
+            feature: 'combination of function and provider-defined tools',
+          ),
+        );
       }
     } else {
       if (effectiveTools != null && effectiveTools.isNotEmpty) {
@@ -1683,11 +1743,11 @@ class GoogleChat
       }
     }
 
-    final providerTools = config.originalConfig?.providerTools;
-    if (providerTools != null && providerTools.isNotEmpty) {
+    final enabledProviderTools = effectiveProviderTools;
+    if (enabledProviderTools != null && enabledProviderTools.isNotEmpty) {
       _addProviderToolsToBody(
         body,
-        providerTools: providerTools,
+        providerTools: enabledProviderTools,
         toolWarnings: toolWarnings,
       );
     }
@@ -1761,7 +1821,7 @@ class GoogleChat
   void _addProviderToolsToBody(
     Map<String, dynamic> body, {
     required List<ProviderTool> providerTools,
-    required List<Map<String, dynamic>> toolWarnings,
+    required List<LLMWarning> toolWarnings,
   }) {
     final enabled = providerTools.where(_isProviderToolEnabled);
     if (enabled.isEmpty) return;
@@ -1834,11 +1894,12 @@ class GoogleChat
             client.logger.warning(
               'google.vertex_rag_store is enabled but options.ragCorpus is missing.',
             );
-            toolWarnings.add({
-              'type': 'unsupported',
-              'feature': 'provider-defined tool google.vertex_rag_store',
-              'details': 'Missing required option: ragCorpus.',
-            });
+            toolWarnings.add(
+              LLMUnsupportedWarning(
+                feature: 'provider-defined tool google.vertex_rag_store',
+                details: 'Missing required option: ragCorpus.',
+              ),
+            );
             break;
           }
           final topK = tool.options['topK'];
@@ -1856,11 +1917,12 @@ class GoogleChat
       }
 
       if (entry == null) {
-        toolWarnings.add({
-          'type': 'unsupported',
-          'feature': 'provider-defined tool ${tool.id}',
-          if (warningDetails != null) 'details': warningDetails,
-        });
+        toolWarnings.add(
+          LLMUnsupportedWarning(
+            feature: 'provider-defined tool ${tool.id}',
+            details: warningDetails,
+          ),
+        );
         continue;
       }
 
@@ -1912,7 +1974,9 @@ class GoogleChat
         role = 'user';
         break;
       default:
-        role = message.role == ChatRole.user ? 'user' : 'model';
+        role = (message.role == ChatRole.user || message.role == ChatRole.tool)
+            ? 'user'
+            : 'model';
     }
 
     switch (message.messageType) {
@@ -2321,7 +2385,10 @@ class GoogleChat
     }
   }
 
-  ToolNameMapping _createToolNameMapping(List<Tool>? tools) {
+  ToolNameMapping _createToolNameMapping(
+    List<Tool>? tools, {
+    List<ProviderTool> providerTools = const <ProviderTool>[],
+  }) {
     final functionToolNames =
         (tools ?? const <Tool>[]).map((t) => t.function.name);
 
@@ -2332,8 +2399,6 @@ class GoogleChat
       providerToolRequestNamesById['google.google_search'] = 'google_search';
     }
 
-    final providerTools =
-        config.originalConfig?.providerTools ?? const <ProviderTool>[];
     final enabledIds =
         providerTools.where(_isProviderToolEnabled).map((t) => t.id).toSet();
     final supportsGemini2OrNewer = _isGemini2OrNewerModel();
@@ -2378,7 +2443,7 @@ class GoogleChatResponse
         ChatResponseWithRequestMetadata {
   final Map<String, dynamic> _rawResponse;
   final ToolNameMapping? _toolNameMapping;
-  final List<Map<String, dynamic>> _toolWarnings;
+  final List<LLMWarning> _toolWarnings;
   final String _providerOptionsName;
   final LLMResponseMetadataPart? _responseMetadata;
   final LLMRequestMetadataPart? _requestMetadata;
@@ -2386,12 +2451,12 @@ class GoogleChatResponse
   GoogleChatResponse(
     this._rawResponse, {
     ToolNameMapping? toolNameMapping,
-    List<Map<String, dynamic>> toolWarnings = const [],
+    List<LLMWarning> toolWarnings = const [],
     String providerOptionsName = 'google',
     LLMResponseMetadataPart? responseMetadata,
     LLMRequestMetadataPart? requestMetadata,
   })  : _toolNameMapping = toolNameMapping,
-        _toolWarnings = List<Map<String, dynamic>>.unmodifiable(toolWarnings),
+        _toolWarnings = List<LLMWarning>.unmodifiable(toolWarnings),
         _providerOptionsName = providerOptionsName,
         _responseMetadata = responseMetadata,
         _requestMetadata = requestMetadata;
@@ -2494,7 +2559,8 @@ class GoogleChatResponse
       if (modelVersion != null) 'model': modelVersion,
       if (finishReason != null) 'finishReason': finishReason,
       if (finishReason != null) 'stopReason': finishReason,
-      if (_toolWarnings.isNotEmpty) 'toolWarnings': _toolWarnings,
+      if (_toolWarnings.isNotEmpty)
+        'toolWarnings': _toolWarnings.map((w) => w.toJson()).toList(growable: false),
       if (usageMetadata != null)
         'usage': {
           if (usageMetadata['promptTokenCount'] != null)

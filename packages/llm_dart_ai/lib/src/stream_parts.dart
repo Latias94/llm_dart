@@ -11,6 +11,7 @@ import 'prompt_input.dart';
 import 'provider_tool_approval_loop.dart';
 import 'types.dart';
 import 'openai_tool_control.dart';
+import 'provider_tool_normalization.dart';
 
 export 'package:llm_dart_core/core/stream_parts.dart';
 
@@ -37,6 +38,10 @@ Stream<LLMStreamPart> streamChatParts({
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async* {
+  final normalized = normalizeProviderToolsAndCollectWarnings(
+    model: model,
+    providerTools: providerTools,
+  );
   Stream<LLMStreamPart> raw() {
     final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
       callOptions,
@@ -59,7 +64,7 @@ Stream<LLMStreamPart> streamChatParts({
         model: model,
         input: input,
         tools: tools,
-        providerTools: providerTools,
+        providerTools: normalized.providerTools,
         callOptions: effectiveCallOptions,
         cancelToken: cancelToken,
       );
@@ -69,7 +74,7 @@ Stream<LLMStreamPart> streamChatParts({
       model: model,
       input: input,
       tools: tools,
-      providerTools: providerTools,
+      providerTools: normalized.providerTools,
       callOptions: effectiveCallOptions,
       onApprovalRequests: onProviderToolApprovalRequests,
       maxSteps: providerToolApprovalMaxSteps,
@@ -92,6 +97,7 @@ Stream<LLMStreamPart> streamChatParts({
         ),
       ),
     ),
+    warnings: normalized.warnings,
   );
 }
 
@@ -114,6 +120,10 @@ Stream<LLMStreamPart> resumeChatPartsAfterProviderToolApprovalRequired({
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async* {
+  final normalized = normalizeProviderToolsAndCollectWarnings(
+    model: model,
+    providerTools: providerTools,
+  );
   Stream<LLMStreamPart> raw() {
     final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
       callOptions,
@@ -125,7 +135,7 @@ Stream<LLMStreamPart> resumeChatPartsAfterProviderToolApprovalRequired({
       blockedState: blockedState,
       decisions: decisions,
       tools: tools,
-      providerTools: providerTools,
+      providerTools: normalized.providerTools,
       callOptions: effectiveCallOptions,
       onApprovalRequests: onProviderToolApprovalRequests,
       maxSteps: providerToolApprovalMaxSteps,
@@ -148,6 +158,7 @@ Stream<LLMStreamPart> resumeChatPartsAfterProviderToolApprovalRequired({
         ),
       ),
     ),
+    warnings: normalized.warnings,
   );
 }
 

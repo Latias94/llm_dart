@@ -19,7 +19,7 @@ void main() {
             'url': 'https://example.com',
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
 
@@ -32,7 +32,7 @@ void main() {
             'id': 'id-0',
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
 
@@ -46,7 +46,7 @@ void main() {
             'title': 'Doc',
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
 
@@ -60,7 +60,7 @@ void main() {
             'mediaType': 'application/pdf',
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
   });

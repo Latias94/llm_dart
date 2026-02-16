@@ -16,10 +16,12 @@ part 'src/request_builder/validation.dart';
 class AnthropicBuiltRequest {
   final Map<String, dynamic> body;
   final ToolNameMapping toolNameMapping;
+  final List<ProviderTool>? providerTools;
 
   const AnthropicBuiltRequest({
     required this.body,
     required this.toolNameMapping,
+    this.providerTools,
   });
 }
 
@@ -67,9 +69,15 @@ class AnthropicRequestBuilder {
   Map<String, dynamic> buildRequestBody(
     List<ChatMessage> messages,
     List<Tool>? tools,
-    bool stream,
-  ) {
-    return buildRequest(messages, tools, stream).body;
+    bool stream, {
+    List<ProviderTool>? providerTools,
+  }) {
+    return buildRequest(
+      messages,
+      tools,
+      stream,
+      providerTools: providerTools,
+    ).body;
   }
 
   /// Build request body for Anthropic's `messages/count_tokens` endpoint.
@@ -79,9 +87,15 @@ class AnthropicRequestBuilder {
   /// like `max_tokens` and `stream`.
   Map<String, dynamic> buildCountTokensRequestBody(
     List<ChatMessage> messages,
-    List<Tool>? tools,
-  ) {
-    final built = buildRequest(messages, tools, false);
+    List<Tool>? tools, {
+    List<ProviderTool>? providerTools,
+  }) {
+    final built = buildRequest(
+      messages,
+      tools,
+      false,
+      providerTools: providerTools,
+    );
     final body = built.body;
 
     final result = <String, dynamic>{
@@ -111,10 +125,19 @@ class AnthropicRequestBuilder {
   AnthropicBuiltRequest buildRequest(
     List<ChatMessage> messages,
     List<Tool>? tools,
-    bool stream,
-  ) {
+    bool stream, {
+    List<ProviderTool>? providerTools,
+  }) {
+    final effectiveProviderTools = mergeProviderToolsById(
+      config.originalConfig?.providerTools,
+      providerTools,
+    );
+
     final processedTools = _processTools(messages, tools);
-    final toolNameMapping = _createToolNameMapping(processedTools);
+    final toolNameMapping = _createToolNameMapping(
+      processedTools,
+      providerTools: effectiveProviderTools,
+    );
 
     final processedData = _processMessages(messages, toolNameMapping);
 
@@ -133,7 +156,12 @@ class AnthropicRequestBuilder {
     };
 
     _addSystemContent(body, processedData);
-    _addTools(body, processedTools, toolNameMapping);
+    _addTools(
+      body,
+      processedTools,
+      toolNameMapping,
+      providerTools: effectiveProviderTools,
+    );
     _addOptionalParameters(body);
 
     final extraBodyFromConfig = config.extraBody;
@@ -147,7 +175,11 @@ class AnthropicRequestBuilder {
       body.remove('extra_body');
     }
 
-    return AnthropicBuiltRequest(body: body, toolNameMapping: toolNameMapping);
+    return AnthropicBuiltRequest(
+      body: body,
+      toolNameMapping: toolNameMapping,
+      providerTools: effectiveProviderTools,
+    );
   }
 
   /// Convert a Tool to Anthropic API format.

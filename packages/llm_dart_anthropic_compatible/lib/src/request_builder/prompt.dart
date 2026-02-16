@@ -4,9 +4,15 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
   Map<String, dynamic> buildRequestBodyFromPrompt(
     Prompt prompt,
     List<Tool>? tools,
-    bool stream,
-  ) {
-    return buildRequestFromPrompt(prompt, tools, stream).body;
+    bool stream, {
+    List<ProviderTool>? providerTools,
+  }) {
+    return buildRequestFromPrompt(
+      prompt,
+      tools,
+      stream,
+      providerTools: providerTools,
+    ).body;
   }
 
   /// Build request body and tool name mapping from a `Prompt` IR.
@@ -17,10 +23,19 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
   AnthropicBuiltRequest buildRequestFromPrompt(
     Prompt prompt,
     List<Tool>? tools,
-    bool stream,
-  ) {
+    bool stream, {
+    List<ProviderTool>? providerTools,
+  }) {
+    final effectiveProviderTools = mergeProviderToolsById(
+      config.originalConfig?.providerTools,
+      providerTools,
+    );
+
     final processedTools = _processTools(const [], tools);
-    final toolNameMapping = _createToolNameMapping(processedTools);
+    final toolNameMapping = _createToolNameMapping(
+      processedTools,
+      providerTools: effectiveProviderTools,
+    );
 
     final processedData = _processPrompt(prompt, toolNameMapping);
 
@@ -39,7 +54,12 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
     };
 
     _addSystemContent(body, processedData);
-    _addTools(body, processedTools, toolNameMapping);
+    _addTools(
+      body,
+      processedTools,
+      toolNameMapping,
+      providerTools: effectiveProviderTools,
+    );
     _addOptionalParameters(body);
 
     final extraBodyFromConfig = config.extraBody;
@@ -53,7 +73,11 @@ extension AnthropicRequestBuilderPrompt on AnthropicRequestBuilder {
       body.remove('extra_body');
     }
 
-    return AnthropicBuiltRequest(body: body, toolNameMapping: toolNameMapping);
+    return AnthropicBuiltRequest(
+      body: body,
+      toolNameMapping: toolNameMapping,
+      providerTools: effectiveProviderTools,
+    );
   }
 
   ProcessedMessages _processPrompt(

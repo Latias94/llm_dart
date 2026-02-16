@@ -18,6 +18,7 @@ workspace:
   - packages/llm_dart_google
   - packages/llm_dart_google_vertex
   - packages/llm_dart_groq
+  - packages/llm_dart_mcp
   - packages/llm_dart_minimax
   - packages/llm_dart_ollama
   - packages/llm_dart_openai
@@ -45,6 +46,7 @@ dev_dependencies:
   llm_dart_groq: ^0.11.0-alpha.1
   llm_dart_elevenlabs: ^0.11.0-alpha.1
   llm_dart_minimax: ^0.11.0-alpha.1
+  llm_dart_mcp: ^0.11.0-alpha.1
   dio: ^5.9.0
   test: ^1.27.0
   mockito: ^5.4.0

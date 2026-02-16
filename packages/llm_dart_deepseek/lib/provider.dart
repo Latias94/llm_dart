@@ -14,6 +14,7 @@ class DeepSeekProvider
         ChatStreamPartsCapability,
         PromptChatCapability,
         PromptChatStreamPartsCapability,
+        ModelIdentityCapability,
         ProviderCapabilities {
   final DeepSeekConfig config;
   final OpenAICompatibleConfig _openAIConfig;
@@ -40,12 +41,22 @@ class DeepSeekProvider
   }
 
   @override
+  String get providerId => 'deepseek';
+
+  @override
+  String get modelId => config.model;
+
+  @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return _chat.chat(messages, cancelToken: cancelToken);
+    return _chat.chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -55,7 +66,12 @@ class DeepSeekProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
+    return _chat.chatWithTools(
+      messages,
+      tools,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -68,6 +84,7 @@ class DeepSeekProvider
     return _chat.chatStreamParts(
       messages,
       tools: tools,
+      providerTools: providerTools,
       cancelToken: cancelToken,
     );
   }
@@ -79,7 +96,12 @@ class DeepSeekProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+    return _chat.chatPrompt(
+      prompt,
+      providerTools: providerTools,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -92,6 +114,7 @@ class DeepSeekProvider
     return _chat.chatPromptStreamParts(
       prompt,
       tools: tools,
+      providerTools: providerTools,
       cancelToken: cancelToken,
     );
   }

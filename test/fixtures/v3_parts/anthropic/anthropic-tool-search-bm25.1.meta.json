@@ -18,6 +18,18 @@
     "finish_usage_present": true,
     "finish_reason_typed": true
   },
+  "request": {
+    "providerTools": [
+      {
+        "id": "anthropic.tool_search_bm25_20251119",
+        "name": "tool_search",
+        "supportsDeferredResults": true,
+        "options": {
+          "enabled": true
+        }
+      }
+    ]
+  },
   "notes": [
     "Provider tool names should remain stable across tool-input/tool-call/tool-result parts."
   ],

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'content_part.dart';
+import 'ai_errors.dart';
 
 /// Settings for controlling what data is retained in results.
 ///
@@ -83,6 +84,11 @@ class GenerateTextResult {
     this.sources = const <LLMStreamPart>[],
     this.files = const <LLMFilePart>[],
   }) : _contentParts = content;
+
+  /// Text output (AI SDK-style).
+  ///
+  /// Throws [NoOutputGeneratedError] when no text was produced.
+  String get output => text ?? (throw const NoOutputGeneratedError());
 
   /// AI SDK-inspired content parts for the last step.
   ///
@@ -170,6 +176,69 @@ typedef GenerateTextOnFinishCallback = FutureOr<void> Function(
   GenerateTextFinishEvent event,
 );
 
+/// Result for a single embedding call (AI SDK-style).
+class EmbedResult {
+  /// The value that was embedded.
+  final String value;
+
+  /// The embedding vector.
+  final List<double> embedding;
+
+  /// Token usage for the call.
+  final EmbeddingUsage usage;
+
+  /// Warnings for the call, e.g. unsupported settings.
+  final List<LLMWarning> warnings;
+
+  /// Optional provider-specific metadata.
+  final Map<String, dynamic>? providerMetadata;
+
+  /// Optional response information for debugging purposes.
+  final EmbeddingCallResponse? response;
+
+  const EmbedResult({
+    required this.value,
+    required this.embedding,
+    required this.usage,
+    this.warnings = const <LLMWarning>[],
+    this.providerMetadata,
+    this.response,
+  });
+}
+
+/// Result for an embedMany call (AI SDK-style).
+class EmbedManyResult {
+  /// The values that were embedded.
+  final List<String> values;
+
+  /// The embeddings. They are in the same order as the values.
+  final List<List<double>> embeddings;
+
+  /// Token usage for the call. (Aggregated across underlying calls when split.)
+  final EmbeddingUsage usage;
+
+  /// Warnings for the call, e.g. unsupported settings.
+  final List<LLMWarning> warnings;
+
+  /// Optional provider-specific metadata.
+  final Map<String, dynamic>? providerMetadata;
+
+  /// Optional response information for debugging purposes.
+  ///
+  /// This is a list because embedMany may split into multiple calls when
+  /// providers impose batch limits.
+  final List<EmbeddingCallResponse?> responses;
+
+  const EmbedManyResult({
+    required this.values,
+    required this.embeddings,
+    required this.usage,
+    this.warnings = const <LLMWarning>[],
+    this.providerMetadata,
+    this.responses = const <EmbeddingCallResponse?>[],
+  });
+}
+
 /// Result for an image generation call.
 class GenerateImageResult {
   /// The raw (standard) image generation response.
@@ -181,6 +250,27 @@ class GenerateImageResult {
   String? get model => rawResponse.model;
   String? get revisedPrompt => rawResponse.revisedPrompt;
   UsageInfo? get usage => rawResponse.usage;
+}
+
+/// Experimental result for a video generation call.
+///
+/// Aligned with Vercel AI SDK's `experimental_generateVideo`.
+class ExperimentalGenerateVideoResult {
+  final ExperimentalVideoGenerationResponse rawResponse;
+
+  const ExperimentalGenerateVideoResult({required this.rawResponse});
+
+  ExperimentalGeneratedVideo get video => rawResponse.video;
+  List<ExperimentalGeneratedVideo> get videos => rawResponse.videos;
+  List<LLMWarning> get warnings => rawResponse.warnings;
+
+  /// Response metadata for each underlying provider call.
+  ///
+  /// This is a list because `experimentalGenerateVideo` may split the request
+  /// into multiple calls when `n` exceeds the model's `maxVideosPerCall`.
+  List<ExperimentalVideoResponseMetadata> get responses =>
+      rawResponse.responses;
+  Map<String, dynamic>? get providerMetadata => rawResponse.providerMetadata;
 }
 
 /// Result for a speech generation (TTS) call.

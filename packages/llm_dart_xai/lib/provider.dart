@@ -199,7 +199,7 @@ class XAIProvider
   }
 
   @override
-  Future<List<List<double>>> embed(
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   }) {

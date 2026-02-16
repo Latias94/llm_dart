@@ -12,4 +12,3 @@ abstract class UIMessageStreamWriter {
   /// Merges another UI message chunk stream into the output stream.
   void merge(Stream<Map<String, Object?>> stream);
 }
-

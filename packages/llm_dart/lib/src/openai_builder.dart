@@ -70,7 +70,7 @@ class OpenAIBuilder {
 
   OpenAIBuilder webSearchTool() {
     useResponsesAPI(true);
-    _baseBuilder.providerTool(OpenAIProviderTools.webSearch());
+    _baseBuilder.providerTool(OpenAIProviderTools.webSearchPreview());
     final tools = _getBuiltInTools();
     tools.add(OpenAIBuiltInTools.webSearch());
     _baseBuilder.providerOption(

@@ -218,6 +218,13 @@ class OpenAIClient {
       } catch (e) {
         if (e is LLMError) rethrow;
 
+        final strict = config.getProviderOption<bool>('strictSseJson') ??
+            config.getProviderOption<bool>('strict_sse_json') ??
+            false;
+        if (strict) {
+          throw ResponseFormatError('Invalid SSE JSON chunk: $e', data);
+        }
+
         // Log and skip malformed JSON chunks, but don't fail the entire stream.
         logger.warning('Failed to parse SSE chunk JSON: $e, data: $data');
         continue;

@@ -162,7 +162,11 @@ class _ImageCallOptionsModel
     ImageGenerationRequest request,
   ) async {
     calledPlain = true;
-    return const ImageGenerationResponse(images: <GeneratedImage>[]);
+    return const ImageGenerationResponse(
+      images: <GeneratedImage>[
+        GeneratedImage(url: 'https://example.com/a.png')
+      ],
+    );
   }
 
   @override
@@ -172,7 +176,11 @@ class _ImageCallOptionsModel
   }) async {
     calledWithOptions = true;
     lastOptions = callOptions;
-    return const ImageGenerationResponse(images: <GeneratedImage>[]);
+    return const ImageGenerationResponse(
+      images: <GeneratedImage>[
+        GeneratedImage(url: 'https://example.com/a.png')
+      ],
+    );
   }
 
   @override
@@ -233,27 +241,31 @@ class _EmbeddingCallOptionsModel
   LLMCallOptions? lastOptions;
 
   @override
-  Future<List<List<double>>> embed(
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
     calledPlain = true;
-    return const [
-      [0.0]
-    ];
+    return const EmbeddingResponse(
+      embeddings: [
+        [0.0],
+      ],
+    );
   }
 
   @override
-  Future<List<List<double>>> embedWithCallOptions(
+  Future<EmbeddingResponse> embedWithCallOptions(
     List<String> input, {
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
     calledWithOptions = true;
     lastOptions = callOptions;
-    return const [
-      [1.0]
-    ];
+    return const EmbeddingResponse(
+      embeddings: [
+        [1.0],
+      ],
+    );
   }
 }
 
@@ -338,14 +350,14 @@ void main() {
         () async {
       final model = _EmbeddingCallOptionsModel();
 
-      final vectors = await embedMany(
+      final result = await embedMany(
         model: model,
         values: const ['hi'],
         callOptions: const LLMCallOptions(headers: {'x-test': '1'}),
       );
 
       expect(
-          vectors,
+          result.embeddings,
           equals(const [
             [1.0]
           ]));
@@ -470,7 +482,7 @@ void main() {
         const {LLMCapability.chat, LLMCapability.embedding},
       );
 
-      final vectors = await embedMany(
+      final result = await embedMany(
         model: provider,
         values: const ['hello'],
         callOptions: const LLMCallOptions(
@@ -480,7 +492,7 @@ void main() {
       );
 
       expect(
-          vectors,
+          result.embeddings,
           equals(const [
             [0.1, 0.2]
           ]));

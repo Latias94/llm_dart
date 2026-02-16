@@ -17,7 +17,7 @@ class OllamaEmbeddings implements EmbeddingCapability {
   String get embeddingEndpoint => '/api/embed';
 
   @override
-  Future<List<List<double>>> embed(
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
@@ -27,12 +27,19 @@ class OllamaEmbeddings implements EmbeddingCapability {
 
     try {
       final requestBody = _buildRequestBody(input);
-      final responseData = await client.postJson(
+      final responseData = await client.postJsonWithHeaders(
         embeddingEndpoint,
         requestBody,
         cancelToken: cancelToken,
       );
-      return _parseResponse(responseData);
+      final embeddings = _parseResponse(responseData.json);
+      return EmbeddingResponse(
+        embeddings: embeddings,
+        response: EmbeddingCallResponse(
+          headers: responseData.headers.isEmpty ? null : responseData.headers,
+          body: responseData.json,
+        ),
+      );
     } on DioException catch (e) {
       throw await DioErrorHandler.handleDioError(e, 'Ollama');
     } catch (e) {

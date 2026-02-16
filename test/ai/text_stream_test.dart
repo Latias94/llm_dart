@@ -13,7 +13,8 @@ void main() {
       );
     });
 
-    test('utf8BytesFromTextStream encodes chunks without concatenation', () async {
+    test('utf8BytesFromTextStream encodes chunks without concatenation',
+        () async {
       final bytes = await utf8BytesFromTextStream(
         Stream<String>.fromIterable(const ['a', '中', '\n']),
       ).toList();
@@ -25,4 +26,3 @@ void main() {
     });
   });
 }
-

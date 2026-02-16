@@ -451,6 +451,7 @@ class OpenAIResponses
           'emit_request_metadata',
         ) ??
         false;
+    Map<String, dynamic>? lastStreamChunk;
 
     try {
       if (emitRequestMetadata) {
@@ -473,6 +474,7 @@ class OpenAIResponses
         if (jsonList.isEmpty) continue;
 
         for (final json in jsonList) {
+          lastStreamChunk = json;
           final eventType = json['type'] as String?;
 
           if (eventType == 'response.created' ||
@@ -1963,7 +1965,12 @@ class OpenAIResponses
         yield LLMErrorPart(e);
         return;
       }
-      yield LLMErrorPart(GenericError('Stream error: $e'));
+      yield LLMErrorPart(
+        InvalidStreamPartError(
+          chunk: lastStreamChunk ?? const <String, dynamic>{},
+          message: 'Stream part decode error: $e',
+        ),
+      );
       return;
     } finally {
       _resetStreamState();
@@ -2269,15 +2276,18 @@ class OpenAIResponses
     for (final tool in builtInToolJson) {
       final rawType = tool['type'];
       if (rawType is String && rawType.isNotEmpty) {
-        providerToolRequestNamesById['openai.$rawType'] = rawType;
+        providerToolRequestNamesById['${config.providerId}.$rawType'] = rawType;
       }
     }
 
     final toolsForMapping = providerTools ?? const <ProviderTool>[];
     for (final t in toolsForMapping) {
       final id = t.id.trim();
-      if (!id.startsWith('openai.')) continue;
-      final requestName = _openaiRequestToolTypeForProviderToolId(id);
+      if (!id.startsWith('${config.providerId}.')) continue;
+      final requestName = _openaiRequestToolTypeForProviderToolId(
+        config.providerId,
+        id,
+      );
       if (requestName == null) continue;
       providerToolRequestNamesById[id] = requestName;
     }
@@ -2309,9 +2319,13 @@ class OpenAIResponses
     return byType.values.toList(growable: false);
   }
 
-  String? _openaiRequestToolTypeForProviderToolId(String id) {
-    if (!id.startsWith('openai.')) return null;
-    final raw = id.substring('openai.'.length).trim();
+  String? _openaiRequestToolTypeForProviderToolId(
+    String providerId,
+    String id,
+  ) {
+    final prefix = '$providerId.';
+    if (!id.startsWith(prefix)) return null;
+    final raw = id.substring(prefix.length).trim();
     if (raw.isEmpty) return null;
     // Alias: OpenAI's built-in tool type for computer use is `computer_use_preview`.
     if (raw == 'computer_use') return 'computer_use_preview';
@@ -2347,9 +2361,12 @@ class OpenAIResponses
 
     for (final t in tools) {
       final id = t.id.trim();
-      if (!id.startsWith('openai.')) continue;
+      if (!id.startsWith('${config.providerId}.')) continue;
 
-      final type = _openaiRequestToolTypeForProviderToolId(id);
+      final type = _openaiRequestToolTypeForProviderToolId(
+        config.providerId,
+        id,
+      );
       if (type == null) continue;
 
       final options = Map<String, dynamic>.from(t.options);
@@ -2366,14 +2383,21 @@ class OpenAIResponses
           } else if (ctx != null && ctx.trim().isNotEmpty) {
             json['search_context_size'] = ctx.trim();
           }
+
+          final userLocation =
+              options.remove('userLocation') ?? options.remove('user_location');
+          final userLocationMap = asStringDynamicMap(userLocation);
+          if (userLocationMap.isNotEmpty) {
+            json['user_location'] = userLocationMap;
+          }
           break;
 
         case 'web_search':
+          final filtersMap = asStringDynamicMap(options.remove('filters'));
           final allowedDomains =
               asStringList(options.remove('allowedDomains')) ??
-                  asStringList(
-                    asStringDynamicMap(options['filters'])['allowed_domains'],
-                  ) ??
+                  asStringList(filtersMap['allowedDomains']) ??
+                  asStringList(filtersMap['allowed_domains']) ??
                   asStringList(options['allowed_domains']);
           if (allowedDomains != null) {
             json['filters'] = {'allowed_domains': allowedDomains};
@@ -2416,6 +2440,38 @@ class OpenAIResponses
             json['vector_store_ids'] = vectorStoreIds;
           }
 
+          final maxNumResults = options.remove('maxNumResults') ??
+              options.remove('max_num_results');
+          if (maxNumResults is int) {
+            json['max_num_results'] = maxNumResults;
+          } else if (maxNumResults is num) {
+            json['max_num_results'] = maxNumResults.toInt();
+          } else {
+            final parsedInt = int.tryParse(maxNumResults?.toString() ?? '');
+            if (parsedInt != null) json['max_num_results'] = parsedInt;
+          }
+
+          final ranking =
+              options.remove('ranking') ?? options.remove('ranking_options');
+          final rankingMap = asStringDynamicMap(ranking);
+          if (rankingMap.isNotEmpty) {
+            final ranker = rankingMap['ranker'];
+            final scoreThreshold =
+                rankingMap['scoreThreshold'] ?? rankingMap['score_threshold'];
+            final outRanking = <String, dynamic>{};
+            if (ranker != null) outRanking['ranker'] = ranker;
+            if (scoreThreshold is num) {
+              outRanking['score_threshold'] = scoreThreshold;
+            } else {
+              final parsed = num.tryParse(scoreThreshold?.toString() ?? '');
+              if (parsed != null) outRanking['score_threshold'] = parsed;
+            }
+            if (outRanking.isNotEmpty) json['ranking_options'] = outRanking;
+          }
+
+          final filters = options.remove('filters');
+          if (filters != null) json['filters'] = filters;
+
           final parameters = asStringDynamicMap(options.remove('parameters'));
           if (parameters.isNotEmpty) {
             json.addAll(parameters);
@@ -2455,7 +2511,26 @@ class OpenAIResponses
 
         case 'code_interpreter':
           final container = options.remove('container');
-          if (container != null) {
+          if (container == null) {
+            json['container'] = const <String, dynamic>{'type': 'auto'};
+          } else if (container is String) {
+            json['container'] = container;
+          } else if (container is Map) {
+            final map = asStringDynamicMap(container);
+            final fileIds =
+                asStringList(map['fileIds']) ?? asStringList(map['file_ids']);
+            if (map.containsKey('type')) {
+              json['container'] = {
+                ...map,
+                if (fileIds != null) 'file_ids': fileIds,
+              };
+            } else {
+              json['container'] = {
+                'type': 'auto',
+                if (fileIds != null) 'file_ids': fileIds,
+              };
+            }
+          } else {
             json['container'] = container;
           }
           final parameters = asStringDynamicMap(options.remove('parameters'));
@@ -2465,7 +2540,126 @@ class OpenAIResponses
           break;
 
         case 'image_generation':
+          final background = options.remove('background');
+          if (background != null) json['background'] = background;
+
+          final inputFidelity = options.remove('inputFidelity') ??
+              options.remove('input_fidelity');
+          if (inputFidelity != null) json['input_fidelity'] = inputFidelity;
+
+          final inputImageMask = options.remove('inputImageMask') ??
+              options.remove('input_image_mask');
+          final maskMap = asStringDynamicMap(inputImageMask);
+          if (maskMap.isNotEmpty) {
+            final fileId = maskMap['fileId'] ?? maskMap['file_id'];
+            final imageUrl = maskMap['imageUrl'] ?? maskMap['image_url'];
+            final outMask = <String, dynamic>{};
+            if (fileId != null) outMask['file_id'] = fileId;
+            if (imageUrl != null) outMask['image_url'] = imageUrl;
+            if (outMask.isNotEmpty) json['input_image_mask'] = outMask;
+          }
+
+          final model = options.remove('model');
+          if (model != null) json['model'] = model;
+
+          final moderation = options.remove('moderation');
+          if (moderation != null) json['moderation'] = moderation;
+
+          final partialImages = options.remove('partialImages') ??
+              options.remove('partial_images');
+          if (partialImages != null) json['partial_images'] = partialImages;
+
+          final quality = options.remove('quality');
+          if (quality != null) json['quality'] = quality;
+
+          final outputCompression = options.remove('outputCompression') ??
+              options.remove('output_compression');
+          if (outputCompression != null) {
+            json['output_compression'] = outputCompression;
+          }
+
+          final outputFormat =
+              options.remove('outputFormat') ?? options.remove('output_format');
+          if (outputFormat != null) json['output_format'] = outputFormat;
+
+          final size = options.remove('size');
+          if (size != null) json['size'] = size;
+
+          final parameters = asStringDynamicMap(options.remove('parameters'));
+          if (parameters.isNotEmpty) {
+            json.addAll(parameters);
+          }
+          break;
+
         case 'mcp':
+          final serverLabel =
+              options.remove('serverLabel') ?? options.remove('server_label');
+          if (serverLabel != null) json['server_label'] = serverLabel;
+
+          final allowedTools =
+              options.remove('allowedTools') ?? options.remove('allowed_tools');
+          if (allowedTools is List) {
+            final list = asStringList(allowedTools);
+            if (list != null) json['allowed_tools'] = list;
+          } else if (allowedTools is Map) {
+            final map = asStringDynamicMap(allowedTools);
+            final readOnly = map['readOnly'] ?? map['read_only'];
+            final toolNames = asStringList(map['toolNames']) ??
+                asStringList(map['tool_names']);
+            final outAllowed = <String, dynamic>{};
+            if (readOnly is bool) outAllowed['read_only'] = readOnly;
+            if (toolNames != null) outAllowed['tool_names'] = toolNames;
+            if (outAllowed.isNotEmpty) json['allowed_tools'] = outAllowed;
+          }
+
+          final authorization = options.remove('authorization');
+          if (authorization != null) json['authorization'] = authorization;
+
+          final connectorId =
+              options.remove('connectorId') ?? options.remove('connector_id');
+          if (connectorId != null) json['connector_id'] = connectorId;
+
+          final headers = options.remove('headers');
+          final headersMap = asStringDynamicMap(headers);
+          if (headersMap.isNotEmpty) json['headers'] = headersMap;
+
+          final requireApproval = options.remove('requireApproval') ??
+              options.remove('require_approval');
+          if (requireApproval != null) {
+            if (requireApproval is String) {
+              json['require_approval'] = requireApproval;
+            } else if (requireApproval is Map) {
+              final map = asStringDynamicMap(requireApproval);
+              final never = map['never'];
+              if (never is Map) {
+                final neverMap = asStringDynamicMap(never);
+                final toolNames = asStringList(neverMap['toolNames']) ??
+                    asStringList(neverMap['tool_names']);
+                json['require_approval'] = {
+                  'never': {
+                    if (toolNames != null) 'tool_names': toolNames,
+                  },
+                };
+              } else {
+                json['require_approval'] = map;
+              }
+            } else {
+              json['require_approval'] = requireApproval;
+            }
+          } else {
+            json['require_approval'] = 'never';
+          }
+
+          final serverDescription = options.remove('serverDescription') ??
+              options.remove('server_description');
+          if (serverDescription != null) {
+            json['server_description'] = serverDescription;
+          }
+
+          final serverUrl =
+              options.remove('serverUrl') ?? options.remove('server_url');
+          if (serverUrl != null) json['server_url'] = serverUrl;
+
           final parameters = asStringDynamicMap(options.remove('parameters'));
           if (parameters.isNotEmpty) {
             json.addAll(parameters);
@@ -2616,7 +2810,7 @@ class OpenAIResponses
         final toolChoiceValue = _convertToolChoiceForResponses(
           effectiveToolChoice,
           functionTools: functionTools,
-          builtInTools: config.builtInTools,
+          builtInToolJson: builtInToolJson,
           toolNameMapping: toolNameMapping,
         );
         if (toolChoiceValue != null) {
@@ -2761,7 +2955,7 @@ class OpenAIResponses
   dynamic _convertToolChoiceForResponses(
     ToolChoice toolChoice, {
     required List<Tool>? functionTools,
-    required List<OpenAIBuiltInTool>? builtInTools,
+    required List<Map<String, dynamic>> builtInToolJson,
     required ToolNameMapping toolNameMapping,
   }) {
     return switch (toolChoice) {
@@ -2772,7 +2966,7 @@ class OpenAIResponses
         _convertSpecificToolChoiceForResponses(
           toolName,
           functionTools: functionTools,
-          builtInTools: builtInTools,
+          builtInToolJson: builtInToolJson,
           toolNameMapping: toolNameMapping,
         ),
     };
@@ -2781,7 +2975,7 @@ class OpenAIResponses
   Map<String, dynamic>? _convertSpecificToolChoiceForResponses(
     String toolName, {
     required List<Tool>? functionTools,
-    required List<OpenAIBuiltInTool>? builtInTools,
+    required List<Map<String, dynamic>> builtInToolJson,
     required ToolNameMapping toolNameMapping,
   }) {
     final functionToolNames =
@@ -2798,9 +2992,10 @@ class OpenAIResponses
 
     // If the caller did not configure function tools but did configure an
     // OpenAI built-in tool, allow selecting it by the built-in `type` name.
-    final builtInTypes = (builtInTools ?? const <OpenAIBuiltInTool>[])
-        .map((t) => t.toJson()['type'])
+    final builtInTypes = builtInToolJson
+        .map((t) => t['type'])
         .whereType<String>()
+        .where((t) => t.trim().isNotEmpty)
         .toSet();
     if (builtInTypes.contains(toolName)) {
       return {'type': toolName};

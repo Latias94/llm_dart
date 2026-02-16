@@ -195,6 +195,40 @@ void main() {
           equals(1));
     });
 
+    test('emits InvalidStreamPartError when a streamed JSON chunk is malformed',
+        () async {
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.anthropic.com/v1/',
+        model: 'claude-sonnet-4-20250514',
+      );
+
+      final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+
+      final sse = [
+        'event: content_block_start\n'
+            'data: {"type":"content_block_start","index":0,"content_block":"not-an-object"}\n'
+            '\n',
+      ];
+
+      final client = _FakeAnthropicClient(
+        anthropicConfig,
+        stream: Stream<String>.fromIterable(sse),
+      );
+      final chat = AnthropicChat(client, anthropicConfig);
+
+      final parts = await chat
+          .chatStreamParts([ChatMessage.user('Hi')], tools: const []).toList();
+
+      final errorPart = parts.whereType<LLMErrorPart>().single;
+      expect(errorPart.error, isA<InvalidStreamPartError>());
+      final error = errorPart.error as InvalidStreamPartError;
+      expect(error.chunk, isA<Map<String, dynamic>>());
+      final chunk = error.chunk as Map<String, dynamic>;
+      expect(chunk['type'], equals('content_block_start'));
+      expect(chunk['content_block'], equals('not-an-object'));
+    });
+
     test('does not surface web_fetch as a local tool call part', () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',

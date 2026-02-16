@@ -138,7 +138,9 @@ class ConfigUtils {
       }
 
       apiMessages.add({
-        'role': message.role.name,
+        // Anthropic does not have a dedicated `tool` role. Tool results are
+        // represented as blocks inside `user` messages at the protocol layer.
+        'role': message.role == ChatRole.tool ? 'user' : message.role.name,
         'content': message.content,
       });
     }

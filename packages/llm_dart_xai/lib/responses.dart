@@ -353,6 +353,7 @@ class XAIResponses
     int? responseCreatedAtSeconds;
     var didEmitResponseMetadata = false;
     String? lastProviderMetadataJson;
+    Map<String, dynamic>? lastStreamChunk;
 
     try {
       final streamed = await client.postStreamRawWithHeaders(
@@ -369,6 +370,7 @@ class XAIResponses
         if (jsonList.isEmpty) continue;
 
         for (final json in jsonList) {
+          lastStreamChunk = json;
           final eventType = json['type'] as String?;
           if (eventType == null || eventType.isEmpty) continue;
 
@@ -884,7 +886,12 @@ class XAIResponses
         yield LLMErrorPart(e);
         return;
       }
-      yield LLMErrorPart(GenericError('Stream error: $e'));
+      yield LLMErrorPart(
+        InvalidStreamPartError(
+          chunk: lastStreamChunk ?? const <String, dynamic>{},
+          message: 'Stream part decode error: $e',
+        ),
+      );
       return;
     } finally {
       client.resetSSEBuffer();
@@ -1012,6 +1019,10 @@ class XAIResponses
               ChatRole.system => 'system',
               ChatRole.user => 'user',
               ChatRole.assistant => 'assistant',
+              // xAI Responses API does not support a dedicated `tool` role for
+              // plain text items. Tool outputs should be sent as
+              // `function_call_output` items (ToolResultMessage).
+              ChatRole.tool => 'user',
             },
             'content': message.content,
           });
@@ -1065,20 +1076,66 @@ class XAIResponses
     String? currentRole;
     final currentText = StringBuffer();
 
-    void flushText() {
+    final currentUserText = StringBuffer();
+    final currentUserParts = <Map<String, dynamic>>[];
+
+    String? itemIdFromProviderOptions(ProviderOptions providerOptions) {
+      final byProviderId = providerOptions[config.providerId];
+      final byXai = providerOptions['xai'];
+
+      Object? raw = byProviderId?['itemId'] ??
+          byProviderId?['item_id'] ??
+          byXai?['itemId'] ??
+          byXai?['item_id'];
+
+      if (raw is String && raw.trim().isNotEmpty) return raw.trim();
+      return null;
+    }
+
+    void flushUserText() {
+      final text = currentUserText.toString();
+      if (text.trim().isEmpty) {
+        currentUserText.clear();
+        return;
+      }
+
+      currentUserParts.add({
+        'type': 'input_text',
+        'text': text,
+      });
+      currentUserText
+        ..clear()
+        ..write('');
+    }
+
+    void flushRole() {
       final role = currentRole;
       if (role == null) return;
-      final text = currentText.toString();
-      if (text.trim().isNotEmpty) {
-        input.add({'role': role, 'content': text});
+
+      if (role == 'user') {
+        flushUserText();
+        if (currentUserParts.isNotEmpty) {
+          input.add({
+            'role': 'user',
+            'content':
+                List<Map<String, dynamic>>.unmodifiable(currentUserParts),
+          });
+        }
+        currentUserParts.clear();
+      } else {
+        final text = currentText.toString();
+        if (text.trim().isNotEmpty) {
+          input.add({'role': role, 'content': text});
+        }
       }
       currentRole = null;
       currentText.clear();
+      currentUserText.clear();
     }
 
     void ensureRole(String role) {
       if (currentRole == role) return;
-      flushText();
+      flushRole();
       currentRole = role;
     }
 
@@ -1120,22 +1177,29 @@ class XAIResponses
               :final toolCallId,
               :final toolName,
               input: final toolInput,
+              :final providerExecuted,
             )) {
+          if (providerExecuted == true) {
+            continue;
+          }
           if (effectiveRole != PromptRole.assistant) {
             throw const InvalidRequestError(
               'ToolCallPart must be emitted from an assistant message.',
             );
           }
-          flushText();
+          flushRole();
           String arguments;
           try {
             arguments = jsonEncode(toolInput);
           } catch (_) {
             arguments = jsonEncode(toolInput.toString());
           }
+
+          final id =
+              itemIdFromProviderOptions(part.providerOptions) ?? toolCallId;
           input.add({
             'type': 'function_call',
-            'id': toolCallId,
+            'id': id,
             'call_id': toolCallId,
             'name': toolName,
             'arguments': arguments,
@@ -1154,7 +1218,7 @@ class XAIResponses
               'ToolResultPart must be emitted from a tool message.',
             );
           }
-          flushText();
+          flushRole();
           String content;
           switch (output) {
             case ToolResultTextOutput(:final value):
@@ -1192,8 +1256,91 @@ class XAIResponses
               PromptRole.system => 'system',
             },
           );
-          if (currentText.isNotEmpty) currentText.write('\n\n');
-          currentText.write(text);
+          if (currentRole == 'user') {
+            if (currentUserText.isNotEmpty) currentUserText.write('\n\n');
+            currentUserText.write(text);
+          } else {
+            if (currentText.isNotEmpty) currentText.write('\n\n');
+            currentText.write(text);
+          }
+          continue;
+        }
+
+        if (part case ImagePart(:final mime, :final data, :final text)) {
+          if (effectiveRole != PromptRole.user) {
+            throw UnsupportedError(
+              'xAI Responses API does not support ${part.runtimeType} in assistant messages',
+            );
+          }
+
+          ensureRole('user');
+
+          if (text != null && text.trim().isNotEmpty) {
+            if (currentUserText.isNotEmpty) currentUserText.write('\n\n');
+            currentUserText.write(text.trim());
+          }
+
+          flushUserText();
+
+          final imageUrl = 'data:${mime.mimeType};base64,${base64Encode(data)}';
+          currentUserParts.add({
+            'type': 'input_image',
+            'image_url': imageUrl,
+          });
+          continue;
+        }
+
+        if (part case ImageUrlPart(:final url, :final text)) {
+          if (effectiveRole != PromptRole.user) {
+            throw UnsupportedError(
+              'xAI Responses API does not support ${part.runtimeType} in assistant messages',
+            );
+          }
+
+          ensureRole('user');
+
+          if (text != null && text.trim().isNotEmpty) {
+            if (currentUserText.isNotEmpty) currentUserText.write('\n\n');
+            currentUserText.write(text.trim());
+          }
+
+          flushUserText();
+
+          currentUserParts.add({
+            'type': 'input_image',
+            'image_url': url,
+          });
+          continue;
+        }
+
+        if (part case FilePart(:final mime, :final data, :final text)) {
+          if (!mime.mimeType.startsWith('image/')) {
+            throw UnsupportedError(
+              'xAI Responses API does not support file part media type ${mime.mimeType}',
+            );
+          }
+          if (effectiveRole != PromptRole.user) {
+            throw UnsupportedError(
+              'xAI Responses API does not support ${part.runtimeType} in assistant messages',
+            );
+          }
+
+          ensureRole('user');
+
+          if (text != null && text.trim().isNotEmpty) {
+            if (currentUserText.isNotEmpty) currentUserText.write('\n\n');
+            currentUserText.write(text.trim());
+          }
+
+          flushUserText();
+
+          final normalizedMime =
+              mime.mimeType == 'image/*' ? 'image/jpeg' : mime.mimeType;
+          final imageUrl = 'data:$normalizedMime;base64,${base64Encode(data)}';
+          currentUserParts.add({
+            'type': 'input_image',
+            'image_url': imageUrl,
+          });
           continue;
         }
 
@@ -1202,7 +1349,7 @@ class XAIResponses
         );
       }
 
-      flushText();
+      flushRole();
     }
 
     if (!hasSystemMessage && config.systemPrompt != null) {

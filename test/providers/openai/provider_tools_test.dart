@@ -9,7 +9,8 @@ void main() {
           contextSize: OpenAIWebSearchContextSize.high);
 
       expect(tool.id, equals('openai.web_search_preview'));
-      expect(tool.options['search_context_size'], equals('high'));
+      expect(tool.name, equals('webSearch'));
+      expect(tool.options['searchContextSize'], equals('high'));
     });
 
     test('webSearchFull creates ProviderTool with stable id', () {
@@ -21,24 +22,26 @@ void main() {
       );
 
       expect(tool.id, equals('openai.web_search'));
+      expect(tool.name, equals('webSearch'));
       expect(
-        (tool.options['filters'] as Map)['allowed_domains'],
+        (tool.options['filters'] as Map)['allowedDomains'],
         equals(['example.com']),
       );
-      expect(tool.options['external_web_access'], isTrue);
-      expect(tool.options['search_context_size'], equals('low'));
-      expect(tool.options['user_location'], equals(const {'country': 'US'}));
+      expect(tool.options['externalWebAccess'], isTrue);
+      expect(tool.options['searchContextSize'], equals('low'));
+      expect(tool.options['userLocation'], equals(const {'country': 'US'}));
     });
 
     test('fileSearch creates ProviderTool with stable id', () {
       final tool = OpenAIProviderTools.fileSearch(
         vectorStoreIds: const ['vs_123'],
-        parameters: const {'max_num_results': 5},
+        maxNumResults: 5,
       );
 
       expect(tool.id, equals('openai.file_search'));
-      expect(tool.options['vector_store_ids'], equals(['vs_123']));
-      expect(tool.options['max_num_results'], equals(5));
+      expect(tool.name, equals('fileSearch'));
+      expect(tool.options['vectorStoreIds'], equals(['vs_123']));
+      expect(tool.options['maxNumResults'], equals(5));
     });
 
     test('computerUse creates ProviderTool with stable id', () {
@@ -50,8 +53,9 @@ void main() {
       );
 
       expect(tool.id, equals('openai.computer_use'));
-      expect(tool.options['display_width'], equals(1024));
-      expect(tool.options['display_height'], equals(768));
+      expect(tool.name, equals('computerUse'));
+      expect(tool.options['displayWidth'], equals(1024));
+      expect(tool.options['displayHeight'], equals(768));
       expect(tool.options['environment'], equals('browser'));
       expect(tool.options['timeout'], equals(30));
     });
@@ -59,31 +63,29 @@ void main() {
     test('codeInterpreter creates ProviderTool with stable id', () {
       final tool = OpenAIProviderTools.codeInterpreter(
         container: {
-          'type': 'auto',
-          'file_ids': ['file_1']
+          'fileIds': ['file_1']
         },
       );
 
       expect(tool.id, equals('openai.code_interpreter'));
+      expect(tool.name, equals('codeExecution'));
       expect(tool.options['container'], isA<Map>());
     });
 
     test('imageGeneration creates ProviderTool with stable id', () {
-      final tool = OpenAIProviderTools.imageGeneration(parameters: const {
-        'size': '1024x1024',
-      });
+      final tool = OpenAIProviderTools.imageGeneration(size: '1024x1024');
 
       expect(tool.id, equals('openai.image_generation'));
+      expect(tool.name, equals('generateImage'));
       expect(tool.options['size'], equals('1024x1024'));
     });
 
     test('mcp creates ProviderTool with stable id', () {
-      final tool = OpenAIProviderTools.mcp(parameters: const {
-        'server_label': 'test',
-      });
+      final tool = OpenAIProviderTools.mcp(serverLabel: 'test');
 
       expect(tool.id, equals('openai.mcp'));
-      expect(tool.options['server_label'], equals('test'));
+      expect(tool.name, equals('mcp'));
+      expect(tool.options['serverLabel'], equals('test'));
     });
 
     test('shell/localShell/applyPatch create ProviderTools with stable ids',

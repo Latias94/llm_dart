@@ -67,6 +67,7 @@ class OpenAIChat
     return chatWithToolsWithCallOptions(
       messages,
       tools,
+      providerTools: providerTools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -84,6 +85,7 @@ class OpenAIChat
       client,
       messages: messages,
       tools: tools,
+      providerTools: providerTools,
       stream: false,
     );
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
@@ -115,6 +117,7 @@ class OpenAIChat
   }) async {
     return chatPromptWithCallOptions(
       prompt,
+      providerTools: providerTools,
       tools: tools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
@@ -133,6 +136,7 @@ class OpenAIChat
       client,
       prompt: prompt,
       tools: tools,
+      providerTools: providerTools,
       stream: false,
     );
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
@@ -184,6 +188,7 @@ class OpenAIChat
       client,
       messages: messages,
       tools: effectiveTools,
+      providerTools: providerTools,
       stream: true,
     );
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
@@ -225,6 +230,7 @@ class OpenAIChat
       client,
       prompt: prompt,
       tools: effectiveTools,
+      providerTools: providerTools,
       stream: true,
     );
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
@@ -276,6 +282,7 @@ class OpenAIChat
 
     var didEmitTerminalParts = false;
     String? finishReason;
+    Map<String, dynamic>? lastStreamChunk;
 
     try {
       if (_emitRequestMetadataEnabled()) {
@@ -298,6 +305,7 @@ class OpenAIChat
         if (jsonList.isEmpty) continue;
 
         for (final json in jsonList) {
+          lastStreamChunk = json;
           id ??= json['id'] as String?;
           model ??= json['model'] as String?;
           systemFingerprint ??= json['system_fingerprint'] as String?;
@@ -985,7 +993,12 @@ class OpenAIChat
         yield LLMErrorPart(e);
         return;
       }
-      yield LLMErrorPart(GenericError('Stream error: $e'));
+      yield LLMErrorPart(
+        InvalidStreamPartError(
+          chunk: lastStreamChunk ?? const <String, dynamic>{},
+          message: 'Stream part decode error: $e',
+        ),
+      );
       return;
     } finally {
       client.resetSSEBuffer();

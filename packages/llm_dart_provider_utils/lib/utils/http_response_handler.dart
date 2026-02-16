@@ -276,4 +276,72 @@ class HttpResponseHandler {
       throw GenericError('Unexpected error: $e');
     }
   }
+
+  /// Create a standardized getJson method that also exposes response headers.
+  ///
+  /// This mirrors [postJsonWithHeaders] and is useful for long-running
+  /// operations that require polling (e.g. video generation).
+  static Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      getJsonWithHeaders(
+    Dio dio,
+    String endpoint, {
+    String? providerName,
+    Logger? logger,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+  }) async {
+    final provider = providerName ?? 'Unknown';
+    final log = logger ?? _logger;
+
+    try {
+      if (log.isLoggable(Level.FINE)) {
+        log.fine('$provider request: GET $endpoint');
+      }
+
+      final response = await withDioCancelToken(
+        cancelToken,
+        (dioToken) => dio.get(
+          endpoint,
+          queryParameters: queryParameters,
+          options: options,
+          cancelToken: dioToken,
+        ),
+      );
+
+      if (log.isLoggable(Level.FINE)) {
+        log.fine('$provider HTTP status: ${response.statusCode}');
+      }
+
+      if (response.statusCode != 200) {
+        log.severe('$provider API returned status ${response.statusCode}');
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: '$provider API returned status ${response.statusCode}',
+        );
+      }
+
+      final headerMap = <String, String>{};
+      response.headers.forEach((name, values) {
+        if (values.isEmpty) return;
+        headerMap[name] = values.join(',');
+      });
+      final sanitizedHeaders = sanitizeResponseHeadersForMetadata(headerMap);
+
+      return (
+        json: parseJsonResponse(response.data, providerName: provider),
+        headers: sanitizedHeaders.isEmpty
+            ? const <String, String>{}
+            : Map<String, String>.unmodifiable(sanitizedHeaders),
+      );
+    } on DioException catch (e) {
+      log.severe('$provider HTTP GET request failed: ${e.message}');
+      throw await DioErrorHandler.handleDioError(e, provider);
+    } catch (e) {
+      if (e is LLMError) rethrow;
+      log.severe('Unexpected error in $provider getJsonWithHeaders: $e');
+      throw GenericError('Unexpected error: $e');
+    }
+  }
 }

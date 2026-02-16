@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'ai_errors.dart';
 import 'call_options_dispatch.dart';
 import 'prompt_input.dart';
 import 'metadata_fallbacks.dart';
@@ -118,21 +119,57 @@ Future<GenerateObjectResult> generateObject({
       .firstWhere((c) => c?.function.name == toolName, orElse: () => null);
 
   if (toolCall != null) {
-    final args = jsonDecode(toolCall.function.arguments);
-    if (args is! Map<String, dynamic>) {
-      throw const InvalidRequestError(
-          'Tool arguments must be a JSON object (map).');
+    Object? decodedArgs;
+    try {
+      decodedArgs = jsonDecode(toolCall.function.arguments);
+    } catch (e) {
+      throw NoObjectGeneratedError(
+        message: 'Failed to parse tool arguments as JSON.',
+        text: toolCall.function.arguments,
+        finishReason: response is ChatResponseWithFinishReason
+            ? response.finishReason
+            : null,
+        usage: response.usage,
+        responseMetadata: response is ChatResponseWithResponseMetadata
+            ? response.responseMetadata
+            : null,
+        cause: e,
+      );
     }
 
-    final validationErrors = ToolValidator.validateParameters(args, schema);
+    if (decodedArgs is! Map<String, dynamic>) {
+      throw NoObjectGeneratedError(
+        message: 'Tool arguments must be a JSON object (map).',
+        text: toolCall.function.arguments,
+        finishReason: response is ChatResponseWithFinishReason
+            ? response.finishReason
+            : null,
+        usage: response.usage,
+        responseMetadata: response is ChatResponseWithResponseMetadata
+            ? response.responseMetadata
+            : null,
+      );
+    }
+
+    final validationErrors =
+        ToolValidator.validateParameters(decodedArgs, schema);
     if (validationErrors.isNotEmpty) {
-      throw InvalidRequestError(
-        'Generated object does not match schema: ${validationErrors.join(', ')}',
+      throw NoObjectGeneratedError(
+        message: 'Generated object does not match schema.',
+        text: toolCall.function.arguments,
+        finishReason: response is ChatResponseWithFinishReason
+            ? response.finishReason
+            : null,
+        usage: response.usage,
+        responseMetadata: response is ChatResponseWithResponseMetadata
+            ? response.responseMetadata
+            : null,
+        cause: validationErrors,
       );
     }
 
     return GenerateObjectResult(
-      object: args,
+      object: decodedArgs,
       rawResponse: response,
       requestMetadata: requestMetadataWithInclude(
         response is ChatResponseWithRequestMetadata
@@ -157,14 +194,47 @@ Future<GenerateObjectResult> generateObject({
 
   final text = response.text;
   if (text == null || text.isEmpty) {
-    throw const InvalidRequestError(
-        'No tool call and no text content to parse.');
+    throw NoObjectGeneratedError(
+      message: 'No tool call and no text content to parse.',
+      text: response.text,
+      finishReason: response is ChatResponseWithFinishReason
+          ? response.finishReason
+          : null,
+      usage: response.usage,
+      responseMetadata: response is ChatResponseWithResponseMetadata
+          ? response.responseMetadata
+          : null,
+    );
   }
 
   final parsed = _extractFirstJsonObject(text);
   if (parsed == null) {
-    throw const InvalidRequestError(
-      'Failed to extract a JSON object from response text.',
+    throw NoObjectGeneratedError(
+      message: 'Failed to extract a JSON object from response text.',
+      text: text,
+      finishReason: response is ChatResponseWithFinishReason
+          ? response.finishReason
+          : null,
+      usage: response.usage,
+      responseMetadata: response is ChatResponseWithResponseMetadata
+          ? response.responseMetadata
+          : null,
+    );
+  }
+
+  final validationErrors = ToolValidator.validateParameters(parsed, schema);
+  if (validationErrors.isNotEmpty) {
+    throw NoObjectGeneratedError(
+      message: 'Generated object does not match schema.',
+      text: text,
+      finishReason: response is ChatResponseWithFinishReason
+          ? response.finishReason
+          : null,
+      usage: response.usage,
+      responseMetadata: response is ChatResponseWithResponseMetadata
+          ? response.responseMetadata
+          : null,
+      cause: validationErrors,
     );
   }
 

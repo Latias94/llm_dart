@@ -99,4 +99,3 @@ class _Writer implements UIMessageStreamWriter {
   @override
   void merge(Stream<Map<String, Object?>> stream) => _merge(stream);
 }
-

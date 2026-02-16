@@ -6,6 +6,7 @@ import 'package:test/test.dart';
 
 import '../../utils/fixture_replay.dart';
 import '../../utils/fakes/fakes.dart';
+import '../../utils/fixture_meta.dart';
 import '../../utils/v3_parts_golden.dart';
 
 void main() {
@@ -31,13 +32,23 @@ void main() {
         stream: true,
       );
 
+      final providerTools = readProviderToolsFromV3Meta(
+        provider: provider,
+        scenario: baseName,
+      );
+
       for (var i = 0; i < sessions.length; i++) {
         final client = FakeAnthropicClient(config)
           ..streamResponse = sessions[i];
         final chat = AnthropicChat(client, config);
 
-        final parts = await llm_ai.streamChatParts(
-            model: chat, messages: [ChatMessage.user('Hi')]).toList();
+        final parts = await llm_ai
+            .streamChatParts(
+              model: chat,
+              messages: [ChatMessage.user('Hi')],
+              providerTools: providerTools,
+            )
+            .toList();
 
         final goldenBasePath = 'test/fixtures/v3_parts/$provider/$baseName';
         final goldenPath = sessions.length == 1

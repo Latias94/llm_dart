@@ -510,7 +510,10 @@ Future<List<LLMStreamPart>> _runOpenAIResponsesFixture({
 
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
   final responses = openai_responses.OpenAIResponses(client, config);
-  return responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+  return responses.chatStreamParts(
+    [ChatMessage.user('Hi')],
+    providerTools: providerTools,
+  ).toList();
 }
 
 Future<List<LLMStreamPart>> _runOpenAIChatFixture({
@@ -534,7 +537,10 @@ Future<List<LLMStreamPart>> _runOpenAIChatFixture({
 
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
   final provider = openai_client.OpenAIProvider(config, client: client);
-  return provider.chatStreamParts([ChatMessage.user('Hi')]).toList();
+  return provider.chatStreamParts(
+    [ChatMessage.user('Hi')],
+    providerTools: providerTools,
+  ).toList();
 }
 
 Future<List<LLMStreamPart>> _runAzureResponsesFixture({
@@ -560,7 +566,10 @@ Future<List<LLMStreamPart>> _runAzureResponsesFixture({
 
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
   final responses = openai_compat.OpenAIResponses(client, config);
-  return responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+  return responses.chatStreamParts(
+    [ChatMessage.user('Hi')],
+    providerTools: providerTools,
+  ).toList();
 }
 
 Future<List<LLMStreamPart>> _runAnthropicMessagesFixture({
@@ -579,8 +588,13 @@ Future<List<LLMStreamPart>> _runAnthropicMessagesFixture({
   final client = FakeAnthropicClient(config)..streamResponse = sessionStream;
   final chat = AnthropicChat(client, config);
 
-  return llm_ai.streamChatParts(
-      model: chat, messages: [ChatMessage.user('Hi')]).toList();
+  return llm_ai
+      .streamChatParts(
+        model: chat,
+        messages: [ChatMessage.user('Hi')],
+        providerTools: providerTools,
+      )
+      .toList();
 }
 
 Future<List<LLMStreamPart>> _runMinimaxAnthropicMessagesFixture({
@@ -615,10 +629,13 @@ Future<List<LLMStreamPart>> _runMinimaxAnthropicMessagesFixture({
     providerName: 'MiniMax',
   );
 
-  return llm_ai.streamChatParts(
-    model: provider,
-    messages: [ChatMessage.user('Hi')],
-  ).toList();
+  return llm_ai
+      .streamChatParts(
+        model: provider,
+        messages: [ChatMessage.user('Hi')],
+        providerTools: providerTools,
+      )
+      .toList();
 }
 
 class _DeepSeekFakeClient extends OpenAIClient {
@@ -636,6 +653,17 @@ class _DeepSeekFakeClient extends OpenAIClient {
     CancelToken? cancelToken,
   }) {
     return _stream;
+  }
+
+  @override
+  Future<({Stream<String> stream, Map<String, String> headers})>
+      postStreamRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> body, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
+    return (stream: _stream, headers: const <String, String>{});
   }
 }
 
@@ -657,8 +685,13 @@ Future<List<LLMStreamPart>> _runDeepSeekOpenAICompatibleFixture({
   final client = _DeepSeekFakeClient(config, stream: sessionStream);
   final provider = OpenAICompatibleChatProvider(client, config, capabilities);
 
-  return llm_ai.streamChatParts(
-      model: provider, messages: [ChatMessage.user('Hi')]).toList();
+  return llm_ai
+      .streamChatParts(
+        model: provider,
+        messages: [ChatMessage.user('Hi')],
+        providerTools: providerTools,
+      )
+      .toList();
 }
 
 Future<List<LLMStreamPart>> _runXAIResponsesFixture({
@@ -685,7 +718,10 @@ Future<List<LLMStreamPart>> _runXAIResponsesFixture({
 
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
   final responses = XAIResponses(client, config);
-  return responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+  return responses.chatStreamParts(
+    [ChatMessage.user('Hi')],
+    providerTools: providerTools,
+  ).toList();
 }
 
 Future<List<LLMStreamPart>> _runOpenResponsesFixture({
@@ -711,7 +747,10 @@ Future<List<LLMStreamPart>> _runOpenResponsesFixture({
 
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
   final responses = openai_compat.OpenAIResponses(client, config);
-  return responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+  return responses.chatStreamParts(
+    [ChatMessage.user('Hi')],
+    providerTools: providerTools,
+  ).toList();
 }
 
 Future<List<LLMStreamPart>> _runGroqChatFixture({
@@ -732,7 +771,10 @@ Future<List<LLMStreamPart>> _runGroqChatFixture({
   final client = FakeOpenAIClient(config)..streamResponse = sessionStream;
   final provider = OpenAICompatibleChatProvider(client, config, capabilities);
 
-  return provider.chatStreamParts([ChatMessage.user('Hi')]).toList();
+  return provider.chatStreamParts(
+    [ChatMessage.user('Hi')],
+    providerTools: providerTools,
+  ).toList();
 }
 
 Future<List<LLMStreamPart>> _runOllamaChatFixture({
@@ -748,10 +790,13 @@ Future<List<LLMStreamPart>> _runOllamaChatFixture({
   final client = FakeOllamaClient(config)..streamResponse = sessionStream;
   final chat = OllamaChat(client, config);
 
-  return llm_ai.streamChatParts(
-    model: chat,
-    messages: [ChatMessage.user('Hi')],
-  ).toList();
+  return llm_ai
+      .streamChatParts(
+        model: chat,
+        messages: [ChatMessage.user('Hi')],
+        providerTools: providerTools,
+      )
+      .toList();
 }
 
 Future<List<LLMStreamPart>> _runGoogleChatFixture({
@@ -775,10 +820,13 @@ Future<List<LLMStreamPart>> _runGoogleChatFixture({
   final client = FakeGoogleClient(config)..streamResponse = sessionStream;
   final chat = GoogleChat(client, config);
 
-  return llm_ai.streamChatParts(
-    model: chat,
-    messages: [ChatMessage.user('Hi')],
-  ).toList();
+  return llm_ai
+      .streamChatParts(
+        model: chat,
+        messages: [ChatMessage.user('Hi')],
+        providerTools: providerTools,
+      )
+      .toList();
 }
 
 Future<List<LLMStreamPart>> _runGoogleVertexChatFixture({
@@ -816,10 +864,13 @@ Future<List<LLMStreamPart>> _runGoogleVertexChatFixture({
   final client = FakeGoogleClient(config)..streamResponse = sessionStream;
   final chat = GoogleChat(client, config);
 
-  return llm_ai.streamChatParts(
-    model: chat,
-    messages: [ChatMessage.user('Hi')],
-  ).toList();
+  return llm_ai
+      .streamChatParts(
+        model: chat,
+        messages: [ChatMessage.user('Hi')],
+        providerTools: providerTools,
+      )
+      .toList();
 }
 
 enum _JsonlDiffStatus { ok, different, wrote }

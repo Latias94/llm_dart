@@ -70,7 +70,7 @@ class StreamTextResult {
   /// Warnings from the model provider (e.g. unsupported settings).
   ///
   /// This is best-effort and is typically derived from the stream-start part.
-  final Future<List<Map<String, dynamic>>> warnings;
+  final Future<List<LLMWarning>> warnings;
 
   /// Stable response metadata emitted during streaming (best-effort).
   ///
@@ -173,7 +173,7 @@ class StreamTextResult {
     final controller = StreamController<LLMStreamPart>.broadcast(sync: true);
 
     final doneCompleter = Completer<void>();
-    final warningsCompleter = Completer<List<Map<String, dynamic>>>();
+    final warningsCompleter = Completer<List<LLMWarning>>();
     final responseMetadataCompleter = Completer<LLMResponseMetadataPart?>();
     final requestMetadataCompleter = Completer<LLMRequestMetadataPart?>();
     final textCompleter = Completer<String>();
@@ -194,8 +194,9 @@ class StreamTextResult {
     // the stream (or only await a subset of futures).
     final contentFuture = finalResultCompleter.future.then((r) => r.content);
     unawaited(contentFuture.catchError((_) => const <ContentPart>[]));
-    unawaited(warningsCompleter.future
-        .catchError((_) => const <Map<String, dynamic>>[]));
+    unawaited(
+      warningsCompleter.future.catchError((_) => const <LLMWarning>[]),
+    );
     unawaited(responseMetadataCompleter.future.catchError((_) => null));
     unawaited(requestMetadataCompleter.future.catchError((_) => null));
     unawaited(textCompleter.future.catchError((_) => ''));
@@ -554,7 +555,7 @@ class StreamTextResult {
         final finish = finishPart;
         if (finish == null) {
           if (!warningsCompleter.isCompleted) {
-            warningsCompleter.complete(const <Map<String, dynamic>>[]);
+            warningsCompleter.complete(const <LLMWarning>[]);
           }
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.complete(currentResponseMetadata);
@@ -653,7 +654,7 @@ class StreamTextResult {
                 : null);
 
         if (!warningsCompleter.isCompleted) {
-          warningsCompleter.complete(const <Map<String, dynamic>>[]);
+          warningsCompleter.complete(const <LLMWarning>[]);
         }
         if (!responseMetadataCompleter.isCompleted) {
           responseMetadataCompleter.complete(currentResponseMetadata);

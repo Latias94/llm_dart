@@ -1,6 +1,7 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'prompt_input.dart';
+import 'prompt_tool_result_validation.dart';
 
 /// Best-effort dispatch for chat calls with optional per-call overrides.
 ///
@@ -42,6 +43,7 @@ Future<ChatResponse> chatWithToolsBestEffort({
       );
 
     case StandardizedPromptIr(:final prompt):
+      validateNoMissingToolResults(prompt);
       if (model is PromptChatCapability) {
         if (callOptions.isEmpty) {
           return (model as PromptChatCapability).chatPrompt(
@@ -128,6 +130,7 @@ Stream<LLMStreamPart> chatStreamPartsBestEffort({
       );
 
     case StandardizedPromptIr(:final prompt):
+      validateNoMissingToolResults(prompt);
       if (model is PromptChatStreamPartsCapability) {
         if (callOptions.isEmpty) {
           return (model as PromptChatStreamPartsCapability)

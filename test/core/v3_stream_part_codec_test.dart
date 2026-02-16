@@ -61,13 +61,13 @@ void main() {
       final parts = <LLMStreamPart>[
         const LLMStreamStartPart(
           warnings: [
-            {'type': 'unsupported', 'feature': 'some-feature'},
+            LLMUnsupportedWarning(feature: 'some-feature'),
           ],
         ),
         LLMResponseMetadataPart(
           id: 'resp_123',
           timestamp: DateTime.parse('2026-02-10T00:00:00Z'),
-          model: 'gpt-test',
+          modelId: 'gpt-test',
         ),
       ];
 

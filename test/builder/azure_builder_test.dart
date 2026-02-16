@@ -42,10 +42,10 @@ void main() {
       expect(
         ids!,
         containsAll([
-          'openai.web_search_preview',
-          'openai.file_search',
-          'openai.code_interpreter',
-          'openai.image_generation',
+          'azure.web_search_preview',
+          'azure.file_search',
+          'azure.code_interpreter',
+          'azure.image_generation',
         ]),
       );
     });

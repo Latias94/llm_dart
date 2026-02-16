@@ -143,7 +143,10 @@ class AzureOpenAIProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    if (config.useResponsesAPI) {
+    final shouldUseResponses = config.useResponsesAPI ||
+        (providerTools != null && providerTools.isNotEmpty);
+
+    if (shouldUseResponses) {
       return _wrapStreamPartsWithProviderMetadataAlias(
         _responses.chatStreamParts(
           messages,
@@ -207,7 +210,10 @@ class AzureOpenAIProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    if (config.useResponsesAPI) {
+    final shouldUseResponses = config.useResponsesAPI ||
+        (providerTools != null && providerTools.isNotEmpty);
+
+    if (shouldUseResponses) {
       return _wrapStreamPartsWithProviderMetadataAlias(
         _responses.chatPromptStreamParts(
           prompt,
@@ -244,7 +250,7 @@ class AzureOpenAIProvider
   }
 
   @override
-  Future<List<List<double>>> embed(
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   }) {

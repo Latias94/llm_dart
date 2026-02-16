@@ -115,7 +115,7 @@ void main() {
           ),
         ],
         toolHandlers: {
-          'get_weather': (call, {cancelToken}) async => {'ok': true},
+          'get_weather': (input, options) async => {'ok': true},
         },
       );
 
@@ -161,7 +161,7 @@ void main() {
           ),
         ],
         toolHandlers: {
-          'get_weather': (call, {cancelToken}) async => {'ok': true},
+          'get_weather': (input, options) async => {'ok': true},
         },
         needsApproval: (
           call, {

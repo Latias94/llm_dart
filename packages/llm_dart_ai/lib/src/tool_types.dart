@@ -2,10 +2,28 @@ import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'tool_execution_options.dart';
+
 /// A handler for executing a tool call locally.
 typedef ToolCallHandler = FutureOr<Object?> Function(
-  ToolCall toolCall, {
-  CancelToken? cancelToken,
+  Map<String, dynamic> input,
+  ToolExecutionOptions options,
+);
+
+/// Optional conversion function that maps a tool execution output to a v3
+/// `tool-result` output envelope.
+///
+/// This mirrors Vercel AI SDK's `toModelOutput` concept (used by dynamic tools),
+/// but keeps Dart's local execution model:
+/// - [input] is the parsed JSON object tool arguments,
+/// - [output] is whatever the tool handler returned,
+/// - return a [ToolResultOutput] to control how the result is represented to
+///   the model (text/json/content/error/denied).
+typedef ToolToModelOutput = FutureOr<ToolResultOutput> Function({
+  required String toolCallId,
+  required Map<String, dynamic> input,
+  required Object? output,
+  required ToolExecutionOptions options,
 });
 
 /// Callback invoked when tool input streaming starts for a tool call.
@@ -62,3 +80,14 @@ typedef ToolCallRepair = FutureOr<String?> Function(
   String? errorMessage,
   List<String>? validationErrors,
 });
+
+/// How tool input/output schemas should be applied in local tool execution.
+///
+/// This mirrors Vercel AI SDK's `schemas` option (e.g. `'automatic' | 'none'`).
+enum ToolSchemas {
+  /// Use available schemas automatically (when present).
+  automatic,
+
+  /// Disable schema usage (best-effort mode).
+  none,
+}

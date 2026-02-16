@@ -3,6 +3,8 @@ import '../models/tool_models.dart';
 import '../models/audio_models.dart';
 import '../models/image_models.dart';
 import '../models/rerank_models.dart';
+import '../models/embedding_models.dart';
+import '../models/video_models.dart';
 import '../prompt/prompt.dart';
 import 'llm_error.dart';
 import 'cancellation.dart';
@@ -74,6 +76,12 @@ enum LLMCapability {
 
   /// Image generation capabilities
   imageGeneration,
+
+  /// Experimental video generation capabilities
+  ///
+  /// This is aligned with Vercel AI SDK's `experimental_generateVideo` and is
+  /// intentionally marked experimental.
+  experimentalVideoGeneration,
 
   /// File management capabilities
   fileManagement,
@@ -584,8 +592,8 @@ abstract class EmbeddingCapability {
   /// [input] - List of strings to generate embeddings for
   /// [cancelToken] - Optional token to cancel the request
   ///
-  /// Returns a list of embedding vectors or throws an LLMError
-  Future<List<List<double>>> embed(
+  /// Returns an [EmbeddingResponse] or throws an LLMError.
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   });
@@ -596,7 +604,7 @@ abstract class EmbeddingCapability {
 /// This enables AI SDK-style request-level options (headers/body) without
 /// mutating the global provider configuration.
 abstract class EmbeddingCallOptionsCapability {
-  Future<List<List<double>>> embedWithCallOptions(
+  Future<EmbeddingResponse> embedWithCallOptions(
     List<String> input, {
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
@@ -1029,6 +1037,31 @@ abstract class ImageGenerationCallOptionsCapability {
     ImageVariationRequest request, {
     required LLMCallOptions callOptions,
   });
+}
+
+/// Experimental video generation capability (aligned with AI SDK).
+abstract class ExperimentalVideoGenerationCapability {
+  Future<ExperimentalVideoGenerationResponse> generateVideos(
+    ExperimentalVideoGenerationRequest request, {
+    CancelToken? cancelToken,
+  });
+}
+
+/// Experimental video generation capability with per-call overrides.
+abstract class ExperimentalVideoGenerationCallOptionsCapability {
+  Future<ExperimentalVideoGenerationResponse> generateVideosWithCallOptions(
+    ExperimentalVideoGenerationRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  });
+}
+
+/// Optional capability for video models that declare a maximum number of videos
+/// per API call.
+///
+/// Mirrors Vercel AI SDK's `maxVideosPerCall` on `Experimental_VideoModelV3`.
+abstract class ExperimentalVideoGenerationMaxVideosPerCallCapability {
+  int get maxVideosPerCall;
 }
 
 /// Provider capability declaration interface

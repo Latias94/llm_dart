@@ -3,24 +3,23 @@ import 'package:test/test.dart';
 
 void main() {
   group('v3 stream part codec: tool-call/tool-result strictness', () {
-    test('duplicate tool-call throws', () {
-      expect(
-        () => decodeV3StreamParts([
-          {
-            'type': 'tool-call',
-            'toolCallId': 'id-0',
-            'toolName': 'tool',
-            'input': '{}',
-          },
-          {
-            'type': 'tool-call',
-            'toolCallId': 'id-0',
-            'toolName': 'tool',
-            'input': '{}',
-          },
-        ]),
-        throwsA(isA<FormatException>()),
-      );
+    test('duplicate tool-call is allowed (fixture parity)', () {
+      final parts = decodeV3StreamParts([
+        {
+          'type': 'tool-call',
+          'toolCallId': 'id-0',
+          'toolName': 'tool',
+          'input': '{}',
+        },
+        {
+          'type': 'tool-call',
+          'toolCallId': 'id-0',
+          'toolName': 'tool',
+          'input': '{}',
+        },
+      ]);
+
+      expect(parts.whereType<LLMProviderToolCallPart>(), hasLength(2));
     });
 
     test('tool-result toolName mismatch throws', () {
@@ -39,7 +38,7 @@ void main() {
             'result': {'ok': true},
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
 
@@ -65,7 +64,7 @@ void main() {
             'result': {'ok': true},
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
 
@@ -125,7 +124,7 @@ void main() {
             'result': {'n': 1},
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
 
@@ -138,7 +137,7 @@ void main() {
             'toolCallId': 'id-0',
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
 
@@ -162,7 +161,7 @@ void main() {
             'toolCallId': 'id-0',
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
   });

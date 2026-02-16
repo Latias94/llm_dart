@@ -70,16 +70,24 @@ class OpenAICompletion {
 
       // Process each JSON object in the chunk
       for (final json in jsonList) {
-        final choices = json['choices'] as List?;
-        if (choices == null || choices.isEmpty) continue;
+        try {
+          final choices = json['choices'] as List?;
+          if (choices == null || choices.isEmpty) continue;
 
-        final choice = choices.first as Map<String, dynamic>;
-        final delta = choice['delta'] as Map<String, dynamic>?;
-        if (delta == null) continue;
+          final choice = choices.first as Map<String, dynamic>;
+          final delta = choice['delta'] as Map<String, dynamic>?;
+          if (delta == null) continue;
 
-        final content = delta['content'] as String?;
-        if (content != null && content.isNotEmpty) {
-          yield content;
+          final content = delta['content'] as String?;
+          if (content != null && content.isNotEmpty) {
+            yield content;
+          }
+        } catch (e) {
+          if (e is LLMError) rethrow;
+          throw InvalidStreamPartError(
+            chunk: json,
+            message: 'Stream part decode error: $e',
+          );
         }
       }
     }

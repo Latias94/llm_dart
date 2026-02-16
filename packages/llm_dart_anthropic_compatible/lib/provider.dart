@@ -56,7 +56,11 @@ class AnthropicCompatibleChatProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chat(messages, cancelToken: cancelToken);
+    return _chat.chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -66,7 +70,12 @@ class AnthropicCompatibleChatProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
+    return _chat.chatWithTools(
+      messages,
+      tools,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -76,8 +85,12 @@ class AnthropicCompatibleChatProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chatStreamParts(messages,
-        tools: tools, cancelToken: cancelToken);
+    return _chat.chatStreamParts(
+      messages,
+      providerTools: providerTools,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -87,7 +100,12 @@ class AnthropicCompatibleChatProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+    return _chat.chatPrompt(
+      prompt,
+      providerTools: providerTools,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -99,6 +117,7 @@ class AnthropicCompatibleChatProvider
   }) {
     return _chat.chatPromptStreamParts(
       prompt,
+      providerTools: providerTools,
       tools: tools,
       cancelToken: cancelToken,
     );

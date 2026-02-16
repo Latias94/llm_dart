@@ -83,7 +83,7 @@ void main() {
         baseUrl: 'https://example.openai.azure.com/openai',
         model: 'deployment_1',
         providerTools: const [
-          ProviderTool(id: 'openai.web_search_preview'),
+          ProviderTool(id: 'azure.web_search_preview'),
         ],
       ).withProviderOptions('azure', {
         'apiVersion': '2024-10-01-preview',

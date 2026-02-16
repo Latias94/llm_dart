@@ -389,8 +389,8 @@ void main(List<String> args) {
 
         final upstreamPaths = _readStringList(upstream['paths']);
         final expectedPath = expectedRepoRefFixturePath;
-        final needsRepoRefPath = expectedPath != null &&
-            !_containsPath(upstreamPaths, expectedPath);
+        final needsRepoRefPath =
+            expectedPath != null && !_containsPath(upstreamPaths, expectedPath);
         if (upstreamPaths
             .where((p) => _normalizePath(p).startsWith('repo-ref/ai/'))
             .isEmpty) {

@@ -12,7 +12,7 @@ void main() {
             'delta': '{"a":1',
           }
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
 
@@ -24,7 +24,7 @@ void main() {
             'id': 'id-0',
           }
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
 
@@ -42,7 +42,7 @@ void main() {
             'toolName': 'tool',
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
 
@@ -63,7 +63,7 @@ void main() {
             'id': 'id-0',
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
   });

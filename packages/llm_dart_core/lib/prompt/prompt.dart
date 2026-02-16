@@ -6,8 +6,8 @@ import 'package:llm_dart_core/models/chat_models.dart';
 /// Role of a message in the Vercel-style prompt IR.
 ///
 /// This is intentionally separate from [ChatRole] because the legacy
-/// [ChatMessage] model does not have a dedicated `tool` role, while the AI SDK
-/// v3 prompt shape does.
+/// prompt IR needs a dedicated `tool` role with additional constraints (only
+/// tool results / approvals are allowed in tool messages).
 enum PromptRole {
   system,
   user,
@@ -109,9 +109,7 @@ class PromptMessage {
       PromptRole.system => ChatRole.system,
       PromptRole.user => ChatRole.user,
       PromptRole.assistant => ChatRole.assistant,
-      // Best-effort: legacy ChatMessage has no tool role. Most providers map
-      // tool results into user messages or dedicated tool blocks anyway.
-      PromptRole.tool => ChatRole.user,
+      PromptRole.tool => ChatRole.tool,
     };
   }
 

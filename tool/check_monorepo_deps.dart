@@ -160,6 +160,11 @@ Set<String>? _allowedInternalDepsFor({
     return const {'llm_dart_core'};
   }
 
+  if (packageName == 'llm_dart_mcp') {
+    // Experimental tooling package: bridges MCP tools into llm_dart_ai tool loops.
+    return const {'llm_dart_core', 'llm_dart_ai'};
+  }
+
   if (packageName == 'llm_dart_builder') {
     return const {'llm_dart_core'};
   }

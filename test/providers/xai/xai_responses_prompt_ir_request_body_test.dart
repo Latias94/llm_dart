@@ -68,7 +68,15 @@ void main() {
       final input = body['input'] as List;
       expect(input, hasLength(2));
 
-      expect(input[0], equals({'role': 'user', 'content': 'A\n\nB'}));
+      expect(
+        input[0],
+        equals({
+          'role': 'user',
+          'content': [
+            {'type': 'input_text', 'text': 'A\n\nB'}
+          ],
+        }),
+      );
       expect(
         input[1],
         equals({

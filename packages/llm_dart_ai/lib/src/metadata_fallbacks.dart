@@ -21,21 +21,21 @@ LLMResponseMetadataPart responseMetadataWithDefaults(
       : meta.id!;
 
   final timestamp = meta?.timestamp ?? startedAtUtc;
-  final modelId = (meta?.model == null || meta!.model!.trim().isEmpty)
+  final modelId = (meta?.modelId == null || meta!.modelId!.trim().isEmpty)
       ? defaultModelId
-      : meta.model;
+      : meta.modelId;
 
   if (meta != null &&
       id == meta.id &&
       timestamp == meta.timestamp &&
-      modelId == meta.model) {
+      modelId == meta.modelId) {
     return meta;
   }
 
   return LLMResponseMetadataPart(
     id: id,
     timestamp: timestamp,
-    model: modelId,
+    modelId: modelId,
     headers: meta?.headers,
     body: meta?.body,
     status: meta?.status,
@@ -68,7 +68,7 @@ LLMResponseMetadataPart? responseMetadataWithInclude(
   return LLMResponseMetadataPart(
     id: meta.id,
     timestamp: meta.timestamp,
-    model: meta.model,
+    modelId: meta.modelId,
     headers: meta.headers,
     body: null,
     status: meta.status,

@@ -13,7 +13,10 @@ class _SequenceAdapter implements HttpClientAdapter {
   int callCount = 0;
 
   _SequenceAdapter(this.statusCodes, {Map<String, List<String>>? errorHeaders})
-      : errorHeaders = errorHeaders ?? const {'retry-after': ['0']};
+      : errorHeaders = errorHeaders ??
+            const {
+              'retry-after': ['0']
+            };
 
   @override
   void close({bool force = false}) {}
@@ -153,7 +156,8 @@ void main() {
       expect(slept, equals(const Duration(milliseconds: 123)));
     });
 
-    test('ignores unreasonable retry-after and falls back to backoff', () async {
+    test('ignores unreasonable retry-after and falls back to backoff',
+        () async {
       final config = LLMConfig(
         baseUrl: 'https://api.example.com/v1/',
         apiKey: 'k',

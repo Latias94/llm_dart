@@ -267,5 +267,41 @@ void main() {
         equals('sigA'),
       );
     });
+
+    test('emits InvalidStreamPartError when a streamed JSON chunk is malformed',
+        () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'deepseek',
+        providerName: 'DeepSeek',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.example.com/v1/',
+        model: 'gpt-4o',
+      );
+
+      final chunks = <String>[
+        _sseData({
+          'id': 'chatcmpl_123',
+          'created': 1700000000,
+          'model': 'gpt-4o',
+          // invalid type: should be List
+          'choices': 'not-a-list',
+        }),
+        'data: [DONE]\n\n',
+      ];
+
+      final client = FakeOpenAIClient(config)
+        ..streamResponse = Stream<String>.fromIterable(chunks);
+      final chat = OpenAIChat(client, config);
+
+      final parts =
+          await chat.chatStreamParts([ChatMessage.user('Hi')]).toList();
+
+      final errorPart = parts.whereType<LLMErrorPart>().single;
+      expect(errorPart.error, isA<InvalidStreamPartError>());
+      final error = errorPart.error as InvalidStreamPartError;
+      expect(error.chunk, isA<Map<String, dynamic>>());
+      final chunk = error.chunk as Map<String, dynamic>;
+      expect(chunk['choices'], equals('not-a-list'));
+    });
   });
 }

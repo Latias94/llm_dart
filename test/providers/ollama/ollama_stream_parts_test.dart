@@ -173,5 +173,39 @@ void main() {
       expect(calls![0].id, equals('call_getWeather'));
       expect(calls[1].id, equals('call_getWeather_1'));
     });
+
+    test('emits InvalidStreamPartError with last json chunk on malformed data',
+        () async {
+      final config = OllamaConfig(
+        baseUrl: 'http://localhost:11434',
+        model: 'llama3.1',
+      );
+
+      final chunks = <String>[
+        '${jsonEncode({
+              'message': 'not-a-map',
+              'done': false,
+            })}\n',
+      ];
+
+      final client = _FakeOllamaClient(
+        config,
+        stream: Stream<String>.fromIterable(chunks),
+      );
+      final chat = OllamaChat(client, config);
+
+      final parts = await chat
+          .chatStreamParts([ChatMessage.user('Hi')], tools: const []).toList();
+
+      final errors = parts.whereType<LLMErrorPart>().toList();
+      expect(errors, hasLength(1));
+
+      final error = errors.single.error;
+      expect(error, isA<InvalidStreamPartError>());
+      expect(
+        (error as InvalidStreamPartError).chunk,
+        equals({'message': 'not-a-map', 'done': false}),
+      );
+    });
   });
 }

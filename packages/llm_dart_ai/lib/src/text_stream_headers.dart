@@ -7,4 +7,3 @@ library;
 const Map<String, String> textStreamHeadersV1 = <String, String>{
   'content-type': 'text/plain; charset=utf-8',
 };
-

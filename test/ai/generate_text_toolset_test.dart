@@ -96,7 +96,7 @@ void main() {
             },
             required: ['city'],
           ),
-          handler: (toolCall, {cancelToken}) => {'temp': 70},
+          handler: (input, options) => {'temp': 70},
         ),
       ]);
 
@@ -229,7 +229,7 @@ void main() {
             },
             required: ['city'],
           ),
-          handler: (toolCall, {cancelToken}) => {'temp': 70},
+          handler: (input, options) => {'temp': 70},
         ),
         schemaOnlyFunctionTool(
           name: 'search_web',

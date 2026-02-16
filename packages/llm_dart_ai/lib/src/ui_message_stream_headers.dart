@@ -14,4 +14,3 @@ const Map<String, String> uiMessageStreamHeadersV1 = <String, String>{
   'x-vercel-ai-ui-message-stream': 'v1',
   'x-accel-buffering': 'no', // disable nginx buffering
 };
-

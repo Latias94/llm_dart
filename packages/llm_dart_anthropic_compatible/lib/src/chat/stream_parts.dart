@@ -30,6 +30,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
 }) async* {
   final requestBody = built.body;
   final toolNameMapping = built.toolNameMapping;
+  final requestProviderTools = built.providerTools;
 
   final originalConfig = config.originalConfig;
   if (originalConfig != null) {
@@ -144,6 +145,97 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
     };
   }
 
+  ProviderTool? findProviderToolForRequestName(String requestName) {
+    final id = toolNameMapping.providerToolIdForRequestName(requestName);
+    final tools = requestProviderTools;
+    if (id != null && tools != null && tools.isNotEmpty) {
+      for (final t in tools) {
+        if (t.id == id) return t;
+      }
+    }
+
+    return findProviderToolByRawName(
+      providerId: config.providerId,
+      rawToolName: requestName,
+      providerTools: requestProviderTools,
+    );
+  }
+
+  String resolveStableProviderToolName(String requestName) {
+    final tool = findProviderToolForRequestName(requestName);
+    final name = tool?.name;
+    if (name != null && name.trim().isNotEmpty) return name.trim();
+    return requestName;
+  }
+
+  String? inferToolSearchRequestNameForDeferredResult() {
+    final tools = requestProviderTools;
+    if (tools == null || tools.isEmpty) return null;
+
+    bool isToolSearch(ProviderTool t) {
+      final suffix = t.id.split('.').last.trim();
+      return suffix == 'tool_search_regex_20251119' ||
+          suffix == 'tool_search_bm25_20251119' ||
+          suffix == 'tool_search_tool_regex_20251119' ||
+          suffix == 'tool_search_tool_bm25_20251119';
+    }
+
+    final candidates = tools.where(isToolSearch).toList(growable: false);
+    if (candidates.isEmpty) return null;
+
+    final picked = candidates.first;
+    final requestName = toolNameMapping.requestNameForProviderToolId(picked.id);
+    if (requestName != null && requestName.trim().isNotEmpty) {
+      return requestName.trim();
+    }
+
+    final explicit = picked.name;
+    if (explicit != null && explicit.trim().isNotEmpty) return explicit.trim();
+
+    final suffix = picked.id.split('.').last.trim();
+    if (suffix.contains('bm25')) return 'tool_search_tool_bm25';
+    if (suffix.contains('regex')) return 'tool_search_tool_regex';
+
+    return null;
+  }
+
+  Object? normalizeToolSearchToolResultContent(Object? content) {
+    if (content is! Map) return content;
+    final map = Map<String, dynamic>.from(content);
+
+    final type = map['type'];
+    if (type == 'tool_search_tool_search_result') {
+      final refs = map['tool_references'];
+      if (refs is! List) return const <Map<String, dynamic>>[];
+
+      final out = <Map<String, dynamic>>[];
+      for (final item in refs) {
+        if (item is! Map) continue;
+        final m = Map<String, dynamic>.from(item);
+        final toolName = m['tool_name'];
+        final t = m['type'];
+        if (toolName is! String || toolName.trim().isEmpty) continue;
+        out.add({
+          'type':
+              t is String && t.trim().isNotEmpty ? t.trim() : 'tool_reference',
+          'toolName': toolName,
+        });
+      }
+      return out;
+    }
+
+    if (type == 'tool_search_tool_result_error') {
+      final errorCode = map['error_code'];
+      return {
+        'type': 'tool_search_tool_result_error',
+        if (errorCode is String && errorCode.trim().isNotEmpty)
+          'errorCode': errorCode.trim(),
+      };
+    }
+
+    return content;
+  }
+
   LLMProviderMetadataPart? computeProviderMetadataPart() {
     final raw = <String, dynamic>{
       'content': contentBlocks,
@@ -205,6 +297,8 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
     currentThinkingIndex = null;
   }
 
+  Object? lastStreamChunk;
+
   try {
     final streamed = await client.postStreamRawWithHeaders(
       chatEndpoint,
@@ -214,7 +308,6 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
     );
     final responseHeaders = streamed.headers;
     final stream = streamed.stream;
-
     await for (final chunk in stream) {
       final dataLines = sseParser.parse(chunk);
       if (dataLines.isEmpty) {
@@ -225,6 +318,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
         final data = line.data;
 
         if (data.isEmpty) continue;
+        lastStreamChunk = data;
         if (data == '[DONE]') {
           // Best-effort finish if the stream ends without message_stop.
           if (inText) {
@@ -277,6 +371,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
         } catch (_) {
           continue;
         }
+        lastStreamChunk = json;
 
         final type = json['type'] as String?;
 
@@ -428,18 +523,55 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
               }
               activeToolCalls[index] = state;
 
-              final isProviderNativeTool = toolName != null &&
-                  (toolNameMapping.providerToolIdForRequestName(toolName) !=
-                          null ||
-                      toolName == 'web_search' ||
-                      toolName == 'web_fetch');
+              final isProviderTool = toolName != null &&
+                  toolNameMapping.providerToolIdForRequestName(toolName) !=
+                      null;
 
-              // Provider-native tools are executed server-side; do not surface
-              // them as local tool call stream parts, otherwise local tool
-              // loops might try to execute them.
+              // `web_search` / `web_fetch` are server tools and should appear
+              // as `server_tool_use` (provider-executed). If they ever appear
+              // as `tool_use`, treat them as provider-executed and avoid local
+              // execution.
+              final isKnownServerTool =
+                  toolName == 'web_search' || toolName == 'web_fetch';
+
+              // Provider-defined tools (e.g. computer use) are represented as
+              // provider tools in the SDK surface but are *client-executed*.
+              // Surface them via `LLMProviderToolCallPart` (providerExecuted=false).
               if (toolId != null &&
                   toolId.isNotEmpty &&
-                  !isProviderNativeTool) {
+                  isProviderTool &&
+                  !isKnownServerTool) {
+                final stableName = resolveStableProviderToolName(toolName!);
+                final configured = findProviderToolForRequestName(toolName);
+
+                providerToolNameById[toolId] = stableName;
+
+                final providerState = _ProviderToolCallState()
+                  ..id = toolId
+                  ..toolName = stableName
+                  ..providerToolName = toolName
+                  ..providerExecuted = false
+                  ..supportsDeferredResults =
+                      configured?.supportsDeferredResults == true;
+
+                // Prefill with embedded `input` when present.
+                if (state.prefilledInput == true &&
+                    state.inputBuffer.isNotEmpty) {
+                  providerState.inputBuffer.write(state.inputBuffer.toString());
+                  providerState.firstDelta = false;
+                }
+
+                activeProviderToolCalls[index] = providerState;
+
+                yield LLMToolInputStartPart(
+                  id: toolId,
+                  toolName: stableName,
+                  providerExecuted: false,
+                );
+              } else if (toolId != null &&
+                  toolId.isNotEmpty &&
+                  !isProviderTool &&
+                  !isKnownServerTool) {
                 final originalToolName = toolNameMapping
                         .originalFunctionNameForRequestName(toolName ?? '') ??
                     (toolName ?? '');
@@ -478,16 +610,10 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                       ? normalizeServerToolName(name)
                       : name;
 
-                  final providerTool = findProviderToolByRawName(
-                    providerId: config.providerId,
-                    rawToolName: rawToolName,
-                    providerTools: originalConfig?.providerTools,
+                  final providerTool = findProviderToolForRequestName(
+                    rawToolName,
                   );
-                  final toolName = resolveProviderToolName(
-                    providerId: config.providerId,
-                    rawToolName: rawToolName,
-                    providerTools: originalConfig?.providerTools,
-                  );
+                  final toolName = resolveStableProviderToolName(rawToolName);
 
                   providerToolNameById[id] = toolName;
 
@@ -526,11 +652,20 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                     inferProviderToolNameFromResultBlockType(blockType) ??
                     'tool';
 
-                toolName = resolveProviderToolName(
-                  providerId: config.providerId,
-                  rawToolName: toolName,
-                  providerTools: originalConfig?.providerTools,
-                );
+                // Tool search tool results may arrive without a matching
+                // `server_tool_use` in the same response (deferred result).
+                // In that case, infer the configured request name from the
+                // enabled provider tools.
+                if (blockType == 'tool_search_tool_result' &&
+                    (toolName == 'tool_search_tool' || toolName == 'tool')) {
+                  final inferred =
+                      inferToolSearchRequestNameForDeferredResult();
+                  if (inferred != null && inferred.isNotEmpty) {
+                    toolName = inferred;
+                  }
+                }
+
+                toolName = resolveStableProviderToolName(toolName);
 
                 final content = contentBlock['content'];
                 final isError = isLikelyToolResultError(content);
@@ -551,7 +686,12 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                     }
                   }
                 } else if (content is Map) {
-                  resultPayload = Map<String, dynamic>.from(content);
+                  if (blockType == 'tool_search_tool_result') {
+                    resultPayload =
+                        normalizeToolSearchToolResultContent(content);
+                  } else {
+                    resultPayload = Map<String, dynamic>.from(content);
+                  }
                 }
 
                 final part = providerToolParts.result(
@@ -652,6 +792,11 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                 providerState.inputBuffer.write(fragment);
                 providerState.firstDelta = false;
 
+                final mirroredState = activeToolCalls[index];
+                if (mirroredState != null && !mirroredState.prefilledInput) {
+                  mirroredState.inputBuffer.write(fragment);
+                }
+
                 yield LLMToolInputDeltaPart(
                   id: providerState.id!,
                   delta: fragment,
@@ -746,15 +891,41 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
               });
 
               final requestName = state.name;
-              final isProviderNativeTool = requestName != null &&
-                  (toolNameMapping.providerToolIdForRequestName(requestName) !=
-                          null ||
-                      requestName == 'web_search' ||
-                      requestName == 'web_fetch');
+              final isProviderTool = requestName != null &&
+                  toolNameMapping.providerToolIdForRequestName(requestName) !=
+                      null;
+              final isKnownServerTool =
+                  requestName == 'web_search' || requestName == 'web_fetch';
 
               if (state.id != null &&
                   state.id!.isNotEmpty &&
-                  !isProviderNativeTool) {
+                  isProviderTool &&
+                  !isKnownServerTool) {
+                final providerState = activeProviderToolCalls.remove(index);
+                yield LLMToolInputEndPart(id: state.id!);
+
+                final stableName = resolveStableProviderToolName(requestName!);
+                var inputString = (providerState?.inputBuffer.toString() ??
+                        state.inputBuffer.toString())
+                    .trim();
+                if (inputString.isEmpty) inputString = '{}';
+
+                final part = providerToolParts.call(
+                  toolCallId: state.id!,
+                  toolName: stableName,
+                  input: inputString,
+                  providerExecuted: false,
+                  supportsDeferredResults:
+                      (providerState?.supportsDeferredResults == true)
+                          ? true
+                          : null,
+                  providerMetadataPayload: const {'type': 'tool_use'},
+                );
+                if (part != null) yield part;
+              } else if (state.id != null &&
+                  state.id!.isNotEmpty &&
+                  !isProviderTool &&
+                  !isKnownServerTool) {
                 endedToolCalls.add(state.id!);
                 yield LLMToolCallEndPart(state.id!);
               }
@@ -940,7 +1111,12 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
       yield LLMErrorPart(e);
       return;
     }
-    yield LLMErrorPart(GenericError('Stream error: $e'));
+    yield LLMErrorPart(
+      InvalidStreamPartError(
+        chunk: lastStreamChunk ?? const <String, dynamic>{},
+        message: 'Stream part decode error: $e',
+      ),
+    );
     return;
   }
 }

@@ -44,6 +44,11 @@ class GoogleClient {
     }
   }
 
+  /// Whether this client authenticates via the `x-goog-api-key` header.
+  ///
+  /// When false, requests authenticate using the `?key=` query parameter.
+  bool get usesApiKeyHeaderAuth => _useApiKeyHeaderAuth;
+
   /// Get endpoint with API key authentication
   String _getEndpointWithAuth(String endpoint) {
     if (_useApiKeyHeaderAuth) {
@@ -101,6 +106,7 @@ class GoogleClient {
       postJsonWithHeaders(
     String endpoint,
     Map<String, dynamic> data, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
     return HttpResponseHandler.postJsonWithHeaders(
@@ -109,6 +115,40 @@ class GoogleClient {
       data,
       providerName: 'Google',
       logger: logger,
+      options: headers == null ? null : Options(headers: headers),
+      cancelToken: cancelToken,
+    );
+  }
+
+  /// Make a GET request and return JSON response.
+  Future<Map<String, dynamic>> getJson(
+    String endpoint, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) {
+    return HttpResponseHandler.getJson(
+      dio,
+      _getEndpointWithAuth(endpoint),
+      providerName: 'Google',
+      logger: logger,
+      options: headers == null ? null : Options(headers: headers),
+      cancelToken: cancelToken,
+    );
+  }
+
+  /// Make a GET request and return JSON response + response headers (best-effort).
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      getJsonWithHeaders(
+    String endpoint, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) {
+    return HttpResponseHandler.getJsonWithHeaders(
+      dio,
+      _getEndpointWithAuth(endpoint),
+      providerName: 'Google',
+      logger: logger,
+      options: headers == null ? null : Options(headers: headers),
       cancelToken: cancelToken,
     );
   }

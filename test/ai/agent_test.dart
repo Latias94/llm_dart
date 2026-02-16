@@ -134,7 +134,7 @@ void main() {
             },
             required: ['city'],
           ),
-          handler: (toolCall, {cancelToken}) => {'temp': 70},
+          handler: (input, options) => {'temp': 70},
         ),
       ]);
 

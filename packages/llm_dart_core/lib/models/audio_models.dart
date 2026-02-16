@@ -435,6 +435,20 @@ class STTRequest {
   /// File path (for file input)
   final String? filePath;
 
+  /// Remote URL to download and transcribe (AI layer convenience).
+  ///
+  /// This mirrors Vercel AI SDK's ability to pass URL-based audio inputs with a
+  /// configurable download function.
+  ///
+  /// Provider implementations typically do not handle downloads themselves; the
+  /// `llm_dart_ai.transcribe(...)` helper will download this URL and convert it
+  /// into [audioData] before calling the provider model.
+  ///
+  /// Precedence:
+  /// - If [audioData], [filePath], or [cloudStorageUrl] is set, [audioUrl] is
+  ///   ignored (and should not be downloaded).
+  final String? audioUrl;
+
   /// Cloud storage URL (ElevenLabs specific)
   final String? cloudStorageUrl;
 
@@ -483,6 +497,7 @@ class STTRequest {
   const STTRequest({
     this.audioData,
     this.filePath,
+    this.audioUrl,
     this.cloudStorageUrl,
     this.model,
     this.language,
@@ -572,6 +587,83 @@ class STTRequest {
         enableLogging: enableLogging,
       );
 
+  /// Create STT request from a remote URL (downloaded by `llm_dart_ai.transcribe`).
+  factory STTRequest.fromUrl(
+    String audioUrl, {
+    String? model,
+    String? language,
+    String? format,
+    bool includeWordTiming = false,
+    bool includeConfidence = false,
+    double? temperature,
+    TimestampGranularity timestampGranularity = TimestampGranularity.word,
+    bool diarize = false,
+    int? numSpeakers,
+    bool tagAudioEvents = true,
+    bool webhook = false,
+    String? prompt,
+    String? responseFormat,
+    bool enableLogging = true,
+  }) =>
+      STTRequest(
+        audioUrl: audioUrl,
+        model: model,
+        language: language,
+        format: format,
+        includeWordTiming: includeWordTiming,
+        includeConfidence: includeConfidence,
+        temperature: temperature,
+        timestampGranularity: timestampGranularity,
+        diarize: diarize,
+        numSpeakers: numSpeakers,
+        tagAudioEvents: tagAudioEvents,
+        webhook: webhook,
+        prompt: prompt,
+        responseFormat: responseFormat,
+        enableLogging: enableLogging,
+      );
+
+  STTRequest copyWith({
+    List<int>? audioData,
+    String? filePath,
+    String? audioUrl,
+    String? cloudStorageUrl,
+    String? model,
+    String? language,
+    String? format,
+    bool? includeWordTiming,
+    bool? includeConfidence,
+    double? temperature,
+    TimestampGranularity? timestampGranularity,
+    bool? diarize,
+    int? numSpeakers,
+    bool? tagAudioEvents,
+    bool? webhook,
+    String? prompt,
+    String? responseFormat,
+    bool? enableLogging,
+  }) =>
+      STTRequest(
+        audioData: audioData ?? this.audioData,
+        filePath: filePath ?? this.filePath,
+        audioUrl: audioUrl ?? this.audioUrl,
+        cloudStorageUrl: cloudStorageUrl ?? this.cloudStorageUrl,
+        model: model ?? this.model,
+        language: language ?? this.language,
+        format: format ?? this.format,
+        includeWordTiming: includeWordTiming ?? this.includeWordTiming,
+        includeConfidence: includeConfidence ?? this.includeConfidence,
+        temperature: temperature ?? this.temperature,
+        timestampGranularity: timestampGranularity ?? this.timestampGranularity,
+        diarize: diarize ?? this.diarize,
+        numSpeakers: numSpeakers ?? this.numSpeakers,
+        tagAudioEvents: tagAudioEvents ?? this.tagAudioEvents,
+        webhook: webhook ?? this.webhook,
+        prompt: prompt ?? this.prompt,
+        responseFormat: responseFormat ?? this.responseFormat,
+        enableLogging: enableLogging ?? this.enableLogging,
+      );
+
   /// Create STT request from cloud storage URL (ElevenLabs specific)
   factory STTRequest.fromCloudUrl(
     String cloudStorageUrl, {
@@ -611,6 +703,7 @@ class STTRequest {
   Map<String, dynamic> toJson() => {
         if (audioData != null) 'audio_data': audioData,
         if (filePath != null) 'file_path': filePath,
+        if (audioUrl != null) 'audio_url': audioUrl,
         if (cloudStorageUrl != null) 'cloud_storage_url': cloudStorageUrl,
         if (model != null) 'model': model,
         if (language != null) 'language': language,
@@ -633,6 +726,7 @@ class STTRequest {
             ? List<int>.from(json['audio_data'] as List)
             : null,
         filePath: json['file_path'] as String?,
+        audioUrl: json['audio_url'] as String?,
         cloudStorageUrl: json['cloud_storage_url'] as String?,
         model: json['model'] as String?,
         language: json['language'] as String?,

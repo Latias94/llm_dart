@@ -9,4 +9,3 @@ Stream<List<int>> utf8BytesFromTextStream(Stream<String> textStream) async* {
     yield utf8.encode(chunk);
   }
 }
-

@@ -8,6 +8,9 @@ library;
 // Core exports (standard surface + shared models)
 export 'package:llm_dart_core/llm_dart_core.dart';
 
+// Provider utilities (HTTP/SSE/schema helpers)
+export 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
 // Task APIs (Vercel-style)
 export 'package:llm_dart_ai/llm_dart_ai.dart';
 

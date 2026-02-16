@@ -84,7 +84,8 @@ void main() {
       expect(inner.lastCallOptions!.body, equals({'a': 1}));
     });
 
-    test('merges defaults + per-call overrides (case-insensitive headers)', () async {
+    test('merges defaults + per-call overrides (case-insensitive headers)',
+        () async {
       final inner = _CapturingCallOptionsChatModel();
       final wrapped = wrapLanguageModel(
         inner,
@@ -123,7 +124,8 @@ void main() {
       );
     });
 
-    test('throws when defaults require callOptions but model does not support them',
+    test(
+        'throws when defaults require callOptions but model does not support them',
         () async {
       final wrapped = wrapLanguageModel(
         _BasicChatModel(),

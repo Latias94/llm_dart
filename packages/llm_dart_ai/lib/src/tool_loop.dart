@@ -17,9 +17,14 @@ import 'prompt_input.dart';
 import 'prompt_message_converters.dart';
 import 'provider_tool_approval_prompt.dart';
 import 'response_messages.dart';
+import 'ai_errors.dart';
+import 'prompt_tool_result_validation.dart';
+import 'tool_catalog.dart';
 import 'tool_set.dart';
+import 'tool_execution_options.dart';
 import 'tool_types.dart';
 import 'types.dart';
+import 'provider_tool_normalization.dart';
 
 class _ToolCallAccum {
   String? name;
@@ -275,6 +280,8 @@ Future<ChatResponse> _chatPromptBestEffort(
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
 }) {
+  validateNoMissingToolResults(prompt);
+
   if (model is PromptChatCapability) {
     if (callOptions.isEmpty) {
       return (model as PromptChatCapability).chatPrompt(
@@ -329,11 +336,13 @@ Future<ToolLoopResult> runToolLoop({
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
   IncludeOptions include = const IncludeOptions(),
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
@@ -354,11 +363,13 @@ Future<ToolLoopResult> runToolLoop({
       tools: tools,
       providerTools: providerTools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
       include: include,
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
@@ -366,6 +377,8 @@ Future<ToolLoopResult> runToolLoop({
   }
 
   final standardizedMessages = (input as StandardizedChatMessages).messages;
+
+  validateNoMissingToolResults(promptFromChatMessages(standardizedMessages));
 
   if (maxSteps < 1) {
     throw const InvalidRequestError('maxSteps must be >= 1');
@@ -476,8 +489,12 @@ Future<ToolLoopResult> runToolLoop({
         toolCalls: autoApprovedToolCalls,
         tools: tools,
         toolHandlers: toolHandlers,
+        toolCatalog: toolCatalog,
         repairToolCall: repairToolCall,
         continueOnToolError: continueOnToolError,
+        toolSchemas: toolSchemas,
+        messages: workingMessages,
+        stepIndex: stepIndex,
         cancelToken: cancelToken,
       );
 
@@ -542,8 +559,12 @@ Future<ToolLoopResult> runToolLoop({
       toolCalls: executableToolCalls,
       tools: tools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
+      messages: workingMessages,
+      stepIndex: stepIndex,
       cancelToken: cancelToken,
     );
 
@@ -677,11 +698,13 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
   IncludeOptions include = const IncludeOptions(),
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
@@ -697,11 +720,13 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       tools: tools,
       providerTools: providerTools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
       include: include,
       callOptions: callOptions,
       cancelToken: cancelToken,
@@ -826,8 +851,12 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
         toolCalls: autoApprovedToolCalls,
         tools: tools,
         toolHandlers: toolHandlers,
+        toolCatalog: toolCatalog,
         repairToolCall: repairToolCall,
         continueOnToolError: continueOnToolError,
+        toolSchemas: toolSchemas,
+        messages: workingMessages,
+        stepIndex: stepIndex,
         cancelToken: cancelToken,
       );
 
@@ -897,8 +926,12 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       toolCalls: executableToolCalls,
       tools: tools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
+      messages: workingMessages,
+      stepIndex: stepIndex,
       cancelToken: cancelToken,
     );
 
@@ -979,11 +1012,13 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
   IncludeOptions include = const IncludeOptions(),
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
@@ -1004,11 +1039,13 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       tools: tools,
       providerTools: providerTools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
       include: include,
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
@@ -1016,6 +1053,8 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
   }
 
   final standardizedMessages = (input as StandardizedChatMessages).messages;
+
+  validateNoMissingToolResults(promptFromChatMessages(standardizedMessages));
 
   if (maxSteps < 1) {
     throw const InvalidRequestError('maxSteps must be >= 1');
@@ -1128,8 +1167,12 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
         toolCalls: autoApprovedToolCalls,
         tools: tools,
         toolHandlers: toolHandlers,
+        toolCatalog: toolCatalog,
         repairToolCall: repairToolCall,
         continueOnToolError: continueOnToolError,
+        toolSchemas: toolSchemas,
+        messages: workingMessages,
+        stepIndex: stepIndex,
         cancelToken: cancelToken,
       );
 
@@ -1194,8 +1237,12 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       toolCalls: executableToolCalls,
       tools: tools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
+      messages: workingMessages,
+      stepIndex: stepIndex,
       cancelToken: cancelToken,
     );
 
@@ -1278,11 +1325,13 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
   IncludeOptions include = const IncludeOptions(),
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
@@ -1306,8 +1355,10 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
     approvals: approvals,
     tools: tools,
     toolHandlers: toolHandlers,
+    toolCatalog: toolCatalog,
     repairToolCall: repairToolCall,
     continueOnToolError: continueOnToolError,
+    toolSchemas: toolSchemas,
     cancelToken: cancelToken,
   );
 
@@ -1321,11 +1372,13 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
       tools: tools,
       providerTools: providerTools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
       include: include,
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
@@ -1340,13 +1393,53 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
     tools: tools,
     providerTools: providerTools,
     toolHandlers: toolHandlers,
+    toolCatalog: toolCatalog,
     repairToolCall: repairToolCall,
     toolApprovalChecks: toolApprovalChecks,
     needsApproval: needsApproval,
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
+    toolSchemas: toolSchemas,
     include: include,
     callOptions: effectiveCallOptions,
+    cancelToken: cancelToken,
+  );
+}
+
+/// ToolSet variant of [resumeToolLoopUntilBlocked].
+Future<ToolLoopRunOutcome> resumeToolLoopUntilBlockedWithToolSet({
+  required ChatCapability model,
+  required ToolLoopBlockedState blockedState,
+  required List<ToolApprovalDecision> approvals,
+  required ToolSet toolSet,
+  List<ProviderTool>? providerTools,
+  ToolCallRepair? repairToolCall,
+  ToolApprovalCheck? needsApproval,
+  int maxSteps = 10,
+  bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
+  IncludeOptions include = const IncludeOptions(),
+  LLMCallOptions defaultCallOptions = const LLMCallOptions(),
+  LLMCallOptions callOptions = const LLMCallOptions(),
+  CancelToken? cancelToken,
+}) {
+  return resumeToolLoopUntilBlocked(
+    model: model,
+    blockedState: blockedState,
+    approvals: approvals,
+    tools: toolSet.tools,
+    providerTools: providerTools,
+    toolHandlers: toolSet.handlers,
+    toolCatalog: ToolSetCatalog(toolSet),
+    repairToolCall: repairToolCall,
+    toolApprovalChecks: toolSet.approvalChecks,
+    needsApproval: needsApproval,
+    maxSteps: maxSteps,
+    continueOnToolError: continueOnToolError,
+    toolSchemas: toolSchemas,
+    include: include,
+    defaultCallOptions: defaultCallOptions,
+    callOptions: callOptions,
     cancelToken: cancelToken,
   );
 }
@@ -1373,8 +1466,10 @@ Future<ToolLoopAppliedToolApprovals> applyToolApprovalsToBlockedState({
   required List<ToolApprovalDecision> approvals,
   List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
   CancelToken? cancelToken,
 }) async {
   final decisionsByApprovalId = <String, ToolApprovalDecision>{};
@@ -1410,10 +1505,14 @@ Future<ToolLoopAppliedToolApprovals> applyToolApprovalsToBlockedState({
     toolCalls: remainingToolCalls,
     tools: tools,
     toolHandlers: toolHandlers,
+    toolCatalog: toolCatalog,
     repairToolCall: repairToolCall,
     continueOnToolError: continueOnToolError,
+    toolSchemas: toolSchemas,
     toolApprovalRequests: approvalRequests,
     decisionsByApprovalId: decisionsByApprovalId,
+    messages: _messagesBeforeBlockedToolCall(blockedState.messages),
+    stepIndex: blockedState.stepIndex,
     cancelToken: cancelToken,
   );
 
@@ -1540,6 +1639,30 @@ ToolLoopStep _withToolResultsOnStep({
   );
 }
 
+/// ToolSet variant of [applyToolApprovalsToBlockedState].
+Future<ToolLoopAppliedToolApprovals>
+    applyToolApprovalsToBlockedStateWithToolSet({
+  required ToolLoopBlockedState blockedState,
+  required List<ToolApprovalDecision> approvals,
+  required ToolSet toolSet,
+  ToolCallRepair? repairToolCall,
+  bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
+  CancelToken? cancelToken,
+}) {
+  return applyToolApprovalsToBlockedState(
+    blockedState: blockedState,
+    approvals: approvals,
+    tools: toolSet.tools,
+    toolHandlers: toolSet.handlers,
+    toolCatalog: ToolSetCatalog(toolSet),
+    repairToolCall: repairToolCall,
+    continueOnToolError: continueOnToolError,
+    toolSchemas: toolSchemas,
+    cancelToken: cancelToken,
+  );
+}
+
 List<ToolLoopStep> _patchBlockedStepWithToolResults({
   required ToolLoopBlockedState blockedState,
   required List<ToolResult> toolResults,
@@ -1634,10 +1757,14 @@ Future<List<ToolResult>> _executeToolCallsWithApprovals({
   required List<ToolCall> toolCalls,
   required List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   required ToolCallRepair? repairToolCall,
   required bool continueOnToolError,
+  required ToolSchemas toolSchemas,
   required List<ToolApprovalRequest> toolApprovalRequests,
   required Map<String, ToolApprovalDecision> decisionsByApprovalId,
+  required List<ChatMessage> messages,
+  required int stepIndex,
   CancelToken? cancelToken,
 }) async {
   final results = <ToolResult>[];
@@ -1679,8 +1806,12 @@ Future<List<ToolResult>> _executeToolCallsWithApprovals({
       toolCalls: [toolCall],
       tools: tools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
+      messages: messages,
+      stepIndex: stepIndex,
       cancelToken: cancelToken,
     );
 
@@ -1707,11 +1838,13 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   required int maxSteps,
   required bool continueOnToolError,
+  required ToolSchemas toolSchemas,
   required IncludeOptions include,
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
@@ -1823,8 +1956,12 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
         toolCalls: autoApprovedToolCalls,
         tools: tools,
         toolHandlers: toolHandlers,
+        toolCatalog: toolCatalog,
         repairToolCall: repairToolCall,
         continueOnToolError: continueOnToolError,
+        toolSchemas: toolSchemas,
+        messages: workingMessages,
+        stepIndex: stepIndex,
         cancelToken: cancelToken,
       );
 
@@ -1889,8 +2026,12 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
       toolCalls: executableToolCalls,
       tools: tools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
+      messages: workingMessages,
+      stepIndex: stepIndex,
       cancelToken: cancelToken,
     );
 
@@ -1967,11 +2108,13 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   required int maxSteps,
   required bool continueOnToolError,
+  required ToolSchemas toolSchemas,
   required IncludeOptions include,
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
@@ -1989,11 +2132,13 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       tools: tools,
       providerTools: providerTools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
       include: include,
       callOptions: callOptions,
       cancelToken: cancelToken,
@@ -2114,8 +2259,12 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
         toolCalls: autoApprovedToolCalls,
         tools: tools,
         toolHandlers: toolHandlers,
+        toolCatalog: toolCatalog,
         repairToolCall: repairToolCall,
         continueOnToolError: continueOnToolError,
+        toolSchemas: toolSchemas,
+        messages: workingMessages,
+        stepIndex: stepIndex,
         cancelToken: cancelToken,
       );
 
@@ -2185,8 +2334,12 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       toolCalls: executableToolCalls,
       tools: tools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
+      messages: workingMessages,
+      stepIndex: stepIndex,
       cancelToken: cancelToken,
     );
 
@@ -2265,11 +2418,13 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
   IncludeOptions include = const IncludeOptions(),
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
@@ -2285,11 +2440,13 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       tools: tools,
       providerTools: providerTools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
       include: include,
       callOptions: callOptions,
       cancelToken: cancelToken,
@@ -2416,8 +2573,12 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
         toolCalls: autoApprovedToolCalls,
         tools: tools,
         toolHandlers: toolHandlers,
+        toolCatalog: toolCatalog,
         repairToolCall: repairToolCall,
         continueOnToolError: continueOnToolError,
+        toolSchemas: toolSchemas,
+        messages: workingMessages,
+        stepIndex: stepIndex,
         cancelToken: cancelToken,
       );
 
@@ -2486,8 +2647,12 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       toolCalls: executableToolCalls,
       tools: tools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
+      messages: workingMessages,
+      stepIndex: stepIndex,
       cancelToken: cancelToken,
     );
 
@@ -2573,6 +2738,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
   IncludeOptions include = const IncludeOptions(),
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
@@ -2587,11 +2753,13 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
     tools: toolSet.tools,
     providerTools: providerTools,
     toolHandlers: toolSet.handlers,
+    toolCatalog: ToolSetCatalog(toolSet),
     repairToolCall: repairToolCall,
     toolApprovalChecks: toolSet.approvalChecks,
     needsApproval: needsApproval,
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
+    toolSchemas: toolSchemas,
     include: include,
     defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
@@ -2612,6 +2780,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
   ToolApprovalCheck? needsApproval,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
   IncludeOptions include = const IncludeOptions(),
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
@@ -2626,11 +2795,13 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
     tools: toolSet.tools,
     providerTools: providerTools,
     toolHandlers: toolSet.handlers,
+    toolCatalog: ToolSetCatalog(toolSet),
     repairToolCall: repairToolCall,
     toolApprovalChecks: toolSet.approvalChecks,
     needsApproval: needsApproval,
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
+    toolSchemas: toolSchemas,
     include: include,
     defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
@@ -2689,6 +2860,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
@@ -2698,12 +2870,17 @@ Stream<LLMStreamPart> streamToolLoopParts({
   bool waitForDeferredProviderToolResults = true,
   int maxAdditionalProviderToolResultSteps = 1,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
   bool emitStepParts = false,
   IncludeOptions include = const IncludeOptions(),
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async* {
+  final normalized = normalizeProviderToolsAndCollectWarnings(
+    model: model,
+    providerTools: providerTools,
+  );
   final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
   Stream<LLMStreamPart> upstream() async* {
     final input = standardizePromptInput(
@@ -2722,8 +2899,9 @@ Stream<LLMStreamPart> streamToolLoopParts({
         model: model,
         prompt: input.prompt,
         tools: tools,
-        providerTools: providerTools,
+        providerTools: normalized.providerTools,
         toolHandlers: toolHandlers,
+        toolCatalog: toolCatalog,
         repairToolCall: repairToolCall,
         toolApprovalChecks: toolApprovalChecks,
         needsApproval: needsApproval,
@@ -2734,6 +2912,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         maxAdditionalProviderToolResultSteps:
             maxAdditionalProviderToolResultSteps,
         continueOnToolError: continueOnToolError,
+        toolSchemas: toolSchemas,
         emitStepParts: emitStepParts,
         include: include,
         callOptions: effectiveCallOptions,
@@ -2743,6 +2922,18 @@ Stream<LLMStreamPart> streamToolLoopParts({
     }
 
     final standardizedMessages = (input as StandardizedChatMessages).messages;
+
+    try {
+      validateNoMissingToolResults(
+          promptFromChatMessages(standardizedMessages));
+    } catch (e) {
+      if (e is LLMError) {
+        yield LLMErrorPart(e);
+        return;
+      }
+      yield LLMErrorPart(GenericError('Invalid prompt/tool history: $e'));
+      return;
+    }
 
     if (enableProviderToolApprovals) {
       final supportsPromptStreaming = effectiveCallOptions.isEmpty
@@ -2765,8 +2956,9 @@ Stream<LLMStreamPart> streamToolLoopParts({
         model: model,
         prompt: promptFromChatMessages(standardizedMessages),
         tools: tools,
-        providerTools: providerTools,
+        providerTools: normalized.providerTools,
         toolHandlers: toolHandlers,
+        toolCatalog: toolCatalog,
         repairToolCall: repairToolCall,
         toolApprovalChecks: toolApprovalChecks,
         needsApproval: needsApproval,
@@ -2777,6 +2969,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         maxAdditionalProviderToolResultSteps:
             maxAdditionalProviderToolResultSteps,
         continueOnToolError: continueOnToolError,
+        toolSchemas: toolSchemas,
         emitStepParts: emitStepParts,
         include: include,
         callOptions: effectiveCallOptions,
@@ -2817,6 +3010,14 @@ Stream<LLMStreamPart> streamToolLoopParts({
     final workingMessages = List<ChatMessage>.from(standardizedMessages);
     final pendingProviderToolCallFirstStep = <String, int>{};
 
+    final workingTools =
+        toolCatalog == null ? null : <Tool>[...?(tools ?? const <Tool>[])];
+    final workingToolHandlers =
+        toolCatalog == null ? null : <String, ToolCallHandler>{...toolHandlers};
+    final workingToolApprovalChecks = toolCatalog == null
+        ? null
+        : <String, ToolApprovalCheck>{...?(toolApprovalChecks ?? const {})};
+
     for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
       if (emitStepParts) {
         yield LLMStepStartPart(stepIndex);
@@ -2829,24 +3030,27 @@ Stream<LLMStreamPart> streamToolLoopParts({
       ChatResponse? completedResponse;
 
       final startedToolCalls = <String>{};
+      final allowUnlistedToolCallIds = <String>{};
 
       final usesNativeParts = true;
       var didEmitProviderMetadataPart = false;
+
+      final toolSearchReferencedNames = <String>[];
 
       final Stream<LLMStreamPart> partsStream;
       if (effectiveCallOptions.isEmpty) {
         partsStream = (model as ChatStreamPartsCapability).chatStreamParts(
           workingMessages,
-          tools: tools,
-          providerTools: providerTools,
+          tools: toolCatalog == null ? tools : workingTools,
+          providerTools: normalized.providerTools,
           cancelToken: cancelToken,
         );
       } else {
         partsStream = (model as ChatStreamPartsCallOptionsCapability)
             .chatStreamPartsWithCallOptions(
           workingMessages,
-          tools: tools,
-          providerTools: providerTools,
+          tools: toolCatalog == null ? tools : workingTools,
+          providerTools: normalized.providerTools,
           callOptions: effectiveCallOptions,
           cancelToken: cancelToken,
         );
@@ -2895,9 +3099,44 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
           case LLMProviderToolCallPart(
               :final toolCallId,
+              :final toolName,
+              :final input,
               :final providerExecuted,
               :final supportsDeferredResults,
             ):
+            // Provider-defined tools (e.g. Anthropic computer use) can be
+            // represented as provider tool calls that must be executed by the
+            // client. Treat them like local function tool calls so the
+            // existing tool handler map can execute them.
+            if (providerExecuted == false &&
+                toolCallId.trim().isNotEmpty &&
+                toolName.trim().isNotEmpty) {
+              allowUnlistedToolCallIds.add(toolCallId);
+              final accum =
+                  toolAccums.putIfAbsent(toolCallId, () => _ToolCallAccum());
+              accum.callType = 'function';
+              accum.name = toolName;
+
+              String rawArgs;
+              final value = input;
+              if (value == null) {
+                rawArgs = '{}';
+              } else if (value is String) {
+                rawArgs = value;
+              } else {
+                try {
+                  rawArgs = jsonEncode(value);
+                } catch (_) {
+                  rawArgs = '{}';
+                }
+              }
+
+              if (rawArgs.isNotEmpty) {
+                accum.arguments
+                  ..clear()
+                  ..write(rawArgs);
+              }
+            }
             if (waitForDeferredProviderToolResults &&
                 toolCallId.trim().isNotEmpty &&
                 providerExecuted != false &&
@@ -2912,6 +3151,13 @@ Stream<LLMStreamPart> streamToolLoopParts({
           case LLMProviderToolResultPart(:final toolCallId, :final preliminary):
             if (toolCallId.trim().isNotEmpty && preliminary != true) {
               pendingProviderToolCallFirstStep.remove(toolCallId);
+            }
+            yield part;
+
+          case LLMProviderToolResultPart(:final toolName, :final result):
+            if (toolName.trim().startsWith('tool_search')) {
+              toolSearchReferencedNames
+                  .addAll(extractToolReferenceNames(result));
             }
             yield part;
 
@@ -2958,6 +3204,23 @@ Stream<LLMStreamPart> streamToolLoopParts({
           .map((e) => e.value.toToolCall(e.key))
           .where(_isExecutableFunctionToolCall)
           .toList(growable: false);
+
+      if (toolCatalog != null &&
+          workingTools != null &&
+          workingToolHandlers != null &&
+          workingToolApprovalChecks != null) {
+        final referenced = <String>{
+          ...toolSearchReferencedNames,
+          ...completedToolCalls.map((c) => c.function.name),
+        };
+        hydrateToolsFromCatalog(
+          catalog: toolCatalog,
+          workingTools: workingTools,
+          workingHandlers: workingToolHandlers,
+          workingApprovalChecks: workingToolApprovalChecks,
+          toolNames: referenced,
+        );
+      }
 
       if (usesNativeParts && !didEmitProviderMetadataPart) {
         final providerMetadata = mergedResponse.providerMetadata;
@@ -3013,7 +3276,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
       final partition = _partitionToolCallsByLocalHandler(
         toolCalls: completedToolCalls,
-        toolHandlers: toolHandlers,
+        toolHandlers: toolCatalog == null ? toolHandlers : workingToolHandlers!,
       );
       final executableToolCalls = partition.executable;
       final hasUnexecutableToolCalls = partition.unexecutable.isNotEmpty;
@@ -3021,10 +3284,16 @@ Stream<LLMStreamPart> streamToolLoopParts({
       if (hasUnexecutableToolCalls) {
         final executed = await _executeToolCalls(
           toolCalls: executableToolCalls,
-          tools: tools,
-          toolHandlers: toolHandlers,
+          tools: toolCatalog == null ? tools : workingTools!,
+          toolHandlers:
+              toolCatalog == null ? toolHandlers : workingToolHandlers!,
+          toolCatalog: toolCatalog,
           repairToolCall: repairToolCall,
+          allowUnlistedToolCallIds: allowUnlistedToolCallIds,
           continueOnToolError: continueOnToolError,
+          toolSchemas: toolSchemas,
+          messages: workingMessages,
+          stepIndex: stepIndex,
           cancelToken: cancelToken,
         );
 
@@ -3058,7 +3327,9 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
       final needingApproval = await _findToolCallsNeedingApproval(
         toolCalls: executableToolCalls,
-        toolApprovalChecks: toolApprovalChecks,
+        toolApprovalChecks: toolCatalog == null
+            ? toolApprovalChecks
+            : workingToolApprovalChecks,
         needsApproval: needsApproval,
         messages: workingMessages,
         stepIndex: stepIndex,
@@ -3079,10 +3350,16 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
         final executed = await _executeToolCalls(
           toolCalls: autoApprovedToolCalls,
-          tools: tools,
-          toolHandlers: toolHandlers,
+          tools: toolCatalog == null ? tools : workingTools!,
+          toolHandlers:
+              toolCatalog == null ? toolHandlers : workingToolHandlers!,
+          toolCatalog: toolCatalog,
           repairToolCall: repairToolCall,
+          allowUnlistedToolCallIds: allowUnlistedToolCallIds,
           continueOnToolError: continueOnToolError,
+          toolSchemas: toolSchemas,
+          messages: _messagesBeforeBlockedToolCall(workingMessages),
+          stepIndex: stepIndex,
           cancelToken: cancelToken,
         );
 
@@ -3165,10 +3442,15 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
       final executed = await _executeToolCalls(
         toolCalls: executableToolCalls,
-        tools: tools,
-        toolHandlers: toolHandlers,
+        tools: toolCatalog == null ? tools : workingTools!,
+        toolHandlers: toolCatalog == null ? toolHandlers : workingToolHandlers!,
+        toolCatalog: toolCatalog,
         repairToolCall: repairToolCall,
+        allowUnlistedToolCallIds: allowUnlistedToolCallIds,
         continueOnToolError: continueOnToolError,
+        toolSchemas: toolSchemas,
+        messages: workingMessages,
+        stepIndex: stepIndex,
         cancelToken: cancelToken,
       );
 
@@ -3233,6 +3515,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         ),
       ),
     ),
+    warnings: normalized.warnings,
   );
 }
 
@@ -3242,6 +3525,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
@@ -3251,11 +3535,23 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   bool waitForDeferredProviderToolResults = true,
   int maxAdditionalProviderToolResultSteps = 1,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
   bool emitStepParts = false,
   IncludeOptions include = const IncludeOptions(),
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
 }) async* {
+  try {
+    validateNoMissingToolResults(prompt);
+  } catch (e) {
+    if (e is LLMError) {
+      yield LLMErrorPart(e);
+      return;
+    }
+    yield LLMErrorPart(GenericError('Invalid prompt/tool history: $e'));
+    return;
+  }
+
   final hasPromptStreamParts = callOptions.isEmpty
       ? model is PromptChatStreamPartsCapability
       : model is PromptChatStreamPartsCallOptionsCapability;
@@ -3285,6 +3581,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       messages: prompt.toChatMessages(),
       tools: tools,
       toolHandlers: toolHandlers,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
@@ -3293,6 +3590,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       maxAdditionalProviderToolResultSteps:
           maxAdditionalProviderToolResultSteps,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
       emitStepParts: emitStepParts,
       include: include,
       callOptions: callOptions,
@@ -3314,6 +3612,14 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   );
   final pendingProviderToolCallFirstStep = <String, int>{};
 
+  final workingTools =
+      toolCatalog == null ? null : <Tool>[...?(tools ?? const <Tool>[])];
+  final workingToolHandlers =
+      toolCatalog == null ? null : <String, ToolCallHandler>{...toolHandlers};
+  final workingToolApprovalChecks = toolCatalog == null
+      ? null
+      : <String, ToolApprovalCheck>{...?(toolApprovalChecks ?? const {})};
+
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
     if (emitStepParts) {
       yield LLMStepStartPart(stepIndex);
@@ -3329,7 +3635,10 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
     final approvalRequests = <LLMProviderToolApprovalRequestPart>[];
     var providerApprovalBlocked = false;
 
+    final toolSearchReferencedNames = <String>[];
+
     final startedToolCalls = <String>{};
+    final allowUnlistedToolCallIds = <String>{};
 
     var didEmitProviderMetadataPart = false;
 
@@ -3338,7 +3647,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       partsStream =
           (model as PromptChatStreamPartsCapability).chatPromptStreamParts(
         workingPrompt,
-        tools: tools,
+        tools: toolCatalog == null ? tools : workingTools,
         providerTools: providerTools,
         cancelToken: cancelToken,
       );
@@ -3346,7 +3655,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       partsStream = (model as PromptChatStreamPartsCallOptionsCapability)
           .chatPromptStreamPartsWithCallOptions(
         workingPrompt,
-        tools: tools,
+        tools: toolCatalog == null ? tools : workingTools,
         providerTools: providerTools,
         callOptions: callOptions,
         cancelToken: cancelToken,
@@ -3414,10 +3723,45 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
 
         case LLMProviderToolCallPart(
             :final toolCallId,
+            :final toolName,
+            :final input,
             :final providerExecuted,
             :final supportsDeferredResults,
           ):
           providerToolCalls.add(part);
+          // Provider-defined tools (e.g. Anthropic computer use) can be
+          // represented as provider tool calls that must be executed by the
+          // client. Treat them like local function tool calls so the existing
+          // tool handler map can execute them.
+          if (providerExecuted == false &&
+              toolCallId.trim().isNotEmpty &&
+              toolName.trim().isNotEmpty) {
+            allowUnlistedToolCallIds.add(toolCallId);
+            final accum =
+                toolAccums.putIfAbsent(toolCallId, () => _ToolCallAccum());
+            accum.callType = 'function';
+            accum.name = toolName;
+
+            String rawArgs;
+            final value = input;
+            if (value == null) {
+              rawArgs = '{}';
+            } else if (value is String) {
+              rawArgs = value;
+            } else {
+              try {
+                rawArgs = jsonEncode(value);
+              } catch (_) {
+                rawArgs = '{}';
+              }
+            }
+
+            if (rawArgs.isNotEmpty) {
+              accum.arguments
+                ..clear()
+                ..write(rawArgs);
+            }
+          }
           if (waitForDeferredProviderToolResults &&
               toolCallId.trim().isNotEmpty &&
               providerExecuted != false &&
@@ -3429,9 +3773,17 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
           }
           yield part;
 
-        case LLMProviderToolResultPart(:final toolCallId, :final preliminary):
+        case LLMProviderToolResultPart(
+            :final toolCallId,
+            :final toolName,
+            :final result,
+            :final preliminary,
+          ):
           if (toolCallId.trim().isNotEmpty && preliminary != true) {
             pendingProviderToolCallFirstStep.remove(toolCallId);
+          }
+          if (toolName.trim().startsWith('tool_search')) {
+            toolSearchReferencedNames.addAll(extractToolReferenceNames(result));
           }
           yield part;
 
@@ -3484,6 +3836,23 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
         .map((e) => e.value.toToolCall(e.key))
         .where(_isExecutableFunctionToolCall)
         .toList(growable: false);
+
+    if (toolCatalog != null &&
+        workingTools != null &&
+        workingToolHandlers != null &&
+        workingToolApprovalChecks != null) {
+      final referenced = <String>{
+        ...toolSearchReferencedNames,
+        ...completedToolCalls.map((c) => c.function.name),
+      };
+      hydrateToolsFromCatalog(
+        catalog: toolCatalog,
+        workingTools: workingTools,
+        workingHandlers: workingToolHandlers,
+        workingApprovalChecks: workingToolApprovalChecks,
+        toolNames: referenced,
+      );
+    }
 
     if (!didEmitProviderMetadataPart) {
       final providerMetadata = mergedResponse.providerMetadata;
@@ -3631,7 +4000,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
 
     final partition = _partitionToolCallsByLocalHandler(
       toolCalls: completedToolCalls,
-      toolHandlers: toolHandlers,
+      toolHandlers: toolCatalog == null ? toolHandlers : workingToolHandlers!,
     );
     final executableToolCalls = partition.executable;
     final hasUnexecutableToolCalls = partition.unexecutable.isNotEmpty;
@@ -3639,10 +4008,15 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
     if (hasUnexecutableToolCalls) {
       final executed = await _executeToolCalls(
         toolCalls: executableToolCalls,
-        tools: tools,
-        toolHandlers: toolHandlers,
+        tools: toolCatalog == null ? tools : workingTools!,
+        toolHandlers: toolCatalog == null ? toolHandlers : workingToolHandlers!,
+        toolCatalog: toolCatalog,
         repairToolCall: repairToolCall,
+        allowUnlistedToolCallIds: allowUnlistedToolCallIds,
         continueOnToolError: continueOnToolError,
+        toolSchemas: toolSchemas,
+        messages: workingMessages,
+        stepIndex: stepIndex,
         cancelToken: cancelToken,
       );
 
@@ -3676,7 +4050,8 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
 
     final needingApproval = await _findToolCallsNeedingApproval(
       toolCalls: executableToolCalls,
-      toolApprovalChecks: toolApprovalChecks,
+      toolApprovalChecks:
+          toolCatalog == null ? toolApprovalChecks : workingToolApprovalChecks,
       needsApproval: needsApproval,
       messages: workingMessages,
       stepIndex: stepIndex,
@@ -3701,8 +4076,13 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
         toolCalls: autoApprovedToolCalls,
         tools: tools,
         toolHandlers: toolHandlers,
+        toolCatalog: toolCatalog,
         repairToolCall: repairToolCall,
+        allowUnlistedToolCallIds: allowUnlistedToolCallIds,
         continueOnToolError: continueOnToolError,
+        toolSchemas: toolSchemas,
+        messages: _messagesBeforeBlockedToolCall(workingMessages),
+        stepIndex: stepIndex,
         cancelToken: cancelToken,
       );
 
@@ -3784,10 +4164,15 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
 
     final executed = await _executeToolCalls(
       toolCalls: executableToolCalls,
-      tools: tools,
-      toolHandlers: toolHandlers,
+      tools: toolCatalog == null ? tools : workingTools!,
+      toolHandlers: toolCatalog == null ? toolHandlers : workingToolHandlers!,
+      toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
+      allowUnlistedToolCallIds: allowUnlistedToolCallIds,
       continueOnToolError: continueOnToolError,
+      toolSchemas: toolSchemas,
+      messages: workingMessages,
+      stepIndex: stepIndex,
       cancelToken: cancelToken,
     );
 
@@ -3860,6 +4245,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
   bool stopOnProviderToolApprovalRequests = false,
   int maxSteps = 10,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
   bool emitStepParts = false,
   IncludeOptions include = const IncludeOptions(),
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
@@ -3875,6 +4261,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     tools: toolSet.tools,
     providerTools: providerTools,
     toolHandlers: toolSet.handlers,
+    toolCatalog: ToolSetCatalog(toolSet),
     repairToolCall: repairToolCall,
     toolApprovalChecks: toolSet.approvalChecks,
     needsApproval: needsApproval,
@@ -3882,6 +4269,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     stopOnProviderToolApprovalRequests: stopOnProviderToolApprovalRequests,
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
+    toolSchemas: toolSchemas,
     emitStepParts: emitStepParts,
     include: include,
     defaultCallOptions: defaultCallOptions,
@@ -3983,16 +4371,26 @@ Future<List<ToolResult>> executeToolCalls({
   required List<ToolCall> toolCalls,
   List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
   bool continueOnToolError = true,
+  ToolSchemas toolSchemas = ToolSchemas.automatic,
+  List<ChatMessage> messages = const <ChatMessage>[],
+  int stepIndex = 0,
+  Object? experimentalContext,
   CancelToken? cancelToken,
 }) {
   return _executeToolCalls(
     toolCalls: toolCalls,
     tools: tools,
     toolHandlers: toolHandlers,
+    toolCatalog: toolCatalog,
     repairToolCall: repairToolCall,
     continueOnToolError: continueOnToolError,
+    toolSchemas: toolSchemas,
+    messages: messages,
+    stepIndex: stepIndex,
+    experimentalContext: experimentalContext,
     cancelToken: cancelToken,
   );
 }
@@ -4042,11 +4440,18 @@ Future<List<ToolResult>> _executeToolCalls({
   required List<ToolCall> toolCalls,
   required List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
+  ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
+  Set<String> allowUnlistedToolCallIds = const {},
   required bool continueOnToolError,
+  required ToolSchemas toolSchemas,
+  required List<ChatMessage> messages,
+  required int stepIndex,
+  Object? experimentalContext,
   CancelToken? cancelToken,
 }) async {
   final results = <ToolResult>[];
+  final messagesForOptions = _toolExecutionMessages(messages);
 
   final toolByName = tools == null
       ? null
@@ -4075,26 +4480,39 @@ Future<List<ToolResult>> _executeToolCalls({
     return (parsed: Map<String, dynamic>.from(decoded), error: null);
   }
 
-  Future<String?> tryRepairToolCall(
+  Future<({String? repaired, ToolCallRepairError? error})> tryRepairToolCall(
     ToolCall toolCall, {
     required String reason,
     String? errorMessage,
     List<String>? validationErrors,
+    required Object originalError,
   }) async {
     final repair = repairToolCall;
-    if (repair == null) return null;
+    if (repair == null) return (repaired: null, error: null);
 
-    final repaired = await Future.value(
-      repair(
-        toolCall,
-        reason: reason,
-        errorMessage: errorMessage,
-        validationErrors: validationErrors,
-      ),
-    );
-    final trimmed = repaired?.trim();
-    if (trimmed == null || trimmed.isEmpty) return null;
-    return trimmed;
+    try {
+      final repaired = await Future.value(
+        repair(
+          toolCall,
+          reason: reason,
+          errorMessage: errorMessage,
+          validationErrors: validationErrors,
+        ),
+      );
+      final trimmed = repaired?.trim();
+      if (trimmed == null || trimmed.isEmpty) {
+        return (repaired: null, error: null);
+      }
+      return (repaired: trimmed, error: null);
+    } catch (e) {
+      return (
+        repaired: null,
+        error: ToolCallRepairError(
+          cause: e,
+          originalError: originalError,
+        ),
+      );
+    }
   }
 
   for (final toolCall in toolCalls) {
@@ -4120,12 +4538,41 @@ Future<List<ToolResult>> _executeToolCalls({
           ? 'arguments_not_object'
           : 'invalid_json';
 
-      final repaired = await tryRepairToolCall(
+      final originalError = InvalidToolInputError(
+        toolName: effectiveToolCall.function.name,
+        toolCallId: effectiveToolCall.id,
+        input: effectiveToolCall.function.arguments,
+        message: parsed.error!,
+      );
+
+      final repairAttempt = await tryRepairToolCall(
         effectiveToolCall,
         reason: reason,
         errorMessage: parsed.error,
+        originalError: originalError,
       );
 
+      final repairError = repairAttempt.error;
+      if (repairError != null) {
+        results.add(
+          ToolResult.error(
+            toolCallId: effectiveToolCall.id,
+            error: repairError.toString(),
+            metadata: {
+              'kind': 'invalid_tool_call',
+              'reason': reason,
+              'toolName': effectiveToolCall.function.name,
+              'input': toolCall.function.arguments,
+              'repairAttempted': true,
+              'repairError': repairError.toString(),
+            },
+          ),
+        );
+        if (!continueOnToolError) break;
+        continue;
+      }
+
+      final repaired = repairAttempt.repaired;
       if (repaired != null) {
         final repairedCall = ToolCall(
           id: effectiveToolCall.id,
@@ -4164,7 +4611,7 @@ Future<List<ToolResult>> _executeToolCalls({
         results.add(
           ToolResult.error(
             toolCallId: effectiveToolCall.id,
-            error: '${parsed.error}: "${effectiveToolCall.function.name}"',
+            error: originalError.toString(),
             metadata: {
               'kind': 'invalid_tool_call',
               'reason': reason,
@@ -4180,61 +4627,128 @@ Future<List<ToolResult>> _executeToolCalls({
 
     final toolDef = toolByName?[effectiveToolCall.function.name];
     if (toolByName != null && toolDef == null) {
-      results.add(
-        ToolResult.error(
-          toolCallId: effectiveToolCall.id,
-          error: 'No such tool: "${effectiveToolCall.function.name}"',
-          metadata: {
-            'kind': 'invalid_tool_call',
-            'reason': 'no_such_tool',
-            'toolName': effectiveToolCall.function.name,
-            'availableTools': toolByName.keys.toList()..sort(),
-            'input': effectiveToolCall.function.arguments,
-          },
-        ),
-      );
-      if (!continueOnToolError) break;
-      continue;
+      final allowUnlisted =
+          allowUnlistedToolCallIds.contains(effectiveToolCall.id) &&
+              toolHandlers.containsKey(effectiveToolCall.function.name);
+      if (allowUnlisted) {
+        // Provider-defined tool calls (providerExecuted=false) are executed
+        // locally but are not necessarily part of the user-supplied tools
+        // allowlist. When explicitly allowed by id, skip the allowlist error.
+      } else {
+        results.add(
+          ToolResult.error(
+            toolCallId: effectiveToolCall.id,
+            error: NoSuchToolError(
+              toolName: effectiveToolCall.function.name,
+              availableTools: toolByName.keys.toList()..sort(),
+            ).toString(),
+            metadata: {
+              'kind': 'invalid_tool_call',
+              'reason': 'no_such_tool',
+              'toolName': effectiveToolCall.function.name,
+              'availableTools': toolByName.keys.toList()..sort(),
+              'input': effectiveToolCall.function.arguments,
+            },
+          ),
+        );
+        if (!continueOnToolError) break;
+        continue;
+      }
     }
 
-    if (toolDef != null) {
-      final errors = ToolValidator.validateParameters(
-        parsed.parsed!,
-        toolDef.function.parameters,
-      );
-      if (errors.isNotEmpty) {
-        final repaired = await tryRepairToolCall(
-          effectiveToolCall,
-          reason: 'schema_validation_failed',
-          validationErrors: errors,
+    if (toolSchemas == ToolSchemas.automatic) {
+      final toolSchemaDef =
+          toolDef ?? toolCatalog?.lookup(effectiveToolCall.function.name)?.tool;
+      if (toolSchemaDef != null) {
+        final errors = ToolValidator.validateParameters(
+          parsed.parsed!,
+          toolSchemaDef.function.parameters,
         );
-
-        if (repaired != null) {
-          final repairedCall = ToolCall(
-            id: effectiveToolCall.id,
-            callType: effectiveToolCall.callType,
-            function: FunctionCall(
-              name: effectiveToolCall.function.name,
-              arguments: repaired,
-            ),
-            providerOptions: effectiveToolCall.providerOptions,
+        if (errors.isNotEmpty) {
+          final originalError = InvalidToolInputError(
+            toolName: effectiveToolCall.function.name,
+            toolCallId: effectiveToolCall.id,
+            input: effectiveToolCall.function.arguments,
+            validationErrors: errors,
+            message: 'Parameter validation failed.',
           );
 
-          final repairedParsed =
-              parseToolInput(repairedCall.function.arguments);
-          if (repairedParsed.error == null) {
-            final repairedErrors = ToolValidator.validateParameters(
-              repairedParsed.parsed!,
-              toolDef.function.parameters,
+          final repairAttempt = await tryRepairToolCall(
+            effectiveToolCall,
+            reason: 'schema_validation_failed',
+            validationErrors: errors,
+            originalError: originalError,
+          );
+
+          final repairError = repairAttempt.error;
+          if (repairError != null) {
+            results.add(
+              ToolResult.error(
+                toolCallId: effectiveToolCall.id,
+                error: repairError.toString(),
+                metadata: {
+                  'kind': 'invalid_tool_call',
+                  'reason': 'schema_validation_failed',
+                  'toolName': effectiveToolCall.function.name,
+                  'errors': errors,
+                  'input': toolCall.function.arguments,
+                  'repairAttempted': true,
+                  'repairError': repairError.toString(),
+                },
+              ),
             );
-            if (repairedErrors.isEmpty) {
-              effectiveToolCall = repairedCall;
-              parsed = repairedParsed;
+            if (!continueOnToolError) break;
+            continue;
+          }
+
+          final repaired = repairAttempt.repaired;
+          if (repaired != null) {
+            final repairedCall = ToolCall(
+              id: effectiveToolCall.id,
+              callType: effectiveToolCall.callType,
+              function: FunctionCall(
+                name: effectiveToolCall.function.name,
+                arguments: repaired,
+              ),
+              providerOptions: effectiveToolCall.providerOptions,
+            );
+
+            final repairedParsed =
+                parseToolInput(repairedCall.function.arguments);
+            if (repairedParsed.error == null) {
+              final repairedErrors = ToolValidator.validateParameters(
+                repairedParsed.parsed!,
+                toolSchemaDef.function.parameters,
+              );
+              if (repairedErrors.isEmpty) {
+                effectiveToolCall = repairedCall;
+                parsed = repairedParsed;
+              } else {
+                results.add(
+                  ToolResult.error(
+                    toolCallId: effectiveToolCall.id,
+                    error: originalError.toString(),
+                    metadata: {
+                      'kind': 'invalid_tool_call',
+                      'reason': 'schema_validation_failed',
+                      'toolName': effectiveToolCall.function.name,
+                      'errors': errors,
+                      'input': toolCall.function.arguments,
+                      'repairAttempted': true,
+                      'repairedInput': repaired,
+                      'repairErrors': repairedErrors,
+                    },
+                  ),
+                );
+                if (!continueOnToolError) break;
+                continue;
+              }
             } else {
               results.add(
                 ToolResult.error(
                   toolCallId: effectiveToolCall.id,
-                  error: 'Parameter validation failed: ${errors.join('; ')}',
+                  error:
+                      '${repairedParsed.error}: "${effectiveToolCall.function.name}"',
                   metadata: {
                     'kind': 'invalid_tool_call',
                     'reason': 'schema_validation_failed',
@@ -4243,7 +4757,7 @@ Future<List<ToolResult>> _executeToolCalls({
                     'input': toolCall.function.arguments,
                     'repairAttempted': true,
                     'repairedInput': repaired,
-                    'repairErrors': repairedErrors,
+                    'repairError': repairedParsed.error,
                   },
                 ),
               );
@@ -4254,43 +4768,24 @@ Future<List<ToolResult>> _executeToolCalls({
             results.add(
               ToolResult.error(
                 toolCallId: effectiveToolCall.id,
-                error:
-                    '${repairedParsed.error}: "${effectiveToolCall.function.name}"',
+                error: originalError.toString(),
                 metadata: {
                   'kind': 'invalid_tool_call',
                   'reason': 'schema_validation_failed',
                   'toolName': effectiveToolCall.function.name,
                   'errors': errors,
-                  'input': toolCall.function.arguments,
-                  'repairAttempted': true,
-                  'repairedInput': repaired,
-                  'repairError': repairedParsed.error,
+                  'input': effectiveToolCall.function.arguments,
                 },
               ),
             );
             if (!continueOnToolError) break;
             continue;
           }
-        } else {
-          results.add(
-            ToolResult.error(
-              toolCallId: effectiveToolCall.id,
-              error: 'Parameter validation failed: ${errors.join('; ')}',
-              metadata: {
-                'kind': 'invalid_tool_call',
-                'reason': 'schema_validation_failed',
-                'toolName': effectiveToolCall.function.name,
-                'errors': errors,
-                'input': effectiveToolCall.function.arguments,
-              },
-            ),
-          );
-          if (!continueOnToolError) break;
-          continue;
         }
       }
     }
 
+    final localToolDef = toolCatalog?.lookup(effectiveToolCall.function.name);
     final handler = toolHandlers[effectiveToolCall.function.name];
     if (handler == null) {
       results.add(
@@ -4305,12 +4800,101 @@ Future<List<ToolResult>> _executeToolCalls({
     }
 
     try {
-      final output = await handler(effectiveToolCall, cancelToken: cancelToken);
+      final executionOptions = ToolExecutionOptions(
+        toolCallId: effectiveToolCall.id,
+        toolName: effectiveToolCall.function.name,
+        rawArguments: effectiveToolCall.function.arguments,
+        messages: messagesForOptions,
+        stepIndex: stepIndex,
+        toolCall: effectiveToolCall,
+        cancelToken: cancelToken,
+        experimentalContext: experimentalContext,
+      );
+
+      final output = await handler(
+        parsed.parsed!,
+        executionOptions,
+      );
+
+      Object? modelOutput = output;
+      if (modelOutput is! ToolResultOutput) {
+        final toModelOutput = localToolDef?.toModelOutput;
+        if (toModelOutput != null) {
+          try {
+            modelOutput = await Future.value(
+              toModelOutput(
+                toolCallId: effectiveToolCall.id,
+                input: parsed.parsed!,
+                output: output,
+                options: executionOptions,
+              ),
+            );
+          } catch (e) {
+            results.add(
+              ToolResult.error(
+                toolCallId: effectiveToolCall.id,
+                error:
+                    'Tool toModelOutput failed: $e (${effectiveToolCall.function.name})',
+                metadata: {
+                  'kind': 'invalid_tool_output',
+                  'reason': 'to_model_output_failed',
+                  'toolName': effectiveToolCall.function.name,
+                },
+              ),
+            );
+            if (!continueOnToolError) break;
+            continue;
+          }
+        }
+      }
+
+      final interpreted = _interpretToolHandlerOutput(modelOutput);
+      final normalized = interpreted.normalizedResult;
+      final jsonValueForOutputSchema = interpreted.jsonValueForOutputSchema;
+
+      if (toolSchemas == ToolSchemas.automatic) {
+        final outputSchema = localToolDef?.outputSchema;
+        if (outputSchema != null &&
+            jsonValueForOutputSchema != null &&
+            !interpreted.isError) {
+          final outputErrors = ToolValidator.validateJsonLike(
+            jsonValueForOutputSchema,
+            outputSchema,
+          );
+          if (outputErrors.isNotEmpty) {
+            results.add(
+              ToolResult.error(
+                toolCallId: effectiveToolCall.id,
+                error: ToolOutputValidationError(
+                  'Tool output does not match outputSchema.',
+                  toolName: effectiveToolCall.function.name,
+                  validationErrors: outputErrors,
+                  source: 'local_tool',
+                ).toString(),
+                metadata: {
+                  'kind': 'invalid_tool_output',
+                  'reason': 'output_schema_validation_failed',
+                  'toolName': effectiveToolCall.function.name,
+                  'errors': outputErrors,
+                },
+              ),
+            );
+            if (!continueOnToolError) break;
+            continue;
+          }
+        }
+      }
+
       results.add(
-        ToolResult.success(
-          toolCallId: effectiveToolCall.id,
-          result: _normalizeToolOutput(output),
-        ),
+        interpreted.isError
+            ? ToolResult.error(
+                toolCallId: effectiveToolCall.id,
+                error: normalized,
+              )
+            : ToolResult.success(
+                toolCallId: effectiveToolCall.id,
+                result: normalized,
+              ),
       );
     } catch (e) {
       results.add(
@@ -4324,6 +4908,21 @@ Future<List<ToolResult>> _executeToolCalls({
   }
 
   return results;
+}
+
+List<ChatMessage> _toolExecutionMessages(List<ChatMessage> messages) {
+  final filtered =
+      messages.where((m) => m.role != ChatRole.system).toList(growable: false);
+  return List<ChatMessage>.unmodifiable(filtered);
+}
+
+List<ChatMessage> _messagesBeforeBlockedToolCall(List<ChatMessage> messages) {
+  if (messages.isEmpty) return const <ChatMessage>[];
+
+  // Blocked states persist the assistant message that contained tool calls in
+  // their message history. For tool execution parity, we want the messages that
+  // initiated that assistant response.
+  return messages.sublist(0, messages.length - 1);
 }
 
 List<ToolCall> _toToolResultCalls(
@@ -4352,6 +4951,46 @@ List<ToolCall> _toToolResultCalls(
   }).toList();
 }
 
+class _InterpretedToolHandlerOutput {
+  final Object? normalizedResult;
+  final Object? jsonValueForOutputSchema;
+  final bool isError;
+
+  const _InterpretedToolHandlerOutput({
+    required this.normalizedResult,
+    required this.jsonValueForOutputSchema,
+    required this.isError,
+  });
+}
+
+_InterpretedToolHandlerOutput _interpretToolHandlerOutput(Object? output) {
+  if (output is ToolResultOutput) {
+    final envelope = output.toJson();
+    final normalizedEnvelope = _normalizeToolOutput(envelope);
+
+    final isError = output is ToolResultErrorTextOutput ||
+        output is ToolResultErrorJsonOutput;
+
+    Object? jsonValueForOutputSchema;
+    if (!isError && output is ToolResultJsonOutput) {
+      jsonValueForOutputSchema = _normalizeToolOutput(output.value);
+    }
+
+    return _InterpretedToolHandlerOutput(
+      normalizedResult: normalizedEnvelope,
+      jsonValueForOutputSchema: jsonValueForOutputSchema,
+      isError: isError,
+    );
+  }
+
+  final normalized = _normalizeToolOutput(output);
+  return _InterpretedToolHandlerOutput(
+    normalizedResult: normalized,
+    jsonValueForOutputSchema: normalized,
+    isError: false,
+  );
+}
+
 Object? _normalizeToolOutput(Object? output) {
   // AI SDK v3 `tool-result.result` is non-null. Preserve "no output" as empty
   // string rather than JSON null.
@@ -4375,11 +5014,22 @@ Object? _normalizeToolOutput(Object? output) {
 }
 
 String _toolCallArgumentsForToolResult(ToolResult result) {
+  final value = result.result;
+  if (value is Map) {
+    final map = value.cast<String, dynamic>();
+    if (map['type'] is String) {
+      try {
+        return jsonEncode(map);
+      } catch (_) {
+        // fall through
+      }
+    }
+  }
+
   if (result.isError) {
     return jsonEncode({'error': result.result});
   }
 
-  final value = result.result;
   if (value == null) return 'null';
   if (value is String) return value;
 

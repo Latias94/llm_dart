@@ -8,6 +8,7 @@ import 'package:llm_dart_anthropic_compatible/provider.dart'
 import 'package:test/test.dart';
 
 import '../../utils/fakes/fakes.dart';
+import '../../utils/fixture_meta.dart';
 import '../../utils/fixture_replay.dart';
 import '../../utils/v3_parts_golden.dart';
 
@@ -49,10 +50,18 @@ void main() {
           providerName: 'MiniMax',
         );
 
-        final parts = await llm_ai.streamChatParts(
-          model: providerInstance,
-          messages: [ChatMessage.user('Hi')],
-        ).toList();
+        final providerTools = readProviderToolsFromV3Meta(
+          provider: provider,
+          scenario: baseName,
+        );
+
+        final parts = await llm_ai
+            .streamChatParts(
+              model: providerInstance,
+              messages: [ChatMessage.user('Hi')],
+              providerTools: providerTools.isEmpty ? null : providerTools,
+            )
+            .toList();
 
         final goldenBasePath = 'test/fixtures/v3_parts/$provider/$baseName';
         final goldenPath = sessions.length == 1

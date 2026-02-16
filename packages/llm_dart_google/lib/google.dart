@@ -36,6 +36,7 @@ export 'chat.dart';
 export 'embeddings.dart';
 export 'images.dart';
 export 'tts.dart';
+export 'video.dart';
 //
 // Advanced, provider-native tools are opt-in:
 // - `package:llm_dart_google/provider_tools.dart`

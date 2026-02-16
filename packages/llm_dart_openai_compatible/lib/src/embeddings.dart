@@ -13,7 +13,7 @@ class OpenAIEmbeddings
   OpenAIEmbeddings(this.client, this.config);
 
   @override
-  Future<List<List<double>>> embed(
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
@@ -25,7 +25,7 @@ class OpenAIEmbeddings
   }
 
   @override
-  Future<List<List<double>>> embedWithCallOptions(
+  Future<EmbeddingResponse> embedWithCallOptions(
     List<String> input, {
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
@@ -75,7 +75,26 @@ class OpenAIEmbeddings
         return embedding.cast<double>();
       }).toList();
 
-      return embeddings;
+      EmbeddingUsage? usage;
+      final usageJson = json['usage'];
+      if (usageJson is Map) {
+        final promptTokens = usageJson['prompt_tokens'];
+        final totalTokens = usageJson['total_tokens'];
+        final tokens = (promptTokens is num
+                ? promptTokens.toInt()
+                : (totalTokens is num ? totalTokens.toInt() : null)) ??
+            0;
+        usage = EmbeddingUsage(tokens: tokens < 0 ? 0 : tokens);
+      }
+
+      final headers =
+          responseData.headers.isEmpty ? null : responseData.headers;
+
+      return EmbeddingResponse(
+        embeddings: embeddings,
+        usage: usage,
+        response: EmbeddingCallResponse(headers: headers, body: json),
+      );
     } catch (e) {
       if (e is LLMError) rethrow;
       throw ResponseFormatError(

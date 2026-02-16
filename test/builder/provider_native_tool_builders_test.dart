@@ -13,6 +13,27 @@ void main() {
       );
     });
 
+    test('anthropic.bashTool() writes ProviderTool', () {
+      final builder = ai().anthropic((anthropic) => anthropic.bashTool());
+
+      expect(builder.currentConfig.providerTools, isNotNull);
+      expect(
+        builder.currentConfig.providerTools!.map((t) => t.id).toList(),
+        equals(['anthropic.bash_20250124']),
+      );
+    });
+
+    test('anthropic.codeExecutionTool() writes ProviderTool', () {
+      final builder =
+          ai().anthropic((anthropic) => anthropic.codeExecutionTool());
+
+      expect(builder.currentConfig.providerTools, isNotNull);
+      expect(
+        builder.currentConfig.providerTools!.map((t) => t.id).toList(),
+        equals(['anthropic.code_execution_20250825']),
+      );
+    });
+
     test('google.webSearchTool() writes ProviderTool', () {
       final builder = ai().google((google) => google.webSearchTool());
 

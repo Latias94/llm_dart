@@ -1,30 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
-class InvalidToolApprovalError extends LLMError {
-  final String approvalId;
-
-  const InvalidToolApprovalError({
-    required this.approvalId,
-    String message = 'Invalid tool approval response',
-  }) : super(message);
-
-  @override
-  String toString() => 'Invalid tool approval response: $message';
-}
-
-class ToolCallNotFoundForApprovalError extends LLMError {
-  final String toolCallId;
-  final String approvalId;
-
-  const ToolCallNotFoundForApprovalError({
-    required this.toolCallId,
-    required this.approvalId,
-    String message = 'Tool call not found for approval request',
-  }) : super(message);
-
-  @override
-  String toString() => 'Tool call not found for approval request: $message';
-}
+import 'ai_errors.dart';
 
 class CollectedToolApproval {
   final ToolApprovalRequestPart approvalRequest;

@@ -8,10 +8,12 @@ export 'defaults.dart';
 export 'base_url.dart';
 export 'chat.dart';
 export 'config.dart';
+export 'computer_tool_options.dart';
 export 'mcp_models.dart';
 export 'provider.dart';
 export 'provider_tools.dart';
 export 'request_builder.dart';
+export 'text_editor_tool_options.dart';
 export 'web_fetch_tool_options.dart';
 export 'web_search_tool_options.dart';
 

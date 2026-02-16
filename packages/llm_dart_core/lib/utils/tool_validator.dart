@@ -9,6 +9,21 @@ import '../models/tool_models.dart';
 /// This class provides static methods for validating tool calls against their
 /// definitions and ensuring parameter types and requirements are met.
 class ToolValidator {
+  /// Validate a JSON-like value against a [ParameterProperty] schema.
+  ///
+  /// This is a best-effort validator intended for tool I/O and MCP payloads.
+  /// It mirrors the parameter validation logic but works for any JSON value
+  /// (not only top-level objects).
+  ///
+  /// Returns a list of validation error messages (empty if valid).
+  static List<String> validateJsonLike(
+    Object? value,
+    ParameterProperty schema, {
+    String path = r'$',
+  }) {
+    return _validateJsonLikeValue(path, value, schema);
+  }
+
   /// Validate a tool call against its tool definition
   ///
   /// [toolCall] - The tool call to validate
@@ -198,6 +213,109 @@ class ToolValidator {
 
       default:
         // Allow unknown types for flexibility
+        break;
+    }
+
+    return errors;
+  }
+
+  static List<String> _validateJsonLikeValue(
+    String path,
+    Object? value,
+    ParameterProperty property,
+  ) {
+    final errors = <String>[];
+
+    switch (property.propertyType) {
+      case 'string':
+        if (value is! String) {
+          errors.add(
+            'Value $path must be a string, got ${value.runtimeType}',
+          );
+        } else if (property.enumList != null &&
+            !property.enumList!.contains(value)) {
+          errors.add(
+              'Value $path must be one of ${property.enumList}, got $value');
+        }
+        break;
+
+      case 'number':
+      case 'integer':
+        if (value is! num) {
+          errors.add(
+            'Value $path must be a number, got ${value.runtimeType}',
+          );
+        } else if (property.propertyType == 'integer' && value is! int) {
+          errors.add(
+            'Value $path must be an integer, got ${value.runtimeType}',
+          );
+        }
+        break;
+
+      case 'boolean':
+        if (value is! bool) {
+          errors.add(
+            'Value $path must be a boolean, got ${value.runtimeType}',
+          );
+        }
+        break;
+
+      case 'array':
+        if (value is! List) {
+          errors.add(
+            'Value $path must be an array, got ${value.runtimeType}',
+          );
+        } else if (property.items != null) {
+          for (int i = 0; i < value.length; i++) {
+            final itemErrors = _validateJsonLikeValue(
+              '$path[$i]',
+              value[i] as Object?,
+              property.items!,
+            );
+            errors.addAll(itemErrors);
+          }
+        }
+        break;
+
+      case 'object':
+        if (value is! Map) {
+          errors.add(
+            'Value $path must be an object, got ${value.runtimeType}',
+          );
+          break;
+        }
+
+        final map = <String, Object?>{};
+        value.forEach((k, v) {
+          map[k.toString()] = v as Object?;
+        });
+
+        final props = property.properties;
+        if (props != null && props.isNotEmpty) {
+          if (property.required != null) {
+            for (final requiredProp in property.required!) {
+              if (!map.containsKey(requiredProp)) {
+                errors.add(
+                    'Object $path missing required property: $requiredProp');
+              }
+            }
+          }
+
+          for (final entry in map.entries) {
+            final key = entry.key;
+            final schemaForKey = props[key];
+            if (schemaForKey == null) {
+              errors.add('Object $path has unknown property: $key');
+              continue;
+            }
+            errors.addAll(
+              _validateJsonLikeValue('$path.$key', entry.value, schemaForKey),
+            );
+          }
+        }
+        break;
+
+      default:
         break;
     }
 

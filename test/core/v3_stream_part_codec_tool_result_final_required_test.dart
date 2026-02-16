@@ -20,7 +20,7 @@ void main() {
             'result': {'preview': 1},
           },
         ]),
-        throwsA(isA<FormatException>()),
+        throwsA(isA<InvalidStreamPartError>()),
       );
     });
 

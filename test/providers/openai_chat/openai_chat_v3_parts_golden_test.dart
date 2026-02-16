@@ -6,6 +6,7 @@ import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_client;
 import 'package:test/test.dart';
 
 import '../../utils/fakes/fakes.dart';
+import '../../utils/fixture_meta.dart';
 import '../../utils/fixture_replay.dart';
 import '../../utils/v3_parts_golden.dart';
 
@@ -25,6 +26,11 @@ void main() {
         useResponsesAPI: false,
       );
 
+      final providerTools = readProviderToolsFromV3Meta(
+        provider: provider,
+        scenario: baseName,
+      );
+
       for (var i = 0; i < sessions.length; i++) {
         final client = FakeOpenAIClient(config)..streamResponse = sessions[i];
         final providerInstance = openai_client.OpenAIProvider(
@@ -32,8 +38,10 @@ void main() {
           client: client,
         );
 
-        final parts = await providerInstance
-            .chatStreamParts([ChatMessage.user('Hi')]).toList();
+        final parts = await providerInstance.chatStreamParts(
+          [ChatMessage.user('Hi')],
+          providerTools: providerTools.isEmpty ? null : providerTools,
+        ).toList();
 
         final goldenBasePath = 'test/fixtures/v3_parts/$provider/$baseName';
         final goldenPath = sessions.length == 1

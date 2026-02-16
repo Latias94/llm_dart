@@ -115,7 +115,7 @@ void main() {
         model: model,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
-          'get_weather': (toolCall, {cancelToken}) => {'temp': 70},
+          'get_weather': (input, options) => {'temp': 70},
         },
         maxSteps: 3,
       ).toList();
@@ -393,7 +393,7 @@ void main() {
             },
             required: ['city'],
           ),
-          handler: (toolCall, {cancelToken}) => {'temp': 70},
+          handler: (input, options) => {'temp': 70},
           onInputStart: (toolCallId) => started.add(toolCallId),
           onInputDelta: (toolCallId, delta) => deltas.add(delta),
           onInputAvailable: (toolCallId, input) => available = input,
@@ -473,7 +473,7 @@ void main() {
         messages: [ChatMessage.user('hi')],
         tools: [getWeatherToolDefinition()],
         toolHandlers: {
-          'get_weather': (toolCall, {cancelToken}) {
+          'get_weather': (input, options) {
             handlerCalls++;
             return {'temp': 70};
           },
@@ -535,7 +535,7 @@ void main() {
         messages: [ChatMessage.user('hi')],
         tools: [getWeatherToolDefinition()],
         toolHandlers: {
-          'get_weather': (toolCall, {cancelToken}) {
+          'get_weather': (input, options) {
             handlerCalls++;
             return {'temp': 70, 'city': 'SF'};
           },
@@ -605,7 +605,7 @@ void main() {
         messages: [ChatMessage.user('hi')],
         tools: [getWeatherToolDefinition()],
         toolHandlers: {
-          'get_weather': (toolCall, {cancelToken}) {
+          'get_weather': (input, options) {
             handlerCalls++;
             return {'temp': 70};
           },
@@ -680,7 +680,7 @@ void main() {
         messages: [ChatMessage.user('hi')],
         tools: [getWeatherToolDefinition()],
         toolHandlers: {
-          'get_weather': (toolCall, {cancelToken}) {
+          'get_weather': (input, options) {
             handlerCalls++;
             return {'temp': 70};
           },
@@ -744,7 +744,7 @@ void main() {
         messages: [ChatMessage.user('hi')],
         tools: [getWeatherToolDefinition()],
         toolHandlers: {
-          'get_weather': (toolCall, {cancelToken}) {
+          'get_weather': (input, options) {
             handlerCalls++;
             return {'temp': 71, 'city': 'SF'};
           },
@@ -819,7 +819,7 @@ void main() {
         messages: [ChatMessage.user('hi')],
         tools: const [],
         toolHandlers: {
-          'get_weather': (toolCall, {cancelToken}) {
+          'get_weather': (input, options) {
             handlerCalls++;
             return {'temp': 70};
           },

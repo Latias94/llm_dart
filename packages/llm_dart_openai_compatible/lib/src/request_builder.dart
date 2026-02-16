@@ -18,6 +18,7 @@ class OpenAIRequestBuilder {
     OpenAIClient client, {
     required Prompt prompt,
     required List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required bool stream,
   }) {
     final providerId = client.providerId;
@@ -68,11 +69,23 @@ class OpenAIRequestBuilder {
     );
 
     final effectiveTools = tools ?? config.tools;
-    if (effectiveTools != null && effectiveTools.isNotEmpty) {
-      body['tools'] = effectiveTools.map((t) => t.toJson()).toList();
+    final toolsJson = <Map<String, dynamic>>[
+      ..._convertProviderToolsForChatCompletions(
+        providerId: providerId,
+        providerTools: providerTools,
+      ),
+      ...?effectiveTools?.map((t) => t.toJson()),
+    ];
+
+    if (toolsJson.isNotEmpty) {
+      body['tools'] = toolsJson;
 
       final effectiveToolChoice = config.toolChoice;
-      if (effectiveToolChoice != null) {
+      // Provider-native tools may not support `tool_choice`. Only emit tool
+      // choice when function tools are present.
+      if (effectiveToolChoice != null &&
+          effectiveTools != null &&
+          effectiveTools.isNotEmpty) {
         body['tool_choice'] = _convertToolChoice(effectiveToolChoice);
       }
     }
@@ -253,6 +266,7 @@ class OpenAIRequestBuilder {
     OpenAIClient client, {
     required List<ChatMessage> messages,
     required List<Tool>? tools,
+    List<ProviderTool>? providerTools,
     required bool stream,
   }) {
     final providerId = client.providerId;
@@ -301,11 +315,21 @@ class OpenAIRequestBuilder {
     );
 
     final effectiveTools = tools ?? config.tools;
-    if (effectiveTools != null && effectiveTools.isNotEmpty) {
-      body['tools'] = effectiveTools.map((t) => t.toJson()).toList();
+    final toolsJson = <Map<String, dynamic>>[
+      ..._convertProviderToolsForChatCompletions(
+        providerId: providerId,
+        providerTools: providerTools,
+      ),
+      ...?effectiveTools?.map((t) => t.toJson()),
+    ];
+
+    if (toolsJson.isNotEmpty) {
+      body['tools'] = toolsJson;
 
       final effectiveToolChoice = config.toolChoice;
-      if (effectiveToolChoice != null) {
+      if (effectiveToolChoice != null &&
+          effectiveTools != null &&
+          effectiveTools.isNotEmpty) {
         body['tool_choice'] = _convertToolChoice(effectiveToolChoice);
       }
     }
@@ -480,6 +504,36 @@ class OpenAIRequestBuilder {
     }
 
     return body;
+  }
+
+  List<Map<String, dynamic>> _convertProviderToolsForChatCompletions({
+    required String providerId,
+    List<ProviderTool>? providerTools,
+  }) {
+    final tools = providerTools;
+    if (tools == null || tools.isEmpty) return const [];
+
+    final isGroq = providerId == 'groq' || providerId == 'groq-openai';
+    if (!isGroq) return const [];
+
+    final out = <Map<String, dynamic>>[];
+    var hasBrowserSearch = false;
+    for (final tool in tools) {
+      final id = tool.id.trim();
+      if (id.isEmpty) continue;
+
+      final enabled = tool.options['enabled'];
+      if (enabled is bool && enabled == false) continue;
+
+      if (id == 'groq.browser_search') {
+        if (!hasBrowserSearch) {
+          out.add(const {'type': 'browser_search'});
+          hasBrowserSearch = true;
+        }
+      }
+    }
+
+    return out;
   }
 
   /// OpenAI-compatible `tool_choice` expects:

@@ -157,19 +157,24 @@ class AzureOpenAIProviderFactory
 
     for (final tool in tools) {
       switch (tool.id) {
-        case 'openai.web_search_preview':
+        case 'azure.web_search_preview':
+        case 'openai.web_search_preview': // tolerate legacy prefix
           built.add(OpenAIBuiltInTools.webSearch());
           break;
-        case 'openai.web_search':
+        case 'azure.web_search':
+        case 'openai.web_search': // tolerate legacy prefix
           built.add(OpenAIBuiltInTools.webSearchFull());
           break;
-        case 'openai.file_search':
+        case 'azure.file_search':
+        case 'openai.file_search': // tolerate legacy prefix
           built.add(OpenAIBuiltInTools.fileSearch());
           break;
-        case 'openai.code_interpreter':
+        case 'azure.code_interpreter':
+        case 'openai.code_interpreter': // tolerate legacy prefix
           built.add(OpenAIBuiltInTools.codeInterpreter());
           break;
-        case 'openai.image_generation':
+        case 'azure.image_generation':
+        case 'openai.image_generation': // tolerate legacy prefix
           built.add(OpenAIBuiltInTools.imageGeneration());
           break;
         default:

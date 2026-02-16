@@ -44,7 +44,11 @@ class OllamaProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return _chat.chat(messages, cancelToken: cancelToken);
+    return _chat.chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -54,7 +58,12 @@ class OllamaProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
+    return _chat.chatWithTools(
+      messages,
+      tools,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -64,8 +73,12 @@ class OllamaProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chatStreamParts(messages,
-        tools: tools, cancelToken: cancelToken);
+    return _chat.chatStreamParts(
+      messages,
+      providerTools: providerTools,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -75,7 +88,12 @@ class OllamaProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+    return _chat.chatPrompt(
+      prompt,
+      providerTools: providerTools,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -87,6 +105,7 @@ class OllamaProvider
   }) {
     return _chat.chatPromptStreamParts(
       prompt,
+      providerTools: providerTools,
       tools: tools,
       cancelToken: cancelToken,
     );
@@ -104,7 +123,7 @@ class OllamaProvider
 
   // Embedding capability methods
   @override
-  Future<List<List<double>>> embed(
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   }) async {

@@ -200,8 +200,9 @@ class TelemetryMiddleware extends LanguageModelMiddleware {
 
     try {
       final response = await next(context);
-      final finishReason =
-          response is ChatResponseWithFinishReason ? response.finishReason : null;
+      final finishReason = response is ChatResponseWithFinishReason
+          ? response.finishReason
+          : null;
       onEvent(
         LanguageModelChatFinishEvent(
           timestamp: DateTime.now().toUtc(),

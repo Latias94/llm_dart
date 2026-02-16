@@ -19,6 +19,18 @@
     "finish_usage_present": true,
     "finish_reason_typed": true
   },
+  "request": {
+    "providerTools": [
+      {
+        "id": "anthropic.tool_search_bm25_20251119",
+        "name": "tool_search",
+        "supportsDeferredResults": true,
+        "options": {
+          "enabled": true
+        }
+      }
+    ]
+  },
   "notes": [
     "The fixture splits into multiple sessions; each session has its own golden JSONL file."
   ],

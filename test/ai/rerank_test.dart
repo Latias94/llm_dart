@@ -8,11 +8,11 @@ class _FakeEmbeddingModel implements EmbeddingCapability {
   _FakeEmbeddingModel(this.vectors);
 
   @override
-  Future<List<List<double>>> embed(
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
-    return vectors;
+    return EmbeddingResponse(embeddings: vectors);
   }
 }
 

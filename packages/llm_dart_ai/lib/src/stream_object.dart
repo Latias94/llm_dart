@@ -59,7 +59,7 @@ class StreamObjectResult {
   /// Warnings from the model provider (e.g. unsupported settings).
   ///
   /// This is best-effort and is typically derived from the stream-start part.
-  final Future<List<Map<String, dynamic>>> warnings;
+  final Future<List<LLMWarning>> warnings;
 
   /// Stable response metadata emitted during streaming (best-effort).
   ///
@@ -134,7 +134,7 @@ class StreamObjectResult {
         StreamController<Map<String, dynamic>>.broadcast(sync: true);
 
     final doneCompleter = Completer<void>();
-    final warningsCompleter = Completer<List<Map<String, dynamic>>>();
+    final warningsCompleter = Completer<List<LLMWarning>>();
     final responseMetadataCompleter = Completer<LLMResponseMetadataPart?>();
     final requestMetadataCompleter = Completer<LLMRequestMetadataPart?>();
     final textCompleter = Completer<String>();
@@ -149,8 +149,9 @@ class StreamObjectResult {
 
     // Prevent unhandled asynchronous errors when callers choose to only consume
     // the streams (or only await a subset of futures).
-    unawaited(warningsCompleter.future
-        .catchError((_) => const <Map<String, dynamic>>[]));
+    unawaited(
+      warningsCompleter.future.catchError((_) => const <LLMWarning>[]),
+    );
     unawaited(responseMetadataCompleter.future.catchError((_) => null));
     unawaited(requestMetadataCompleter.future.catchError((_) => null));
     unawaited(textCompleter.future.catchError((_) => ''));
@@ -484,8 +485,9 @@ class StreamObjectResult {
           final blocked = providerToolApprovalBlockedState;
           final err = blocked ??
               const GenericError('Stream finished without a finish part.');
-          if (!warningsCompleter.isCompleted)
-            warningsCompleter.complete(const <Map<String, dynamic>>[]);
+          if (!warningsCompleter.isCompleted) {
+            warningsCompleter.complete(const <LLMWarning>[]);
+          }
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.complete(
               currentResponseMetadata,
@@ -606,7 +608,7 @@ class StreamObjectResult {
           // return_object tool call. Treat this as a blocked/partial outcome
           // rather than failing schema validation.
           if (!warningsCompleter.isCompleted) {
-            warningsCompleter.complete(const <Map<String, dynamic>>[]);
+            warningsCompleter.complete(const <LLMWarning>[]);
           }
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.complete(currentResponseMetadata);
@@ -659,8 +661,9 @@ class StreamObjectResult {
 
           validateObjectOrThrow(resolved.object);
 
-          if (!warningsCompleter.isCompleted)
-            warningsCompleter.complete(const <Map<String, dynamic>>[]);
+          if (!warningsCompleter.isCompleted) {
+            warningsCompleter.complete(const <LLMWarning>[]);
+          }
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.complete(currentResponseMetadata);
           }
@@ -702,8 +705,9 @@ class StreamObjectResult {
           final err = e is LLMError
               ? e
               : GenericError('Failed to parse streamed object: $e');
-          if (!warningsCompleter.isCompleted)
-            warningsCompleter.complete(const <Map<String, dynamic>>[]);
+          if (!warningsCompleter.isCompleted) {
+            warningsCompleter.complete(const <LLMWarning>[]);
+          }
           if (!responseMetadataCompleter.isCompleted) {
             responseMetadataCompleter.complete(
               currentResponseMetadata,

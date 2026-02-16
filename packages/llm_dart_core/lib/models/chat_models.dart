@@ -11,6 +11,13 @@ enum ChatRole {
 
   /// System message for setting context
   system,
+
+  /// Tool role messages (tool results / tool outputs).
+  ///
+  /// This aligns with OpenAI-style `role=tool` messages. Providers that do not
+  /// support a dedicated tool role should map tool messages to their closest
+  /// equivalent (typically `user`) at the protocol layer.
+  tool,
 }
 
 /// The supported MIME type of an image.
@@ -328,7 +335,7 @@ class ToolResultMessage extends MessageType {
 
 /// A single message in a chat conversation.
 class ChatMessage {
-  /// The role of who sent this message (user or assistant)
+  /// The role of who sent this message.
   final ChatRole role;
 
   /// The type of the message (text, image, audio, video, etc)
@@ -575,7 +582,7 @@ class ChatMessage {
     Map<String, dynamic> protocolPayloads = const {},
   }) =>
       ChatMessage(
-        role: ChatRole.user,
+        role: ChatRole.tool,
         messageType: ToolResultMessage(results),
         content: content,
         protocolPayloads: protocolPayloads,

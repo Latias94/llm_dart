@@ -58,6 +58,7 @@ class AnthropicChat
     return chatWithToolsWithCallOptions(
       messages,
       tools,
+      providerTools: providerTools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
     );
@@ -71,7 +72,12 @@ class AnthropicChat
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
-    final built = _requestBuilder.buildRequest(messages, tools, false);
+    final built = _requestBuilder.buildRequest(
+      messages,
+      tools,
+      false,
+      providerTools: providerTools,
+    );
     var requestBody = Map<String, dynamic>.from(built.body);
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
     final embeddedExtraBody = requestBody['extra_body'];
@@ -120,6 +126,7 @@ class AnthropicChat
   }) async {
     return chatPromptWithCallOptions(
       prompt,
+      providerTools: providerTools,
       tools: tools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
@@ -134,7 +141,12 @@ class AnthropicChat
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
-    final built = _requestBuilder.buildRequestFromPrompt(prompt, tools, false);
+    final built = _requestBuilder.buildRequestFromPrompt(
+      prompt,
+      tools,
+      false,
+      providerTools: providerTools,
+    );
     var requestBody = Map<String, dynamic>.from(built.body);
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
     final embeddedExtraBody = requestBody['extra_body'];
@@ -182,6 +194,7 @@ class AnthropicChat
   }) {
     return chatStreamPartsWithCallOptions(
       messages,
+      providerTools: providerTools,
       tools: tools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
@@ -197,7 +210,12 @@ class AnthropicChat
     CancelToken? cancelToken,
   }) {
     final effectiveTools = tools ?? config.tools;
-    final built = _requestBuilder.buildRequest(messages, effectiveTools, true);
+    final built = _requestBuilder.buildRequest(
+      messages,
+      effectiveTools,
+      true,
+      providerTools: providerTools,
+    );
 
     var requestBody = Map<String, dynamic>.from(built.body);
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
@@ -214,6 +232,7 @@ class AnthropicChat
     final effectiveBuilt = AnthropicBuiltRequest(
       body: requestBody,
       toolNameMapping: built.toolNameMapping,
+      providerTools: built.providerTools,
     );
 
     return _anthropicChatStreamPartsFromBuiltRequest(
@@ -235,6 +254,7 @@ class AnthropicChat
   }) {
     return chatPromptStreamPartsWithCallOptions(
       prompt,
+      providerTools: providerTools,
       tools: tools,
       callOptions: const LLMCallOptions(),
       cancelToken: cancelToken,
@@ -254,6 +274,7 @@ class AnthropicChat
       prompt,
       effectiveTools,
       true,
+      providerTools: providerTools,
     );
 
     var requestBody = Map<String, dynamic>.from(built.body);
@@ -271,6 +292,7 @@ class AnthropicChat
     final effectiveBuilt = AnthropicBuiltRequest(
       body: requestBody,
       toolNameMapping: built.toolNameMapping,
+      providerTools: built.providerTools,
     );
 
     return _anthropicChatStreamPartsFromBuiltRequest(

@@ -1,5 +1,5 @@
 import 'package:llm_dart_builder/llm_dart_builder.dart';
-import 'package:llm_dart_openai/provider_tools.dart';
+import 'package:llm_dart_azure/provider_tools.dart';
 
 /// Azure OpenAI-specific LLM builder with provider-specific configuration methods.
 ///
@@ -36,7 +36,7 @@ class AzureBuilder {
   /// Enable Azure/OpenAI web search preview tool (provider-native).
   AzureBuilder webSearchPreviewTool() {
     useResponsesAPI(true);
-    _baseBuilder.providerTool(OpenAIProviderTools.webSearch());
+    _baseBuilder.providerTool(AzureOpenAIProviderTools.webSearchPreview());
     return this;
   }
 
@@ -44,7 +44,7 @@ class AzureBuilder {
   AzureBuilder fileSearchTool({List<String>? vectorStoreIds}) {
     useResponsesAPI(true);
     _baseBuilder.providerTool(
-      OpenAIProviderTools.fileSearch(vectorStoreIds: vectorStoreIds),
+      AzureOpenAIProviderTools.fileSearch(vectorStoreIds: vectorStoreIds),
     );
     return this;
   }
@@ -52,14 +52,14 @@ class AzureBuilder {
   /// Enable Azure/OpenAI code interpreter tool (provider-native).
   AzureBuilder codeInterpreterTool() {
     useResponsesAPI(true);
-    _baseBuilder.providerTool(OpenAIProviderTools.codeInterpreter());
+    _baseBuilder.providerTool(AzureOpenAIProviderTools.codeInterpreter());
     return this;
   }
 
   /// Enable Azure/OpenAI image generation tool (provider-native).
   AzureBuilder imageGenerationTool() {
     useResponsesAPI(true);
-    _baseBuilder.providerTool(OpenAIProviderTools.imageGeneration());
+    _baseBuilder.providerTool(AzureOpenAIProviderTools.imageGeneration());
     return this;
   }
 }

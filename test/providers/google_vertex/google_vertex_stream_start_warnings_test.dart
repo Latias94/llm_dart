@@ -74,14 +74,11 @@ void main() {
 
       expect(parts.first, isA<LLMStreamStartPart>());
       final start = parts.first as LLMStreamStartPart;
+      expect(start.warnings, hasLength(1));
+      expect(start.warnings.single, isA<LLMUnsupportedWarning>());
       expect(
-        start.warnings,
-        equals([
-          {
-            'type': 'unsupported',
-            'feature': 'combination of function and provider-defined tools',
-          },
-        ]),
+        (start.warnings.single as LLMUnsupportedWarning).feature,
+        equals('combination of function and provider-defined tools'),
       );
     });
   });

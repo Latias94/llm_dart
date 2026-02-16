@@ -47,7 +47,8 @@ class _TestChatResponse extends ChatResponse {
 
 void main() {
   group('generateText defaultCallOptions', () {
-    test('uses defaultCallOptions when per-call callOptions is empty', () async {
+    test('uses defaultCallOptions when per-call callOptions is empty',
+        () async {
       final model = _CapturingCallOptionsChatModel();
 
       final result = await generateText(

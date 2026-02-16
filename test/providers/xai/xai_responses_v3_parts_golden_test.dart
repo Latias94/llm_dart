@@ -7,6 +7,7 @@ import 'package:test/test.dart';
 
 import '../../utils/fixture_replay.dart';
 import '../../utils/fakes/fakes.dart';
+import '../../utils/fixture_meta.dart';
 import '../../utils/v3_parts_golden.dart';
 
 void main() {
@@ -31,12 +32,19 @@ void main() {
         model: 'grok-4-fast',
       );
 
+      final providerTools = readProviderToolsFromV3Meta(
+        provider: provider,
+        scenario: baseName,
+      );
+
       for (var i = 0; i < sessions.length; i++) {
         final client = FakeOpenAIClient(config)..streamResponse = sessions[i];
         final responses = XAIResponses(client, config);
 
-        final parts =
-            await responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+        final parts = await responses.chatStreamParts(
+          [ChatMessage.user('Hi')],
+          providerTools: providerTools.isEmpty ? null : providerTools,
+        ).toList();
 
         final goldenBasePath = 'test/fixtures/v3_parts/$provider/$baseName';
         final goldenPath = sessions.length == 1

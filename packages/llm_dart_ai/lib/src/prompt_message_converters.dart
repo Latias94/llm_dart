@@ -19,6 +19,7 @@ PromptMessage promptMessageFromChatMessage(ChatMessage message) {
       ChatRole.system => PromptRole.system,
       ChatRole.user => PromptRole.user,
       ChatRole.assistant => PromptRole.assistant,
+      ChatRole.tool => PromptRole.tool,
     };
   }
 
@@ -73,7 +74,8 @@ PromptMessage promptMessageFromChatMessage(ChatMessage message) {
             break;
 
           case 'tool_result':
-            if (message.role != ChatRole.user) {
+            if (message.role != ChatRole.user &&
+                message.role != ChatRole.tool) {
               throw const InvalidRequestError(
                 'Anthropic tool_result blocks must be emitted from a user message.',
               );
@@ -205,9 +207,9 @@ PromptMessage promptMessageFromChatMessage(ChatMessage message) {
       }
 
     case ToolResultMessage(results: final results):
-      if (message.role != ChatRole.user) {
+      if (message.role != ChatRole.user && message.role != ChatRole.tool) {
         throw const InvalidRequestError(
-          'ToolResultMessage must be emitted from a user message.',
+          'ToolResultMessage must be emitted from a tool message.',
         );
       }
       if (parts.isEmpty) {

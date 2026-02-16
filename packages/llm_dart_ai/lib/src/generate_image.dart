@@ -1,5 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'ai_errors.dart';
 import 'types.dart';
 
 /// Generate images using a provider-agnostic capability.
@@ -29,6 +30,10 @@ Future<GenerateImageResult> generateImage({
       request,
       callOptions: effectiveCallOptions,
     );
+  }
+
+  if (response.images.isEmpty) {
+    throw NoImageGeneratedError(response: response);
   }
 
   return GenerateImageResult(rawResponse: response);

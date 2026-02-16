@@ -71,13 +71,14 @@ Future<RerankResult> rerankByEmbedding({
   }
 
   final inputs = <String>[query, ...documents.map((d) => d.text)];
-  final vectors = await embedMany(
+  final embedResult = await embedMany(
     model: model,
     values: inputs,
     defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
   );
+  final vectors = embedResult.embeddings;
   if (vectors.length != inputs.length) {
     throw ResponseFormatError(
       'Invalid embedding response: expected query + documents vectors.',

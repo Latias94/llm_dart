@@ -190,6 +190,9 @@ class CapabilityUtils {
     if (provider is ImageGenerationCapability) {
       detected.add(LLMCapability.imageGeneration);
     }
+    if (provider is ExperimentalVideoGenerationCapability) {
+      detected.add(LLMCapability.experimentalVideoGeneration);
+    }
 
     // Audio capabilities: infer support from implemented task interfaces.
     if (provider is TextToSpeechCapability) {

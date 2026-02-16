@@ -8,6 +8,10 @@ class _FakePromptToolStreamPartsModel extends ChatCapability
   int chatWithToolsCalls = 0;
   int chatPromptStreamPartsCalls = 0;
   int _step = 0;
+  final bool _useProviderToolCall;
+
+  _FakePromptToolStreamPartsModel({bool useProviderToolCall = false})
+      : _useProviderToolCall = useProviderToolCall;
 
   @override
   Future<ChatResponse> chatWithTools(
@@ -33,6 +37,16 @@ class _FakePromptToolStreamPartsModel extends ChatCapability
 
     if (_step == 0) {
       _step++;
+      if (_useProviderToolCall) {
+        yield const LLMProviderToolCallPart(
+          toolCallId: 'pt_1',
+          toolName: 'computer',
+          input: '{"action":"screenshot"}',
+          providerExecuted: false,
+        );
+        yield LLMFinishPart(_FakeStreamResponse());
+        return;
+      }
       yield const LLMToolCallStartPart(
         ToolCall(
           id: 'toolu_1',
@@ -92,7 +106,7 @@ void main() {
           ),
         ],
         toolHandlers: {
-          'get_weather': (call, {cancelToken}) async => {'ok': true},
+          'get_weather': (input, options) async => {'ok': true},
         },
       ).toList();
 
@@ -104,6 +118,40 @@ void main() {
 
       expect(model.chatWithToolsCalls, equals(0));
       expect(model.chatPromptStreamPartsCalls, greaterThanOrEqualTo(1));
+    });
+
+    test(
+        'streamToolLoopParts(promptIr) executes provider-defined tool calls when providerExecuted=false',
+        () async {
+      final model = _FakePromptToolStreamPartsModel(useProviderToolCall: true);
+      var handlerCalls = 0;
+
+      final parts = await streamToolLoopParts(
+        model: model,
+        promptIr: Prompt(messages: [PromptMessage.user('hi')]),
+        tools: const [],
+        toolHandlers: {
+          'computer': (input, options) async {
+            handlerCalls++;
+            expect(options.toolCallId, equals('pt_1'));
+            expect(options.toolName, equals('computer'));
+            expect(options.rawArguments, contains('screenshot'));
+            return {'ok': true};
+          },
+        },
+      ).toList();
+
+      expect(handlerCalls, equals(1));
+      expect(parts.whereType<LLMProviderToolCallPart>(), isNotEmpty);
+      expect(parts.whereType<LLMToolResultPart>(), isNotEmpty);
+
+      final toolResult = parts.whereType<LLMToolResultPart>().single.result;
+      expect(toolResult.toolCallId, equals('pt_1'));
+      expect(toolResult.isError, isFalse);
+      expect(toolResult.result, equals({'ok': true}));
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.text, equals('done'));
     });
 
     test('streamToolLoopParts(promptIr) supports file reference parts',
@@ -146,7 +194,7 @@ void main() {
           ),
         ],
         toolHandlers: {
-          'get_weather': (call, {cancelToken}) async => {'ok': true},
+          'get_weather': (input, options) async => {'ok': true},
         },
       ).toList();
 

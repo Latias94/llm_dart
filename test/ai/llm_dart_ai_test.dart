@@ -73,16 +73,16 @@ class _FakeStreamChatModel extends _FakeChatModel
   }
 }
 
-class _FakeEmbeddingModel extends EmbeddingCapability {
+class _FakeEmbeddingModel implements EmbeddingCapability {
   final List<List<double>> vectors;
   _FakeEmbeddingModel(this.vectors);
 
   @override
-  Future<List<List<double>>> embed(
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
-    return vectors;
+    return EmbeddingResponse(embeddings: vectors);
   }
 }
 
@@ -420,10 +420,10 @@ void main() {
         [0.1, 0.2],
       ]);
 
-      final vectors = await embedMany(model: model, values: const ['x']);
+      final result = await embedMany(model: model, values: const ['x']);
 
-      expect(vectors, hasLength(1));
-      expect(vectors.single, [0.1, 0.2]);
+      expect(result.embeddings, hasLength(1));
+      expect(result.embeddings.single, [0.1, 0.2]);
     });
 
     test('generateObject parses tool call arguments', () async {
@@ -624,10 +624,9 @@ void main() {
           ),
         ],
         toolHandlers: {
-          'sum': (call, {cancelToken}) async {
-            final args = jsonDecode(call.function.arguments) as Map;
-            final a = (args['a'] as num).toInt();
-            final b = (args['b'] as num).toInt();
+          'sum': (input, options) async {
+            final a = (input['a'] as num).toInt();
+            final b = (input['b'] as num).toInt();
             return {'result': a + b};
           },
         },
@@ -670,7 +669,7 @@ void main() {
         model: model,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
-          'sum': (call, {cancelToken}) => {'result': 3},
+          'sum': (input, options) => {'result': 3},
         },
         needsApproval: (call,
                 {required messages, required stepIndex, cancelToken}) =>
@@ -719,7 +718,7 @@ void main() {
           model: model,
           messages: [ChatMessage.user('hi')],
           toolHandlers: {
-            'sum': (call, {cancelToken}) => {'result': 3},
+            'sum': (input, options) => {'result': 3},
           },
           needsApproval: (call,
                   {required messages, required stepIndex, cancelToken}) =>
@@ -754,7 +753,7 @@ void main() {
         model: firstModel,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
-          'sum': (call, {cancelToken}) => {'result': 3},
+          'sum': (input, options) => {'result': 3},
         },
         needsApproval: (call,
                 {required messages, required stepIndex, cancelToken}) =>
@@ -767,7 +766,7 @@ void main() {
       final toolResults = await executeToolCalls(
         toolCalls: blocked.state.toolCalls,
         toolHandlers: {
-          'sum': (call, {cancelToken}) => {'result': 3},
+          'sum': (input, options) => {'result': 3},
         },
       );
 
@@ -814,7 +813,7 @@ void main() {
         model: firstModel,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
-          'sum': (call, {cancelToken}) => {'result': 3},
+          'sum': (input, options) => {'result': 3},
         },
         needsApproval: (call,
                 {required messages, required stepIndex, cancelToken}) =>
@@ -839,7 +838,7 @@ void main() {
           ),
         ],
         toolHandlers: {
-          'sum': (call, {cancelToken}) {
+          'sum': (input, options) {
             handlerCalls++;
             return {'result': 3};
           },
@@ -882,7 +881,7 @@ void main() {
         model: firstModel,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
-          'sum': (call, {cancelToken}) => {'result': 3},
+          'sum': (input, options) => {'result': 3},
         },
         needsApproval: (call,
                 {required messages, required stepIndex, cancelToken}) =>
@@ -908,7 +907,7 @@ void main() {
           ),
         ],
         toolHandlers: {
-          'sum': (call, {cancelToken}) {
+          'sum': (input, options) {
             handlerCalls++;
             return {'result': 3};
           },
@@ -945,7 +944,7 @@ void main() {
         model: model,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
-          'boom': (call, {cancelToken}) {
+          'boom': (input, options) {
             throw StateError('nope');
           },
         },
@@ -976,7 +975,7 @@ void main() {
           model: model,
           messages: [ChatMessage.user('hi')],
           toolHandlers: {
-            'noop': (call, {cancelToken}) => {'ok': true},
+            'noop': (input, options) => {'ok': true},
           },
           maxSteps: 1,
         ),
@@ -1012,10 +1011,9 @@ void main() {
         model: model,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
-          'sum': (call, {cancelToken}) async {
-            final args = jsonDecode(call.function.arguments) as Map;
-            final a = (args['a'] as num).toInt();
-            final b = (args['b'] as num).toInt();
+          'sum': (input, options) async {
+            final a = (input['a'] as num).toInt();
+            final b = (input['b'] as num).toInt();
             return {'result': a + b};
           },
         },
@@ -1067,7 +1065,7 @@ void main() {
         model: model,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
-          'sum': (call, {cancelToken}) => {'result': 3},
+          'sum': (input, options) => {'result': 3},
         },
         needsApproval: (call,
                 {required messages, required stepIndex, cancelToken}) =>
@@ -1113,7 +1111,7 @@ void main() {
         model: model,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
-          'noop': (call, {cancelToken}) => {'ok': true},
+          'noop': (input, options) => {'ok': true},
         },
         maxSteps: 1,
       ).toList();
@@ -1147,10 +1145,9 @@ void main() {
             },
             required: ['a', 'b'],
           ),
-          handler: (call, {cancelToken}) async {
-            final args = jsonDecode(call.function.arguments) as Map;
-            final a = (args['a'] as num).toInt();
-            final b = (args['b'] as num).toInt();
+          handler: (input, options) async {
+            final a = (input['a'] as num).toInt();
+            final b = (input['b'] as num).toInt();
             return {'result': a + b};
           },
         ),
@@ -1190,7 +1187,7 @@ void main() {
             },
             required: ['a', 'b'],
           ),
-          handler: (call, {cancelToken}) => {'result': 3},
+          handler: (input, options) => {'result': 3},
           needsApproval: (call,
                   {required messages, required stepIndex, cancelToken}) =>
               true,

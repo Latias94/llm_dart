@@ -22,7 +22,7 @@ class GoogleEmbeddings implements EmbeddingCapability {
       '${googleModelPath(config.model)}:batchEmbedContents';
 
   @override
-  Future<List<List<double>>> embed(
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
@@ -34,21 +34,35 @@ class GoogleEmbeddings implements EmbeddingCapability {
       // For single input or small batches, use single endpoint
       if (input.length == 1) {
         final requestBody = _buildSingleEmbeddingRequest(input.first);
-        final responseData = await client.postJson(
+        final responseData = await client.postJsonWithHeaders(
           embeddingEndpoint,
           requestBody,
           cancelToken: cancelToken,
         );
-        return [_parseSingleEmbeddingResponse(responseData)];
+        final embedding = _parseSingleEmbeddingResponse(responseData.json);
+        return EmbeddingResponse(
+          embeddings: [embedding],
+          response: EmbeddingCallResponse(
+            headers: responseData.headers.isEmpty ? null : responseData.headers,
+            body: responseData.json,
+          ),
+        );
       } else {
         // For multiple inputs, use batch endpoint
         final requestBody = _buildBatchEmbeddingRequest(input);
-        final responseData = await client.postJson(
+        final responseData = await client.postJsonWithHeaders(
           batchEmbeddingEndpoint,
           requestBody,
           cancelToken: cancelToken,
         );
-        return _parseBatchEmbeddingResponse(responseData);
+        final embeddings = _parseBatchEmbeddingResponse(responseData.json);
+        return EmbeddingResponse(
+          embeddings: embeddings,
+          response: EmbeddingCallResponse(
+            headers: responseData.headers.isEmpty ? null : responseData.headers,
+            body: responseData.json,
+          ),
+        );
       }
     } on DioException catch (e) {
       throw await DioErrorHandler.handleDioError(e, 'Google');

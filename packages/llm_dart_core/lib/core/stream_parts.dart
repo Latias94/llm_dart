@@ -17,6 +17,127 @@ sealed class LLMStreamPart {
   const LLMStreamPart();
 }
 
+/// Warning emitted by the model or orchestration layer (AI SDK v3-style).
+///
+/// This is aligned with the AI SDK shared v3 warning shape:
+/// - `unsupported`: a feature is not supported by the model/provider.
+/// - `compatibility`: a compatibility fallback is used.
+/// - `other`: any other warning message.
+sealed class LLMWarning {
+  const LLMWarning();
+
+  String get type;
+
+  Map<String, dynamic> toJson();
+
+  static LLMWarning fromJson(Map<String, dynamic> json) {
+    final type = json['type'];
+    if (type is! String || type.trim().isEmpty) {
+      return const LLMOtherWarning('Invalid warning: missing non-empty "type".');
+    }
+
+    switch (type) {
+      case 'unsupported':
+        final feature = json['feature'];
+        final details = json['details'];
+        if (feature is String && feature.trim().isNotEmpty) {
+          return LLMUnsupportedWarning(
+            feature: feature.trim(),
+            details: details is String && details.trim().isNotEmpty
+                ? details.trim()
+                : null,
+          );
+        }
+        return const LLMOtherWarning(
+            'Invalid warning: unsupported warning missing "feature".');
+
+      case 'compatibility':
+        final feature = json['feature'];
+        final details = json['details'];
+        if (feature is String && feature.trim().isNotEmpty) {
+          return LLMCompatibilityWarning(
+            feature: feature.trim(),
+            details: details is String && details.trim().isNotEmpty
+                ? details.trim()
+                : null,
+          );
+        }
+        return const LLMOtherWarning(
+            'Invalid warning: compatibility warning missing "feature".');
+
+      case 'other':
+        final message = json['message'];
+        if (message is String && message.trim().isNotEmpty) {
+          return LLMOtherWarning(message.trim());
+        }
+        return const LLMOtherWarning(
+            'Invalid warning: other warning missing "message".');
+
+      default:
+        final message = json['message'];
+        if (message is String && message.trim().isNotEmpty) {
+          return LLMOtherWarning(message.trim());
+        }
+        return LLMOtherWarning('Unknown warning type: $type');
+    }
+  }
+}
+
+class LLMUnsupportedWarning extends LLMWarning {
+  final String feature;
+  final String? details;
+
+  const LLMUnsupportedWarning({
+    required this.feature,
+    this.details,
+  });
+
+  @override
+  String get type => 'unsupported';
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': type,
+        'feature': feature,
+        if (details != null && details!.trim().isNotEmpty) 'details': details,
+      };
+}
+
+class LLMCompatibilityWarning extends LLMWarning {
+  final String feature;
+  final String? details;
+
+  const LLMCompatibilityWarning({
+    required this.feature,
+    this.details,
+  });
+
+  @override
+  String get type => 'compatibility';
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': type,
+        'feature': feature,
+        if (details != null && details!.trim().isNotEmpty) 'details': details,
+      };
+}
+
+class LLMOtherWarning extends LLMWarning {
+  final String message;
+
+  const LLMOtherWarning(this.message);
+
+  @override
+  String get type => 'other';
+
+  @override
+  Map<String, dynamic> toJson() => {
+        'type': type,
+        'message': message,
+      };
+}
+
 /// Marks the start of a streaming response.
 ///
 /// Mirrors Vercel AI SDK's `stream-start` concept and provides a stable place
@@ -24,9 +145,7 @@ sealed class LLMStreamPart {
 /// providerMetadata maps.
 class LLMStreamStartPart extends LLMStreamPart {
   /// Optional warnings emitted by the orchestration layer or provider.
-  ///
-  /// Best-effort structure aligned with AI SDK warnings (typically objects).
-  final List<Map<String, dynamic>> warnings;
+  final List<LLMWarning> warnings;
 
   const LLMStreamStartPart({this.warnings = const []});
 }
@@ -48,7 +167,10 @@ class LLMResponseMetadataPart extends LLMStreamPart {
   final DateTime? timestamp;
 
   /// Model identifier (if available).
-  final String? model;
+  final String? modelId;
+
+  @Deprecated('Use modelId.')
+  String? get model => modelId;
 
   /// Response headers (best-effort; HTTP providers only).
   ///
@@ -75,14 +197,15 @@ class LLMResponseMetadataPart extends LLMStreamPart {
   const LLMResponseMetadataPart({
     this.id,
     this.timestamp,
-    this.model,
+    String? modelId,
+    @Deprecated('Use modelId.') String? model,
     this.headers,
     this.body,
     this.status,
     this.systemFingerprint,
     this.providerMetadata,
     this.raw,
-  });
+  }) : modelId = modelId ?? model;
 }
 
 /// Request metadata emitted during streaming (best-effort).

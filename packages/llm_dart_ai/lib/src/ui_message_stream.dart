@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'ai_errors.dart';
 import 'types.dart';
 
 /// Encodes [LLMStreamPart] streams into Vercel AI SDK-style UI message chunks.
@@ -767,10 +768,10 @@ String _toDataUri({required String mediaType, required Object data}) {
   } else if (data is Uint8List) {
     base64Data = base64Encode(data);
   } else {
-    throw ArgumentError.value(
-      data,
-      'data',
-      'LLMFilePart.data must be a String (base64) or Uint8List (bytes).',
+    throw UiMessageStreamError(
+      cause: data,
+      message:
+          'LLMFilePart.data must be a String (base64) or Uint8List (bytes).',
     );
   }
 

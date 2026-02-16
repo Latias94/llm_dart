@@ -119,9 +119,7 @@ void main() {
         unified: LLMUnifiedFinishReason.stop,
         raw: 'stop',
       );
-      const warnings = [
-        {'type': 'warning', 'message': 'test warning'}
-      ];
+      const warnings = [LLMOtherWarning('test warning')];
 
       final model = _FakeChatModel([
         const LLMStreamStartPart(warnings: warnings),
@@ -131,7 +129,7 @@ void main() {
         LLMResponseMetadataPart(
           id: 'resp_1',
           timestamp: DateTime.utc(2020, 1, 1),
-          model: 'm1',
+          modelId: 'm1',
         ),
         const LLMTextStartPart(),
         const LLMTextDeltaPart('Hel'),
@@ -160,7 +158,11 @@ void main() {
 
       final partsFuture = result.fullStream.toList();
 
-      expect(await result.warnings, equals(warnings));
+      final resolvedWarnings = await result.warnings;
+      expect(resolvedWarnings, hasLength(1));
+      expect(resolvedWarnings.single, isA<LLMOtherWarning>());
+      expect((resolvedWarnings.single as LLMOtherWarning).message,
+          equals('test warning'));
       expect((await result.responseMetadata)?.id, equals('resp_1'));
       expect(
           (await result.requestMetadata)?.body,
@@ -299,7 +301,7 @@ void main() {
             },
             required: ['city'],
           ),
-          handler: (toolCall, {cancelToken}) => {'temp': 70},
+          handler: (input, options) => {'temp': 70},
         ),
       ]);
 

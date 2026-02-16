@@ -159,7 +159,8 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
       return;
     }
 
-    final inferredFromMeta = inferToolNameFromProviderMetadata(providerMetadata);
+    final inferredFromMeta =
+        inferToolNameFromProviderMetadata(providerMetadata);
     final inferredFromDelta = inferToolNameFromDelta(delta);
     final inferred = inferredFromMeta ?? inferredFromDelta;
     if (inferred != null && inferred.trim().isNotEmpty) {

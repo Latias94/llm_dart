@@ -6,6 +6,5 @@
 {"delta":"{\"city\":\"London\"}","id":"call_getWeather","type":"tool-input-delta"}
 {"id":"0","type":"text-end"}
 {"id":"call_getWeather","type":"tool-input-end"}
-{"input":"{\"city\":\"London\"}","toolCallId":"call_getWeather","toolName":"getWeather","type":"tool-call"}
 {"rawValue":{"providerMetadata":{"ollama":{"createdAt":"2026-01-01T00:00:00Z","doneReason":"stop","evalCount":8,"finishReason":"stop","model":"llama3.1","promptEvalCount":12,"usage":{"completionTokens":8,"promptTokens":12,"totalTokens":20}},"ollama.chat":{"createdAt":"2026-01-01T00:00:00Z","doneReason":"stop","evalCount":8,"finishReason":"stop","model":"llama3.1","promptEvalCount":12,"usage":{"completionTokens":8,"promptTokens":12,"totalTokens":20}}}},"type":"raw"}
 {"finishReason":{"raw":"stop","unified":"tool-calls"},"providerMetadata":{"ollama":{"createdAt":"2026-01-01T00:00:00Z","doneReason":"stop","evalCount":8,"finishReason":"stop","model":"llama3.1","promptEvalCount":12,"usage":{"completionTokens":8,"promptTokens":12,"totalTokens":20}},"ollama.chat":{"createdAt":"2026-01-01T00:00:00Z","doneReason":"stop","evalCount":8,"finishReason":"stop","model":"llama3.1","promptEvalCount":12,"usage":{"completionTokens":8,"promptTokens":12,"totalTokens":20}}},"type":"finish","usage":{"inputTokens":{"total":12},"outputTokens":{"total":8},"raw":{"eval_count":8,"prompt_eval_count":12}}}

@@ -28,6 +28,7 @@ class AnthropicProvider
         ChatCallOptionsCapability,
         ChatStreamPartsCallOptionsCapability,
         PromptChatStreamPartsCallOptionsCapability,
+        ModelIdentityCapability,
         ProviderCapabilities {
   final AnthropicClient _client;
   final AnthropicConfig config;
@@ -49,12 +50,22 @@ class AnthropicProvider
   }
 
   @override
+  String get providerId => config.providerId;
+
+  @override
+  String get modelId => config.model;
+
+  @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return _chat.chat(messages, cancelToken: cancelToken);
+    return _chat.chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -64,7 +75,12 @@ class AnthropicProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
+    return _chat.chatWithTools(
+      messages,
+      tools,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -78,6 +94,7 @@ class AnthropicProvider
     return _chat.chatWithToolsWithCallOptions(
       messages,
       tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -93,6 +110,7 @@ class AnthropicProvider
     return _chat.chatStreamParts(
       messages,
       tools: tools,
+      providerTools: providerTools,
       cancelToken: cancelToken,
     );
   }
@@ -108,6 +126,7 @@ class AnthropicProvider
     return _chat.chatStreamPartsWithCallOptions(
       messages,
       tools: tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
@@ -120,7 +139,12 @@ class AnthropicProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+    return _chat.chatPrompt(
+      prompt,
+      providerTools: providerTools,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -133,6 +157,7 @@ class AnthropicProvider
   }) {
     return _chat.chatPromptWithCallOptions(
       prompt,
+      providerTools: providerTools,
       tools: tools,
       callOptions: callOptions,
       cancelToken: cancelToken,
@@ -149,6 +174,7 @@ class AnthropicProvider
     return _chat.chatPromptStreamParts(
       prompt,
       tools: tools,
+      providerTools: providerTools,
       cancelToken: cancelToken,
     );
   }
@@ -164,6 +190,7 @@ class AnthropicProvider
     return _chat.chatPromptStreamPartsWithCallOptions(
       prompt,
       tools: tools,
+      providerTools: providerTools,
       callOptions: callOptions,
       cancelToken: cancelToken,
     );

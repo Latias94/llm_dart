@@ -1,6 +1,30 @@
 part of 'package:llm_dart_anthropic_compatible/request_builder.dart';
 
 extension _AnthropicRequestBuilderMessages on AnthropicRequestBuilder {
+  Object _decodeToolResultContentIfJsonArray(String raw) {
+    final trimmed = raw.trim();
+    if (!trimmed.startsWith('[')) return raw;
+
+    try {
+      final decoded = jsonDecode(trimmed);
+      if (decoded is! List) return raw;
+
+      final blocks = decoded
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .toList(growable: false);
+
+      // Only treat JSON arrays that look like Anthropic content blocks as rich content.
+      final looksLikeContentBlocks = blocks.isEmpty ||
+          blocks.every((b) =>
+              b['type'] is String && (b['type'] as String).trim().isNotEmpty);
+
+      return looksLikeContentBlocks ? blocks : raw;
+    } catch (_) {
+      return raw;
+    }
+  }
+
   ProcessedMessages _processMessages(
     List<ChatMessage> messages,
     ToolNameMapping toolNameMapping,
@@ -236,12 +260,13 @@ extension _AnthropicRequestBuilderMessages on AnthropicRequestBuilder {
           }
           for (final result in results) {
             final resultContent = result.function.arguments;
-            final isError = _toolResultIsError(resultContent, result.providerOptions);
+            final isError =
+                _toolResultIsError(resultContent, result.providerOptions);
 
             content.add({
               'type': 'tool_result',
               'tool_use_id': result.id,
-              'content': resultContent,
+              'content': _decodeToolResultContentIfJsonArray(resultContent),
               'is_error': isError,
               if ((_cacheControlFromProviderOptions(result.providerOptions) ??
                       effectiveCacheControl) !=
@@ -255,8 +280,21 @@ extension _AnthropicRequestBuilderMessages on AnthropicRequestBuilder {
       }
     }
 
+    String wireRoleForMessage(ChatMessage message) {
+      // Anthropic Messages API does not support a dedicated `tool` role.
+      // Tool results are represented as `tool_result` blocks inside `user` messages.
+      if (message.messageType is ToolResultMessage) return 'user';
+
+      return switch (message.role) {
+        ChatRole.system => 'system',
+        ChatRole.user => 'user',
+        ChatRole.assistant => 'assistant',
+        ChatRole.tool => 'user',
+      };
+    }
+
     return {
-      'role': message.role.name,
+      'role': wireRoleForMessage(message),
       'content': content,
     };
   }

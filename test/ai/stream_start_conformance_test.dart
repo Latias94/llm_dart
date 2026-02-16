@@ -83,7 +83,7 @@ void main() {
         Stream<LLMStreamPart>.fromIterable(const [
           LLMStreamStartPart(
             warnings: [
-              {'type': 'unsupported', 'feature': 'demo'},
+              LLMUnsupportedWarning(feature: 'demo'),
             ],
           ),
           LLMTextDeltaPart('ok'),
@@ -98,12 +98,10 @@ void main() {
 
       expect(parts.first, isA<LLMStreamStartPart>());
       expect(parts.whereType<LLMStreamStartPart>(), hasLength(1));
-      expect(
-        (parts.first as LLMStreamStartPart).warnings,
-        equals([
-          {'type': 'unsupported', 'feature': 'demo'},
-        ]),
-      );
+      final warnings = (parts.first as LLMStreamStartPart).warnings;
+      expect(warnings, hasLength(1));
+      expect(warnings.single, isA<LLMUnsupportedWarning>());
+      expect((warnings.single as LLMUnsupportedWarning).feature, equals('demo'));
     });
 
     test('streamToolLoopParts does not duplicate provider stream-start',
@@ -112,7 +110,7 @@ void main() {
         Stream<LLMStreamPart>.fromIterable([
           const LLMStreamStartPart(
             warnings: [
-              {'type': 'unsupported', 'feature': 'demo'},
+              LLMUnsupportedWarning(feature: 'demo'),
             ],
           ),
           const LLMFinishPart(_FakeChatResponse(text: 'ok')),
@@ -128,12 +126,10 @@ void main() {
 
       expect(parts.first, isA<LLMStreamStartPart>());
       expect(parts.whereType<LLMStreamStartPart>(), hasLength(1));
-      expect(
-        (parts.first as LLMStreamStartPart).warnings,
-        equals([
-          {'type': 'unsupported', 'feature': 'demo'},
-        ]),
-      );
+      final warnings = (parts.first as LLMStreamStartPart).warnings;
+      expect(warnings, hasLength(1));
+      expect(warnings.single, isA<LLMUnsupportedWarning>());
+      expect((warnings.single as LLMUnsupportedWarning).feature, equals('demo'));
     });
 
     test(
@@ -177,14 +173,12 @@ void main() {
 
       expect(parts.first, isA<LLMStreamStartPart>());
       expect(parts.whereType<LLMStreamStartPart>(), hasLength(1));
+      final warnings = (parts.first as LLMStreamStartPart).warnings;
+      expect(warnings, hasLength(1));
+      expect(warnings.single, isA<LLMUnsupportedWarning>());
       expect(
-        (parts.first as LLMStreamStartPart).warnings,
-        equals([
-          {
-            'type': 'unsupported',
-            'feature': 'combination of function and provider-defined tools',
-          },
-        ]),
+        (warnings.single as LLMUnsupportedWarning).feature,
+        equals('combination of function and provider-defined tools'),
       );
     });
   });

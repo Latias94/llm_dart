@@ -124,6 +124,47 @@ void main() {
       );
     });
 
+    test('v1 base URL: per-call providerTools serialize into Responses tools',
+        () async {
+      final adapter = _CapturingHttpClientAdapter();
+      final customDio = Dio()..httpClientAdapter = adapter;
+
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://example.openai.azure.com/openai',
+        model: 'deployment_1',
+      ).withProviderOptions('azure', {
+        'apiVersion': '2024-10-01-preview',
+        'useDeploymentBasedUrls': false,
+        'useResponsesAPI': false,
+      }).withTransportOptions({'customDio': customDio});
+
+      final factory = AzureOpenAIProviderFactory();
+      final provider = factory.create(llmConfig) as AzureOpenAIProvider;
+
+      await provider.chat(
+        [ChatMessage.user('hi')],
+        providerTools: const [
+          ProviderTool(
+            id: 'azure.web_search_preview',
+            options: {'searchContextSize': 'high'},
+          ),
+        ],
+      );
+
+      final req = adapter.lastRequest;
+      expect(req, isNotNull);
+      expect(req!.uri.toString(), contains('/openai/v1/responses'));
+
+      final body = req.data as Map;
+      final tools =
+          (body['tools'] as List?)?.whereType<Map>().toList() ?? const [];
+      expect(tools.any((t) => t['type'] == 'web_search_preview'), isTrue);
+
+      final web = tools.firstWhere((t) => t['type'] == 'web_search_preview');
+      expect(web['search_context_size'], equals('high'));
+    });
+
     test('v1 base URL: prompt IR (responses) groups multi-part message',
         () async {
       final adapter = _CapturingHttpClientAdapter();

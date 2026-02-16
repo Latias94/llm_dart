@@ -7,6 +7,7 @@ import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:test/test.dart';
 
+import '../../utils/fixture_meta.dart';
 import '../../utils/fixture_replay.dart';
 import '../../utils/v3_parts_golden.dart';
 
@@ -76,6 +77,11 @@ void main() {
       final fixturePath =
           'test/fixtures/openai_compatible/$baseName.chunks.txt';
 
+      final providerTools = readProviderToolsFromV3Meta(
+        provider: 'openai_compatible',
+        scenario: baseName,
+      );
+
       final config = OpenAICompatibleConfig(
         providerId: 'deepseek',
         providerName: 'DeepSeek',
@@ -92,8 +98,13 @@ void main() {
       final provider =
           OpenAICompatibleChatProvider(client, config, capabilities);
 
-      final parts = await llm_ai.streamChatParts(
-          model: provider, messages: [ChatMessage.user('Hi')]).toList();
+      final parts = await llm_ai
+          .streamChatParts(
+            model: provider,
+            messages: [ChatMessage.user('Hi')],
+            providerTools: providerTools.isEmpty ? null : providerTools,
+          )
+          .toList();
 
       // Sanity: ensure we at least match the expected DeepSeek extraction
       // (for the vendored DeepSeek fixtures).

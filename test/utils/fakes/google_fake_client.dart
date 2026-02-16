@@ -7,9 +7,21 @@ import 'package:llm_dart_google/client.dart';
 class FakeGoogleClient extends GoogleClient {
   String? lastEndpoint;
   dynamic lastBody;
+  Map<String, String>? lastHeaders;
+
+  final List<
+      ({
+        String method,
+        String endpoint,
+        dynamic body,
+        Map<String, String>? headers
+      })> calls = [];
 
   /// Fake JSON responses keyed by endpoint.
   final Map<String, Map<String, dynamic>> responsesByEndpoint;
+
+  /// Fake JSON responses keyed by GET endpoint.
+  final Map<String, Map<String, dynamic>> getResponsesByEndpoint;
 
   /// Fallback JSON response returned when `responsesByEndpoint` has no entry.
   ///
@@ -31,8 +43,10 @@ class FakeGoogleClient extends GoogleClient {
   FakeGoogleClient(
     super.config, {
     Map<String, Map<String, dynamic>>? responsesByEndpoint,
+    Map<String, Map<String, dynamic>>? getResponsesByEndpoint,
     this.defaultJsonResponse,
-  }) : responsesByEndpoint = responsesByEndpoint ?? const {};
+  })  : responsesByEndpoint = responsesByEndpoint ?? const {},
+        getResponsesByEndpoint = getResponsesByEndpoint ?? const {};
 
   @override
   Future<Map<String, dynamic>> postJson(
@@ -42,6 +56,8 @@ class FakeGoogleClient extends GoogleClient {
   }) async {
     lastEndpoint = endpoint;
     lastBody = data;
+    lastHeaders = null;
+    calls.add((method: 'POST', endpoint: endpoint, body: data, headers: null));
 
     final response = responsesByEndpoint[endpoint];
     if (response == null) {
@@ -57,11 +73,54 @@ class FakeGoogleClient extends GoogleClient {
       postJsonWithHeaders(
     String endpoint,
     Map<String, dynamic> data, {
+    Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
+    lastHeaders = headers;
+    calls.add(
+      (method: 'POST', endpoint: endpoint, body: data, headers: headers),
+    );
     final json = await postJson(
       endpoint,
       data,
+      cancelToken: cancelToken,
+    );
+    return (json: json, headers: jsonHeaders);
+  }
+
+  @override
+  Future<Map<String, dynamic>> getJson(
+    String endpoint, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
+    lastEndpoint = endpoint;
+    lastBody = null;
+    lastHeaders = headers;
+    calls
+        .add((method: 'GET', endpoint: endpoint, body: null, headers: headers));
+
+    final response = getResponsesByEndpoint[endpoint];
+    if (response == null) {
+      final fallback = defaultJsonResponse;
+      if (fallback != null) return fallback;
+      throw StateError(
+        'No fake GET response registered for endpoint: $endpoint',
+      );
+    }
+    return response;
+  }
+
+  @override
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      getJsonWithHeaders(
+    String endpoint, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
+    final json = await getJson(
+      endpoint,
+      headers: headers,
       cancelToken: cancelToken,
     );
     return (json: json, headers: jsonHeaders);
@@ -75,6 +134,8 @@ class FakeGoogleClient extends GoogleClient {
   }) {
     lastEndpoint = endpoint;
     lastBody = data;
+    lastHeaders = null;
+    calls.add((method: 'POST', endpoint: endpoint, body: data, headers: null));
     return streamResponse;
   }
 
@@ -87,6 +148,8 @@ class FakeGoogleClient extends GoogleClient {
   }) async {
     lastEndpoint = endpoint;
     lastBody = data;
+    lastHeaders = null;
+    calls.add((method: 'POST', endpoint: endpoint, body: data, headers: null));
     return (stream: streamResponse, headers: streamHeaders);
   }
 
@@ -100,6 +163,13 @@ class FakeGoogleClient extends GoogleClient {
   }) async {
     lastEndpoint = endpoint;
     lastBody = data;
+    lastHeaders = options?.headers?.cast<String, String>();
+    calls.add((
+      method: 'POST',
+      endpoint: endpoint,
+      body: data,
+      headers: lastHeaders,
+    ));
 
     return postResponse ??
         dio.Response(

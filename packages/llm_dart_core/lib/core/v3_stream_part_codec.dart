@@ -91,8 +91,14 @@ LLMFinishReason _defaultFinishReasonForResponse(ChatResponse response) {
 /// This encoder performs a small amount of normalization to make fixture tests
 /// deterministic:
 /// - Injects missing block ids for text/reasoning blocks (counter-based).
-/// - Converts tool-call start/delta/end parts into `tool-input-*` parts and
-///   emits a final `tool-call` part once input is complete.
+/// - Converts local tool-call start/delta/end parts into `tool-input-*` parts
+///   and emits a final `tool-call` part once input is complete.
+///
+/// Notes:
+/// - Canonical v3 `tool-input-*` parts are treated as already-normalized and
+///   are encoded 1:1 (no synthetic `tool-call` emission). This is required for
+///   fixture round-trips because upstream fixtures often include both
+///   `tool-input-*` and one or more `tool-call` parts for the same toolCallId.
 List<V3JsonMap> encodeV3StreamParts(
   Iterable<LLMStreamPart> parts, {
   bool injectMissingBlockIds = true,
@@ -114,489 +120,453 @@ List<V3JsonMap> encodeV3StreamParts(
 /// Decodes AI SDK v3-style JSON objects into [LLMStreamPart]s.
 ///
 /// This decoder is intended for fixture-driven tests and round-trip debugging.
-/// It is best-effort and may throw [FormatException] if the input stream is
-/// structurally invalid (e.g. missing required fields).
+/// It is best-effort and may throw [InvalidStreamPartError] if the input stream
+/// is structurally invalid (e.g. missing required fields).
 List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
   final state = _V3DecodeState();
   final out = <LLMStreamPart>[];
 
   for (final obj in objects) {
-    final type = obj['type'];
-    if (type is! String || type.isEmpty) {
-      throw const FormatException('v3 part missing non-empty "type".');
-    }
+    try {
+      final type = obj['type'];
+      if (type is! String || type.isEmpty) {
+        throw const FormatException('v3 part missing non-empty "type".');
+      }
 
-    final providerMetadata = _asStringKeyedMap(obj['providerMetadata']);
+      final providerMetadata = _asStringKeyedMap(obj['providerMetadata']);
 
-    switch (type) {
-      case 'stream-start':
-        out.add(
-          LLMStreamStartPart(
-            warnings: _asListOfStringKeyedMaps(obj['warnings']) ?? const [],
-          ),
-        );
-        break;
-
-      case 'response-metadata':
-        final id = obj['id'] as String?;
-        final timestampRaw = obj['timestamp'];
-        final modelId = obj['modelId'] as String?;
-        out.add(
-          LLMResponseMetadataPart(
-            id: (id != null && id.isNotEmpty) ? id : null,
-            timestamp:
-                timestampRaw != null ? _decodeV3Timestamp(timestampRaw) : null,
-            model: (modelId != null && modelId.isNotEmpty) ? modelId : null,
-            providerMetadata: providerMetadata,
-            raw: _asStringKeyedMap(obj['raw']),
-          ),
-        );
-        break;
-
-      case 'text-start':
-        final id = _requireString(obj, 'id');
-        state.text.onStart(id);
-        out.add(
-          LLMTextStartPart(blockId: id, providerMetadata: providerMetadata),
-        );
-        break;
-
-      case 'text-delta':
-        final id = _requireString(obj, 'id');
-        final delta = _requireString(obj, 'delta');
-        state.text.onDelta(id, delta);
-        out.add(
-          LLMTextDeltaPart(delta,
-              blockId: id, providerMetadata: providerMetadata),
-        );
-        break;
-
-      case 'text-end':
-        final id = _requireString(obj, 'id');
-        final text = state.text.onEnd(id);
-        out.add(
-          LLMTextEndPart(text, blockId: id, providerMetadata: providerMetadata),
-        );
-        break;
-
-      case 'reasoning-start':
-        final id = _requireString(obj, 'id');
-        state.reasoning.onStart(id);
-        out.add(
-          LLMReasoningStartPart(
-              blockId: id, providerMetadata: providerMetadata),
-        );
-        break;
-
-      case 'reasoning-delta':
-        final id = _requireString(obj, 'id');
-        final delta = _requireString(obj, 'delta');
-        state.reasoning.onDelta(id, delta);
-        out.add(
-          LLMReasoningDeltaPart(
-            delta,
-            blockId: id,
-            providerMetadata: providerMetadata,
-          ),
-        );
-        break;
-
-      case 'reasoning-end':
-        final id = _requireString(obj, 'id');
-        final thinking = state.reasoning.onEnd(id);
-        state.reasoning.currentId = null;
-        out.add(
-          LLMReasoningEndPart(
-            thinking,
-            blockId: id,
-            providerMetadata: providerMetadata,
-          ),
-        );
-        break;
-
-      case 'tool-input-start':
-        final id = _requireString(obj, 'id');
-        final toolName = _requireString(obj, 'toolName');
-        final providerExecuted = obj['providerExecuted'] == true ? true : null;
-        final dynamicTool = obj['dynamic'] == true ? true : null;
-        final title = obj['title'] as String?;
-
-        state.toolInput.onStart(id);
-        state.rememberTool(id: id, toolName: toolName);
-
-        out.add(
-          LLMToolInputStartPart(
-            id: id,
-            toolName: toolName,
-            providerExecuted: providerExecuted,
-            isDynamic: dynamicTool,
-            title: (title != null && title.isNotEmpty) ? title : null,
-            providerMetadata: providerMetadata,
-          ),
-        );
-        break;
-
-      case 'tool-input-delta':
-        final id = _requireString(obj, 'id');
-        final delta = _requireString(obj, 'delta');
-        state.toolInput.onDelta(id, delta);
-        out.add(
-          LLMToolInputDeltaPart(
-            id: id,
-            delta: delta,
-            providerMetadata: providerMetadata,
-          ),
-        );
-        break;
-
-      case 'tool-input-end':
-        final id = _requireString(obj, 'id');
-        state.toolInput.onEnd(id);
-        out.add(
-            LLMToolInputEndPart(id: id, providerMetadata: providerMetadata));
-        break;
-
-      case 'tool-call':
-        final toolCallId = _requireString(obj, 'toolCallId');
-        final toolName = _requireString(obj, 'toolName');
-        final inputRaw = obj['input'];
-        if (inputRaw is! String) {
-          throw const FormatException('v3 tool-call missing string "input".');
-        }
-        final providerExecuted = obj['providerExecuted'] == true ? true : null;
-        final dynamicTool = obj['dynamic'] == true ? true : null;
-
-        if (!state.emittedToolCallIds.add(toolCallId)) {
-          throw FormatException(
-              'v3 tool-call duplicated for toolCallId: $toolCallId');
-        }
-
-        final existing = state.toolById[toolCallId];
-        if (existing != null && existing.toolName != toolName) {
-          throw FormatException(
-            'v3 tool-call toolName mismatch for toolCallId=$toolCallId: '
-            'existing=${existing.toolName}, got=$toolName',
+      switch (type) {
+        case 'stream-start':
+          final warningObjs =
+              _asListOfStringKeyedMaps(obj['warnings']) ?? const [];
+          final warnings = warningObjs
+              .map((w) => LLMWarning.fromJson(w))
+              .toList(growable: false);
+          out.add(
+            LLMStreamStartPart(
+              warnings: warnings,
+            ),
           );
-        }
+          break;
 
-        // Preserve the original v3 shape: `tool-call.input` is a stringified JSON
-        // object. Do not decode it, otherwise whitespace/minification differences
-        // would break fixture round-trips.
-        state.rememberTool(id: toolCallId, toolName: toolName, input: inputRaw);
-
-        out.add(
-          LLMProviderToolCallPart(
-            toolCallId: toolCallId,
-            toolName: toolName,
-            input: inputRaw,
-            providerExecuted: providerExecuted,
-            isDynamic: dynamicTool,
-            providerMetadata: providerMetadata,
-          ),
-        );
-        break;
-
-      case 'tool-result':
-        final toolCallId = _requireString(obj, 'toolCallId');
-        final toolName = _requireString(obj, 'toolName');
-        final result = obj['result'];
-        if (result == null) {
-          throw const FormatException(
-              'v3 tool-result missing non-null "result".');
-        }
-        final isError = obj['isError'] == true ? true : null;
-        final preliminary = obj['preliminary'] == true ? true : null;
-        final dynamicTool = obj['dynamic'] == true ? true : null;
-
-        final existing = state.toolById[toolCallId];
-        if (existing != null && existing.toolName != toolName) {
-          throw FormatException(
-            'v3 tool-result toolName mismatch for toolCallId=$toolCallId: '
-            'existing=${existing.toolName}, got=$toolName',
+        case 'response-metadata':
+          final id = obj['id'] as String?;
+          final timestampRaw = obj['timestamp'];
+          final modelId = obj['modelId'] as String?;
+          out.add(
+            LLMResponseMetadataPart(
+              id: (id != null && id.isNotEmpty) ? id : null,
+              timestamp: timestampRaw != null
+                  ? _decodeV3Timestamp(timestampRaw)
+                  : null,
+              modelId:
+                  (modelId != null && modelId.isNotEmpty) ? modelId : null,
+              providerMetadata: providerMetadata,
+              raw: _asStringKeyedMap(obj['raw']),
+            ),
           );
-        }
+          break;
 
-        final toolState = state.toolResultStateByToolCallId
-            .putIfAbsent(toolCallId, _ToolResultDecodeState.new);
-        if (toolState.seenFinal) {
-          throw FormatException(
-            'v3 tool-result emitted after final result for toolCallId: $toolCallId',
+        case 'text-start':
+          final id = _requireString(obj, 'id');
+          state.text.onStart(id);
+          out.add(
+            LLMTextStartPart(blockId: id, providerMetadata: providerMetadata),
           );
-        }
-        if (preliminary != true) {
-          toolState.seenFinal = true;
-        }
-        toolState.seenAny = true;
+          break;
 
-        state.rememberTool(id: toolCallId, toolName: toolName);
-
-        out.add(
-          LLMProviderToolResultPart(
-            toolCallId: toolCallId,
-            toolName: toolName,
-            result: _normalizeJsonLike(result),
-            isError: isError,
-            preliminary: preliminary,
-            isDynamic: dynamicTool,
-            providerMetadata: providerMetadata,
-          ),
-        );
-        break;
-
-      case 'tool-approval-request':
-        final approvalId = _requireString(obj, 'approvalId');
-        final toolCallId = _requireString(obj, 'toolCallId');
-        if (!state.emittedApprovalIds.add(approvalId)) {
-          throw FormatException(
-              'v3 tool-approval-request duplicated approvalId: $approvalId');
-        }
-
-        final remembered = state.toolById[toolCallId];
-        if (remembered == null || remembered.toolName.isEmpty) {
-          throw FormatException(
-            'v3 tool-approval-request references unknown toolCallId: $toolCallId',
+        case 'text-delta':
+          final id = _requireString(obj, 'id');
+          final delta = _requireString(obj, 'delta');
+          state.text.onDelta(id, delta);
+          out.add(
+            LLMTextDeltaPart(delta,
+                blockId: id, providerMetadata: providerMetadata),
           );
-        }
-        final fallbackInput = state.toolInput.fullInputForId(toolCallId);
+          break;
 
-        out.add(
-          LLMProviderToolApprovalRequestPart(
-            approvalId: approvalId,
-            toolCallId: toolCallId,
-            toolName: remembered?.toolName ?? 'unknown',
-            input: remembered?.input ??
-                (fallbackInput != null && fallbackInput.isNotEmpty
-                    ? _decodeJsonIfPossible(fallbackInput)
-                    : null),
-            providerMetadata: providerMetadata,
-          ),
-        );
-        break;
+        case 'text-end':
+          final id = _requireString(obj, 'id');
+          final text = state.text.onEnd(id);
+          out.add(
+            LLMTextEndPart(text,
+                blockId: id, providerMetadata: providerMetadata),
+          );
+          break;
 
-      case 'source':
-        final sourceType = _requireString(obj, 'sourceType');
-        final id = _requireString(obj, 'id');
-        if (!state.emittedSourceIds.add(id)) {
-          throw FormatException('v3 source duplicated id: $id');
-        }
-        switch (sourceType) {
-          case 'url':
-            final url = _requireString(obj, 'url');
-            final title = obj['title'] as String?;
-            out.add(
-              LLMSourceUrlPart(
-                sourceId: id,
-                url: url,
-                title: (title != null && title.isNotEmpty) ? title : null,
-                providerMetadata: providerMetadata,
-              ),
-            );
-            break;
-          case 'document':
-            final mediaType = _requireString(obj, 'mediaType');
-            final title = _requireString(obj, 'title');
-            final filename = obj['filename'] as String?;
-            out.add(
-              LLMSourceDocumentPart(
-                sourceId: id,
-                mediaType: mediaType,
-                title: title,
-                filename:
-                    (filename != null && filename.isNotEmpty) ? filename : null,
-                providerMetadata: providerMetadata,
-              ),
-            );
-            break;
-          default:
-            throw FormatException('Unsupported v3 sourceType: $sourceType');
-        }
-        break;
+        case 'reasoning-start':
+          final id = _requireString(obj, 'id');
+          state.reasoning.onStart(id);
+          out.add(
+            LLMReasoningStartPart(
+                blockId: id, providerMetadata: providerMetadata),
+          );
+          break;
 
-      case 'file':
-        final mediaType = _requireString(obj, 'mediaType');
-        final data = _decodeV3FileData(obj['data']);
-        out.add(
-          LLMFilePart(
-            mediaType: mediaType,
-            data: data,
-            providerMetadata: providerMetadata,
-          ),
-        );
-        break;
-
-      case 'finish':
-        final usageRaw = obj['usage'];
-        if (usageRaw is! Map) {
-          throw const FormatException('v3 finish missing object "usage".');
-        }
-        final finishReasonRaw = obj['finishReason'];
-        if (finishReasonRaw is! Map) {
-          throw const FormatException(
-              'v3 finish missing object "finishReason".');
-        }
-
-        final reason =
-            _decodeV3FinishReason(_asStringKeyedMap(finishReasonRaw)!);
-        final usage = _decodeV3Usage(_asStringKeyedMap(usageRaw)!);
-
-        out.add(
-          LLMFinishPart(
-            _DecodedChatResponse(
-              finishReason: reason,
-              usage: usage,
+        case 'reasoning-delta':
+          final id = _requireString(obj, 'id');
+          final delta = _requireString(obj, 'delta');
+          state.reasoning.onDelta(id, delta);
+          out.add(
+            LLMReasoningDeltaPart(
+              delta,
+              blockId: id,
               providerMetadata: providerMetadata,
             ),
-            usage: usage,
-            finishReason: reason,
-          ),
-        );
-        break;
+          );
+          break;
 
-      case 'raw':
-        final rawValue = obj['rawValue'];
-        if (rawValue is Map) {
-          // Tool loop step boundaries (non-canonical v3; injected by llm_dart tool loops).
-          final kind = rawValue['kind'];
-          if (kind == 'step-start') {
-            final stepIndexRaw = rawValue['stepIndex'];
-            final stepIndex = stepIndexRaw is int
-                ? stepIndexRaw
-                : (stepIndexRaw is num ? stepIndexRaw.toInt() : null);
-            if (stepIndex != null && stepIndex >= 0) {
-              out.add(LLMStepStartPart(stepIndex));
-              break;
-            }
+        case 'reasoning-end':
+          final id = _requireString(obj, 'id');
+          final thinking = state.reasoning.onEnd(id);
+          state.reasoning.currentId = null;
+          out.add(
+            LLMReasoningEndPart(
+              thinking,
+              blockId: id,
+              providerMetadata: providerMetadata,
+            ),
+          );
+          break;
+
+        case 'tool-input-start':
+          final id = _requireString(obj, 'id');
+          final toolName = _requireString(obj, 'toolName');
+          final providerExecuted =
+              obj['providerExecuted'] == true ? true : null;
+          final dynamicTool = obj['dynamic'] == true ? true : null;
+          final title = obj['title'] as String?;
+
+          state.toolInput.onStart(id);
+          state.rememberTool(id: id, toolName: toolName);
+
+          out.add(
+            LLMToolInputStartPart(
+              id: id,
+              toolName: toolName,
+              providerExecuted: providerExecuted,
+              isDynamic: dynamicTool,
+              title: (title != null && title.isNotEmpty) ? title : null,
+              providerMetadata: providerMetadata,
+            ),
+          );
+          break;
+
+        case 'tool-input-delta':
+          final id = _requireString(obj, 'id');
+          final delta = _requireString(obj, 'delta');
+          state.toolInput.onDelta(id, delta);
+          out.add(
+            LLMToolInputDeltaPart(
+              id: id,
+              delta: delta,
+              providerMetadata: providerMetadata,
+            ),
+          );
+          break;
+
+        case 'tool-input-end':
+          final id = _requireString(obj, 'id');
+          state.toolInput.onEnd(id);
+          out.add(
+              LLMToolInputEndPart(id: id, providerMetadata: providerMetadata));
+          break;
+
+        case 'tool-call':
+          final toolCallId = _requireString(obj, 'toolCallId');
+          final toolName = _requireString(obj, 'toolName');
+          final inputRaw = obj['input'];
+          if (inputRaw is! String) {
+            throw const FormatException('v3 tool-call missing string "input".');
+          }
+          final providerExecuted =
+              obj['providerExecuted'] == true ? true : null;
+          final dynamicTool = obj['dynamic'] == true ? true : null;
+
+          final existing = state.toolById[toolCallId];
+          if (existing != null && existing.toolName != toolName) {
+            throw FormatException(
+              'v3 tool-call toolName mismatch for toolCallId=$toolCallId: '
+              'existing=${existing.toolName}, got=$toolName',
+            );
           }
 
-          if (kind == 'step-finish') {
-            final stepIndexRaw = rawValue['stepIndex'];
-            final stepIndex = stepIndexRaw is int
-                ? stepIndexRaw
-                : (stepIndexRaw is num ? stepIndexRaw.toInt() : null);
-            if (stepIndex == null || stepIndex < 0) {
-              out.add(LLMRawPart(_normalizeJsonLike(rawValue)));
-              break;
-            }
+          // Preserve the original v3 shape: `tool-call.input` is a stringified JSON
+          // object. Do not decode it, otherwise whitespace/minification differences
+          // would break fixture round-trips.
+          state.rememberTool(
+              id: toolCallId, toolName: toolName, input: inputRaw);
 
-            final usageRaw = _asStringKeyedMap(rawValue['usage']);
-            final finishReasonRaw = _asStringKeyedMap(rawValue['finishReason']);
-            final usage = usageRaw != null ? _decodeV3Usage(usageRaw) : null;
-            final finishReason = finishReasonRaw != null
-                ? _decodeV3FinishReason(finishReasonRaw)
-                : null;
+          out.add(
+            LLMProviderToolCallPart(
+              toolCallId: toolCallId,
+              toolName: toolName,
+              input: inputRaw,
+              providerExecuted: providerExecuted,
+              isDynamic: dynamicTool,
+              providerMetadata: providerMetadata,
+            ),
+          );
+          break;
 
-            final responseProviderMetadata =
-                _asStringKeyedMap(rawValue['providerMetadata']);
+        case 'tool-result':
+          final toolCallId = _requireString(obj, 'toolCallId');
+          final toolName = _requireString(obj, 'toolName');
+          final result = obj['result'];
+          if (result == null) {
+            throw const FormatException(
+                'v3 tool-result missing non-null "result".');
+          }
+          final isError = obj['isError'] == true ? true : null;
+          final preliminary = obj['preliminary'] == true ? true : null;
+          final dynamicTool = obj['dynamic'] == true ? true : null;
 
-            final toolCallsRaw = rawValue['toolCalls'];
-            final toolResultsRaw = rawValue['toolResults'];
+          final existing = state.toolById[toolCallId];
+          if (existing != null && existing.toolName != toolName) {
+            throw FormatException(
+              'v3 tool-result toolName mismatch for toolCallId=$toolCallId: '
+              'existing=${existing.toolName}, got=$toolName',
+            );
+          }
 
-            final toolCalls = <ToolCall>[];
-            if (toolCallsRaw is List) {
-              for (final v in toolCallsRaw) {
-                if (v is Map) {
-                  toolCalls.add(ToolCall.fromJson(v.cast<String, dynamic>()));
-                }
-              }
-            }
+          final toolState = state.toolResultStateByToolCallId
+              .putIfAbsent(toolCallId, _ToolResultDecodeState.new);
+          if (toolState.seenFinal) {
+            throw FormatException(
+              'v3 tool-result emitted after final result for toolCallId: $toolCallId',
+            );
+          }
+          if (preliminary != true) {
+            toolState.seenFinal = true;
+          }
+          toolState.seenAny = true;
 
-            final toolResults = <ToolResult>[];
-            if (toolResultsRaw is List) {
-              for (final v in toolResultsRaw) {
-                if (v is Map) {
-                  toolResults
-                      .add(ToolResult.fromJson(v.cast<String, dynamic>()));
-                }
-              }
-            }
+          state.rememberTool(id: toolCallId, toolName: toolName);
 
-            out.add(
-              LLMStepFinishPart(
-                stepIndex: stepIndex,
-                response: _DecodedChatResponse(
-                  finishReason: finishReason,
-                  usage: usage,
-                  providerMetadata: responseProviderMetadata,
+          out.add(
+            LLMProviderToolResultPart(
+              toolCallId: toolCallId,
+              toolName: toolName,
+              result: _normalizeJsonLike(result),
+              isError: isError,
+              preliminary: preliminary,
+              isDynamic: dynamicTool,
+              providerMetadata: providerMetadata,
+            ),
+          );
+          break;
+
+        case 'tool-approval-request':
+          final approvalId = _requireString(obj, 'approvalId');
+          final toolCallId = _requireString(obj, 'toolCallId');
+          if (!state.emittedApprovalIds.add(approvalId)) {
+            throw FormatException(
+                'v3 tool-approval-request duplicated approvalId: $approvalId');
+          }
+
+          final remembered = state.toolById[toolCallId];
+          if (remembered == null || remembered.toolName.isEmpty) {
+            throw FormatException(
+              'v3 tool-approval-request references unknown toolCallId: $toolCallId',
+            );
+          }
+          final fallbackInput = state.toolInput.fullInputForId(toolCallId);
+
+          out.add(
+            LLMProviderToolApprovalRequestPart(
+              approvalId: approvalId,
+              toolCallId: toolCallId,
+              toolName: remembered?.toolName ?? 'unknown',
+              input: remembered?.input ??
+                  (fallbackInput != null && fallbackInput.isNotEmpty
+                      ? _decodeJsonIfPossible(fallbackInput)
+                      : null),
+              providerMetadata: providerMetadata,
+            ),
+          );
+          break;
+
+        case 'source':
+          final sourceType = _requireString(obj, 'sourceType');
+          final id = _requireString(obj, 'id');
+          if (!state.emittedSourceIds.add(id)) {
+            throw FormatException('v3 source duplicated id: $id');
+          }
+          switch (sourceType) {
+            case 'url':
+              final url = _requireString(obj, 'url');
+              final title = obj['title'] as String?;
+              out.add(
+                LLMSourceUrlPart(
+                  sourceId: id,
+                  url: url,
+                  title: (title != null && title.isNotEmpty) ? title : null,
+                  providerMetadata: providerMetadata,
                 ),
+              );
+              break;
+            case 'document':
+              final mediaType = _requireString(obj, 'mediaType');
+              final title = _requireString(obj, 'title');
+              final filename = obj['filename'] as String?;
+              out.add(
+                LLMSourceDocumentPart(
+                  sourceId: id,
+                  mediaType: mediaType,
+                  title: title,
+                  filename: (filename != null && filename.isNotEmpty)
+                      ? filename
+                      : null,
+                  providerMetadata: providerMetadata,
+                ),
+              );
+              break;
+            default:
+              throw FormatException('Unsupported v3 sourceType: $sourceType');
+          }
+          break;
+
+        case 'file':
+          final mediaType = _requireString(obj, 'mediaType');
+          final data = _decodeV3FileData(obj['data']);
+          out.add(
+            LLMFilePart(
+              mediaType: mediaType,
+              data: data,
+              providerMetadata: providerMetadata,
+            ),
+          );
+          break;
+
+        case 'finish':
+          final usageRaw = obj['usage'];
+          if (usageRaw is! Map) {
+            throw const FormatException('v3 finish missing object "usage".');
+          }
+          final finishReasonRaw = obj['finishReason'];
+          if (finishReasonRaw is! Map) {
+            throw const FormatException(
+                'v3 finish missing object "finishReason".');
+          }
+
+          final reason =
+              _decodeV3FinishReason(_asStringKeyedMap(finishReasonRaw)!);
+          final usage = _decodeV3Usage(_asStringKeyedMap(usageRaw)!);
+
+          out.add(
+            LLMFinishPart(
+              _DecodedChatResponse(
+                finishReason: reason,
                 usage: usage,
-                finishReason: finishReason,
-                toolCalls: toolCalls,
-                toolResults: toolResults,
+                providerMetadata: providerMetadata,
               ),
-            );
-            break;
-          }
+              usage: usage,
+              finishReason: reason,
+            ),
+          );
+          break;
 
-          if (kind == 'request-metadata') {
-            out.add(
-              LLMRequestMetadataPart(
-                body: _normalizeJsonLike(rawValue['body']),
-              ),
-            );
-            break;
-          }
+        case 'raw':
+          final rawValue = obj['rawValue'];
+          if (rawValue is Map) {
+            // Tool loop step boundaries (non-canonical v3; injected by llm_dart tool loops).
+            final kind = rawValue['kind'];
+            if (kind == 'step-start') {
+              final stepIndexRaw = rawValue['stepIndex'];
+              final stepIndex = stepIndexRaw is int
+                  ? stepIndexRaw
+                  : (stepIndexRaw is num ? stepIndexRaw.toInt() : null);
+              if (stepIndex != null && stepIndex >= 0) {
+                out.add(LLMStepStartPart(stepIndex));
+                break;
+              }
+            }
 
-          // Backward compatibility: historically we wrapped non-canonical parts
-          // in `rawValue.kind=...` envelopes for fixture round-trips. Newer
-          // fixtures omit `kind` and use a minimal, self-describing shape.
+            if (kind == 'step-finish') {
+              final stepIndexRaw = rawValue['stepIndex'];
+              final stepIndex = stepIndexRaw is int
+                  ? stepIndexRaw
+                  : (stepIndexRaw is num ? stepIndexRaw.toInt() : null);
+              if (stepIndex == null || stepIndex < 0) {
+                out.add(LLMRawPart(_normalizeJsonLike(rawValue)));
+                break;
+              }
 
-          // Provider tool delta (preferred): { toolCallId, toolName, status, ... }
-          final toolCallId = rawValue['toolCallId'] as String?;
-          final toolName = rawValue['toolName'] as String?;
-          final status = rawValue['status'] as String?;
-          if (toolCallId != null &&
-              toolCallId.isNotEmpty &&
-              toolName != null &&
-              toolName.isNotEmpty &&
-              status != null &&
-              status.isNotEmpty) {
-            final data = rawValue['data'];
-            final pm = _asStringKeyedMap(rawValue['providerMetadata']);
-            out.add(
-              LLMProviderToolDeltaPart(
-                toolCallId: toolCallId,
-                toolName: toolName,
-                status: status,
-                data: _normalizeJsonLike(data),
-                providerMetadata: pm,
-              ),
-            );
-            break;
-          }
+              final usageRaw = _asStringKeyedMap(rawValue['usage']);
+              final finishReasonRaw =
+                  _asStringKeyedMap(rawValue['finishReason']);
+              final usage = usageRaw != null ? _decodeV3Usage(usageRaw) : null;
+              final finishReason = finishReasonRaw != null
+                  ? _decodeV3FinishReason(finishReasonRaw)
+                  : null;
 
-          // Provider metadata snapshot (preferred): { providerMetadata: {...} }
-          // Only treat it as a metadata snapshot when the object contains *only*
-          // this single key, otherwise preserve as a raw chunk.
-          if (rawValue.length == 1 &&
-              rawValue.containsKey('providerMetadata')) {
-            final pm = _asStringKeyedMap(rawValue['providerMetadata']);
-            if (pm != null) {
-              out.add(LLMProviderMetadataPart(pm));
+              final responseProviderMetadata =
+                  _asStringKeyedMap(rawValue['providerMetadata']);
+
+              final toolCallsRaw = rawValue['toolCalls'];
+              final toolResultsRaw = rawValue['toolResults'];
+
+              final toolCalls = <ToolCall>[];
+              if (toolCallsRaw is List) {
+                for (final v in toolCallsRaw) {
+                  if (v is Map) {
+                    toolCalls.add(ToolCall.fromJson(v.cast<String, dynamic>()));
+                  }
+                }
+              }
+
+              final toolResults = <ToolResult>[];
+              if (toolResultsRaw is List) {
+                for (final v in toolResultsRaw) {
+                  if (v is Map) {
+                    toolResults
+                        .add(ToolResult.fromJson(v.cast<String, dynamic>()));
+                  }
+                }
+              }
+
+              out.add(
+                LLMStepFinishPart(
+                  stepIndex: stepIndex,
+                  response: _DecodedChatResponse(
+                    finishReason: finishReason,
+                    usage: usage,
+                    providerMetadata: responseProviderMetadata,
+                  ),
+                  usage: usage,
+                  finishReason: finishReason,
+                  toolCalls: toolCalls,
+                  toolResults: toolResults,
+                ),
+              );
               break;
             }
-          }
 
-          // Legacy envelopes: { kind: 'provider-metadata' | 'provider-tool-delta', ... }
-          // (Note: step boundaries are handled above.)
-          if (kind == 'provider-metadata') {
-            final pm = _asStringKeyedMap(rawValue['providerMetadata']);
-            if (pm != null) {
-              out.add(LLMProviderMetadataPart(pm));
+            if (kind == 'request-metadata') {
+              out.add(
+                LLMRequestMetadataPart(
+                  body: _normalizeJsonLike(rawValue['body']),
+                ),
+              );
               break;
             }
-          }
-          if (kind == 'provider-tool-delta') {
+
+            // Backward compatibility: historically we wrapped non-canonical parts
+            // in `rawValue.kind=...` envelopes for fixture round-trips. Newer
+            // fixtures omit `kind` and use a minimal, self-describing shape.
+
+            // Provider tool delta (preferred): { toolCallId, toolName, status, ... }
             final toolCallId = rawValue['toolCallId'] as String?;
             final toolName = rawValue['toolName'] as String?;
             final status = rawValue['status'] as String?;
-            final data = rawValue['data'];
-            final pm = _asStringKeyedMap(rawValue['providerMetadata']);
             if (toolCallId != null &&
                 toolCallId.isNotEmpty &&
                 toolName != null &&
                 toolName.isNotEmpty &&
                 status != null &&
                 status.isNotEmpty) {
+              final data = rawValue['data'];
+              final pm = _asStringKeyedMap(rawValue['providerMetadata']);
               out.add(
                 LLMProviderToolDeltaPart(
                   toolCallId: toolCallId,
@@ -608,25 +578,78 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
               );
               break;
             }
+
+            // Provider metadata snapshot (preferred): { providerMetadata: {...} }
+            // Only treat it as a metadata snapshot when the object contains *only*
+            // this single key, otherwise preserve as a raw chunk.
+            if (rawValue.length == 1 &&
+                rawValue.containsKey('providerMetadata')) {
+              final pm = _asStringKeyedMap(rawValue['providerMetadata']);
+              if (pm != null) {
+                out.add(LLMProviderMetadataPart(pm));
+                break;
+              }
+            }
+
+            // Legacy envelopes: { kind: 'provider-metadata' | 'provider-tool-delta', ... }
+            // (Note: step boundaries are handled above.)
+            if (kind == 'provider-metadata') {
+              final pm = _asStringKeyedMap(rawValue['providerMetadata']);
+              if (pm != null) {
+                out.add(LLMProviderMetadataPart(pm));
+                break;
+              }
+            }
+            if (kind == 'provider-tool-delta') {
+              final toolCallId = rawValue['toolCallId'] as String?;
+              final toolName = rawValue['toolName'] as String?;
+              final status = rawValue['status'] as String?;
+              final data = rawValue['data'];
+              final pm = _asStringKeyedMap(rawValue['providerMetadata']);
+              if (toolCallId != null &&
+                  toolCallId.isNotEmpty &&
+                  toolName != null &&
+                  toolName.isNotEmpty &&
+                  status != null &&
+                  status.isNotEmpty) {
+                out.add(
+                  LLMProviderToolDeltaPart(
+                    toolCallId: toolCallId,
+                    toolName: toolName,
+                    status: status,
+                    data: _normalizeJsonLike(data),
+                    providerMetadata: pm,
+                  ),
+                );
+                break;
+              }
+            }
           }
-        }
-        out.add(LLMRawPart(_normalizeJsonLike(rawValue)));
-        break;
+          out.add(LLMRawPart(_normalizeJsonLike(rawValue)));
+          break;
 
-      case 'error':
-        final rawError = _normalizeJsonLike(obj['error']);
-        out.add(
-          LLMErrorRawPart(
-            rawError,
-            decodedError: _decodeV3Error(rawError),
-          ),
-        );
-        break;
+        case 'error':
+          final rawError = _normalizeJsonLike(obj['error']);
+          out.add(
+            LLMErrorRawPart(
+              rawError,
+              decodedError: _decodeV3Error(rawError),
+            ),
+          );
+          break;
 
-      default:
-        // Preserve unknown parts as raw to keep decoding forward-compatible.
-        out.add(LLMRawPart(_normalizeJsonLike(obj)));
-        break;
+        default:
+          // Preserve unknown parts as raw to keep decoding forward-compatible.
+          out.add(LLMRawPart(_normalizeJsonLike(obj)));
+          break;
+      }
+    } on InvalidStreamPartError {
+      rethrow;
+    } on FormatException catch (e) {
+      throw InvalidStreamPartError(
+        chunk: obj,
+        message: e.message.toString(),
+      );
     }
   }
 
@@ -634,8 +657,10 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
     final toolCallId = entry.key;
     final toolState = entry.value;
     if (toolState.seenAny && !toolState.seenFinal) {
-      throw FormatException(
-        'v3 tool-result missing final (non-preliminary) result for toolCallId: $toolCallId',
+      throw InvalidStreamPartError(
+        chunk: {'type': 'tool-result', 'toolCallId': toolCallId},
+        message:
+            'v3 tool-result missing final (non-preliminary) result for toolCallId: $toolCallId',
       );
     }
   }
@@ -652,21 +677,21 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
       return [
         {
           'type': 'stream-start',
-          'warnings': warnings,
+          'warnings': warnings.map((w) => w.toJson()).toList(growable: false),
         },
       ];
 
     case LLMResponseMetadataPart(
         id: final id,
         timestamp: final timestamp,
-        model: final model,
+        modelId: final modelId,
       ):
       return [
         {
           'type': 'response-metadata',
           if (id != null && id.isNotEmpty) 'id': id,
           if (timestamp != null) 'timestamp': timestamp.toIso8601String(),
-          if (model != null && model.isNotEmpty) 'modelId': model,
+          if (modelId != null && modelId.isNotEmpty) 'modelId': modelId,
         },
       ];
 
@@ -878,7 +903,7 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
       ];
 
     case LLMToolInputEndPart(id: final id, providerMetadata: final pm):
-      final completed = state.toolInput.onToolInputEnd(id);
+      state.toolInput.onToolInputEnd(id);
       final out = <V3JsonMap>[
         {
           'type': 'tool-input-end',
@@ -886,15 +911,6 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         },
       ];
-      if (completed != null && !completed.providerExecuted) {
-        out.add({
-          'type': 'tool-call',
-          'toolCallId': completed.id,
-          'toolName': completed.toolName,
-          'input': completed.input,
-          // client-executed tool call: omit providerExecuted
-        });
-      }
       return out;
 
     // Local tool call lifecycle (client-executed function tools):

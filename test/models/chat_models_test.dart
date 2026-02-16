@@ -6,10 +6,11 @@ void main() {
   group('Chat Models Tests', () {
     group('ChatRole Enum', () {
       test('should have correct values', () {
-        expect(ChatRole.values, hasLength(3));
+        expect(ChatRole.values, hasLength(4));
         expect(ChatRole.values, contains(ChatRole.user));
         expect(ChatRole.values, contains(ChatRole.assistant));
         expect(ChatRole.values, contains(ChatRole.system));
+        expect(ChatRole.values, contains(ChatRole.tool));
       });
     });
 
@@ -237,7 +238,7 @@ void main() {
           content: 'Tool results',
         );
 
-        expect(message.role, equals(ChatRole.user));
+        expect(message.role, equals(ChatRole.tool));
         expect(message.content, equals('Tool results'));
         expect(message.messageType, isA<ToolResultMessage>());
 

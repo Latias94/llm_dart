@@ -6,6 +6,7 @@ import 'embeddings.dart';
 import 'images.dart';
 import 'model_path.dart';
 import 'tts.dart';
+import 'video.dart';
 
 /// Google provider implementation
 ///
@@ -20,6 +21,9 @@ class GoogleProvider
         PromptChatStreamPartsCapability,
         EmbeddingCapability,
         ImageGenerationCapability,
+        ExperimentalVideoGenerationCapability,
+        ExperimentalVideoGenerationCallOptionsCapability,
+        ExperimentalVideoGenerationMaxVideosPerCallCapability,
         TextToSpeechCapability,
         StreamingTextToSpeechCapability,
         VoiceListingCapability,
@@ -32,6 +36,7 @@ class GoogleProvider
   late final GoogleChat _chat;
   late final GoogleEmbeddings _embeddings;
   late final GoogleImages _images;
+  late final GoogleVideo _video;
   late final GoogleTTS _tts;
 
   GoogleProvider(
@@ -42,6 +47,7 @@ class GoogleProvider
     _chat = GoogleChat(_client, config);
     _embeddings = GoogleEmbeddings(_client, config);
     _images = GoogleImages(_client, config);
+    _video = GoogleVideo(_client, config);
     _tts = GoogleTTS(_client, config);
   }
 
@@ -57,7 +63,11 @@ class GoogleProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return _chat.chat(messages, cancelToken: cancelToken);
+    return _chat.chat(
+      messages,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -67,7 +77,12 @@ class GoogleProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
+    return _chat.chatWithTools(
+      messages,
+      tools,
+      providerTools: providerTools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -77,8 +92,12 @@ class GoogleProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chatStreamParts(messages,
-        tools: tools, cancelToken: cancelToken);
+    return _chat.chatStreamParts(
+      messages,
+      providerTools: providerTools,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -88,7 +107,12 @@ class GoogleProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    return _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
+    return _chat.chatPrompt(
+      prompt,
+      providerTools: providerTools,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -100,6 +124,7 @@ class GoogleProvider
   }) {
     return _chat.chatPromptStreamParts(
       prompt,
+      providerTools: providerTools,
       tools: tools,
       cancelToken: cancelToken,
     );
@@ -118,7 +143,7 @@ class GoogleProvider
   // ========== EmbeddingCapability ==========
 
   @override
-  Future<List<List<double>>> embed(
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
@@ -186,6 +211,32 @@ class GoogleProvider
       promptEnhancement: promptEnhancement,
     );
   }
+
+  // ========== ExperimentalVideoGenerationCapability ==========
+
+  @override
+  Future<ExperimentalVideoGenerationResponse> generateVideos(
+    ExperimentalVideoGenerationRequest request, {
+    CancelToken? cancelToken,
+  }) {
+    return _video.generateVideos(request, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<ExperimentalVideoGenerationResponse> generateVideosWithCallOptions(
+    ExperimentalVideoGenerationRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _video.generateVideosWithCallOptions(
+      request,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  int get maxVideosPerCall => 4;
 
   // ========== Task-specific audio capabilities ==========
 
@@ -323,6 +374,7 @@ class GoogleProvider
         LLMCapability.vision,
         LLMCapability.reasoning,
         LLMCapability.imageGeneration,
+        LLMCapability.experimentalVideoGeneration,
         LLMCapability.embedding,
         LLMCapability.textToSpeech,
         LLMCapability.streamingTextToSpeech,

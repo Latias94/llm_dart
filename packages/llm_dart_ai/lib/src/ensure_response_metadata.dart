@@ -103,7 +103,7 @@ LLMResponseMetadataPart _mergeResponseMetadata(
   return LLMResponseMetadataPart(
     id: a.id ?? b.id,
     timestamp: a.timestamp ?? b.timestamp,
-    model: a.model ?? b.model,
+    modelId: a.modelId ?? b.modelId,
     headers: mergeHeaders(a.headers, b.headers),
     body: a.body ?? b.body,
     status: a.status ?? b.status,

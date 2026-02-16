@@ -90,7 +90,7 @@ void main() {
         model: model,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
-          'web_search': (toolCall, {cancelToken}) async {
+          'web_search': (input, options) async {
             handlerCalls++;
             return {'ok': true};
           },
@@ -135,7 +135,7 @@ void main() {
         model: model,
         messages: [ChatMessage.user('hi')],
         toolHandlers: {
-          'web_search': (toolCall, {cancelToken}) async {
+          'web_search': (input, options) async {
             handlerCalls++;
             return {'ok': true};
           },

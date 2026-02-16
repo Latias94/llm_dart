@@ -49,8 +49,10 @@ void main() {
         final client = FakeOpenAIClient(config)..streamResponse = sessions[i];
         final responses = openai_responses.OpenAIResponses(client, config);
 
-        final parts =
-            await responses.chatStreamParts([ChatMessage.user('Hi')]).toList();
+        final parts = await responses.chatStreamParts(
+          [ChatMessage.user('Hi')],
+          providerTools: providerTools.isEmpty ? null : providerTools,
+        ).toList();
 
         final goldenBasePath = 'test/fixtures/v3_parts/$provider/$baseName';
         final goldenPath = sessions.length == 1

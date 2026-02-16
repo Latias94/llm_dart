@@ -38,7 +38,10 @@ void main() {
     test('uiChunkData produces data-* type', () {
       expect(
         uiChunkData('foo', const {'a': 1}),
-        equals(const {'type': 'data-foo', 'data': {'a': 1}}),
+        equals(const {
+          'type': 'data-foo',
+          'data': {'a': 1}
+        }),
       );
 
       expect(
@@ -53,4 +56,3 @@ void main() {
     });
   });
 }
-

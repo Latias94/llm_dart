@@ -9,7 +9,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 /// - Otherwise, a new [LLMStreamStartPart] is injected before the first part.
 Stream<LLMStreamPart> ensureStreamStartPart(
   Stream<LLMStreamPart> upstream, {
-  List<Map<String, dynamic>> warnings = const [],
+  List<LLMWarning> warnings = const [],
 }) async* {
   final iterator = StreamIterator(upstream);
   try {

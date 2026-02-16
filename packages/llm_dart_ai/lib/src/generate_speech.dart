@@ -1,5 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'ai_errors.dart';
 import 'types.dart';
 
 /// Generate speech audio (TTS) using a provider-agnostic capability.
@@ -30,6 +31,10 @@ Future<GenerateSpeechResult> generateSpeech({
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
+  }
+
+  if (response.audioData.isEmpty) {
+    throw NoSpeechGeneratedError(response: response);
   }
 
   return GenerateSpeechResult(rawResponse: response);

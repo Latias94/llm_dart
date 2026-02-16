@@ -215,7 +215,7 @@ class OpenAICompatibleChatEmbeddingProvider extends OpenAICompatibleChatProvider
   }
 
   @override
-  Future<List<List<double>>> embed(
+  Future<EmbeddingResponse> embed(
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
@@ -223,7 +223,7 @@ class OpenAICompatibleChatEmbeddingProvider extends OpenAICompatibleChatProvider
   }
 
   @override
-  Future<List<List<double>>> embedWithCallOptions(
+  Future<EmbeddingResponse> embedWithCallOptions(
     List<String> input, {
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,

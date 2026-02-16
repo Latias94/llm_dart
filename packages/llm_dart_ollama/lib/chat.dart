@@ -188,6 +188,7 @@ class OllamaChat
     final toolAccums = <String, _ToolCallAccum>{};
     var didEmitResponseMetadata = false;
 
+    Map<String, dynamic>? lastStreamChunk;
     try {
       final streamed = await client.postStreamRawWithHeaders(
         chatEndpoint,
@@ -199,6 +200,7 @@ class OllamaChat
 
       await for (final chunk in stream) {
         for (final json in jsonlParser.parseObjects(chunk)) {
+          lastStreamChunk = json;
           if (!didEmitResponseMetadata) {
             final model = json['model'] as String? ?? config.model;
             if (model.isNotEmpty) {
@@ -415,7 +417,12 @@ class OllamaChat
         yield LLMErrorPart(e);
         return;
       }
-      yield LLMErrorPart(GenericError('Unexpected error: $e'));
+      yield LLMErrorPart(
+        InvalidStreamPartError(
+          chunk: lastStreamChunk ?? const <String, dynamic>{},
+          message: 'Stream part decode error: $e',
+        ),
+      );
       return;
     }
   }

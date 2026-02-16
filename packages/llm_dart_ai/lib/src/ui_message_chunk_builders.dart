@@ -44,7 +44,8 @@ Map<String, Object?> uiChunkData(
 }) {
   final chunkType = name.trim();
   if (chunkType.isEmpty) {
-    throw ArgumentError.value(name, 'name', 'Data chunk name must be non-empty');
+    throw ArgumentError.value(
+        name, 'name', 'Data chunk name must be non-empty');
   }
 
   return <String, Object?>{
@@ -54,4 +55,3 @@ Map<String, Object?> uiChunkData(
     if (transient == true) 'transient': true,
   };
 }
-

@@ -51,6 +51,25 @@ class ResponseFormatError extends LLMError {
       'Response format error: $message. Raw response: $rawResponse';
 }
 
+/// Stream part format error for AI SDK v3-style JSON stream parts.
+///
+/// This is thrown when decoding a v3 stream part fails due to missing or
+/// malformed required fields.
+///
+/// Mirrors Vercel AI SDK's `InvalidStreamPartError` concept.
+class InvalidStreamPartError extends LLMError {
+  /// The offending stream chunk (best-effort raw JSON map/object).
+  final Object chunk;
+
+  InvalidStreamPartError({
+    required this.chunk,
+    required String message,
+  }) : super(message);
+
+  @override
+  String toString() => 'Invalid stream part: $message';
+}
+
 /// Generic error
 class GenericError extends LLMError {
   const GenericError(super.message);
@@ -134,6 +153,37 @@ class ToolValidationError extends LLMError {
     }
     if (providedValue != null) {
       parts.add('Provided value: $providedValue');
+    }
+    return parts.join(', ');
+  }
+}
+
+/// Tool output validation error
+///
+/// This is thrown when a tool returns an output that does not match an
+/// expected output schema (e.g. MCP tool outputSchema validation).
+class ToolOutputValidationError extends LLMError {
+  final String toolName;
+  final List<String> validationErrors;
+  final String? source;
+
+  const ToolOutputValidationError(
+    super.message, {
+    required this.toolName,
+    required this.validationErrors,
+    this.source,
+  });
+
+  @override
+  String toString() {
+    final parts = <String>[
+      'Tool output validation error ($toolName): $message'
+    ];
+    if (source != null && source!.trim().isNotEmpty) {
+      parts.add('Source: $source');
+    }
+    if (validationErrors.isNotEmpty) {
+      parts.add('Errors: ${validationErrors.join('; ')}');
     }
     return parts.join(', ');
   }
@@ -415,8 +465,7 @@ class HttpErrorMapper {
   static Duration? extractRetryAfter(Map<String, dynamic>? headers) {
     if (headers == null) return null;
 
-    final retryAfterMs =
-        headers['retry-after-ms'] ?? headers['Retry-After-Ms'];
+    final retryAfterMs = headers['retry-after-ms'] ?? headers['Retry-After-Ms'];
     if (retryAfterMs is int) {
       return Duration(milliseconds: retryAfterMs);
     } else if (retryAfterMs is String) {

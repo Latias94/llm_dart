@@ -5,6 +5,8 @@ import 'tool_types.dart';
 /// A local tool definition bundling a tool schema and a local executor.
 class LocalTool {
   final Tool tool;
+  final ParameterProperty? outputSchema;
+  final ToolToModelOutput? toModelOutput;
 
   /// Optional local executor for this tool.
   ///
@@ -19,6 +21,8 @@ class LocalTool {
 
   const LocalTool({
     required this.tool,
+    this.outputSchema,
+    this.toModelOutput,
     this.handler,
     this.needsApproval,
     this.onInputStart,
@@ -82,6 +86,11 @@ LocalTool functionTool({
   required String description,
   required ParametersSchema parameters,
   required ToolCallHandler handler,
+  bool? strict,
+  List<Map<String, dynamic>>? inputExamples,
+  ProviderOptions providerOptions = const {},
+  ParameterProperty? outputSchema,
+  ToolToModelOutput? toModelOutput,
   ToolApprovalCheck? needsApproval,
   ToolInputStartHandler? onInputStart,
   ToolInputDeltaHandler? onInputDelta,
@@ -93,7 +102,12 @@ LocalTool functionTool({
       name: name,
       description: description,
       parameters: parameters,
+      strict: strict,
+      inputExamples: inputExamples,
+      providerOptions: providerOptions,
     ),
+    outputSchema: outputSchema,
+    toModelOutput: toModelOutput,
     handler: handler,
     needsApproval: needsApproval,
     onInputStart: onInputStart,
@@ -108,6 +122,11 @@ LocalTool schemaOnlyFunctionTool({
   required String name,
   required String description,
   required ParametersSchema parameters,
+  bool? strict,
+  List<Map<String, dynamic>>? inputExamples,
+  ProviderOptions providerOptions = const {},
+  ParameterProperty? outputSchema,
+  ToolToModelOutput? toModelOutput,
   ToolApprovalCheck? needsApproval,
   ToolInputStartHandler? onInputStart,
   ToolInputDeltaHandler? onInputDelta,
@@ -119,7 +138,12 @@ LocalTool schemaOnlyFunctionTool({
       name: name,
       description: description,
       parameters: parameters,
+      strict: strict,
+      inputExamples: inputExamples,
+      providerOptions: providerOptions,
     ),
+    outputSchema: outputSchema,
+    toModelOutput: toModelOutput,
     handler: null,
     needsApproval: needsApproval,
     onInputStart: onInputStart,
