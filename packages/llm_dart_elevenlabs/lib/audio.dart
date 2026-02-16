@@ -108,6 +108,7 @@ class ElevenLabsAudio
   }) async {
     final voiceUsed = request.voice ?? config.defaultVoiceId;
     final modelUsed = request.model ?? config.defaultTTSModel;
+    final startedAt = DateTime.now().toUtc();
 
     final voiceSettings = <String, dynamic>{
       ...config.voiceSettings,
@@ -146,6 +147,12 @@ class ElevenLabsAudio
       duration: null,
       sampleRate: null,
       usage: null,
+      responses: [
+        SpeechModelResponseMetadata(
+          timestamp: startedAt,
+          modelId: modelUsed,
+        ),
+      ],
       providerMetadata: _buildProviderMetadata(
         'text-to-speech/$voiceUsed',
         capability: 'speech',
@@ -260,6 +267,7 @@ class ElevenLabsAudio
   }) async {
     late ElevenLabsSTTResponse response;
     final modelUsed = request.model ?? config.defaultSTTModel;
+    final startedAt = DateTime.now().toUtc();
 
     if (request.audioData != null) {
       response = await _speechToTextInternal(
@@ -307,6 +315,12 @@ class ElevenLabsAudio
       model: modelUsed,
       duration: null,
       usage: null,
+      responses: [
+        TranscriptionModelResponseMetadata(
+          timestamp: startedAt,
+          modelId: modelUsed,
+        ),
+      ],
       additionalFormats: response.additionalFormats,
       providerMetadata: _buildProviderMetadata(
         'speech-to-text',

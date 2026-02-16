@@ -282,6 +282,7 @@ class GoogleProvider
     final voiceName = request.voice ?? 'Kore';
     final model = request.model ?? _tts.defaultTTSModel;
 
+    final startedAt = DateTime.now().toUtc();
     final response = await _tts.generateSpeech(
       GoogleTTSRequest.singleSpeaker(
         text: request.text,
@@ -310,6 +311,12 @@ class GoogleProvider
       usage: response.usage,
       duration: null,
       sampleRate: null,
+      responses: [
+        SpeechModelResponseMetadata(
+          timestamp: startedAt,
+          modelId: model,
+        ),
+      ],
       providerMetadata: providerMetadata,
     );
   }

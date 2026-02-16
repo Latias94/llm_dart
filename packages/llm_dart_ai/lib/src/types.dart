@@ -33,6 +33,7 @@ class GenerateTextResult {
   final UsageInfo? usage;
   final UsageInfo? totalUsage;
   final LLMFinishReason? finishReason;
+  final List<LLMWarning> warnings;
   final List<ToolLoopStep> steps;
   final List<LLMStreamPart> sources;
   final List<LLMFilePart> files;
@@ -76,6 +77,7 @@ class GenerateTextResult {
     this.usage,
     this.totalUsage,
     this.finishReason,
+    this.warnings = const <LLMWarning>[],
     this.requestMetadata,
     this.responseMetadata,
     this.responseMessages = const <ChatMessage>[],
@@ -291,7 +293,11 @@ class GenerateSpeechResult {
   int? get sampleRate => rawResponse.sampleRate;
   String? get voice => rawResponse.voice;
   String? get model => rawResponse.model;
-  UsageInfo? get usage => rawResponse.usage;
+  UsageInfo get usage => rawResponse.usage ?? const UsageInfo();
+  List<LLMWarning> get warnings => rawResponse.warnings;
+  List<SpeechModelResponseMetadata> get responses => rawResponse.responses;
+  Map<String, dynamic> get providerMetadata =>
+      rawResponse.providerMetadata ?? const <String, dynamic>{};
 }
 
 /// Result for a transcription (STT) call.
@@ -305,7 +311,12 @@ class TranscribeResult {
   String? get language => rawResponse.language;
   double? get confidence => rawResponse.confidence;
   double? get duration => rawResponse.duration;
-  UsageInfo? get usage => rawResponse.usage;
+  UsageInfo get usage => rawResponse.usage ?? const UsageInfo();
+  List<LLMWarning> get warnings => rawResponse.warnings;
+  List<TranscriptionModelResponseMetadata> get responses =>
+      rawResponse.responses;
+  Map<String, dynamic> get providerMetadata =>
+      rawResponse.providerMetadata ?? const <String, dynamic>{};
 }
 
 /// A single non-streaming step in a tool loop.

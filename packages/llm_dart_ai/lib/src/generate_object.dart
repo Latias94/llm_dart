@@ -9,11 +9,15 @@ import 'metadata_fallbacks.dart';
 import 'response_messages.dart';
 import 'types.dart';
 import 'openai_tool_control.dart';
+import 'provider_tool_normalization.dart';
 
 /// Result for a non-streaming object generation call.
 class GenerateObjectResult {
   /// Parsed object. When tool calling is used, this is the tool arguments map.
   final Map<String, dynamic> object;
+
+  /// Warnings for the call, e.g. unsupported settings.
+  final List<LLMWarning> warnings;
 
   /// Best-effort request metadata for this generation (provider-dependent).
   final LLMRequestMetadataPart? requestMetadata;
@@ -32,6 +36,7 @@ class GenerateObjectResult {
 
   const GenerateObjectResult({
     required this.object,
+    this.warnings = const <LLMWarning>[],
     this.requestMetadata,
     this.responseMetadata,
     this.responseMessages = const <ChatMessage>[],
@@ -105,11 +110,16 @@ Future<GenerateObjectResult> generateObject({
       ),
   };
 
+  final normalized = normalizeProviderToolsAndCollectWarnings(
+    model: model,
+    providerTools: providerTools,
+  );
+
   final response = await chatWithToolsBestEffort(
     model: model,
     input: augmentedInput,
     tools: [tool],
-    providerTools: providerTools,
+    providerTools: normalized.providerTools,
     callOptions: effectiveCallOptions,
     cancelToken: cancelToken,
   );
@@ -170,6 +180,7 @@ Future<GenerateObjectResult> generateObject({
 
     return GenerateObjectResult(
       object: decodedArgs,
+      warnings: normalized.warnings,
       rawResponse: response,
       requestMetadata: requestMetadataWithInclude(
         response is ChatResponseWithRequestMetadata
@@ -240,6 +251,7 @@ Future<GenerateObjectResult> generateObject({
 
   return GenerateObjectResult(
     object: parsed,
+    warnings: normalized.warnings,
     rawResponse: response,
     requestMetadata: requestMetadataWithInclude(
       response is ChatResponseWithRequestMetadata

@@ -84,6 +84,7 @@ GenerateTextResult _attachToolResultsToStepResult(
     usage: base.usage,
     totalUsage: base.totalUsage,
     finishReason: base.finishReason,
+    warnings: base.warnings,
     requestMetadata: base.requestMetadata,
     responseMetadata: base.responseMetadata,
     responseMessages: base.responseMessages,
@@ -197,6 +198,7 @@ GenerateTextResult _attachToolApprovalRequestsToStepResult(
     usage: base.usage,
     totalUsage: base.totalUsage,
     finishReason: base.finishReason,
+    warnings: base.warnings,
     requestMetadata: base.requestMetadata,
     responseMetadata: base.responseMetadata,
     responseMessages: base.responseMessages,
@@ -348,6 +350,10 @@ Future<ToolLoopResult> runToolLoop({
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
+  final normalized = normalizeProviderToolsAndCollectWarnings(
+    model: model,
+    providerTools: providerTools,
+  );
   final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
   final input = standardizePromptInput(
     system: system,
@@ -361,7 +367,7 @@ Future<ToolLoopResult> runToolLoop({
       model: model,
       prompt: input.prompt,
       tools: tools,
-      providerTools: providerTools,
+      providerTools: normalized.providerTools,
       toolHandlers: toolHandlers,
       toolCatalog: toolCatalog,
       repairToolCall: repairToolCall,
@@ -373,6 +379,7 @@ Future<ToolLoopResult> runToolLoop({
       include: include,
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
+      warnings: normalized.warnings,
     );
   }
 
@@ -397,7 +404,7 @@ Future<ToolLoopResult> runToolLoop({
       model,
       workingMessages,
       tools,
-      providerTools: providerTools,
+      providerTools: normalized.providerTools,
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
     );
@@ -419,6 +426,7 @@ Future<ToolLoopResult> runToolLoop({
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
+      warnings: normalized.warnings,
       requestMetadata: requestMetadataWithInclude(
         response is ChatResponseWithRequestMetadata
             ? response.requestMetadata
@@ -697,6 +705,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   required Prompt prompt,
   List<Tool>? tools,
   List<ProviderTool>? providerTools,
+  List<LLMWarning> warnings = const <LLMWarning>[],
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCatalog? toolCatalog,
   ToolCallRepair? repairToolCall,
@@ -775,6 +784,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
+      warnings: warnings,
       requestMetadata: requestMetadataWithInclude(
         response is ChatResponseWithRequestMetadata
             ? response.requestMetadata

@@ -71,9 +71,13 @@ class NoSpeechGeneratedError extends LLMError {
   /// Provider response snapshot for debugging (optional).
   final TTSResponse? response;
 
+  /// Provider response metadata snapshots (best-effort; optional).
+  final List<SpeechModelResponseMetadata>? responses;
+
   const NoSpeechGeneratedError({
     String message = 'No speech generated.',
     this.response,
+    this.responses,
   }) : super(message);
 
   @override
@@ -87,9 +91,13 @@ class NoTranscriptGeneratedError extends LLMError {
   /// Provider response snapshot for debugging (optional).
   final STTResponse? response;
 
+  /// Provider response metadata snapshots (best-effort; optional).
+  final List<TranscriptionModelResponseMetadata>? responses;
+
   const NoTranscriptGeneratedError({
     String message = 'No transcript generated.',
     this.response,
+    this.responses,
   }) : super(message);
 
   @override

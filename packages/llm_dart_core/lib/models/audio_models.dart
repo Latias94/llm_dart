@@ -2,6 +2,7 @@
 library;
 
 import '../core/capability.dart' show UsageInfo;
+import '../core/stream_parts.dart';
 
 /// Audio processing mode for different use cases
 enum AudioProcessingMode {
@@ -357,6 +358,15 @@ class TTSResponse {
   /// Usage information if available
   final UsageInfo? usage;
 
+  /// Warnings for the call, e.g. unsupported settings.
+  final List<LLMWarning> warnings;
+
+  /// Response metadata from the provider (AI SDK-style).
+  ///
+  /// This is a list because some orchestrators may split a high-level request
+  /// into multiple underlying model calls.
+  final List<SpeechModelResponseMetadata> responses;
+
   /// Character-level timing alignment (ElevenLabs specific)
   final AudioAlignment? alignment;
 
@@ -380,6 +390,8 @@ class TTSResponse {
     this.voice,
     this.model,
     this.usage,
+    this.warnings = const <LLMWarning>[],
+    this.responses = const <SpeechModelResponseMetadata>[],
     this.alignment,
     this.normalizedAlignment,
     this.requestId,
@@ -394,6 +406,10 @@ class TTSResponse {
         if (voice != null) 'voice': voice,
         if (model != null) 'model': model,
         if (usage != null) 'usage': usage!.toJson(),
+        if (warnings.isNotEmpty)
+          'warnings': warnings.map((w) => w.toJson()).toList(growable: false),
+        if (responses.isNotEmpty)
+          'responses': responses.map((r) => r.toJson()).toList(growable: false),
         if (alignment != null) 'alignment': alignment!.toJson(),
         if (normalizedAlignment != null)
           'normalized_alignment': normalizedAlignment!.toJson(),
@@ -411,6 +427,17 @@ class TTSResponse {
         usage: json['usage'] != null
             ? UsageInfo.fromJson(json['usage'] as Map<String, dynamic>)
             : null,
+        warnings: (json['warnings'] as List?)
+                ?.whereType<Map>()
+                .map((m) => LLMWarning.fromJson(m.cast<String, dynamic>()))
+                .toList(growable: false) ??
+            const <LLMWarning>[],
+        responses: (json['responses'] as List?)
+                ?.whereType<Map>()
+                .map((m) => SpeechModelResponseMetadata.fromJson(
+                    m.cast<String, dynamic>()))
+                .toList(growable: false) ??
+            const <SpeechModelResponseMetadata>[],
         alignment: json['alignment'] != null
             ? AudioAlignment.fromJson(json['alignment'] as Map<String, dynamic>)
             : null,
@@ -424,6 +451,45 @@ class TTSResponse {
             : (json['providerMetadata'] is Map
                 ? Map<String, dynamic>.from(json['providerMetadata'] as Map)
                 : null),
+      );
+}
+
+/// Speech model response metadata (AI SDK-style).
+class SpeechModelResponseMetadata {
+  /// Timestamp for the start of the generated response.
+  final DateTime timestamp;
+
+  /// The ID of the response model that was used to generate the response.
+  final String modelId;
+
+  /// Response headers (best-effort; HTTP providers only).
+  final Map<String, String>? headers;
+
+  /// Response body (best-effort; provider-dependent).
+  final Object? body;
+
+  const SpeechModelResponseMetadata({
+    required this.timestamp,
+    required this.modelId,
+    this.headers,
+    this.body,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'timestamp': timestamp.toUtc().toIso8601String(),
+        'modelId': modelId,
+        if (headers != null) 'headers': headers,
+        if (body != null) 'body': body,
+      };
+
+  factory SpeechModelResponseMetadata.fromJson(Map<String, dynamic> json) =>
+      SpeechModelResponseMetadata(
+        timestamp: DateTime.parse(json['timestamp'] as String).toUtc(),
+        modelId: json['modelId'] as String,
+        headers: (json['headers'] as Map?)?.map(
+          (k, v) => MapEntry(k.toString(), v.toString()),
+        ),
+        body: json['body'],
       );
 }
 
@@ -774,6 +840,15 @@ class STTResponse {
   /// Usage information if available
   final UsageInfo? usage;
 
+  /// Warnings for the call, e.g. unsupported settings.
+  final List<LLMWarning> warnings;
+
+  /// Response metadata from the provider (AI SDK-style).
+  ///
+  /// This is a list because some orchestrators may split a high-level request
+  /// into multiple underlying model calls.
+  final List<TranscriptionModelResponseMetadata> responses;
+
   /// Language probability (ElevenLabs specific)
   final double? languageProbability;
 
@@ -795,6 +870,8 @@ class STTResponse {
     this.model,
     this.duration,
     this.usage,
+    this.warnings = const <LLMWarning>[],
+    this.responses = const <TranscriptionModelResponseMetadata>[],
     this.languageProbability,
     this.additionalFormats,
     this.providerMetadata,
@@ -810,6 +887,10 @@ class STTResponse {
         if (model != null) 'model': model,
         if (duration != null) 'duration': duration,
         if (usage != null) 'usage': usage!.toJson(),
+        if (warnings.isNotEmpty)
+          'warnings': warnings.map((w) => w.toJson()).toList(growable: false),
+        if (responses.isNotEmpty)
+          'responses': responses.map((r) => r.toJson()).toList(growable: false),
         if (languageProbability != null)
           'language_probability': languageProbability,
         if (additionalFormats != null) 'additional_formats': additionalFormats,
@@ -836,6 +917,17 @@ class STTResponse {
         usage: json['usage'] != null
             ? UsageInfo.fromJson(json['usage'] as Map<String, dynamic>)
             : null,
+        warnings: (json['warnings'] as List?)
+                ?.whereType<Map>()
+                .map((m) => LLMWarning.fromJson(m.cast<String, dynamic>()))
+                .toList(growable: false) ??
+            const <LLMWarning>[],
+        responses: (json['responses'] as List?)
+                ?.whereType<Map>()
+                .map((m) => TranscriptionModelResponseMetadata.fromJson(
+                    m.cast<String, dynamic>()))
+                .toList(growable: false) ??
+            const <TranscriptionModelResponseMetadata>[],
         languageProbability: json['language_probability'] as double?,
         additionalFormats: json['additional_formats'] as Map<String, dynamic>?,
         providerMetadata: json['provider_metadata'] is Map
@@ -843,6 +935,40 @@ class STTResponse {
             : (json['providerMetadata'] is Map
                 ? Map<String, dynamic>.from(json['providerMetadata'] as Map)
                 : null),
+      );
+}
+
+/// Transcription model response metadata (AI SDK-style).
+class TranscriptionModelResponseMetadata {
+  /// Timestamp for the start of the generated response.
+  final DateTime timestamp;
+
+  /// The ID of the response model that was used to generate the response.
+  final String modelId;
+
+  /// Response headers (best-effort; HTTP providers only).
+  final Map<String, String>? headers;
+
+  const TranscriptionModelResponseMetadata({
+    required this.timestamp,
+    required this.modelId,
+    this.headers,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'timestamp': timestamp.toUtc().toIso8601String(),
+        'modelId': modelId,
+        if (headers != null) 'headers': headers,
+      };
+
+  factory TranscriptionModelResponseMetadata.fromJson(
+          Map<String, dynamic> json) =>
+      TranscriptionModelResponseMetadata(
+        timestamp: DateTime.parse(json['timestamp'] as String).toUtc(),
+        modelId: json['modelId'] as String,
+        headers: (json['headers'] as Map?)?.map(
+          (k, v) => MapEntry(k.toString(), v.toString()),
+        ),
       );
 }
 

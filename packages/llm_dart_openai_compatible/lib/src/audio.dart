@@ -79,6 +79,7 @@ class OpenAIStyleAudio
 
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
 
+    final startedAt = DateTime.now().toUtc();
     final audioData = await client.postRawWithHeaders(
       'audio/speech',
       requestBody,
@@ -121,6 +122,12 @@ class OpenAIStyleAudio
       duration: null,
       sampleRate: null,
       usage: null,
+      responses: [
+        SpeechModelResponseMetadata(
+          timestamp: startedAt,
+          modelId: modelUsed,
+        ),
+      ],
       providerMetadata: _buildProviderMetadata(
         'audio/speech',
         model: modelUsed,
@@ -190,6 +197,7 @@ class OpenAIStyleAudio
       callOptions: callOptions,
     );
 
+    final startedAt = DateTime.now().toUtc();
     final responseData = await client.postFormWithHeaders(
       'audio/transcriptions',
       formData,
@@ -201,6 +209,7 @@ class OpenAIStyleAudio
       responseData,
       endpoint: 'audio/transcriptions',
       modelUsed: modelUsed,
+      startedAt: startedAt,
     );
   }
 
@@ -243,6 +252,7 @@ class OpenAIStyleAudio
       callOptions: callOptions,
     );
 
+    final startedAt = DateTime.now().toUtc();
     final responseData = await client.postFormWithHeaders(
       'audio/translations',
       formData,
@@ -254,6 +264,7 @@ class OpenAIStyleAudio
       responseData,
       endpoint: 'audio/translations',
       modelUsed: modelUsed,
+      startedAt: startedAt,
     );
   }
 
@@ -299,6 +310,7 @@ class OpenAIStyleAudio
     Map<String, dynamic> responseData, {
     required String endpoint,
     required String modelUsed,
+    required DateTime startedAt,
   }) {
     final text = responseData['text'] as String?;
     if (text == null) {
@@ -319,6 +331,12 @@ class OpenAIStyleAudio
       words: null,
       usage: null,
       model: modelId,
+      responses: [
+        TranscriptionModelResponseMetadata(
+          timestamp: startedAt,
+          modelId: modelId,
+        ),
+      ],
       providerMetadata: _buildProviderMetadata(
         endpoint,
         model: modelId,

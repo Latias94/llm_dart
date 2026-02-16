@@ -10,6 +10,7 @@ import 'tool_set.dart';
 import 'tool_types.dart';
 import 'types.dart';
 import 'openai_tool_control.dart';
+import 'provider_tool_normalization.dart';
 
 /// Generate text (Vercel-style prompt input).
 ///
@@ -126,22 +127,30 @@ Future<GenerateTextResult> generateText({
       usage: finalResult.usage,
       totalUsage: totalUsage ?? finalResult.usage,
       finishReason: finalResult.finishReason,
+      warnings: finalResult.warnings,
       requestMetadata: finalResult.requestMetadata,
       responseMetadata: finalResult.responseMetadata,
       responseMessages: finalResult.responseMessages,
       responsePromptMessages: finalResult.responsePromptMessages,
       steps: steps,
+      sources: finalResult.sources,
+      files: finalResult.files,
     );
 
     await runCallbacksBestEffort(steps, wrapped);
     return wrapped;
   }
 
+  final normalized = normalizeProviderToolsAndCollectWarnings(
+    model: model,
+    providerTools: providerTools,
+  );
+
   final response = await chatWithToolsBestEffort(
     model: model,
     input: input,
     tools: tools,
-    providerTools: providerTools,
+    providerTools: normalized.providerTools,
     callOptions: effectiveCallOptions,
     cancelToken: cancelToken,
   );
@@ -162,6 +171,7 @@ Future<GenerateTextResult> generateText({
     totalUsage: response.usage,
     finishReason:
         response is ChatResponseWithFinishReason ? response.finishReason : null,
+    warnings: normalized.warnings,
     requestMetadata: requestMetadataWithInclude(
       response is ChatResponseWithRequestMetadata
           ? response.requestMetadata
@@ -199,6 +209,7 @@ Future<GenerateTextResult> generateText({
           finishReason: response is ChatResponseWithFinishReason
               ? response.finishReason
               : null,
+          warnings: normalized.warnings,
           requestMetadata: requestMetadataWithInclude(
             response is ChatResponseWithRequestMetadata
                 ? response.requestMetadata

@@ -75,6 +75,7 @@ class OpenAIAudio
 
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
 
+    final startedAt = DateTime.now().toUtc();
     final audioData = await client.postRawWithHeaders(
       'audio/speech',
       requestBody,
@@ -117,6 +118,12 @@ class OpenAIAudio
       duration: null, // OpenAI doesn't provide duration
       sampleRate: null, // OpenAI doesn't provide sample rate
       usage: null,
+      responses: [
+        SpeechModelResponseMetadata(
+          timestamp: startedAt,
+          modelId: modelUsed,
+        ),
+      ],
       providerMetadata: _buildProviderMetadata(
         'audio/speech',
         capability: 'speech',
@@ -201,6 +208,7 @@ class OpenAIAudio
       callOptions: callOptions,
     );
 
+    final startedAt = DateTime.now().toUtc();
     final responseData = await client.postFormWithHeaders(
       'audio/transcriptions',
       formData,
@@ -233,6 +241,12 @@ class OpenAIAudio
       model: modelUsed,
       duration: responseData['duration'] as double?,
       usage: null,
+      responses: [
+        TranscriptionModelResponseMetadata(
+          timestamp: startedAt,
+          modelId: modelUsed,
+        ),
+      ],
       providerMetadata: _buildProviderMetadata(
         'audio/transcriptions',
         capability: 'transcription',
@@ -389,6 +403,7 @@ class OpenAIAudio
       callOptions: callOptions,
     );
 
+    final startedAt = DateTime.now().toUtc();
     final responseData = await client.postFormWithHeaders(
       'audio/translations',
       formData,
@@ -404,6 +419,12 @@ class OpenAIAudio
       model: modelUsed,
       duration: responseData['duration'] as double?,
       usage: null,
+      responses: [
+        TranscriptionModelResponseMetadata(
+          timestamp: startedAt,
+          modelId: modelUsed,
+        ),
+      ],
       providerMetadata: _buildProviderMetadata(
         'audio/translations',
         capability: 'transcription',

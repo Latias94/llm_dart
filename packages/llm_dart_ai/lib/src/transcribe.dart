@@ -48,7 +48,10 @@ Future<TranscribeResult> transcribe({
   }
 
   if (response.text.trim().isEmpty) {
-    throw NoTranscriptGeneratedError(response: response);
+    throw NoTranscriptGeneratedError(
+      response: response,
+      responses: response.responses,
+    );
   }
 
   return TranscribeResult(rawResponse: response);
