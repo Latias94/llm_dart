@@ -2,6 +2,40 @@
 library;
 
 import '../core/capability.dart' show UsageInfo;
+import '../core/stream_parts.dart';
+
+/// Image model response metadata (AI SDK-style).
+class ImageModelResponseMetadata {
+  /// Timestamp for the start of the generated response.
+  final DateTime timestamp;
+
+  /// The ID of the response model that was used to generate the response.
+  final String modelId;
+
+  /// Response headers (best-effort; HTTP providers only).
+  final Map<String, String>? headers;
+
+  const ImageModelResponseMetadata({
+    required this.timestamp,
+    required this.modelId,
+    this.headers,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'timestamp': timestamp.toUtc().toIso8601String(),
+        'modelId': modelId,
+        if (headers != null) 'headers': headers,
+      };
+
+  factory ImageModelResponseMetadata.fromJson(Map<String, dynamic> json) =>
+      ImageModelResponseMetadata(
+        timestamp: DateTime.parse(json['timestamp'] as String).toUtc(),
+        modelId: json['modelId'] as String,
+        headers: (json['headers'] as Map?)?.map(
+          (k, v) => MapEntry(k.toString(), v.toString()),
+        ),
+      );
+}
 
 /// Image generation request configuration
 class ImageGenerationRequest {
@@ -108,6 +142,13 @@ class ImageGenerationResponse {
   /// Usage information if available
   final UsageInfo? usage;
 
+  /// Warnings for the call, e.g. unsupported settings.
+  final List<LLMWarning> warnings;
+
+  /// Response metadata from the provider. There may be multiple responses if we
+  /// made multiple calls to the model.
+  final List<ImageModelResponseMetadata> responses;
+
   /// Provider-specific metadata for the response (optional).
   ///
   /// Recommended shape: a provider-id namespaced map, e.g.
@@ -119,6 +160,8 @@ class ImageGenerationResponse {
     this.model,
     this.revisedPrompt,
     this.usage,
+    this.warnings = const <LLMWarning>[],
+    this.responses = const <ImageModelResponseMetadata>[],
     this.providerMetadata,
   });
 
@@ -127,6 +170,10 @@ class ImageGenerationResponse {
         if (model != null) 'model': model,
         if (revisedPrompt != null) 'revised_prompt': revisedPrompt,
         if (usage != null) 'usage': usage!.toJson(),
+        if (warnings.isNotEmpty)
+          'warnings': warnings.map((w) => w.toJson()).toList(growable: false),
+        if (responses.isNotEmpty)
+          'responses': responses.map((r) => r.toJson()).toList(growable: false),
         if (providerMetadata != null) 'provider_metadata': providerMetadata,
       };
 
@@ -140,6 +187,17 @@ class ImageGenerationResponse {
         usage: json['usage'] != null
             ? UsageInfo.fromJson(json['usage'] as Map<String, dynamic>)
             : null,
+        warnings: (json['warnings'] as List?)
+                ?.whereType<Map>()
+                .map((m) => LLMWarning.fromJson(m.cast<String, dynamic>()))
+                .toList(growable: false) ??
+            const <LLMWarning>[],
+        responses: (json['responses'] as List?)
+                ?.whereType<Map>()
+                .map((m) => ImageModelResponseMetadata.fromJson(
+                    m.cast<String, dynamic>()))
+                .toList(growable: false) ??
+            const <ImageModelResponseMetadata>[],
         providerMetadata: json['provider_metadata'] is Map
             ? Map<String, dynamic>.from(json['provider_metadata'] as Map)
             : (json['providerMetadata'] is Map

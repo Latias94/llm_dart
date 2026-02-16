@@ -21,6 +21,7 @@ class GoogleProvider
         PromptChatStreamPartsCapability,
         EmbeddingCapability,
         ImageGenerationCapability,
+        ImageGenerationCallOptionsCapability,
         ExperimentalVideoGenerationCapability,
         ExperimentalVideoGenerationCallOptionsCapability,
         ExperimentalVideoGenerationMaxVideosPerCallCapability,
@@ -160,8 +161,30 @@ class GoogleProvider
   }
 
   @override
+  Future<ImageGenerationResponse> generateImagesWithCallOptions(
+    ImageGenerationRequest request, {
+    required LLMCallOptions callOptions,
+  }) {
+    return _images.generateImagesWithCallOptions(
+      request,
+      callOptions: callOptions,
+    );
+  }
+
+  @override
   Future<ImageGenerationResponse> editImage(ImageEditRequest request) async {
     return _images.editImage(request);
+  }
+
+  @override
+  Future<ImageGenerationResponse> editImageWithCallOptions(
+    ImageEditRequest request, {
+    required LLMCallOptions callOptions,
+  }) {
+    return _images.editImageWithCallOptions(
+      request,
+      callOptions: callOptions,
+    );
   }
 
   @override
@@ -169,6 +192,17 @@ class GoogleProvider
     ImageVariationRequest request,
   ) async {
     return _images.createVariation(request);
+  }
+
+  @override
+  Future<ImageGenerationResponse> createVariationWithCallOptions(
+    ImageVariationRequest request, {
+    required LLMCallOptions callOptions,
+  }) {
+    return _images.createVariationWithCallOptions(
+      request,
+      callOptions: callOptions,
+    );
   }
 
   @override

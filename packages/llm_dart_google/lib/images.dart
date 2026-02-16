@@ -22,7 +22,8 @@ import 'model_path.dart';
 /// - Model: imagen-3.0-generate-002
 ///
 /// Reference: https://ai.google.dev/gemini-api/docs/image-generation
-class GoogleImages implements ImageGenerationCapability {
+class GoogleImages
+    implements ImageGenerationCapability, ImageGenerationCallOptionsCapability {
   final GoogleClient _client;
   final GoogleConfig _config;
   final Logger _logger = Logger('GoogleImages');
@@ -47,20 +48,39 @@ class GoogleImages implements ImageGenerationCapability {
   Future<ImageGenerationResponse> generateImages(
     ImageGenerationRequest request,
   ) async {
+    return generateImagesWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
+    );
+  }
+
+  @override
+  Future<ImageGenerationResponse> generateImagesWithCallOptions(
+    ImageGenerationRequest request, {
+    required LLMCallOptions callOptions,
+  }) async {
     _logger.info('Generating images with prompt: ${request.prompt}');
 
     // Determine which API to use based on model
     if (_isImagenModel(request.model ?? _config.model)) {
-      return _generateWithImagen(request);
+      return _generateWithImagen(
+        request,
+        callOptions: callOptions,
+      );
     } else {
-      return _generateWithGemini(request);
+      return _generateWithGemini(
+        request,
+        callOptions: callOptions,
+      );
     }
   }
 
   /// Generate images using Imagen 3 API
   Future<ImageGenerationResponse> _generateWithImagen(
-    ImageGenerationRequest request,
-  ) async {
+    ImageGenerationRequest request, {
+    required LLMCallOptions callOptions,
+  }) async {
+    final startedAt = DateTime.now().toUtc();
     final model = request.model ?? _config.model;
     final endpoint = 'models/$model:predict';
 
@@ -80,10 +100,16 @@ class GoogleImages implements ImageGenerationCapability {
     };
 
     try {
-      final response = await _client.postJson(endpoint, requestData);
+      final response = await _client.postJsonWithHeaders(
+        endpoint,
+        callOptions.mergeIntoRequestBody(requestData),
+        headers: callOptions.headers,
+      );
       return _parseImagenResponse(
-        response,
+        response.json,
         model,
+        startedAt: startedAt,
+        responseHeaders: response.headers,
         providerMetadata: _buildProviderMetadata(endpoint, model: model),
       );
     } catch (e) {
@@ -94,8 +120,10 @@ class GoogleImages implements ImageGenerationCapability {
 
   /// Generate images using Gemini 2.0 Flash Preview Image Generation
   Future<ImageGenerationResponse> _generateWithGemini(
-    ImageGenerationRequest request,
-  ) async {
+    ImageGenerationRequest request, {
+    required LLMCallOptions callOptions,
+  }) async {
+    final startedAt = DateTime.now().toUtc();
     final model = request.model ?? _config.model;
     final endpoint = '${googleModelPath(model)}:generateContent';
 
@@ -129,10 +157,16 @@ class GoogleImages implements ImageGenerationCapability {
     };
 
     try {
-      final response = await _client.postJson(endpoint, requestData);
+      final response = await _client.postJsonWithHeaders(
+        endpoint,
+        callOptions.mergeIntoRequestBody(requestData),
+        headers: callOptions.headers,
+      );
       return _parseGeminiResponse(
-        response,
+        response.json,
         model,
+        startedAt: startedAt,
+        responseHeaders: response.headers,
         providerMetadata: _buildProviderMetadata(endpoint, model: model),
       );
     } catch (e) {
@@ -145,6 +179,8 @@ class GoogleImages implements ImageGenerationCapability {
   ImageGenerationResponse _parseImagenResponse(
     Map<String, dynamic> response,
     String model, {
+    required DateTime startedAt,
+    required Map<String, String> responseHeaders,
     Map<String, dynamic>? providerMetadata,
   }) {
     final predictions = response['predictions'] as List? ?? [];
@@ -166,6 +202,13 @@ class GoogleImages implements ImageGenerationCapability {
     return ImageGenerationResponse(
       images: images,
       model: model,
+      responses: [
+        ImageModelResponseMetadata(
+          timestamp: startedAt,
+          modelId: model,
+          headers: responseHeaders.isEmpty ? null : responseHeaders,
+        ),
+      ],
       providerMetadata: providerMetadata,
     );
   }
@@ -174,6 +217,8 @@ class GoogleImages implements ImageGenerationCapability {
   ImageGenerationResponse _parseGeminiResponse(
     Map<String, dynamic> response,
     String model, {
+    required DateTime startedAt,
+    required Map<String, String> responseHeaders,
     Map<String, dynamic>? providerMetadata,
   }) {
     final candidates = response['candidates'] as List? ?? [];
@@ -217,12 +262,31 @@ class GoogleImages implements ImageGenerationCapability {
       images: images,
       model: model,
       revisedPrompt: revisedPrompt,
+      responses: [
+        ImageModelResponseMetadata(
+          timestamp: startedAt,
+          modelId: model,
+          headers: responseHeaders.isEmpty ? null : responseHeaders,
+        ),
+      ],
       providerMetadata: providerMetadata,
     );
   }
 
   @override
   Future<ImageGenerationResponse> editImage(ImageEditRequest request) async {
+    return editImageWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
+    );
+  }
+
+  @override
+  Future<ImageGenerationResponse> editImageWithCallOptions(
+    ImageEditRequest request, {
+    required LLMCallOptions callOptions,
+  }) async {
+    final startedAt = DateTime.now().toUtc();
     // Google supports image editing through Gemini conversational approach
     final model = _config.model;
     final endpoint = '${googleModelPath(model)}:generateContent';
@@ -273,10 +337,16 @@ class GoogleImages implements ImageGenerationCapability {
     };
 
     try {
-      final response = await _client.postJson(endpoint, requestData);
+      final response = await _client.postJsonWithHeaders(
+        endpoint,
+        callOptions.mergeIntoRequestBody(requestData),
+        headers: callOptions.headers,
+      );
       return _parseGeminiResponse(
-        response,
+        response.json,
         model,
+        startedAt: startedAt,
+        responseHeaders: response.headers,
         providerMetadata: _buildProviderMetadata(endpoint, model: model),
       );
     } catch (e) {
@@ -289,6 +359,18 @@ class GoogleImages implements ImageGenerationCapability {
   Future<ImageGenerationResponse> createVariation(
     ImageVariationRequest request,
   ) async {
+    return createVariationWithCallOptions(
+      request,
+      callOptions: const LLMCallOptions(),
+    );
+  }
+
+  @override
+  Future<ImageGenerationResponse> createVariationWithCallOptions(
+    ImageVariationRequest request, {
+    required LLMCallOptions callOptions,
+  }) async {
+    final startedAt = DateTime.now().toUtc();
     // Google doesn't have a direct variation API, but we can simulate it
     // by asking Gemini to create variations of the provided image
     final model = _config.model;
@@ -343,10 +425,16 @@ class GoogleImages implements ImageGenerationCapability {
     };
 
     try {
-      final response = await _client.postJson(endpoint, requestData);
+      final response = await _client.postJsonWithHeaders(
+        endpoint,
+        callOptions.mergeIntoRequestBody(requestData),
+        headers: callOptions.headers,
+      );
       return _parseGeminiResponse(
-        response,
+        response.json,
         model,
+        startedAt: startedAt,
+        responseHeaders: response.headers,
         providerMetadata: _buildProviderMetadata(endpoint, model: model),
       );
     } catch (e) {

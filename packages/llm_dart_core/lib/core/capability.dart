@@ -1039,6 +1039,12 @@ abstract class ImageGenerationCallOptionsCapability {
   });
 }
 
+/// Optional capability for image models that declare a maximum number of images
+/// per API call (AI SDK-style).
+abstract class ImageGenerationMaxImagesPerCallCapability {
+  int get maxImagesPerCall;
+}
+
 /// Experimental video generation capability (aligned with AI SDK).
 abstract class ExperimentalVideoGenerationCapability {
   Future<ExperimentalVideoGenerationResponse> generateVideos(

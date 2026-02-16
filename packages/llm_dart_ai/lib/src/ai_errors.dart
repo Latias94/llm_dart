@@ -51,9 +51,13 @@ class NoImageGeneratedError extends LLMError {
   /// Provider response snapshot for debugging (optional).
   final ImageGenerationResponse? response;
 
+  /// Provider response metadata snapshots (best-effort; optional).
+  final List<ImageModelResponseMetadata>? responses;
+
   const NoImageGeneratedError({
     String message = 'No image generated.',
     this.response,
+    this.responses,
   }) : super(message);
 
   @override

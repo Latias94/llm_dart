@@ -51,6 +51,7 @@ class OpenAIStyleImages
     ImageGenerationRequest request, {
     required LLMCallOptions callOptions,
   }) async {
+    final startedAt = DateTime.now().toUtc();
     var requestBody = <String, dynamic>{
       'model': request.model ?? config.model,
       'prompt': request.prompt,
@@ -129,6 +130,13 @@ class OpenAIStyleImages
         model: request.model ?? config.model,
         revisedPrompt: images.isNotEmpty ? images.first.revisedPrompt : null,
         usage: null,
+        responses: [
+          ImageModelResponseMetadata(
+            timestamp: startedAt,
+            modelId: request.model ?? config.model,
+            headers: responseData.headers.isEmpty ? null : responseData.headers,
+          ),
+        ],
         providerMetadata: _buildProviderMetadata(
           'images/generations',
           model: request.model ?? config.model,
@@ -156,6 +164,7 @@ class OpenAIStyleImages
     ImageEditRequest request, {
     required LLMCallOptions callOptions,
   }) async {
+    final startedAt = DateTime.now().toUtc();
     final formData = <String, dynamic>{
       'prompt': request.prompt,
       if (request.model != null) 'model': request.model,
@@ -188,6 +197,7 @@ class OpenAIStyleImages
     return _parseImageResponse(
       responseData,
       request.model,
+      startedAt: startedAt,
       providerMetadata: _buildProviderMetadata(
         'images/edits',
         model: request.model ?? config.model,
@@ -210,6 +220,7 @@ class OpenAIStyleImages
     ImageVariationRequest request, {
     required LLMCallOptions callOptions,
   }) async {
+    final startedAt = DateTime.now().toUtc();
     final formData = <String, dynamic>{
       if (request.model != null) 'model': request.model,
       if (request.count != null) 'n': request.count,
@@ -235,6 +246,7 @@ class OpenAIStyleImages
     return _parseImageResponse(
       responseData,
       request.model,
+      startedAt: startedAt,
       providerMetadata: _buildProviderMetadata(
         'images/variations',
         model: request.model ?? config.model,
@@ -336,6 +348,7 @@ class OpenAIStyleImages
   ImageGenerationResponse _parseImageResponse(
     Map<String, dynamic> responseData,
     String? model, {
+    required DateTime startedAt,
     Map<String, dynamic>? providerMetadata,
   }) {
     final data = responseData['data'] as List?;
@@ -390,6 +403,12 @@ class OpenAIStyleImages
         model: model ?? config.model,
         revisedPrompt: images.isNotEmpty ? images.first.revisedPrompt : null,
         usage: null,
+        responses: [
+          ImageModelResponseMetadata(
+            timestamp: startedAt,
+            modelId: model ?? config.model,
+          ),
+        ],
         providerMetadata: providerMetadata,
       );
     } catch (e) {

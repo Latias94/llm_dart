@@ -47,6 +47,7 @@ class OpenAIImages
     ImageGenerationRequest request, {
     required LLMCallOptions callOptions,
   }) async {
+    final startedAt = DateTime.now().toUtc();
     final modelUsed = request.model ?? config.model;
     var requestBody = <String, dynamic>{
       'model': modelUsed,
@@ -128,6 +129,13 @@ class OpenAIImages
         model: modelUsed,
         revisedPrompt: images.isNotEmpty ? images.first.revisedPrompt : null,
         usage: null, // OpenAI doesn't provide usage info for image generation
+        responses: [
+          ImageModelResponseMetadata(
+            timestamp: startedAt,
+            modelId: modelUsed,
+            headers: responseData.headers.isEmpty ? null : responseData.headers,
+          ),
+        ],
         providerMetadata: _buildProviderMetadata(
           'images/generations',
           model: modelUsed,
@@ -155,6 +163,7 @@ class OpenAIImages
     ImageEditRequest request, {
     required LLMCallOptions callOptions,
   }) async {
+    final startedAt = DateTime.now().toUtc();
     final modelUsed = request.model ?? config.model;
     // Prepare multipart form data for image editing
     final formData = <String, dynamic>{
@@ -192,6 +201,7 @@ class OpenAIImages
     return _parseImageResponse(
       responseData,
       request.model,
+      startedAt: startedAt,
       providerMetadata: _buildProviderMetadata(
         'images/edits',
         model: modelUsed,
@@ -213,6 +223,7 @@ class OpenAIImages
     ImageVariationRequest request, {
     required LLMCallOptions callOptions,
   }) async {
+    final startedAt = DateTime.now().toUtc();
     final modelUsed = request.model ?? config.model;
     // Prepare multipart form data for image variation
     final formData = <String, dynamic>{
@@ -241,6 +252,7 @@ class OpenAIImages
     return _parseImageResponse(
       responseData,
       request.model,
+      startedAt: startedAt,
       providerMetadata: _buildProviderMetadata(
         'images/variations',
         model: modelUsed,
@@ -346,6 +358,7 @@ class OpenAIImages
   ImageGenerationResponse _parseImageResponse(
     Map<String, dynamic> responseData,
     String? model, {
+    required DateTime startedAt,
     Map<String, dynamic>? providerMetadata,
   }) {
     final data = responseData['data'] as List?;
@@ -402,6 +415,12 @@ class OpenAIImages
         model: model ?? config.model,
         revisedPrompt: images.isNotEmpty ? images.first.revisedPrompt : null,
         usage: null, // OpenAI doesn't provide usage info for image generation
+        responses: [
+          ImageModelResponseMetadata(
+            timestamp: startedAt,
+            modelId: model ?? config.model,
+          ),
+        ],
         providerMetadata: providerMetadata,
       );
     } catch (e) {

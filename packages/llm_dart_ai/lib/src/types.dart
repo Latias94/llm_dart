@@ -247,9 +247,14 @@ class GenerateImageResult {
   const GenerateImageResult({required this.rawResponse});
 
   List<GeneratedImage> get images => rawResponse.images;
+  GeneratedImage get image => rawResponse.images.first;
   String? get model => rawResponse.model;
   String? get revisedPrompt => rawResponse.revisedPrompt;
-  UsageInfo? get usage => rawResponse.usage;
+  UsageInfo get usage => rawResponse.usage ?? const UsageInfo();
+  List<LLMWarning> get warnings => rawResponse.warnings;
+  List<ImageModelResponseMetadata> get responses => rawResponse.responses;
+  Map<String, dynamic> get providerMetadata =>
+      rawResponse.providerMetadata ?? const <String, dynamic>{};
 }
 
 /// Experimental result for a video generation call.
