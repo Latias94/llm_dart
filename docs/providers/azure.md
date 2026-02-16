@@ -80,6 +80,10 @@ Control it via:
 If you configure any OpenAI built-in tools via `providerTools`, LLM Dart will
 force `useResponsesAPI=true` (tooling requires Responses).
 
+Note: Azure tool ids use the `azure.` prefix (AI SDK parity), e.g.
+`azure.web_search_preview`. The Azure factory also tolerates legacy `openai.*`
+ids during the fearless refactor window.
+
 ## Quick start (recommended: task APIs)
 
 ```dart

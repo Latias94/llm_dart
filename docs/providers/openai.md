@@ -95,7 +95,7 @@ Future<void> main() async {
 OpenAI built-in tools are provider-executed (server-side). Configure them via
 `providerTools` (recommended) using typed factories:
 
-- `OpenAIProviderTools.webSearch(...)` → `web_search_preview`
+- `OpenAIProviderTools.webSearchPreview(...)` → `web_search_preview`
 - `OpenAIProviderTools.fileSearch(...)` → `file_search`
 - `OpenAIProviderTools.computerUse(...)` → `computer_use_preview`
 
@@ -103,13 +103,14 @@ Example (web search):
 
 ```dart
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai/provider_tools.dart';
 
 final model = await LLMBuilder()
     .provider(openaiProviderId)
     .apiKey('OPENAI_API_KEY')
     .model('gpt-4o')
     .providerTool(
-      OpenAIProviderTools.webSearch(
+      OpenAIProviderTools.webSearchPreview(
         contextSize: OpenAIWebSearchContextSize.high,
       ),
     )
@@ -122,6 +123,43 @@ Notes:
   family, OpenAI should return an API error and the caller can adjust.
 - If you also provide local `FunctionTool`s, LLM Dart applies tool name mapping
   to avoid collisions with built-in tool names (Vercel-style).
+
+### Client-executed provider tools
+
+Some OpenAI Responses tools are "provider-native" in the protocol, but require
+**client execution** (e.g. `shell`, `local_shell`, `apply_patch`).
+
+LLM Dart parses these as `LLMProviderToolCallPart(providerExecuted=false)` and
+the tool loop can execute them locally.
+
+The `llm_dart_ai` package provides lightweight handler templates:
+
+```dart
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+
+final toolHandlers = <String, ToolCallHandler>{
+  'shell': OpenAIClientExecutedTools.shellHandler(
+    onShell: (action, {cancelToken}) async {
+      // Execute action.commands safely in your own sandbox.
+      return {
+        'output': [
+          {
+            'stdout': 'ok',
+            'stderr': '',
+            'outcome': {'type': 'exit', 'exitCode': 0},
+          }
+        ],
+      };
+    },
+  ),
+  'apply_patch': OpenAIClientExecutedTools.applyPatchHandler(
+    execute: (input, {cancelToken}) async {
+      // Apply patch operations in your own workspace logic.
+      return const OpenAIApplyPatchOutput.completed('applied');
+    },
+  ),
+};
+```
 
 Official docs:
 

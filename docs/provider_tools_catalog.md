@@ -1,6 +1,6 @@
 # Provider Tool Catalogs (ProviderTool)
 
-This doc describes the recommended way to configure **provider-executed** tools
+This doc describes the recommended way to configure **provider-defined** tools
 (aka provider-native / built-in tools) in `llm_dart`.
 
 ## Why catalogs?
@@ -9,12 +9,19 @@ Provider-native tools have provider-specific semantics and request JSON shapes.
 To keep the *standard* surface stable, `llm_dart` models them as:
 
 - `Tool` / `FunctionTool`: executed locally by tool loops
-- `ProviderTool`: executed by the provider (server-side)
+- `ProviderTool`: provider-defined tool schema used by the provider protocol
+
+Most `ProviderTool` entries are **provider-executed** (server-side). However,
+some providers define tools that require **client execution** (e.g. Anthropic
+computer use, OpenAI `shell`/`apply_patch`). These are surfaced as
+`LLMProviderToolCallPart(providerExecuted=false)` and must be handled by the
+client tool loop.
 
 Typed catalogs exist to avoid “stringly-typed” ids/options:
 
 - `OpenAIProviderTools` (Responses API built-ins)
-- `AnthropicProviderTools` (Anthropic server tools)
+- `AzureOpenAIProviderTools` (Azure Responses API built-ins)
+- `AnthropicProviderTools` (Anthropic server tools + client-executed tools)
 - `GoogleProviderTools` (Gemini built-ins)
 - `XAIProviderTools` (xAI Responses built-ins)
 
@@ -29,7 +36,7 @@ final provider = await LLMBuilder()
     .provider(openaiProviderId)
     .apiKey(apiKey)
     .model('gpt-4o')
-    .providerTool(OpenAIProviderTools.webSearch(
+    .providerTool(OpenAIProviderTools.webSearchPreview(
       contextSize: OpenAIWebSearchContextSize.high,
     ))
     .build();
@@ -133,7 +140,7 @@ final result = await generateText(
 final stream = streamText(
   model: model,
   prompt: 'Summarize today’s AI SDK changes.',
-  providerTools: const [ProviderTool(id: 'openai.web_search')],
+  providerTools: const [ProviderTool(id: 'openai.web_search_preview')],
 );
 ```
 
@@ -141,7 +148,7 @@ final stream = streamText(
 final agent = Agent(model: model, toolSet: toolSet);
 final run = agent.streamText(
   messages: [ChatMessage.user('Find sources, then call get_weather().')],
-  providerTools: const [ProviderTool(id: 'openai.web_search')],
+  providerTools: const [ProviderTool(id: 'openai.web_search_preview')],
 );
 ```
 
@@ -152,6 +159,8 @@ Notes:
   through Responses even if chat completions are otherwise enabled.
 - xAI: use `xai.responses` when you want built-in Responses tools (web search,
   x_search, code_execution, etc.).
+- Some provider-defined tools require client execution. Use explicit approval
+  checks and tool handlers (see `OpenAIClientExecutedTools` / `AnthropicClientExecutedTools`).
 
 ## Compatibility notes
 

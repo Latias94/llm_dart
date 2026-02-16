@@ -45,6 +45,7 @@ import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_anthropic/provider_tools.dart';
 
 Future<void> main() async {
   registerAnthropic();
@@ -157,6 +158,68 @@ Legacy/best-effort escape hatches:
 Official docs:
 
 - Web fetch tool: https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool
+
+## Provider-native code execution (server tool)
+
+Anthropic supports provider-executed code execution via the server tool:
+
+- tool type: `code_execution_20250825`
+- tool name: `code_execution`
+
+Recommended configuration (typed `providerTools`):
+
+```dart
+LLMConfig(
+  providerTools: const [
+    AnthropicProviderTools.codeExecution(toolType: 'code_execution_20250825'),
+  ],
+);
+```
+
+## Provider-native tools (client-executed)
+
+Anthropic also defines provider-specific tools that are **client-executed**:
+
+- `bash` (`anthropic.bash_20250124`)
+- `computer` (`anthropic.computer_20251124`, `computer_20250124`, ...)
+- text editor (`anthropic.text_editor_*` => tool name is `str_replace_editor` or `str_replace_based_edit_tool` depending on version)
+- `memory` (`anthropic.memory_20250818`)
+
+In `llm_dart`:
+
+- Enable them via `providerTools` (so the request includes the tool definition).
+- Provide local handlers in the tool loop. Anthropic streaming parsers surface
+  these tool calls as `LLMProviderToolCallPart(providerExecuted=false)` and the
+  tool loop executes them using `toolHandlers` (tool name == function name).
+
+Helper module: `AnthropicClientExecutedTools` (in `llm_dart_ai`) provides input
+parsers and handler factories.
+
+Example (bash):
+
+```dart
+final model = await LLMBuilder()
+    .provider(anthropicProviderId)
+    .apiKey('ANTHROPIC_API_KEY')
+    .model('claude-sonnet-4-20250514')
+    .providerTool(AnthropicProviderTools.bash())
+    .build();
+
+await streamToolLoopParts(
+  model: model,
+  messages: const [ChatMessage.user('Run: echo hello')],
+  tools: const [],
+  toolHandlers: {
+    'bash': AnthropicClientExecutedTools.bashHandler(
+      execute: (input, {cancelToken}) async {
+        // Run input.command in your environment and return a string result.
+        return 'ok';
+      },
+    ),
+  },
+  needsApproval: AnthropicClientExecutedTools.alwaysRequireApproval(),
+).drain();
+```
 
 ## Streaming
 
