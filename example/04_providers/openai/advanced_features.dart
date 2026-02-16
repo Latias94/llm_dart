@@ -359,12 +359,12 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
           },
           required: ['location'],
         ),
-        handler: (toolCall, {cancelToken}) async {
+        handler: (input, options) async {
           return {
             'temperature': 22,
             'condition': 'sunny',
             'humidity': 65,
-            'toolCallId': toolCall.id,
+            'toolCallId': options.toolCallId,
           };
         },
       ),

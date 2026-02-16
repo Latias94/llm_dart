@@ -55,10 +55,8 @@ Future<void> main() async {
         },
         required: ['location'],
       ),
-      handler: (toolCall, {cancelToken}) async {
-        final args = jsonDecode(toolCall.function.arguments);
-        if (args is! Map) return {'error': 'invalid args'};
-        final location = args['location']?.toString() ?? 'unknown';
+      handler: (input, options) async {
+        final location = input['location']?.toString() ?? 'unknown';
         return {
           'location': location,
           'temperatureC': 18,

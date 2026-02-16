@@ -44,13 +44,8 @@ LocalTool _duckDuckGoWebSearchTool({Dio? dio}) {
       },
       required: ['query'],
     ),
-    handler: (toolCall, {cancelToken}) async {
-      final args = jsonDecode(toolCall.function.arguments);
-      if (args is! Map) {
-        return {'error': 'Invalid arguments: expected an object.'};
-      }
-
-      final map = Map<String, dynamic>.from(args);
+    handler: (input, options) async {
+      final map = input;
       final query = (map['query'] as String?)?.trim();
       if (query == null || query.isEmpty) {
         return {'error': 'Missing required argument: query'};
@@ -60,7 +55,8 @@ LocalTool _duckDuckGoWebSearchTool({Dio? dio}) {
       final maxResults = (maxResultsRaw is num) ? maxResultsRaw.toInt() : 5;
       final effectiveMaxResults = maxResults <= 0 ? 5 : maxResults;
 
-      final resp = await withDioCancelToken(cancelToken, (dioCancelToken) {
+      final resp =
+          await withDioCancelToken(options.cancelToken, (dioCancelToken) {
         return client.get<dynamic>(
           '/',
           queryParameters: {

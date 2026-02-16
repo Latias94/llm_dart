@@ -87,7 +87,7 @@ Future<void> demonstrateBasicToolCalling(ChatCapability provider) async {
       promptIr: prompt,
       tools: [calculatorTool],
       toolHandlers: {
-        'calculate': (toolCall, {cancelToken}) => executeFunction(toolCall),
+        'calculate': (input, options) => executeFunction(options.toolCall),
       },
       maxSteps: 5,
     );
@@ -303,11 +303,11 @@ Future<void> demonstrateMultipleTools(ChatCapability provider) async {
       promptIr: prompt,
       tools: tools,
       toolHandlers: {
-        'get_weather': (toolCall, {cancelToken}) => executeFunction(toolCall),
-        'get_current_time': (toolCall, {cancelToken}) =>
-            executeFunction(toolCall),
-        'generate_random_number': (toolCall, {cancelToken}) =>
-            executeFunction(toolCall),
+        'get_weather': (input, options) => executeFunction(options.toolCall),
+        'get_current_time': (input, options) =>
+            executeFunction(options.toolCall),
+        'generate_random_number': (input, options) =>
+            executeFunction(options.toolCall),
       },
       maxSteps: 5,
     );
@@ -380,8 +380,8 @@ Future<void> demonstrateToolChaining(ChatCapability provider) async {
       promptIr: prompt,
       tools: tools,
       toolHandlers: {
-        'search_web': (toolCall, {cancelToken}) => executeFunction(toolCall),
-        'save_note': (toolCall, {cancelToken}) => executeFunction(toolCall),
+        'search_web': (input, options) => executeFunction(options.toolCall),
+        'save_note': (input, options) => executeFunction(options.toolCall),
       },
       maxSteps: 5,
     );
@@ -415,7 +415,7 @@ Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
           },
           required: ['path'],
         ),
-        handler: (toolCall, {cancelToken}) => executeFunction(toolCall),
+        handler: (input, options) => executeFunction(options.toolCall),
       ),
     ]);
 
@@ -537,8 +537,8 @@ Future<void> demonstrateToolErrorHandling(ChatCapability provider) async {
       promptIr: prompt,
       tools: tools,
       toolHandlers: {
-        'risky_operation': (toolCall, {cancelToken}) =>
-            _executeRiskyFunction(toolCall),
+        'risky_operation': (input, options) =>
+            _executeRiskyFunction(options.toolCall),
       },
       maxSteps: 3,
       continueOnToolError: true,
@@ -646,9 +646,9 @@ Future<void> demonstrateComplexWorkflow(ChatCapability provider) async {
       promptIr: prompt,
       tools: tools,
       toolHandlers: {
-        'search_web': (toolCall, {cancelToken}) => executeFunction(toolCall),
-        'calculate': (toolCall, {cancelToken}) => executeFunction(toolCall),
-        'save_note': (toolCall, {cancelToken}) => executeFunction(toolCall),
+        'search_web': (input, options) => executeFunction(options.toolCall),
+        'calculate': (input, options) => executeFunction(options.toolCall),
+        'save_note': (input, options) => executeFunction(options.toolCall),
       },
       maxSteps: 5,
     );

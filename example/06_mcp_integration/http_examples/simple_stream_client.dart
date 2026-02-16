@@ -108,11 +108,11 @@ Future<void> _processStreamingToolUse(
     tools.map(
       (tool) => LocalTool(
         tool: tool,
-        handler: (toolCall, {cancelToken}) async {
+        handler: (input, options) async {
           return _executeMcpTool(
             mcpClient,
-            toolCall.function.name,
-            toolCall.function.arguments,
+            options.toolName,
+            options.rawArguments,
           );
         },
       ),

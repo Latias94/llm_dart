@@ -47,9 +47,8 @@ Future<void> main() async {
         // Here we always ask for approval before fetching any URL.
         return true;
       },
-      handler: (toolCall, {cancelToken}) async {
-        final args = jsonDecode(toolCall.function.arguments) as Map;
-        final urlString = (args['url'] as String?) ?? '';
+      handler: (input, options) async {
+        final urlString = (input['url'] as String?) ?? '';
         final url = Uri.tryParse(urlString);
         if (url == null || !(url.isScheme('https') || url.isScheme('http'))) {
           return {'error': 'Invalid URL: $urlString'};
