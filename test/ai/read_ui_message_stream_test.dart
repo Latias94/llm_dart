@@ -152,6 +152,30 @@ void main() {
         }),
       );
     });
+
+    test('terminates when receiving an error chunk (terminateOnError=true)',
+        () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {'type': 'text-start', 'id': 't1'},
+        const {'type': 'text-delta', 'id': 't1', 'delta': 'Hello'},
+        const {'type': 'error', 'errorText': 'Test error message'},
+      ]);
+
+      expect(
+        () => readUiMessageStream(
+          chunks: chunks,
+          terminateOnError: true,
+        ).toList(),
+        throwsA(
+          isA<UiMessageStreamError>().having(
+            (e) => e.message,
+            'message',
+            contains('Test error message'),
+          ),
+        ),
+      );
+    });
   });
 
   group('handleUiMessageStreamFinish (ai-sdk style)', () {

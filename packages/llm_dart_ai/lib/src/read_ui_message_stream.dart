@@ -238,9 +238,17 @@ void applyUiMessageChunk(
       return;
 
     case 'error':
-      // Error chunks are not part of the UI message itself; callers can decide
-      // whether to terminate or keep consuming.
-      return;
+      // Error chunks are not part of the UI message itself, but they should
+      // surface as errors to the consumer (AI SDK parity). Callers can decide
+      // whether to terminate or keep consuming via `terminateOnError`.
+      final errorText = chunk['errorText'] as String?;
+      if (errorText != null && errorText.trim().isNotEmpty) {
+        throw UiMessageStreamError(cause: chunk, message: errorText.trim());
+      }
+      throw UiMessageStreamError(
+        cause: chunk,
+        message: 'UI message stream error chunk received.',
+      );
 
     case 'start-step':
       state.message.parts.add(const <String, Object?>{'type': 'step-start'});
