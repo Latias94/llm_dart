@@ -1180,7 +1180,8 @@ class OpenAIChatResponse
     implements
         ChatResponseWithFinishReason,
         ChatResponseWithResponseMetadata,
-        ChatResponseWithRequestMetadata {
+        ChatResponseWithRequestMetadata,
+        ChatResponseWithWarnings {
   final Map<String, dynamic> _rawResponse;
   final String? _thinkingContent;
   final String? _providerId;
@@ -1209,6 +1210,33 @@ class OpenAIChatResponse
 
   @override
   LLMRequestMetadataPart? get requestMetadata => _requestMetadata;
+
+  @override
+  List<LLMWarning> get warnings {
+    if (!_parseToolCallsFromText || !_didRequestTools) return const [];
+
+    final choices = _rawResponse['choices'] as List?;
+    if (choices == null || choices.isEmpty) return const [];
+
+    final message = choices.first['message'] as Map<String, dynamic>?;
+    final toolCalls = message?['tool_calls'] as List?;
+    if (toolCalls != null && toolCalls.isNotEmpty) return const [];
+
+    final content = message?['content'];
+    if (content is! String || content.trim().isEmpty) return const [];
+
+    final fallback = _tryParseToolCallFromText(content);
+    if (fallback == null) return const [];
+
+    return const [
+      LLMCompatibilityWarning(
+        feature: 'tool calls parsed from text',
+        details:
+            'The provider returned a tool call JSON payload in message content instead of `tool_calls`. '
+            'Tool calls were parsed from text for compatibility.',
+      ),
+    ];
+  }
 
   @override
   String? get text {

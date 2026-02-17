@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:test/test.dart';
 
@@ -31,6 +32,13 @@ void main() {
       expect(calls, hasLength(1));
       expect(
           calls!.first.function.name, equals('weather\$weather#get_weather'));
+
+      expect(response.warnings, hasLength(1));
+      expect(response.warnings.single, isA<LLMCompatibilityWarning>());
+      expect(
+        (response.warnings.single as LLMCompatibilityWarning).feature,
+        equals('tool calls parsed from text'),
+      );
 
       final args = jsonDecode(calls.first.function.arguments);
       expect(args, isA<Map>());
