@@ -24,9 +24,8 @@ class _FakeChatResponse implements ChatResponseWithFinishReason {
     this.text,
     this.thinking,
     this.toolCalls,
-    this.usage,
     this.finishReason,
-  });
+  }) : usage = null;
 
   @override
   Map<String, dynamic>? get providerMetadata => null;

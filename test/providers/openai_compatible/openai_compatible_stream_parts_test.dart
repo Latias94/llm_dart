@@ -124,7 +124,7 @@ void main() {
       final responseMetadata =
           parts.whereType<LLMResponseMetadataPart>().single;
       expect(responseMetadata.id, equals('chatcmpl_123'));
-      expect(responseMetadata.model, equals('gpt-4o'));
+      expect(responseMetadata.modelId, equals('gpt-4o'));
       expect(responseMetadata.systemFingerprint, equals('fp_1'));
       expect(
         responseMetadata.timestamp?.toUtc().millisecondsSinceEpoch,

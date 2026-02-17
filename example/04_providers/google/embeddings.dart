@@ -42,15 +42,17 @@ Future<void> demonstrateBasicEmbeddings(String apiKey) async {
         .buildEmbedding();
 
     // Single text embedding
-    final singleEmbedding = await provider.embed(['Hello, world!']);
-    print('   ✅ Single embedding: ${singleEmbedding.first.length} dimensions');
+    final singleResponse = await provider.embed(['Hello, world!']);
+    print(
+        '   ✅ Single embedding: ${singleResponse.embeddings.first.length} dimensions');
 
     // Multiple texts
-    final multipleEmbeddings = await provider.embed([
+    final multipleResponse = await provider.embed([
       'The quick brown fox jumps over the lazy dog',
       'Machine learning is transforming technology',
       'Google provides powerful embedding models',
     ]);
+    final multipleEmbeddings = multipleResponse.embeddings;
 
     print(
         '   ✅ Multiple embeddings: ${multipleEmbeddings.length} texts processed');
@@ -87,7 +89,8 @@ Future<void> demonstrateBatchEmbeddings(String apiKey) async {
       'Machine learning requires large datasets for training',
     ];
 
-    final embeddings = await provider.embed(texts);
+    final response = await provider.embed(texts);
+    final embeddings = response.embeddings;
     print('   ✅ Batch processing: ${embeddings.length} embeddings generated');
     print('   📏 Embedding dimensions: ${embeddings.first.length}');
 
@@ -121,13 +124,13 @@ Future<void> demonstrateEmbeddingParameters(String apiKey) async {
         .option('embeddingDimensions', 512) // Reduced dimensions
         .buildEmbedding();
 
-    final embeddings = await provider.embed([
+    final response = await provider.embed([
       'Document for semantic similarity',
       'Another document for comparison',
     ]);
 
     print('   ✅ Task-specific embeddings generated');
-    print('   📏 Reduced dimensions: ${embeddings.first.length}');
+    print('   📏 Reduced dimensions: ${response.embeddings.first.length}');
 
     // For retrieval tasks
     final retrievalProvider = await LLMBuilder()
@@ -138,12 +141,12 @@ Future<void> demonstrateEmbeddingParameters(String apiKey) async {
         .option('embeddingTitle', 'Technical Documentation')
         .buildEmbedding();
 
-    final docEmbeddings = await retrievalProvider.embed([
+    final docResponse = await retrievalProvider.embed([
       'This is a technical document about machine learning algorithms.',
     ]);
 
     print(
-        '   ✅ Retrieval embeddings with title: ${docEmbeddings.first.length} dimensions');
+        '   ✅ Retrieval embeddings with title: ${docResponse.embeddings.first.length} dimensions');
   } catch (e) {
     print('   ❌ Parameter demonstration failed: $e');
   }
@@ -170,7 +173,8 @@ Future<void> demonstrateSemanticSimilarity(String apiKey) async {
       'Machine learning algorithms',
     ];
 
-    final embeddings = await provider.embed(texts);
+    final response = await provider.embed(texts);
+    final embeddings = response.embeddings;
 
     print('   📊 Similarity Matrix:');
     print(

@@ -449,7 +449,7 @@ Future<void> demonstrateStreamingWithTools(ChatCapability provider) async {
 
         case LLMToolResultPart(:final result):
           print(
-            '   📄 Tool result for ${result.toolCallId}: ${result.content}',
+            '   📄 Tool result for ${result.toolCallId}: ${result.result}',
           );
           break;
 

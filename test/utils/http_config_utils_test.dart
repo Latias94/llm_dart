@@ -1,7 +1,6 @@
 import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 void main() {
   group('HttpConfigUtils Tests', () {

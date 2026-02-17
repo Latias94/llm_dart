@@ -378,7 +378,7 @@ class AnthropicChat
     final responseMetadata = (id != null || model != null || headers != null)
         ? LLMResponseMetadataPart(
             id: id,
-            model: model,
+            modelId: model,
             headers: headers,
             body: responseData,
             raw: {

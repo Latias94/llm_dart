@@ -65,7 +65,8 @@ void main() {
         expect(capabilities, contains(LLMCapability.embedding));
         expect(capabilities, contains(LLMCapability.liveSearch));
         expect(capabilities, contains(LLMCapability.imageGeneration));
-        expect(capabilities, contains(LLMCapability.experimentalVideoGeneration));
+        expect(
+            capabilities, contains(LLMCapability.experimentalVideoGeneration));
       });
     });
 

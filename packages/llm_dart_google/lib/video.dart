@@ -110,8 +110,9 @@ class GoogleVideo
       'sampleCount': request.n,
     };
 
-    if (request.aspectRatio != null)
+    if (request.aspectRatio != null) {
       parameters['aspectRatio'] = request.aspectRatio;
+    }
 
     if (request.resolution != null) {
       const resolutionMap = {
@@ -123,8 +124,9 @@ class GoogleVideo
           resolutionMap[request.resolution] ?? request.resolution;
     }
 
-    if (request.duration != null)
+    if (request.duration != null) {
       parameters['durationSeconds'] = request.duration;
+    }
     if (request.seed != null) parameters['seed'] = request.seed;
 
     // Known provider option keys (Vercel parity) + passthrough.

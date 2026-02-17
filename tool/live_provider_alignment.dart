@@ -356,11 +356,11 @@ Future<List<_CheckResult>> _runProviderChecks(
 
               case LLMResponseMetadataPart(
                   id: final id,
-                  model: final model,
+                  modelId: final modelId,
                   status: final status,
                 ):
                 dump(
-                  'ResponseMetadata id=${id ?? '-'} model=${model ?? '-'} status=${status ?? '-'}',
+                  'ResponseMetadata id=${id ?? '-'} model=${modelId ?? '-'} status=${status ?? '-'}',
                 );
 
               case LLMTextStartPart():
@@ -409,8 +409,9 @@ Future<List<_CheckResult>> _runProviderChecks(
 
               case LLMToolResultPart(:final result):
                 sawAnyDelta = true;
+                final resultText = result.result?.toString() ?? '';
                 dump(
-                    'ToolResult toolCallId=${result.toolCallId} len=${result.content.length}');
+                    'ToolResult toolCallId=${result.toolCallId} len=${resultText.length}');
 
               case LLMProviderToolCallPart(:final toolCallId, :final toolName):
                 sawAnyDelta = true;

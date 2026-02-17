@@ -151,7 +151,7 @@ Future<ExperimentalMcpToolBridge> experimentalCreateMcpToolBridge({
             ? _outputSchemaFromMcpTool(mcpTool)
             : null);
 
-    final handler = (Map<String, dynamic> input,
+    Future<Object> handler(Map<String, dynamic> input,
         ToolExecutionOptions executionOptions) async {
       connection.throwIfCancelled(executionOptions.cancelToken);
 
@@ -189,7 +189,7 @@ Future<ExperimentalMcpToolBridge> experimentalCreateMcpToolBridge({
       }
 
       return _callToolResultToBestEffortToolOutputValue(result);
-    };
+    }
 
     final description = mcpTool.description?.trim().isNotEmpty == true
         ? mcpTool.description!.trim()

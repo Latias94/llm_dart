@@ -152,7 +152,7 @@ Future<void> _processStreamingToolUse(
         stdout.writeln('\n   🛠️  MCP tool result:');
         stdout.writeln('      • toolCallId: ${result.toolCallId}');
         stdout.writeln('      • ok: ${!result.isError}');
-        stdout.writeln('      • content: ${result.content}');
+        stdout.writeln('      • result: ${result.result}');
         stdout.writeln('\n   🤖 Continuing...\n');
         stdout.write('      ');
         break;

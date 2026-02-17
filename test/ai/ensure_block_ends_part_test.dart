@@ -173,12 +173,10 @@ void main() {
         messages: [ChatMessage.user('hi')],
       ).toList();
 
-      final startIndex = parts.indexWhere((p) =>
-          p is LLMToolInputStartPart &&
-          (p as LLMToolInputStartPart).id == 'id-0');
-      final deltaIndex = parts.indexWhere((p) =>
-          p is LLMToolInputDeltaPart &&
-          (p as LLMToolInputDeltaPart).id == 'id-0');
+      final startIndex = parts
+          .indexWhere((p) => p is LLMToolInputStartPart && (p).id == 'id-0');
+      final deltaIndex = parts
+          .indexWhere((p) => p is LLMToolInputDeltaPart && (p).id == 'id-0');
 
       expect(startIndex, isNonNegative);
       expect(deltaIndex, isNonNegative);
@@ -197,11 +195,10 @@ void main() {
         messages: [ChatMessage.user('hi')],
       ).toList();
 
-      final startIndex = parts.indexWhere((p) =>
-          p is LLMToolInputStartPart &&
-          (p as LLMToolInputStartPart).id == 'id-0');
-      final endIndex = parts.indexWhere((p) =>
-          p is LLMToolInputEndPart && (p as LLMToolInputEndPart).id == 'id-0');
+      final startIndex = parts
+          .indexWhere((p) => p is LLMToolInputStartPart && (p).id == 'id-0');
+      final endIndex =
+          parts.indexWhere((p) => p is LLMToolInputEndPart && (p).id == 'id-0');
 
       expect(startIndex, isNonNegative);
       expect(endIndex, isNonNegative);

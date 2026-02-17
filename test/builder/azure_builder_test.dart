@@ -4,11 +4,8 @@ import 'package:test/test.dart';
 void main() {
   group('AzureBuilder', () {
     test('writes providerOptions for azure', () {
-      final builder = ai().azureChat(
-        (azure) => azure
-            .apiVersion('2024-10-01-preview')
-            .useDeploymentBasedUrls(true)
-      );
+      final builder = ai().azureChat((azure) =>
+          azure.apiVersion('2024-10-01-preview').useDeploymentBasedUrls(true));
 
       expect(builder.providerId, equals('azure.chat'));
       expect(
@@ -21,7 +18,8 @@ void main() {
         isTrue,
       );
       expect(
-        builder.currentConfig.getProviderOption<bool>('azure', 'useResponsesAPI'),
+        builder.currentConfig
+            .getProviderOption<bool>('azure', 'useResponsesAPI'),
         isNull,
       );
     });

@@ -1,5 +1,4 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
 import 'package:test/test.dart';
 
@@ -42,7 +41,7 @@ void main() {
       expect(result.responseMetadata, isNotNull);
       expect(result.responseMetadata!.headers, containsPair('x-test', '1'));
       expect(result.responseMetadata!.timestamp, isNotNull);
-      expect(result.responseMetadata!.model, equals('gemini-2.5-pro'));
+      expect(result.responseMetadata!.modelId, equals('gemini-2.5-pro'));
     });
   });
 }

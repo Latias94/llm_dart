@@ -186,8 +186,7 @@ Future<void> capabilityDetectionExample(String apiKey) async {
       }
     } else {
       print('❌ OpenAI Responses API capability not available');
-      print(
-          '💡 Use providerId "openai" (Responses) instead of "openai.chat".');
+      print('💡 Use providerId "openai" (Responses) instead of "openai.chat".');
     }
 
     print('');

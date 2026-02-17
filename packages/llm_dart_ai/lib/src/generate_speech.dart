@@ -34,7 +34,8 @@ Future<GenerateSpeechResult> generateSpeech({
   }
 
   if (response.audioData.isEmpty) {
-    throw NoSpeechGeneratedError(response: response, responses: response.responses);
+    throw NoSpeechGeneratedError(
+        response: response, responses: response.responses);
   }
 
   return GenerateSpeechResult(rawResponse: response);

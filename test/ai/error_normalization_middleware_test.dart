@@ -4,22 +4,6 @@ import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
 
-class _TestChatResponse extends ChatResponse {
-  @override
-  final String? text;
-
-  @override
-  List<ToolCall>? get toolCalls => null;
-
-  @override
-  UsageInfo? get usage => null;
-
-  @override
-  Map<String, dynamic>? get providerMetadata => null;
-
-  _TestChatResponse({this.text});
-}
-
 class _ThrowingChatModel extends ChatCapability
     implements ChatCallOptionsCapability, ChatStreamPartsCallOptionsCapability {
   final Object toThrow;

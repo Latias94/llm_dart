@@ -181,12 +181,9 @@ class GoogleConfig {
       }
     }
 
-    final providerToolEnabled = providerToolWebSearch == null
-        ? false
-        : _isProviderToolEnabled(providerToolWebSearch);
-
     final webSearchToolOptionsFromProviderTools =
         providerToolWebSearch != null &&
+                _isProviderToolEnabled(providerToolWebSearch) &&
                 providerToolWebSearch.options.isNotEmpty
             ? _parseWebSearchToolOptions(providerToolWebSearch.options)
             : null;

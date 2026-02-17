@@ -43,7 +43,8 @@ class XAIVideo
 
     final mergedProviderOptions =
         _mergeProviderOptions(config.originalConfig, request.providerOptions);
-    final xaiOptions = mergedProviderOptions['xai'] ?? const <String, dynamic>{};
+    final xaiOptions =
+        mergedProviderOptions['xai'] ?? const <String, dynamic>{};
 
     final pollIntervalMs = _readInt(xaiOptions['pollIntervalMs']) ?? 5000;
     final pollTimeoutMs = _readInt(xaiOptions['pollTimeoutMs']) ?? 600000;
@@ -88,7 +89,8 @@ class XAIVideo
       ));
     }
 
-    if (isEdit && (request.resolution != null || xaiOptions['resolution'] != null)) {
+    if (isEdit &&
+        (request.resolution != null || xaiOptions['resolution'] != null)) {
       warnings.add(const LLMUnsupportedWarning(
         feature: 'resolution',
         details: 'xAI video editing does not support custom resolution.',
@@ -158,8 +160,8 @@ class XAIVideo
     );
 
     final createJson = createResult.json;
-    final requestId =
-        _readString(createJson['request_id']) ?? _readString(createJson['requestId']);
+    final requestId = _readString(createJson['request_id']) ??
+        _readString(createJson['requestId']);
     if (requestId == null || requestId.trim().isEmpty) {
       throw ProviderError(
         'No request_id returned from xAI API. Response: ${jsonEncode(createJson)}',
@@ -181,7 +183,8 @@ class XAIVideo
       }
 
       if (DateTime.now().toUtc().isAfter(deadline)) {
-        throw TimeoutError('Video generation timed out after ${pollTimeoutMs}ms');
+        throw TimeoutError(
+            'Video generation timed out after ${pollTimeoutMs}ms');
       }
 
       final pollResult = await client.getJsonWithResponseHeaders(
@@ -197,7 +200,8 @@ class XAIVideo
       final videoObj = pollJson['video'];
       final url = (videoObj is Map) ? _readString(videoObj['url']) : null;
 
-      if (status == 'done' || (status == null && url != null && url.trim().isNotEmpty)) {
+      if (status == 'done' ||
+          (status == null && url != null && url.trim().isNotEmpty)) {
         if (url == null || url.trim().isEmpty) {
           throw const ProviderError(
             'Video generation completed but no video URL was returned.',
@@ -216,7 +220,7 @@ class XAIVideo
             ExperimentalVideoResponseMetadata(
               timestamp: startedAt,
               modelId: config.videoModel,
-              headers: pollHeaders == null || pollHeaders.isEmpty ? null : pollHeaders,
+              headers: pollHeaders.isEmpty ? null : pollHeaders,
             ),
           ],
           providerMetadata: _providerMetadata(
@@ -235,7 +239,8 @@ Map<String, Map<String, dynamic>> _mergeProviderOptions(
   LLMConfig? originalConfig,
   ProviderOptions requestProviderOptions,
 ) {
-  final base = originalConfig?.providerOptions ?? const <String, Map<String, dynamic>>{};
+  final base =
+      originalConfig?.providerOptions ?? const <String, Map<String, dynamic>>{};
   if (base.isEmpty) return requestProviderOptions;
   if (requestProviderOptions.isEmpty) return base;
 
@@ -294,7 +299,8 @@ String _experimentalVideoFileToUrl(ExperimentalVideoFile file) {
       } else if (data is Uint8List) {
         base64Data = base64Encode(data);
       } else {
-        throw InvalidRequestError('Invalid inline file data: ${data.runtimeType}');
+        throw InvalidRequestError(
+            'Invalid inline file data: ${data.runtimeType}');
       }
       return 'data:$mediaType;base64,$base64Data';
   }

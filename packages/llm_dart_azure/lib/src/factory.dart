@@ -42,7 +42,8 @@ class AzureOpenAIProviderFactory
   String get displayName => 'Azure OpenAI';
 
   @override
-  String get description => 'Azure OpenAI models via the Responses API (default).';
+  String get description =>
+      'Azure OpenAI models via the Responses API (default).';
 
   @override
   Set<LLMCapability> get supportedCapabilities => {
@@ -153,8 +154,9 @@ class AzureOpenAIProviderFactory
 
     return AzureOpenAIConfig(
       providerId: providerId,
-      providerName:
-          providerId == azureChatProviderId ? 'Azure OpenAI (Chat)' : 'Azure OpenAI',
+      providerName: providerId == azureChatProviderId
+          ? 'Azure OpenAI (Chat)'
+          : 'Azure OpenAI',
       apiKey: config.apiKey ?? '',
       baseUrl: '$apiRoot/',
       model: config.model,

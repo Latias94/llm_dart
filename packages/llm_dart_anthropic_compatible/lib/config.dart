@@ -167,9 +167,7 @@ class AnthropicConfig {
       config,
       providerOptionsNamespace: providerOptionsNamespace,
     );
-    final effectiveWebSearchToolType = providerToolWebSearchConfig == null
-        ? null
-        : providerToolWebSearchConfig.toolType;
+    final effectiveWebSearchToolType = providerToolWebSearchConfig?.toolType;
 
     final providerToolWebFetchConfig = _buildWebFetchConfigFromProviderTools(
       config,
@@ -583,32 +581,4 @@ class _WebFetchConfig {
     this.toolType = 'web_fetch_20250910',
     this.options,
   });
-
-  factory _WebFetchConfig.fromJson(Map<String, dynamic> json) {
-    final rawEnabled = json['enabled'];
-    final enabled = rawEnabled is bool ? rawEnabled : true;
-
-    final rawType = json['toolType'] ??
-        json['tool_type'] ??
-        json['type'] ??
-        json['tool'] ??
-        json['toolName'];
-
-    final toolType = rawType is String && rawType.trim().isNotEmpty
-        ? rawType.trim()
-        : (json['mode'] is String ? (json['mode'] as String).trim() : null);
-
-    final options = AnthropicWebFetchToolOptions.fromJson(json);
-
-    final normalizedType =
-        (toolType != null && toolType.startsWith('web_fetch_'))
-            ? toolType
-            : 'web_fetch_20250910';
-
-    return _WebFetchConfig(
-      enabled: enabled,
-      toolType: normalizedType,
-      options: options,
-    );
-  }
 }

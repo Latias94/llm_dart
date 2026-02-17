@@ -26,8 +26,10 @@ void main() {
       final meta = response.providerMetadata;
 
       expect(meta, isNotNull);
-      expect(meta!.containsKey('openai.chat'), isTrue);
-      expect(meta.containsKey('openai'), isFalse);
+      expect(meta!.containsKey('openai'), isTrue);
+      expect(meta.containsKey('openai.chat'), isTrue);
+      expect(meta.containsKey('openai.chat.chat'), isFalse);
+      expect(meta['openai.chat'], equals(meta['openai']));
 
       expect(response.usage, isNotNull);
       expect(response.usage!.promptTokens, equals(3));

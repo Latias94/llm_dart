@@ -42,6 +42,9 @@ class ExperimentalMcpStreamableHttpConnection
   @override
   mcp.Client get experimentalClient => _client;
 
+  /// Underlying MCP transport. Exposed for advanced usage.
+  mcp.StreamableHttpClientTransport get experimentalTransport => _transport;
+
   @override
   String? get serverLabel => config.serverLabel;
 

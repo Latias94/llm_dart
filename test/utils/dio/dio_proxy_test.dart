@@ -1,6 +1,5 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'dio_proxy_test_stub.dart'
     if (dart.library.io) 'dio_proxy_test_io.dart'
     if (dart.library.html) 'dio_proxy_test_web.dart';

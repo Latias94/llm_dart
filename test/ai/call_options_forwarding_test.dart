@@ -3,8 +3,6 @@ import 'dart:async';
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
-import 'package:llm_dart_openai_compatible/src/audio.dart';
-import 'package:llm_dart_openai_compatible/src/images.dart';
 import 'package:test/test.dart';
 
 import '../utils/fakes/openai_fake_client.dart';
@@ -27,11 +25,10 @@ class _TextResponse implements ChatResponse {
 
   const _TextResponse({
     this.text,
-    this.thinking,
-    this.toolCalls,
-    this.usage,
-    this.providerMetadata,
-  });
+  })  : thinking = null,
+        toolCalls = null,
+        usage = null,
+        providerMetadata = null;
 }
 
 class _CallOptionsModel extends ChatCapability
@@ -217,21 +214,6 @@ class _ImageCallOptionsModel
 
   @override
   bool get supportsImageVariations => true;
-
-  @override
-  Future<List<String>> generateImage({
-    required String prompt,
-    String? model,
-    String? negativePrompt,
-    String? imageSize,
-    int? batchSize,
-    String? seed,
-    int? numInferenceSteps,
-    double? guidanceScale,
-    bool? promptEnhancement,
-  }) async {
-    return const <String>[];
-  }
 }
 
 class _EmbeddingCallOptionsModel

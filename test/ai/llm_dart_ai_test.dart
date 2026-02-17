@@ -369,9 +369,7 @@ void main() {
       expect(inputStartIndex, lessThan(toolCallStartIndex));
 
       final inputEndIndex = parts.indexWhere(
-        (p) =>
-            p is LLMToolInputEndPart &&
-            (p as LLMToolInputEndPart).id == 'call_1',
+        (p) => p is LLMToolInputEndPart && (p).id == 'call_1',
       );
       final finishIndex = parts.indexWhere((p) => p is LLMFinishPart);
       expect(inputEndIndex, greaterThanOrEqualTo(0));

@@ -209,7 +209,7 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
       case LLMResponseMetadataPart(
           id: final id,
           timestamp: final timestamp,
-          model: final model,
+          modelId: final modelId,
           headers: final headers,
           body: final body,
           status: final status,
@@ -220,7 +220,7 @@ Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
         yield LLMResponseMetadataPart(
           id: id,
           timestamp: timestamp,
-          model: model,
+          modelId: modelId,
           headers: headers,
           body: body,
           status: status,

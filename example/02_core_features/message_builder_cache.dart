@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// Anthropic prompt caching example (Vercel-style escape hatch).
 ///
@@ -54,7 +53,7 @@ Future<void> main() async {
   final prompt = Prompt(
     messages: [
       PromptMessage(
-        role: ChatRole.system,
+        role: PromptRole.system,
         parts: [
           const TextPart('You are a helpful AI assistant.'),
           const TextPart(''),

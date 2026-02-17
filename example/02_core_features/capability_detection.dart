@@ -89,7 +89,8 @@ Future<Map<String, ProviderCapabilities>> createProviders() async {
           .providerTool(OpenAIProviderTools.webSearchPreview())
           .build();
       if (openaiResponses is ProviderCapabilities) {
-        providers['OpenAI (Responses)'] = openaiResponses as ProviderCapabilities;
+        providers['OpenAI (Responses)'] =
+            openaiResponses as ProviderCapabilities;
       }
     } catch (e) {
       print('⚠️  Failed to create OpenAI Responses provider: $e');
@@ -104,7 +105,8 @@ Future<Map<String, ProviderCapabilities>> createProviders() async {
           .providerTool(OpenAIProviderTools.webSearchPreview())
           .build();
       final openaiProvider = provider as OpenAIProvider;
-      providers['OpenAI (Responses, Typed)'] = openaiProvider as ProviderCapabilities;
+      providers['OpenAI (Responses, Typed)'] =
+          openaiProvider as ProviderCapabilities;
     } catch (e) {
       print('⚠️  Failed to create OpenAI Responses auto provider: $e');
     }

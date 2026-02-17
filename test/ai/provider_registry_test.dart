@@ -10,7 +10,7 @@ class _FakeIdentityChatModel
   @override
   final String providerId;
 
-  _FakeIdentityChatModel(this.modelId, {this.providerId = 'test'});
+  _FakeIdentityChatModel(this.modelId) : providerId = 'fake';
 
   @override
   Future<ChatResponse> chatWithTools(
@@ -51,7 +51,7 @@ class _FakeIdentityVideoModel
   @override
   final String providerId;
 
-  _FakeIdentityVideoModel(this.modelId, {this.providerId = 'test'});
+  _FakeIdentityVideoModel(this.modelId) : providerId = 'fake';
 
   @override
   Future<ExperimentalVideoGenerationResponse> generateVideos(

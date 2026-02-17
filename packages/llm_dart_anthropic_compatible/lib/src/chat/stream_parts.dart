@@ -1,25 +1,5 @@
 part of 'package:llm_dart_anthropic_compatible/chat.dart';
 
-Stream<LLMStreamPart> _anthropicChatStreamParts(
-  AnthropicClient client,
-  AnthropicConfig config,
-  AnthropicRequestBuilder requestBuilder,
-  String chatEndpoint,
-  List<ChatMessage> messages, {
-  List<Tool>? tools,
-  CancelToken? cancelToken,
-}) async* {
-  final effectiveTools = tools ?? config.tools;
-  final built = requestBuilder.buildRequest(messages, effectiveTools, true);
-  yield* _anthropicChatStreamPartsFromBuiltRequest(
-    client,
-    config,
-    chatEndpoint,
-    built,
-    cancelToken: cancelToken,
-  );
-}
-
 Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
   AnthropicClient client,
   AnthropicConfig config,
@@ -444,7 +424,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
               };
               yield LLMResponseMetadataPart(
                 id: messageId,
-                model: model,
+                modelId: model,
                 headers: responseHeaders.isEmpty ? null : responseHeaders,
                 raw: raw.isEmpty ? null : raw,
               );
@@ -541,7 +521,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                   toolId.isNotEmpty &&
                   isProviderTool &&
                   !isKnownServerTool) {
-                final stableName = resolveStableProviderToolName(toolName!);
+                final stableName = resolveStableProviderToolName(toolName);
                 final configured = findProviderToolForRequestName(toolName);
 
                 providerToolNameById[toolId] = stableName;
@@ -904,7 +884,7 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                 final providerState = activeProviderToolCalls.remove(index);
                 yield LLMToolInputEndPart(id: state.id!);
 
-                final stableName = resolveStableProviderToolName(requestName!);
+                final stableName = resolveStableProviderToolName(requestName);
                 var inputString = (providerState?.inputBuffer.toString() ??
                         state.inputBuffer.toString())
                     .trim();

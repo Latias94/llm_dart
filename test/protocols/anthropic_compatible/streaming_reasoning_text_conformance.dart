@@ -80,7 +80,7 @@ void registerAnthropicCompatibleReasoningTextStreamingConformanceTests({
 
       final meta = parts[metaIndex] as LLMResponseMetadataPart;
       expect(meta.id, equals(fixture.expectedMessageId));
-      expect(meta.model, equals(fixture.expectedModel));
+      expect(meta.modelId, equals(fixture.expectedModel));
     });
 
     test('emits thinking_delta and text_delta parts in order', () async {

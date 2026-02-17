@@ -18,8 +18,9 @@ class _TestChatResponse extends ChatResponse {
   @override
   final Map<String, dynamic>? providerMetadata;
 
-  _TestChatResponse({this.text, this.thinking})
-      : toolCalls = null,
+  _TestChatResponse({this.text})
+      : thinking = null,
+        toolCalls = null,
         usage = null,
         providerMetadata = null;
 }

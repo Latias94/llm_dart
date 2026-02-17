@@ -250,12 +250,11 @@ Future<void> demoOpenRouterBuilder(String? apiKey) async {
 
   try {
     final provider = await LLMBuilder()
-        .openRouter(
-          (openrouter) => openrouter.appInfo(
-            referer: 'https://example.com',
-            title: 'llm_dart demo',
-          ),
-        )
+        .provider('openrouter')
+        .providerOption('openrouter', 'headers', {
+          'HTTP-Referer': 'https://example.com',
+          'X-Title': 'llm_dart demo',
+        })
         .apiKey(apiKey)
         .model('anthropic/claude-3.5-sonnet')
         .temperature(0.3)

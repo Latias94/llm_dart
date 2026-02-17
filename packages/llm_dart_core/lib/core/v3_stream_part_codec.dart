@@ -159,8 +159,7 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
               timestamp: timestampRaw != null
                   ? _decodeV3Timestamp(timestampRaw)
                   : null,
-              modelId:
-                  (modelId != null && modelId.isNotEmpty) ? modelId : null,
+              modelId: (modelId != null && modelId.isNotEmpty) ? modelId : null,
               providerMetadata: providerMetadata,
               raw: _asStringKeyedMap(obj['raw']),
             ),
@@ -376,8 +375,8 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
             LLMProviderToolApprovalRequestPart(
               approvalId: approvalId,
               toolCallId: toolCallId,
-              toolName: remembered?.toolName ?? 'unknown',
-              input: remembered?.input ??
+              toolName: remembered.toolName,
+              input: remembered.input ??
                   (fallbackInput != null && fallbackInput.isNotEmpty
                       ? _decodeJsonIfPossible(fallbackInput)
                       : null),

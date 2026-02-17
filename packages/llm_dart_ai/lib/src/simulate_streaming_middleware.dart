@@ -1,5 +1,3 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
-
 import 'middleware.dart';
 
 /// Enables best-effort streaming simulation for non-streaming models.

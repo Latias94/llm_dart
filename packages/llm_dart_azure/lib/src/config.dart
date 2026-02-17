@@ -33,8 +33,8 @@ class AzureOpenAIConfig extends OpenAICompatibleConfig
   final List<OpenAIBuiltInTool>? builtInTools;
 
   const AzureOpenAIConfig({
-    String providerId = azureProviderId,
-    String providerName = 'Azure OpenAI',
+    super.providerId = azureProviderId,
+    super.providerName = 'Azure OpenAI',
     required super.apiKey,
     required super.baseUrl,
     required super.model,
@@ -62,10 +62,7 @@ class AzureOpenAIConfig extends OpenAICompatibleConfig
     super.user,
     super.serviceTier,
     super.originalConfig,
-  }) : super(
-          providerId: providerId,
-          providerName: providerName,
-        );
+  });
 
   @override
   T? getProviderOption<T>(String key) {
@@ -78,7 +75,8 @@ class AzureOpenAIConfig extends OpenAICompatibleConfig
     // Azure provider options to keep escape hatches ergonomic.
     final original = originalConfig;
     if (original != null && providerId == azureChatProviderId) {
-      return readProviderOption<T>(original.providerOptions, azureProviderId, key);
+      return readProviderOption<T>(
+          original.providerOptions, azureProviderId, key);
     }
 
     return null;

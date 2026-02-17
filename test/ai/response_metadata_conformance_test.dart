@@ -57,7 +57,7 @@ void main() {
           const LLMTextDeltaPart('ok'),
           const LLMTextEndPart('ok'),
           const LLMFinishPart(_FakeChatResponse(text: 'ok')),
-          LLMResponseMetadataPart(id: 'resp_1', model: 'm'),
+          LLMResponseMetadataPart(id: 'resp_1', modelId: 'm'),
           const LLMProviderMetadataPart({
             'openai': {'id': 'resp_1'}
           }),
@@ -86,7 +86,7 @@ void main() {
       final model = _FakePartsModel(
         Stream<LLMStreamPart>.fromIterable([
           LLMResponseMetadataPart(id: 'resp_1'),
-          LLMResponseMetadataPart(model: 'm1'),
+          LLMResponseMetadataPart(modelId: 'm1'),
           const LLMTextDeltaPart('ok'),
           const LLMFinishPart(_FakeChatResponse(text: 'ok')),
         ]),
@@ -100,15 +100,15 @@ void main() {
       final metas = parts.whereType<LLMResponseMetadataPart>().toList();
       expect(metas, hasLength(1));
       expect(metas.single.id, equals('resp_1'));
-      expect(metas.single.model, equals('m1'));
+      expect(metas.single.modelId, equals('m1'));
     });
 
     test('drops additional response-metadata parts later in stream', () async {
       final model = _FakePartsModel(
         Stream<LLMStreamPart>.fromIterable([
-          LLMResponseMetadataPart(id: 'resp_1', model: 'm1'),
+          LLMResponseMetadataPart(id: 'resp_1', modelId: 'm1'),
           const LLMTextDeltaPart('ok'),
-          LLMResponseMetadataPart(id: 'resp_2', model: 'm2'),
+          LLMResponseMetadataPart(id: 'resp_2', modelId: 'm2'),
           const LLMFinishPart(_FakeChatResponse(text: 'ok')),
         ]),
       );
@@ -121,7 +121,7 @@ void main() {
       final metas = parts.whereType<LLMResponseMetadataPart>().toList();
       expect(metas, hasLength(1));
       expect(metas.single.id, equals('resp_1'));
-      expect(metas.single.model, equals('m1'));
+      expect(metas.single.modelId, equals('m1'));
     });
   });
 

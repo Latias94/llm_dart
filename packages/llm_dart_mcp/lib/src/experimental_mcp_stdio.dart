@@ -50,6 +50,9 @@ class ExperimentalMcpStdioConnection implements ExperimentalMcpConnection {
   @override
   mcp.Client get experimentalClient => _client;
 
+  /// Underlying MCP transport. Exposed for advanced usage.
+  mcp.StdioClientTransport get experimentalTransport => _transport;
+
   @override
   String? get serverLabel => config.serverLabel;
 

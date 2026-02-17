@@ -1,5 +1,4 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
 
 void main() {

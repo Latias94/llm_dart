@@ -59,13 +59,15 @@ PromptPart _contentToPromptPart(mcp.Content content) {
     case mcp.ImageContent(:final data, :final mimeType):
       final bytes = base64Decode(data);
       final mime = mimeType.toLowerCase();
-      if (mime == 'image/png')
+      if (mime == 'image/png') {
         return ImagePart(mime: ImageMime.png, data: bytes);
+      }
       if (mime == 'image/jpeg') {
         return ImagePart(mime: ImageMime.jpeg, data: bytes);
       }
-      if (mime == 'image/gif')
+      if (mime == 'image/gif') {
         return ImagePart(mime: ImageMime.gif, data: bytes);
+      }
       if (mime == 'image/webp') {
         return ImagePart(mime: ImageMime.webp, data: bytes);
       }

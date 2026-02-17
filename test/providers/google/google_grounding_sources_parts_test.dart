@@ -24,7 +24,7 @@ void main() {
 
       final responseMetadata =
           parts.whereType<LLMResponseMetadataPart>().single;
-      expect(responseMetadata.model, equals('gemini-2.5-flash'));
+      expect(responseMetadata.modelId, equals('gemini-2.5-flash'));
       expect(
         parts.indexOf(responseMetadata),
         lessThan(parts.indexWhere((p) => p is LLMSourceUrlPart)),

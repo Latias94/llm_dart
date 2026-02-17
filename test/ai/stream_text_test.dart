@@ -21,11 +21,11 @@ class _FakeChatResponse implements ChatResponse {
 
   const _FakeChatResponse({
     this.text,
-    this.thinking,
-    this.toolCalls,
     this.usage,
     Map<String, dynamic>? providerMetadata,
-  }) : _providerMetadata = providerMetadata;
+  })  : thinking = null,
+        toolCalls = null,
+        _providerMetadata = providerMetadata;
 
   @override
   Map<String, dynamic>? get providerMetadata => _providerMetadata;
@@ -38,8 +38,6 @@ class _FakeChatResponseWithFinishReason extends _FakeChatResponse
 
   const _FakeChatResponseWithFinishReason({
     super.text,
-    super.thinking,
-    super.toolCalls,
     super.usage,
     super.providerMetadata,
     this.finishReason,

@@ -19,10 +19,9 @@ class _TestChatResponse extends ChatResponse {
 
   _TestChatResponse({
     this.text,
-    this.toolCalls,
-    this.usage,
-    this.providerMetadata,
-  });
+  })  : toolCalls = null,
+        usage = null,
+        providerMetadata = null;
 }
 
 List<Map<String, Object?>> _decodeSseChunks(List<String> sseLines) {

@@ -328,7 +328,7 @@ class OpenAIChat
                       createdSeconds * 1000,
                       isUtc: true,
                     ),
-              model: model,
+              modelId: model,
               headers: responseHeaders.isEmpty ? null : responseHeaders,
               systemFingerprint: systemFingerprint,
               raw: raw.isEmpty ? null : raw,
@@ -1105,7 +1105,7 @@ class OpenAIChat
         ? LLMResponseMetadataPart(
             id: id,
             timestamp: timestamp,
-            model: model,
+            modelId: model,
             headers: headers,
             body: responseData,
             systemFingerprint:
@@ -1380,9 +1380,17 @@ class OpenAIChatResponse
       if (finishReason != null) 'finishReason': finishReason,
       if (isXai && citations != null) 'citations': citations,
     };
+
+    // AI SDK parity: expose providerMetadata at both the base provider id key
+    // (e.g. `openai`) and the capability namespace key (e.g. `openai.chat`).
+    //
+    // Some call sites set providerId to the capability namespace already
+    // (e.g. `openai.chat`). Avoid producing `openai.chat.chat`.
+    final baseKey = providerId.split('.').first;
+    final chatKey = providerId.contains('.') ? providerId : '$providerId.chat';
     return {
-      providerId: payload,
-      '$providerId.chat': payload,
+      baseKey: payload,
+      chatKey: payload,
     };
   }
 

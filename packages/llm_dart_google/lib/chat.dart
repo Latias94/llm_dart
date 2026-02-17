@@ -578,7 +578,7 @@ class GoogleChat
             if (!didEmitResponseMetadata) {
               didEmitResponseMetadata = true;
               yield LLMResponseMetadataPart(
-                model: modelVersion,
+                modelId: modelVersion,
                 headers: responseHeaders.isEmpty ? null : responseHeaders,
                 raw: {'modelVersion': modelVersion},
               );
@@ -1155,7 +1155,7 @@ class GoogleChat
 
     final responseMetadata = (model != null || headers != null)
         ? LLMResponseMetadataPart(
-            model: model,
+            modelId: model,
             headers: headers,
             body: responseData,
             raw: {
@@ -1698,9 +1698,6 @@ class GoogleChat
     final providerToolsEnabled =
         (effectiveProviderTools ?? const <ProviderTool>[])
             .any(_isProviderToolEnabled);
-    final googleSearchEnabledViaProviderTools =
-        (effectiveProviderTools ?? const <ProviderTool>[]).any(
-            (t) => t.id == 'google.google_search' && _isProviderToolEnabled(t));
     final hasProviderDefinedTools = providerToolsEnabled;
 
     if (hasProviderDefinedTools) {

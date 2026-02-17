@@ -53,7 +53,6 @@ class AnthropicClient {
     final canonicalByLower = <String, String>{};
     for (final entry in dio.options.headers.entries) {
       final key = entry.key;
-      if (key is! String) continue;
       final lower = key.trim().toLowerCase();
       if (lower.isEmpty) continue;
       canonicalByLower.putIfAbsent(lower, () => key);

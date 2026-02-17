@@ -51,11 +51,11 @@ void main() async {
 
       case LLMResponseMetadataPart(
           id: final id,
-          model: final model,
+          modelId: final modelId,
           status: final status,
         ):
         stdout.writeln(
-          '[response metadata] id=${id ?? '-'} model=${model ?? '-'} status=${status ?? '-'}',
+          '[response metadata] id=${id ?? '-'} model=${modelId ?? '-'} status=${status ?? '-'}',
         );
         break;
 

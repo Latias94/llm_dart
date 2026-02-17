@@ -700,26 +700,6 @@ ImageMime? _imageMimeFromMediaType(String mediaType) => switch (mediaType) {
       _ => null,
     };
 
-Object? _decodeJsonIfPossible(String content) {
-  final trimmed = content.trim();
-  if (trimmed.isEmpty) return '';
-
-  if (!(trimmed.startsWith('{') ||
-      trimmed.startsWith('[') ||
-      trimmed == 'null' ||
-      trimmed == 'true' ||
-      trimmed == 'false' ||
-      num.tryParse(trimmed) != null)) {
-    return content;
-  }
-
-  try {
-    return jsonDecode(trimmed);
-  } catch (_) {
-    return content;
-  }
-}
-
 Map<String, dynamic>? _normalizeAndValidateToolResultOutput(Object? parsed) {
   if (parsed == null) return null;
 
@@ -1042,19 +1022,4 @@ Object? _normalizeJsonLike(Object? value) {
     return value.map((k, v) => MapEntry(k.toString(), _normalizeJsonLike(v)));
   }
   return value.toString();
-}
-
-ProviderOptions _mergeProviderOptions(
-  ProviderOptions a,
-  ProviderOptions b,
-) {
-  if (a.isEmpty) return b;
-  if (b.isEmpty) return a;
-
-  final merged = <String, Map<String, dynamic>>{...a};
-  for (final entry in b.entries) {
-    final existing = merged[entry.key];
-    merged[entry.key] = {...?existing, ...entry.value};
-  }
-  return merged;
 }

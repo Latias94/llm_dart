@@ -102,7 +102,7 @@ Future<ExperimentalGenerateVideoResult> experimentalGenerateVideo({
         cancelToken: cancelToken,
       );
 
-      final usable = (String? type) =>
+      bool usable(String? type) =>
           type != null &&
           type.isNotEmpty &&
           type.toLowerCase() != 'application/octet-stream';
@@ -155,7 +155,7 @@ Map<String, dynamic>? _mergeProviderMetadata(
       }
 
       final existingVideos = merged['videos'];
-      final newVideos = (bv as Map)['videos'];
+      final newVideos = (bv)['videos'];
       if (existingVideos is List && newVideos is List) {
         merged['videos'] = [...existingVideos, ...newVideos];
       }

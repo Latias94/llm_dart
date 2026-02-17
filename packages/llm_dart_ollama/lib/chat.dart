@@ -206,7 +206,7 @@ class OllamaChat
             if (model.isNotEmpty) {
               didEmitResponseMetadata = true;
               yield LLMResponseMetadataPart(
-                model: model,
+                modelId: model,
                 headers: responseHeaders.isEmpty ? null : responseHeaders,
                 raw: {'model': model},
               );
@@ -470,7 +470,7 @@ class OllamaChat
 
     final responseMetadata = (model.isNotEmpty || headers != null)
         ? LLMResponseMetadataPart(
-            model: model.isNotEmpty ? model : null,
+            modelId: model.isNotEmpty ? model : null,
             headers: headers,
             body: responseData,
             raw: {'model': model},

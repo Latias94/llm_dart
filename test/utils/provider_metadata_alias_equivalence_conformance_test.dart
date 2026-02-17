@@ -26,7 +26,7 @@ void _expectAliasesMirrorCanonical(
 
 void main() {
   group('providerMetadata alias equivalence (conformance)', () {
-    test('OpenAI Chat Completions emits canonical openai.chat', () async {
+    test('OpenAI Chat Completions emits openai + openai.chat aliases', () async {
       final config = OpenAIConfig(
         providerId: 'openai.chat',
         providerName: 'OpenAI (Chat)',
@@ -77,8 +77,10 @@ void main() {
 
       final meta = finish.response.providerMetadata;
       expect(meta, isNotNull);
-      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'openai.chat');
-      expect(meta.containsKey('openai'), isFalse);
+      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'openai');
+      expect(meta.containsKey('openai.chat'), isTrue);
+      expect(meta.containsKey('openai.chat.chat'), isFalse);
+      expect(meta['openai.chat'], equals(meta['openai']));
     });
 
     test('OpenAI provider emits openai.responses alias equal to openai',

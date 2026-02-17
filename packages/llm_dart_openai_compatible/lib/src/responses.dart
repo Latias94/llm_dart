@@ -498,7 +498,7 @@ class OpenAIResponses
                           createdAtSeconds * 1000,
                           isUtc: true,
                         ),
-                  model: model,
+                  modelId: model,
                   headers: responseHeaders.isEmpty ? null : responseHeaders,
                   status: status,
                   systemFingerprint: systemFingerprint,
@@ -1828,7 +1828,7 @@ class OpenAIResponses
                             createdAtSeconds * 1000,
                             isUtc: true,
                           ),
-                    model: model,
+                    modelId: model,
                     headers: responseHeaders.isEmpty ? null : responseHeaders,
                     status: status,
                     systemFingerprint: systemFingerprint,
@@ -3062,7 +3062,7 @@ class OpenAIResponses
             ? LLMResponseMetadataPart(
                 id: id,
                 timestamp: timestamp,
-                model: model,
+                modelId: model,
                 headers: headers,
                 body: responseData,
               )

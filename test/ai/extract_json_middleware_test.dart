@@ -88,7 +88,7 @@ void main() {
     test('uses custom transform', () async {
       final model = wrapLanguageModelWithMiddleware(
         _FakeNonStreamingModel(
-          const _FakeChatResponse(text: 'PREFIX{\"value\":1}SUFFIX'),
+          const _FakeChatResponse(text: 'PREFIX{"value":1}SUFFIX'),
         ),
         middlewares: [
           ExtractJsonMiddleware(

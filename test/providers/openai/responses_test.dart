@@ -47,9 +47,8 @@ void main() {
 
     test('should build provider with Responses API using builder', () async {
       final provider = await ai()
-          .openai((openai) => openai
-              .webSearchTool()
-              .fileSearchTool(vectorStoreIds: ['vs_123']))
+          .openai((openai) =>
+              openai.webSearchTool().fileSearchTool(vectorStoreIds: ['vs_123']))
           .apiKey('test-key')
           .model('gpt-4o')
           .build();

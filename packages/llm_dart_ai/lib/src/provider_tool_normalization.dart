@@ -156,7 +156,8 @@ import 'package:llm_dart_core/llm_dart_core.dart';
     }
 
     if (!supportedIds.contains(tool.id)) {
-      warnings.add(LLMUnsupportedWarning(feature: 'provider-defined tool ${tool.id}'));
+      warnings.add(
+          LLMUnsupportedWarning(feature: 'provider-defined tool ${tool.id}'));
       continue;
     }
 

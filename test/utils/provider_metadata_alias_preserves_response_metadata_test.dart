@@ -48,7 +48,7 @@ void main() {
     test('preserves responseMetadata and finishReason', () {
       final meta = LLMResponseMetadataPart(
         id: 'resp_1',
-        model: 'gpt-test',
+        modelId: 'gpt-test',
         headers: const {'x-test': '1'},
       );
 

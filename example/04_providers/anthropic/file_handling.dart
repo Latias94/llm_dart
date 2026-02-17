@@ -209,7 +209,7 @@ from 3.2 to 4.7 out of 5.
       promptIr: Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart(
                 'Please analyze this project report and provide insights:',
@@ -274,7 +274,7 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
         promptIr: Prompt(
           messages: [
             PromptMessage(
-              role: ChatRole.user,
+              role: PromptRole.user,
               parts: [
                 const TextPart(
                   'Please analyze this image and describe what you see:',
@@ -368,7 +368,7 @@ advantages and operational improvements for modern businesses.
       promptIr: Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart(
                 'Please analyze this research paper and provide a comprehensive review:',
@@ -456,7 +456,7 @@ Q3 Sales Report:
       promptIr: Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart(
                 'Please analyze these quarterly sales reports and provide insights:',
@@ -555,7 +555,7 @@ Company Policy: Remote Work Guidelines
       promptIr: Prompt(
         messages: [
           PromptMessage(
-            role: ChatRole.user,
+            role: PromptRole.user,
             parts: [
               const TextPart(
                 'Please compare these two versions of our remote work policy:',

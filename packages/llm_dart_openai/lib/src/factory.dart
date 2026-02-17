@@ -19,7 +19,8 @@ const String openaiChatProviderId = 'openai.chat';
 ///   not override an existing provider registered under the same id.
 /// - If [replace] is true, the existing registration (if any) is replaced.
 void registerOpenAI({bool replace = false}) {
-  final responsesRegistered = LLMProviderRegistry.isRegistered(openaiProviderId);
+  final responsesRegistered =
+      LLMProviderRegistry.isRegistered(openaiProviderId);
   final chatRegistered = LLMProviderRegistry.isRegistered(openaiChatProviderId);
 
   if (!replace && responsesRegistered && chatRegistered) return;
@@ -173,7 +174,8 @@ class OpenAIProviderFactory
 
     return OpenAIConfig(
       providerId: providerId,
-      providerName: providerId == openaiChatProviderId ? 'OpenAI (Chat)' : 'OpenAI',
+      providerName:
+          providerId == openaiChatProviderId ? 'OpenAI (Chat)' : 'OpenAI',
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
       model: config.model,
@@ -406,13 +408,13 @@ class OpenAIProviderFactory
 
     final result = <OpenAIBuiltInTool>[];
 
-    int? _asInt(dynamic value) {
+    int? asInt(dynamic value) {
       if (value is int) return value;
       if (value is num) return value.toInt();
       return null;
     }
 
-    List<String>? _asStringList(dynamic value) {
+    List<String>? asStringList(dynamic value) {
       if (value is List<String>) return value;
       if (value is List) return value.whereType<String>().toList();
       return null;
@@ -447,8 +449,8 @@ class OpenAIProviderFactory
           final filters = tool.options['filters'];
           List<String>? allowedDomains;
           if (filters is Map) {
-            allowedDomains = _asStringList(filters['allowed_domains']) ??
-                _asStringList(filters['allowedDomains']);
+            allowedDomains = asStringList(filters['allowed_domains']) ??
+                asStringList(filters['allowedDomains']);
           }
 
           final userLocation =
@@ -499,9 +501,8 @@ class OpenAIProviderFactory
             parameters.addAll(Map<String, dynamic>.from(explicitParameters));
           }
 
-          final maxNumResults =
-              _asInt(tool.options['max_num_results']) ??
-                  _asInt(tool.options['maxNumResults']);
+          final maxNumResults = asInt(tool.options['max_num_results']) ??
+              asInt(tool.options['maxNumResults']);
           if (maxNumResults != null) {
             parameters['max_num_results'] = maxNumResults;
           }
@@ -511,8 +512,8 @@ class OpenAIProviderFactory
               tool.options['ranking'];
           if (ranking is Map) {
             final ranker = ranking['ranker'];
-            final scoreThreshold = ranking['score_threshold'] ??
-                ranking['scoreThreshold'];
+            final scoreThreshold =
+                ranking['score_threshold'] ?? ranking['scoreThreshold'];
             final rankingOptions = <String, dynamic>{};
             if (ranker is String && ranker.isNotEmpty) {
               rankingOptions['ranker'] = ranker;
@@ -608,9 +609,8 @@ class OpenAIProviderFactory
           } else if (rawContainer is String) {
             container = rawContainer;
           } else if (rawContainer is Map) {
-            final fileIds =
-                _asStringList(rawContainer['file_ids']) ??
-                    _asStringList(rawContainer['fileIds']);
+            final fileIds = asStringList(rawContainer['file_ids']) ??
+                asStringList(rawContainer['fileIds']);
             container = <String, Object?>{
               'type': 'auto',
               if (fileIds != null && fileIds.isNotEmpty) 'file_ids': fileIds,
@@ -651,10 +651,11 @@ class OpenAIProviderFactory
           mapKey('outputFormat', 'output_format');
           mapKey('size', 'size');
 
-          final inputImageMask =
-              tool.options['input_image_mask'] ?? tool.options['inputImageMask'];
+          final inputImageMask = tool.options['input_image_mask'] ??
+              tool.options['inputImageMask'];
           if (inputImageMask is Map) {
-            final fileId = inputImageMask['file_id'] ?? inputImageMask['fileId'];
+            final fileId =
+                inputImageMask['file_id'] ?? inputImageMask['fileId'];
             final imageUrl =
                 inputImageMask['image_url'] ?? inputImageMask['imageUrl'];
             final m = <String, dynamic>{};
@@ -710,7 +711,7 @@ class OpenAIProviderFactory
           } else if (allowedTools is Map) {
             final readOnly =
                 allowedTools['read_only'] ?? allowedTools['readOnly'];
-            final toolNames = _asStringList(
+            final toolNames = asStringList(
               allowedTools['tool_names'] ?? allowedTools['toolNames'],
             );
             p['allowed_tools'] = <String, dynamic>{
@@ -726,7 +727,7 @@ class OpenAIProviderFactory
           } else if (requireApproval is Map) {
             final never = requireApproval['never'];
             if (never is Map) {
-              final toolNames = _asStringList(
+              final toolNames = asStringList(
                 never['tool_names'] ?? never['toolNames'],
               );
               p['require_approval'] = {
@@ -788,7 +789,8 @@ class OpenAIChatProviderFactory extends OpenAIProviderFactory {
   String get displayName => 'OpenAI (Chat Completions)';
 
   @override
-  String get description => 'OpenAI GPT models via Chat Completions (explicit).';
+  String get description =>
+      'OpenAI GPT models via Chat Completions (explicit).';
 
   @override
   Set<LLMCapability> get supportedCapabilities => {

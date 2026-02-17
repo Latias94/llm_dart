@@ -140,8 +140,9 @@ Future<void> demonstrateTypeSafeBuilding() async {
       print('         Type: ${embeddingProvider.runtimeType}');
 
       // Test embedding functionality
-      final embeddings = await embeddingProvider.embed(['Hello world']);
-      print('         🔢 Generated embeddings: ${embeddings.length} vectors');
+      final embeddingResponse = await embeddingProvider.embed(['Hello world']);
+      print(
+          '         🔢 Generated embeddings: ${embeddingResponse.embeddings.length} vectors');
 
       // Model listing is provider-specific (Vercel-style: not part of standard surface)
       print('      📋 Building provider (for model discovery)...');
@@ -289,14 +290,16 @@ Future<void> demonstratePracticalUsage() async {
           .buildEmbedding();
 
       // Direct usage without type casting
-      final embeddings = await embeddingProvider.embed([
+      final embeddingResponse = await embeddingProvider.embed([
         'The new capability factory methods are great',
         'Type safety is important in software development',
         'Cats are cute animals',
       ]);
 
-      print('         ✅ Generated ${embeddings.length} embeddings');
-      print('         📏 Vector dimensions: ${embeddings.first.length}');
+      print(
+          '         ✅ Generated ${embeddingResponse.embeddings.length} embeddings');
+      print(
+          '         📏 Vector dimensions: ${embeddingResponse.embeddings.first.length}');
     } catch (e) {
       print('         ❌ Embedding generation failed: $e');
     }

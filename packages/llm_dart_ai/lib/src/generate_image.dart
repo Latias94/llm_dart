@@ -64,7 +64,7 @@ Future<GenerateImageResult> generateImage({
       mergedModel ??= r.model;
       mergedRevisedPrompt ??= r.revisedPrompt;
       if (r.usage != null) {
-        totalUsage = totalUsage == null ? r.usage : (totalUsage! + r.usage!);
+        totalUsage = totalUsage == null ? r.usage : (totalUsage + r.usage!);
       }
     }
 
@@ -248,7 +248,7 @@ Map<String, dynamic>? _mergeProviderMetadata(
       }
 
       final existingImages = merged['images'];
-      final newImages = (bv as Map)['images'];
+      final newImages = (bv)['images'];
       if (existingImages is List && newImages is List) {
         merged['images'] = [...existingImages, ...newImages];
       }

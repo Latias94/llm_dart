@@ -69,7 +69,7 @@ Stream<Map<String, Object?>> handleUiMessageStreamFinish({
   var chain = Future<void>.value();
 
   bool isContinuation() =>
-      lastMessage != null && state.message.id == lastMessage!.id;
+      lastMessage != null && state.message.id == lastMessage.id;
 
   List<UIMessage> buildMessagesSnapshot() {
     if (!isContinuation()) {

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
@@ -111,7 +110,7 @@ Future<void> main() async {
         stdout.writeln('args: ${toolCall.function.arguments}');
       case LLMToolResultPart(:final result):
         stdout.writeln('\n[tool_result] ${result.toolCallId}');
-        stdout.writeln(result.content);
+        stdout.writeln(result.result);
       case LLMFinishPart(:final response):
         stdout.writeln('\n\n--- done ---');
         stdout.writeln('text: ${response.text}');

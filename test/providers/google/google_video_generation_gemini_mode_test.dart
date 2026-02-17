@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 
 import 'package:llm_dart/llm_dart.dart';
-import 'package:llm_dart_google/llm_dart_google.dart';
 import 'package:llm_dart_google/model_path.dart';
 import 'package:test/test.dart';
 

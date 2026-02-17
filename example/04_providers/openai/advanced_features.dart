@@ -392,7 +392,7 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
           print('\n\n🔧 Tool call started: ${toolCall.function.name}');
           break;
         case LLMToolResultPart(result: final result):
-          print('\n\n🧰 Tool result: ${result.content}');
+          print('\n\n🧰 Tool result: ${result.result}');
           break;
         case LLMFinishPart(response: final response):
           print('\n\n✅ Streaming completed');

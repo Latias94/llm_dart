@@ -64,18 +64,21 @@ class XAIImages
     if (request.negativePrompt != null) {
       warnings.add(const LLMUnsupportedWarning(feature: 'negativePrompt'));
     }
-    if (request.steps != null)
+    if (request.steps != null) {
       warnings.add(const LLMUnsupportedWarning(feature: 'steps'));
+    }
     if (request.guidanceScale != null) {
       warnings.add(const LLMUnsupportedWarning(feature: 'guidanceScale'));
     }
     if (request.enhancePrompt != null) {
       warnings.add(const LLMUnsupportedWarning(feature: 'enhancePrompt'));
     }
-    if (request.style != null)
+    if (request.style != null) {
       warnings.add(const LLMUnsupportedWarning(feature: 'style'));
-    if (request.quality != null)
+    }
+    if (request.quality != null) {
       warnings.add(const LLMUnsupportedWarning(feature: 'quality'));
+    }
 
     final baseBody = <String, dynamic>{
       'model': modelUsed,

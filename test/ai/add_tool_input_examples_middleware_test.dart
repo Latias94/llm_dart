@@ -82,8 +82,8 @@ void main() {
       final transformed = inner.lastTools!.single;
       expect(transformed.inputExamples, isNull);
       expect(transformed.function.description, contains('Input Examples:'));
-      expect(transformed.function.description, contains('{\"foo\":\"bar\"}'));
-      expect(transformed.function.description, contains('{\"x\":1}'));
+      expect(transformed.function.description, contains('{"foo":"bar"}'));
+      expect(transformed.function.description, contains('{"x":1}'));
     });
 
     test('keeps inputExamples when remove=false', () async {

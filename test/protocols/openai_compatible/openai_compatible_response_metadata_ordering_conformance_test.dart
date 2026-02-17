@@ -99,7 +99,7 @@ void main() {
 
       final meta = parts[metaIndex] as LLMResponseMetadataPart;
       expect(meta.id, equals('chatcmpl_1'));
-      expect(meta.model, equals('gpt-4o-mini'));
+      expect(meta.modelId, equals('gpt-4o-mini'));
       expect(meta.systemFingerprint, equals('fp_1'));
       expect(meta.timestamp, isNotNull);
     });

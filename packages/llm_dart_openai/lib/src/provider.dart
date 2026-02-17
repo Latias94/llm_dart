@@ -470,12 +470,6 @@ class OpenAIProvider
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
-    if (_embeddings is! EmbeddingCallOptionsCapability) {
-      throw const InvalidRequestError(
-        'This provider does not support call-level overrides (headers/body) for embeddings.',
-      );
-    }
-
     return (_embeddings as EmbeddingCallOptionsCapability).embedWithCallOptions(
       input,
       callOptions: callOptions,
@@ -499,12 +493,6 @@ class OpenAIProvider
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
-    if (_audio is! TextToSpeechCallOptionsCapability) {
-      throw const InvalidRequestError(
-        'This provider does not support call-level overrides (headers/body) for text-to-speech.',
-      );
-    }
-
     return (_audio as TextToSpeechCallOptionsCapability)
         .textToSpeechWithCallOptions(
       request,
@@ -532,12 +520,6 @@ class OpenAIProvider
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
-    if (_audio is! SpeechToTextCallOptionsCapability) {
-      throw const InvalidRequestError(
-        'This provider does not support call-level overrides (headers/body) for transcription.',
-      );
-    }
-
     return (_audio as SpeechToTextCallOptionsCapability)
         .speechToTextWithCallOptions(
       request,
@@ -560,12 +542,6 @@ class OpenAIProvider
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
-    if (_audio is! AudioTranslationCallOptionsCapability) {
-      throw const InvalidRequestError(
-        'This provider does not support call-level overrides (headers/body) for audio translation.',
-      );
-    }
-
     return (_audio as AudioTranslationCallOptionsCapability)
         .translateAudioWithCallOptions(
       request,
@@ -592,12 +568,6 @@ class OpenAIProvider
     ImageGenerationRequest request, {
     required LLMCallOptions callOptions,
   }) {
-    if (_images is! ImageGenerationCallOptionsCapability) {
-      throw const InvalidRequestError(
-        'This provider does not support call-level overrides (headers/body) for image generation.',
-      );
-    }
-
     return (_images as ImageGenerationCallOptionsCapability)
         .generateImagesWithCallOptions(
       request,
@@ -615,12 +585,6 @@ class OpenAIProvider
     ImageEditRequest request, {
     required LLMCallOptions callOptions,
   }) {
-    if (_images is! ImageGenerationCallOptionsCapability) {
-      throw const InvalidRequestError(
-        'This provider does not support call-level overrides (headers/body) for image generation.',
-      );
-    }
-
     return (_images as ImageGenerationCallOptionsCapability)
         .editImageWithCallOptions(
       request,
@@ -639,12 +603,6 @@ class OpenAIProvider
     ImageVariationRequest request, {
     required LLMCallOptions callOptions,
   }) {
-    if (_images is! ImageGenerationCallOptionsCapability) {
-      throw const InvalidRequestError(
-        'This provider does not support call-level overrides (headers/body) for image generation.',
-      );
-    }
-
     return (_images as ImageGenerationCallOptionsCapability)
         .createVariationWithCallOptions(
       request,

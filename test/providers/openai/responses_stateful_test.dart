@@ -26,11 +26,8 @@ void main() {
     });
 
     test('should implement OpenAIResponsesCapability interface', () async {
-      final provider = await ai()
-          .openai()
-          .apiKey('test-key')
-          .model('gpt-4o')
-          .build();
+      final provider =
+          await ai().openai().apiKey('test-key').model('gpt-4o').build();
 
       final openaiProvider = provider as OpenAIProvider;
       final responses = OpenAIResponses(
@@ -42,11 +39,8 @@ void main() {
 
     test('should have all required OpenAIResponsesCapability methods',
         () async {
-      final provider = await ai()
-          .openai()
-          .apiKey('test-key')
-          .model('gpt-4o')
-          .build();
+      final provider =
+          await ai().openai().apiKey('test-key').model('gpt-4o').build();
 
       final openaiProvider = provider as OpenAIProvider;
       final responses = OpenAIResponses(
@@ -64,11 +58,8 @@ void main() {
     });
 
     test('should support basic OpenAIResponsesCapability methods', () async {
-      final provider = await ai()
-          .openai()
-          .apiKey('test-key')
-          .model('gpt-4o')
-          .build();
+      final provider =
+          await ai().openai().apiKey('test-key').model('gpt-4o').build();
 
       final openaiProvider = provider as OpenAIProvider;
       final responses = OpenAIResponses(

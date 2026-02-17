@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_core/utils/tool_call_aggregator.dart';
 
 import 'generate_object.dart';
 import 'prompt_input.dart';
@@ -237,7 +236,7 @@ class StreamObjectResult {
       return LLMResponseMetadataPart(
         id: update.id ?? base.id,
         timestamp: update.timestamp ?? base.timestamp,
-        model: update.model ?? base.model,
+        modelId: update.modelId ?? base.modelId,
         headers: mergeHeaders(base.headers, update.headers),
         body: update.body ?? base.body,
         status: update.status ?? base.status,
@@ -477,252 +476,263 @@ class StreamObjectResult {
           if (!finalResultCompleter.isCompleted) {
             finalResultCompleter.completeError(err);
           }
-          return;
         }
 
-        final finish = finishPart;
-        if (finish == null) {
-          final blocked = providerToolApprovalBlockedState;
-          final err = blocked ??
-              const GenericError('Stream finished without a finish part.');
-          if (!warningsCompleter.isCompleted) {
-            warningsCompleter.complete(const <LLMWarning>[]);
-          }
-          if (!responseMetadataCompleter.isCompleted) {
-            responseMetadataCompleter.complete(
-              currentResponseMetadata,
-            );
-          }
-          if (!requestMetadataCompleter.isCompleted) {
-            requestMetadataCompleter.complete(lastRequestMetadata);
-          }
-          if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
-            providerToolApprovalBlockedStateCompleter.complete(blocked);
-          }
-
-          if (blocked != null) {
-            final partialText = objectJsonTextBuffer.toString();
-            if (!textCompleter.isCompleted) textCompleter.complete(partialText);
-
-            Map<String, dynamic> partialObject = const <String, dynamic>{};
-            try {
-              final parsed = _tryParseJsonObject(partialText);
-              if (parsed != null) {
-                partialObject = output == StreamObjectOutput.array
-                    ? _normalizeArrayWrapperPartial(
-                        parsed,
-                        elementSchema: schema,
-                      )
-                    : parsed;
-              }
-            } catch (_) {
-              // best-effort
+        if (terminalError == null) {
+          final finish = finishPart;
+          if (finish == null) {
+            final blocked = providerToolApprovalBlockedState;
+            final err = blocked ??
+                const GenericError('Stream finished without a finish part.');
+            if (!warningsCompleter.isCompleted) {
+              warningsCompleter.complete(const <LLMWarning>[]);
+            }
+            if (!responseMetadataCompleter.isCompleted) {
+              responseMetadataCompleter.complete(
+                currentResponseMetadata,
+              );
+            }
+            if (!requestMetadataCompleter.isCompleted) {
+              requestMetadataCompleter.complete(lastRequestMetadata);
+            }
+            if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+              providerToolApprovalBlockedStateCompleter.complete(blocked);
             }
 
-            if (!objectCompleter.isCompleted)
-              objectCompleter.complete(
-                partialObject,
-              );
+            if (blocked != null) {
+              final partialText = objectJsonTextBuffer.toString();
+              if (!textCompleter.isCompleted) {
+                textCompleter.complete(partialText);
+              }
 
-            if (!elementsCompleter.isCompleted) {
-              if (output == StreamObjectOutput.array) {
-                final els = _extractElements(partialObject);
-                elementsCompleter.complete(els ?? const []);
-              } else {
-                elementsCompleter.completeError(
-                  UnsupportedError(
-                    'elements is only available when output == StreamObjectOutput.array',
+              Map<String, dynamic> partialObject = const <String, dynamic>{};
+              try {
+                final parsed = _tryParseJsonObject(partialText);
+                if (parsed != null) {
+                  partialObject = output == StreamObjectOutput.array
+                      ? _normalizeArrayWrapperPartial(
+                          parsed,
+                          elementSchema: schema,
+                        )
+                      : parsed;
+                }
+              } catch (_) {
+                // best-effort
+              }
+
+              if (!objectCompleter.isCompleted) {
+                objectCompleter.complete(
+                  partialObject,
+                );
+              }
+
+              if (!elementsCompleter.isCompleted) {
+                if (output == StreamObjectOutput.array) {
+                  final els = _extractElements(partialObject);
+                  elementsCompleter.complete(els ?? const []);
+                } else {
+                  elementsCompleter.completeError(
+                    UnsupportedError(
+                      'elements is only available when output == StreamObjectOutput.array',
+                    ),
+                  );
+                }
+              }
+
+              if (!usageCompleter.isCompleted) usageCompleter.complete(null);
+              if (!finishReasonCompleter.isCompleted) {
+                finishReasonCompleter.complete(null);
+              }
+              if (!providerMetadataCompleter.isCompleted) {
+                providerMetadataCompleter.complete(lastProviderMetadata);
+              }
+
+              if (!finalResultCompleter.isCompleted) {
+                final partialResponse = _PartialStreamResponse(
+                  text: textBuffer.toString(),
+                  providerMetadata: lastProviderMetadata,
+                );
+                finalResultCompleter.complete(
+                  GenerateObjectResult(
+                    object: partialObject,
+                    rawResponse: partialResponse,
+                    requestMetadata: lastRequestMetadata,
+                    responseMetadata: currentResponseMetadata,
+                    responseMessages:
+                        buildResponseMessagesBestEffort(partialResponse),
+                    responsePromptMessages:
+                        buildResponsePromptMessagesBestEffort(partialResponse),
                   ),
                 );
               }
-            }
-
-            if (!usageCompleter.isCompleted) usageCompleter.complete(null);
-            if (!finishReasonCompleter.isCompleted)
-              finishReasonCompleter.complete(null);
-            if (!providerMetadataCompleter.isCompleted) {
-              providerMetadataCompleter.complete(lastProviderMetadata);
-            }
-
-            if (!finalResultCompleter.isCompleted) {
-              final partialResponse = _PartialStreamResponse(
-                text: textBuffer.toString(),
-                providerMetadata: lastProviderMetadata,
-              );
-              finalResultCompleter.complete(
-                GenerateObjectResult(
-                  object: partialObject,
-                  rawResponse: partialResponse,
-                  requestMetadata: lastRequestMetadata,
-                  responseMetadata: currentResponseMetadata,
-                  responseMessages:
-                      buildResponseMessagesBestEffort(partialResponse),
-                  responsePromptMessages:
-                      buildResponsePromptMessagesBestEffort(partialResponse),
-                ),
-              );
-            }
-          } else {
-            if (!textCompleter.isCompleted) textCompleter.complete('');
-            if (!objectCompleter.isCompleted)
-              objectCompleter.completeError(err);
-            if (!elementsCompleter.isCompleted) {
-              elementsCompleter.completeError(err);
-            }
-            if (!usageCompleter.isCompleted) usageCompleter.complete(null);
-            if (!finishReasonCompleter.isCompleted)
-              finishReasonCompleter.complete(null);
-            if (!providerMetadataCompleter.isCompleted) {
-              providerMetadataCompleter.complete(lastProviderMetadata);
-            }
-            if (!finalResultCompleter.isCompleted)
-              finalResultCompleter.completeError(err);
-          }
-          return;
-        }
-
-        final response = finish.response;
-        final usage = finish.usage ?? response.usage;
-        final finishReason = finish.finishReason ??
-            (response is ChatResponseWithFinishReason
-                ? response.finishReason
-                : null);
-
-        usageCompleter.complete(usage);
-        finishReasonCompleter.complete(finishReason);
-        providerMetadataCompleter.complete(
-          response.providerMetadata ?? lastProviderMetadata,
-        );
-        if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
-          providerToolApprovalBlockedStateCompleter
-              .complete(providerToolApprovalBlockedState);
-        }
-
-        final didSeeTargetToolCall = targetToolCallIds.values.any((v) => v);
-        final didSeeTargetToolInput = targetToolInputIds.isNotEmpty;
-        if (finishReason?.unified == LLMUnifiedFinishReason.toolCalls &&
-            !didSeeTargetToolCall &&
-            !didSeeTargetToolInput) {
-          // Provider-native tool flows (e.g. provider tool approvals) can
-          // finish with `tool-calls` without ever producing the target
-          // return_object tool call. Treat this as a blocked/partial outcome
-          // rather than failing schema validation.
-          if (!warningsCompleter.isCompleted) {
-            warningsCompleter.complete(const <LLMWarning>[]);
-          }
-          if (!responseMetadataCompleter.isCompleted) {
-            responseMetadataCompleter.complete(currentResponseMetadata);
-          }
-          if (!requestMetadataCompleter.isCompleted) {
-            requestMetadataCompleter.complete(lastRequestMetadata);
-          }
-          if (!textCompleter.isCompleted) textCompleter.complete('');
-          if (!objectCompleter.isCompleted) {
-            objectCompleter.complete(const <String, dynamic>{});
-          }
-          if (!elementsCompleter.isCompleted) {
-            if (output == StreamObjectOutput.array) {
-              elementsCompleter.complete(const []);
             } else {
-              elementsCompleter.completeError(
-                UnsupportedError(
-                  'elements is only available when output == StreamObjectOutput.array',
-                ),
-              );
+              if (!textCompleter.isCompleted) textCompleter.complete('');
+              if (!objectCompleter.isCompleted) {
+                objectCompleter.completeError(err);
+              }
+              if (!elementsCompleter.isCompleted) {
+                elementsCompleter.completeError(err);
+              }
+              if (!usageCompleter.isCompleted) usageCompleter.complete(null);
+              if (!finishReasonCompleter.isCompleted) {
+                finishReasonCompleter.complete(null);
+              }
+              if (!providerMetadataCompleter.isCompleted) {
+                providerMetadataCompleter.complete(lastProviderMetadata);
+              }
+              if (!finalResultCompleter.isCompleted) {
+                finalResultCompleter.completeError(err);
+              }
             }
-          }
-          if (!finalResultCompleter.isCompleted) {
-            finalResultCompleter.complete(
-              GenerateObjectResult(
-                object: const <String, dynamic>{},
-                rawResponse: response,
-                requestMetadata: lastRequestMetadata,
-                responseMetadata: currentResponseMetadata,
-                responseMessages: buildResponseMessagesBestEffort(response),
-                responsePromptMessages:
-                    buildResponsePromptMessagesBestEffort(response),
-              ),
-            );
-          }
-          return;
-        }
-
-        try {
-          final resolved = _resolveFinalObjectAndText(
-            toolName: toolName,
-            toolCallAgg: toolCallAgg,
-            endedToolCalls: endedToolCalls,
-            toolInputNames: toolInputNames,
-            toolInputBuffers: toolInputBuffers,
-            endedToolInputs: endedToolInputs,
-            fallbackText: textBuffer.toString(),
-            output: output,
-          );
-
-          validateObjectOrThrow(resolved.object);
-
-          if (!warningsCompleter.isCompleted) {
-            warningsCompleter.complete(const <LLMWarning>[]);
-          }
-          if (!responseMetadataCompleter.isCompleted) {
-            responseMetadataCompleter.complete(currentResponseMetadata);
-          }
-          if (!requestMetadataCompleter.isCompleted) {
-            requestMetadataCompleter.complete(lastRequestMetadata);
-          }
-          textCompleter.complete(resolved.text);
-          objectCompleter.complete(resolved.object);
-
-          if (output == StreamObjectOutput.array) {
-            final els = _extractElements(resolved.object);
-            if (els == null) {
-              throw const InvalidRequestError(
-                'Array output requires an "elements" array in the generated object.',
-              );
-            }
-            elementsCompleter.complete(els);
           } else {
-            elementsCompleter.completeError(
-              UnsupportedError(
-                'elements is only available when output == StreamObjectOutput.array',
-              ),
-            );
-          }
+            final response = finish.response;
+            final usage = finish.usage ?? response.usage;
+            final finishReason = finish.finishReason ??
+                (response is ChatResponseWithFinishReason
+                    ? response.finishReason
+                    : null);
 
-          finalResultCompleter.complete(
-            GenerateObjectResult(
-              object: resolved.object,
-              rawResponse: response,
-              requestMetadata: lastRequestMetadata,
-              responseMetadata: currentResponseMetadata,
-              responseMessages: buildResponseMessagesBestEffort(response),
-              responsePromptMessages: buildResponsePromptMessagesBestEffort(
-                response,
-              ),
-            ),
-          );
-        } catch (e) {
-          final err = e is LLMError
-              ? e
-              : GenericError('Failed to parse streamed object: $e');
-          if (!warningsCompleter.isCompleted) {
-            warningsCompleter.complete(const <LLMWarning>[]);
-          }
-          if (!responseMetadataCompleter.isCompleted) {
-            responseMetadataCompleter.complete(
-              currentResponseMetadata,
+            usageCompleter.complete(usage);
+            finishReasonCompleter.complete(finishReason);
+            providerMetadataCompleter.complete(
+              response.providerMetadata ?? lastProviderMetadata,
             );
-          }
-          if (!requestMetadataCompleter.isCompleted) {
-            requestMetadataCompleter.complete(lastRequestMetadata);
-          }
-          if (!textCompleter.isCompleted) textCompleter.completeError(err);
-          if (!objectCompleter.isCompleted) objectCompleter.completeError(err);
-          if (!elementsCompleter.isCompleted) {
-            elementsCompleter.completeError(err);
-          }
-          if (!finalResultCompleter.isCompleted) {
-            finalResultCompleter.completeError(err);
+            if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+              providerToolApprovalBlockedStateCompleter
+                  .complete(providerToolApprovalBlockedState);
+            }
+
+            final didSeeTargetToolCall = targetToolCallIds.values.any((v) => v);
+            final didSeeTargetToolInput = targetToolInputIds.isNotEmpty;
+            if (finishReason?.unified == LLMUnifiedFinishReason.toolCalls &&
+                !didSeeTargetToolCall &&
+                !didSeeTargetToolInput) {
+              // Provider-native tool flows (e.g. provider tool approvals) can
+              // finish with `tool-calls` without ever producing the target
+              // return_object tool call. Treat this as a blocked/partial outcome
+              // rather than failing schema validation.
+              if (!warningsCompleter.isCompleted) {
+                warningsCompleter.complete(const <LLMWarning>[]);
+              }
+              if (!responseMetadataCompleter.isCompleted) {
+                responseMetadataCompleter.complete(currentResponseMetadata);
+              }
+              if (!requestMetadataCompleter.isCompleted) {
+                requestMetadataCompleter.complete(lastRequestMetadata);
+              }
+              if (!textCompleter.isCompleted) textCompleter.complete('');
+              if (!objectCompleter.isCompleted) {
+                objectCompleter.complete(const <String, dynamic>{});
+              }
+              if (!elementsCompleter.isCompleted) {
+                if (output == StreamObjectOutput.array) {
+                  elementsCompleter.complete(const []);
+                } else {
+                  elementsCompleter.completeError(
+                    UnsupportedError(
+                      'elements is only available when output == StreamObjectOutput.array',
+                    ),
+                  );
+                }
+              }
+              if (!finalResultCompleter.isCompleted) {
+                finalResultCompleter.complete(
+                  GenerateObjectResult(
+                    object: const <String, dynamic>{},
+                    rawResponse: response,
+                    requestMetadata: lastRequestMetadata,
+                    responseMetadata: currentResponseMetadata,
+                    responseMessages: buildResponseMessagesBestEffort(response),
+                    responsePromptMessages:
+                        buildResponsePromptMessagesBestEffort(response),
+                  ),
+                );
+              }
+            } else {
+              try {
+                final resolved = _resolveFinalObjectAndText(
+                  toolName: toolName,
+                  toolCallAgg: toolCallAgg,
+                  endedToolCalls: endedToolCalls,
+                  toolInputNames: toolInputNames,
+                  toolInputBuffers: toolInputBuffers,
+                  endedToolInputs: endedToolInputs,
+                  fallbackText: textBuffer.toString(),
+                  output: output,
+                );
+
+                validateObjectOrThrow(resolved.object);
+
+                if (!warningsCompleter.isCompleted) {
+                  warningsCompleter.complete(const <LLMWarning>[]);
+                }
+                if (!responseMetadataCompleter.isCompleted) {
+                  responseMetadataCompleter.complete(currentResponseMetadata);
+                }
+                if (!requestMetadataCompleter.isCompleted) {
+                  requestMetadataCompleter.complete(lastRequestMetadata);
+                }
+                textCompleter.complete(resolved.text);
+                objectCompleter.complete(resolved.object);
+
+                if (output == StreamObjectOutput.array) {
+                  final els = _extractElements(resolved.object);
+                  if (els == null) {
+                    throw const InvalidRequestError(
+                      'Array output requires an "elements" array in the generated object.',
+                    );
+                  }
+                  elementsCompleter.complete(els);
+                } else {
+                  elementsCompleter.completeError(
+                    UnsupportedError(
+                      'elements is only available when output == StreamObjectOutput.array',
+                    ),
+                  );
+                }
+
+                finalResultCompleter.complete(
+                  GenerateObjectResult(
+                    object: resolved.object,
+                    rawResponse: response,
+                    requestMetadata: lastRequestMetadata,
+                    responseMetadata: currentResponseMetadata,
+                    responseMessages: buildResponseMessagesBestEffort(response),
+                    responsePromptMessages:
+                        buildResponsePromptMessagesBestEffort(
+                      response,
+                    ),
+                  ),
+                );
+              } catch (e) {
+                final err = e is LLMError
+                    ? e
+                    : GenericError('Failed to parse streamed object: $e');
+                if (!warningsCompleter.isCompleted) {
+                  warningsCompleter.complete(const <LLMWarning>[]);
+                }
+                if (!responseMetadataCompleter.isCompleted) {
+                  responseMetadataCompleter.complete(
+                    currentResponseMetadata,
+                  );
+                }
+                if (!requestMetadataCompleter.isCompleted) {
+                  requestMetadataCompleter.complete(lastRequestMetadata);
+                }
+                if (!textCompleter.isCompleted) {
+                  textCompleter.completeError(err);
+                }
+                if (!objectCompleter.isCompleted) {
+                  objectCompleter.completeError(err);
+                }
+                if (!elementsCompleter.isCompleted) {
+                  elementsCompleter.completeError(err);
+                }
+                if (!finalResultCompleter.isCompleted) {
+                  finalResultCompleter.completeError(err);
+                }
+              }
+            }
           }
         }
       }
@@ -1097,7 +1107,7 @@ Map<String, dynamic> _parseRequiredJsonMap(String raw,
   if (decoded is! Map) {
     throw InvalidRequestError('$context must be a JSON object (map).');
   }
-  return Map<String, dynamic>.from(decoded as Map);
+  return Map<String, dynamic>.from(decoded);
 }
 
 Map<String, dynamic>? _tryParseJsonObject(String raw) {
@@ -1106,7 +1116,7 @@ Map<String, dynamic>? _tryParseJsonObject(String raw) {
 
   try {
     final decoded = jsonDecode(trimmed);
-    if (decoded is Map) return Map<String, dynamic>.from(decoded as Map);
+    if (decoded is Map) return Map<String, dynamic>.from(decoded);
   } catch (_) {
     // ignore
   }

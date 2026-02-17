@@ -415,10 +415,10 @@ class SemanticSearchEngine {
     _embeddings.clear();
 
     final texts = documents.map((doc) => doc.fullText).toList();
-    final embeddings = await _embeddingProvider.embed(texts);
+    final response = await _embeddingProvider.embed(texts);
 
     _documents.addAll(documents);
-    _embeddings.addAll(embeddings);
+    _embeddings.addAll(response.embeddings);
   }
 
   /// Perform semantic search
@@ -433,7 +433,8 @@ class SemanticSearchEngine {
     _queryCount[query] = (_queryCount[query] ?? 0) + 1;
 
     // Get query embedding
-    final queryEmbedding = await _embeddingProvider.embed([query]);
+    final queryResponse = await _embeddingProvider.embed([query]);
+    final queryEmbedding = queryResponse.embeddings[0];
 
     // Calculate similarities
     final results = <SearchResult>[];
@@ -445,7 +446,7 @@ class SemanticSearchEngine {
         continue;
       }
 
-      final similarity = _cosineSimilarity(queryEmbedding[0], _embeddings[i]);
+      final similarity = _cosineSimilarity(queryEmbedding, _embeddings[i]);
       results.add(SearchResult(
         document: document,
         score: similarity,

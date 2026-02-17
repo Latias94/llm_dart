@@ -77,7 +77,7 @@ void main() {
 
       final responseMetadata =
           parts.whereType<LLMResponseMetadataPart>().single;
-      expect(responseMetadata.model, equals('llama3.1'));
+      expect(responseMetadata.modelId, equals('llama3.1'));
       expect(
         parts.indexOf(responseMetadata),
         lessThan(parts.indexWhere((p) => p is LLMTextStartPart)),

@@ -117,8 +117,7 @@ Future<void> demoOpenAIProviderTool(String? apiKey) async {
         ),
       );
 
-  final model =
-      await base.build();
+  final model = await base.build();
 
   final prompt = Prompt(messages: [
     PromptMessage.user(

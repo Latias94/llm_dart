@@ -9,7 +9,7 @@ class _FakeChatResponse implements ChatResponse {
   @override
   final List<ToolCall>? toolCalls;
 
-  const _FakeChatResponse({this.text, this.toolCalls});
+  const _FakeChatResponse({this.text}) : toolCalls = null;
 
   @override
   String? get thinking => null;

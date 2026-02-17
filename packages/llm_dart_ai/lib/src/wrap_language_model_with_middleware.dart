@@ -301,9 +301,9 @@ class _MiddlewareLanguageModel extends ChatCapability
 class _MiddlewareLanguageModelWithIdentity extends _MiddlewareLanguageModel
     implements ModelIdentityCapability {
   _MiddlewareLanguageModelWithIdentity({
-    required ChatCapability inner,
-    required List<LanguageModelMiddleware> middlewares,
-  }) : super(inner: inner, middlewares: middlewares);
+    required super.inner,
+    required super.middlewares,
+  });
 
   ModelIdentityCapability get _identity => inner as ModelIdentityCapability;
 

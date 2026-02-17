@@ -45,12 +45,11 @@ class _Response implements ChatResponseWithFinishReason {
 
   const _Response({
     this.text,
-    this.thinking,
     this.toolCalls,
     this.usage,
-    this.providerMetadata,
     this.finishReason,
-  });
+  })  : thinking = null,
+        providerMetadata = null;
 }
 
 void main() {

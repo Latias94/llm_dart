@@ -35,7 +35,7 @@ void main() {
       final responseMetadata =
           parts.whereType<LLMResponseMetadataPart>().single;
       expect(responseMetadata.id, equals('resp_1'));
-      expect(responseMetadata.model, equals('gpt-4o-search-preview'));
+      expect(responseMetadata.modelId, equals('gpt-4o-search-preview'));
 
       final sources = parts.whereType<LLMSourceUrlPart>().toList();
       expect(sources, hasLength(1));

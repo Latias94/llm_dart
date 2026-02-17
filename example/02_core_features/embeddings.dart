@@ -105,11 +105,12 @@ Future<void> demonstrateBasicEmbeddings(
   try {
     // Single text embedding
     final singleText = ['Hello, world! This is a test sentence for embedding.'];
-    final singleEmbedding = await provider.embed(singleText);
+    final singleResponse = await provider.embed(singleText);
+    final singleEmbedding = singleResponse.embeddings[0];
 
-    print('      ✅ Single embedding: ${singleEmbedding[0].length} dimensions');
+    print('      ✅ Single embedding: ${singleEmbedding.length} dimensions');
     print(
-        '      📊 Sample values: ${singleEmbedding[0].take(5).map((v) => v.toStringAsFixed(4)).join(', ')}...');
+        '      📊 Sample values: ${singleEmbedding.take(5).map((v) => v.toStringAsFixed(4)).join(', ')}...');
 
     // Multiple texts
     final multipleTexts = [
@@ -118,7 +119,8 @@ Future<void> demonstrateBasicEmbeddings(
       'The weather is beautiful today.',
     ];
 
-    final multipleEmbeddings = await provider.embed(multipleTexts);
+    final multipleResponse = await provider.embed(multipleTexts);
+    final multipleEmbeddings = multipleResponse.embeddings;
 
     print(
         '      ✅ Multiple embeddings: ${multipleEmbeddings.length} texts processed');
@@ -154,7 +156,8 @@ Future<void> demonstrateBatchEmbeddings(
     print('      🔄 Processing ${batchTexts.length} texts in batch...');
     final startTime = DateTime.now();
 
-    final batchEmbeddings = await provider.embed(batchTexts);
+    final batchResponse = await provider.embed(batchTexts);
+    final batchEmbeddings = batchResponse.embeddings;
 
     final duration = DateTime.now().difference(startTime);
     print('      ✅ Batch completed in ${duration.inMilliseconds}ms');
@@ -190,7 +193,8 @@ Future<void> demonstrateSimilarityCalculations(
       'The weather is sunny today.', // Different
     ];
 
-    final embeddings = await provider.embed(testTexts);
+    final embeddingsResponse = await provider.embed(testTexts);
+    final embeddings = embeddingsResponse.embeddings;
     final referenceEmbedding = embeddings[0];
 
     print('      📝 Reference: "${testTexts[0]}"');
@@ -252,7 +256,8 @@ Future<void> demonstrateSemanticSearch(
 
     // Create document embeddings
     print('      🔄 Creating document index...');
-    final documentEmbeddings = await provider.embed(documents);
+    final documentResponse = await provider.embed(documents);
+    final documentEmbeddings = documentResponse.embeddings;
 
     // Search queries
     final queries = [
@@ -264,9 +269,9 @@ Future<void> demonstrateSemanticSearch(
     for (final query in queries) {
       print('      🔎 Query: "$query"');
 
-      final queryEmbedding = await provider.embed([query]);
+      final queryResponse = await provider.embed([query]);
       final results = SemanticSearchEngine.search(
-        queryEmbedding[0],
+        queryResponse.embeddings[0],
         documentEmbeddings,
         documents,
         topK: 3,
@@ -310,7 +315,8 @@ Future<void> demonstrateDocumentClustering(
       'Tennis is an individual sport.',
     ];
 
-    final embeddings = await provider.embed(documents);
+    final embeddingsResponse = await provider.embed(documents);
+    final embeddings = embeddingsResponse.embeddings;
 
     // Simple clustering using similarity threshold
     final clusters = DocumentClusterer.clusterBySimilarity(

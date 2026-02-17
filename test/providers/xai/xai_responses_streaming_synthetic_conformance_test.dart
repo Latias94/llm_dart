@@ -114,7 +114,7 @@ void main() {
       expect(parts.first, isA<LLMStreamStartPart>());
       final responseMetadata = parts.whereType<LLMResponseMetadataPart>().first;
       expect(responseMetadata.id, equals('resp_1'));
-      expect(responseMetadata.model, equals('grok-4-fast-reasoning'));
+      expect(responseMetadata.modelId, equals('grok-4-fast-reasoning'));
       expect(responseMetadata.status, equals('in_progress'));
       expect(
         responseMetadata.timestamp?.toUtc().millisecondsSinceEpoch,

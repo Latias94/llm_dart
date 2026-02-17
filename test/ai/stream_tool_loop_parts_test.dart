@@ -241,7 +241,7 @@ void main() {
           const LLMProviderToolCallPart(
             toolCallId: 'prov_1',
             toolName: 'code_execution',
-            input: {'code': 'print(\"hi\")'},
+            input: {'code': 'print("hi")'},
             providerExecuted: true,
             supportsDeferredResults: true,
           ),
@@ -293,7 +293,7 @@ void main() {
           const LLMProviderToolCallPart(
             toolCallId: 'prov_1',
             toolName: 'code_execution',
-            input: {'code': 'print(\"hi\")'},
+            input: {'code': 'print("hi")'},
             providerExecuted: true,
             supportsDeferredResults: true,
           ),

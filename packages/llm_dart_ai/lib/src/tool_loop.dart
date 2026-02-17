@@ -3042,12 +3042,12 @@ Stream<LLMStreamPart> streamToolLoopParts({
     final pendingProviderToolCallFirstStep = <String, int>{};
 
     final workingTools =
-        toolCatalog == null ? null : <Tool>[...?(tools ?? const <Tool>[])];
+        toolCatalog == null ? null : <Tool>[...(tools ?? const <Tool>[])];
     final workingToolHandlers =
         toolCatalog == null ? null : <String, ToolCallHandler>{...toolHandlers};
     final workingToolApprovalChecks = toolCatalog == null
         ? null
-        : <String, ToolApprovalCheck>{...?(toolApprovalChecks ?? const {})};
+        : <String, ToolApprovalCheck>{...(toolApprovalChecks ?? const {})};
 
     for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
       if (emitStepParts) {
@@ -3179,13 +3179,15 @@ Stream<LLMStreamPart> streamToolLoopParts({
             }
             yield part;
 
-          case LLMProviderToolResultPart(:final toolCallId, :final preliminary):
+          case LLMProviderToolResultPart(
+              :final toolCallId,
+              :final toolName,
+              :final result,
+              :final preliminary,
+            ):
             if (toolCallId.trim().isNotEmpty && preliminary != true) {
               pendingProviderToolCallFirstStep.remove(toolCallId);
             }
-            yield part;
-
-          case LLMProviderToolResultPart(:final toolName, :final result):
             if (toolName.trim().startsWith('tool_search')) {
               toolSearchReferencedNames
                   .addAll(extractToolReferenceNames(result));
@@ -3644,12 +3646,12 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   final pendingProviderToolCallFirstStep = <String, int>{};
 
   final workingTools =
-      toolCatalog == null ? null : <Tool>[...?(tools ?? const <Tool>[])];
+      toolCatalog == null ? null : <Tool>[...(tools ?? const <Tool>[])];
   final workingToolHandlers =
       toolCatalog == null ? null : <String, ToolCallHandler>{...toolHandlers};
   final workingToolApprovalChecks = toolCatalog == null
       ? null
-      : <String, ToolApprovalCheck>{...?(toolApprovalChecks ?? const {})};
+      : <String, ToolApprovalCheck>{...(toolApprovalChecks ?? const {})};
 
   for (var stepIndex = 0; stepIndex < maxSteps; stepIndex++) {
     if (emitStepParts) {

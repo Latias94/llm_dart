@@ -88,7 +88,7 @@ void main() {
           ),
           responseMetadata: LLMResponseMetadataPart(
             id: 'resp_1',
-            model: 'm',
+            modelId: 'm',
             body: const {'response': 'payload'},
           ),
         ),
@@ -116,7 +116,7 @@ void main() {
           const LLMRequestMetadataPart(body: {'request': 'payload'}),
           LLMResponseMetadataPart(
             id: 'resp_1',
-            model: 'm',
+            modelId: 'm',
             body: const {'response': 'payload'},
           ),
           const LLMTextDeltaPart('ok'),

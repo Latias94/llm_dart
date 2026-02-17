@@ -29,8 +29,10 @@ void main() {
       final meta = response.providerMetadata;
 
       expect(meta, isNotNull);
-      expect(meta!.containsKey('azure.chat'), isTrue);
-      expect(meta.containsKey('azure'), isFalse);
+      expect(meta!.containsKey('azure'), isTrue);
+      expect(meta.containsKey('azure.chat'), isTrue);
+      expect(meta.containsKey('azure.chat.chat'), isFalse);
+      expect(meta['azure.chat'], equals(meta['azure']));
 
       expect(response.usage, isNotNull);
       expect(response.usage!.promptTokens, equals(3));

@@ -456,7 +456,7 @@ void main() {
         stopOnProviderToolApprovalRequests: true,
       );
 
-      final parts = await result.fullStream.toList();
+      await result.fullStream.toList();
       expect(model.calls, equals(1));
 
       final blocked = await result.providerToolApprovalBlockedState;

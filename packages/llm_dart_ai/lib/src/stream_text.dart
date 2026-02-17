@@ -283,7 +283,7 @@ class StreamTextResult {
       return LLMResponseMetadataPart(
         id: update.id ?? base.id,
         timestamp: update.timestamp ?? base.timestamp,
-        model: update.model ?? base.model,
+        modelId: update.modelId ?? base.modelId,
         headers: mergeHeaders(base.headers, update.headers),
         body: update.body ?? base.body,
         status: update.status ?? base.status,
@@ -511,8 +511,9 @@ class StreamTextResult {
             requestMetadataCompleter.completeError(err);
           }
           if (!textCompleter.isCompleted) textCompleter.completeError(err);
-          if (!thinkingCompleter.isCompleted)
+          if (!thinkingCompleter.isCompleted) {
             thinkingCompleter.completeError(err);
+          }
           if (!usageCompleter.isCompleted) usageCompleter.completeError(err);
           if (!totalUsageCompleter.isCompleted) {
             totalUsageCompleter.completeError(err);
@@ -530,98 +531,115 @@ class StreamTextResult {
           if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
             providerToolApprovalBlockedStateCompleter.completeError(err);
           }
-          if (!sourcesCompleter.isCompleted)
+          if (!sourcesCompleter.isCompleted) {
             sourcesCompleter.completeError(err);
+          }
           if (!filesCompleter.isCompleted) filesCompleter.completeError(err);
           if (!finalResultCompleter.isCompleted) {
             finalResultCompleter.completeError(err);
           }
-          return;
         }
 
-        final aggregatedText = joinBlocks(textBlockOrder, textBlocks);
-        final aggregatedThinking =
-            joinBlocks(thinkingBlockOrder, thinkingBlocks);
+        if (terminalError == null) {
+          final aggregatedText = joinBlocks(textBlockOrder, textBlocks);
+          final aggregatedThinking =
+              joinBlocks(thinkingBlockOrder, thinkingBlocks);
 
-        textCompleter.complete(aggregatedText);
-        thinkingCompleter.complete(
-          aggregatedThinking.trim().isEmpty ? null : aggregatedThinking,
-        );
+          textCompleter.complete(aggregatedText);
+          thinkingCompleter.complete(
+            aggregatedThinking.trim().isEmpty ? null : aggregatedThinking,
+          );
 
-        sourcesCompleter
-            .complete(List<LLMStreamPart>.unmodifiable(collectedSources));
-        filesCompleter.complete(List<LLMFilePart>.unmodifiable(collectedFiles));
+          sourcesCompleter
+              .complete(List<LLMStreamPart>.unmodifiable(collectedSources));
+          filesCompleter
+              .complete(List<LLMFilePart>.unmodifiable(collectedFiles));
 
-        final finish = finishPart;
-        if (finish == null) {
-          if (!warningsCompleter.isCompleted) {
-            warningsCompleter.complete(const <LLMWarning>[]);
-          }
-          if (!responseMetadataCompleter.isCompleted) {
-            responseMetadataCompleter.complete(currentResponseMetadata);
-          }
-          if (!requestMetadataCompleter.isCompleted) {
-            requestMetadataCompleter.complete(lastRequestMetadata);
-          }
-          final blocked = approvalRequired;
-          final providerBlocked = providerApprovalRequired;
-          if (blocked != null) {
-            // Tool approval required: treat as a structured blocked outcome
-            // rather than a hard error, similar to AI SDK tool approval requests.
-            finalResultCompleter.complete(blocked.state.stepResult);
-            if (!toolLoopBlockedStateCompleter.isCompleted) {
-              toolLoopBlockedStateCompleter.complete(blocked.state);
+          final finish = finishPart;
+          if (finish == null) {
+            if (!warningsCompleter.isCompleted) {
+              warningsCompleter.complete(const <LLMWarning>[]);
             }
-            if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
-              providerToolApprovalBlockedStateCompleter.complete(null);
+            if (!responseMetadataCompleter.isCompleted) {
+              responseMetadataCompleter.complete(currentResponseMetadata);
             }
-          } else if (providerBlocked != null) {
-            // Provider tool approval required: treat as a structured blocked
-            // outcome (no finish part is available).
-            final partialThinking =
-                aggregatedThinking.trim().isEmpty ? null : aggregatedThinking;
-            final partialResponse = _PartialStreamResponse(
-              text: aggregatedText,
-              thinking: partialThinking,
-              providerMetadata: lastProviderMetadata,
-            );
-            final partialContent = contentCollector.finalize(
-              toolCalls: const <ToolCall>[],
-              toolResults: const <ToolResult>[],
-              fallbackText: aggregatedText,
-              fallbackReasoning:
-                  aggregatedThinking.trim().isEmpty ? null : aggregatedThinking,
-            );
-            finalResultCompleter.complete(
-              GenerateTextResult(
-                rawResponse: partialResponse,
-                content: partialContent,
+            if (!requestMetadataCompleter.isCompleted) {
+              requestMetadataCompleter.complete(lastRequestMetadata);
+            }
+            final blocked = approvalRequired;
+            final providerBlocked = providerApprovalRequired;
+            if (blocked != null) {
+              // Tool approval required: treat as a structured blocked outcome
+              // rather than a hard error, similar to AI SDK tool approval requests.
+              finalResultCompleter.complete(blocked.state.stepResult);
+              if (!toolLoopBlockedStateCompleter.isCompleted) {
+                toolLoopBlockedStateCompleter.complete(blocked.state);
+              }
+              if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+                providerToolApprovalBlockedStateCompleter.complete(null);
+              }
+            } else if (providerBlocked != null) {
+              // Provider tool approval required: treat as a structured blocked
+              // outcome (no finish part is available).
+              final partialThinking =
+                  aggregatedThinking.trim().isEmpty ? null : aggregatedThinking;
+              final partialResponse = _PartialStreamResponse(
                 text: aggregatedText,
                 thinking: partialThinking,
-                toolCalls: null,
-                usage: null,
-                finishReason: null,
-                requestMetadata: lastRequestMetadata,
-                responseMetadata: currentResponseMetadata,
-                responseMessages:
-                    buildResponseMessagesBestEffort(partialResponse),
-                responsePromptMessages:
-                    buildResponsePromptMessagesBestEffort(partialResponse),
-                sources: List<LLMStreamPart>.unmodifiable(collectedSources),
-                files: List<LLMFilePart>.unmodifiable(collectedFiles),
-              ),
-            );
-            if (!toolLoopBlockedStateCompleter.isCompleted) {
-              toolLoopBlockedStateCompleter.complete(null);
+                providerMetadata: lastProviderMetadata,
+              );
+              final partialContent = contentCollector.finalize(
+                toolCalls: const <ToolCall>[],
+                toolResults: const <ToolResult>[],
+                fallbackText: aggregatedText,
+                fallbackReasoning: aggregatedThinking.trim().isEmpty
+                    ? null
+                    : aggregatedThinking,
+              );
+              finalResultCompleter.complete(
+                GenerateTextResult(
+                  rawResponse: partialResponse,
+                  content: partialContent,
+                  text: aggregatedText,
+                  thinking: partialThinking,
+                  toolCalls: null,
+                  usage: null,
+                  finishReason: null,
+                  requestMetadata: lastRequestMetadata,
+                  responseMetadata: currentResponseMetadata,
+                  responseMessages:
+                      buildResponseMessagesBestEffort(partialResponse),
+                  responsePromptMessages:
+                      buildResponsePromptMessagesBestEffort(partialResponse),
+                  sources: List<LLMStreamPart>.unmodifiable(collectedSources),
+                  files: List<LLMFilePart>.unmodifiable(collectedFiles),
+                ),
+              );
+              if (!toolLoopBlockedStateCompleter.isCompleted) {
+                toolLoopBlockedStateCompleter.complete(null);
+              }
+              if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+                providerToolApprovalBlockedStateCompleter
+                    .complete(providerBlocked.state);
+              }
+            } else {
+              finalResultCompleter.completeError(
+                const GenericError('Stream finished without a finish part.'),
+              );
+              if (!toolLoopBlockedStateCompleter.isCompleted) {
+                toolLoopBlockedStateCompleter.complete(toolLoopBlockedState);
+              }
+              if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+                providerToolApprovalBlockedStateCompleter
+                    .complete(providerToolApprovalBlockedState);
+              }
             }
-            if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
-              providerToolApprovalBlockedStateCompleter
-                  .complete(providerBlocked.state);
-            }
-          } else {
-            finalResultCompleter.completeError(
-              const GenericError('Stream finished without a finish part.'),
-            );
+            usageCompleter.complete(null);
+            totalUsageCompleter.complete(accumulatedUsage);
+            finishReasonCompleter.complete(null);
+            providerMetadataCompleter.complete(lastProviderMetadata);
+            stepsCompleter
+                .complete(List<ToolLoopStep>.unmodifiable(collectedSteps));
             if (!toolLoopBlockedStateCompleter.isCompleted) {
               toolLoopBlockedStateCompleter.complete(toolLoopBlockedState);
             }
@@ -629,149 +647,137 @@ class StreamTextResult {
               providerToolApprovalBlockedStateCompleter
                   .complete(providerToolApprovalBlockedState);
             }
-          }
-          usageCompleter.complete(null);
-          totalUsageCompleter.complete(accumulatedUsage);
-          finishReasonCompleter.complete(null);
-          providerMetadataCompleter.complete(lastProviderMetadata);
-          stepsCompleter
-              .complete(List<ToolLoopStep>.unmodifiable(collectedSteps));
-          if (!toolLoopBlockedStateCompleter.isCompleted) {
-            toolLoopBlockedStateCompleter.complete(toolLoopBlockedState);
-          }
-          if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
-            providerToolApprovalBlockedStateCompleter
-                .complete(providerToolApprovalBlockedState);
-          }
-          return;
-        }
+          } else {
+            final response = finish.response;
+            final usage = finish.usage ?? response.usage;
+            final finishReason = finish.finishReason ??
+                (response is ChatResponseWithFinishReason
+                    ? response.finishReason
+                    : null);
 
-        final response = finish.response;
-        final usage = finish.usage ?? response.usage;
-        final finishReason = finish.finishReason ??
-            (response is ChatResponseWithFinishReason
-                ? response.finishReason
-                : null);
+            if (!warningsCompleter.isCompleted) {
+              warningsCompleter.complete(const <LLMWarning>[]);
+            }
+            if (!responseMetadataCompleter.isCompleted) {
+              responseMetadataCompleter.complete(currentResponseMetadata);
+            }
+            if (!requestMetadataCompleter.isCompleted) {
+              requestMetadataCompleter.complete(lastRequestMetadata);
+            }
 
-        if (!warningsCompleter.isCompleted) {
-          warningsCompleter.complete(const <LLMWarning>[]);
-        }
-        if (!responseMetadataCompleter.isCompleted) {
-          responseMetadataCompleter.complete(currentResponseMetadata);
-        }
-        if (!requestMetadataCompleter.isCompleted) {
-          requestMetadataCompleter.complete(lastRequestMetadata);
-        }
+            usageCompleter.complete(usage);
+            totalUsageCompleter.complete(accumulatedUsage ?? usage);
+            finishReasonCompleter.complete(finishReason);
 
-        usageCompleter.complete(usage);
-        totalUsageCompleter.complete(accumulatedUsage ?? usage);
-        finishReasonCompleter.complete(finishReason);
-
-        providerMetadataCompleter.complete(
-          response.providerMetadata ?? lastProviderMetadata,
-        );
-
-        late final List<ToolLoopStep> stepsSnapshot;
-        if (collectedSteps.isEmpty) {
-          final toolCalls = response.toolCalls ?? const <ToolCall>[];
-          final responseMetadata = currentResponseMetadata;
-          final content = contentCollector.finalize(
-            toolCalls: toolCalls,
-            toolResults: const <ToolResult>[],
-            fallbackText: response.text ?? aggregatedText,
-            fallbackReasoning: response.thinking ??
-                (aggregatedThinking.isEmpty ? null : aggregatedThinking),
-          );
-          lastStepContent = content;
-          stepsSnapshot = List<ToolLoopStep>.unmodifiable([
-            ToolLoopStep(
-              index: 0,
-              result: GenerateTextResult(
-                rawResponse: response,
-                content: content,
-                text: response.text ?? aggregatedText,
-                thinking: response.thinking ??
-                    (aggregatedThinking.isEmpty ? null : aggregatedThinking),
-                toolCalls: toolCalls,
-                toolResults: const <ToolResult>[],
-                usage: usage,
-                finishReason: finishReason,
-                requestMetadata: lastRequestMetadata,
-                responseMetadata: responseMetadata,
-                responseMessages: buildResponseMessagesBestEffort(response),
-                responsePromptMessages:
-                    buildResponsePromptMessagesBestEffort(response),
-                sources: List<LLMStreamPart>.unmodifiable(collectedSources),
-                files: List<LLMFilePart>.unmodifiable(collectedFiles),
-              ),
-              toolCalls: toolCalls,
-              toolResults: const [],
-              responseMetadata: responseMetadata,
-              requestMetadata: lastRequestMetadata,
-              responsePromptMessages:
-                  buildResponsePromptMessagesBestEffort(response),
-            ),
-          ]);
-          stepsCompleter.complete(stepsSnapshot);
-        } else {
-          stepsSnapshot = List<ToolLoopStep>.unmodifiable(collectedSteps);
-          stepsCompleter.complete(stepsSnapshot);
-        }
-
-        if (!toolLoopBlockedStateCompleter.isCompleted) {
-          toolLoopBlockedStateCompleter.complete(toolLoopBlockedState);
-        }
-        if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
-          providerToolApprovalBlockedStateCompleter
-              .complete(providerToolApprovalBlockedState);
-        }
-
-        final totalUsage = accumulatedUsage ?? usage;
-        final lastToolResults = stepsSnapshot.isEmpty
-            ? const <ToolResult>[]
-            : stepsSnapshot.last.toolResults;
-        final content = lastStepContent ??
-            contentCollector.finalize(
-              toolCalls: response.toolCalls ?? const <ToolCall>[],
-              toolResults: lastToolResults,
-              fallbackText: response.text ?? aggregatedText,
-              fallbackReasoning: response.thinking ??
-                  (aggregatedThinking.isEmpty ? null : aggregatedThinking),
+            providerMetadataCompleter.complete(
+              response.providerMetadata ?? lastProviderMetadata,
             );
 
-        final finalResult = GenerateTextResult(
-          rawResponse: response,
-          content: content,
-          text: response.text ?? aggregatedText,
-          thinking: response.thinking ??
-              (aggregatedThinking.isEmpty ? null : aggregatedThinking),
-          toolCalls: response.toolCalls,
-          toolResults: lastToolResults,
-          usage: usage,
-          totalUsage: totalUsage,
-          finishReason: finishReason,
-          requestMetadata: lastRequestMetadata,
-          responseMetadata: currentResponseMetadata,
-          responseMessages: buildResponseMessagesBestEffort(response),
-          responsePromptMessages: buildResponsePromptMessagesBestEffort(
-            response,
-          ),
-          steps: stepsSnapshot,
-          sources: List<LLMStreamPart>.unmodifiable(collectedSources),
-          files: List<LLMFilePart>.unmodifiable(collectedFiles),
-        );
-        finalResultCompleter.complete(finalResult);
+            late final List<ToolLoopStep> stepsSnapshot;
+            if (collectedSteps.isEmpty) {
+              final toolCalls = response.toolCalls ?? const <ToolCall>[];
+              final responseMetadata = currentResponseMetadata;
+              final content = contentCollector.finalize(
+                toolCalls: toolCalls,
+                toolResults: const <ToolResult>[],
+                fallbackText: response.text ?? aggregatedText,
+                fallbackReasoning: response.thinking ??
+                    (aggregatedThinking.isEmpty ? null : aggregatedThinking),
+              );
+              lastStepContent = content;
+              stepsSnapshot = List<ToolLoopStep>.unmodifiable([
+                ToolLoopStep(
+                  index: 0,
+                  result: GenerateTextResult(
+                    rawResponse: response,
+                    content: content,
+                    text: response.text ?? aggregatedText,
+                    thinking: response.thinking ??
+                        (aggregatedThinking.isEmpty
+                            ? null
+                            : aggregatedThinking),
+                    toolCalls: toolCalls,
+                    toolResults: const <ToolResult>[],
+                    usage: usage,
+                    finishReason: finishReason,
+                    requestMetadata: lastRequestMetadata,
+                    responseMetadata: responseMetadata,
+                    responseMessages: buildResponseMessagesBestEffort(response),
+                    responsePromptMessages:
+                        buildResponsePromptMessagesBestEffort(response),
+                    sources: List<LLMStreamPart>.unmodifiable(collectedSources),
+                    files: List<LLMFilePart>.unmodifiable(collectedFiles),
+                  ),
+                  toolCalls: toolCalls,
+                  toolResults: const [],
+                  responseMetadata: responseMetadata,
+                  requestMetadata: lastRequestMetadata,
+                  responsePromptMessages:
+                      buildResponsePromptMessagesBestEffort(response),
+                ),
+              ]);
+              stepsCompleter.complete(stepsSnapshot);
+            } else {
+              stepsSnapshot = List<ToolLoopStep>.unmodifiable(collectedSteps);
+              stepsCompleter.complete(stepsSnapshot);
+            }
 
-        final finishCallback = onFinish;
-        if (finishCallback != null) {
-          final event = StreamTextFinishEvent(
-            result: finalResult,
-            steps: stepsSnapshot,
-            totalUsage: totalUsage,
-          );
-          unawaited(
-            Future.sync(() => finishCallback(event)).catchError((_) {}),
-          );
+            if (!toolLoopBlockedStateCompleter.isCompleted) {
+              toolLoopBlockedStateCompleter.complete(toolLoopBlockedState);
+            }
+            if (!providerToolApprovalBlockedStateCompleter.isCompleted) {
+              providerToolApprovalBlockedStateCompleter
+                  .complete(providerToolApprovalBlockedState);
+            }
+
+            final totalUsage = accumulatedUsage ?? usage;
+            final lastToolResults = stepsSnapshot.isEmpty
+                ? const <ToolResult>[]
+                : stepsSnapshot.last.toolResults;
+            final content = lastStepContent ??
+                contentCollector.finalize(
+                  toolCalls: response.toolCalls ?? const <ToolCall>[],
+                  toolResults: lastToolResults,
+                  fallbackText: response.text ?? aggregatedText,
+                  fallbackReasoning: response.thinking ??
+                      (aggregatedThinking.isEmpty ? null : aggregatedThinking),
+                );
+
+            final finalResult = GenerateTextResult(
+              rawResponse: response,
+              content: content,
+              text: response.text ?? aggregatedText,
+              thinking: response.thinking ??
+                  (aggregatedThinking.isEmpty ? null : aggregatedThinking),
+              toolCalls: response.toolCalls,
+              toolResults: lastToolResults,
+              usage: usage,
+              totalUsage: totalUsage,
+              finishReason: finishReason,
+              requestMetadata: lastRequestMetadata,
+              responseMetadata: currentResponseMetadata,
+              responseMessages: buildResponseMessagesBestEffort(response),
+              responsePromptMessages: buildResponsePromptMessagesBestEffort(
+                response,
+              ),
+              steps: stepsSnapshot,
+              sources: List<LLMStreamPart>.unmodifiable(collectedSources),
+              files: List<LLMFilePart>.unmodifiable(collectedFiles),
+            );
+            finalResultCompleter.complete(finalResult);
+
+            final finishCallback = onFinish;
+            if (finishCallback != null) {
+              final event = StreamTextFinishEvent(
+                result: finalResult,
+                steps: stepsSnapshot,
+                totalUsage: totalUsage,
+              );
+              unawaited(
+                Future.sync(() => finishCallback(event)).catchError((_) {}),
+              );
+            }
+          }
         }
       }
     }
@@ -1175,10 +1181,9 @@ class _PartialStreamResponse implements ChatResponse {
   const _PartialStreamResponse({
     this.text,
     this.thinking,
-    this.toolCalls,
-    this.usage,
     this.providerMetadata,
-  });
+  })  : toolCalls = null,
+        usage = null;
 }
 
 /// Stream text with optional local tool execution (AI SDK-inspired).

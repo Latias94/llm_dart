@@ -337,18 +337,6 @@ class OpenAIStyleImages
   bool get supportsImageVariations => true;
 
   Future<({Map<String, dynamic> json, Map<String, String> headers})>
-      _postMultipartForm(
-    String endpoint,
-    Map<String, dynamic> formData,
-  ) async {
-    return _postMultipartFormWithCallOptions(
-      endpoint,
-      formData,
-      callOptions: const LLMCallOptions(),
-    );
-  }
-
-  Future<({Map<String, dynamic> json, Map<String, String> headers})>
       _postMultipartFormWithCallOptions(
     String endpoint,
     Map<String, dynamic> formData, {

@@ -64,7 +64,8 @@ class _FakeIdentityChatModel extends ChatCapability
 
 void main() {
   group('non-streaming warnings (AI SDK parity)', () {
-    test('generateText surfaces provider tool normalization warnings', () async {
+    test('generateText surfaces provider tool normalization warnings',
+        () async {
       final model = _FakeIdentityChatModel(
         providerId: 'groq',
         modelId: 'qwen/qwen3-32b',
@@ -138,4 +139,3 @@ void main() {
     });
   });
 }
-
