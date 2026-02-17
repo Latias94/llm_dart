@@ -190,7 +190,6 @@ void main() {
           providerOptions: const {
             'xai': {
               'liveSearch': true,
-              'webSearchEnabled': true,
             },
           },
         );

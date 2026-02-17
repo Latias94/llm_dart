@@ -140,10 +140,6 @@ class SearchSource {
 /// Reference: https://docs.x.ai/docs/guides/live-search
 class SearchParameters {
   /// Search mode preference: "off" | "auto" | "on".
-  ///
-  /// Legacy aliases:
-  /// - "never" -> "off"
-  /// - "always" -> "on"
   final String? mode;
 
   /// Whether to return citations.
@@ -173,14 +169,7 @@ class SearchParameters {
   static String? _normalizeMode(String? raw) {
     final v = raw?.trim();
     if (v == null || v.isEmpty) return null;
-    switch (v.toLowerCase()) {
-      case 'always':
-        return 'on';
-      case 'never':
-        return 'off';
-      default:
-        return v;
-    }
+    return v.toLowerCase();
   }
 
   factory SearchParameters.webSearch({
@@ -380,41 +369,14 @@ class XAIConfig {
     final liveSearchFromProviderOptions =
         readProviderOption<bool>(providerOptions, providerId, 'liveSearch');
 
-    final rawWebSearch = readProviderOptionMap(
-            providerOptions, providerId, 'webSearch') ??
-        readProviderOption<dynamic>(providerOptions, providerId, 'webSearch');
-    final legacyWebSearchJson = _parseLegacyWebSearchJson(rawWebSearch);
-
     SearchParameters? searchParams = searchParamsFromProviderOptions;
 
     bool? liveSearchEnabled = liveSearchFromProviderOptions;
 
-    final webSearchEnabledFromProviderOptions = readProviderOption<bool>(
-        providerOptions, providerId, 'webSearchEnabled');
-
-    final webSearchEnabled = webSearchEnabledFromProviderOptions;
-    if (webSearchEnabled == true &&
-        searchParams == null &&
-        liveSearchEnabled != true) {
-      liveSearchEnabled = true;
+    if (liveSearchEnabled == true && searchParams == null) {
       searchParams = SearchParameters.webSearch();
     }
 
-    if (legacyWebSearchJson != null && searchParams == null) {
-      final enabled = _isLegacyWebSearchEnabled(legacyWebSearchJson);
-      if (enabled) {
-        searchParams =
-            _convertLegacyWebSearchJsonToSearchParameters(legacyWebSearchJson);
-        liveSearchEnabled = true;
-      }
-    } else if (rawWebSearch is bool &&
-        rawWebSearch == true &&
-        searchParams == null) {
-      liveSearchEnabled = true;
-      searchParams = SearchParameters.webSearch();
-    }
-
-    // Normalize legacy aliases (e.g. always/never) after all fallback paths.
     searchParams = searchParams?.copyWith();
 
     final imageModelFromProviderOptions = readProviderOption<String>(
@@ -475,107 +437,6 @@ class XAIConfig {
       searchParameters: searchParams,
       liveSearch: liveSearchEnabled,
       originalConfig: config,
-    );
-  }
-
-  static Map<String, dynamic>? _parseLegacyWebSearchJson(dynamic raw) {
-    if (raw == null) return null;
-    if (raw is Map<String, dynamic>) return raw;
-    if (raw is Map) return Map<String, dynamic>.from(raw);
-    return null;
-  }
-
-  static bool _isLegacyWebSearchEnabled(Map<String, dynamic> json) {
-    final enabled = json['enabled'];
-    if (enabled is bool) return enabled;
-    return true; // presence implies enabled (legacy behavior)
-  }
-
-  static SearchParameters _convertLegacyWebSearchJsonToSearchParameters(
-    Map<String, dynamic> webSearchJson,
-  ) {
-    int? parseInt(dynamic value) {
-      if (value is int) return value;
-      if (value is num) return value.toInt();
-      return null;
-    }
-
-    List<String>? parseStringList(dynamic value) {
-      if (value is List<String>) return value;
-      if (value is List) return value.whereType<String>().toList();
-      return null;
-    }
-
-    final excluded = parseStringList(
-      webSearchJson['excluded_websites'] ??
-          webSearchJson['excludedWebsites'] ??
-          webSearchJson['blocked_domains'] ??
-          webSearchJson['blockedDomains'],
-    );
-
-    final mode = (webSearchJson['mode'] as String?)?.trim().isNotEmpty == true
-        ? (webSearchJson['mode'] as String).trim()
-        : 'auto';
-
-    final maxResults = parseInt(
-      webSearchJson['max_search_results'] ??
-          webSearchJson['maxSearchResults'] ??
-          webSearchJson['max_results'] ??
-          webSearchJson['maxResults'],
-    );
-
-    final fromDate = webSearchJson['from_date'] as String? ??
-        webSearchJson['fromDate'] as String?;
-    final toDate = webSearchJson['to_date'] as String? ??
-        webSearchJson['toDate'] as String?;
-
-    final rawType = webSearchJson['search_type'] ?? webSearchJson['searchType'];
-    final searchType = rawType is String ? rawType : null;
-
-    List<SearchSource> sourcesForType(String? type) {
-      switch ((type ?? 'web').toLowerCase()) {
-        case 'news':
-          return [
-            SearchSource(
-              sourceType: 'news',
-              excludedWebsites: excluded?.isNotEmpty == true ? excluded : null,
-            ),
-          ];
-        case 'combined':
-          return [
-            SearchSource(
-              sourceType: 'web',
-              excludedWebsites: excluded?.isNotEmpty == true ? excluded : null,
-            ),
-            SearchSource(
-              sourceType: 'news',
-              excludedWebsites: excluded?.isNotEmpty == true ? excluded : null,
-            ),
-          ];
-        case 'academic':
-          return [
-            SearchSource(
-              sourceType: 'web',
-              excludedWebsites: excluded?.isNotEmpty == true ? excluded : null,
-            ),
-          ];
-        case 'web':
-        default:
-          return [
-            SearchSource(
-              sourceType: 'web',
-              excludedWebsites: excluded?.isNotEmpty == true ? excluded : null,
-            ),
-          ];
-      }
-    }
-
-    return SearchParameters(
-      mode: mode,
-      sources: sourcesForType(searchType),
-      maxSearchResults: maxResults,
-      fromDate: fromDate,
-      toDate: toDate,
     );
   }
 

@@ -57,7 +57,7 @@ void main() {
           .providerOptions('xai', {
         'liveSearch': true,
         'searchParameters': SearchParameters.webSearch(
-          mode: 'always',
+          mode: 'on',
           maxResults: 10,
           excludedWebsites: ['spam.com', 'ads.com'],
         ).toJson(),
@@ -205,7 +205,7 @@ void main() {
         model: 'grok-3',
         liveSearch: true,
         searchParameters: SearchParameters(
-          mode: 'always',
+          mode: 'on',
           sources: const [SearchSource(sourceType: 'web')],
           maxSearchResults: 15,
           fromDate: '2024-06-01',

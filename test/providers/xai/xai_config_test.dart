@@ -295,7 +295,8 @@ void main() {
         );
       });
 
-      test('should enable live search from providerOptions.webSearchEnabled',
+      test(
+          'should default searchParameters when providerOptions.liveSearch=true',
           () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
@@ -303,7 +304,7 @@ void main() {
           model: 'grok-3',
           providerOptions: const {
             'xai': {
-              'webSearchEnabled': true,
+              'liveSearch': true,
             },
           },
         );
@@ -313,40 +314,6 @@ void main() {
         expect(xaiConfig.liveSearch, isTrue);
         expect(xaiConfig.searchParameters, isNotNull);
         expect(xaiConfig.isLiveSearchEnabled, isTrue);
-      });
-
-      test('should convert providerOptions.webSearch to searchParameters', () {
-        final llmConfig = LLMConfig(
-          apiKey: 'test-key',
-          baseUrl: 'https://api.x.ai/v1/',
-          model: 'grok-3',
-          providerOptions: const {
-            'xai': {
-              'webSearch': {
-                'enabled': true,
-                'mode': 'always',
-                'max_results': 7,
-                'blocked_domains': ['spam.com'],
-                'search_type': 'news',
-              },
-            },
-          },
-        );
-
-        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
-
-        expect(xaiConfig.liveSearch, isTrue);
-        expect(xaiConfig.searchParameters, isNotNull);
-        expect(xaiConfig.searchParameters!.mode, equals('on'));
-        expect(xaiConfig.searchParameters!.maxSearchResults, equals(7));
-        expect(xaiConfig.searchParameters!.sources, isNotNull);
-        expect(xaiConfig.searchParameters!.sources, hasLength(1));
-        expect(xaiConfig.searchParameters!.sources!.single.sourceType,
-            equals('news'));
-        expect(
-          xaiConfig.searchParameters!.sources!.single.excludedWebsites,
-          contains('spam.com'),
-        );
       });
 
       test('should parse providerOptions.searchParameters JSON', () {
