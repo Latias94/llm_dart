@@ -900,6 +900,73 @@ class OpenAIClient {
     }
   }
 
+  /// Make a GET request and return JSON + response headers (best-effort).
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      getJsonWithResponseHeaders(
+    String endpoint, {
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
+    try {
+      final resolvedEndpoint = _resolveEndpoint(endpoint);
+
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine('${config.providerName} request: GET /$resolvedEndpoint');
+        logger.fine(
+            '${config.providerName} request headers: ${dio.options.headers}');
+      }
+
+      final mergedQueryParameters = <String, dynamic>{
+        ...?_getDefaultQueryParameters(),
+        ...?queryParameters,
+      };
+
+      final response = await withDioCancelToken(
+        cancelToken,
+        (dioToken) => dio.get(
+          resolvedEndpoint,
+          queryParameters:
+              mergedQueryParameters.isEmpty ? null : mergedQueryParameters,
+          options: headers == null || headers.isEmpty
+              ? null
+              : Options(headers: _buildRequestHeaderOverrides(headers)),
+          cancelToken: dioToken,
+        ),
+      );
+
+      if (logger.isLoggable(Level.FINE)) {
+        logger
+            .fine('${config.providerName} HTTP status: ${response.statusCode}');
+      }
+
+      if (response.statusCode != 200) {
+        _handleErrorResponse(response, resolvedEndpoint);
+      }
+
+      final headerMap = <String, String>{};
+      response.headers.forEach((name, values) {
+        if (values.isEmpty) return;
+        headerMap[name] = values.join(',');
+      });
+      final sanitizedHeaders = sanitizeResponseHeadersForMetadata(headerMap);
+
+      return (
+        json: HttpResponseHandler.parseJsonResponse(
+          response.data,
+          providerName: config.providerName,
+        ),
+        headers: sanitizedHeaders.isEmpty
+            ? const <String, String>{}
+            : Map<String, String>.unmodifiable(sanitizedHeaders),
+      );
+    } on DioException catch (e) {
+      throw await handleDioError(e);
+    } catch (e) {
+      throw GenericError('Unexpected error: $e');
+    }
+  }
+
   /// Make a POST request with form data
   Future<Map<String, dynamic>> postForm(
     String endpoint,

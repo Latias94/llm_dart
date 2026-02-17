@@ -44,9 +44,15 @@ void main() {
       });
 
       test('should not support unsupported capabilities', () {
-        expect(provider.supports(LLMCapability.imageGeneration), isFalse);
+        expect(provider.supports(LLMCapability.completion), isFalse);
         expect(provider.supports(LLMCapability.textToSpeech), isFalse);
         expect(provider.supports(LLMCapability.speechToText), isFalse);
+      });
+
+      test('should support image and video generation', () {
+        expect(provider.supports(LLMCapability.imageGeneration), isTrue);
+        expect(provider.supports(LLMCapability.experimentalVideoGeneration),
+            isTrue);
       });
 
       test('should return correct supported capabilities set', () {
@@ -58,6 +64,8 @@ void main() {
         expect(capabilities, contains(LLMCapability.reasoning));
         expect(capabilities, contains(LLMCapability.embedding));
         expect(capabilities, contains(LLMCapability.liveSearch));
+        expect(capabilities, contains(LLMCapability.imageGeneration));
+        expect(capabilities, contains(LLMCapability.experimentalVideoGeneration));
       });
     });
 

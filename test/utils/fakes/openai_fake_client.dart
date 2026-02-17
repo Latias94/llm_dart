@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
@@ -17,6 +18,10 @@ class FakeOpenAIClient extends OpenAIClient {
   Stream<String> streamResponse = const Stream<String>.empty();
   Map<String, String> streamHeaders = const <String, String>{};
 
+  /// Queue for GET JSON responses (used for polling-style APIs).
+  final Queue<({Map<String, dynamic> json, Map<String, String> headers})>
+      getJsonQueue = Queue();
+
   FakeOpenAIClient(super.config);
 
   @override
@@ -28,6 +33,35 @@ class FakeOpenAIClient extends OpenAIClient {
     lastEndpoint = endpoint;
     lastJsonBody = body;
     return jsonResponse;
+  }
+
+  @override
+  Future<Map<String, dynamic>> getJson(
+    String endpoint, {
+    Map<String, dynamic>? queryParameters,
+    CancelToken? cancelToken,
+  }) async {
+    lastEndpoint = endpoint;
+    final next = getJsonQueue.isEmpty
+        ? (json: jsonResponse, headers: jsonHeaders)
+        : getJsonQueue.removeFirst();
+    return next.json;
+  }
+
+  @override
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      getJsonWithResponseHeaders(
+    String endpoint, {
+    Map<String, dynamic>? queryParameters,
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
+    lastEndpoint = endpoint;
+    lastRequestHeaders = headers;
+    final next = getJsonQueue.isEmpty
+        ? (json: jsonResponse, headers: jsonHeaders)
+        : getJsonQueue.removeFirst();
+    return next;
   }
 
   @override

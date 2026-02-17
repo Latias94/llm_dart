@@ -3,6 +3,8 @@ import 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart';
 import 'package:llm_dart_openai_compatible/client.dart';
 
 import 'config.dart';
+import 'images.dart';
+import 'video.dart';
 
 class XAIProvider
     implements
@@ -16,17 +18,28 @@ class XAIProvider
         ChatCallOptionsCapability,
         PromptChatCallOptionsCapability,
         EmbeddingCapability,
+        ImageGenerationCapability,
+        ImageGenerationCallOptionsCapability,
+        ImageGenerationMaxImagesPerCallCapability,
+        ExperimentalVideoGenerationCapability,
+        ExperimentalVideoGenerationCallOptionsCapability,
+        ExperimentalVideoGenerationMaxVideosPerCallCapability,
         ProviderCapabilities {
   final XAIConfig config;
 
   final OpenAICompatibleConfig _openAIConfig;
   final OpenAIClient _client;
   late final OpenAICompatibleChatEmbeddingProvider _provider;
+  late final XAIImages _images;
+  late final XAIVideo _video;
 
-  factory XAIProvider(XAIConfig config) {
+  factory XAIProvider(
+    XAIConfig config, {
+    OpenAIClient? client,
+  }) {
     final openAIConfig = _toOpenAICompatibleConfig(config);
-    final client = OpenAIClient(openAIConfig);
-    return XAIProvider._(config, openAIConfig, client);
+    final effectiveClient = client ?? OpenAIClient(openAIConfig);
+    return XAIProvider._(config, openAIConfig, effectiveClient);
   }
 
   XAIProvider._(
@@ -39,6 +52,8 @@ class XAIProvider
       _openAIConfig,
       supportedCapabilities,
     );
+    _images = XAIImages(_client, config);
+    _video = XAIVideo(_client, config);
   }
 
   @override
@@ -206,6 +221,126 @@ class XAIProvider
     return _provider.embed(input, cancelToken: cancelToken);
   }
 
+  // ========== ImageGenerationCapability ==========
+
+  @override
+  Future<ImageGenerationResponse> generateImages(
+    ImageGenerationRequest request,
+  ) {
+    return _images.generateImages(request);
+  }
+
+  @override
+  Future<ImageGenerationResponse> generateImagesWithCallOptions(
+    ImageGenerationRequest request, {
+    required LLMCallOptions callOptions,
+  }) {
+    return _images.generateImagesWithCallOptions(
+      request,
+      callOptions: callOptions,
+    );
+  }
+
+  @override
+  Future<ImageGenerationResponse> editImage(ImageEditRequest request) {
+    return _images.editImage(request);
+  }
+
+  @override
+  Future<ImageGenerationResponse> editImageWithCallOptions(
+    ImageEditRequest request, {
+    required LLMCallOptions callOptions,
+  }) {
+    return _images.editImageWithCallOptions(
+      request,
+      callOptions: callOptions,
+    );
+  }
+
+  @override
+  Future<ImageGenerationResponse> createVariation(
+    ImageVariationRequest request,
+  ) {
+    return _images.createVariation(request);
+  }
+
+  @override
+  Future<ImageGenerationResponse> createVariationWithCallOptions(
+    ImageVariationRequest request, {
+    required LLMCallOptions callOptions,
+  }) {
+    return _images.createVariationWithCallOptions(
+      request,
+      callOptions: callOptions,
+    );
+  }
+
+  @override
+  Future<List<String>> generateImage({
+    required String prompt,
+    String? model,
+    String? negativePrompt,
+    String? imageSize,
+    int? batchSize,
+    String? seed,
+    int? numInferenceSteps,
+    double? guidanceScale,
+    bool? promptEnhancement,
+  }) {
+    return _images.generateImage(
+      prompt: prompt,
+      model: model,
+      negativePrompt: negativePrompt,
+      imageSize: imageSize,
+      batchSize: batchSize,
+      seed: seed,
+      numInferenceSteps: numInferenceSteps,
+      guidanceScale: guidanceScale,
+      promptEnhancement: promptEnhancement,
+    );
+  }
+
+  @override
+  List<String> getSupportedSizes() => _images.getSupportedSizes();
+
+  @override
+  List<String> getSupportedFormats() => _images.getSupportedFormats();
+
+  @override
+  bool get supportsImageEditing => _images.supportsImageEditing;
+
+  @override
+  bool get supportsImageVariations => _images.supportsImageVariations;
+
+  @override
+  int get maxImagesPerCall => _images.maxImagesPerCall;
+
+  // ========== ExperimentalVideoGenerationCapability ==========
+
+  @override
+  Future<ExperimentalVideoGenerationResponse> generateVideos(
+    ExperimentalVideoGenerationRequest request, {
+    CancelToken? cancelToken,
+  }) {
+    return _video.generateVideos(request, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<ExperimentalVideoGenerationResponse> generateVideosWithCallOptions(
+    ExperimentalVideoGenerationRequest request, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _video.generateVideosWithCallOptions(
+      request,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  int get maxVideosPerCall => _video.maxVideosPerCall;
+
   String get providerName => 'xAI';
 
   @override
@@ -216,6 +351,8 @@ class XAIProvider
         LLMCapability.reasoning,
         LLMCapability.liveSearch,
         LLMCapability.embedding,
+        LLMCapability.imageGeneration,
+        LLMCapability.experimentalVideoGeneration,
         // Intentionally optimistic: do not maintain a model capability matrix.
         LLMCapability.vision,
       };

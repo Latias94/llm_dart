@@ -317,6 +317,8 @@ class XAIConfig {
   final String apiKey;
   final String baseUrl;
   final String model;
+  final String imageModel;
+  final String videoModel;
   final int? maxTokens;
   final double? temperature;
   final String? systemPrompt;
@@ -338,6 +340,8 @@ class XAIConfig {
     required this.apiKey,
     this.baseUrl = xaiBaseUrl,
     this.model = xaiDefaultModel,
+    this.imageModel = xaiDefaultImageModel,
+    this.videoModel = xaiDefaultVideoModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,
@@ -413,10 +417,38 @@ class XAIConfig {
     // Normalize legacy aliases (e.g. always/never) after all fallback paths.
     searchParams = searchParams?.copyWith();
 
+    final imageModelFromProviderOptions = readProviderOption<String>(
+          providerOptions,
+          providerId,
+          'imageModel',
+        ) ??
+        readProviderOption<String>(
+          providerOptions,
+          providerId,
+          'imageModelId',
+        );
+
+    final videoModelFromProviderOptions = readProviderOption<String>(
+          providerOptions,
+          providerId,
+          'videoModel',
+        ) ??
+        readProviderOption<String>(
+          providerOptions,
+          providerId,
+          'videoModelId',
+        );
+
     return XAIConfig(
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
       model: config.model,
+      imageModel: (imageModelFromProviderOptions?.trim().isNotEmpty == true)
+          ? imageModelFromProviderOptions!.trim()
+          : xaiDefaultImageModel,
+      videoModel: (videoModelFromProviderOptions?.trim().isNotEmpty == true)
+          ? videoModelFromProviderOptions!.trim()
+          : xaiDefaultVideoModel,
       maxTokens: config.maxTokens,
       temperature: config.temperature,
       systemPrompt: config.systemPrompt,
@@ -571,6 +603,8 @@ class XAIConfig {
     String? apiKey,
     String? baseUrl,
     String? model,
+    String? imageModel,
+    String? videoModel,
     int? maxTokens,
     double? temperature,
     String? systemPrompt,
@@ -589,6 +623,8 @@ class XAIConfig {
       apiKey: apiKey ?? this.apiKey,
       baseUrl: baseUrl ?? this.baseUrl,
       model: model ?? this.model,
+      imageModel: imageModel ?? this.imageModel,
+      videoModel: videoModel ?? this.videoModel,
       maxTokens: maxTokens ?? this.maxTokens,
       temperature: temperature ?? this.temperature,
       systemPrompt: systemPrompt ?? this.systemPrompt,
