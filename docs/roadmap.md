@@ -139,7 +139,7 @@ Status: planned.
 - [x] Introduce `providerTools` + tool name mapping (Anthropic-compatible baseline).
 - [x] Keep standard surface in `llm_dart_ai` (task APIs + tool loops).
 - [x] Add prompt-level `providerOptions` on `ChatMessage` and `ToolCall`.
-- [x] Deprecate `ChatMessage.extensions` for user code; keep as protocol-internal.
+- [x] Remove legacy `ChatMessage.extensions` (use `protocolPayloads` internally instead).
 - [x] Add a Vercel-style prompt IR with part-level providerOptions (MVP 2).
 - [x] Add task overloads/helpers that accept `Prompt` directly (MVP 2).
 - [x] Streaming tool loops prefer prompt-native streaming when available (`PromptChatStreamPartsCapability` / `PromptChatCapability`).

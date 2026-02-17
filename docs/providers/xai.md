@@ -283,8 +283,8 @@ Future<void> main() async {
     messages: const [ChatMessage.user('Give me 1 source about xAI.')],
   )) {
     switch (part) {
-      case LLMResponseMetadataPart(:final id, :final model, :final timestamp):
-        stderr.writeln('meta: id=$id model=$model ts=$timestamp');
+      case LLMResponseMetadataPart(:final id, :final modelId, :final timestamp):
+        stderr.writeln('meta: id=$id modelId=$modelId ts=$timestamp');
       case LLMTextDeltaPart(:final delta):
         stdout.write(delta);
       case LLMSourceUrlPart(:final url):
@@ -327,8 +327,8 @@ Future<void> main() async {
     messages: const [ChatMessage.user('Search and answer: what is Grok?')],
   )) {
     switch (part) {
-      case LLMResponseMetadataPart(:final id, :final model, :final timestamp):
-        stderr.writeln('meta: id=$id model=$model ts=$timestamp');
+      case LLMResponseMetadataPart(:final id, :final modelId, :final timestamp):
+        stderr.writeln('meta: id=$id modelId=$modelId ts=$timestamp');
       case LLMTextDeltaPart(:final delta):
         stdout.write(delta);
       case LLMSourceUrlPart(:final url, :final title):

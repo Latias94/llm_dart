@@ -170,9 +170,6 @@ class LLMResponseMetadataPart extends LLMStreamPart {
   /// Model identifier (if available).
   final String? modelId;
 
-  @Deprecated('Use modelId.')
-  String? get model => modelId;
-
   /// Response headers (best-effort; HTTP providers only).
   ///
   /// Mirrors Vercel AI SDK's `LanguageModelResponseMetadata.headers` concept.
@@ -198,15 +195,14 @@ class LLMResponseMetadataPart extends LLMStreamPart {
   const LLMResponseMetadataPart({
     this.id,
     this.timestamp,
-    String? modelId,
-    @Deprecated('Use modelId.') String? model,
+    this.modelId,
     this.headers,
     this.body,
     this.status,
     this.systemFingerprint,
     this.providerMetadata,
     this.raw,
-  }) : modelId = modelId ?? model;
+  });
 }
 
 /// Request metadata emitted during streaming (best-effort).

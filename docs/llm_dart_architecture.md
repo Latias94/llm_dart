@@ -59,7 +59,7 @@ Provider-by-provider alignment tracker:
 ### 0.2 Breaking changes (recent)
 
 - `LLMConfig.extensions` was removed. Use `providerOptions` for provider-only knobs and `transportOptions` for transport/HTTP.
-- `ChatMessage.extensions` is deprecated for user code and reserved for protocol-internal content blocks. Prefer `Prompt` IR + `providerOptions`.
+- `ChatMessage.extensions` was removed. Use `protocolPayloads` only for protocol adapters; prefer `Prompt` IR + `providerOptions`.
 - `LLMBuilder.extension(...)` (legacy, global) and the old `LLMBuilder` image/audio convenience setters were removed. Use namespaced `providerOptions` (`option/providerOption/providerConfig`) and task request objects in `llm_dart_ai`.
 - `LLMBuilder.providerConfig((p) => ...)` writes into `providerOptions`.
 - `createProvider(...)` accepts `providerOptions` (use `LLMBuilder()` + `providerOptions` / provider wrapper builders for more complex setup).

@@ -117,7 +117,7 @@ However, the recommended app-level flow is Prompt IR.
 2. Prefer `Prompt` + task prompt inputs (`promptIr: ...`); keep `ChatMessage`
    for low-level users and protocol adapters.
 3. Deprecate user-facing “wire format” shortcuts over time (e.g.
-   `ChatMessage.extensions` in app code).
+   `ChatMessage.protocolPayloads` in app code).
 4. Keep the umbrella `llm_dart` package as a convenience bundle, but recommend
    `llm_dart_ai` + provider subpackages for new code.
 

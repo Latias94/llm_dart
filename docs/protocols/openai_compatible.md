@@ -165,8 +165,8 @@ Future<void> main() async {
     messages: const [ChatMessage.user('Write one sentence about HTTP.')],
   )) {
     switch (part) {
-      case LLMResponseMetadataPart(:final id, :final model):
-        stderr.writeln('meta: id=$id model=$model');
+      case LLMResponseMetadataPart(:final id, :final modelId):
+        stderr.writeln('meta: id=$id modelId=$modelId');
       case LLMTextDeltaPart(:final delta):
         stdout.write(delta);
       case LLMToolCallStartPart(:final toolCall):

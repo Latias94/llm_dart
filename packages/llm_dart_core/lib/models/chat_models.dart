@@ -358,13 +358,6 @@ class ChatMessage {
   /// - `providerOptions` for provider-only knobs (escape hatch)
   final Map<String, dynamic> protocolPayloads;
 
-  /// Legacy protocol payload alias (deprecated).
-  @Deprecated(
-    'ChatMessage.extensions is reserved for internal protocol adapters. '
-    'Use ChatMessage.protocolPayloads / getProtocolPayload() instead.',
-  )
-  Map<String, dynamic> get extensions => protocolPayloads;
-
   /// Provider-specific options for this message (namespaced).
   ///
   /// This is the preferred mechanism for provider-only knobs at the prompt
@@ -376,15 +369,9 @@ class ChatMessage {
     required this.messageType,
     required this.content,
     this.name,
-    @Deprecated(
-      'ChatMessage.extensions is reserved for internal protocol adapters. '
-      'Use ChatMessage.protocolPayloads / getProtocolPayload() instead.',
-    )
-    Map<String, dynamic> extensions = const {},
-    Map<String, dynamic> protocolPayloads = const {},
+    this.protocolPayloads = const {},
     this.providerOptions = const {},
-  }) : protocolPayloads =
-            protocolPayloads.isNotEmpty ? protocolPayloads : extensions;
+  });
 
   /// Protocol payload getter (internal).
   T? getProtocolPayload<T>(String providerId) =>
@@ -402,32 +389,6 @@ class ChatMessage {
       providerOptions: providerOptions,
     );
   }
-
-  // Extension helpers (internal/legacy).
-  @Deprecated(
-    'ChatMessage.extensions is reserved for internal protocol adapters. '
-    'Prefer Prompt IR (llm_dart_ai) and ChatMessage.providerOptions.',
-  )
-  T? getExtension<T>(String key) => protocolPayloads[key] as T?;
-
-  @Deprecated(
-    'ChatMessage.extensions is reserved for internal protocol adapters. '
-    'Prefer Prompt IR (llm_dart_ai) and ChatMessage.providerOptions.',
-  )
-  bool hasExtension(String key) => protocolPayloads.containsKey(key);
-
-  @Deprecated(
-    'ChatMessage.extensions is reserved for internal protocol adapters. '
-    'Prefer Prompt IR (llm_dart_ai) and ChatMessage.providerOptions.',
-  )
-  ChatMessage withExtension(String key, dynamic value) => ChatMessage(
-        role: role,
-        messageType: messageType,
-        content: content,
-        name: name,
-        protocolPayloads: {...protocolPayloads, key: value},
-        providerOptions: providerOptions,
-      );
 
   ChatMessage withProviderOptions(
       String providerId, Map<String, dynamic> value) {

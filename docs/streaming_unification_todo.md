@@ -38,7 +38,7 @@ Core principle:
 Add new parts (names are placeholders; exact naming TBD):
 
 - `LLMStreamStartPart({List<Map<String, dynamic>> warnings})` (optional)
-- `LLMResponseMetadataPart({String? id, String? model, String? status, String? systemFingerprint, Map<String, dynamic>? providerMetadata, Map<String, dynamic>? raw})`
+- `LLMResponseMetadataPart({String? id, DateTime? timestamp, String? modelId, Map<String, String>? headers, Object? body, String? status, String? systemFingerprint, Map<String, dynamic>? providerMetadata, Map<String, dynamic>? raw})`
 - `LLMSourceUrlPart({String sourceId, String url, String? title, Map<String, dynamic>? providerMetadata})`
 - `LLMSourceDocumentPart({String sourceId, String mediaType, String title, String? filename, Map<String, dynamic>? providerMetadata})`
 - Provider-executed tools (server tools):

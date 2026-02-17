@@ -34,21 +34,6 @@ AiProviderRegistry createProviderRegistry(
   return registry;
 }
 
-/// @deprecated Use [createProviderRegistry] instead.
-@Deprecated('Use createProviderRegistry instead.')
-AiProviderRegistry experimentalCreateProviderRegistry(
-  Map<String, ProviderRegistryEntry> providers, {
-  String separator = ':',
-  LanguageModelMiddleware? languageModelMiddleware,
-  List<LanguageModelMiddleware>? languageModelMiddlewares,
-}) =>
-    createProviderRegistry(
-      providers,
-      separator: separator,
-      languageModelMiddleware: languageModelMiddleware,
-      languageModelMiddlewares: languageModelMiddlewares,
-    );
-
 /// A single provider entry in a [ProviderRegistry].
 ///
 /// Each factory is expected to return a capability instance configured for the

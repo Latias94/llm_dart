@@ -236,14 +236,15 @@ Tool control notes (OpenAI-style providers):
   - `tool_choice`: `auto` / `none` / `required` / specific tool object
   - `parallel_tool_calls`: boolean
 
-### 2.2.1 Legacy `ChatMessage.extensions` (deprecated)
+### 2.2.1 Legacy `ChatMessage.extensions` (removed)
 
-`ChatMessage.extensions` is reserved for **protocol-internal** use (e.g. carrying
-provider-native content blocks through legacy message conversion).
+`ChatMessage.extensions` has been removed. Use `ChatMessage.protocolPayloads`
+for protocol-internal payloads (if you must).
 
 Notes:
 
-- New user code should not write to `ChatMessage.extensions`.
+- App code should not write to `protocolPayloads` unless you are implementing a
+  protocol adapter.
 - Prefer `Prompt` IR (`llm_dart_ai`) for prompt composition and `providerOptions`
   for provider-only knobs.
 

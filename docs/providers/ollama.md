@@ -95,8 +95,8 @@ Future<void> main() async {
     switch (part) {
       case LLMStreamStartPart(:final warnings):
         if (warnings.isNotEmpty) stderr.writeln('warnings: $warnings');
-      case LLMResponseMetadataPart(:final model):
-        stderr.writeln('meta: model=$model');
+      case LLMResponseMetadataPart(:final modelId):
+        stderr.writeln('meta: modelId=$modelId');
       case LLMTextDeltaPart(:final delta):
         stdout.write(delta);
       case LLMFinishPart(:final finishReason, :final usage):

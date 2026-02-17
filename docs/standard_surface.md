@@ -75,8 +75,8 @@ Prompt vs `ChatMessage` (when to use which):
 - `MessageBuilder` was removed:
   - Prefer `Prompt` for app-level prompt composition.
   - Use `ChatMessage.*` factories if you need the legacy message model.
-- Avoid using `ChatMessage.extensions` in user code:
-  - It is deprecated for user code and reserved for protocol-internal blocks.
+- Avoid using `ChatMessage.protocolPayloads` in user code:
+  - It is reserved for protocol-internal blocks and may change without notice.
 - Use prompt-scoped escape hatches sparingly:
   - `ChatMessage.providerOptions` / `ToolCall.providerOptions` are for
     message/tool-local provider knobs (e.g. caching markers, tool_result flags),

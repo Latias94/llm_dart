@@ -242,22 +242,6 @@ class InvalidArgumentError extends LLMError {
       'Invalid argument ($argument): $message${value == null ? '' : ' (value: $value)'}';
 }
 
-/// @deprecated Use [MissingToolResultsError] instead.
-class MissingToolResultError extends LLMError {
-  final String toolCallId;
-  final String? toolName;
-
-  @Deprecated('Use MissingToolResultsError(toolCallIds: ...) instead.')
-  MissingToolResultError({
-    required this.toolCallId,
-    this.toolName,
-    String? message,
-  }) : super(message ?? 'Missing tool result for tool call "$toolCallId".');
-
-  @override
-  String toString() => 'Missing tool result: $message';
-}
-
 /// Thrown when one or more tool-call ids have no corresponding tool-result.
 ///
 /// Mirrors Vercel AI SDK's `MissingToolResultsError`.

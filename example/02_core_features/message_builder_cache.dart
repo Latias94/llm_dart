@@ -13,7 +13,7 @@ import 'package:llm_dart_builder/llm_dart_builder.dart';
 /// In the new architecture:
 /// - Provider-only knobs live in `providerOptions` (namespaced by provider id)
 /// - Prompt IR (`Prompt`) is the recommended user-facing prompt surface
-/// - `ChatMessage.extensions` is reserved for internal protocol adapters
+/// - `ChatMessage.protocolPayloads` is reserved for internal protocol adapters
 ///
 /// To run:
 /// ```bash
