@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+- **Google Vertex**: canonical provider key is now `vertex` (AI SDK v6 parity).
+  - Reads request-side options from `providerOptions['vertex']` with legacy
+    fallbacks `providerOptions['google-vertex']` and `providerOptions['google']`.
+  - Emits response metadata under `providerMetadata['vertex']` and the
+    compatibility alias `providerMetadata['vertex.chat']`.
+- **Core**: removed legacy/placeholder APIs:
+  - `ChatMessage.extensions` (and extension helper methods). Use
+    `ChatMessage.protocolPayloads` for protocol adapters only, and prefer
+    `Prompt` IR + `providerOptions` in app code.
+  - `LLMResponseMetadataPart.model` alias (use `modelId`).
+- **Umbrella builder extensions**: removed deprecated OpenAI-compatible shims:
+  - Removed: `LLMBuilder().deepseekOpenAI()/googleOpenAI()/xaiOpenAI()/groqOpenAI()`.
+  - Use: `LLMBuilder().openaiCompatible('<presetId>')` (e.g. `deepseek-openai`).
+- **MiniMax**: removed deprecated `minimaxSupportedModels` (use `minimaxKnownModels`).
 - **Google**: provider-native web search/grounding must be enabled via
   `providerTools` (`google.google_search`). Removed legacy:
   - `providerOptions['google'|'google-vertex']['webSearchEnabled']`
@@ -31,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Provider metadata (AI SDK parity)**: chat providers may emit both the base
+  provider key and a capability namespace key (e.g. `openai` + `openai.chat`)
+  with identical payloads, mirroring AI SDK access patterns.
 - **AI task APIs** (`llm_dart_ai`): prompts containing `FileUrlPart` / `FileIdPart`
   now require prompt-native capabilities (`PromptChatCapability` /
   `PromptChatStreamPartsCapability`) when the underlying model cannot represent
