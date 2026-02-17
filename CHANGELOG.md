@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking Changes
+
+- **Google**: provider-native web search/grounding must be enabled via
+  `providerTools` (`google.google_search`). Removed legacy:
+  - `providerOptions['google'|'google-vertex']['webSearchEnabled']`
+  - `providerOptions['google'|'google-vertex']['webSearchToolOptions']`
+  - `GoogleConfig.webSearchEnabled`
+- **Anthropic**: provider-native web fetch must be enabled via `providerTools`
+  (`anthropic.web_fetch_*`). Removed legacy:
+  - `providerOptions['anthropic'|'<anthropic-compatible>']['webFetchEnabled']`
+  - `providerOptions['anthropic'|'<anthropic-compatible>']['webFetch']`
+- **OpenAI**: Responses built-in tools should be enabled via `providerTools`
+  and/or `providerOptions['openai']['builtInTools']`. Removed legacy:
+  - `providerOptions['openai']['webSearchEnabled'|'fileSearchEnabled'|'computerUseEnabled']`
+
 ### Added
 
 - **Prompt IR file references**: `FileUrlPart` and `FileIdPart` are now available
