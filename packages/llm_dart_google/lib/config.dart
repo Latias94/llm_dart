@@ -96,10 +96,9 @@ class GoogleConfig {
 
   /// Provider-native web search configuration (Gemini `google_search` tool).
   ///
-  /// When enabled (via `providerOptions['google']['webSearchEnabled']` or
-  /// a `ProviderTool` such as `google.google_search`), `GoogleChat` injects a
-  /// Google grounding tool into the request JSON (e.g. `googleSearch` or
-  /// `googleSearchRetrieval`, depending on the model).
+  /// When enabled via a `ProviderTool` such as `google.google_search`,
+  /// `GoogleChat` injects a Google grounding tool into the request JSON
+  /// (e.g. `googleSearch` or `googleSearchRetrieval`, depending on the model).
   final bool webSearchEnabled;
 
   /// When true, only known-supported http(s) file URLs are allowed for URL-based
@@ -177,9 +176,6 @@ class GoogleConfig {
   }) {
     final providerOptions = config.providerOptions;
 
-    final webSearchEnabledFromProviderOptions = readProviderOption<bool>(
-        providerOptions, providerId, 'webSearchEnabled');
-
     final rawWebSearchToolOptions = readProviderOptionMap(
           providerOptions,
           providerId,
@@ -209,8 +205,7 @@ class GoogleConfig {
         ? false
         : _isProviderToolEnabled(providerToolWebSearch);
 
-    final mergedWebSearchEnabled =
-        webSearchEnabledFromProviderOptions == true || providerToolEnabled;
+    final mergedWebSearchEnabled = providerToolEnabled;
 
     final webSearchToolOptionsFromProviderTools =
         providerToolWebSearch != null &&

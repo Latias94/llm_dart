@@ -326,20 +326,24 @@ final provider = await LLMBuilder()
     .provider(googleProviderId)
     .apiKey('...')
     .model('gemini-1.5-flash')
+    .providerTool(GoogleProviderTools.webSearch())
     .providerOptions('google', {
-      'webSearchEnabled': true,
+      // Only applied when the provider-native tool is enabled via `providerTools`.
+      'webSearchToolOptions': {
+        'mode': 'dynamic',
+        'dynamicThreshold': 0.3,
+      },
     })
     .build();
 ```
 
-Prefer these keys (per-provider namespace):
-
-- `providerOptions[providerId]['webSearchEnabled']`: `bool`
+Prefer provider-native option shapes (per-provider namespace), and enable the
+provider tool via `providerTools` whenever possible.
 
 Notes:
 
-- Web search is intentionally a **provider-native** feature. Providers may interpret the same enable flag differently.
-- Legacy `extensions` keys for web search have been removed. Use `providerOptions` only.
+- Web search is intentionally a **provider-native** feature (executed server-side).
+- Legacy `extensions` keys for web search have been removed.
 
 ##### OpenRouter (OpenAI-compatible): model `:online` shortcut
 

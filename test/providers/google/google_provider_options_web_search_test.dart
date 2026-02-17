@@ -4,8 +4,9 @@ import 'package:test/test.dart';
 import '../../utils/fakes/fakes.dart';
 
 void main() {
-  group('Google providerOptions web search', () {
-    test('adds google_search tool when providerOptions.webSearchEnabled=true',
+  group('Google web search request shaping (AI SDK parity)', () {
+    test(
+        'does not add google_search tool when providerOptions.webSearchEnabled=true (legacy removed)',
         () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',
@@ -26,12 +27,7 @@ void main() {
       await chat
           .chatStreamParts([ChatMessage.user('hi')], tools: const []).toList();
 
-      final tools = client.lastBody?['tools'];
-      expect(tools, isA<List>());
-      final list = tools as List;
-      final hasGoogleSearch =
-          list.any((t) => t is Map && t.containsKey('googleSearchRetrieval'));
-      expect(hasGoogleSearch, isTrue);
+      expect(client.lastBody?.containsKey('tools'), isFalse);
     });
 
     test(
@@ -41,9 +37,11 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
         model: 'gemini-1.5-flash',
+        providerTools: const [
+          ProviderTool(id: 'google.google_search'),
+        ],
         providerOptions: const {
           'google': {
-            'webSearchEnabled': true,
             'webSearchToolOptions': {
               'mode': 'dynamic',
               'dynamicThreshold': 0.7,
@@ -135,11 +133,9 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
         model: 'gemini-1.5-flash',
-        providerOptions: const {
-          'google': {
-            'webSearchEnabled': true,
-          },
-        },
+        providerTools: const [
+          ProviderTool(id: 'google.google_search'),
+        ],
       );
 
       final config =

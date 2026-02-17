@@ -101,7 +101,8 @@ void main() {
       final warnings = (parts.first as LLMStreamStartPart).warnings;
       expect(warnings, hasLength(1));
       expect(warnings.single, isA<LLMUnsupportedWarning>());
-      expect((warnings.single as LLMUnsupportedWarning).feature, equals('demo'));
+      expect(
+          (warnings.single as LLMUnsupportedWarning).feature, equals('demo'));
     });
 
     test('streamToolLoopParts does not duplicate provider stream-start',
@@ -129,7 +130,8 @@ void main() {
       final warnings = (parts.first as LLMStreamStartPart).warnings;
       expect(warnings, hasLength(1));
       expect(warnings.single, isA<LLMUnsupportedWarning>());
-      expect((warnings.single as LLMUnsupportedWarning).feature, equals('demo'));
+      expect(
+          (warnings.single as LLMUnsupportedWarning).feature, equals('demo'));
     });
 
     test(
@@ -139,11 +141,9 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
         model: 'gemini-2.5-flash',
-        providerOptions: const {
-          'google': {
-            'webSearchEnabled': true,
-          },
-        },
+        providerTools: const [
+          ProviderTool(id: 'google.google_search'),
+        ],
       );
 
       final config =

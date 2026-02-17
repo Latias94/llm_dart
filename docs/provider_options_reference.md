@@ -65,16 +65,12 @@ Used as an escape hatch to merge provider-native request fields/headers.
 ### 1.2 Web search (provider-native tool)
 
 Web search is intentionally **not** standardized into a single abstraction.
-Configure it via provider options and let the provider execute it server-side.
+Configure it via `providerTools` and let the provider execute it server-side.
 
 Recommended:
 
 - Prefer `providerTools` (typed `ProviderTool` catalogs) when the provider offers a server-side tool.
-- Use `providerOptions` as a legacy best-effort escape hatch.
-
-Legacy keys:
-
-- `providerOptions[providerId]['webSearchEnabled']`: `bool`
+- Prefer provider-specific native option shapes when needed (e.g. xAI `searchParameters`).
 
 ### 1.3 OpenAI-compatible (Chat Completions) optional params
 
@@ -308,8 +304,8 @@ Embeddings (Gemini-native):
 
 Web search:
 
-- `webSearchEnabled`: `bool`
-- `webSearchToolOptions`: `Map<String, dynamic>` (Vercel-style args: `mode`, `dynamicThreshold`)
+- Enable via `providerTools` (recommended): `ProviderTool(id: 'google.google_search')` or `GoogleProviderTools.webSearch(...)`.
+- `webSearchToolOptions`: `Map<String, dynamic>` (Vercel-style args: `mode`, `dynamicThreshold`; only applied when the tool is enabled via `providerTools`)
 
 ### 2.5 `google-openai` (OpenAI-compatible)
 

@@ -158,11 +158,9 @@ void main() {
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
         model: 'gemini-2.5-flash',
         toolChoice: const AutoToolChoice(),
-        providerOptions: const {
-          'google': {
-            'webSearchEnabled': true,
-          },
-        },
+        providerTools: const [
+          ProviderTool(id: 'google.google_search'),
+        ],
       );
 
       final config =

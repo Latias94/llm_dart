@@ -14,11 +14,9 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
         model: 'gemini-2.5-flash',
-        providerOptions: const {
-          'google-vertex': {
-            'webSearchEnabled': true,
-          },
-        },
+        providerTools: const [
+          ProviderTool(id: 'google.google_search'),
+        ],
       );
 
       final config = GoogleConfig.fromLLMConfig(
