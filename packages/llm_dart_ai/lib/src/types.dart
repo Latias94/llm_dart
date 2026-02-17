@@ -287,6 +287,15 @@ class GenerateSpeechResult {
 
   const GenerateSpeechResult({required this.rawResponse});
 
+  /// Generated audio file (AI SDK-style).
+  ///
+  /// This is a convenience wrapper around [audioData] and [contentType] that
+  /// provides a stable `mediaType` + `format` view.
+  GeneratedAudioFile get audio => GeneratedAudioFile(
+        data: audioData,
+        mediaType: contentType,
+      );
+
   List<int> get audioData => rawResponse.audioData;
   String? get contentType => rawResponse.contentType;
   double? get duration => rawResponse.duration;
@@ -298,6 +307,51 @@ class GenerateSpeechResult {
   List<SpeechModelResponseMetadata> get responses => rawResponse.responses;
   Map<String, dynamic> get providerMetadata =>
       rawResponse.providerMetadata ?? const <String, dynamic>{};
+}
+
+/// A generated audio file (AI SDK-style).
+class GeneratedAudioFile {
+  /// Audio bytes.
+  final List<int> data;
+
+  /// Media type (MIME type), e.g. `audio/mpeg`.
+  final String mediaType;
+
+  /// Audio format derived from [mediaType], e.g. `mp3`, `wav`, `opus`.
+  final String format;
+
+  GeneratedAudioFile({
+    required List<int> data,
+    required String? mediaType,
+  })  : data = List<int>.unmodifiable(data),
+        mediaType = _normalizeMediaType(mediaType),
+        format = _formatFromMediaType(_normalizeMediaType(mediaType));
+
+  static String _normalizeMediaType(String? mediaType) {
+    final v = mediaType?.trim();
+    if (v == null || v.isEmpty) return 'audio/mpeg';
+    // Strip parameters like `; charset=utf-8`.
+    final semi = v.indexOf(';');
+    return (semi >= 0 ? v.substring(0, semi) : v).trim();
+  }
+
+  static String _formatFromMediaType(String mediaType) {
+    final normalized = _normalizeMediaType(mediaType);
+    final lower = normalized.toLowerCase();
+    if (lower == 'audio/mpeg') return 'mp3';
+
+    final parts = lower.split('/');
+    if (parts.length != 2) return 'mp3';
+    if (parts[0] != 'audio') return 'mp3';
+
+    final subtype = parts[1];
+    // Common aliases.
+    if (subtype == 'x-wav') return 'wav';
+    if (subtype == 'wave') return 'wav';
+    if (subtype == 'x-pcm') return 'pcm';
+
+    return subtype;
+  }
 }
 
 /// Result for a transcription (STT) call.

@@ -549,6 +549,9 @@ void main() {
 
       expect(result.audioData, [1, 2, 3]);
       expect(result.contentType, 'audio/mpeg');
+      expect(result.audio.data, [1, 2, 3]);
+      expect(result.audio.mediaType, 'audio/mpeg');
+      expect(result.audio.format, 'mp3');
       expect(result.rawResponse.audioData, [1, 2, 3]);
     });
 
