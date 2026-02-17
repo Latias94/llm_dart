@@ -33,7 +33,8 @@ sealed class LLMWarning {
   static LLMWarning fromJson(Map<String, dynamic> json) {
     final type = json['type'];
     if (type is! String || type.trim().isEmpty) {
-      return const LLMOtherWarning('Invalid warning: missing non-empty "type".');
+      return const LLMOtherWarning(
+          'Invalid warning: missing non-empty "type".');
     }
 
     switch (type) {
@@ -239,6 +240,14 @@ abstract class ChatResponseWithResponseMetadata implements ChatResponse {
 /// include `request` metadata (best-effort; provider-dependent).
 abstract class ChatResponseWithRequestMetadata implements ChatResponse {
   LLMRequestMetadataPart? get requestMetadata;
+}
+
+/// Optional interface for non-streaming responses that can expose warnings.
+///
+/// This mirrors the AI SDK concept that `generateText` / `generateObject`
+/// results surface provider/orchestrator warnings in a dedicated list.
+abstract class ChatResponseWithWarnings implements ChatResponse {
+  List<LLMWarning> get warnings;
 }
 
 /// Marks the start of a single "step" in a multi-step generation.

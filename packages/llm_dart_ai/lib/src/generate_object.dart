@@ -124,6 +124,18 @@ Future<GenerateObjectResult> generateObject({
     cancelToken: cancelToken,
   );
 
+  final providerWarnings = response is ChatResponseWithWarnings
+      ? response.warnings
+      : const <LLMWarning>[];
+  final warnings = normalized.warnings.isEmpty
+      ? providerWarnings
+      : (providerWarnings.isEmpty
+          ? normalized.warnings
+          : List<LLMWarning>.unmodifiable([
+              ...normalized.warnings,
+              ...providerWarnings,
+            ]));
+
   final toolCall = response.toolCalls
       ?.cast<ToolCall?>()
       .firstWhere((c) => c?.function.name == toolName, orElse: () => null);
@@ -180,7 +192,7 @@ Future<GenerateObjectResult> generateObject({
 
     return GenerateObjectResult(
       object: decodedArgs,
-      warnings: normalized.warnings,
+      warnings: warnings,
       rawResponse: response,
       requestMetadata: requestMetadataWithInclude(
         response is ChatResponseWithRequestMetadata
@@ -251,7 +263,7 @@ Future<GenerateObjectResult> generateObject({
 
   return GenerateObjectResult(
     object: parsed,
-    warnings: normalized.warnings,
+    warnings: warnings,
     rawResponse: response,
     requestMetadata: requestMetadataWithInclude(
       response is ChatResponseWithRequestMetadata

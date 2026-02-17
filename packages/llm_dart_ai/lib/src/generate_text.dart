@@ -156,6 +156,17 @@ Future<GenerateTextResult> generateText({
   );
 
   final toolCalls = response.toolCalls ?? const <ToolCall>[];
+  final providerWarnings = response is ChatResponseWithWarnings
+      ? response.warnings
+      : const <LLMWarning>[];
+  final warnings = normalized.warnings.isEmpty
+      ? providerWarnings
+      : (providerWarnings.isEmpty
+          ? normalized.warnings
+          : List<LLMWarning>.unmodifiable([
+              ...normalized.warnings,
+              ...providerWarnings,
+            ]));
   final result = GenerateTextResult(
     rawResponse: response,
     content: buildContentPartsBestEffort(
@@ -171,7 +182,7 @@ Future<GenerateTextResult> generateText({
     totalUsage: response.usage,
     finishReason:
         response is ChatResponseWithFinishReason ? response.finishReason : null,
-    warnings: normalized.warnings,
+    warnings: warnings,
     requestMetadata: requestMetadataWithInclude(
       response is ChatResponseWithRequestMetadata
           ? response.requestMetadata
@@ -209,7 +220,7 @@ Future<GenerateTextResult> generateText({
           finishReason: response is ChatResponseWithFinishReason
               ? response.finishReason
               : null,
-          warnings: normalized.warnings,
+          warnings: warnings,
           requestMetadata: requestMetadataWithInclude(
             response is ChatResponseWithRequestMetadata
                 ? response.requestMetadata

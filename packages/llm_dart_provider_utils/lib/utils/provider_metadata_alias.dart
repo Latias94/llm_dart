@@ -399,7 +399,8 @@ class _ChatResponseAliasedProviderMetadata
         ChatResponse,
         ChatResponseWithFinishReason,
         ChatResponseWithResponseMetadata,
-        ChatResponseWithRequestMetadata {
+        ChatResponseWithRequestMetadata,
+        ChatResponseWithWarnings {
   final ChatResponse _inner;
   final String baseKey;
   final String aliasKey;
@@ -442,6 +443,12 @@ class _ChatResponseAliasedProviderMetadata
     return inner is ChatResponseWithRequestMetadata
         ? inner.requestMetadata
         : null;
+  }
+
+  @override
+  List<LLMWarning> get warnings {
+    final inner = _inner;
+    return inner is ChatResponseWithWarnings ? inner.warnings : const [];
   }
 
   @override

@@ -84,6 +84,16 @@ abstract class _TransformedChatResponseBase extends ChatResponse {
   Map<String, dynamic>? get providerMetadata => inner.providerMetadata;
 }
 
+/// Forward warnings when present (best-effort).
+mixin _WithWarnings on _TransformedChatResponseBase
+    implements ChatResponseWithWarnings {
+  @override
+  List<LLMWarning> get warnings {
+    final i = inner;
+    return i is ChatResponseWithWarnings ? i.warnings : const [];
+  }
+}
+
 mixin _WithFinishReason on _TransformedChatResponseBase
     implements ChatResponseWithFinishReason {
   @override
@@ -113,73 +123,93 @@ mixin _WithResponseMetadata on _TransformedChatResponseBase
       (inner as ChatResponseWithResponseMetadata).responseMetadata;
 }
 
-class _T0 extends _TransformedChatResponseBase {
+class _T0 extends _TransformedChatResponseBase with _WithWarnings {
   _T0(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
-class _T1 extends _TransformedChatResponseBase with _WithFinishReason {
+class _T1 extends _TransformedChatResponseBase
+    with _WithFinishReason, _WithWarnings {
   _T1(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
-class _T2 extends _TransformedChatResponseBase with _WithAssistantMessage {
+class _T2 extends _TransformedChatResponseBase
+    with _WithAssistantMessage, _WithWarnings {
   _T2(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
 class _T3 extends _TransformedChatResponseBase
-    with _WithFinishReason, _WithAssistantMessage {
+    with _WithFinishReason, _WithAssistantMessage, _WithWarnings {
   _T3(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
-class _T4 extends _TransformedChatResponseBase with _WithRequestMetadata {
+class _T4 extends _TransformedChatResponseBase
+    with _WithRequestMetadata, _WithWarnings {
   _T4(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
 class _T5 extends _TransformedChatResponseBase
-    with _WithFinishReason, _WithRequestMetadata {
+    with _WithFinishReason, _WithRequestMetadata, _WithWarnings {
   _T5(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
 class _T6 extends _TransformedChatResponseBase
-    with _WithAssistantMessage, _WithRequestMetadata {
+    with _WithAssistantMessage, _WithRequestMetadata, _WithWarnings {
   _T6(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
 class _T7 extends _TransformedChatResponseBase
-    with _WithFinishReason, _WithAssistantMessage, _WithRequestMetadata {
+    with
+        _WithFinishReason,
+        _WithAssistantMessage,
+        _WithRequestMetadata,
+        _WithWarnings {
   _T7(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
-class _T8 extends _TransformedChatResponseBase with _WithResponseMetadata {
+class _T8 extends _TransformedChatResponseBase
+    with _WithResponseMetadata, _WithWarnings {
   _T8(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
 class _T9 extends _TransformedChatResponseBase
-    with _WithFinishReason, _WithResponseMetadata {
+    with _WithFinishReason, _WithResponseMetadata, _WithWarnings {
   _T9(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
 class _T10 extends _TransformedChatResponseBase
-    with _WithAssistantMessage, _WithResponseMetadata {
+    with _WithAssistantMessage, _WithResponseMetadata, _WithWarnings {
   _T10(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
 class _T11 extends _TransformedChatResponseBase
-    with _WithFinishReason, _WithAssistantMessage, _WithResponseMetadata {
+    with
+        _WithFinishReason,
+        _WithAssistantMessage,
+        _WithResponseMetadata,
+        _WithWarnings {
   _T11(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
 class _T12 extends _TransformedChatResponseBase
-    with _WithRequestMetadata, _WithResponseMetadata {
+    with _WithRequestMetadata, _WithResponseMetadata, _WithWarnings {
   _T12(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
 class _T13 extends _TransformedChatResponseBase
-    with _WithFinishReason, _WithRequestMetadata, _WithResponseMetadata {
+    with
+        _WithFinishReason,
+        _WithRequestMetadata,
+        _WithResponseMetadata,
+        _WithWarnings {
   _T13(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
 class _T14 extends _TransformedChatResponseBase
-    with _WithAssistantMessage, _WithRequestMetadata, _WithResponseMetadata {
+    with
+        _WithAssistantMessage,
+        _WithRequestMetadata,
+        _WithResponseMetadata,
+        _WithWarnings {
   _T14(super.inner, {super.text, super.thinking, super.assistantMessage});
 }
 
@@ -188,6 +218,7 @@ class _T15 extends _TransformedChatResponseBase
         _WithFinishReason,
         _WithAssistantMessage,
         _WithRequestMetadata,
-        _WithResponseMetadata {
+        _WithResponseMetadata,
+        _WithWarnings {
   _T15(super.inner, {super.text, super.thinking, super.assistantMessage});
 }

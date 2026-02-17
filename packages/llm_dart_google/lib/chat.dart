@@ -2440,7 +2440,8 @@ class GoogleChatResponse
     implements
         ChatResponseWithFinishReason,
         ChatResponseWithResponseMetadata,
-        ChatResponseWithRequestMetadata {
+        ChatResponseWithRequestMetadata,
+        ChatResponseWithWarnings {
   final Map<String, dynamic> _rawResponse;
   final ToolNameMapping? _toolNameMapping;
   final List<LLMWarning> _toolWarnings;
@@ -2466,6 +2467,9 @@ class GoogleChatResponse
 
   @override
   LLMRequestMetadataPart? get requestMetadata => _requestMetadata;
+
+  @override
+  List<LLMWarning> get warnings => _toolWarnings;
 
   @override
   String? get text {
@@ -2560,7 +2564,8 @@ class GoogleChatResponse
       if (finishReason != null) 'finishReason': finishReason,
       if (finishReason != null) 'stopReason': finishReason,
       if (_toolWarnings.isNotEmpty)
-        'toolWarnings': _toolWarnings.map((w) => w.toJson()).toList(growable: false),
+        'toolWarnings':
+            _toolWarnings.map((w) => w.toJson()).toList(growable: false),
       if (usageMetadata != null)
         'usage': {
           if (usageMetadata['promptTokenCount'] != null)

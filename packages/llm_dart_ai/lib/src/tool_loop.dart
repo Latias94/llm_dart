@@ -350,6 +350,18 @@ Future<ToolLoopResult> runToolLoop({
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
+  List<LLMWarning> mergeWarnings(
+    List<LLMWarning> base,
+    ChatResponse response,
+  ) {
+    final providerWarnings = response is ChatResponseWithWarnings
+        ? response.warnings
+        : const <LLMWarning>[];
+    if (base.isEmpty) return providerWarnings;
+    if (providerWarnings.isEmpty) return base;
+    return List<LLMWarning>.unmodifiable([...base, ...providerWarnings]);
+  }
+
   final normalized = normalizeProviderToolsAndCollectWarnings(
     model: model,
     providerTools: providerTools,
@@ -410,6 +422,7 @@ Future<ToolLoopResult> runToolLoop({
     );
 
     final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+    final warnings = mergeWarnings(normalized.warnings, response);
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
@@ -426,7 +439,7 @@ Future<ToolLoopResult> runToolLoop({
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
-      warnings: normalized.warnings,
+      warnings: warnings,
       requestMetadata: requestMetadataWithInclude(
         response is ChatResponseWithRequestMetadata
             ? response.requestMetadata
@@ -768,6 +781,14 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
     );
 
     final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+    final mergedWarnings = () {
+      final providerWarnings = response is ChatResponseWithWarnings
+          ? response.warnings
+          : const <LLMWarning>[];
+      if (warnings.isEmpty) return providerWarnings;
+      if (providerWarnings.isEmpty) return warnings;
+      return List<LLMWarning>.unmodifiable([...warnings, ...providerWarnings]);
+    }();
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
@@ -784,7 +805,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       finishReason: response is ChatResponseWithFinishReason
           ? response.finishReason
           : null,
-      warnings: warnings,
+      warnings: mergedWarnings,
       requestMetadata: requestMetadataWithInclude(
         response is ChatResponseWithRequestMetadata
             ? response.requestMetadata
