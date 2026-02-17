@@ -6,7 +6,8 @@ class AnthropicChatResponse
         ChatResponseWithAssistantMessage,
         ChatResponseWithFinishReason,
         ChatResponseWithResponseMetadata,
-        ChatResponseWithRequestMetadata {
+        ChatResponseWithRequestMetadata,
+        ChatResponseWithWarnings {
   final Map<String, dynamic> _rawResponse;
   final String? _providerId;
   final ToolNameMapping? _toolNameMapping;
@@ -26,6 +27,71 @@ class AnthropicChatResponse
 
   @override
   LLMRequestMetadataPart? get requestMetadata => _requestMetadata;
+
+  @override
+  List<LLMWarning> get warnings {
+    final content = _rawResponse['content'];
+    if (content is! List || content.isEmpty) return const [];
+
+    var hasRedactedThinking = false;
+    var hasMcpBlocks = false;
+    final providerNativeToolNames = <String>{};
+
+    for (final block in content) {
+      if (block is! Map) continue;
+      final type = block['type'] as String?;
+      if (type == 'redacted_thinking') {
+        hasRedactedThinking = true;
+        continue;
+      }
+      if (type == 'mcp_tool_use' || type == 'mcp_tool_result') {
+        hasMcpBlocks = true;
+        continue;
+      }
+      if (type != 'tool_use') continue;
+
+      final requestName = block['name'];
+      if (requestName is! String || requestName.trim().isEmpty) continue;
+
+      final isProviderNativeTool =
+          _toolNameMapping?.providerToolIdForRequestName(requestName) != null ||
+              requestName == 'web_search' ||
+              requestName == 'web_fetch';
+      if (isProviderNativeTool) providerNativeToolNames.add(requestName);
+    }
+
+    final out = <LLMWarning>[];
+    if (hasRedactedThinking) {
+      out.add(
+        const LLMCompatibilityWarning(
+          feature: 'redacted thinking content',
+          details:
+              'The provider returned redacted (encrypted) thinking blocks. A placeholder string is surfaced instead.',
+        ),
+      );
+    }
+    if (providerNativeToolNames.isNotEmpty) {
+      out.add(
+        LLMCompatibilityWarning(
+          feature: 'provider-native tool_use not surfaced',
+          details:
+              'Provider-native tools are executed server-side and are not returned as local tool calls. '
+              'Tool(s): ${providerNativeToolNames.toList(growable: false)..sort()}',
+        ),
+      );
+    }
+    if (hasMcpBlocks) {
+      out.add(
+        const LLMCompatibilityWarning(
+          feature: 'mcp tool blocks not surfaced',
+          details:
+              'MCP connector tool blocks are provider-executed and are not returned as local tool calls.',
+        ),
+      );
+    }
+
+    return out.isEmpty ? const [] : List<LLMWarning>.unmodifiable(out);
+  }
 
   @override
   String? get text {

@@ -116,6 +116,16 @@ void main() {
       });
 
       expect(response.toolCalls, isNull);
+      expect(response, isA<ChatResponseWithWarnings>());
+      final warnings = (response as ChatResponseWithWarnings).warnings;
+      expect(
+        warnings.any(
+          (w) =>
+              w is LLMCompatibilityWarning &&
+              w.feature == 'provider-native tool_use not surfaced',
+        ),
+        isTrue,
+      );
       final finish = (response as ChatResponseWithFinishReason).finishReason!;
       expect(finish.unified, equals(LLMUnifiedFinishReason.other));
       expect(finish.raw, equals('tool_use'));

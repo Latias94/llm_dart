@@ -54,6 +54,17 @@ void main() {
       // tool calls, otherwise tool loops could try to execute them.
       expect(resp.toolCalls, anyOf(isNull, isEmpty));
 
+      expect(resp, isA<ChatResponseWithWarnings>());
+      final warnings = (resp as ChatResponseWithWarnings).warnings;
+      expect(
+        warnings.any(
+          (w) =>
+              w is LLMCompatibilityWarning &&
+              w.feature == 'mcp tool blocks not surfaced',
+        ),
+        isTrue,
+      );
+
       expect(resp, isA<AnthropicChatResponse>());
       final typed = resp as AnthropicChatResponse;
       final uses = typed.mcpToolUses;

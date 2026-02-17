@@ -64,6 +64,17 @@ void main() {
         contains('[Redacted thinking content - encrypted for safety]'),
       );
 
+      expect(first, isA<ChatResponseWithWarnings>());
+      final warnings = (first as ChatResponseWithWarnings).warnings;
+      expect(
+        warnings.any(
+          (w) =>
+              w is LLMCompatibilityWarning &&
+              w.feature == 'redacted thinking content',
+        ),
+        isTrue,
+      );
+
       expect(first, isA<ChatResponseWithAssistantMessage>());
       final assistantMessage =
           (first as ChatResponseWithAssistantMessage).assistantMessage;
