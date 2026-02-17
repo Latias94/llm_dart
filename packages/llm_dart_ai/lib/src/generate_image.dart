@@ -207,10 +207,14 @@ Future<GenerateImageResult> generateImage({
     return GenerateImageResult(rawResponse: merged);
   }
 
-  final responses = <ImageGenerationResponse>[];
-  for (final count in callCounts) {
-    responses.add(await runOne(n: count, prompt: prompt));
+  if (cancelToken?.isCancelled == true) {
+    throw CancelledError(cancelToken?.reason?.toString() ?? 'Cancelled');
   }
+
+  final responses = await Future.wait<ImageGenerationResponse>(
+    callCounts.map((count) => runOne(n: count, prompt: prompt)),
+    eagerError: true,
+  );
 
   final merged = mergeResponses(responses);
 
