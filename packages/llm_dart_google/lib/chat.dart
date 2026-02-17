@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'package:llm_dart_provider_utils/utils/request_metadata_options.dart';
 import 'package:llm_dart_provider_utils/utils/request_metadata_sanitizer.dart';
 import 'client.dart';
 import 'config.dart';
@@ -115,16 +116,11 @@ class GoogleChat
     final original = config.originalConfig;
     if (original == null) return false;
 
-    final scoped = _scopedProviderOptions(original.providerOptions);
-    if (scoped == null) return false;
-
-    final direct = scoped['emitRequestMetadata'];
-    if (direct is bool) return direct;
-
-    final legacy = scoped['emit_request_metadata'];
-    if (legacy is bool) return legacy;
-
-    return false;
+    return emitRequestMetadataEnabled(
+      original.providerOptions,
+      _providerOptionsId,
+      fallbackProviderId: _providerOptionsName,
+    );
   }
 
   bool _supportedFileUrlsOnlyFromProviderOptions(

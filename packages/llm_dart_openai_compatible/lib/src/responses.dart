@@ -134,9 +134,6 @@ class OpenAIResponses
     final emitRequestMetadata = config.getProviderOption<bool>(
           'emitRequestMetadata',
         ) ??
-        config.getProviderOption<bool>(
-          'emit_request_metadata',
-        ) ??
         false;
     final requestMetadata = emitRequestMetadata
         ? LLMRequestMetadataPart(
@@ -193,9 +190,6 @@ class OpenAIResponses
     final emitRequestMetadata = config.getProviderOption<bool>(
           'emitRequestMetadata',
         ) ??
-        config.getProviderOption<bool>(
-          'emit_request_metadata',
-        ) ??
         false;
     final requestMetadata = emitRequestMetadata
         ? LLMRequestMetadataPart(
@@ -228,9 +222,6 @@ class OpenAIResponses
     final builtRequest = _buildRequest(messages, tools, false, true);
     final emitRequestMetadata = config.getProviderOption<bool>(
           'emitRequestMetadata',
-        ) ??
-        config.getProviderOption<bool>(
-          'emit_request_metadata',
         ) ??
         false;
     final requestMetadata = emitRequestMetadata
@@ -446,9 +437,6 @@ class OpenAIResponses
             false;
     final emitRequestMetadata = config.getProviderOption<bool>(
           'emitRequestMetadata',
-        ) ??
-        config.getProviderOption<bool>(
-          'emit_request_metadata',
         ) ??
         false;
     Map<String, dynamic>? lastStreamChunk;

@@ -46,9 +46,7 @@ class OpenAIChat
   String get chatEndpoint => 'chat/completions';
 
   bool _emitRequestMetadataEnabled() {
-    return config.getProviderOption<bool>('emitRequestMetadata') ??
-        config.getProviderOption<bool>('emit_request_metadata') ??
-        false;
+    return config.getProviderOption<bool>('emitRequestMetadata') ?? false;
   }
 
   bool _parseToolCallsFromTextEnabled() {

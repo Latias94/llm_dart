@@ -7,7 +7,6 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 ///
 /// Supported keys:
 /// - `emitRequestMetadata` (preferred)
-/// - `emit_request_metadata` (legacy)
 bool emitRequestMetadataEnabled(
   ProviderOptions providerOptions,
   String providerId, {
@@ -17,12 +16,6 @@ bool emitRequestMetadataEnabled(
         providerOptions,
         providerId,
         'emitRequestMetadata',
-        fallbackProviderId: fallbackProviderId,
-      ) ??
-      readProviderOption<bool>(
-        providerOptions,
-        providerId,
-        'emit_request_metadata',
         fallbackProviderId: fallbackProviderId,
       ) ??
       false;

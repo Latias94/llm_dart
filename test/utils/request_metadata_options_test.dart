@@ -10,13 +10,6 @@ void main() {
       expect(emitRequestMetadataEnabled(providerOptions, 'foo'), isTrue);
     });
 
-    test('reads emit_request_metadata', () {
-      const providerOptions = <String, Map<String, dynamic>>{
-        'foo': {'emit_request_metadata': true},
-      };
-      expect(emitRequestMetadataEnabled(providerOptions, 'foo'), isTrue);
-    });
-
     test('supports fallbackProviderId', () {
       const providerOptions = <String, Map<String, dynamic>>{
         'fallback': {'emitRequestMetadata': true},
