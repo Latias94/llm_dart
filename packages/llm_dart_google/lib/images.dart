@@ -30,6 +30,16 @@ class GoogleImages
 
   GoogleImages(this._client, this._config);
 
+  LLMCallOptions _mergeCallOptionsWithProviderOptions(
+    LLMCallOptions callOptions,
+    ProviderOptions providerOptions,
+  ) {
+    if (providerOptions.isEmpty) return callOptions;
+    final ns = providerOptionsNamespace(providerOptions, 'google');
+    if (ns == null || ns.isEmpty) return callOptions;
+    return LLMCallOptions(body: ns).mergedWith(callOptions);
+  }
+
   Map<String, dynamic> _buildProviderMetadata(
     String endpoint, {
     required String model,
@@ -81,8 +91,14 @@ class GoogleImages
     required LLMCallOptions callOptions,
   }) async {
     final startedAt = DateTime.now().toUtc();
+    final effectiveCallOptions = _mergeCallOptionsWithProviderOptions(
+      callOptions,
+      request.providerOptions,
+    );
     final model = request.model ?? _config.model;
     final endpoint = 'models/$model:predict';
+
+    final aspectRatio = request.aspectRatio?.trim();
 
     final requestData = {
       'instances': [
@@ -92,7 +108,9 @@ class GoogleImages
       ],
       'parameters': {
         if (request.count != null) 'sampleCount': request.count,
-        if (request.size != null)
+        if (aspectRatio != null && aspectRatio.isNotEmpty)
+          'aspectRatio': aspectRatio
+        else if (request.size != null)
           'aspectRatio': _convertSizeToAspectRatio(request.size!),
         // Imagen 3 specific parameters
         'personGeneration': 'allow_adult', // Default safe setting
@@ -102,8 +120,8 @@ class GoogleImages
     try {
       final response = await _client.postJsonWithHeaders(
         endpoint,
-        callOptions.mergeIntoRequestBody(requestData),
-        headers: callOptions.headers,
+        effectiveCallOptions.mergeIntoRequestBody(requestData),
+        headers: effectiveCallOptions.headers,
       );
       return _parseImagenResponse(
         response.json,
@@ -124,13 +142,20 @@ class GoogleImages
     required LLMCallOptions callOptions,
   }) async {
     final startedAt = DateTime.now().toUtc();
+    final effectiveCallOptions = _mergeCallOptionsWithProviderOptions(
+      callOptions,
+      request.providerOptions,
+    );
     final model = request.model ?? _config.model;
     final endpoint = '${googleModelPath(model)}:generateContent';
 
-    var imageConfig = {
-      if (request.size != null)
-        'aspectRatio': _normalizeAspectRatio(request.size!),
-    };
+    final imageConfig = <String, dynamic>{};
+    final aspectRatio = request.aspectRatio?.trim();
+    if (aspectRatio != null && aspectRatio.isNotEmpty) {
+      imageConfig['aspectRatio'] = aspectRatio;
+    } else if (request.size != null) {
+      imageConfig['aspectRatio'] = _normalizeAspectRatio(request.size!);
+    }
 
     final requestData = {
       'contents': [
@@ -159,8 +184,8 @@ class GoogleImages
     try {
       final response = await _client.postJsonWithHeaders(
         endpoint,
-        callOptions.mergeIntoRequestBody(requestData),
-        headers: callOptions.headers,
+        effectiveCallOptions.mergeIntoRequestBody(requestData),
+        headers: effectiveCallOptions.headers,
       );
       return _parseGeminiResponse(
         response.json,

@@ -3,6 +3,7 @@ library;
 
 import '../core/capability.dart' show UsageInfo;
 import '../core/stream_parts.dart';
+import '../core/provider_options.dart';
 
 /// Image model response metadata (AI SDK-style).
 class ImageModelResponseMetadata {
@@ -45,6 +46,9 @@ class ImageGenerationRequest {
   /// Model to use for generation
   final String? model;
 
+  /// Aspect ratio for the generated images (AI SDK-style), e.g. `16:9`.
+  final String? aspectRatio;
+
   /// Negative prompt to avoid certain elements
   final String? negativePrompt;
 
@@ -78,9 +82,17 @@ class ImageGenerationRequest {
   /// User identifier for monitoring and abuse detection
   final String? user;
 
+  /// Namespaced provider-specific options (AI SDK-style).
+  ///
+  /// Providers may ignore this field. Orchestration layers can also merge these
+  /// values into request payloads for provider modules that do not parse it
+  /// explicitly.
+  final ProviderOptions providerOptions;
+
   const ImageGenerationRequest({
     required this.prompt,
     this.model,
+    this.aspectRatio,
     this.negativePrompt,
     this.size,
     this.count,
@@ -92,11 +104,13 @@ class ImageGenerationRequest {
     this.quality,
     this.responseFormat,
     this.user,
+    this.providerOptions = const {},
   });
 
   Map<String, dynamic> toJson() => {
         'prompt': prompt,
         if (model != null) 'model': model,
+        if (aspectRatio != null) 'aspectRatio': aspectRatio,
         if (negativePrompt != null) 'negative_prompt': negativePrompt,
         if (size != null) 'size': size,
         if (count != null) 'count': count,
@@ -108,12 +122,15 @@ class ImageGenerationRequest {
         if (quality != null) 'quality': quality,
         if (responseFormat != null) 'response_format': responseFormat,
         if (user != null) 'user': user,
+        if (providerOptions.isNotEmpty) 'providerOptions': providerOptions,
       };
 
   factory ImageGenerationRequest.fromJson(Map<String, dynamic> json) =>
       ImageGenerationRequest(
         prompt: json['prompt'] as String,
         model: json['model'] as String?,
+        aspectRatio: (json['aspectRatio'] as String?) ??
+            (json['aspect_ratio'] as String?),
         negativePrompt: json['negative_prompt'] as String?,
         size: json['size'] as String?,
         count: json['count'] as int?,
@@ -125,6 +142,9 @@ class ImageGenerationRequest {
         quality: json['quality'] as String?,
         responseFormat: json['response_format'] as String?,
         user: json['user'] as String?,
+        providerOptions: _parseProviderOptions(
+          json['providerOptions'] ?? json['provider_options'],
+        ),
       );
 }
 
@@ -549,6 +569,12 @@ class ImageEditRequest {
   /// A unique identifier representing your end-user, which will help OpenAI to monitor and detect abuse.
   final String? user;
 
+  /// Aspect ratio for the edited images (AI SDK-style), e.g. `16:9`.
+  final String? aspectRatio;
+
+  /// Namespaced provider-specific options (AI SDK-style).
+  final ProviderOptions providerOptions;
+
   const ImageEditRequest({
     required this.image,
     required this.prompt,
@@ -558,6 +584,8 @@ class ImageEditRequest {
     this.size,
     this.responseFormat,
     this.user,
+    this.aspectRatio,
+    this.providerOptions = const {},
   });
 
   Map<String, dynamic> toJson() => {
@@ -569,6 +597,8 @@ class ImageEditRequest {
         if (size != null) 'size': size,
         if (responseFormat != null) 'response_format': responseFormat,
         if (user != null) 'user': user,
+        if (aspectRatio != null) 'aspectRatio': aspectRatio,
+        if (providerOptions.isNotEmpty) 'providerOptions': providerOptions,
       };
 
   factory ImageEditRequest.fromJson(Map<String, dynamic> json) =>
@@ -583,6 +613,11 @@ class ImageEditRequest {
         size: json['size'] as String?,
         responseFormat: json['response_format'] as String?,
         user: json['user'] as String?,
+        aspectRatio: (json['aspectRatio'] as String?) ??
+            (json['aspect_ratio'] as String?),
+        providerOptions: _parseProviderOptions(
+          json['providerOptions'] ?? json['provider_options'],
+        ),
       );
 
   @override
@@ -617,6 +652,12 @@ class ImageVariationRequest {
   /// A unique identifier representing your end-user, which will help OpenAI to monitor and detect abuse.
   final String? user;
 
+  /// Aspect ratio for the variations (AI SDK-style), e.g. `16:9`.
+  final String? aspectRatio;
+
+  /// Namespaced provider-specific options (AI SDK-style).
+  final ProviderOptions providerOptions;
+
   const ImageVariationRequest({
     required this.image,
     this.model,
@@ -624,6 +665,8 @@ class ImageVariationRequest {
     this.size,
     this.responseFormat,
     this.user,
+    this.aspectRatio,
+    this.providerOptions = const {},
   });
 
   Map<String, dynamic> toJson() => {
@@ -633,6 +676,8 @@ class ImageVariationRequest {
         if (size != null) 'size': size,
         if (responseFormat != null) 'response_format': responseFormat,
         if (user != null) 'user': user,
+        if (aspectRatio != null) 'aspectRatio': aspectRatio,
+        if (providerOptions.isNotEmpty) 'providerOptions': providerOptions,
       };
 
   factory ImageVariationRequest.fromJson(Map<String, dynamic> json) =>
@@ -643,6 +688,11 @@ class ImageVariationRequest {
         size: json['size'] as String?,
         responseFormat: json['response_format'] as String?,
         user: json['user'] as String?,
+        aspectRatio: (json['aspectRatio'] as String?) ??
+            (json['aspect_ratio'] as String?),
+        providerOptions: _parseProviderOptions(
+          json['providerOptions'] ?? json['provider_options'],
+        ),
       );
 
   @override
@@ -654,3 +704,23 @@ class ImageVariationRequest {
 }
 
 // UsageInfo is imported from chat_provider.dart
+
+ProviderOptions _parseProviderOptions(Object? raw) {
+  if (raw is ProviderOptions) return raw;
+  if (raw is! Map) return const {};
+
+  final result = <String, Map<String, dynamic>>{};
+  for (final entry in raw.entries) {
+    final key = entry.key;
+    if (key is! String) continue;
+
+    final value = entry.value;
+    if (value is Map<String, dynamic>) {
+      result[key] = value;
+    } else if (value is Map) {
+      result[key] = Map<String, dynamic>.from(value);
+    }
+  }
+
+  return result.isEmpty ? const {} : result;
+}

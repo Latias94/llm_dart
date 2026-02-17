@@ -87,7 +87,8 @@ class XAIImages
     if (request.size != null) {
       warnings.add(const LLMUnsupportedWarning(
         feature: 'size',
-        details: 'xAI image models do not support `size`. Use `aspectRatio` via provider options instead.',
+        details:
+            'xAI image models do not support `size`. Use `aspectRatio` instead.',
       ));
     }
     if (request.seed != null) {
@@ -96,15 +97,18 @@ class XAIImages
     if (request.negativePrompt != null) {
       warnings.add(const LLMUnsupportedWarning(feature: 'negativePrompt'));
     }
-    if (request.steps != null) warnings.add(const LLMUnsupportedWarning(feature: 'steps'));
+    if (request.steps != null)
+      warnings.add(const LLMUnsupportedWarning(feature: 'steps'));
     if (request.guidanceScale != null) {
       warnings.add(const LLMUnsupportedWarning(feature: 'guidanceScale'));
     }
     if (request.enhancePrompt != null) {
       warnings.add(const LLMUnsupportedWarning(feature: 'enhancePrompt'));
     }
-    if (request.style != null) warnings.add(const LLMUnsupportedWarning(feature: 'style'));
-    if (request.quality != null) warnings.add(const LLMUnsupportedWarning(feature: 'quality'));
+    if (request.style != null)
+      warnings.add(const LLMUnsupportedWarning(feature: 'style'));
+    if (request.quality != null)
+      warnings.add(const LLMUnsupportedWarning(feature: 'quality'));
 
     final baseBody = <String, dynamic>{
       'model': modelUsed,
@@ -113,10 +117,22 @@ class XAIImages
       'response_format': 'url',
     };
 
-    final providerOptionsBody = _xaiProviderOptionsBody(config.originalConfig);
-    final effectiveBody = callOptions
-        .mergedWith(LLMCallOptions(body: providerOptionsBody))
-        .mergeIntoRequestBody(baseBody);
+    final mergedProviderOptions =
+        _mergeProviderOptions(config.originalConfig, request.providerOptions);
+    final xaiOptions = mergedProviderOptions['xai'];
+    final providerOptionsBody = _xaiProviderOptionsBody(xaiOptions);
+
+    var requestBody = Map<String, dynamic>.from(baseBody);
+    if (providerOptionsBody != null && providerOptionsBody.isNotEmpty) {
+      requestBody.addAll(providerOptionsBody);
+    }
+
+    final ar = request.aspectRatio?.trim();
+    if (ar != null && ar.isNotEmpty) {
+      requestBody['aspect_ratio'] = ar;
+    }
+
+    final effectiveBody = callOptions.mergeIntoRequestBody(requestBody);
 
     final result = await client.postJsonWithHeaders(
       'images/generations',
@@ -199,7 +215,8 @@ class XAIImages
     if (request.size != null) {
       warnings.add(const LLMUnsupportedWarning(
         feature: 'size',
-        details: 'xAI image models do not support `size`. Use `aspectRatio` via provider options instead.',
+        details:
+            'xAI image models do not support `size`. Use `aspectRatio` instead.',
       ));
     }
     if (request.mask != null) {
@@ -219,10 +236,22 @@ class XAIImages
       },
     };
 
-    final providerOptionsBody = _xaiProviderOptionsBody(config.originalConfig);
-    final effectiveBody = callOptions
-        .mergedWith(LLMCallOptions(body: providerOptionsBody))
-        .mergeIntoRequestBody(baseBody);
+    final mergedProviderOptions =
+        _mergeProviderOptions(config.originalConfig, request.providerOptions);
+    final xaiOptions = mergedProviderOptions['xai'];
+    final providerOptionsBody = _xaiProviderOptionsBody(xaiOptions);
+
+    var requestBody = Map<String, dynamic>.from(baseBody);
+    if (providerOptionsBody != null && providerOptionsBody.isNotEmpty) {
+      requestBody.addAll(providerOptionsBody);
+    }
+
+    final ar = request.aspectRatio?.trim();
+    if (ar != null && ar.isNotEmpty) {
+      requestBody['aspect_ratio'] = ar;
+    }
+
+    final effectiveBody = callOptions.mergeIntoRequestBody(requestBody);
 
     final result = await client.postJsonWithHeaders(
       'images/edits',
@@ -333,8 +362,9 @@ String _mediaTypeFromImageFormat(String? format) {
   }
 }
 
-Map<String, dynamic>? _xaiProviderOptionsBody(LLMConfig? originalConfig) {
-  final options = originalConfig?.providerOptions['xai'];
+Map<String, dynamic>? _xaiProviderOptionsBody(
+    Map<String, dynamic>? xaiOptions) {
+  final options = xaiOptions;
   if (options == null || options.isEmpty) return null;
   // Do not include known non-body options here.
   final out = <String, dynamic>{};
@@ -355,6 +385,31 @@ Map<String, dynamic>? _xaiProviderOptionsBody(LLMConfig? originalConfig) {
     out[key] = entry.value;
   }
   return out.isEmpty ? null : out;
+}
+
+Map<String, Map<String, dynamic>> _mergeProviderOptions(
+  LLMConfig? originalConfig,
+  ProviderOptions requestProviderOptions,
+) {
+  final base =
+      originalConfig?.providerOptions ?? const <String, Map<String, dynamic>>{};
+  if (base.isEmpty) return requestProviderOptions;
+  if (requestProviderOptions.isEmpty) return base;
+
+  final out = <String, Map<String, dynamic>>{};
+  for (final entry in base.entries) {
+    out[entry.key] = Map<String, dynamic>.from(entry.value);
+  }
+  for (final entry in requestProviderOptions.entries) {
+    final key = entry.key;
+    final existing = out[key];
+    if (existing == null) {
+      out[key] = Map<String, dynamic>.from(entry.value);
+    } else {
+      out[key] = {...existing, ...entry.value};
+    }
+  }
+  return out;
 }
 
 Map<String, dynamic> _providerMetadata({

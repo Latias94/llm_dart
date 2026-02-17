@@ -18,6 +18,15 @@ class OpenAIImages
 
   OpenAIImages(this.client, this.config);
 
+  Map<String, dynamic>? _providerOptionsBody(ProviderOptions providerOptions) {
+    if (providerOptions.isEmpty) return null;
+    return providerOptionsNamespace(
+      providerOptions,
+      config.providerId,
+      fallbackProviderId: 'openai',
+    );
+  }
+
   Map<String, dynamic> _buildProviderMetadata(
     String endpoint, {
     required String model,
@@ -49,6 +58,17 @@ class OpenAIImages
   }) async {
     final startedAt = DateTime.now().toUtc();
     final modelUsed = request.model ?? config.model;
+    final warnings = <LLMWarning>[];
+    if (request.aspectRatio != null && request.aspectRatio!.trim().isNotEmpty) {
+      warnings.add(
+        const LLMUnsupportedWarning(
+          feature: 'aspectRatio',
+          details:
+              'OpenAI image APIs do not support `aspectRatio`. Use `size` or provider-specific parameters instead.',
+        ),
+      );
+    }
+
     var requestBody = <String, dynamic>{
       'model': modelUsed,
       'prompt': request.prompt,
@@ -65,6 +85,11 @@ class OpenAIImages
       if (request.style != null) 'style': request.style,
       if (request.quality != null) 'quality': request.quality,
     };
+
+    final providerOptionsBody = _providerOptionsBody(request.providerOptions);
+    if (providerOptionsBody != null && providerOptionsBody.isNotEmpty) {
+      requestBody.addAll(providerOptionsBody);
+    }
 
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
 
@@ -129,6 +154,7 @@ class OpenAIImages
         model: modelUsed,
         revisedPrompt: images.isNotEmpty ? images.first.revisedPrompt : null,
         usage: null, // OpenAI doesn't provide usage info for image generation
+        warnings: warnings,
         responses: [
           ImageModelResponseMetadata(
             timestamp: startedAt,
@@ -165,6 +191,17 @@ class OpenAIImages
   }) async {
     final startedAt = DateTime.now().toUtc();
     final modelUsed = request.model ?? config.model;
+    final warnings = <LLMWarning>[];
+    if (request.aspectRatio != null && request.aspectRatio!.trim().isNotEmpty) {
+      warnings.add(
+        const LLMUnsupportedWarning(
+          feature: 'aspectRatio',
+          details:
+              'OpenAI image APIs do not support `aspectRatio`. Use `size` or provider-specific parameters instead.',
+        ),
+      );
+    }
+
     // Prepare multipart form data for image editing
     final formData = <String, dynamic>{
       'prompt': request.prompt,
@@ -175,6 +212,11 @@ class OpenAIImages
         'response_format': request.responseFormat,
       if (request.user != null) 'user': request.user,
     };
+
+    final providerOptionsBody = _providerOptionsBody(request.providerOptions);
+    if (providerOptionsBody != null && providerOptionsBody.isNotEmpty) {
+      formData.addAll(providerOptionsBody);
+    }
 
     // Add image data
     if (request.image.data != null) {
@@ -203,6 +245,7 @@ class OpenAIImages
       request.model,
       startedAt: startedAt,
       responseHeaders: response.headers.isEmpty ? null : response.headers,
+      warnings: warnings,
       providerMetadata: _buildProviderMetadata(
         'images/edits',
         model: modelUsed,
@@ -226,6 +269,17 @@ class OpenAIImages
   }) async {
     final startedAt = DateTime.now().toUtc();
     final modelUsed = request.model ?? config.model;
+    final warnings = <LLMWarning>[];
+    if (request.aspectRatio != null && request.aspectRatio!.trim().isNotEmpty) {
+      warnings.add(
+        const LLMUnsupportedWarning(
+          feature: 'aspectRatio',
+          details:
+              'OpenAI image APIs do not support `aspectRatio`. Use `size` or provider-specific parameters instead.',
+        ),
+      );
+    }
+
     // Prepare multipart form data for image variation
     final formData = <String, dynamic>{
       if (request.model != null) 'model': request.model,
@@ -235,6 +289,11 @@ class OpenAIImages
         'response_format': request.responseFormat,
       if (request.user != null) 'user': request.user,
     };
+
+    final providerOptionsBody = _providerOptionsBody(request.providerOptions);
+    if (providerOptionsBody != null && providerOptionsBody.isNotEmpty) {
+      formData.addAll(providerOptionsBody);
+    }
 
     // Add image data
     if (request.image.data != null) {
@@ -255,6 +314,7 @@ class OpenAIImages
       request.model,
       startedAt: startedAt,
       responseHeaders: response.headers.isEmpty ? null : response.headers,
+      warnings: warnings,
       providerMetadata: _buildProviderMetadata(
         'images/variations',
         model: modelUsed,
@@ -364,6 +424,7 @@ class OpenAIImages
     String? model, {
     required DateTime startedAt,
     required Map<String, String>? responseHeaders,
+    List<LLMWarning> warnings = const <LLMWarning>[],
     Map<String, dynamic>? providerMetadata,
   }) {
     final data = responseData['data'] as List?;
@@ -420,6 +481,7 @@ class OpenAIImages
         model: model ?? config.model,
         revisedPrompt: images.isNotEmpty ? images.first.revisedPrompt : null,
         usage: null, // OpenAI doesn't provide usage info for image generation
+        warnings: warnings,
         responses: [
           ImageModelResponseMetadata(
             timestamp: startedAt,

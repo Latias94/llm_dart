@@ -22,54 +22,8 @@ Future<GenerateImageResult> generateImage({
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
-  String? providerId;
-  if (model is ModelIdentityCapability) {
-    providerId = (model as ModelIdentityCapability).providerId;
-  }
-
   final orchestrationWarnings = <LLMWarning>[];
-  final extraBody = <String, dynamic>{};
-
-  if (providerOptions.isNotEmpty) {
-    if (providerId == null || providerId.trim().isEmpty) {
-      orchestrationWarnings.add(const LLMCompatibilityWarning(
-        feature: 'providerOptions ignored',
-        details:
-            'providerOptions were provided, but the model did not expose a providerId via ModelIdentityCapability.',
-      ));
-    } else {
-      final ns = providerOptionsNamespace(providerOptions, providerId.trim());
-      if (ns != null && ns.isNotEmpty) {
-        extraBody.addAll(ns);
-      }
-    }
-  }
-
-  // Best-effort: AI SDK exposes `aspectRatio` for image models. We only enable
-  // a safe generic mapping for xAI (which expects `aspect_ratio` at the
-  // top-level request body).
-  final aspectRatioValue = aspectRatio?.trim();
-  if (aspectRatioValue != null && aspectRatioValue.isNotEmpty) {
-    final pid = providerId?.trim().toLowerCase();
-    if (pid == 'xai' || pid?.startsWith('xai.') == true) {
-      extraBody['aspect_ratio'] = aspectRatioValue;
-    } else {
-      orchestrationWarnings.add(LLMUnsupportedWarning(
-        feature: 'aspectRatio',
-        details:
-            'Generic image generation does not support `aspectRatio` for this provider. '
-            'Use callOptions.body with provider-specific parameters instead.',
-      ));
-    }
-  }
-
-  final effectiveCallOptions = defaultCallOptions
-      .mergedWith(
-        extraBody.isEmpty
-            ? const LLMCallOptions()
-            : LLMCallOptions(body: extraBody),
-      )
-      .mergedWith(callOptions);
+  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
 
   final requestedN = n <= 0 ? 1 : n;
   final declaredMaxImagesPerCall = model
@@ -154,9 +108,11 @@ Future<GenerateImageResult> generateImage({
         final request = ImageGenerationRequest(
           prompt: text,
           model: modelId,
+          aspectRatio: aspectRatio,
           size: size,
           count: n,
           seed: seed,
+          providerOptions: providerOptions,
         );
         return run(
           (cap) => cap.generateImagesWithCallOptions(
@@ -198,6 +154,8 @@ Future<GenerateImageResult> generateImage({
           model: modelId,
           count: n,
           size: size,
+          aspectRatio: aspectRatio,
+          providerOptions: providerOptions,
         );
 
         final response = await run(
