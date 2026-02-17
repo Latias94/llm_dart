@@ -221,5 +221,5 @@ part of the standard surface. Import them from:
 
 Example:
 
-- Anthropic `web_search_*` is provider-native and supported (configure via `providerTools` / `providerOptions`).
+  - Anthropic `web_search_*` is provider-native and supported (configure via `providerTools`).
 - MiniMax (Anthropic-compatible) may or may not support `web_search_*` provider-native tools depending on backend compatibility; LLM Dart does not hardcode an “unsupported matrix”.

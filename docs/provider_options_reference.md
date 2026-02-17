@@ -178,8 +178,7 @@ OpenAI extras (Chat/Responses):
 Web search:
 
 - `webSearchEnabled`: `bool`
-- `webSearch`: `Map<String, dynamic>` (**legacy best-effort**; prefer `providerTools`)
-- Behavior: when enabled/configured, forces `useResponsesAPI=true` and injects the `web_search_preview` built-in tool if missing. The SDK does **not** rewrite `model`; if a tool requires a specific model, the OpenAI API is the source of truth.
+- Behavior: when enabled, forces `useResponsesAPI=true` and injects the `web_search_preview` built-in tool if missing. Prefer configuring web search options via `providerTools` (`openai.web_search_preview`) or `builtInTools`.
 
 File search (Responses built-in tool):
 
@@ -215,8 +214,7 @@ Caching:
 
 Web search:
 
-- `webSearchEnabled`: `bool`
-- `webSearch`: `Map<String, dynamic>` (**legacy best-effort**; prefer `providerTools`)
+- Configure via `providerTools` (e.g. `anthropic.web_search_20250305`).
 
 Web fetch:
 
@@ -316,7 +314,7 @@ Embeddings (Gemini-native):
 Web search:
 
 - `webSearchEnabled`: `bool`
-- `webSearch`: `Map<String, dynamic>` (**legacy best-effort**; prefer `providerTools`)
+- `webSearchToolOptions`: `Map<String, dynamic>` (Vercel-style args: `mode`, `dynamicThreshold`)
 
 ### 2.5 `google-openai` (OpenAI-compatible)
 
@@ -379,8 +377,6 @@ Live search:
 
 - `liveSearch`: `bool`
 - `searchParameters`: `SearchParameters` JSON
-- `webSearchEnabled`: `bool`
-- `webSearch`: `Map<String, dynamic>` (converted into `SearchParameters`, **legacy best-effort**; prefer `searchParameters`)
 
 Embeddings:
 

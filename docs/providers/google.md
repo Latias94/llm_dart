@@ -114,10 +114,11 @@ final model = await LLMBuilder()
     .build();
 ```
 
-Legacy/best-effort escape hatches:
+Provider options (escape hatch):
 
-- `providerOptions['google']['webSearchEnabled']`
-- `providerOptions['google']['webSearch']` (legacy; prefer `providerTools`)
+- `providerOptions['google']['webSearchEnabled']`: `bool`
+- `providerOptions['google']['webSearchToolOptions']`: `Map<String, dynamic>`
+  (Vercel-style args: `mode`, `dynamicThreshold`)
 
 Notes:
 

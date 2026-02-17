@@ -148,7 +148,7 @@ Provider-by-provider alignment tracker:
     - `AnthropicConfig.copyWith(...)` preserves `providerId`, preventing metadata key regressions (e.g. `minimax`, not `anthropic`).
   - Anthropic-compatible request builder conformance is now shared:
     - `test/protocols/anthropic_compatible/request_builder_conformance_test.dart` asserts:
-      - providerOptions / providerTools both bridge into provider-native web search tool config and inject `web_search_*` tool definitions
+      - providerTools bridge into provider-native web search tool config and inject `web_search_*` tool definitions
       - collision-safe renaming when a local tool name collides with provider-native `web_search`
       - default `cacheControl` behavior (system blocks + last tool)
   - Anthropic-compatible tool loop persistence conformance is now shared:
