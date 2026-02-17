@@ -1,4 +1,5 @@
 import 'package:llm_dart_builder/llm_dart_builder.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_azure/provider_tools.dart';
 
 /// Azure OpenAI-specific LLM builder with provider-specific configuration methods.
@@ -9,6 +10,14 @@ class AzureBuilder {
   final LLMBuilder _baseBuilder;
 
   AzureBuilder(this._baseBuilder);
+
+  void _assertResponsesProviderSelected() {
+    if (_baseBuilder.providerId == 'azure') return;
+    throw UnsupportedCapabilityError(
+      'This Azure OpenAI feature requires the Responses API. '
+      'Use providerId "azure" (or call .azure()) instead of "${_baseBuilder.providerId}".',
+    );
+  }
 
   /// Set the Azure OpenAI `api-version` query parameter.
   AzureBuilder apiVersion(String apiVersion) {
@@ -25,24 +34,16 @@ class AzureBuilder {
     return this;
   }
 
-  /// Use the OpenAI Responses API module for chat operations.
-  ///
-  /// When disabled, chat calls fall back to Chat Completions API.
-  AzureBuilder useResponsesAPI([bool enabled = true]) {
-    _baseBuilder.providerOption('azure', 'useResponsesAPI', enabled);
-    return this;
-  }
-
   /// Enable Azure/OpenAI web search preview tool (provider-native).
   AzureBuilder webSearchPreviewTool() {
-    useResponsesAPI(true);
+    _assertResponsesProviderSelected();
     _baseBuilder.providerTool(AzureOpenAIProviderTools.webSearchPreview());
     return this;
   }
 
   /// Enable Azure/OpenAI file search tool (provider-native).
   AzureBuilder fileSearchTool({List<String>? vectorStoreIds}) {
-    useResponsesAPI(true);
+    _assertResponsesProviderSelected();
     _baseBuilder.providerTool(
       AzureOpenAIProviderTools.fileSearch(vectorStoreIds: vectorStoreIds),
     );
@@ -51,14 +52,14 @@ class AzureBuilder {
 
   /// Enable Azure/OpenAI code interpreter tool (provider-native).
   AzureBuilder codeInterpreterTool() {
-    useResponsesAPI(true);
+    _assertResponsesProviderSelected();
     _baseBuilder.providerTool(AzureOpenAIProviderTools.codeInterpreter());
     return this;
   }
 
   /// Enable Azure/OpenAI image generation tool (provider-native).
   AzureBuilder imageGenerationTool() {
-    useResponsesAPI(true);
+    _assertResponsesProviderSelected();
     _baseBuilder.providerTool(AzureOpenAIProviderTools.imageGeneration());
     return this;
   }

@@ -73,7 +73,7 @@ void main() {
       test('should handle invalid API key gracefully', () async {
         expect(() async {
           await ai()
-              .openai((openai) => openai.useResponsesAPI())
+              .openai()
               .apiKey('') // Empty API key
               .model('gpt-4o')
               .build();
@@ -83,7 +83,7 @@ void main() {
       test('should handle missing model gracefully', () async {
         expect(() async {
           await ai()
-              .openai((openai) => openai.useResponsesAPI())
+              .openai()
               .apiKey('test-key')
               .model('') // Empty model
               .build();
@@ -260,24 +260,17 @@ void main() {
 
     // ========== Builder Edge Cases ==========
     group('Builder Edge Cases', () {
-      test('should handle multiple calls to same builder method', () async {
-        final provider = await ai()
-            .openai((openai) => openai
-                .useResponsesAPI()
-                .useResponsesAPI(false) // Override
-                .useResponsesAPI(true)) // Override again
-            .apiKey('test-key')
-            .model('gpt-4o')
-            .build();
+      test('openaiChat builder should disable Responses API', () async {
+        final provider =
+            await ai().openaiChat().apiKey('test-key').model('gpt-4o').build();
 
         final openaiProvider = provider as OpenAIProvider;
-        expect(openaiProvider.config.useResponsesAPI, isTrue);
+        expect(openaiProvider.config.useResponsesAPI, isFalse);
       });
 
       test('should handle duplicate tool additions', () async {
         final provider = await ai()
             .openai((openai) => openai
-                .useResponsesAPI()
                 .webSearchTool()
                 .webSearchTool() // Duplicate
                 .fileSearchTool(vectorStoreIds: ['vs_123']).fileSearchTool(
@@ -294,7 +287,6 @@ void main() {
       test('should handle previousResponseId override', () async {
         final provider = await ai()
             .openai((openai) => openai
-                .useResponsesAPI()
                 .previousResponseId('resp_first')
                 .previousResponseId('resp_second')) // Override
             .apiKey('test-key')
@@ -321,21 +313,18 @@ void main() {
     group('Capability Edge Cases', () {
       test('should handle capability detection with mixed configurations',
           () async {
-        // Provider with Responses API but no tools
-        final provider1 = await ai()
-            .openai((openai) => openai.useResponsesAPI())
-            .apiKey('test-key')
-            .model('gpt-4o')
-            .build();
+        // Responses provider
+        final provider1 =
+            await ai().openai().apiKey('test-key').model('gpt-4o').build();
 
         expect(
             (provider1 as ProviderCapabilities)
                 .supports(LLMCapability.openaiResponses),
             isTrue);
 
-        // Provider with tools but no explicit Responses API
+        // Chat Completions provider
         final provider2 =
-            await ai().openai().apiKey('test-key').model('gpt-4o').build();
+            await ai().openaiChat().apiKey('test-key').model('gpt-4o').build();
 
         expect(
             (provider2 as ProviderCapabilities)

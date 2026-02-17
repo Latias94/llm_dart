@@ -10,19 +10,35 @@ import '../web_search_context_size.dart';
 /// OpenAI provider id used in the core registry.
 const String openaiProviderId = 'openai';
 
+/// OpenAI Chat Completions provider id (explicit chat surface).
+const String openaiChatProviderId = 'openai.chat';
+
 /// Register the OpenAI provider in the global [LLMProviderRegistry].
 ///
 /// - If [replace] is false (default), registration is idempotent and will
 ///   not override an existing provider registered under the same id.
 /// - If [replace] is true, the existing registration (if any) is replaced.
 void registerOpenAI({bool replace = false}) {
-  if (!replace && LLMProviderRegistry.isRegistered(openaiProviderId)) return;
-  final factory = OpenAIProviderFactory();
+  final responsesRegistered = LLMProviderRegistry.isRegistered(openaiProviderId);
+  final chatRegistered = LLMProviderRegistry.isRegistered(openaiChatProviderId);
+
+  if (!replace && responsesRegistered && chatRegistered) return;
+
+  final responsesFactory = OpenAIProviderFactory();
+  final chatFactory = OpenAIChatProviderFactory();
+
   if (replace) {
-    LLMProviderRegistry.registerOrReplace(factory);
+    LLMProviderRegistry.registerOrReplace(responsesFactory);
+    LLMProviderRegistry.registerOrReplace(chatFactory);
     return;
   }
-  LLMProviderRegistry.register(factory);
+
+  if (!responsesRegistered) {
+    LLMProviderRegistry.register(responsesFactory);
+  }
+  if (!chatRegistered) {
+    LLMProviderRegistry.register(chatFactory);
+  }
 }
 
 /// Factory for creating OpenAI provider instances.
@@ -36,7 +52,7 @@ class OpenAIProviderFactory
 
   @override
   String get description =>
-      'OpenAI GPT models including GPT-4, GPT-3.5, and reasoning models';
+      'OpenAI GPT models via the Responses API (default).';
 
   @override
   Set<LLMCapability> get supportedCapabilities => {
@@ -50,7 +66,6 @@ class OpenAIProviderFactory
         LLMCapability.speechToText,
         LLMCapability.audioTranslation,
         LLMCapability.imageGeneration,
-        // Best-effort: can be enabled via providerOptions['openai']['useResponsesAPI'].
         LLMCapability.openaiResponses,
       };
 
@@ -73,45 +88,95 @@ class OpenAIProviderFactory
 
   /// Transform unified config to OpenAI-specific config.
   OpenAIConfig _transformConfig(LLMConfig config) {
-    String? model = config.model;
-
     final providerOptions = config.providerOptions;
-    final extraBody =
-        readProviderOptionMap(providerOptions, providerId, 'extraBody');
-    final extraHeadersRaw =
-        readProviderOptionMap(providerOptions, providerId, 'extraHeaders');
-    final extraHeaders = _parseStringMap(extraHeadersRaw);
+    final fallbackProviderId =
+        providerId == openaiChatProviderId ? openaiProviderId : null;
 
-    var useResponsesAPI = readProviderOption<bool>(
-            providerOptions, providerId, 'useResponsesAPI') ??
-        false;
+    if (readProviderOption<dynamic>(
+          providerOptions,
+          providerId,
+          'useResponsesAPI',
+          fallbackProviderId: fallbackProviderId,
+        ) !=
+        null) {
+      throw InvalidRequestError(
+        '"useResponsesAPI" has been removed. Use providerId "$openaiProviderId" '
+        '(Responses) or "$openaiChatProviderId" (Chat Completions) instead.',
+      );
+    }
+
+    final useResponsesAPI = providerId == openaiProviderId;
+
+    final extraBody = readProviderOptionMap(
+      providerOptions,
+      providerId,
+      'extraBody',
+      fallbackProviderId: fallbackProviderId,
+    );
+    final extraHeadersRaw = readProviderOptionMap(
+      providerOptions,
+      providerId,
+      'extraHeaders',
+      fallbackProviderId: fallbackProviderId,
+    );
+    final extraHeaders = _parseStringMap(extraHeadersRaw);
 
     final builtInToolsFromProviderOptions = _parseBuiltInTools(
       readProviderOption<dynamic>(providerOptions, providerId, 'builtInTools'),
     );
 
-    List<OpenAIBuiltInTool>? builtInTools = builtInToolsFromProviderOptions;
-    final builtInToolsFromProviderTools =
-        _buildBuiltInToolsFromProviderTools(config);
-    if (builtInToolsFromProviderTools != null &&
-        builtInToolsFromProviderTools.isNotEmpty) {
-      final merged = List<OpenAIBuiltInTool>.from(builtInTools ?? const []);
-      for (final tool in builtInToolsFromProviderTools) {
-        if (merged.any((t) => t.type == tool.type)) continue;
-        merged.add(tool);
+    final previousResponseId = readProviderOption<String>(
+      providerOptions,
+      providerId,
+      'previousResponseId',
+    );
+
+    if (!useResponsesAPI) {
+      if (config.providerTools != null && config.providerTools!.isNotEmpty) {
+        throw InvalidRequestError(
+          'providerTools are only supported with the OpenAI Responses API. '
+          'Use providerId "$openaiProviderId".',
+        );
       }
-      builtInTools = merged.isEmpty ? null : merged;
+
+      if (builtInToolsFromProviderOptions != null &&
+          builtInToolsFromProviderOptions.isNotEmpty) {
+        throw InvalidRequestError(
+          '"builtInTools" are only supported with the OpenAI Responses API. '
+          'Use providerId "$openaiProviderId".',
+        );
+      }
+
+      if (previousResponseId != null && previousResponseId.isNotEmpty) {
+        throw InvalidRequestError(
+          '"previousResponseId" is only supported with the OpenAI Responses API. '
+          'Use providerId "$openaiProviderId".',
+        );
+      }
     }
 
-    // If any built-in tools are configured, force Responses API.
-    if ((builtInTools?.isNotEmpty ?? false) && useResponsesAPI == false) {
-      useResponsesAPI = true;
+    List<OpenAIBuiltInTool>? builtInTools;
+    if (useResponsesAPI) {
+      builtInTools = builtInToolsFromProviderOptions;
+      final builtInToolsFromProviderTools =
+          _buildBuiltInToolsFromProviderTools(config);
+      if (builtInToolsFromProviderTools != null &&
+          builtInToolsFromProviderTools.isNotEmpty) {
+        final merged = List<OpenAIBuiltInTool>.from(builtInTools ?? const []);
+        for (final tool in builtInToolsFromProviderTools) {
+          if (merged.any((t) => t.type == tool.type)) continue;
+          merged.add(tool);
+        }
+        builtInTools = merged.isEmpty ? null : merged;
+      }
     }
 
     return OpenAIConfig(
+      providerId: providerId,
+      providerName: providerId == openaiChatProviderId ? 'OpenAI (Chat)' : 'OpenAI',
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
-      model: model,
+      model: config.model,
       extraBody: extraBody,
       extraHeaders: extraHeaders,
       maxTokens: config.maxTokens,
@@ -127,28 +192,39 @@ class OpenAIProviderFactory
       serviceTier: config.serviceTier,
       reasoningEffort: ReasoningEffort.fromString(
         readProviderOption<String>(
-            providerOptions, providerId, 'reasoningEffort'),
+          providerOptions,
+          providerId,
+          'reasoningEffort',
+          fallbackProviderId: fallbackProviderId,
+        ),
       ),
       jsonSchema: readProviderOption<StructuredOutputFormat>(
         providerOptions,
         providerId,
         'jsonSchema',
+        fallbackProviderId: fallbackProviderId,
       ),
-      voice: readProviderOption<String>(providerOptions, providerId, 'voice'),
+      voice: readProviderOption<String>(
+        providerOptions,
+        providerId,
+        'voice',
+        fallbackProviderId: fallbackProviderId,
+      ),
       embeddingEncodingFormat: readProviderOption<String>(
         providerOptions,
         providerId,
         'embeddingEncodingFormat',
+        fallbackProviderId: fallbackProviderId,
       ),
       embeddingDimensions: readProviderOption<int>(
         providerOptions,
         providerId,
         'embeddingDimensions',
+        fallbackProviderId: fallbackProviderId,
       ),
       useResponsesAPI: useResponsesAPI,
-      previousResponseId: readProviderOption<String>(
-          providerOptions, providerId, 'previousResponseId'),
-      builtInTools: builtInTools,
+      previousResponseId: useResponsesAPI ? previousResponseId : null,
+      builtInTools: useResponsesAPI ? builtInTools : null,
       originalConfig: config,
     );
   }
@@ -701,4 +777,30 @@ class OpenAIProviderFactory
   // Note: this factory intentionally does not rewrite `model` when provider-native
   // tools are enabled. If a tool requires a specific model family, the OpenAI API
   // should return an error and the caller can pick an appropriate model.
+}
+
+/// Factory for creating OpenAI Chat Completions provider instances.
+class OpenAIChatProviderFactory extends OpenAIProviderFactory {
+  @override
+  String get providerId => openaiChatProviderId;
+
+  @override
+  String get displayName => 'OpenAI (Chat Completions)';
+
+  @override
+  String get description => 'OpenAI GPT models via Chat Completions (explicit).';
+
+  @override
+  Set<LLMCapability> get supportedCapabilities => {
+        LLMCapability.chat,
+        LLMCapability.streaming,
+        LLMCapability.embedding,
+        LLMCapability.toolCalling,
+        LLMCapability.reasoning,
+        LLMCapability.vision,
+        LLMCapability.textToSpeech,
+        LLMCapability.speechToText,
+        LLMCapability.audioTranslation,
+        LLMCapability.imageGeneration,
+      };
 }

@@ -115,22 +115,18 @@ void main() {
           );
         }
 
-        // Best-effort capability that is gated behind provider-specific settings.
-        if (caps.contains(LLMCapability.openaiResponses) &&
-            (providerId == 'openai' || providerId == 'azure')) {
-          final enabledConfig =
-              config.withProviderOption(providerId, 'useResponsesAPI', true);
-          final enabledProvider =
-              LLMProviderRegistry.createAnyProvider(providerId, enabledConfig);
-
-          expect(enabledProvider, isA<ProviderCapabilities>());
+        // The Responses capability is an explicit provider id in this repo
+        // (e.g. `openai` vs `openai.chat`), so it should be enabled whenever
+        // the factory advertises it.
+        if (caps.contains(LLMCapability.openaiResponses)) {
+          expect(provider, isA<ProviderCapabilities>());
 
           final supported =
-              (enabledProvider as ProviderCapabilities).supportedCapabilities;
+              (provider as ProviderCapabilities).supportedCapabilities;
           expect(
             supported,
             contains(LLMCapability.openaiResponses),
-            reason: '$providerId should expose openaiResponses when enabled',
+            reason: '$providerId should expose openaiResponses',
           );
         }
       }

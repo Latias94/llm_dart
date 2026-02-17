@@ -188,7 +188,7 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
 ### Fixed
 
 - **OpenAI Image and File Message Handling**: Fixed message format compatibility for both Chat Completions API and Responses API (by [@viumvi](https://github.com/viumvi) in [#19](https://github.com/Latias94/llm_dart/pull/19))
-  - Fixed image URL format to use correct structure based on `useResponsesAPI` flag
+  - Fixed image URL format to use the correct structure for the selected API (Chat Completions vs Responses)
   - Fixed Responses API `input` field to always send message array (was incorrectly sending content array for single messages)
   - Fixed content type names for Responses API (`input_text`, `input_image`, `input_file`)
   - Fixed missing text content when `ImageMessage` or `ImageUrlMessage` includes `content` field
@@ -280,7 +280,7 @@ Migration guide: `docs/migrations/0.11.0-alpha.1.md`.
   - Stateful conversation management with `continueConversation()` and `forkConversation()`
   - Background processing for long-running tasks
   - Built-in tools integration: web search, file search, computer use
-  - Enhanced builder methods: `useResponsesAPI()`, `webSearchTool()`, `fileSearchTool()`, `computerUseTool()`
+  - Enhanced builder methods: `webSearchTool()`, `fileSearchTool()`, `computerUseTool()`, `buildOpenAIResponses()`
   - Type-safe response handling and comprehensive examples in `example/04_providers/openai/responses_api.dart`
 
 ### Fixed

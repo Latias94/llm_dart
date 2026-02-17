@@ -77,8 +77,9 @@ Official surfaces (from OpenAPI spec):
 Notes:
 
 - LLM Dart supports both OpenAI Chat Completions and the OpenAI-only Responses API.
-  Responses is opt-in via `providerOptions['openai']['useResponsesAPI']` or when
-  OpenAI built-in tools are configured.
+  The surface is selected by provider id:
+  - Responses: `openai` (default)
+  - Chat Completions: `openai.chat` (explicit)
 
 ## Anthropic (`llm_dart_anthropic`)
 

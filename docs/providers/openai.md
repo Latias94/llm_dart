@@ -8,7 +8,7 @@ OpenAI-specific functionality is accessed via:
 
 - `providerOptions['openai']`
 - `providerTools` (provider-executed tools)
-- `providerMetadata['openai']`
+- `providerMetadata[providerId]` (canonical; e.g. `openai` or `openai.chat`)
 
 ## Packages
 
@@ -50,13 +50,16 @@ In LLM Dart:
 - The **Responses API** implementation lives in `llm_dart_openai` only
   (see `docs/adp/0007-openai-responses-openai-only.md`).
 
-How the OpenAI provider decides:
+In LLM Dart, the API surface is selected by provider id:
 
-- Default: Chat Completions
-- Enable Responses API explicitly: `providerOptions['openai']['useResponsesAPI']=true`
-- Responses is also enabled automatically when:
-  - any OpenAI built-in tool is configured via `providerTools`, or
-  - `builtInTools` is configured.
+- Responses API (default OpenAI surface): providerId `openai`
+- Chat Completions (explicit baseline surface): providerId `openai.chat`
+
+Notes:
+
+- Responses-only options (e.g. `previousResponseId`, `builtInTools`) require
+  providerId `openai`.
+- `openai.chat` rejects provider-native tools (`providerTools`).
 
 Official docs:
 
@@ -174,7 +177,6 @@ Reference:
 
 Common OpenAI keys (non-exhaustive):
 
-- `useResponsesAPI`: `bool`
 - `previousResponseId`: `String` (Responses API only)
 - `builtInTools`: `List<Map<String, dynamic>>` (Responses built-in tools)
 - Prefer `providerTools` for Responses built-in tools (recommended).

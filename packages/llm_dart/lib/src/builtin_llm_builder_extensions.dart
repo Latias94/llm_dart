@@ -24,9 +24,27 @@ extension BuiltinProviderBuilders on LLMBuilder {
     return this;
   }
 
+  LLMBuilder azureChat([AzureBuilder Function(AzureBuilder)? configure]) {
+    BuiltinProviderRegistry.ensureRegistered();
+    provider('azure.chat');
+    if (configure != null) {
+      configure(AzureBuilder(this));
+    }
+    return this;
+  }
+
   LLMBuilder openai([OpenAIBuilder Function(OpenAIBuilder)? configure]) {
     BuiltinProviderRegistry.ensureRegistered();
     provider('openai');
+    if (configure != null) {
+      configure(OpenAIBuilder(this));
+    }
+    return this;
+  }
+
+  LLMBuilder openaiChat([OpenAIBuilder Function(OpenAIBuilder)? configure]) {
+    BuiltinProviderRegistry.ensureRegistered();
+    provider('openai.chat');
     if (configure != null) {
       configure(OpenAIBuilder(this));
     }
@@ -241,13 +259,6 @@ extension BuiltinProviderBuildHelpers on LLMBuilder {
         'buildOpenAIResponses() can only be used with OpenAI provider. '
         'Current provider: $providerId. Use .openai() first.',
       );
-    }
-
-    final isResponsesAPIEnabled =
-        currentConfig.getProviderOption<bool>('openai', 'useResponsesAPI') ??
-            false;
-    if (!isResponsesAPIEnabled) {
-      providerOption('openai', 'useResponsesAPI', true);
     }
 
     final provider = await build();

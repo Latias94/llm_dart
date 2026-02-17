@@ -69,29 +69,27 @@ Future<Map<String, ProviderCapabilities>> createProviders() async {
   if (openaiKey != null) {
     try {
       final openai = await LLMBuilder()
-          .provider(openaiProviderId)
+          .provider(openaiChatProviderId)
           .apiKey(openaiKey)
           .model('gpt-4o-mini')
           .build();
       if (openai is ProviderCapabilities) {
-        providers['OpenAI Standard'] = openai as ProviderCapabilities;
+        providers['OpenAI (Chat Completions)'] = openai as ProviderCapabilities;
       }
     } catch (e) {
       print('⚠️  Failed to create OpenAI provider: $e');
     }
 
-    // OpenAI provider with Responses API (manual configuration)
+    // OpenAI provider with Responses API
     try {
       final openaiResponses = await LLMBuilder()
           .provider(openaiProviderId)
           .apiKey(openaiKey)
           .model('gpt-4o')
-          .providerOption('openai', 'useResponsesAPI', true)
           .providerTool(OpenAIProviderTools.webSearchPreview())
           .build();
       if (openaiResponses is ProviderCapabilities) {
-        providers['OpenAI Responses (Manual)'] =
-            openaiResponses as ProviderCapabilities;
+        providers['OpenAI (Responses)'] = openaiResponses as ProviderCapabilities;
       }
     } catch (e) {
       print('⚠️  Failed to create OpenAI Responses provider: $e');
@@ -103,12 +101,10 @@ Future<Map<String, ProviderCapabilities>> createProviders() async {
           .provider(openaiProviderId)
           .apiKey(openaiKey)
           .model('gpt-4o')
-          .providerOption('openai', 'useResponsesAPI', true)
           .providerTool(OpenAIProviderTools.webSearchPreview())
           .build();
       final openaiProvider = provider as OpenAIProvider;
-      providers['OpenAI Responses (Typed)'] =
-          openaiProvider as ProviderCapabilities;
+      providers['OpenAI (Responses, Typed)'] = openaiProvider as ProviderCapabilities;
     } catch (e) {
       print('⚠️  Failed to create OpenAI Responses auto provider: $e');
     }
@@ -305,7 +301,7 @@ Future<void> demonstrateFeatureBasedSelection(
   } else {
     print('      ❌ No providers support OpenAI Responses API');
     print(
-        '      💡 Tip: Enable with .openai((openai) => openai.useResponsesAPI())');
+        '      💡 Tip: Use providerId "openai" (Responses) instead of "openai.chat".');
   }
   print('');
 }

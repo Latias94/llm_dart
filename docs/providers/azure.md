@@ -14,7 +14,7 @@ Provider-agnostic usage should prefer `llm_dart_ai` task APIs. Azure-only knobs
 live behind:
 
 - `providerOptions['azure']`
-- `providerMetadata['azure']`
+- `providerMetadata[providerId]` (canonical; e.g. `azure` or `azure.chat`)
 
 ## Packages
 
@@ -70,15 +70,8 @@ When `true` (deployment-based URLs, common in Azure):
 
 Azure can use either:
 
-- Chat Completions (`/chat/completions`)
-- Responses (`/responses`)
-
-Control it via:
-
-- `providerOptions['azure']['useResponsesAPI'] = true|false`
-
-If you configure any OpenAI built-in tools via `providerTools`, LLM Dart will
-force `useResponsesAPI=true` (tooling requires Responses).
+- Responses (`/responses`) via providerId `azure` (default)
+- Chat Completions (`/chat/completions`) via providerId `azure.chat` (explicit)
 
 Note: Azure tool ids use the `azure.` prefix (AI SDK parity), e.g.
 `azure.web_search_preview`. The Azure factory also tolerates legacy `openai.*`
@@ -105,7 +98,6 @@ Future<void> main() async {
       .providerOptions('azure', const {
         'apiVersion': '2024-10-01-preview',
         'useDeploymentBasedUrls': true,
-        'useResponsesAPI': true,
       })
       .build();
 
@@ -123,13 +115,14 @@ Future<void> main() async {
 
 `ChatResponse.providerMetadata` is an optional provider-id namespaced map.
 
-For Azure, the namespace is:
+For Azure, the canonical namespace key equals `providerId`:
 
-- `providerMetadata['azure']`
+- Responses: `providerMetadata['azure']`
+- Chat Completions: `providerMetadata['azure.chat']`
 
 Compatibility aliases may also be emitted during the fearless refactor window
-(e.g. `azure.chat`, `azure.responses`), but downstream code should treat
-`providerMetadata['azure']` as canonical.
+(e.g. `azure.responses`), but downstream code should treat
+`providerMetadata[providerId]` as canonical.
 
 The payload includes best-effort fields such as:
 

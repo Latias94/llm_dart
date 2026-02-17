@@ -9,7 +9,7 @@ import 'package:llm_dart_openai/provider.dart';
 
 void main() {
   group('OpenAI providerMetadata namespacing', () {
-    test('chat completions adds openai.chat alias key', () async {
+    test('chat completions uses canonical openai.chat key', () async {
       final adapter = _FakeOpenAIHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
 
@@ -17,20 +17,17 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://api.openai.com/v1/',
         model: 'gpt-4o',
-      ).withProviderOptions('openai', {
-        'useResponsesAPI': false,
-      }).withTransportOptions({'customDio': customDio});
+      ).withTransportOptions({'customDio': customDio});
 
-      final factory = OpenAIProviderFactory();
+      final factory = OpenAIChatProviderFactory();
       final provider = factory.create(llmConfig) as OpenAIProvider;
 
       final response = await provider.chat([ChatMessage.user('hi')]);
       final meta = response.providerMetadata;
 
       expect(meta, isNotNull);
-      expect(meta!.containsKey('openai'), isTrue);
-      expect(meta.containsKey('openai.chat'), isTrue);
-      expect(meta['openai.chat'], equals(meta['openai']));
+      expect(meta!.containsKey('openai.chat'), isTrue);
+      expect(meta.containsKey('openai'), isFalse);
 
       expect(response.usage, isNotNull);
       expect(response.usage!.promptTokens, equals(3));
@@ -47,9 +44,7 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://api.openai.com/v1/',
         model: 'gpt-4o',
-      ).withProviderOptions('openai', {
-        'useResponsesAPI': true,
-      }).withTransportOptions({'customDio': customDio});
+      ).withTransportOptions({'customDio': customDio});
 
       final factory = OpenAIProviderFactory();
       final provider = factory.create(llmConfig) as OpenAIProvider;

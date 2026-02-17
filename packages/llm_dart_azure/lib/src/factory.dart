@@ -10,13 +10,26 @@ import '../provider.dart';
 
 /// Register the Azure OpenAI provider in the global [LLMProviderRegistry].
 void registerAzure({bool replace = false}) {
-  if (!replace && LLMProviderRegistry.isRegistered(azureProviderId)) return;
-  final factory = AzureOpenAIProviderFactory();
+  final responsesRegistered = LLMProviderRegistry.isRegistered(azureProviderId);
+  final chatRegistered = LLMProviderRegistry.isRegistered(azureChatProviderId);
+
+  if (!replace && responsesRegistered && chatRegistered) return;
+
+  final responsesFactory = AzureOpenAIProviderFactory();
+  final chatFactory = AzureOpenAIChatProviderFactory();
+
   if (replace) {
-    LLMProviderRegistry.registerOrReplace(factory);
+    LLMProviderRegistry.registerOrReplace(responsesFactory);
+    LLMProviderRegistry.registerOrReplace(chatFactory);
     return;
   }
-  LLMProviderRegistry.register(factory);
+
+  if (!responsesRegistered) {
+    LLMProviderRegistry.register(responsesFactory);
+  }
+  if (!chatRegistered) {
+    LLMProviderRegistry.register(chatFactory);
+  }
 }
 
 /// Factory for creating Azure OpenAI provider instances.
@@ -29,7 +42,7 @@ class AzureOpenAIProviderFactory
   String get displayName => 'Azure OpenAI';
 
   @override
-  String get description => 'Azure OpenAI models (OpenAI-compatible).';
+  String get description => 'Azure OpenAI models via the Responses API (default).';
 
   @override
   Set<LLMCapability> get supportedCapabilities => {
@@ -70,24 +83,36 @@ class AzureOpenAIProviderFactory
 
   AzureOpenAIConfig _transformConfig(LLMConfig config) {
     final providerOptions = config.providerOptions;
+    final fallbackProviderId =
+        providerId == azureChatProviderId ? azureProviderId : null;
+
+    if (readProviderOption<dynamic>(
+          providerOptions,
+          providerId,
+          'useResponsesAPI',
+          fallbackProviderId: fallbackProviderId,
+        ) !=
+        null) {
+      throw InvalidRequestError(
+        '"useResponsesAPI" has been removed. Use providerId "$azureProviderId" '
+        '(Responses) or "$azureChatProviderId" (Chat Completions) instead.',
+      );
+    }
 
     final baseUrlPrefix = config.baseUrl.trim().replaceAll(RegExp(r'/*$'), '');
     final apiVersion = readProviderOption<String>(
           providerOptions,
           providerId,
           'apiVersion',
+          fallbackProviderId: fallbackProviderId,
         ) ??
         azureDefaultApiVersion;
-    var useResponsesAPI = readProviderOption<bool>(
-          providerOptions,
-          providerId,
-          'useResponsesAPI',
-        ) ??
-        true;
+    final useResponsesAPI = providerId == azureProviderId;
     final useDeploymentBasedUrls = readProviderOption<bool>(
           providerOptions,
           providerId,
           'useDeploymentBasedUrls',
+          fallbackProviderId: fallbackProviderId,
         ) ??
         false;
 
@@ -95,22 +120,41 @@ class AzureOpenAIProviderFactory
         ? '$baseUrlPrefix/deployments/${Uri.encodeComponent(config.model)}'
         : '$baseUrlPrefix/v1';
 
-    final extraBody =
-        readProviderOptionMap(providerOptions, providerId, 'extraBody');
-    final extraHeadersRaw =
-        readProviderOptionMap(providerOptions, providerId, 'extraHeaders');
+    final extraBody = readProviderOptionMap(
+      providerOptions,
+      providerId,
+      'extraBody',
+      fallbackProviderId: fallbackProviderId,
+    );
+    final extraHeadersRaw = readProviderOptionMap(
+      providerOptions,
+      providerId,
+      'extraHeaders',
+      fallbackProviderId: fallbackProviderId,
+    );
     final extraHeaders = _parseStringMap(extraHeadersRaw);
 
     final builtInTools = _parseBuiltInTools(config.providerTools);
 
-    // Azure provider-native tools (OpenAI Responses built-ins) require the
-    // Responses API. Align with OpenAI factory behavior: if any built-in tools
-    // are configured, force `useResponsesAPI=true`.
-    if ((builtInTools?.isNotEmpty ?? false) && useResponsesAPI == false) {
-      useResponsesAPI = true;
+    if (!useResponsesAPI) {
+      if (config.providerTools != null && config.providerTools!.isNotEmpty) {
+        throw InvalidRequestError(
+          'providerTools are only supported with the Azure/OpenAI Responses API. '
+          'Use providerId "$azureProviderId".',
+        );
+      }
+      if (builtInTools != null && builtInTools.isNotEmpty) {
+        throw InvalidRequestError(
+          'Azure provider-native tools are only supported with the Responses API. '
+          'Use providerId "$azureProviderId".',
+        );
+      }
     }
 
     return AzureOpenAIConfig(
+      providerId: providerId,
+      providerName:
+          providerId == azureChatProviderId ? 'Azure OpenAI (Chat)' : 'Azure OpenAI',
       apiKey: config.apiKey ?? '',
       baseUrl: '$apiRoot/',
       model: config.model,
@@ -129,7 +173,7 @@ class AzureOpenAIProviderFactory
       stopSequences: config.stopSequences,
       user: config.user,
       serviceTier: config.serviceTier,
-      builtInTools: builtInTools,
+      builtInTools: useResponsesAPI ? builtInTools : null,
       useResponsesAPI: useResponsesAPI,
       originalConfig: config,
     );
@@ -179,4 +223,31 @@ class AzureOpenAIProviderFactory
 
     return built.isEmpty ? null : built;
   }
+}
+
+/// Factory for creating Azure OpenAI Chat Completions provider instances.
+class AzureOpenAIChatProviderFactory extends AzureOpenAIProviderFactory {
+  @override
+  String get providerId => azureChatProviderId;
+
+  @override
+  String get displayName => 'Azure OpenAI (Chat Completions)';
+
+  @override
+  String get description =>
+      'Azure OpenAI models via Chat Completions (explicit).';
+
+  @override
+  Set<LLMCapability> get supportedCapabilities => {
+        LLMCapability.chat,
+        LLMCapability.streaming,
+        LLMCapability.embedding,
+        LLMCapability.toolCalling,
+        LLMCapability.reasoning,
+        LLMCapability.vision,
+        LLMCapability.imageGeneration,
+        LLMCapability.textToSpeech,
+        LLMCapability.speechToText,
+        LLMCapability.audioTranslation,
+      };
 }

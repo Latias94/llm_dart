@@ -5,8 +5,8 @@
 ///
 /// ## Building OpenAI Responses API providers
 ///
-/// OpenAI Responses API is enabled via namespaced `providerOptions`:
-/// (OpenAI-only; not part of `llm_dart_openai_compatible`)
+/// OpenAI Responses API is selected via providerId `openai`
+/// (Chat Completions baseline is providerId `openai.chat`).
 ///
 /// ```dart
 /// registerOpenAI();
@@ -15,12 +15,14 @@
 ///     .provider(openaiProviderId)
 ///     .apiKey(apiKey)
 ///     .model('gpt-4o')
-///     .providerOption('openai', 'useResponsesAPI', true)
 ///     .providerTool(OpenAIProviderTools.webSearchPreview())
 ///     .build();
 ///
 /// final openaiProvider = provider as OpenAIProvider;
-/// final responses = openaiProvider.responses!;
+/// final responses = OpenAIResponses(
+///   OpenAIClient(openaiProvider.config),
+///   openaiProvider.config,
+/// );
 /// ```
 library;
 
@@ -88,9 +90,9 @@ Future<void> capabilityDetectionExample(String apiKey) async {
   print('--- Example 0: Capability Detection ---');
 
   try {
-    // Create standard OpenAI provider (without Responses API)
+    // Create OpenAI Chat Completions provider (without Responses API)
     final standardProvider = await LLMBuilder()
-        .provider(openaiProviderId)
+        .provider(openaiChatProviderId)
         .apiKey(apiKey)
         .model('gpt-4o-mini')
         .build();
@@ -105,7 +107,6 @@ Future<void> capabilityDetectionExample(String apiKey) async {
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
-        .providerOption('openai', 'useResponsesAPI', true)
         .providerTool(OpenAIProviderTools.webSearchPreview())
         .build();
 
@@ -160,7 +161,6 @@ Future<void> capabilityDetectionExample(String apiKey) async {
             .provider(openaiProviderId)
             .apiKey(apiKey)
             .model('gpt-4o')
-            .providerOption('openai', 'useResponsesAPI', true)
             .providerTool(OpenAIProviderTools.webSearchPreview())
             .build();
         final autoProvider = provider as OpenAIProvider;
@@ -187,7 +187,7 @@ Future<void> capabilityDetectionExample(String apiKey) async {
     } else {
       print('❌ OpenAI Responses API capability not available');
       print(
-          "💡 Enable with: .providerOption('openai', 'useResponsesAPI', true)");
+          '💡 Use providerId "openai" (Responses) instead of "openai.chat".');
     }
 
     print('');
@@ -219,7 +219,6 @@ Future<void> basicResponsesAPIExample(String apiKey) async {
         .apiKey(apiKey)
         .model('gpt-4.1')
         .temperature(0.7)
-        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     final messages = [
@@ -248,7 +247,6 @@ Future<void> webSearchExample(String apiKey) async {
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
-        .providerOption('openai', 'useResponsesAPI', true)
         .providerTool(OpenAIProviderTools.webSearchPreview())
         .build();
 
@@ -273,7 +271,6 @@ Future<void> functionCallingExample(String apiKey) async {
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
-        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     // Define a simple weather function
@@ -331,7 +328,6 @@ Future<void> reasoningExample(String apiKey) async {
         .model('o3-mini')
         .reasoningEffort(ReasoningEffort.high)
         .maxTokens(2000)
-        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     final messages = [
@@ -373,7 +369,6 @@ Future<void> fileSearchExample(String apiKey) async {
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
-        .providerOption('openai', 'useResponsesAPI', true)
         .providerTool(
           OpenAIProviderTools.fileSearch(
             vectorStoreIds: const ['vs_example123'],
@@ -403,7 +398,6 @@ Future<void> multipleToolsExample(String apiKey) async {
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
-        .providerOption('openai', 'useResponsesAPI', true)
         .providerTool(OpenAIProviderTools.webSearchPreview())
         .providerTool(
           OpenAIProviderTools.fileSearch(
@@ -433,7 +427,6 @@ Future<void> streamingExample(String apiKey) async {
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
-        .providerOption('openai', 'useResponsesAPI', true)
         .providerTool(OpenAIProviderTools.webSearchPreview())
         .build();
 
@@ -482,7 +475,6 @@ Future<void> computerUseExample(String apiKey) async {
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('computer-use-preview')
-        .providerOption('openai', 'useResponsesAPI', true)
         .providerTool(OpenAIProviderTools.computerUse(
           displayWidth: 1024,
           displayHeight: 768,
@@ -512,7 +504,6 @@ Future<void> responseChainingExample(String apiKey) async {
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4.1')
-        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     final messages1 = [
@@ -532,7 +523,6 @@ Future<void> responseChainingExample(String apiKey) async {
           .provider(openaiProviderId)
           .apiKey(apiKey)
           .model('gpt-4.1')
-          .providerOption('openai', 'useResponsesAPI', true)
           .providerOption('openai', 'previousResponseId', response1.responseId!)
           .build();
 
@@ -560,7 +550,6 @@ Future<void> statefulConversationExample(String apiKey) async {
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
-        .providerOption('openai', 'useResponsesAPI', true)
         .providerTool(OpenAIProviderTools.webSearchPreview())
         .build();
     final openaiProvider = provider as OpenAIProvider;
@@ -617,7 +606,6 @@ Future<void> backgroundProcessingExample(String apiKey) async {
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
-        .providerOption('openai', 'useResponsesAPI', true)
         .providerTool(OpenAIProviderTools.webSearchPreview())
         .build();
     final openaiProvider = provider as OpenAIProvider;
@@ -682,7 +670,6 @@ Future<void> responseLifecycleExample(String apiKey) async {
         .provider(openaiProviderId)
         .apiKey(apiKey)
         .model('gpt-4o')
-        .providerOption('openai', 'useResponsesAPI', true)
         .providerTool(OpenAIProviderTools.webSearchPreview())
         .build();
     final openaiProvider = provider as OpenAIProvider;

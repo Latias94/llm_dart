@@ -450,35 +450,29 @@ not part of the `llm_dart_openai_compatible` baseline.
 final provider = await OpenAIBuilder(
   ai().provider('openai').apiKey('your-key').model('gpt-4o'),
 )
-    .useResponsesAPI()
     .webSearchTool()
     .fileSearchTool(vectorStoreIds: ['vs_123'])
-    .build();
+    .buildOpenAIResponses();
 
-// Cast to access stateful features
-final responsesProvider = provider as OpenAIProvider;
-final responses = responsesProvider.responses!;
+final responses = OpenAIResponses(
+  OpenAIClient(provider.config),
+  provider.config,
+);
 
 // Stateful conversation with automatic context preservation
 final response1 = await responses.chat(
-  Prompt(messages: [
-    PromptMessage.user('My name is Alice. Tell me about quantum computing'),
-  ]).toChatMessages(),
+  [ChatMessage.user('My name is Alice. Tell me about quantum computing')],
 );
 
 final responseId = (response1 as OpenAIResponsesResponse).responseId;
 final response2 = await responses.continueConversation(
   responseId!,
-  Prompt(messages: [
-    PromptMessage.user('Remember my name and explain it simply'),
-  ]).toChatMessages(),
+  [ChatMessage.user('Remember my name and explain it simply')],
 );
 
 // Background processing for long tasks
 final backgroundTask = await responses.chatWithToolsBackground(
-  Prompt(messages: [
-    PromptMessage.user('Write a detailed research report'),
-  ]).toChatMessages(),
+  [ChatMessage.user('Write a detailed research report')],
   null,
 );
 

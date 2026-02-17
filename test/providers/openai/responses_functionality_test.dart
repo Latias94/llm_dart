@@ -19,7 +19,7 @@ void main() {
 
       setUp(() async {
         provider = await ai()
-            .openai((openai) => openai.useResponsesAPI().webSearchTool())
+            .openai((openai) => openai.webSearchTool())
             .apiKey('test-key')
             .model('gpt-4o')
             .build() as OpenAIProvider;
@@ -96,7 +96,7 @@ void main() {
 
       setUp(() async {
         provider = await ai()
-            .openai((openai) => openai.useResponsesAPI())
+            .openai()
             .apiKey('test-key')
             .model('gpt-4o')
             .build() as OpenAIProvider;
@@ -169,7 +169,7 @@ void main() {
 
       setUp(() async {
         provider = await ai()
-            .openai((openai) => openai.useResponsesAPI().webSearchTool())
+            .openai((openai) => openai.webSearchTool())
             .apiKey('test-key')
             .model('gpt-4o')
             .build() as OpenAIProvider;
@@ -311,7 +311,7 @@ void main() {
 
       setUp(() async {
         provider = await ai()
-            .openai((openai) => openai.useResponsesAPI())
+            .openai()
             .apiKey('test-key')
             .model('gpt-4o')
             .build() as OpenAIProvider;
@@ -385,7 +385,7 @@ void main() {
 
       setUp(() async {
         provider = await ai()
-            .openai((openai) => openai.useResponsesAPI().webSearchTool())
+            .openai((openai) => openai.webSearchTool())
             .apiKey('test-key')
             .model('gpt-4o')
             .build() as OpenAIProvider;

@@ -48,7 +48,9 @@ class BuiltinProviderRegistry {
   /// while still allowing low-level users to manage the registry manually.
   static void ensureRegistered() {
     if (_isRegistered('openai') &&
+        _isRegistered('openai.chat') &&
         _isRegistered('azure') &&
+        _isRegistered('azure.chat') &&
         _isRegistered('anthropic') &&
         _isRegistered('deepseek') &&
         _isRegistered('ollama') &&

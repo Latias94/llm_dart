@@ -151,7 +151,13 @@ Common keys:
 
 OpenAI extras (Chat/Responses):
 
-- `useResponsesAPI`: `bool`
+Model surface selection:
+
+- Responses API (default): providerId `openai`
+- Chat Completions (explicit): providerId `openai.chat`
+
+Responses-only:
+
 - `previousResponseId`: `String`
 - `store`: `bool` (Responses-only; forwarded to `store`)
   - Note: the OpenAI Responses API defaults `store=true` when omitted.

@@ -99,7 +99,6 @@ Future<void> imageUrlResponsesAPIExample(String apiKey) async {
         .apiKey(apiKey)
         .model('gpt-4o')
         .temperature(0.7)
-        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     // Same API - the library handles format differences automatically
@@ -269,7 +268,6 @@ Technical Details:
         .model('gpt-4o')
         .temperature(0.7)
         .maxTokens(300)
-        .providerOption('openai', 'useResponsesAPI', true)
         .build();
 
     // Read file

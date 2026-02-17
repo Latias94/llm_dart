@@ -14,6 +14,14 @@ class OpenAIBuilder {
 
   OpenAIBuilder(this._baseBuilder);
 
+  void _assertResponsesProviderSelected() {
+    if (_baseBuilder.providerId == 'openai') return;
+    throw UnsupportedCapabilityError(
+      'This OpenAI feature requires the Responses API. '
+      'Use providerId "openai" (or call .openai()) instead of "${_baseBuilder.providerId}".',
+    );
+  }
+
   // ========== OpenAI-specific configuration methods ==========
 
   OpenAIBuilder frequencyPenalty(double penalty) {
@@ -58,18 +66,14 @@ class OpenAIBuilder {
 
   // ========== OpenAI Responses API Configuration ==========
 
-  OpenAIBuilder useResponsesAPI([bool use = true]) {
-    _baseBuilder.providerOption('openai', 'useResponsesAPI', use);
-    return this;
-  }
-
   OpenAIBuilder previousResponseId(String responseId) {
+    _assertResponsesProviderSelected();
     _baseBuilder.providerOption('openai', 'previousResponseId', responseId);
     return this;
   }
 
   OpenAIBuilder webSearchTool() {
-    useResponsesAPI(true);
+    _assertResponsesProviderSelected();
     _baseBuilder.providerTool(OpenAIProviderTools.webSearchPreview());
     final tools = _getBuiltInTools();
     tools.add(OpenAIBuiltInTools.webSearch());
@@ -85,7 +89,7 @@ class OpenAIBuilder {
     List<String>? vectorStoreIds,
     Map<String, dynamic>? parameters,
   }) {
-    useResponsesAPI(true);
+    _assertResponsesProviderSelected();
     _baseBuilder.providerTool(
       OpenAIProviderTools.fileSearch(
         vectorStoreIds: vectorStoreIds,
@@ -111,7 +115,7 @@ class OpenAIBuilder {
     required String environment,
     Map<String, dynamic>? parameters,
   }) {
-    useResponsesAPI(true);
+    _assertResponsesProviderSelected();
     _baseBuilder.providerTool(
       OpenAIProviderTools.computerUse(
         displayWidth: displayWidth,
@@ -215,7 +219,7 @@ class OpenAIBuilder {
   OpenAIBuilder webSearch({
     OpenAIWebSearchContextSize contextSize = OpenAIWebSearchContextSize.medium,
   }) {
-    useResponsesAPI(true);
+    _assertResponsesProviderSelected();
     final tools = _getBuiltInTools();
     tools.add(OpenAIBuiltInTools.webSearch(contextSize: contextSize));
     _baseBuilder.providerOption(
@@ -252,12 +256,7 @@ class OpenAIBuilder {
       _baseBuilder.buildEmbedding();
 
   Future<OpenAIProvider> buildOpenAIResponses() async {
-    final isResponsesAPIEnabled = _baseBuilder.currentConfig
-            .getProviderOption<bool>('openai', 'useResponsesAPI') ??
-        false;
-    if (!isResponsesAPIEnabled) {
-      useResponsesAPI(true);
-    }
+    _assertResponsesProviderSelected();
 
     final provider = await build();
 

@@ -191,7 +191,6 @@ void main() {
       test('should build provider with Responses API using builder', () async {
         final provider = await ai()
             .openai((openai) => openai
-                .useResponsesAPI()
                 .webSearchTool()
                 .fileSearchTool(vectorStoreIds: ['vs_123']))
             .apiKey('test-key')
@@ -209,7 +208,6 @@ void main() {
       test('should accumulate multiple built-in tools', () async {
         final provider = await ai()
             .openai((openai) => openai
-                    .useResponsesAPI()
                     .webSearchTool()
                     .fileSearchTool(vectorStoreIds: ['vs_123']).computerUseTool(
                   displayWidth: 1024,
@@ -231,8 +229,7 @@ void main() {
 
       test('should set previous response ID correctly', () async {
         final provider = await ai()
-            .openai((openai) =>
-                openai.useResponsesAPI().previousResponseId('resp_chain_123'))
+            .openai((openai) => openai.previousResponseId('resp_chain_123'))
             .apiKey('test-key')
             .model('gpt-4o')
             .build();
@@ -400,11 +397,8 @@ void main() {
     // ========== Capability Detection Tests ==========
     group('Capability Detection', () {
       test('should detect OpenAI Responses capability when enabled', () async {
-        final provider = await ai()
-            .openai((openai) => openai.useResponsesAPI())
-            .apiKey('test-key')
-            .model('gpt-4o')
-            .build();
+        final provider =
+            await ai().openai().apiKey('test-key').model('gpt-4o').build();
 
         expect(provider, isA<ProviderCapabilities>());
         final capabilities = provider as ProviderCapabilities;
@@ -418,7 +412,7 @@ void main() {
       test('should not detect OpenAI Responses capability when disabled',
           () async {
         final provider =
-            await ai().openai().apiKey('test-key').model('gpt-4o').build();
+            await ai().openaiChat().apiKey('test-key').model('gpt-4o').build();
 
         expect(provider, isA<ProviderCapabilities>());
         final capabilities = provider as ProviderCapabilities;
@@ -430,11 +424,8 @@ void main() {
       });
 
       test('should allow Responses opt-in wrapper when enabled', () async {
-        final provider = await ai()
-            .openai((openai) => openai.useResponsesAPI())
-            .apiKey('test-key')
-            .model('gpt-4o')
-            .build();
+        final provider =
+            await ai().openai().apiKey('test-key').model('gpt-4o').build();
 
         final openaiProvider = provider as OpenAIProvider;
         expect(openaiProvider.supports(LLMCapability.openaiResponses), isTrue);
@@ -449,7 +440,7 @@ void main() {
       test('should not report openaiResponses capability when disabled',
           () async {
         final provider =
-            await ai().openai().apiKey('test-key').model('gpt-4o').build();
+            await ai().openaiChat().apiKey('test-key').model('gpt-4o').build();
 
         final openaiProvider = provider as OpenAIProvider;
         expect(openaiProvider.supports(LLMCapability.openaiResponses), isFalse);
@@ -457,7 +448,7 @@ void main() {
 
       test('should support type-safe capability checking', () async {
         final provider = await ai()
-            .openai((openai) => openai.useResponsesAPI().webSearchTool())
+            .openai((openai) => openai.webSearchTool())
             .apiKey('test-key')
             .model('gpt-4o')
             .build();

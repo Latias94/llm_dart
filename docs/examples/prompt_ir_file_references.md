@@ -68,8 +68,6 @@ Future<void> main() async {
       .provider(openaiProviderId) // 'openai'
       .apiKey(Platform.environment['OPENAI_API_KEY'] ?? 'OPENAI_API_KEY')
       .model('gpt-4o')
-      // File ids / file URLs require Responses semantics.
-      .option('useResponsesAPI', true)
       .build();
 
   final prompt = Prompt(messages: [

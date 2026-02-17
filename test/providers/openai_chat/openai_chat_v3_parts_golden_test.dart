@@ -20,6 +20,8 @@ void main() {
       final sessions = [sseStreamFromChunkFile(fixturePath)];
 
       final config = openai_client.OpenAIConfig(
+        providerId: 'openai.chat',
+        providerName: 'OpenAI (Chat)',
         apiKey: 'test-key',
         baseUrl: 'https://api.openai.com/v1/',
         model: 'gpt-5-mini',

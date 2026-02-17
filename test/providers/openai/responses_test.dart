@@ -8,7 +8,6 @@ void main() {
       final config = OpenAIConfig(
         apiKey: 'test-key',
         model: 'gpt-4o',
-        useResponsesAPI: true,
       );
 
       expect(config.useResponsesAPI, isTrue);
@@ -49,7 +48,6 @@ void main() {
     test('should build provider with Responses API using builder', () async {
       final provider = await ai()
           .openai((openai) => openai
-              .useResponsesAPI()
               .webSearchTool()
               .fileSearchTool(vectorStoreIds: ['vs_123']))
           .apiKey('test-key')
@@ -126,7 +124,6 @@ void main() {
       test('should accumulate multiple built-in tools', () async {
         final provider = await ai()
             .openai((openai) => openai
-                    .useResponsesAPI()
                     .webSearchTool()
                     .fileSearchTool(vectorStoreIds: ['vs_123']).computerUseTool(
                   displayWidth: 1024,
@@ -148,8 +145,7 @@ void main() {
 
       test('should set previous response ID correctly', () async {
         final provider = await ai()
-            .openai((openai) =>
-                openai.useResponsesAPI().previousResponseId('resp_123'))
+            .openai((openai) => openai.previousResponseId('resp_123'))
             .apiKey('test-key')
             .model('gpt-4o')
             .build();

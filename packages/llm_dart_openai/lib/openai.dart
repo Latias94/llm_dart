@@ -41,6 +41,7 @@ OpenAIProvider createOpenAIProvider({
     temperature: temperature,
     maxTokens: maxTokens,
     systemPrompt: systemPrompt,
+    useResponsesAPI: true,
   );
 
   return OpenAIProvider(config);

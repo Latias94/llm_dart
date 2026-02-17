@@ -12,7 +12,6 @@ void main() {
           .apiKey('test-key')
           .model('gpt-4o')
           .providerOptions('openai', {
-        'useResponsesAPI': true,
         'builtInTools': [
           {'type': 'web_search_preview', 'search_context_size': 'high'},
           {

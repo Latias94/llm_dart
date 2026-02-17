@@ -1,3 +1,4 @@
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_openai_compatible/openai_compatible_config.dart';
 import 'package:llm_dart_openai_compatible/openai_responses_config.dart';
 import 'package:llm_dart_openai_compatible/builtin_tools.dart';
@@ -32,6 +33,8 @@ class AzureOpenAIConfig extends OpenAICompatibleConfig
   final List<OpenAIBuiltInTool>? builtInTools;
 
   const AzureOpenAIConfig({
+    String providerId = azureProviderId,
+    String providerName = 'Azure OpenAI',
     required super.apiKey,
     required super.baseUrl,
     required super.model,
@@ -60,14 +63,24 @@ class AzureOpenAIConfig extends OpenAICompatibleConfig
     super.serviceTier,
     super.originalConfig,
   }) : super(
-          providerId: azureProviderId,
-          providerName: 'Azure OpenAI',
+          providerId: providerId,
+          providerName: providerName,
         );
 
   @override
   T? getProviderOption<T>(String key) {
     if (key == 'apiVersion') return apiVersion as T?;
     if (key == 'useDeploymentBasedUrls') return useDeploymentBasedUrls as T?;
-    return super.getProviderOption<T>(key);
+    final direct = super.getProviderOption<T>(key);
+    if (direct != null) return direct;
+
+    // For namespaced variants (e.g. "azure.chat"), fall back to the base
+    // Azure provider options to keep escape hatches ergonomic.
+    final original = originalConfig;
+    if (original != null && providerId == azureChatProviderId) {
+      return readProviderOption<T>(original.providerOptions, azureProviderId, key);
+    }
+
+    return null;
   }
 }

@@ -73,16 +73,24 @@ class AzureOpenAIProvider
   bool supports(LLMCapability capability) =>
       supportedCapabilities.contains(capability);
 
+  void _assertProviderToolsSupported(List<ProviderTool>? providerTools) {
+    if (providerTools == null || providerTools.isEmpty) return;
+    if (config.useResponsesAPI) return;
+    throw UnsupportedCapabilityError(
+      'Provider-native tools require the Azure/OpenAI Responses API. '
+      'Use providerId "azure" (Responses) instead of "${config.providerId}".',
+    );
+  }
+
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    final shouldUseResponses = config.useResponsesAPI ||
-        (providerTools != null && providerTools.isNotEmpty);
+    _assertProviderToolsSupported(providerTools);
 
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       final response = await _responses.chat(messages,
           providerTools: providerTools, cancelToken: cancelToken);
       return _wrapResponseWithProviderMetadataAlias(
@@ -107,10 +115,9 @@ class AzureOpenAIProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    final shouldUseResponses = config.useResponsesAPI ||
-        (providerTools != null && providerTools.isNotEmpty);
+    _assertProviderToolsSupported(providerTools);
 
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       final response = await _responses.chatWithTools(
         messages,
         tools,
@@ -143,10 +150,9 @@ class AzureOpenAIProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    final shouldUseResponses = config.useResponsesAPI ||
-        (providerTools != null && providerTools.isNotEmpty);
+    _assertProviderToolsSupported(providerTools);
 
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       return _wrapStreamPartsWithProviderMetadataAlias(
         _responses.chatStreamParts(
           messages,
@@ -177,10 +183,9 @@ class AzureOpenAIProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async {
-    final shouldUseResponses = config.useResponsesAPI ||
-        (providerTools != null && providerTools.isNotEmpty);
+    _assertProviderToolsSupported(providerTools);
 
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       final response = await _responses.chatPrompt(
         prompt,
         providerTools: providerTools,
@@ -210,10 +215,9 @@ class AzureOpenAIProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    final shouldUseResponses = config.useResponsesAPI ||
-        (providerTools != null && providerTools.isNotEmpty);
+    _assertProviderToolsSupported(providerTools);
 
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       return _wrapStreamPartsWithProviderMetadataAlias(
         _responses.chatPromptStreamParts(
           prompt,

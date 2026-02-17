@@ -167,7 +167,6 @@ final provider = await LLMBuilder()
     .provider(openaiProviderId)
     .apiKey('your-key')
     .model('gpt-5-mini')
-    .providerOption('openai', 'useResponsesAPI', true)
     .providerTools([
       OpenAIProviderTools.webSearchPreview(),
       OpenAIProviderTools.fileSearch(vectorStoreIds: ['vs_123']),
@@ -184,12 +183,14 @@ final provider = await LLMBuilder()
     .provider(openaiProviderId)
     .apiKey('your-key')
     .model('gpt-5-mini')
-    .providerOption('openai', 'useResponsesAPI', true)
     .build();
 final openaiProvider = provider as OpenAIProvider;
 
-// Direct access to Responses API
-final responses = openaiProvider.responses!;
+// Direct access to Responses API (typed wrapper)
+final responses = OpenAIResponses(
+  OpenAIClient(openaiProvider.config),
+  openaiProvider.config,
+);
 
 // Create initial response
 final response1 = await responses.chat([

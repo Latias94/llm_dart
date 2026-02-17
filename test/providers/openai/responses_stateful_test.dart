@@ -6,11 +6,8 @@ import 'package:llm_dart_openai/client.dart';
 void main() {
   group('OpenAI Responses API Stateful Features', () {
     test('should report Responses capability when enabled', () async {
-      final provider = await ai()
-          .openai((openai) => openai.useResponsesAPI())
-          .apiKey('test-key')
-          .model('gpt-4o')
-          .build();
+      final provider =
+          await ai().openai().apiKey('test-key').model('gpt-4o').build();
 
       final openaiProvider = provider as OpenAIProvider;
       expect(openaiProvider.supports(LLMCapability.openaiResponses), isTrue);
@@ -22,7 +19,7 @@ void main() {
 
     test('should not report Responses capability when disabled', () async {
       final provider =
-          await ai().openai().apiKey('test-key').model('gpt-4o').build();
+          await ai().openaiChat().apiKey('test-key').model('gpt-4o').build();
 
       final openaiProvider = provider as OpenAIProvider;
       expect(openaiProvider.supports(LLMCapability.openaiResponses), isFalse);
@@ -30,7 +27,7 @@ void main() {
 
     test('should implement OpenAIResponsesCapability interface', () async {
       final provider = await ai()
-          .openai((openai) => openai.useResponsesAPI())
+          .openai()
           .apiKey('test-key')
           .model('gpt-4o')
           .build();
@@ -46,7 +43,7 @@ void main() {
     test('should have all required OpenAIResponsesCapability methods',
         () async {
       final provider = await ai()
-          .openai((openai) => openai.useResponsesAPI())
+          .openai()
           .apiKey('test-key')
           .model('gpt-4o')
           .build();
@@ -68,7 +65,7 @@ void main() {
 
     test('should support basic OpenAIResponsesCapability methods', () async {
       final provider = await ai()
-          .openai((openai) => openai.useResponsesAPI())
+          .openai()
           .apiKey('test-key')
           .model('gpt-4o')
           .build();

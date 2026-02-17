@@ -105,7 +105,6 @@ void main() {
       ).withProviderOptions('azure', {
         'apiVersion': '2024-10-01-preview',
         'useDeploymentBasedUrls': false,
-        'useResponsesAPI': true,
       }).withTransportOptions({'customDio': customDio});
 
       final factory = AzureOpenAIProviderFactory();
@@ -136,7 +135,6 @@ void main() {
       ).withProviderOptions('azure', {
         'apiVersion': '2024-10-01-preview',
         'useDeploymentBasedUrls': false,
-        'useResponsesAPI': false,
       }).withTransportOptions({'customDio': customDio});
 
       final factory = AzureOpenAIProviderFactory();
@@ -177,7 +175,6 @@ void main() {
       ).withProviderOptions('azure', {
         'apiVersion': '2024-10-01-preview',
         'useDeploymentBasedUrls': false,
-        'useResponsesAPI': true,
       }).withTransportOptions({'customDio': customDio});
 
       final factory = AzureOpenAIProviderFactory();
@@ -269,7 +266,6 @@ void main() {
       ).withProviderOptions('azure', {
         'apiVersion': '2024-10-01-preview',
         'useDeploymentBasedUrls': true,
-        'useResponsesAPI': true,
       }).withTransportOptions({'customDio': customDio});
 
       final factory = AzureOpenAIProviderFactory();

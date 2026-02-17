@@ -81,7 +81,7 @@ dart test test/test_all.dart
 The OpenAI Responses API tests cover:
 
 ### ✅ Configuration & Builder
-- [x] Basic configuration with `useResponsesAPI()`
+- [x] Basic configuration via providerId `openai`
 - [x] Built-in tools configuration (web search, file search, computer use)
 - [x] Previous response ID for conversation chaining
 - [x] Builder method chaining and accumulation
@@ -107,7 +107,7 @@ The OpenAI Responses API tests cover:
 - [x] `LLMCapability.openaiResponses` detection
 - [x] Type-safe capability checking
 - [x] Provider capability consistency
-- [x] Responses getter availability
+- [x] `OpenAIResponses` wrapper instantiation
 
 ### ✅ Error Handling
 - [x] `OpenAIResponsesError` creation and formatting

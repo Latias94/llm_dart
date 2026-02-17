@@ -4,15 +4,13 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:test/test.dart';
 
 import '../../utils/fakes/fakes.dart';
-import '../../utils/fixture_replay.dart';
 
 void main() {
-  group('Azure providerTools trigger Responses API (streaming)', () {
-    test('uses responses endpoint when providerTools are provided', () async {
-      const fixturePath =
-          'test/fixtures/openai/responses/openai-web-search-tool.1.chunks.txt';
-
+  group('Azure providerTools require Responses API (streaming)', () {
+    test('throws when providerTools are provided on azure.chat', () async {
       final config = AzureOpenAIConfig(
+        providerId: azureChatProviderId,
+        providerName: 'Azure OpenAI (Chat)',
         apiKey: 'test-key',
         baseUrl: 'https://example.openai.azure.com/openai/v1/',
         model: 'deployment_1',
@@ -21,20 +19,18 @@ void main() {
         useResponsesAPI: false,
       );
 
-      final client = FakeOpenAIClient(config)
-        ..streamResponse = sseStreamFromChunkFile(fixturePath);
+      final client = FakeOpenAIClient(config);
       final provider = AzureOpenAIProvider(config, client: client);
 
-      final parts = await provider.chatStreamParts(
-        [ChatMessage.user('Hi')],
-        providerTools: [
-          AzureOpenAIProviderTools.webSearchPreview(),
-        ],
-      ).toList();
-
-      expect(client.lastEndpoint, equals('responses'));
-      expect(parts.whereType<LLMProviderToolCallPart>(), isNotEmpty);
-      expect(parts.whereType<LLMFinishPart>(), isNotEmpty);
+      expect(
+        () => provider.chatStreamParts(
+          [ChatMessage.user('Hi')],
+          providerTools: [
+            AzureOpenAIProviderTools.webSearchPreview(),
+          ],
+        ),
+        throwsA(isA<UnsupportedCapabilityError>()),
+      );
     });
   });
 }

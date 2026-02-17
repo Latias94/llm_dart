@@ -9,7 +9,7 @@ import 'package:llm_dart_azure/provider.dart';
 
 void main() {
   group('Azure providerMetadata namespacing', () {
-    test('chat completions adds azure.chat alias key', () async {
+    test('chat completions uses canonical azure.chat key', () async {
       final adapter = _FakeAzureHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
 
@@ -20,19 +20,17 @@ void main() {
       ).withProviderOptions('azure', {
         'apiVersion': '2024-10-01-preview',
         'useDeploymentBasedUrls': false,
-        'useResponsesAPI': false,
       }).withTransportOptions({'customDio': customDio});
 
-      final factory = AzureOpenAIProviderFactory();
+      final factory = AzureOpenAIChatProviderFactory();
       final provider = factory.create(llmConfig) as AzureOpenAIProvider;
 
       final response = await provider.chat([ChatMessage.user('hi')]);
       final meta = response.providerMetadata;
 
       expect(meta, isNotNull);
-      expect(meta!.containsKey('azure'), isTrue);
-      expect(meta.containsKey('azure.chat'), isTrue);
-      expect(meta['azure.chat'], equals(meta['azure']));
+      expect(meta!.containsKey('azure.chat'), isTrue);
+      expect(meta.containsKey('azure'), isFalse);
 
       expect(response.usage, isNotNull);
       expect(response.usage!.promptTokens, equals(3));
@@ -52,7 +50,6 @@ void main() {
       ).withProviderOptions('azure', {
         'apiVersion': '2024-10-01-preview',
         'useDeploymentBasedUrls': false,
-        'useResponsesAPI': true,
       }).withTransportOptions({'customDio': customDio});
 
       final factory = AzureOpenAIProviderFactory();
@@ -73,8 +70,7 @@ void main() {
       expect(response.usage!.reasoningTokens, equals(5));
     });
 
-    test('providerTools force Responses API even when useResponsesAPI=false',
-        () async {
+    test('azure.chat rejects providerTools', () async {
       final adapter = _FakeAzureHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
 
@@ -88,26 +84,13 @@ void main() {
       ).withProviderOptions('azure', {
         'apiVersion': '2024-10-01-preview',
         'useDeploymentBasedUrls': false,
-        'useResponsesAPI': false,
       }).withTransportOptions({'customDio': customDio});
 
-      final factory = AzureOpenAIProviderFactory();
-      final provider = factory.create(llmConfig) as AzureOpenAIProvider;
-
-      final response = await provider.chat([ChatMessage.user('hi')]);
-      final meta = response.providerMetadata;
-
-      expect(meta, isNotNull);
-      expect(meta!.containsKey('azure'), isTrue);
-      expect(meta.containsKey('azure.responses'), isTrue);
-      expect(meta['azure.responses'], equals(meta['azure']));
-
-      // The fake adapter returns different usage for chat vs responses.
-      expect(response.usage, isNotNull);
-      expect(response.usage!.promptTokens, equals(11));
-      expect(response.usage!.completionTokens, equals(7));
-      expect(response.usage!.totalTokens, equals(18));
-      expect(response.usage!.reasoningTokens, equals(5));
+      final factory = AzureOpenAIChatProviderFactory();
+      expect(
+        () => factory.create(llmConfig),
+        throwsA(isA<InvalidRequestError>()),
+      );
     });
   });
 }

@@ -108,18 +108,24 @@ class OpenAIProvider
 
   // ========== ChatCapability (delegated to chat module) ==========
 
+  void _assertProviderToolsSupported(List<ProviderTool>? providerTools) {
+    if (providerTools == null || providerTools.isEmpty) return;
+    if (config.useResponsesAPI) return;
+    throw UnsupportedCapabilityError(
+      'Provider-native tools require the OpenAI Responses API. '
+      'Use providerId "openai" (Responses) instead of "${config.providerId}".',
+    );
+  }
+
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    final shouldUseResponses =
-        (providerTools != null && providerTools.isNotEmpty) ||
-            (config.useResponsesAPI && _responses != null);
+    _assertProviderToolsSupported(providerTools);
 
-    // Provider-native tools (e.g. web search) require Responses API.
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       final responses = _responses ?? OpenAIResponses(_client, config);
       final response = await responses.chat(
         messages,
@@ -131,14 +137,14 @@ class OpenAIProvider
         baseKey: config.providerId,
         aliasKey: _openaiResponsesProviderMetadataKey,
       );
-    } else {
-      final response = await _chat.chat(messages, cancelToken: cancelToken);
-      return _wrapResponseWithProviderMetadataAlias(
-        response,
-        baseKey: config.providerId,
-        aliasKey: _openaiChatProviderMetadataKey,
-      );
     }
+
+    final response = await _chat.chat(messages, cancelToken: cancelToken);
+    return _wrapResponseWithProviderMetadataAlias(
+      response,
+      baseKey: config.providerId,
+      aliasKey: _openaiChatProviderMetadataKey,
+    );
   }
 
   @override
@@ -148,11 +154,9 @@ class OpenAIProvider
     List<ProviderTool>? providerTools,
     CancelToken? cancelToken,
   }) async {
-    final shouldUseResponses =
-        (providerTools != null && providerTools.isNotEmpty) ||
-            (config.useResponsesAPI && _responses != null);
+    _assertProviderToolsSupported(providerTools);
 
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       final responses = _responses ?? OpenAIResponses(_client, config);
       final response = await responses.chatWithTools(
         messages,
@@ -165,18 +169,18 @@ class OpenAIProvider
         baseKey: config.providerId,
         aliasKey: _openaiResponsesProviderMetadataKey,
       );
-    } else {
-      final response = await _chat.chatWithTools(
-        messages,
-        tools,
-        cancelToken: cancelToken,
-      );
-      return _wrapResponseWithProviderMetadataAlias(
-        response,
-        baseKey: config.providerId,
-        aliasKey: _openaiChatProviderMetadataKey,
-      );
     }
+
+    final response = await _chat.chatWithTools(
+      messages,
+      tools,
+      cancelToken: cancelToken,
+    );
+    return _wrapResponseWithProviderMetadataAlias(
+      response,
+      baseKey: config.providerId,
+      aliasKey: _openaiChatProviderMetadataKey,
+    );
   }
 
   @override
@@ -187,11 +191,9 @@ class OpenAIProvider
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
-    final shouldUseResponses =
-        (providerTools != null && providerTools.isNotEmpty) ||
-            (config.useResponsesAPI && _responses != null);
+    _assertProviderToolsSupported(providerTools);
 
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       final responses = _responses ?? OpenAIResponses(_client, config);
       final response = await responses.chatWithToolsWithCallOptions(
         messages,
@@ -205,19 +207,19 @@ class OpenAIProvider
         baseKey: config.providerId,
         aliasKey: _openaiResponsesProviderMetadataKey,
       );
+    } else {
+      final response = await _chat.chatWithToolsWithCallOptions(
+        messages,
+        tools,
+        callOptions: callOptions,
+        cancelToken: cancelToken,
+      );
+      return _wrapResponseWithProviderMetadataAlias(
+        response,
+        baseKey: config.providerId,
+        aliasKey: _openaiChatProviderMetadataKey,
+      );
     }
-
-    final response = await _chat.chatWithToolsWithCallOptions(
-      messages,
-      tools,
-      callOptions: callOptions,
-      cancelToken: cancelToken,
-    );
-    return _wrapResponseWithProviderMetadataAlias(
-      response,
-      baseKey: config.providerId,
-      aliasKey: _openaiChatProviderMetadataKey,
-    );
   }
 
   @override
@@ -227,12 +229,9 @@ class OpenAIProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    final shouldUseResponses =
-        (providerTools != null && providerTools.isNotEmpty) ||
-            (config.useResponsesAPI && _responses != null);
+    _assertProviderToolsSupported(providerTools);
 
-    // Provider-native tools (e.g. web search) require Responses API.
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       final responses = _responses ?? OpenAIResponses(_client, config);
       return wrapStreamPartsWithProviderMetadataAlias(
         responses.chatStreamParts(
@@ -299,11 +298,9 @@ class OpenAIProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) async {
-    final shouldUseResponses =
-        (providerTools != null && providerTools.isNotEmpty) ||
-            (config.useResponsesAPI && _responses != null);
+    _assertProviderToolsSupported(providerTools);
 
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       final responses = _responses ?? OpenAIResponses(_client, config);
       final response = await responses.chatPrompt(
         prompt,
@@ -335,11 +332,9 @@ class OpenAIProvider
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
-    final shouldUseResponses =
-        (providerTools != null && providerTools.isNotEmpty) ||
-            (config.useResponsesAPI && _responses != null);
+    _assertProviderToolsSupported(providerTools);
 
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       final responses = _responses ?? OpenAIResponses(_client, config);
       final response = await responses.chatPromptWithCallOptions(
         prompt,
@@ -375,11 +370,9 @@ class OpenAIProvider
     List<Tool>? tools,
     CancelToken? cancelToken,
   }) {
-    final shouldUseResponses =
-        (providerTools != null && providerTools.isNotEmpty) ||
-            (config.useResponsesAPI && _responses != null);
+    _assertProviderToolsSupported(providerTools);
 
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       final responses = _responses ?? OpenAIResponses(_client, config);
       return wrapStreamPartsWithProviderMetadataAlias(
         responses.chatPromptStreamParts(
@@ -412,11 +405,9 @@ class OpenAIProvider
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) {
-    final shouldUseResponses =
-        (providerTools != null && providerTools.isNotEmpty) ||
-            (config.useResponsesAPI && _responses != null);
+    _assertProviderToolsSupported(providerTools);
 
-    if (shouldUseResponses) {
+    if (config.useResponsesAPI) {
       final responses = _responses ?? OpenAIResponses(_client, config);
       return wrapStreamPartsWithProviderMetadataAlias(
         responses.chatPromptStreamPartsWithCallOptions(

@@ -118,7 +118,7 @@ Future<void> demoOpenAIProviderTool(String? apiKey) async {
       );
 
   final model =
-      await base.providerOption('openai', 'useResponsesAPI', true).build();
+      await base.build();
 
   final prompt = Prompt(messages: [
     PromptMessage.user(

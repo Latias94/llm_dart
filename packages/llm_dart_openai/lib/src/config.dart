@@ -12,10 +12,10 @@ import '../defaults.dart';
 /// It's extracted from the main provider to improve modularity and reusability.
 class OpenAIConfig implements OpenAIRequestConfig, OpenAIResponsesConfig {
   @override
-  String get providerId => 'openai';
+  final String providerId;
 
   @override
-  String get providerName => 'OpenAI';
+  final String providerName;
 
   @override
   final String apiKey;
@@ -81,6 +81,8 @@ class OpenAIConfig implements OpenAIRequestConfig, OpenAIResponsesConfig {
   final LLMConfig? _originalConfig;
 
   const OpenAIConfig({
+    this.providerId = 'openai',
+    this.providerName = 'OpenAI',
     required this.apiKey,
     this.baseUrl = openaiBaseUrl,
     this.model = openaiDefaultModel,
@@ -102,21 +104,36 @@ class OpenAIConfig implements OpenAIRequestConfig, OpenAIResponsesConfig {
     this.stopSequences,
     this.user,
     this.serviceTier,
-    this.useResponsesAPI = false,
+    this.useResponsesAPI = true,
     this.previousResponseId,
     this.builtInTools,
     LLMConfig? originalConfig,
   }) : _originalConfig = originalConfig;
 
   @override
-  T? getProviderOption<T>(String key) =>
-      _originalConfig?.getProviderOption<T>(providerId, key);
+  T? getProviderOption<T>(String key) {
+    final original = _originalConfig;
+    if (original == null) return null;
+
+    final direct = original.getProviderOption<T>(providerId, key);
+    if (direct != null) return direct;
+
+    // For namespaced variants (e.g. "openai.chat"), fall back to the base
+    // OpenAI provider options to keep escape hatches ergonomic.
+    if (providerId == 'openai.chat') {
+      return original.getProviderOption<T>('openai', key);
+    }
+
+    return null;
+  }
 
   /// Get the original LLMConfig for HTTP configuration
   @override
   LLMConfig? get originalConfig => _originalConfig;
 
   OpenAIConfig copyWith({
+    String? providerId,
+    String? providerName,
     String? apiKey,
     String? baseUrl,
     String? model,
@@ -143,6 +160,8 @@ class OpenAIConfig implements OpenAIRequestConfig, OpenAIResponsesConfig {
     List<OpenAIBuiltInTool>? builtInTools,
   }) =>
       OpenAIConfig(
+        providerId: providerId ?? this.providerId,
+        providerName: providerName ?? this.providerName,
         apiKey: apiKey ?? this.apiKey,
         baseUrl: baseUrl ?? this.baseUrl,
         model: model ?? this.model,
@@ -184,6 +203,8 @@ class OpenAIConfig implements OpenAIRequestConfig, OpenAIResponsesConfig {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is OpenAIConfig &&
+        other.providerId == providerId &&
+        other.providerName == providerName &&
         other.apiKey == apiKey &&
         other.baseUrl == baseUrl &&
         other.model == model &&
@@ -213,6 +234,8 @@ class OpenAIConfig implements OpenAIRequestConfig, OpenAIResponsesConfig {
   @override
   int get hashCode {
     return Object.hashAll([
+      providerId,
+      providerName,
       apiKey,
       baseUrl,
       model,
