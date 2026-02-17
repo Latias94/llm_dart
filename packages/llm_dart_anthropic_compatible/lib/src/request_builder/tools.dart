@@ -112,7 +112,7 @@ extension _AnthropicRequestBuilderTools on AnthropicRequestBuilder {
       providerToolDefsByName[name] = def;
     }
 
-    // Config-driven server tools (providerOptions-based enable).
+    // Config-driven server tools (AnthropicConfig-based enable).
     putProviderToolDef(_buildWebSearchToolDefinitionIfEnabled());
     putProviderToolDef(_buildWebFetchToolDefinitionIfEnabled());
 
@@ -251,7 +251,7 @@ extension _AnthropicRequestBuilderTools on AnthropicRequestBuilder {
       providerToolIdByRequestName[name] = id;
     }
 
-    // Config-driven tools (when enabled via providerOptions).
+    // Config-driven tools (when enabled via AnthropicConfig).
     if (webSearchToolType != null && webSearchToolType.isNotEmpty) {
       final normalizedType = webSearchToolType.startsWith('web_search_')
           ? webSearchToolType
@@ -355,16 +355,22 @@ extension _AnthropicRequestBuilderTools on AnthropicRequestBuilder {
 
     switch (idSuffix) {
       case final s when s.startsWith('web_search_'):
+        final options = AnthropicWebSearchToolOptions.fromJson(
+          optionsWithoutEnabled(),
+        ).toJson();
         return <String, dynamic>{
           'type': s,
           'name': 'web_search',
-          ...optionsWithoutEnabled(),
+          ...options,
         };
       case final s when s.startsWith('web_fetch_'):
+        final options = AnthropicWebFetchToolOptions.fromJson(
+          optionsWithoutEnabled(),
+        ).toJson();
         return <String, dynamic>{
           'type': s,
           'name': 'web_fetch',
-          ...optionsWithoutEnabled(),
+          ...options,
         };
       case final s when s.startsWith('code_execution_'):
         return <String, dynamic>{

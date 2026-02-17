@@ -4,6 +4,8 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'config.dart';
+import 'web_fetch_tool_options.dart';
+import 'web_search_tool_options.dart';
 
 part 'src/request_builder/messages.dart';
 part 'src/request_builder/models.dart';

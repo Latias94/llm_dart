@@ -70,14 +70,12 @@ class AnthropicConfig {
 
   /// Provider-native web search tool configuration.
   ///
-  /// This is sourced from:
-  /// - `providerOptions[providerId]['webSearch']` (preferred), with optional
-  ///   fallback to `providerOptions['anthropic']['webSearch']` for
-  ///   Anthropic-compatible providers, and
+  /// This is sourced from `LLMConfig.providerTools` entries like
+  /// `anthropic.web_search_*` (or `<providerNamespace>.web_search_*` for
+  /// Anthropic-compatible providers).
   ///
-  /// When enabled (via `webSearchEnabled` or `webSearch.enabled`),
-  /// `AnthropicRequestBuilder` injects the correct `web_search_*` built-in tool
-  /// into the outgoing request JSON.
+  /// When enabled, `AnthropicRequestBuilder` injects the configured
+  /// `web_search_*` built-in tool into the outgoing request JSON.
   final String? webSearchToolType;
 
   /// Options for the Anthropic `web_search_*` server tool.
@@ -167,47 +165,13 @@ class AnthropicConfig {
       return result.isEmpty ? null : result;
     }
 
-    final webSearchEnabledFromProviderOptions = readProviderOption<bool>(
-      providerOptions,
-      providerOptionsNamespace,
-      'webSearchEnabled',
-      fallbackProviderId: fallbackProviderId,
-    );
-
-    final webSearchConfigFromProviderOptions = _parseWebSearchConfig(
-      readProviderOptionMap(
-            providerOptions,
-            providerOptionsNamespace,
-            'webSearch',
-            fallbackProviderId: fallbackProviderId,
-          ) ??
-          readProviderOption<dynamic>(
-            providerOptions,
-            providerOptionsNamespace,
-            'webSearch',
-            fallbackProviderId: fallbackProviderId,
-          ),
-    );
-
-    final effectiveWebSearchEnabled = webSearchEnabledFromProviderOptions ??
-        webSearchConfigFromProviderOptions?.enabled;
-
-    final enabledWebSearchConfig = effectiveWebSearchEnabled == true
-        ? (webSearchConfigFromProviderOptions ?? const _WebSearchConfig())
-        : null;
-
     final providerToolWebSearchConfig = _buildWebSearchConfigFromProviderTools(
       config,
       providerOptionsNamespace: providerOptionsNamespace,
     );
-
-    final mergedWebSearchConfig = _mergeWebSearchConfigs(
-      enabledWebSearchConfig,
-      providerToolWebSearchConfig,
-    );
-    final effectiveWebSearchToolType = mergedWebSearchConfig == null
+    final effectiveWebSearchToolType = providerToolWebSearchConfig == null
         ? null
-        : (mergedWebSearchConfig.toolType ?? 'web_search_20250305');
+        : providerToolWebSearchConfig.toolType;
 
     final webFetchEnabledFromProviderOptions = readProviderOption<bool>(
       providerOptions,
@@ -358,7 +322,7 @@ class AnthropicConfig {
       mcpServers: mcpServers,
       cacheControl: cacheControl,
       webSearchToolType: effectiveWebSearchToolType,
-      webSearchToolOptions: mergedWebSearchConfig?.options,
+      webSearchToolOptions: providerToolWebSearchConfig?.options,
       webFetchToolType: mergedWebFetchConfig?.toolType,
       webFetchToolOptions: mergedWebFetchConfig?.options,
       originalConfig: config,
@@ -386,26 +350,6 @@ class AnthropicConfig {
       if (type is! String || type.trim().isEmpty) return null;
       return raw;
     }
-
-    return null;
-  }
-
-  static _WebSearchConfig? _parseWebSearchConfig(dynamic raw) {
-    if (raw == null) return null;
-
-    if (raw is _WebSearchConfig) return raw;
-
-    if (raw == true) {
-      return const _WebSearchConfig(enabled: true);
-    }
-
-    if (raw is String) {
-      final type = raw.trim();
-      if (type.isEmpty) return null;
-      return _WebSearchConfig(enabled: true, toolType: type);
-    }
-
-    if (raw is Map<String, dynamic>) return _WebSearchConfig.fromJson(raw);
 
     return null;
   }
@@ -462,7 +406,6 @@ class AnthropicConfig {
         : null;
 
     return _WebSearchConfig(
-      enabled: true,
       toolType: normalizedType,
       options: options,
     );
@@ -504,45 +447,6 @@ class AnthropicConfig {
       enabled: true,
       toolType: normalizedType,
       options: options,
-    );
-  }
-
-  static _WebSearchConfig? _mergeWebSearchConfigs(
-    _WebSearchConfig? primary,
-    _WebSearchConfig? secondary,
-  ) {
-    if (primary == null) return secondary;
-    if (secondary == null) return primary;
-
-    final mergedOptions = _mergeWebSearchToolOptions(
-      primary.options,
-      secondary.options,
-    );
-
-    final mergedType =
-        (primary.toolType != null && primary.toolType!.isNotEmpty)
-            ? primary.toolType
-            : secondary.toolType;
-
-    return _WebSearchConfig(
-      enabled: true,
-      toolType: mergedType,
-      options: mergedOptions,
-    );
-  }
-
-  static AnthropicWebSearchToolOptions? _mergeWebSearchToolOptions(
-    AnthropicWebSearchToolOptions? primary,
-    AnthropicWebSearchToolOptions? secondary,
-  ) {
-    if (primary == null) return secondary;
-    if (secondary == null) return primary;
-
-    return AnthropicWebSearchToolOptions(
-      maxUses: primary.maxUses ?? secondary.maxUses,
-      allowedDomains: primary.allowedDomains ?? secondary.allowedDomains,
-      blockedDomains: primary.blockedDomains ?? secondary.blockedDomains,
-      userLocation: primary.userLocation ?? secondary.userLocation,
     );
   }
 
@@ -755,43 +659,13 @@ class AnthropicConfig {
 }
 
 class _WebSearchConfig {
-  final bool enabled;
-  final String? toolType;
+  final String toolType;
   final AnthropicWebSearchToolOptions? options;
 
   const _WebSearchConfig({
-    this.enabled = true,
-    this.toolType,
+    required this.toolType,
     this.options,
   });
-
-  factory _WebSearchConfig.fromJson(Map<String, dynamic> json) {
-    final rawEnabled = json['enabled'];
-    final enabled = rawEnabled is bool ? rawEnabled : true;
-
-    final rawType = json['toolType'] ??
-        json['tool_type'] ??
-        json['type'] ??
-        json['tool'] ??
-        json['toolName'] ??
-        json['mode'];
-
-    final toolType =
-        rawType is String && rawType.trim().isNotEmpty ? rawType.trim() : null;
-
-    final normalizedType =
-        (toolType != null && toolType.startsWith('web_search_'))
-            ? toolType
-            : null;
-
-    final options = AnthropicWebSearchToolOptions.fromJson(json);
-
-    return _WebSearchConfig(
-      enabled: enabled,
-      toolType: normalizedType,
-      options: options,
-    );
-  }
 }
 
 class _WebFetchConfig {

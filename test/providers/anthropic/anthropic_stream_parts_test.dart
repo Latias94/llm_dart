@@ -142,11 +142,9 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://api.anthropic.com/v1/',
         model: 'claude-sonnet-4-20250514',
-        providerOptions: const {
-          'anthropic': {
-            'webSearchEnabled': true,
-          },
-        },
+        providerTools: const [
+          ProviderTool(id: 'anthropic.web_search_20250305', name: 'web_search'),
+        ],
       );
 
       final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);

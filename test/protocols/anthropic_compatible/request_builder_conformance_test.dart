@@ -21,15 +21,16 @@ Tool _noopTool(String name) {
 
 void main() {
   group('Anthropic-compatible request builder conformance', () {
-    test('injects web_search tool when enabled via providerOptions', () {
+    test('injects web_search tool when enabled via providerTools', () {
       final llmConfig = LLMConfig(
         apiKey: 'k',
         baseUrl: 'https://api.anthropic.com/v1/',
         model: 'test-model',
-        providerOptions: const {
-          'anthropic': {
-            'webSearchEnabled': true,
-            'webSearch': {
+        providerTools: const [
+          ProviderTool(
+            id: 'anthropic.web_search_20250305',
+            name: 'web_search',
+            options: {
               'maxUses': 2,
               'allowedDomains': ['example.com'],
               'blockedDomains': ['bad.com'],
@@ -41,8 +42,8 @@ void main() {
                 'timezone': 'Europe/London',
               },
             },
-          },
-        },
+          ),
+        ],
       );
 
       final config = AnthropicConfig.fromLLMConfig(llmConfig);
@@ -119,9 +120,9 @@ void main() {
         baseUrl: 'https://api.anthropic.com/v1/',
         model: 'test-model',
         toolChoice: const SpecificToolChoice('web_search'),
-        providerOptions: const {
-          'anthropic': {'webSearchEnabled': true},
-        },
+        providerTools: const [
+          ProviderTool(id: 'anthropic.web_search_20250305', name: 'web_search'),
+        ],
       );
 
       final config = AnthropicConfig.fromLLMConfig(llmConfig);
@@ -208,9 +209,11 @@ void main() {
         providerOptions: const {
           'anthropic': {
             'cacheControl': {'type': 'ephemeral'},
-            'webSearchEnabled': true,
           },
         },
+        providerTools: const [
+          ProviderTool(id: 'anthropic.web_search_20250305', name: 'web_search'),
+        ],
       );
 
       final config = AnthropicConfig.fromLLMConfig(llmConfig);
