@@ -14,6 +14,9 @@ class FakeElevenLabsClient extends ElevenLabsClient {
   Uint8List ttsBytes = Uint8List(0);
   Map<String, dynamic> sttJson = const <String, dynamic>{'text': ''};
 
+  Map<String, String> ttsHeaders = const <String, String>{};
+  Map<String, String> sttHeaders = const <String, String>{};
+
   FakeElevenLabsClient(super.config);
 
   @override
@@ -23,11 +26,28 @@ class FakeElevenLabsClient extends ElevenLabsClient {
     Map<String, String>? queryParams,
     CancelToken? cancelToken,
   }) async {
+    final response = await postBinaryWithResponseHeaders(
+      endpoint,
+      data,
+      queryParams: queryParams,
+      cancelToken: cancelToken,
+    );
+    return response.data;
+  }
+
+  @override
+  Future<({Uint8List data, Map<String, String> headers})>
+      postBinaryWithResponseHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    Map<String, String>? queryParams,
+    CancelToken? cancelToken,
+  }) async {
     lastEndpoint = endpoint;
     lastBody = data;
     lastQueryParams =
         queryParams == null ? null : Map<String, String>.from(queryParams);
-    return ttsBytes;
+    return (data: ttsBytes, headers: ttsHeaders);
   }
 
   @override
@@ -37,10 +57,27 @@ class FakeElevenLabsClient extends ElevenLabsClient {
     Map<String, String>? queryParams,
     CancelToken? cancelToken,
   }) async {
+    final response = await postFormDataWithResponseHeaders(
+      endpoint,
+      formData,
+      queryParams: queryParams,
+      cancelToken: cancelToken,
+    );
+    return response.json;
+  }
+
+  @override
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postFormDataWithResponseHeaders(
+    String endpoint,
+    FormData formData, {
+    Map<String, String>? queryParams,
+    CancelToken? cancelToken,
+  }) async {
     lastEndpoint = endpoint;
     lastQueryParams =
         queryParams == null ? null : Map<String, String>.from(queryParams);
     lastFormData = formData;
-    return sttJson;
+    return (json: sttJson, headers: sttHeaders);
   }
 }

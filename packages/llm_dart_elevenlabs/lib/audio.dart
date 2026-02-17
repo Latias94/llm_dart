@@ -121,7 +121,7 @@ class ElevenLabsAudio
       if (request.speed != null) 'speed': request.speed,
     };
 
-    final response = await _textToSpeechInternal(
+    final result = await _textToSpeechInternal(
       request.text,
       voiceId: voiceUsed,
       model: modelUsed,
@@ -138,6 +138,8 @@ class ElevenLabsAudio
       outputFormat: _resolveOutputFormat(request),
       cancelToken: cancelToken,
     );
+    final response = result.response;
+    final responseHeaders = result.headers;
 
     return TTSResponse(
       audioData: response.audioData,
@@ -151,6 +153,7 @@ class ElevenLabsAudio
         SpeechModelResponseMetadata(
           timestamp: startedAt,
           modelId: modelUsed,
+          headers: responseHeaders.isEmpty ? null : responseHeaders,
         ),
       ],
       providerMetadata: _buildProviderMetadata(
@@ -265,12 +268,12 @@ class ElevenLabsAudio
     STTRequest request, {
     CancelToken? cancelToken,
   }) async {
-    late ElevenLabsSTTResponse response;
+    late ({ElevenLabsSTTResponse response, Map<String, String> headers}) result;
     final modelUsed = request.model ?? config.defaultSTTModel;
     final startedAt = DateTime.now().toUtc();
 
     if (request.audioData != null) {
-      response = await _speechToTextInternal(
+      result = await _speechToTextInternal(
         Uint8List.fromList(request.audioData!),
         model: modelUsed,
         languageCode: request.language,
@@ -283,7 +286,7 @@ class ElevenLabsAudio
         cancelToken: cancelToken,
       );
     } else if (request.filePath != null) {
-      response = await _speechToTextFromFileInternal(
+      result = await _speechToTextFromFileInternal(
         request.filePath!,
         model: modelUsed,
         languageCode: request.language,
@@ -299,6 +302,9 @@ class ElevenLabsAudio
       throw const InvalidRequestError(
           'Either audioData or filePath must be provided');
     }
+
+    final response = result.response;
+    final responseHeaders = result.headers;
 
     return STTResponse(
       text: response.text,
@@ -319,6 +325,7 @@ class ElevenLabsAudio
         TranscriptionModelResponseMetadata(
           timestamp: startedAt,
           modelId: modelUsed,
+          headers: responseHeaders.isEmpty ? null : responseHeaders,
         ),
       ],
       additionalFormats: response.additionalFormats,
@@ -352,7 +359,8 @@ class ElevenLabsAudio
     ];
   }
 
-  Future<ElevenLabsTTSResponse> _textToSpeechInternal(
+  Future<({ElevenLabsTTSResponse response, Map<String, String> headers})>
+      _textToSpeechInternal(
     String text, {
     String? voiceId,
     String? model,
@@ -413,16 +421,22 @@ class ElevenLabsAudio
             optimizeStreamingLatency.toString();
       }
 
-      final audioData = await client.postBinary(
+      final response = await client.postBinaryWithResponseHeaders(
         'text-to-speech/$effectiveVoiceId',
         requestBody,
         queryParams: queryParams,
         cancelToken: cancelToken,
       );
 
-      return ElevenLabsTTSResponse(
-        audioData: audioData,
-        contentType: _inferContentTypeFromOutputFormat(outputFormat),
+      final contentType = response.headers['content-type'] ??
+          _inferContentTypeFromOutputFormat(outputFormat);
+
+      return (
+        response: ElevenLabsTTSResponse(
+          audioData: response.data,
+          contentType: contentType,
+        ),
+        headers: response.headers,
       );
     } catch (e) {
       if (e is LLMError) rethrow;
@@ -430,7 +444,8 @@ class ElevenLabsAudio
     }
   }
 
-  Future<ElevenLabsSTTResponse> _speechToTextInternal(
+  Future<({ElevenLabsSTTResponse response, Map<String, String> headers})>
+      _speechToTextInternal(
     Uint8List audioData, {
     String? model,
     String? languageCode,
@@ -480,21 +495,25 @@ class ElevenLabsAudio
         queryParams['enable_logging'] = enableLogging.toString();
       }
 
-      final responseData = await client.postFormData(
+      final response = await client.postFormDataWithResponseHeaders(
         'speech-to-text',
         formData,
         queryParams: queryParams.isNotEmpty ? queryParams : null,
         cancelToken: cancelToken,
       );
 
-      return ElevenLabsSTTResponse.fromJson(responseData);
+      return (
+        response: ElevenLabsSTTResponse.fromJson(response.json),
+        headers: response.headers,
+      );
     } catch (e) {
       if (e is LLMError) rethrow;
       throw GenericError('Unexpected error during speech-to-text: $e');
     }
   }
 
-  Future<ElevenLabsSTTResponse> _speechToTextFromFileInternal(
+  Future<({ElevenLabsSTTResponse response, Map<String, String> headers})>
+      _speechToTextFromFileInternal(
     String filePath, {
     String? model,
     String? languageCode,
@@ -542,14 +561,17 @@ class ElevenLabsAudio
         queryParams['enable_logging'] = enableLogging.toString();
       }
 
-      final responseData = await client.postFormData(
+      final response = await client.postFormDataWithResponseHeaders(
         'speech-to-text',
         formData,
         queryParams: queryParams.isNotEmpty ? queryParams : null,
         cancelToken: cancelToken,
       );
 
-      return ElevenLabsSTTResponse.fromJson(responseData);
+      return (
+        response: ElevenLabsSTTResponse.fromJson(response.json),
+        headers: response.headers,
+      );
     } catch (e) {
       if (e is LLMError) rethrow;
       throw GenericError(

@@ -9,11 +9,15 @@ import 'package:test/test.dart';
 class _FakeElevenLabsClient extends ElevenLabsClient {
   final Uint8List ttsBytes;
   final Map<String, dynamic> sttJson;
+  final Map<String, String> ttsHeaders;
+  final Map<String, String> sttHeaders;
 
   _FakeElevenLabsClient(
     super.config, {
     required this.ttsBytes,
     required this.sttJson,
+    this.ttsHeaders = const <String, String>{},
+    this.sttHeaders = const <String, String>{},
   });
 
   @override
@@ -23,7 +27,13 @@ class _FakeElevenLabsClient extends ElevenLabsClient {
     Map<String, String>? queryParams,
     CancelToken? cancelToken,
   }) async {
-    return ttsBytes;
+    final response = await postBinaryWithResponseHeaders(
+      endpoint,
+      data,
+      queryParams: queryParams,
+      cancelToken: cancelToken,
+    );
+    return response.data;
   }
 
   @override
@@ -33,7 +43,35 @@ class _FakeElevenLabsClient extends ElevenLabsClient {
     Map<String, String>? queryParams,
     CancelToken? cancelToken,
   }) async {
-    return sttJson;
+    final response = await postFormDataWithResponseHeaders(
+      endpoint,
+      formData,
+      queryParams: queryParams,
+      cancelToken: cancelToken,
+    );
+    return response.json;
+  }
+
+  @override
+  Future<({Uint8List data, Map<String, String> headers})>
+      postBinaryWithResponseHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    Map<String, String>? queryParams,
+    CancelToken? cancelToken,
+  }) async {
+    return (data: ttsBytes, headers: ttsHeaders);
+  }
+
+  @override
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postFormDataWithResponseHeaders(
+    String endpoint,
+    FormData formData, {
+    Map<String, String>? queryParams,
+    CancelToken? cancelToken,
+  }) async {
+    return (json: sttJson, headers: sttHeaders);
   }
 }
 
@@ -51,6 +89,7 @@ void main() {
         config,
         ttsBytes: Uint8List.fromList(const [1, 2, 3]),
         sttJson: const {'text': 'unused'},
+        ttsHeaders: const {'x-request-id': 'rid-tts-1'},
       );
 
       final audio = ElevenLabsAudio(client, config);
@@ -58,6 +97,11 @@ void main() {
       final response = await audio.textToSpeech(const TTSRequest(text: 'hi'));
       expect(response.voice, 'voice_test');
       expect(response.model, 'tts_test_model');
+      expect(response.responses, hasLength(1));
+      expect(
+        response.responses.single.headers,
+        equals(const {'x-request-id': 'rid-tts-1'}),
+      );
 
       final metadata = response.providerMetadata;
       expect(metadata, isNotNull);
@@ -91,6 +135,7 @@ void main() {
             },
           ],
         },
+        sttHeaders: const {'x-request-id': 'rid-stt-1'},
       );
 
       final audio = ElevenLabsAudio(client, config);
@@ -99,6 +144,11 @@ void main() {
         STTRequest(audioData: const [0, 1, 2]),
       );
       expect(response.model, 'scribe_v1');
+      expect(response.responses, hasLength(1));
+      expect(
+        response.responses.single.headers,
+        equals(const {'x-request-id': 'rid-stt-1'}),
+      );
 
       final metadata = response.providerMetadata;
       expect(metadata, isNotNull);

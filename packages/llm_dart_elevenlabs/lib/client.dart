@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart' hide CancelToken;
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+import 'package:llm_dart_provider_utils/utils/response_metadata_sanitizer.dart';
 import 'package:logging/logging.dart';
 
 import 'config.dart';
@@ -29,6 +30,19 @@ class ElevenLabsClient {
   }
 
   Logger get logger => _logger;
+
+  Map<String, String> _sanitizeResponseHeaders(Headers headers) {
+    final headerMap = <String, String>{};
+    headers.forEach((name, values) {
+      if (values.isEmpty) return;
+      headerMap[name] = values.join(',');
+    });
+
+    final sanitized = sanitizeResponseHeadersForMetadata(headerMap);
+    return sanitized.isEmpty
+        ? const <String, String>{}
+        : Map<String, String>.unmodifiable(sanitized);
+  }
 
   Future<Map<String, dynamic>> getJson(
     String endpoint, {
@@ -80,6 +94,22 @@ class ElevenLabsClient {
     Map<String, String>? queryParams,
     CancelToken? cancelToken,
   }) async {
+    final response = await postBinaryWithResponseHeaders(
+      endpoint,
+      data,
+      queryParams: queryParams,
+      cancelToken: cancelToken,
+    );
+    return response.data;
+  }
+
+  Future<({Uint8List data, Map<String, String> headers})>
+      postBinaryWithResponseHeaders(
+    String endpoint,
+    Map<String, dynamic> data, {
+    Map<String, String>? queryParams,
+    CancelToken? cancelToken,
+  }) async {
     try {
       final response = await withDioCancelToken(
         cancelToken,
@@ -98,7 +128,10 @@ class ElevenLabsClient {
         );
       }
 
-      return Uint8List.fromList(response.data as List<int>);
+      return (
+        data: Uint8List.fromList(response.data as List<int>),
+        headers: _sanitizeResponseHeaders(response.headers),
+      );
     } on DioException catch (e) {
       throw await DioErrorHandler.handleDioError(e, 'ElevenLabs');
     }
@@ -140,6 +173,22 @@ class ElevenLabsClient {
     Map<String, String>? queryParams,
     CancelToken? cancelToken,
   }) async {
+    final response = await postFormDataWithResponseHeaders(
+      endpoint,
+      formData,
+      queryParams: queryParams,
+      cancelToken: cancelToken,
+    );
+    return response.json;
+  }
+
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postFormDataWithResponseHeaders(
+    String endpoint,
+    FormData formData, {
+    Map<String, String>? queryParams,
+    CancelToken? cancelToken,
+  }) async {
     try {
       final response = await withDioCancelToken(
         cancelToken,
@@ -160,11 +209,20 @@ class ElevenLabsClient {
 
       final responseData = response.data;
       if (responseData is Map<String, dynamic>) {
-        return responseData;
+        return (
+          json: responseData,
+          headers: _sanitizeResponseHeaders(response.headers),
+        );
       } else if (responseData is String) {
-        return {'text': responseData};
+        return (
+          json: {'text': responseData},
+          headers: _sanitizeResponseHeaders(response.headers),
+        );
       } else {
-        return responseData as Map<String, dynamic>;
+        return (
+          json: responseData as Map<String, dynamic>,
+          headers: _sanitizeResponseHeaders(response.headers),
+        );
       }
     } on DioException catch (e) {
       throw await DioErrorHandler.handleDioError(e, 'ElevenLabs');
