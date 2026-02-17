@@ -177,20 +177,15 @@ OpenAI extras (Chat/Responses):
 
 Web search:
 
-- `webSearchEnabled`: `bool`
-- Behavior: when enabled, forces `useResponsesAPI=true` and injects the `web_search_preview` built-in tool if missing. Prefer configuring web search options via `providerTools` (`openai.web_search_preview`) or `builtInTools`.
+- Configure via `providerTools` (`openai.web_search_preview` / `openai.web_search`) or `builtInTools`.
 
 File search (Responses built-in tool):
 
-- `fileSearchEnabled`: `bool`
-- `fileSearch`: `Map<String, dynamic>` (OpenAI `file_search` tool config; supports `vectorStoreIds` / `vector_store_ids` + extra parameters)
-- Behavior: when enabled/configured, forces `useResponsesAPI=true` and injects `file_search` into `builtInTools` if missing.
+- Configure via `providerTools` (`openai.file_search`) or `builtInTools`.
 
 Computer use (Responses built-in tool):
 
-- `computerUseEnabled`: `bool`
-- `computerUse`: `Map<String, dynamic>` (requires `displayWidth`, `displayHeight`, `environment`; extra keys become tool parameters)
-- Behavior: when enabled/configured, forces `useResponsesAPI=true` and injects `computer_use_preview` into `builtInTools` if missing.
+- Configure via `providerTools` (`openai.computer_use`) or `builtInTools`.
 
 ### 2.2 `anthropic`
 

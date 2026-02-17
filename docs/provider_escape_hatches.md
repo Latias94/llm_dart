@@ -579,7 +579,7 @@ Examples that are often **provider-specific**:
 
 - Web search (API semantics vary widely)
 - Provider built-in tools (web_search/file_search/computer_use)
-  - OpenAI (Responses API) built-in tools are configured via `providerOptions['openai']['builtInTools']` (or `webSearchEnabled`, `fileSearchEnabled/fileSearch`, `computerUseEnabled/computerUse` convenience keys).
+  - OpenAI (Responses API) built-in tools are configured via `providerOptions['openai']['builtInTools']` or via `providerTools`.
 - Vendor caching semantics beyond simple “cacheControl”
 - Realtime audio / multimodal pipelines
 

@@ -56,7 +56,7 @@ How the OpenAI provider decides:
 - Enable Responses API explicitly: `providerOptions['openai']['useResponsesAPI']=true`
 - Responses is also enabled automatically when:
   - any OpenAI built-in tool is configured via `providerTools`, or
-  - `webSearchEnabled` / `fileSearchEnabled` / `computerUseEnabled` is enabled.
+  - `builtInTools` is configured.
 
 Official docs:
 
@@ -177,9 +177,7 @@ Common OpenAI keys (non-exhaustive):
 - `useResponsesAPI`: `bool`
 - `previousResponseId`: `String` (Responses API only)
 - `builtInTools`: `List<Map<String, dynamic>>` (Responses built-in tools)
-- `webSearchEnabled`: `bool` (Responses built-in web search)
-- `fileSearchEnabled` / `fileSearch` (legacy best-effort; prefer `providerTools`)
-- `computerUseEnabled` / `computerUse` (legacy best-effort; prefer `providerTools`)
+- Prefer `providerTools` for Responses built-in tools (recommended).
 - `extraBody` / `extraHeaders` (escape hatches)
 
 ## providerMetadata

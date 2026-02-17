@@ -79,82 +79,6 @@ void main() {
       expect(computerTool.parameters, containsPair('timeout', 30));
     });
 
-    test(
-        'webSearchEnabled enables Responses API and injects web_search_preview',
-        () async {
-      final provider = await ai()
-          .provider('openai')
-          .apiKey('test-key')
-          .model('gpt-4o')
-          .providerOptions('openai', {
-        'webSearchEnabled': true,
-      }).build();
-
-      final openaiProvider = provider as OpenAIProvider;
-      expect(openaiProvider.config.useResponsesAPI, isTrue);
-      expect(openaiProvider.config.builtInTools, isNotNull);
-      expect(openaiProvider.config.builtInTools!, isNotEmpty);
-
-      final webTool = openaiProvider.config.builtInTools!
-          .whereType<OpenAIWebSearchTool>()
-          .single;
-      expect(
-          webTool.searchContextSize, equals(OpenAIWebSearchContextSize.medium));
-    });
-
-    test('fileSearchEnabled injects file_search tool and enables Responses API',
-        () async {
-      final provider = await ai()
-          .provider('openai')
-          .apiKey('test-key')
-          .model('gpt-4o')
-          .providerOptions('openai', {
-        'fileSearchEnabled': true,
-        'fileSearch': {
-          'vectorStoreIds': ['vs_123'],
-          'max_num_results': 5,
-        },
-      }).build();
-
-      final openaiProvider = provider as OpenAIProvider;
-      expect(openaiProvider.config.useResponsesAPI, isTrue);
-
-      final tool = openaiProvider.config.builtInTools!
-          .whereType<OpenAIFileSearchTool>()
-          .single;
-      expect(tool.vectorStoreIds, equals(['vs_123']));
-      expect(tool.parameters, containsPair('max_num_results', 5));
-    });
-
-    test(
-        'computerUseEnabled injects computer_use tool and enables Responses API',
-        () async {
-      final provider = await ai()
-          .provider('openai')
-          .apiKey('test-key')
-          .model('gpt-4o')
-          .providerOptions('openai', {
-        'computerUseEnabled': true,
-        'computerUse': {
-          'displayWidth': 1024,
-          'displayHeight': 768,
-          'environment': 'browser',
-          'timeout': 30,
-        },
-      }).build();
-
-      final openaiProvider = provider as OpenAIProvider;
-      expect(openaiProvider.config.useResponsesAPI, isTrue);
-
-      final tool = openaiProvider.config.builtInTools!
-          .whereType<OpenAIComputerUseTool>()
-          .single;
-      expect(tool.displayWidth, equals(1024));
-      expect(tool.displayHeight, equals(768));
-      expect(tool.environment, equals('browser'));
-      expect(tool.parameters, containsPair('timeout', 30));
-    });
-
     test('providerTools injects Responses built-in tools', () async {
       final provider = await ai()
           .provider('openai')
@@ -182,6 +106,62 @@ void main() {
       // The SDK does not rewrite models; if a built-in tool requires a specific
       // model, OpenAI should return an API error and the caller can adjust.
       expect(openaiProvider.config.model, equals('gpt-4o'));
+    });
+
+    test('providerTools injects file_search tool and enables Responses API',
+        () async {
+      final provider = await ai()
+          .provider('openai')
+          .apiKey('test-key')
+          .model('gpt-4o')
+          .providerTools(const [
+        ProviderTool(
+          id: 'openai.file_search',
+          options: {
+            'vector_store_ids': ['vs_123'],
+            'max_num_results': 5,
+          },
+        ),
+      ]).build();
+
+      final openaiProvider = provider as OpenAIProvider;
+      expect(openaiProvider.config.useResponsesAPI, isTrue);
+
+      final tool = openaiProvider.config.builtInTools!
+          .whereType<OpenAIFileSearchTool>()
+          .single;
+      expect(tool.vectorStoreIds, equals(['vs_123']));
+      expect(tool.parameters, containsPair('max_num_results', 5));
+    });
+
+    test('providerTools injects computer_use tool and enables Responses API',
+        () async {
+      final provider = await ai()
+          .provider('openai')
+          .apiKey('test-key')
+          .model('gpt-4o')
+          .providerTools(const [
+        ProviderTool(
+          id: 'openai.computer_use',
+          options: {
+            'displayWidth': 1024,
+            'displayHeight': 768,
+            'environment': 'browser',
+            'timeout': 30,
+          },
+        ),
+      ]).build();
+
+      final openaiProvider = provider as OpenAIProvider;
+      expect(openaiProvider.config.useResponsesAPI, isTrue);
+
+      final tool = openaiProvider.config.builtInTools!
+          .whereType<OpenAIComputerUseTool>()
+          .single;
+      expect(tool.displayWidth, equals(1024));
+      expect(tool.displayHeight, equals(768));
+      expect(tool.environment, equals('browser'));
+      expect(tool.parameters, containsPair('timeout', 30));
     });
 
     test('providerTools injects web_search (non-preview) when configured',

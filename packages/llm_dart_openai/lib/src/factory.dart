@@ -73,7 +73,6 @@ class OpenAIProviderFactory
 
   /// Transform unified config to OpenAI-specific config.
   OpenAIConfig _transformConfig(LLMConfig config) {
-    // Handle web search configuration.
     String? model = config.model;
 
     final providerOptions = config.providerOptions;
@@ -82,37 +81,6 @@ class OpenAIProviderFactory
     final extraHeadersRaw =
         readProviderOptionMap(providerOptions, providerId, 'extraHeaders');
     final extraHeaders = _parseStringMap(extraHeadersRaw);
-
-    final webSearchEnabledFromProviderOptions = readProviderOption<bool>(
-      providerOptions,
-      providerId,
-      'webSearchEnabled',
-    );
-
-    final providerTools = config.providerTools;
-    ProviderTool? webSearchProviderTool;
-    String? webSearchProviderToolId;
-    if (providerTools != null) {
-      for (final t in providerTools) {
-        if (t.id == 'openai.web_search' ||
-            t.id == 'openai.web_search_preview') {
-          webSearchProviderTool = t;
-          webSearchProviderToolId = t.id;
-          break;
-        }
-      }
-    }
-    final hasProviderToolWebSearch = webSearchProviderTool != null;
-    final hasProviderToolWebSearchFull =
-        webSearchProviderToolId == 'openai.web_search';
-    final providerToolContextSize =
-        _parseProviderToolWebSearchContextSize(webSearchProviderTool);
-
-    final webSearchEnabled = webSearchEnabledFromProviderOptions ??
-        (hasProviderToolWebSearch ? true : null);
-
-    final shouldEnableResponsesForWebSearch =
-        webSearchEnabled == true || hasProviderToolWebSearch;
 
     var useResponsesAPI = readProviderOption<bool>(
             providerOptions, providerId, 'useResponsesAPI') ??
@@ -133,56 +101,6 @@ class OpenAIProviderFactory
         merged.add(tool);
       }
       builtInTools = merged.isEmpty ? null : merged;
-    }
-
-    final fileSearchTool = _buildFileSearchToolFromProviderOptions(config);
-    final computerUseTool = _buildComputerUseToolFromProviderOptions(config);
-
-    if (shouldEnableResponsesForWebSearch) {
-      // OpenAI web search is a provider-native built-in tool in the Responses API.
-      useResponsesAPI = true;
-
-      final tools = List<OpenAIBuiltInTool>.from(builtInTools ?? const []);
-      final hasWebSearchTool = tools.any(
-        (t) =>
-            t.type == OpenAIBuiltInToolType.webSearch ||
-            t.type == OpenAIBuiltInToolType.webSearchFull,
-      );
-
-      if (!hasWebSearchTool) {
-        if (hasProviderToolWebSearchFull) {
-          tools.add(OpenAIBuiltInTools.webSearchFull(
-            contextSize:
-                providerToolContextSize ?? OpenAIWebSearchContextSize.medium,
-          ));
-        } else {
-          tools.add(
-            OpenAIBuiltInTools.webSearch(
-              contextSize:
-                  providerToolContextSize ?? OpenAIWebSearchContextSize.medium,
-            ),
-          );
-        }
-      }
-
-      builtInTools = tools.isEmpty ? null : tools;
-    }
-
-    if (fileSearchTool != null || computerUseTool != null) {
-      useResponsesAPI = true;
-      final tools = List<OpenAIBuiltInTool>.from(builtInTools ?? const []);
-
-      if (fileSearchTool != null &&
-          !tools.any((t) => t.type == OpenAIBuiltInToolType.fileSearch)) {
-        tools.add(fileSearchTool);
-      }
-
-      if (computerUseTool != null &&
-          !tools.any((t) => t.type == OpenAIBuiltInToolType.computerUse)) {
-        tools.add(computerUseTool);
-      }
-
-      builtInTools = tools.isEmpty ? null : tools;
     }
 
     // If any built-in tools are configured, force Responses API.
@@ -245,122 +163,6 @@ class OpenAIProviderFactory
       }
     }
     return result.isEmpty ? null : result;
-  }
-
-  OpenAIWebSearchContextSize? _parseProviderToolWebSearchContextSize(
-    ProviderTool? tool,
-  ) {
-    if (tool == null) return null;
-    return _parseContextSizeValue(tool.options['search_context_size']);
-  }
-
-  OpenAIWebSearchContextSize? _parseContextSizeValue(dynamic value) {
-    if (value is! String) return null;
-    return OpenAIWebSearchContextSize.tryParse(value);
-  }
-
-  OpenAIFileSearchTool? _buildFileSearchToolFromProviderOptions(
-      LLMConfig config) {
-    final providerOptions = config.providerOptions;
-    final enabled = readProviderOption<bool>(
-        providerOptions, providerId, 'fileSearchEnabled');
-
-    final map =
-        readProviderOptionMap(providerOptions, providerId, 'fileSearch') ??
-            <String, dynamic>{};
-    if (enabled != true && map.isEmpty) return null;
-
-    final enabledFromMap = map['enabled'];
-    final effectiveEnabled = enabled == true || enabledFromMap == true;
-    if (!effectiveEnabled) return null;
-
-    final vectorStoreIds =
-        (map['vectorStoreIds'] as List?)?.whereType<String>().toList() ??
-            (map['vector_store_ids'] as List?)?.whereType<String>().toList();
-
-    final explicitParameters = map['parameters'];
-    final parameters = <String, dynamic>{};
-    if (explicitParameters is Map<String, dynamic>) {
-      parameters.addAll(explicitParameters);
-    } else if (explicitParameters is Map) {
-      parameters.addAll(Map<String, dynamic>.from(explicitParameters));
-    }
-
-    // Allow extra keys as a flexible escape hatch.
-    for (final entry in map.entries) {
-      if (entry.key == 'enabled' ||
-          entry.key == 'vectorStoreIds' ||
-          entry.key == 'vector_store_ids' ||
-          entry.key == 'parameters') {
-        continue;
-      }
-      parameters[entry.key] = entry.value;
-    }
-
-    return OpenAIBuiltInTools.fileSearch(
-      vectorStoreIds: vectorStoreIds?.isEmpty == true ? null : vectorStoreIds,
-      parameters: parameters.isEmpty ? null : parameters,
-    );
-  }
-
-  OpenAIComputerUseTool? _buildComputerUseToolFromProviderOptions(
-      LLMConfig config) {
-    final providerOptions = config.providerOptions;
-    final enabled = readProviderOption<bool>(
-      providerOptions,
-      providerId,
-      'computerUseEnabled',
-    );
-
-    final map =
-        readProviderOptionMap(providerOptions, providerId, 'computerUse') ??
-            <String, dynamic>{};
-    if (enabled != true && map.isEmpty) return null;
-
-    final enabledFromMap = map['enabled'];
-    final effectiveEnabled = enabled == true || enabledFromMap == true;
-    if (!effectiveEnabled) return null;
-
-    final displayWidth =
-        (map['displayWidth'] as int?) ?? (map['display_width'] as int?);
-    final displayHeight =
-        (map['displayHeight'] as int?) ?? (map['display_height'] as int?);
-    final environment = map['environment'] as String?;
-
-    if (displayWidth == null || displayHeight == null || environment == null) {
-      throw const InvalidRequestError(
-        'OpenAI computer use requires providerOptions["openai"]["computerUse"] '
-        'to include displayWidth, displayHeight, and environment.',
-      );
-    }
-
-    final explicitParameters = map['parameters'];
-    final parameters = <String, dynamic>{};
-    if (explicitParameters is Map<String, dynamic>) {
-      parameters.addAll(explicitParameters);
-    } else if (explicitParameters is Map) {
-      parameters.addAll(Map<String, dynamic>.from(explicitParameters));
-    }
-
-    for (final entry in map.entries) {
-      if (entry.key == 'enabled' ||
-          entry.key == 'displayWidth' ||
-          entry.key == 'display_height' ||
-          entry.key == 'displayHeight' ||
-          entry.key == 'display_width' ||
-          entry.key == 'environment' ||
-          entry.key == 'parameters') {
-        continue;
-      }
-      parameters[entry.key] = entry.value;
-    }
-
-    return OpenAIBuiltInTools.computerUse(
-      displayWidth: displayWidth,
-      displayHeight: displayHeight,
-      environment: environment,
-      parameters: parameters.isEmpty ? null : parameters,
-    );
   }
 
   List<OpenAIBuiltInTool>? _parseBuiltInTools(dynamic raw) {
