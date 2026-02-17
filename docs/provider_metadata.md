@@ -5,17 +5,18 @@ part of the standardized surface.
 
 This repository follows a Vercel AI SDK–style namespacing convention:
 
-- Always emit a canonical namespace key equal to the provider instance `providerId`
-  (e.g. `openai`, `anthropic`, `google`, `deepseek`, `xai.responses`).
-- Historically, we also emitted capability aliases (e.g. `openai.chat`,
-  `openai.responses`, `google.generative-ai`) for AI SDK fixture parity.
+- Always emit a canonical namespace key equal to the **base provider id**
+  (the prefix before the first `.` in `providerId`; e.g. `openai` for
+  `openai.chat` and `openai.responses`).
+- Also emit one or more capability aliases (e.g. `openai.chat`, `openai.responses`)
+  for Vercel AI SDK parity and protocol reuse.
 
 Canonicalization policy:
 
-- **Downstream code should treat `providerMetadata[providerId]` as canonical.**
-- Alias keys are **compatibility only** during the fearless refactor window.
+- **Downstream code should treat `providerMetadata[baseProviderId]` as canonical.**
+- Capability keys are aliases for parity/ergonomics.
 - If aliases are emitted, their payload must deep-equal the canonical payload.
-- We stop adding new aliases by default.
+- Avoid adding new alias families unless they are justified and tested.
 
 See:
 
@@ -44,13 +45,14 @@ final meta = response.providerMetadata;
 final openai = meta?['openai'] as Map<String, dynamic>?;
 ```
 
-If you are migrating legacy code that used an alias key (e.g. `openai.chat`),
-update it to the canonical `openai` key.
+If you are migrating legacy code that used a capability key (e.g. `openai.chat`),
+prefer the canonical base key (`openai`) for maximum stability.
 
 Exception note:
 
 - Some providers may emit additional compatibility aliases during the refactor
-  window, but the canonical key should remain the provider `providerId`.
+  window, but the canonical key should remain the base provider id (without
+  capability suffixes).
 
 ## Recommended Payload Shape
 

@@ -99,7 +99,7 @@ The minimal requirement:
 
 - A tool call in the response must indicate whether it is **client-executed** or **provider-executed**.
 
-Provider-specific output remains in `providerMetadata[providerId]`, but the *existence* and *identity*
+Provider-specific output remains in `providerMetadata[baseProviderId]` (where `baseProviderId = providerId.split('.').first`), but the *existence* and *identity*
 of provider-executed tool calls should be representable in a structured way.
 
 ### 5) Configuration flow

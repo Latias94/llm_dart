@@ -7,10 +7,12 @@ fields that are intentionally not part of the standardized surface.
 
 Today the repository follows an AI SDK–inspired namespacing convention:
 
-- Always emit a base namespace key equal to `providerId` (e.g. `openai`,
-  `anthropic`, `google`, `xai.responses`).
+- Always emit a base namespace key equal to the **base provider id**
+  (the prefix before the first `.` in `providerId`; e.g. `openai` for
+  `openai.chat` and `openai.responses`).
 - Additionally emit one or more capability aliases (e.g. `openai.chat`,
-  `openai.responses`).
+  `openai.responses`). In many cases, the capability key matches the provider
+  instance `providerId`.
 
 This helped with early Vercel AI SDK fixture parity and protocol reuse.
 
@@ -40,16 +42,16 @@ reducing long-term costs.
 
 ### 1) Canonical key
 
-The canonical provider metadata key is always the `providerId` of the provider
-instance.
+The canonical provider metadata key is always the **base provider id** (without
+capability suffixes).
 
 Examples:
 
-- OpenAI: canonical key is `openai`
+- OpenAI (Responses, providerId `openai`): canonical key is `openai`
+- OpenAI (Chat Completions, providerId `openai.chat`): canonical key is `openai`
 - Anthropic: canonical key is `anthropic`
 - Google (Gemini API): canonical key is `google`
 - Google Vertex: canonical key is `vertex`
-- xAI Responses: canonical key is `xai.responses`
 
 Historical note (Vertex):
 
@@ -83,7 +85,7 @@ payload must be identical to the canonical payload (deep-equal JSON shape).
 
 Positive:
 
-- Clear rule for downstream code: always read `providerMetadata[providerId]`.
+- Clear rule for downstream code: always read `providerMetadata[baseProviderId]`.
 - Lower drift risk: one canonical schema to maintain.
 - Easier to evolve the standard surface without being trapped by legacy keys.
 
@@ -110,4 +112,4 @@ Negative:
 
 1) Should we expose a helper for consumers:
    - e.g. `readProviderMetadata(providerMetadata, providerId)` that always
-     prefers canonical key and falls back to single-entry maps?
+     reads the base provider id key and falls back to single-entry maps?
