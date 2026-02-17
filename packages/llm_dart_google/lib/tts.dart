@@ -408,24 +408,36 @@ class GoogleTTS implements GoogleTTSCapability {
 
   GoogleTTS(this._client, this._config);
 
-  @override
-  Future<GoogleTTSResponse> generateSpeech(GoogleTTSRequest request) async {
+  /// Generate speech and return best-effort response headers.
+  ///
+  /// This is useful for higher-level integrations that want to attach response
+  /// metadata (e.g., request ids) to `responses[*].headers`.
+  Future<({GoogleTTSResponse response, Map<String, String> headers})>
+      generateSpeechWithResponseHeaders(GoogleTTSRequest request) async {
     try {
       final requestBody = request.toJson();
 
       // Use the appropriate TTS model if not specified
       final model = request.model ?? _config.model;
 
-      final response = await _client.post(
+      final api = await _client.postJsonWithHeaders(
         '${googleModelPath(model)}:generateContent',
-        data: requestBody,
+        requestBody,
       );
 
-      return GoogleTTSResponse.fromApiResponse(
-          response.data as Map<String, dynamic>);
+      return (
+        response: GoogleTTSResponse.fromApiResponse(api.json),
+        headers: api.headers,
+      );
     } catch (e) {
       throw GenericError('Google TTS generation failed: $e');
     }
+  }
+
+  @override
+  Future<GoogleTTSResponse> generateSpeech(GoogleTTSRequest request) async {
+    final result = await generateSpeechWithResponseHeaders(request);
+    return result.response;
   }
 
   @override

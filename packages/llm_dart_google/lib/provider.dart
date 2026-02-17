@@ -283,13 +283,15 @@ class GoogleProvider
     final model = request.model ?? _tts.defaultTTSModel;
 
     final startedAt = DateTime.now().toUtc();
-    final response = await _tts.generateSpeech(
+    final result = await _tts.generateSpeechWithResponseHeaders(
       GoogleTTSRequest.singleSpeaker(
         text: request.text,
         voiceName: voiceName,
         model: model,
       ),
     );
+    final response = result.response;
+    final responseHeaders = result.headers;
 
     final endpoint = '${googleModelPath(model)}:generateContent';
     final providerMetadata = <String, dynamic>{
@@ -315,6 +317,7 @@ class GoogleProvider
         SpeechModelResponseMetadata(
           timestamp: startedAt,
           modelId: model,
+          headers: responseHeaders.isEmpty ? null : responseHeaders,
         ),
       ],
       providerMetadata: providerMetadata,
