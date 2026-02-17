@@ -920,6 +920,23 @@ class OpenAIClient {
     Map<String, String>? headers,
     CancelToken? cancelToken,
   }) async {
+    final result = await postFormWithResponseHeaders(
+      endpoint,
+      formData,
+      headers: headers,
+      cancelToken: cancelToken,
+    );
+    return result.json;
+  }
+
+  /// Make a POST request with form data and return JSON + response headers (best-effort).
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      postFormWithResponseHeaders(
+    String endpoint,
+    FormData formData, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
     try {
       final resolvedEndpoint = _resolveEndpoint(endpoint);
 
@@ -952,7 +969,22 @@ class OpenAIClient {
         _handleErrorResponse(response, resolvedEndpoint);
       }
 
-      return response.data as Map<String, dynamic>;
+      final headerMap = <String, String>{};
+      response.headers.forEach((name, values) {
+        if (values.isEmpty) return;
+        headerMap[name] = values.join(',');
+      });
+      final sanitizedHeaders = sanitizeResponseHeadersForMetadata(headerMap);
+
+      return (
+        json: HttpResponseHandler.parseJsonResponse(
+          response.data,
+          providerName: config.providerName,
+        ),
+        headers: sanitizedHeaders.isEmpty
+            ? const <String, String>{}
+            : Map<String, String>.unmodifiable(sanitizedHeaders),
+      );
     } on DioException catch (e) {
       throw await handleDioError(e);
     } catch (e) {
@@ -975,6 +1007,23 @@ class OpenAIClient {
 
   /// Make a POST request and return raw bytes, with per-call header overrides.
   Future<List<int>> postRawWithHeaders(
+    String endpoint,
+    Map<String, dynamic> body, {
+    Map<String, String>? headers,
+    CancelToken? cancelToken,
+  }) async {
+    final result = await postRawWithResponseHeaders(
+      endpoint,
+      body,
+      headers: headers,
+      cancelToken: cancelToken,
+    );
+    return result.data;
+  }
+
+  /// Make a POST request and return raw bytes + response headers (best-effort).
+  Future<({List<int> data, Map<String, String> headers})>
+      postRawWithResponseHeaders(
     String endpoint,
     Map<String, dynamic> body, {
     Map<String, String>? headers,
@@ -1003,7 +1052,19 @@ class OpenAIClient {
         _handleErrorResponse(response, resolvedEndpoint);
       }
 
-      return response.data as List<int>;
+      final headerMap = <String, String>{};
+      response.headers.forEach((name, values) {
+        if (values.isEmpty) return;
+        headerMap[name] = values.join(',');
+      });
+      final sanitizedHeaders = sanitizeResponseHeadersForMetadata(headerMap);
+
+      return (
+        data: response.data as List<int>,
+        headers: sanitizedHeaders.isEmpty
+            ? const <String, String>{}
+            : Map<String, String>.unmodifiable(sanitizedHeaders),
+      );
     } on DioException catch (e) {
       throw await handleDioError(e);
     } catch (e) {

@@ -76,12 +76,14 @@ class OpenAIAudio
     requestBody = callOptions.mergeIntoRequestBody(requestBody);
 
     final startedAt = DateTime.now().toUtc();
-    final audioData = await client.postRawWithHeaders(
+    final audioResponse = await client.postRawWithResponseHeaders(
       'audio/speech',
       requestBody,
       headers: callOptions.headers,
       cancelToken: cancelToken,
     );
+    final audioData = audioResponse.data;
+    final responseHeaders = audioResponse.headers;
 
     // Determine content type based on format
     String contentType = 'audio/mpeg'; // Default for mp3
@@ -122,6 +124,7 @@ class OpenAIAudio
         SpeechModelResponseMetadata(
           timestamp: startedAt,
           modelId: modelUsed,
+          headers: responseHeaders.isEmpty ? null : responseHeaders,
         ),
       ],
       providerMetadata: _buildProviderMetadata(
@@ -209,12 +212,14 @@ class OpenAIAudio
     );
 
     final startedAt = DateTime.now().toUtc();
-    final responseData = await client.postFormWithHeaders(
+    final transcriptionResponse = await client.postFormWithResponseHeaders(
       'audio/transcriptions',
       formData,
       headers: callOptions.headers,
       cancelToken: cancelToken,
     );
+    final responseData = transcriptionResponse.json;
+    final responseHeaders = transcriptionResponse.headers;
 
     // Parse word timing if available
     List<WordTiming>? words;
@@ -245,6 +250,7 @@ class OpenAIAudio
         TranscriptionModelResponseMetadata(
           timestamp: startedAt,
           modelId: modelUsed,
+          headers: responseHeaders.isEmpty ? null : responseHeaders,
         ),
       ],
       providerMetadata: _buildProviderMetadata(
@@ -404,12 +410,14 @@ class OpenAIAudio
     );
 
     final startedAt = DateTime.now().toUtc();
-    final responseData = await client.postFormWithHeaders(
+    final translationResponse = await client.postFormWithResponseHeaders(
       'audio/translations',
       formData,
       headers: callOptions.headers,
       cancelToken: cancelToken,
     );
+    final responseData = translationResponse.json;
+    final responseHeaders = translationResponse.headers;
 
     return STTResponse(
       text: responseData['text'] as String,
@@ -423,6 +431,7 @@ class OpenAIAudio
         TranscriptionModelResponseMetadata(
           timestamp: startedAt,
           modelId: modelUsed,
+          headers: responseHeaders.isEmpty ? null : responseHeaders,
         ),
       ],
       providerMetadata: _buildProviderMetadata(

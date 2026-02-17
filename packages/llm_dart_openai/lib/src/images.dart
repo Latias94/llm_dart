@@ -193,15 +193,16 @@ class OpenAIImages
       // Note: filePath support removed for Web platform compatibility
     }
 
-    final responseData = await _postMultipartFormWithCallOptions(
+    final response = await _postMultipartFormWithCallOptions(
       'images/edits',
       callOptions.mergeIntoRequestBody(formData),
       callOptions: callOptions,
     );
     return _parseImageResponse(
-      responseData,
+      response.json,
       request.model,
       startedAt: startedAt,
+      responseHeaders: response.headers.isEmpty ? null : response.headers,
       providerMetadata: _buildProviderMetadata(
         'images/edits',
         model: modelUsed,
@@ -244,15 +245,16 @@ class OpenAIImages
       );
     }
 
-    final responseData = await _postMultipartFormWithCallOptions(
+    final response = await _postMultipartFormWithCallOptions(
       'images/variations',
       callOptions.mergeIntoRequestBody(formData),
       callOptions: callOptions,
     );
     return _parseImageResponse(
-      responseData,
+      response.json,
       request.model,
       startedAt: startedAt,
+      responseHeaders: response.headers.isEmpty ? null : response.headers,
       providerMetadata: _buildProviderMetadata(
         'images/variations',
         model: modelUsed,
@@ -310,7 +312,8 @@ class OpenAIImages
   }
 
   /// Helper method to handle multipart form requests
-  Future<Map<String, dynamic>> _postMultipartForm(
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      _postMultipartForm(
     String endpoint,
     Map<String, dynamic> formData,
   ) async {
@@ -321,7 +324,8 @@ class OpenAIImages
     );
   }
 
-  Future<Map<String, dynamic>> _postMultipartFormWithCallOptions(
+  Future<({Map<String, dynamic> json, Map<String, String> headers})>
+      _postMultipartFormWithCallOptions(
     String endpoint,
     Map<String, dynamic> formData, {
     required LLMCallOptions callOptions,
@@ -347,7 +351,7 @@ class OpenAIImages
       }
     }
 
-    return await client.postFormWithHeaders(
+    return await client.postFormWithResponseHeaders(
       endpoint,
       dioFormData,
       headers: callOptions.headers,
@@ -359,6 +363,7 @@ class OpenAIImages
     Map<String, dynamic> responseData,
     String? model, {
     required DateTime startedAt,
+    required Map<String, String>? responseHeaders,
     Map<String, dynamic>? providerMetadata,
   }) {
     final data = responseData['data'] as List?;
@@ -419,6 +424,7 @@ class OpenAIImages
           ImageModelResponseMetadata(
             timestamp: startedAt,
             modelId: model ?? config.model,
+            headers: responseHeaders,
           ),
         ],
         providerMetadata: providerMetadata,
