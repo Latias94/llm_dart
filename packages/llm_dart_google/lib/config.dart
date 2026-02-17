@@ -97,7 +97,7 @@ class GoogleConfig {
   /// Provider-native web search configuration (Gemini `google_search` tool).
   ///
   /// When enabled (via `providerOptions['google']['webSearchEnabled']` or
-  /// `providerOptions['google']['webSearch'].enabled`), `GoogleChat` injects a
+  /// a `ProviderTool` such as `google.google_search`), `GoogleChat` injects a
   /// Google grounding tool into the request JSON (e.g. `googleSearch` or
   /// `googleSearchRetrieval`, depending on the model).
   final bool webSearchEnabled;
@@ -180,17 +180,19 @@ class GoogleConfig {
     final webSearchEnabledFromProviderOptions = readProviderOption<bool>(
         providerOptions, providerId, 'webSearchEnabled');
 
-    final rawWebSearch = readProviderOptionMap(
-            providerOptions, providerId, 'webSearch') ??
-        readProviderOption<dynamic>(providerOptions, providerId, 'webSearch');
-    final webSearchEnabledFromWebSearch =
-        _parseWebSearchEnabledFromLegacyConfig(rawWebSearch);
+    final rawWebSearchToolOptions = readProviderOptionMap(
+          providerOptions,
+          providerId,
+          'webSearchToolOptions',
+        ) ??
+        readProviderOption<dynamic>(
+          providerOptions,
+          providerId,
+          'webSearchToolOptions',
+        );
 
     final webSearchToolOptionsFromProviderOptions =
-        _parseWebSearchToolOptions(rawWebSearch);
-
-    final webSearchEnabledFromOptions =
-        webSearchEnabledFromProviderOptions ?? webSearchEnabledFromWebSearch;
+        _parseWebSearchToolOptions(rawWebSearchToolOptions);
 
     final providerTools = config.providerTools;
     ProviderTool? providerToolWebSearch;
@@ -208,7 +210,7 @@ class GoogleConfig {
         : _isProviderToolEnabled(providerToolWebSearch);
 
     final mergedWebSearchEnabled =
-        webSearchEnabledFromOptions == true || providerToolEnabled;
+        webSearchEnabledFromProviderOptions == true || providerToolEnabled;
 
     final webSearchToolOptionsFromProviderTools =
         providerToolWebSearch != null &&
@@ -220,24 +222,9 @@ class GoogleConfig {
         webSearchToolOptionsFromProviderOptions;
 
     final supportedFileUrlsOnly = readProviderOption<bool>(
-            providerOptions, providerId, 'supportedFileUrlsOnly') ??
-        _parseSupportedFileUrlsOnlyFromLegacyConfig(
-          readProviderOptionMap(
-                  providerOptions, providerId, 'supportedFileUrl') ??
-              readProviderOption<dynamic>(
-                providerOptions,
-                providerId,
-                'supportedFileUrl',
-              ),
-        ) ??
-        _parseSupportedFileUrlsOnlyFromLegacyConfig(
-          readProviderOptionMap(
-                  providerOptions, providerId, 'supportedFileUrls') ??
-              readProviderOption<dynamic>(
-                providerOptions,
-                providerId,
-                'supportedFileUrls',
-              ),
+          providerOptions,
+          providerId,
+          'supportedFileUrlsOnly',
         ) ??
         false;
 
@@ -361,44 +348,6 @@ class GoogleConfig {
     if (raw is Map) {
       return GoogleWebSearchToolOptions.fromJson(
           Map<String, dynamic>.from(raw));
-    }
-    return null;
-  }
-
-  static bool? _parseWebSearchEnabledFromLegacyConfig(dynamic raw) {
-    if (raw == null) return null;
-
-    if (raw is bool) return raw;
-
-    if (raw is Map<String, dynamic>) {
-      final enabled = raw['enabled'];
-      if (enabled is bool) return enabled;
-      return true; // presence implies enable (legacy behavior)
-    }
-
-    if (raw is Map) {
-      final map = Map<String, dynamic>.from(raw);
-      final enabled = map['enabled'];
-      if (enabled is bool) return enabled;
-      return true; // presence implies enable (legacy behavior)
-    }
-
-    return true;
-  }
-
-  static bool? _parseSupportedFileUrlsOnlyFromLegacyConfig(dynamic raw) {
-    if (raw == null) return null;
-    if (raw is bool) return raw;
-    if (raw is Map<String, dynamic>) {
-      final enabled = raw['enabled'];
-      if (enabled is bool) return enabled;
-      return true; // presence implies enable (legacy behavior)
-    }
-    if (raw is Map) {
-      final map = Map<String, dynamic>.from(raw);
-      final enabled = map['enabled'];
-      if (enabled is bool) return enabled;
-      return true;
     }
     return null;
   }

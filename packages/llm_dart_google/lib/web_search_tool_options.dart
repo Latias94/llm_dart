@@ -27,6 +27,22 @@ enum GoogleDynamicRetrievalMode {
     }
     return null;
   }
+
+  /// Parses both API enum values (e.g. `MODE_DYNAMIC`) and Vercel-style
+  /// human-friendly values (e.g. `dynamic`).
+  static GoogleDynamicRetrievalMode? fromString(String value) {
+    final byApiValue = fromApiValue(value);
+    if (byApiValue != null) return byApiValue;
+
+    switch (value.trim().toLowerCase()) {
+      case 'dynamic':
+        return GoogleDynamicRetrievalMode.dynamic;
+      case 'unspecified':
+        return GoogleDynamicRetrievalMode.unspecified;
+      default:
+        return null;
+    }
+  }
 }
 
 class GoogleWebSearchToolOptions {
@@ -47,7 +63,7 @@ class GoogleWebSearchToolOptions {
     GoogleDynamicRetrievalMode? parsedMode;
     final rawMode = json['mode'];
     if (rawMode is String) {
-      parsedMode = GoogleDynamicRetrievalMode.fromApiValue(rawMode);
+      parsedMode = GoogleDynamicRetrievalMode.fromString(rawMode);
     }
 
     double? parsedThreshold;

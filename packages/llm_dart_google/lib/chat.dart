@@ -134,16 +134,7 @@ class GoogleChat
     if (scoped == null) return false;
 
     final direct = scoped['supportedFileUrlsOnly'];
-    if (direct == true) return true;
-
-    final raw = scoped['supportedFileUrl'] ?? scoped['supportedFileUrls'];
-    if (raw is Map) {
-      final map = Map<String, dynamic>.from(raw);
-      if (map['enabled'] == true) return true;
-      return map.isNotEmpty;
-    }
-
-    return false;
+    return direct == true;
   }
 
   String get _chatEndpoint =>

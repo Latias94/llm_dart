@@ -34,7 +34,8 @@ void main() {
       expect(hasGoogleSearch, isTrue);
     });
 
-    test('adds google_search tool when providerOptions.webSearch.enabled=true',
+    test(
+        'parses providerOptions.webSearchToolOptions for google_search retrieval tool',
         () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',
@@ -42,8 +43,10 @@ void main() {
         model: 'gemini-1.5-flash',
         providerOptions: const {
           'google': {
-            'webSearch': {
-              'enabled': true,
+            'webSearchEnabled': true,
+            'webSearchToolOptions': {
+              'mode': 'dynamic',
+              'dynamicThreshold': 0.7,
             },
           },
         },
@@ -60,9 +63,20 @@ void main() {
       final tools = client.lastBody?['tools'];
       expect(tools, isA<List>());
       final list = tools as List;
-      final hasGoogleSearch =
-          list.any((t) => t is Map && t.containsKey('googleSearchRetrieval'));
-      expect(hasGoogleSearch, isTrue);
+
+      final retrieval = list
+          .whereType<Map>()
+          .map((m) => Map<String, dynamic>.from(m))
+          .firstWhere((m) => m.containsKey('googleSearchRetrieval'));
+      final payload =
+          retrieval['googleSearchRetrieval'] as Map<String, dynamic>?;
+      expect(payload, isNotNull);
+
+      final dynamicConfig =
+          payload!['dynamicRetrievalConfig'] as Map<String, dynamic>?;
+      expect(dynamicConfig, isNotNull);
+      expect(dynamicConfig!['mode'], equals('MODE_DYNAMIC'));
+      expect(dynamicConfig['dynamicThreshold'], equals(0.7));
     });
 
     test(
