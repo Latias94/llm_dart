@@ -177,7 +177,7 @@ Common OpenAI keys (non-exhaustive):
 - `useResponsesAPI`: `bool`
 - `previousResponseId`: `String` (Responses API only)
 - `builtInTools`: `List<Map<String, dynamic>>` (Responses built-in tools)
-- `webSearchEnabled` / `webSearch` (legacy best-effort; prefer `providerTools`)
+- `webSearchEnabled`: `bool` (Responses built-in web search)
 - `fileSearchEnabled` / `fileSearch` (legacy best-effort; prefer `providerTools`)
 - `computerUseEnabled` / `computerUse` (legacy best-effort; prefer `providerTools`)
 - `extraBody` / `extraHeaders` (escape hatches)

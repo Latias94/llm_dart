@@ -90,12 +90,6 @@ Recommended:
 - Set the model explicitly with `:online` when you want OpenRouter web search,
   e.g. `anthropic/claude-3.5-sonnet:online`.
 
-Legacy/best-effort escape hatches (do not rewrite `model`):
-
-- `providerOptions['openrouter']['webSearchEnabled']`: `bool`
-- `providerOptions['openrouter']['webSearch']`: `Map<String, dynamic>`
-- `providerOptions['openrouter']['useOnlineShortcut']`: `bool` (legacy; no longer rewrites the model)
-
 References:
 
 - `docs/provider_escape_hatches.md`
@@ -124,10 +118,6 @@ The OpenAI-compatible layer surfaces best-effort metadata such as:
 - `id`, `model`, `systemFingerprint`, `finishReason`
 
 ## Conformance tests
-
-OpenRouter web search configuration tests:
-
-- `test/providers/openai_compatible/openrouter_provider_options_web_search_test.dart`
 
 OpenAI-compatible baseline tests:
 

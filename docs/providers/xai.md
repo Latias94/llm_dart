@@ -111,8 +111,7 @@ final model = await LLMBuilder()
 
 Notes:
 
-- `webSearchEnabled/webSearch` keys are legacy best-effort; prefer
-  `liveSearch/searchParameters`.
+- Configure live search via `liveSearch/searchParameters`.
 
 References:
 

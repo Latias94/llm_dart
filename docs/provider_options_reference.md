@@ -75,7 +75,6 @@ Recommended:
 Legacy keys:
 
 - `providerOptions[providerId]['webSearchEnabled']`: `bool`
-- `providerOptions[providerId]['webSearch']`: `Map<String, dynamic>` (**legacy best-effort**; prefer `providerTools`)
 
 ### 1.3 OpenAI-compatible (Chat Completions) optional params
 
@@ -108,7 +107,6 @@ Opt-in emission of request metadata for debug/observability, aligned with the
 AI SDK `LanguageModelRequestMetadata` concept.
 
 - `providerOptions[providerId]['emitRequestMetadata']`: `bool` (default: `false`)
-- `providerOptions[providerId]['emit_request_metadata']`: `bool` (legacy alias)
 
 When enabled, providers may:
 
@@ -344,9 +342,7 @@ Guide: [docs/providers/openrouter.md](providers/openrouter.md)
 
 Web search:
 
-- `webSearchEnabled`: `bool`
-- `webSearch`: `Map<String, dynamic>` (**legacy best-effort**; prefer setting `:online` explicitly)
-- `useOnlineShortcut`: `bool` (legacy; no longer rewrites the model)
+- Use the `:online` model suffix explicitly when you want OpenRouter web search.
 
 ### 2.7 `groq` / `groq-openai` (OpenAI-compatible)
 

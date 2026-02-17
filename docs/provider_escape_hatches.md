@@ -335,11 +335,10 @@ final provider = await LLMBuilder()
 Prefer these keys (per-provider namespace):
 
 - `providerOptions[providerId]['webSearchEnabled']`: `bool`
-- `providerOptions[providerId]['webSearch']`: `Map<String, dynamic>` (**legacy best-effort**; prefer `providerTools`)
 
 Notes:
 
-- `webSearch` is intentionally a **provider-native** feature. Providers may interpret the same config differently.
+- Web search is intentionally a **provider-native** feature. Providers may interpret the same enable flag differently.
 - Legacy `extensions` keys for web search have been removed. Use `providerOptions` only.
 
 ##### OpenRouter (OpenAI-compatible): model `:online` shortcut
@@ -359,7 +358,6 @@ await LLMBuilder()
 
 Notes:
 
-- `providerOptions['openrouter']['webSearchEnabled']` / `webSearch` are legacy escape hatches for app-side logic and examples.
 - Prefer setting the model suffix explicitly, since OpenRouter treats this as a model-selection detail.
 
 ##### Anthropic (Messages API): `web_search_*` tool

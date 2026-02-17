@@ -213,9 +213,9 @@ Provider-by-provider alignment tracker:
   - Anthropic-compatible `web_search_*` is filtered out from local tool call surfaces to avoid accidental execution in local tool loops.
   - **Migration in progress**:
     - Prefer `LLMConfig.providerTools` (typed `ProviderTool` catalogs) for provider-native web search / grounding tools.
-    - Namespaced `providerOptions[*]['webSearchEnabled'|'webSearch']` remain as legacy best-effort escape hatches for compatibility.
+    - Namespaced `providerOptions[*]['webSearchEnabled']` may exist for some providers as a best-effort enable flag, but provider-specific `webSearch` map configs have been removed in favor of `providerTools`.
     - OpenRouter web search is a provider detail (`:online` model suffix). LLM Dart does not rewrite models automatically; set it explicitly if needed.
-    - xAI uses `providerOptions['xai']['searchParameters'|'liveSearch']` (native shape); `webSearch*` keys are legacy.
+    - xAI uses `providerOptions['xai']['searchParameters'|'liveSearch']` (native shape); legacy `webSearch*` keys have been removed.
   - `LLMConfig.providerTools` is now writable via `LLMBuilder.providerTool(s)`, and providers can gradually bridge it into native request formats.
     - Implemented bridges: OpenAI (`openai.web_search_preview` / `openai.file_search` / `openai.computer_use_preview`), Anthropic-compatible (`*.web_search_*`), Google (`google.google_search`).
     - Provider helpers:

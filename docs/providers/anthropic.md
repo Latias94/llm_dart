@@ -113,11 +113,6 @@ LLMConfig(
 );
 ```
 
-Legacy/best-effort escape hatches:
-
-- `providerOptions['anthropic']['webSearchEnabled']`
-- `providerOptions['anthropic']['webSearch']`
-
 Official docs:
 
 - Web search tool: https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool

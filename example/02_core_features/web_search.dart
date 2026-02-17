@@ -204,13 +204,6 @@ Future<void> demoOpenRouterOnlineSuffix(String? apiKey) async {
       .provider('openrouter')
       .apiKey(apiKey)
       .model('anthropic/claude-3.5-sonnet:online')
-      .providerOption('openrouter', 'webSearch', const {
-        'enabled': true,
-        'max_results': 5,
-        'strategy': 'plugin',
-        'search_type': 'web',
-      })
-      .providerOption('openrouter', 'webSearchEnabled', true)
       .build();
 
   final prompt = Prompt(messages: [

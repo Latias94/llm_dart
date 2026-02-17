@@ -264,8 +264,7 @@ void main() {
 
       test('should configure OpenRouter with callback', () {
         final builder = LLMBuilder().openRouter((openrouter) =>
-            openrouter.webSearch(
-                maxResults: 5, searchPrompt: 'Focus on recent research'));
+            openrouter.httpReferer('https://example.com').xTitle('llm_dart'));
         expect(builder, isNotNull);
       });
 

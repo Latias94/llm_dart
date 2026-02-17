@@ -249,24 +249,17 @@ Future<void> demoOpenRouterBuilder(String? apiKey) async {
   }
 
   try {
-    // OpenRouter web search is configured via namespaced providerOptions.
-    // Note: LLM Dart does not rewrite `:online` suffixes automatically.
     final provider = await LLMBuilder()
-        .provider('openrouter')
+        .openRouter(
+          (openrouter) => openrouter.appInfo(
+            referer: 'https://example.com',
+            title: 'llm_dart demo',
+          ),
+        )
         .apiKey(apiKey)
         .model('anthropic/claude-3.5-sonnet')
         .temperature(0.3)
         .maxTokens(150)
-        .providerOption('openrouter', 'webSearch', const {
-          'enabled': true,
-          'max_results': 8,
-          'search_prompt':
-              'Focus on academic papers, research publications, and scholarly sources',
-          'strategy': 'plugin',
-          'search_type': 'web',
-        })
-        .providerOption('openrouter', 'webSearchEnabled', true)
-        .providerOption('openrouter', 'useOnlineShortcut', false)
         .build();
 
     final result = await generateText(
