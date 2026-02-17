@@ -9,11 +9,11 @@ String _sseData(Map<String, dynamic> json) => 'data: ${jsonEncode(json)}\n\n';
 
 void main() {
   group('Google Vertex grounding sources (AI SDK parity)', () {
-    test('emits source parts and namespaces metadata under google-vertex',
-        () async {
+    test('emits source parts and namespaces metadata under vertex', () async {
       final config = GoogleConfig(
-        providerId: 'google-vertex',
-        providerOptionsName: 'google-vertex',
+        providerId: 'vertex',
+        providerOptionsName: 'vertex',
+        providerOptionsFallbackIds: const ['google-vertex', 'google'],
         apiKey: 'test-key',
         baseUrl: googleVertexBaseUrl,
         model: googleVertexDefaultModel,
@@ -69,16 +69,16 @@ void main() {
       expect(sources.single.url, equals('https://example.com'));
       expect(sources.single.title, equals('Example'));
 
-      final sourceMeta =
-          sources.single.providerMetadata?['google-vertex'] as Map?;
+      final sourceMeta = sources.single.providerMetadata?['vertex'] as Map?;
       expect(sourceMeta, isNotNull);
       expect(sourceMeta!['type'], equals('groundingMetadata'));
 
       final finish = parts.whereType<LLMFinishPart>().single;
       final meta = finish.response.providerMetadata;
       expect(meta, isNotNull);
-      expect(meta!.containsKey('google-vertex'), isTrue);
-      expect(meta.containsKey('google-vertex.chat'), isTrue);
+      expect(meta!.containsKey('vertex'), isTrue);
+      expect(meta.containsKey('vertex.chat'), isTrue);
+      expect(meta.containsKey('google-vertex'), isFalse);
       expect(meta.containsKey('google'), isFalse);
     });
   });

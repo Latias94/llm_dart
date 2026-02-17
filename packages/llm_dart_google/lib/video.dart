@@ -364,7 +364,9 @@ Map<String, dynamic> _readVideoOptions(
   // Vercel AI SDK mental model aliases:
   // - Google Vertex video options live under `vertex`.
   if (options == null && isVertex) {
-    options = providerOptions['vertex'] ?? providerOptions['google-vertex'];
+    options = providerOptions['vertex'] ??
+        providerOptions['google-vertex'] ??
+        providerOptions['google'];
   }
 
   // - Google video options live under `google`.

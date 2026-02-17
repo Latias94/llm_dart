@@ -48,14 +48,14 @@ Examples:
 - OpenAI: canonical key is `openai`
 - Anthropic: canonical key is `anthropic`
 - Google (Gemini API): canonical key is `google`
-- Google Vertex: canonical key is `google-vertex`
+- Google Vertex: canonical key is `vertex`
 - xAI Responses: canonical key is `xai.responses`
 
 Historical note (Vertex):
 
-- Earlier refactor iterations emitted `providerMetadata['vertex']` for Vertex
-  express mode. This has been aligned to `providerMetadata['google-vertex']`
-  for Vercel AI SDK parity.
+- Earlier refactor iterations emitted `providerMetadata['google-vertex']` for
+  Vertex express mode. This has been aligned to `providerMetadata['vertex']`
+  for AI SDK v6 parity, with `google-vertex` kept as a legacy input alias.
 
 ### 2) Alias policy
 

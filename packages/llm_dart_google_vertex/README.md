@@ -23,7 +23,7 @@ Future<void> main() async {
   registerGoogleVertex();
 
   final model = await LLMBuilder()
-      .provider(googleVertexProviderId) // 'google-vertex'
+      .provider(vertexProviderId) // 'vertex'
       .apiKey(Platform.environment['VERTEX_API_KEY'] ?? 'VERTEX_API_KEY')
       .model('gemini-2.5-flash')
       .build();
@@ -39,8 +39,10 @@ Future<void> main() async {
 
 ## Notes
 
-- Provider metadata keys follow Vercel AI SDK: `google-vertex` (canonical) and
-  `google-vertex.chat` (compatibility alias).
+- AI SDK v6 parity keys:
+  - Canonical: `vertex`
+  - Alias: `vertex.chat`
+  - Legacy input alias (deprecated): `google-vertex` (still accepted)
 - Non-express (OAuth / service account) authentication is not implemented yet.
 
 See also:

@@ -55,6 +55,7 @@ class BuiltinProviderRegistry {
         _isRegistered('deepseek') &&
         _isRegistered('ollama') &&
         _isRegistered('google') &&
+        _isRegistered('vertex') &&
         _isRegistered('google-vertex') &&
         _isRegistered('xai') &&
         _isRegistered('xai.responses') &&

@@ -6,23 +6,41 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'defaults.dart';
 
+/// Canonical provider id for Google Vertex (AI SDK v6 parity).
+const String vertexProviderId = 'vertex';
+
+/// Back-compat alias (deprecated).
+@Deprecated('Use vertexProviderId ("vertex").')
 const String googleVertexProviderId = 'google-vertex';
 
 void registerGoogleVertex({bool replace = false}) {
-  if (!replace && LLMProviderRegistry.isRegistered(googleVertexProviderId)) {
+  final vertexRegistered = LLMProviderRegistry.isRegistered(vertexProviderId);
+  final legacyRegistered = LLMProviderRegistry.isRegistered('google-vertex');
+
+  if (!replace && vertexRegistered && legacyRegistered) {
     return;
   }
-  final factory = GoogleVertexProviderFactory();
+
+  final vertexFactory = VertexProviderFactory();
+  final legacyFactory = GoogleVertexProviderFactory();
+
   if (replace) {
-    LLMProviderRegistry.registerOrReplace(factory);
+    LLMProviderRegistry.registerOrReplace(vertexFactory);
+    LLMProviderRegistry.registerOrReplace(legacyFactory);
     return;
   }
-  LLMProviderRegistry.register(factory);
+
+  if (!vertexRegistered) {
+    LLMProviderRegistry.register(vertexFactory);
+  }
+  if (!legacyRegistered) {
+    LLMProviderRegistry.register(legacyFactory);
+  }
 }
 
-class GoogleVertexProviderFactory extends BaseProviderFactory<ChatCapability> {
+class VertexProviderFactory extends BaseProviderFactory<ChatCapability> {
   @override
-  String get providerId => googleVertexProviderId;
+  String get providerId => vertexProviderId;
 
   @override
   String get displayName => 'Google Vertex';
@@ -59,14 +77,18 @@ class GoogleVertexProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   GoogleConfig _transformConfig(LLMConfig config) {
-    // Derive config from the unified LLMConfig, but:
-    // - Read provider options from this provider id (google-vertex)
-    // - Emit provider metadata under `google-vertex` for AI SDK parity.
+    // AI SDK parity: `@ai-sdk/google-vertex` uses `vertex` as the key for both
+    // providerMetadata output and providerOptions input. We still accept
+    // `google-vertex` (legacy) and `google` (AI SDK <=5) as fallbacks.
     final baseUrl = _ensureTrailingSlash(config.baseUrl);
     return GoogleConfig.fromLLMConfig(
       config,
-      providerId: googleVertexProviderId,
-      providerOptionsName: googleVertexProviderId,
+      providerId: vertexProviderId,
+      providerOptionsName: vertexProviderId,
+      providerOptionsFallbackIds: const [
+        'google-vertex',
+        'google',
+      ],
     ).copyWith(
       baseUrl: baseUrl,
       model: config.model.isEmpty ? googleVertexDefaultModel : config.model,
@@ -77,4 +99,10 @@ class GoogleVertexProviderFactory extends BaseProviderFactory<ChatCapability> {
     if (url.isEmpty) return googleVertexBaseUrl;
     return url.endsWith('/') ? url : '$url/';
   }
+}
+
+/// Back-compat alias factory for users still using providerId `google-vertex`.
+class GoogleVertexProviderFactory extends VertexProviderFactory {
+  @override
+  String get providerId => 'google-vertex';
 }

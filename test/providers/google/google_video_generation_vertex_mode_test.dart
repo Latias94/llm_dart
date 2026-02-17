@@ -12,8 +12,9 @@ void main() {
         'predictLongRunning uses bytesBase64Encoded and polls via fetchPredictOperation',
         () async {
       final config = GoogleConfig(
-        providerId: 'google-vertex',
-        providerOptionsName: 'google-vertex',
+        providerId: 'vertex',
+        providerOptionsName: 'vertex',
+        providerOptionsFallbackIds: const ['google-vertex', 'google'],
         apiKey: 'test-key',
         model: 'veo-2.0-generate-001',
         baseUrl: 'https://us-central1-aiplatform.googleapis.com/v1/',

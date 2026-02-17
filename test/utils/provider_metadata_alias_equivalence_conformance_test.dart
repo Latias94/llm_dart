@@ -26,7 +26,8 @@ void _expectAliasesMirrorCanonical(
 
 void main() {
   group('providerMetadata alias equivalence (conformance)', () {
-    test('OpenAI Chat Completions emits openai + openai.chat aliases', () async {
+    test('OpenAI Chat Completions emits openai + openai.chat aliases',
+        () async {
       final config = OpenAIConfig(
         providerId: 'openai.chat',
         providerName: 'OpenAI (Chat)',
@@ -245,10 +246,11 @@ void main() {
       expect(meta.containsKey('google.chat'), isTrue);
     });
 
-    test('Google Vertex emits google-vertex.chat alias equal to google-vertex',
-        () async {
+    test('Google Vertex emits vertex.chat alias equal to vertex', () async {
       final config = GoogleConfig(
-        providerOptionsName: 'google-vertex',
+        providerId: 'vertex',
+        providerOptionsName: 'vertex',
+        providerOptionsFallbackIds: const ['google-vertex', 'google'],
         apiKey: 'test-key',
         baseUrl: 'https://aiplatform.googleapis.com/v1/publishers/google/',
         model: 'gemini-2.5-flash',
@@ -267,8 +269,8 @@ void main() {
 
       final meta = finish.response.providerMetadata;
       expect(meta, isNotNull);
-      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'google-vertex');
-      expect(meta.containsKey('google-vertex.chat'), isTrue);
+      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'vertex');
+      expect(meta.containsKey('vertex.chat'), isTrue);
     });
   });
 }

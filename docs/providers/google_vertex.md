@@ -9,8 +9,13 @@ with Vercel AI SDK `@ai-sdk/google-vertex` express mode.
 Provider-agnostic usage should prefer `llm_dart_ai` task APIs. Vertex-only knobs
 live behind:
 
-- `providerOptions['google-vertex']`
-- `providerMetadata['google-vertex']`
+- `providerOptions['vertex']`
+- `providerMetadata['vertex']`
+
+Legacy input aliases (supported for migration):
+
+- `providerOptions['google-vertex']` (deprecated)
+- `providerOptions['google']` (AI SDK <=5 style; deprecated for Vertex)
 
 ## Packages
 
@@ -40,7 +45,7 @@ If you want stricter AI SDK-style validation, enable:
 
 ```dart
 providerOptions: const {
-  'google-vertex': {
+  'vertex': {
     'supportedFileUrlsOnly': true,
   },
 },
@@ -72,7 +77,7 @@ Future<void> main() async {
   registerGoogleVertex();
 
   final model = await LLMBuilder()
-      .provider(googleVertexProviderId) // 'google-vertex'
+      .provider(vertexProviderId) // 'vertex'
       .apiKey(Platform.environment['VERTEX_API_KEY'] ?? 'VERTEX_API_KEY')
       .model('gemini-2.5-flash')
       .build();
@@ -91,11 +96,8 @@ Future<void> main() async {
 
 Vertex metadata follows Vercel AI SDK conventions:
 
-- `providerMetadata['google-vertex']`
-
-Compatibility alias:
-
-- `providerMetadata['google-vertex.chat']` (mirrors `google-vertex`; avoid depending on it)
+- `providerMetadata['vertex']` (canonical)
+- `providerMetadata['vertex.chat']` (alias; mirrors `vertex`)
 
 ## Streaming (LLMStreamPart)
 
@@ -112,8 +114,8 @@ Future<void> printStream(Stream<LLMStreamPart> parts) async {
     switch (part) {
       case LLMStreamStartPart(:final warnings):
         if (warnings.isNotEmpty) stderr.writeln('warnings: $warnings');
-      case LLMResponseMetadataPart(:final model):
-        stderr.writeln('meta: model=$model');
+      case LLMResponseMetadataPart(:final modelId):
+        stderr.writeln('meta: modelId=$modelId');
       case LLMTextDeltaPart(:final delta):
         stdout.write(delta);
       case LLMSourceUrlPart(:final url, :final title):

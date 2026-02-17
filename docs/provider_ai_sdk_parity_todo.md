@@ -68,10 +68,10 @@ Notes:
 
 ### Google Vertex (express mode) (`llm_dart_google_vertex`)
 
-- [x] Request-side `providerOptions` are scoped under `providerOptions['google-vertex']`
+- [x] Request-side `providerOptions` are scoped under `providerOptions['vertex']` (legacy: `google-vertex`, `google`)
 - [x] Prompt IR file URL strict mode is namespaced (`supportedFileUrlsOnly`)
-- [x] Response metadata is emitted under `providerMetadata['google-vertex']`
-- [x] providerMetadata alias equivalence (`google-vertex.chat` mirrors `google-vertex`)
+- [x] Response metadata is emitted under `providerMetadata['vertex']`
+- [x] providerMetadata alias equivalence (`vertex.chat` mirrors `vertex`)
 - [x] Source parts conformance (should match Google grounding)
 
 ### xAI (`llm_dart_xai`)
@@ -101,6 +101,6 @@ Notes:
 ## Migration notes
 
 - Google Vertex metadata key:
-  - canonical: `providerMetadata['google-vertex']`
-  - alias: `providerMetadata['google-vertex.chat']`
+  - canonical: `providerMetadata['vertex']`
+  - alias: `providerMetadata['vertex.chat']`
   - see `docs/migrations/0.12.0-alpha.1.md`

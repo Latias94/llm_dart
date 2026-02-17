@@ -100,6 +100,11 @@ class GoogleChat
     final byName = providerOptions[_providerOptionsName];
     if (byName != null) return byName;
 
+    for (final fallbackId in config.providerOptionsFallbackIds) {
+      final value = providerOptions[fallbackId];
+      if (value != null) return value;
+    }
+
     return null;
   }
 
@@ -116,11 +121,21 @@ class GoogleChat
     final original = config.originalConfig;
     if (original == null) return false;
 
-    return emitRequestMetadataEnabled(
+    if (emitRequestMetadataEnabled(
       original.providerOptions,
       _providerOptionsId,
       fallbackProviderId: _providerOptionsName,
-    );
+    )) {
+      return true;
+    }
+
+    for (final fallbackId in config.providerOptionsFallbackIds) {
+      if (emitRequestMetadataEnabled(original.providerOptions, fallbackId)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   bool _supportedFileUrlsOnlyFromProviderOptions(

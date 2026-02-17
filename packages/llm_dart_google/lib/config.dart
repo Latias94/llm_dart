@@ -58,8 +58,16 @@ class GoogleConfig {
   ///
   /// Examples:
   /// - `google` (Gemini API)
-  /// - `google-vertex` (Vertex express mode)
+  /// - `vertex` (Vertex express mode, AI SDK v6 parity)
+  /// - `google-vertex` (Vertex express mode, legacy alias)
   final String providerId;
+
+  /// Fallback provider ids used for reading request-side `providerOptions`.
+  ///
+  /// This is primarily used to preserve backwards compatibility for providers
+  /// that renamed their providerOptions key (e.g. Vertex: `google`/`google-vertex`
+  /// -> `vertex`).
+  final List<String> providerOptionsFallbackIds;
 
   /// Provider options namespace name used for `providerMetadata` and per-part
   /// `providerOptions` propagation.
@@ -68,7 +76,7 @@ class GoogleConfig {
   ///
   /// This exists to support Vercel AI SDK parity where the same internal
   /// message/part mapping is shared across Google AI and Vertex AI, but the
-  /// metadata namespace differs (`google` vs `google-vertex`).
+  /// metadata namespace differs (`google` vs `vertex`).
   final String providerOptionsName;
 
   final String apiKey;
@@ -110,6 +118,7 @@ class GoogleConfig {
   ///
   /// Enable via:
   /// - `providerOptions['google']['supportedFileUrlsOnly'] = true`
+  /// - `providerOptions['vertex']['supportedFileUrlsOnly'] = true`
   /// - `providerOptions['google-vertex']['supportedFileUrlsOnly'] = true`
   final bool supportedFileUrlsOnly;
 
@@ -131,6 +140,7 @@ class GoogleConfig {
 
   const GoogleConfig({
     this.providerId = 'google',
+    this.providerOptionsFallbackIds = const [],
     this.providerOptionsName = 'google',
     required this.apiKey,
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/',
@@ -167,6 +177,7 @@ class GoogleConfig {
     LLMConfig config, {
     String providerId = 'google',
     String providerOptionsName = 'google',
+    List<String> providerOptionsFallbackIds = const [],
   }) {
     final providerOptions = config.providerOptions;
 
@@ -190,23 +201,40 @@ class GoogleConfig {
 
     final mergedWebSearchToolOptions = webSearchToolOptionsFromProviderTools;
 
-    final supportedFileUrlsOnly = readProviderOption<bool>(
-          providerOptions,
-          providerId,
-          'supportedFileUrlsOnly',
-        ) ??
-        false;
+    T? readOption<T>(String key) {
+      final direct = readProviderOption<T>(providerOptions, providerId, key);
+      if (direct != null) return direct;
+
+      for (final fallbackId in providerOptionsFallbackIds) {
+        final value = readProviderOption<T>(providerOptions, fallbackId, key);
+        if (value != null) return value;
+      }
+
+      return null;
+    }
+
+    List<dynamic>? readOptionList(String key) {
+      final direct = readProviderOptionList(providerOptions, providerId, key);
+      if (direct != null) return direct;
+
+      for (final fallbackId in providerOptionsFallbackIds) {
+        final value = readProviderOptionList(providerOptions, fallbackId, key);
+        if (value != null) return value;
+      }
+
+      return null;
+    }
+
+    final supportedFileUrlsOnly =
+        readOption<bool>('supportedFileUrlsOnly') ?? false;
 
     final safetySettings = _parseSafetySettings(
-      readProviderOptionList(
-        providerOptions,
-        providerId,
-        'safetySettings',
-      ),
+      readOptionList('safetySettings'),
     );
 
     return GoogleConfig(
       providerId: providerId,
+      providerOptionsFallbackIds: providerOptionsFallbackIds,
       providerOptionsName: providerOptionsName,
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
@@ -222,45 +250,25 @@ class GoogleConfig {
       toolChoice: config.toolChoice,
       // Google-specific provider options (namespaced)
       reasoningEffort: ReasoningEffort.fromString(
-        readProviderOption<String>(
-            providerOptions, providerId, 'reasoningEffort'),
+        readOption<String>('reasoningEffort'),
       ),
-      thinkingBudgetTokens: readProviderOption<int>(
-          providerOptions, providerId, 'thinkingBudgetTokens'),
-      includeThoughts: readProviderOption<bool>(
-        providerOptions,
-        providerId,
-        'includeThoughts',
-      ),
-      enableImageGeneration: readProviderOption<bool>(
-        providerOptions,
-        providerId,
-        'enableImageGeneration',
-      ),
-      responseModalities: readProviderOptionList(
-        providerOptions,
-        providerId,
-        'responseModalities',
-      )?.whereType<String>().toList(growable: false),
+      thinkingBudgetTokens: readOption<int>('thinkingBudgetTokens'),
+      includeThoughts: readOption<bool>('includeThoughts'),
+      enableImageGeneration: readOption<bool>('enableImageGeneration'),
+      responseModalities: readOptionList('responseModalities')
+          ?.whereType<String>()
+          .toList(growable: false),
       safetySettings: safetySettings,
-      maxInlineDataSize: readProviderOption<int>(
-            providerOptions,
-            providerId,
-            'maxInlineDataSize',
-          ) ??
-          20 * 1024 * 1024,
-      candidateCount: readProviderOption<int>(
-          providerOptions, providerId, 'candidateCount'),
+      maxInlineDataSize:
+          readOption<int>('maxInlineDataSize') ?? 20 * 1024 * 1024,
+      candidateCount: readOption<int>('candidateCount'),
       stopSequences: config.stopSequences,
       supportedFileUrlsOnly: supportedFileUrlsOnly,
       webSearchToolOptions: mergedWebSearchToolOptions,
       // Embedding-specific provider options
-      embeddingTaskType: readProviderOption<String>(
-          providerOptions, providerId, 'embeddingTaskType'),
-      embeddingTitle: readProviderOption<String>(
-          providerOptions, providerId, 'embeddingTitle'),
-      embeddingDimensions: readProviderOption<int>(
-          providerOptions, providerId, 'embeddingDimensions'),
+      embeddingTaskType: readOption<String>('embeddingTaskType'),
+      embeddingTitle: readOption<String>('embeddingTitle'),
+      embeddingDimensions: readOption<int>('embeddingDimensions'),
       originalConfig: config,
     );
   }
@@ -387,6 +395,7 @@ class GoogleConfig {
 
   GoogleConfig copyWith({
     String? providerId,
+    List<String>? providerOptionsFallbackIds,
     String? providerOptionsName,
     String? apiKey,
     String? baseUrl,
@@ -418,6 +427,8 @@ class GoogleConfig {
   }) =>
       GoogleConfig(
         providerId: providerId ?? this.providerId,
+        providerOptionsFallbackIds:
+            providerOptionsFallbackIds ?? this.providerOptionsFallbackIds,
         providerOptionsName: providerOptionsName ?? this.providerOptionsName,
         apiKey: apiKey ?? this.apiKey,
         baseUrl: baseUrl ?? this.baseUrl,

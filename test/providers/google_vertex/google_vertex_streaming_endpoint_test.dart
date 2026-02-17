@@ -9,8 +9,9 @@ void main() {
   group('Google Vertex streaming endpoint (AI SDK parity)', () {
     test('uses streamGenerateContent without alt=sse', () async {
       final config = GoogleConfig(
-        providerOptionsName: 'google-vertex',
-        providerId: 'google-vertex',
+        providerOptionsName: 'vertex',
+        providerId: 'vertex',
+        providerOptionsFallbackIds: const ['google-vertex', 'google'],
         apiKey: 'test-key',
         baseUrl: googleVertexBaseUrl,
         model: googleVertexDefaultModel,
@@ -50,8 +51,9 @@ void main() {
           'projects/test-project/locations/us-central1/publishers/google/models/gemini-2.5-pro';
 
       final config = GoogleConfig(
-        providerOptionsName: 'google-vertex',
-        providerId: 'google-vertex',
+        providerOptionsName: 'vertex',
+        providerId: 'vertex',
+        providerOptionsFallbackIds: const ['google-vertex', 'google'],
         apiKey: 'test-key',
         baseUrl: 'https://us-central1-aiplatform.googleapis.com/v1/',
         model: fullModelPath,

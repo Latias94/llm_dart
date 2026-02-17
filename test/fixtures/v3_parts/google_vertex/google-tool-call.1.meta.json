@@ -1,7 +1,7 @@
 {
   "provider": "google_vertex",
   "scenario": "google-tool-call.1",
-  "description": "Google Vertex (express mode) SSE streaming with a functionCall tool. Handcrafted contract fixture validating tool-input and finishReason mapping under `google-vertex` metadata namespace.",
+  "description": "Google Vertex (express mode) SSE streaming with a functionCall tool. Handcrafted contract fixture validating tool-input and finishReason mapping under `vertex` metadata namespace.",
   "source": {
     "type": "handcrafted-contract-fixture",
     "paths": [
@@ -19,4 +19,3 @@
     "finish_reason_typed": true
   }
 }
-

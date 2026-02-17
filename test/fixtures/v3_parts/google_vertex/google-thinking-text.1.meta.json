@@ -1,7 +1,7 @@
 {
   "provider": "google_vertex",
   "scenario": "google-thinking-text.1",
-  "description": "Google Vertex (express mode) SSE streaming with thought=true reasoning and regular text. Handcrafted contract fixture validating providerMetadata namespace differences (`google-vertex`).",
+  "description": "Google Vertex (express mode) SSE streaming with thought=true reasoning and regular text. Handcrafted contract fixture validating providerMetadata namespace differences (`vertex`).",
   "source": {
     "type": "handcrafted-contract-fixture",
     "paths": [
@@ -19,4 +19,3 @@
     "finish_reason_typed": true
   }
 }
-

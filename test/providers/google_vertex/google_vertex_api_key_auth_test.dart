@@ -51,8 +51,9 @@ void main() {
   group('Google Vertex express API key auth (AI SDK parity)', () {
     test('sends API key via x-goog-api-key header (not query)', () async {
       final config = GoogleConfig(
-        providerOptionsName: 'google-vertex',
-        providerId: 'google-vertex',
+        providerOptionsName: 'vertex',
+        providerId: 'vertex',
+        providerOptionsFallbackIds: const ['google-vertex', 'google'],
         apiKey: 'test-vertex-key',
         baseUrl: googleVertexBaseUrl,
         model: 'gemini-2.5-pro',
@@ -91,8 +92,9 @@ void main() {
           'projects/test-project/locations/us-central1/publishers/google/models/gemini-2.5-pro';
 
       final config = GoogleConfig(
-        providerOptionsName: 'google-vertex',
-        providerId: 'google-vertex',
+        providerOptionsName: 'vertex',
+        providerId: 'vertex',
+        providerOptionsFallbackIds: const ['google-vertex', 'google'],
         apiKey: 'test-vertex-key',
         baseUrl: 'https://us-central1-aiplatform.googleapis.com/v1/',
         model: fullModelPath,

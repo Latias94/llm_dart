@@ -5,10 +5,11 @@ import '../../utils/fakes/google_fake_client.dart';
 
 void main() {
   group('Google Vertex providerMetadata', () {
-    test('namespaces metadata under google-vertex (AI SDK parity)', () async {
+    test('namespaces metadata under vertex (AI SDK parity)', () async {
       final config = GoogleConfig(
-        providerOptionsName: 'google-vertex',
-        providerId: 'google-vertex',
+        providerOptionsName: 'vertex',
+        providerId: 'vertex',
+        providerOptionsFallbackIds: const ['google-vertex', 'google'],
         apiKey: 'test-key',
         baseUrl: googleVertexBaseUrl,
         model: googleVertexDefaultModel,
@@ -62,8 +63,9 @@ void main() {
 
       final meta = response.providerMetadata;
       expect(meta, isNotNull);
-      expect(meta!.containsKey('google-vertex'), isTrue);
-      expect(meta.containsKey('google-vertex.chat'), isTrue);
+      expect(meta!.containsKey('vertex'), isTrue);
+      expect(meta.containsKey('vertex.chat'), isTrue);
+      expect(meta.containsKey('google-vertex'), isFalse);
       expect(meta.containsKey('google'), isFalse);
       expect(meta.containsKey('google.generative-ai'), isFalse);
 
@@ -71,7 +73,7 @@ void main() {
       expect(calls, isNotNull);
       expect(calls, isNotEmpty);
       expect(
-        calls!.first.providerOptions['google-vertex']?['thoughtSignature'],
+        calls!.first.providerOptions['vertex']?['thoughtSignature'],
         equals('sig-vertex'),
       );
     });

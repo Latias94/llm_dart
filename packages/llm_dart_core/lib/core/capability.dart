@@ -497,7 +497,7 @@ abstract class ChatCapability {
 /// best-effort defaults for response metadata (`id`, `timestamp`, `modelId`)
 /// even when providers do not return them.
 abstract class ModelIdentityCapability {
-  /// Provider identifier (e.g. `openai`, `anthropic`, `google-vertex`).
+  /// Provider identifier (e.g. `openai`, `anthropic`, `vertex`).
   String get providerId;
 
   /// Model identifier (e.g. `gpt-4.1-mini`, `claude-3-5-sonnet-latest`).

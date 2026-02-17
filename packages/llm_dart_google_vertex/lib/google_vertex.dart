@@ -1,8 +1,11 @@
 /// Google Vertex provider (express mode).
 ///
 /// This package reuses the Google Generative AI request/response mapping from
-/// `llm_dart_google`, but exposes provider metadata under the `google-vertex`
+/// `llm_dart_google`, but exposes provider metadata under the `vertex`
 /// namespace for Vercel AI SDK parity.
+///
+/// Note: for AI SDK v6 parity, the canonical providerOptions/providerMetadata key
+/// is now `vertex` (with `google-vertex` kept as a deprecated alias).
 library;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
@@ -36,8 +39,9 @@ GoogleProvider createGoogleVertexProvider({
   int? embeddingDimensions,
 }) {
   final config = GoogleConfig(
-    providerOptionsName: googleVertexProviderId,
-    providerId: googleVertexProviderId,
+    providerOptionsName: vertexProviderId,
+    providerId: vertexProviderId,
+    providerOptionsFallbackIds: const ['google-vertex', 'google'],
     apiKey: apiKey,
     model: model ?? googleVertexDefaultModel,
     baseUrl: baseUrl ?? googleVertexBaseUrl,

@@ -846,8 +846,9 @@ Future<List<LLMStreamPart>> _runGoogleVertexChatFixture({
       : googleVertexBaseUrl;
 
   final config = GoogleConfig(
-    providerId: 'google-vertex',
-    providerOptionsName: 'google-vertex',
+    providerId: 'vertex',
+    providerOptionsName: 'vertex',
+    providerOptionsFallbackIds: const ['google-vertex', 'google'],
     apiKey: 'test-key',
     baseUrl: baseUrl,
     model: model,

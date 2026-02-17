@@ -157,8 +157,8 @@ Priority order:
 - [x] `openai-compatible responses`: emit server tool approval request via typed parts (MCP)
 - [x] `xai.responses`: emit citations/sources via typed parts
 - [x] `xai.responses`: emit server tool calls via typed parts (call/result)
-- [x] `google`/`google-vertex`: emit grounding sources via typed parts
-- [x] `google`/`google-vertex`: emit provider tool parts for code execution (call/result)
+- [x] `google`/`vertex`: emit grounding sources via typed parts (legacy input: `google-vertex`)
+- [x] `google`/`vertex`: emit provider tool parts for code execution (call/result) (legacy input: `google-vertex`)
 - [x] `anthropic`/`anthropic-compatible`: emit citations via typed parts
 
 Acceptance criteria:

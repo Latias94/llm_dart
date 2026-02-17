@@ -206,7 +206,7 @@ Remaining (recommended next targets):
   add small handcrafted contract fixtures under `test/fixtures/<provider>/...`
   and mark `source.type = "handcrafted-contract-fixture"` in `*.meta.json`.
 - [x] Vertex AI (non-express mode; usage + metadata)
-  - Covered by `google-vertex` contract fixture
+  - Covered by `vertex` contract fixture
     `test/fixtures/v3_parts/google_vertex/google-vertex-non-express-model-path.1.jsonl`.
 - [x] ElevenLabs (non-chat surfaces; define parity scope)
   - Scope: `docs/ai_sdk_v3_refactor_elevenlabs_scope.md`

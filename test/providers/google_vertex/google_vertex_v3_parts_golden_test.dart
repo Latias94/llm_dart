@@ -19,8 +19,9 @@ void main() {
       final sessions = [sseStreamFromChunkFile(fixturePath)];
 
       final config = GoogleConfig(
-        providerId: 'google-vertex',
-        providerOptionsName: 'google-vertex',
+        providerId: 'vertex',
+        providerOptionsName: 'vertex',
+        providerOptionsFallbackIds: const ['google-vertex', 'google'],
         apiKey: 'test-key',
         baseUrl: 'https://us-central1-aiplatform.googleapis.com/v1/',
         model: 'gemini-2.5-pro',

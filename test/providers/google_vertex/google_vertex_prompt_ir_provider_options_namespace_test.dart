@@ -6,7 +6,7 @@ import '../../utils/fakes/google_fake_client.dart';
 void main() {
   group('Google Vertex Prompt IR providerOptions namespace', () {
     test(
-        'reads thoughtSignature from providerOptions[google-vertex] (not vertex)',
+        'reads thoughtSignature from providerOptions[google-vertex] (fallback)',
         () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',
@@ -16,8 +16,9 @@ void main() {
 
       final config = GoogleConfig.fromLLMConfig(
         llmConfig,
-        providerId: 'google-vertex',
-        providerOptionsName: 'google-vertex',
+        providerId: 'vertex',
+        providerOptionsName: 'vertex',
+        providerOptionsFallbackIds: const ['google-vertex', 'google'],
       );
 
       final client = FakeGoogleClient(

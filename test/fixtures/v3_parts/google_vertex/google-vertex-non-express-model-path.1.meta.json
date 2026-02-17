@@ -1,7 +1,7 @@
 {
   "provider": "google_vertex",
   "scenario": "google-vertex-non-express-model-path.1",
-  "description": "Vertex AI non-express mode (regional endpoint) with full model resource path. Contract fixture validating model path passthrough and typed finishReason/usage mapping under `google-vertex` metadata namespace.",
+  "description": "Vertex AI non-express mode (regional endpoint) with full model resource path. Contract fixture validating model path passthrough and typed finishReason/usage mapping under `vertex` metadata namespace.",
   "source": {
     "type": "handcrafted-contract-fixture",
     "paths": [
@@ -19,4 +19,3 @@
     "finish_reason_typed": true
   }
 }
-
