@@ -46,11 +46,6 @@ class OpenAIProviderTools {
     );
   }
 
-  /// Back-compat alias for older code paths in this repo.
-  @Deprecated('Use webSearchPreview(...) for `web_search_preview`.')
-  static ProviderTool webSearch({OpenAIWebSearchContextSize? contextSize}) =>
-      webSearchPreview(contextSize: contextSize);
-
   /// OpenAI web search tool (`web_search`).
   ///
   /// Mirrors Vercel AI SDK `openaiTools.webSearch(...)`.

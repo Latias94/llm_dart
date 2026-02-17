@@ -112,7 +112,7 @@ Future<void> demoOpenAIProviderTool(String? apiKey) async {
       .apiKey(apiKey)
       .model('gpt-5-mini')
       .providerTool(
-        OpenAIProviderTools.webSearch(
+        OpenAIProviderTools.webSearchPreview(
           contextSize: OpenAIWebSearchContextSize.medium,
         ),
       );

@@ -4,9 +4,10 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAIProviderTools', () {
-    test('webSearch creates ProviderTool with stable id', () {
-      final tool = OpenAIProviderTools.webSearch(
-          contextSize: OpenAIWebSearchContextSize.high);
+    test('webSearchPreview creates ProviderTool with stable id', () {
+      final tool = OpenAIProviderTools.webSearchPreview(
+        contextSize: OpenAIWebSearchContextSize.high,
+      );
 
       expect(tool.id, equals('openai.web_search_preview'));
       expect(tool.name, equals('webSearch'));

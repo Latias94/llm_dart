@@ -169,7 +169,7 @@ final provider = await LLMBuilder()
     .model('gpt-5-mini')
     .providerOption('openai', 'useResponsesAPI', true)
     .providerTools([
-      OpenAIProviderTools.webSearch(),
+      OpenAIProviderTools.webSearchPreview(),
       OpenAIProviderTools.fileSearch(vectorStoreIds: ['vs_123']),
     ])
     .build();

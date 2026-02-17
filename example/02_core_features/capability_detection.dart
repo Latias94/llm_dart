@@ -87,7 +87,7 @@ Future<Map<String, ProviderCapabilities>> createProviders() async {
           .apiKey(openaiKey)
           .model('gpt-4o')
           .providerOption('openai', 'useResponsesAPI', true)
-          .providerTool(OpenAIProviderTools.webSearch())
+          .providerTool(OpenAIProviderTools.webSearchPreview())
           .build();
       if (openaiResponses is ProviderCapabilities) {
         providers['OpenAI Responses (Manual)'] =
@@ -104,7 +104,7 @@ Future<Map<String, ProviderCapabilities>> createProviders() async {
           .apiKey(openaiKey)
           .model('gpt-4o')
           .providerOption('openai', 'useResponsesAPI', true)
-          .providerTool(OpenAIProviderTools.webSearch())
+          .providerTool(OpenAIProviderTools.webSearchPreview())
           .build();
       final openaiProvider = provider as OpenAIProvider;
       providers['OpenAI Responses (Typed)'] =

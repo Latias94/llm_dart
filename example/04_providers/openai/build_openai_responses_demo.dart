@@ -28,7 +28,7 @@ import 'package:llm_dart_openai/responses.dart';
 ///     .apiKey(apiKey)
 ///     .model('gpt-4o')
 ///     .providerOption('openai', 'useResponsesAPI', true)
-///     .providerTool(OpenAIProviderTools.webSearch())
+///     .providerTool(OpenAIProviderTools.webSearchPreview())
 ///     .build();
 ///
 /// if (provider1.supports(LLMCapability.openaiResponses) && provider1 is OpenAIProvider) {
@@ -73,7 +73,7 @@ Future<void> demonstrateTraditionalApproach(String apiKey) async {
         .apiKey(apiKey)
         .model('gpt-4o')
         .providerOption('openai', 'useResponsesAPI', true)
-        .providerTool(OpenAIProviderTools.webSearch())
+        .providerTool(OpenAIProviderTools.webSearchPreview())
         .build();
 
     print('   ✅ Provider created: ${provider.runtimeType}');
@@ -120,7 +120,7 @@ Future<void> demonstrateConvenienceMethod(String apiKey) async {
         .apiKey(apiKey)
         .model('gpt-4o')
         .providerOption('openai', 'useResponsesAPI', true)
-        .providerTool(OpenAIProviderTools.webSearch())
+        .providerTool(OpenAIProviderTools.webSearchPreview())
         .build();
     final openaiProvider = provider as OpenAIProvider;
 
@@ -269,7 +269,7 @@ void _printCapabilities(dynamic provider) {
 ///     .apiKey(apiKey)
 ///     .model('gpt-4o')
 ///     .providerOption('openai', 'useResponsesAPI', true)
-///     .providerTool(OpenAIProviderTools.webSearch())
+///     .providerTool(OpenAIProviderTools.webSearchPreview())
 ///     .build();
 ///
 /// final openaiProvider = provider as OpenAIProvider;
