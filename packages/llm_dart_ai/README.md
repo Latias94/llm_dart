@@ -73,6 +73,19 @@ final text = await result.text;
 print('\n\nFinal: $text');
 ```
 
+### Image generation
+
+```dart
+final result = await generateImage(
+  model: model,
+  prompt: const GenerateImagePrompt.text('A cat astronaut'),
+  n: 1,
+);
+
+final firstUrl = result.image.url;
+print(firstUrl);
+```
+
 ### Per-call provider tools
 
 Provider-native tools (server-side) can be enabled per call via `providerTools`:

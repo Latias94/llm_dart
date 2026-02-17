@@ -519,11 +519,9 @@ void main() {
 
       final result = await generateImage(
         model: model,
-        request: const ImageGenerationRequest(
-          prompt: 'cat',
-          model: 'm',
-          count: 1,
-        ),
+        prompt: const GenerateImagePrompt.text('cat'),
+        modelId: 'm',
+        n: 1,
       );
 
       expect(result.rawResponse, same(response));

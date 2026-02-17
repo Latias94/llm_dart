@@ -402,7 +402,7 @@ void main() {
 
       await generateImage(
         model: model,
-        request: const ImageGenerationRequest(prompt: 'hi'),
+        prompt: const GenerateImagePrompt.text('hi'),
         callOptions: const LLMCallOptions(headers: {'x-test': '1'}),
       );
 
@@ -585,7 +585,7 @@ void main() {
 
       await generateImage(
         model: images,
-        request: const ImageGenerationRequest(prompt: 'hi'),
+        prompt: const GenerateImagePrompt.text('hi'),
         callOptions: const LLMCallOptions(
           headers: {'x-test': '1'},
           body: {'model': 'override-image-model'},

@@ -3,22 +3,83 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'ai_errors.dart';
 import 'types.dart';
 
-/// Generate images using a provider-agnostic capability.
+/// Generate images using a provider-agnostic capability (AI SDK-style).
+///
+/// This mirrors the Vercel AI SDK `generateImage` surface:
+/// - prompt can be plain text, or
+/// - prompt can include input images + optional mask for editing.
 Future<GenerateImageResult> generateImage({
   required ImageGenerationCapability model,
-  required ImageGenerationRequest request,
+  required GenerateImagePrompt prompt,
+  String? modelId,
+  int n = 1,
+  int? maxImagesPerCall,
+  String? size,
+  String? aspectRatio,
+  int? seed,
+  ProviderOptions providerOptions = const {},
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
-  final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+  String? providerId;
+  if (model is ModelIdentityCapability) {
+    providerId = (model as ModelIdentityCapability).providerId;
+  }
 
-  final requestedN = (request.count ?? 1) <= 0 ? 1 : (request.count ?? 1);
-  final maxImagesPerCall = model is ImageGenerationMaxImagesPerCallCapability
+  final orchestrationWarnings = <LLMWarning>[];
+  final extraBody = <String, dynamic>{};
+
+  if (providerOptions.isNotEmpty) {
+    if (providerId == null || providerId.trim().isEmpty) {
+      orchestrationWarnings.add(const LLMCompatibilityWarning(
+        feature: 'providerOptions ignored',
+        details:
+            'providerOptions were provided, but the model did not expose a providerId via ModelIdentityCapability.',
+      ));
+    } else {
+      final ns = providerOptionsNamespace(providerOptions, providerId.trim());
+      if (ns != null && ns.isNotEmpty) {
+        extraBody.addAll(ns);
+      }
+    }
+  }
+
+  // Best-effort: AI SDK exposes `aspectRatio` for image models. We only enable
+  // a safe generic mapping for xAI (which expects `aspect_ratio` at the
+  // top-level request body).
+  final aspectRatioValue = aspectRatio?.trim();
+  if (aspectRatioValue != null && aspectRatioValue.isNotEmpty) {
+    final pid = providerId?.trim().toLowerCase();
+    if (pid == 'xai' || pid?.startsWith('xai.') == true) {
+      extraBody['aspect_ratio'] = aspectRatioValue;
+    } else {
+      orchestrationWarnings.add(LLMUnsupportedWarning(
+        feature: 'aspectRatio',
+        details:
+            'Generic image generation does not support `aspectRatio` for this provider. '
+            'Use callOptions.body with provider-specific parameters instead.',
+      ));
+    }
+  }
+
+  final effectiveCallOptions = defaultCallOptions
+      .mergedWith(
+        extraBody.isEmpty
+            ? const LLMCallOptions()
+            : LLMCallOptions(body: extraBody),
+      )
+      .mergedWith(callOptions);
+
+  final requestedN = n <= 0 ? 1 : n;
+  final declaredMaxImagesPerCall = model
+          is ImageGenerationMaxImagesPerCallCapability
       ? (model as ImageGenerationMaxImagesPerCallCapability).maxImagesPerCall
       : requestedN;
   final effectiveMaxImagesPerCall =
-      maxImagesPerCall <= 0 ? requestedN : maxImagesPerCall;
+      (maxImagesPerCall ?? declaredMaxImagesPerCall) <= 0
+          ? requestedN
+          : (maxImagesPerCall ?? declaredMaxImagesPerCall);
 
   final callCounts = <int>[];
   var remaining = requestedN;
@@ -30,98 +91,177 @@ Future<GenerateImageResult> generateImage({
     remaining -= next;
   }
 
-  Future<ImageGenerationResponse> runOne(int n) async {
+  ImageGenerationResponse mergeResponses(
+      List<ImageGenerationResponse> responses) {
+    final allImages = <GeneratedImage>[];
+    final allWarnings = <LLMWarning>[...orchestrationWarnings];
+    final allResponses = <ImageModelResponseMetadata>[];
+    UsageInfo? totalUsage;
+    Map<String, dynamic>? providerMetadata;
+    String? mergedModel;
+    String? mergedRevisedPrompt;
+
+    for (final r in responses) {
+      allImages.addAll(r.images);
+      allWarnings.addAll(r.warnings);
+      allResponses.addAll(r.responses);
+      providerMetadata =
+          _mergeProviderMetadata(providerMetadata, r.providerMetadata);
+      mergedModel ??= r.model;
+      mergedRevisedPrompt ??= r.revisedPrompt;
+      if (r.usage != null) {
+        totalUsage = totalUsage == null ? r.usage : (totalUsage! + r.usage!);
+      }
+    }
+
+    return ImageGenerationResponse(
+      images: List<GeneratedImage>.unmodifiable(allImages),
+      model: mergedModel ?? modelId,
+      revisedPrompt: mergedRevisedPrompt,
+      usage: totalUsage,
+      warnings: List<LLMWarning>.unmodifiable(allWarnings),
+      responses: List<ImageModelResponseMetadata>.unmodifiable(allResponses),
+      providerMetadata: providerMetadata,
+    );
+  }
+
+  Future<ImageGenerationResponse> runOne({
+    required int n,
+    required GenerateImagePrompt prompt,
+  }) async {
     if (cancelToken?.isCancelled == true) {
       throw CancelledError(cancelToken?.reason?.toString() ?? 'Cancelled');
     }
 
-    final subRequest = ImageGenerationRequest(
-      prompt: request.prompt,
-      model: request.model,
-      negativePrompt: request.negativePrompt,
-      size: request.size,
-      count: n,
-      seed: request.seed,
-      steps: request.steps,
-      guidanceScale: request.guidanceScale,
-      enhancePrompt: request.enhancePrompt,
-      style: request.style,
-      quality: request.quality,
-      responseFormat: request.responseFormat,
-      user: request.user,
-    );
+    Future<T> run<T>(
+      Future<T> Function(ImageGenerationCallOptionsCapability cap) withOptions,
+      Future<T> Function() plain,
+    ) async {
+      if (effectiveCallOptions.isEmpty) return plain();
 
-    if (effectiveCallOptions.isEmpty) {
-      return model.generateImages(subRequest);
+      if (model is! ImageGenerationCallOptionsCapability) {
+        throw const InvalidRequestError(
+          'This model does not support call-level overrides (headers/body) for image generation. '
+          'Implement `ImageGenerationCallOptionsCapability` (or use a provider that does).',
+        );
+      }
+
+      return withOptions(model as ImageGenerationCallOptionsCapability);
     }
 
-    if (model is! ImageGenerationCallOptionsCapability) {
-      throw const InvalidRequestError(
-        'This model does not support call-level overrides (headers/body) for image generation. '
-        'Implement `ImageGenerationCallOptionsCapability` (or use a provider that does).',
-      );
-    }
+    switch (prompt) {
+      case GenerateImageTextPrompt(:final text):
+        final request = ImageGenerationRequest(
+          prompt: text,
+          model: modelId,
+          size: size,
+          count: n,
+          seed: seed,
+        );
+        return run(
+          (cap) => cap.generateImagesWithCallOptions(
+            request,
+            callOptions: effectiveCallOptions,
+          ),
+          () => model.generateImages(request),
+        );
 
-    return (model as ImageGenerationCallOptionsCapability)
-        .generateImagesWithCallOptions(
-      subRequest,
-      callOptions: effectiveCallOptions,
-    );
+      case GenerateImageImagesPrompt(
+          :final images,
+          :final text,
+          :final mask,
+        ):
+        if (images.isEmpty) {
+          throw const InvalidArgumentError(
+            argument: 'prompt.images',
+            message: 'prompt.images must not be empty.',
+          );
+        }
+
+        if (!model.supportsImageEditing) {
+          throw const InvalidRequestError(
+            'This model does not support image editing.',
+          );
+        }
+
+        final warnings = <LLMWarning>[];
+        if (images.length > 1) {
+          warnings.add(const LLMOtherWarning(
+            'This model only supports a single input image. Additional images are ignored.',
+          ));
+        }
+
+        final request = ImageEditRequest(
+          image: images.first,
+          prompt: (text ?? '').trim(),
+          mask: mask,
+          model: modelId,
+          count: n,
+          size: size,
+        );
+
+        final response = await run(
+          (cap) => cap.editImageWithCallOptions(
+            request,
+            callOptions: effectiveCallOptions,
+          ),
+          () => model.editImage(request),
+        );
+
+        if (warnings.isEmpty) return response;
+        return ImageGenerationResponse(
+          images: response.images,
+          model: response.model,
+          revisedPrompt: response.revisedPrompt,
+          usage: response.usage,
+          warnings: [...response.warnings, ...warnings],
+          responses: response.responses,
+          providerMetadata: response.providerMetadata,
+        );
+    }
   }
 
   if (callCounts.length == 1) {
-    final response = await runOne(callCounts.single);
+    final response = await runOne(n: callCounts.single, prompt: prompt);
     if (response.images.isEmpty) {
       throw NoImageGeneratedError(
         response: response,
         responses: response.responses,
       );
     }
-    return GenerateImageResult(rawResponse: response);
+    if (orchestrationWarnings.isEmpty) {
+      return GenerateImageResult(rawResponse: response);
+    }
+
+    final merged = ImageGenerationResponse(
+      images: response.images,
+      model: response.model ?? modelId,
+      revisedPrompt: response.revisedPrompt,
+      usage: response.usage,
+      warnings: List<LLMWarning>.unmodifiable([
+        ...orchestrationWarnings,
+        ...response.warnings,
+      ]),
+      responses: response.responses,
+      providerMetadata: response.providerMetadata,
+    );
+
+    return GenerateImageResult(rawResponse: merged);
   }
 
   final responses = <ImageGenerationResponse>[];
-  for (final n in callCounts) {
-    responses.add(await runOne(n));
+  for (final count in callCounts) {
+    responses.add(await runOne(n: count, prompt: prompt));
   }
 
-  final allImages = <GeneratedImage>[];
-  final allWarnings = <LLMWarning>[];
-  final allResponses = <ImageModelResponseMetadata>[];
-  UsageInfo? totalUsage;
-  Map<String, dynamic>? providerMetadata;
-  String? mergedModel;
-  String? mergedRevisedPrompt;
+  final merged = mergeResponses(responses);
 
-  for (final r in responses) {
-    allImages.addAll(r.images);
-    allWarnings.addAll(r.warnings);
-    allResponses.addAll(r.responses);
-    providerMetadata =
-        _mergeProviderMetadata(providerMetadata, r.providerMetadata);
-    mergedModel ??= r.model;
-    mergedRevisedPrompt ??= r.revisedPrompt;
-    if (r.usage != null) {
-      totalUsage = totalUsage == null ? r.usage : (totalUsage! + r.usage!);
-    }
-  }
-
-  if (allImages.isEmpty) {
+  if (merged.images.isEmpty) {
     throw NoImageGeneratedError(
       response: responses.isEmpty ? null : responses.last,
-      responses: allResponses,
+      responses: merged.responses,
     );
   }
-
-  final merged = ImageGenerationResponse(
-    images: List<GeneratedImage>.unmodifiable(allImages),
-    model: mergedModel ?? request.model,
-    revisedPrompt: mergedRevisedPrompt,
-    usage: totalUsage,
-    warnings: List<LLMWarning>.unmodifiable(allWarnings),
-    responses: List<ImageModelResponseMetadata>.unmodifiable(allResponses),
-    providerMetadata: providerMetadata,
-  );
 
   return GenerateImageResult(rawResponse: merged);
 }

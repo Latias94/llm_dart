@@ -259,6 +259,50 @@ class GenerateImageResult {
       rawResponse.providerMetadata ?? const <String, dynamic>{};
 }
 
+/// Prompt input for image generation (AI SDK-style).
+///
+/// Mirrors Vercel AI SDK's `GenerateImagePrompt` union:
+/// - `string`
+/// - `{ images: DataContent[], text?: string, mask?: DataContent }`
+sealed class GenerateImagePrompt {
+  const GenerateImagePrompt();
+
+  const factory GenerateImagePrompt.text(String text) = GenerateImageTextPrompt;
+
+  factory GenerateImagePrompt.images({
+    required List<ImageInput> images,
+    String? text,
+    ImageInput? mask,
+  }) = GenerateImageImagesPrompt;
+}
+
+final class GenerateImageTextPrompt extends GenerateImagePrompt {
+  final String text;
+
+  const GenerateImageTextPrompt(this.text);
+}
+
+final class GenerateImageImagesPrompt extends GenerateImagePrompt {
+  /// Input images for image editing / image-to-image generation.
+  ///
+  /// The generic `ImageGenerationCapability` surface only supports a single
+  /// image input through `editImage(...)`. When multiple images are provided,
+  /// orchestration layers may ignore additional images and surface a warning.
+  final List<ImageInput> images;
+
+  /// Optional prompt text used for editing.
+  final String? text;
+
+  /// Optional mask image.
+  final ImageInput? mask;
+
+  GenerateImageImagesPrompt({
+    required List<ImageInput> images,
+    this.text,
+    this.mask,
+  }) : images = List<ImageInput>.from(images);
+}
+
 /// Experimental result for a video generation call.
 ///
 /// Aligned with Vercel AI SDK's `experimental_generateVideo`.

@@ -157,7 +157,7 @@ void main() {
       await expectLater(
         () => generateImage(
           model: model,
-          request: const ImageGenerationRequest(prompt: 'cat'),
+          prompt: const GenerateImagePrompt.text('cat'),
         ),
         throwsA(isA<NoImageGeneratedError>()),
       );
