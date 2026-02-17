@@ -154,11 +154,15 @@ void main() {
 
     test('GoogleProvider: generateText surfaces provider tool warnings',
         () async {
-      final config = GoogleConfig(
+      final llmConfig = LLMConfig(
         apiKey: 'test-key',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
         model: 'gemini-2.5-flash',
-        webSearchEnabled: true,
+        providerTools: const [
+          ProviderTool(id: 'google.google_search'),
+        ],
       );
+      final config = GoogleConfig.fromLLMConfig(llmConfig);
 
       final endpoint = 'models/${config.model}:generateContent';
       final client = FakeGoogleClient(

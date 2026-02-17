@@ -1701,8 +1701,7 @@ class GoogleChat
     final googleSearchEnabledViaProviderTools =
         (effectiveProviderTools ?? const <ProviderTool>[]).any(
             (t) => t.id == 'google.google_search' && _isProviderToolEnabled(t));
-    final hasProviderDefinedTools =
-        providerToolsEnabled || config.webSearchEnabled;
+    final hasProviderDefinedTools = providerToolsEnabled;
 
     if (hasProviderDefinedTools) {
       if (effectiveTools != null && effectiveTools.isNotEmpty) {
@@ -1742,12 +1741,8 @@ class GoogleChat
       );
     }
 
-    // Legacy escape hatch: allow enabling Gemini grounding via config, but
-    // prefer the provider-native tool (`google.google_search`) in `providerTools`.
-    if (config.webSearchEnabled && !googleSearchEnabledViaProviderTools) {
-      body['tools'] ??= [];
-      (body['tools'] as List).add(_buildGoogleSearchTool());
-    }
+    // Web search/grounding is configured via providerTools (`google.google_search`).
+    // Legacy config-level enable flags are intentionally not supported.
 
     return body;
   }
@@ -2392,10 +2387,9 @@ class GoogleChat
     final providerToolRequestNamesById = <String, String>{};
 
     // Reserve provider-native web search tool name when enabled.
-    final googleSearchEnabled = config.webSearchEnabled ||
-        providerTools.any(
-          (t) => t.id == 'google.google_search' && _isProviderToolEnabled(t),
-        );
+    final googleSearchEnabled = providerTools.any(
+      (t) => t.id == 'google.google_search' && _isProviderToolEnabled(t),
+    );
     if (googleSearchEnabled) {
       providerToolRequestNamesById['google.google_search'] = 'google_search';
     }

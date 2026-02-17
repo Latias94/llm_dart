@@ -94,13 +94,6 @@ class GoogleConfig {
   final int? candidateCount;
   final List<String>? stopSequences;
 
-  /// Provider-native web search configuration (Gemini `google_search` tool).
-  ///
-  /// When enabled via a `ProviderTool` such as `google.google_search`,
-  /// `GoogleChat` injects a Google grounding tool into the request JSON
-  /// (e.g. `googleSearch` or `googleSearchRetrieval`, depending on the model).
-  final bool webSearchEnabled;
-
   /// When true, only known-supported http(s) file URLs are allowed for URL-based
   /// file inputs (e.g. `ImageUrlPart`, `FileUrlPart`).
   ///
@@ -161,7 +154,6 @@ class GoogleConfig {
     this.maxInlineDataSize = 20 * 1024 * 1024, // 20MB default
     this.candidateCount,
     this.stopSequences,
-    this.webSearchEnabled = false,
     this.supportedFileUrlsOnly = false,
     this.webSearchToolOptions,
     this.embeddingTaskType,
@@ -192,8 +184,6 @@ class GoogleConfig {
     final providerToolEnabled = providerToolWebSearch == null
         ? false
         : _isProviderToolEnabled(providerToolWebSearch);
-
-    final mergedWebSearchEnabled = providerToolEnabled;
 
     final webSearchToolOptionsFromProviderTools =
         providerToolWebSearch != null &&
@@ -265,7 +255,6 @@ class GoogleConfig {
       candidateCount: readProviderOption<int>(
           providerOptions, providerId, 'candidateCount'),
       stopSequences: config.stopSequences,
-      webSearchEnabled: mergedWebSearchEnabled,
       supportedFileUrlsOnly: supportedFileUrlsOnly,
       webSearchToolOptions: mergedWebSearchToolOptions,
       // Embedding-specific provider options
@@ -424,7 +413,6 @@ class GoogleConfig {
     int? maxInlineDataSize,
     int? candidateCount,
     List<String>? stopSequences,
-    bool? webSearchEnabled,
     bool? supportedFileUrlsOnly,
     GoogleWebSearchToolOptions? webSearchToolOptions,
     String? embeddingTaskType,
@@ -457,7 +445,6 @@ class GoogleConfig {
         maxInlineDataSize: maxInlineDataSize ?? this.maxInlineDataSize,
         candidateCount: candidateCount ?? this.candidateCount,
         stopSequences: stopSequences ?? this.stopSequences,
-        webSearchEnabled: webSearchEnabled ?? this.webSearchEnabled,
         supportedFileUrlsOnly:
             supportedFileUrlsOnly ?? this.supportedFileUrlsOnly,
         webSearchToolOptions: webSearchToolOptions ?? this.webSearchToolOptions,
