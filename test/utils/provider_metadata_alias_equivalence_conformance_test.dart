@@ -223,6 +223,63 @@ void main() {
       expect(meta.containsKey('azure.responses'), isTrue);
     });
 
+    test('Azure Chat Completions emits azure + azure.chat aliases', () async {
+      final config = AzureOpenAIConfig(
+        providerId: 'azure.chat',
+        apiKey: 'test-key',
+        baseUrl: 'https://example.openai.azure.com/openai/v1/',
+        model: 'deployment_1',
+        useResponsesAPI: false,
+        apiVersion: '2024-10-01-preview',
+      );
+
+      final chunks = <String>[
+        _sseData({
+          'id': 'chatcmpl_1',
+          'created': 1700000000,
+          'model': 'deployment_1',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {'role': 'assistant'},
+            }
+          ],
+        }),
+        _sseData({
+          'id': 'chatcmpl_1',
+          'model': 'deployment_1',
+          'choices': [
+            {
+              'index': 0,
+              'delta': {'content': 'Hello'},
+              'finish_reason': 'stop',
+            }
+          ],
+          'usage': {
+            'prompt_tokens': 1,
+            'completion_tokens': 1,
+            'total_tokens': 2,
+          },
+        }),
+        'data: [DONE]\n\n',
+      ];
+
+      final client = FakeOpenAIClient(config)
+        ..streamResponse = Stream<String>.fromIterable(chunks);
+      final provider = AzureOpenAIProvider(config, client: client);
+
+      final parts =
+          await provider.chatStreamParts([ChatMessage.user('hi')]).toList();
+      final finish = parts.whereType<LLMFinishPart>().single;
+
+      final meta = finish.response.providerMetadata;
+      expect(meta, isNotNull);
+      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'azure');
+      expect(meta.containsKey('azure.chat'), isTrue);
+      expect(meta.containsKey('azure.chat.chat'), isFalse);
+      expect(meta['azure.chat'], equals(meta['azure']));
+    });
+
     test('Google emits google.chat alias equal to google', () async {
       final config = GoogleConfig(
         apiKey: 'test-key',

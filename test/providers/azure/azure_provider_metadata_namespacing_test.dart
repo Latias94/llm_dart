@@ -9,7 +9,7 @@ import 'package:llm_dart_azure/provider.dart';
 
 void main() {
   group('Azure providerMetadata namespacing', () {
-    test('chat completions uses canonical azure.chat key', () async {
+    test('chat completions emits azure + azure.chat aliases', () async {
       final adapter = _FakeAzureHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
 

@@ -9,7 +9,7 @@ import 'package:llm_dart_openai/provider.dart';
 
 void main() {
   group('OpenAI providerMetadata namespacing', () {
-    test('chat completions uses canonical openai.chat key', () async {
+    test('chat completions emits openai + openai.chat aliases', () async {
       final adapter = _FakeOpenAIHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
 
