@@ -959,7 +959,8 @@ class OllamaChatResponse
     implements
         ChatResponseWithFinishReason,
         ChatResponseWithResponseMetadata,
-        ChatResponseWithRequestMetadata {
+        ChatResponseWithRequestMetadata,
+        ChatResponseWithWarnings {
   final Map<String, dynamic> _rawResponse;
   final LLMResponseMetadataPart? _responseMetadata;
   final LLMRequestMetadataPart? _requestMetadata;
@@ -976,6 +977,20 @@ class OllamaChatResponse
 
   @override
   LLMRequestMetadataPart? get requestMetadata => _requestMetadata;
+
+  @override
+  List<LLMWarning> get warnings {
+    final calls = toolCalls;
+    if (calls == null || calls.isEmpty) return const [];
+
+    return const [
+      LLMCompatibilityWarning(
+        feature: 'synthetic tool call ids',
+        details:
+            'Ollama tool calls do not include stable ids. ids like `call_<name>` are generated for compatibility.',
+      ),
+    ];
+  }
 
   @override
   String? get text {
