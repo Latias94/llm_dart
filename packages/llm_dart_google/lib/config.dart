@@ -124,6 +124,8 @@ class GoogleConfig {
   ///
   /// This follows the Vercel-style provider tool input schema (e.g.
   /// `mode`, `dynamicThreshold`) and is only used for request shaping.
+  ///
+  /// This is sourced from `LLMConfig.providerTools` (recommended).
   final GoogleWebSearchToolOptions? webSearchToolOptions;
 
   // Embedding-specific parameters
@@ -176,20 +178,6 @@ class GoogleConfig {
   }) {
     final providerOptions = config.providerOptions;
 
-    final rawWebSearchToolOptions = readProviderOptionMap(
-          providerOptions,
-          providerId,
-          'webSearchToolOptions',
-        ) ??
-        readProviderOption<dynamic>(
-          providerOptions,
-          providerId,
-          'webSearchToolOptions',
-        );
-
-    final webSearchToolOptionsFromProviderOptions =
-        _parseWebSearchToolOptions(rawWebSearchToolOptions);
-
     final providerTools = config.providerTools;
     ProviderTool? providerToolWebSearch;
     if (providerTools != null) {
@@ -213,8 +201,7 @@ class GoogleConfig {
             ? _parseWebSearchToolOptions(providerToolWebSearch.options)
             : null;
 
-    final mergedWebSearchToolOptions = webSearchToolOptionsFromProviderTools ??
-        webSearchToolOptionsFromProviderOptions;
+    final mergedWebSearchToolOptions = webSearchToolOptionsFromProviderTools;
 
     final supportedFileUrlsOnly = readProviderOption<bool>(
           providerOptions,

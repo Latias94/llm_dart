@@ -1771,12 +1771,14 @@ class GoogleChat
 
     final supportsDynamicRetrieval = _supportsDynamicRetrieval();
     final options = config.webSearchToolOptions;
-    final dynamicConfig = options == null || !supportsDynamicRetrieval
+    final dynamicConfig = !supportsDynamicRetrieval
         ? null
         : <String, dynamic>{
-            if (options.mode != null) 'mode': options.mode!.apiValue,
-            if (options.dynamicThreshold != null)
-              'dynamicThreshold': options.dynamicThreshold,
+            // AI SDK parity: when dynamic retrieval is supported, the upstream
+            // provider tool schema applies defaults (mode=MODE_UNSPECIFIED,
+            // dynamicThreshold=1) even when args are omitted.
+            'mode': options?.mode?.apiValue ?? 'MODE_UNSPECIFIED',
+            'dynamicThreshold': options?.dynamicThreshold ?? 1,
           };
 
     return <String, dynamic>{

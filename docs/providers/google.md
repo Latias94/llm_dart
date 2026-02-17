@@ -114,11 +114,8 @@ final model = await LLMBuilder()
     .build();
 ```
 
-Provider options (escape hatch):
-
-- `providerOptions['google']['webSearchToolOptions']`: `Map<String, dynamic>`
-  (Vercel-style args: `mode`, `dynamicThreshold`; only applied when web search is
-  enabled via `providerTools`, e.g. `ProviderTool(id: 'google.google_search')`).
+Tool args are configured via `providerTools` (Vercel-style args: `mode`,
+`dynamicThreshold`).
 
 Notes:
 

@@ -317,7 +317,7 @@ await LLMBuilder()
   .build();
 ```
 
-Alternatively, you can configure it via namespaced `providerOptions`:
+Configure tool args via the typed `providerTools` catalog:
 
 ```dart
 registerGoogle();
@@ -326,14 +326,14 @@ final provider = await LLMBuilder()
     .provider(googleProviderId)
     .apiKey('...')
     .model('gemini-1.5-flash')
-    .providerTool(GoogleProviderTools.webSearch())
-    .providerOptions('google', {
-      // Only applied when the provider-native tool is enabled via `providerTools`.
-      'webSearchToolOptions': {
-        'mode': 'dynamic',
-        'dynamicThreshold': 0.3,
-      },
-    })
+    .providerTool(
+      GoogleProviderTools.webSearch(
+        options: const GoogleWebSearchToolOptions(
+          mode: GoogleDynamicRetrievalMode.dynamic,
+          dynamicThreshold: 0.3,
+        ),
+      ),
+    )
     .build();
 ```
 

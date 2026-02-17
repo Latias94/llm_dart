@@ -31,7 +31,7 @@ void main() {
     });
 
     test(
-        'parses providerOptions.webSearchToolOptions for google_search retrieval tool',
+        'ignores providerOptions.webSearchToolOptions for google_search retrieval tool (legacy removed)',
         () async {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',
@@ -73,8 +73,8 @@ void main() {
       final dynamicConfig =
           payload!['dynamicRetrievalConfig'] as Map<String, dynamic>?;
       expect(dynamicConfig, isNotNull);
-      expect(dynamicConfig!['mode'], equals('MODE_DYNAMIC'));
-      expect(dynamicConfig['dynamicThreshold'], equals(0.7));
+      expect(dynamicConfig!['mode'], equals('MODE_UNSPECIFIED'));
+      expect(dynamicConfig['dynamicThreshold'], equals(1));
     });
 
     test(

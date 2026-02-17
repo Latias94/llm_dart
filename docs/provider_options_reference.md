@@ -304,7 +304,7 @@ Embeddings (Gemini-native):
 Web search:
 
 - Enable via `providerTools` (recommended): `ProviderTool(id: 'google.google_search')` or `GoogleProviderTools.webSearch(...)`.
-- `webSearchToolOptions`: `Map<String, dynamic>` (Vercel-style args: `mode`, `dynamicThreshold`; only applied when the tool is enabled via `providerTools`)
+- Configure tool args via `providerTools` (Vercel-style args: `mode`, `dynamicThreshold`).
 
 ### 2.5 `google-openai` (OpenAI-compatible)
 
