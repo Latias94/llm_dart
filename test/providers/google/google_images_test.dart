@@ -338,7 +338,7 @@ void main() {
       );
     });
 
-    test('generateImage returns data URLs for generated images', () async {
+    test('generateImages returns image bytes for generated images', () async {
       const model = 'gemini-2.0-flash-preview-image-generation';
       final config = GoogleConfig(
         apiKey: 'test-key',
@@ -371,11 +371,15 @@ void main() {
       );
 
       final images = GoogleImages(client, config);
-      final urls = await images.generateImage(prompt: 'A test image');
+      final response = await images.generateImages(
+        const ImageGenerationRequest(prompt: 'A test image'),
+      );
 
-      expect(urls, hasLength(1));
-      expect(urls.single,
-          equals('data:image/png;base64,${base64Encode(pngBytes)}'));
+      expect(response.images, hasLength(1));
+      final image = response.images.single;
+      expect(image.format, equals('png'));
+      expect(image.data, isNotNull);
+      expect(image.data!, orderedEquals(pngBytes));
     });
   });
 }

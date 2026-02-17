@@ -289,31 +289,6 @@ class AzureOpenAIProvider
   @override
   bool get supportsImageVariations => _images.supportsImageVariations;
 
-  @override
-  Future<List<String>> generateImage({
-    required String prompt,
-    String? model,
-    String? negativePrompt,
-    String? imageSize,
-    int? batchSize,
-    String? seed,
-    int? numInferenceSteps,
-    double? guidanceScale,
-    bool? promptEnhancement,
-  }) {
-    return _images.generateImage(
-      prompt: prompt,
-      model: model,
-      negativePrompt: negativePrompt,
-      imageSize: imageSize,
-      batchSize: batchSize,
-      seed: seed,
-      numInferenceSteps: numInferenceSteps,
-      guidanceScale: guidanceScale,
-      promptEnhancement: promptEnhancement,
-    );
-  }
-
   // ========== Audio capabilities ==========
 
   @override

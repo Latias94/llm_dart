@@ -114,11 +114,18 @@ Future<void> demonstrateImageGeneration(String apiKey) async {
         'A futuristic city with flying cars at sunset, digital art';
     print('      Prompt: "$basicPrompt"');
 
-    final basicImages = await imageProvider.generateImage(
-      prompt: basicPrompt,
-      model: 'dall-e-3',
-      imageSize: '1024x1024',
+    final basicResponse = await imageProvider.generateImages(
+      ImageGenerationRequest(
+        prompt: basicPrompt,
+        model: 'dall-e-3',
+        size: '1024x1024',
+        responseFormat: 'url',
+      ),
     );
+    final basicImages = basicResponse.images
+        .map((img) => img.url)
+        .whereType<String>()
+        .toList(growable: false);
 
     print('      ✅ Generated ${basicImages.length} image(s):');
     for (int i = 0; i < basicImages.length; i++) {
@@ -161,12 +168,20 @@ Future<void> demonstrateImageGeneration(String apiKey) async {
         .model('dall-e-2')
         .buildImageGeneration();
 
-    final multiImages = await multiProvider.generateImage(
-      prompt: 'A cute robot assistant helping with daily tasks, cartoon style',
-      model: 'dall-e-2',
-      imageSize: '512x512',
-      batchSize: 2, // Generate 2 images
+    final multiResponse = await multiProvider.generateImages(
+      const ImageGenerationRequest(
+        prompt:
+            'A cute robot assistant helping with daily tasks, cartoon style',
+        model: 'dall-e-2',
+        size: '512x512',
+        count: 2,
+        responseFormat: 'url',
+      ),
     );
+    final multiImages = multiResponse.images
+        .map((img) => img.url)
+        .whereType<String>()
+        .toList(growable: false);
 
     print('      ✅ Generated ${multiImages.length} variations:');
     for (int i = 0; i < multiImages.length; i++) {

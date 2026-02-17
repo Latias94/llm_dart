@@ -224,17 +224,19 @@ final imageProvider = await LLMBuilder()
     .buildImageGeneration();
 
 // Generate images
-final images = await imageProvider.generateImage(
-  prompt: 'A futuristic robot in a modern kitchen',
-  batchSize: 1,
+final response = await imageProvider.generateImages(
+  ImageGenerationRequest(
+    prompt: 'A futuristic robot in a modern kitchen',
+    count: 1,
+  ),
 );
 
-// Images are returned as base64 data URLs
-for (final imageData in images) {
-  if (imageData.startsWith('data:image/')) {
-    final base64Data = imageData.split(',')[1];
-    final bytes = base64Decode(base64Data);
-    await File('generated_image.png').writeAsBytes(bytes);
+// Gemini returns inline image bytes (base64-encoded in the API response)
+for (final image in response.images) {
+  if (image.data != null) {
+    await File('generated_image.png').writeAsBytes(image.data!);
+  } else if (image.url != null) {
+    print('Generated image URL: ${image.url}');
   }
 }
 ```

@@ -491,40 +491,6 @@ class GoogleImages
   @override
   bool get supportsImageVariations => true;
 
-  @override
-  Future<List<String>> generateImage({
-    required String prompt,
-    String? model,
-    String? negativePrompt,
-    String? imageSize,
-    int? batchSize,
-    String? seed,
-    int? numInferenceSteps,
-    double? guidanceScale,
-    bool? promptEnhancement,
-  }) async {
-    final response = await generateImages(
-      ImageGenerationRequest(
-        prompt: prompt,
-        model: model,
-        negativePrompt: negativePrompt,
-        size: imageSize,
-        count: batchSize,
-        seed: seed != null ? int.tryParse(seed) : null,
-        steps: numInferenceSteps,
-        guidanceScale: guidanceScale,
-        enhancePrompt: promptEnhancement,
-      ),
-    );
-
-    // For Google, we return base64 data URLs since images are returned as data
-    return response.images
-        .where((img) => img.data != null)
-        .map((img) =>
-            'data:image/${img.format ?? 'png'};base64,${base64Encode(img.data!)}')
-        .toList();
-  }
-
   /// Check if the model is an Imagen model
   bool _isImagenModel(String model) {
     return model.contains('imagen');

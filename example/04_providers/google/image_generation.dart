@@ -69,24 +69,24 @@ Future<void> demonstrateGeminiImageGeneration(String apiKey) async {
         'digital art style, warm lighting, detailed';
     print('      Prompt: "$prompt"');
 
-    final images = await imageProvider.generateImage(
-      prompt: prompt,
-      batchSize: 1,
+    final response = await imageProvider.generateImages(
+      ImageGenerationRequest(
+        prompt: prompt,
+        count: 1,
+      ),
     );
 
-    print('      ✅ Generated ${images.length} image(s)');
-    for (int i = 0; i < images.length; i++) {
-      final imageData = images[i];
-      if (imageData.startsWith('data:image/')) {
-        // Extract base64 data and save to file
-        final base64Data = imageData.split(',')[1];
-        final bytes = base64Decode(base64Data);
+    print('      ✅ Generated ${response.images.length} image(s)');
+    for (int i = 0; i < response.images.length; i++) {
+      final image = response.images[i];
+      final bytes = image.data;
+      if (bytes != null) {
         final filename = 'gemini_generated_${i + 1}.png';
         await File(filename).writeAsBytes(bytes);
         print(
             '         Image ${i + 1}: Saved as $filename (${bytes.length} bytes)');
-      } else {
-        print('         Image ${i + 1}: $imageData');
+      } else if (image.url != null) {
+        print('         Image ${i + 1}: ${image.url}');
       }
     }
   } catch (e) {
@@ -158,49 +158,52 @@ Future<void> demonstrateImageEditing(String apiKey) async {
     final basePrompt = 'A simple cartoon cat sitting on a chair';
     print('      Base prompt: "$basePrompt"');
 
-    final baseImages = await imageProvider.generateImage(
-      prompt: basePrompt,
-      batchSize: 1,
+    final baseResponse = await imageProvider.generateImages(
+      ImageGenerationRequest(
+        prompt: basePrompt,
+        count: 1,
+      ),
     );
 
-    if (baseImages.isNotEmpty) {
-      // Extract image data for editing
-      final baseImageData = baseImages[0];
-      if (baseImageData.startsWith('data:image/')) {
-        final base64Data = baseImageData.split(',')[1];
-        final bytes = base64Decode(base64Data);
-
-        // Save base image
-        await File('base_image.png').writeAsBytes(bytes);
-        print('      ✅ Base image saved as base_image.png');
-
-        // Edit the image
-        print('\n   ✏️  Editing the image...');
-        final editPrompt =
-            'Add a red hat to the cat and change the chair to blue';
-        print('      Edit prompt: "$editPrompt"');
-
-        final editResponse = await imageProvider.editImage(
-          ImageEditRequest(
-            image: ImageInput.fromBytes(bytes, format: 'png'),
-            prompt: editPrompt,
-            count: 1,
-          ),
+    if (baseResponse.images.isNotEmpty) {
+      // Extract image data for editing (Gemini returns image bytes inline)
+      final baseImage = baseResponse.images.first;
+      final bytes = baseImage.data;
+      if (bytes == null) {
+        throw const InvalidRequestError(
+          'Gemini did not return inline image bytes for editing.',
         );
+      }
 
-        print(
-            '      ✅ Generated ${editResponse.images.length} edited image(s)');
-        if (editResponse.revisedPrompt != null) {
-          print('      Revised prompt: "${editResponse.revisedPrompt}"');
-        }
+      // Save base image
+      await File('base_image.png').writeAsBytes(bytes);
+      print('      ✅ Base image saved as base_image.png');
 
-        for (int i = 0; i < editResponse.images.length; i++) {
-          final image = editResponse.images[i];
-          if (image.data != null) {
-            final filename = 'edited_image_${i + 1}.png';
-            await File(filename).writeAsBytes(image.data!);
-            print('         Edited image ${i + 1}: Saved as $filename');
-          }
+      // Edit the image
+      print('\n   ✏️  Editing the image...');
+      final editPrompt =
+          'Add a red hat to the cat and change the chair to blue';
+      print('      Edit prompt: "$editPrompt"');
+
+      final editResponse = await imageProvider.editImage(
+        ImageEditRequest(
+          image: ImageInput.fromBytes(bytes, format: 'png'),
+          prompt: editPrompt,
+          count: 1,
+        ),
+      );
+
+      print('      ✅ Generated ${editResponse.images.length} edited image(s)');
+      if (editResponse.revisedPrompt != null) {
+        print('      Revised prompt: "${editResponse.revisedPrompt}"');
+      }
+
+      for (int i = 0; i < editResponse.images.length; i++) {
+        final image = editResponse.images[i];
+        if (image.data != null) {
+          final filename = 'edited_image_${i + 1}.png';
+          await File(filename).writeAsBytes(image.data!);
+          print('         Edited image ${i + 1}: Saved as $filename');
         }
       }
     }

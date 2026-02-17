@@ -41,39 +41,6 @@ class XAIImages
   }
 
   @override
-  Future<List<String>> generateImage({
-    required String prompt,
-    String? model,
-    String? negativePrompt,
-    String? imageSize,
-    int? batchSize,
-    String? seed,
-    int? numInferenceSteps,
-    double? guidanceScale,
-    bool? promptEnhancement,
-  }) async {
-    final response = await generateImages(
-      ImageGenerationRequest(
-        prompt: prompt,
-        model: model,
-        negativePrompt: negativePrompt,
-        size: imageSize,
-        count: batchSize,
-        seed: seed != null ? int.tryParse(seed) : null,
-        steps: numInferenceSteps,
-        guidanceScale: guidanceScale,
-        enhancePrompt: promptEnhancement,
-      ),
-    );
-
-    return response.images
-        .map((img) => img.url)
-        .where((url) => url != null)
-        .cast<String>()
-        .toList(growable: false);
-  }
-
-  @override
   Future<ImageGenerationResponse> generateImagesWithCallOptions(
     ImageGenerationRequest request, {
     required LLMCallOptions callOptions,

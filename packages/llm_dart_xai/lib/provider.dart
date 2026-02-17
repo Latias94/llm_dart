@@ -276,31 +276,6 @@ class XAIProvider
   }
 
   @override
-  Future<List<String>> generateImage({
-    required String prompt,
-    String? model,
-    String? negativePrompt,
-    String? imageSize,
-    int? batchSize,
-    String? seed,
-    int? numInferenceSteps,
-    double? guidanceScale,
-    bool? promptEnhancement,
-  }) {
-    return _images.generateImage(
-      prompt: prompt,
-      model: model,
-      negativePrompt: negativePrompt,
-      imageSize: imageSize,
-      batchSize: batchSize,
-      seed: seed,
-      numInferenceSteps: numInferenceSteps,
-      guidanceScale: guidanceScale,
-      promptEnhancement: promptEnhancement,
-    );
-  }
-
-  @override
   List<String> getSupportedSizes() => _images.getSupportedSizes();
 
   @override

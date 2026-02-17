@@ -79,10 +79,14 @@ final imageProvider = await LLMBuilder()
     .model('dall-e-3')
     .buildImageGeneration();
 
-final images = await imageProvider.generateImage(
-  prompt: 'A futuristic cityscape',
-  imageSize: '1024x1024',
+final response = await imageProvider.generateImages(
+  ImageGenerationRequest(
+    prompt: 'A futuristic cityscape',
+    size: '1024x1024',
+    responseFormat: 'url',
+  ),
 );
+final images = response.images.map((img) => img.url).whereType<String>().toList();
 ```
 
 ### Audio Processing
