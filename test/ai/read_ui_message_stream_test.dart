@@ -176,6 +176,50 @@ void main() {
         ),
       );
     });
+
+    test('throws when encountering text-delta without text-start', () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {'type': 'text-delta', 'id': 't1', 'delta': 'Hello'},
+      ]);
+
+      expect(
+        () => readUiMessageStream(
+          chunks: chunks,
+          terminateOnError: true,
+        ).toList(),
+        throwsA(
+          isA<UiMessageStreamError>()
+              .having((e) => e.chunkType, 'chunkType', equals('text-delta'))
+              .having((e) => e.chunkId, 'chunkId', equals('t1')),
+        ),
+      );
+    });
+
+    test('throws when encountering tool-input-delta without tool-input-start',
+        () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {
+          'type': 'tool-input-delta',
+          'toolCallId': 'call1',
+          'inputTextDelta': '{"x":1}',
+        },
+      ]);
+
+      expect(
+        () => readUiMessageStream(
+          chunks: chunks,
+          terminateOnError: true,
+        ).toList(),
+        throwsA(
+          isA<UiMessageStreamError>()
+              .having(
+                  (e) => e.chunkType, 'chunkType', equals('tool-input-delta'))
+              .having((e) => e.chunkId, 'chunkId', equals('call1')),
+        ),
+      );
+    });
   });
 
   group('handleUiMessageStreamFinish (ai-sdk style)', () {

@@ -160,7 +160,8 @@ void applyUiMessageChunk(
   final type = chunk['type'];
   if (type is! String || type.isEmpty) {
     throw UiMessageStreamError(
-      cause: FormatException('UI message chunk missing non-empty "type".'),
+      cause: chunk,
+      message: 'UI message chunk missing non-empty "type".',
     );
   }
 
@@ -198,16 +199,32 @@ void applyUiMessageChunk(
       final id = (chunk['id'] as String?)?.trim();
       final delta = chunk['delta'] as String?;
       if (id == null || id.isEmpty || delta == null || delta.isEmpty) return;
-      final part = _ensureTextPart(state, id,
-          providerMetadata: _asProviderMetadata(chunk['providerMetadata']));
+      final part = state._activeTextParts[id];
+      if (part == null) {
+        throw UiMessageStreamError(
+          cause: chunk,
+          chunkType: 'text-delta',
+          chunkId: id,
+          message:
+              'Received text-delta for missing text part id "$id". Send a "text-start" chunk before any "text-delta" chunks.',
+        );
+      }
       part['text'] = ((part['text'] as String?) ?? '') + delta;
       return;
 
     case 'text-end':
       final id = (chunk['id'] as String?)?.trim();
       if (id == null || id.isEmpty) return;
-      final part = _ensureTextPart(state, id,
-          providerMetadata: _asProviderMetadata(chunk['providerMetadata']));
+      final part = state._activeTextParts[id];
+      if (part == null) {
+        throw UiMessageStreamError(
+          cause: chunk,
+          chunkType: 'text-end',
+          chunkId: id,
+          message:
+              'Received text-end for missing text part id "$id". Send a "text-start" chunk before "text-end".',
+        );
+      }
       part['state'] = 'done';
       state._activeTextParts.remove(id);
       return;
@@ -223,16 +240,32 @@ void applyUiMessageChunk(
       final id = (chunk['id'] as String?)?.trim();
       final delta = chunk['delta'] as String?;
       if (id == null || id.isEmpty || delta == null || delta.isEmpty) return;
-      final part = _ensureReasoningPart(state, id,
-          providerMetadata: _asProviderMetadata(chunk['providerMetadata']));
+      final part = state._activeReasoningParts[id];
+      if (part == null) {
+        throw UiMessageStreamError(
+          cause: chunk,
+          chunkType: 'reasoning-delta',
+          chunkId: id,
+          message:
+              'Received reasoning-delta for missing reasoning part id "$id". Send a "reasoning-start" chunk before any "reasoning-delta" chunks.',
+        );
+      }
       part['text'] = ((part['text'] as String?) ?? '') + delta;
       return;
 
     case 'reasoning-end':
       final id = (chunk['id'] as String?)?.trim();
       if (id == null || id.isEmpty) return;
-      final part = _ensureReasoningPart(state, id,
-          providerMetadata: _asProviderMetadata(chunk['providerMetadata']));
+      final part = state._activeReasoningParts[id];
+      if (part == null) {
+        throw UiMessageStreamError(
+          cause: chunk,
+          chunkType: 'reasoning-end',
+          chunkId: id,
+          message:
+              'Received reasoning-end for missing reasoning part id "$id". Send a "reasoning-start" chunk before "reasoning-end".',
+        );
+      }
       part['state'] = 'done';
       state._activeReasoningParts.remove(id);
       return;
@@ -243,10 +276,17 @@ void applyUiMessageChunk(
       // whether to terminate or keep consuming via `terminateOnError`.
       final errorText = chunk['errorText'] as String?;
       if (errorText != null && errorText.trim().isNotEmpty) {
-        throw UiMessageStreamError(cause: chunk, message: errorText.trim());
+        throw UiMessageStreamError(
+          cause: chunk,
+          chunkType: 'error',
+          chunkId: (chunk['id'] as String?)?.trim(),
+          message: errorText.trim(),
+        );
       }
       throw UiMessageStreamError(
         cause: chunk,
+        chunkType: 'error',
+        chunkId: (chunk['id'] as String?)?.trim(),
         message: 'UI message stream error chunk received.',
       );
 
@@ -366,6 +406,17 @@ void applyUiMessageChunk(
         return;
       }
 
+      if (!state._partialToolInputText.containsKey(toolCallId) &&
+          !state._partialToolMeta.containsKey(toolCallId)) {
+        throw UiMessageStreamError(
+          cause: chunk,
+          chunkType: 'tool-input-delta',
+          chunkId: toolCallId,
+          message:
+              'Received tool-input-delta for missing tool call id "$toolCallId". Send a "tool-input-start" chunk before any "tool-input-delta" chunks.',
+        );
+      }
+
       final buffer = state._partialToolInputText.putIfAbsent(
         toolCallId,
         StringBuffer.new,
@@ -460,7 +511,15 @@ void applyUiMessageChunk(
         return;
       }
       final part = state._toolPartsByCallId[toolCallId];
-      if (part == null) return;
+      if (part == null) {
+        throw UiMessageStreamError(
+          cause: chunk,
+          chunkType: 'tool-approval-request',
+          chunkId: toolCallId,
+          message:
+              'Received tool-approval-request for missing tool call id "$toolCallId". Ensure tool input chunks are sent before requesting approval.',
+        );
+      }
       part['state'] = 'approval-requested';
       part['approval'] = <String, Object?>{'id': approvalId};
       return;
@@ -469,7 +528,15 @@ void applyUiMessageChunk(
       final toolCallId = (chunk['toolCallId'] as String?)?.trim();
       if (toolCallId == null || toolCallId.isEmpty) return;
       final part = state._toolPartsByCallId[toolCallId];
-      if (part == null) return;
+      if (part == null) {
+        throw UiMessageStreamError(
+          cause: chunk,
+          chunkType: 'tool-output-denied',
+          chunkId: toolCallId,
+          message:
+              'Received tool-output-denied for missing tool call id "$toolCallId".',
+        );
+      }
       part['state'] = 'output-denied';
       return;
 
@@ -477,7 +544,15 @@ void applyUiMessageChunk(
       final toolCallId = (chunk['toolCallId'] as String?)?.trim();
       if (toolCallId == null || toolCallId.isEmpty) return;
       final part = state._toolPartsByCallId[toolCallId];
-      if (part == null) return;
+      if (part == null) {
+        throw UiMessageStreamError(
+          cause: chunk,
+          chunkType: 'tool-output-available',
+          chunkId: toolCallId,
+          message:
+              'Received tool-output-available for missing tool call id "$toolCallId".',
+        );
+      }
       part['state'] = 'output-available';
       part['output'] = chunk['output'];
       if (chunk['preliminary'] == true) part['preliminary'] = true;
@@ -494,7 +569,15 @@ void applyUiMessageChunk(
         return;
       }
       final part = state._toolPartsByCallId[toolCallId];
-      if (part == null) return;
+      if (part == null) {
+        throw UiMessageStreamError(
+          cause: chunk,
+          chunkType: 'tool-output-error',
+          chunkId: toolCallId,
+          message:
+              'Received tool-output-error for missing tool call id "$toolCallId".',
+        );
+      }
       part['state'] = 'output-error';
       part['errorText'] = errorText;
       if (chunk['providerExecuted'] == true) part['providerExecuted'] = true;

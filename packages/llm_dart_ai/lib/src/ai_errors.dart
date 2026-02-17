@@ -201,14 +201,27 @@ class ToolCallRepairError extends LLMError {
 /// Mirrors Vercel AI SDK's `UIMessageStreamError`.
 class UiMessageStreamError extends LLMError {
   final Object cause;
+  final String? chunkType;
+  final String? chunkId;
 
   UiMessageStreamError({
     required this.cause,
+    this.chunkType,
+    this.chunkId,
     String message = 'UI message stream error.',
   }) : super(message);
 
   @override
-  String toString() => 'UI message stream error: $message (cause: $cause)';
+  String toString() {
+    final type = chunkType;
+    final id = chunkId;
+    final extra = <String>[
+      if (type != null && type.isNotEmpty) 'chunkType=$type',
+      if (id != null && id.isNotEmpty) 'chunkId=$id',
+    ];
+    return 'UI message stream error: $message'
+        '${extra.isEmpty ? '' : ' (${extra.join(', ')})'} (cause: $cause)';
+  }
 }
 
 /// Thrown when an API surface is called with invalid arguments.
