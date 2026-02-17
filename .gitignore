@@ -13,6 +13,7 @@ repo-ref/
 # Local analysis scratch
 .analyze_machine.txt
 .testlog.txt
+.testlog*.txt
 
 # Lockfiles (library monorepo)
 pubspec.lock
