@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'ai_errors.dart';
 import 'ui_messages.dart';
@@ -33,6 +34,27 @@ class StreamingUIMessageState {
   bool isAborted = false;
 
   StreamingUIMessageState(this.message);
+}
+
+Object? _tryParsePartialJson(String text) {
+  if (text.isEmpty) return null;
+  try {
+    return jsonDecode(text);
+  } catch (_) {
+    // Ignore and fall back to best-effort prefix parsing below.
+  }
+
+  final lastObjectEnd = text.lastIndexOf('}');
+  final lastArrayEnd = text.lastIndexOf(']');
+  final lastEnd = lastObjectEnd > lastArrayEnd ? lastObjectEnd : lastArrayEnd;
+  if (lastEnd <= 0) return null;
+
+  final prefix = text.substring(0, lastEnd + 1);
+  try {
+    return jsonDecode(prefix);
+  } catch (_) {
+    return null;
+  }
 }
 
 StreamingUIMessageState createStreamingUIMessageState({
@@ -437,7 +459,8 @@ void applyUiMessageChunk(
         providerMetadata: meta?.providerMetadata,
       );
       part['state'] = 'input-streaming';
-      part['input'] = buffer.toString();
+      final inputText = buffer.toString();
+      part['input'] = _tryParsePartialJson(inputText) ?? inputText;
       return;
 
     case 'tool-input-available':

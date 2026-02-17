@@ -115,6 +115,47 @@ void main() {
       expect(tool['output'], equals(const {'y': 2}));
     });
 
+    test('parses partial tool input JSON best-effort from tool-input-delta',
+        () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {
+          'type': 'tool-input-start',
+          'toolCallId': 'call1',
+          'toolName': 'calc',
+        },
+        const {
+          'type': 'tool-input-delta',
+          'toolCallId': 'call1',
+          'inputTextDelta': '{"x":',
+        },
+        const {
+          'type': 'tool-input-delta',
+          'toolCallId': 'call1',
+          'inputTextDelta': '1}',
+        },
+        const {'type': 'finish', 'finishReason': 'tool-calls'},
+      ]);
+
+      final snapshots = await readUiMessageStream(chunks: chunks).toList();
+      final toolSnapshots = snapshots
+          .map((m) => m.parts.where((p) => p['type'] == 'tool-calc').toList())
+          .where((parts) => parts.isNotEmpty)
+          .map((parts) => parts.single)
+          .toList(growable: false);
+
+      expect(toolSnapshots, isNotEmpty);
+
+      final anyParsed = toolSnapshots.any(
+        (p) {
+          final input = p['input'];
+          if (input is! Map) return false;
+          return input['x'] == 1;
+        },
+      );
+      expect(anyParsed, isTrue);
+    });
+
     test('maps sources and files into UI message parts', () async {
       final chunks = Stream.fromIterable(<Map<String, Object?>>[
         const {'type': 'start', 'messageId': 'msg_1'},
