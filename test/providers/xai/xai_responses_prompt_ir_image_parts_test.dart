@@ -60,6 +60,64 @@ void main() {
       );
     });
 
+    test('normalizes FilePart image/* to image/jpeg and emits warning',
+        () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'xai.responses',
+        providerName: 'xAI (Responses)',
+        apiKey: 'test-key',
+        baseUrl: 'https://example.com/v1/',
+        model: 'grok-4-fast',
+      );
+
+      final client = FakeOpenAIClient(config)..jsonResponse = const {};
+      final responses = XAIResponses(client, config);
+
+      final prompt = Prompt(
+        messages: [
+          PromptMessage(
+            role: PromptRole.user,
+            parts: [
+              const TextPart('Look'),
+              const FilePart(
+                mime: FileMime('image/*'),
+                data: [1, 2, 3],
+                text: 'file',
+              ),
+            ],
+          ),
+        ],
+      );
+
+      final response = await responses.chatPrompt(prompt);
+
+      final input = client.lastJsonBody?['input'] as List?;
+      expect(input, isNotNull);
+      expect(input, hasLength(1));
+
+      final user = input!.single as Map;
+      final content = user['content'] as List;
+      expect(content, hasLength(2));
+
+      final image = content[1] as Map;
+      expect(image['type'], equals('input_image'));
+      expect(
+        image['image_url'],
+        equals('data:image/jpeg;base64,${base64Encode(const [1, 2, 3])}'),
+      );
+
+      expect(response, isA<ChatResponseWithWarnings>());
+      final warnings = (response as ChatResponseWithWarnings).warnings;
+      expect(
+        warnings.any(
+          (w) =>
+              w is LLMCompatibilityWarning &&
+              w.feature == 'image/* normalized to image/jpeg',
+        ),
+        isTrue,
+      );
+    });
+
     test('encodes ImageUrlPart as input_image url', () async {
       final config = OpenAICompatibleConfig(
         providerId: 'xai.responses',

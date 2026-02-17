@@ -101,7 +101,7 @@ class XAIResponses
       stream: false,
       providerTools: requestProviderTools,
     );
-    var body = Map<String, dynamic>.from(built);
+    var body = Map<String, dynamic>.from(built.body);
     body = callOptions.mergeIntoRequestBody(body);
     final requestMetadata = _emitRequestMetadataEnabled()
         ? LLMRequestMetadataPart(body: sanitizeRequestBodyForMetadata(body))
@@ -116,6 +116,7 @@ class XAIResponses
       responseWithHeaders.json,
       responseHeaders: responseWithHeaders.headers,
       requestMetadata: requestMetadata,
+      requestWarnings: built.warnings,
     );
   }
 
@@ -153,7 +154,7 @@ class XAIResponses
       stream: false,
       providerTools: requestProviderTools,
     );
-    var body = Map<String, dynamic>.from(built);
+    var body = Map<String, dynamic>.from(built.body);
     body = callOptions.mergeIntoRequestBody(body);
     final requestMetadata = _emitRequestMetadataEnabled()
         ? LLMRequestMetadataPart(body: sanitizeRequestBodyForMetadata(body))
@@ -168,6 +169,7 @@ class XAIResponses
       responseWithHeaders.json,
       responseHeaders: responseWithHeaders.headers,
       requestMetadata: requestMetadata,
+      requestWarnings: built.warnings,
     );
   }
 
@@ -210,7 +212,6 @@ class XAIResponses
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async* {
-    yield const LLMStreamStartPart();
     final requestProviderTools = mergeProviderToolsById(
       config.originalConfig?.providerTools,
       providerTools,
@@ -221,7 +222,8 @@ class XAIResponses
       stream: true,
       providerTools: requestProviderTools,
     );
-    var body = Map<String, dynamic>.from(built);
+    yield LLMStreamStartPart(warnings: built.warnings);
+    var body = Map<String, dynamic>.from(built.body);
     body = callOptions.mergeIntoRequestBody(body);
     if (_emitRequestMetadataEnabled()) {
       yield LLMRequestMetadataPart(
@@ -232,6 +234,7 @@ class XAIResponses
       body,
       requestProviderTools: requestProviderTools,
       headers: callOptions.headers,
+      requestWarnings: built.warnings,
       cancelToken: cancelToken,
     );
   }
@@ -260,7 +263,6 @@ class XAIResponses
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async* {
-    yield const LLMStreamStartPart();
     final requestProviderTools = mergeProviderToolsById(
       config.originalConfig?.providerTools,
       providerTools,
@@ -271,7 +273,8 @@ class XAIResponses
       stream: true,
       providerTools: requestProviderTools,
     );
-    var body = Map<String, dynamic>.from(built);
+    yield LLMStreamStartPart(warnings: built.warnings);
+    var body = Map<String, dynamic>.from(built.body);
     body = callOptions.mergeIntoRequestBody(body);
     if (_emitRequestMetadataEnabled()) {
       yield LLMRequestMetadataPart(
@@ -282,6 +285,7 @@ class XAIResponses
       body,
       requestProviderTools: requestProviderTools,
       headers: callOptions.headers,
+      requestWarnings: built.warnings,
       cancelToken: cancelToken,
     );
   }
@@ -290,6 +294,7 @@ class XAIResponses
     Map<String, dynamic> body, {
     List<ProviderTool>? requestProviderTools,
     Map<String, String>? headers,
+    List<LLMWarning> requestWarnings = const <LLMWarning>[],
     CancelToken? cancelToken,
   }) async* {
     client.resetSSEBuffer();
@@ -801,7 +806,10 @@ class XAIResponses
 
             final parsed = finalResponseObject == null
                 ? null
-                : _parseResponse(finalResponseObject);
+                : _parseResponse(
+                    finalResponseObject,
+                    requestWarnings: requestWarnings,
+                  );
 
             final finishText = fullText.isNotEmpty
                 ? fullText.toString()
@@ -839,6 +847,7 @@ class XAIResponses
                   providerId: config.providerId,
                   text: finishText,
                   thinking: finishThinking.isNotEmpty ? finishThinking : null,
+                  warnings: requestWarnings,
                 );
 
             final metadata = response.providerMetadata;
@@ -867,6 +876,7 @@ class XAIResponses
         providerId: config.providerId,
         text: fullText.toString(),
         thinking: fullThinking.isNotEmpty ? fullThinking.toString() : null,
+        warnings: requestWarnings,
       );
       final metadata = response.providerMetadata;
       if (metadata != null && metadata.isNotEmpty) {
@@ -898,33 +908,40 @@ class XAIResponses
     }
   }
 
-  Map<String, dynamic> _buildRequestBody({
+  ({Map<String, dynamic> body, List<LLMWarning> warnings}) _buildRequestBody({
     required List<ChatMessage> messages,
     required List<Tool>? tools,
     required bool stream,
     List<ProviderTool>? providerTools,
   }) {
-    final input = _buildInputMessages(messages);
-    return _buildRequestBodyFromInput(
-      input: input,
-      tools: tools,
-      stream: stream,
-      providerTools: providerTools,
+    final built = _buildInputMessages(messages);
+    return (
+      body: _buildRequestBodyFromInput(
+        input: built.input,
+        tools: tools,
+        stream: stream,
+        providerTools: providerTools,
+      ),
+      warnings: built.warnings,
     );
   }
 
-  Map<String, dynamic> _buildRequestBodyFromPrompt({
+  ({Map<String, dynamic> body, List<LLMWarning> warnings})
+      _buildRequestBodyFromPrompt({
     required Prompt prompt,
     required List<Tool>? tools,
     required bool stream,
     List<ProviderTool>? providerTools,
   }) {
-    final input = _buildInputMessagesFromPrompt(prompt);
-    return _buildRequestBodyFromInput(
-      input: input,
-      tools: tools,
-      stream: stream,
-      providerTools: providerTools,
+    final built = _buildInputMessagesFromPrompt(prompt);
+    return (
+      body: _buildRequestBodyFromInput(
+        input: built.input,
+        tools: tools,
+        stream: stream,
+        providerTools: providerTools,
+      ),
+      warnings: built.warnings,
     );
   }
 
@@ -1003,9 +1020,11 @@ class XAIResponses
     return body;
   }
 
-  List<Map<String, dynamic>> _buildInputMessages(List<ChatMessage> messages) {
+  ({List<Map<String, dynamic>> input, List<LLMWarning> warnings})
+      _buildInputMessages(List<ChatMessage> messages) {
     final input = <Map<String, dynamic>>[];
     var hasSystemMessage = false;
+    var mappedToolRoleToUser = false;
 
     for (final message in messages) {
       if (message.role == ChatRole.system) {
@@ -1014,6 +1033,7 @@ class XAIResponses
 
       switch (message.messageType) {
         case TextMessage():
+          if (message.role == ChatRole.tool) mappedToolRoleToUser = true;
           input.add({
             'role': switch (message.role) {
               ChatRole.system => 'system',
@@ -1066,12 +1086,33 @@ class XAIResponses
       input.insert(0, {'role': 'system', 'content': config.systemPrompt});
     }
 
-    return input;
+    final warnings = <LLMWarning>[];
+    if (mappedToolRoleToUser) {
+      warnings.add(
+        const LLMCompatibilityWarning(
+          feature: 'tool role mapped to user',
+          details:
+              'xAI Responses API does not support a dedicated `tool` role for plain text items. Tool-role text messages were mapped to the `user` role.',
+        ),
+      );
+    }
+
+    return (
+      input: input,
+      warnings: warnings.isEmpty
+          ? const <LLMWarning>[]
+          : List<LLMWarning>.unmodifiable(warnings),
+    );
   }
 
-  List<Map<String, dynamic>> _buildInputMessagesFromPrompt(Prompt prompt) {
+  ({List<Map<String, dynamic>> input, List<LLMWarning> warnings})
+      _buildInputMessagesFromPrompt(Prompt prompt) {
     final input = <Map<String, dynamic>>[];
     var hasSystemMessage = false;
+
+    var didOmitProviderExecutedToolCall = false;
+    var didStringifyToolInput = false;
+    var didNormalizeImageWildcard = false;
 
     String? currentRole;
     final currentText = StringBuffer();
@@ -1180,6 +1221,7 @@ class XAIResponses
               :final providerExecuted,
             )) {
           if (providerExecuted == true) {
+            didOmitProviderExecutedToolCall = true;
             continue;
           }
           if (effectiveRole != PromptRole.assistant) {
@@ -1192,6 +1234,7 @@ class XAIResponses
           try {
             arguments = jsonEncode(toolInput);
           } catch (_) {
+            didStringifyToolInput = true;
             arguments = jsonEncode(toolInput.toString());
           }
 
@@ -1334,8 +1377,12 @@ class XAIResponses
 
           flushUserText();
 
-          final normalizedMime =
-              mime.mimeType == 'image/*' ? 'image/jpeg' : mime.mimeType;
+          final normalizedMime = mime.mimeType == 'image/*'
+              ? (() {
+                  didNormalizeImageWildcard = true;
+                  return 'image/jpeg';
+                })()
+              : mime.mimeType;
           final imageUrl = 'data:$normalizedMime;base64,${base64Encode(data)}';
           currentUserParts.add({
             'type': 'input_image',
@@ -1356,7 +1403,41 @@ class XAIResponses
       input.insert(0, {'role': 'system', 'content': config.systemPrompt});
     }
 
-    return input;
+    final warnings = <LLMWarning>[];
+    if (didOmitProviderExecutedToolCall) {
+      warnings.add(
+        const LLMCompatibilityWarning(
+          feature: 'provider-executed tool call omitted',
+          details:
+              'ToolCallPart(providerExecuted: true) is provider-executed and is omitted from the xAI request input for compatibility.',
+        ),
+      );
+    }
+    if (didStringifyToolInput) {
+      warnings.add(
+        const LLMCompatibilityWarning(
+          feature: 'tool input stringified',
+          details:
+              'Tool input could not be JSON-encoded and was stringified for compatibility.',
+        ),
+      );
+    }
+    if (didNormalizeImageWildcard) {
+      warnings.add(
+        const LLMCompatibilityWarning(
+          feature: 'image/* normalized to image/jpeg',
+          details:
+              'xAI Responses API requires a concrete image MIME type. `image/*` was normalized to `image/jpeg`.',
+        ),
+      );
+    }
+
+    return (
+      input: input,
+      warnings: warnings.isEmpty
+          ? const <LLMWarning>[]
+          : List<LLMWarning>.unmodifiable(warnings),
+    );
   }
 
   Map<String, dynamic> _convertFunctionTool(Tool tool) {
@@ -1447,6 +1528,7 @@ class XAIResponses
     Map<String, dynamic> responseData, {
     Map<String, String>? responseHeaders,
     LLMRequestMetadataPart? requestMetadata,
+    List<LLMWarning> requestWarnings = const <LLMWarning>[],
   }) {
     final output = responseData['output'] as List?;
 
@@ -1575,6 +1657,7 @@ class XAIResponses
       requestMetadata: requestMetadata,
       serverToolCalls: serverToolCalls.isNotEmpty ? serverToolCalls : null,
       sources: sources.isNotEmpty ? sources : null,
+      warnings: requestWarnings,
     );
   }
 }
@@ -1583,7 +1666,8 @@ class XAIResponsesChatResponse
     implements
         ChatResponseWithFinishReason,
         ChatResponseWithResponseMetadata,
-        ChatResponseWithRequestMetadata {
+        ChatResponseWithRequestMetadata,
+        ChatResponseWithWarnings {
   final String providerId;
   @override
   final String? text;
@@ -1601,6 +1685,7 @@ class XAIResponsesChatResponse
   final LLMRequestMetadataPart? _requestMetadata;
   final List<Map<String, dynamic>>? serverToolCalls;
   final List<Map<String, dynamic>>? sources;
+  final List<LLMWarning> _warnings;
 
   XAIResponsesChatResponse({
     required this.providerId,
@@ -1615,14 +1700,35 @@ class XAIResponsesChatResponse
     LLMRequestMetadataPart? requestMetadata,
     this.serverToolCalls,
     this.sources,
+    List<LLMWarning> warnings = const <LLMWarning>[],
   })  : _responseMetadata = responseMetadata,
-        _requestMetadata = requestMetadata;
+        _requestMetadata = requestMetadata,
+        _warnings = (() {
+          final out = <LLMWarning>[...warnings];
+          final server = serverToolCalls;
+          if (server != null && server.isNotEmpty) {
+            out.add(
+              LLMCompatibilityWarning(
+                feature: 'provider-native tool calls not surfaced',
+                details:
+                    'xAI Responses server tool calls are provider-executed and are not returned as local tool calls. '
+                    'See providerMetadata["$providerId"]["serverToolCalls"].',
+              ),
+            );
+          }
+          return out.isEmpty
+              ? const <LLMWarning>[]
+              : List<LLMWarning>.unmodifiable(out);
+        })();
 
   @override
   LLMResponseMetadataPart? get responseMetadata => _responseMetadata;
 
   @override
   LLMRequestMetadataPart? get requestMetadata => _requestMetadata;
+
+  @override
+  List<LLMWarning> get warnings => _warnings;
 
   @override
   LLMFinishReason? get finishReason {

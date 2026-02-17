@@ -94,6 +94,8 @@ void main() {
         expect(response.thinking, isNull);
         expect(response.toolCalls, isNull);
 
+        final warnings =
+            response is ChatResponseWithWarnings ? response.warnings : const [];
         final meta = response.providerMetadata?['xai.responses'];
         expect(meta, isNotNull);
         expect(meta!['id'], equals(raw['id']));
@@ -109,6 +111,14 @@ void main() {
         if (expectedType != null) {
           expect(calls, isNotNull);
           expect((calls!.first as Map)['type'], equals(expectedType));
+          expect(
+            warnings.any(
+              (w) =>
+                  w is LLMCompatibilityWarning &&
+                  w.feature == 'provider-native tool calls not surfaced',
+            ),
+            isTrue,
+          );
         }
       });
     }

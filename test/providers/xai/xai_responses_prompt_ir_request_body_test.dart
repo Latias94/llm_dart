@@ -43,6 +43,14 @@ void main() {
         ),
       );
 
+      const providerExecutedCall = ToolCallPart(
+        toolCallId: 'call_provider_1',
+        toolName: 'web_search',
+        input: {'query': 'hi'},
+        providerExecuted: true,
+        overrideRole: PromptRole.assistant,
+      );
+
       final prompt = Prompt(
         messages: [
           PromptMessage(
@@ -54,12 +62,13 @@ void main() {
                 call,
                 overrideRole: PromptRole.assistant,
               ),
+              providerExecutedCall,
             ],
           ),
         ],
       );
 
-      await responses.chatPrompt(prompt);
+      final response = await responses.chatPrompt(prompt);
 
       final body = client.lastJsonBody;
       expect(body, isNotNull);
@@ -87,6 +96,17 @@ void main() {
           'arguments': '{"city":"Tokyo"}',
           'status': 'completed',
         }),
+      );
+
+      expect(response, isA<ChatResponseWithWarnings>());
+      final warnings = (response as ChatResponseWithWarnings).warnings;
+      expect(
+        warnings.any(
+          (w) =>
+              w is LLMCompatibilityWarning &&
+              w.feature == 'provider-executed tool call omitted',
+        ),
+        isTrue,
       );
     });
   });
