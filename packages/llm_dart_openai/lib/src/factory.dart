@@ -330,6 +330,18 @@ class OpenAIProviderFactory
 
     final result = <OpenAIBuiltInTool>[];
 
+    int? _asInt(dynamic value) {
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      return null;
+    }
+
+    List<String>? _asStringList(dynamic value) {
+      if (value is List<String>) return value;
+      if (value is List) return value.whereType<String>().toList();
+      return null;
+    }
+
     for (final tool in providerTools) {
       switch (tool.id) {
         case 'openai.web_search_preview':
@@ -358,10 +370,9 @@ class OpenAIProviderFactory
 
           final filters = tool.options['filters'];
           List<String>? allowedDomains;
-          if (filters is Map && filters['allowed_domains'] is List) {
-            allowedDomains = (filters['allowed_domains'] as List)
-                .whereType<String>()
-                .toList();
+          if (filters is Map) {
+            allowedDomains = _asStringList(filters['allowed_domains']) ??
+                _asStringList(filters['allowedDomains']);
           }
 
           final userLocation =
@@ -403,17 +414,55 @@ class OpenAIProviderFactory
               ? rawVectorStoreIds.whereType<String>().toList()
               : null;
 
-          final explicitParameters = tool.options['parameters'];
           final parameters = <String, dynamic>{};
+
+          final explicitParameters = tool.options['parameters'];
           if (explicitParameters is Map<String, dynamic>) {
             parameters.addAll(explicitParameters);
           } else if (explicitParameters is Map) {
             parameters.addAll(Map<String, dynamic>.from(explicitParameters));
           }
 
+          final maxNumResults =
+              _asInt(tool.options['max_num_results']) ??
+                  _asInt(tool.options['maxNumResults']);
+          if (maxNumResults != null) {
+            parameters['max_num_results'] = maxNumResults;
+          }
+
+          final ranking = tool.options['ranking_options'] ??
+              tool.options['rankingOptions'] ??
+              tool.options['ranking'];
+          if (ranking is Map) {
+            final ranker = ranking['ranker'];
+            final scoreThreshold = ranking['score_threshold'] ??
+                ranking['scoreThreshold'];
+            final rankingOptions = <String, dynamic>{};
+            if (ranker is String && ranker.isNotEmpty) {
+              rankingOptions['ranker'] = ranker;
+            }
+            if (scoreThreshold is num) {
+              rankingOptions['score_threshold'] = scoreThreshold;
+            }
+            if (rankingOptions.isNotEmpty) {
+              parameters['ranking_options'] = rankingOptions;
+            }
+          }
+
+          final filters = tool.options['filters'];
+          if (filters != null) {
+            parameters['filters'] = filters;
+          }
+
           for (final entry in tool.options.entries) {
             if (entry.key == 'vector_store_ids' ||
                 entry.key == 'vectorStoreIds' ||
+                entry.key == 'max_num_results' ||
+                entry.key == 'maxNumResults' ||
+                entry.key == 'ranking_options' ||
+                entry.key == 'rankingOptions' ||
+                entry.key == 'ranking' ||
+                entry.key == 'filters' ||
                 entry.key == 'parameters') {
               continue;
             }
@@ -476,7 +525,24 @@ class OpenAIProviderFactory
           break;
 
         case 'openai.code_interpreter':
-          final container = tool.options['container'];
+          final rawContainer = tool.options['container'];
+          dynamic container;
+          if (rawContainer == null) {
+            container = const <String, Object?>{'type': 'auto'};
+          } else if (rawContainer is String) {
+            container = rawContainer;
+          } else if (rawContainer is Map) {
+            final fileIds =
+                _asStringList(rawContainer['file_ids']) ??
+                    _asStringList(rawContainer['fileIds']);
+            container = <String, Object?>{
+              'type': 'auto',
+              if (fileIds != null && fileIds.isNotEmpty) 'file_ids': fileIds,
+            };
+          } else {
+            container = rawContainer;
+          }
+
           final parameters = Map<String, dynamic>.from(tool.options)
             ..remove('container');
           result.add(
@@ -488,16 +554,130 @@ class OpenAIProviderFactory
           break;
 
         case 'openai.image_generation':
-          result.add(
-            OpenAIBuiltInTools.imageGeneration(
-              parameters: tool.options.isEmpty ? null : tool.options,
-            ),
-          );
+          final p = <String, dynamic>{};
+
+          void mapKey(String from, String to) {
+            if (!tool.options.containsKey(from)) return;
+            p[to] = tool.options[from];
+          }
+
+          mapKey('background', 'background');
+          mapKey('input_fidelity', 'input_fidelity');
+          mapKey('inputFidelity', 'input_fidelity');
+          mapKey('model', 'model');
+          mapKey('moderation', 'moderation');
+          mapKey('partial_images', 'partial_images');
+          mapKey('partialImages', 'partial_images');
+          mapKey('quality', 'quality');
+          mapKey('output_compression', 'output_compression');
+          mapKey('outputCompression', 'output_compression');
+          mapKey('output_format', 'output_format');
+          mapKey('outputFormat', 'output_format');
+          mapKey('size', 'size');
+
+          final inputImageMask =
+              tool.options['input_image_mask'] ?? tool.options['inputImageMask'];
+          if (inputImageMask is Map) {
+            final fileId = inputImageMask['file_id'] ?? inputImageMask['fileId'];
+            final imageUrl =
+                inputImageMask['image_url'] ?? inputImageMask['imageUrl'];
+            final m = <String, dynamic>{};
+            if (fileId is String && fileId.isNotEmpty) m['file_id'] = fileId;
+            if (imageUrl is String && imageUrl.isNotEmpty) {
+              m['image_url'] = imageUrl;
+            }
+            if (m.isNotEmpty) p['input_image_mask'] = m;
+          }
+
+          // Pass through already-snake_case keys as an escape hatch.
+          for (final entry in tool.options.entries) {
+            final k = entry.key;
+            if (!k.contains('_')) continue;
+            p.putIfAbsent(k, () => entry.value);
+          }
+
+          result.add(OpenAIBuiltInTools.imageGeneration(
+            parameters: p.isEmpty ? null : p,
+          ));
           break;
 
         case 'openai.mcp':
+          final p = <String, dynamic>{};
+
+          void mapKey(String from, String to) {
+            if (!tool.options.containsKey(from)) return;
+            p[to] = tool.options[from];
+          }
+
+          mapKey('server_label', 'server_label');
+          mapKey('serverLabel', 'server_label');
+          mapKey('server_description', 'server_description');
+          mapKey('serverDescription', 'server_description');
+          mapKey('server_url', 'server_url');
+          mapKey('serverUrl', 'server_url');
+          mapKey('authorization', 'authorization');
+          mapKey('connector_id', 'connector_id');
+          mapKey('connectorId', 'connector_id');
+
+          final headers = tool.options['headers'];
+          if (headers is Map<String, dynamic>) {
+            p['headers'] = headers;
+          } else if (headers is Map) {
+            p['headers'] = Map<String, dynamic>.from(headers);
+          }
+
+          final allowedTools =
+              tool.options['allowed_tools'] ?? tool.options['allowedTools'];
+          if (allowedTools is List) {
+            final names = allowedTools.whereType<String>().toList();
+            if (names.isNotEmpty) p['allowed_tools'] = names;
+          } else if (allowedTools is Map) {
+            final readOnly =
+                allowedTools['read_only'] ?? allowedTools['readOnly'];
+            final toolNames = _asStringList(
+              allowedTools['tool_names'] ?? allowedTools['toolNames'],
+            );
+            p['allowed_tools'] = <String, dynamic>{
+              if (readOnly is bool) 'read_only': readOnly,
+              if (toolNames != null) 'tool_names': toolNames,
+            };
+          }
+
+          final requireApproval = tool.options['require_approval'] ??
+              tool.options['requireApproval'];
+          if (requireApproval is String) {
+            p['require_approval'] = requireApproval;
+          } else if (requireApproval is Map) {
+            final never = requireApproval['never'];
+            if (never is Map) {
+              final toolNames = _asStringList(
+                never['tool_names'] ?? never['toolNames'],
+              );
+              p['require_approval'] = {
+                'never': {
+                  if (toolNames != null) 'tool_names': toolNames,
+                },
+              };
+            }
+          } else {
+            // Mirror Vercel default.
+            p['require_approval'] = 'never';
+          }
+
+          // If `requireApproval` is absent, default to `never` for parity.
+          if (!p.containsKey('require_approval')) {
+            p['require_approval'] = 'never';
+          }
+
+          // Pass through already-snake_case keys as an escape hatch.
+          for (final entry in tool.options.entries) {
+            final k = entry.key;
+            if (!k.contains('_')) continue;
+            p.putIfAbsent(k, () => entry.value);
+          }
+
           result.add(OpenAIBuiltInTools.mcp(
-            parameters: tool.options.isEmpty ? null : tool.options,
+            parameters: p.isEmpty ? null : p,
           ));
           break;
 

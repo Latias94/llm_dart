@@ -1,5 +1,6 @@
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart_openai/builtin_tools.dart';
+import 'package:llm_dart_openai/provider_tools.dart';
 import 'package:llm_dart_openai/web_search_context_size.dart';
 import 'package:test/test.dart';
 
@@ -84,14 +85,11 @@ void main() {
           .provider('openai')
           .apiKey('test-key')
           .model('gpt-4o')
-          .providerTools(
-        const [
-          ProviderTool(
-            id: 'openai.web_search_preview',
-            options: {'search_context_size': 'high'},
-          ),
-        ],
-      ).build();
+          .providerTools([
+        OpenAIProviderTools.webSearchPreview(
+          contextSize: OpenAIWebSearchContextSize.high,
+        ),
+      ]).build();
 
       final openaiProvider = provider as OpenAIProvider;
       expect(openaiProvider.config.useResponsesAPI, isTrue);
@@ -114,13 +112,10 @@ void main() {
           .provider('openai')
           .apiKey('test-key')
           .model('gpt-4o')
-          .providerTools(const [
-        ProviderTool(
-          id: 'openai.file_search',
-          options: {
-            'vector_store_ids': ['vs_123'],
-            'max_num_results': 5,
-          },
+          .providerTools([
+        OpenAIProviderTools.fileSearch(
+          vectorStoreIds: const ['vs_123'],
+          maxNumResults: 5,
         ),
       ]).build();
 
@@ -140,15 +135,12 @@ void main() {
           .provider('openai')
           .apiKey('test-key')
           .model('gpt-4o')
-          .providerTools(const [
-        ProviderTool(
-          id: 'openai.computer_use',
-          options: {
-            'displayWidth': 1024,
-            'displayHeight': 768,
-            'environment': 'browser',
-            'timeout': 30,
-          },
+          .providerTools([
+        OpenAIProviderTools.computerUse(
+          displayWidth: 1024,
+          displayHeight: 768,
+          environment: 'browser',
+          parameters: const {'timeout': 30},
         ),
       ]).build();
 
@@ -170,16 +162,11 @@ void main() {
           .provider('openai')
           .apiKey('test-key')
           .model('gpt-4o')
-          .providerTools(const [
-        ProviderTool(
-          id: 'openai.web_search',
-          options: {
-            'search_context_size': 'low',
-            'external_web_access': true,
-            'filters': {
-              'allowed_domains': ['example.com'],
-            },
-          },
+          .providerTools([
+        OpenAIProviderTools.webSearchFull(
+          allowedDomains: const ['example.com'],
+          externalWebAccess: true,
+          contextSize: OpenAIWebSearchContextSize.low,
         ),
       ]).build();
 
@@ -198,11 +185,11 @@ void main() {
           .provider('openai')
           .apiKey('test-key')
           .model('gpt-4o')
-          .providerTools(const [
-        ProviderTool(id: 'openai.code_interpreter'),
-        ProviderTool(id: 'openai.apply_patch'),
-        ProviderTool(id: 'openai.shell'),
-        ProviderTool(id: 'openai.local_shell'),
+          .providerTools([
+        OpenAIProviderTools.codeInterpreter(),
+        OpenAIProviderTools.applyPatch(),
+        OpenAIProviderTools.shell(),
+        OpenAIProviderTools.localShell(),
       ]).build();
 
       final openaiProvider = provider as OpenAIProvider;
@@ -212,6 +199,53 @@ void main() {
         containsAll(
             ['code_interpreter', 'apply_patch', 'shell', 'local_shell']),
       );
+    });
+
+    test('providerTools normalizes file_search params to OpenAI JSON shape',
+        () async {
+      final provider = await ai()
+          .provider('openai')
+          .apiKey('test-key')
+          .model('gpt-4o')
+          .providerTools([
+        OpenAIProviderTools.fileSearch(
+          vectorStoreIds: const ['vs_123'],
+          maxNumResults: 7,
+          ranking: const {
+            'ranker': 'default',
+            'scoreThreshold': 0.5,
+          },
+        ),
+      ]).build();
+
+      final openaiProvider = provider as OpenAIProvider;
+      final tool = openaiProvider.config.builtInTools!
+          .whereType<OpenAIFileSearchTool>()
+          .single;
+
+      expect(tool.vectorStoreIds, equals(['vs_123']));
+      expect(tool.parameters, containsPair('max_num_results', 7));
+      expect(tool.parameters, contains('ranking_options'));
+      expect(
+        tool.parameters!['ranking_options'],
+        equals(const {'ranker': 'default', 'score_threshold': 0.5}),
+      );
+    });
+
+    test('providerTools code_interpreter uses auto container by default',
+        () async {
+      final provider = await ai()
+          .provider('openai')
+          .apiKey('test-key')
+          .model('gpt-4o')
+          .providerTools([OpenAIProviderTools.codeInterpreter()]).build();
+
+      final openaiProvider = provider as OpenAIProvider;
+      final tool = openaiProvider.config.builtInTools!
+          .whereType<OpenAICodeInterpreterTool>()
+          .single;
+
+      expect(tool.container, equals(const {'type': 'auto'}));
     });
   });
 }
