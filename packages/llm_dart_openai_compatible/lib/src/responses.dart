@@ -3423,7 +3423,6 @@ class OpenAIResponsesResponse
 
   @override
   String? get text {
-    // First try the Responses API format
     final output = _rawResponse['output'] as List?;
     if (output != null) {
       // Look for message items in the output array
@@ -3443,13 +3442,12 @@ class OpenAIResponsesResponse
       }
     }
 
-    // Fallback to legacy format
+    // Fallback to stream-aggregated fields when the output array is incomplete.
     return _rawResponse['output_text'] as String?;
   }
 
   @override
   List<ToolCall>? get toolCalls {
-    // First try the Responses API format
     final output = _rawResponse['output'] as List?;
     if (output != null) {
       final toolCalls = <ToolCall>[];
@@ -3481,7 +3479,7 @@ class OpenAIResponsesResponse
       if (toolCalls.isNotEmpty) return toolCalls;
     }
 
-    // Fallback to legacy format
+    // Fallback to stream-aggregated fields when the output array is incomplete.
     final toolCalls = _rawResponse['tool_calls'] as List?;
     if (toolCalls == null) return null;
 
