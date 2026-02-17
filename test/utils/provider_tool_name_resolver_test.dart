@@ -15,6 +15,44 @@ void main() {
       );
     });
 
+    test('matches tools when providerId is namespaced (xai.responses -> xai)',
+        () {
+      expect(
+        resolveProviderToolName(
+          providerId: 'xai.responses',
+          rawToolName: 'web_search',
+          providerTools: const [
+            ProviderTool(id: 'xai.web_search', name: 'web_search'),
+          ],
+        ),
+        equals('web_search'),
+      );
+    });
+
+    test('normalizes xAI code_interpreter to code_execution (no tools)', () {
+      expect(
+        resolveProviderToolName(
+          providerId: 'xai.responses',
+          rawToolName: 'code_interpreter',
+          providerTools: null,
+        ),
+        equals('code_execution'),
+      );
+    });
+
+    test('normalizes xAI code_interpreter to ProviderTool.name', () {
+      expect(
+        resolveProviderToolName(
+          providerId: 'xai.responses',
+          rawToolName: 'code_interpreter',
+          providerTools: const [
+            ProviderTool(id: 'xai.code_execution', name: 'code_execution'),
+          ],
+        ),
+        equals('code_execution'),
+      );
+    });
+
     test('prefers ProviderTool.name when tool id matches exactly', () {
       expect(
         resolveProviderToolName(
