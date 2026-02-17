@@ -209,8 +209,7 @@ Web search:
 
 Web fetch:
 
-- `webFetchEnabled`: `bool`
-- `webFetch`: `Map<String, dynamic>` (**legacy best-effort**; prefer `providerTools`)
+- Configure via `providerTools` (e.g. `anthropic.web_fetch_20250910`).
 - Note: `web_fetch_20250910` requires the beta header `anthropic-beta: web-fetch-2025-09-10`.
   `llm_dart_anthropic` auto-adds it when provider-native web fetch is enabled.
 

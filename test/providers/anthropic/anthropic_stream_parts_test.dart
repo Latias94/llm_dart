@@ -232,11 +232,9 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://api.anthropic.com/v1/',
         model: 'claude-sonnet-4-20250514',
-        providerOptions: const {
-          'anthropic': {
-            'webFetchEnabled': true,
-          },
-        },
+        providerTools: const [
+          ProviderTool(id: 'anthropic.web_fetch_20250910'),
+        ],
       );
 
       final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);

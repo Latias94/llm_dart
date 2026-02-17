@@ -4,7 +4,7 @@ import 'package:llm_dart/llm_dart.dart';
 void main() {
   group('Anthropic web fetch tool (provider-native)', () {
     test(
-        'injects web_fetch_* tool into request body when providerOptions.webFetch is set',
+        'does not inject web_fetch_* tool into request body when providerOptions.webFetch is set (legacy removed)',
         () {
       final llmConfig = LLMConfig(
         apiKey: 'test-key',
@@ -31,46 +31,7 @@ void main() {
         false,
       );
 
-      final tools = body['tools'] as List<dynamic>;
-      expect(tools, hasLength(1));
-
-      final json = tools.single as Map<String, dynamic>;
-      expect(json['type'], equals('web_fetch_20250910'));
-      expect(json['name'], equals('web_fetch'));
-      expect(json['max_uses'], equals(2));
-      expect(json['allowed_domains'], equals(['example.com']));
-      expect(json['citations'], equals({'enabled': true}));
-      expect(json['max_content_tokens'], equals(512));
-    });
-
-    test('allows overriding tool type via providerOptions.webFetch.toolType',
-        () {
-      final llmConfig = LLMConfig(
-        apiKey: 'test-key',
-        baseUrl: 'https://api.anthropic.com/v1/',
-        model: 'claude-sonnet-4-20250514',
-        providerOptions: const {
-          'anthropic': {
-            'webFetch': {
-              'toolType': 'web_fetch_20250910',
-            },
-          },
-        },
-      );
-
-      final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
-      final builder = AnthropicRequestBuilder(anthropicConfig);
-
-      final body = builder.buildRequestBody(
-        [ChatMessage.user('hi')],
-        null,
-        false,
-      );
-
-      final tools = body['tools'] as List<dynamic>;
-      final json = tools.single as Map<String, dynamic>;
-      expect(json['type'], equals('web_fetch_20250910'));
-      expect(json['name'], equals('web_fetch'));
+      expect(body.containsKey('tools'), isFalse);
     });
 
     test(
@@ -115,11 +76,9 @@ void main() {
         apiKey: 'test-key',
         baseUrl: 'https://api.anthropic.com/v1/',
         model: 'claude-sonnet-4-20250514',
-        providerOptions: const {
-          'anthropic': {
-            'webFetchEnabled': true,
-          },
-        },
+        providerTools: const [
+          ProviderTool(id: 'anthropic.web_fetch_20250910'),
+        ],
       );
 
       final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);

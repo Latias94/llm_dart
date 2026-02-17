@@ -86,11 +86,9 @@ class AnthropicConfig {
 
   /// Provider-native web fetch tool configuration.
   ///
-  /// This is sourced from:
-  /// - `providerOptions[providerId]['webFetch']` (preferred), with optional
-  ///   fallback to `providerOptions['anthropic']['webFetch']` for
-  ///   Anthropic-compatible providers, and
-  /// - `LLMConfig.providerTools` entries like `anthropic.web_fetch_*`.
+  /// This is sourced from `LLMConfig.providerTools` entries like
+  /// `anthropic.web_fetch_*` (or `<providerNamespace>.web_fetch_*` for
+  /// Anthropic-compatible providers).
   ///
   /// When enabled, `AnthropicRequestBuilder` injects the correct
   /// `web_fetch_*` built-in tool into the outgoing request JSON.
@@ -173,43 +171,9 @@ class AnthropicConfig {
         ? null
         : providerToolWebSearchConfig.toolType;
 
-    final webFetchEnabledFromProviderOptions = readProviderOption<bool>(
-      providerOptions,
-      providerOptionsNamespace,
-      'webFetchEnabled',
-      fallbackProviderId: fallbackProviderId,
-    );
-
-    final webFetchConfigFromProviderOptions = _parseWebFetchConfig(
-      readProviderOptionMap(
-            providerOptions,
-            providerOptionsNamespace,
-            'webFetch',
-            fallbackProviderId: fallbackProviderId,
-          ) ??
-          readProviderOption<dynamic>(
-            providerOptions,
-            providerOptionsNamespace,
-            'webFetch',
-            fallbackProviderId: fallbackProviderId,
-          ),
-    );
-
-    final effectiveWebFetchEnabled = webFetchEnabledFromProviderOptions ??
-        webFetchConfigFromProviderOptions?.enabled;
-
-    final enabledWebFetchConfig = effectiveWebFetchEnabled == true
-        ? (webFetchConfigFromProviderOptions ?? const _WebFetchConfig())
-        : null;
-
     final providerToolWebFetchConfig = _buildWebFetchConfigFromProviderTools(
       config,
       providerOptionsNamespace: providerOptionsNamespace,
-    );
-
-    final mergedWebFetchConfig = _mergeWebFetchConfigs(
-      enabledWebFetchConfig,
-      providerToolWebFetchConfig,
     );
 
     final cacheControl = _parseCacheControl(
@@ -323,8 +287,8 @@ class AnthropicConfig {
       cacheControl: cacheControl,
       webSearchToolType: effectiveWebSearchToolType,
       webSearchToolOptions: providerToolWebSearchConfig?.options,
-      webFetchToolType: mergedWebFetchConfig?.toolType,
-      webFetchToolOptions: mergedWebFetchConfig?.options,
+      webFetchToolType: providerToolWebFetchConfig?.toolType,
+      webFetchToolOptions: providerToolWebFetchConfig?.options,
       originalConfig: config,
     );
   }
@@ -350,25 +314,6 @@ class AnthropicConfig {
       if (type is! String || type.trim().isEmpty) return null;
       return raw;
     }
-
-    return null;
-  }
-
-  static _WebFetchConfig? _parseWebFetchConfig(dynamic raw) {
-    if (raw == null) return null;
-    if (raw is _WebFetchConfig) return raw;
-
-    if (raw == true) {
-      return const _WebFetchConfig(enabled: true);
-    }
-
-    if (raw is String) {
-      final type = raw.trim();
-      if (type.isEmpty) return null;
-      return _WebFetchConfig(enabled: true, toolType: type);
-    }
-
-    if (raw is Map<String, dynamic>) return _WebFetchConfig.fromJson(raw);
 
     return null;
   }
@@ -447,46 +392,6 @@ class AnthropicConfig {
       enabled: true,
       toolType: normalizedType,
       options: options,
-    );
-  }
-
-  static _WebFetchConfig? _mergeWebFetchConfigs(
-    _WebFetchConfig? primary,
-    _WebFetchConfig? secondary,
-  ) {
-    if (primary == null) return secondary;
-    if (secondary == null) return primary;
-
-    final mergedOptions = _mergeWebFetchToolOptions(
-      primary.options,
-      secondary.options,
-    );
-
-    final mergedType =
-        (primary.toolType != null && primary.toolType!.isNotEmpty)
-            ? primary.toolType
-            : secondary.toolType;
-
-    return _WebFetchConfig(
-      enabled: true,
-      toolType: mergedType ?? 'web_fetch_20250910',
-      options: mergedOptions,
-    );
-  }
-
-  static AnthropicWebFetchToolOptions? _mergeWebFetchToolOptions(
-    AnthropicWebFetchToolOptions? primary,
-    AnthropicWebFetchToolOptions? secondary,
-  ) {
-    if (primary == null) return secondary;
-    if (secondary == null) return primary;
-
-    return AnthropicWebFetchToolOptions(
-      maxUses: primary.maxUses ?? secondary.maxUses,
-      allowedDomains: primary.allowedDomains ?? secondary.allowedDomains,
-      blockedDomains: primary.blockedDomains ?? secondary.blockedDomains,
-      citations: primary.citations ?? secondary.citations,
-      maxContentTokens: primary.maxContentTokens ?? secondary.maxContentTokens,
     );
   }
 

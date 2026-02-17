@@ -145,11 +145,6 @@ LLMConfig(
 );
 ```
 
-Legacy/best-effort escape hatches:
-
-- `providerOptions['anthropic']['webFetchEnabled']`
-- `providerOptions['anthropic']['webFetch']`
-
 Official docs:
 
 - Web fetch tool: https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-fetch-tool
