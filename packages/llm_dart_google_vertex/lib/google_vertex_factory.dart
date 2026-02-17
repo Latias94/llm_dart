@@ -9,10 +9,6 @@ import 'defaults.dart';
 /// Canonical provider id for Google Vertex (AI SDK v6 parity).
 const String vertexProviderId = 'vertex';
 
-/// Back-compat alias (deprecated).
-@Deprecated('Use vertexProviderId ("vertex").')
-const String googleVertexProviderId = 'google-vertex';
-
 void registerGoogleVertex({bool replace = false}) {
   final vertexRegistered = LLMProviderRegistry.isRegistered(vertexProviderId);
   final legacyRegistered = LLMProviderRegistry.isRegistered('google-vertex');

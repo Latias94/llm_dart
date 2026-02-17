@@ -109,49 +109,31 @@ extension BuiltinProviderBuilders on LLMBuilder {
     return this;
   }
 
-  // OpenAI-compatible providers
-  @Deprecated(
-    'Prefer the first-party DeepSeek provider (`LLMBuilder.deepseek()` / providerId `deepseek`). '
-    'Use `deepseek-openai` only when you must target an OpenAI-compatible endpoint.',
-  )
-  LLMBuilder deepseekOpenAI() {
+  /// Select an OpenAI-compatible preset provider id (opt-in).
+  ///
+  /// This is intentionally generic to avoid growing the umbrella surface with
+  /// one method per preset.
+  ///
+  /// Example:
+  ///
+  /// ```dart
+  /// final model = await LLMBuilder()
+  ///   .openaiCompatible('deepseek-openai')
+  ///   .apiKey('...')
+  ///   .model('deepseek-chat')
+  ///   .build();
+  /// ```
+  LLMBuilder openaiCompatible(
+    String providerId, [
+    OpenAICompatibleBuilder Function(OpenAICompatibleBuilder)? configure,
+  ]) {
     BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
-      'deepseek-openai',
-    );
-    return provider('deepseek-openai');
-  }
-
-  @Deprecated(
-    'Prefer the native Google provider (`LLMBuilder.google()` / providerId `google`). '
-    'Use `google-openai` only when you must target an OpenAI-compatible endpoint.',
-  )
-  LLMBuilder googleOpenAI() {
-    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
-      'google-openai',
-    );
-    return provider('google-openai');
-  }
-
-  @Deprecated(
-    'Prefer the first-party xAI provider (`LLMBuilder.xai()` / providerId `xai`). '
-    'Use `xai-openai` only when you must target an OpenAI-compatible endpoint.',
-  )
-  LLMBuilder xaiOpenAI() {
-    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
-      'xai-openai',
-    );
-    return provider('xai-openai');
-  }
-
-  @Deprecated(
-    'Prefer the first-party Groq provider (`LLMBuilder.groq()` / providerId `groq`). '
-    'Use `groq-openai` only when you must target an OpenAI-compatible endpoint.',
-  )
-  LLMBuilder groqOpenAI() {
-    BuiltinProviderRegistry.ensureOpenAICompatibleProviderRegistered(
-      'groq-openai',
-    );
-    return provider('groq-openai');
+        providerId);
+    provider(providerId);
+    if (configure != null) {
+      configure(OpenAICompatibleBuilder(this, providerId));
+    }
+    return this;
   }
 
   LLMBuilder openRouter(

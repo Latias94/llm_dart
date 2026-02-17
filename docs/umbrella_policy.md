@@ -63,7 +63,7 @@ Presets shipped in `llm_dart_openai_compatible` currently include:
 - `github-copilot`
 - `together-ai`
 
-The umbrella builder extensions (e.g. `LLMBuilder().deepseekOpenAI()`) register their preset on demand.
+The umbrella builder extension `LLMBuilder().openaiCompatible('<id>')` registers its preset on demand.
 
 ### 2.3 Standard-only mode
 

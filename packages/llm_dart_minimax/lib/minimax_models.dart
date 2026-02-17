@@ -20,11 +20,3 @@ const Set<String> minimaxKnownModels = {
   minimaxDefaultModel,
   minimaxFastModel,
 };
-
-/// Deprecated: this list is a docs snapshot and should not be treated as an
-/// enforced support matrix.
-@Deprecated(
-  'Use minimaxKnownModels instead. This list is best-effort documentation and '
-  'should not be treated as an enforced capability matrix.',
-)
-const Set<String> minimaxSupportedModels = minimaxKnownModels;

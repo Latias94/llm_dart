@@ -114,26 +114,22 @@ void main() {
 
     group('OpenAI-Compatible Providers', () {
       test('should select DeepSeek OpenAI', () {
-        // ignore: deprecated_member_use
-        final builder = LLMBuilder().deepseekOpenAI();
+        final builder = LLMBuilder().openaiCompatible('deepseek-openai');
         expect(builder, isNotNull);
       });
 
       test('should select Google OpenAI', () {
-        // ignore: deprecated_member_use
-        final builder = LLMBuilder().googleOpenAI();
+        final builder = LLMBuilder().openaiCompatible('google-openai');
         expect(builder, isNotNull);
       });
 
       test('should select xAI OpenAI', () {
-        // ignore: deprecated_member_use
-        final builder = LLMBuilder().xaiOpenAI();
+        final builder = LLMBuilder().openaiCompatible('xai-openai');
         expect(builder, isNotNull);
       });
 
       test('should select Groq OpenAI', () {
-        // ignore: deprecated_member_use
-        final builder = LLMBuilder().groqOpenAI();
+        final builder = LLMBuilder().openaiCompatible('groq-openai');
         expect(builder, isNotNull);
       });
 
