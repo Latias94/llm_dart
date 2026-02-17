@@ -89,21 +89,6 @@ class OpenAIProviderFactory
       'webSearchEnabled',
     );
 
-    final rawWebSearch = readProviderOptionMap(
-          providerOptions,
-          providerId,
-          'webSearch',
-        ) ??
-        readProviderOption<dynamic>(
-          providerOptions,
-          providerId,
-          'webSearch',
-        );
-    final webSearchEnabledFromLegacyProviderOptions =
-        _parseLegacyWebSearchEnabled(rawWebSearch);
-    final legacyProviderOptionContextSize =
-        _parseLegacyWebSearchContextSize(rawWebSearch);
-
     final providerTools = config.providerTools;
     ProviderTool? webSearchProviderTool;
     String? webSearchProviderToolId;
@@ -124,7 +109,6 @@ class OpenAIProviderFactory
         _parseProviderToolWebSearchContextSize(webSearchProviderTool);
 
     final webSearchEnabled = webSearchEnabledFromProviderOptions ??
-        webSearchEnabledFromLegacyProviderOptions ??
         (hasProviderToolWebSearch ? true : null);
 
     final shouldEnableResponsesForWebSearch =
@@ -168,16 +152,14 @@ class OpenAIProviderFactory
       if (!hasWebSearchTool) {
         if (hasProviderToolWebSearchFull) {
           tools.add(OpenAIBuiltInTools.webSearchFull(
-            contextSize: providerToolContextSize ??
-                legacyProviderOptionContextSize ??
-                OpenAIWebSearchContextSize.medium,
+            contextSize:
+                providerToolContextSize ?? OpenAIWebSearchContextSize.medium,
           ));
         } else {
           tools.add(
             OpenAIBuiltInTools.webSearch(
-              contextSize: providerToolContextSize ??
-                  legacyProviderOptionContextSize ??
-                  OpenAIWebSearchContextSize.medium,
+              contextSize:
+                  providerToolContextSize ?? OpenAIWebSearchContextSize.medium,
             ),
           );
         }
@@ -263,45 +245,6 @@ class OpenAIProviderFactory
       }
     }
     return result.isEmpty ? null : result;
-  }
-
-  bool? _parseLegacyWebSearchEnabled(dynamic rawWebSearch) {
-    if (rawWebSearch == null) return null;
-    if (rawWebSearch is bool) return rawWebSearch;
-
-    if (rawWebSearch is Map<String, dynamic>) {
-      final enabled = rawWebSearch['enabled'];
-      if (enabled is bool) return enabled;
-      return true; // presence implies enable (legacy behavior)
-    }
-
-    if (rawWebSearch is Map) {
-      final enabled = rawWebSearch['enabled'];
-      if (enabled is bool) return enabled;
-      return true; // presence implies enable (legacy behavior)
-    }
-
-    return null;
-  }
-
-  OpenAIWebSearchContextSize? _parseLegacyWebSearchContextSize(
-    dynamic rawWebSearch,
-  ) {
-    if (rawWebSearch is Map<String, dynamic>) {
-      return _parseContextSizeValue(
-        rawWebSearch['contextSize'] ??
-            rawWebSearch['context_size'] ??
-            rawWebSearch['search_context_size'],
-      );
-    }
-    if (rawWebSearch is Map) {
-      return _parseContextSizeValue(
-        rawWebSearch['contextSize'] ??
-            rawWebSearch['context_size'] ??
-            rawWebSearch['search_context_size'],
-      );
-    }
-    return null;
   }
 
   OpenAIWebSearchContextSize? _parseProviderToolWebSearchContextSize(
@@ -685,7 +628,6 @@ class OpenAIProviderFactory
           break;
 
         case 'openai.computer_use':
-        case 'openai.computer_use_preview': // legacy alias
           final displayWidth = (tool.options['displayWidth'] as int?) ??
               (tool.options['display_width'] as int?);
           final displayHeight = (tool.options['displayHeight'] as int?) ??

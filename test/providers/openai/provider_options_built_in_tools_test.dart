@@ -88,7 +88,6 @@ void main() {
           .model('gpt-4o')
           .providerOptions('openai', {
         'webSearchEnabled': true,
-        'webSearch': const {'search_context_size': 'high'},
       }).build();
 
       final openaiProvider = provider as OpenAIProvider;
@@ -100,7 +99,7 @@ void main() {
           .whereType<OpenAIWebSearchTool>()
           .single;
       expect(
-          webTool.searchContextSize, equals(OpenAIWebSearchContextSize.high));
+          webTool.searchContextSize, equals(OpenAIWebSearchContextSize.medium));
     });
 
     test('fileSearchEnabled injects file_search tool and enables Responses API',
