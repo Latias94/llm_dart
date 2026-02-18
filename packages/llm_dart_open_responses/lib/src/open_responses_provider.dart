@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_openai_compatible/responses.dart';
 
@@ -48,10 +48,13 @@ class OpenResponsesProviderSettings {
 ///   prompt: 'Hello',
 /// );
 /// ```
-class OpenResponsesProvider {
+class OpenResponsesProvider with ProviderV3Defaults implements ProviderV3 {
   final OpenResponsesProviderSettings settings;
 
   const OpenResponsesProvider(this.settings);
+
+  @override
+  ChatCapability languageModel(String modelId) => call(modelId);
 
   ChatCapability call(
     String modelId, {

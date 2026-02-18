@@ -17,10 +17,10 @@ resolution: workspace
 
 dependencies:
   llm_dart_core: ^0.11.0-alpha.1
+  llm_dart_provider: ^0.11.0-alpha.1
   llm_dart_provider_utils: ^0.11.0-alpha.1
   llm_dart_openai_compatible: ^0.11.0-alpha.1
 
 dev_dependencies:
   test: ^1.27.0
   lints: ^6.0.0
-
