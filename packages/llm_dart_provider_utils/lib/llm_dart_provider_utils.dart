@@ -10,6 +10,7 @@ export 'core/tool_validator.dart';
 export 'factories/base_factory.dart';
 
 export 'utils/config_utils.dart';
+export 'utils/combine_headers.dart';
 export 'utils/dio_cancellation.dart';
 export 'utils/dio_error_handler.dart';
 export 'utils/dio_client_factory.dart';
@@ -22,8 +23,14 @@ export 'utils/http_response_handler.dart';
 export 'utils/json_utils.dart';
 export 'utils/jsonl_chunk_parser.dart';
 export 'utils/id_generator.dart';
+export 'utils/load_api_key.dart';
+export 'utils/load_optional_setting.dart';
+export 'utils/load_setting.dart';
 export 'utils/log_redactor.dart';
 export 'utils/log_utils.dart';
+export 'utils/normalize_headers.dart';
+export 'utils/parse_json.dart';
+export 'utils/parse_json_event_stream.dart';
 export 'utils/provider_metadata_alias.dart';
 export 'utils/read_provider_metadata.dart';
 export 'utils/provider_tool_part_emitter.dart';
@@ -39,6 +46,7 @@ export 'utils/source_part_emitter.dart';
 export 'utils/tool_name_mapping.dart';
 export 'utils/user_agent.dart';
 export 'utils/utf8_stream_decoder.dart';
+export 'utils/without_trailing_slash.dart';
 export 'utils/runtime_user_agent_stub.dart'
     if (dart.library.io) 'utils/runtime_user_agent_io.dart'
     if (dart.library.html) 'utils/runtime_user_agent_web.dart';
