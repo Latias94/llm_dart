@@ -1,4 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
 import 'middleware.dart';
 import 'wrap_language_model_with_middleware.dart';
@@ -65,18 +66,12 @@ class ProviderRegistryEntry {
 }
 
 /// Error thrown when a provider registry cannot resolve a model id.
-class NoSuchModelError extends InvalidRequestError {
-  final String modelId;
-  final String modelType;
-
+class NoSuchModelError extends provider.NoSuchModelError {
   NoSuchModelError({
-    required this.modelId,
-    required this.modelType,
-    String? message,
-  }) : super(
-          message ??
-              'No such $modelType: $modelId (invalid registry id or unsupported model type).',
-        );
+    required super.modelId,
+    required super.modelType,
+    super.message,
+  });
 }
 
 /// Error thrown when the provider id part does not exist in the registry.

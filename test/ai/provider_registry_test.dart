@@ -1,5 +1,6 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:test/test.dart';
 
 class _FakeIdentityChatModel
@@ -100,12 +101,18 @@ void main() {
 
       expect(
         () => registry.languageModel('openai'),
-        throwsA(isA<NoSuchModelError>()),
+        throwsA(allOf(
+          isA<NoSuchModelError>(),
+          isA<provider.NoSuchModelError>(),
+        )),
       );
 
       expect(
         () => registry.videoModel('google'),
-        throwsA(isA<NoSuchModelError>()),
+        throwsA(allOf(
+          isA<NoSuchModelError>(),
+          isA<provider.NoSuchModelError>(),
+        )),
       );
     });
 
