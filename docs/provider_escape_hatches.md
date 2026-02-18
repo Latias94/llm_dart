@@ -533,9 +533,25 @@ Notes:
 - Some providers use different native terms (`stop_reason`, `done_reason`); keep the raw key too if it is useful, but prefer exposing `finishReason` as well.
 - `usage` here is for provider-specific visibility; the standard `ChatResponse.usage` remains the primary cross-provider surface.
 
+Recommended access pattern (canonical + alias-safe):
+
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final google = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  'google.chat',
+);
+
+final ollama = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  'ollama',
+);
+```
+
 ### 2.5.1 Google (Gemini)
 
-`providerMetadata['google']` may include:
+`readProviderMetadata<Map<String, dynamic>>(providerMetadata, 'google')` may include:
 
 - `model`: `modelVersion` when available
 - `finishReason` / `stopReason`
@@ -544,7 +560,7 @@ Notes:
 
 ### 2.5.2 Ollama
 
-`providerMetadata['ollama']` may include:
+`readProviderMetadata<Map<String, dynamic>>(providerMetadata, 'ollama')` may include:
 
 - `model`, `createdAt`, `doneReason` / `finishReason`
 - `usage`: token counters when available
