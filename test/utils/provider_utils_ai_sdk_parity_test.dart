@@ -6,6 +6,77 @@ import 'package:test/test.dart';
 
 void main() {
   group('provider-utils AI SDK parity', () {
+    test('resolve resolves value/future/function', () async {
+      expect(await resolve<String>('a'), 'a');
+      expect(await resolve<String>(Future.value('b')), 'b');
+      expect(await resolve<String>(() => 'c'), 'c');
+      expect(await resolve<String>(() async => 'd'), 'd');
+    });
+
+    test('removeUndefinedEntries drops null values', () {
+      final out = removeUndefinedEntries<String>({
+        'a': '1',
+        'b': null,
+        'c': '3',
+      });
+      expect(out, equals({'a': '1', 'c': '3'}));
+    });
+
+    test('getErrorMessage returns stable strings', () {
+      expect(getErrorMessage(null), 'unknown error');
+      expect(getErrorMessage('x'), 'x');
+      expect(getErrorMessage(const InvalidRequestError('bad')), 'bad');
+      expect(getErrorMessage({'a': 1}), '{"a":1}');
+      expect(getErrorMessage(Exception('oops')), contains('oops'));
+    });
+
+    test('isAbortError recognizes cancel/timeout', () {
+      expect(isAbortError(const CancelledError('cancel')), isTrue);
+      expect(isAbortError(const TimeoutError('timeout')), isTrue);
+      expect(isAbortError(const GenericError('no')), isFalse);
+    });
+
+    test('parseProviderOptions returns null when namespace absent', () async {
+      final out = await parseProviderOptions<Map<String, dynamic>>(
+        provider: 'openai',
+        providerOptions: const <String, Map<String, dynamic>>{},
+        parse: (raw) async => raw as Map<String, dynamic>,
+      );
+      expect(out, isNull);
+    });
+
+    test('parseProviderOptions parses namespaced options', () async {
+      final out = await parseProviderOptions<Map<String, dynamic>>(
+        provider: 'openai',
+        providerOptions: const <String, Map<String, dynamic>>{
+          'openai': <String, dynamic>{'foo': 1},
+        },
+        parse: (raw) => raw as Map<String, dynamic>,
+      );
+      expect(out, equals({'foo': 1}));
+    });
+
+    test('parseProviderOptions throws InvalidArgumentError on parse error',
+        () async {
+      Future<void> run() async {
+        await parseProviderOptions<int>(
+          provider: 'openai',
+          providerOptions: const <String, Map<String, dynamic>>{
+            'openai': <String, dynamic>{'foo': 1},
+          },
+          parse: (raw) => throw StateError('nope'),
+        );
+      }
+
+      await expectLater(
+        run,
+        throwsA(
+          isA<InvalidArgumentError>()
+              .having((e) => e.argument, 'argument', 'providerOptions'),
+        ),
+      );
+    });
+
     test('combineHeaders merges in order', () {
       final out = combineHeaders(
         {'a': '1', 'b': '1'},
