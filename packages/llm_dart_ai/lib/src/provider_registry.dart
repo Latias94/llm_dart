@@ -35,6 +35,33 @@ AiProviderRegistry createProviderRegistry(
   return registry;
 }
 
+/// Creates a provider registry from `ProviderV3` instances.
+///
+/// Mirrors the upstream AI SDK `createProviderRegistry({ providers })` shape,
+/// where providers are objects implementing `ProviderV3`.
+AiProviderRegistry createProviderRegistryV3(
+  Map<String, provider.ProviderV3> providers, {
+  String separator = ':',
+  LanguageModelMiddleware? languageModelMiddleware,
+  List<LanguageModelMiddleware>? languageModelMiddlewares,
+}) {
+  final all = <LanguageModelMiddleware>[
+    if (languageModelMiddleware != null) languageModelMiddleware,
+    ...?languageModelMiddlewares,
+  ];
+
+  final registry = AiProviderRegistry._(
+    separator: separator,
+    languageModelMiddlewares: List<LanguageModelMiddleware>.unmodifiable(all),
+  );
+
+  for (final entry in providers.entries) {
+    registry.registerProviderV3(id: entry.key, provider: entry.value);
+  }
+
+  return registry;
+}
+
 /// A single provider entry in a [ProviderRegistry].
 ///
 /// Each factory is expected to return a capability instance configured for the
@@ -91,9 +118,101 @@ class NoSuchProviderError extends NoSuchModelError {
         );
 }
 
+class _ProviderV3FromEntry
+    with provider.ProviderV3Defaults
+    implements provider.ProviderV3 {
+  final ProviderRegistryEntry entry;
+
+  const _ProviderV3FromEntry(this.entry);
+
+  @override
+  ChatCapability languageModel(String modelId) {
+    final factory = entry.languageModel;
+    if (factory == null) {
+      throw provider.NoSuchModelError(
+        modelId: modelId,
+        modelType: 'languageModel',
+      );
+    }
+    return factory(modelId);
+  }
+
+  @override
+  EmbeddingCapability embeddingModel(String modelId) {
+    final factory = entry.embeddingModel;
+    if (factory == null) {
+      throw provider.NoSuchModelError(
+        modelId: modelId,
+        modelType: 'embeddingModel',
+      );
+    }
+    return factory(modelId);
+  }
+
+  @override
+  ImageGenerationCapability imageModel(String modelId) {
+    final factory = entry.imageModel;
+    if (factory == null) {
+      throw provider.NoSuchModelError(
+        modelId: modelId,
+        modelType: 'imageModel',
+      );
+    }
+    return factory(modelId);
+  }
+
+  @override
+  ExperimentalVideoGenerationCapability videoModel(String modelId) {
+    final factory = entry.videoModel;
+    if (factory == null) {
+      throw provider.NoSuchModelError(
+        modelId: modelId,
+        modelType: 'videoModel',
+      );
+    }
+    return factory(modelId);
+  }
+
+  @override
+  SpeechToTextCapability transcriptionModel(String modelId) {
+    final factory = entry.transcriptionModel;
+    if (factory == null) {
+      throw provider.NoSuchModelError(
+        modelId: modelId,
+        modelType: 'transcriptionModel',
+      );
+    }
+    return factory(modelId);
+  }
+
+  @override
+  TextToSpeechCapability speechModel(String modelId) {
+    final factory = entry.speechModel;
+    if (factory == null) {
+      throw provider.NoSuchModelError(
+        modelId: modelId,
+        modelType: 'speechModel',
+      );
+    }
+    return factory(modelId);
+  }
+
+  @override
+  RerankCapability rerankingModel(String modelId) {
+    final factory = entry.rerankingModel;
+    if (factory == null) {
+      throw provider.NoSuchModelError(
+        modelId: modelId,
+        modelType: 'rerankingModel',
+      );
+    }
+    return factory(modelId);
+  }
+}
+
 /// Provider registry implementation.
 class AiProviderRegistry {
-  final Map<String, ProviderRegistryEntry> _providers = {};
+  final Map<String, provider.ProviderV3> _providers = {};
   final String _separator;
   final List<LanguageModelMiddleware> _languageModelMiddlewares;
 
@@ -107,10 +226,17 @@ class AiProviderRegistry {
     required String id,
     required ProviderRegistryEntry provider,
   }) {
+    _providers[id] = _ProviderV3FromEntry(provider);
+  }
+
+  void registerProviderV3({
+    required String id,
+    required provider.ProviderV3 provider,
+  }) {
     _providers[id] = provider;
   }
 
-  ProviderRegistryEntry _getProvider(String providerId, String modelType) {
+  provider.ProviderV3 _getProvider(String providerId, String modelType) {
     final provider = _providers[providerId];
     if (provider == null) {
       throw NoSuchProviderError(
@@ -142,13 +268,14 @@ class AiProviderRegistry {
 
   ChatCapability languageModel(String id) {
     final split = _splitId(id, 'languageModel');
-    final provider = _getProvider(split.providerId, 'languageModel');
-    final factory = provider.languageModel;
-    if (factory == null) {
-      throw NoSuchModelError(modelId: id, modelType: 'languageModel');
+    final resolvedProvider = _getProvider(split.providerId, 'languageModel');
+    ChatCapability model;
+    try {
+      model = resolvedProvider.languageModel(split.modelId);
+    } on provider.NoSuchModelError catch (e) {
+      throw NoSuchModelError(
+          modelId: id, modelType: e.modelType, message: e.message);
     }
-
-    var model = factory(split.modelId);
     if (_languageModelMiddlewares.isNotEmpty) {
       model = wrapLanguageModelWithMiddleware(
         model,
@@ -160,62 +287,69 @@ class AiProviderRegistry {
 
   EmbeddingCapability embeddingModel(String id) {
     final split = _splitId(id, 'embeddingModel');
-    final provider = _getProvider(split.providerId, 'embeddingModel');
-    final factory = provider.embeddingModel;
-    if (factory == null) {
-      throw NoSuchModelError(modelId: id, modelType: 'embeddingModel');
+    final resolvedProvider = _getProvider(split.providerId, 'embeddingModel');
+    try {
+      return resolvedProvider.embeddingModel(split.modelId);
+    } on provider.NoSuchModelError catch (e) {
+      throw NoSuchModelError(
+          modelId: id, modelType: e.modelType, message: e.message);
     }
-    return factory(split.modelId);
   }
 
   ImageGenerationCapability imageModel(String id) {
     final split = _splitId(id, 'imageModel');
-    final provider = _getProvider(split.providerId, 'imageModel');
-    final factory = provider.imageModel;
-    if (factory == null) {
-      throw NoSuchModelError(modelId: id, modelType: 'imageModel');
+    final resolvedProvider = _getProvider(split.providerId, 'imageModel');
+    try {
+      return resolvedProvider.imageModel(split.modelId);
+    } on provider.NoSuchModelError catch (e) {
+      throw NoSuchModelError(
+          modelId: id, modelType: e.modelType, message: e.message);
     }
-    return factory(split.modelId);
   }
 
   /// Experimental: resolves a video model by registry id (e.g. `google:veo-2.0-generate-001`).
   ExperimentalVideoGenerationCapability videoModel(String id) {
     final split = _splitId(id, 'videoModel');
-    final provider = _getProvider(split.providerId, 'videoModel');
-    final factory = provider.videoModel;
-    if (factory == null) {
-      throw NoSuchModelError(modelId: id, modelType: 'videoModel');
+    final resolvedProvider = _getProvider(split.providerId, 'videoModel');
+    try {
+      return resolvedProvider.videoModel(split.modelId);
+    } on provider.NoSuchModelError catch (e) {
+      throw NoSuchModelError(
+          modelId: id, modelType: e.modelType, message: e.message);
     }
-    return factory(split.modelId);
   }
 
   SpeechToTextCapability transcriptionModel(String id) {
     final split = _splitId(id, 'transcriptionModel');
-    final provider = _getProvider(split.providerId, 'transcriptionModel');
-    final factory = provider.transcriptionModel;
-    if (factory == null) {
-      throw NoSuchModelError(modelId: id, modelType: 'transcriptionModel');
+    final resolvedProvider =
+        _getProvider(split.providerId, 'transcriptionModel');
+    try {
+      return resolvedProvider.transcriptionModel(split.modelId);
+    } on provider.NoSuchModelError catch (e) {
+      throw NoSuchModelError(
+          modelId: id, modelType: e.modelType, message: e.message);
     }
-    return factory(split.modelId);
   }
 
   TextToSpeechCapability speechModel(String id) {
     final split = _splitId(id, 'speechModel');
-    final provider = _getProvider(split.providerId, 'speechModel');
-    final factory = provider.speechModel;
-    if (factory == null) {
-      throw NoSuchModelError(modelId: id, modelType: 'speechModel');
+    final resolvedProvider = _getProvider(split.providerId, 'speechModel');
+    try {
+      return resolvedProvider.speechModel(split.modelId);
+    } on provider.NoSuchModelError catch (e) {
+      throw NoSuchModelError(
+          modelId: id, modelType: e.modelType, message: e.message);
     }
-    return factory(split.modelId);
   }
 
   RerankCapability rerankingModel(String id) {
     final split = _splitId(id, 'rerankingModel');
-    final provider = _getProvider(split.providerId, 'rerankingModel');
-    final factory = provider.rerankingModel;
-    if (factory == null) {
-      throw NoSuchModelError(modelId: id, modelType: 'rerankingModel');
+    final resolvedProvider = _getProvider(split.providerId, 'rerankingModel');
+    try {
+      return resolvedProvider.rerankingModel(split.modelId);
+    } on provider.NoSuchModelError catch (e) {
+      throw NoSuchModelError(
+          modelId: id, modelType: e.modelType, message: e.message);
     }
-    return factory(split.modelId);
   }
 }
