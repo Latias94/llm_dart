@@ -1,5 +1,10 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'ui_messages.dart';
+
+export 'package:llm_dart_core/llm_dart_core.dart'
+    show InvalidDataContentError, InvalidMessageRoleError;
+
 /// Thrown when a result object is accessed but no output was generated.
 ///
 /// This mirrors Vercel AI SDK's `NoOutputGeneratedError`.
@@ -224,24 +229,6 @@ class UiMessageStreamError extends LLMError {
   }
 }
 
-/// Thrown when an API surface is called with invalid arguments.
-///
-/// Mirrors Vercel AI SDK's `InvalidArgumentError`.
-class InvalidArgumentError extends LLMError {
-  final String argument;
-  final Object? value;
-
-  const InvalidArgumentError({
-    required this.argument,
-    this.value,
-    String message = 'Invalid argument.',
-  }) : super(message);
-
-  @override
-  String toString() =>
-      'Invalid argument ($argument): $message${value == null ? '' : ' (value: $value)'}';
-}
-
 /// Thrown when one or more tool-call ids have no corresponding tool-result.
 ///
 /// Mirrors Vercel AI SDK's `MissingToolResultsError`.
@@ -317,4 +304,19 @@ class ToolCallNotFoundForApprovalError extends LLMError {
 
   @override
   String toString() => 'Tool call not found for approval request: $message';
+}
+
+/// Thrown when converting UI messages into model prompt messages fails.
+///
+/// Mirrors Vercel AI SDK's `MessageConversionError`.
+class MessageConversionError extends LLMError {
+  final UIMessage originalMessage;
+
+  MessageConversionError({
+    required this.originalMessage,
+    required String message,
+  }) : super(message);
+
+  @override
+  String toString() => 'Message conversion error: $message';
 }

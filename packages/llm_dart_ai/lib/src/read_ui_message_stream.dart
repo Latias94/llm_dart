@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:llm_dart_core/llm_dart_core.dart';
+
 import 'ai_errors.dart';
 import 'ui_messages.dart';
 
@@ -60,6 +62,7 @@ Object? _tryParsePartialJson(String text) {
 StreamingUIMessageState createStreamingUIMessageState({
   UIMessage? lastMessage,
   String? messageId,
+  IdGenerator? generateId,
 }) {
   final base = lastMessage;
   if (base != null && base.role == 'assistant') {
@@ -79,7 +82,7 @@ StreamingUIMessageState createStreamingUIMessageState({
 
   final id = (messageId != null && messageId.trim().isNotEmpty)
       ? messageId.trim()
-      : fallbackUiMessageId();
+      : (generateId != null ? generateId() : fallbackUiMessageId());
 
   return StreamingUIMessageState(
     UIMessage(
@@ -652,10 +655,12 @@ Stream<UIMessage> readUiMessageStream({
   UIMessage? message,
   bool terminateOnError = false,
   void Function(Object error)? onError,
+  IdGenerator? generateId,
 }) {
   final state = createStreamingUIMessageState(
     lastMessage: message,
     messageId: message?.id,
+    generateId: generateId,
   );
 
   late final StreamSubscription<Map<String, Object?>> sub;

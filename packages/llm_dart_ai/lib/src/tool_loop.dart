@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/llm_dart_core.dart' as core;
 
 import 'content_part.dart';
 import 'content_part_builders.dart';
@@ -106,18 +106,17 @@ Object? _decodeJsonIfPossible(String raw) {
 }
 
 String _generateToolApprovalId() {
-  final now = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
-  final rnd = Random().nextInt(0x7fffffff).toRadixString(36);
-  return 'approval_${now}_$rnd';
+  return core.generateId();
 }
 
 List<ToolApprovalRequest> _buildToolApprovalRequests(
-  List<ToolCall> toolCallsNeedingApproval,
-) {
+  List<ToolCall> toolCallsNeedingApproval, {
+  required IdGenerator generateId,
+}) {
   return toolCallsNeedingApproval
       .map(
         (c) => ToolApprovalRequest(
-          approvalId: _generateToolApprovalId(),
+          approvalId: generateId(),
           toolCall: c,
         ),
       )
@@ -349,6 +348,7 @@ Future<ToolLoopResult> runToolLoop({
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
+  IdGenerator? generateId,
 }) async {
   List<LLMWarning> mergeWarnings(
     List<LLMWarning> base,
@@ -366,6 +366,7 @@ Future<ToolLoopResult> runToolLoop({
     model: model,
     providerTools: providerTools,
   );
+  final generateIdFn = generateId ?? core.generateId;
   final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
   final input = standardizePromptInput(
     system: system,
@@ -392,6 +393,7 @@ Future<ToolLoopResult> runToolLoop({
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
       warnings: normalized.warnings,
+      generateId: generateIdFn,
     );
   }
 
@@ -538,7 +540,10 @@ Future<ToolLoopResult> runToolLoop({
               responsePromptMessages: stepResponsePromptMessages,
             );
 
-      final approvalRequests = _buildToolApprovalRequests(needingApproval);
+      final approvalRequests = _buildToolApprovalRequests(
+        needingApproval,
+        generateId: generateIdFn,
+      );
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
         stepResultWithTools,
         toolApprovalRequests: approvalRequests,
@@ -730,6 +735,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
   IncludeOptions include = const IncludeOptions(),
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
+  required IdGenerator generateId,
 }) async {
   if (model is! PromptChatCapability) {
     requirePromptCapabilityForFileReferenceParts(
@@ -752,6 +758,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       include: include,
       callOptions: callOptions,
       cancelToken: cancelToken,
+      generateId: generateId,
     );
   }
 
@@ -910,7 +917,10 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
               responsePromptMessages: stepResponsePromptMessages,
             );
 
-      final approvalRequests = _buildToolApprovalRequests(needingApproval);
+      final approvalRequests = _buildToolApprovalRequests(
+        needingApproval,
+        generateId: generateId,
+      );
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
         stepResultWithTools,
         toolApprovalRequests: approvalRequests,
@@ -1054,8 +1064,10 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
+  IdGenerator? generateId,
 }) async {
   final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+  final generateIdFn = generateId ?? core.generateId;
   final input = standardizePromptInput(
     system: system,
     prompt: prompt,
@@ -1080,6 +1092,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       include: include,
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
+      generateId: generateIdFn,
     );
   }
 
@@ -1226,7 +1239,10 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
               responsePromptMessages: stepResponsePromptMessages,
             );
 
-      final approvalRequests = _buildToolApprovalRequests(needingApproval);
+      final approvalRequests = _buildToolApprovalRequests(
+        needingApproval,
+        generateId: generateIdFn,
+      );
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
         stepResultWithTools,
         toolApprovalRequests: approvalRequests,
@@ -1367,8 +1383,10 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
+  IdGenerator? generateId,
 }) async {
   final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
+  final generateIdFn = generateId ?? core.generateId;
   if (maxSteps < 1) {
     throw const InvalidRequestError('maxSteps must be >= 1');
   }
@@ -1413,6 +1431,7 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
       include: include,
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
+      generateId: generateIdFn,
     );
   }
 
@@ -1428,6 +1447,7 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlocked({
     repairToolCall: repairToolCall,
     toolApprovalChecks: toolApprovalChecks,
     needsApproval: needsApproval,
+    generateId: generateIdFn,
     maxSteps: maxSteps,
     continueOnToolError: continueOnToolError,
     toolSchemas: toolSchemas,
@@ -1453,6 +1473,7 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlockedWithToolSet({
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
+  IdGenerator? generateId,
 }) {
   return resumeToolLoopUntilBlocked(
     model: model,
@@ -1472,6 +1493,7 @@ Future<ToolLoopRunOutcome> resumeToolLoopUntilBlockedWithToolSet({
     defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
+    generateId: generateId,
   );
 }
 
@@ -1873,6 +1895,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
+  required IdGenerator generateId,
   required int maxSteps,
   required bool continueOnToolError,
   required ToolSchemas toolSchemas,
@@ -2015,7 +2038,10 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
               responsePromptMessages: stepResponsePromptMessages,
             );
 
-      final approvalRequests = _buildToolApprovalRequests(needingApproval);
+      final approvalRequests = _buildToolApprovalRequests(
+        needingApproval,
+        generateId: generateId,
+      );
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
         stepResultWithTools,
         toolApprovalRequests: approvalRequests,
@@ -2143,6 +2169,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
   ToolCallRepair? repairToolCall,
   Map<String, ToolApprovalCheck>? toolApprovalChecks,
   ToolApprovalCheck? needsApproval,
+  required IdGenerator generateId,
   required int maxSteps,
   required bool continueOnToolError,
   required ToolSchemas toolSchemas,
@@ -2167,6 +2194,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       repairToolCall: repairToolCall,
       toolApprovalChecks: toolApprovalChecks,
       needsApproval: needsApproval,
+      generateId: generateId,
       maxSteps: maxSteps,
       continueOnToolError: continueOnToolError,
       toolSchemas: toolSchemas,
@@ -2318,7 +2346,10 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
               responsePromptMessages: stepResponsePromptMessages,
             );
 
-      final approvalRequests = _buildToolApprovalRequests(needingApproval);
+      final approvalRequests = _buildToolApprovalRequests(
+        needingApproval,
+        generateId: generateId,
+      );
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
         stepResultWithTools,
         toolApprovalRequests: approvalRequests,
@@ -2459,6 +2490,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
   IncludeOptions include = const IncludeOptions(),
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
+  required IdGenerator generateId,
 }) async {
   if (model is! PromptChatCapability) {
     requirePromptCapabilityForFileReferenceParts(
@@ -2481,6 +2513,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       include: include,
       callOptions: callOptions,
       cancelToken: cancelToken,
+      generateId: generateId,
     );
   }
 
@@ -2632,7 +2665,10 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
               responsePromptMessages: stepResponsePromptMessages,
             );
 
-      final approvalRequests = _buildToolApprovalRequests(needingApproval);
+      final approvalRequests = _buildToolApprovalRequests(
+        needingApproval,
+        generateId: generateId,
+      );
       final stepResultWithApprovals = _attachToolApprovalRequestsToStepResult(
         stepResultWithTools,
         toolApprovalRequests: approvalRequests,
@@ -2774,6 +2810,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
+  IdGenerator? generateId,
 }) {
   return runToolLoop(
     model: model,
@@ -2795,6 +2832,7 @@ Future<ToolLoopResult> runToolLoopWithToolSet({
     defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
+    generateId: generateId,
   );
 }
 
@@ -2816,6 +2854,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
+  IdGenerator? generateId,
 }) {
   return runToolLoopUntilBlocked(
     model: model,
@@ -2837,6 +2876,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlockedWithToolSet({
     defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
+    generateId: generateId,
   );
 }
 
@@ -2907,11 +2947,13 @@ Stream<LLMStreamPart> streamToolLoopParts({
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
+  IdGenerator? generateId,
 }) async* {
   final normalized = normalizeProviderToolsAndCollectWarnings(
     model: model,
     providerTools: providerTools,
   );
+  final generateIdFn = generateId ?? core.generateId;
   final effectiveCallOptions = defaultCallOptions.mergedWith(callOptions);
   Stream<LLMStreamPart> upstream() async* {
     final input = standardizePromptInput(
@@ -2948,6 +2990,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         include: include,
         callOptions: effectiveCallOptions,
         cancelToken: cancelToken,
+        generateId: generateIdFn,
       );
       return;
     }
@@ -3005,6 +3048,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         include: include,
         callOptions: effectiveCallOptions,
         cancelToken: cancelToken,
+        generateId: generateIdFn,
       );
       return;
     }
@@ -3400,7 +3444,10 @@ Stream<LLMStreamPart> streamToolLoopParts({
           yield LLMToolResultPart(result);
         }
 
-        final approvalRequests = _buildToolApprovalRequests(needingApproval);
+        final approvalRequests = _buildToolApprovalRequests(
+          needingApproval,
+          generateId: generateIdFn,
+        );
         for (final r in approvalRequests) {
           final call = r.toolCall;
           yield LLMProviderToolApprovalRequestPart(
@@ -3573,6 +3620,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
   IncludeOptions include = const IncludeOptions(),
   required LLMCallOptions callOptions,
   CancelToken? cancelToken,
+  required IdGenerator generateId,
 }) async* {
   try {
     validateNoMissingToolResults(prompt);
@@ -4123,7 +4171,10 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
         yield LLMToolResultPart(result);
       }
 
-      final approvalRequests = _buildToolApprovalRequests(needingApproval);
+      final approvalRequests = _buildToolApprovalRequests(
+        needingApproval,
+        generateId: generateId,
+      );
       for (final r in approvalRequests) {
         final call = r.toolCall;
         yield LLMProviderToolApprovalRequestPart(
@@ -4284,6 +4335,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
+  IdGenerator? generateId,
 }) async* {
   final upstream = streamToolLoopParts(
     model: model,
@@ -4308,6 +4360,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
     defaultCallOptions: defaultCallOptions,
     callOptions: callOptions,
     cancelToken: cancelToken,
+    generateId: generateId,
   );
 
   final toolNameByCallId = <String, String>{};

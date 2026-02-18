@@ -41,6 +41,7 @@ Future<GenerateTextResult> generateText({
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
+  IdGenerator? generateId,
 }) async {
   final startedAt = DateTime.now().toUtc();
   final defaultModelId = model is ModelIdentityCapability
@@ -111,6 +112,7 @@ Future<GenerateTextResult> generateText({
       defaultCallOptions: const LLMCallOptions(),
       callOptions: effectiveCallOptions,
       cancelToken: cancelToken,
+      generateId: generateId,
     );
 
     final steps = loop.steps;

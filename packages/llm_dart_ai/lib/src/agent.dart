@@ -61,6 +61,7 @@ class Agent {
     bool? continueOnToolError,
     LLMCallOptions callOptions = const LLMCallOptions(),
     CancelToken? cancelToken,
+    IdGenerator? generateId,
   }) async {
     final effectiveToolSet = toolSet ?? this.toolSet;
     final effectiveRepair = repairToolCall ?? this.repairToolCall;
@@ -91,6 +92,7 @@ class Agent {
         defaultCallOptions: const LLMCallOptions(),
         callOptions: effectiveCallOptions,
         cancelToken: cancelToken,
+        generateId: generateId,
       );
     }
 
@@ -178,6 +180,7 @@ class Agent {
     streaming.StreamTextOnFinishCallback? onFinish,
     LLMCallOptions callOptions = const LLMCallOptions(),
     CancelToken? cancelToken,
+    IdGenerator? generateId,
   }) {
     return streaming.streamText(
       model: model,
@@ -207,6 +210,7 @@ class Agent {
       defaultCallOptions: defaultCallOptions,
       callOptions: callOptions,
       cancelToken: cancelToken,
+      generateId: generateId,
     );
   }
 

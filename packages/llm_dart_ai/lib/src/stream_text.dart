@@ -1221,6 +1221,7 @@ StreamTextResult streamText({
   LLMCallOptions defaultCallOptions = const LLMCallOptions(),
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
+  IdGenerator? generateId,
 }) {
   final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
     defaultCallOptions.mergedWith(callOptions),
@@ -1248,6 +1249,7 @@ StreamTextResult streamText({
         include: include,
         callOptions: effectiveCallOptions,
         cancelToken: cancelToken,
+        generateId: generateId,
       );
       return;
     }

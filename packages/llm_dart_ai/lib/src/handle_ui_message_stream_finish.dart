@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:llm_dart_core/llm_dart_core.dart';
+
 import 'read_ui_message_stream.dart';
 import 'ui_messages.dart';
 
@@ -46,6 +48,7 @@ Stream<Map<String, Object?>> handleUiMessageStreamFinish({
   UiMessageStreamOnStepFinishCallback? onStepFinish,
   UiMessageStreamOnFinishCallback? onFinish,
   void Function(Object error)? onError,
+  IdGenerator? generateId,
 }) {
   // Persistence mode: if the last original message is an assistant message, we
   // continue it and reuse its id.
@@ -60,6 +63,7 @@ Stream<Map<String, Object?>> handleUiMessageStreamFinish({
   final state = createStreamingUIMessageState(
     lastMessage: lastMessage,
     messageId: messageId,
+    generateId: generateId,
   );
 
   final controller = StreamController<Map<String, Object?>>(sync: true);

@@ -1,4 +1,4 @@
-import 'dart:math';
+import 'package:llm_dart_core/llm_dart_core.dart';
 
 /// UI message model for AI SDK-style streaming integrations.
 ///
@@ -107,7 +107,10 @@ Object? mergeJsonLike(Object? base, Object? patch) {
 ///
 /// This is not intended for cryptographic use.
 String fallbackUiMessageId() {
-  final now = DateTime.now().microsecondsSinceEpoch;
-  final salt = Random(now).nextInt(1 << 20);
-  return 'msg_${now}_$salt';
+  return _fallbackUiMessageIdGenerator();
 }
+
+final IdGenerator _fallbackUiMessageIdGenerator = createIdGenerator(
+  prefix: 'msg',
+  separator: '_',
+);
