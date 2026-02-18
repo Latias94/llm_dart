@@ -59,7 +59,7 @@ Examples:
 - Anthropic: canonical key is `anthropic`
 - Google (Gemini API): canonical key is `google`
 - Google Vertex: canonical key is `vertex`
-- xAI Responses (providerId `xai.responses`): canonical key is `xai.responses`
+- xAI Responses (providerId `xai.responses`): canonical key is `xai`
 
 Historical note (Vertex):
 

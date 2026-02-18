@@ -1734,12 +1734,13 @@ class XAIResponsesChatResponse
           final out = <LLMWarning>[...warnings];
           final server = serverToolCalls;
           if (server != null && server.isNotEmpty) {
+            final baseProviderId = providerId.split('.').first;
             out.add(
               LLMCompatibilityWarning(
                 feature: 'provider-native tool calls not surfaced',
                 details:
                     'xAI Responses server tool calls are provider-executed and are not returned as local tool calls. '
-                    'See providerMetadata["$providerId"]["serverToolCalls"].',
+                    'See providerMetadata["$baseProviderId"]["serverToolCalls"] (alias: providerMetadata["$providerId"]).',
               ),
             );
           }

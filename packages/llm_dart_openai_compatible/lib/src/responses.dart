@@ -3101,9 +3101,9 @@ class OpenAIResponses
     Map<String, dynamic>? providerMetadata,
   ) {
     if (providerMetadata == null) return null;
-    final raw = providerMetadata[config.providerId];
+    final raw = readProviderMetadata<Map>(providerMetadata, config.providerId);
+    if (raw == null) return null;
     if (raw is Map<String, dynamic>) return raw;
-    if (raw is! Map) return null;
     return raw.map<String, dynamic>((k, v) => MapEntry(k.toString(), v));
   }
 
