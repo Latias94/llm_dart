@@ -27,6 +27,26 @@ void main() {
       expect(value, equals({'id': 'alias'}));
     });
 
+    test('prefers base key for namespaced provider ids (xai.responses -> xai)',
+        () {
+      final meta = <String, dynamic>{
+        'xai': {'id': 'base'},
+        'xai.responses': {'id': 'alias'},
+      };
+
+      final value = readProviderMetadata<Map>(meta, 'xai.responses');
+      expect(value, equals({'id': 'base'}));
+    });
+
+    test('falls back to namespaced provider id key when base is absent', () {
+      final meta = <String, dynamic>{
+        'xai.responses': {'id': 'alias'},
+      };
+
+      final value = readProviderMetadata<Map>(meta, 'xai.responses');
+      expect(value, equals({'id': 'alias'}));
+    });
+
     test('falls back to common capability aliases when direct keys are absent',
         () {
       final meta = <String, dynamic>{
