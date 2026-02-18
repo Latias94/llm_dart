@@ -40,6 +40,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Prompt IR file references**: `FileUrlPart` and `FileIdPart` are now available
   alongside inline `FilePart` bytes.
+- **Provider metadata**: `readProviderMetadata(...)` helper (in
+  `llm_dart_provider_utils`) to read canonical provider metadata safely across
+  base keys, capability aliases, and single-entry maps.
 - **Google / Google Vertex**: `providerOptions['google'|'google-vertex']['supportedFileUrlsOnly']`
   to optionally restrict URL-based file parts to AI SDK supported patterns.
 
