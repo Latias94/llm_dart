@@ -20,6 +20,7 @@ export 'package:llm_dart_builder/llm_dart_builder.dart';
 // Provider exports (all-in-one umbrella)
 export 'package:llm_dart_azure/llm_dart_azure.dart';
 export 'package:llm_dart_openai/llm_dart_openai.dart';
+export 'package:llm_dart_open_responses/llm_dart_open_responses.dart';
 export 'package:llm_dart_openai_compatible/llm_dart_openai_compatible.dart'
     hide
         openaiCompatibleFallbackModel,
