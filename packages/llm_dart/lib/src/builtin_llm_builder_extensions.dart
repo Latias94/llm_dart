@@ -15,6 +15,19 @@ import 'openrouter_builder.dart';
 
 /// Convenience methods for built-in providers.
 extension BuiltinProviderBuilders on LLMBuilder {
+  /// Select a provider id and ensure it is registered in the umbrella package.
+  ///
+  /// This is a dynamic alternative to the typed convenience methods (e.g.
+  /// `.openai()`, `.anthropic()`) and is useful when provider ids are driven by
+  /// configuration.
+  ///
+  /// Note: this only registers providers that ship with the umbrella package
+  /// (and OpenAI-compatible presets supported by `llm_dart_openai_compatible`).
+  LLMBuilder builtin(String providerId) {
+    BuiltinProviderRegistry.ensureProviderRegistered(providerId);
+    return provider(providerId);
+  }
+
   LLMBuilder azure([AzureBuilder Function(AzureBuilder)? configure]) {
     BuiltinProviderRegistry.ensureProviderRegistered('azure');
     provider('azure');

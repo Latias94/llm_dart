@@ -154,6 +154,17 @@ void main() async {
 }
 ```
 
+If you disable auto-registration, you can still use umbrella helper methods to
+select and register providers on demand:
+
+```dart
+final model = await ai(autoRegister: AutoRegisterPolicy.none)
+    .builtin('anthropic')
+    .apiKey('your-api-key')
+    .model('claude-sonnet-4-20250514')
+    .build();
+```
+
 ### Pick subpackages (example: MiniMax)
 
 For a minimal dependency footprint, depend on only the packages you need:

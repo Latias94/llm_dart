@@ -45,6 +45,12 @@ quickly without manually calling `register*()`.
 - `AutoRegisterPolicy.standard`: register only OpenAI + Anthropic + Google
 - `AutoRegisterPolicy.none`: do not register anything (side-effect-free)
 
+Even with `AutoRegisterPolicy.none`, you can still register/select providers on
+demand via umbrella builder conveniences:
+
+- Typed: `LLMBuilder().openai()`, `LLMBuilder().anthropic()`, ...
+- Dynamic: `LLMBuilder().builtin('<providerId>')`
+
 By default, `ensureRegistered()` registers:
 
 - Standard providers: `openai`, `anthropic`, `google`

@@ -39,6 +39,18 @@ void main() {
       ai();
     });
 
+    test('LLMBuilder.builtin() registers and selects a provider id', () {
+      LLMProviderRegistry.clear();
+
+      final builder =
+          ai(autoRegister: AutoRegisterPolicy.none).builtin('openai');
+      expect(builder.providerId, equals('openai'));
+      expect(LLMProviderRegistry.isRegistered('openai'), isTrue);
+
+      // Restore default umbrella registration for other tests.
+      ai();
+    });
+
     group('createProvider function', () {
       test('throws error with invalid provider ID', () async {
         expect(

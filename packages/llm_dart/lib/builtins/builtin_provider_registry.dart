@@ -128,11 +128,19 @@ class BuiltinProviderRegistry {
       return;
     }
 
+    // OpenAI-compatible presets usually include '-' (e.g. `deepseek-openai`,
+    // `github-copilot`). Try registering them on demand.
+    if (id.contains('-')) {
+      ensureOpenAICompatibleProviderRegistered(id);
+      return;
+    }
+
     _logger.warning(
       'Unknown built-in provider id "$providerId". '
-      'This umbrella helper only supports first-party providers and OpenRouter. '
-      'For other ids (e.g. OpenAI-compatible presets), register them explicitly '
-      'or use `LLMBuilder().openaiCompatible("<id>")`.',
+      'This umbrella helper supports first-party providers and some '
+      'OpenAI-compatible presets. '
+      'For other ids, register them explicitly or use '
+      '`LLMBuilder().openaiCompatible("<id>")` for OpenAI-compatible presets.',
     );
   }
 
