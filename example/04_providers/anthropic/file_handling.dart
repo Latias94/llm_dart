@@ -49,9 +49,10 @@ Future<void> demonstrateFileManagement(String apiKey) async {
   print('📁 File Management API:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = createAnthropic(
       apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
+    )(
+      'claude-sonnet-4-20250514',
     );
 
     final filesConfig = provider.config.copyWith(
@@ -162,9 +163,13 @@ Future<void> demonstrateTextFileProcessing(String apiKey) async {
   print('📄 Text File Processing:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = createAnthropic(
       apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
+    )(
+      'claude-sonnet-4-20250514',
+    );
+
+    const callOptions = LLMCallOptions(
       temperature: 0.3,
       maxTokens: 1500,
     );
@@ -206,6 +211,7 @@ from 3.2 to 4.7 out of 5.
 
     final result = await generateText(
       model: provider,
+      callOptions: callOptions,
       promptIr: Prompt(
         messages: [
           PromptMessage(
@@ -250,9 +256,13 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
   print('🖼️  Image Analysis:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = createAnthropic(
       apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
+    )(
+      'claude-sonnet-4-20250514',
+    );
+
+    const callOptions = LLMCallOptions(
       temperature: 0.4,
       maxTokens: 1000,
     );
@@ -271,6 +281,7 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
 
       final result = await generateText(
         model: provider,
+        callOptions: callOptions,
         promptIr: Prompt(
           messages: [
             PromptMessage(
@@ -319,9 +330,13 @@ Future<void> demonstratePDFProcessing(String apiKey) async {
   print('📋 PDF Processing:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = createAnthropic(
       apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
+    )(
+      'claude-sonnet-4-20250514',
+    );
+
+    const callOptions = LLMCallOptions(
       temperature: 0.3,
       maxTokens: 2000,
     );
@@ -365,6 +380,7 @@ advantages and operational improvements for modern businesses.
 
     final result = await generateText(
       model: provider,
+      callOptions: callOptions,
       promptIr: Prompt(
         messages: [
           PromptMessage(
@@ -407,9 +423,13 @@ Future<void> demonstrateMultiFileAnalysis(String apiKey) async {
   print('📚 Multi-File Analysis:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = createAnthropic(
       apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
+    )(
+      'claude-sonnet-4-20250514',
+    );
+
+    const callOptions = LLMCallOptions(
       temperature: 0.3,
       maxTokens: 2000,
     );
@@ -453,6 +473,7 @@ Q3 Sales Report:
 
     final result = await generateText(
       model: provider,
+      callOptions: callOptions,
       promptIr: Prompt(
         messages: [
           PromptMessage(
@@ -512,9 +533,13 @@ Future<void> demonstrateDocumentComparison(String apiKey) async {
   print('🔍 Document Comparison:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = createAnthropic(
       apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
+    )(
+      'claude-sonnet-4-20250514',
+    );
+
+    const callOptions = LLMCallOptions(
       temperature: 0.2, // Lower for analytical comparison
       maxTokens: 1500,
     );
@@ -552,6 +577,7 @@ Company Policy: Remote Work Guidelines
 
     final result = await generateText(
       model: provider,
+      callOptions: callOptions,
       promptIr: Prompt(
         messages: [
           PromptMessage(
@@ -622,7 +648,7 @@ Please provide:
 /// - Cross-document pattern recognition
 ///
 /// Best Practices:
-/// - Use createAnthropicProvider() for full file management access
+/// - Use createAnthropic() for full file management access
 /// - Use appropriate MIME types for files
 /// - Provide context with file uploads
 /// - Use lower temperature for analytical tasks

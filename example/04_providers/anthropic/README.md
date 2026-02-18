@@ -73,10 +73,8 @@ if (result.thinking != null) {
 
 ### File Processing
 ```dart
-final provider = createAnthropicProvider(
-  apiKey: 'your-key',
-  model: 'claude-sonnet-4-20250514',
-);
+final claude = createAnthropic(apiKey: 'your-key');
+final provider = claude('claude-sonnet-4-20250514');
 
 // Upload and analyze document
 final fileObject = await provider.uploadFile(FileUploadRequest(

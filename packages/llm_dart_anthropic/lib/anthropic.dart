@@ -1,50 +1,58 @@
 /// Anthropic provider package entrypoint.
 library;
 
-import 'package:llm_dart_anthropic_compatible/llm_dart_anthropic_compatible.dart'
-    show AnthropicConfig;
+import 'package:llm_dart_anthropic_compatible/config.dart';
 
 import 'provider.dart';
-import 'defaults.dart';
+import 'src/anthropic_provider_v3.dart';
 
 // Provider modules
 export 'provider.dart';
+
+export 'src/anthropic_provider_v3.dart'
+    show
+        AnthropicProviderV3,
+        AnthropicProviderSettings;
 //
 // Advanced endpoint wrappers are opt-in:
 // - `package:llm_dart_anthropic/files.dart`
 // - `package:llm_dart_anthropic/models.dart`
 
-/// Create an Anthropic provider with default configuration.
-AnthropicProvider createAnthropicProvider({
-  required String apiKey,
-  String? model,
-  String? baseUrl,
-  int? maxTokens,
-  double? temperature,
-  String? systemPrompt,
+/// Create an Anthropic provider (AI SDK v3 style).
+AnthropicProviderV3 createAnthropic({
+  required Object? apiKey,
+  Object? baseUrl,
+  Map<String, String>? headers,
   Duration? timeout,
-  bool? stream,
-  double? topP,
-  int? topK,
-  bool? reasoning,
-  int? thinkingBudgetTokens,
-  bool? interleavedThinking,
+  String name = 'anthropic',
+  AnthropicProvider Function(AnthropicConfig config)? providerFactory,
 }) {
-  final config = AnthropicConfig(
-    apiKey: apiKey,
-    model: model ?? anthropicDefaultModel,
-    baseUrl: baseUrl ?? anthropicBaseUrl,
-    maxTokens: maxTokens,
-    temperature: temperature,
-    systemPrompt: systemPrompt,
-    timeout: timeout,
-    stream: stream ?? false,
-    topP: topP,
-    topK: topK,
-    reasoning: reasoning ?? false,
-    thinkingBudgetTokens: thinkingBudgetTokens,
-    interleavedThinking: interleavedThinking ?? false,
+  return AnthropicProviderV3(
+    AnthropicProviderSettings(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      headers: headers,
+      timeout: timeout,
+      name: name,
+      providerFactory: providerFactory,
+    ),
   );
-
-  return AnthropicProvider(config);
 }
+
+/// Alias for `createAnthropic(...)` (upstream parity).
+AnthropicProviderV3 anthropic({
+  required Object? apiKey,
+  Object? baseUrl,
+  Map<String, String>? headers,
+  Duration? timeout,
+  String name = 'anthropic',
+  AnthropicProvider Function(AnthropicConfig config)? providerFactory,
+}) =>
+    createAnthropic(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      headers: headers,
+      timeout: timeout,
+      name: name,
+      providerFactory: providerFactory,
+    );

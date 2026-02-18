@@ -36,8 +36,10 @@ class AnthropicProvider
   // Capability modules
   late final AnthropicChat _chat;
 
-  AnthropicProvider(this.config)
-      : _client = AnthropicClient(config, strategy: AnthropicDioStrategy()) {
+  AnthropicProvider(
+    this.config, {
+    AnthropicClient? client,
+  }) : _client = client ?? AnthropicClient(config, strategy: AnthropicDioStrategy()) {
     // Validate configuration on initialization
     final validationError = config.validateThinkingConfig();
     if (validationError != null) {
