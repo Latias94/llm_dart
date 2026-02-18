@@ -3,6 +3,7 @@ import 'package:logging/logging.dart';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'http_retry.dart';
+import 'header_utils.dart';
 import 'http_client_adapter_stub.dart'
     if (dart.library.io) 'http_client_adapter_io.dart'
     if (dart.library.html) 'http_client_adapter_web.dart';
@@ -106,45 +107,7 @@ class HttpConfigUtils {
     Map<String, String> defaultHeaders,
     Map<String, String> customHeaders,
   ) {
-    if (customHeaders.isEmpty) return defaultHeaders;
-    final result = <String, String>{...defaultHeaders};
-
-    for (final entry in customHeaders.entries) {
-      final keyLower = entry.key.toLowerCase();
-      final existingKeys = result.keys
-          .where((k) => k.toLowerCase() == keyLower)
-          .toList(growable: false);
-
-      final isUserAgent = keyLower == 'user-agent';
-      if (isUserAgent) {
-        final existingValues = existingKeys
-            .map((k) => result[k])
-            .whereType<String>()
-            .where((v) => v.trim().isNotEmpty)
-            .toList(growable: false);
-
-        for (final k in existingKeys) {
-          result.remove(k);
-        }
-
-        final customValue = entry.value.trim();
-        final combined = [
-          if (customValue.isNotEmpty) customValue,
-          ...existingValues,
-        ].join(' ');
-        if (combined.isNotEmpty) {
-          result['User-Agent'] = combined;
-        }
-        continue;
-      }
-
-      for (final k in existingKeys) {
-        result.remove(k);
-      }
-      result[entry.key] = entry.value;
-    }
-
-    return result;
+    return mergeHeadersCaseInsensitive(defaultHeaders, customHeaders);
   }
 
   /// Configure HTTP client adapter with proxy and SSL settings

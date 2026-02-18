@@ -15,6 +15,7 @@ export 'utils/dio_cancellation.dart';
 export 'utils/dio_error_handler.dart';
 export 'utils/dio_client_factory.dart';
 export 'utils/get_error_message.dart';
+export 'utils/header_utils.dart';
 export 'utils/http_client_adapter_stub.dart'
     if (dart.library.io) 'utils/http_client_adapter_io.dart'
     if (dart.library.html) 'utils/http_client_adapter_web.dart';
