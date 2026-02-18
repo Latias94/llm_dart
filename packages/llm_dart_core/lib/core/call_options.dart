@@ -5,6 +5,8 @@
 /// configuration.
 library;
 
+import '../utils/header_utils.dart' as headers;
+
 class LLMCallOptions {
   /// Additional HTTP headers for the call (best-effort).
   ///
@@ -73,30 +75,11 @@ Map<String, String>? _mergeHeadersCaseInsensitive(
   if (a == null || a.isEmpty) return (b == null || b.isEmpty) ? null : b;
   if (b == null || b.isEmpty) return a;
 
-  final out = <String, String>{...a};
-
-  final baseKeyByLower = <String, String>{};
-  for (final key in out.keys) {
-    final lower = key.trim().toLowerCase();
-    if (lower.isEmpty) continue;
-    baseKeyByLower.putIfAbsent(lower, () => key);
-  }
-
-  for (final entry in b.entries) {
-    final rawKey = entry.key.trim();
-    if (rawKey.isEmpty) continue;
-    final lower = rawKey.toLowerCase();
-
-    final existingKey = baseKeyByLower[lower];
-    if (existingKey != null && existingKey != rawKey) {
-      out.remove(existingKey);
-    }
-
-    out[rawKey] = entry.value;
-    baseKeyByLower[lower] = rawKey;
-  }
-
-  return out.isEmpty ? null : out;
+  return headers.mergeHeadersCaseInsensitive(
+    a,
+    b,
+    mergeUserAgent: false,
+  );
 }
 
 Map<String, dynamic>? _mergeBodiesDeep(
