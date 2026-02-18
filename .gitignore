@@ -16,6 +16,12 @@ repo-ref/
 .analyze_machine.txt
 .testlog.txt
 .testlog*.txt
+darthelp.log
+darthelp.err
+pubget.log
+pubget.err
+trace.log
+trace.err
 
 # Lockfiles (library monorepo)
 pubspec.lock
