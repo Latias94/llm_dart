@@ -131,13 +131,15 @@ void main() async {
 
 ### Umbrella convenience (optional)
 
-If you depend on `llm_dart`, it auto-registers built-in providers via `ai()`:
+If you depend on `llm_dart`, you can use `ai()` to create an `LLMBuilder`.
+By default, it auto-registers all built-in providers for a quick start.
+You can also choose a narrower auto-register policy.
 
 ```dart
 import 'package:llm_dart/llm_dart.dart';
 
 void main() async {
-  final model = await ai()
+  final model = await ai(autoRegister: AutoRegisterPolicy.standard)
       .provider('anthropic')
       .apiKey('your-api-key')
       .model('claude-sonnet-4-20250514')

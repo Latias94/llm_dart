@@ -36,7 +36,14 @@ Notes:
 
 ### 2.1 Automatic registration
 
-Umbrella entrypoints like `ai()` call `BuiltinProviderRegistry.ensureRegistered()` so users can start quickly without manually calling `register*()`.
+Umbrella entrypoints like `ai()` can auto-register providers so users can start
+quickly without manually calling `register*()`.
+
+`ai()` supports an `autoRegister` policy:
+
+- `AutoRegisterPolicy.all` (default): register the full umbrella provider set
+- `AutoRegisterPolicy.standard`: register only OpenAI + Anthropic + Google
+- `AutoRegisterPolicy.none`: do not register anything (side-effect-free)
 
 By default, `ensureRegistered()` registers:
 

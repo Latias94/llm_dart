@@ -69,8 +69,34 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 ///     .model('gpt-4o')
 ///     .build();
 /// ```
-LLMBuilder ai() {
-  BuiltinProviderRegistry.ensureRegistered();
+enum AutoRegisterPolicy {
+  /// Register all built-in providers shipped in the umbrella package.
+  ///
+  /// This matches the historical behavior of `ai()` for backward compatibility.
+  all,
+
+  /// Register only the Vercel-style "standard provider set":
+  /// OpenAI, Anthropic, and Google (Gemini).
+  standard,
+
+  /// Do not auto-register any providers.
+  ///
+  /// Use this if you want a side-effect-free entrypoint and register providers
+  /// explicitly via `register*()` calls.
+  none,
+}
+
+LLMBuilder ai({AutoRegisterPolicy autoRegister = AutoRegisterPolicy.all}) {
+  switch (autoRegister) {
+    case AutoRegisterPolicy.all:
+      BuiltinProviderRegistry.ensureRegistered();
+      break;
+    case AutoRegisterPolicy.standard:
+      BuiltinProviderRegistry.ensureStandardRegistered();
+      break;
+    case AutoRegisterPolicy.none:
+      break;
+  }
   return LLMBuilder();
 }
 
@@ -101,8 +127,18 @@ Future<ChatCapability> createProvider({
   double? topP,
   int? topK,
   Map<String, dynamic>? providerOptions,
+  AutoRegisterPolicy autoRegister = AutoRegisterPolicy.all,
 }) async {
-  BuiltinProviderRegistry.ensureRegistered();
+  switch (autoRegister) {
+    case AutoRegisterPolicy.all:
+      BuiltinProviderRegistry.ensureRegistered();
+      break;
+    case AutoRegisterPolicy.standard:
+      BuiltinProviderRegistry.ensureStandardRegistered();
+      break;
+    case AutoRegisterPolicy.none:
+      break;
+  }
   var builder = LLMBuilder().provider(providerId).apiKey(apiKey).model(model);
 
   if (baseUrl != null) builder = builder.baseUrl(baseUrl);

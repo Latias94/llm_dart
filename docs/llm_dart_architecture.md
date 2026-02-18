@@ -30,7 +30,7 @@ Provider-by-provider alignment tracker:
   - Examples now prefer `llm_dart_ai` streaming/task APIs (`streamChatParts` / `streamToolLoopPartsWithToolSet`) instead of provider-specific streaming surfaces.
   - Streaming is parts-first (`LLMStreamPart` via `ChatStreamPartsCapability` / `PromptChatStreamPartsCapability`). Legacy `chatStream` / `ChatStreamEvent` was removed (breaking).
   - Examples and example READMEs no longer import `package:llm_dart/llm_dart.dart` or call `ai()`; they use explicit subpackages + `register*()` + `LLMBuilder()` (and provider wrapper builders where available).
-  - `ai()` remains a legacy convenience in the umbrella package (auto-registers built-in providers via `BuiltinProviderRegistry`).
+  - `ai()` remains a legacy convenience in the umbrella package (optionally auto-registers built-in providers via `BuiltinProviderRegistry`).
 
 - **OpenAI-compatible examples cleaned up**:
   - `example/04_providers/others/openai_compatible.dart` now reflects the primary OpenAI-compatible presets we smoke test in this repo (`deepseek-openai`, `groq-openai`, `xai-openai`, `google-openai`, `openrouter`).

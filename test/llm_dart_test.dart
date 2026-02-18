@@ -14,6 +14,31 @@ void main() {
       expect(identical(builder1, builder2), isFalse);
     });
 
+    test('ai(autoRegister: none) does not auto-register providers', () {
+      LLMProviderRegistry.clear();
+      ai(autoRegister: AutoRegisterPolicy.none);
+      expect(LLMProviderRegistry.isRegistered('openai'), isFalse);
+
+      // Restore default umbrella registration for other tests.
+      ai();
+    });
+
+    test('ai(autoRegister: standard) registers only standard providers', () {
+      LLMProviderRegistry.clear();
+      ai(autoRegister: AutoRegisterPolicy.standard);
+
+      expect(LLMProviderRegistry.isRegistered('openai'), isTrue);
+      expect(LLMProviderRegistry.isRegistered('anthropic'), isTrue);
+      expect(LLMProviderRegistry.isRegistered('google'), isTrue);
+
+      // Additional providers are not auto-registered in standard mode.
+      expect(LLMProviderRegistry.isRegistered('deepseek'), isFalse);
+      expect(LLMProviderRegistry.isRegistered('xai'), isFalse);
+
+      // Restore default umbrella registration for other tests.
+      ai();
+    });
+
     group('createProvider function', () {
       test('throws error with invalid provider ID', () async {
         expect(

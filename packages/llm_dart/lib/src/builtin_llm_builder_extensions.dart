@@ -16,7 +16,7 @@ import 'openrouter_builder.dart';
 /// Convenience methods for built-in providers.
 extension BuiltinProviderBuilders on LLMBuilder {
   LLMBuilder azure([AzureBuilder Function(AzureBuilder)? configure]) {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('azure');
     provider('azure');
     if (configure != null) {
       configure(AzureBuilder(this));
@@ -25,7 +25,7 @@ extension BuiltinProviderBuilders on LLMBuilder {
   }
 
   LLMBuilder azureChat([AzureBuilder Function(AzureBuilder)? configure]) {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('azure.chat');
     provider('azure.chat');
     if (configure != null) {
       configure(AzureBuilder(this));
@@ -34,7 +34,7 @@ extension BuiltinProviderBuilders on LLMBuilder {
   }
 
   LLMBuilder openai([OpenAIBuilder Function(OpenAIBuilder)? configure]) {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('openai');
     provider('openai');
     if (configure != null) {
       configure(OpenAIBuilder(this));
@@ -43,7 +43,7 @@ extension BuiltinProviderBuilders on LLMBuilder {
   }
 
   LLMBuilder openaiChat([OpenAIBuilder Function(OpenAIBuilder)? configure]) {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('openai.chat');
     provider('openai.chat');
     if (configure != null) {
       configure(OpenAIBuilder(this));
@@ -53,7 +53,7 @@ extension BuiltinProviderBuilders on LLMBuilder {
 
   LLMBuilder anthropic(
       [AnthropicBuilder Function(AnthropicBuilder)? configure]) {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('anthropic');
     provider('anthropic');
     if (configure != null) {
       configure(AnthropicBuilder(this));
@@ -62,7 +62,7 @@ extension BuiltinProviderBuilders on LLMBuilder {
   }
 
   LLMBuilder google([GoogleLLMBuilder Function(GoogleLLMBuilder)? configure]) {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('google');
     provider('google');
     if (configure != null) {
       configure(GoogleLLMBuilder(this));
@@ -71,12 +71,12 @@ extension BuiltinProviderBuilders on LLMBuilder {
   }
 
   LLMBuilder deepseek() {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('deepseek');
     return provider('deepseek');
   }
 
   LLMBuilder ollama([OllamaBuilder Function(OllamaBuilder)? configure]) {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('ollama');
     provider('ollama');
     if (configure != null) {
       configure(OllamaBuilder(this));
@@ -85,23 +85,23 @@ extension BuiltinProviderBuilders on LLMBuilder {
   }
 
   LLMBuilder xai() {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('xai');
     return provider('xai');
   }
 
   LLMBuilder groq() {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('groq');
     return provider('groq');
   }
 
   LLMBuilder minimax() {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('minimax');
     return provider('minimax');
   }
 
   LLMBuilder elevenlabs(
       [ElevenLabsBuilder Function(ElevenLabsBuilder)? configure]) {
-    BuiltinProviderRegistry.ensureRegistered();
+    BuiltinProviderRegistry.ensureProviderRegistered('elevenlabs');
     provider('elevenlabs');
     if (configure != null) {
       configure(ElevenLabsBuilder(this));

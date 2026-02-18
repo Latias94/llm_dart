@@ -68,6 +68,74 @@ class BuiltinProviderRegistry {
     registerAll();
   }
 
+  /// Ensure a single provider id is registered (best-effort).
+  ///
+  /// This is intended for umbrella builder conveniences like:
+  /// - `LLMBuilder().openai()`
+  /// - `LLMBuilder().anthropic()`
+  ///
+  /// It avoids the global side effects of `ensureRegistered()` (which registers
+  /// the full umbrella set).
+  static void ensureProviderRegistered(String providerId) {
+    final id = providerId.trim();
+    if (id.isEmpty) return;
+    if (_isRegistered(id)) return;
+
+    final base = id.split('.').first;
+
+    try {
+      switch (base) {
+        case 'openai':
+          registerOpenAI();
+          return;
+        case 'azure':
+          registerAzure();
+          return;
+        case 'anthropic':
+          registerAnthropic();
+          return;
+        case 'google':
+          registerGoogle();
+          return;
+        case 'vertex':
+        case 'google-vertex':
+          registerGoogleVertex();
+          return;
+        case 'deepseek':
+          registerDeepSeek();
+          return;
+        case 'ollama':
+          registerOllama();
+          return;
+        case 'xai':
+          registerXAI();
+          return;
+        case 'groq':
+          registerGroq();
+          return;
+        case 'elevenlabs':
+          registerElevenLabs();
+          return;
+        case 'minimax':
+          registerMinimax();
+          return;
+        case _openRouterProviderId:
+          registerOpenAICompatibleProvider(_openRouterProviderId);
+          return;
+      }
+    } catch (e) {
+      _logger.warning('Failed to register provider "$providerId": $e');
+      return;
+    }
+
+    _logger.warning(
+      'Unknown built-in provider id "$providerId". '
+      'This umbrella helper only supports first-party providers and OpenRouter. '
+      'For other ids (e.g. OpenAI-compatible presets), register them explicitly '
+      'or use `LLMBuilder().openaiCompatible("<id>")`.',
+    );
+  }
+
   /// Ensure a specific OpenAI-compatible preset provider is registered.
   ///
   /// `llm_dart` treats OpenAI-compatible presets as opt-in because some of them
