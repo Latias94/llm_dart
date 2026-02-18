@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import '../core/llm_error.dart';
 import '../core/provider_options.dart';
 import '../models/chat_models.dart';
 import 'prompt.dart';
@@ -19,8 +20,9 @@ enum V3PromptDataEncoding {
 /// Encodes a [Prompt] into AI SDK v3 `LanguageModelV3Prompt`-style JSON.
 ///
 /// This codec is intended for interoperability tests and debugging. It is
-/// best-effort and may throw [FormatException] if the prompt cannot be mapped
-/// to the v3 shape (e.g. unsupported parts in a given role).
+/// best-effort and may throw [FormatException] or [InvalidRequestError] if the
+/// prompt cannot be mapped to the v3 shape (e.g. unsupported parts in a given
+/// role).
 V3PromptJson encodeV3Prompt(
   Prompt prompt, {
   V3PromptDataEncoding dataEncoding = V3PromptDataEncoding.base64,
@@ -424,7 +426,7 @@ PromptMessage _decodeV3PromptMessage(Map<String, dynamic> obj) {
     'user' => PromptRole.user,
     'assistant' => PromptRole.assistant,
     'tool' => PromptRole.tool,
-    _ => throw FormatException('v3 prompt: unsupported role: $roleRaw'),
+    _ => throw InvalidMessageRoleError(role: roleRaw),
   };
 
   final parts = <PromptPart>[];
@@ -659,8 +661,10 @@ Object _decodeV3DataContent(Object? value) {
     try {
       return Uint8List.fromList(base64Decode(value));
     } catch (_) {
-      throw const FormatException(
-        'v3 prompt file.data string is neither a URL nor valid base64.',
+      throw InvalidDataContentError(
+        content: value,
+        message:
+            'Invalid data content. Expected a base64 string or URL, but got an invalid string.',
       );
     }
   }
@@ -670,8 +674,10 @@ Object _decodeV3DataContent(Object? value) {
     for (final item in value) {
       final n = item is int ? item : (item is num ? item.toInt() : null);
       if (n == null || n < 0 || n > 255) {
-        throw const FormatException(
-          'v3 prompt file.data byte array must contain integers in range 0..255.',
+        throw InvalidDataContentError(
+          content: value,
+          message:
+              'Invalid data content. Byte arrays must contain integers in range 0..255.',
         );
       }
       bytes.add(n);
@@ -679,7 +685,7 @@ Object _decodeV3DataContent(Object? value) {
     return Uint8List.fromList(bytes);
   }
 
-  throw const FormatException('v3 prompt file.data must be a string or list.');
+  throw InvalidDataContentError(content: value);
 }
 
 ProviderOptions? _asProviderOptions(Object? value) {

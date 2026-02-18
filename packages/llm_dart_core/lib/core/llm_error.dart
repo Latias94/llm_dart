@@ -32,6 +32,68 @@ class InvalidRequestError extends LLMError {
   String toString() => 'Invalid request: $message';
 }
 
+/// Thrown when an API surface is called with invalid arguments.
+///
+/// Mirrors Vercel AI SDK's `InvalidArgumentError`.
+class InvalidArgumentError extends InvalidRequestError {
+  final String argument;
+  final Object? value;
+
+  const InvalidArgumentError({
+    required this.argument,
+    this.value,
+    String message = 'Invalid argument.',
+  }) : super(message);
+
+  @override
+  String toString() =>
+      'Invalid argument ($argument): $message${value == null ? '' : ' (value: $value)'}';
+}
+
+/// Thrown when binary/data content has an unsupported shape.
+///
+/// Mirrors Vercel AI SDK's `InvalidDataContentError`.
+class InvalidDataContentError extends InvalidRequestError {
+  /// The offending data content.
+  final Object? content;
+
+  /// Optional original error.
+  final Object? cause;
+
+  InvalidDataContentError({
+    required this.content,
+    this.cause,
+    String? message,
+  }) : super(
+          message ??
+              'Invalid data content. Expected a base64 string, Uint8List, '
+                  'or byte array, but got ${content == null ? 'null' : content.runtimeType}.',
+        );
+
+  @override
+  String toString() =>
+      'Invalid data content: $message${cause == null ? '' : ' (cause: $cause)'}';
+}
+
+/// Thrown when a message role is invalid for the prompt protocol.
+///
+/// Mirrors Vercel AI SDK's `InvalidMessageRoleError`.
+class InvalidMessageRoleError extends InvalidRequestError {
+  final String role;
+
+  InvalidMessageRoleError({
+    required this.role,
+    String? message,
+  }) : super(
+          message ??
+              "Invalid message role: '$role'. Must be one of: "
+                  '"system", "user", "assistant", "tool".',
+        );
+
+  @override
+  String toString() => 'Invalid message role: $message';
+}
+
 /// Errors returned by the LLM provider
 class ProviderError extends LLMError {
   const ProviderError(super.message);

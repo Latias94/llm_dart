@@ -16,6 +16,7 @@ export 'core/v3_stream_part_codec.dart';
 
 export 'utils/capability_utils.dart';
 export 'utils/download.dart';
+export 'utils/id_generator.dart';
 export 'utils/provider_registry.dart';
 export 'utils/schema.dart';
 export 'utils/tool_call_aggregator.dart';

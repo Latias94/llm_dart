@@ -21,6 +21,7 @@ export 'utils/http_retry.dart';
 export 'utils/http_response_handler.dart';
 export 'utils/json_utils.dart';
 export 'utils/jsonl_chunk_parser.dart';
+export 'utils/id_generator.dart';
 export 'utils/log_redactor.dart';
 export 'utils/log_utils.dart';
 export 'utils/provider_metadata_alias.dart';
