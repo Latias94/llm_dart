@@ -93,6 +93,7 @@ GoogleProviderV3 google({
     );
 
 /// Create a Google provider with default configuration
+@Deprecated('Use createGoogleGenerativeAI()/google() (ProviderV3) instead.')
 GoogleProvider createGoogleProvider({
   required String apiKey,
   String? model,
