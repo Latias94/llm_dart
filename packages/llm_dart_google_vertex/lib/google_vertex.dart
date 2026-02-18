@@ -13,7 +13,47 @@ import 'package:llm_dart_google/google.dart';
 
 import 'defaults.dart';
 import 'google_vertex_factory.dart';
+import 'src/vertex_provider_v3.dart';
 
+export 'src/vertex_provider_v3.dart'
+    show VertexProviderV3, VertexProviderSettings;
+
+/// Create a Google Vertex provider (AI SDK v3 style, express mode).
+VertexProviderV3 createVertex({
+  required Object? apiKey,
+  Object? baseUrl,
+  Map<String, String>? headers,
+  Duration? timeout,
+  GoogleProvider Function(GoogleConfig config)? providerFactory,
+}) {
+  return VertexProviderV3(
+    VertexProviderSettings(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      headers: headers,
+      timeout: timeout,
+      providerFactory: providerFactory,
+    ),
+  );
+}
+
+/// Alias for `createVertex(...)` (upstream parity).
+VertexProviderV3 vertex({
+  required Object? apiKey,
+  Object? baseUrl,
+  Map<String, String>? headers,
+  Duration? timeout,
+  GoogleProvider Function(GoogleConfig config)? providerFactory,
+}) =>
+    createVertex(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      headers: headers,
+      timeout: timeout,
+      providerFactory: providerFactory,
+    );
+
+@Deprecated('Use createVertex()/vertex() (ProviderV3) instead.')
 GoogleProvider createGoogleVertexProvider({
   required String apiKey,
   String? model,
