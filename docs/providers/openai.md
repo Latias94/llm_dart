@@ -73,6 +73,7 @@ import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 Future<void> main() async {
   registerOpenAI();
@@ -89,7 +90,12 @@ Future<void> main() async {
   );
 
   print(result.text);
-  print(result.providerMetadata);
+
+  final openai = readProviderMetadata<Map<String, dynamic>>(
+    result.providerMetadata,
+    openaiProviderId,
+  );
+  print(openai);
 }
 ```
 

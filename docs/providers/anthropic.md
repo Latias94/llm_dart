@@ -46,6 +46,7 @@ import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_anthropic/provider_tools.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 Future<void> main() async {
   registerAnthropic();
@@ -62,7 +63,12 @@ Future<void> main() async {
   );
 
   print(result.text);
-  print(result.providerMetadata);
+
+  final anthropic = readProviderMetadata<Map<String, dynamic>>(
+    result.providerMetadata,
+    anthropicProviderId,
+  );
+  print(anthropic);
 }
 ```
 

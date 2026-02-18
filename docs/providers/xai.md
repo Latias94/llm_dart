@@ -63,6 +63,7 @@ import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_core/models/tool_models.dart';
 import 'package:llm_dart_xai/llm_dart_xai.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 Future<void> main() async {
   registerXAI();
@@ -79,7 +80,12 @@ Future<void> main() async {
   );
 
   print(result.text);
-  print(result.providerMetadata);
+
+  final xai = readProviderMetadata<Map<String, dynamic>>(
+    result.providerMetadata,
+    xaiProviderId,
+  );
+  print(xai);
 }
 ```
 
@@ -204,6 +210,7 @@ import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_xai/llm_dart_xai.dart';
 import 'package:llm_dart_xai/provider_tools.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 Future<void> main() async {
   registerXAI();
@@ -221,7 +228,12 @@ Future<void> main() async {
   );
 
   print(result.text);
-  print(result.providerMetadata);
+
+  final xai = readProviderMetadata<Map<String, dynamic>>(
+    result.providerMetadata,
+    'xai.responses',
+  );
+  print(xai);
 }
 ```
 

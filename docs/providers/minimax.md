@@ -74,6 +74,7 @@ import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_minimax/llm_dart_minimax.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 Future<void> main() async {
   registerMinimax();
@@ -91,7 +92,12 @@ Future<void> main() async {
   );
 
   print(result.text);
-  print(result.providerMetadata); // optional provider-specific metadata
+
+  final minimax = readProviderMetadata<Map<String, dynamic>>(
+    result.providerMetadata,
+    minimaxProviderId,
+  );
+  print(minimax); // optional provider-specific metadata
 }
 ```
 
