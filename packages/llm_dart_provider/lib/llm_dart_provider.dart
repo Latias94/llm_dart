@@ -9,5 +9,6 @@ library;
 
 export 'package:llm_dart_core/llm_dart_core.dart';
 
+export 'src/create_provider_v3.dart';
 export 'src/errors/no_such_model_error.dart';
 export 'src/provider_v3.dart';

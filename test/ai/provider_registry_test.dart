@@ -44,19 +44,6 @@ class _NoopMiddleware extends LanguageModelMiddleware {
   const _NoopMiddleware();
 }
 
-class _FakeProviderV3
-    with provider.ProviderV3Defaults
-    implements provider.ProviderV3 {
-  final ChatCapability Function(String modelId) createLanguageModel;
-
-  _FakeProviderV3({
-    required this.createLanguageModel,
-  });
-
-  @override
-  ChatCapability languageModel(String modelId) => createLanguageModel(modelId);
-}
-
 class _FakeIdentityVideoModel
     implements ExperimentalVideoGenerationCapability, ModelIdentityCapability {
   @override
@@ -80,7 +67,7 @@ void main() {
   group('provider registry', () {
     test('splits providerId:modelId and resolves language models', () {
       final registry = createProviderRegistry({
-        'openai': ProviderRegistryEntry(
+        'openai': provider.createProviderV3(
           languageModel: (modelId) => _FakeIdentityChatModel(modelId),
         ),
       });
@@ -94,7 +81,7 @@ void main() {
     test('splits providerId:modelId and resolves video models (experimental)',
         () {
       final registry = createProviderRegistry({
-        'google': ProviderRegistryEntry(
+        'google': provider.createProviderV3(
           videoModel: (modelId) => _FakeIdentityVideoModel(modelId),
         ),
       });
@@ -107,31 +94,25 @@ void main() {
 
     test('throws NoSuchModelError for invalid registry ids', () {
       final registry = createProviderRegistry({
-        'openai': ProviderRegistryEntry(
+        'openai': provider.createProviderV3(
           languageModel: (modelId) => _FakeIdentityChatModel(modelId),
         ),
       });
 
       expect(
         () => registry.languageModel('openai'),
-        throwsA(allOf(
-          isA<NoSuchModelError>(),
-          isA<provider.NoSuchModelError>(),
-        )),
+        throwsA(isA<provider.NoSuchModelError>()),
       );
 
       expect(
         () => registry.videoModel('google'),
-        throwsA(allOf(
-          isA<NoSuchModelError>(),
-          isA<provider.NoSuchModelError>(),
-        )),
+        throwsA(isA<provider.NoSuchModelError>()),
       );
     });
 
     test('throws NoSuchProviderError for missing providers', () {
       final registry = createProviderRegistry({
-        'openai': ProviderRegistryEntry(
+        'openai': provider.createProviderV3(
           languageModel: (modelId) => _FakeIdentityChatModel(modelId),
         ),
       });
@@ -150,7 +131,7 @@ void main() {
 
     test('throws when model type is not supported by provider entry', () {
       final registry = createProviderRegistry({
-        'openai': ProviderRegistryEntry(
+        'openai': provider.createProviderV3(
           languageModel: (modelId) => _FakeIdentityChatModel(modelId),
           // embeddingModel intentionally missing
         ),
@@ -158,12 +139,12 @@ void main() {
 
       expect(
         () => registry.embeddingModel('openai:text-embedding-3'),
-        throwsA(isA<NoSuchModelError>()),
+        throwsA(isA<provider.NoSuchModelError>()),
       );
 
       expect(
         () => registry.videoModel('openai:veo-test'),
-        throwsA(isA<NoSuchModelError>()),
+        throwsA(isA<provider.NoSuchModelError>()),
       );
     });
 
@@ -172,49 +153,8 @@ void main() {
 
       final registry = createProviderRegistry(
         {
-          'openai': ProviderRegistryEntry(
+          'openai': provider.createProviderV3(
             languageModel: (modelId) {
-              final m = _FakeIdentityChatModel(modelId);
-              created = m;
-              return m;
-            },
-          ),
-        },
-        languageModelMiddleware: const _NoopMiddleware(),
-      );
-
-      final resolved = registry.languageModel('openai:gpt-test');
-      expect(created, isNotNull);
-      expect(identical(created, resolved), isFalse);
-      expect(resolved, isA<ModelIdentityCapability>());
-      expect(
-        (resolved as ModelIdentityCapability).modelId,
-        equals('gpt-test'),
-      );
-    });
-  });
-
-  group('provider registry v3', () {
-    test('resolves language models from ProviderV3 instances', () {
-      final registry = createProviderRegistryV3({
-        'openai': _FakeProviderV3(
-          createLanguageModel: (modelId) => _FakeIdentityChatModel(modelId),
-        ),
-      });
-
-      final model = registry.languageModel('openai:gpt-test');
-      expect(model, isA<ChatCapability>());
-      expect(model, isA<ModelIdentityCapability>());
-      expect((model as ModelIdentityCapability).modelId, equals('gpt-test'));
-    });
-
-    test('wraps language models with middleware when configured', () {
-      ChatCapability? created;
-
-      final registry = createProviderRegistryV3(
-        {
-          'openai': _FakeProviderV3(
-            createLanguageModel: (modelId) {
               final m = _FakeIdentityChatModel(modelId);
               created = m;
               return m;
