@@ -37,6 +37,7 @@ void main() {
             providerMetadata,
           LLMReasoningStartPart(:final providerMetadata) => providerMetadata,
           LLMReasoningEndPart(:final providerMetadata) => providerMetadata,
+          LLMSourceUrlPart(:final providerMetadata) => providerMetadata,
           LLMSourceDocumentPart(:final providerMetadata) => providerMetadata,
           _ => null,
         };
