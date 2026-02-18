@@ -13,6 +13,7 @@ export 'embeddings.dart';
 export 'audio.dart';
 export 'images.dart';
 export 'provider.dart';
+export 'openai_compatible.dart';
 
 // Low-level HTTP utilities are opt-in:
 // - `package:llm_dart_openai_compatible/client.dart`
