@@ -24,7 +24,20 @@ void _expectAliasesMirrorCanonical(
   }
 }
 
-Future<Map<String, dynamic>?> _runOpenAICompatibleChatCompletionsStream({
+void _expectOpenAICompatibleChatAliases(
+  Map<String, dynamic> meta, {
+  required String providerId,
+}) {
+  final baseKey = providerId.split('.').first;
+  final chatKey = providerId.contains('.') ? providerId : '$providerId.chat';
+
+  expect(meta.containsKey(baseKey), isTrue);
+  expect(meta.containsKey(chatKey), isTrue);
+  expect(meta.containsKey('$chatKey.chat'), isFalse);
+  expect(meta[chatKey], equals(meta[baseKey]));
+}
+
+Future<List<LLMStreamPart>> _runOpenAICompatibleChatCompletionsStreamParts({
   required String providerId,
   required String model,
 }) async {
@@ -75,10 +88,7 @@ Future<Map<String, dynamic>?> _runOpenAICompatibleChatCompletionsStream({
     const {LLMCapability.chat, LLMCapability.streaming},
   );
 
-  final parts =
-      await provider.chatStreamParts([ChatMessage.user('hi')]).toList();
-  final finish = parts.whereType<LLMFinishPart>().single;
-  return finish.response.providerMetadata;
+  return provider.chatStreamParts([ChatMessage.user('hi')]).toList();
 }
 
 void main() {
@@ -139,6 +149,15 @@ void main() {
       expect(meta.containsKey('openai.chat'), isTrue);
       expect(meta.containsKey('openai.chat.chat'), isFalse);
       expect(meta['openai.chat'], equals(meta['openai']));
+
+      final metaParts = parts.whereType<LLMProviderMetadataPart>().toList();
+      expect(metaParts, isNotEmpty);
+      for (final p in metaParts) {
+        _expectOpenAICompatibleChatAliases(
+          p.providerMetadata,
+          providerId: 'openai.chat',
+        );
+      }
     });
 
     test('OpenAI provider emits openai.responses alias equal to openai',
@@ -211,6 +230,12 @@ void main() {
       expect(meta, isNotNull);
       _expectAliasesMirrorCanonical(meta!, canonicalKey: 'openai');
       expect(meta.containsKey('openai.responses'), isTrue);
+
+      final metaParts = parts.whereType<LLMProviderMetadataPart>().toList();
+      for (final p in metaParts) {
+        expect(p.providerMetadata['openai.responses'],
+            equals(p.providerMetadata['openai']));
+      }
     });
 
     test('Azure provider emits azure.responses alias equal to azure', () async {
@@ -278,6 +303,12 @@ void main() {
       expect(meta, isNotNull);
       _expectAliasesMirrorCanonical(meta!, canonicalKey: 'azure');
       expect(meta.containsKey('azure.responses'), isTrue);
+
+      final metaParts = parts.whereType<LLMProviderMetadataPart>().toList();
+      for (final p in metaParts) {
+        expect(p.providerMetadata['azure.responses'],
+            equals(p.providerMetadata['azure']));
+      }
     });
 
     test('Azure Chat Completions emits azure + azure.chat aliases', () async {
@@ -335,6 +366,15 @@ void main() {
       expect(meta.containsKey('azure.chat'), isTrue);
       expect(meta.containsKey('azure.chat.chat'), isFalse);
       expect(meta['azure.chat'], equals(meta['azure']));
+
+      final metaParts = parts.whereType<LLMProviderMetadataPart>().toList();
+      expect(metaParts, isNotEmpty);
+      for (final p in metaParts) {
+        _expectOpenAICompatibleChatAliases(
+          p.providerMetadata,
+          providerId: 'azure.chat',
+        );
+      }
     });
 
     test('Google emits google.chat alias equal to google', () async {
@@ -389,11 +429,22 @@ void main() {
 
     test('DeepSeek (OpenAI-compatible) emits deepseek + deepseek.chat aliases',
         () async {
-      final meta = await _runOpenAICompatibleChatCompletionsStream(
+      final parts = await _runOpenAICompatibleChatCompletionsStreamParts(
         providerId: 'deepseek',
         model: 'deepseek-chat',
       );
 
+      final metaParts = parts.whereType<LLMProviderMetadataPart>().toList();
+      expect(metaParts, isNotEmpty);
+      for (final p in metaParts) {
+        _expectOpenAICompatibleChatAliases(
+          p.providerMetadata,
+          providerId: 'deepseek',
+        );
+      }
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      final meta = finish.response.providerMetadata;
       expect(meta, isNotNull);
       _expectAliasesMirrorCanonical(meta!, canonicalKey: 'deepseek');
       expect(meta.containsKey('deepseek.chat'), isTrue);
@@ -402,11 +453,22 @@ void main() {
     });
 
     test('Groq (OpenAI-compatible) emits groq + groq.chat aliases', () async {
-      final meta = await _runOpenAICompatibleChatCompletionsStream(
+      final parts = await _runOpenAICompatibleChatCompletionsStreamParts(
         providerId: 'groq',
         model: 'qwen/qwen3-32b',
       );
 
+      final metaParts = parts.whereType<LLMProviderMetadataPart>().toList();
+      expect(metaParts, isNotEmpty);
+      for (final p in metaParts) {
+        _expectOpenAICompatibleChatAliases(
+          p.providerMetadata,
+          providerId: 'groq',
+        );
+      }
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      final meta = finish.response.providerMetadata;
       expect(meta, isNotNull);
       _expectAliasesMirrorCanonical(meta!, canonicalKey: 'groq');
       expect(meta.containsKey('groq.chat'), isTrue);
@@ -416,11 +478,22 @@ void main() {
 
     test('OpenRouter (OpenAI-compatible) emits openrouter + openrouter.chat',
         () async {
-      final meta = await _runOpenAICompatibleChatCompletionsStream(
+      final parts = await _runOpenAICompatibleChatCompletionsStreamParts(
         providerId: 'openrouter',
         model: 'anthropic/claude-3.5-sonnet',
       );
 
+      final metaParts = parts.whereType<LLMProviderMetadataPart>().toList();
+      expect(metaParts, isNotEmpty);
+      for (final p in metaParts) {
+        _expectOpenAICompatibleChatAliases(
+          p.providerMetadata,
+          providerId: 'openrouter',
+        );
+      }
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      final meta = finish.response.providerMetadata;
       expect(meta, isNotNull);
       _expectAliasesMirrorCanonical(meta!, canonicalKey: 'openrouter');
       expect(meta.containsKey('openrouter.chat'), isTrue);
@@ -429,11 +502,22 @@ void main() {
     });
 
     test('xAI Chat (OpenAI-compatible) emits xai + xai.chat aliases', () async {
-      final meta = await _runOpenAICompatibleChatCompletionsStream(
+      final parts = await _runOpenAICompatibleChatCompletionsStreamParts(
         providerId: 'xai',
         model: 'grok-3',
       );
 
+      final metaParts = parts.whereType<LLMProviderMetadataPart>().toList();
+      expect(metaParts, isNotEmpty);
+      for (final p in metaParts) {
+        _expectOpenAICompatibleChatAliases(
+          p.providerMetadata,
+          providerId: 'xai',
+        );
+      }
+
+      final finish = parts.whereType<LLMFinishPart>().single;
+      final meta = finish.response.providerMetadata;
       expect(meta, isNotNull);
       _expectAliasesMirrorCanonical(meta!, canonicalKey: 'xai');
       expect(meta.containsKey('xai.chat'), isTrue);

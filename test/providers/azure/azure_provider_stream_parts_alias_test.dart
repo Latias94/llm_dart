@@ -28,6 +28,7 @@ void main() {
 
       Map<String, dynamic>? providerMetadataForPart(LLMStreamPart part) {
         return switch (part) {
+          LLMProviderMetadataPart(:final providerMetadata) => providerMetadata,
           LLMProviderToolCallPart(:final providerMetadata) => providerMetadata,
           LLMProviderToolDeltaPart(:final providerMetadata) => providerMetadata,
           LLMProviderToolResultPart(:final providerMetadata) =>
