@@ -50,15 +50,20 @@ class OpenAIProviderV3 with ProviderV3Defaults implements ProviderV3 {
       description: 'OpenAI',
     );
 
-    final baseUrl = settings.baseUrl?.trim().isEmpty == false
-        ? settings.baseUrl!.trim()
-        : null;
+    final baseUrl =
+        withoutTrailingSlash(
+          loadOptionalSetting(
+            settingValue: settings.baseUrl,
+            environmentVariableName: 'OPENAI_BASE_URL',
+          ),
+        ) ??
+        withoutTrailingSlash(openaiBaseUrl)!;
 
     return OpenAIConfig(
       providerId: settings.providerId,
       providerName: settings.providerName,
       apiKey: apiKey,
-      baseUrl: baseUrl ?? openaiBaseUrl,
+      baseUrl: baseUrl,
       model: modelId,
       extraHeaders: settings.headers,
       timeout: settings.timeout,
