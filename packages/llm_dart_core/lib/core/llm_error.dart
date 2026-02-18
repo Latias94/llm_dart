@@ -50,6 +50,29 @@ class InvalidArgumentError extends InvalidRequestError {
       'Invalid argument ($argument): $message${value == null ? '' : ' (value: $value)'}';
 }
 
+/// Thrown when required settings cannot be loaded.
+///
+/// Mirrors Vercel AI SDK's `LoadSettingError`.
+class LoadSettingError extends InvalidRequestError {
+  const LoadSettingError({required String message}) : super(message);
+
+  @override
+  String toString() => 'Load setting error: $message';
+}
+
+/// Thrown when an API key cannot be loaded.
+///
+/// Mirrors Vercel AI SDK's `LoadAPIKeyError`.
+class LoadApiKeyError extends InvalidRequestError {
+  const LoadApiKeyError({required String message}) : super(message);
+
+  @override
+  String toString() => 'Load API key error: $message';
+}
+
+/// Alias for parity with the upstream `LoadAPIKeyError` name.
+typedef LoadAPIKeyError = LoadApiKeyError;
+
 /// Thrown when binary/data content has an unsupported shape.
 ///
 /// Mirrors Vercel AI SDK's `InvalidDataContentError`.
