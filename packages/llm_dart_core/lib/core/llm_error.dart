@@ -38,16 +38,19 @@ class InvalidRequestError extends LLMError {
 class InvalidArgumentError extends InvalidRequestError {
   final String argument;
   final Object? value;
+  final Object? cause;
 
   const InvalidArgumentError({
     required this.argument,
     this.value,
+    this.cause,
     String message = 'Invalid argument.',
   }) : super(message);
 
   @override
-  String toString() =>
-      'Invalid argument ($argument): $message${value == null ? '' : ' (value: $value)'}';
+  String toString() => 'Invalid argument ($argument): $message'
+      '${value == null ? '' : ' (value: $value)'}'
+      '${cause == null ? '' : ' (cause: $cause)'}';
 }
 
 /// Thrown when required settings cannot be loaded.
