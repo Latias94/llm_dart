@@ -24,6 +24,63 @@ void _expectAliasesMirrorCanonical(
   }
 }
 
+Future<Map<String, dynamic>?> _runOpenAICompatibleChatCompletionsStream({
+  required String providerId,
+  required String model,
+}) async {
+  final config = OpenAICompatibleConfig(
+    providerId: providerId,
+    providerName: providerId,
+    apiKey: 'test-key',
+    baseUrl: 'https://example.com/v1/',
+    model: model,
+  );
+
+  final chunks = <String>[
+    _sseData({
+      'id': 'chatcmpl_1',
+      'created': 1700000000,
+      'model': model,
+      'choices': [
+        {
+          'index': 0,
+          'delta': {'role': 'assistant'},
+        }
+      ],
+    }),
+    _sseData({
+      'id': 'chatcmpl_1',
+      'model': model,
+      'choices': [
+        {
+          'index': 0,
+          'delta': {'content': 'Hello'},
+          'finish_reason': 'stop',
+        }
+      ],
+      'usage': {
+        'prompt_tokens': 1,
+        'completion_tokens': 1,
+        'total_tokens': 2,
+      },
+    }),
+    'data: [DONE]\n\n',
+  ];
+
+  final client = FakeOpenAIClient(config)
+    ..streamResponse = Stream<String>.fromIterable(chunks);
+  final provider = OpenAICompatibleChatProvider(
+    client,
+    config,
+    const {LLMCapability.chat, LLMCapability.streaming},
+  );
+
+  final parts =
+      await provider.chatStreamParts([ChatMessage.user('hi')]).toList();
+  final finish = parts.whereType<LLMFinishPart>().single;
+  return finish.response.providerMetadata;
+}
+
 void main() {
   group('providerMetadata alias equivalence (conformance)', () {
     test('OpenAI Chat Completions emits openai + openai.chat aliases',
@@ -328,6 +385,60 @@ void main() {
       expect(meta, isNotNull);
       _expectAliasesMirrorCanonical(meta!, canonicalKey: 'vertex');
       expect(meta.containsKey('vertex.chat'), isTrue);
+    });
+
+    test('DeepSeek (OpenAI-compatible) emits deepseek + deepseek.chat aliases',
+        () async {
+      final meta = await _runOpenAICompatibleChatCompletionsStream(
+        providerId: 'deepseek',
+        model: 'deepseek-chat',
+      );
+
+      expect(meta, isNotNull);
+      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'deepseek');
+      expect(meta.containsKey('deepseek.chat'), isTrue);
+      expect(meta.containsKey('deepseek.chat.chat'), isFalse);
+      expect(meta['deepseek.chat'], equals(meta['deepseek']));
+    });
+
+    test('Groq (OpenAI-compatible) emits groq + groq.chat aliases', () async {
+      final meta = await _runOpenAICompatibleChatCompletionsStream(
+        providerId: 'groq',
+        model: 'qwen/qwen3-32b',
+      );
+
+      expect(meta, isNotNull);
+      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'groq');
+      expect(meta.containsKey('groq.chat'), isTrue);
+      expect(meta.containsKey('groq.chat.chat'), isFalse);
+      expect(meta['groq.chat'], equals(meta['groq']));
+    });
+
+    test('OpenRouter (OpenAI-compatible) emits openrouter + openrouter.chat',
+        () async {
+      final meta = await _runOpenAICompatibleChatCompletionsStream(
+        providerId: 'openrouter',
+        model: 'anthropic/claude-3.5-sonnet',
+      );
+
+      expect(meta, isNotNull);
+      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'openrouter');
+      expect(meta.containsKey('openrouter.chat'), isTrue);
+      expect(meta.containsKey('openrouter.chat.chat'), isFalse);
+      expect(meta['openrouter.chat'], equals(meta['openrouter']));
+    });
+
+    test('xAI Chat (OpenAI-compatible) emits xai + xai.chat aliases', () async {
+      final meta = await _runOpenAICompatibleChatCompletionsStream(
+        providerId: 'xai',
+        model: 'grok-3',
+      );
+
+      expect(meta, isNotNull);
+      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'xai');
+      expect(meta.containsKey('xai.chat'), isTrue);
+      expect(meta.containsKey('xai.chat.chat'), isFalse);
+      expect(meta['xai.chat'], equals(meta['xai']));
     });
   });
 }
