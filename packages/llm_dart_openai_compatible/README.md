@@ -22,6 +22,33 @@ can register your own provider id:
 
 - Example: `example/04_providers/others/openai_compatible_custom_providers.dart`
 
+## Quick start (ProviderV3 factory)
+
+This package also exposes an AI SDK v3-style factory for OpenAI-compatible
+gateways:
+
+```dart
+import 'package:llm_dart_core/models/chat_models.dart';
+import 'package:llm_dart_openai_compatible/openai_compatible.dart';
+
+Future<void> main() async {
+  final openrouter = createOpenAICompatible(
+    baseUrl: 'https://openrouter.ai/api/v1',
+    name: 'openrouter',
+    apiKey: 'OPENROUTER_API_KEY',
+    headers: const {
+      // Example:
+      // 'HTTP-Referer': 'https://your.app',
+      // 'X-Title': 'your-app-name',
+    },
+  );
+
+  final model = openrouter('gpt-4.1');
+  final result = await model.chat([ChatMessage.user('Hello!')]);
+  print(result.text);
+}
+```
+
 ## Imports
 
 The recommended entrypoint is:
@@ -50,4 +77,3 @@ This package reads provider-specific options from `LLMConfig.providerOptions[pro
 
 Note: `apiKey` is optional for OpenAI-compatible endpoints. If omitted, auth
 headers are not added and the server decides whether the request is allowed.
-
