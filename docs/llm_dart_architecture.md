@@ -223,8 +223,8 @@ Provider-by-provider alignment tracker:
     - Typed tool catalogs (recommended): `OpenAIProviderTools`, `AnthropicProviderTools`, `GoogleProviderTools`.
     - `LLMBuilder` web search convenience methods were removed.
 - OpenAI Responses exposes web search calls + citations via:
-  - `providerMetadata['openai']['webSearchCalls']`
-  - `providerMetadata['openai']['annotations']`
+  - `readProviderMetadata<Map<String, dynamic>>(providerMetadata, 'openai')?['webSearchCalls']`
+  - `readProviderMetadata<Map<String, dynamic>>(providerMetadata, 'openai')?['annotations']`
   - OpenAI Responses auto-adds `include: ['web_search_call.action.sources']` when the built-in web search tool is enabled.
   - OpenAI factory bridges `LLMConfig.providerTools` ids (`openai.web_search_preview`, `openai.file_search`, `openai.computer_use_preview`) into Responses built-in tools (in addition to `providerOptions['openai']['builtInTools']`).
   - Similarly auto-adds:
@@ -502,9 +502,9 @@ typedef ProviderMetadata = Map<String, Map<String, Object?>>;
 
 Examples:
 
-- `providerMetadata['anthropic']?['cacheReadTokens'] = ...`
-- `providerMetadata['openai']?['id'] = ...`
-- `providerMetadata['openai']?['webSearchCalls'] = ...` (OpenAI Responses built-in web search)
+- `readProviderMetadata<Map<String, dynamic>>(providerMetadata, 'anthropic')?['cacheReadTokens'] = ...`
+- `readProviderMetadata<Map<String, dynamic>>(providerMetadata, 'openai.chat')?['id'] = ...`
+- `readProviderMetadata<Map<String, dynamic>>(providerMetadata, 'openai')?['webSearchCalls'] = ...` (OpenAI Responses built-in web search)
 
 ### 5.3 Provider tools (not only function tools)
 

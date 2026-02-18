@@ -160,6 +160,7 @@ print('AI thinking: ${result.thinking}');
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_xai/llm_dart_xai.dart';
 
 registerXAI();
@@ -177,7 +178,12 @@ final result = await generateText(
 );
 
 print(result.text);
-print(result.providerMetadata);
+
+final xai = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  xaiProviderId,
+);
+print(xai);
 ```
 
 ## Best Practices

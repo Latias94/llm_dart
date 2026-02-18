@@ -460,12 +460,21 @@ In LLM Dart terms:
 - Provider-native tools (e.g. Anthropic `web_search_20250305`, OpenAI `web_search_preview`) should be configured via provider packages/config and executed by the provider.
 - Provider-only outputs should be read from `providerMetadata` (and `rawResponse` when necessary).
 
-#### 2.4.1 OpenAI Responses: web search outputs (`providerMetadata['openai']`)
+#### 2.4.1 OpenAI Responses: web search outputs (`readProviderMetadata(..., 'openai')`)
 
 When using OpenAI Responses built-in web search tools, `llm_dart_openai` exposes provider-only outputs via:
 
-- `providerMetadata['openai']['webSearchCalls']`: array of web search calls (provider-executed)
-- `providerMetadata['openai']['annotations']`: aggregated `output_text.annotations` (e.g. URL citations) when present
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final openai = readProviderMetadata<Map<String, dynamic>>(
+  providerMetadata,
+  'openai',
+);
+```
+
+- `openai?['webSearchCalls']`: array of web search calls (provider-executed)
+- `openai?['annotations']`: aggregated `output_text.annotations` (e.g. URL citations) when present
 
 Example shape:
 
@@ -492,12 +501,12 @@ Notes:
 - `action.type` is normalized to `search` / `openPage` / `findInPage` for convenience.
 - Web search calls are **not** surfaced via `ChatResponse.toolCalls` (they are provider-executed).
 
-#### 2.4.2 OpenAI Responses: other built-in tools (`providerMetadata['openai']`)
+#### 2.4.2 OpenAI Responses: other built-in tools (`readProviderMetadata(..., 'openai')`)
 
 For other OpenAI Responses built-in tools, `llm_dart_openai` also exposes tool-call summaries via `providerMetadata`:
 
-- `providerMetadata['openai']['fileSearchCalls']`: array of `file_search_call` items (including `queries` and optional `results` when included)
-- `providerMetadata['openai']['computerCalls']`: array of `computer_call` items (id + status)
+- `openai?['fileSearchCalls']`: array of `file_search_call` items (including `queries` and optional `results` when included)
+- `openai?['computerCalls']`: array of `computer_call` items (id + status)
 
 Additionally, when these tools are enabled, `llm_dart_openai` auto-adds the corresponding `include` fields so the response contains the richest available tool outputs:
 

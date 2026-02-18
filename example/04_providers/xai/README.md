@@ -53,7 +53,13 @@ final result = await generateText(
 
 // Grok automatically includes live search results
 print('Current info: ${result.text}');
-print(result.providerMetadata);
+
+// Requires: import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+final xai = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  xaiProviderId,
+);
+print(xai);
 ```
 
 ### Real-time Data Access
@@ -72,7 +78,13 @@ final result = await generateText(
 
 // Live financial data integrated automatically
 print('Live data: ${result.text}');
-print(result.providerMetadata);
+
+// Requires: import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+final xai = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  xaiProviderId,
+);
+print(xai);
 ```
 
 ## Next Steps
