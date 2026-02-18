@@ -1,8 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:llm_dart_builder/llm_dart_builder.dart';
-import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_google/google.dart';
 
 /// Example demonstrating Google's native text-to-speech capabilities
 ///
@@ -99,29 +98,20 @@ List<int> _int16ToBytes(int value) {
 
 void main() async {
   // Get API key from environment
-  final apiKey = Platform.environment['GOOGLE_API_KEY'];
+  final apiKey = Platform.environment['GOOGLE_GENERATIVE_AI_API_KEY'] ??
+      Platform.environment['GOOGLE_API_KEY'];
   if (apiKey == null) {
-    print('Please set GOOGLE_API_KEY environment variable');
+    print(
+      'Please set GOOGLE_GENERATIVE_AI_API_KEY (recommended) or GOOGLE_API_KEY environment variable',
+    );
     return;
   }
 
   print('🎤 Google TTS Example\n');
 
   try {
-    registerGoogle();
-
-    // Build Google TTS provider
-    final provider = await LLMBuilder()
-        .provider(googleProviderId)
-        .apiKey(apiKey)
-        .model('gemini-2.5-flash-preview-tts')
-        .build();
-
-    if (provider is! GoogleTTSCapability) {
-      throw StateError('Built provider does not support Google TTS.');
-    }
-
-    final ttsProvider = provider as GoogleTTSCapability;
+    final google = createGoogleGenerativeAI(apiKey: apiKey);
+    final ttsProvider = google('gemini-2.5-flash-preview-tts');
 
     // Example 1: Single-speaker TTS
     await singleSpeakerExample(ttsProvider);

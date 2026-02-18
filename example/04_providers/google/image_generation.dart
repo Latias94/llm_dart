@@ -1,8 +1,7 @@
 import 'dart:io';
 
-import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_google/google.dart';
 
 /// Google Image Generation Examples
 ///
@@ -21,39 +20,38 @@ import 'package:llm_dart_google/llm_dart_google.dart';
 Future<void> main() async {
   print('🎨 Google Image Generation Examples\n');
 
-  registerGoogle();
-
-  final apiKey = Platform.environment['GOOGLE_API_KEY'];
+  final apiKey = Platform.environment['GOOGLE_GENERATIVE_AI_API_KEY'] ??
+      Platform.environment['GOOGLE_API_KEY'];
   if (apiKey == null) {
-    print('❌ Please set GOOGLE_API_KEY environment variable');
+    print(
+      '❌ Please set GOOGLE_GENERATIVE_AI_API_KEY (recommended) or GOOGLE_API_KEY environment variable',
+    );
     print('   Get your API key from: https://aistudio.google.com/app/apikey');
     return;
   }
 
+  final google = createGoogleGenerativeAI(apiKey: apiKey);
+
   try {
-    await demonstrateGeminiImageGeneration(apiKey);
+    await demonstrateGeminiImageGeneration(google);
     print(
         '⚠️  Note: Imagen 3 requires a paid account and may not be available in all regions.');
-    await demonstrateImagenGeneration(apiKey);
-    await demonstrateImageEditing(apiKey);
+    await demonstrateImagenGeneration(google);
+    await demonstrateImageEditing(google);
   } catch (e) {
     print('❌ Error: $e');
   }
 }
 
 /// Demonstrate Gemini 2.0 Flash Preview Image Generation
-Future<void> demonstrateGeminiImageGeneration(String apiKey) async {
+Future<void> demonstrateGeminiImageGeneration(GoogleProviderV3 google) async {
   print('🔮 Gemini 2.0 Flash Preview Image Generation');
   print('=' * 50);
 
   try {
     // Create Google provider for Gemini image generation
-    final imageProvider = await LLMBuilder()
-        .provider(googleProviderId)
-        .apiKey(apiKey)
-        .model('gemini-2.0-flash-preview-image-generation')
-        .option('enableImageGeneration', true)
-        .option('responseModalities', ['TEXT', 'IMAGE']).buildImageGeneration();
+    final imageProvider =
+        google.imageModel('gemini-2.0-flash-preview-image-generation');
 
     print('   📋 Provider capabilities:');
     print('      Supported sizes: ${imageProvider.getSupportedSizes()}');
@@ -94,17 +92,13 @@ Future<void> demonstrateGeminiImageGeneration(String apiKey) async {
 }
 
 /// Demonstrate Imagen 3 generation
-Future<void> demonstrateImagenGeneration(String apiKey) async {
+Future<void> demonstrateImagenGeneration(GoogleProviderV3 google) async {
   print('\n🖼️  Imagen 3 Generation');
   print('=' * 50);
 
   try {
     // Create Google provider for Imagen 3
-    final imageProvider = await LLMBuilder()
-        .provider(googleProviderId)
-        .apiKey(apiKey)
-        .model('imagen-3.0-generate-002')
-        .buildImageGeneration();
+    final imageProvider = google.imageModel('imagen-3.0-generate-002');
 
     // Generate image with Imagen 3
     print('   🎨 Generating image with Imagen 3...');
@@ -140,18 +134,14 @@ Future<void> demonstrateImagenGeneration(String apiKey) async {
 }
 
 /// Demonstrate image editing with Gemini
-Future<void> demonstrateImageEditing(String apiKey) async {
+Future<void> demonstrateImageEditing(GoogleProviderV3 google) async {
   print('\n✂️  Image Editing with Gemini');
   print('=' * 50);
 
   try {
     // First, generate a base image
-    final imageProvider = await LLMBuilder()
-        .provider(googleProviderId)
-        .apiKey(apiKey)
-        .model('gemini-2.0-flash-preview-image-generation')
-        .option('enableImageGeneration', true)
-        .option('responseModalities', ['TEXT', 'IMAGE']).buildImageGeneration();
+    final imageProvider =
+        google.imageModel('gemini-2.0-flash-preview-image-generation');
 
     print('   🎨 Generating base image...');
     final basePrompt = 'A simple cartoon cat sitting on a chair';

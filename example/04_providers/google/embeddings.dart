@@ -1,8 +1,9 @@
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:llm_dart_builder/llm_dart_builder.dart';
-import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_google/google.dart';
 
 /// Google Embeddings Examples
 ///
@@ -14,44 +15,47 @@ import 'package:llm_dart_google/llm_dart_google.dart';
 Future<void> main() async {
   print('🔢 Google Embeddings Examples\n');
 
-  registerGoogle();
-
-  final apiKey = Platform.environment['GOOGLE_API_KEY'];
+  final apiKey = Platform.environment['GOOGLE_GENERATIVE_AI_API_KEY'] ??
+      Platform.environment['GOOGLE_API_KEY'];
   if (apiKey == null || apiKey.isEmpty) {
-    print('⚠️  Skipped: Please set GOOGLE_API_KEY environment variable');
+    print(
+      '⚠️  Skipped: Please set GOOGLE_GENERATIVE_AI_API_KEY (recommended) or GOOGLE_API_KEY',
+    );
     return;
   }
 
-  await demonstrateBasicEmbeddings(apiKey);
-  await demonstrateBatchEmbeddings(apiKey);
-  await demonstrateEmbeddingParameters(apiKey);
-  await demonstrateSemanticSimilarity(apiKey);
+  final google = createGoogleGenerativeAI(apiKey: apiKey);
+
+  await demonstrateBasicEmbeddings(google);
+  await demonstrateBatchEmbeddings(google);
+  await demonstrateEmbeddingParameters(google);
+  await demonstrateSemanticSimilarity(google);
 
   print('\n✅ Google embeddings examples completed!');
 }
 
 /// Demonstrate basic embedding generation
-Future<void> demonstrateBasicEmbeddings(String apiKey) async {
+Future<void> demonstrateBasicEmbeddings(GoogleProviderV3 google) async {
   print('📊 Basic Embeddings:');
 
   try {
-    final provider = await LLMBuilder()
-        .provider(googleProviderId)
-        .apiKey(apiKey)
-        .model('text-embedding-004')
-        .buildEmbedding();
-
     // Single text embedding
-    final singleResponse = await provider.embed(['Hello, world!']);
+    final singleResponse = await embedMany(
+      model: google.embeddingModel('text-embedding-004'),
+      values: ['Hello, world!'],
+    );
     print(
         '   ✅ Single embedding: ${singleResponse.embeddings.first.length} dimensions');
 
     // Multiple texts
-    final multipleResponse = await provider.embed([
-      'The quick brown fox jumps over the lazy dog',
-      'Machine learning is transforming technology',
-      'Google provides powerful embedding models',
-    ]);
+    final multipleResponse = await embedMany(
+      model: google.embeddingModel('text-embedding-004'),
+      values: [
+        'The quick brown fox jumps over the lazy dog',
+        'Machine learning is transforming technology',
+        'Google provides powerful embedding models',
+      ],
+    );
     final multipleEmbeddings = multipleResponse.embeddings;
 
     print(
@@ -67,16 +71,10 @@ Future<void> demonstrateBasicEmbeddings(String apiKey) async {
 }
 
 /// Demonstrate batch embedding processing
-Future<void> demonstrateBatchEmbeddings(String apiKey) async {
+Future<void> demonstrateBatchEmbeddings(GoogleProviderV3 google) async {
   print('📦 Batch Processing:');
 
   try {
-    final provider = await LLMBuilder()
-        .provider(googleProviderId)
-        .apiKey(apiKey)
-        .model('text-embedding-004')
-        .buildEmbedding();
-
     // Large batch of texts
     final texts = [
       'Artificial intelligence is revolutionizing industries',
@@ -89,7 +87,10 @@ Future<void> demonstrateBatchEmbeddings(String apiKey) async {
       'Machine learning requires large datasets for training',
     ];
 
-    final response = await provider.embed(texts);
+    final response = await embedMany(
+      model: google.embeddingModel('text-embedding-004'),
+      values: texts,
+    );
     final embeddings = response.embeddings;
     print('   ✅ Batch processing: ${embeddings.length} embeddings generated');
     print('   📏 Embedding dimensions: ${embeddings.first.length}');
@@ -111,39 +112,39 @@ Future<void> demonstrateBatchEmbeddings(String apiKey) async {
 }
 
 /// Demonstrate Google-specific embedding parameters
-Future<void> demonstrateEmbeddingParameters(String apiKey) async {
+Future<void> demonstrateEmbeddingParameters(GoogleProviderV3 google) async {
   print('⚙️  Google-Specific Parameters:');
 
   try {
-    // Using task type for better embeddings
-    final provider = await LLMBuilder()
-        .provider(googleProviderId)
-        .apiKey(apiKey)
-        .model('text-embedding-004')
-        .option('embeddingTaskType', 'SEMANTIC_SIMILARITY')
-        .option('embeddingDimensions', 512) // Reduced dimensions
-        .buildEmbedding();
-
-    final response = await provider.embed([
-      'Document for semantic similarity',
-      'Another document for comparison',
-    ]);
+    final response = await embedMany(
+      model: google.embeddingModel('text-embedding-004'),
+      values: [
+        'Document for semantic similarity',
+        'Another document for comparison',
+      ],
+      callOptions: const LLMCallOptions(
+        body: {
+          'taskType': 'SEMANTIC_SIMILARITY',
+          'outputDimensionality': 512,
+        },
+      ),
+    );
 
     print('   ✅ Task-specific embeddings generated');
     print('   📏 Reduced dimensions: ${response.embeddings.first.length}');
 
-    // For retrieval tasks
-    final retrievalProvider = await LLMBuilder()
-        .provider(googleProviderId)
-        .apiKey(apiKey)
-        .model('text-embedding-004')
-        .option('embeddingTaskType', 'RETRIEVAL_DOCUMENT')
-        .option('embeddingTitle', 'Technical Documentation')
-        .buildEmbedding();
-
-    final docResponse = await retrievalProvider.embed([
-      'This is a technical document about machine learning algorithms.',
-    ]);
+    final docResponse = await embedMany(
+      model: google.embeddingModel('text-embedding-004'),
+      values: [
+        'This is a technical document about machine learning algorithms.',
+      ],
+      callOptions: const LLMCallOptions(
+        body: {
+          'taskType': 'RETRIEVAL_DOCUMENT',
+          'title': 'Technical Documentation',
+        },
+      ),
+    );
 
     print(
         '   ✅ Retrieval embeddings with title: ${docResponse.embeddings.first.length} dimensions');
@@ -155,17 +156,10 @@ Future<void> demonstrateEmbeddingParameters(String apiKey) async {
 }
 
 /// Demonstrate semantic similarity calculations
-Future<void> demonstrateSemanticSimilarity(String apiKey) async {
+Future<void> demonstrateSemanticSimilarity(GoogleProviderV3 google) async {
   print('🎯 Semantic Similarity:');
 
   try {
-    final provider = await LLMBuilder()
-        .provider(googleProviderId)
-        .apiKey(apiKey)
-        .model('text-embedding-004')
-        .option('embeddingTaskType', 'SEMANTIC_SIMILARITY')
-        .buildEmbedding();
-
     final texts = [
       'The cat sat on the mat',
       'A feline rested on the rug',
@@ -173,7 +167,13 @@ Future<void> demonstrateSemanticSimilarity(String apiKey) async {
       'Machine learning algorithms',
     ];
 
-    final response = await provider.embed(texts);
+    final response = await embedMany(
+      model: google.embeddingModel('text-embedding-004'),
+      values: texts,
+      callOptions: const LLMCallOptions(
+        body: {'taskType': 'SEMANTIC_SIMILARITY'},
+      ),
+    );
     final embeddings = response.embeddings;
 
     print('   📊 Similarity Matrix:');
