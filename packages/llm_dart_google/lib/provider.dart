@@ -269,15 +269,15 @@ class GoogleProvider
     final responseHeaders = result.headers;
 
     final endpoint = '${googleModelPath(model)}:generateContent';
+    final payload = <String, dynamic>{
+      'model': model,
+      'endpoint': endpoint,
+    };
+    final baseKey = config.providerOptionsName;
     final providerMetadata = <String, dynamic>{
-      'google': {
-        'model': model,
-        'endpoint': endpoint,
-      },
-      'google.speech': {
-        'model': model,
-        'endpoint': endpoint,
-      },
+      baseKey: payload,
+      '$baseKey.speech': payload,
+      if (baseKey == 'google') 'google.generative-ai': payload,
     };
 
     return TTSResponse(

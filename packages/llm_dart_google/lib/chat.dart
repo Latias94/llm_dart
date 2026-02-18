@@ -2021,9 +2021,13 @@ class GoogleChat
             if (thoughtSignature != null) 'thoughtSignature': thoughtSignature,
           });
         }
-        final uploaded = message.getProtocolPayload<Map<String, dynamic>>(
-          'google',
-        );
+        final uploaded =
+            message.getProtocolPayload<Map<String, dynamic>>(
+              config.providerOptionsName,
+            ) ??
+            message.getProtocolPayload<Map<String, dynamic>>(
+              'google',
+            );
         final fileUri = uploaded?['fileUri'] as String?;
         final uploadedMimeType = uploaded?['mimeType'] as String?;
 
@@ -2192,7 +2196,7 @@ class GoogleChat
               name: message.name,
               protocolPayloads: {
                 ...message.protocolPayloads,
-                'google': {
+                config.providerOptionsName: {
                   'fileUri': uri,
                   'mimeType': mime.mimeType,
                 },

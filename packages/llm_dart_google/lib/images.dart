@@ -35,7 +35,13 @@ class GoogleImages
     ProviderOptions providerOptions,
   ) {
     if (providerOptions.isEmpty) return callOptions;
-    final ns = providerOptionsNamespace(providerOptions, 'google');
+    Map<String, dynamic>? ns = providerOptions[_config.providerId];
+    if (ns == null) {
+      for (final fallbackId in _config.providerOptionsFallbackIds) {
+        ns = providerOptions[fallbackId];
+        if (ns != null) break;
+      }
+    }
     if (ns == null || ns.isEmpty) return callOptions;
     return LLMCallOptions(body: ns).mergedWith(callOptions);
   }
@@ -48,10 +54,18 @@ class GoogleImages
       'model': model,
       'endpoint': endpoint,
     };
-    return {
-      'google': payload,
-      'google.image': payload,
+    final baseKey = _config.providerOptionsName;
+    final metadata = <String, dynamic>{
+      baseKey: payload,
+      '$baseKey.image': payload,
     };
+
+    // AI SDK default provider name for Google Generative AI (Gemini API only).
+    if (baseKey == 'google') {
+      metadata['google.generative-ai'] = payload;
+    }
+
+    return metadata;
   }
 
   @override
