@@ -26,6 +26,7 @@ library;
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'config.dart';
 import 'provider.dart';
+import 'src/google_provider_v3.dart';
 
 // Core exports
 export 'config.dart';
@@ -41,6 +42,55 @@ export 'video.dart';
 // Advanced, provider-native tools are opt-in:
 // - `package:llm_dart_google/provider_tools.dart`
 // - `package:llm_dart_google/web_search_tool_options.dart`
+
+export 'src/google_provider_v3.dart' show GoogleProviderV3, GoogleProviderSettings;
+
+/// Create a Google Generative AI provider (AI SDK v3 style).
+GoogleProviderV3 createGoogleGenerativeAI({
+  required Object? apiKey,
+  Object? baseUrl,
+  Map<String, String>? headers,
+  Duration? timeout,
+  String providerId = 'google',
+  String providerOptionsName = 'google',
+  List<String> providerOptionsFallbackIds = const [],
+  GoogleProvider Function(GoogleConfig config)? providerFactory,
+}) {
+  return GoogleProviderV3(
+    GoogleProviderSettings(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      headers: headers,
+      timeout: timeout,
+      providerId: providerId,
+      providerOptionsName: providerOptionsName,
+      providerOptionsFallbackIds: providerOptionsFallbackIds,
+      providerFactory: providerFactory,
+    ),
+  );
+}
+
+/// Alias for `createGoogleGenerativeAI(...)` (upstream parity).
+GoogleProviderV3 google({
+  required Object? apiKey,
+  Object? baseUrl,
+  Map<String, String>? headers,
+  Duration? timeout,
+  String providerId = 'google',
+  String providerOptionsName = 'google',
+  List<String> providerOptionsFallbackIds = const [],
+  GoogleProvider Function(GoogleConfig config)? providerFactory,
+}) =>
+    createGoogleGenerativeAI(
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      headers: headers,
+      timeout: timeout,
+      providerId: providerId,
+      providerOptionsName: providerOptionsName,
+      providerOptionsFallbackIds: providerOptionsFallbackIds,
+      providerFactory: providerFactory,
+    );
 
 /// Create a Google provider with default configuration
 GoogleProvider createGoogleProvider({

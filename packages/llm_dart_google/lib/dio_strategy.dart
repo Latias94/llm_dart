@@ -24,6 +24,12 @@ class GoogleDioStrategy extends BaseProviderDioStrategy {
     };
 
     final googleConfig = config as GoogleConfig;
+    final extra = googleConfig.extraHeaders;
+    if (extra != null && extra.isNotEmpty) {
+      for (final entry in extra.entries) {
+        setHeaderCaseInsensitive(headers, entry.key, entry.value);
+      }
+    }
     return withUserAgentSuffix(
       headers,
       defaultUserAgentSuffixPartsForProvider(googleConfig.providerOptionsName),

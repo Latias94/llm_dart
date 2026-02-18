@@ -81,6 +81,11 @@ class GoogleConfig {
 
   final String apiKey;
   final String baseUrl;
+
+  /// Optional extra headers merged into request headers.
+  ///
+  /// This is primarily used by AI SDK-style provider factories (v3 parity).
+  final Map<String, String>? extraHeaders;
   final String model;
   final int? maxTokens;
   final double? temperature;
@@ -144,6 +149,7 @@ class GoogleConfig {
     this.providerOptionsName = 'google',
     required this.apiKey,
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/',
+    this.extraHeaders,
     this.model = 'gemini-1.5-flash',
     this.maxTokens,
     this.temperature,
@@ -399,6 +405,7 @@ class GoogleConfig {
     String? providerOptionsName,
     String? apiKey,
     String? baseUrl,
+    Map<String, String>? extraHeaders,
     String? model,
     int? maxTokens,
     double? temperature,
@@ -432,6 +439,7 @@ class GoogleConfig {
         providerOptionsName: providerOptionsName ?? this.providerOptionsName,
         apiKey: apiKey ?? this.apiKey,
         baseUrl: baseUrl ?? this.baseUrl,
+        extraHeaders: extraHeaders ?? this.extraHeaders,
         model: model ?? this.model,
         maxTokens: maxTokens ?? this.maxTokens,
         temperature: temperature ?? this.temperature,
