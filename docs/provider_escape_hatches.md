@@ -603,7 +603,7 @@ Standardize a capability only if:
 Otherwise:
 
 - Keep it provider-specific via `providerOptions[providerId]`
-- Expose any provider-only outputs via `providerMetadata[baseProviderId]` (where `baseProviderId = providerId.split('.').first`)
+- Expose any provider-only outputs via `readProviderMetadata(providerMetadata, providerId)`
 
 Examples that are often **provider-specific**:
 

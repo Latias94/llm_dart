@@ -79,7 +79,7 @@ We do not expand the standard surface to cover every provider feature. Instead:
 
 - Request-time knobs: `LLMConfig.providerOptions[providerId]`
 - Provider-executed tools: `LLMConfig.providerTools` (`ProviderTool`)
-- Response passthrough: `ChatResponse.providerMetadata[baseProviderId]` (where `baseProviderId = providerId.split('.').first`)
+- Response passthrough: `readProviderMetadata(ChatResponse.providerMetadata, providerId)`
 
 This keeps the standard API small, while still enabling power users to access
 provider features.

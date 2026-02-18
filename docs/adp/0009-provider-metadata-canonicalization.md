@@ -42,8 +42,15 @@ reducing long-term costs.
 
 ### 1) Canonical key
 
-The canonical provider metadata key is always the **base provider id** (without
-capability suffixes).
+The canonical provider metadata key should be stable and deterministic.
+
+In practice, downstream code should read via:
+
+- `readProviderMetadata(providerMetadata, providerId)`
+
+This prefers the base provider id when present (e.g. `openai` for
+`openai.chat` / `openai.responses`) and falls back to `providerId` (and
+single-entry maps) when needed.
 
 Examples:
 
@@ -52,6 +59,7 @@ Examples:
 - Anthropic: canonical key is `anthropic`
 - Google (Gemini API): canonical key is `google`
 - Google Vertex: canonical key is `vertex`
+- xAI Responses (providerId `xai.responses`): canonical key is `xai.responses`
 
 Historical note (Vertex):
 
@@ -85,7 +93,7 @@ payload must be identical to the canonical payload (deep-equal JSON shape).
 
 Positive:
 
-- Clear rule for downstream code: always read `providerMetadata[baseProviderId]`.
+- Clear rule for downstream code: always read via `readProviderMetadata(providerMetadata, providerId)`.
 - Lower drift risk: one canonical schema to maintain.
 - Easier to evolve the standard surface without being trapped by legacy keys.
 

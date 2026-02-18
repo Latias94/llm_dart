@@ -5,16 +5,14 @@ part of the standardized surface.
 
 This repository follows a Vercel AI SDK–style namespacing convention:
 
-- Always emit a canonical namespace key equal to the **base provider id**
-  (the prefix before the first `.` in `providerId`; e.g. `openai` for
-  `openai.chat` and `openai.responses`).
-- Also emit one or more capability aliases (e.g. `openai.chat`, `openai.responses`)
-  for Vercel AI SDK parity and protocol reuse.
+- Providers emit at least one stable namespace key (often the base provider id,
+  such as `openai` or `azure`).
+- Some providers may also emit capability keys (e.g. `openai.chat`,
+  `openai.responses`) for Vercel AI SDK parity and protocol reuse.
 
 Canonicalization policy:
 
-- **Downstream code should treat `providerMetadata[baseProviderId]` as canonical.**
-- Capability keys are aliases for parity/ergonomics.
+- **Downstream code should read via `readProviderMetadata(providerMetadata, providerId)`.**
 - If aliases are emitted, their payload must deep-equal the canonical payload.
 - Avoid adding new alias families unless they are justified and tested.
 
@@ -47,15 +45,13 @@ final meta = response.providerMetadata;
 final openai = readProviderMetadata<Map<String, dynamic>>(meta, 'openai.chat');
 ```
 
-`readProviderMetadata` always prefers the canonical base provider key (e.g.
-`openai`) and falls back to capability aliases (e.g. `openai.chat`,
-`openai.responses`) when needed.
+`readProviderMetadata` prefers a base provider key when present and falls back
+to capability keys (and single-entry maps) when needed.
 
 Exception note:
 
-- Some providers may emit additional compatibility aliases during the refactor
-  window, but the canonical key should remain the base provider id (without
-  capability suffixes).
+- During the fearless refactor window, some providers may emit additional keys
+  for parity or migration. Prefer the helper for stable access.
 
 ## Recommended Payload Shape
 
