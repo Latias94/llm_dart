@@ -10,7 +10,8 @@ import 'model_path.dart';
 /// This module handles embedding generation functionality for Google providers.
 /// Google provides text embedding models through the Gemini API.
 /// Reference: https://ai.google.dev/api/embeddings
-class GoogleEmbeddings implements EmbeddingCapability {
+class GoogleEmbeddings
+    implements EmbeddingCapability, EmbeddingCallOptionsCapability {
   final GoogleClient client;
   final GoogleConfig config;
 
@@ -26,6 +27,19 @@ class GoogleEmbeddings implements EmbeddingCapability {
     List<String> input, {
     CancelToken? cancelToken,
   }) async {
+    return embedWithCallOptions(
+      input,
+      callOptions: const LLMCallOptions(),
+      cancelToken: cancelToken,
+    );
+  }
+
+  @override
+  Future<EmbeddingResponse> embedWithCallOptions(
+    List<String> input, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing Google API key');
     }
@@ -33,7 +47,9 @@ class GoogleEmbeddings implements EmbeddingCapability {
     try {
       // For single input or small batches, use single endpoint
       if (input.length == 1) {
-        final requestBody = _buildSingleEmbeddingRequest(input.first);
+        final requestBody = callOptions.mergeIntoRequestBody(
+          _buildSingleEmbeddingRequest(input.first),
+        );
         final responseData = await client.postJsonWithHeaders(
           embeddingEndpoint,
           requestBody,
@@ -49,7 +65,9 @@ class GoogleEmbeddings implements EmbeddingCapability {
         );
       } else {
         // For multiple inputs, use batch endpoint
-        final requestBody = _buildBatchEmbeddingRequest(input);
+        final requestBody = callOptions.mergeIntoRequestBody(
+          _buildBatchEmbeddingRequest(input),
+        );
         final responseData = await client.postJsonWithHeaders(
           batchEmbeddingEndpoint,
           requestBody,

@@ -20,6 +20,7 @@ class GoogleProvider
         PromptChatCapability,
         PromptChatStreamPartsCapability,
         EmbeddingCapability,
+        EmbeddingCallOptionsCapability,
         ImageGenerationCapability,
         ImageGenerationCallOptionsCapability,
         ExperimentalVideoGenerationCapability,
@@ -149,6 +150,19 @@ class GoogleProvider
     CancelToken? cancelToken,
   }) async {
     return _embeddings.embed(input, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<EmbeddingResponse> embedWithCallOptions(
+    List<String> input, {
+    required LLMCallOptions callOptions,
+    CancelToken? cancelToken,
+  }) {
+    return _embeddings.embedWithCallOptions(
+      input,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
+    );
   }
 
   // ========== ImageGenerationCapability (delegated to images module) ==========

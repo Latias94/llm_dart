@@ -3,6 +3,8 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/google.dart';
 import 'package:llm_dart_google/client.dart';
 
+import '../../utils/fakes/google_fake_client.dart';
+
 void main() {
   group('GoogleEmbeddings', () {
     late GoogleConfig config;
@@ -166,6 +168,42 @@ void main() {
       test('should implement EmbeddingCapability', () {
         final provider = GoogleProvider(config);
         expect(provider, isA<EmbeddingCapability>());
+      });
+
+      test('should implement EmbeddingCallOptionsCapability', () {
+        final provider = GoogleProvider(config);
+        expect(provider, isA<EmbeddingCallOptionsCapability>());
+      });
+
+      test('embedWithCallOptions should merge fields into request body',
+          () async {
+        const endpoint = 'models/text-embedding-004:embedContent';
+        final client = FakeGoogleClient(
+          config,
+          responsesByEndpoint: {
+            endpoint: {
+              'embedding': {
+                'values': [0.1, 0.2]
+              }
+            },
+          },
+        );
+        final provider = GoogleProvider(config, client: client);
+
+        await provider.embedWithCallOptions(
+          ['hello'],
+          callOptions: const LLMCallOptions(
+            body: {
+              'taskType': 'SEMANTIC_SIMILARITY',
+              'outputDimensionality': 256,
+            },
+          ),
+        );
+
+        final body = client.lastBody as Map<String, dynamic>?;
+        expect(body, isNotNull);
+        expect(body!['taskType'], equals('SEMANTIC_SIMILARITY'));
+        expect(body['outputDimensionality'], equals(256));
       });
 
       test('should report embedding capability optimistically', () {
