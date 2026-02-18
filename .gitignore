@@ -3,6 +3,8 @@
 .pub/
 build/
 coverage/
+.melos_tool/
+.tmp/
 .DS_Store
 .idea/
 .vscode/
