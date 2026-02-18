@@ -24,7 +24,7 @@ Note: If you use the **pre-configured OpenAI-compatible** provider id
 If you use the **Responses API** provider id `xai.responses`, the namespace is:
 
 - `providerOptions['xai.responses']`
-- `providerMetadata['xai.responses']`
+- `providerMetadata['xai']` (canonical) + `providerMetadata['xai.responses']` (alias)
 
 ## Packages
 

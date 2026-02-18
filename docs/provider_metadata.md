@@ -48,6 +48,14 @@ final openai = readProviderMetadata<Map<String, dynamic>>(meta, 'openai.chat');
 `readProviderMetadata` prefers a base provider key when present and falls back
 to capability keys (and single-entry maps) when needed.
 
+Namespaced provider ids (e.g. `xai.responses`) are also supported. Always pass
+the provider instance id you used, and let the helper handle base vs alias keys:
+
+```dart
+final xaiResponses =
+    readProviderMetadata<Map<String, dynamic>>(meta, 'xai.responses');
+```
+
 Exception note:
 
 - During the fearless refactor window, some providers may emit additional keys
