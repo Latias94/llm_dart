@@ -53,6 +53,7 @@ class GoogleEmbeddings
         final responseData = await client.postJsonWithHeaders(
           embeddingEndpoint,
           requestBody,
+          headers: callOptions.headers,
           cancelToken: cancelToken,
         );
         final embedding = _parseSingleEmbeddingResponse(responseData.json);
@@ -71,6 +72,7 @@ class GoogleEmbeddings
         final responseData = await client.postJsonWithHeaders(
           batchEmbeddingEndpoint,
           requestBody,
+          headers: callOptions.headers,
           cancelToken: cancelToken,
         );
         final embeddings = _parseBatchEmbeddingResponse(responseData.json);

@@ -193,6 +193,7 @@ void main() {
         await provider.embedWithCallOptions(
           ['hello'],
           callOptions: const LLMCallOptions(
+            headers: {'x-test': '1'},
             body: {
               'taskType': 'SEMANTIC_SIMILARITY',
               'outputDimensionality': 256,
@@ -204,6 +205,12 @@ void main() {
         expect(body, isNotNull);
         expect(body!['taskType'], equals('SEMANTIC_SIMILARITY'));
         expect(body['outputDimensionality'], equals(256));
+
+        final withHeaders = client.calls
+            .where((c) => c.endpoint == endpoint && c.headers != null)
+            .toList(growable: false);
+        expect(withHeaders, isNotEmpty);
+        expect(withHeaders.first.headers, containsPair('x-test', '1'));
       });
 
       test('should report embedding capability optimistically', () {
