@@ -34,7 +34,9 @@ Default base URL (AI SDK parity):
 
 Vertex express mode uses API key header auth:
 
-- `x-goog-api-key: <VERTEX_API_KEY>`
+- `x-goog-api-key: <GOOGLE_VERTEX_API_KEY>` (recommended, upstream parity)
+
+Legacy env var (kept for compatibility): `VERTEX_API_KEY`.
 
 ## File URLs (`supportedFileUrlsOnly`)
 
@@ -69,19 +71,13 @@ public URLs and prefer inline uploads instead.
 import 'dart:io';
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
-import 'package:llm_dart_builder/llm_dart_builder.dart';
 import 'package:llm_dart_core/models/chat_models.dart';
 import 'package:llm_dart_google_vertex/llm_dart_google_vertex.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 Future<void> main() async {
-  registerGoogleVertex();
-
-  final model = await LLMBuilder()
-      .provider(vertexProviderId) // 'vertex'
-      .apiKey(Platform.environment['VERTEX_API_KEY'] ?? 'VERTEX_API_KEY')
-      .model('gemini-2.5-flash')
-      .build();
+  final v = createVertex(apiKey: null); // reads GOOGLE_VERTEX_API_KEY
+  final model = v('gemini-2.5-flash');
 
   final result = await generateText(
     model: model,
