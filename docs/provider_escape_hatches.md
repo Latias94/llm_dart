@@ -123,8 +123,14 @@ final provider = await LLMBuilder()
 `llm_dart_ai.GenerateTextResult` forwards it:
 
 ```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
 final result = await generateText(...);
-print(result.providerMetadata);
+final meta = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  openaiProviderId,
+);
+print(meta);
 ```
 
 Recommended shape:
