@@ -140,9 +140,24 @@ Gemini-specific thinking knobs live behind provider options (best-effort):
 
 `ChatResponse.providerMetadata` is an optional provider-id namespaced map.
 
-For Google, the namespace is:
+For Google, the canonical namespace key is:
 
 - `providerMetadata['google']`
+
+Recommended access pattern (canonical + alias-safe):
+
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final google = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  googleProviderId,
+);
+
+final model = google?['model'] ?? google?['modelVersion'];
+final finishReason = google?['finishReason'] ?? google?['stopReason'];
+final usage = google?['usage'];
+```
 
 The provider surfaces best-effort metadata such as:
 

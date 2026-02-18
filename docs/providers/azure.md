@@ -133,6 +133,22 @@ For Vercel AI SDK parity, LLM Dart also emits capability aliases:
 The alias payload is deep-equal to `providerMetadata['azure']`.
 Downstream code should prefer reading the canonical `azure` key.
 
+Recommended access pattern (canonical + alias-safe):
+
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final azure = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  azureProviderId,
+);
+
+final id = azure?['id'];
+final model = azure?['model'];
+final finishReason = azure?['finishReason'];
+final usage = azure?['usage'];
+```
+
 The payload includes best-effort fields such as:
 
 - `id`, `model`, `systemFingerprint`, `finishReason`

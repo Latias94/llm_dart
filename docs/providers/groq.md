@@ -107,9 +107,25 @@ Common keys:
 
 `ChatResponse.providerMetadata` is an optional provider-id namespaced map.
 
-For Groq, the namespace is:
+For Groq, the canonical namespace key is:
 
 - `providerMetadata['groq']`
+
+Recommended access pattern (canonical + alias-safe):
+
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final groq = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  groqProviderId,
+);
+
+final id = groq?['id'];
+final model = groq?['model'];
+final finishReason = groq?['finishReason'];
+final usage = groq?['usage'];
+```
 
 The OpenAI-compatible layer surfaces best-effort metadata such as:
 

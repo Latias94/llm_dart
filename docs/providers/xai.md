@@ -172,9 +172,25 @@ print(sources.map((s) => s.url).toList());
 
 `ChatResponse.providerMetadata` is an optional provider-id namespaced map.
 
-For xAI, the namespace is:
+For xAI (Chat Completions), the canonical namespace key is:
 
 - `providerMetadata['xai']`
+
+Recommended access pattern (canonical + alias-safe):
+
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final xai = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  xaiProviderId,
+);
+
+final id = xai?['id'];
+final model = xai?['model'];
+final finishReason = xai?['finishReason'];
+final citations = xai?['citations'];
+```
 
 The OpenAI-compatible layer surfaces best-effort metadata such as:
 
@@ -201,6 +217,25 @@ The `xai.responses` provider id targets:
 - `POST /v1/responses`
 - streaming events such as `response.output_text.delta` and
   `response.reasoning_summary_text.delta`
+
+Provider metadata for `xai.responses` is emitted under:
+
+- `providerMetadata['xai.responses']` (canonical for the Responses provider instance)
+
+Recommended access pattern:
+
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final xaiResponses = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  'xai.responses',
+);
+
+final id = xaiResponses?['id'];
+final model = xaiResponses?['model'];
+final usage = xaiResponses?['usage'];
+```
 
 ### Quick start (Responses)
 

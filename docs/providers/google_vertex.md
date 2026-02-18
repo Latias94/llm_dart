@@ -105,6 +105,21 @@ Vertex metadata follows Vercel AI SDK conventions:
 - `providerMetadata['vertex']` (canonical)
 - `providerMetadata['vertex.chat']` (alias; mirrors `vertex`)
 
+Recommended access pattern (canonical + alias-safe):
+
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final vertex = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  vertexProviderId,
+);
+
+final model = vertex?['model'] ?? vertex?['modelVersion'];
+final finishReason = vertex?['finishReason'] ?? vertex?['stopReason'];
+final usage = vertex?['usage'];
+```
+
 ## Streaming (LLMStreamPart)
 
 Vertex streaming is SSE. Prefer consuming stream output via `LLMStreamPart`:

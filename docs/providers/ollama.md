@@ -139,9 +139,24 @@ Reference:
 
 `ChatResponse.providerMetadata` is an optional provider-id namespaced map.
 
-For Ollama, the namespace is:
+For Ollama, the canonical namespace key is:
 
 - `providerMetadata['ollama']`
+
+Recommended access pattern (canonical + alias-safe):
+
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final ollama = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  ollamaProviderId,
+);
+
+final model = ollama?['model'];
+final doneReason = ollama?['doneReason'] ?? ollama?['finishReason'];
+final usage = ollama?['usage'];
+```
 
 The provider surfaces best-effort metadata such as:
 

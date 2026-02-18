@@ -115,9 +115,25 @@ to the OpenRouter request body as:
 
 `ChatResponse.providerMetadata` is an optional provider-id namespaced map.
 
-For OpenRouter, the namespace is:
+For OpenRouter, the canonical namespace key is:
 
 - `providerMetadata['openrouter']`
+
+Recommended access pattern (canonical + alias-safe):
+
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final openrouter = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  'openrouter',
+);
+
+final id = openrouter?['id'];
+final model = openrouter?['model'];
+final finishReason = openrouter?['finishReason'];
+final usage = openrouter?['usage'];
+```
 
 The OpenAI-compatible layer surfaces best-effort metadata such as:
 

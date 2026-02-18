@@ -115,9 +115,24 @@ Common keys:
 
 `ChatResponse.providerMetadata` is an optional provider-id namespaced map.
 
-For DeepSeek, the namespace is:
+For DeepSeek, the canonical namespace key is:
 
 - `providerMetadata['deepseek']`
+
+Recommended access pattern (canonical + alias-safe):
+
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final deepseek = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  deepseekProviderId,
+);
+
+final id = deepseek?['id'];
+final model = deepseek?['model'];
+final finishReason = deepseek?['finishReason'];
+```
 
 The OpenAI-compatible layer surfaces best-effort metadata such as:
 

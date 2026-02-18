@@ -204,6 +204,22 @@ For Vercel AI SDK parity, LLM Dart also emits capability aliases:
 The alias payload is deep-equal to `providerMetadata['openai']`.
 Downstream code should prefer reading the canonical `openai` key.
 
+Recommended access pattern (canonical + alias-safe):
+
+```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
+final openai = readProviderMetadata<Map<String, dynamic>>(
+  result.providerMetadata,
+  openaiProviderId,
+);
+
+final id = openai?['id'];
+final model = openai?['model'];
+final finishReason = openai?['finishReason'];
+final usage = openai?['usage'];
+```
+
 Chat Completions metadata (best-effort):
 
 - `id`, `model`, `systemFingerprint`, `finishReason`
