@@ -51,6 +51,34 @@ void main() {
       ai();
     });
 
+    test('LLMBuilder.builtin() supports namespaced provider ids (xai.responses)',
+        () {
+      LLMProviderRegistry.clear();
+
+      final builder =
+          ai(autoRegister: AutoRegisterPolicy.none).builtin('xai.responses');
+      expect(builder.providerId, equals('xai.responses'));
+      expect(LLMProviderRegistry.isRegistered('xai'), isTrue);
+      expect(LLMProviderRegistry.isRegistered('xai.responses'), isTrue);
+
+      // Restore default umbrella registration for other tests.
+      ai();
+    });
+
+    test(
+        'LLMBuilder.builtin() supports OpenAI-compatible presets (deepseek-openai)',
+        () {
+      LLMProviderRegistry.clear();
+
+      final builder = ai(autoRegister: AutoRegisterPolicy.none)
+          .builtin('deepseek-openai');
+      expect(builder.providerId, equals('deepseek-openai'));
+      expect(LLMProviderRegistry.isRegistered('deepseek-openai'), isTrue);
+
+      // Restore default umbrella registration for other tests.
+      ai();
+    });
+
     group('createProvider function', () {
       test('throws error with invalid provider ID', () async {
         expect(
