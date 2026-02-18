@@ -84,9 +84,15 @@ void main(List<String> args) {
         ? (meta['upstream'] as Map).cast<String, dynamic>()
         : <String, dynamic>{};
 
-    upstream['repository'] ??= upstreamInfo['repository'];
-    upstream['commit'] ??= upstreamInfo['commit'];
-    upstream['license'] ??= upstreamInfo['license'];
+    // For vendored fixtures (or any meta that references repo-ref/ai), keep the
+    // upstream fields in sync with the pinned `_upstream.json`. These files are
+    // meant to be bumped as a set when upstream moves.
+    //
+    // For handcrafted scenarios (which we skip above), we intentionally do not
+    // inject or overwrite upstream provenance automatically.
+    upstream['repository'] = upstreamInfo['repository'];
+    upstream['commit'] = upstreamInfo['commit'];
+    upstream['license'] = upstreamInfo['license'];
 
     if (repoRefPaths.isNotEmpty) {
       final existing = upstream['paths'];

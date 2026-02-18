@@ -36,7 +36,7 @@
   ],
   "upstream": {
     "repository": "https://github.com/vercel/ai",
-    "commit": "c36a873ce00892a4c587c2e9492220b392aefd09",
+    "commit": "393205dcdcc9d410374edfe0c8a0d22d2ae7c066",
     "license": "Apache-2.0",
     "paths": [
       "repo-ref/ai/packages/anthropic/src/__fixtures__/anthropic-tool-search-deferred-bm25.chunks.txt"
