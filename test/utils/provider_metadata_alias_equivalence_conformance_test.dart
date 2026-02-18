@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_xai/responses.dart';
 import 'package:test/test.dart';
 
 import '../utils/fakes/google_fake_client.dart';
@@ -523,6 +524,82 @@ void main() {
       expect(meta.containsKey('xai.chat'), isTrue);
       expect(meta.containsKey('xai.chat.chat'), isFalse);
       expect(meta['xai.chat'], equals(meta['xai']));
+    });
+
+    test('xAI Responses emits xai + xai.responses aliases', () async {
+      final config = OpenAICompatibleConfig(
+        providerId: 'xai.responses',
+        providerName: 'xAI (Responses)',
+        apiKey: 'test-key',
+        baseUrl: 'https://api.x.ai/v1/',
+        model: 'grok-4-fast',
+      );
+
+      final chunks = <String>[
+        _sseData({
+          'type': 'response.created',
+          'response': {
+            'object': 'response',
+            'id': 'resp_1',
+            'created_at': 1700000000,
+            'model': 'grok-4-fast',
+            'status': 'in_progress',
+            'output': [],
+          },
+        }),
+        _sseData({
+          'type': 'response.output_text.delta',
+          'delta': 'Hello',
+        }),
+        _sseData({
+          'type': 'response.completed',
+          'response': {
+            'object': 'response',
+            'id': 'resp_1',
+            'created_at': 1700000000,
+            'model': 'grok-4-fast',
+            'status': 'completed',
+            'output': [
+              {
+                'type': 'message',
+                'id': 'msg_1',
+                'role': 'assistant',
+                'status': 'completed',
+                'content': [
+                  {
+                    'type': 'output_text',
+                    'text': 'Hello',
+                    'annotations': [],
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+        'data: [DONE]\n\n',
+      ];
+
+      final client = FakeOpenAIClient(config)
+        ..streamResponse = Stream<String>.fromIterable(chunks);
+      final responses = XAIResponses(client, config);
+
+      final parts =
+          await responses.chatStreamParts([ChatMessage.user('hi')]).toList();
+      final finish = parts.whereType<LLMFinishPart>().single;
+
+      final meta = finish.response.providerMetadata;
+      expect(meta, isNotNull);
+      _expectAliasesMirrorCanonical(meta!, canonicalKey: 'xai');
+      expect(meta.containsKey('xai.responses'), isTrue);
+      expect(meta.containsKey('xai.responses.responses'), isFalse);
+      expect(meta['xai.responses'], equals(meta['xai']));
+
+      final metaParts = parts.whereType<LLMProviderMetadataPart>().toList();
+      expect(metaParts, isNotEmpty);
+      for (final p in metaParts) {
+        expect(p.providerMetadata['xai.responses'],
+            equals(p.providerMetadata['xai']));
+      }
     });
   });
 }

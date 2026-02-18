@@ -18,6 +18,12 @@ Map<String, dynamic> _stringKeyedMap(Map input) {
   });
 }
 
+String _baseProviderId(String providerId) {
+  final idx = providerId.indexOf('.');
+  if (idx <= 0) return providerId;
+  return providerId.substring(0, idx);
+}
+
 /// (Tier 3 / opt-in) xAI Responses API implementation (`POST /v1/responses`).
 ///
 /// This mirrors the event stream shape used by the OpenAI Responses API
@@ -89,6 +95,7 @@ class XAIResponses
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
+    final baseKey = _baseProviderId(config.providerId);
     final requestProviderTools = mergeProviderToolsById(
       config.originalConfig?.providerTools,
       providerTools,
@@ -110,11 +117,16 @@ class XAIResponses
       headers: callOptions.headers,
       cancelToken: cancelToken,
     );
-    return _parseResponse(
+    final response = _parseResponse(
       responseWithHeaders.json,
       responseHeaders: responseWithHeaders.headers,
       requestMetadata: requestMetadata,
       requestWarnings: built.warnings,
+    );
+    return wrapChatResponseWithProviderMetadataAlias(
+      response,
+      baseKey: baseKey,
+      aliasKey: config.providerId,
     );
   }
 
@@ -142,6 +154,7 @@ class XAIResponses
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async {
+    final baseKey = _baseProviderId(config.providerId);
     final requestProviderTools = mergeProviderToolsById(
       config.originalConfig?.providerTools,
       providerTools,
@@ -163,11 +176,16 @@ class XAIResponses
       headers: callOptions.headers,
       cancelToken: cancelToken,
     );
-    return _parseResponse(
+    final response = _parseResponse(
       responseWithHeaders.json,
       responseHeaders: responseWithHeaders.headers,
       requestMetadata: requestMetadata,
       requestWarnings: built.warnings,
+    );
+    return wrapChatResponseWithProviderMetadataAlias(
+      response,
+      baseKey: baseKey,
+      aliasKey: config.providerId,
     );
   }
 
@@ -210,6 +228,7 @@ class XAIResponses
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async* {
+    final baseKey = _baseProviderId(config.providerId);
     final requestProviderTools = mergeProviderToolsById(
       config.originalConfig?.providerTools,
       providerTools,
@@ -228,12 +247,16 @@ class XAIResponses
         body: sanitizeRequestBodyForMetadata(body),
       );
     }
-    yield* _chatStreamPartsFromBody(
-      body,
-      requestProviderTools: requestProviderTools,
-      headers: callOptions.headers,
-      requestWarnings: built.warnings,
-      cancelToken: cancelToken,
+    yield* wrapStreamPartsWithProviderMetadataAlias(
+      _chatStreamPartsFromBody(
+        body,
+        requestProviderTools: requestProviderTools,
+        headers: callOptions.headers,
+        requestWarnings: built.warnings,
+        cancelToken: cancelToken,
+      ),
+      baseKey: baseKey,
+      aliasKey: config.providerId,
     );
   }
 
@@ -261,6 +284,7 @@ class XAIResponses
     required LLMCallOptions callOptions,
     CancelToken? cancelToken,
   }) async* {
+    final baseKey = _baseProviderId(config.providerId);
     final requestProviderTools = mergeProviderToolsById(
       config.originalConfig?.providerTools,
       providerTools,
@@ -279,12 +303,16 @@ class XAIResponses
         body: sanitizeRequestBodyForMetadata(body),
       );
     }
-    yield* _chatStreamPartsFromBody(
-      body,
-      requestProviderTools: requestProviderTools,
-      headers: callOptions.headers,
-      requestWarnings: built.warnings,
-      cancelToken: cancelToken,
+    yield* wrapStreamPartsWithProviderMetadataAlias(
+      _chatStreamPartsFromBody(
+        body,
+        requestProviderTools: requestProviderTools,
+        headers: callOptions.headers,
+        requestWarnings: built.warnings,
+        cancelToken: cancelToken,
+      ),
+      baseKey: baseKey,
+      aliasKey: config.providerId,
     );
   }
 
@@ -313,8 +341,9 @@ class XAIResponses
     final toolAccums = <String, _FunctionCallAccum>{};
     final startedToolCalls = <String>{};
     final endedToolCalls = <String>{};
+    final baseKey = _baseProviderId(config.providerId);
     final providerToolParts = ProviderToolPartEmitter(
-      providerMetadataNamespace: config.providerId,
+      providerMetadataNamespace: baseKey,
     );
     final providerToolTypeById = <String, String>{};
     final providerToolNameById = <String, String>{};
@@ -347,7 +376,7 @@ class XAIResponses
     final serverToolCallsById = <String, Map<String, dynamic>>{};
     final sources = <String, Map<String, dynamic>>{};
     final sourceParts = SourcePartEmitter(
-      providerMetadataNamespace: config.providerId,
+      providerMetadataNamespace: baseKey,
     );
 
     String? responseId;
@@ -455,7 +484,7 @@ class XAIResponses
                 status: 'input_delta',
                 data: _stringKeyedMap(json),
                 providerMetadata: {
-                  config.providerId: {'type': eventType},
+                  baseKey: {'type': eventType},
                 },
               );
             }
@@ -481,7 +510,7 @@ class XAIResponses
                 status: 'input_done',
                 data: _stringKeyedMap(json),
                 providerMetadata: {
-                  config.providerId: {'type': eventType},
+                  baseKey: {'type': eventType},
                 },
               );
             }
@@ -605,7 +634,7 @@ class XAIResponses
                   if (part != null) yield part;
 
                   final metadata = {
-                    config.providerId: {
+                    baseKey: {
                       if (responseId != null) 'id': responseId,
                       if (responseModel != null) 'model': responseModel,
                       if (responseStatus != null) 'status': responseStatus,
@@ -737,7 +766,7 @@ class XAIResponses
                 serverToolCallsById[id] = _stringKeyedMap(item);
                 if (eventType == 'response.output_item.done') {
                   final metadata = {
-                    config.providerId: {
+                    baseKey: {
                       if (responseId != null) 'id': responseId,
                       if (responseModel != null) 'model': responseModel,
                       if (responseStatus != null) 'status': responseStatus,
@@ -1753,7 +1782,7 @@ class XAIResponsesChatResponse
 
   @override
   Map<String, dynamic>? get providerMetadata => {
-        providerId: {
+        _baseProviderId(providerId): {
           if (responseId != null) 'id': responseId,
           if (model != null) 'model': model,
           if (status != null) 'status': status,

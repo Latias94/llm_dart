@@ -220,7 +220,7 @@ The `xai.responses` provider id targets:
 
 Provider metadata for `xai.responses` is emitted under:
 
-- `providerMetadata['xai.responses']` (canonical for the Responses provider instance)
+- `providerMetadata['xai']` + `providerMetadata['xai.responses']` (alias; mirrors `xai`)
 
 Recommended access pattern:
 

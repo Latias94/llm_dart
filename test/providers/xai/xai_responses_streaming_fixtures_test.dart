@@ -58,6 +58,10 @@ void main() {
         );
         expect(finish.response.toolCalls, isNull);
         expect(finish.response.providerMetadata?['xai.responses'], isNotNull);
+        expect(
+          finish.response.providerMetadata?['xai'],
+          equals(finish.response.providerMetadata?['xai.responses']),
+        );
 
         // AI SDK parity: finish part should surface usage/finishReason when the
         // response provides them.
