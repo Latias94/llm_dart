@@ -41,12 +41,15 @@ We keep `providerId` as the stable primary key and add aliases so that:
 Prefer reading the canonical key:
 
 ```dart
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
+
 final meta = response.providerMetadata;
-final openai = meta?['openai'] as Map<String, dynamic>?;
+final openai = readProviderMetadata<Map<String, dynamic>>(meta, 'openai.chat');
 ```
 
-If you are migrating legacy code that used a capability key (e.g. `openai.chat`),
-prefer the canonical base key (`openai`) for maximum stability.
+`readProviderMetadata` always prefers the canonical base provider key (e.g.
+`openai`) and falls back to capability aliases (e.g. `openai.chat`,
+`openai.responses`) when needed.
 
 Exception note:
 

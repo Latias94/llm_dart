@@ -24,6 +24,7 @@ export 'utils/jsonl_chunk_parser.dart';
 export 'utils/log_redactor.dart';
 export 'utils/log_utils.dart';
 export 'utils/provider_metadata_alias.dart';
+export 'utils/read_provider_metadata.dart';
 export 'utils/provider_tool_part_emitter.dart';
 export 'utils/provider_tool_name_resolver.dart';
 export 'utils/provider_tool_merge.dart';

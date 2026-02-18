@@ -113,3 +113,7 @@ Negative:
 1) Should we expose a helper for consumers:
    - e.g. `readProviderMetadata(providerMetadata, providerId)` that always
      reads the base provider id key and falls back to single-entry maps?
+
+Status:
+
+- Implemented: `readProviderMetadata` is available in `llm_dart_provider_utils`.
