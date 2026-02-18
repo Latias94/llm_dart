@@ -41,6 +41,13 @@ class ProviderConfig {
       extension('interleavedThinking', enable);
   ProviderConfig metadata(Map<String, dynamic> data) =>
       extension('metadata', data);
+  ProviderConfig cacheControl(Map<String, dynamic> cacheControl) =>
+      extension('cacheControl', cacheControl);
+  ProviderConfig cacheControlEphemeral({String? ttl}) =>
+      cacheControl(<String, dynamic>{
+        'type': 'ephemeral',
+        if (ttl != null) 'ttl': ttl,
+      });
 
   // Ollama-specific configuration methods
   ProviderConfig numCtx(int contextLength) =>

@@ -147,6 +147,22 @@ void main() {
         expect(result['metadata'], equals(metadata));
       });
 
+      test('cacheControl() sets cache control', () {
+        final cacheControl = {'type': 'ephemeral', 'ttl': '1h'};
+        config.cacheControl(cacheControl);
+        final result = config.build();
+        expect(result['cacheControl'], equals(cacheControl));
+      });
+
+      test('cacheControlEphemeral() sets ephemeral cache control', () {
+        config.cacheControlEphemeral(ttl: '5m');
+        final result = config.build();
+        expect(
+          result['cacheControl'],
+          equals({'type': 'ephemeral', 'ttl': '5m'}),
+        );
+      });
+
       test('Anthropic configuration chaining', () {
         final metadata = {'test': 'value'};
         final result = config
@@ -155,12 +171,17 @@ void main() {
             .thinkingBudgetTokens(2000)
             .interleavedThinking(false)
             .metadata(metadata)
+            .cacheControlEphemeral(ttl: '1h')
             .build();
 
         expect(result['reasoning'], isTrue);
         expect(result['thinkingBudgetTokens'], equals(2000));
         expect(result['interleavedThinking'], isFalse);
         expect(result['metadata'], equals(metadata));
+        expect(
+          result['cacheControl'],
+          equals({'type': 'ephemeral', 'ttl': '1h'}),
+        );
       });
     });
 

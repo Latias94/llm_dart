@@ -15,6 +15,29 @@ class AnthropicBuilder {
 
   AnthropicBuilder(this._baseBuilder);
 
+  /// Configure Anthropic prompt caching (`cache_control`) via `providerOptions`.
+  ///
+  /// This writes to `providerOptions['anthropic']['cacheControl']`.
+  ///
+  /// Note: This is provider-specific. Other providers ignore this option.
+  AnthropicBuilder cacheControl(Map<String, dynamic> cacheControl) {
+    _baseBuilder.option('cacheControl', cacheControl);
+    return this;
+  }
+
+  /// Convenience helper for Anthropic ephemeral prompt caching.
+  ///
+  /// Example payload:
+  /// - `{ "type": "ephemeral", "ttl": "1h" }`
+  ///
+  /// The `ttl` format is Anthropic-specific (string).
+  AnthropicBuilder cacheControlEphemeral({String? ttl}) {
+    return cacheControl(<String, dynamic>{
+      'type': 'ephemeral',
+      if (ttl != null) 'ttl': ttl,
+    });
+  }
+
   AnthropicBuilder metadata(Map<String, dynamic> data) {
     _baseBuilder.option('metadata', data);
     return this;
