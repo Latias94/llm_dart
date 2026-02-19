@@ -245,6 +245,69 @@ void main() {
       expect(tool['state'], equals('output-denied'));
     });
 
+    test('handles tool output error and preserves providerExecuted', () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {
+          'type': 'tool-input-start',
+          'toolCallId': 'call1',
+          'toolName': 'calc',
+        },
+        const {
+          'type': 'tool-input-available',
+          'toolCallId': 'call1',
+          'toolName': 'calc',
+          'input': {'x': 1},
+        },
+        const {
+          'type': 'tool-output-error',
+          'toolCallId': 'call1',
+          'errorText': 'tool failed',
+          'providerExecuted': true,
+        },
+        const {'type': 'finish', 'finishReason': 'error'},
+      ]);
+
+      final last = await readUiMessageStream(chunks: chunks).last;
+      final tool = last.parts.singleWhere((p) => p['type'] == 'tool-calc');
+      expect(tool['state'], equals('output-error'));
+      expect(tool['errorText'], equals('tool failed'));
+      expect(tool['providerExecuted'], isTrue);
+    });
+
+    test('handles dynamic tool output error', () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {
+          'type': 'tool-input-start',
+          'toolCallId': 'call1',
+          'toolName': 'tool',
+          'dynamic': true,
+        },
+        const {
+          'type': 'tool-input-available',
+          'toolCallId': 'call1',
+          'toolName': 'tool',
+          'dynamic': true,
+          'input': {'x': 1},
+        },
+        const {
+          'type': 'tool-output-error',
+          'toolCallId': 'call1',
+          'dynamic': true,
+          'errorText': 'tool failed',
+        },
+        const {'type': 'finish', 'finishReason': 'error'},
+      ]);
+
+      final last = await readUiMessageStream(chunks: chunks).last;
+      final tool = last.parts.singleWhere((p) => p['type'] == 'dynamic-tool');
+      expect(tool['state'], equals('output-error'));
+      expect(tool['errorText'], equals('tool failed'));
+      expect(tool['input'], equals(const {'x': 1}));
+      expect(tool['toolName'], equals('tool'));
+    });
+
     test('throws when tool-approval-request arrives before tool input',
         () async {
       final chunks = Stream.fromIterable(<Map<String, Object?>>[
