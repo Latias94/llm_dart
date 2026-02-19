@@ -230,23 +230,87 @@ class UiChat {
   Future<void> sendMessage(
     String text, {
     UiChatRequestOptions options = const UiChatRequestOptions(),
+  }) =>
+      send(text: text, options: options);
+
+  /// Appends or replaces a user message and submits it.
+  ///
+  /// If [messageId] is provided, the existing user message is replaced and all
+  /// messages after it are removed (AI SDK parity).
+  ///
+  /// If [text], [parts], and [files] are all null, this submits the current
+  /// message list without adding a new message.
+  Future<void> send({
+    String? text,
+    List<Map<String, Object?>>? parts,
+    List<Map<String, Object?>>? files,
+    Object? metadata,
+    String? messageId,
+    UiChatRequestOptions options = const UiChatRequestOptions(),
   }) async {
-    final id = generateId();
+    final hasContent = text != null || parts != null || files != null;
+
+    // Submit without adding a new message.
+    if (!hasContent) {
+      await _makeRequest(
+        trigger: 'submit-message',
+        messageId: _lastMessage?.id,
+        options: options,
+      );
+      return;
+    }
+
+    final mergedParts = <Map<String, Object?>>[
+      ...?files,
+      ...?parts,
+      if (text != null) {'type': 'text', 'text': text},
+    ];
+
+    if (messageId != null) {
+      await _jobExecutor.run(() async {
+        final messages = state.messages;
+        final idx = messages.indexWhere((m) => m.id == messageId);
+        if (idx == -1) {
+          throw StateError('message with id $messageId not found');
+        }
+        if (messages[idx].role != 'user') {
+          throw StateError('message with id $messageId is not a user message');
+        }
+
+        state.messages = messages.take(idx + 1).toList(growable: false);
+        state.replaceMessage(
+          idx,
+          UIMessage(
+            id: messageId,
+            role: 'user',
+            metadata: metadata,
+            parts: mergedParts,
+          ),
+        );
+      });
+
+      await _makeRequest(
+        trigger: 'submit-message',
+        messageId: messageId,
+        options: options,
+      );
+      return;
+    }
+
     await _jobExecutor.run(() async {
       state.pushMessage(
         UIMessage(
-          id: id,
+          id: generateId(),
           role: 'user',
-          parts: [
-            {'type': 'text', 'text': text},
-          ],
+          metadata: metadata,
+          parts: mergedParts,
         ),
       );
     });
 
     await _makeRequest(
       trigger: 'submit-message',
-      messageId: id,
+      messageId: null,
       options: options,
     );
   }

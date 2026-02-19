@@ -97,6 +97,95 @@ void main() {
       expect(finish!.messages, hasLength(2));
     });
 
+    test('sendMessage replaces an existing user message when messageId is set',
+        () async {
+      var nextId = 0;
+      String idGen() => 'id_${nextId++}';
+
+      final transport = _FakeChatTransport(const [
+        {'type': 'start'},
+        {'type': 'text-start', 'id': 't1'},
+        {'type': 'text-delta', 'id': 't1', 'delta': 'Done'},
+        {'type': 'text-end', 'id': 't1'},
+        {'type': 'finish'},
+      ]);
+
+      final chat = UiChat(
+        init: UiChatInit(
+          id: 'chat_1',
+          generateId: idGen,
+          transport: transport,
+        ),
+      );
+
+      await chat.sendMessage('A');
+      await chat.sendMessage('B');
+
+      expect(chat.messages, hasLength(4));
+      final firstUser = chat.messages.first;
+      expect(firstUser.role, equals('user'));
+
+      await chat.send(
+        text: 'A2',
+        messageId: firstUser.id,
+      );
+
+      // All messages after the replaced message are removed before submit,
+      // then a new assistant message is streamed.
+      expect(chat.messages, hasLength(2));
+      expect(chat.messages.first.id, equals(firstUser.id));
+      expect(
+        chat.messages.first.parts,
+        equals(const [
+          {'type': 'text', 'text': 'A2'}
+        ]),
+      );
+      expect(chat.messages.last.role, equals('assistant'));
+    });
+
+    test('sendMessage accepts parts/files/metadata', () async {
+      var nextId = 0;
+      String idGen() => 'id_${nextId++}';
+
+      final transport = _FakeChatTransport(const [
+        {'type': 'start'},
+        {'type': 'finish'},
+      ]);
+
+      final chat = UiChat(
+        init: UiChatInit(
+          id: 'chat_1',
+          generateId: idGen,
+          transport: transport,
+        ),
+      );
+
+      await chat.send(
+        text: 'Hi',
+        metadata: const {'m': 1},
+        files: const [
+          {
+            'type': 'file',
+            'url': 'data:text/plain;base64,SGVsbG8=',
+            'mediaType': 'text/plain',
+          },
+        ],
+        parts: const [
+          {
+            'type': 'data-custom',
+            'data': {'x': 1}
+          },
+        ],
+      );
+
+      final user = chat.messages.first;
+      expect(user.metadata, equals(const {'m': 1}));
+      expect(user.parts, hasLength(3));
+      expect(user.parts.first['type'], equals('file'));
+      expect(user.parts[1]['type'], equals('data-custom'));
+      expect(user.parts.last, equals(const {'type': 'text', 'text': 'Hi'}));
+    });
+
     test('resumeStream is a no-op when there is no active stream', () async {
       var nextId = 0;
       String idGen() => 'id_${nextId++}';
