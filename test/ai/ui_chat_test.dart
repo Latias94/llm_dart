@@ -422,6 +422,34 @@ void main() {
       await didAutoSend.future.timeout(const Duration(seconds: 2));
       expect(calls, equals(['submit-message']));
     });
+
+    test('onFinish sets isDisconnect for network-like errors', () async {
+      var nextId = 0;
+      String idGen() => 'id_${nextId++}';
+
+      final transport = _ErrorTransport(
+        error: Exception(
+          'SocketException: Connection reset by peer',
+        ),
+      );
+
+      UiChatFinishEvent? finish;
+      final chat = UiChat(
+        init: UiChatInit(
+          id: 'chat_1',
+          generateId: idGen,
+          transport: transport,
+          onFinish: (evt) => finish = evt,
+        ),
+      );
+
+      await chat.sendMessage('Hi');
+
+      expect(chat.status, equals(UiChatStatus.error));
+      expect(finish, isNotNull);
+      expect(finish!.isError, isTrue);
+      expect(finish!.isDisconnect, isTrue);
+    });
   });
 }
 
@@ -544,6 +572,34 @@ class _CountingTransport implements UiChatTransport {
       chunkDelay: null,
     );
   }
+
+  @override
+  FutureOr<Stream<Map<String, Object?>>>? reconnectToStream({
+    required String chatId,
+    Map<String, String>? headers,
+    Map<String, Object?>? body,
+    Object? metadata,
+  }) =>
+      null;
+}
+
+class _ErrorTransport implements UiChatTransport {
+  final Object error;
+
+  _ErrorTransport({required this.error});
+
+  @override
+  FutureOr<Stream<Map<String, Object?>>> sendMessages({
+    required String chatId,
+    required List<UIMessage> messages,
+    required String trigger,
+    String? messageId,
+    Map<String, String>? headers,
+    Map<String, Object?>? body,
+    Object? metadata,
+    CancelToken? cancelToken,
+  }) =>
+      Stream<Map<String, Object?>>.error(error);
 
   @override
   FutureOr<Stream<Map<String, Object?>>>? reconnectToStream({

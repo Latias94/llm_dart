@@ -479,6 +479,35 @@ class UiChat {
     return await Future<bool>.value(cb(messages: state.messages));
   }
 
+  static bool _isDisconnectError(Object error) {
+    if (error is TimeoutException) return true;
+
+    final message = error.toString().toLowerCase();
+    if (message.contains('socketexception')) return true;
+    if (message.contains('clientexception')) return true;
+    if (message.contains('failed host lookup')) return true;
+    if (message.contains('host lookup')) return true;
+
+    // Generic network-ish terms across platforms/runtimes.
+    if (message.contains('network')) return true;
+    if (message.contains('connection') &&
+        (message.contains('closed') ||
+            message.contains('reset') ||
+            message.contains('refused') ||
+            message.contains('aborted') ||
+            message.contains('terminated'))) {
+      return true;
+    }
+
+    if (message.contains('timed out') || message.contains('timeout'))
+      return true;
+
+    // AI SDK parity: fetch/network errors are treated as disconnects.
+    if (message.contains('fetch')) return true;
+
+    return false;
+  }
+
   Future<void> _makeRequest({
     required String trigger,
     String? messageId,
@@ -650,10 +679,7 @@ class UiChat {
       } else {
         isError = true;
 
-        // Best-effort network/disconnect detection.
-        if (e is Exception && e.toString().toLowerCase().contains('socket')) {
-          isDisconnect = true;
-        }
+        isDisconnect = _isDisconnectError(e);
 
         state.status = UiChatStatus.error;
         state.error = e;
