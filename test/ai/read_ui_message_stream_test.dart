@@ -308,6 +308,49 @@ void main() {
       expect(tool['toolName'], equals('tool'));
     });
 
+    test(
+        'dynamic tool output available supports preliminary and updates output',
+        () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {
+          'type': 'tool-input-start',
+          'toolCallId': 'call1',
+          'toolName': 'tool',
+          'dynamic': true,
+        },
+        const {
+          'type': 'tool-input-available',
+          'toolCallId': 'call1',
+          'toolName': 'tool',
+          'dynamic': true,
+          'input': {'x': 1},
+        },
+        const {
+          'type': 'tool-output-available',
+          'toolCallId': 'call1',
+          'dynamic': true,
+          'preliminary': true,
+          'output': {'step': 1},
+        },
+        const {
+          'type': 'tool-output-available',
+          'toolCallId': 'call1',
+          'dynamic': true,
+          'output': {'step': 2},
+        },
+        const {'type': 'finish', 'finishReason': 'tool-calls'},
+      ]);
+
+      final last = await readUiMessageStream(chunks: chunks).last;
+      final tool = last.parts.singleWhere((p) => p['type'] == 'dynamic-tool');
+
+      expect(tool['state'], equals('output-available'));
+      expect(tool['input'], equals(const {'x': 1}));
+      expect(tool['output'], equals(const {'step': 2}));
+      expect(tool['preliminary'], isTrue);
+    });
+
     test('throws when tool-approval-request arrives before tool input',
         () async {
       final chunks = Stream.fromIterable(<Map<String, Object?>>[
