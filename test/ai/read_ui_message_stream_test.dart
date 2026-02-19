@@ -210,6 +210,66 @@ void main() {
       expect(tool['errorText'], equals('bad input'));
     });
 
+    test('handles tool approval request and output denied', () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {
+          'type': 'tool-input-start',
+          'toolCallId': 'call1',
+          'toolName': 'calc',
+        },
+        const {
+          'type': 'tool-input-available',
+          'toolCallId': 'call1',
+          'toolName': 'calc',
+          'input': {'x': 1},
+        },
+        const {
+          'type': 'tool-approval-request',
+          'approvalId': 'approval_1',
+          'toolCallId': 'call1',
+        },
+        const {
+          'type': 'tool-output-denied',
+          'toolCallId': 'call1',
+        },
+        const {'type': 'finish', 'finishReason': 'tool-calls'},
+      ]);
+
+      final last = await readUiMessageStream(chunks: chunks).last;
+
+      final tool = last.parts.singleWhere((p) => p['type'] == 'tool-calc');
+      expect(tool['toolCallId'], equals('call1'));
+      expect(tool['input'], equals(const {'x': 1}));
+      expect(tool['approval'], equals(const {'id': 'approval_1'}));
+      expect(tool['state'], equals('output-denied'));
+    });
+
+    test('throws when tool-approval-request arrives before tool input',
+        () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {
+          'type': 'tool-approval-request',
+          'approvalId': 'approval_1',
+          'toolCallId': 'call1',
+        },
+      ]);
+
+      expect(
+        () => readUiMessageStream(
+          chunks: chunks,
+          terminateOnError: true,
+        ).toList(),
+        throwsA(
+          isA<UiMessageStreamError>()
+              .having((e) => e.chunkType, 'chunkType',
+                  equals('tool-approval-request'))
+              .having((e) => e.chunkId, 'chunkId', equals('call1')),
+        ),
+      );
+    });
+
     test('parses partial tool input JSON best-effort from tool-input-delta',
         () async {
       final chunks = Stream.fromIterable(<Map<String, Object?>>[
