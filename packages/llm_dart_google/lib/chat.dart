@@ -783,13 +783,10 @@ class GoogleChat
                             'thoughtSignature': thoughtSignature.toString(),
                           },
                         };
-                  final toolCall = ToolCall(
-                    id: id,
-                    callType: 'function',
-                    function: FunctionCall(
-                      name: name,
-                      arguments: jsonEncode(args),
-                    ),
+                  final toolCall = V3ToolCall(
+                    toolCallId: id,
+                    toolName: name,
+                    input: jsonEncode(args),
                     providerOptions: providerOptions,
                   );
                   startedToolCalls.add(id);
@@ -1882,7 +1879,7 @@ class GoogleChat
           }
           entry = <String, dynamic>{
             'fileSearch': <String, dynamic>{
-              ...tool.options,
+              ...tool.args,
             }..remove('enabled'),
           };
           break;
@@ -1893,7 +1890,7 @@ class GoogleChat
                 'The RAG store tool is not supported with other Gemini models than Gemini 2.';
             break;
           }
-          final ragCorpus = tool.options['ragCorpus'];
+          final ragCorpus = tool.args['ragCorpus'];
           if (ragCorpus is! String || ragCorpus.isEmpty) {
             client.logger.warning(
               'google.vertex_rag_store is enabled but options.ragCorpus is missing.',
@@ -1906,7 +1903,7 @@ class GoogleChat
             );
             break;
           }
-          final topK = tool.options['topK'];
+          final topK = tool.args['topK'];
           entry = <String, dynamic>{
             'retrieval': <String, dynamic>{
               'vertex_rag_store': <String, dynamic>{
@@ -1936,7 +1933,7 @@ class GoogleChat
   }
 
   bool _isProviderToolEnabled(ProviderTool tool) {
-    final enabled = tool.options['enabled'];
+    final enabled = tool.args['enabled'];
     if (enabled is bool) return enabled;
     return true;
   }
@@ -2301,25 +2298,33 @@ class GoogleChat
   /// Convert Tool to Google format
   Map<String, dynamic> _convertTool(Tool tool) {
     try {
-      final schema = tool.function.parameters.toJson();
-      final hasEmptyObjectSchema = schema['type'] == 'object' &&
-          (schema['properties'] is Map) &&
-          (schema['properties'] as Map).isEmpty &&
-          (schema['required'] is List) &&
-          (schema['required'] as List).isEmpty;
+      final schema = tool.function.inputSchema;
 
+      final propsRaw = schema['properties'];
+      final props = propsRaw is Map ? propsRaw : const <Object?, Object?>{};
+
+      final requiredRaw = schema['required'];
+      final required =
+          requiredRaw is List ? requiredRaw : const <Object?>[];
+
+      final hasEmptyObjectSchema = schema['type'] == 'object' &&
+          props.isEmpty &&
+          required.isEmpty;
+
+      final description = tool.function.description;
       return {
         'name': tool.function.name,
-        'description': tool.function.description,
+        if (description != null) 'description': description,
         if (!hasEmptyObjectSchema) 'parameters': schema,
       };
     } catch (e) {
       client.logger.warning('Failed to convert tool ${tool.function.name}: $e');
       // Return a minimal valid tool definition
+      final description = tool.function.description;
       return {
         'name': tool.function.name,
-        'description': tool.function.description.isNotEmpty
-            ? tool.function.description
+        'description': (description != null && description.trim().isNotEmpty)
+            ? description
             : 'Tool with invalid schema',
         'parameters': {
           'type': 'object',
@@ -2596,17 +2601,7 @@ class GoogleChatResponse
     };
 
     final baseKey = _providerOptionsName;
-    final metadata = <String, dynamic>{
-      baseKey: payload,
-      '$baseKey.chat': payload,
-    };
-
-    // AI SDK default provider name for Google Generative AI (Gemini API only).
-    if (baseKey == 'google') {
-      metadata['google.generative-ai'] = payload;
-    }
-
-    return metadata;
+    return <String, dynamic>{baseKey: payload};
   }
 
   @override

@@ -52,11 +52,7 @@ void main() {
           Tool.function(
             name: 'test',
             description: 'Test',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
       );
@@ -64,7 +60,7 @@ void main() {
       final meta = response.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('vertex'), isTrue);
-      expect(meta.containsKey('vertex.chat'), isTrue);
+      expect(meta.containsKey('vertex.chat'), isFalse);
       expect(meta.containsKey('google-vertex'), isFalse);
       expect(meta.containsKey('google'), isFalse);
       expect(meta.containsKey('google.generative-ai'), isFalse);

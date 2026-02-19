@@ -27,11 +27,7 @@ void main() {
       final collidingTool = Tool.function(
         name: 'web_search_preview',
         description: 'test',
-        parameters: const ParametersSchema(
-          schemaType: 'object',
-          properties: {},
-          required: [],
-        ),
+        inputSchema: Schema.params(properties: const {}),
       );
 
       final parts = await responses.chatStreamParts(
@@ -39,7 +35,7 @@ void main() {
         tools: [collidingTool],
       ).toList();
 
-      final toolCalls = <ToolCall>[];
+      final toolCalls = <V3ToolCall>[];
       for (final part in parts) {
         if (part is LLMToolCallStartPart) {
           toolCalls.add(part.toolCall);

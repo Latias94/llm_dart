@@ -129,10 +129,9 @@ void main() {
 
     test('generateObject throws NoObjectGeneratedError when no output',
         () async {
-      final schema = ParametersSchema(
-        schemaType: 'object',
-        properties: const {
-          'ok': ParameterProperty(propertyType: 'string', description: 'ok'),
+      final schema = Schema.params(
+        properties: {
+          'ok': Schema.string('ok'),
         },
         required: ['ok'],
       );

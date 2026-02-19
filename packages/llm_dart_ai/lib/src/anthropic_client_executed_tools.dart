@@ -13,7 +13,7 @@ import 'tool_types.dart';
 /// In `llm_dart`, these tools are typically enabled via `providerTools`
 /// (e.g. `AnthropicProviderTools.bash()`), and streaming parsers surface them as
 /// `LLMProviderToolCallPart(providerExecuted=false)`. The tool loop bridges them
-/// into local function tool calls (`ToolCall`) by using the tool name as the
+/// into local function tool calls (`V3ToolCall`) by using the tool name as the
 /// function name.
 ///
 /// This module provides:
@@ -28,7 +28,7 @@ class AnthropicClientExecutedTools {
     final set = allowed.toSet();
     return (toolCall,
         {required messages, required stepIndex, cancelToken}) async {
-      return set.contains(toolCall.function.name);
+      return set.contains(toolCall.toolName);
     };
   }
 
@@ -46,88 +46,57 @@ class AnthropicClientExecutedTools {
   static Tool bashToolDefinition() => Tool.function(
         name: 'bash',
         description: 'Client-executed Anthropic bash tool call.',
-        parameters: const ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'command': ParameterProperty(
-              propertyType: 'string',
-              description: 'Bash command to run.',
-            ),
-            'restart': ParameterProperty(
-              propertyType: 'boolean',
-              description: 'Whether to restart the tool.',
-            ),
+            'command': Schema.string('Bash command to run.'),
+            'restart': Schema.boolean('Whether to restart the tool.'),
           },
-          required: ['command'],
+          required: const ['command'],
         ),
       );
 
   static Tool memoryToolDefinition() => Tool.function(
         name: 'memory',
         description: 'Client-executed Anthropic memory tool call.',
-        parameters: const ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'command': ParameterProperty(
-              propertyType: 'string',
-              description: 'Memory tool command.',
-            ),
-            'path': ParameterProperty(
-              propertyType: 'string',
-              description: 'Target path for memory operation.',
-            ),
+            'command': Schema.string('Memory tool command.'),
+            'path': Schema.string('Target path for memory operation.'),
           },
-          required: ['command'],
+          required: const ['command'],
         ),
       );
 
   static Tool textEditorToolDefinition({required String name}) => Tool.function(
         name: name,
         description: 'Client-executed Anthropic text editor tool call.',
-        parameters: const ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'command': ParameterProperty(
-              propertyType: 'string',
-              description: 'Text editor command.',
-            ),
-            'path': ParameterProperty(
-              propertyType: 'string',
-              description: 'File or directory path.',
-            ),
+            'command': Schema.string('Text editor command.'),
+            'path': Schema.string('File or directory path.'),
           },
-          required: ['command', 'path'],
+          required: const ['command', 'path'],
         ),
       );
 
   static Tool computerToolDefinition() => Tool.function(
         name: 'computer',
         description: 'Client-executed Anthropic computer tool call.',
-        parameters: const ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'action': ParameterProperty(
-              propertyType: 'string',
-              description: 'Computer action name.',
+            'action': Schema.string('Computer action name.'),
+            'coordinate': Schema.array(
+              'Coordinate tuple [x, y].',
+              items: Schema.integer('Coordinate component.'),
             ),
-            'coordinate': ParameterProperty(
-              propertyType: 'array',
-              description: 'Coordinate tuple [x, y].',
+            'region': Schema.array(
+              'Region tuple [x1, y1, x2, y2].',
+              items: Schema.integer('Region component.'),
             ),
-            'region': ParameterProperty(
-              propertyType: 'array',
-              description: 'Region tuple [x1, y1, x2, y2].',
-            ),
-            'text': ParameterProperty(
-              propertyType: 'string',
-              description: 'Text payload for keyboard actions.',
-            ),
-            'duration': ParameterProperty(
-              propertyType: 'number',
-              description: 'Duration in seconds for wait/hold_key.',
-            ),
+            'text': Schema.string('Text payload for keyboard actions.'),
+            'duration': Schema.number('Duration in seconds for wait/hold_key.'),
           },
-          required: ['action'],
+          required: const ['action'],
         ),
       );
 

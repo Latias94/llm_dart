@@ -220,7 +220,7 @@ class Agent {
     String? prompt,
     List<ChatMessage>? messages,
     Prompt? promptIr,
-    required ParametersSchema schema,
+    required Object schema,
     object_streaming.StreamObjectOutput output =
         object_streaming.StreamObjectOutput.object,
     String toolName = 'return_object',

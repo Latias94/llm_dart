@@ -24,11 +24,7 @@ void main() {
           Tool.function(
             name: 'testFunction',
             description: 'Test',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
       ).toList();
@@ -60,11 +56,7 @@ void main() {
           Tool.function(
             name: 'testFunction',
             description: 'Test',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
       ).toList();
@@ -96,11 +88,7 @@ void main() {
           Tool.function(
             name: 'testFunction',
             description: 'Test',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
       ).toList();
@@ -132,11 +120,7 @@ void main() {
           Tool.function(
             name: 'testFunction',
             description: 'Test',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
       ).toList();
@@ -174,11 +158,7 @@ void main() {
           Tool.function(
             name: 'testFunction',
             description: 'Test',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
       ).toList();

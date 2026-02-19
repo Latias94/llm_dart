@@ -122,13 +122,10 @@ class _ProviderApprovalObjectModel extends ChatCapability
 
       yield const LLMStreamStartPart();
       yield LLMToolCallStartPart(
-        ToolCall(
-          id: 'call_1',
-          callType: 'function',
-          function: FunctionCall(
-            name: 'return_object',
-            arguments: '{"city":"SF","temp":70}',
-          ),
+        const V3ToolCall(
+          toolCallId: 'call_1',
+          toolName: 'return_object',
+          input: '{"city":"SF","temp":70}',
         ),
       );
       yield const LLMToolCallEndPart('call_1');
@@ -149,17 +146,10 @@ class _ProviderApprovalObjectModel extends ChatCapability
 
 void main() {
   group('streamObject', () {
-    const schema = ParametersSchema(
-      schemaType: 'object',
+    final schema = Schema.params(
       properties: {
-        'city': ParameterProperty(
-          propertyType: 'string',
-          description: 'city',
-        ),
-        'temp': ParameterProperty(
-          propertyType: 'number',
-          description: 'temp',
-        ),
+        'city': Schema.string('city'),
+        'temp': Schema.number('temp'),
       },
       required: ['city'],
     );
@@ -184,23 +174,17 @@ void main() {
           modelId: 'm1',
         ),
         LLMToolCallStartPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'return_object',
-              arguments: '{"city":"SF",',
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: 'return_object',
+            input: '{"city":"SF",',
           ),
         ),
         LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: '',
-              arguments: '"temp":70}',
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: '',
+            input: '"temp":70}',
           ),
         ),
         const LLMToolCallEndPart('call_1'),
@@ -265,23 +249,17 @@ void main() {
     test('array output exposes elements and elementStream', () async {
       final model = _FakeStreamChatModel([
         LLMToolCallStartPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'return_object',
-              arguments: '{"elements":[{"city":"SF","temp":70},',
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: 'return_object',
+            input: '{"elements":[{"city":"SF","temp":70},',
           ),
         ),
         LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: '',
-              arguments: '{"city":"LA","temp":80}]}',
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: '',
+            input: '{"city":"LA","temp":80}]}',
           ),
         ),
         const LLMToolCallEndPart('call_1'),
@@ -353,13 +331,10 @@ void main() {
     test('fails when object does not match schema', () async {
       final model = _FakeStreamChatModel([
         LLMToolCallStartPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'return_object',
-              arguments: '{"temp":70}',
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: 'return_object',
+            input: '{"temp":70}',
           ),
         ),
         const LLMToolCallEndPart('call_1'),
@@ -411,23 +386,17 @@ void main() {
         () async {
       final model = _FakeStreamChatModel([
         LLMToolCallStartPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'return_object',
-              arguments: '{"city":"SF"',
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: 'return_object',
+            input: '{"city":"SF"',
           ),
         ),
         LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: '',
-              arguments: ',"temp":70}',
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: '',
+            input: ',"temp":70}',
           ),
         ),
         const LLMToolCallEndPart('call_1'),

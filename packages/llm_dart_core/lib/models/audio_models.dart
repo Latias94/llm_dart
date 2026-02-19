@@ -379,7 +379,7 @@ class TTSResponse {
   /// Provider-specific metadata for the response (optional).
   ///
   /// Recommended shape: a provider-id namespaced map, e.g.
-  /// `{'openai.speech': {'model': 'tts-1', 'endpoint': 'audio/speech'}}`.
+  /// `{'openai': {'model': 'tts-1', 'endpoint': 'audio/speech'}}`.
   final Map<String, dynamic>? providerMetadata;
 
   const TTSResponse({
@@ -858,7 +858,7 @@ class STTResponse {
   /// Provider-specific metadata for the response (optional).
   ///
   /// Recommended shape: a provider-id namespaced map, e.g.
-  /// `{'openai.transcription': {'model': 'whisper-1', 'endpoint': 'audio/transcriptions'}}`.
+  /// `{'openai': {'model': 'whisper-1', 'endpoint': 'audio/transcriptions'}}`.
   final Map<String, dynamic>? providerMetadata;
 
   const STTResponse({

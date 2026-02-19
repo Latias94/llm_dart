@@ -36,7 +36,7 @@ final class ToolExecutionOptions {
   final Object? experimentalContext;
 
   /// The original tool call object (best-effort).
-  final ToolCall toolCall;
+  final V3ToolCall toolCall;
 
   const ToolExecutionOptions({
     required this.toolCallId,

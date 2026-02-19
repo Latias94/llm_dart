@@ -172,7 +172,7 @@ class ImageGenerationResponse {
   /// Provider-specific metadata for the response (optional).
   ///
   /// Recommended shape: a provider-id namespaced map, e.g.
-  /// `{'openai.image': {'model': 'gpt-image-1', 'endpoint': 'images/generations'}}`.
+  /// `{'openai': {'model': 'gpt-image-1', 'endpoint': 'images/generations'}}`.
   final Map<String, dynamic>? providerMetadata;
 
   const ImageGenerationResponse({

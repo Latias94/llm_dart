@@ -73,15 +73,11 @@ void main() {
 
       final result = agent.streamObject(
         messages: [ChatMessage.user('hi')],
-        schema: const ParametersSchema(
-          schemaType: 'object',
+        schema: Schema.params(
           properties: {
-            'answer': ParameterProperty(
-              propertyType: 'string',
-              description: 'answer',
-            ),
+            'answer': Schema.string('answer'),
           },
-          required: ['answer'],
+          required: const ['answer'],
         ),
         providerTools: const [ProviderTool(id: 'openai.web_search')],
         callOptions: const LLMCallOptions(headers: {'x-test': '1'}),
@@ -123,15 +119,11 @@ void main() {
         functionTool(
           name: 'get_weather',
           description: 'weather',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'city': ParameterProperty(
-                propertyType: 'string',
-                description: 'city',
-              ),
+              'city': Schema.string('city'),
             },
-            required: ['city'],
+            required: const ['city'],
           ),
           handler: (input, options) => {'temp': 70},
         ),
@@ -236,11 +228,7 @@ class _CapturingProviderToolsStreamObjectModel extends ChatCapability
 
     yield const LLMStreamStartPart();
     yield const LLMToolCallStartPart(
-      ToolCall(
-        id: callId,
-        callType: 'function',
-        function: FunctionCall(name: toolName, arguments: args),
-      ),
+      V3ToolCall(toolCallId: callId, toolName: toolName, input: args),
     );
     yield const LLMToolCallEndPart(callId);
     yield const LLMFinishPart(

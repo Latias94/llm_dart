@@ -102,7 +102,7 @@ final class FileContentPart extends ContentPart {
 }
 
 final class ToolCallContentPart extends ContentPart {
-  final ToolCall toolCall;
+  final V3ToolCall toolCall;
 
   const ToolCallContentPart(this.toolCall);
 
@@ -260,7 +260,7 @@ final class ProviderToolApprovalRequestContentPart extends ContentPart {
 /// full tool call.
 final class ToolApprovalRequestContentPart extends ContentPart {
   final String approvalId;
-  final ToolCall toolCall;
+  final V3ToolCall toolCall;
 
   const ToolApprovalRequestContentPart({
     required this.approvalId,

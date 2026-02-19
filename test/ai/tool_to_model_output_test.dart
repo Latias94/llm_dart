@@ -12,11 +12,7 @@ void main() {
         functionTool(
           name: 'emit',
           description: 'emit content output',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
           toModelOutput: toModelContentValue((output) {
             return const [ToolResultContentText('hello')];
           }),
@@ -24,10 +20,10 @@ void main() {
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'emit', arguments: '{}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'emit',
+        input: '{}',
       );
 
       final results = await executeToolCalls(
@@ -62,11 +58,7 @@ void main() {
         functionTool(
           name: 'sum',
           description: 'sum numbers',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
           outputSchema: Schema.object(
             'sum output',
             properties: {'result': Schema.integer('result')},
@@ -81,10 +73,10 @@ void main() {
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'sum', arguments: '{}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'sum',
+        input: '{}',
       );
 
       final results = await executeToolCalls(
@@ -107,20 +99,16 @@ void main() {
         functionTool(
           name: 'fail',
           description: 'fail',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
           toModelOutput: toModelErrorTextValue((output) => 'nope'),
           handler: (input, options) => {'ignored': true},
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'fail', arguments: '{}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'fail',
+        input: '{}',
       );
 
       final results = await executeToolCalls(
@@ -145,11 +133,7 @@ void main() {
         functionTool(
           name: 'direct',
           description: 'direct',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
           toModelOutput: toModelOutput((toolCallId, input, output, options) {
             called = true;
             throw StateError('should not be called');
@@ -158,10 +142,10 @@ void main() {
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'direct', arguments: '{}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'direct',
+        input: '{}',
       );
 
       final results = await executeToolCalls(

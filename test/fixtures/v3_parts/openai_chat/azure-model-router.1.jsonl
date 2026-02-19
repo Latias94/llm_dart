@@ -5,5 +5,5 @@
 {"delta":" Denmark","id":"0","type":"text-delta"}
 {"delta":".","id":"0","type":"text-delta"}
 {"id":"0","type":"text-end"}
-{"rawValue":{"providerMetadata":{"openai":{"finishReason":"stop","id":"","model":""},"openai.chat":{"finishReason":"stop","id":"","model":""}}},"type":"raw"}
-{"finishReason":{"raw":"stop","unified":"stop"},"providerMetadata":{"openai":{"finishReason":"stop","id":"","model":""},"openai.chat":{"finishReason":"stop","id":"","model":""}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"noCache":15,"total":15},"outputTokens":{"reasoning":64,"text":14,"total":78},"raw":{"completion_tokens":78,"completion_tokens_details":{"accepted_prediction_tokens":0,"audio_tokens":0,"reasoning_tokens":64,"rejected_prediction_tokens":0},"prompt_tokens":15,"prompt_tokens_details":{"audio_tokens":0,"cached_tokens":0},"total_tokens":93}}}
+{"rawValue":{"providerMetadata":{"openai":{"finishReason":"stop","id":"","model":""}}},"type":"raw"}
+{"finishReason":{"raw":"stop","unified":"stop"},"providerMetadata":{"openai":{"finishReason":"stop","id":"","model":""}},"type":"finish","usage":{"inputTokens":{"cacheRead":0,"noCache":15,"total":15},"outputTokens":{"reasoning":64,"text":14,"total":78},"raw":{"completion_tokens":78,"completion_tokens_details":{"accepted_prediction_tokens":0,"audio_tokens":0,"reasoning_tokens":64,"rejected_prediction_tokens":0},"prompt_tokens":15,"prompt_tokens_details":{"audio_tokens":0,"cached_tokens":0},"total_tokens":93}}}

@@ -125,10 +125,8 @@ void main() {
       expect(metadata['google']['usage']['completionTokens'], equals(5));
       expect(metadata['google']['usage']['totalTokens'], equals(15));
       expect(metadata['google']['usage']['reasoningTokens'], equals(3));
-      expect(metadata.containsKey('google.chat'), isTrue);
-      expect(metadata['google.chat'], equals(metadata['google']));
-      expect(metadata.containsKey('google.generative-ai'), isTrue);
-      expect(metadata['google.generative-ai'], equals(metadata['google']));
+      expect(metadata.containsKey('google.chat'), isFalse);
+      expect(metadata.containsKey('google.generative-ai'), isFalse);
     });
   });
 }

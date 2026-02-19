@@ -97,11 +97,7 @@ void main() {
           Tool.function(
             name: 'google_search',
             description: 'Local tool with reserved name',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
       ).toList();
@@ -149,11 +145,7 @@ void main() {
           Tool.function(
             name: 'google_search',
             description: 'Local tool with colliding name',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
       ).toList();
@@ -221,11 +213,7 @@ void main() {
           Tool.function(
             name: 'google_search',
             description: 'Local tool with colliding name',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
       ).toList();
@@ -253,7 +241,7 @@ void main() {
         providerTools: const [
           ProviderTool(
             id: 'google.google_search',
-            options: {
+            args: {
               'mode': 'MODE_DYNAMIC',
               'dynamicThreshold': 0.3,
             },
@@ -295,7 +283,7 @@ void main() {
         providerTools: const [
           ProviderTool(
             id: 'google.google_search',
-            options: {
+            args: {
               'mode': 'MODE_DYNAMIC',
               'dynamicThreshold': 0.3,
             },
@@ -375,11 +363,7 @@ void main() {
           Tool.function(
             name: 'code_execution',
             description: 'Local tool with colliding name',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
       ).toList();

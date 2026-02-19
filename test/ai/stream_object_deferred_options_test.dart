@@ -70,13 +70,9 @@ class _SequencedPromptStreamModel extends ChatCapability
 
 void main() {
   group('streamObject deferred provider-tool options', () {
-    const schema = ParametersSchema(
-      schemaType: 'object',
+    final schema = Schema.params(
       properties: {
-        'ok': ParameterProperty(
-          propertyType: 'boolean',
-          description: 'ok',
-        ),
+        'ok': Schema.boolean('ok'),
       },
       required: ['ok'],
     );
@@ -94,13 +90,10 @@ void main() {
             supportsDeferredResults: true,
           ),
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(
-                name: 'return_object',
-                arguments: '{"ok":true}',
-              ),
+            const V3ToolCall(
+              toolCallId: 'call_1',
+              toolName: 'return_object',
+              input: '{"ok":true}',
             ),
           ),
           const LLMToolCallEndPart('call_1'),
@@ -114,13 +107,10 @@ void main() {
             result: {'ok': true},
           ),
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(
-                name: 'return_object',
-                arguments: '{"ok":true}',
-              ),
+            const V3ToolCall(
+              toolCallId: 'call_1',
+              toolName: 'return_object',
+              input: '{"ok":true}',
             ),
           ),
           const LLMToolCallEndPart('call_1'),
@@ -159,13 +149,10 @@ void main() {
             supportsDeferredResults: true,
           ),
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(
-                name: 'return_object',
-                arguments: '{"ok":true}',
-              ),
+            const V3ToolCall(
+              toolCallId: 'call_1',
+              toolName: 'return_object',
+              input: '{"ok":true}',
             ),
           ),
           const LLMToolCallEndPart('call_1'),

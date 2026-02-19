@@ -589,7 +589,7 @@ class StreamTextResult {
                 providerMetadata: lastProviderMetadata,
               );
               final partialContent = contentCollector.finalize(
-                toolCalls: const <ToolCall>[],
+                toolCalls: const <V3ToolCall>[],
                 toolResults: const <ToolResult>[],
                 fallbackText: aggregatedText,
                 fallbackReasoning: aggregatedThinking.trim().isEmpty
@@ -675,7 +675,9 @@ class StreamTextResult {
 
             late final List<ToolLoopStep> stepsSnapshot;
             if (collectedSteps.isEmpty) {
-              final toolCalls = response.toolCalls ?? const <ToolCall>[];
+              final toolCalls = (response.toolCalls ?? const <ToolCall>[])
+                  .map(V3ToolCall.fromLegacyToolCall)
+                  .toList(growable: false);
               final responseMetadata = currentResponseMetadata;
               final content = contentCollector.finalize(
                 toolCalls: toolCalls,
@@ -734,9 +736,12 @@ class StreamTextResult {
             final lastToolResults = stepsSnapshot.isEmpty
                 ? const <ToolResult>[]
                 : stepsSnapshot.last.toolResults;
+            final toolCalls = (response.toolCalls ?? const <ToolCall>[])
+                .map(V3ToolCall.fromLegacyToolCall)
+                .toList(growable: false);
             final content = lastStepContent ??
                 contentCollector.finalize(
-                  toolCalls: response.toolCalls ?? const <ToolCall>[],
+                  toolCalls: toolCalls,
                   toolResults: lastToolResults,
                   fallbackText: response.text ?? aggregatedText,
                   fallbackReasoning: response.thinking ??
@@ -749,7 +754,7 @@ class StreamTextResult {
               text: response.text ?? aggregatedText,
               thinking: response.thinking ??
                   (aggregatedThinking.isEmpty ? null : aggregatedThinking),
-              toolCalls: response.toolCalls,
+              toolCalls: toolCalls,
               toolResults: lastToolResults,
               usage: usage,
               totalUsage: totalUsage,
@@ -814,7 +819,7 @@ class _StepContentCollector {
   final List<ContentPart> _parts = <ContentPart>[];
 
   final ToolCallAggregator _toolCallAggregator = ToolCallAggregator();
-  final Map<String, ToolCall> _toolCallsById = <String, ToolCall>{};
+  final Map<String, V3ToolCall> _toolCallsById = <String, V3ToolCall>{};
   final Set<String> _emittedToolCallIds = <String>{};
 
   final Map<String, StringBuffer> _textBlocks = <String, StringBuffer>{};
@@ -917,7 +922,7 @@ class _StepContentCollector {
       case LLMToolCallStartPart(:final toolCall):
       case LLMToolCallDeltaPart(:final toolCall):
         final merged = _toolCallAggregator.addDelta(toolCall);
-        _toolCallsById[merged.id] = merged;
+        _toolCallsById[merged.toolCallId] = merged;
         return;
 
       case LLMToolCallEndPart(:final toolCallId):
@@ -1028,9 +1033,7 @@ class _StepContentCollector {
         ):
         _providerToolCallIds.add(toolCallId);
         final localToolCall = _toolCallsById[toolCallId];
-        if (localToolCall != null &&
-            localToolCall.callType.trim().toLowerCase() == 'function' &&
-            localToolCall.function.name.trim().isNotEmpty) {
+        if (localToolCall != null && localToolCall.toolName.trim().isNotEmpty) {
           _parts.add(
             ToolApprovalRequestContentPart(
               approvalId: approvalId,
@@ -1062,7 +1065,7 @@ class _StepContentCollector {
 
     final call = _toolCallsById[id];
     if (call == null) return;
-    if (call.function.name.trim().isEmpty) return;
+    if (call.toolName.trim().isEmpty) return;
 
     _emittedToolCallIds.add(id);
     _parts.add(ToolCallContentPart(call));
@@ -1070,7 +1073,9 @@ class _StepContentCollector {
 
   bool _hasToolCallPart(List<ContentPart> parts, String toolCallId) {
     for (final p in parts) {
-      if (p is ToolCallContentPart && p.toolCall.id == toolCallId) return true;
+      if (p is ToolCallContentPart && p.toolCall.toolCallId == toolCallId) {
+        return true;
+      }
     }
     return false;
   }
@@ -1097,7 +1102,7 @@ class _StepContentCollector {
   /// This is used for both single-step streams (no step boundary parts) and for
   /// tool-loop steps (using [LLMStepFinishPart.toolCalls]/[toolResults]).
   List<ContentPart> finalize({
-    required List<ToolCall> toolCalls,
+    required List<V3ToolCall> toolCalls,
     List<ToolResult> toolResults = const <ToolResult>[],
     String? fallbackText,
     String? fallbackReasoning,
@@ -1129,8 +1134,8 @@ class _StepContentCollector {
     }
 
     for (final c in toolCalls) {
-      if (_hasToolCallPart(out, c.id)) continue;
-      final idx = _indexOfToolResultPart(out, c.id);
+      if (_hasToolCallPart(out, c.toolCallId)) continue;
+      final idx = _indexOfToolResultPart(out, c.toolCallId);
       final callPart = ToolCallContentPart(c);
       if (idx == -1) {
         out.add(callPart);

@@ -300,14 +300,9 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
 
         case LLMToolCallStartPart(:final toolCall):
         case LLMToolCallDeltaPart(:final toolCall):
-          final callType = toolCall.callType.trim().toLowerCase();
-          if (callType != 'function') {
-            yield part;
-            break;
-          }
-          final id = toolCall.id.trim();
+          final id = toolCall.toolCallId.trim();
           if (id.isNotEmpty) {
-            final name = toolCall.function.name.trim();
+            final name = toolCall.toolName.trim();
             if (name.isNotEmpty) {
               toolNameByToolInputId[id] = name;
               final synthesizedStart = startToolInputIfNeeded(id: id);
@@ -319,7 +314,7 @@ Stream<LLMStreamPart> ensureBlockEndsPart(
               }
             }
 
-            final delta = toolCall.function.arguments;
+            final delta = toolCall.input;
             if (delta.isNotEmpty) {
               for (final p in handleToolInputDelta(id: id, delta: delta)) {
                 yield p;

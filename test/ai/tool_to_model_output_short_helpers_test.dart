@@ -11,20 +11,16 @@ void main() {
         functionTool(
           name: 't',
           description: 't',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
           toModelOutput: toModelTextValue((output) => output.toString()),
           handler: (input, options) => 123,
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 't', arguments: '{}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 't',
+        input: '{}',
       );
 
       final results = await executeToolCalls(
@@ -44,20 +40,16 @@ void main() {
         functionTool(
           name: 'deny',
           description: 'deny',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
           toModelOutput: toModelExecutionDeniedReason((output) => 'no'),
           handler: (input, options) => {'ignored': true},
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'deny', arguments: '{}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'deny',
+        input: '{}',
       );
 
       final results = await executeToolCalls(

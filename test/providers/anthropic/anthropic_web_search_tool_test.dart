@@ -14,7 +14,7 @@ void main() {
           ProviderTool(
             id: 'anthropic.web_search_20250305',
             name: 'web_search',
-            options: {
+            args: {
               'maxUses': 3,
               'allowedDomains': ['example.com'],
               'userLocation': {
@@ -68,11 +68,7 @@ void main() {
           Tool.function(
             name: 'web_search',
             description: 'Local web search',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
         false,
@@ -106,11 +102,7 @@ void main() {
           Tool.function(
             name: 'web_search',
             description: 'Local web search',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
         false,

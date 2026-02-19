@@ -31,7 +31,7 @@ class AnthropicProviderTools {
       id: '$_prefix$normalizedType',
       name: 'web_search',
       supportsDeferredResults: true,
-      options: {
+      args: {
         ...toolOptions,
         'enabled': true,
       },
@@ -53,7 +53,7 @@ class AnthropicProviderTools {
       id: '$_prefix$normalizedType',
       name: 'web_fetch',
       supportsDeferredResults: true,
-      options: {
+      args: {
         ...?options?.toJson(),
         'enabled': true,
       },
@@ -80,7 +80,7 @@ class AnthropicProviderTools {
       id: '$_prefix$normalizedType',
       name: 'code_execution',
       supportsDeferredResults: true,
-      options: const {'enabled': true},
+      args: const {'enabled': true},
     );
   }
 
@@ -100,7 +100,7 @@ class AnthropicProviderTools {
     return ProviderTool(
       id: '$_prefix$normalizedType',
       name: 'computer',
-      options: {
+      args: {
         ...options.toJson(),
         'enabled': true,
       },
@@ -127,7 +127,7 @@ class AnthropicProviderTools {
     return ProviderTool(
       id: '$_prefix$normalizedType',
       name: name,
-      options: {
+      args: {
         ...?options?.toJson(),
         'enabled': true,
       },
@@ -144,7 +144,7 @@ class AnthropicProviderTools {
     return ProviderTool(
       id: '$_prefix$normalizedType',
       name: 'bash',
-      options: const {'enabled': true},
+      args: const {'enabled': true},
     );
   }
 
@@ -158,7 +158,7 @@ class AnthropicProviderTools {
     return ProviderTool(
       id: '$_prefix$normalizedType',
       name: 'memory',
-      options: const {'enabled': true},
+      args: const {'enabled': true},
     );
   }
 
@@ -177,7 +177,7 @@ class AnthropicProviderTools {
       id: '$_prefix$normalizedType',
       name: 'tool_search',
       supportsDeferredResults: true,
-      options: const {'enabled': true},
+      args: const {'enabled': true},
     );
   }
 
@@ -196,7 +196,7 @@ class AnthropicProviderTools {
       id: '$_prefix$normalizedType',
       name: 'tool_search',
       supportsDeferredResults: true,
-      options: const {'enabled': true},
+      args: const {'enabled': true},
     );
   }
 }

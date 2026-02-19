@@ -157,7 +157,9 @@ Future<GenerateTextResult> generateText({
     cancelToken: cancelToken,
   );
 
-  final toolCalls = response.toolCalls ?? const <ToolCall>[];
+  final toolCalls = (response.toolCalls ?? const <ToolCall>[])
+      .map(V3ToolCall.fromLegacyToolCall)
+      .toList(growable: false);
   final providerWarnings = response is ChatResponseWithWarnings
       ? response.warnings
       : const <LLMWarning>[];
@@ -179,7 +181,7 @@ Future<GenerateTextResult> generateText({
     ),
     text: response.text,
     thinking: response.thinking,
-    toolCalls: response.toolCalls,
+    toolCalls: toolCalls,
     usage: response.usage,
     totalUsage: response.usage,
     finishReason:
@@ -216,7 +218,7 @@ Future<GenerateTextResult> generateText({
           ),
           text: response.text,
           thinking: response.thinking,
-          toolCalls: response.toolCalls,
+          toolCalls: toolCalls,
           toolResults: const <ToolResult>[],
           usage: response.usage,
           finishReason: response is ChatResponseWithFinishReason

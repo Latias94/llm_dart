@@ -106,15 +106,15 @@ void main() {
       final metadata = response.providerMetadata;
       expect(metadata, isNotNull);
       expect(metadata, contains('elevenlabs'));
-      expect(metadata, contains('elevenlabs.speech'));
+      expect(metadata, isNot(contains('elevenlabs.speech')));
 
-      final payload = metadata!['elevenlabs.speech'] as Map<String, dynamic>;
+      final payload = metadata!['elevenlabs'] as Map<String, dynamic>;
       expect(payload['model'], 'tts_test_model');
       expect(payload['endpoint'], 'text-to-speech/voice_test');
       expect(payload['voice'], 'voice_test');
     });
 
-    test('speechToText returns providerMetadata with alias', () async {
+    test('speechToText returns canonical providerMetadata', () async {
       final config = ElevenLabsConfig(
         apiKey: 'test-key',
         baseUrl: 'https://example.test/v1/',
@@ -153,10 +153,9 @@ void main() {
       final metadata = response.providerMetadata;
       expect(metadata, isNotNull);
       expect(metadata, contains('elevenlabs'));
-      expect(metadata, contains('elevenlabs.transcription'));
+      expect(metadata, isNot(contains('elevenlabs.transcription')));
 
-      final payload =
-          metadata!['elevenlabs.transcription'] as Map<String, dynamic>;
+      final payload = metadata!['elevenlabs'] as Map<String, dynamic>;
       expect(payload['model'], 'scribe_v1');
       expect(payload['endpoint'], 'speech-to-text');
     });

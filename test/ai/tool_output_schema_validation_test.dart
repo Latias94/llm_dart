@@ -13,11 +13,10 @@ void main() {
         functionTool(
           name: 'sum',
           description: 'sum numbers',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'a': ParameterProperty(propertyType: 'integer', description: 'a'),
-              'b': ParameterProperty(propertyType: 'integer', description: 'b'),
+              'a': Schema.integer('a'),
+              'b': Schema.integer('b'),
             },
             required: ['a', 'b'],
           ),
@@ -31,10 +30,10 @@ void main() {
       ]);
 
       const rawArguments = '{"a":1,"b":2}';
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'sum', arguments: rawArguments),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'sum',
+        input: rawArguments,
       );
 
       final results = await executeToolCalls(
@@ -61,11 +60,10 @@ void main() {
         functionTool(
           name: 'sum',
           description: 'sum numbers',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'a': ParameterProperty(propertyType: 'integer', description: 'a'),
-              'b': ParameterProperty(propertyType: 'integer', description: 'b'),
+              'a': Schema.integer('a'),
+              'b': Schema.integer('b'),
             },
             required: ['a', 'b'],
           ),
@@ -79,10 +77,10 @@ void main() {
       ]);
 
       const rawArguments = '{"a":1,"b":2}';
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'sum', arguments: rawArguments),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'sum',
+        input: rawArguments,
       );
 
       final results = await executeToolCalls(
@@ -106,11 +104,10 @@ void main() {
         functionTool(
           name: 'sum',
           description: 'sum numbers',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'a': ParameterProperty(propertyType: 'integer', description: 'a'),
-              'b': ParameterProperty(propertyType: 'integer', description: 'b'),
+              'a': Schema.integer('a'),
+              'b': Schema.integer('b'),
             },
             required: ['a', 'b'],
           ),
@@ -124,10 +121,10 @@ void main() {
       ]);
 
       const rawArguments = '{"a":1,"b":2}';
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'sum', arguments: rawArguments),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'sum',
+        input: rawArguments,
       );
 
       final results = await executeToolCalls(

@@ -39,14 +39,12 @@ class OpenAIStyleImages
   }) {
     final providerId =
         config.providerId.trim().isEmpty ? 'openai' : config.providerId.trim();
+    final baseKey = providerId.split('.').first;
     final payload = <String, dynamic>{
       if (model != null) 'model': model,
       'endpoint': endpoint,
     };
-    return {
-      providerId: payload,
-      '$providerId.image': payload,
-    };
+    return {baseKey: payload};
   }
 
   @override

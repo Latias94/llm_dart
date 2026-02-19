@@ -75,8 +75,9 @@ void main() {
 
       final metadata = response.providerMetadata;
       expect(metadata, isNotNull);
-      expect(metadata!.keys,
-          containsAll(['google', 'google.chat', 'google.generative-ai']));
+      expect(metadata!.keys, contains('google'));
+      expect(metadata.keys, isNot(contains('google.chat')));
+      expect(metadata.keys, isNot(contains('google.generative-ai')));
 
       final google = metadata['google'] as Map?;
       expect(google, isNotNull);

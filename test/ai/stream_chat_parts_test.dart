@@ -63,10 +63,10 @@ class _FakeChatModel extends ChatCapability
 void main() {
   group('streamChatParts', () {
     test('should emit block boundaries and finish metadata', () async {
-      final toolCall = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'getWeather', arguments: '{"q":"a"}'),
+      const toolCall = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'getWeather',
+        input: '{"q":"a"}',
       );
 
       final model = _FakeChatModel([

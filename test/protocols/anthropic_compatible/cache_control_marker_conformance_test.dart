@@ -6,13 +6,9 @@ Tool _noopTool(String name) {
   return Tool.function(
     name: name,
     description: 'noop',
-    parameters: const ParametersSchema(
-      schemaType: 'object',
+    inputSchema: Schema.params(
       properties: {
-        'q': ParameterProperty(
-          propertyType: 'string',
-          description: 'q',
-        ),
+        'q': Schema.string('q'),
       },
       required: ['q'],
     ),

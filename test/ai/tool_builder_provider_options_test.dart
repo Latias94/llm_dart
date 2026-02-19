@@ -10,11 +10,7 @@ void main() {
       final local = functionTool(
         name: 't',
         description: 'test',
-        parameters: const ParametersSchema(
-          schemaType: 'object',
-          properties: {},
-          required: [],
-        ),
+        inputSchema: Schema.params(properties: const {}),
         strict: true,
         inputExamples: const [
           {'a': 1},
@@ -37,11 +33,7 @@ void main() {
       final local = tool(
         name: 't',
         description: 'test',
-        parameters: const ParametersSchema(
-          schemaType: 'object',
-          properties: {},
-          required: [],
-        ),
+        inputSchema: Schema.params(properties: const {}),
         strict: true,
         inputExamples: const [
           {'a': 1},

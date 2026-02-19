@@ -8,7 +8,7 @@ void main() {
         const [
           ProviderTool(
             id: 'openai.web_search_preview',
-            options: {'search_context_size': 'high'},
+            args: {'search_context_size': 'high'},
           ),
         ],
       );

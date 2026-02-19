@@ -14,6 +14,42 @@ class OpenAIRequestBuilder {
 
   const OpenAIRequestBuilder(this.config);
 
+  Map<String, dynamic> _convertToolToChatCompletionsFormat(Tool tool) {
+    final json = tool.toOpenAIChatCompletionsJson();
+
+    // OpenAI strict tools require `additionalProperties: false` in parameters.
+    if (tool.strict == true) {
+      final function = json['function'];
+      if (function is Map<String, dynamic>) {
+        final parameters = function['parameters'];
+        if (parameters is Map<String, dynamic>) {
+          function['parameters'] = addAdditionalPropertiesToJsonSchema(
+            parameters,
+          );
+        } else if (parameters is Map) {
+          function['parameters'] = addAdditionalPropertiesToJsonSchema(
+            Map<String, dynamic>.from(parameters),
+          );
+        }
+      } else if (function is Map) {
+        final functionMap = Map<String, dynamic>.from(function);
+        final parameters = functionMap['parameters'];
+        if (parameters is Map<String, dynamic>) {
+          functionMap['parameters'] = addAdditionalPropertiesToJsonSchema(
+            parameters,
+          );
+        } else if (parameters is Map) {
+          functionMap['parameters'] = addAdditionalPropertiesToJsonSchema(
+            Map<String, dynamic>.from(parameters),
+          );
+        }
+        json['function'] = functionMap;
+      }
+    }
+
+    return json;
+  }
+
   Map<String, dynamic> buildChatCompletionsRequestBodyFromPrompt(
     OpenAIClient client, {
     required Prompt prompt,
@@ -74,7 +110,7 @@ class OpenAIRequestBuilder {
         providerId: providerId,
         providerTools: providerTools,
       ),
-      ...?effectiveTools?.map((t) => t.toJson()),
+      ...?effectiveTools?.map(_convertToolToChatCompletionsFormat),
     ];
 
     if (toolsJson.isNotEmpty) {
@@ -320,7 +356,7 @@ class OpenAIRequestBuilder {
         providerId: providerId,
         providerTools: providerTools,
       ),
-      ...?effectiveTools?.map((t) => t.toJson()),
+      ...?effectiveTools?.map(_convertToolToChatCompletionsFormat),
     ];
 
     if (toolsJson.isNotEmpty) {
@@ -522,7 +558,7 @@ class OpenAIRequestBuilder {
       final id = tool.id.trim();
       if (id.isEmpty) continue;
 
-      final enabled = tool.options['enabled'];
+      final enabled = tool.args['enabled'];
       if (enabled is bool && enabled == false) continue;
 
       if (id == 'groq.browser_search') {

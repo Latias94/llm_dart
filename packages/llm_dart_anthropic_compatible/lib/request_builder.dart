@@ -187,18 +187,18 @@ class AnthropicRequestBuilder {
   /// Convert a Tool to Anthropic API format.
   Map<String, dynamic> convertTool(Tool tool) {
     try {
-      final schema = tool.function.parameters.toJson();
+      final schema = tool.function.inputSchema;
 
       if (schema['type'] != 'object') {
         throw ArgumentError(
           'Anthropic tools require input_schema to be of type "object". '
           'Tool "${tool.function.name}" has type "${schema['type']}". '
           '\n\nTo fix this, update your tool definition:\n'
-          'ParametersSchema(\n'
-          '  schemaType: "object",  // <- Change this to "object"\n'
-          '  properties: {...},\n'
-          '  required: [...],\n'
-          ')\n\n'
+          '{\n'
+          '  "type": "object",\n'
+          '  "properties": {...},\n'
+          '  "required": [...]\n'
+          '}\n\n'
           'See: https://docs.anthropic.com/en/api/messages#tools',
         );
       }
@@ -208,10 +208,11 @@ class AnthropicRequestBuilder {
         inputSchema['properties'] = <String, dynamic>{};
       }
 
+      final description = tool.function.description;
       final result = <String, dynamic>{
         'name': tool.function.name,
-        'description': tool.function.description.isNotEmpty
-            ? tool.function.description
+        'description': (description != null && description.trim().isNotEmpty)
+            ? description
             : 'No description provided',
         'input_schema': inputSchema,
       };

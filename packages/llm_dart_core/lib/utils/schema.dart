@@ -1,78 +1,74 @@
 import '../models/tool_models.dart';
 
-/// Convenience builders for tool parameter schemas.
-///
-/// This keeps the underlying data structures ([ParametersSchema],
-/// [ParameterProperty]) unchanged while making schema construction less
-/// verbose in Dart code.
+/// Convenience builders for tool input schemas (JSON Schema).
 class Schema {
   Schema._();
 
-  /// Top-level parameters schema (always an object in our tool model).
-  static ParametersSchema params({
-    required Map<String, ParameterProperty> properties,
+  /// Top-level schema (typically `type: object`).
+  static JsonSchema params({
+    required Map<String, JsonSchema> properties,
     List<String> required = const <String>[],
   }) {
-    return ParametersSchema(
-      schemaType: 'object',
-      properties: properties,
-      required: required,
-    );
+    return <String, dynamic>{
+      'type': 'object',
+      'properties': properties,
+      if (required.isNotEmpty) 'required': required,
+    };
   }
 
-  static ParameterProperty string(
+  static JsonSchema string(
     String description, {
     List<String>? enumValues,
   }) {
-    return ParameterProperty(
-      propertyType: 'string',
-      description: description,
-      enumList: enumValues,
-    );
+    return <String, dynamic>{
+      'type': 'string',
+      'description': description,
+      if (enumValues != null && enumValues.isNotEmpty) 'enum': enumValues,
+    };
   }
 
-  static ParameterProperty number(String description) {
-    return ParameterProperty(
-      propertyType: 'number',
-      description: description,
-    );
+  static JsonSchema number(String description) {
+    return <String, dynamic>{
+      'type': 'number',
+      'description': description,
+    };
   }
 
-  static ParameterProperty integer(String description) {
-    return ParameterProperty(
-      propertyType: 'integer',
-      description: description,
-    );
+  static JsonSchema integer(String description) {
+    return <String, dynamic>{
+      'type': 'integer',
+      'description': description,
+    };
   }
 
-  static ParameterProperty boolean(String description) {
-    return ParameterProperty(
-      propertyType: 'boolean',
-      description: description,
-    );
+  static JsonSchema boolean(String description) {
+    return <String, dynamic>{
+      'type': 'boolean',
+      'description': description,
+    };
   }
 
-  static ParameterProperty array(
+  static JsonSchema array(
     String description, {
-    required ParameterProperty items,
+    required JsonSchema items,
   }) {
-    return ParameterProperty(
-      propertyType: 'array',
-      description: description,
-      items: items,
-    );
+    return <String, dynamic>{
+      'type': 'array',
+      'description': description,
+      'items': items,
+    };
   }
 
-  static ParameterProperty object(
+  static JsonSchema object(
     String description, {
-    required Map<String, ParameterProperty> properties,
+    required Map<String, JsonSchema> properties,
     List<String> required = const <String>[],
   }) {
-    return ParameterProperty(
-      propertyType: 'object',
-      description: description,
-      properties: properties,
-      required: required.isEmpty ? null : required,
-    );
+    return <String, dynamic>{
+      'type': 'object',
+      'description': description,
+      'properties': properties,
+      if (required.isNotEmpty) 'required': required,
+    };
   }
 }

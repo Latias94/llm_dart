@@ -28,17 +28,14 @@ class OpenAIAudio
 
   Map<String, dynamic> _buildProviderMetadata(
     String endpoint, {
-    required String capability,
     required String model,
   }) {
     final payload = <String, dynamic>{
       'model': model,
       'endpoint': endpoint,
     };
-    return {
-      config.providerId: payload,
-      '${config.providerId}.$capability': payload,
-    };
+    final baseKey = config.providerId.split('.').first;
+    return {baseKey: payload};
   }
 
   @override
@@ -129,7 +126,6 @@ class OpenAIAudio
       ],
       providerMetadata: _buildProviderMetadata(
         'audio/speech',
-        capability: 'speech',
         model: modelUsed,
       ),
     );
@@ -255,7 +251,6 @@ class OpenAIAudio
       ],
       providerMetadata: _buildProviderMetadata(
         'audio/transcriptions',
-        capability: 'transcription',
         model: modelUsed,
       ),
     );
@@ -436,7 +431,6 @@ class OpenAIAudio
       ],
       providerMetadata: _buildProviderMetadata(
         'audio/translations',
-        capability: 'transcription',
         model: modelUsed,
       ),
     );

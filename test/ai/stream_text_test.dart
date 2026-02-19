@@ -239,17 +239,17 @@ void main() {
           const LLMTextStartPart(),
           const LLMTextDeltaPart('Need '),
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(name: 'get_weather', arguments: '{'),
+            const V3ToolCall(
+              toolCallId: 'call_1',
+              toolName: 'get_weather',
+              input: '{',
             ),
           ),
           LLMToolCallDeltaPart(
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(name: '', arguments: '"city":"SF"}'),
+            const V3ToolCall(
+              toolCallId: 'call_1',
+              toolName: '',
+              input: '"city":"SF"}',
             ),
           ),
           const LLMTextEndPart('Need '),
@@ -289,13 +289,9 @@ void main() {
         functionTool(
           name: 'get_weather',
           description: 'get weather',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'city': ParameterProperty(
-                propertyType: 'string',
-                description: 'city',
-              ),
+              'city': Schema.string('city'),
             },
             required: ['city'],
           ),
@@ -370,13 +366,10 @@ void main() {
         raw: 'stop',
       );
 
-      final mergedToolCall = ToolCall(
-        id: toolCallId,
-        callType: 'function',
-        function: const FunctionCall(
-          name: 'myTool',
-          arguments: '{"x":1}',
-        ),
+      const mergedToolCall = V3ToolCall(
+        toolCallId: toolCallId,
+        toolName: 'myTool',
+        input: '{"x":1}',
       );
 
       final toolResult = ToolResult.success(
@@ -396,23 +389,17 @@ void main() {
         const LLMTextDeltaPart('hi', blockId: 't1'),
         const LLMTextEndPart('hi', blockId: 't1'),
         LLMToolCallStartPart(
-          ToolCall(
-            id: toolCallId,
-            callType: 'function',
-            function: const FunctionCall(
-              name: 'myTool',
-              arguments: '{',
-            ),
+          const V3ToolCall(
+            toolCallId: toolCallId,
+            toolName: 'myTool',
+            input: '{',
           ),
         ),
         LLMToolCallDeltaPart(
-          ToolCall(
-            id: toolCallId,
-            callType: 'function',
-            function: const FunctionCall(
-              name: '',
-              arguments: '"x":1}',
-            ),
+          const V3ToolCall(
+            toolCallId: toolCallId,
+            toolName: '',
+            input: '"x":1}',
           ),
         ),
         const LLMToolCallEndPart(toolCallId),
@@ -448,9 +435,9 @@ void main() {
       ]);
 
       final toolCallPart = stepContent[1] as ToolCallContentPart;
-      expect(toolCallPart.toolCall.id, equals(toolCallId));
-      expect(toolCallPart.toolCall.function.name, equals('myTool'));
-      expect(toolCallPart.toolCall.function.arguments, equals('{"x":1}'));
+      expect(toolCallPart.toolCall.toolCallId, equals(toolCallId));
+      expect(toolCallPart.toolCall.toolName, equals('myTool'));
+      expect(toolCallPart.toolCall.input, equals('{"x":1}'));
 
       final toolResultPart = stepContent[2] as ToolResultContentPart;
       expect(toolResultPart.toolResult.toolCallId, equals(toolCallId));

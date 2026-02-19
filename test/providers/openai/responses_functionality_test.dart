@@ -205,13 +205,9 @@ void main() {
           Tool.function(
             name: 'get_weather',
             description: 'Get current weather',
-            parameters: ParametersSchema(
-              schemaType: 'object',
+            inputSchema: Schema.params(
               properties: {
-                'location': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'City name',
-                ),
+                'location': Schema.string('City name'),
               },
               required: ['location'],
             ),
@@ -233,13 +229,9 @@ void main() {
           Tool.function(
             name: 'get_weather',
             description: 'Get current weather',
-            parameters: ParametersSchema(
-              schemaType: 'object',
+            inputSchema: Schema.params(
               properties: {
-                'location': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Location to get weather for',
-                ),
+                'location': Schema.string('Location to get weather for'),
               },
               required: ['location'],
             ),
@@ -247,15 +239,10 @@ void main() {
           Tool.function(
             name: 'get_time',
             description: 'Get current time',
-            parameters: ParametersSchema(
-              schemaType: 'object',
+            inputSchema: Schema.params(
               properties: {
-                'timezone': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Timezone to get time for',
-                ),
+                'timezone': Schema.string('Timezone to get time for'),
               },
-              required: [],
             ),
           ),
         ];
@@ -276,17 +263,12 @@ void main() {
           Tool.function(
             name: 'process_data',
             description: 'Process complex data',
-            parameters: ParametersSchema(
-              schemaType: 'object',
+            inputSchema: Schema.params(
               properties: {
-                'data': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Data to process',
-                ),
-                'format': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Output format',
-                  enumList: ['json', 'csv', 'xml'],
+                'data': Schema.string('Data to process'),
+                'format': Schema.string(
+                  'Output format',
+                  enumValues: const ['json', 'csv', 'xml'],
                 ),
               },
               required: ['data'],
@@ -297,7 +279,10 @@ void main() {
         expect(messages, hasLength(1));
         expect(tools, hasLength(1));
         expect(tools.first.function.name, equals('process_data'));
-        expect(tools.first.function.parameters.required, contains('data'));
+        expect(
+          (tools.first.function.inputSchema['required'] as List).cast<String>(),
+          contains('data'),
+        );
 
         // Test that methods exist without calling them
         expect(responses.chatWithTools, isA<Function>());
@@ -417,15 +402,10 @@ void main() {
           Tool.function(
             name: 'get_weather',
             description: 'Get weather',
-            parameters: ParametersSchema(
-              schemaType: 'object',
+            inputSchema: Schema.params(
               properties: {
-                'location': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Location for weather',
-                ),
+                'location': Schema.string('Location for weather'),
               },
-              required: [],
             ),
           ),
         ];

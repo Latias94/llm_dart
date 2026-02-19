@@ -286,7 +286,7 @@ class LLMStepFinishPart extends LLMStreamPart {
   final LLMFinishReason? finishReason;
 
   /// Tool calls produced by the model for this step (local function tools only).
-  final List<ToolCall> toolCalls;
+  final List<V3ToolCall> toolCalls;
 
   /// Tool results produced by local execution for this step.
   final List<ToolResult> toolResults;
@@ -533,13 +533,13 @@ class LLMToolInputEndPart extends LLMStreamPart {
 
 /// Starts a tool call (arguments are usually streamed progressively).
 class LLMToolCallStartPart extends LLMStreamPart {
-  final ToolCall toolCall;
+  final V3ToolCall toolCall;
   const LLMToolCallStartPart(this.toolCall);
 }
 
 /// A delta/update for a tool call.
 class LLMToolCallDeltaPart extends LLMStreamPart {
-  final ToolCall toolCall;
+  final V3ToolCall toolCall;
   const LLMToolCallDeltaPart(this.toolCall);
 }
 

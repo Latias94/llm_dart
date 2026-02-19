@@ -106,10 +106,9 @@ void main() {
         final metadata = response.providerMetadata;
         expect(metadata, isNotNull);
         expect(metadata!.containsKey('deepseek'), isTrue);
-        expect(metadata.containsKey('deepseek.chat'), isTrue);
+        expect(metadata.containsKey('deepseek.chat'), isFalse);
 
         final payload = _asJsonMap(metadata['deepseek']);
-        expect(metadata['deepseek.chat'], equals(payload));
         expect(payload['id'], equals(raw['id']));
         expect(payload['model'], equals(raw['model']));
         expect(payload['systemFingerprint'], equals(raw['system_fingerprint']));

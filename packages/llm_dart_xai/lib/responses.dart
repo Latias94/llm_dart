@@ -123,11 +123,7 @@ class XAIResponses
       requestMetadata: requestMetadata,
       requestWarnings: built.warnings,
     );
-    return wrapChatResponseWithProviderMetadataAlias(
-      response,
-      baseKey: baseKey,
-      aliasKey: config.providerId,
-    );
+    return response;
   }
 
   @override
@@ -182,11 +178,7 @@ class XAIResponses
       requestMetadata: requestMetadata,
       requestWarnings: built.warnings,
     );
-    return wrapChatResponseWithProviderMetadataAlias(
-      response,
-      baseKey: baseKey,
-      aliasKey: config.providerId,
-    );
+    return response;
   }
 
   @override
@@ -247,16 +239,12 @@ class XAIResponses
         body: sanitizeRequestBodyForMetadata(body),
       );
     }
-    yield* wrapStreamPartsWithProviderMetadataAlias(
-      _chatStreamPartsFromBody(
-        body,
-        requestProviderTools: requestProviderTools,
-        headers: callOptions.headers,
-        requestWarnings: built.warnings,
-        cancelToken: cancelToken,
-      ),
-      baseKey: baseKey,
-      aliasKey: config.providerId,
+    yield* _chatStreamPartsFromBody(
+      body,
+      requestProviderTools: requestProviderTools,
+      headers: callOptions.headers,
+      requestWarnings: built.warnings,
+      cancelToken: cancelToken,
     );
   }
 
@@ -303,16 +291,12 @@ class XAIResponses
         body: sanitizeRequestBodyForMetadata(body),
       );
     }
-    yield* wrapStreamPartsWithProviderMetadataAlias(
-      _chatStreamPartsFromBody(
-        body,
-        requestProviderTools: requestProviderTools,
-        headers: callOptions.headers,
-        requestWarnings: built.warnings,
-        cancelToken: cancelToken,
-      ),
-      baseKey: baseKey,
-      aliasKey: config.providerId,
+    yield* _chatStreamPartsFromBody(
+      body,
+      requestProviderTools: requestProviderTools,
+      headers: callOptions.headers,
+      requestWarnings: built.warnings,
+      cancelToken: cancelToken,
     );
   }
 
@@ -672,13 +656,10 @@ class XAIResponses
               if (name.isNotEmpty) accum.name = name;
               if (args.isNotEmpty) accum.arguments = args;
 
-              final toolCall = ToolCall(
-                id: callId,
-                callType: 'function',
-                function: FunctionCall(
-                  name: name.isNotEmpty ? name : (accum.name ?? ''),
-                  arguments: args,
-                ),
+              final toolCall = V3ToolCall(
+                toolCallId: callId,
+                toolName: name.isNotEmpty ? name : (accum.name ?? ''),
+                input: args,
               );
 
               if (startedToolCalls.add(callId)) {
@@ -1468,12 +1449,13 @@ class XAIResponses
   }
 
   Map<String, dynamic> _convertFunctionTool(Tool tool) {
+    final description = tool.function.description;
     return {
       'type': 'function',
       'function': {
         'name': tool.function.name,
-        'description': tool.function.description,
-        'parameters': tool.function.parameters.toJson(),
+        if (description != null) 'description': description,
+        'parameters': tool.function.inputSchema,
       },
     };
   }
@@ -1483,8 +1465,8 @@ class XAIResponses
     final id = rawId.startsWith('xai.') ? rawId.substring(4) : rawId;
 
     Map<String, dynamic> applyOptions(Map<String, dynamic> base) {
-      if (tool.options.isEmpty) return base;
-      return {...base, ..._normalizeXaiToolOptions(tool.options)};
+      if (tool.args.isEmpty) return base;
+      return {...base, ..._normalizeXaiToolOptions(tool.args)};
     }
 
     return switch (id) {
@@ -1740,7 +1722,7 @@ class XAIResponsesChatResponse
                 feature: 'provider-native tool calls not surfaced',
                 details:
                     'xAI Responses server tool calls are provider-executed and are not returned as local tool calls. '
-                    'See providerMetadata["$baseProviderId"]["serverToolCalls"] (alias: providerMetadata["$providerId"]).',
+                    'See providerMetadata["$baseProviderId"]["serverToolCalls"].',
               ),
             );
           }

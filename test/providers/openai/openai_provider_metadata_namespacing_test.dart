@@ -9,7 +9,7 @@ import 'package:llm_dart_openai/provider.dart';
 
 void main() {
   group('OpenAI providerMetadata namespacing', () {
-    test('chat completions emits openai + openai.chat aliases', () async {
+    test('chat completions emits canonical openai providerMetadata', () async {
       final adapter = _FakeOpenAIHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
 
@@ -27,9 +27,8 @@ void main() {
 
       expect(meta, isNotNull);
       expect(meta!.containsKey('openai'), isTrue);
-      expect(meta.containsKey('openai.chat'), isTrue);
-      expect(meta.containsKey('openai.chat.chat'), isFalse);
-      expect(meta['openai.chat'], equals(meta['openai']));
+      expect(meta.containsKey('openai.chat'), isFalse);
+      expect(meta.containsKey('openai.responses'), isFalse);
 
       expect(response.usage, isNotNull);
       expect(response.usage!.promptTokens, equals(3));
@@ -37,7 +36,7 @@ void main() {
       expect(response.usage!.totalTokens, equals(7));
     });
 
-    test('responses api adds openai.responses alias key + normalizes usage',
+    test('responses api emits canonical openai providerMetadata + normalizes usage',
         () async {
       final adapter = _FakeOpenAIHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
@@ -56,8 +55,7 @@ void main() {
 
       expect(meta, isNotNull);
       expect(meta!.containsKey('openai'), isTrue);
-      expect(meta.containsKey('openai.responses'), isTrue);
-      expect(meta['openai.responses'], equals(meta['openai']));
+      expect(meta.containsKey('openai.responses'), isFalse);
 
       expect(response.usage, isNotNull);
       expect(response.usage!.promptTokens, equals(11));

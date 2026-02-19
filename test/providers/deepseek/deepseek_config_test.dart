@@ -227,11 +227,7 @@ void main() {
           Tool.function(
             name: 'test_function',
             description: 'A test function',
-            parameters: ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ];
 
@@ -250,11 +246,7 @@ void main() {
           Tool.function(
             name: 'test_function',
             description: 'A test function',
-            parameters: ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ];
 

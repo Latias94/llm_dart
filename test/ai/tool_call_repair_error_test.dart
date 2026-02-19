@@ -9,19 +9,18 @@ void main() {
       final tool = Tool.function(
         name: 'get_weather',
         description: 'get weather',
-        parameters: const ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'city': ParameterProperty(propertyType: 'string', description: 'c'),
+            'city': Schema.string('c'),
           },
           required: ['city'],
         ),
       );
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'get_weather', arguments: '{'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'get_weather',
+        input: '{',
       );
 
       final results = await executeToolCalls(

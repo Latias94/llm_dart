@@ -286,13 +286,10 @@ class OllamaChat
                   accum.arguments.write(argsJson);
                 }
 
-                final toolCall = ToolCall(
-                  id: id,
-                  callType: 'function',
-                  function: FunctionCall(
-                    name: name,
-                    arguments: argsJson,
-                  ),
+                final toolCall = V3ToolCall(
+                  toolCallId: id,
+                  toolName: name,
+                  input: argsJson,
                 );
 
                 if (startedToolCalls.add(id)) {
@@ -899,22 +896,13 @@ class OllamaChat
 
   /// Convert Tool to Ollama format
   Map<String, dynamic> _convertTool(Tool tool) {
-    // Convert properties to proper JSON format for Ollama
-    final propertiesJson = <String, dynamic>{};
-    for (final entry in tool.function.parameters.properties.entries) {
-      propertiesJson[entry.key] = entry.value.toJson();
-    }
-
+    final description = tool.function.description;
     return {
       'type': 'function',
       'function': {
         'name': tool.function.name,
-        'description': tool.function.description,
-        'parameters': {
-          'type': tool.function.parameters.schemaType,
-          'properties': propertiesJson,
-          'required': tool.function.parameters.required,
-        },
+        if (description != null) 'description': description,
+        'parameters': tool.function.inputSchema,
       },
     };
   }
@@ -1159,10 +1147,7 @@ class OllamaChatResponse
       if (context != null) 'context': context,
     };
 
-    return {
-      'ollama': payload,
-      'ollama.chat': payload,
-    };
+    return {'ollama': payload};
   }
 
   @override

@@ -145,7 +145,7 @@ void main() {
         providerTools: const [
           ProviderTool(
             id: 'azure.web_search_preview',
-            options: {'searchContextSize': 'high'},
+            args: {'searchContextSize': 'high'},
           ),
         ],
       );

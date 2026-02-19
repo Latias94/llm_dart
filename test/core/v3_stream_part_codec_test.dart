@@ -91,24 +91,24 @@ void main() {
       final parts = <LLMStreamPart>[
         const LLMStreamStartPart(),
         LLMToolCallStartPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: const FunctionCall(name: 'do_it', arguments: ''),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: 'do_it',
+            input: '',
           ),
         ),
         LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: const FunctionCall(name: 'do_it', arguments: '{"a":1'),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: 'do_it',
+            input: '{"a":1',
           ),
         ),
         LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: const FunctionCall(name: 'do_it', arguments: '}'),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: 'do_it',
+            input: '}',
           ),
         ),
         const LLMToolCallEndPart('call_1'),

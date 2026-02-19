@@ -9,13 +9,9 @@ Tool _localWebSearchTool() {
   return Tool.function(
     name: 'web_search',
     description: 'local web search tool (collides with provider-native)',
-    parameters: const ParametersSchema(
-      schemaType: 'object',
+    inputSchema: Schema.params(
       properties: {
-        'query': ParameterProperty(
-          propertyType: 'string',
-          description: 'query',
-        ),
+        'query': Schema.string('query'),
       },
       required: ['query'],
     ),
@@ -126,14 +122,13 @@ void main() {
 
       final toolStarts = parts.whereType<LLMToolCallStartPart>().toList();
       expect(toolStarts, hasLength(1));
-      expect(toolStarts.single.toolCall.id, equals('toolu_1'));
-      expect(toolStarts.single.toolCall.function.name, equals('web_search'));
+      expect(toolStarts.single.toolCall.toolCallId, equals('toolu_1'));
+      expect(toolStarts.single.toolCall.toolName, equals('web_search'));
 
       final toolDeltas = parts.whereType<LLMToolCallDeltaPart>().toList();
       expect(toolDeltas, hasLength(1));
-      expect(toolDeltas.single.toolCall.function.name, equals('web_search'));
-      expect(toolDeltas.single.toolCall.function.arguments,
-          equals('{"query":"dart"}'));
+      expect(toolDeltas.single.toolCall.toolName, equals('web_search'));
+      expect(toolDeltas.single.toolCall.input, equals('{"query":"dart"}'));
 
       expect(
         parts.whereType<LLMToolCallEndPart>().single.toolCallId,

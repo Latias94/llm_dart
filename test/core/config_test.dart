@@ -21,15 +21,11 @@ void main() {
       });
 
       test('should create with all parameters', () {
-        final tools = [
+        final tools = <Tool>[
           Tool.function(
             name: 'test_tool',
             description: 'A test tool',
-            parameters: ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ];
 
@@ -174,7 +170,7 @@ void main() {
           providerTools: const [
             ProviderTool(
               id: 'openai.web_search_preview',
-              options: {'searchContextSize': 'medium'},
+              args: {'searchContextSize': 'medium'},
             ),
           ],
         );
@@ -188,7 +184,7 @@ void main() {
         expect(roundTrip.providerTools!.single.id,
             equals('openai.web_search_preview'));
         expect(
-          roundTrip.providerTools!.single.options,
+          roundTrip.providerTools!.single.args,
           equals({'searchContextSize': 'medium'}),
         );
       });

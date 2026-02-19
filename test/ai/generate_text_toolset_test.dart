@@ -85,13 +85,9 @@ void main() {
         functionTool(
           name: 'get_weather',
           description: 'get weather',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'city': ParameterProperty(
-                propertyType: 'string',
-                description: 'city',
-              ),
+              'city': Schema.string('city'),
             },
             required: ['city'],
           ),
@@ -157,13 +153,9 @@ void main() {
         schemaOnlyFunctionTool(
           name: 'search_web',
           description: 'search',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'q': ParameterProperty(
-                propertyType: 'string',
-                description: 'query',
-              ),
+              'q': Schema.string('query'),
             },
             required: ['q'],
           ),
@@ -218,13 +210,9 @@ void main() {
         functionTool(
           name: 'get_weather',
           description: 'get weather',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'city': ParameterProperty(
-                propertyType: 'string',
-                description: 'city',
-              ),
+              'city': Schema.string('city'),
             },
             required: ['city'],
           ),
@@ -233,13 +221,9 @@ void main() {
         schemaOnlyFunctionTool(
           name: 'search_web',
           description: 'search',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'q': ParameterProperty(
-                propertyType: 'string',
-                description: 'query',
-              ),
+              'q': Schema.string('query'),
             },
             required: ['q'],
           ),

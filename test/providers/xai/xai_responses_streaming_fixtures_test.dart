@@ -57,10 +57,10 @@ void main() {
           equals(expected.thinking.isEmpty ? null : expected.thinking),
         );
         expect(finish.response.toolCalls, isNull);
-        expect(finish.response.providerMetadata?['xai.responses'], isNotNull);
+        expect(finish.response.providerMetadata?['xai'], isNotNull);
         expect(
-          finish.response.providerMetadata?['xai'],
-          equals(finish.response.providerMetadata?['xai.responses']),
+          finish.response.providerMetadata?.containsKey('xai.responses'),
+          isFalse,
         );
 
         // AI SDK parity: finish part should surface usage/finishReason when the
@@ -94,7 +94,7 @@ void main() {
               (type.endsWith('_call') || type == 'custom_tool_call');
         });
 
-        final metadata = finish.response.providerMetadata?['xai.responses'];
+        final metadata = finish.response.providerMetadata?['xai'];
         if (expectedHasServerToolCall && metadata is Map) {
           expect(metadata['serverToolCalls'], isNotNull);
         }

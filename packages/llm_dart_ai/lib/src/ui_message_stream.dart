@@ -426,7 +426,7 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
                 .map((r) => r.approvalId)
                 .toList(growable: false),
             'toolCallIds': state.toolApprovalRequests
-                .map((r) => r.toolCall.id)
+                .map((r) => r.toolCall.toolCallId)
                 .toList(growable: false),
             if (extra != null) 'extra': extra,
           };
@@ -558,7 +558,7 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
               // Some runtimes do not distinguish approvalId vs toolCallId.
               // Reuse toolCallId as a stable approvalId.
               'approvalId': req.approvalId,
-              'toolCallId': req.toolCall.id,
+              'toolCallId': req.toolCall.toolCallId,
             };
           }
           if (toolApprovalBlockedStateData != null) {
@@ -571,7 +571,7 @@ Stream<Map<String, Object?>> uiMessageChunksFromParts(
                   .map((r) => r.approvalId)
                   .toList(growable: false),
               'toolCallIds': state.toolApprovalRequests
-                  .map((r) => r.toolCall.id)
+                  .map((r) => r.toolCall.toolCallId)
                   .toList(growable: false),
               if (extra != null) 'extra': extra,
             };

@@ -1,120 +1,10 @@
 import '../core/provider_options.dart';
 
-/// Represents a parameter in a function tool
-class ParameterProperty {
-  /// The type of the parameter (e.g. "string", "number", "array", etc)
-  final String propertyType;
-
-  /// Description of what the parameter does
-  final String description;
-
-  /// When type is "array", this defines the type of the array items
-  final ParameterProperty? items;
-
-  /// When type is "enum", this defines the possible values for the parameter
-  final List<String>? enumList;
-
-  /// When type is "object", this defines the properties of the object
-  final Map<String, ParameterProperty>? properties;
-
-  /// When type is "object", this defines which properties are required
-  final List<String>? required;
-
-  const ParameterProperty({
-    required this.propertyType,
-    required this.description,
-    this.items,
-    this.enumList,
-    this.properties,
-    this.required,
-  });
-
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{
-      'type': propertyType,
-      'description': description,
-    };
-
-    if (items != null) {
-      json['items'] = items!.toJson();
-    }
-
-    if (enumList != null) {
-      json['enum'] = enumList;
-    }
-
-    if (properties != null) {
-      json['properties'] =
-          properties!.map((key, value) => MapEntry(key, value.toJson()));
-    }
-
-    if (required != null) {
-      json['required'] = required;
-    }
-
-    return json;
-  }
-
-  factory ParameterProperty.fromJson(Map<String, dynamic> json) =>
-      ParameterProperty(
-        propertyType: json['type'] as String,
-        description: json['description'] as String,
-        items: json['items'] != null
-            ? ParameterProperty.fromJson(json['items'] as Map<String, dynamic>)
-            : null,
-        enumList: json['enum'] != null
-            ? List<String>.from(json['enum'] as List)
-            : null,
-        properties: json['properties'] != null
-            ? (json['properties'] as Map<String, dynamic>).map(
-                (key, value) => MapEntry(
-                  key,
-                  ParameterProperty.fromJson(value as Map<String, dynamic>),
-                ),
-              )
-            : null,
-        required: json['required'] != null
-            ? List<String>.from(json['required'] as List)
-            : null,
-      );
-}
-
-/// Represents the parameters schema for a function tool
-class ParametersSchema {
-  /// The type of the parameters object (usually "object")
-  final String schemaType;
-
-  /// Map of parameter names to their properties
-  final Map<String, ParameterProperty> properties;
-
-  /// List of required parameter names
-  final List<String> required;
-
-  const ParametersSchema({
-    required this.schemaType,
-    required this.properties,
-    required this.required,
-  });
-
-  Map<String, dynamic> toJson() => {
-        'type': schemaType,
-        'properties':
-            properties.map((key, value) => MapEntry(key, value.toJson())),
-        'required': required,
-      };
-
-  factory ParametersSchema.fromJson(Map<String, dynamic> json) =>
-      ParametersSchema(
-        schemaType: json['type'] as String,
-        properties: (json['properties'] as Map<String, dynamic>).map(
-          (key, value) => MapEntry(
-            key,
-            ParameterProperty.fromJson(value as Map<String, dynamic>),
-          ),
-        ),
-        required: List<String>.from(json['required'] as List),
-      );
-}
+/// JSON Schema (AI SDK v3 style).
+///
+/// In upstream AI SDK, function tools carry `inputSchema: JSONSchema7`.
+/// In Dart we represent it as a JSON-like map for maximum interoperability.
+typedef JsonSchema = Map<String, dynamic>;
 
 /// Represents a function definition for a tool
 class FunctionTool {
@@ -122,29 +12,30 @@ class FunctionTool {
   final String name;
 
   /// Description of what the function does
-  final String description;
+  final String? description;
 
-  /// The parameters schema for the function
-  final ParametersSchema parameters;
+  /// JSON schema for the tool input (AI SDK v3 `inputSchema`).
+  final JsonSchema inputSchema;
 
   const FunctionTool({
     required this.name,
-    required this.description,
-    required this.parameters,
+    this.description,
+    required this.inputSchema,
   });
 
   Map<String, dynamic> toJson() => {
         'name': name,
-        'description': description,
-        'parameters': parameters.toJson(),
+        if (description != null && description!.trim().isNotEmpty)
+          'description': description,
+        'inputSchema': inputSchema,
       };
 
   factory FunctionTool.fromJson(Map<String, dynamic> json) => FunctionTool(
         name: json['name'] as String,
-        description: json['description'] as String,
-        parameters: ParametersSchema.fromJson(
-          json['parameters'] as Map<String, dynamic>,
-        ),
+        description: json['description'] as String?,
+        inputSchema: (json['inputSchema'] as Map?)?.cast<String, dynamic>() ??
+            (json['parameters'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{},
       );
 }
 
@@ -229,23 +120,61 @@ class Tool {
     this.providerOptions = const {},
   });
 
+  /// AI SDK v3-style tool JSON (flattened).
+  ///
+  /// Providers are responsible for mapping this representation into their
+  /// wire formats (e.g. OpenAI Chat Completions vs Responses API).
   Map<String, dynamic> toJson() => {
         'type': toolType,
+        'name': function.name,
+        if (function.description != null &&
+            function.description!.trim().isNotEmpty)
+          'description': function.description,
+        'inputSchema': function.inputSchema,
+        if (strict != null) 'strict': strict,
+        if (inputExamples != null && inputExamples!.isNotEmpty)
+          'inputExamples': inputExamples,
+        if (providerOptions.isNotEmpty) 'providerOptions': providerOptions,
+      };
+
+  /// OpenAI Chat Completions / Assistants tool JSON (nested `function` object).
+  Map<String, dynamic> toOpenAIChatCompletionsJson() => {
+        'type': toolType,
         'function': {
-          ...function.toJson(),
+          'name': function.name,
+          if (function.description != null &&
+              function.description!.trim().isNotEmpty)
+            'description': function.description,
+          // OpenAI expects `parameters` (JSON Schema object).
+          'parameters': function.inputSchema,
           if (strict != null) 'strict': strict,
         },
       };
 
+  /// OpenAI Responses API tool JSON (flattened `name` + `parameters`).
+  Map<String, dynamic> toOpenAIResponsesJson() => {
+        'type': toolType,
+        'name': function.name,
+        if (function.description != null &&
+            function.description!.trim().isNotEmpty)
+          'description': function.description,
+        'parameters': function.inputSchema,
+        if (strict != null) 'strict': strict,
+      };
+
   factory Tool.fromJson(Map<String, dynamic> json) {
     final functionRaw = json['function'];
-    final functionMap = functionRaw is Map<String, dynamic>
-        ? functionRaw
-        : functionRaw is Map
-            ? Map<String, dynamic>.from(functionRaw)
-            : const <String, dynamic>{};
+    final hasNestedFunction = functionRaw != null;
 
-    final strict = functionMap['strict'];
+    final functionMap = hasNestedFunction
+        ? functionRaw is Map<String, dynamic>
+            ? functionRaw
+            : functionRaw is Map
+                ? Map<String, dynamic>.from(functionRaw)
+                : const <String, dynamic>{}
+        : const <String, dynamic>{};
+
+    final strict = hasNestedFunction ? functionMap['strict'] : json['strict'];
 
     List<Map<String, dynamic>>? parseExamples(dynamic raw) {
       if (raw is! List) return null;
@@ -277,9 +206,38 @@ class Tool {
       return result.isEmpty ? const {} : result;
     }
 
+    final toolType = (json['type'] as String?) ?? (json['toolType'] as String?);
+    if (toolType == null || toolType.trim().isEmpty) {
+      throw ArgumentError.value(json, 'json', 'Tool requires type/toolType.');
+    }
+
+    // Accept both AI SDK v3 flattened tool JSON and OpenAI-style nested tool JSON.
+    final name =
+        (hasNestedFunction ? functionMap['name'] : json['name']) as String?;
+    if (name == null || name.trim().isEmpty) {
+      throw ArgumentError.value(json, 'json', 'Tool requires name.');
+    }
+
+    final description = (hasNestedFunction
+        ? functionMap['description']
+        : json['description']) as String?;
+
+    final inputSchemaRaw = hasNestedFunction
+        ? (functionMap['inputSchema'] ?? functionMap['parameters'])
+        : (json['inputSchema'] ?? json['parameters']);
+    final inputSchema = inputSchemaRaw is Map<String, dynamic>
+        ? inputSchemaRaw
+        : inputSchemaRaw is Map
+            ? Map<String, dynamic>.from(inputSchemaRaw)
+            : const <String, dynamic>{};
+
     return Tool(
-      toolType: json['type'] as String,
-      function: FunctionTool.fromJson(functionMap),
+      toolType: toolType,
+      function: FunctionTool(
+        name: name,
+        description: description,
+        inputSchema: inputSchema,
+      ),
       strict: strict is bool ? strict : null,
       inputExamples: parseExamples(
         json['inputExamples'] ?? json['input_examples'],
@@ -292,7 +250,7 @@ class Tool {
   factory Tool.function({
     required String name,
     required String description,
-    required ParametersSchema parameters,
+    required JsonSchema inputSchema,
     bool? strict,
     List<Map<String, dynamic>>? inputExamples,
     ProviderOptions providerOptions = const {},
@@ -302,7 +260,7 @@ class Tool {
         function: FunctionTool(
           name: name,
           description: description,
-          parameters: parameters,
+          inputSchema: inputSchema,
         ),
         strict: strict,
         inputExamples: inputExamples,
@@ -335,8 +293,8 @@ class ProviderTool {
   /// (e.g. request tool type or id suffix).
   final String? name;
 
-  /// Optional provider-specific tool configuration (JSON-like).
-  final Map<String, dynamic> options;
+  /// Provider tool arguments (JSON-like), upstream name: `args`.
+  final Map<String, dynamic> args;
 
   /// Whether this provider tool may return its results in a later step/turn.
   ///
@@ -350,7 +308,7 @@ class ProviderTool {
   const ProviderTool({
     required this.id,
     this.name,
-    this.options = const {},
+    this.args = const {},
     this.supportsDeferredResults = false,
   });
 
@@ -366,20 +324,22 @@ class ProviderTool {
   Map<String, dynamic> toJson() => {
         'id': id,
         if (name != null && name!.isNotEmpty) 'name': name,
-        if (options.isNotEmpty) 'options': options,
+        if (args.isNotEmpty) 'args': args,
         if (supportsDeferredResults) 'supportsDeferredResults': true,
       };
 
   factory ProviderTool.fromJson(Map<String, dynamic> json) => ProviderTool(
         id: json['id'] as String,
         name: json['name'] as String?,
-        options: (json['options'] as Map?)?.cast<String, dynamic>() ?? const {},
+        args: (json['args'] as Map?)?.cast<String, dynamic>() ??
+            (json['options'] as Map?)?.cast<String, dynamic>() ??
+            const {},
         supportsDeferredResults: json['supportsDeferredResults'] == true,
       );
 
   @override
   String toString() =>
-      'ProviderTool(id: $id, name: $name, options: $options, supportsDeferredResults: $supportsDeferredResults)';
+      'ProviderTool(id: $id, name: $name, args: $args, supportsDeferredResults: $supportsDeferredResults)';
 }
 
 /// Tool choice determines how the LLM uses available tools.

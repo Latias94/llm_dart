@@ -31,19 +31,15 @@ class OpenAIStyleAudio
   Map<String, dynamic> _buildProviderMetadata(
     String endpoint, {
     String? model,
-    required String capability,
   }) {
     final trimmed = config.providerId.trim();
     final providerId = trimmed.isEmpty ? 'openai' : trimmed;
-    final alias = '$providerId.$capability';
+    final baseKey = providerId.split('.').first;
     final payload = <String, dynamic>{
       if (model != null) 'model': model,
       'endpoint': endpoint,
     };
-    return {
-      providerId: payload,
-      alias: payload,
-    };
+    return {baseKey: payload};
   }
 
   @override
@@ -134,7 +130,6 @@ class OpenAIStyleAudio
       providerMetadata: _buildProviderMetadata(
         'audio/speech',
         model: modelUsed,
-        capability: 'speech',
       ),
     );
   }
@@ -351,7 +346,6 @@ class OpenAIStyleAudio
       providerMetadata: _buildProviderMetadata(
         endpoint,
         model: modelId,
-        capability: 'transcription',
       ),
     );
   }

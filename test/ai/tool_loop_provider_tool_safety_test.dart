@@ -69,10 +69,10 @@ void main() {
         const LLMTextStartPart(),
         const LLMTextDeltaPart('Hello'),
         LLMToolCallStartPart(
-          ToolCall(
-            id: 'call_provider_1',
-            callType: 'provider',
-            function: const FunctionCall(name: 'web_search', arguments: '{}'),
+          const V3ToolCall(
+            toolCallId: 'call_provider_1',
+            toolName: '',
+            input: '{}',
           ),
         ),
         const LLMToolCallEndPart('call_provider_1'),

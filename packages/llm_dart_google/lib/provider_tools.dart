@@ -17,7 +17,7 @@ class GoogleProviderTools {
     return ProviderTool(
       id: 'google.google_search',
       name: 'google_search',
-      options: {
+      args: {
         ...toolOptions,
         'enabled': true,
       },
@@ -76,7 +76,7 @@ class GoogleProviderTools {
     return ProviderTool(
       id: 'google.file_search',
       name: 'file_search',
-      options: {
+      args: {
         'fileSearchStoreNames': fileSearchStoreNames,
         if (metadataFilter != null) 'metadataFilter': metadataFilter,
         if (topK != null) 'topK': topK,
@@ -94,7 +94,7 @@ class GoogleProviderTools {
     return ProviderTool(
       id: 'google.vertex_rag_store',
       name: 'vertex_rag_store',
-      options: {
+      args: {
         'ragCorpus': ragCorpus,
         if (topK != null) 'topK': topK,
       },

@@ -15,11 +15,7 @@ void main() {
       final tool = Tool.function(
         name: 't',
         description: 'd',
-        parameters: const ParametersSchema(
-          schemaType: 'object',
-          properties: {},
-          required: [],
-        ),
+        inputSchema: Schema.params(properties: const {}),
         strict: true,
         inputExamples: const [
           {'a': 1},

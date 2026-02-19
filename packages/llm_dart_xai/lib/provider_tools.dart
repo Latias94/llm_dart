@@ -30,7 +30,7 @@ class XAIProviderTools {
     return ProviderTool(
       id: '${_prefix}web_search',
       name: 'web_search',
-      options: {
+      args: {
         ...?options?.toJson(),
         ...?parameters,
       },
@@ -44,7 +44,7 @@ class XAIProviderTools {
     return ProviderTool(
       id: '${_prefix}x_search',
       name: 'x_search',
-      options: {
+      args: {
         ...?options?.toJson(),
         ...?parameters,
       },
@@ -70,7 +70,7 @@ class XAIProviderTools {
     return ProviderTool(
       id: '${_prefix}file_search',
       name: 'file_search',
-      options: {
+      args: {
         ...?options?.toJson(),
         ...?parameters,
       },
@@ -84,7 +84,7 @@ class XAIProviderTools {
     return ProviderTool(
       id: '${_prefix}mcp',
       name: 'mcp',
-      options: {
+      args: {
         ...?options?.toJson(),
         ...?parameters,
       },

@@ -84,8 +84,9 @@ class OpenAIResponses
   final Map<int, StringBuffer> _functionCallArgsByOutputIndex = {};
 
   OpenAIResponses(this.client, this.config) {
+    final providerMetadataNamespace = config.providerId.split('.').first;
     _sourceParts = SourcePartEmitter(
-      providerMetadataNamespace: config.providerId,
+      providerMetadataNamespace: providerMetadataNamespace,
       sourceIdPrefix: 'id-',
     );
   }
@@ -353,8 +354,9 @@ class OpenAIResponses
     final activeToolCalls = <String>{};
     final toolCallArgsById = <String, StringBuffer>{};
     final endedToolCalls = <String>{};
+    final providerMetadataNamespace = config.providerId.split('.').first;
     final providerToolParts = ProviderToolPartEmitter(
-      providerMetadataNamespace: config.providerId,
+      providerMetadataNamespace: providerMetadataNamespace,
     );
     final emittedProviderApprovalRequests = <String>{};
     final emittedReasoningItems = <String>{};
@@ -721,20 +723,17 @@ class OpenAIResponses
                         ) ??
                         requestName;
 
-                if (eventType == 'response.output_item.added') {
-                  if (activeToolCalls.add(callId)) {
-                    yield LLMToolCallStartPart(
-                      ToolCall(
-                        id: callId,
-                        callType: 'function',
-                        function: FunctionCall(
-                          name: originalName,
-                          arguments: '',
+                  if (eventType == 'response.output_item.added') {
+                    if (activeToolCalls.add(callId)) {
+                      yield LLMToolCallStartPart(
+                        V3ToolCall(
+                          toolCallId: callId,
+                          toolName: originalName,
+                          input: '',
                         ),
-                      ),
-                    );
-                  }
-                } else if (eventType == 'response.output_item.done') {
+                      );
+                    }
+                  } else if (eventType == 'response.output_item.done') {
                   if (rawArgs != null) {
                     _functionCallArgsByOutputIndex[outputIndex] = StringBuffer(
                       rawArgs,
@@ -1639,19 +1638,19 @@ class OpenAIResponses
             if (originalName.isNotEmpty) {
               if (activeToolCalls.add(callId)) {
                 yield LLMToolCallStartPart(
-                  ToolCall(
-                    id: callId,
-                    callType: 'function',
-                    function: FunctionCall(name: originalName, arguments: ''),
+                  V3ToolCall(
+                    toolCallId: callId,
+                    toolName: originalName,
+                    input: '',
                   ),
                 );
               }
 
               yield LLMToolCallDeltaPart(
-                ToolCall(
-                  id: callId,
-                  callType: 'function',
-                  function: FunctionCall(name: originalName, arguments: delta),
+                V3ToolCall(
+                  toolCallId: callId,
+                  toolName: originalName,
+                  input: delta,
                 ),
               );
             }
@@ -1688,12 +1687,12 @@ class OpenAIResponses
                           requestName;
                   final args = functionMap['arguments'] as String? ?? '';
                   if (name.isNotEmpty || args.isNotEmpty) {
-                    final toolCall = ToolCall(
-                      id: stableId,
-                      callType: 'function',
-                      function: FunctionCall(name: name, arguments: args),
+                    final toolCall = V3ToolCall(
+                      toolCallId: stableId,
+                      toolName: name,
+                      input: args,
                     );
-                    if (activeToolCalls.add(toolCall.id)) {
+                    if (activeToolCalls.add(toolCall.toolCallId)) {
                       yield LLMToolCallStartPart(toolCall);
                     } else {
                       yield LLMToolCallDeltaPart(toolCall);
@@ -1719,50 +1718,40 @@ class OpenAIResponses
             } else if (toolCallMap.containsKey('id') &&
                 toolCallMap.containsKey('function')) {
               try {
-                final toolCall = ToolCall.fromJson(toolCallMap);
-                final requestName = toolCall.function.name;
+                final legacy = ToolCall.fromJson(toolCallMap);
+                final requestName = legacy.function.name;
                 final originalName =
                     toolNameMapping.originalFunctionNameForRequestName(
                           requestName,
                         ) ??
                         requestName;
-                if (activeToolCalls.add(toolCall.id)) {
-                  yield LLMToolCallStartPart(
-                    ToolCall(
-                      id: toolCall.id,
-                      callType: toolCall.callType,
-                      function: FunctionCall(
-                        name: originalName,
-                        arguments: toolCall.function.arguments,
-                      ),
-                    ),
-                  );
+
+                final toolCall = V3ToolCall(
+                  toolCallId: legacy.id,
+                  toolName: originalName,
+                  input: legacy.function.arguments,
+                  providerOptions: legacy.providerOptions,
+                );
+
+                if (activeToolCalls.add(toolCall.toolCallId)) {
+                  yield LLMToolCallStartPart(toolCall);
                 } else {
-                  yield LLMToolCallDeltaPart(
-                    ToolCall(
-                      id: toolCall.id,
-                      callType: toolCall.callType,
-                      function: FunctionCall(
-                        name: originalName,
-                        arguments: toolCall.function.arguments,
-                      ),
-                    ),
-                  );
+                  yield LLMToolCallDeltaPart(toolCall);
                 }
 
-                final args = toolCall.function.arguments;
+                final args = toolCall.input;
                 if (args.isNotEmpty) {
                   final buf = toolCallArgsById.putIfAbsent(
-                    toolCall.id,
+                    toolCall.toolCallId,
                     StringBuffer.new,
                   );
                   buf.write(args);
                   final fullArgs = buf.toString();
                   if (fullArgs.isNotEmpty &&
                       isParsableJson(fullArgs) &&
-                      endedToolCalls.add(toolCall.id)) {
-                    yield LLMToolCallEndPart(toolCall.id);
-                    activeToolCalls.remove(toolCall.id);
+                      endedToolCalls.add(toolCall.toolCallId)) {
+                    yield LLMToolCallEndPart(toolCall.toolCallId);
+                    activeToolCalls.remove(toolCall.toolCallId);
                   }
                 }
               } catch (_) {
@@ -2357,7 +2346,7 @@ class OpenAIResponses
       );
       if (type == null) continue;
 
-      final options = Map<String, dynamic>.from(t.options);
+      final options = Map<String, dynamic>.from(t.args);
       final json = <String, dynamic>{'type': type};
 
       switch (type) {
@@ -3199,8 +3188,11 @@ class OpenAIResponses
     return {
       'type': 'function',
       'name': requestName,
-      'description': tool.function.description,
-      'parameters': tool.function.parameters.toJson(),
+      if (tool.function.description != null)
+        'description': tool.function.description,
+      'parameters': tool.strict == true
+          ? addAdditionalPropertiesToJsonSchema(tool.function.inputSchema)
+          : tool.function.inputSchema,
       if (tool.strict != null) 'strict': tool.strict,
     };
   }
@@ -3631,8 +3623,9 @@ class OpenAIResponsesResponse
       return null;
     }
 
+    final baseKey = _providerId.split('.').first;
     return {
-      _providerId: {
+      baseKey: {
         if (id != null) 'id': id,
         if (id != null) 'responseId': id,
         if (model != null) 'model': model,

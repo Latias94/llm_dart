@@ -288,11 +288,7 @@ class GoogleProvider
       'endpoint': endpoint,
     };
     final baseKey = config.providerOptionsName;
-    final providerMetadata = <String, dynamic>{
-      baseKey: payload,
-      '$baseKey.speech': payload,
-      if (baseKey == 'google') 'google.generative-ai': payload,
-    };
+    final providerMetadata = <String, dynamic>{baseKey: payload};
 
     return TTSResponse(
       audioData: response.audioData,

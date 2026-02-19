@@ -210,7 +210,7 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
           response: response,
           usage: usage,
           finishReason: toolCallsReason,
-          toolCalls: const <ToolCall>[],
+          toolCalls: const <V3ToolCall>[],
           toolResults: const <ToolResult>[],
         );
 
@@ -268,7 +268,7 @@ Stream<LLMStreamPart> streamChatPartsWithProviderToolApprovals({
           (response is ChatResponseWithFinishReason
               ? response.finishReason
               : null),
-      toolCalls: const <ToolCall>[],
+      toolCalls: const <V3ToolCall>[],
       toolResults: const <ToolResult>[],
     );
 

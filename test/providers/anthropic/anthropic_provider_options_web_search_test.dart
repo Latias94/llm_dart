@@ -32,7 +32,7 @@ void main() {
           ProviderTool(
             id: 'anthropic.web_search_20250305',
             name: 'web_search',
-            options: {'enabled': false},
+            args: {'enabled': false},
           ),
         ],
       );

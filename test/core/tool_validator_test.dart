@@ -13,20 +13,15 @@ void main() {
       weatherTool = Tool.function(
         name: 'get_weather',
         description: 'Get weather information',
-        parameters: ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'location': ParameterProperty(
-              propertyType: 'string',
-              description: 'City name',
-            ),
-            'units': ParameterProperty(
-              propertyType: 'string',
-              description: 'Temperature units',
-              enumList: ['celsius', 'fahrenheit'],
+            'location': Schema.string('City name'),
+            'units': Schema.string(
+              'Temperature units',
+              enumValues: const ['celsius', 'fahrenheit'],
             ),
           },
-          required: ['location'],
+          required: const ['location'],
         ),
       );
 
@@ -34,19 +29,12 @@ void main() {
       calculatorTool = Tool.function(
         name: 'calculate',
         description: 'Perform calculations',
-        parameters: ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'expression': ParameterProperty(
-              propertyType: 'string',
-              description: 'Math expression',
-            ),
-            'precision': ParameterProperty(
-              propertyType: 'integer',
-              description: 'Decimal precision',
-            ),
+            'expression': Schema.string('Math expression'),
+            'precision': Schema.integer('Decimal precision'),
           },
-          required: ['expression'],
+          required: const ['expression'],
         ),
       );
 
@@ -54,34 +42,22 @@ void main() {
       complexTool = Tool.function(
         name: 'process_data',
         description: 'Process complex data',
-        parameters: ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'data': ParameterProperty(
-              propertyType: 'array',
-              description: 'Data array',
-              items: ParameterProperty(
-                propertyType: 'object',
-                description: 'Data item',
+            'data': Schema.array(
+              'Data array',
+              items: Schema.object(
+                'Data item',
                 properties: {
-                  'id': ParameterProperty(
-                    propertyType: 'string',
-                    description: 'Item ID',
-                  ),
-                  'value': ParameterProperty(
-                    propertyType: 'number',
-                    description: 'Item value',
-                  ),
-                  'active': ParameterProperty(
-                    propertyType: 'boolean',
-                    description: 'Is active',
-                  ),
+                  'id': Schema.string('Item ID'),
+                  'value': Schema.number('Item value'),
+                  'active': Schema.boolean('Is active'),
                 },
-                required: ['id', 'value'],
+                required: const ['id', 'value'],
               ),
             ),
           },
-          required: ['data'],
+          required: const ['data'],
         ),
       );
     });

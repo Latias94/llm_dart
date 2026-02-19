@@ -28,10 +28,10 @@ class _TestChatResponse extends ChatResponse {
 void main() {
   group('StreamTextResult tool approval', () {
     test('exposes toolLoopBlockedState when emitted', () async {
-      const toolCall = ToolCall(
-        id: 'call1',
-        callType: 'function',
-        function: FunctionCall(name: 'calc', arguments: '{"x":1}'),
+      const toolCall = V3ToolCall(
+        toolCallId: 'call1',
+        toolName: 'calc',
+        input: '{"x":1}',
       );
 
       final stepResult = GenerateTextResult(

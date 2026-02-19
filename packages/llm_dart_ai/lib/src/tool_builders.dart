@@ -10,16 +10,16 @@ import 'tool_types.dart';
 ///
 /// This is intentionally Dart-flavored:
 /// - [execute] is a [ToolCallHandler] (Future/Stream friendly),
-/// - schema stays as [ParametersSchema].
+/// - schemas are JSON Schema maps ([JsonSchema]).
 LocalTool tool({
   required String name,
   required String description,
-  required ParametersSchema parameters,
+  required Object inputSchema,
   required ToolCallHandler execute,
   bool? strict,
   List<Map<String, dynamic>>? inputExamples,
   ProviderOptions providerOptions = const {},
-  ParameterProperty? outputSchema,
+  Object? outputSchema,
   ToolToModelOutput? toModelOutput,
   ToolApprovalCheck? needsApproval,
   ToolInputStartHandler? onInputStart,
@@ -30,7 +30,7 @@ LocalTool tool({
   return functionTool(
     name: name,
     description: description,
-    parameters: parameters,
+    inputSchema: inputSchema,
     strict: strict,
     inputExamples: inputExamples,
     providerOptions: providerOptions,
@@ -45,41 +45,24 @@ LocalTool tool({
   );
 }
 
-ParametersSchema _parametersFromObjectSchema(ParameterProperty inputSchema) {
-  if (inputSchema.propertyType != 'object') {
-    throw ArgumentError.value(
-      inputSchema.propertyType,
-      'inputSchema.propertyType',
-      'dynamicTool inputSchema must be an object schema (propertyType="object").',
-    );
-  }
-  return ParametersSchema(
-    schemaType: 'object',
-    properties: inputSchema.properties ?? const <String, ParameterProperty>{},
-    required: inputSchema.required ?? const <String>[],
-  );
-}
-
 /// Defines a "dynamic tool" (AI SDK-style) using an object [inputSchema].
 ///
 /// In Vercel AI SDK, dynamic tools use a `FlexibleSchema` for input validation.
-/// In llm_dart, we keep the underlying tool model ([ParametersSchema]) but
-/// allow callers to define tool inputs using the same schema node type as
-/// [outputSchema] ([ParameterProperty]).
+/// In llm_dart, we represent tool schemas as JSON Schema ([JsonSchema]).
 ///
 /// Notes:
-/// - [inputSchema] must be `propertyType="object"`.
+/// - [inputSchema] should be an object schema (`type: object`).
 /// - Local execution still receives a parsed JSON object `Map<String, dynamic>`.
 /// - Schema validation is controlled by `ToolSchemas` in the tool loop.
 LocalTool dynamicTool({
   required String name,
   required String description,
-  required ParameterProperty inputSchema,
+  required Object inputSchema,
   required ToolCallHandler execute,
   bool? strict,
   List<Map<String, dynamic>>? inputExamples,
   ProviderOptions providerOptions = const {},
-  ParameterProperty? outputSchema,
+  Object? outputSchema,
   ToolToModelOutput? toModelOutput,
   ToolApprovalCheck? needsApproval,
   ToolInputStartHandler? onInputStart,
@@ -87,10 +70,18 @@ LocalTool dynamicTool({
   ToolInputAvailableHandler? onInputAvailable,
   ToolInputErrorHandler? onInputError,
 }) {
+  final normalizedInputSchema = asSchema<Map<String, dynamic>>(inputSchema);
+  if (normalizedInputSchema.jsonSchema['type'] != 'object') {
+    throw ArgumentError.value(
+      normalizedInputSchema.jsonSchema['type'],
+      'inputSchema.type',
+      'dynamicTool inputSchema must be an object schema (type="object").',
+    );
+  }
   return tool(
     name: name,
     description: description,
-    parameters: _parametersFromObjectSchema(inputSchema),
+    inputSchema: normalizedInputSchema,
     execute: execute,
     strict: strict,
     inputExamples: inputExamples,
@@ -252,11 +243,11 @@ ToolToModelOutput toModelExecutionDeniedReason(
 LocalTool schemaTool({
   required String name,
   required String description,
-  required ParametersSchema parameters,
+  required Object inputSchema,
   bool? strict,
   List<Map<String, dynamic>>? inputExamples,
   ProviderOptions providerOptions = const {},
-  ParameterProperty? outputSchema,
+  Object? outputSchema,
   ToolToModelOutput? toModelOutput,
   ToolApprovalCheck? needsApproval,
   ToolInputStartHandler? onInputStart,
@@ -267,7 +258,7 @@ LocalTool schemaTool({
   return schemaOnlyFunctionTool(
     name: name,
     description: description,
-    parameters: parameters,
+    inputSchema: inputSchema,
     strict: strict,
     inputExamples: inputExamples,
     providerOptions: providerOptions,

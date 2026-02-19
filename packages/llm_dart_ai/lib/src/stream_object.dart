@@ -114,15 +114,18 @@ class StreamObjectResult {
 
   factory StreamObjectResult.fromPartsStream(
     Stream<LLMStreamPart> upstream, {
-    required ParametersSchema schema,
+    required Object schema,
     required String toolName,
     StreamObjectOutput output = StreamObjectOutput.object,
     String? defaultModelId,
   }) {
     final startedAt = DateTime.now().toUtc();
     var currentStepStartedAt = startedAt;
-    final toolSchema =
-        output == StreamObjectOutput.array ? _wrapArraySchema(schema) : schema;
+    final schemaDef = asSchema<Map<String, dynamic>>(schema);
+    final elementSchema = schemaDef.jsonSchema;
+    final toolSchema = output == StreamObjectOutput.array
+        ? _wrapArraySchema(elementSchema)
+        : elementSchema;
 
     final fullController =
         StreamController<LLMStreamPart>.broadcast(sync: true);
@@ -255,7 +258,7 @@ class StreamObjectResult {
       if (parsed == null) return;
 
       final normalized = output == StreamObjectOutput.array
-          ? _normalizeArrayWrapperPartial(parsed, elementSchema: schema)
+          ? _normalizeArrayWrapperPartial(parsed, elementSchema: elementSchema)
           : parsed;
 
       // Best-effort dedupe to avoid noisy re-emissions.
@@ -279,7 +282,18 @@ class StreamObjectResult {
       partialController.add(normalized);
     }
 
-    void validateObjectOrThrow(Map<String, dynamic> obj) {
+    Future<void> validateObjectOrThrow(Map<String, dynamic> obj) async {
+      final validate = schemaDef.validate;
+      if (validate != null && output != StreamObjectOutput.array) {
+        final validation = await Future.value(validate(obj));
+        if (!validation.success) {
+          throw InvalidRequestError(
+            'Generated object does not match schema: ${validation is ValidationFailure ? (validation as ValidationFailure).error : 'schema_validation_failed'}',
+          );
+        }
+        return;
+      }
+
       final errors = ToolValidator.validateParameters(obj, toolSchema);
       if (errors.isNotEmpty) {
         throw InvalidRequestError(
@@ -356,8 +370,8 @@ class StreamObjectResult {
             case LLMToolCallStartPart(:final toolCall):
             case LLMToolCallDeltaPart(:final toolCall):
               final aggregated = toolCallAgg.addDelta(toolCall);
-              final id = aggregated.id;
-              final name = aggregated.function.name;
+              final id = aggregated.toolCallId;
+              final name = aggregated.toolName;
 
               // AI SDK v3 semantics: prefer tool-input-* parts when available.
               // `ensureBlockEndsPart` may mirror tool-call deltas into tool-input
@@ -368,7 +382,7 @@ class StreamObjectResult {
 
               final knownTarget = targetToolCallIds[id];
               if (knownTarget == true) {
-                final delta = toolCall.function.arguments;
+                final delta = toolCall.input;
                 if (delta.isNotEmpty) {
                   textController.add(delta);
                   objectJsonTextBuffer.write(delta);
@@ -376,7 +390,7 @@ class StreamObjectResult {
               } else if (knownTarget == null) {
                 final buf =
                     toolCallPreNameArgs.putIfAbsent(id, StringBuffer.new);
-                final delta = toolCall.function.arguments;
+                final delta = toolCall.input;
                 if (delta.isNotEmpty) buf.write(delta);
 
                 if (name.isNotEmpty) {
@@ -394,7 +408,7 @@ class StreamObjectResult {
               }
 
               if (name == toolName) {
-                emitPartialIfParsable(aggregated.function.arguments);
+                emitPartialIfParsable(aggregated.input);
               }
 
             case LLMToolCallEndPart(:final toolCallId):
@@ -512,7 +526,7 @@ class StreamObjectResult {
                   partialObject = output == StreamObjectOutput.array
                       ? _normalizeArrayWrapperPartial(
                           parsed,
-                          elementSchema: schema,
+                          elementSchema: elementSchema,
                         )
                       : parsed;
                 }
@@ -661,7 +675,7 @@ class StreamObjectResult {
                   output: output,
                 );
 
-                validateObjectOrThrow(resolved.object);
+                await validateObjectOrThrow(resolved.object);
 
                 if (!warningsCompleter.isCompleted) {
                   warningsCompleter.complete(const <LLMWarning>[]);
@@ -819,7 +833,7 @@ StreamObjectResult streamObject({
   String? prompt,
   List<ChatMessage>? messages,
   Prompt? promptIr,
-  required ParametersSchema schema,
+  required Object schema,
   StreamObjectOutput output = StreamObjectOutput.object,
   String toolName = 'return_object',
   String toolDescription =
@@ -836,6 +850,8 @@ StreamObjectResult streamObject({
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
+  final schemaDef = asSchema<Map<String, dynamic>>(schema);
+
   Stream<LLMStreamPart> upstream() async* {
     final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
       callOptions,
@@ -852,9 +868,9 @@ StreamObjectResult streamObject({
     final tool = Tool.function(
       name: toolName,
       description: toolDescription,
-      parameters: output == StreamObjectOutput.array
-          ? _wrapArraySchema(schema)
-          : schema,
+      inputSchema: output == StreamObjectOutput.array
+          ? _wrapArraySchema(schemaDef.jsonSchema)
+          : schemaDef.jsonSchema,
     );
 
     switch (input) {
@@ -948,7 +964,7 @@ StreamObjectResult streamObject({
 
   return StreamObjectResult.fromPartsStream(
     upstream(),
-    schema: schema,
+    schema: schemaDef,
     toolName: toolName,
     output: output,
     defaultModelId: model is ModelIdentityCapability
@@ -966,7 +982,7 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
   required ChatCapability model,
   required ProviderToolApprovalBlockedState blockedState,
   required List<ToolApprovalDecision> decisions,
-  required ParametersSchema schema,
+  required Object schema,
   StreamObjectOutput output = StreamObjectOutput.object,
   String toolName = 'return_object',
   String toolDescription =
@@ -981,6 +997,8 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) {
+  final schemaDef = asSchema<Map<String, dynamic>>(schema);
+
   Stream<LLMStreamPart> upstream() async* {
     final effectiveCallOptions = applyOpenAIToolControlsToCallOptions(
       callOptions,
@@ -990,9 +1008,9 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
     final tool = Tool.function(
       name: toolName,
       description: toolDescription,
-      parameters: output == StreamObjectOutput.array
-          ? _wrapArraySchema(schema)
-          : schema,
+      inputSchema: output == StreamObjectOutput.array
+          ? _wrapArraySchema(schemaDef.jsonSchema)
+          : schemaDef.jsonSchema,
     );
 
     try {
@@ -1027,7 +1045,7 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
 
   return StreamObjectResult.fromPartsStream(
     upstream(),
-    schema: schema,
+    schema: schemaDef,
     toolName: toolName,
     output: output,
     defaultModelId: model is ModelIdentityCapability
@@ -1066,7 +1084,7 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
   }
 
   final toolCalls = toolCallAgg.completedCalls
-      .where((c) => c.function.name == toolName)
+      .where((c) => c.toolName == toolName)
       .toList(growable: false);
 
   if (toolCalls.length > 1) {
@@ -1075,13 +1093,13 @@ StreamObjectResult resumeStreamObjectAfterProviderToolApprovalBlocked({
 
   if (toolCalls.length == 1) {
     final call = toolCalls.single;
-    if (endedToolCalls.isNotEmpty && !endedToolCalls.contains(call.id)) {
+    if (endedToolCalls.isNotEmpty && !endedToolCalls.contains(call.toolCallId)) {
       // Best-effort: if the provider did not emit explicit end parts, accept
       // the aggregated arguments at finish time.
     }
-    final parsed = _parseRequiredJsonMap(call.function.arguments,
-        context: 'tool arguments');
-    return (text: call.function.arguments.trim(), object: parsed);
+    final parsed =
+        _parseRequiredJsonMap(call.input, context: 'tool arguments');
+    return (text: call.input.trim(), object: parsed);
   }
 
   // Text fallback (best-effort).
@@ -1147,30 +1165,23 @@ Map<String, dynamic>? _extractFirstJsonObject(String text) {
   return null;
 }
 
-ParametersSchema _wrapArraySchema(ParametersSchema elementSchema) {
-  final elementProperty = ParameterProperty(
-    propertyType: 'object',
-    description: 'Array element',
-    properties: elementSchema.properties,
-    required: elementSchema.required,
-  );
-
-  return ParametersSchema(
-    schemaType: 'object',
-    properties: {
-      'elements': ParameterProperty(
-        propertyType: 'array',
-        description: 'Array elements',
-        items: elementProperty,
-      ),
+JsonSchema _wrapArraySchema(JsonSchema elementSchema) {
+  return {
+    'type': 'object',
+    'properties': {
+      'elements': {
+        'type': 'array',
+        'description': 'Array elements',
+        'items': elementSchema,
+      },
     },
-    required: const ['elements'],
-  );
+    'required': const ['elements'],
+  };
 }
 
 Map<String, dynamic> _normalizeArrayWrapperPartial(
   Map<String, dynamic> obj, {
-  required ParametersSchema elementSchema,
+  required JsonSchema elementSchema,
 }) {
   final elementsRaw = obj['elements'];
   if (elementsRaw is! List) return obj;

@@ -11,11 +11,7 @@ void main() {
         functionTool(
           name: 'emit_content',
           description: 'emit content output',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
           handler: (input, options) => ToolResultContentOutput(
             const [
               ToolResultContentText('hello'),
@@ -24,10 +20,10 @@ void main() {
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'emit_content', arguments: '{}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'emit_content',
+        input: '{}',
       );
 
       final results = await executeToolCalls(
@@ -66,19 +62,15 @@ void main() {
         functionTool(
           name: 'fail',
           description: 'emit error output',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
           handler: (input, options) => const ToolResultErrorTextOutput('nope'),
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'fail', arguments: '{}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'fail',
+        input: '{}',
       );
 
       final results = await executeToolCalls(

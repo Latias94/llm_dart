@@ -8,7 +8,7 @@ import '../../utils/fakes/google_fake_client.dart';
 
 void main() {
   group('GoogleProvider textToSpeech providerMetadata', () {
-    test('attaches google + google.speech metadata with endpoint + model',
+    test('attaches canonical google providerMetadata with endpoint + model',
         () async {
       final config = GoogleConfig(
         apiKey: 'test-key',
@@ -63,9 +63,9 @@ void main() {
       final meta = response.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('google'), isTrue);
-      expect(meta.containsKey('google.speech'), isTrue);
+      expect(meta.containsKey('google.speech'), isFalse);
       expect(
-        meta['google.speech'],
+        meta['google'],
         equals({
           'model': 'gemini-2.5-flash-preview-tts',
           'endpoint': endpoint,

@@ -334,7 +334,7 @@ class AnthropicConfig {
     }
     if (tool == null) return null;
 
-    final rawEnabled = tool.options['enabled'];
+    final rawEnabled = tool.args['enabled'];
     final enabled = rawEnabled is bool ? rawEnabled : true;
     if (!enabled) return null;
 
@@ -342,9 +342,9 @@ class AnthropicConfig {
     final normalizedType =
         idSuffix.startsWith('web_search_') ? idSuffix : 'web_search_20250305';
 
-    final options = tool.options.isNotEmpty
+    final options = tool.args.isNotEmpty
         ? AnthropicWebSearchToolOptions.fromJson(
-            Map<String, dynamic>.from(tool.options),
+            Map<String, dynamic>.from(tool.args),
           )
         : null;
 
@@ -372,7 +372,7 @@ class AnthropicConfig {
     }
     if (tool == null) return null;
 
-    final rawEnabled = tool.options['enabled'];
+    final rawEnabled = tool.args['enabled'];
     final enabled = rawEnabled is bool ? rawEnabled : true;
     if (!enabled) return null;
 
@@ -380,9 +380,9 @@ class AnthropicConfig {
     final normalizedType =
         idSuffix.startsWith('web_fetch_') ? idSuffix : 'web_fetch_20250910';
 
-    final options = tool.options.isNotEmpty
+    final options = tool.args.isNotEmpty
         ? AnthropicWebFetchToolOptions.fromJson(
-            Map<String, dynamic>.from(tool.options),
+            Map<String, dynamic>.from(tool.args),
           )
         : null;
 

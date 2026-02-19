@@ -46,13 +46,13 @@ void registerAnthropicCompatibleToolUseStreamingConformanceTests({
 
       final toolStarts = parts.whereType<LLMToolCallStartPart>().toList();
       expect(toolStarts, hasLength(1));
-      expect(toolStarts.single.toolCall.id, equals('toolu_1'));
-      expect(toolStarts.single.toolCall.function.name, equals('getWeather'));
+      expect(toolStarts.single.toolCall.toolCallId, equals('toolu_1'));
+      expect(toolStarts.single.toolCall.toolName, equals('getWeather'));
 
       final toolDeltas = parts.whereType<LLMToolCallDeltaPart>().toList();
       expect(toolDeltas, hasLength(2));
       expect(
-        toolDeltas.map((p) => p.toolCall.function.arguments).join(),
+        toolDeltas.map((p) => p.toolCall.input).join(),
         equals('{"city":"London"}'),
       );
 

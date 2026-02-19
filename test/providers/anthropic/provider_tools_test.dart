@@ -10,8 +10,8 @@ void main() {
       );
 
       expect(tool.id, equals('anthropic.web_search_20250305'));
-      expect(tool.options['max_uses'], equals(2));
-      expect(tool.options['enabled'], isTrue);
+      expect(tool.args['max_uses'], equals(2));
+      expect(tool.args['enabled'], isTrue);
     });
 
     test('webFetch creates ProviderTool with stable id', () {
@@ -21,8 +21,8 @@ void main() {
       );
 
       expect(tool.id, equals('anthropic.web_fetch_20250910'));
-      expect(tool.options['max_content_tokens'], equals(64));
-      expect(tool.options['enabled'], isTrue);
+      expect(tool.args['max_content_tokens'], equals(64));
+      expect(tool.args['enabled'], isTrue);
     });
 
     test('bash creates ProviderTool with stable id', () {
@@ -30,7 +30,7 @@ void main() {
 
       expect(tool.id, equals('anthropic.bash_20250124'));
       expect(tool.name, equals('bash'));
-      expect(tool.options['enabled'], isTrue);
+      expect(tool.args['enabled'], isTrue);
     });
 
     test('computer creates ProviderTool with stable id + options', () {
@@ -45,10 +45,10 @@ void main() {
 
       expect(tool.id, equals('anthropic.computer_20250124'));
       expect(tool.name, equals('computer'));
-      expect(tool.options['display_width_px'], equals(1920));
-      expect(tool.options['display_height_px'], equals(1080));
-      expect(tool.options['display_number'], equals(0));
-      expect(tool.options['enabled'], isTrue);
+      expect(tool.args['display_width_px'], equals(1920));
+      expect(tool.args['display_height_px'], equals(1080));
+      expect(tool.args['display_number'], equals(0));
+      expect(tool.args['enabled'], isTrue);
     });
 
     test('textEditor picks stable request name based on toolType', () {

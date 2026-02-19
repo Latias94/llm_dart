@@ -272,10 +272,10 @@ void main() {
         expect(sumStringHandler, isNotNull);
 
         const rawArguments = '{"a":1,"b":2}';
-        final callOk = ToolCall(
-          id: 'call_ok',
-          callType: 'function',
-          function: FunctionCall(name: sumToolName, arguments: rawArguments),
+        final callOk = V3ToolCall(
+          toolCallId: 'call_ok',
+          toolName: sumToolName,
+          input: rawArguments,
         );
         final ok = await sumHandler!(
           const {'a': 1, 'b': 2},
@@ -300,13 +300,10 @@ void main() {
                 rawArguments: rawArguments,
                 messages: const [],
                 stepIndex: 0,
-                toolCall: ToolCall(
-                  id: 'call_bad',
-                  callType: 'function',
-                  function: FunctionCall(
-                    name: sumStringToolName,
-                    arguments: rawArguments,
-                  ),
+                toolCall: V3ToolCall(
+                  toolCallId: 'call_bad',
+                  toolName: sumStringToolName,
+                  input: rawArguments,
                 ),
               ),
             ),
@@ -353,10 +350,10 @@ void main() {
         expect(sumTextJsonHandler, isNotNull);
 
         const rawArguments = '{"a":1,"b":2}';
-        final callOk = ToolCall(
-          id: 'call_ok',
-          callType: 'function',
-          function: FunctionCall(name: sumToolName, arguments: rawArguments),
+        final callOk = V3ToolCall(
+          toolCallId: 'call_ok',
+          toolName: sumToolName,
+          input: rawArguments,
         );
         final ok = await sumHandler!(
           const {'a': 1, 'b': 2},
@@ -371,11 +368,10 @@ void main() {
         );
         expect(ok, equals({'result': 3}));
 
-        final callText = ToolCall(
-          id: 'call_text',
-          callType: 'function',
-          function:
-              FunctionCall(name: sumTextJsonToolName, arguments: rawArguments),
+        final callText = V3ToolCall(
+          toolCallId: 'call_text',
+          toolName: sumTextJsonToolName,
+          input: rawArguments,
         );
         final okText = await sumTextJsonHandler!(
           const {'a': 1, 'b': 2},
@@ -400,13 +396,10 @@ void main() {
                 rawArguments: rawArguments,
                 messages: const [],
                 stepIndex: 0,
-                toolCall: ToolCall(
-                  id: 'call_bad',
-                  callType: 'function',
-                  function: FunctionCall(
-                    name: sumStringToolName,
-                    arguments: rawArguments,
-                  ),
+                toolCall: V3ToolCall(
+                  toolCallId: 'call_bad',
+                  toolName: sumStringToolName,
+                  input: rawArguments,
                 ),
               ),
             ),

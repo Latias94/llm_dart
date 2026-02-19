@@ -26,11 +26,11 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('openai'), isTrue);
-      expect(meta.containsKey('openai.speech'), isTrue);
+      expect(meta.containsKey('openai.speech'), isFalse);
       expect(meta.containsKey('.speech'), isFalse);
 
       expect(
-        meta['openai.speech'],
+        meta['openai'],
         equals({
           'model': openaiStyleDefaultTTSModel,
           'endpoint': 'audio/speech',
@@ -67,9 +67,9 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('azure-openai'), isTrue);
-      expect(meta.containsKey('azure-openai.transcription'), isTrue);
+      expect(meta.containsKey('azure-openai.transcription'), isFalse);
       expect(
-        meta['azure-openai.transcription'],
+        meta['azure-openai'],
         equals({
           'model': 'whisper-1',
           'endpoint': 'audio/transcriptions',
@@ -104,9 +104,9 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('openrouter'), isTrue);
-      expect(meta.containsKey('openrouter.transcription'), isTrue);
+      expect(meta.containsKey('openrouter.transcription'), isFalse);
       expect(
-        meta['openrouter.transcription'],
+        meta['openrouter'],
         equals({
           'model': 'whisper-1',
           'endpoint': 'audio/translations',

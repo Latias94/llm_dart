@@ -147,11 +147,11 @@ void main() {
           .map((p) => p.toolCall)
           .toList();
       final readCallId = localToolCalls
-          .firstWhere((c) => c.function.name == 'readNoteTree')
-          .id;
+          .firstWhere((c) => c.toolName == 'readNoteTree')
+          .toolCallId;
       final editCallId = localToolCalls
-          .firstWhere((c) => c.function.name == 'executeEditorOperation')
-          .id;
+          .firstWhere((c) => c.toolName == 'executeEditorOperation')
+          .toolCallId;
 
       final toolResults = parts.whereType<LLMToolResultPart>().toList();
       final resultIds = toolResults.map((p) => p.result.toolCallId).toSet();

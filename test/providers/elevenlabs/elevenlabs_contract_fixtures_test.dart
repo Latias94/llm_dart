@@ -69,7 +69,7 @@ void main() {
       final metadata = response.providerMetadata;
       expect(metadata, isNotNull);
       expect(metadata, contains('elevenlabs'));
-      expect(metadata, contains('elevenlabs.speech'));
+      expect(metadata, isNot(contains('elevenlabs.speech')));
     });
 
     test('STT: multipart fields + response mapping + providerMetadata',
@@ -126,7 +126,7 @@ void main() {
       final metadata = response.providerMetadata;
       expect(metadata, isNotNull);
       expect(metadata, contains('elevenlabs'));
-      expect(metadata, contains('elevenlabs.transcription'));
+      expect(metadata, isNot(contains('elevenlabs.transcription')));
     });
   });
 }

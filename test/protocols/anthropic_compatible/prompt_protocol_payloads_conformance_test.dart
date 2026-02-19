@@ -54,13 +54,9 @@ void main() {
           Tool.function(
             name: 'getWeather',
             description: 'get weather',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
+            inputSchema: Schema.params(
               properties: {
-                'city': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'city',
-                ),
+                'city': Schema.string('city'),
               },
               required: ['city'],
             ),

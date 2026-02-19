@@ -6,13 +6,9 @@ Tool _noopTool(String name) {
   return Tool.function(
     name: name,
     description: 'noop',
-    parameters: const ParametersSchema(
-      schemaType: 'object',
+    inputSchema: Schema.params(
       properties: {
-        'q': ParameterProperty(
-          propertyType: 'string',
-          description: 'q',
-        ),
+        'q': Schema.string('q'),
       },
       required: ['q'],
     ),
@@ -30,7 +26,7 @@ void main() {
           ProviderTool(
             id: 'anthropic.web_search_20250305',
             name: 'web_search',
-            options: {
+            args: {
               'maxUses': 2,
               'allowedDomains': ['example.com'],
               'blockedDomains': ['bad.com'],

@@ -12,7 +12,7 @@ import 'tool_types.dart';
 ///
 /// Streaming parsers typically emit these as `LLMProviderToolCallPart` with
 /// `providerExecuted=false`, and the tool loop bridges them into local function
-/// tool calls (`ToolCall`) by using `toolName` as the function name.
+/// tool calls (`V3ToolCall`) by using `toolName` as the function name.
 ///
 /// This module provides:
 /// - lightweight parsers for tool inputs
@@ -26,7 +26,7 @@ class OpenAIClientExecutedTools {
     final set = allowed.toSet();
     return (toolCall,
         {required messages, required stepIndex, cancelToken}) async {
-      return set.contains(toolCall.function.name);
+      return set.contains(toolCall.toolName);
     };
   }
 
@@ -42,15 +42,13 @@ class OpenAIClientExecutedTools {
         name: 'shell',
         description:
             'Client-executed shell tool call (OpenAI Responses provider tool).',
-        parameters: ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'action': ParameterProperty(
-              propertyType: 'object',
-              description: 'Shell action object (provider-defined shape).',
+            'action': Schema.object(
+              'Shell action object (provider-defined shape).',
+              properties: const {},
             ),
           },
-          required: const [],
         ),
       );
 
@@ -59,19 +57,14 @@ class OpenAIClientExecutedTools {
         name: 'apply_patch',
         description:
             'Client-executed apply_patch tool call (OpenAI Responses provider tool).',
-        parameters: ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'callId': ParameterProperty(
-              propertyType: 'string',
-              description: 'Tool call id.',
-            ),
-            'operation': ParameterProperty(
-              propertyType: 'object',
-              description: 'Patch operation object (provider-defined shape).',
+            'callId': Schema.string('Tool call id.'),
+            'operation': Schema.object(
+              'Patch operation object (provider-defined shape).',
+              properties: const {},
             ),
           },
-          required: const [],
         ),
       );
 

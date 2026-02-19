@@ -4,34 +4,26 @@ import '../core/llm_error.dart';
 import '../models/chat_models.dart';
 import '../models/tool_models.dart';
 
-/// Tool validation utility for ensuring tool calls and parameters are valid
+/// Tool validation utility for ensuring tool calls and tool inputs are valid.
 ///
-/// This class provides static methods for validating tool calls against their
-/// definitions and ensuring parameter types and requirements are met.
+/// This is a best-effort validator that checks JSON-like tool inputs against a
+/// subset of JSON Schema keywords used in AI SDK-style tool schemas.
 class ToolValidator {
-  /// Validate a JSON-like value against a [ParameterProperty] schema.
-  ///
-  /// This is a best-effort validator intended for tool I/O and MCP payloads.
-  /// It mirrors the parameter validation logic but works for any JSON value
-  /// (not only top-level objects).
+  /// Validate a JSON-like value against a [JsonSchema].
   ///
   /// Returns a list of validation error messages (empty if valid).
   static List<String> validateJsonLike(
     Object? value,
-    ParameterProperty schema, {
+    JsonSchema schema, {
     String path = r'$',
   }) {
     return _validateJsonLikeValue(path, value, schema);
   }
 
-  /// Validate a tool call against its tool definition
+  /// Validate a tool call against its tool definition.
   ///
-  /// [toolCall] - The tool call to validate
-  /// [toolDefinition] - The tool definition to validate against
-  ///
-  /// Returns true if valid, throws ToolValidationError if invalid
+  /// Returns true if valid, throws [ToolValidationError] if invalid.
   static bool validateToolCall(ToolCall toolCall, Tool toolDefinition) {
-    // Check if tool names match
     if (toolCall.function.name != toolDefinition.function.name) {
       throw ToolValidationError(
         'Tool name mismatch: expected ${toolDefinition.function.name}, got ${toolCall.function.name}',
@@ -39,11 +31,9 @@ class ToolValidator {
       );
     }
 
-    // Parse and validate arguments
     Map<String, dynamic> arguments;
     try {
-      arguments =
-          jsonDecode(toolCall.function.arguments) as Map<String, dynamic>;
+      arguments = jsonDecode(toolCall.function.arguments) as Map<String, dynamic>;
     } catch (e) {
       throw ToolValidationError(
         'Invalid JSON in tool arguments: $e',
@@ -51,10 +41,9 @@ class ToolValidator {
       );
     }
 
-    // Validate parameters
     final validationErrors = validateParameters(
       arguments,
-      toolDefinition.function.parameters,
+      toolDefinition.function.inputSchema,
     );
 
     if (validationErrors.isNotEmpty) {
@@ -67,267 +56,176 @@ class ToolValidator {
     return true;
   }
 
-  /// Validate parameters against a schema
+  /// Validate parameters against a tool input schema.
   ///
-  /// [arguments] - The arguments to validate
-  /// [schema] - The parameter schema to validate against
-  ///
-  /// Returns a list of validation error messages (empty if valid)
+  /// The schema is expected to be a JSON Schema object (typically
+  /// `type: object`).
   static List<String> validateParameters(
     Map<String, dynamic> arguments,
-    ParametersSchema schema,
+    JsonSchema schema,
   ) {
-    final errors = <String>[];
-
-    // Check required parameters
-    for (final requiredParam in schema.required) {
-      if (!arguments.containsKey(requiredParam)) {
-        errors.add('Missing required parameter: $requiredParam');
-      }
-    }
-
-    // Validate each provided parameter
-    for (final entry in arguments.entries) {
-      final paramName = entry.key;
-      final paramValue = entry.value;
-      final paramProperty = schema.properties[paramName];
-
-      if (paramProperty == null) {
-        errors.add('Unknown parameter: $paramName');
-        continue;
-      }
-
-      final paramErrors = _validateParameterValue(
-        paramName,
-        paramValue,
-        paramProperty,
-      );
-      errors.addAll(paramErrors);
-    }
-
-    return errors;
-  }
-
-  /// Validate a single parameter value against its property definition
-  static List<String> _validateParameterValue(
-    String paramName,
-    dynamic value,
-    ParameterProperty property,
-  ) {
-    final errors = <String>[];
-
-    // Type validation
-    switch (property.propertyType) {
-      case 'string':
-        if (value is! String) {
-          errors.add(
-            'Parameter $paramName must be a string, got ${value.runtimeType}',
-          );
-        } else if (property.enumList != null &&
-            !property.enumList!.contains(value)) {
-          errors.add(
-            'Parameter $paramName must be one of ${property.enumList}, got $value',
-          );
-        }
-        break;
-
-      case 'number':
-      case 'integer':
-        if (value is! num) {
-          errors.add(
-            'Parameter $paramName must be a number, got ${value.runtimeType}',
-          );
-        } else if (property.propertyType == 'integer' && value is! int) {
-          errors.add(
-            'Parameter $paramName must be an integer, got ${value.runtimeType}',
-          );
-        }
-        break;
-
-      case 'boolean':
-        if (value is! bool) {
-          errors.add(
-            'Parameter $paramName must be a boolean, got ${value.runtimeType}',
-          );
-        }
-        break;
-
-      case 'array':
-        if (value is! List) {
-          errors.add(
-            'Parameter $paramName must be an array, got ${value.runtimeType}',
-          );
-        } else if (property.items != null) {
-          // Validate array items
-          for (int i = 0; i < value.length; i++) {
-            final itemErrors = _validateParameterValue(
-              '$paramName[$i]',
-              value[i],
-              property.items!,
-            );
-            errors.addAll(itemErrors);
-          }
-        }
-        break;
-
-      case 'object':
-        if (value is! Map<String, dynamic>) {
-          errors.add(
-            'Parameter $paramName must be an object, got ${value.runtimeType}',
-          );
-        } else if (property.properties != null) {
-          // Validate object properties if schema is defined
-          final objectValue = value;
-
-          // Check required properties
-          if (property.required != null) {
-            for (final requiredProp in property.required!) {
-              if (!objectValue.containsKey(requiredProp)) {
-                errors.add(
-                  'Object $paramName missing required property: $requiredProp',
-                );
-              }
-            }
-          }
-
-          // Validate each provided property
-          for (final entry in objectValue.entries) {
-            final propName = entry.key;
-            final propValue = entry.value;
-            final propProperty = property.properties![propName];
-
-            if (propProperty == null) {
-              errors.add('Object $paramName has unknown property: $propName');
-              continue;
-            }
-
-            final propErrors = _validateParameterValue(
-              '$paramName.$propName',
-              propValue,
-              propProperty,
-            );
-            errors.addAll(propErrors);
-          }
-        }
-        break;
-
-      default:
-        // Allow unknown types for flexibility
-        break;
-    }
-
-    return errors;
+    return _validateJsonLikeValue(r'$', arguments, schema);
   }
 
   static List<String> _validateJsonLikeValue(
     String path,
     Object? value,
-    ParameterProperty property,
+    JsonSchema schema,
   ) {
     final errors = <String>[];
 
-    switch (property.propertyType) {
+    // enum
+    final enumValues = schema['enum'];
+    if (enumValues is List && enumValues.isNotEmpty) {
+      if (!enumValues.contains(value)) {
+        errors.add('Value $path must be one of $enumValues, got $value');
+      }
+      return errors;
+    }
+
+    // oneOf/anyOf/allOf (best-effort)
+    final oneOf = schema['oneOf'];
+    if (oneOf is List && oneOf.isNotEmpty) {
+      final anyOk = oneOf.whereType<Map>().any((candidate) {
+        return _validateJsonLikeValue(
+          path,
+          value,
+          candidate.cast<String, dynamic>(),
+        ).isEmpty;
+      });
+      if (!anyOk) errors.add('Value $path does not match any schema in oneOf.');
+      return errors;
+    }
+
+    final anyOf = schema['anyOf'];
+    if (anyOf is List && anyOf.isNotEmpty) {
+      final anyOk = anyOf.whereType<Map>().any((candidate) {
+        return _validateJsonLikeValue(
+          path,
+          value,
+          candidate.cast<String, dynamic>(),
+        ).isEmpty;
+      });
+      if (!anyOk) errors.add('Value $path does not match any schema in anyOf.');
+      return errors;
+    }
+
+    final allOf = schema['allOf'];
+    if (allOf is List && allOf.isNotEmpty) {
+      for (final candidate in allOf.whereType<Map>()) {
+        errors.addAll(
+          _validateJsonLikeValue(path, value, candidate.cast<String, dynamic>()),
+        );
+      }
+      return errors;
+    }
+
+    final schemaType = schema['type'];
+    switch (schemaType) {
       case 'string':
         if (value is! String) {
-          errors.add(
-            'Value $path must be a string, got ${value.runtimeType}',
-          );
-        } else if (property.enumList != null &&
-            !property.enumList!.contains(value)) {
-          errors.add(
-              'Value $path must be one of ${property.enumList}, got $value');
+          errors.add('Value $path must be a string, got ${value.runtimeType}');
         }
-        break;
+        return errors;
 
       case 'number':
-      case 'integer':
         if (value is! num) {
-          errors.add(
-            'Value $path must be a number, got ${value.runtimeType}',
-          );
-        } else if (property.propertyType == 'integer' && value is! int) {
-          errors.add(
-            'Value $path must be an integer, got ${value.runtimeType}',
-          );
+          errors.add('Value $path must be a number, got ${value.runtimeType}');
         }
-        break;
+        return errors;
+
+      case 'integer':
+        if (value is! int) {
+          errors.add('Value $path must be an integer, got ${value.runtimeType}');
+        }
+        return errors;
 
       case 'boolean':
         if (value is! bool) {
-          errors.add(
-            'Value $path must be a boolean, got ${value.runtimeType}',
-          );
+          errors.add('Value $path must be a boolean, got ${value.runtimeType}');
         }
-        break;
+        return errors;
 
       case 'array':
         if (value is! List) {
-          errors.add(
-            'Value $path must be an array, got ${value.runtimeType}',
-          );
-        } else if (property.items != null) {
-          for (int i = 0; i < value.length; i++) {
-            final itemErrors = _validateJsonLikeValue(
-              '$path[$i]',
-              value[i] as Object?,
-              property.items!,
+          errors.add('Value $path must be an array, got ${value.runtimeType}');
+          return errors;
+        }
+        final items = schema['items'];
+        if (items is Map) {
+          final itemSchema = items.cast<String, dynamic>();
+          for (var i = 0; i < value.length; i++) {
+            errors.addAll(
+              _validateJsonLikeValue('$path[$i]', value[i] as Object?, itemSchema),
             );
-            errors.addAll(itemErrors);
           }
         }
-        break;
+        return errors;
 
       case 'object':
         if (value is! Map) {
-          errors.add(
-            'Value $path must be an object, got ${value.runtimeType}',
-          );
-          break;
+          errors.add('Value $path must be an object, got ${value.runtimeType}');
+          return errors;
         }
 
         final map = <String, Object?>{};
-        value.forEach((k, v) {
-          map[k.toString()] = v as Object?;
-        });
+        value.forEach((k, v) => map[k.toString()] = v as Object?);
 
-        final props = property.properties;
-        if (props != null && props.isNotEmpty) {
-          if (property.required != null) {
-            for (final requiredProp in property.required!) {
-              if (!map.containsKey(requiredProp)) {
-                errors.add(
-                    'Object $path missing required property: $requiredProp');
-              }
+        final required = schema['required'];
+        if (required is List) {
+          for (final item in required) {
+            if (item is String && !map.containsKey(item)) {
+              errors.add('Object $path missing required property: $item');
             }
-          }
-
-          for (final entry in map.entries) {
-            final key = entry.key;
-            final schemaForKey = props[key];
-            if (schemaForKey == null) {
-              errors.add('Object $path has unknown property: $key');
-              continue;
-            }
-            errors.addAll(
-              _validateJsonLikeValue('$path.$key', entry.value, schemaForKey),
-            );
           }
         }
-        break;
+
+        final propsRaw = schema['properties'];
+        final props = propsRaw is Map ? propsRaw.cast<String, dynamic>() : null;
+
+        final additionalProperties = schema['additionalProperties'];
+        final disallowAdditional = additionalProperties == false;
+
+        if (props != null && props.isNotEmpty) {
+          for (final entry in map.entries) {
+            final key = entry.key;
+            final valueForKey = entry.value;
+            final schemaForKey = props[key];
+
+            if (schemaForKey == null) {
+              if (disallowAdditional) {
+                errors.add('Object $path has unknown property: $key');
+              }
+              continue;
+            }
+
+            if (schemaForKey is Map) {
+              errors.addAll(
+                _validateJsonLikeValue(
+                  '$path.$key',
+                  valueForKey,
+                  schemaForKey.cast<String, dynamic>(),
+                ),
+              );
+            }
+          }
+        }
+
+        return errors;
+
+      case null:
+        // Best-effort: if `type` is absent, do not hard-fail.
+        return errors;
 
       default:
-        break;
+        // Best-effort: ignore unknown schema keywords/types.
+        return errors;
     }
-
-    return errors;
   }
 
-  /// Validate tool choice against available tools
+  /// Validate tool choice against available tools.
   ///
-  /// [toolChoice] - The tool choice to validate
-  /// [availableTools] - List of available tool definitions
-  ///
-  /// Returns true if valid, throws ToolValidationError if invalid
+  /// Returns true if valid, throws [ToolValidationError] if invalid.
   static bool validateToolChoice(
     ToolChoice toolChoice,
     List<Tool> availableTools,
@@ -346,29 +244,19 @@ class ToolValidator {
       case AutoToolChoice():
       case AnyToolChoice():
       case NoneToolChoice():
-        // These are always valid
         break;
     }
-
     return true;
   }
 
-  /// Validate structured output format
-  ///
-  /// [format] - The structured output format to validate
-  ///
-  /// Returns true if valid, throws StructuredOutputError if invalid
+  /// Validate structured output format.
   static bool validateStructuredOutput(StructuredOutputFormat format) {
     if (format.name.isEmpty) {
-      throw const StructuredOutputError(
-        'Structured output name cannot be empty',
-      );
+      throw const StructuredOutputError('Structured output name cannot be empty');
     }
 
     if (format.schema != null) {
       final schema = format.schema!;
-
-      // Basic JSON schema validation
       if (schema['type'] == null) {
         throw StructuredOutputError(
           'Schema must have a type field',
@@ -377,41 +265,30 @@ class ToolValidator {
         );
       }
 
-      // Validate required properties for object type
-      if (schema['type'] == 'object') {
-        if (schema['properties'] == null) {
-          throw StructuredOutputError(
-            'Object schema must have properties field',
-            schemaName: format.name,
-            schema: schema,
-          );
-        }
+      if (schema['type'] == 'object' && schema['properties'] == null) {
+        throw StructuredOutputError(
+          'Object schema must have properties field',
+          schemaName: format.name,
+          schema: schema,
+        );
       }
     }
 
     return true;
   }
 
-  /// Get tool by name from a list of tools
-  ///
-  /// [toolName] - Name of the tool to find
-  /// [tools] - List of tools to search in
-  ///
-  /// Returns the tool if found, null otherwise
+  /// Get tool by name from a list of tools.
   static Tool? findTool(String toolName, List<Tool> tools) {
     try {
       return tools.firstWhere((tool) => tool.function.name == toolName);
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }
 
-  /// Validate multiple tool calls against their definitions
+  /// Validate multiple tool calls against their definitions.
   ///
-  /// [toolCalls] - List of tool calls to validate
-  /// [availableTools] - List of available tool definitions
-  ///
-  /// Returns a map of tool call ID to validation errors (empty map if all valid)
+  /// Returns a map of tool call ID to validation errors.
   static Map<String, List<String>> validateToolCalls(
     List<ToolCall> toolCalls,
     List<Tool> availableTools,
@@ -439,3 +316,4 @@ class ToolValidator {
     return errors;
   }
 }
+

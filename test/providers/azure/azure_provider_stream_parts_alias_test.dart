@@ -5,8 +5,8 @@ import '../../utils/fakes/fakes.dart';
 import '../../utils/fixture_replay.dart';
 
 void main() {
-  group('Azure provider metadata alias (stream parts)', () {
-    test('adds azure.responses alias to providerMetadata maps', () async {
+  group('Azure providerMetadata namespacing (stream parts)', () {
+    test('emits canonical azure providerMetadata maps', () async {
       const fixturePath =
           'test/fixtures/openai/responses/openai-web-search-tool.1.chunks.txt';
 
@@ -50,13 +50,15 @@ void main() {
       expect(metas, isNotEmpty);
 
       for (final meta in metas) {
-        expect(meta['azure.responses'], equals(meta['azure']));
+        expect(meta.containsKey('azure'), isTrue);
+        expect(meta.containsKey('azure.responses'), isFalse);
       }
 
       final finish = parts.whereType<LLMFinishPart>().single;
+      expect(finish.response.providerMetadata?['azure'], isNotNull);
       expect(
-        finish.response.providerMetadata?['azure.responses'],
-        equals(finish.response.providerMetadata?['azure']),
+        finish.response.providerMetadata?.containsKey('azure.responses'),
+        isFalse,
       );
     });
   });

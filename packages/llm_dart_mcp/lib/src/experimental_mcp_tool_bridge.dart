@@ -52,14 +52,13 @@ class ExperimentalMcpToolBridgeOptions {
   /// Optional output schemas used to validate MCP tool outputs.
   ///
   /// Keys are MCP tool names (as returned by `tools/list`).
-  /// Values are `ParameterProperty` schemas (JSON-like), e.g. built via
-  /// `Schema.object(...)`.
+  /// Values are JSON Schema maps ([JsonSchema]), e.g. built via `Schema.object(...)`.
   ///
   /// When provided, the bridge will:
   /// - Prefer `structuredContent` when available and validate it.
   /// - Otherwise, attempt to parse single text content as JSON and validate it.
   /// - Throw if the output cannot be validated against the schema.
-  final Map<String, ParameterProperty> outputSchemasByMcpToolName;
+  final Map<String, JsonSchema> outputSchemasByMcpToolName;
 
   /// Whether to attempt parsing single `text` tool outputs as JSON when
   /// validating against [outputSchemasByMcpToolName].
@@ -90,7 +89,7 @@ class ExperimentalMcpToolBridgeOptions {
     String? toolNamePrefix,
     bool? namespaceByServerLabel,
     bool? wrapInputForOpenSchemas,
-    Map<String, ParameterProperty>? outputSchemasByMcpToolName,
+    Map<String, JsonSchema>? outputSchemasByMcpToolName,
     bool? parseTextContentAsJsonForOutputSchema,
     bool? inferOutputSchemaFromToolDefinitions,
   }) {
@@ -201,7 +200,7 @@ Future<ExperimentalMcpToolBridge> experimentalCreateMcpToolBridge({
       functionTool(
         name: functionName,
         description: description,
-        parameters: schemaInfo.schema,
+        inputSchema: schemaInfo.schema,
         handler: handler,
       ),
     );
@@ -219,7 +218,7 @@ Future<ExperimentalMcpToolBridge> experimentalCreateMcpToolBridge({
 }
 
 class _ToolSchemaInfo {
-  final ParametersSchema schema;
+  final JsonSchema schema;
   final bool wrapInput;
 
   const _ToolSchemaInfo({required this.schema, required this.wrapInput});
@@ -247,63 +246,53 @@ _ToolSchemaInfo _parametersSchemaFromMcpTool({
     if (!wrapInputForOpenSchemas) {
       // No properties; accept empty args.
       return const _ToolSchemaInfo(
-        schema: ParametersSchema(
-          schemaType: 'object',
-          properties: <String, ParameterProperty>{},
-          required: <String>[],
-        ),
+        schema: <String, dynamic>{
+          'type': 'object',
+          'properties': <String, dynamic>{},
+        },
         wrapInput: false,
       );
     }
 
     return _ToolSchemaInfo(
-      schema: const ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'input': ParameterProperty(
-            propertyType: 'object',
-            description: 'Tool arguments (free-form).',
-          ),
+      schema: const <String, dynamic>{
+        'type': 'object',
+        'properties': {
+          'input': {
+            'type': 'object',
+            'description': 'Tool arguments (free-form).',
+          },
         },
-        required: <String>[],
-      ),
+      },
       wrapInput: true,
     );
   }
 
-  final properties = <String, ParameterProperty>{};
+  final properties = <String, dynamic>{};
   for (final entry in props.entries) {
     final key = entry.key;
     final raw = entry.value;
     if (raw is Map<String, dynamic>) {
-      properties[key] = _jsonSchemaToParameterProperty(
-        raw,
-        descriptionFallback: key,
-      );
+      properties[key] = _ensureSchemaDescription(raw, key);
     } else if (raw is Map) {
-      properties[key] = _jsonSchemaToParameterProperty(
-        Map<String, dynamic>.from(raw),
-        descriptionFallback: key,
-      );
+      properties[key] =
+          _ensureSchemaDescription(Map<String, dynamic>.from(raw), key);
     } else {
-      properties[key] = ParameterProperty(
-        propertyType: 'string',
-        description: key,
-      );
+      properties[key] = <String, dynamic>{'type': 'string', 'description': key};
     }
   }
 
   return _ToolSchemaInfo(
-    schema: ParametersSchema(
-      schemaType: 'object',
-      properties: properties,
-      required: required,
-    ),
+    schema: <String, dynamic>{
+      'type': 'object',
+      'properties': properties,
+      if (required.isNotEmpty) 'required': required,
+    },
     wrapInput: false,
   );
 }
 
-ParameterProperty? _outputSchemaFromMcpTool(mcp.Tool tool) {
+JsonSchema? _outputSchemaFromMcpTool(mcp.Tool tool) {
   final out = tool.outputSchema;
   if (out == null) return null;
 
@@ -312,136 +301,38 @@ ParameterProperty? _outputSchemaFromMcpTool(mcp.Tool tool) {
 
   final required = out.required ?? const <String>[];
 
-  final properties = <String, ParameterProperty>{};
+  final properties = <String, dynamic>{};
   for (final entry in props.entries) {
     final key = entry.key;
     final raw = entry.value;
     if (raw is Map<String, dynamic>) {
-      properties[key] = _jsonSchemaToParameterProperty(
-        raw,
-        descriptionFallback: key,
-      );
+      properties[key] = _ensureSchemaDescription(raw, key);
     } else if (raw is Map) {
-      properties[key] = _jsonSchemaToParameterProperty(
-        Map<String, dynamic>.from(raw),
-        descriptionFallback: key,
-      );
+      properties[key] =
+          _ensureSchemaDescription(Map<String, dynamic>.from(raw), key);
     } else {
-      properties[key] = ParameterProperty(
-        propertyType: 'string',
-        description: key,
-      );
+      properties[key] = <String, dynamic>{'type': 'string', 'description': key};
     }
   }
 
-  return ParameterProperty(
-    propertyType: 'object',
-    description: 'Tool output',
-    properties: properties,
-    required: required.isEmpty ? null : required,
-  );
+  return <String, dynamic>{
+    'type': 'object',
+    'description': 'Tool output',
+    'properties': properties,
+    if (required.isNotEmpty) 'required': required,
+  };
 }
 
-ParameterProperty _jsonSchemaToParameterProperty(
-  Map<String, dynamic> schema, {
-  required String descriptionFallback,
-}) {
-  final description =
-      (schema['description'] as String?)?.trim().isNotEmpty == true
-          ? (schema['description'] as String).trim()
-          : descriptionFallback;
-
-  final enumRaw = schema['enum'];
-  final enumStrings = enumRaw is List
-      ? enumRaw.whereType<String>().toList(growable: false)
-      : null;
-
-  String? type = schema['type'] as String?;
-
-  // Best-effort inference when type is omitted.
-  if (type == null) {
-    if (schema['properties'] is Map) type = 'object';
-    if (schema['items'] is Map) type = 'array';
-  }
-
-  switch (type) {
-    case 'string':
-      return ParameterProperty(
-        propertyType: 'string',
-        description: description,
-        enumList: enumStrings,
-      );
-    case 'number':
-      return ParameterProperty(
-        propertyType: 'number',
-        description: description,
-      );
-    case 'integer':
-      return ParameterProperty(
-        propertyType: 'integer',
-        description: description,
-      );
-    case 'boolean':
-      return ParameterProperty(
-        propertyType: 'boolean',
-        description: description,
-      );
-    case 'array':
-      final itemsRaw = schema['items'];
-      final itemsSchema = itemsRaw is Map<String, dynamic>
-          ? itemsRaw
-          : itemsRaw is Map
-              ? Map<String, dynamic>.from(itemsRaw)
-              : null;
-      return ParameterProperty(
-        propertyType: 'array',
-        description: description,
-        items: itemsSchema != null
-            ? _jsonSchemaToParameterProperty(
-                itemsSchema,
-                descriptionFallback: 'item',
-              )
-            : null,
-      );
-    case 'object':
-      final propsRaw = schema['properties'];
-      Map<String, ParameterProperty>? nestedProps;
-      if (propsRaw is Map) {
-        nestedProps = {};
-        propsRaw.forEach((k, v) {
-          if (k is! String) return;
-          if (v is Map<String, dynamic>) {
-            nestedProps![k] = _jsonSchemaToParameterProperty(
-              v,
-              descriptionFallback: k,
-            );
-          } else if (v is Map) {
-            nestedProps![k] = _jsonSchemaToParameterProperty(
-              Map<String, dynamic>.from(v),
-              descriptionFallback: k,
-            );
-          }
-        });
-        if (nestedProps.isEmpty) nestedProps = null;
-      }
-
-      final required = schema['required'] is List
-          ? (schema['required'] as List).whereType<String>().toList()
-          : null;
-
-      return ParameterProperty(
-        propertyType: 'object',
-        description: description,
-        properties: nestedProps,
-        required: required,
-      );
-  }
-
-  return ParameterProperty(
-    propertyType: 'string',
-    description: description,
-    enumList: enumStrings,
-  );
+Map<String, dynamic> _ensureSchemaDescription(
+  Map<String, dynamic> schema,
+  String descriptionFallback,
+) {
+  final desc = schema['description'];
+  if (desc is String && desc.trim().isNotEmpty) return schema;
+  return {
+    ...schema,
+    'description': descriptionFallback,
+  };
 }
 
 String _callToolResultToBestEffortText(mcp.CallToolResult result) {
@@ -458,7 +349,7 @@ String _callToolResultToBestEffortText(mcp.CallToolResult result) {
 
 ({bool ok, Object? value, LLMError? error}) _validateToolOutputAgainstSchema(
   mcp.CallToolResult result,
-  ParameterProperty outputSchema, {
+  JsonSchema outputSchema, {
   required String toolName,
   required bool parseTextAsJson,
 }) {

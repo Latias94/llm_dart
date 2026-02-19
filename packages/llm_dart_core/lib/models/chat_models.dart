@@ -265,6 +265,106 @@ class ToolCall {
   String toString() => jsonEncode(toJson());
 }
 
+/// AI SDK v3-style function tool call (flattened).
+///
+/// This is the canonical tool call shape used by v3 stream parts and tool loops:
+/// - [toolCallId] stable identifier within a single response
+/// - [toolName] function tool name
+/// - [input] stringified JSON object (may be streamed in chunks by some adapters)
+///
+/// Notes:
+/// - This is distinct from [ToolCall], which is the legacy OpenAI-style nested
+///   `function: { name, arguments }` representation used in `ChatMessage` payloads.
+class V3ToolCall {
+  final String toolCallId;
+  final String toolName;
+
+  /// Tool input JSON string (typically a JSON object).
+  final String input;
+
+  /// Provider-specific options/metadata (namespaced).
+  final ProviderOptions providerOptions;
+
+  const V3ToolCall({
+    required this.toolCallId,
+    required this.toolName,
+    required this.input,
+    this.providerOptions = const {},
+  });
+
+  @Deprecated('Use toolCallId.')
+  String get id => toolCallId;
+
+  @Deprecated('Use toolName/input.')
+  FunctionCall get function => FunctionCall(name: toolName, arguments: input);
+
+  /// Convert to legacy nested [ToolCall] (OpenAI-style).
+  ToolCall toLegacyToolCall({String callType = 'function'}) {
+    return ToolCall(
+      id: toolCallId,
+      callType: callType,
+      function: FunctionCall(name: toolName, arguments: input),
+      providerOptions: providerOptions,
+    );
+  }
+
+  factory V3ToolCall.fromLegacyToolCall(ToolCall toolCall) {
+    return V3ToolCall(
+      toolCallId: toolCall.id,
+      toolName: toolCall.function.name,
+      input: toolCall.function.arguments,
+      providerOptions: toolCall.providerOptions,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'toolCallId': toolCallId,
+        'toolName': toolName,
+        'input': input,
+        if (providerOptions.isNotEmpty) 'providerOptions': providerOptions,
+      };
+
+  factory V3ToolCall.fromJson(Map<String, dynamic> json) {
+    final id = json['toolCallId'];
+    final name = json['toolName'];
+    final input = json['input'];
+    if (id is! String || id.trim().isEmpty) {
+      throw ArgumentError.value(json, 'json', 'V3ToolCall requires toolCallId.');
+    }
+    if (name is! String || name.trim().isEmpty) {
+      throw ArgumentError.value(json, 'json', 'V3ToolCall requires toolName.');
+    }
+    if (input is! String) {
+      throw ArgumentError.value(json, 'json', 'V3ToolCall requires input.');
+    }
+
+    final providerOptionsRaw = json['providerOptions'];
+    ProviderOptions providerOptions;
+    if (providerOptionsRaw is ProviderOptions) {
+      providerOptions = providerOptionsRaw;
+    } else if (providerOptionsRaw is Map) {
+      providerOptions = providerOptionsRaw.map<String, Map<String, dynamic>>(
+        (key, value) => MapEntry(
+          key.toString(),
+          (value as Map?)?.cast<String, dynamic>() ?? const {},
+        ),
+      );
+    } else {
+      providerOptions = const {};
+    }
+
+    return V3ToolCall(
+      toolCallId: id,
+      toolName: name,
+      input: input,
+      providerOptions: providerOptions,
+    );
+  }
+
+  @override
+  String toString() => jsonEncode(toJson());
+}
+
 /// FunctionCall contains details about which function to call and with what arguments.
 class FunctionCall {
   /// The name of the function to call.
@@ -533,6 +633,25 @@ class ChatMessage {
         content: content,
         protocolPayloads: protocolPayloads,
         providerOptions: providerOptions,
+      );
+
+  /// Create a tool use message from v3 flattened tool calls.
+  ///
+  /// This is a convenience adapter for legacy provider protocols that expect
+  /// OpenAI-style nested tool calls.
+  factory ChatMessage.toolUseV3({
+    required List<V3ToolCall> toolCalls,
+    String content = '',
+    ProviderOptions providerOptions = const {},
+    Map<String, dynamic> protocolPayloads = const {},
+  }) =>
+      ChatMessage.toolUse(
+        toolCalls: toolCalls.map((c) => c.toLegacyToolCall()).toList(
+              growable: false,
+            ),
+        content: content,
+        providerOptions: providerOptions,
+        protocolPayloads: protocolPayloads,
       );
 
   /// Create a tool result message

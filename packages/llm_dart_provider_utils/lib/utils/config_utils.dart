@@ -171,7 +171,8 @@ class ConfigUtils {
     ToolChoice? toolChoice,
   ) {
     if (tools != null && tools.isNotEmpty) {
-      requestBody['tools'] = tools.map((t) => t.toJson()).toList();
+      requestBody['tools'] =
+          tools.map((t) => t.toOpenAIChatCompletionsJson()).toList();
 
       if (toolChoice != null) {
         requestBody['tool_choice'] = toolChoice.toJson();

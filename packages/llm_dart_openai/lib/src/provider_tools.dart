@@ -38,7 +38,7 @@ class OpenAIProviderTools {
     return ProviderTool(
       id: '${_prefix}web_search_preview',
       name: 'webSearch',
-      options: {
+      args: {
         if (contextSize != null) 'searchContextSize': contextSize.apiValue,
         if (userLocation != null && userLocation.isNotEmpty)
           'userLocation': userLocation,
@@ -59,7 +59,7 @@ class OpenAIProviderTools {
     return ProviderTool(
       id: '${_prefix}web_search',
       name: 'webSearch',
-      options: {
+      args: {
         if (externalWebAccess != null) 'externalWebAccess': externalWebAccess,
         if (allowedDomains != null && allowedDomains.isNotEmpty)
           'filters': {'allowedDomains': allowedDomains},
@@ -113,7 +113,7 @@ class OpenAIProviderTools {
     return ProviderTool(
       id: '${_prefix}file_search',
       name: 'fileSearch',
-      options: {
+      args: {
         if (vectorStoreIds != null && vectorStoreIds.isNotEmpty)
           'vectorStoreIds': vectorStoreIds,
         if (maxNumResults != null) 'maxNumResults': maxNumResults,
@@ -133,7 +133,7 @@ class OpenAIProviderTools {
     return ProviderTool(
       id: '${_prefix}computer_use',
       name: 'computerUse',
-      options: {
+      args: {
         'displayWidth': displayWidth,
         'displayHeight': displayHeight,
         'environment': environment,
@@ -155,7 +155,7 @@ class OpenAIProviderTools {
       id: '${_prefix}code_interpreter',
       name: 'codeExecution',
       supportsDeferredResults: true,
-      options: {
+      args: {
         if (container != null) 'container': container,
         ...?parameters,
       },
@@ -178,7 +178,7 @@ class OpenAIProviderTools {
     return ProviderTool(
       id: '${_prefix}image_generation',
       name: 'generateImage',
-      options: {
+      args: {
         if (background != null) 'background': background,
         if (inputFidelity != null) 'inputFidelity': inputFidelity,
         if (inputImageMask != null && inputImageMask.isNotEmpty)
@@ -209,7 +209,7 @@ class OpenAIProviderTools {
     return ProviderTool(
       id: '${_prefix}mcp',
       name: 'mcp',
-      options: {
+      args: {
         if (serverLabel != null) 'serverLabel': serverLabel,
         if (allowedTools != null) 'allowedTools': allowedTools,
         if (authorization != null) 'authorization': authorization,

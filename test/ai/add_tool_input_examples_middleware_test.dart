@@ -50,15 +50,11 @@ void main() {
         ],
       );
 
-      final tools = [
+      final tools = <Tool>[
         Tool.function(
           name: 'testTool',
           description: 'Do a thing.',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
           inputExamples: const [
             {
               'input': {'foo': 'bar'}
@@ -95,15 +91,11 @@ void main() {
         ],
       );
 
-      final tools = [
+      final tools = <Tool>[
         Tool.function(
           name: 'testTool',
           description: '',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
           inputExamples: const [
             {
               'input': {'foo': 'bar'}

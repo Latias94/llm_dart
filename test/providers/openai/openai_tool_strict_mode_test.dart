@@ -10,11 +10,7 @@ void main() {
     return Tool.function(
       name: name,
       description: 'tool',
-      parameters: const ParametersSchema(
-        schemaType: 'object',
-        properties: {},
-        required: [],
-      ),
+      inputSchema: Schema.params(properties: const {}),
       strict: strict,
     );
   }

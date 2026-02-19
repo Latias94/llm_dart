@@ -60,7 +60,7 @@ Future<GenerateObjectResult> generateObject({
   List<ProviderTool>? providerTools,
   ToolChoice? toolChoice,
   bool? parallelToolCalls,
-  required ParametersSchema schema,
+  required Object schema,
   String toolName = 'return_object',
   String toolDescription =
       'Return the result as a JSON object that matches the schema.',
@@ -69,6 +69,8 @@ Future<GenerateObjectResult> generateObject({
   LLMCallOptions callOptions = const LLMCallOptions(),
   CancelToken? cancelToken,
 }) async {
+  final schemaDef = asSchema<Map<String, dynamic>>(schema);
+
   final startedAt = DateTime.now().toUtc();
   final defaultModelId = model is ModelIdentityCapability
       ? (model as ModelIdentityCapability).modelId
@@ -89,7 +91,7 @@ Future<GenerateObjectResult> generateObject({
   final tool = Tool.function(
     name: toolName,
     description: toolDescription,
-    parameters: schema,
+    inputSchema: schemaDef.jsonSchema,
   );
 
   final instruction =
@@ -173,21 +175,44 @@ Future<GenerateObjectResult> generateObject({
       );
     }
 
-    final validationErrors =
-        ToolValidator.validateParameters(decodedArgs, schema);
-    if (validationErrors.isNotEmpty) {
-      throw NoObjectGeneratedError(
-        message: 'Generated object does not match schema.',
-        text: toolCall.function.arguments,
-        finishReason: response is ChatResponseWithFinishReason
-            ? response.finishReason
-            : null,
-        usage: response.usage,
-        responseMetadata: response is ChatResponseWithResponseMetadata
-            ? response.responseMetadata
-            : null,
-        cause: validationErrors,
+    final validate = schemaDef.validate;
+    if (validate != null) {
+      final validation = await Future.value(validate(decodedArgs));
+      if (!validation.success) {
+        throw NoObjectGeneratedError(
+          message: 'Generated object does not match schema.',
+          text: toolCall.function.arguments,
+          finishReason: response is ChatResponseWithFinishReason
+              ? response.finishReason
+              : null,
+          usage: response.usage,
+          responseMetadata: response is ChatResponseWithResponseMetadata
+              ? response.responseMetadata
+              : null,
+          cause: validation is ValidationFailure
+              ? (validation as ValidationFailure).error
+              : 'Schema validation failed.',
+        );
+      }
+    } else {
+      final validationErrors = ToolValidator.validateParameters(
+        decodedArgs,
+        schemaDef.jsonSchema,
       );
+      if (validationErrors.isNotEmpty) {
+        throw NoObjectGeneratedError(
+          message: 'Generated object does not match schema.',
+          text: toolCall.function.arguments,
+          finishReason: response is ChatResponseWithFinishReason
+              ? response.finishReason
+              : null,
+          usage: response.usage,
+          responseMetadata: response is ChatResponseWithResponseMetadata
+              ? response.responseMetadata
+              : null,
+          cause: validationErrors,
+        );
+      }
     }
 
     return GenerateObjectResult(
@@ -245,20 +270,42 @@ Future<GenerateObjectResult> generateObject({
     );
   }
 
-  final validationErrors = ToolValidator.validateParameters(parsed, schema);
-  if (validationErrors.isNotEmpty) {
-    throw NoObjectGeneratedError(
-      message: 'Generated object does not match schema.',
-      text: text,
-      finishReason: response is ChatResponseWithFinishReason
-          ? response.finishReason
-          : null,
-      usage: response.usage,
-      responseMetadata: response is ChatResponseWithResponseMetadata
-          ? response.responseMetadata
-          : null,
-      cause: validationErrors,
-    );
+  final validate = schemaDef.validate;
+  if (validate != null) {
+    final validation = await Future.value(validate(parsed));
+    if (!validation.success) {
+      throw NoObjectGeneratedError(
+        message: 'Generated object does not match schema.',
+        text: text,
+        finishReason: response is ChatResponseWithFinishReason
+            ? response.finishReason
+            : null,
+        usage: response.usage,
+        responseMetadata: response is ChatResponseWithResponseMetadata
+            ? response.responseMetadata
+            : null,
+        cause: validation is ValidationFailure
+            ? (validation as ValidationFailure).error
+            : 'Schema validation failed.',
+      );
+    }
+  } else {
+    final validationErrors =
+        ToolValidator.validateParameters(parsed, schemaDef.jsonSchema);
+    if (validationErrors.isNotEmpty) {
+      throw NoObjectGeneratedError(
+        message: 'Generated object does not match schema.',
+        text: text,
+        finishReason: response is ChatResponseWithFinishReason
+            ? response.finishReason
+            : null,
+        usage: response.usage,
+        responseMetadata: response is ChatResponseWithResponseMetadata
+            ? response.responseMetadata
+            : null,
+        cause: validationErrors,
+      );
+    }
   }
 
   return GenerateObjectResult(

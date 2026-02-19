@@ -236,10 +236,10 @@ void main() {
     test(
         'emits data-tool-loop-blocked when ToolLoopBlockedState raw part is present',
         () async {
-      const toolCall = ToolCall(
-        id: 'call1',
-        callType: 'function',
-        function: FunctionCall(name: 'calc', arguments: '{"x":1}'),
+      const toolCall = V3ToolCall(
+        toolCallId: 'call1',
+        toolName: 'calc',
+        input: '{"x":1}',
       );
 
       final state = ToolLoopBlockedState(
@@ -280,7 +280,7 @@ void main() {
         toolApprovalBlockedStateData: (s) => {
           'stepIndex': s.stepIndex,
           'toolCallIds':
-              s.toolApprovalRequests.map((r) => r.toolCall.id).toList(),
+              s.toolApprovalRequests.map((r) => r.toolCall.toolCallId).toList(),
         },
       ).toList();
 

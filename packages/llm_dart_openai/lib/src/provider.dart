@@ -1,5 +1,4 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'client.dart';
 import 'config.dart';
 import 'chat.dart';
@@ -7,9 +6,6 @@ import 'embeddings.dart';
 import 'audio.dart';
 import 'images.dart';
 import 'package:llm_dart_openai_compatible/responses.dart';
-
-const String _openaiChatProviderMetadataKey = 'openai.chat';
-const String _openaiResponsesProviderMetadataKey = 'openai.responses';
 
 /// OpenAI Provider implementation
 ///
@@ -132,19 +128,11 @@ class OpenAIProvider
         providerTools: providerTools,
         cancelToken: cancelToken,
       );
-      return _wrapResponseWithProviderMetadataAlias(
-        response,
-        baseKey: config.providerId,
-        aliasKey: _openaiResponsesProviderMetadataKey,
-      );
+      return response;
     }
 
     final response = await _chat.chat(messages, cancelToken: cancelToken);
-    return _wrapResponseWithProviderMetadataAlias(
-      response,
-      baseKey: config.providerId,
-      aliasKey: _openaiChatProviderMetadataKey,
-    );
+    return response;
   }
 
   @override
@@ -164,11 +152,7 @@ class OpenAIProvider
         providerTools: providerTools,
         cancelToken: cancelToken,
       );
-      return _wrapResponseWithProviderMetadataAlias(
-        response,
-        baseKey: config.providerId,
-        aliasKey: _openaiResponsesProviderMetadataKey,
-      );
+      return response;
     }
 
     final response = await _chat.chatWithTools(
@@ -176,11 +160,7 @@ class OpenAIProvider
       tools,
       cancelToken: cancelToken,
     );
-    return _wrapResponseWithProviderMetadataAlias(
-      response,
-      baseKey: config.providerId,
-      aliasKey: _openaiChatProviderMetadataKey,
-    );
+    return response;
   }
 
   @override
@@ -202,11 +182,7 @@ class OpenAIProvider
         callOptions: callOptions,
         cancelToken: cancelToken,
       );
-      return _wrapResponseWithProviderMetadataAlias(
-        response,
-        baseKey: config.providerId,
-        aliasKey: _openaiResponsesProviderMetadataKey,
-      );
+      return response;
     } else {
       final response = await _chat.chatWithToolsWithCallOptions(
         messages,
@@ -214,11 +190,7 @@ class OpenAIProvider
         callOptions: callOptions,
         cancelToken: cancelToken,
       );
-      return _wrapResponseWithProviderMetadataAlias(
-        response,
-        baseKey: config.providerId,
-        aliasKey: _openaiChatProviderMetadataKey,
-      );
+      return response;
     }
   }
 
@@ -233,22 +205,18 @@ class OpenAIProvider
 
     if (config.useResponsesAPI) {
       final responses = _responses ?? OpenAIResponses(_client, config);
-      return wrapStreamPartsWithProviderMetadataAlias(
-        responses.chatStreamParts(
-          messages,
-          providerTools: providerTools,
-          tools: tools,
-          cancelToken: cancelToken,
-        ),
-        baseKey: config.providerId,
-        aliasKey: _openaiResponsesProviderMetadataKey,
+      return responses.chatStreamParts(
+        messages,
+        providerTools: providerTools,
+        tools: tools,
+        cancelToken: cancelToken,
       );
     }
 
-    return wrapStreamPartsWithProviderMetadataAlias(
-      _chat.chatStreamParts(messages, tools: tools, cancelToken: cancelToken),
-      baseKey: config.providerId,
-      aliasKey: _openaiChatProviderMetadataKey,
+    return _chat.chatStreamParts(
+      messages,
+      tools: tools,
+      cancelToken: cancelToken,
     );
   }
 
@@ -266,28 +234,20 @@ class OpenAIProvider
 
     if (shouldUseResponses) {
       final responses = _responses ?? OpenAIResponses(_client, config);
-      return wrapStreamPartsWithProviderMetadataAlias(
-        responses.chatStreamPartsWithCallOptions(
-          messages,
-          providerTools: providerTools,
-          tools: tools,
-          callOptions: callOptions,
-          cancelToken: cancelToken,
-        ),
-        baseKey: config.providerId,
-        aliasKey: _openaiResponsesProviderMetadataKey,
-      );
-    }
-
-    return wrapStreamPartsWithProviderMetadataAlias(
-      _chat.chatStreamPartsWithCallOptions(
+      return responses.chatStreamPartsWithCallOptions(
         messages,
+        providerTools: providerTools,
         tools: tools,
         callOptions: callOptions,
         cancelToken: cancelToken,
-      ),
-      baseKey: config.providerId,
-      aliasKey: _openaiChatProviderMetadataKey,
+      );
+    }
+
+    return _chat.chatStreamPartsWithCallOptions(
+      messages,
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
     );
   }
 
@@ -308,20 +268,12 @@ class OpenAIProvider
         tools: tools,
         cancelToken: cancelToken,
       );
-      return _wrapResponseWithProviderMetadataAlias(
-        response,
-        baseKey: config.providerId,
-        aliasKey: _openaiResponsesProviderMetadataKey,
-      );
+      return response;
     }
 
     final response =
         await _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
-    return _wrapResponseWithProviderMetadataAlias(
-      response,
-      baseKey: config.providerId,
-      aliasKey: _openaiChatProviderMetadataKey,
-    );
+    return response;
   }
 
   @override
@@ -343,11 +295,7 @@ class OpenAIProvider
         callOptions: callOptions,
         cancelToken: cancelToken,
       );
-      return _wrapResponseWithProviderMetadataAlias(
-        response,
-        baseKey: config.providerId,
-        aliasKey: _openaiResponsesProviderMetadataKey,
-      );
+      return response;
     }
 
     final response = await _chat.chatPromptWithCallOptions(
@@ -356,11 +304,7 @@ class OpenAIProvider
       callOptions: callOptions,
       cancelToken: cancelToken,
     );
-    return _wrapResponseWithProviderMetadataAlias(
-      response,
-      baseKey: config.providerId,
-      aliasKey: _openaiChatProviderMetadataKey,
-    );
+    return response;
   }
 
   @override
@@ -374,26 +318,18 @@ class OpenAIProvider
 
     if (config.useResponsesAPI) {
       final responses = _responses ?? OpenAIResponses(_client, config);
-      return wrapStreamPartsWithProviderMetadataAlias(
-        responses.chatPromptStreamParts(
-          prompt,
-          providerTools: providerTools,
-          tools: tools,
-          cancelToken: cancelToken,
-        ),
-        baseKey: config.providerId,
-        aliasKey: _openaiResponsesProviderMetadataKey,
+      return responses.chatPromptStreamParts(
+        prompt,
+        providerTools: providerTools,
+        tools: tools,
+        cancelToken: cancelToken,
       );
     }
 
-    return wrapStreamPartsWithProviderMetadataAlias(
-      _chat.chatPromptStreamParts(
-        prompt,
-        tools: tools,
-        cancelToken: cancelToken,
-      ),
-      baseKey: config.providerId,
-      aliasKey: _openaiChatProviderMetadataKey,
+    return _chat.chatPromptStreamParts(
+      prompt,
+      tools: tools,
+      cancelToken: cancelToken,
     );
   }
 
@@ -409,28 +345,20 @@ class OpenAIProvider
 
     if (config.useResponsesAPI) {
       final responses = _responses ?? OpenAIResponses(_client, config);
-      return wrapStreamPartsWithProviderMetadataAlias(
-        responses.chatPromptStreamPartsWithCallOptions(
-          prompt,
-          providerTools: providerTools,
-          tools: tools,
-          callOptions: callOptions,
-          cancelToken: cancelToken,
-        ),
-        baseKey: config.providerId,
-        aliasKey: _openaiResponsesProviderMetadataKey,
-      );
-    }
-
-    return wrapStreamPartsWithProviderMetadataAlias(
-      _chat.chatPromptStreamPartsWithCallOptions(
+      return responses.chatPromptStreamPartsWithCallOptions(
         prompt,
+        providerTools: providerTools,
         tools: tools,
         callOptions: callOptions,
         cancelToken: cancelToken,
-      ),
-      baseKey: config.providerId,
-      aliasKey: _openaiChatProviderMetadataKey,
+      );
+    }
+
+    return _chat.chatPromptStreamPartsWithCallOptions(
+      prompt,
+      tools: tools,
+      callOptions: callOptions,
+      cancelToken: cancelToken,
     );
   }
 
@@ -722,16 +650,4 @@ $conversationContext
         'baseUrl: ${config.baseUrl}'
         ')';
   }
-}
-
-ChatResponse _wrapResponseWithProviderMetadataAlias(
-  ChatResponse response, {
-  required String baseKey,
-  required String aliasKey,
-}) {
-  return wrapChatResponseWithProviderMetadataAlias(
-    response,
-    baseKey: baseKey,
-    aliasKey: aliasKey,
-  );
 }

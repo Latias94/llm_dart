@@ -125,10 +125,9 @@ void main() {
         ),
       );
 
-      final schema = ParametersSchema(
-        schemaType: 'object',
-        properties: const {
-          'ok': ParameterProperty(propertyType: 'string', description: 'ok'),
+      final schema = Schema.params(
+        properties: {
+          'ok': Schema.string('ok'),
         },
         required: ['ok'],
       );
@@ -190,11 +189,7 @@ void main() {
           Tool.function(
             name: 'testFunction',
             description: 'Test',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
       );

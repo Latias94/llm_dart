@@ -52,11 +52,7 @@ void main() {
           Tool.function(
             name: 'web_fetch',
             description: 'Local web fetch',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
         false,
@@ -90,11 +86,7 @@ void main() {
           Tool.function(
             name: 'web_fetch',
             description: 'Local web fetch',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
         false,
@@ -123,7 +115,7 @@ void main() {
         providerTools: const [
           ProviderTool(
             id: 'anthropic.web_fetch_20250910',
-            options: {
+            args: {
               'max_uses': 1,
               'max_content_tokens': 64,
             },
@@ -171,11 +163,7 @@ void main() {
           Tool.function(
             name: 'web_fetch',
             description: 'Local web fetch',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
-              properties: {},
-              required: [],
-            ),
+            inputSchema: Schema.params(properties: const {}),
           ),
         ],
         false,

@@ -201,8 +201,8 @@ class GoogleConfig {
     final webSearchToolOptionsFromProviderTools =
         providerToolWebSearch != null &&
                 _isProviderToolEnabled(providerToolWebSearch) &&
-                providerToolWebSearch.options.isNotEmpty
-            ? _parseWebSearchToolOptions(providerToolWebSearch.options)
+                providerToolWebSearch.args.isNotEmpty
+            ? _parseWebSearchToolOptions(providerToolWebSearch.args)
             : null;
 
     final mergedWebSearchToolOptions = webSearchToolOptionsFromProviderTools;
@@ -335,7 +335,7 @@ class GoogleConfig {
   }
 
   static bool _isProviderToolEnabled(ProviderTool tool) {
-    final enabled = tool.options['enabled'];
+    final enabled = tool.args['enabled'];
     if (enabled is bool) return enabled;
     return true;
   }

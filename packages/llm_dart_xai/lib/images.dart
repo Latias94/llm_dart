@@ -393,8 +393,5 @@ Map<String, dynamic> _providerMetadata({
     if (images.isNotEmpty) 'images': images,
   };
 
-  return {
-    'xai': payload,
-    'xai.image': payload,
-  };
+  return {'xai': payload};
 }

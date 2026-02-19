@@ -11,11 +11,7 @@ void main() {
     Tool tool(String name) => Tool.function(
           name: name,
           description: 'tool',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
         );
 
     test('serializes auto/none/required as strings', () async {

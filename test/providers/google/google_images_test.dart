@@ -65,9 +65,9 @@ void main() {
       final meta = response.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('google'), isTrue);
-      expect(meta.containsKey('google.image'), isTrue);
+      expect(meta.containsKey('google.image'), isFalse);
       expect(
-        meta['google.image'],
+        meta['google'],
         equals({
           'model': model,
           'endpoint': endpoint,
@@ -149,9 +149,9 @@ void main() {
       final meta = response.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('google'), isTrue);
-      expect(meta.containsKey('google.image'), isTrue);
+      expect(meta.containsKey('google.image'), isFalse);
       expect(
-        meta['google.image'],
+        meta['google'],
         equals({
           'model': model,
           'endpoint': endpoint,
@@ -226,9 +226,9 @@ void main() {
       final meta = response.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('google'), isTrue);
-      expect(meta.containsKey('google.image'), isTrue);
+      expect(meta.containsKey('google.image'), isFalse);
       expect(
-        meta['google.image'],
+        meta['google'],
         equals({
           'model': model,
           'endpoint': endpoint,
@@ -297,9 +297,9 @@ void main() {
       final meta = response.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('google'), isTrue);
-      expect(meta.containsKey('google.image'), isTrue);
+      expect(meta.containsKey('google.image'), isFalse);
       expect(
-        meta['google.image'],
+        meta['google'],
         equals({
           'model': model,
           'endpoint': endpoint,

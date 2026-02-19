@@ -424,9 +424,9 @@ class OpenAIProviderFactory
       switch (tool.id) {
         case 'openai.web_search_preview':
           OpenAIWebSearchContextSize? contextSize;
-          final rawContextSize = tool.options['search_context_size'] ??
-              tool.options['searchContextSize'] ??
-              tool.options['contextSize'];
+          final rawContextSize = tool.args['search_context_size'] ??
+              tool.args['searchContextSize'] ??
+              tool.args['contextSize'];
           if (rawContextSize is String) {
             contextSize = OpenAIWebSearchContextSize.tryParse(rawContextSize);
           }
@@ -439,14 +439,14 @@ class OpenAIProviderFactory
 
         case 'openai.web_search':
           OpenAIWebSearchContextSize? contextSize;
-          final rawContextSize = tool.options['search_context_size'] ??
-              tool.options['searchContextSize'] ??
-              tool.options['contextSize'];
+          final rawContextSize = tool.args['search_context_size'] ??
+              tool.args['searchContextSize'] ??
+              tool.args['contextSize'];
           if (rawContextSize is String) {
             contextSize = OpenAIWebSearchContextSize.tryParse(rawContextSize);
           }
 
-          final filters = tool.options['filters'];
+          final filters = tool.args['filters'];
           List<String>? allowedDomains;
           if (filters is Map) {
             allowedDomains = asStringList(filters['allowed_domains']) ??
@@ -454,14 +454,14 @@ class OpenAIProviderFactory
           }
 
           final userLocation =
-              tool.options['user_location'] ?? tool.options['userLocation'];
+              tool.args['user_location'] ?? tool.args['userLocation'];
           final userLocationMap = userLocation is Map<String, dynamic>
               ? userLocation
               : userLocation is Map
                   ? Map<String, dynamic>.from(userLocation)
                   : null;
 
-          final parameters = Map<String, dynamic>.from(tool.options);
+          final parameters = Map<String, dynamic>.from(tool.args);
           parameters.remove('filters');
           parameters.remove('external_web_access');
           parameters.remove('externalWebAccess');
@@ -476,8 +476,8 @@ class OpenAIProviderFactory
               allowedDomains:
                   allowedDomains?.isEmpty == true ? null : allowedDomains,
               externalWebAccess:
-                  (tool.options['external_web_access'] as bool?) ??
-                      (tool.options['externalWebAccess'] as bool?),
+                  (tool.args['external_web_access'] as bool?) ??
+                      (tool.args['externalWebAccess'] as bool?),
               contextSize: contextSize,
               userLocation: userLocationMap,
               parameters: parameters.isEmpty ? null : parameters,
@@ -486,30 +486,30 @@ class OpenAIProviderFactory
           break;
 
         case 'openai.file_search':
-          final rawVectorStoreIds = tool.options['vector_store_ids'] ??
-              tool.options['vectorStoreIds'];
+          final rawVectorStoreIds = tool.args['vector_store_ids'] ??
+              tool.args['vectorStoreIds'];
           final vectorStoreIds = (rawVectorStoreIds is List)
               ? rawVectorStoreIds.whereType<String>().toList()
               : null;
 
           final parameters = <String, dynamic>{};
 
-          final explicitParameters = tool.options['parameters'];
+          final explicitParameters = tool.args['parameters'];
           if (explicitParameters is Map<String, dynamic>) {
             parameters.addAll(explicitParameters);
           } else if (explicitParameters is Map) {
             parameters.addAll(Map<String, dynamic>.from(explicitParameters));
           }
 
-          final maxNumResults = asInt(tool.options['max_num_results']) ??
-              asInt(tool.options['maxNumResults']);
+          final maxNumResults = asInt(tool.args['max_num_results']) ??
+              asInt(tool.args['maxNumResults']);
           if (maxNumResults != null) {
             parameters['max_num_results'] = maxNumResults;
           }
 
-          final ranking = tool.options['ranking_options'] ??
-              tool.options['rankingOptions'] ??
-              tool.options['ranking'];
+          final ranking = tool.args['ranking_options'] ??
+              tool.args['rankingOptions'] ??
+              tool.args['ranking'];
           if (ranking is Map) {
             final ranker = ranking['ranker'];
             final scoreThreshold =
@@ -526,12 +526,12 @@ class OpenAIProviderFactory
             }
           }
 
-          final filters = tool.options['filters'];
+          final filters = tool.args['filters'];
           if (filters != null) {
             parameters['filters'] = filters;
           }
 
-          for (final entry in tool.options.entries) {
+          for (final entry in tool.args.entries) {
             if (entry.key == 'vector_store_ids' ||
                 entry.key == 'vectorStoreIds' ||
                 entry.key == 'max_num_results' ||
@@ -556,22 +556,22 @@ class OpenAIProviderFactory
           break;
 
         case 'openai.computer_use':
-          final displayWidth = (tool.options['displayWidth'] as int?) ??
-              (tool.options['display_width'] as int?);
-          final displayHeight = (tool.options['displayHeight'] as int?) ??
-              (tool.options['display_height'] as int?);
-          final environment = tool.options['environment'] as String?;
+          final displayWidth = (tool.args['displayWidth'] as int?) ??
+              (tool.args['display_width'] as int?);
+          final displayHeight = (tool.args['displayHeight'] as int?) ??
+              (tool.args['display_height'] as int?);
+          final environment = tool.args['environment'] as String?;
 
           if (displayWidth == null ||
               displayHeight == null ||
               environment == null) {
             throw const InvalidRequestError(
               'OpenAI computer use requires ProviderTool(id: "openai.computer_use") '
-              'to include displayWidth, displayHeight, and environment in options.',
+              'to include displayWidth, displayHeight, and environment in args.',
             );
           }
 
-          final explicitParameters = tool.options['parameters'];
+          final explicitParameters = tool.args['parameters'];
           final parameters = <String, dynamic>{};
           if (explicitParameters is Map<String, dynamic>) {
             parameters.addAll(explicitParameters);
@@ -579,7 +579,7 @@ class OpenAIProviderFactory
             parameters.addAll(Map<String, dynamic>.from(explicitParameters));
           }
 
-          for (final entry in tool.options.entries) {
+          for (final entry in tool.args.entries) {
             if (entry.key == 'displayWidth' ||
                 entry.key == 'display_height' ||
                 entry.key == 'displayHeight' ||
@@ -602,7 +602,7 @@ class OpenAIProviderFactory
           break;
 
         case 'openai.code_interpreter':
-          final rawContainer = tool.options['container'];
+          final rawContainer = tool.args['container'];
           dynamic container;
           if (rawContainer == null) {
             container = const <String, Object?>{'type': 'auto'};
@@ -619,7 +619,7 @@ class OpenAIProviderFactory
             container = rawContainer;
           }
 
-          final parameters = Map<String, dynamic>.from(tool.options)
+          final parameters = Map<String, dynamic>.from(tool.args)
             ..remove('container');
           result.add(
             OpenAIBuiltInTools.codeInterpreter(
@@ -633,8 +633,8 @@ class OpenAIProviderFactory
           final p = <String, dynamic>{};
 
           void mapKey(String from, String to) {
-            if (!tool.options.containsKey(from)) return;
-            p[to] = tool.options[from];
+            if (!tool.args.containsKey(from)) return;
+            p[to] = tool.args[from];
           }
 
           mapKey('background', 'background');
@@ -651,8 +651,8 @@ class OpenAIProviderFactory
           mapKey('outputFormat', 'output_format');
           mapKey('size', 'size');
 
-          final inputImageMask = tool.options['input_image_mask'] ??
-              tool.options['inputImageMask'];
+          final inputImageMask = tool.args['input_image_mask'] ??
+              tool.args['inputImageMask'];
           if (inputImageMask is Map) {
             final fileId =
                 inputImageMask['file_id'] ?? inputImageMask['fileId'];
@@ -667,7 +667,7 @@ class OpenAIProviderFactory
           }
 
           // Pass through already-snake_case keys as an escape hatch.
-          for (final entry in tool.options.entries) {
+          for (final entry in tool.args.entries) {
             final k = entry.key;
             if (!k.contains('_')) continue;
             p.putIfAbsent(k, () => entry.value);
@@ -682,8 +682,8 @@ class OpenAIProviderFactory
           final p = <String, dynamic>{};
 
           void mapKey(String from, String to) {
-            if (!tool.options.containsKey(from)) return;
-            p[to] = tool.options[from];
+            if (!tool.args.containsKey(from)) return;
+            p[to] = tool.args[from];
           }
 
           mapKey('server_label', 'server_label');
@@ -696,7 +696,7 @@ class OpenAIProviderFactory
           mapKey('connector_id', 'connector_id');
           mapKey('connectorId', 'connector_id');
 
-          final headers = tool.options['headers'];
+          final headers = tool.args['headers'];
           if (headers is Map<String, dynamic>) {
             p['headers'] = headers;
           } else if (headers is Map) {
@@ -704,7 +704,7 @@ class OpenAIProviderFactory
           }
 
           final allowedTools =
-              tool.options['allowed_tools'] ?? tool.options['allowedTools'];
+              tool.args['allowed_tools'] ?? tool.args['allowedTools'];
           if (allowedTools is List) {
             final names = allowedTools.whereType<String>().toList();
             if (names.isNotEmpty) p['allowed_tools'] = names;
@@ -720,8 +720,8 @@ class OpenAIProviderFactory
             };
           }
 
-          final requireApproval = tool.options['require_approval'] ??
-              tool.options['requireApproval'];
+          final requireApproval =
+              tool.args['require_approval'] ?? tool.args['requireApproval'];
           if (requireApproval is String) {
             p['require_approval'] = requireApproval;
           } else if (requireApproval is Map) {
@@ -747,7 +747,7 @@ class OpenAIProviderFactory
           }
 
           // Pass through already-snake_case keys as an escape hatch.
-          for (final entry in tool.options.entries) {
+          for (final entry in tool.args.entries) {
             final k = entry.key;
             if (!k.contains('_')) continue;
             p.putIfAbsent(k, () => entry.value);

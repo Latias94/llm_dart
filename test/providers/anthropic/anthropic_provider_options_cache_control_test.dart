@@ -22,13 +22,9 @@ void main() {
       final tool1 = Tool.function(
         name: 'get_weather',
         description: 'Get current weather',
-        parameters: ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'location': ParameterProperty(
-              propertyType: 'string',
-              description: 'City name',
-            ),
+            'location': Schema.string('City name'),
           },
           required: ['location'],
         ),
@@ -37,13 +33,9 @@ void main() {
       final tool2 = Tool.function(
         name: 'search_documents',
         description: 'Search through documents',
-        parameters: ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'query': ParameterProperty(
-              propertyType: 'string',
-              description: 'Search query',
-            ),
+            'query': Schema.string('Search query'),
           },
           required: ['query'],
         ),

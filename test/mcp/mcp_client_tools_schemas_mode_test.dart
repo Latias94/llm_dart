@@ -33,13 +33,10 @@ void main() {
         // The MCP server returns `{"result":"3"}` (string). With schemas=none we
         // keep best-effort behavior and don't validate against outputSchema.
         const rawArguments = '{"a":1,"b":2}';
-        final toolCall = ToolCall(
-          id: 'call_1',
-          callType: 'function',
-          function: FunctionCall(
-            name: sumStringToolName,
-            arguments: rawArguments,
-          ),
+        final toolCall = V3ToolCall(
+          toolCallId: 'call_1',
+          toolName: sumStringToolName,
+          input: rawArguments,
         );
 
         final out = await handler!(

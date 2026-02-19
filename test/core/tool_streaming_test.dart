@@ -42,37 +42,31 @@ void main() {
   group('Tool Streaming Tests', () {
     group('LLMToolCallDeltaPart', () {
       test('should create tool call delta part', () {
-        final toolCall = ToolCall(
-          id: 'call_123',
-          callType: 'function',
-          function: FunctionCall(
-            name: 'test_function',
-            arguments: '{"param": "value"}',
-          ),
+        const toolCall = V3ToolCall(
+          toolCallId: 'call_123',
+          toolName: 'test_function',
+          input: '{"param": "value"}',
         );
 
         final part = LLMToolCallDeltaPart(toolCall);
 
         expect(part.toolCall, equals(toolCall));
-        expect(part.toolCall.id, equals('call_123'));
-        expect(part.toolCall.function.name, equals('test_function'));
+        expect(part.toolCall.toolCallId, equals('call_123'));
+        expect(part.toolCall.toolName, equals('test_function'));
       });
 
       test('should handle partial tool call data', () {
-        final partialToolCall = ToolCall(
-          id: 'call_partial',
-          callType: 'function',
-          function: FunctionCall(
-            name: 'partial_function',
-            arguments: '{"incomplete": "', // Incomplete JSON
-          ),
+        const partialToolCall = V3ToolCall(
+          toolCallId: 'call_partial',
+          toolName: 'partial_function',
+          input: '{"incomplete": "', // Incomplete JSON
         );
 
         final part = LLMToolCallDeltaPart(partialToolCall);
 
-        expect(part.toolCall.id, equals('call_partial'));
-        expect(part.toolCall.function.name, equals('partial_function'));
-        expect(part.toolCall.function.arguments, equals('{"incomplete": "'));
+        expect(part.toolCall.toolCallId, equals('call_partial'));
+        expect(part.toolCall.toolName, equals('partial_function'));
+        expect(part.toolCall.input, equals('{"incomplete": "'));
       });
     });
 
@@ -100,13 +94,10 @@ void main() {
         // Simulate streaming parts
         controller.add(const LLMTextDeltaPart('I need to call a tool: '));
         controller.add(LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_stream_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'get_weather',
-              arguments: '{"location": "New York"}',
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_stream_1',
+            toolName: 'get_weather',
+            input: '{"location": "New York"}',
           ),
         ));
         controller.add(
@@ -127,7 +118,7 @@ void main() {
         expect(parts[3], isA<LLMFinishPart>());
 
         final toolCallPart = parts[1] as LLMToolCallDeltaPart;
-        expect(toolCallPart.toolCall.function.name, equals('get_weather'));
+        expect(toolCallPart.toolCall.toolName, equals('get_weather'));
       });
 
       test('should handle multiple tool calls in stream', () async {
@@ -161,23 +152,17 @@ void main() {
         controller
             .add(const LLMTextDeltaPart('I need to call multiple tools: '));
         controller.add(LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'get_weather',
-              arguments: '{"location": "New York"}',
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: 'get_weather',
+            input: '{"location": "New York"}',
           ),
         ));
         controller.add(LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_2',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'calculate',
-              arguments: '{"expression": "2+2"}',
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_2',
+            toolName: 'calculate',
+            input: '{"expression": "2+2"}',
           ),
         ));
         controller.add(LLMFinishPart(mockResponse));
@@ -191,8 +176,8 @@ void main() {
         }
 
         expect(toolCallParts, hasLength(2));
-        expect(toolCallParts[0].toolCall.function.name, equals('get_weather'));
-        expect(toolCallParts[1].toolCall.function.name, equals('calculate'));
+        expect(toolCallParts[0].toolCall.toolName, equals('get_weather'));
+        expect(toolCallParts[1].toolCall.toolName, equals('calculate'));
       });
 
       test('should handle streaming with incremental tool call building',
@@ -203,33 +188,24 @@ void main() {
         // Simulate incremental tool call argument building
         controller.add(const LLMTextDeltaPart('Calling function: '));
         controller.add(LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_incremental',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'search',
-              arguments: '{"query": "', // Partial arguments
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_incremental',
+            toolName: 'search',
+            input: '{"query": "', // Partial arguments
           ),
         ));
         controller.add(LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_incremental',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'search',
-              arguments: '{"query": "weather', // More arguments
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_incremental',
+            toolName: 'search',
+            input: '{"query": "weather', // More arguments
           ),
         ));
         controller.add(LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_incremental',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'search',
-              arguments: '{"query": "weather in Tokyo"}', // Complete arguments
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_incremental',
+            toolName: 'search',
+            input: '{"query": "weather in Tokyo"}', // Complete arguments
           ),
         ));
         controller.close();
@@ -237,7 +213,7 @@ void main() {
         // Collect tool call arguments progression
         await for (final part in controller.stream) {
           if (part is LLMToolCallDeltaPart) {
-            toolCallParts.add(part.toolCall.function.arguments);
+            toolCallParts.add(part.toolCall.input);
           }
         }
 
@@ -255,13 +231,10 @@ void main() {
 
         controller.add(const LLMTextDeltaPart('Starting tool call...'));
         controller.add(LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_malformed',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'malformed_tool',
-              arguments: 'invalid json', // Invalid JSON
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_malformed',
+            toolName: 'malformed_tool',
+            input: 'invalid json', // Invalid JSON
           ),
         ));
         controller.add(const LLMTextDeltaPart('Tool call completed.'));
@@ -273,8 +246,7 @@ void main() {
 
         expect(parts, hasLength(3));
         final toolCallPart = parts[1] as LLMToolCallDeltaPart;
-        expect(
-            toolCallPart.toolCall.function.arguments, equals('invalid json'));
+        expect(toolCallPart.toolCall.input, equals('invalid json'));
         // The streaming should continue despite malformed JSON
       });
 
@@ -283,23 +255,17 @@ void main() {
         final toolCallParts = <LLMToolCallDeltaPart>[];
 
         controller.add(LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_empty',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'no_args_tool',
-              arguments: '', // Empty arguments
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_empty',
+            toolName: 'no_args_tool',
+            input: '', // Empty arguments
           ),
         ));
         controller.add(LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_empty_json',
-            callType: 'function',
-            function: FunctionCall(
-              name: 'empty_json_tool',
-              arguments: '{}', // Empty JSON
-            ),
+          const V3ToolCall(
+            toolCallId: 'call_empty_json',
+            toolName: 'empty_json_tool',
+            input: '{}', // Empty JSON
           ),
         ));
         controller.close();
@@ -311,8 +277,8 @@ void main() {
         }
 
         expect(toolCallParts, hasLength(2));
-        expect(toolCallParts[0].toolCall.function.arguments, equals(''));
-        expect(toolCallParts[1].toolCall.function.arguments, equals('{}'));
+        expect(toolCallParts[0].toolCall.input, equals(''));
+        expect(toolCallParts[1].toolCall.input, equals('{}'));
       });
     });
 
@@ -328,10 +294,10 @@ void main() {
         eventTypes.add('text');
 
         controller.add(LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_1',
-            callType: 'function',
-            function: FunctionCall(name: 'analyze', arguments: '{}'),
+          const V3ToolCall(
+            toolCallId: 'call_1',
+            toolName: 'analyze',
+            input: '{}',
           ),
         ));
         eventTypes.add('tool_call');
@@ -341,10 +307,10 @@ void main() {
         eventTypes.add('text');
 
         controller.add(LLMToolCallDeltaPart(
-          ToolCall(
-            id: 'call_2',
-            callType: 'function',
-            function: FunctionCall(name: 'calculate', arguments: '{}'),
+          const V3ToolCall(
+            toolCallId: 'call_2',
+            toolName: 'calculate',
+            input: '{}',
           ),
         ));
         eventTypes.add('tool_call');

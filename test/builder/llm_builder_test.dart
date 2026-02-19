@@ -154,11 +154,7 @@ void main() {
         final tool = Tool.function(
           name: 'test_tool',
           description: 'A test tool',
-          parameters: ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
         );
         final builder = LLMBuilder().tools([tool]);
         expect(builder, isNotNull);
@@ -401,11 +397,7 @@ void main() {
         final tool = Tool.function(
           name: 'test_tool',
           description: 'A test tool',
-          parameters: ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
         );
 
         final builder = LLMBuilder()

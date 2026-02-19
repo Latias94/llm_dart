@@ -273,8 +273,9 @@ class OpenAIChat
     int? createdSeconds;
     Map<String, dynamic>? usage;
     final citations = <String>[];
+    final providerMetadataNamespace = config.providerId.split('.').first;
     final sourceParts = SourcePartEmitter(
-      providerMetadataNamespace: config.providerId,
+      providerMetadataNamespace: providerMetadataNamespace,
     );
     var didEmitResponseMetadata = false;
 
@@ -537,7 +538,7 @@ class OpenAIChat
                   continue;
                 }
 
-                ToolCall toolCallForDelta({
+                V3ToolCall toolCallForDelta({
                   required String id,
                   required String name,
                   required String arguments,
@@ -546,22 +547,16 @@ class OpenAIChat
                   if (thoughtSignature == null ||
                       thoughtSignature.isEmpty ||
                       config.providerId.isEmpty) {
-                    return ToolCall(
-                      id: id,
-                      callType: 'function',
-                      function: FunctionCall(
-                        name: name,
-                        arguments: arguments,
-                      ),
+                    return V3ToolCall(
+                      toolCallId: id,
+                      toolName: name,
+                      input: arguments,
                     );
                   }
-                  return ToolCall(
-                    id: id,
-                    callType: 'function',
-                    function: FunctionCall(
-                      name: name,
-                      arguments: arguments,
-                    ),
+                  return V3ToolCall(
+                    toolCallId: id,
+                    toolName: name,
+                    input: arguments,
                     providerOptions: {
                       config.providerId: {
                         'thoughtSignature': thoughtSignature,
@@ -663,11 +658,11 @@ class OpenAIChat
                   final toolCall = thoughtSignature == null ||
                           thoughtSignature.isEmpty ||
                           config.providerId.isEmpty
-                      ? parsed
-                      : ToolCall(
-                          id: parsed.id,
-                          callType: parsed.callType,
-                          function: parsed.function,
+                      ? V3ToolCall.fromLegacyToolCall(parsed)
+                      : V3ToolCall(
+                          toolCallId: parsed.id,
+                          toolName: parsed.function.name,
+                          input: parsed.function.arguments,
                           providerOptions: {
                             ...parsed.providerOptions,
                             config.providerId: {
@@ -676,22 +671,22 @@ class OpenAIChat
                             },
                           },
                         );
-                  if (endedToolCalls.contains(toolCall.id)) continue;
+                  if (endedToolCalls.contains(toolCall.toolCallId)) continue;
                   final accum = toolAccums.putIfAbsent(
-                    toolCall.id,
+                    toolCall.toolCallId,
                     () => _ToolCallAccum(),
                   );
-                  if (toolCall.function.name.isNotEmpty) {
-                    accum.name = toolCall.function.name;
+                  if (toolCall.toolName.isNotEmpty) {
+                    accum.name = toolCall.toolName;
                   }
-                  if (toolCall.function.arguments.isNotEmpty) {
-                    accum.arguments.write(toolCall.function.arguments);
+                  if (toolCall.input.isNotEmpty) {
+                    accum.arguments.write(toolCall.input);
                   }
                   if (thoughtSignature != null) {
                     accum.thoughtSignature ??= thoughtSignature;
                   }
 
-                  if (startedToolCalls.add(toolCall.id)) {
+                  if (startedToolCalls.add(toolCall.toolCallId)) {
                     yield LLMToolCallStartPart(toolCall);
                   } else {
                     yield LLMToolCallDeltaPart(toolCall);
@@ -699,8 +694,8 @@ class OpenAIChat
 
                   final fullArgs = accum.arguments.toString();
                   if (fullArgs.isNotEmpty && isParsableJson(fullArgs)) {
-                    if (endedToolCalls.add(toolCall.id)) {
-                      yield LLMToolCallEndPart(toolCall.id);
+                    if (endedToolCalls.add(toolCall.toolCallId)) {
+                      yield LLMToolCallEndPart(toolCall.toolCallId);
                     }
                   }
                 } catch (_) {
@@ -1381,16 +1376,9 @@ class OpenAIChatResponse
       if (isXai && citations != null) 'citations': citations,
     };
 
-    // AI SDK parity: expose providerMetadata at both the base provider id key
-    // (e.g. `openai`) and the capability namespace key (e.g. `openai.chat`).
-    //
-    // Some call sites set providerId to the capability namespace already
-    // (e.g. `openai.chat`). Avoid producing `openai.chat.chat`.
     final baseKey = providerId.split('.').first;
-    final chatKey = providerId.contains('.') ? providerId : '$providerId.chat';
     return {
       baseKey: payload,
-      chatKey: payload,
     };
   }
 

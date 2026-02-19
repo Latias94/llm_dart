@@ -7,7 +7,7 @@ import '../../utils/fakes/openai_fake_client.dart';
 
 void main() {
   group('OpenAI audio providerMetadata', () {
-    test('textToSpeech attaches openai + openai.speech metadata', () async {
+    test('textToSpeech attaches canonical openai providerMetadata', () async {
       final config = OpenAIConfig(apiKey: 'test-key');
       final client = FakeOpenAIClient(config);
       final audio = OpenAIAudio(client, config);
@@ -20,9 +20,9 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('openai'), isTrue);
-      expect(meta.containsKey('openai.speech'), isTrue);
+      expect(meta.containsKey('openai.speech'), isFalse);
       expect(
-        meta['openai.speech'],
+        meta['openai'],
         equals({
           'model': openaiDefaultTTSModel,
           'endpoint': 'audio/speech',
@@ -30,7 +30,7 @@ void main() {
       );
     });
 
-    test('speechToText attaches openai + openai.transcription metadata',
+    test('speechToText attaches canonical openai providerMetadata',
         () async {
       final config = OpenAIConfig(apiKey: 'test-key');
       final client = FakeOpenAIClient(config);
@@ -46,9 +46,9 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('openai'), isTrue);
-      expect(meta.containsKey('openai.transcription'), isTrue);
+      expect(meta.containsKey('openai.transcription'), isFalse);
       expect(
-        meta['openai.transcription'],
+        meta['openai'],
         equals({
           'model': 'whisper-1',
           'endpoint': 'audio/transcriptions',
@@ -56,7 +56,7 @@ void main() {
       );
     });
 
-    test('translateAudio attaches openai + openai.transcription metadata',
+    test('translateAudio attaches canonical openai providerMetadata',
         () async {
       final config = OpenAIConfig(apiKey: 'test-key');
       final client = FakeOpenAIClient(config);
@@ -72,9 +72,9 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('openai'), isTrue);
-      expect(meta.containsKey('openai.transcription'), isTrue);
+      expect(meta.containsKey('openai.transcription'), isFalse);
       expect(
-        meta['openai.transcription'],
+        meta['openai'],
         equals({
           'model': 'whisper-1',
           'endpoint': 'audio/translations',

@@ -5,7 +5,8 @@ import 'tool_types.dart';
 /// A local tool definition bundling a tool schema and a local executor.
 class LocalTool {
   final Tool tool;
-  final ParameterProperty? outputSchema;
+  final FlexibleSchema<Map<String, dynamic>> inputSchema;
+  final FlexibleSchema<Object?>? outputSchema;
   final ToolToModelOutput? toModelOutput;
 
   /// Optional local executor for this tool.
@@ -19,8 +20,9 @@ class LocalTool {
   final ToolInputAvailableHandler? onInputAvailable;
   final ToolInputErrorHandler? onInputError;
 
-  const LocalTool({
+  LocalTool({
     required this.tool,
+    FlexibleSchema<Map<String, dynamic>>? inputSchema,
     this.outputSchema,
     this.toModelOutput,
     this.handler,
@@ -29,7 +31,8 @@ class LocalTool {
     this.onInputDelta,
     this.onInputAvailable,
     this.onInputError,
-  });
+  }) : inputSchema =
+            inputSchema ?? asSchema<Map<String, dynamic>>(tool.function.inputSchema);
 
   String get name => tool.function.name;
 }
@@ -84,12 +87,12 @@ class ToolSet {
 LocalTool functionTool({
   required String name,
   required String description,
-  required ParametersSchema parameters,
+  required Object inputSchema,
   required ToolCallHandler handler,
   bool? strict,
   List<Map<String, dynamic>>? inputExamples,
   ProviderOptions providerOptions = const {},
-  ParameterProperty? outputSchema,
+  Object? outputSchema,
   ToolToModelOutput? toModelOutput,
   ToolApprovalCheck? needsApproval,
   ToolInputStartHandler? onInputStart,
@@ -97,16 +100,20 @@ LocalTool functionTool({
   ToolInputAvailableHandler? onInputAvailable,
   ToolInputErrorHandler? onInputError,
 }) {
+  final normalizedInputSchema = asSchema<Map<String, dynamic>>(inputSchema);
+  final normalizedOutputSchema =
+      outputSchema == null ? null : asSchema<Object?>(outputSchema);
   return LocalTool(
     tool: Tool.function(
       name: name,
       description: description,
-      parameters: parameters,
+      inputSchema: normalizedInputSchema.jsonSchema,
       strict: strict,
       inputExamples: inputExamples,
       providerOptions: providerOptions,
     ),
-    outputSchema: outputSchema,
+    inputSchema: normalizedInputSchema,
+    outputSchema: normalizedOutputSchema,
     toModelOutput: toModelOutput,
     handler: handler,
     needsApproval: needsApproval,
@@ -121,11 +128,11 @@ LocalTool functionTool({
 LocalTool schemaOnlyFunctionTool({
   required String name,
   required String description,
-  required ParametersSchema parameters,
+  required Object inputSchema,
   bool? strict,
   List<Map<String, dynamic>>? inputExamples,
   ProviderOptions providerOptions = const {},
-  ParameterProperty? outputSchema,
+  Object? outputSchema,
   ToolToModelOutput? toModelOutput,
   ToolApprovalCheck? needsApproval,
   ToolInputStartHandler? onInputStart,
@@ -133,16 +140,20 @@ LocalTool schemaOnlyFunctionTool({
   ToolInputAvailableHandler? onInputAvailable,
   ToolInputErrorHandler? onInputError,
 }) {
+  final normalizedInputSchema = asSchema<Map<String, dynamic>>(inputSchema);
+  final normalizedOutputSchema =
+      outputSchema == null ? null : asSchema<Object?>(outputSchema);
   return LocalTool(
     tool: Tool.function(
       name: name,
       description: description,
-      parameters: parameters,
+      inputSchema: normalizedInputSchema.jsonSchema,
       strict: strict,
       inputExamples: inputExamples,
       providerOptions: providerOptions,
     ),
-    outputSchema: outputSchema,
+    inputSchema: normalizedInputSchema,
+    outputSchema: normalizedOutputSchema,
     toModelOutput: toModelOutput,
     handler: null,
     needsApproval: needsApproval,

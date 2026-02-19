@@ -5,12 +5,8 @@ import 'package:llm_dart_openai_compatible/client.dart';
 import 'package:llm_dart_openai_compatible/embeddings.dart';
 import 'package:llm_dart_openai_compatible/images.dart';
 import 'package:llm_dart_openai_compatible/responses.dart';
-import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'config.dart';
-
-const String _azureChatProviderMetadataKey = 'azure.chat';
-const String _azureResponsesProviderMetadataKey = 'azure.responses';
 
 /// Azure OpenAI provider implementation.
 class AzureOpenAIProvider
@@ -93,19 +89,11 @@ class AzureOpenAIProvider
     if (config.useResponsesAPI) {
       final response = await _responses.chat(messages,
           providerTools: providerTools, cancelToken: cancelToken);
-      return _wrapResponseWithProviderMetadataAlias(
-        response,
-        baseKey: config.providerId,
-        aliasKey: _azureResponsesProviderMetadataKey,
-      );
+      return response;
     }
 
     final response = await _chat.chat(messages, cancelToken: cancelToken);
-    return _wrapResponseWithProviderMetadataAlias(
-      response,
-      baseKey: config.providerId,
-      aliasKey: _azureChatProviderMetadataKey,
-    );
+    return response;
   }
 
   @override
@@ -124,11 +112,7 @@ class AzureOpenAIProvider
         providerTools: providerTools,
         cancelToken: cancelToken,
       );
-      return _wrapResponseWithProviderMetadataAlias(
-        response,
-        baseKey: config.providerId,
-        aliasKey: _azureResponsesProviderMetadataKey,
-      );
+      return response;
     }
 
     final response = await _chat.chatWithTools(
@@ -136,11 +120,7 @@ class AzureOpenAIProvider
       tools,
       cancelToken: cancelToken,
     );
-    return _wrapResponseWithProviderMetadataAlias(
-      response,
-      baseKey: config.providerId,
-      aliasKey: _azureChatProviderMetadataKey,
-    );
+    return response;
   }
 
   @override
@@ -153,26 +133,18 @@ class AzureOpenAIProvider
     _assertProviderToolsSupported(providerTools);
 
     if (config.useResponsesAPI) {
-      return _wrapStreamPartsWithProviderMetadataAlias(
-        _responses.chatStreamParts(
-          messages,
-          providerTools: providerTools,
-          tools: tools,
-          cancelToken: cancelToken,
-        ),
-        baseKey: config.providerId,
-        aliasKey: _azureResponsesProviderMetadataKey,
+      return _responses.chatStreamParts(
+        messages,
+        providerTools: providerTools,
+        tools: tools,
+        cancelToken: cancelToken,
       );
     }
 
-    return _wrapStreamPartsWithProviderMetadataAlias(
-      _chat.chatStreamParts(
-        messages,
-        tools: tools,
-        cancelToken: cancelToken,
-      ),
-      baseKey: config.providerId,
-      aliasKey: _azureChatProviderMetadataKey,
+    return _chat.chatStreamParts(
+      messages,
+      tools: tools,
+      cancelToken: cancelToken,
     );
   }
 
@@ -192,20 +164,12 @@ class AzureOpenAIProvider
         tools: tools,
         cancelToken: cancelToken,
       );
-      return _wrapResponseWithProviderMetadataAlias(
-        response,
-        baseKey: config.providerId,
-        aliasKey: _azureResponsesProviderMetadataKey,
-      );
+      return response;
     }
 
     final response =
         await _chat.chatPrompt(prompt, tools: tools, cancelToken: cancelToken);
-    return _wrapResponseWithProviderMetadataAlias(
-      response,
-      baseKey: config.providerId,
-      aliasKey: _azureChatProviderMetadataKey,
-    );
+    return response;
   }
 
   @override
@@ -218,26 +182,18 @@ class AzureOpenAIProvider
     _assertProviderToolsSupported(providerTools);
 
     if (config.useResponsesAPI) {
-      return _wrapStreamPartsWithProviderMetadataAlias(
-        _responses.chatPromptStreamParts(
-          prompt,
-          providerTools: providerTools,
-          tools: tools,
-          cancelToken: cancelToken,
-        ),
-        baseKey: config.providerId,
-        aliasKey: _azureResponsesProviderMetadataKey,
+      return _responses.chatPromptStreamParts(
+        prompt,
+        providerTools: providerTools,
+        tools: tools,
+        cancelToken: cancelToken,
       );
     }
 
-    return _wrapStreamPartsWithProviderMetadataAlias(
-      _chat.chatPromptStreamParts(
-        prompt,
-        tools: tools,
-        cancelToken: cancelToken,
-      ),
-      baseKey: config.providerId,
-      aliasKey: _azureChatProviderMetadataKey,
+    return _chat.chatPromptStreamParts(
+      prompt,
+      tools: tools,
+      cancelToken: cancelToken,
     );
   }
 
@@ -326,28 +282,4 @@ class AzureOpenAIProvider
   Future<List<LanguageInfo>> getSupportedLanguages() {
     return _audio.getSupportedLanguages();
   }
-}
-
-ChatResponse _wrapResponseWithProviderMetadataAlias(
-  ChatResponse response, {
-  required String baseKey,
-  required String aliasKey,
-}) {
-  return wrapChatResponseWithProviderMetadataAlias(
-    response,
-    baseKey: baseKey,
-    aliasKey: aliasKey,
-  );
-}
-
-Stream<LLMStreamPart> _wrapStreamPartsWithProviderMetadataAlias(
-  Stream<LLMStreamPart> stream, {
-  required String baseKey,
-  required String aliasKey,
-}) {
-  return wrapStreamPartsWithProviderMetadataAlias(
-    stream,
-    baseKey: baseKey,
-    aliasKey: aliasKey,
-  );
 }

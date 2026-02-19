@@ -19,7 +19,7 @@ class AzureOpenAIProviderTools {
     return ProviderTool(
       id: '${_prefix}web_search_preview',
       name: 'webSearch',
-      options: {
+      args: {
         if (contextSize != null) 'searchContextSize': contextSize.apiValue,
         if (userLocation != null && userLocation.isNotEmpty)
           'userLocation': userLocation,
@@ -38,7 +38,7 @@ class AzureOpenAIProviderTools {
     return ProviderTool(
       id: '${_prefix}file_search',
       name: 'fileSearch',
-      options: {
+      args: {
         if (vectorStoreIds != null && vectorStoreIds.isNotEmpty)
           'vectorStoreIds': vectorStoreIds,
         if (maxNumResults != null) 'maxNumResults': maxNumResults,
@@ -58,7 +58,7 @@ class AzureOpenAIProviderTools {
       id: '${_prefix}code_interpreter',
       name: 'codeExecution',
       supportsDeferredResults: true,
-      options: {
+      args: {
         if (container != null) 'container': container,
         ...?parameters,
       },
@@ -82,7 +82,7 @@ class AzureOpenAIProviderTools {
     return ProviderTool(
       id: '${_prefix}image_generation',
       name: 'generateImage',
-      options: {
+      args: {
         if (background != null) 'background': background,
         if (inputFidelity != null) 'inputFidelity': inputFidelity,
         if (inputImageMask != null && inputImageMask.isNotEmpty)

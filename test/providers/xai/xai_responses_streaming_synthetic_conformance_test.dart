@@ -125,8 +125,10 @@ void main() {
       expect(finish.response.text, equals('Hello'));
       expect(finish.response.toolCalls, isNull);
 
-      final meta = finish.response.providerMetadata?['xai.responses'];
+      final meta = finish.response.providerMetadata?['xai'];
       expect(meta, isNotNull);
+      expect(finish.response.providerMetadata?.containsKey('xai.responses'),
+          isFalse);
       expect((meta!['serverToolCalls'] as List?)?.length, equals(1));
       expect(((meta['serverToolCalls'] as List).first as Map)['type'],
           equals('x_search_call'));
@@ -203,8 +205,10 @@ void main() {
       expect(finish.response.text, equals('1'));
       expect(finish.response.toolCalls, isNull);
 
-      final meta = finish.response.providerMetadata?['xai.responses'];
+      final meta = finish.response.providerMetadata?['xai'];
       expect(meta, isNotNull);
+      expect(finish.response.providerMetadata?.containsKey('xai.responses'),
+          isFalse);
       expect((meta!['serverToolCalls'] as List?)?.length, equals(1));
       expect(((meta['serverToolCalls'] as List).first as Map)['type'],
           equals('code_interpreter_call'));

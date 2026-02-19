@@ -55,7 +55,7 @@ typedef ToolInputErrorHandler = FutureOr<void> Function(
 /// If it returns `true`, a tool loop can stop early and surface a
 /// "tool approval required" state to the caller.
 typedef ToolApprovalCheck = FutureOr<bool> Function(
-  ToolCall toolCall, {
+  V3ToolCall toolCall, {
   required List<ChatMessage> messages,
   required int stepIndex,
   CancelToken? cancelToken,
@@ -75,7 +75,7 @@ typedef ToolApprovalCheck = FutureOr<bool> Function(
 /// - `arguments_not_object`
 /// - `schema_validation_failed`
 typedef ToolCallRepair = FutureOr<String?> Function(
-  ToolCall toolCall, {
+  V3ToolCall toolCall, {
   required String reason,
   String? errorMessage,
   List<String>? validationErrors,

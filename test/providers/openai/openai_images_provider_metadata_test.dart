@@ -6,7 +6,7 @@ import '../../utils/fakes/openai_fake_client.dart';
 
 void main() {
   group('OpenAI images providerMetadata', () {
-    test('generateImages attaches openai + openai.image metadata', () async {
+    test('generateImages attaches canonical openai providerMetadata', () async {
       final config = OpenAIConfig(apiKey: 'test-key', model: 'gpt-image-1');
       final client = FakeOpenAIClient(config);
       client.jsonResponse = const {
@@ -30,9 +30,9 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('openai'), isTrue);
-      expect(meta.containsKey('openai.image'), isTrue);
+      expect(meta.containsKey('openai.image'), isFalse);
       expect(
-        meta['openai.image'],
+        meta['openai'],
         equals({
           'model': 'gpt-image-1',
           'endpoint': 'images/generations',
@@ -40,7 +40,7 @@ void main() {
       );
     });
 
-    test('editImage attaches openai + openai.image metadata', () async {
+    test('editImage attaches canonical openai providerMetadata', () async {
       final config = OpenAIConfig(apiKey: 'test-key', model: 'gpt-image-1');
       final client = FakeOpenAIClient(config);
       client.formResponse = const {
@@ -67,9 +67,9 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('openai'), isTrue);
-      expect(meta.containsKey('openai.image'), isTrue);
+      expect(meta.containsKey('openai.image'), isFalse);
       expect(
-        meta['openai.image'],
+        meta['openai'],
         equals({
           'model': 'gpt-image-1',
           'endpoint': 'images/edits',
@@ -77,7 +77,7 @@ void main() {
       );
     });
 
-    test('createVariation attaches openai + openai.image metadata', () async {
+    test('createVariation attaches canonical openai providerMetadata', () async {
       final config = OpenAIConfig(apiKey: 'test-key', model: 'gpt-image-1');
       final client = FakeOpenAIClient(config);
       client.formResponse = const {
@@ -103,9 +103,9 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('openai'), isTrue);
-      expect(meta.containsKey('openai.image'), isTrue);
+      expect(meta.containsKey('openai.image'), isFalse);
       expect(
-        meta['openai.image'],
+        meta['openai'],
         equals({
           'model': 'gpt-image-1',
           'endpoint': 'images/variations',

@@ -27,18 +27,38 @@ import 'types.dart';
 import 'provider_tool_normalization.dart';
 
 class _ToolCallAccum {
-  String? name;
-  String callType = 'function';
-  final StringBuffer arguments = StringBuffer();
+  String? toolName;
+  final StringBuffer input = StringBuffer();
+  ProviderOptions providerOptions = const {};
 
-  ToolCall toToolCall(String id) {
-    return ToolCall(
-      id: id,
-      callType: callType,
-      function: FunctionCall(
-        name: name ?? '',
-        arguments: arguments.toString(),
-      ),
+  void absorbDelta(V3ToolCall delta) {
+    if ((toolName == null || toolName!.trim().isEmpty) &&
+        delta.toolName.trim().isNotEmpty) {
+      toolName = delta.toolName;
+    }
+
+    if (delta.input.isNotEmpty) {
+      input.write(delta.input);
+    }
+
+    if (delta.providerOptions.isNotEmpty) {
+      final merged = <String, Map<String, dynamic>>{...providerOptions};
+      for (final entry in delta.providerOptions.entries) {
+        merged[entry.key] = {
+          ...?merged[entry.key],
+          ...entry.value,
+        };
+      }
+      providerOptions = merged;
+    }
+  }
+
+  V3ToolCall toToolCall(String id) {
+    return V3ToolCall(
+      toolCallId: id,
+      toolName: toolName ?? '',
+      input: input.toString(),
+      providerOptions: providerOptions,
     );
   }
 }
@@ -52,18 +72,13 @@ Prompt _appendChatMessageToPrompt(Prompt prompt, ChatMessage message) {
   );
 }
 
-bool _isFunctionToolCall(ToolCall toolCall) {
-  return toolCall.callType.trim().toLowerCase() == 'function';
-}
-
-bool _isExecutableFunctionToolCall(ToolCall toolCall) {
-  if (!_isFunctionToolCall(toolCall)) return false;
-  return toolCall.function.name.trim().isNotEmpty;
+bool _isExecutableToolCall(V3ToolCall toolCall) {
+  return toolCall.toolName.trim().isNotEmpty;
 }
 
 GenerateTextResult _attachToolResultsToStepResult(
   GenerateTextResult base, {
-  required List<ToolCall> toolCalls,
+  required List<V3ToolCall> toolCalls,
   required List<ToolResult> toolResults,
   required List<PromptMessage> responsePromptMessages,
 }) {
@@ -110,7 +125,7 @@ String _generateToolApprovalId() {
 }
 
 List<ToolApprovalRequest> _buildToolApprovalRequests(
-  List<ToolCall> toolCallsNeedingApproval, {
+  List<V3ToolCall> toolCallsNeedingApproval, {
   required IdGenerator generateId,
 }) {
   return toolCallsNeedingApproval
@@ -133,12 +148,13 @@ GenerateTextResult _attachToolApprovalRequestsToStepResult(
   final out = <ContentPart>[];
 
   final approvalIdByToolCallId = <String, String>{
-    for (final r in toolApprovalRequests) r.toolCall.id: r.approvalId,
+    for (final r in toolApprovalRequests) r.toolCall.toolCallId: r.approvalId,
   };
 
   bool hasApprovalFor(String toolCallId) {
     for (final p in existing) {
-      if (p is ToolApprovalRequestContentPart && p.toolCall.id == toolCallId) {
+      if (p is ToolApprovalRequestContentPart &&
+          p.toolCall.toolCallId == toolCallId) {
         return true;
       }
       if (p is ProviderToolApprovalRequestContentPart &&
@@ -147,7 +163,8 @@ GenerateTextResult _attachToolApprovalRequestsToStepResult(
       }
     }
     for (final p in out) {
-      if (p is ToolApprovalRequestContentPart && p.toolCall.id == toolCallId) {
+      if (p is ToolApprovalRequestContentPart &&
+          p.toolCall.toolCallId == toolCallId) {
         return true;
       }
       if (p is ProviderToolApprovalRequestContentPart &&
@@ -161,11 +178,12 @@ GenerateTextResult _attachToolApprovalRequestsToStepResult(
   for (final part in existing) {
     out.add(part);
     if (part is! ToolCallContentPart) continue;
-    final id = part.toolCall.id;
+    final id = part.toolCall.toolCallId;
     final approvalId = approvalIdByToolCallId[id];
     if (approvalId == null || approvalId.isEmpty) continue;
     if (hasApprovalFor(id)) continue;
-    final request = toolApprovalRequests.where((r) => r.toolCall.id == id);
+    final request =
+        toolApprovalRequests.where((r) => r.toolCall.toolCallId == id);
     for (final r in request) {
       out.add(
         ToolApprovalRequestContentPart(
@@ -178,7 +196,7 @@ GenerateTextResult _attachToolApprovalRequestsToStepResult(
 
   // If any approval requests couldn't be attached to a tool-call part, append them.
   for (final r in toolApprovalRequests) {
-    if (hasApprovalFor(r.toolCall.id)) continue;
+    if (hasApprovalFor(r.toolCall.toolCallId)) continue;
     out.add(
       ToolApprovalRequestContentPart(
         approvalId: r.approvalId,
@@ -208,26 +226,29 @@ GenerateTextResult _attachToolApprovalRequestsToStepResult(
   );
 }
 
-List<ToolCall> _onlyLocalFunctionToolCalls(List<ToolCall>? toolCalls) {
+List<V3ToolCall> _onlyLocalFunctionToolCalls(List<V3ToolCall>? toolCalls) {
   if (toolCalls == null || toolCalls.isEmpty) return const [];
-  final filtered = toolCalls.where(_isExecutableFunctionToolCall).toList();
-  return filtered.isEmpty ? const [] : List<ToolCall>.unmodifiable(filtered);
+  final filtered = toolCalls.where(_isExecutableToolCall).toList();
+  return filtered.isEmpty ? const [] : List<V3ToolCall>.unmodifiable(filtered);
 }
 
-({List<ToolCall> executable, List<ToolCall> unexecutable})
+({List<V3ToolCall> executable, List<V3ToolCall> unexecutable})
     _partitionToolCallsByLocalHandler({
-  required List<ToolCall> toolCalls,
+  required List<V3ToolCall> toolCalls,
   required Map<String, ToolCallHandler> toolHandlers,
 }) {
   if (toolCalls.isEmpty) {
-    return (executable: const <ToolCall>[], unexecutable: const <ToolCall>[]);
+    return (
+      executable: const <V3ToolCall>[],
+      unexecutable: const <V3ToolCall>[],
+    );
   }
 
-  final executable = <ToolCall>[];
-  final unexecutable = <ToolCall>[];
+  final executable = <V3ToolCall>[];
+  final unexecutable = <V3ToolCall>[];
 
   for (final call in toolCalls) {
-    if (toolHandlers.containsKey(call.function.name)) {
+    if (toolHandlers.containsKey(call.toolName)) {
       executable.add(call);
     } else {
       unexecutable.add(call);
@@ -235,8 +256,8 @@ List<ToolCall> _onlyLocalFunctionToolCalls(List<ToolCall>? toolCalls) {
   }
 
   return (
-    executable: List<ToolCall>.unmodifiable(executable),
-    unexecutable: List<ToolCall>.unmodifiable(unexecutable),
+    executable: List<V3ToolCall>.unmodifiable(executable),
+    unexecutable: List<V3ToolCall>.unmodifiable(unexecutable),
   );
 }
 
@@ -423,7 +444,10 @@ Future<ToolLoopResult> runToolLoop({
       cancelToken: cancelToken,
     );
 
-    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+    final toolCallsRaw = (response.toolCalls ?? const <ToolCall>[])
+        .map(V3ToolCall.fromLegacyToolCall)
+        .toList(growable: false);
+    final toolCalls = _onlyLocalFunctionToolCalls(toolCallsRaw);
     final warnings = mergeWarnings(normalized.warnings, response);
 
     final stepResult = GenerateTextResult(
@@ -503,9 +527,9 @@ Future<ToolLoopResult> runToolLoop({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
-      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final needingIds = needingApproval.map((c) => c.toolCallId).toSet();
       final autoApprovedToolCalls = executableToolCalls
-          .where((c) => !needingIds.contains(c.id))
+          .where((c) => !needingIds.contains(c.toolCallId))
           .toList(growable: false);
 
       final executed = await _executeToolCalls(
@@ -552,7 +576,7 @@ Future<ToolLoopResult> runToolLoop({
         ToolLoopStep(
           index: stepIndex,
           result: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolResults: List<ToolResult>.unmodifiable(executed),
           responseMetadata: stepResultWithApprovals.responseMetadata,
           requestMetadata: stepResultWithApprovals.requestMetadata,
@@ -564,14 +588,14 @@ Future<ToolLoopResult> runToolLoop({
       if (response is ChatResponseWithAssistantMessage) {
         workingMessages.add(response.assistantMessage);
       } else {
-        workingMessages.add(ChatMessage.toolUse(toolCalls: toolCalls));
+        workingMessages.add(ChatMessage.toolUseV3(toolCalls: toolCalls));
       }
 
       throw ToolApprovalRequiredError(
         state: ToolLoopBlockedState(
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolApprovalRequests:
               List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
@@ -617,7 +641,7 @@ Future<ToolLoopResult> runToolLoop({
       ToolLoopStep(
         index: stepIndex,
         result: stepResultWithTools,
-        toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+        toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
@@ -629,7 +653,7 @@ Future<ToolLoopResult> runToolLoop({
     if (response is ChatResponseWithAssistantMessage) {
       workingMessages.add(response.assistantMessage);
     } else {
-      workingMessages.add(ChatMessage.toolUse(toolCalls: toolCalls));
+      workingMessages.add(ChatMessage.toolUseV3(toolCalls: toolCalls));
     }
     if (executed.isNotEmpty) {
       workingMessages.add(
@@ -787,7 +811,10 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       cancelToken: cancelToken,
     );
 
-    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+    final toolCallsRaw = (response.toolCalls ?? const <ToolCall>[])
+        .map(V3ToolCall.fromLegacyToolCall)
+        .toList(growable: false);
+    final toolCalls = _onlyLocalFunctionToolCalls(toolCallsRaw);
     final mergedWarnings = () {
       final providerWarnings = response is ChatResponseWithWarnings
           ? response.warnings
@@ -880,9 +907,9 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
-      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final needingIds = needingApproval.map((c) => c.toolCallId).toSet();
       final autoApprovedToolCalls = executableToolCalls
-          .where((c) => !needingIds.contains(c.id))
+          .where((c) => !needingIds.contains(c.toolCallId))
           .toList(growable: false);
 
       final executed = await _executeToolCalls(
@@ -929,7 +956,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
         ToolLoopStep(
           index: stepIndex,
           result: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolResults: List<ToolResult>.unmodifiable(executed),
           responseMetadata: stepResultWithApprovals.responseMetadata,
           requestMetadata: stepResultWithApprovals.requestMetadata,
@@ -940,7 +967,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
 
       final assistantMessage = response is ChatResponseWithAssistantMessage
           ? response.assistantMessage
-          : ChatMessage.toolUse(
+          : ChatMessage.toolUseV3(
               toolCalls: toolCalls,
               content: response.text ?? '',
             );
@@ -953,7 +980,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
         state: ToolLoopBlockedState(
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolApprovalRequests:
               List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
@@ -999,7 +1026,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
       ToolLoopStep(
         index: stepIndex,
         result: stepResultWithTools,
-        toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+        toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
@@ -1009,7 +1036,7 @@ Future<ToolLoopResult> _runToolLoopPromptIr({
 
     final assistantMessage = response is ChatResponseWithAssistantMessage
         ? response.assistantMessage
-        : ChatMessage.toolUse(
+        : ChatMessage.toolUseV3(
             toolCalls: toolCalls,
             content: response.text ?? '',
           );
@@ -1122,7 +1149,10 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       cancelToken: cancelToken,
     );
 
-    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+    final toolCallsRaw = (response.toolCalls ?? const <ToolCall>[])
+        .map(V3ToolCall.fromLegacyToolCall)
+        .toList(growable: false);
+    final toolCalls = _onlyLocalFunctionToolCalls(toolCallsRaw);
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
@@ -1202,9 +1232,9 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
-      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final needingIds = needingApproval.map((c) => c.toolCallId).toSet();
       final autoApprovedToolCalls = executableToolCalls
-          .where((c) => !needingIds.contains(c.id))
+          .where((c) => !needingIds.contains(c.toolCallId))
           .toList(growable: false);
 
       final executed = await _executeToolCalls(
@@ -1251,7 +1281,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
         ToolLoopStep(
           index: stepIndex,
           result: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolResults: List<ToolResult>.unmodifiable(executed),
           responseMetadata: stepResultWithApprovals.responseMetadata,
           requestMetadata: stepResultWithApprovals.requestMetadata,
@@ -1263,14 +1293,14 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       if (response is ChatResponseWithAssistantMessage) {
         workingMessages.add(response.assistantMessage);
       } else {
-        workingMessages.add(ChatMessage.toolUse(toolCalls: toolCalls));
+        workingMessages.add(ChatMessage.toolUseV3(toolCalls: toolCalls));
       }
 
       return ToolLoopBlocked(
         ToolLoopBlockedState(
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolApprovalRequests:
               List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
@@ -1316,7 +1346,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
       ToolLoopStep(
         index: stepIndex,
         result: stepResultWithTools,
-        toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+        toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
@@ -1327,7 +1357,7 @@ Future<ToolLoopRunOutcome> runToolLoopUntilBlocked({
     if (response is ChatResponseWithAssistantMessage) {
       workingMessages.add(response.assistantMessage);
     } else {
-      workingMessages.add(ChatMessage.toolUse(toolCalls: toolCalls));
+      workingMessages.add(ChatMessage.toolUseV3(toolCalls: toolCalls));
     }
     if (executed.isNotEmpty) {
       workingMessages.add(
@@ -1760,7 +1790,7 @@ List<ToolLoopStep> _patchBlockedStepWithToolResults({
       ToolLoopStep(
         index: blockedState.stepIndex,
         result: patchedResult,
-        toolCalls: List<ToolCall>.unmodifiable(blockedState.toolCalls),
+        toolCalls: List<V3ToolCall>.unmodifiable(blockedState.toolCalls),
         toolResults: List<ToolResult>.unmodifiable(toolResults),
         responseMetadata: patchedResult.responseMetadata,
         requestMetadata: patchedResult.requestMetadata,
@@ -1775,7 +1805,7 @@ List<ToolLoopStep> _patchBlockedStepWithToolResults({
 PromptMessage _buildToolApprovalAndResultPromptMessageBestEffort({
   required List<ToolApprovalRequest> toolApprovalRequests,
   required Map<String, ToolApprovalDecision> decisionsByApprovalId,
-  required List<ToolCall> toolCalls,
+  required List<V3ToolCall> toolCalls,
   required List<ToolResult> toolResults,
 }) {
   final approvalParts = <PromptPart>[];
@@ -1807,7 +1837,7 @@ PromptMessage _buildToolApprovalAndResultPromptMessageBestEffort({
 }
 
 Future<List<ToolResult>> _executeToolCallsWithApprovals({
-  required List<ToolCall> toolCalls,
+  required List<V3ToolCall> toolCalls,
   required List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCatalog? toolCatalog,
@@ -1823,11 +1853,11 @@ Future<List<ToolResult>> _executeToolCallsWithApprovals({
   final results = <ToolResult>[];
 
   final approvalIdByToolCallId = <String, String>{
-    for (final r in toolApprovalRequests) r.toolCall.id: r.approvalId,
+    for (final r in toolApprovalRequests) r.toolCall.toolCallId: r.approvalId,
   };
 
   ToolResult deniedResult(
-    ToolCall toolCall, {
+    V3ToolCall toolCall, {
     String? reason,
   }) {
     final payload = <String, dynamic>{
@@ -1835,13 +1865,13 @@ Future<List<ToolResult>> _executeToolCallsWithApprovals({
       if (reason != null && reason.trim().isNotEmpty) 'reason': reason.trim(),
     };
     return ToolResult.success(
-      toolCallId: toolCall.id,
+      toolCallId: toolCall.toolCallId,
       result: payload,
     );
   }
 
   for (final toolCall in toolCalls) {
-    final approvalId = approvalIdByToolCallId[toolCall.id];
+    final approvalId = approvalIdByToolCallId[toolCall.toolCallId];
     if (approvalId != null && approvalId.isNotEmpty) {
       final decision = decisionsByApprovalId[approvalId];
       if (decision == null) {
@@ -1921,7 +1951,10 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
       cancelToken: cancelToken,
     );
 
-    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+    final toolCallsRaw = (response.toolCalls ?? const <ToolCall>[])
+        .map(V3ToolCall.fromLegacyToolCall)
+        .toList(growable: false);
+    final toolCalls = _onlyLocalFunctionToolCalls(toolCallsRaw);
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
@@ -2001,9 +2034,9 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
-      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final needingIds = needingApproval.map((c) => c.toolCallId).toSet();
       final autoApprovedToolCalls = executableToolCalls
-          .where((c) => !needingIds.contains(c.id))
+          .where((c) => !needingIds.contains(c.toolCallId))
           .toList(growable: false);
 
       final executed = await _executeToolCalls(
@@ -2050,7 +2083,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
         ToolLoopStep(
           index: stepIndex,
           result: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolResults: List<ToolResult>.unmodifiable(executed),
           responseMetadata: stepResultWithApprovals.responseMetadata,
           requestMetadata: stepResultWithApprovals.requestMetadata,
@@ -2062,14 +2095,14 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
       if (response is ChatResponseWithAssistantMessage) {
         workingMessages.add(response.assistantMessage);
       } else {
-        workingMessages.add(ChatMessage.toolUse(toolCalls: toolCalls));
+        workingMessages.add(ChatMessage.toolUseV3(toolCalls: toolCalls));
       }
 
       return ToolLoopBlocked(
         ToolLoopBlockedState(
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolApprovalRequests:
               List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
@@ -2115,7 +2148,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
       ToolLoopStep(
         index: stepIndex,
         result: stepResultWithTools,
-        toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+        toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
@@ -2126,7 +2159,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedFromState({
     if (response is ChatResponseWithAssistantMessage) {
       workingMessages.add(response.assistantMessage);
     } else {
-      workingMessages.add(ChatMessage.toolUse(toolCalls: toolCalls));
+      workingMessages.add(ChatMessage.toolUseV3(toolCalls: toolCalls));
     }
     if (executed.isNotEmpty) {
       workingMessages.add(
@@ -2223,7 +2256,10 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       cancelToken: cancelToken,
     );
 
-    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+    final toolCallsRaw = (response.toolCalls ?? const <ToolCall>[])
+        .map(V3ToolCall.fromLegacyToolCall)
+        .toList(growable: false);
+    final toolCalls = _onlyLocalFunctionToolCalls(toolCallsRaw);
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
@@ -2309,9 +2345,9 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
-      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final needingIds = needingApproval.map((c) => c.toolCallId).toSet();
       final autoApprovedToolCalls = executableToolCalls
-          .where((c) => !needingIds.contains(c.id))
+          .where((c) => !needingIds.contains(c.toolCallId))
           .toList(growable: false);
 
       final executed = await _executeToolCalls(
@@ -2358,7 +2394,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
         ToolLoopStep(
           index: stepIndex,
           result: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolResults: List<ToolResult>.unmodifiable(executed),
           responseMetadata: stepResultWithApprovals.responseMetadata,
           requestMetadata: stepResultWithApprovals.requestMetadata,
@@ -2369,7 +2405,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
 
       final assistantMessage = response is ChatResponseWithAssistantMessage
           ? response.assistantMessage
-          : ChatMessage.toolUse(
+          : ChatMessage.toolUseV3(
               toolCalls: toolCalls,
               content: response.text ?? '',
             );
@@ -2382,7 +2418,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
         ToolLoopBlockedState(
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolApprovalRequests:
               List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
@@ -2428,7 +2464,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
       ToolLoopStep(
         index: stepIndex,
         result: stepResultWithTools,
-        toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+        toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
@@ -2438,7 +2474,7 @@ Future<ToolLoopRunOutcome> _continueToolLoopUntilBlockedPromptIrFromState({
 
     final assistantMessage = response is ChatResponseWithAssistantMessage
         ? response.assistantMessage
-        : ChatMessage.toolUse(
+        : ChatMessage.toolUseV3(
             toolCalls: toolCalls,
             content: response.text ?? '',
           );
@@ -2542,7 +2578,10 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       cancelToken: cancelToken,
     );
 
-    final toolCalls = _onlyLocalFunctionToolCalls(response.toolCalls);
+    final toolCallsRaw = (response.toolCalls ?? const <ToolCall>[])
+        .map(V3ToolCall.fromLegacyToolCall)
+        .toList(growable: false);
+    final toolCalls = _onlyLocalFunctionToolCalls(toolCallsRaw);
 
     final stepResult = GenerateTextResult(
       rawResponse: response,
@@ -2628,9 +2667,9 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       cancelToken: cancelToken,
     );
     if (needingApproval.isNotEmpty) {
-      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final needingIds = needingApproval.map((c) => c.toolCallId).toSet();
       final autoApprovedToolCalls = executableToolCalls
-          .where((c) => !needingIds.contains(c.id))
+          .where((c) => !needingIds.contains(c.toolCallId))
           .toList(growable: false);
 
       final executed = await _executeToolCalls(
@@ -2677,7 +2716,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
         ToolLoopStep(
           index: stepIndex,
           result: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolResults: List<ToolResult>.unmodifiable(executed),
           responseMetadata: stepResultWithApprovals.responseMetadata,
           requestMetadata: stepResultWithApprovals.requestMetadata,
@@ -2688,7 +2727,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
 
       final assistantMessage = response is ChatResponseWithAssistantMessage
           ? response.assistantMessage
-          : ChatMessage.toolUse(
+          : ChatMessage.toolUseV3(
               toolCalls: toolCalls,
               content: response.text ?? '',
             );
@@ -2700,7 +2739,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
         ToolLoopBlockedState(
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
           toolApprovalRequests:
               List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: List<ToolLoopStep>.unmodifiable(steps),
@@ -2746,7 +2785,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
       ToolLoopStep(
         index: stepIndex,
         result: stepResultWithTools,
-        toolCalls: List<ToolCall>.unmodifiable(toolCalls),
+        toolCalls: List<V3ToolCall>.unmodifiable(toolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
         responseMetadata: stepResult.responseMetadata,
         requestMetadata: stepResult.requestMetadata,
@@ -2756,7 +2795,7 @@ Future<ToolLoopRunOutcome> _runToolLoopUntilBlockedPromptIr({
 
     final assistantMessage = response is ChatResponseWithAssistantMessage
         ? response.assistantMessage
-        : ChatMessage.toolUse(
+        : ChatMessage.toolUseV3(
             toolCalls: toolCalls,
             content: response.text ?? '',
           );
@@ -3155,21 +3194,12 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
           case LLMToolCallStartPart(:final toolCall):
           case LLMToolCallDeltaPart(:final toolCall):
-            if (!_isFunctionToolCall(toolCall)) {
-              // Tool loop only executes local function tools.
-              yield part;
-              break;
-            }
-            final accum =
-                toolAccums.putIfAbsent(toolCall.id, () => _ToolCallAccum());
-            accum.callType = toolCall.callType;
-            if (toolCall.function.name.isNotEmpty) {
-              accum.name = toolCall.function.name;
-            }
-            if (toolCall.function.arguments.isNotEmpty) {
-              accum.arguments.write(toolCall.function.arguments);
-            }
-            startedToolCalls.add(toolCall.id);
+            final accum = toolAccums.putIfAbsent(
+              toolCall.toolCallId,
+              _ToolCallAccum.new,
+            );
+            accum.absorbDelta(toolCall);
+            startedToolCalls.add(toolCall.toolCallId);
             yield part;
 
           case LLMProviderToolCallPart(
@@ -3188,9 +3218,8 @@ Stream<LLMStreamPart> streamToolLoopParts({
                 toolName.trim().isNotEmpty) {
               allowUnlistedToolCallIds.add(toolCallId);
               final accum =
-                  toolAccums.putIfAbsent(toolCallId, () => _ToolCallAccum());
-              accum.callType = 'function';
-              accum.name = toolName;
+                  toolAccums.putIfAbsent(toolCallId, _ToolCallAccum.new);
+              accum.toolName = toolName;
 
               String rawArgs;
               final value = input;
@@ -3207,7 +3236,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
               }
 
               if (rawArgs.isNotEmpty) {
-                accum.arguments
+                accum.input
                   ..clear()
                   ..write(rawArgs);
               }
@@ -3279,7 +3308,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
 
       final completedToolCalls = toolAccums.entries
           .map((e) => e.value.toToolCall(e.key))
-          .where(_isExecutableFunctionToolCall)
+          .where(_isExecutableToolCall)
           .toList(growable: false);
 
       if (toolCatalog != null &&
@@ -3288,7 +3317,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
           workingToolApprovalChecks != null) {
         final referenced = <String>{
           ...toolSearchReferencedNames,
-          ...completedToolCalls.map((c) => c.function.name),
+          ...completedToolCalls.map((c) => c.toolName),
         };
         hydrateToolsFromCatalog(
           catalog: toolCatalog,
@@ -3389,7 +3418,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
             response: mergedResponse,
             usage: mergedResponse.usage,
             finishReason: finishReason,
-            toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+            toolCalls: List<V3ToolCall>.unmodifiable(completedToolCalls),
             toolResults: List<ToolResult>.unmodifiable(executed),
           );
         }
@@ -3417,12 +3446,12 @@ Stream<LLMStreamPart> streamToolLoopParts({
           workingMessages.add(completedResponse.assistantMessage);
         } else {
           workingMessages
-              .add(ChatMessage.toolUse(toolCalls: completedToolCalls));
+              .add(ChatMessage.toolUseV3(toolCalls: completedToolCalls));
         }
 
-        final needingIds = needingApproval.map((c) => c.id).toSet();
+        final needingIds = needingApproval.map((c) => c.toolCallId).toSet();
         final autoApprovedToolCalls = executableToolCalls
-            .where((c) => !needingIds.contains(c.id))
+            .where((c) => !needingIds.contains(c.toolCallId))
             .toList(growable: false);
 
         final executed = await _executeToolCalls(
@@ -3452,9 +3481,9 @@ Stream<LLMStreamPart> streamToolLoopParts({
           final call = r.toolCall;
           yield LLMProviderToolApprovalRequestPart(
             approvalId: r.approvalId,
-            toolCallId: call.id,
-            toolName: call.function.name,
-            input: _decodeJsonIfPossible(call.function.arguments),
+            toolCallId: call.toolCallId,
+            toolName: call.toolName,
+            input: _decodeJsonIfPossible(call.input),
           );
         }
 
@@ -3486,7 +3515,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
         final blockedState = ToolLoopBlockedState(
           stepIndex: stepIndex,
           stepResult: stepResultWithApprovals,
-          toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(completedToolCalls),
           toolApprovalRequests:
               List<ToolApprovalRequest>.unmodifiable(approvalRequests),
           steps: const [],
@@ -3507,7 +3536,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
             response: mergedResponse,
             usage: mergedResponse.usage,
             finishReason: finishReason,
-            toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+            toolCalls: List<V3ToolCall>.unmodifiable(completedToolCalls),
             toolResults: List<ToolResult>.unmodifiable(executed),
           );
         }
@@ -3544,7 +3573,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
           response: mergedResponse,
           usage: mergedResponse.usage,
           finishReason: mergedResponse.finishReason,
-          toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(completedToolCalls),
           toolResults: List<ToolResult>.unmodifiable(executed),
         );
       }
@@ -3552,7 +3581,7 @@ Stream<LLMStreamPart> streamToolLoopParts({
       if (completedResponse is ChatResponseWithAssistantMessage) {
         workingMessages.add(completedResponse.assistantMessage);
       } else {
-        workingMessages.add(ChatMessage.toolUse(toolCalls: completedToolCalls));
+        workingMessages.add(ChatMessage.toolUseV3(toolCalls: completedToolCalls));
       }
       if (executed.isNotEmpty) {
         workingMessages.add(
@@ -3785,21 +3814,17 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
 
         case LLMToolCallStartPart(:final toolCall):
         case LLMToolCallDeltaPart(:final toolCall):
-          if (!_isFunctionToolCall(toolCall)) {
+          if (!_isExecutableToolCall(toolCall)) {
             // Tool loop only executes local function tools.
             yield part;
             break;
           }
-          final accum =
-              toolAccums.putIfAbsent(toolCall.id, () => _ToolCallAccum());
-          accum.callType = toolCall.callType;
-          if (toolCall.function.name.isNotEmpty) {
-            accum.name = toolCall.function.name;
-          }
-          if (toolCall.function.arguments.isNotEmpty) {
-            accum.arguments.write(toolCall.function.arguments);
-          }
-          startedToolCalls.add(toolCall.id);
+          final accum = toolAccums.putIfAbsent(
+            toolCall.toolCallId,
+            () => _ToolCallAccum(),
+          );
+          accum.absorbDelta(toolCall);
+          startedToolCalls.add(toolCall.toolCallId);
           yield part;
 
         case LLMProviderToolCallPart(
@@ -3818,10 +3843,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
               toolCallId.trim().isNotEmpty &&
               toolName.trim().isNotEmpty) {
             allowUnlistedToolCallIds.add(toolCallId);
-            final accum =
-                toolAccums.putIfAbsent(toolCallId, () => _ToolCallAccum());
-            accum.callType = 'function';
-            accum.name = toolName;
+            final accum = toolAccums.putIfAbsent(toolCallId, () => _ToolCallAccum());
 
             String rawArgs;
             final value = input;
@@ -3838,9 +3860,13 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
             }
 
             if (rawArgs.isNotEmpty) {
-              accum.arguments
-                ..clear()
-                ..write(rawArgs);
+              accum.absorbDelta(
+                V3ToolCall(
+                  toolCallId: toolCallId,
+                  toolName: toolName,
+                  input: rawArgs,
+                ),
+              );
             }
           }
           if (waitForDeferredProviderToolResults &&
@@ -3915,7 +3941,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
 
     final completedToolCalls = toolAccums.entries
         .map((e) => e.value.toToolCall(e.key))
-        .where(_isExecutableFunctionToolCall)
+        .where(_isExecutableToolCall)
         .toList(growable: false);
 
     if (toolCatalog != null &&
@@ -3924,7 +3950,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
         workingToolApprovalChecks != null) {
       final referenced = <String>{
         ...toolSearchReferencedNames,
-        ...completedToolCalls.map((c) => c.function.name),
+        ...completedToolCalls.map((c) => c.toolName),
       };
       hydrateToolsFromCatalog(
         catalog: toolCatalog,
@@ -3962,7 +3988,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
           response: response,
           usage: responseUsage,
           finishReason: toolCallsReason,
-          toolCalls: const <ToolCall>[],
+          toolCalls: const <V3ToolCall>[],
           toolResults: const <ToolResult>[],
         );
       }
@@ -4116,7 +4142,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
           response: mergedResponse,
           usage: mergedResponse.usage,
           finishReason: finishReason,
-          toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(completedToolCalls),
           toolResults: List<ToolResult>.unmodifiable(executed),
         );
       }
@@ -4142,15 +4168,15 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       final assistantMessage =
           completedResponse is ChatResponseWithAssistantMessage
               ? completedResponse.assistantMessage
-              : ChatMessage.toolUse(toolCalls: completedToolCalls);
+              : ChatMessage.toolUseV3(toolCalls: completedToolCalls);
 
       workingMessages.add(assistantMessage);
       workingPrompt =
           _appendChatMessageToPrompt(workingPrompt, assistantMessage);
 
-      final needingIds = needingApproval.map((c) => c.id).toSet();
+      final needingIds = needingApproval.map((c) => c.toolCallId).toSet();
       final autoApprovedToolCalls = executableToolCalls
-          .where((c) => !needingIds.contains(c.id))
+          .where((c) => !needingIds.contains(c.toolCallId))
           .toList(growable: false);
 
       final executed = await _executeToolCalls(
@@ -4179,9 +4205,9 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
         final call = r.toolCall;
         yield LLMProviderToolApprovalRequestPart(
           approvalId: r.approvalId,
-          toolCallId: call.id,
-          toolName: call.function.name,
-          input: _decodeJsonIfPossible(call.function.arguments),
+          toolCallId: call.toolCallId,
+          toolName: call.toolName,
+          input: _decodeJsonIfPossible(call.input),
         );
       }
 
@@ -4213,7 +4239,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
       final blockedState = ToolLoopBlockedState(
         stepIndex: stepIndex,
         stepResult: stepResultWithApprovals,
-        toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+        toolCalls: List<V3ToolCall>.unmodifiable(completedToolCalls),
         toolApprovalRequests:
             List<ToolApprovalRequest>.unmodifiable(approvalRequests),
         steps: const [],
@@ -4233,7 +4259,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
           response: mergedResponse,
           usage: mergedResponse.usage,
           finishReason: finishReason,
-          toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+          toolCalls: List<V3ToolCall>.unmodifiable(completedToolCalls),
           toolResults: List<ToolResult>.unmodifiable(executed),
         );
       }
@@ -4270,7 +4296,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
         response: mergedResponse,
         usage: mergedResponse.usage,
         finishReason: mergedResponse.finishReason,
-        toolCalls: List<ToolCall>.unmodifiable(completedToolCalls),
+        toolCalls: List<V3ToolCall>.unmodifiable(completedToolCalls),
         toolResults: List<ToolResult>.unmodifiable(executed),
       );
     }
@@ -4278,7 +4304,7 @@ Stream<LLMStreamPart> _streamToolLoopPartsPromptIr({
     final assistantMessage =
         completedResponse is ChatResponseWithAssistantMessage
             ? completedResponse.assistantMessage
-            : ChatMessage.toolUse(
+            : ChatMessage.toolUseV3(
                 toolCalls: completedToolCalls,
                 content: mergedResponse.text ?? '',
               );
@@ -4454,7 +4480,7 @@ Stream<LLMStreamPart> streamToolLoopPartsWithToolSet({
 
 /// Execute tool calls locally and return a list of tool results.
 Future<List<ToolResult>> executeToolCalls({
-  required List<ToolCall> toolCalls,
+  required List<V3ToolCall> toolCalls,
   List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCatalog? toolCatalog,
@@ -4483,14 +4509,14 @@ Future<List<ToolResult>> executeToolCalls({
 
 /// Encode tool results into the `ToolCall` shape used by [ChatMessage.toolResult].
 List<ToolCall> encodeToolResultsAsToolCalls({
-  required List<ToolCall> toolCalls,
+  required List<V3ToolCall> toolCalls,
   required List<ToolResult> toolResults,
 }) {
   return _toToolResultCalls(toolCalls, toolResults);
 }
 
-Future<List<ToolCall>> _findToolCallsNeedingApproval({
-  required List<ToolCall> toolCalls,
+Future<List<V3ToolCall>> _findToolCallsNeedingApproval({
+  required List<V3ToolCall> toolCalls,
   required Map<String, ToolApprovalCheck>? toolApprovalChecks,
   required ToolApprovalCheck? needsApproval,
   required List<ChatMessage> messages,
@@ -4501,11 +4527,10 @@ Future<List<ToolCall>> _findToolCallsNeedingApproval({
     return const [];
   }
 
-  final needing = <ToolCall>[];
+  final needing = <V3ToolCall>[];
   for (final toolCall in toolCalls) {
-    if (!_isExecutableFunctionToolCall(toolCall)) continue;
-    final checker =
-        toolApprovalChecks?[toolCall.function.name] ?? needsApproval;
+    if (!_isExecutableToolCall(toolCall)) continue;
+    final checker = toolApprovalChecks?[toolCall.toolName] ?? needsApproval;
     if (checker == null) continue;
     final requiredApproval = await Future.value(
       checker(
@@ -4523,7 +4548,7 @@ Future<List<ToolCall>> _findToolCallsNeedingApproval({
 }
 
 Future<List<ToolResult>> _executeToolCalls({
-  required List<ToolCall> toolCalls,
+  required List<V3ToolCall> toolCalls,
   required List<Tool>? tools,
   required Map<String, ToolCallHandler> toolHandlers,
   ToolCatalog? toolCatalog,
@@ -4567,7 +4592,7 @@ Future<List<ToolResult>> _executeToolCalls({
   }
 
   Future<({String? repaired, ToolCallRepairError? error})> tryRepairToolCall(
-    ToolCall toolCall, {
+    V3ToolCall toolCall, {
     required String reason,
     String? errorMessage,
     List<String>? validationErrors,
@@ -4604,12 +4629,11 @@ Future<List<ToolResult>> _executeToolCalls({
   for (final toolCall in toolCalls) {
     var effectiveToolCall = toolCall;
 
-    if (!_isExecutableFunctionToolCall(toolCall)) {
+    if (!_isExecutableToolCall(toolCall)) {
       results.add(
         ToolResult.error(
-          toolCallId: toolCall.id,
-          error:
-              'Only "function" ToolCall can be executed locally (got: ${toolCall.callType})',
+          toolCallId: toolCall.toolCallId,
+          error: 'Tool call cannot be executed locally (missing toolName).',
         ),
       );
       if (!continueOnToolError) break;
@@ -4618,16 +4642,16 @@ Future<List<ToolResult>> _executeToolCalls({
 
     // Best-effort AI SDK parity: tool call input is expected to be a JSON object.
     // If it is malformed, emit an error result and skip execution.
-    var parsed = parseToolInput(effectiveToolCall.function.arguments);
+    var parsed = parseToolInput(effectiveToolCall.input);
     if (parsed.error != null) {
       final reason = parsed.error == 'Tool arguments must be a JSON object'
           ? 'arguments_not_object'
           : 'invalid_json';
 
       final originalError = InvalidToolInputError(
-        toolName: effectiveToolCall.function.name,
-        toolCallId: effectiveToolCall.id,
-        input: effectiveToolCall.function.arguments,
+        toolName: effectiveToolCall.toolName,
+        toolCallId: effectiveToolCall.toolCallId,
+        input: effectiveToolCall.input,
         message: parsed.error!,
       );
 
@@ -4642,13 +4666,13 @@ Future<List<ToolResult>> _executeToolCalls({
       if (repairError != null) {
         results.add(
           ToolResult.error(
-            toolCallId: effectiveToolCall.id,
+            toolCallId: effectiveToolCall.toolCallId,
             error: repairError.toString(),
             metadata: {
               'kind': 'invalid_tool_call',
               'reason': reason,
-              'toolName': effectiveToolCall.function.name,
-              'input': toolCall.function.arguments,
+              'toolName': effectiveToolCall.toolName,
+              'input': toolCall.input,
               'repairAttempted': true,
               'repairError': repairError.toString(),
             },
@@ -4660,30 +4684,27 @@ Future<List<ToolResult>> _executeToolCalls({
 
       final repaired = repairAttempt.repaired;
       if (repaired != null) {
-        final repairedCall = ToolCall(
-          id: effectiveToolCall.id,
-          callType: effectiveToolCall.callType,
-          function: FunctionCall(
-            name: effectiveToolCall.function.name,
-            arguments: repaired,
-          ),
+        final repairedCall = V3ToolCall(
+          toolCallId: effectiveToolCall.toolCallId,
+          toolName: effectiveToolCall.toolName,
+          input: repaired,
           providerOptions: effectiveToolCall.providerOptions,
         );
-        final repairedParsed = parseToolInput(repairedCall.function.arguments);
+        final repairedParsed = parseToolInput(repairedCall.input);
         if (repairedParsed.error == null) {
           effectiveToolCall = repairedCall;
           parsed = repairedParsed;
         } else {
           results.add(
             ToolResult.error(
-              toolCallId: effectiveToolCall.id,
+              toolCallId: effectiveToolCall.toolCallId,
               error:
-                  '${repairedParsed.error}: "${effectiveToolCall.function.name}"',
+                  '${repairedParsed.error}: "${effectiveToolCall.toolName}"',
               metadata: {
                 'kind': 'invalid_tool_call',
                 'reason': reason,
-                'toolName': effectiveToolCall.function.name,
-                'input': toolCall.function.arguments,
+                'toolName': effectiveToolCall.toolName,
+                'input': toolCall.input,
                 'repairAttempted': true,
                 'repairedInput': repaired,
                 'repairError': repairedParsed.error,
@@ -4696,13 +4717,13 @@ Future<List<ToolResult>> _executeToolCalls({
       } else {
         results.add(
           ToolResult.error(
-            toolCallId: effectiveToolCall.id,
+            toolCallId: effectiveToolCall.toolCallId,
             error: originalError.toString(),
             metadata: {
               'kind': 'invalid_tool_call',
               'reason': reason,
-              'toolName': effectiveToolCall.function.name,
-              'input': effectiveToolCall.function.arguments,
+              'toolName': effectiveToolCall.toolName,
+              'input': effectiveToolCall.input,
             },
           ),
         );
@@ -4711,11 +4732,12 @@ Future<List<ToolResult>> _executeToolCalls({
       }
     }
 
-    final toolDef = toolByName?[effectiveToolCall.function.name];
+    final toolDef = toolByName?[effectiveToolCall.toolName];
+    final localToolDef = toolCatalog?.lookup(effectiveToolCall.toolName);
     if (toolByName != null && toolDef == null) {
       final allowUnlisted =
-          allowUnlistedToolCallIds.contains(effectiveToolCall.id) &&
-              toolHandlers.containsKey(effectiveToolCall.function.name);
+          allowUnlistedToolCallIds.contains(effectiveToolCall.toolCallId) &&
+              toolHandlers.containsKey(effectiveToolCall.toolName);
       if (allowUnlisted) {
         // Provider-defined tool calls (providerExecuted=false) are executed
         // locally but are not necessarily part of the user-supplied tools
@@ -4723,17 +4745,17 @@ Future<List<ToolResult>> _executeToolCalls({
       } else {
         results.add(
           ToolResult.error(
-            toolCallId: effectiveToolCall.id,
+            toolCallId: effectiveToolCall.toolCallId,
             error: NoSuchToolError(
-              toolName: effectiveToolCall.function.name,
+              toolName: effectiveToolCall.toolName,
               availableTools: toolByName.keys.toList()..sort(),
             ).toString(),
             metadata: {
               'kind': 'invalid_tool_call',
               'reason': 'no_such_tool',
-              'toolName': effectiveToolCall.function.name,
+              'toolName': effectiveToolCall.toolName,
               'availableTools': toolByName.keys.toList()..sort(),
-              'input': effectiveToolCall.function.arguments,
+              'input': effectiveToolCall.input,
             },
           ),
         );
@@ -4743,26 +4765,46 @@ Future<List<ToolResult>> _executeToolCalls({
     }
 
     if (toolSchemas == ToolSchemas.automatic) {
-      final toolSchemaDef =
-          toolDef ?? toolCatalog?.lookup(effectiveToolCall.function.name)?.tool;
+      final toolSchemaDef = toolDef ?? localToolDef?.tool;
       if (toolSchemaDef != null) {
-        final errors = ToolValidator.validateParameters(
-          parsed.parsed!,
-          toolSchemaDef.function.parameters,
-        );
-        if (errors.isNotEmpty) {
+        final localInputSchema = localToolDef?.inputSchema;
+        final validate = localInputSchema?.validate;
+
+        final errors = validate != null
+            ? () {
+                // Best-effort: map custom validation errors to a string list.
+                final result = validate(parsed.parsed!);
+                return Future.value(result).then((r) {
+                  if (r.success) return const <String>[];
+                  if (r is ValidationFailure) {
+                    return <String>[
+                      'Schema validation failed: ${(r as ValidationFailure).error}',
+                    ];
+                  }
+                  return const <String>['Schema validation failed.'];
+                });
+              }()
+            : Future.value(
+                ToolValidator.validateParameters(
+                  parsed.parsed!,
+                  toolSchemaDef.function.inputSchema,
+                ),
+              );
+
+        final resolvedErrors = await errors;
+        if (resolvedErrors.isNotEmpty) {
           final originalError = InvalidToolInputError(
-            toolName: effectiveToolCall.function.name,
-            toolCallId: effectiveToolCall.id,
-            input: effectiveToolCall.function.arguments,
-            validationErrors: errors,
+            toolName: effectiveToolCall.toolName,
+            toolCallId: effectiveToolCall.toolCallId,
+            input: effectiveToolCall.input,
+            validationErrors: resolvedErrors,
             message: 'Parameter validation failed.',
           );
 
           final repairAttempt = await tryRepairToolCall(
             effectiveToolCall,
             reason: 'schema_validation_failed',
-            validationErrors: errors,
+            validationErrors: resolvedErrors,
             originalError: originalError,
           );
 
@@ -4770,14 +4812,14 @@ Future<List<ToolResult>> _executeToolCalls({
           if (repairError != null) {
             results.add(
               ToolResult.error(
-                toolCallId: effectiveToolCall.id,
+                toolCallId: effectiveToolCall.toolCallId,
                 error: repairError.toString(),
                 metadata: {
                   'kind': 'invalid_tool_call',
                   'reason': 'schema_validation_failed',
-                  'toolName': effectiveToolCall.function.name,
-                  'errors': errors,
-                  'input': toolCall.function.arguments,
+                  'toolName': effectiveToolCall.toolName,
+                  'errors': resolvedErrors,
+                  'input': toolCall.input,
                   'repairAttempted': true,
                   'repairError': repairError.toString(),
                 },
@@ -4789,40 +4831,52 @@ Future<List<ToolResult>> _executeToolCalls({
 
           final repaired = repairAttempt.repaired;
           if (repaired != null) {
-            final repairedCall = ToolCall(
-              id: effectiveToolCall.id,
-              callType: effectiveToolCall.callType,
-              function: FunctionCall(
-                name: effectiveToolCall.function.name,
-                arguments: repaired,
-              ),
+            final repairedCall = V3ToolCall(
+              toolCallId: effectiveToolCall.toolCallId,
+              toolName: effectiveToolCall.toolName,
+              input: repaired,
               providerOptions: effectiveToolCall.providerOptions,
             );
 
-            final repairedParsed =
-                parseToolInput(repairedCall.function.arguments);
+            final repairedParsed = parseToolInput(repairedCall.input);
             if (repairedParsed.error == null) {
-              final repairedErrors = ToolValidator.validateParameters(
-                repairedParsed.parsed!,
-                toolSchemaDef.function.parameters,
-              );
-              if (repairedErrors.isEmpty) {
+              final repairedErrors = validate != null
+                  ? () {
+                      final result = validate(repairedParsed.parsed!);
+                      return Future.value(result).then((r) {
+                        if (r.success) return const <String>[];
+                        if (r is ValidationFailure) {
+                          return <String>[
+                            'Schema validation failed: ${(r as ValidationFailure).error}',
+                          ];
+                        }
+                        return const <String>['Schema validation failed.'];
+                      });
+                    }()
+                  : Future.value(
+                      ToolValidator.validateParameters(
+                        repairedParsed.parsed!,
+                        toolSchemaDef.function.inputSchema,
+                      ),
+                    );
+              final resolvedRepairedErrors = await repairedErrors;
+              if (resolvedRepairedErrors.isEmpty) {
                 effectiveToolCall = repairedCall;
                 parsed = repairedParsed;
               } else {
                 results.add(
                   ToolResult.error(
-                    toolCallId: effectiveToolCall.id,
+                    toolCallId: effectiveToolCall.toolCallId,
                     error: originalError.toString(),
                     metadata: {
                       'kind': 'invalid_tool_call',
                       'reason': 'schema_validation_failed',
-                      'toolName': effectiveToolCall.function.name,
-                      'errors': errors,
-                      'input': toolCall.function.arguments,
+                      'toolName': effectiveToolCall.toolName,
+                      'errors': resolvedErrors,
+                      'input': toolCall.input,
                       'repairAttempted': true,
                       'repairedInput': repaired,
-                      'repairErrors': repairedErrors,
+                      'repairErrors': resolvedRepairedErrors,
                     },
                   ),
                 );
@@ -4832,18 +4886,18 @@ Future<List<ToolResult>> _executeToolCalls({
             } else {
               results.add(
                 ToolResult.error(
-                  toolCallId: effectiveToolCall.id,
+                  toolCallId: effectiveToolCall.toolCallId,
                   error:
-                      '${repairedParsed.error}: "${effectiveToolCall.function.name}"',
+                      '${repairedParsed.error}: "${effectiveToolCall.toolName}"',
                   metadata: {
-                    'kind': 'invalid_tool_call',
-                    'reason': 'schema_validation_failed',
-                    'toolName': effectiveToolCall.function.name,
-                    'errors': errors,
-                    'input': toolCall.function.arguments,
-                    'repairAttempted': true,
-                    'repairedInput': repaired,
-                    'repairError': repairedParsed.error,
+                  'kind': 'invalid_tool_call',
+                  'reason': 'schema_validation_failed',
+                  'toolName': effectiveToolCall.toolName,
+                  'errors': resolvedErrors,
+                  'input': toolCall.input,
+                  'repairAttempted': true,
+                  'repairedInput': repaired,
+                  'repairError': repairedParsed.error,
                   },
                 ),
               );
@@ -4853,14 +4907,14 @@ Future<List<ToolResult>> _executeToolCalls({
           } else {
             results.add(
               ToolResult.error(
-                toolCallId: effectiveToolCall.id,
+                toolCallId: effectiveToolCall.toolCallId,
                 error: originalError.toString(),
                 metadata: {
                   'kind': 'invalid_tool_call',
                   'reason': 'schema_validation_failed',
-                  'toolName': effectiveToolCall.function.name,
-                  'errors': errors,
-                  'input': effectiveToolCall.function.arguments,
+                  'toolName': effectiveToolCall.toolName,
+                  'errors': resolvedErrors,
+                  'input': effectiveToolCall.input,
                 },
               ),
             );
@@ -4870,15 +4924,13 @@ Future<List<ToolResult>> _executeToolCalls({
         }
       }
     }
-
-    final localToolDef = toolCatalog?.lookup(effectiveToolCall.function.name);
-    final handler = toolHandlers[effectiveToolCall.function.name];
+    final handler = toolHandlers[effectiveToolCall.toolName];
     if (handler == null) {
       results.add(
         ToolResult.error(
-          toolCallId: effectiveToolCall.id,
+          toolCallId: effectiveToolCall.toolCallId,
           error:
-              'No tool handler registered for "${effectiveToolCall.function.name}"',
+              'No tool handler registered for "${effectiveToolCall.toolName}"',
         ),
       );
       if (!continueOnToolError) break;
@@ -4887,9 +4939,9 @@ Future<List<ToolResult>> _executeToolCalls({
 
     try {
       final executionOptions = ToolExecutionOptions(
-        toolCallId: effectiveToolCall.id,
-        toolName: effectiveToolCall.function.name,
-        rawArguments: effectiveToolCall.function.arguments,
+        toolCallId: effectiveToolCall.toolCallId,
+        toolName: effectiveToolCall.toolName,
+        rawArguments: effectiveToolCall.input,
         messages: messagesForOptions,
         stepIndex: stepIndex,
         toolCall: effectiveToolCall,
@@ -4909,7 +4961,7 @@ Future<List<ToolResult>> _executeToolCalls({
           try {
             modelOutput = await Future.value(
               toModelOutput(
-                toolCallId: effectiveToolCall.id,
+                toolCallId: effectiveToolCall.toolCallId,
                 input: parsed.parsed!,
                 output: output,
                 options: executionOptions,
@@ -4918,13 +4970,13 @@ Future<List<ToolResult>> _executeToolCalls({
           } catch (e) {
             results.add(
               ToolResult.error(
-                toolCallId: effectiveToolCall.id,
+                toolCallId: effectiveToolCall.toolCallId,
                 error:
-                    'Tool toModelOutput failed: $e (${effectiveToolCall.function.name})',
+                    'Tool toModelOutput failed: $e (${effectiveToolCall.toolName})',
                 metadata: {
                   'kind': 'invalid_tool_output',
                   'reason': 'to_model_output_failed',
-                  'toolName': effectiveToolCall.function.name,
+                  'toolName': effectiveToolCall.toolName,
                 },
               ),
             );
@@ -4943,25 +4995,39 @@ Future<List<ToolResult>> _executeToolCalls({
         if (outputSchema != null &&
             jsonValueForOutputSchema != null &&
             !interpreted.isError) {
-          final outputErrors = ToolValidator.validateJsonLike(
-            jsonValueForOutputSchema,
-            outputSchema,
-          );
-          if (outputErrors.isNotEmpty) {
+          final validate = outputSchema.validate;
+          final outputErrors = validate != null
+              ? () async {
+                  final result = await Future.value(
+                    validate(jsonValueForOutputSchema),
+                  );
+                  return result is ValidationFailure
+                      ? <String>[result.error.toString()]
+                      : const <String>[];
+                }()
+              : Future.value(
+                  ToolValidator.validateJsonLike(
+                    jsonValueForOutputSchema,
+                    outputSchema.jsonSchema,
+                  ),
+                );
+
+          final resolvedOutputErrors = await outputErrors;
+          if (resolvedOutputErrors.isNotEmpty) {
             results.add(
               ToolResult.error(
-                toolCallId: effectiveToolCall.id,
+                toolCallId: effectiveToolCall.toolCallId,
                 error: ToolOutputValidationError(
                   'Tool output does not match outputSchema.',
-                  toolName: effectiveToolCall.function.name,
-                  validationErrors: outputErrors,
+                  toolName: effectiveToolCall.toolName,
+                  validationErrors: resolvedOutputErrors,
                   source: 'local_tool',
                 ).toString(),
                 metadata: {
                   'kind': 'invalid_tool_output',
                   'reason': 'output_schema_validation_failed',
-                  'toolName': effectiveToolCall.function.name,
-                  'errors': outputErrors,
+                  'toolName': effectiveToolCall.toolName,
+                  'errors': resolvedOutputErrors,
                 },
               ),
             );
@@ -4974,18 +5040,18 @@ Future<List<ToolResult>> _executeToolCalls({
       results.add(
         interpreted.isError
             ? ToolResult.error(
-                toolCallId: effectiveToolCall.id,
+                toolCallId: effectiveToolCall.toolCallId,
                 error: normalized,
               )
             : ToolResult.success(
-                toolCallId: effectiveToolCall.id,
+                toolCallId: effectiveToolCall.toolCallId,
                 result: normalized,
               ),
       );
     } catch (e) {
       results.add(
         ToolResult.error(
-          toolCallId: effectiveToolCall.id,
+          toolCallId: effectiveToolCall.toolCallId,
           error: 'Tool execution failed: $e',
         ),
       );
@@ -5012,23 +5078,22 @@ List<ChatMessage> _messagesBeforeBlockedToolCall(List<ChatMessage> messages) {
 }
 
 List<ToolCall> _toToolResultCalls(
-  List<ToolCall> toolCalls,
+  List<V3ToolCall> toolCalls,
   List<ToolResult> toolResults,
 ) {
-  final byId = <String, ToolCall>{
-    for (final c in toolCalls) c.id: c,
+  final byId = <String, V3ToolCall>{
+    for (final c in toolCalls) c.toolCallId: c,
   };
 
   return toolResults.map((r) {
     final original = byId[r.toolCallId];
-    final toolName = original?.function.name ?? 'tool';
-    final callType = original?.callType ?? 'function';
+    final toolName = original?.toolName ?? 'tool';
 
     final content = _toolCallArgumentsForToolResult(r);
 
     return ToolCall(
       id: r.toolCallId,
-      callType: callType,
+      callType: 'function',
       function: FunctionCall(
         name: toolName,
         arguments: content,

@@ -19,7 +19,7 @@ void main() {
         providerTools: const [
           ProviderTool(
             id: 'xai.web_search',
-            options: {
+            args: {
               'allowed_domains': ['example.com'],
               'enable_image_understanding': true,
             },
@@ -85,13 +85,9 @@ void main() {
       final weather = Tool.function(
         name: 'weather',
         description: 'Get weather by location',
-        parameters: const ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'location': ParameterProperty(
-              propertyType: 'string',
-              description: 'city name',
-            ),
+            'location': Schema.string('city name'),
           },
           required: ['location'],
         ),

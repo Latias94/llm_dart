@@ -28,23 +28,17 @@ class _FakeToolCatalogModel extends ChatCapability
       );
 
       yield const LLMToolCallStartPart(
-        ToolCall(
-          id: 'call_1',
-          callType: 'function',
-          function: FunctionCall(
-            name: 'get_weather',
-            arguments: '',
-          ),
+        const V3ToolCall(
+          toolCallId: 'call_1',
+          toolName: 'get_weather',
+          input: '',
         ),
       );
       yield const LLMToolCallDeltaPart(
-        ToolCall(
-          id: 'call_1',
-          callType: 'function',
-          function: FunctionCall(
-            name: 'get_weather',
-            arguments: '{"location":"San Francisco"}',
-          ),
+        const V3ToolCall(
+          toolCallId: 'call_1',
+          toolName: 'get_weather',
+          input: '{"location":"San Francisco"}',
         ),
       );
       yield LLMFinishPart(_FakeStreamResponse());
@@ -96,13 +90,9 @@ void main() {
             tool: Tool.function(
               name: 'get_weather',
               description: 'Get weather',
-              parameters: const ParametersSchema(
-                schemaType: 'object',
+              inputSchema: Schema.params(
                 properties: {
-                  'location': ParameterProperty(
-                    propertyType: 'string',
-                    description: 'location',
-                  ),
+                  'location': Schema.string('location'),
                 },
                 required: ['location'],
               ),

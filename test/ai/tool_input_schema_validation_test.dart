@@ -12,13 +12,9 @@ void main() {
         functionTool(
           name: 'get_weather',
           description: 'get weather',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'city': ParameterProperty(
-                propertyType: 'string',
-                description: 'city',
-              ),
+              'city': Schema.string('city'),
             },
             required: ['city'],
           ),
@@ -26,10 +22,10 @@ void main() {
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'get_weather', arguments: '{}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'get_weather',
+        input: '{}',
       );
 
       final results = await executeToolCalls(
@@ -56,13 +52,9 @@ void main() {
         functionTool(
           name: 'get_weather',
           description: 'get weather',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'city': ParameterProperty(
-                propertyType: 'string',
-                description: 'city',
-              ),
+              'city': Schema.string('city'),
             },
             required: ['city'],
           ),
@@ -70,10 +62,10 @@ void main() {
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'get_weather', arguments: '{}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'get_weather',
+        input: '{}',
       );
 
       final results = await executeToolCalls(

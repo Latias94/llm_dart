@@ -28,7 +28,7 @@ class GenerateTextResult {
 
   final String? text;
   final String? thinking;
-  final List<ToolCall>? toolCalls;
+  final List<V3ToolCall>? toolCalls;
   final List<ToolResult> toolResults;
   final UsageInfo? usage;
   final UsageInfo? totalUsage;
@@ -421,7 +421,7 @@ class TranscribeResult {
 class ToolLoopStep {
   final int index;
   final GenerateTextResult result;
-  final List<ToolCall> toolCalls;
+  final List<V3ToolCall> toolCalls;
   final List<ToolResult> toolResults;
 
   /// Best-effort response metadata for this step.
@@ -477,7 +477,7 @@ class ToolLoopResult {
 class ToolLoopBlockedState {
   final int stepIndex;
   final GenerateTextResult stepResult;
-  final List<ToolCall> toolCalls;
+  final List<V3ToolCall> toolCalls;
 
   /// Tool approval requests that must be approved/denied to continue.
   ///
@@ -505,7 +505,7 @@ class ToolLoopBlockedState {
 /// The user should respond with a [ToolApprovalDecision] referencing [approvalId].
 class ToolApprovalRequest {
   final String approvalId;
-  final ToolCall toolCall;
+  final V3ToolCall toolCall;
 
   const ToolApprovalRequest({
     required this.approvalId,

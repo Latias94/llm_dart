@@ -6,13 +6,12 @@ import 'package:test/test.dart';
 
 void main() {
   group('dynamicTool', () {
-    test('converts inputSchema object to ParametersSchema', () async {
+    test('validates inputSchema when executing tool calls', () async {
       final toolSet = ToolSet([
         dynamicTool(
           name: 'get_weather',
           description: 'get weather',
-          inputSchema: Schema.object(
-            'params',
+          inputSchema: Schema.params(
             properties: {
               'city': Schema.string('city'),
             },
@@ -22,10 +21,10 @@ void main() {
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'get_weather', arguments: '{}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'get_weather',
+        input: '{}',
       );
 
       final results = await executeToolCalls(
@@ -48,8 +47,7 @@ void main() {
         dynamicTool(
           name: 'sum',
           description: 'sum numbers',
-          inputSchema: Schema.object(
-            'params',
+          inputSchema: Schema.params(
             properties: {
               'a': Schema.integer('a'),
               'b': Schema.integer('b'),
@@ -68,10 +66,10 @@ void main() {
         ),
       ]);
 
-      const call = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: FunctionCall(name: 'sum', arguments: '{"a":1,"b":2}'),
+      const call = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'sum',
+        input: '{"a":1,"b":2}',
       );
 
       final results = await executeToolCalls(

@@ -59,12 +59,12 @@ List<PromptMessage> buildResponsePromptMessagesBestEffort(
 }
 
 PromptMessage buildToolResultPromptMessageBestEffort({
-  required List<ToolCall> toolCalls,
+  required List<V3ToolCall> toolCalls,
   required List<ToolResult> toolResults,
 }) {
   final toolNameById = <String, String>{};
   for (final call in toolCalls) {
-    toolNameById[call.id] = call.function.name;
+    toolNameById[call.toolCallId] = call.toolName;
   }
 
   ToolResultOutput toOutput(ToolResult result) {

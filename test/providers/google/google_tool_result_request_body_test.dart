@@ -21,11 +21,7 @@ void main() {
         Tool.function(
           name: 'getWeather',
           description: 'Test tool',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
         ),
       ];
 
@@ -73,11 +69,7 @@ void main() {
         Tool.function(
           name: 'getWeather',
           description: 'Test tool',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
         ),
       ];
 

@@ -104,7 +104,7 @@ void main() {
         providerTools: const [
           ProviderTool(
             id: 'google.file_search',
-            options: {
+            args: {
               'fileSearchStoreNames': ['projects/foo/fileSearchStores/bar'],
               'metadataFilter': 'author=Robert Graves',
               'topK': 5,
@@ -149,7 +149,7 @@ void main() {
         providerTools: const [
           ProviderTool(
             id: 'google.file_search',
-            options: {
+            args: {
               'fileSearchStoreNames': ['projects/foo/fileSearchStores/bar'],
             },
           ),
@@ -175,7 +175,7 @@ void main() {
         providerTools: const [
           ProviderTool(
             id: 'google.vertex_rag_store',
-            options: {
+            args: {
               'ragCorpus': 'projects/p/locations/l/ragCorpora/c',
               'topK': 3,
             },
@@ -223,7 +223,7 @@ void main() {
         providerTools: const [
           ProviderTool(
             id: 'google.google_search',
-            options: {
+            args: {
               'enabled': true,
               'mode': 'MODE_DYNAMIC',
               'dynamicThreshold': 0.5,
@@ -267,7 +267,7 @@ void main() {
         providerTools: const [
           ProviderTool(
             id: 'google.google_search',
-            options: {
+            args: {
               'enabled': true,
               'mode': 'MODE_DYNAMIC',
               'dynamicThreshold': 0.5,

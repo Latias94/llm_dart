@@ -38,7 +38,7 @@ String _sseData(Map<String, dynamic> json) => 'data: ${jsonEncode(json)}\n\n';
 
 void main() {
   group('OpenAI-compatible providerMetadata namespacing conformance', () {
-    test('uses providerId and providerId.chat keys (groq-openai)', () async {
+    test('emits canonical providerId key only (groq-openai)', () async {
       final config = OpenAICompatibleConfig(
         providerId: 'groq-openai',
         providerName: 'Groq (OpenAI-compatible)',
@@ -90,8 +90,7 @@ void main() {
       expect(meta, isNotNull);
 
       expect(meta!.containsKey('groq-openai'), isTrue);
-      expect(meta.containsKey('groq-openai.chat'), isTrue);
-      expect(meta['groq-openai.chat'], equals(meta['groq-openai']));
+      expect(meta.containsKey('groq-openai.chat'), isFalse);
 
       // Ensure we do not accidentally inject a different namespace.
       expect(meta.containsKey('groq'), isFalse);
@@ -164,8 +163,7 @@ void main() {
       expect(meta, isNotNull);
 
       expect(meta!.containsKey('xai-openai'), isTrue);
-      expect(meta.containsKey('xai-openai.chat'), isTrue);
-      expect(meta['xai-openai.chat'], equals(meta['xai-openai']));
+      expect(meta.containsKey('xai-openai.chat'), isFalse);
 
       expect(
         (meta['xai-openai'] as Map<String, dynamic>)['citations'],
@@ -173,7 +171,7 @@ void main() {
       );
     });
 
-    test('uses providerId and providerId.chat keys (google-openai)', () async {
+    test('emits canonical providerId key only (google-openai)', () async {
       final config = OpenAICompatibleConfig(
         providerId: 'google-openai',
         providerName: 'Google Gemini (OpenAI-compatible)',
@@ -220,8 +218,7 @@ void main() {
       expect(meta, isNotNull);
 
       expect(meta!.containsKey('google-openai'), isTrue);
-      expect(meta.containsKey('google-openai.chat'), isTrue);
-      expect(meta['google-openai.chat'], equals(meta['google-openai']));
+      expect(meta.containsKey('google-openai.chat'), isFalse);
 
       expect(meta.containsKey('google'), isFalse);
       expect(meta.containsKey('google.chat'), isFalse);

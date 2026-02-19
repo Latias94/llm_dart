@@ -35,10 +35,8 @@ class OpenAIImages
       'model': model,
       'endpoint': endpoint,
     };
-    return {
-      config.providerId: payload,
-      '${config.providerId}.image': payload,
-    };
+    final baseKey = config.providerId.split('.').first;
+    return {baseKey: payload};
   }
 
   @override

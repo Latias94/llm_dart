@@ -85,7 +85,6 @@ class ElevenLabsAudio
 
   Map<String, dynamic> _buildProviderMetadata(
     String endpoint, {
-    required String capability,
     required String model,
     String? voice,
   }) {
@@ -95,10 +94,8 @@ class ElevenLabsAudio
       if (voice != null) 'voice': voice,
     };
 
-    return {
-      config.providerId: payload,
-      '${config.providerId}.$capability': payload,
-    };
+    final baseKey = config.providerId.split('.').first;
+    return {baseKey: payload};
   }
 
   @override
@@ -158,7 +155,6 @@ class ElevenLabsAudio
       ],
       providerMetadata: _buildProviderMetadata(
         'text-to-speech/$voiceUsed',
-        capability: 'speech',
         model: modelUsed,
         voice: voiceUsed,
       ),
@@ -331,7 +327,6 @@ class ElevenLabsAudio
       additionalFormats: response.additionalFormats,
       providerMetadata: _buildProviderMetadata(
         'speech-to-text',
-        capability: 'transcription',
         model: modelUsed,
       ),
     );

@@ -19,7 +19,7 @@ class ToolCallRepairStrategies {
   /// - Returns `null` when it cannot safely recover an object.
   static ToolCallRepair fixCommonJsonObject() {
     return (
-      ToolCall toolCall, {
+      V3ToolCall toolCall, {
       required String reason,
       String? errorMessage,
       List<String>? validationErrors,
@@ -28,7 +28,7 @@ class ToolCallRepairStrategies {
         return null;
       }
 
-      final raw = toolCall.function.arguments;
+      final raw = toolCall.input;
       final repaired = _repairToJsonObjectString(raw);
       return repaired;
     };

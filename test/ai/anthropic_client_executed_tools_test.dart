@@ -15,10 +15,10 @@ void main() {
       );
 
       const raw = '{"command":"echo hi","restart":true}';
-      final toolCall = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: const FunctionCall(name: 'bash', arguments: raw),
+      const toolCall = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'bash',
+        input: raw,
       );
 
       final out = await handler(
@@ -51,10 +51,10 @@ void main() {
 
       const raw =
           '{"action":"scroll","coordinate":[10,20],"scroll_amount":3,"scroll_direction":"down"}';
-      final toolCall = ToolCall(
-        id: 'call_2',
-        callType: 'function',
-        function: const FunctionCall(name: 'computer', arguments: raw),
+      const toolCall = V3ToolCall(
+        toolCallId: 'call_2',
+        toolName: 'computer',
+        input: raw,
       );
 
       final out = await handler(
@@ -88,13 +88,10 @@ void main() {
       );
 
       const raw = '{"command":"create","path":"/tmp/a.txt","file_text":"hi"}';
-      final toolCall = ToolCall(
-        id: 'call_3',
-        callType: 'function',
-        function: const FunctionCall(
-          name: 'str_replace_based_edit_tool',
-          arguments: raw,
-        ),
+      const toolCall = V3ToolCall(
+        toolCallId: 'call_3',
+        toolName: 'str_replace_based_edit_tool',
+        input: raw,
       );
 
       final out = await handler(

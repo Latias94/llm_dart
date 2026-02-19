@@ -41,13 +41,14 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
 
   final contentBlocks = <Map<String, dynamic>>[];
 
+  final providerMetadataNamespace = config.providerId.split('.').first;
   final sources = SourcePartEmitter(
-    providerMetadataNamespace: config.providerId,
+    providerMetadataNamespace: providerMetadataNamespace,
   );
 
   final providerToolNameById = <String, String>{};
   final providerToolParts = ProviderToolPartEmitter(
-    providerMetadataNamespace: config.providerId,
+    providerMetadataNamespace: providerMetadataNamespace,
   );
 
   String? messageId;
@@ -398,18 +399,15 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                                 toolName ?? '') ??
                             (toolName ?? '');
                     final args = input == null ? '' : jsonEncode(input);
-                    final toolCall = ToolCall(
-                      id: toolId,
-                      callType: 'function',
-                      function: FunctionCall(
-                        name: originalToolName,
-                        arguments: args,
-                      ),
+                    final toolCall = V3ToolCall(
+                      toolCallId: toolId,
+                      toolName: originalToolName,
+                      input: args,
                     );
-                    startedToolCalls.add(toolCall.id);
-                    endedToolCalls.add(toolCall.id);
+                    startedToolCalls.add(toolCall.toolCallId);
+                    endedToolCalls.add(toolCall.toolCallId);
                     yield LLMToolCallStartPart(toolCall);
-                    yield LLMToolCallEndPart(toolCall.id);
+                    yield LLMToolCallEndPart(toolCall.toolCallId);
                   }
                 }
               }
@@ -555,17 +553,14 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                 final originalToolName = toolNameMapping
                         .originalFunctionNameForRequestName(toolName ?? '') ??
                     (toolName ?? '');
-                final toolCall = ToolCall(
-                  id: toolId,
-                  callType: 'function',
-                  function: FunctionCall(
-                    name: originalToolName,
-                    arguments: state.inputBuffer.isNotEmpty
-                        ? state.inputBuffer.toString()
-                        : '',
-                  ),
+                final toolCall = V3ToolCall(
+                  toolCallId: toolId,
+                  toolName: originalToolName,
+                  input: state.inputBuffer.isNotEmpty
+                      ? state.inputBuffer.toString()
+                      : '',
                 );
-                startedToolCalls.add(toolCall.id);
+                startedToolCalls.add(toolCall.toolCallId);
                 yield LLMToolCallStartPart(toolCall);
               }
             } else if (blockType == 'server_tool_use' ||
@@ -807,13 +802,10 @@ Stream<LLMStreamPart> _anthropicChatStreamPartsFromBuiltRequest(
                           ) ??
                           (state.name ?? '');
                   yield LLMToolCallDeltaPart(
-                    ToolCall(
-                      id: state.id!,
-                      callType: 'function',
-                      function: FunctionCall(
-                        name: originalToolName,
-                        arguments: partialJson,
-                      ),
+                    V3ToolCall(
+                      toolCallId: state.id!,
+                      toolName: originalToolName,
+                      input: partialJson,
                     ),
                   );
                 }

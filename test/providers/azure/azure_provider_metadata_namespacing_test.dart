@@ -9,7 +9,7 @@ import 'package:llm_dart_azure/provider.dart';
 
 void main() {
   group('Azure providerMetadata namespacing', () {
-    test('chat completions emits azure + azure.chat aliases', () async {
+    test('chat completions emits canonical azure providerMetadata', () async {
       final adapter = _FakeAzureHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
 
@@ -30,9 +30,8 @@ void main() {
 
       expect(meta, isNotNull);
       expect(meta!.containsKey('azure'), isTrue);
-      expect(meta.containsKey('azure.chat'), isTrue);
-      expect(meta.containsKey('azure.chat.chat'), isFalse);
-      expect(meta['azure.chat'], equals(meta['azure']));
+      expect(meta.containsKey('azure.chat'), isFalse);
+      expect(meta.containsKey('azure.responses'), isFalse);
 
       expect(response.usage, isNotNull);
       expect(response.usage!.promptTokens, equals(3));
@@ -40,7 +39,7 @@ void main() {
       expect(response.usage!.totalTokens, equals(7));
     });
 
-    test('responses api adds azure.responses alias key + normalizes usage',
+    test('responses api emits canonical azure providerMetadata + normalizes usage',
         () async {
       final adapter = _FakeAzureHttpClientAdapter();
       final customDio = Dio()..httpClientAdapter = adapter;
@@ -62,8 +61,7 @@ void main() {
 
       expect(meta, isNotNull);
       expect(meta!.containsKey('azure'), isTrue);
-      expect(meta.containsKey('azure.responses'), isTrue);
-      expect(meta['azure.responses'], equals(meta['azure']));
+      expect(meta.containsKey('azure.responses'), isFalse);
 
       expect(response.usage, isNotNull);
       expect(response.usage!.promptTokens, equals(11));

@@ -48,13 +48,10 @@ class _FakePromptToolStreamPartsModel extends ChatCapability
         return;
       }
       yield const LLMToolCallStartPart(
-        ToolCall(
-          id: 'toolu_1',
-          callType: 'function',
-          function: FunctionCall(
-            name: 'get_weather',
-            arguments: '{"location":"SF"}',
-          ),
+        const V3ToolCall(
+          toolCallId: 'toolu_1',
+          toolName: 'get_weather',
+          input: '{"location":"SF"}',
         ),
       );
       yield const LLMToolCallEndPart('toolu_1');
@@ -93,13 +90,9 @@ void main() {
           Tool.function(
             name: 'get_weather',
             description: 'Get weather for a location',
-            parameters: ParametersSchema(
-              schemaType: 'object',
+            inputSchema: Schema.params(
               properties: {
-                'location': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'City name',
-                ),
+                'location': Schema.string('City name'),
               },
               required: ['location'],
             ),
@@ -181,13 +174,9 @@ void main() {
           Tool.function(
             name: 'get_weather',
             description: 'Get weather for a location',
-            parameters: ParametersSchema(
-              schemaType: 'object',
+            inputSchema: Schema.params(
               properties: {
-                'location': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'City name',
-                ),
+                'location': Schema.string('City name'),
               },
               required: ['location'],
             ),

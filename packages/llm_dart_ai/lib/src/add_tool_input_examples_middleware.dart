@@ -70,7 +70,7 @@ class AddToolInputExamplesMiddleware extends LanguageModelMiddleware {
       }
 
       final examplesSection = '$prefix\n${formatted.join('\n')}';
-      final baseDesc = tool.function.description;
+      final baseDesc = tool.function.description ?? '';
       final newDesc = baseDesc.trim().isEmpty
           ? examplesSection
           : '$baseDesc\n\n$examplesSection';
@@ -81,7 +81,7 @@ class AddToolInputExamplesMiddleware extends LanguageModelMiddleware {
           function: FunctionTool(
             name: tool.function.name,
             description: newDesc,
-            parameters: tool.function.parameters,
+            inputSchema: tool.function.inputSchema,
           ),
           strict: tool.strict,
           inputExamples: remove ? null : examples,

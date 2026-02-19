@@ -40,9 +40,9 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('deepseek'), isTrue);
-      expect(meta.containsKey('deepseek.image'), isTrue);
+      expect(meta.containsKey('deepseek.image'), isFalse);
       expect(
-        meta['deepseek.image'],
+        meta['deepseek'],
         equals({
           'model': 'gpt-image-1',
           'endpoint': 'images/generations',
@@ -85,9 +85,9 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('deepseek'), isTrue);
-      expect(meta.containsKey('deepseek.image'), isTrue);
+      expect(meta.containsKey('deepseek.image'), isFalse);
       expect(
-        meta['deepseek.image'],
+        meta['deepseek'],
         equals({
           'model': 'gpt-image-1',
           'endpoint': 'images/edits',
@@ -130,9 +130,9 @@ void main() {
       final meta = resp.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('deepseek'), isTrue);
-      expect(meta.containsKey('deepseek.image'), isTrue);
+      expect(meta.containsKey('deepseek.image'), isFalse);
       expect(
-        meta['deepseek.image'],
+        meta['deepseek'],
         equals({
           'model': 'gpt-image-1',
           'endpoint': 'images/variations',

@@ -137,7 +137,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
   }
 
   bool isEnabled(ProviderTool t) {
-    final enabled = t.options['enabled'];
+    final enabled = t.args['enabled'];
     if (enabled is bool) return enabled;
     return true;
   }
@@ -172,7 +172,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
       ProviderTool(
         id: tool.id,
         name: name,
-        options: tool.options,
+        args: tool.args,
         supportsDeferredResults: supportsDeferredResults,
       ),
     );

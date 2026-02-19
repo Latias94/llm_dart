@@ -68,15 +68,17 @@ extension _AnthropicRequestBuilderTools on AnthropicRequestBuilder {
           if (toolMap.containsKey('function') && toolMap.containsKey('type')) {
             final function =
                 Map<String, dynamic>.from(toolMap['function'] as Map);
+            final inputSchema =
+                (function['inputSchema'] as Map?)?.cast<String, dynamic>() ??
+                    (function['parameters'] as Map?)?.cast<String, dynamic>() ??
+                    const <String, dynamic>{};
             tools.add(
               Tool(
                 toolType: toolMap['type'] as String? ?? 'function',
                 function: FunctionTool(
                   name: function['name'] as String,
-                  description: function['description'] as String,
-                  parameters: ParametersSchema.fromJson(
-                    function['parameters'] as Map<String, dynamic>,
-                  ),
+                  description: function['description'] as String?,
+                  inputSchema: inputSchema,
                 ),
               ),
             );
@@ -298,7 +300,7 @@ extension _AnthropicRequestBuilderTools on AnthropicRequestBuilder {
           id.startsWith(providerPrefix) || id.startsWith('anthropic.');
       if (!isRelevant) continue;
 
-      final enabled = tool.options['enabled'];
+      final enabled = tool.args['enabled'];
       if (enabled is bool && enabled == false) continue;
       result.add(tool);
     }
@@ -335,7 +337,7 @@ extension _AnthropicRequestBuilderTools on AnthropicRequestBuilder {
     if (idSuffix.isEmpty) return null;
 
     Map<String, dynamic> optionsWithoutEnabled() {
-      final opts = Map<String, dynamic>.from(tool.options);
+      final opts = Map<String, dynamic>.from(tool.args);
       opts.remove('enabled');
       return opts;
     }

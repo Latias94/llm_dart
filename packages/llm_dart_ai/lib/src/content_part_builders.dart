@@ -7,7 +7,7 @@ List<ContentPart> buildContentPartsBestEffort({
   required String? thinking,
   List<LLMStreamPart> sources = const <LLMStreamPart>[],
   List<LLMFilePart> files = const <LLMFilePart>[],
-  List<ToolCall> toolCalls = const <ToolCall>[],
+  List<V3ToolCall> toolCalls = const <V3ToolCall>[],
   List<ToolResult> toolResults = const <ToolResult>[],
 }) {
   final out = <ContentPart>[];

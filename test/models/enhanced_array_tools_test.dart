@@ -3,124 +3,79 @@ import 'package:llm_dart/llm_dart.dart';
 import 'dart:convert';
 
 void main() {
-  group('Enhanced Array Tools', () {
-    test('ParameterProperty supports object properties and required fields',
-        () {
-      // Create a ParameterProperty with nested object structure
-      final userProperty = ParameterProperty(
-        propertyType: 'object',
-        description: 'User object',
+  group('Enhanced JSON Schema tools', () {
+    test('Schema builders support nested objects and required fields', () {
+      final schema = Schema.object(
+        'User object',
         properties: {
-          'name': ParameterProperty(
-            propertyType: 'string',
-            description: 'User name',
-          ),
-          'age': ParameterProperty(
-            propertyType: 'integer',
-            description: 'User age',
-          ),
-          'active': ParameterProperty(
-            propertyType: 'boolean',
-            description: 'User active status',
-          ),
+          'name': Schema.string('User name'),
+          'age': Schema.integer('User age'),
+          'active': Schema.boolean('User active status'),
         },
-        required: ['name', 'age'],
+        required: const ['name', 'age'],
       );
 
-      // Test serialization
-      final json = userProperty.toJson();
-      expect(json['type'], equals('object'));
-      expect(json['properties'], isA<Map<String, dynamic>>());
-      expect(json['properties']['name']['type'], equals('string'));
-      expect(json['required'], equals(['name', 'age']));
-
-      // Test deserialization
-      final reconstructed = ParameterProperty.fromJson(json);
-      expect(reconstructed.propertyType, equals('object'));
-      expect(reconstructed.properties!.length, equals(3));
-      expect(reconstructed.required!.length, equals(2));
-      expect(reconstructed.properties!['name']!.propertyType, equals('string'));
+      expect(schema['type'], equals('object'));
+      expect(schema['properties'], isA<Map<String, dynamic>>());
+      expect((schema['properties'] as Map)['name']['type'], equals('string'));
+      expect(schema['required'], equals(['name', 'age']));
     });
 
-    test('Tool with nested array of objects works correctly', () {
-      // Create a tool with array of objects
+    test('Tool with nested array of objects serializes as inputSchema', () {
       final tool = Tool.function(
         name: 'process_users',
         description: 'Process user array',
-        parameters: ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'users': ParameterProperty(
-              propertyType: 'array',
-              description: 'Array of users',
-              items: ParameterProperty(
-                propertyType: 'object',
-                description: 'User object',
+            'users': Schema.array(
+              'Array of users',
+              items: Schema.object(
+                'User object',
                 properties: {
-                  'name': ParameterProperty(
-                    propertyType: 'string',
-                    description: 'User name',
-                  ),
-                  'email': ParameterProperty(
-                    propertyType: 'string',
-                    description: 'User email',
-                  ),
+                  'name': Schema.string('User name'),
+                  'email': Schema.string('User email'),
                 },
-                required: ['name'],
+                required: const ['name'],
               ),
             ),
           },
-          required: ['users'],
+          required: const ['users'],
         ),
       );
 
-      // Test tool serialization
       final toolJson = tool.toJson();
-      expect(toolJson['function']['parameters']['properties']['users']['type'],
-          equals('array'));
+      final inputSchema = toolJson['inputSchema'] as Map;
+      final users = (inputSchema['properties'] as Map)['users'] as Map;
+      expect(users['type'], equals('array'));
+      expect((users['items'] as Map)['type'], equals('object'));
       expect(
-          toolJson['function']['parameters']['properties']['users']['items']
-              ['type'],
-          equals('object'));
-      expect(
-          toolJson['function']['parameters']['properties']['users']['items']
-              ['properties']['name']['type'],
-          equals('string'));
+        (((users['items'] as Map)['properties'] as Map)['name'] as Map)['type'],
+        equals('string'),
+      );
     });
 
     test('ToolValidator validates nested object arrays correctly', () {
-      // Create tool definition
       final tool = Tool.function(
         name: 'test_function',
         description: 'Test function',
-        parameters: ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'items': ParameterProperty(
-              propertyType: 'array',
-              description: 'Array of items',
-              items: ParameterProperty(
-                propertyType: 'object',
-                description: 'Item object',
+            'items': Schema.array(
+              'Array of items',
+              items: Schema.object(
+                'Item object',
                 properties: {
-                  'id': ParameterProperty(
-                    propertyType: 'string',
-                    description: 'Item ID',
-                  ),
-                  'count': ParameterProperty(
-                    propertyType: 'integer',
-                    description: 'Item count',
-                  ),
+                  'id': Schema.string('Item ID'),
+                  'count': Schema.integer('Item count'),
                 },
-                required: ['id'],
+                required: const ['id'],
               ),
             ),
           },
-          required: ['items'],
+          required: const ['items'],
         ),
       );
 
-      // Valid tool call
       final validToolCall = ToolCall(
         id: 'call_123',
         callType: 'function',
@@ -129,17 +84,17 @@ void main() {
           arguments: jsonEncode({
             'items': [
               {'id': 'item1', 'count': 5},
-              {'id': 'item2', 'count': 3}
-            ]
+              {'id': 'item2', 'count': 3},
+            ],
           }),
         ),
       );
 
-      // Should validate successfully
-      expect(() => ToolValidator.validateToolCall(validToolCall, tool),
-          returnsNormally);
+      expect(
+        () => ToolValidator.validateToolCall(validToolCall, tool),
+        returnsNormally,
+      );
 
-      // Invalid tool call - missing required field
       final invalidToolCall = ToolCall(
         id: 'call_124',
         callType: 'function',
@@ -148,113 +103,97 @@ void main() {
           arguments: jsonEncode({
             'items': [
               {'id': 'item1', 'count': 5},
-              {'count': 3} // Missing required 'id' field
-            ]
+              {'count': 3},
+            ],
           }),
         ),
       );
 
-      // Should throw validation error
-      expect(() => ToolValidator.validateToolCall(invalidToolCall, tool),
-          throwsA(isA<ToolValidationError>()));
+      expect(
+        () => ToolValidator.validateToolCall(invalidToolCall, tool),
+        throwsA(isA<ToolValidationError>()),
+      );
     });
 
-    test('Deep nesting works correctly', () {
-      // Create deeply nested structure: array -> object -> array -> object
+    test('Deep nesting round-trips through Tool.toJson/fromJson', () {
       final deepTool = Tool.function(
         name: 'deep_function',
         description: 'Deep nested structure',
-        parameters: ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'orders': ParameterProperty(
-              propertyType: 'array',
-              description: 'Array of orders',
-              items: ParameterProperty(
-                propertyType: 'object',
-                description: 'Order object',
+            'orders': Schema.array(
+              'Array of orders',
+              items: Schema.object(
+                'Order object',
                 properties: {
-                  'id': ParameterProperty(
-                    propertyType: 'string',
-                    description: 'Order ID',
-                  ),
-                  'items': ParameterProperty(
-                    propertyType: 'array',
-                    description: 'Order items',
-                    items: ParameterProperty(
-                      propertyType: 'object',
-                      description: 'Item object',
+                  'id': Schema.string('Order ID'),
+                  'items': Schema.array(
+                    'Order items',
+                    items: Schema.object(
+                      'Item object',
                       properties: {
-                        'product': ParameterProperty(
-                          propertyType: 'string',
-                          description: 'Product name',
-                        ),
-                        'quantity': ParameterProperty(
-                          propertyType: 'integer',
-                          description: 'Quantity',
-                        ),
+                        'product': Schema.string('Product name'),
+                        'quantity': Schema.integer('Quantity'),
                       },
-                      required: ['product'],
+                      required: const ['product'],
                     ),
                   ),
                 },
-                required: ['id', 'items'],
+                required: const ['id', 'items'],
               ),
             ),
           },
-          required: ['orders'],
+          required: const ['orders'],
         ),
       );
 
-      // Test serialization/deserialization of deep structure
       final json = deepTool.toJson();
       final reconstructed = Tool.fromJson(json);
 
       expect(reconstructed.function.name, equals('deep_function'));
 
-      // Verify deep structure integrity
-      final ordersParam =
-          reconstructed.function.parameters.properties['orders']!;
-      expect(ordersParam.propertyType, equals('array'));
+      final schema = reconstructed.function.inputSchema;
+      final orders = (schema['properties'] as Map)['orders'] as Map;
+      expect(orders['type'], equals('array'));
 
-      final orderObject = ordersParam.items!;
-      expect(orderObject.propertyType, equals('object'));
-      expect(orderObject.properties!['items']!.propertyType, equals('array'));
+      final orderObject = orders['items'] as Map;
+      expect(orderObject['type'], equals('object'));
 
-      final itemObject = orderObject.properties!['items']!.items!;
-      expect(itemObject.propertyType, equals('object'));
-      expect(itemObject.properties!['product']!.propertyType, equals('string'));
+      final orderItems = (orderObject['properties'] as Map)['items'] as Map;
+      expect(orderItems['type'], equals('array'));
+
+      final itemObject = orderItems['items'] as Map;
+      expect(itemObject['type'], equals('object'));
+      expect(
+        (((itemObject['properties'] as Map)['product'] as Map)['type']),
+        equals('string'),
+      );
     });
 
     test('Enum validation works in nested structures', () {
       final tool = Tool.function(
         name: 'enum_test',
         description: 'Test enum validation',
-        parameters: ParametersSchema(
-          schemaType: 'object',
+        inputSchema: Schema.params(
           properties: {
-            'items': ParameterProperty(
-              propertyType: 'array',
-              description: 'Array with enum',
-              items: ParameterProperty(
-                propertyType: 'object',
-                description: 'Object with enum',
+            'items': Schema.array(
+              'Array with enum',
+              items: Schema.object(
+                'Object with enum',
                 properties: {
-                  'status': ParameterProperty(
-                    propertyType: 'string',
-                    description: 'Status enum',
-                    enumList: ['active', 'inactive', 'pending'],
+                  'status': Schema.string(
+                    'Status enum',
+                    enumValues: const ['active', 'inactive', 'pending'],
                   ),
                 },
-                required: ['status'],
+                required: const ['status'],
               ),
             ),
           },
-          required: ['items'],
+          required: const ['items'],
         ),
       );
 
-      // Valid enum value
       final validCall = ToolCall(
         id: 'call_enum_valid',
         callType: 'function',
@@ -263,15 +202,16 @@ void main() {
           arguments: jsonEncode({
             'items': [
               {'status': 'active'}
-            ]
+            ],
           }),
         ),
       );
 
-      expect(() => ToolValidator.validateToolCall(validCall, tool),
-          returnsNormally);
+      expect(
+        () => ToolValidator.validateToolCall(validCall, tool),
+        returnsNormally,
+      );
 
-      // Invalid enum value
       final invalidCall = ToolCall(
         id: 'call_enum_invalid',
         callType: 'function',
@@ -280,13 +220,15 @@ void main() {
           arguments: jsonEncode({
             'items': [
               {'status': 'invalid_status'}
-            ]
+            ],
           }),
         ),
       );
 
-      expect(() => ToolValidator.validateToolCall(invalidCall, tool),
-          throwsA(isA<ToolValidationError>()));
+      expect(
+        () => ToolValidator.validateToolCall(invalidCall, tool),
+        throwsA(isA<ToolValidationError>()),
+      );
     });
   });
 }

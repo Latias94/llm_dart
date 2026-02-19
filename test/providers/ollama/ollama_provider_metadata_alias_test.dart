@@ -2,7 +2,7 @@ import 'package:llm_dart_ollama/ollama.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('Ollama chat response exposes providerMetadata aliases', () {
+  test('Ollama chat response exposes canonical providerMetadata', () {
     final response = OllamaChatResponse({
       'model': 'llama3.2',
       'created_at': '2024-01-01T00:00:00Z',
@@ -14,6 +14,6 @@ void main() {
     final metadata = response.providerMetadata;
     expect(metadata, isNotNull);
     expect(metadata, contains('ollama'));
-    expect(metadata, contains('ollama.chat'));
+    expect(metadata, isNot(contains('ollama.chat')));
   });
 }

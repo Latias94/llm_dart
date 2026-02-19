@@ -8,11 +8,7 @@ void main() {
     Tool tool(String name) => Tool.function(
           name: name,
           description: 'tool',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
-            properties: {},
-            required: [],
-          ),
+          inputSchema: Schema.params(properties: const {}),
         );
 
     test('injects config.systemPrompt when no system message exists', () {

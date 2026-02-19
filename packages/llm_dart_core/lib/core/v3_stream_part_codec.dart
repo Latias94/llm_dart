@@ -231,10 +231,29 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
         case 'tool-input-start':
           final id = _requireString(obj, 'id');
           final toolName = _requireString(obj, 'toolName');
-          final providerExecuted =
-              obj['providerExecuted'] == true ? true : null;
-          final dynamicTool = obj['dynamic'] == true ? true : null;
-          final title = obj['title'] as String?;
+          final providerExecutedRaw = obj['providerExecuted'];
+          if (providerExecutedRaw != null && providerExecutedRaw is! bool) {
+            throw const FormatException(
+              'v3 tool-input-start requires boolean "providerExecuted" when present.',
+            );
+          }
+          final providerExecuted = providerExecutedRaw == true ? true : null;
+
+          final dynamicRaw = obj['dynamic'];
+          if (dynamicRaw != null && dynamicRaw is! bool) {
+            throw const FormatException(
+              'v3 tool-input-start requires boolean "dynamic" when present.',
+            );
+          }
+          final dynamicTool = dynamicRaw == true ? true : null;
+
+          final titleRaw = obj['title'];
+          if (titleRaw != null && titleRaw is! String) {
+            throw const FormatException(
+              'v3 tool-input-start requires string "title" when present.',
+            );
+          }
+          final title = titleRaw as String?;
 
           state.toolInput.onStart(id);
           state.rememberTool(id: id, toolName: toolName);
@@ -278,9 +297,28 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
           if (inputRaw is! String) {
             throw const FormatException('v3 tool-call missing string "input".');
           }
-          final providerExecuted =
-              obj['providerExecuted'] == true ? true : null;
-          final dynamicTool = obj['dynamic'] == true ? true : null;
+          final providerExecutedRaw = obj['providerExecuted'];
+          if (providerExecutedRaw != null && providerExecutedRaw is! bool) {
+            throw const FormatException(
+              'v3 tool-call requires boolean "providerExecuted" when present.',
+            );
+          }
+          final dynamicRaw = obj['dynamic'];
+          if (dynamicRaw != null && dynamicRaw is! bool) {
+            throw const FormatException(
+              'v3 tool-call requires boolean "dynamic" when present.',
+            );
+          }
+
+          // AI SDK v3 semantics:
+          // - `providerExecuted=true` => provider executes
+          // - `providerExecuted` missing/false => client executes
+          //
+          // Internal note: LLMProviderToolCallPart uses `providerExecuted=false`
+          // to represent client-executed provider-triggered tool calls (e.g.
+          // OpenAI "custom tools").
+          final providerExecuted = providerExecutedRaw == true ? true : false;
+          final dynamicTool = dynamicRaw == true ? true : null;
 
           final existing = state.toolById[toolCallId];
           if (existing != null && existing.toolName != toolName) {
@@ -316,9 +354,29 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
             throw const FormatException(
                 'v3 tool-result missing non-null "result".');
           }
-          final isError = obj['isError'] == true ? true : null;
-          final preliminary = obj['preliminary'] == true ? true : null;
-          final dynamicTool = obj['dynamic'] == true ? true : null;
+          final isErrorRaw = obj['isError'];
+          if (isErrorRaw != null && isErrorRaw is! bool) {
+            throw const FormatException(
+              'v3 tool-result requires boolean "isError" when present.',
+            );
+          }
+          final isError = isErrorRaw == true ? true : null;
+
+          final preliminaryRaw = obj['preliminary'];
+          if (preliminaryRaw != null && preliminaryRaw is! bool) {
+            throw const FormatException(
+              'v3 tool-result requires boolean "preliminary" when present.',
+            );
+          }
+          final preliminary = preliminaryRaw == true ? true : null;
+
+          final dynamicRaw = obj['dynamic'];
+          if (dynamicRaw != null && dynamicRaw is! bool) {
+            throw const FormatException(
+              'v3 tool-result requires boolean "dynamic" when present.',
+            );
+          }
+          final dynamicTool = dynamicRaw == true ? true : null;
 
           final existing = state.toolById[toolCallId];
           if (existing != null && existing.toolName != toolName) {
@@ -505,11 +563,20 @@ List<LLMStreamPart> decodeV3StreamParts(Iterable<V3JsonMap> objects) {
               final toolCallsRaw = rawValue['toolCalls'];
               final toolResultsRaw = rawValue['toolResults'];
 
-              final toolCalls = <ToolCall>[];
+              final toolCalls = <V3ToolCall>[];
               if (toolCallsRaw is List) {
                 for (final v in toolCallsRaw) {
                   if (v is Map) {
-                    toolCalls.add(ToolCall.fromJson(v.cast<String, dynamic>()));
+                    final map = v.cast<String, dynamic>();
+                    if (map.containsKey('toolCallId')) {
+                      toolCalls.add(V3ToolCall.fromJson(map));
+                    } else {
+                      toolCalls.add(
+                        V3ToolCall.fromLegacyToolCall(
+                          ToolCall.fromJson(map),
+                        ),
+                      );
+                    }
                   }
                 }
               }
@@ -914,33 +981,37 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
 
     // Local tool call lifecycle (client-executed function tools):
     case LLMToolCallStartPart(:final toolCall):
-      if (state.toolInput.hasSeenToolInputPart(toolCall.id)) return const [];
+      if (state.toolInput.hasSeenToolInputPart(toolCall.toolCallId)) {
+        return const [];
+      }
       state.toolInput.onStart(toolCall);
       final out = <V3JsonMap>[
         {
           'type': 'tool-input-start',
-          'id': toolCall.id,
-          'toolName': toolCall.function.name,
+          'id': toolCall.toolCallId,
+          'toolName': toolCall.toolName,
         },
       ];
-      if (toolCall.function.arguments.isNotEmpty) {
+      if (toolCall.input.isNotEmpty) {
         state.toolInput.onDelta(toolCall);
         out.add({
           'type': 'tool-input-delta',
-          'id': toolCall.id,
-          'delta': toolCall.function.arguments,
+          'id': toolCall.toolCallId,
+          'delta': toolCall.input,
         });
       }
       return out;
 
     case LLMToolCallDeltaPart(:final toolCall):
-      if (state.toolInput.hasSeenToolInputPart(toolCall.id)) return const [];
+      if (state.toolInput.hasSeenToolInputPart(toolCall.toolCallId)) {
+        return const [];
+      }
       state.toolInput.onDelta(toolCall);
       return [
         {
           'type': 'tool-input-delta',
-          'id': toolCall.id,
-          'delta': toolCall.function.arguments,
+          'id': toolCall.toolCallId,
+          'delta': toolCall.input,
         },
       ];
 
@@ -982,8 +1053,6 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
           'toolName': state.toolInput.toolNameForToolCallId(result.toolCallId),
           'result': normalized,
           if (result.isError) 'isError': true,
-          if (result.metadata != null && result.metadata!.isNotEmpty)
-            'providerMetadata': {'tool': result.metadata},
         },
       ];
 
@@ -996,13 +1065,17 @@ List<V3JsonMap> _encodeV3Part(LLMStreamPart part, _V3EncodeState state) {
         isDynamic: final dynamicTool,
         providerMetadata: final pm,
       ):
+      // Internal semantics: providerExecuted defaults to true unless explicitly
+      // set to false.
+      final effectiveProviderExecuted =
+          (providerExecuted == false) ? false : true;
       return [
         {
           'type': 'tool-call',
           'toolCallId': id,
           'toolName': toolName,
           'input': _stringifyToolInput(input),
-          if (providerExecuted == true) 'providerExecuted': true,
+          if (effectiveProviderExecuted) 'providerExecuted': true,
           if (dynamicTool == true) 'dynamic': true,
           if (pm != null && pm.isNotEmpty) 'providerMetadata': pm,
         },
@@ -1309,7 +1382,7 @@ Object _encodeError(LLMError error) => {
     };
 
 String _stringifyToolInput(Object? input) {
-  if (input == null) return 'null';
+  if (input == null) return '{}';
   if (input is String) return input;
   try {
     return jsonEncode(input);
@@ -1422,15 +1495,14 @@ class _ToolInputState {
   final Map<String, bool> _providerExecutedById = {};
   final Set<String> _seenToolInputParts = {};
 
-  void onStart(ToolCall toolCall) {
-    _toolNameById[toolCall.id] = toolCall.function.name;
-    _argsById.putIfAbsent(toolCall.id, StringBuffer.new);
+  void onStart(V3ToolCall toolCall) {
+    _toolNameById[toolCall.toolCallId] = toolCall.toolName;
+    _argsById.putIfAbsent(toolCall.toolCallId, StringBuffer.new);
   }
 
-  void onDelta(ToolCall toolCall) {
-    _toolNameById[toolCall.id] = toolCall.function.name;
-    (_argsById[toolCall.id] ??= StringBuffer())
-        .write(toolCall.function.arguments);
+  void onDelta(V3ToolCall toolCall) {
+    _toolNameById[toolCall.toolCallId] = toolCall.toolName;
+    (_argsById[toolCall.toolCallId] ??= StringBuffer()).write(toolCall.input);
   }
 
   void onToolInputStart({

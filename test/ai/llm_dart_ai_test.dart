@@ -245,7 +245,7 @@ void main() {
       expect(result.text, 'hello');
       expect(result.thinking, 'thinking...');
       expect(result.toolCalls, isNotNull);
-      expect(result.toolCalls!.single.function.name, 't');
+      expect(result.toolCalls!.single.toolName, 't');
       expect(result.usage?.promptTokens, 1);
       expect(result.rawResponse, same(response));
       expect(result.providerMetadata, const {
@@ -321,11 +321,7 @@ void main() {
           const LLMTextDeltaPart('a'),
           const LLMReasoningDeltaPart('b'),
           LLMToolCallStartPart(
-            const ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(name: 't', arguments: '{}'),
-            ),
+            const V3ToolCall(toolCallId: 'call_1', toolName: 't', input: '{}'),
           ),
           LLMFinishPart(response),
         ],
@@ -360,7 +356,7 @@ void main() {
       final toolCallStarts = parts.whereType<LLMToolCallStartPart>().toList();
       expect(toolCallStarts, hasLength(1));
       final toolCallStart = toolCallStarts.single;
-      expect(toolCallStart.toolCall.function.name, 't');
+      expect(toolCallStart.toolCall.toolName, 't');
 
       final inputStartIndex =
           parts.indexWhere((p) => p is LLMToolInputStartPart);
@@ -425,13 +421,9 @@ void main() {
     });
 
     test('generateObject parses tool call arguments', () async {
-      const schema = ParametersSchema(
-        schemaType: 'object',
+      final schema = Schema.params(
         properties: {
-          'answer': ParameterProperty(
-            propertyType: 'string',
-            description: 'Answer text',
-          ),
+          'answer': Schema.string('Answer text'),
         },
         required: ['answer'],
       );
@@ -461,13 +453,9 @@ void main() {
     test(
         'generateObject(promptIr) rejects file reference parts without PromptChatCapability',
         () async {
-      const schema = ParametersSchema(
-        schemaType: 'object',
+      final schema = Schema.params(
         properties: {
-          'answer': ParameterProperty(
-            propertyType: 'string',
-            description: 'Answer text',
-          ),
+          'answer': Schema.string('Answer text'),
         },
         required: ['answer'],
       );
@@ -606,17 +594,10 @@ void main() {
           Tool.function(
             name: 'sum',
             description: 'sum a and b',
-            parameters: const ParametersSchema(
-              schemaType: 'object',
+            inputSchema: Schema.params(
               properties: {
-                'a': ParameterProperty(
-                  propertyType: 'number',
-                  description: 'a',
-                ),
-                'b': ParameterProperty(
-                  propertyType: 'number',
-                  description: 'b',
-                ),
+                'a': Schema.number('a'),
+                'b': Schema.number('b'),
               },
               required: ['a', 'b'],
             ),
@@ -680,7 +661,7 @@ void main() {
       final blocked = outcome as ToolLoopBlocked;
       expect(blocked.state.toolApprovalRequests, hasLength(1));
       expect(
-        blocked.state.toolApprovalRequests.single.toolCall.id,
+        blocked.state.toolApprovalRequests.single.toolCall.toolCallId,
         'call_1',
       );
       expect(blocked.state.toolApprovalRequests.single.approvalId, isNotEmpty);
@@ -728,7 +709,8 @@ void main() {
           predicate(
             (e) =>
                 e is ToolApprovalRequiredError &&
-                e.state.toolApprovalRequests.single.toolCall.id == 'call_1' &&
+                e.state.toolApprovalRequests.single.toolCall.toolCallId ==
+                    'call_1' &&
                 e.state.stepResult.content.any(
                   (p) => p is ToolApprovalRequestContentPart,
                 ),
@@ -983,15 +965,15 @@ void main() {
     });
 
     test('streamToolLoopParts runs tools and continues streaming', () async {
-      final toolCall1 = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: const FunctionCall(name: 'sum', arguments: '{"a":1,'),
+      const toolCall1 = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: 'sum',
+        input: '{"a":1,',
       );
-      final toolCall2 = ToolCall(
-        id: 'call_1',
-        callType: 'function',
-        function: const FunctionCall(name: '', arguments: '"b":2}'),
+      const toolCall2 = V3ToolCall(
+        toolCallId: 'call_1',
+        toolName: '',
+        input: '"b":2}',
       );
 
       final model = _SequencedStreamChatModel([
@@ -1055,7 +1037,7 @@ void main() {
 
       final model = _SequencedStreamChatModel([
         [
-          LLMToolCallStartPart(toolCall),
+          LLMToolCallStartPart(V3ToolCall.fromLegacyToolCall(toolCall)),
           const LLMFinishPart(_FakeChatResponse()),
         ],
       ]);
@@ -1084,7 +1066,7 @@ void main() {
 
       final blocked = blockedParts.single;
       expect(blocked.toolApprovalRequests, hasLength(1));
-      expect(blocked.toolApprovalRequests.single.toolCall.id, 'call_1');
+      expect(blocked.toolApprovalRequests.single.toolCall.toolCallId, 'call_1');
       expect(blocked.toolApprovalRequests.single.approvalId, isNotEmpty);
 
       final finish = parts.whereType<LLMFinishPart>().single;
@@ -1101,7 +1083,7 @@ void main() {
 
       final model = _SequencedStreamChatModel([
         [
-          LLMToolCallStartPart(toolCall),
+          LLMToolCallStartPart(V3ToolCall.fromLegacyToolCall(toolCall)),
           const LLMFinishPart(_FakeChatResponse()),
         ],
       ]);
@@ -1136,11 +1118,10 @@ void main() {
         functionTool(
           name: 'sum',
           description: 'sum a and b',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'a': ParameterProperty(propertyType: 'number', description: 'a'),
-              'b': ParameterProperty(propertyType: 'number', description: 'b'),
+              'a': Schema.number('a'),
+              'b': Schema.number('b'),
             },
             required: ['a', 'b'],
           ),
@@ -1178,11 +1159,10 @@ void main() {
         functionTool(
           name: 'sum',
           description: 'sum',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'a': ParameterProperty(propertyType: 'number', description: 'a'),
-              'b': ParameterProperty(propertyType: 'number', description: 'b'),
+              'a': Schema.number('a'),
+              'b': Schema.number('b'),
             },
             required: ['a', 'b'],
           ),

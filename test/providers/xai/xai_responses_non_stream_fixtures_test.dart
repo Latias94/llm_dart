@@ -96,9 +96,9 @@ void main() {
 
         final warnings =
             response is ChatResponseWithWarnings ? response.warnings : const [];
-        final meta = response.providerMetadata?['xai.responses'];
+        final meta = response.providerMetadata?['xai'];
         expect(meta, isNotNull);
-        expect(response.providerMetadata?['xai'], equals(meta));
+        expect(response.providerMetadata?.containsKey('xai.responses'), isFalse);
         expect(meta!['id'], equals(raw['id']));
         expect(meta['model'], equals(raw['model']));
         expect(meta['status'], equals(raw['status']));

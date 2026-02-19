@@ -74,17 +74,17 @@ void main() {
           const LLMTextStartPart(),
           const LLMTextDeltaPart('Need '),
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(name: 'get_weather', arguments: '{'),
+            const V3ToolCall(
+              toolCallId: 'call_1',
+              toolName: 'get_weather',
+              input: '{',
             ),
           ),
           LLMToolCallDeltaPart(
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(name: '', arguments: '"city":"SF"}'),
+            const V3ToolCall(
+              toolCallId: 'call_1',
+              toolName: '',
+              input: '"city":"SF"}',
             ),
           ),
           const LLMTextEndPart('Need '),
@@ -148,7 +148,7 @@ void main() {
 
       expect(
         parts.whereType<LLMToolCallStartPart>().where(
-              (p) => p.toolCall.id == 'call_1',
+              (p) => p.toolCall.toolCallId == 'call_1',
             ),
         hasLength(1),
       );
@@ -198,17 +198,17 @@ void main() {
       final model = _SequencedStreamChatModel([
         [
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(name: 'search_web', arguments: '{'),
+            const V3ToolCall(
+              toolCallId: 'call_1',
+              toolName: 'search_web',
+              input: '{',
             ),
           ),
           LLMToolCallDeltaPart(
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(name: '', arguments: '"q":"dart"}'),
+            const V3ToolCall(
+              toolCallId: 'call_1',
+              toolName: '',
+              input: '"q":"dart"}',
             ),
           ),
           const LLMToolCallEndPart('call_1'),
@@ -339,17 +339,17 @@ void main() {
       final model = _SequencedStreamChatModel([
         [
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(name: 'get_weather', arguments: '{'),
+            const V3ToolCall(
+              toolCallId: 'call_1',
+              toolName: 'get_weather',
+              input: '{',
             ),
           ),
           LLMToolCallDeltaPart(
-            ToolCall(
-              id: 'call_1',
-              callType: 'function',
-              function: FunctionCall(name: '', arguments: '"city":"SF"}'),
+            const V3ToolCall(
+              toolCallId: 'call_1',
+              toolName: '',
+              input: '"city":"SF"}',
             ),
           ),
           const LLMToolCallEndPart('call_1'),
@@ -383,13 +383,9 @@ void main() {
         functionTool(
           name: 'get_weather',
           description: 'Get weather',
-          parameters: const ParametersSchema(
-            schemaType: 'object',
+          inputSchema: Schema.params(
             properties: {
-              'city': ParameterProperty(
-                propertyType: 'string',
-                description: 'City name',
-              ),
+              'city': Schema.string('City name'),
             },
             required: ['city'],
           ),
@@ -413,21 +409,14 @@ void main() {
     });
 
     Tool getWeatherToolDefinition() {
-      return Tool(
-        toolType: 'function',
-        function: FunctionTool(
-          name: 'get_weather',
-          description: 'Get weather for a city',
-          parameters: ParametersSchema(
-            schemaType: 'object',
-            properties: const {
-              'city': ParameterProperty(
-                propertyType: 'string',
-                description: 'City name',
-              ),
-            },
-            required: const ['city'],
-          ),
+      return Tool.function(
+        name: 'get_weather',
+        description: 'Get weather for a city',
+        inputSchema: Schema.params(
+          properties: {
+            'city': Schema.string('City name'),
+          },
+          required: ['city'],
         ),
       );
     }
@@ -439,10 +428,10 @@ void main() {
       final model = _SequencedStreamChatModel([
         [
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_bad_json',
-              callType: 'function',
-              function: FunctionCall(name: 'get_weather', arguments: '{'),
+            const V3ToolCall(
+              toolCallId: 'call_bad_json',
+              toolName: 'get_weather',
+              input: '{',
             ),
           ),
           const LLMToolCallEndPart('call_bad_json'),
@@ -501,10 +490,10 @@ void main() {
       final model = _SequencedStreamChatModel([
         [
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_bad_json',
-              callType: 'function',
-              function: FunctionCall(name: 'get_weather', arguments: '{'),
+            const V3ToolCall(
+              toolCallId: 'call_bad_json',
+              toolName: 'get_weather',
+              input: '{',
             ),
           ),
           const LLMToolCallEndPart('call_bad_json'),
@@ -544,7 +533,7 @@ void main() {
             {required reason, errorMessage, validationErrors}) {
           repairCalls++;
           lastReason = reason;
-          lastInput = toolCall.function.arguments;
+          lastInput = toolCall.input;
           return '{"city":"SF"}';
         },
         maxSteps: 3,
@@ -571,10 +560,10 @@ void main() {
       final model = _SequencedStreamChatModel([
         [
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_bad_json',
-              callType: 'function',
-              function: FunctionCall(name: 'get_weather', arguments: '{'),
+            const V3ToolCall(
+              toolCallId: 'call_bad_json',
+              toolName: 'get_weather',
+              input: '{',
             ),
           ),
           const LLMToolCallEndPart('call_bad_json'),
@@ -632,10 +621,7 @@ void main() {
 
       final v3 = encodeV3StreamParts(parts);
       final toolResultV3 = v3.where((o) => o['type'] == 'tool-result').single;
-      final providerMetadata = toolResultV3['providerMetadata'] as Map?;
-      final toolMetadata = providerMetadata?['tool'] as Map?;
-      expect(toolMetadata?['kind'], equals('invalid_tool_call'));
-      expect(toolMetadata?['repairAttempted'], isTrue);
+      expect(toolResultV3.containsKey('providerMetadata'), isFalse);
     });
 
     test('skips execution and emits error tool result for schema mismatch',
@@ -645,11 +631,10 @@ void main() {
       final model = _SequencedStreamChatModel([
         [
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_schema',
-              callType: 'function',
-              function:
-                  FunctionCall(name: 'get_weather', arguments: '{"city":123}'),
+            const V3ToolCall(
+              toolCallId: 'call_schema',
+              toolName: 'get_weather',
+              input: '{"city":123}',
             ),
           ),
           const LLMToolCallEndPart('call_schema'),
@@ -709,11 +694,10 @@ void main() {
       final model = _SequencedStreamChatModel([
         [
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_schema',
-              callType: 'function',
-              function:
-                  FunctionCall(name: 'get_weather', arguments: '{"city":123}'),
+            const V3ToolCall(
+              toolCallId: 'call_schema',
+              toolName: 'get_weather',
+              input: '{"city":123}',
             ),
           ),
           const LLMToolCallEndPart('call_schema'),
@@ -784,11 +768,10 @@ void main() {
       final model = _SequencedStreamChatModel([
         [
           LLMToolCallStartPart(
-            ToolCall(
-              id: 'call_unknown',
-              callType: 'function',
-              function:
-                  FunctionCall(name: 'get_weather', arguments: '{"city":"SF"}'),
+            const V3ToolCall(
+              toolCallId: 'call_unknown',
+              toolName: 'get_weather',
+              input: '{"city":"SF"}',
             ),
           ),
           const LLMToolCallEndPart('call_unknown'),

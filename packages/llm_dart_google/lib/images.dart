@@ -55,17 +55,7 @@ class GoogleImages
       'endpoint': endpoint,
     };
     final baseKey = _config.providerOptionsName;
-    final metadata = <String, dynamic>{
-      baseKey: payload,
-      '$baseKey.image': payload,
-    };
-
-    // AI SDK default provider name for Google Generative AI (Gemini API only).
-    if (baseKey == 'google') {
-      metadata['google.generative-ai'] = payload;
-    }
-
-    return metadata;
+    return <String, dynamic>{baseKey: payload};
   }
 
   @override

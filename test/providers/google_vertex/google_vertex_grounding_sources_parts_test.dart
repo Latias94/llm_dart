@@ -77,7 +77,7 @@ void main() {
       final meta = finish.response.providerMetadata;
       expect(meta, isNotNull);
       expect(meta!.containsKey('vertex'), isTrue);
-      expect(meta.containsKey('vertex.chat'), isTrue);
+      expect(meta.containsKey('vertex.chat'), isFalse);
       expect(meta.containsKey('google-vertex'), isFalse);
       expect(meta.containsKey('google'), isFalse);
     });

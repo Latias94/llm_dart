@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('Schema builders', () {
-    test('builds ParametersSchema JSON', () {
+    test('builds JSON Schema', () {
       final schema = Schema.params(
         properties: {
           'location': Schema.string('City name'),
@@ -25,7 +25,7 @@ void main() {
         required: const ['location'],
       );
 
-      expect(schema.toJson(), {
+      expect(schema, {
         'type': 'object',
         'properties': {
           'location': {'type': 'string', 'description': 'City name'},
@@ -87,8 +87,8 @@ void main() {
           schema,
         ),
         containsAll([
-          'Missing required parameter: location',
-          'Parameter units must be one of [c, f], got x',
+          'Object \$ missing required property: location',
+          'Value \$.units must be one of [c, f], got x',
         ]),
       );
     });
