@@ -1,6 +1,10 @@
 import 'dart:async';
 
+import 'package:llm_dart_core/llm_dart_core.dart';
+
+import 'handle_ui_message_stream_finish.dart';
 import 'ui_message_stream_writer.dart';
+import 'ui_messages.dart';
 
 /// Creates a UI message stream (chunk stream) that can be consumed by a UI client.
 ///
@@ -12,13 +16,26 @@ import 'ui_message_stream_writer.dart';
 /// - Use `uiMessageSseFromChunks(...)` to encode it as SSE (`data: ...\n\n`).
 /// - The [writer] can be captured and used after [execute] returns; the stream
 ///   stays open until all merged streams complete.
+/// - The returned stream is wrapped by [handleUiMessageStreamFinish] to support
+///   persistence (message id injection) and finish callbacks.
 Stream<Map<String, Object?>> createUiMessageStream({
   required FutureOr<void> Function(UIMessageStreamWriter writer) execute,
   String Function(Object error)? onError,
+  List<UIMessage>? originalMessages,
+  UiMessageStreamOnStepFinishCallback? onStepFinish,
+  UiMessageStreamOnFinishCallback? onFinish,
+  IdGenerator? generateId,
 }) {
   final controller = StreamController<Map<String, Object?>>(sync: true);
   final ongoing = <Future<void>>[];
   final effectiveOnError = onError ?? (Object e) => e.toString();
+  final finishMessageId = (generateId ?? fallbackUiMessageId)();
+
+  void notifyError(Object error) {
+    // Mirror AI SDK behavior: callers often provide a mapping function that
+    // returns an error string. We call it for consistency and ignore the return.
+    effectiveOnError(error);
+  }
 
   void safeAdd(Map<String, Object?> chunk) {
     if (controller.isClosed) return;
@@ -82,7 +99,14 @@ Stream<Map<String, Object?>> createUiMessageStream({
   scheduleMicrotask(startExecute);
   scheduleMicrotask(waitForMergedStreamsAndClose);
 
-  return controller.stream;
+  return handleUiMessageStreamFinish(
+    chunks: controller.stream,
+    messageId: finishMessageId,
+    originalMessages: originalMessages ?? const <UIMessage>[],
+    onStepFinish: onStepFinish,
+    onFinish: onFinish,
+    onError: notifyError,
+  );
 }
 
 class _Writer implements UIMessageStreamWriter {

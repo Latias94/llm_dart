@@ -8,9 +8,9 @@ void main() {
     test('writes chunks in order', () async {
       final stream = createUiMessageStream(
         execute: (writer) {
-          writer.write(const {'type': 'start'});
+          writer.write(const {'type': 'text-start', 'id': 't1'});
           writer.write(const {'type': 'text-delta', 'id': 't1', 'delta': 'Hi'});
-          writer.write(const {'type': 'finish'});
+          writer.write(const {'type': 'text-end', 'id': 't1'});
         },
       );
 
@@ -18,9 +18,9 @@ void main() {
       expect(
         chunks,
         equals(const [
-          {'type': 'start'},
+          {'type': 'text-start', 'id': 't1'},
           {'type': 'text-delta', 'id': 't1', 'delta': 'Hi'},
-          {'type': 'finish'},
+          {'type': 'text-end', 'id': 't1'},
         ]),
       );
     });
@@ -35,7 +35,7 @@ void main() {
           if (!capturedCompleter.isCompleted) {
             capturedCompleter.complete(writer);
           }
-          writer.write(const {'type': 'start'});
+          writer.write(const {'type': 'text-start', 'id': 't1'});
           await done.future;
         },
       );
@@ -48,6 +48,7 @@ void main() {
 
       controller.add(const {'type': 'text-delta', 'id': 't1', 'delta': 'A'});
       controller.add(const {'type': 'text-delta', 'id': 't1', 'delta': 'B'});
+      controller.add(const {'type': 'text-end', 'id': 't1'});
       await controller.close();
       done.complete();
 
@@ -55,9 +56,10 @@ void main() {
       expect(
         chunks,
         equals(const [
-          {'type': 'start'},
+          {'type': 'text-start', 'id': 't1'},
           {'type': 'text-delta', 'id': 't1', 'delta': 'A'},
           {'type': 'text-delta', 'id': 't1', 'delta': 'B'},
+          {'type': 'text-end', 'id': 't1'},
         ]),
       );
     });
@@ -103,6 +105,30 @@ void main() {
         chunks.single,
         equals(const {'type': 'error', 'errorText': 'P:boom'}),
       );
+    });
+
+    test('injects messageId into start chunk and calls onFinish', () async {
+      UiMessageStreamFinishEvent? finishEvent;
+
+      final stream = createUiMessageStream(
+        generateId: () => 'msg_fixed',
+        onFinish: (event) => finishEvent = event,
+        execute: (writer) {
+          writer.write(const {'type': 'start'});
+          writer.write(const {'type': 'finish', 'finishReason': 'stop'});
+        },
+      );
+
+      final chunks = await stream.toList();
+      expect(chunks, hasLength(2));
+      expect(chunks.first['type'], equals('start'));
+      expect(chunks.first['messageId'], equals('msg_fixed'));
+
+      expect(finishEvent, isNotNull);
+      expect(finishEvent!.isAborted, isFalse);
+      expect(finishEvent!.isContinuation, isFalse);
+      expect(finishEvent!.responseMessage.id, equals('msg_fixed'));
+      expect(finishEvent!.finishReason, equals('stop'));
     });
   });
 }
