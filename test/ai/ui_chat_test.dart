@@ -362,6 +362,53 @@ void main() {
       expect(finish!.isAbort, isTrue);
     });
 
+    test('stop cancels even when transport ignores cancelToken', () async {
+      var nextId = 0;
+      String idGen() => 'id_${nextId++}';
+
+      final controller = StreamController<Map<String, Object?>>(sync: true);
+      final transport = _StreamTransport(stream: controller.stream);
+
+      UiChatFinishEvent? finish;
+      final chat = UiChat(
+        init: UiChatInit(
+          id: 'chat_1',
+          generateId: idGen,
+          transport: transport,
+          onFinish: (evt) => finish = evt,
+        ),
+      );
+
+      final task = chat.sendMessage('Hi');
+
+      // Ensure request started (submitted/streaming) before stopping.
+      var started = false;
+      for (var i = 0; i < 50; i++) {
+        if (chat.status == UiChatStatus.submitted ||
+            chat.status == UiChatStatus.streaming) {
+          started = true;
+          break;
+        }
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(started, isTrue);
+
+      await chat.stop('User cancelled');
+
+      // Keep emitting chunks: they should be ignored after cancellation.
+      controller.add(const {'type': 'start'});
+      controller.add(const {'type': 'text-start', 'id': 't1'});
+      controller.add(const {'type': 'text-delta', 'id': 't1', 'delta': 'A'});
+      await controller.close();
+
+      await task;
+
+      expect(chat.status, equals(UiChatStatus.ready));
+      expect(finish, isNotNull);
+      expect(finish!.isAbort, isTrue);
+      expect(finish!.isError, isFalse);
+    });
+
     test('addToolOutput can trigger sendAutomaticallyWhen', () async {
       var nextId = 0;
       String idGen() => 'id_${nextId++}';

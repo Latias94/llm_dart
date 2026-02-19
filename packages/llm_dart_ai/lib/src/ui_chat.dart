@@ -508,6 +508,60 @@ class UiChat {
     return false;
   }
 
+  static Stream<Map<String, Object?>> _cancelOnToken(
+    Stream<Map<String, Object?>> input,
+    core.CancelToken token,
+  ) {
+    if (token.isCancelled) {
+      return Stream<Map<String, Object?>>.error(
+        core.CancelledError(token.reason?.toString() ?? 'Cancelled'),
+      );
+    }
+
+    late final StreamSubscription<Map<String, Object?>> sub;
+    late final void Function() disposeListener;
+    final controller = StreamController<Map<String, Object?>>(sync: true);
+
+    void cancel() {
+      if (controller.isClosed) return;
+      controller.addError(
+        core.CancelledError(token.reason?.toString() ?? 'Cancelled'),
+      );
+      controller.close();
+      // Cancelling an async* subscription can complete with an error if the
+      // generator throws during teardown. Swallow those errors to avoid
+      // surfacing cancellation as an unhandled error.
+      unawaited(sub.cancel().catchError((_) {}));
+      disposeListener();
+    }
+
+    disposeListener = token.addListener((_) => cancel());
+
+    sub = input.listen(
+      controller.add,
+      onError: (e, st) {
+        if (controller.isClosed) return;
+        controller.addError(e, st);
+      },
+      onDone: () {
+        disposeListener();
+        if (!controller.isClosed) controller.close();
+      },
+      cancelOnError: false,
+    );
+
+    controller.onCancel = () async {
+      disposeListener();
+      try {
+        await sub.cancel();
+      } catch (_) {
+        // Ignore cancellation errors from underlying streams.
+      }
+    };
+
+    return controller.stream;
+  }
+
   Future<void> _makeRequest({
     required String trigger,
     String? messageId,
@@ -612,7 +666,7 @@ class UiChat {
 
       if (stream == null) return;
 
-      await for (final chunk in stream) {
+      await for (final chunk in _cancelOnToken(stream, cancelToken)) {
         final type = chunk['type'];
         if (type is! String || type.isEmpty) continue;
 
