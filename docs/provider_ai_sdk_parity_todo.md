@@ -11,7 +11,7 @@ This tracker compares `llm_dart` providers against Vercel AI SDK semantics
 - Typed `finishReason` + `usage` on `LLMFinishPart`
 - Typed citations/sources (`LLMSourceUrlPart` / `LLMSourceDocumentPart`)
 - Provider-executed tools as typed parts (never local `toolCalls`)
-- Provider metadata namespacing + alias equivalence conformance
+- Provider metadata namespacing (canonical key only)
 
 Notes:
 
@@ -25,7 +25,7 @@ Notes:
 
 - Provider-executed tools never become local `ChatResponse.toolCalls`.
 - `LLMStreamPart` is the primary stream representation; legacy streaming is adapter-only.
-- If a provider emits metadata aliases, alias payloads deep-equal the canonical payload.
+- Providers emit canonical `providerMetadata` keys only.
 
 ---
 
@@ -36,7 +36,6 @@ Notes:
 - [x] Responses streaming emits typed source parts (URL + document citations)
 - [x] Responses streaming emits provider tools as typed parts
 - [x] Finish part includes typed `usage` + `finishReason`
-- [x] providerMetadata alias equivalence (`openai.responses` mirrors `openai`)
 - [x] Prompt IR file reference parts (Responses request compilation)
   - `FileUrlPart` (PDF) and `FileIdPart` (PDF/image) are compiled to Responses inputs.
 
@@ -64,14 +63,12 @@ Notes:
 - [x] Grounding sources emitted as typed source parts
 - [x] Code execution emitted as provider tool typed parts
 - [x] Finish part includes typed `usage` + `finishReason`
-- [x] providerMetadata alias equivalence (`google.chat` mirrors `google`)
 
 ### Google Vertex (express mode) (`llm_dart_google_vertex`)
 
 - [x] Request-side `providerOptions` are scoped under `providerOptions['vertex']` (legacy: `google-vertex`, `google`)
 - [x] Prompt IR file URL strict mode is namespaced (`supportedFileUrlsOnly`)
 - [x] Response metadata is emitted under `providerMetadata['vertex']`
-- [x] providerMetadata alias equivalence (`vertex.chat` mirrors `vertex`)
 - [x] Source parts conformance (should match Google grounding)
 
 ### xAI (`llm_dart_xai`)
@@ -100,7 +97,4 @@ Notes:
 
 ## Migration notes
 
-- Google Vertex metadata key:
-  - canonical: `providerMetadata['vertex']`
-  - alias: `providerMetadata['vertex.chat']`
-  - see `docs/migrations/0.12.0-alpha.1.md`
+- Google Vertex metadata key: `providerMetadata['vertex']`

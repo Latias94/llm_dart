@@ -134,7 +134,7 @@ Legend:
   - Finish reason mapping recognizes `pause_turn`, `refusal`, and `model_context_window_exceeded`.
 - 2026-02-09: Google Vertex (express mode) providerOptions scoping aligns with AI SDK conventions:
   - Request-side `providerOptions` are read from the provider id (`vertex`) with legacy fallbacks (`google-vertex`, `google`).
-  - Response metadata is emitted under `vertex` / `vertex.chat`.
+  - Response metadata is emitted under `vertex`.
   - Prompt IR assistant `thoughtSignature` works when provided under `providerOptions['vertex']` (and legacy keys).
 - 2026-02-09: Ollama prompt-native compilation now preserves multi-part user messages:
   - Prompt IR groups text + images into a single `/api/chat` message with `images` array.

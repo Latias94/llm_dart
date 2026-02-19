@@ -14,7 +14,7 @@ Provider-agnostic usage should prefer `llm_dart_ai` task APIs. Azure-only knobs
 live behind:
 
 - `providerOptions['azure']`
-- `providerMetadata['azure']` (canonical) + capability aliases (`azure.chat`, `azure.responses`)
+- `providerMetadata['azure']`
 
 ## Packages
 
@@ -124,14 +124,6 @@ Future<void> main() async {
 For Azure, the canonical namespace key is:
 
 - `providerMetadata['azure']`
-
-For Vercel AI SDK parity, LLM Dart also emits capability aliases:
-
-- `providerMetadata['azure.chat']` (Chat Completions)
-- `providerMetadata['azure.responses']` (Responses API)
-
-The alias payload is deep-equal to `providerMetadata['azure']`.
-Downstream code should prefer reading the canonical `azure` key.
 
 Recommended access pattern (canonical + alias-safe):
 

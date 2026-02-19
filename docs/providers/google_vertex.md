@@ -99,7 +99,6 @@ Future<void> main() async {
 Vertex metadata follows Vercel AI SDK conventions:
 
 - `providerMetadata['vertex']` (canonical)
-- `providerMetadata['vertex.chat']` (alias; mirrors `vertex`)
 
 Recommended access pattern (canonical + alias-safe):
 

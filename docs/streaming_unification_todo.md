@@ -60,7 +60,7 @@ Optional but valuable (for multi-block providers):
   - Today we sometimes expose both a base key (e.g. `openai`) and capability aliases
     (e.g. `openai.chat`, `openai.responses`).
   - During the refactor, prefer a **single canonical key** per provider (e.g. `openai`,
-    `azure`, `xai.responses`), and migrate callers to that.
+    `azure`, `xai`), and migrate callers to that.
 - Make `finishReason` a real, typed value:
   - Stop forcing consumers to decode finish semantics from ad-hoc provider metadata.
   - Keep raw provider reason as an escape hatch.
@@ -177,7 +177,7 @@ Acceptance criteria:
 - [x] Expand chunk-fuzz coverage to the new part types
 - [x] Add a global "no drift" guard: legacy stream event surfaces must not exist
 - [x] Azure: add request mapping tests for `/responses` + `api-version` (v1 + deployment URL modes)
-- [x] providerMetadata alias equivalence conformance tests (canonical equals aliases)
+- [x] providerMetadata canonicalization conformance tests (canonical key only)
 
 ### M5 - Documentation + migration guide
 
@@ -230,7 +230,7 @@ Goal: for each provider, confirm we match the Vercel AI SDK behavior for:
 
 Status notes (dev-remote, best-effort):
 
-- OpenAI + Azure (Responses): covered by fixtures + provider-tool alias tests; Azure `/responses` request mapping includes `api-version`.
+- OpenAI + Azure (Responses): covered by fixtures + canonical providerMetadata tests; Azure `/responses` request mapping includes `api-version`.
 - OpenAI-compatible (Chat/Responses): has streaming usage tail + `[DONE]` conformance tests.
 - Google + Google Vertex: covered by SSE fixtures, streaming endpoint/auth tests, grounding source parts, code execution provider tool parts.
 - Anthropic (+ compatible): covered by fixtures, citations source parts, web tools/provider tool parts, fuzz tests.

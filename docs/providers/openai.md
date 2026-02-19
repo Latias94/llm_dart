@@ -8,7 +8,7 @@ OpenAI-specific functionality is accessed via:
 
 - `providerOptions['openai']`
 - `providerTools` (provider-executed tools)
-- `providerMetadata['openai']` (canonical) + capability aliases (`openai.chat`, `openai.responses`)
+- `providerMetadata['openai']`
 
 ## Packages
 
@@ -195,14 +195,6 @@ Common OpenAI keys (non-exhaustive):
 For OpenAI, the canonical namespace key is:
 
 - `providerMetadata['openai']`
-
-For Vercel AI SDK parity, LLM Dart also emits capability aliases:
-
-- `providerMetadata['openai.chat']` (Chat Completions)
-- `providerMetadata['openai.responses']` (Responses API)
-
-The alias payload is deep-equal to `providerMetadata['openai']`.
-Downstream code should prefer reading the canonical `openai` key.
 
 Recommended access pattern (canonical + alias-safe):
 

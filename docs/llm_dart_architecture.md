@@ -503,7 +503,7 @@ typedef ProviderMetadata = Map<String, Map<String, Object?>>;
 Examples:
 
 - `readProviderMetadata<Map<String, dynamic>>(providerMetadata, 'anthropic')?['cacheReadTokens'] = ...`
-- `readProviderMetadata<Map<String, dynamic>>(providerMetadata, 'openai.chat')?['id'] = ...`
+- `readProviderMetadata<Map<String, dynamic>>(providerMetadata, 'openai')?['id'] = ...`
 - `readProviderMetadata<Map<String, dynamic>>(providerMetadata, 'openai')?['webSearchCalls'] = ...` (OpenAI Responses built-in web search)
 
 ### 5.3 Provider tools (not only function tools)

@@ -7,14 +7,13 @@ fields that are intentionally not part of the standardized surface.
 
 Today the repository follows an AI SDK–inspired namespacing convention:
 
-- Always emit a base namespace key equal to the **base provider id**
-  (the prefix before the first `.` in `providerId`; e.g. `openai` for
-  `openai.chat` and `openai.responses`).
-- Additionally emit one or more capability aliases (e.g. `openai.chat`,
-  `openai.responses`). In many cases, the capability key matches the provider
-  instance `providerId`.
+- Emit a base namespace key equal to the **base provider id** (the prefix
+  before the first `.` in `providerId`; e.g. `openai` for `openai.chat` and
+  `openai.responses`).
 
-This helped with early Vercel AI SDK fixture parity and protocol reuse.
+Historically, some providers also emitted capability aliases (e.g.
+`openai.chat`, `openai.responses`, `google.generative-ai`). This helped early
+fixture parity, but increases drift and maintenance cost.
 
 ## Problem
 
@@ -52,6 +51,8 @@ This prefers the base provider id when present (e.g. `openai` for
 `openai.chat` / `openai.responses`) and falls back to `providerId` (and
 single-entry maps) when needed.
 
+Providers should **emit the canonical key only** by default.
+
 Examples:
 
 - OpenAI (Responses, providerId `openai`): canonical key is `openai`
@@ -67,27 +68,10 @@ Historical note (Vertex):
   Vertex express mode. This has been aligned to `providerMetadata['vertex']`
   for AI SDK v6 parity, with `google-vertex` kept as a legacy input alias.
 
-### 2) Alias policy
+### 2) Legacy aliases
 
-- Existing aliases remain during a migration window.
-- We stop adding new aliases by default.
-- If a new alias is introduced for fixture parity, it must:
-  - be explicitly justified, and
-  - be covered by conformance tests that assert exact payload equivalence.
-
-### 3) Payload equivalence rule (while aliases exist)
-
-If both canonical and alias keys are emitted for a given response, the alias
-payload must be identical to the canonical payload (deep-equal JSON shape).
-
-### 4) Deprecation path
-
-- Short term (current fearless refactor): keep emitting existing aliases, but
-  treat them as **compatibility only**.
-- Next alpha (target): deprecate alias keys in docs and recommend consuming the
-  canonical key only.
-- Removal window: remove aliases in a future pre-release once downstream has a
-  migration guide and tests have proven parity.
+`readProviderMetadata` supports legacy alias keys if they appear in recorded
+fixtures, but providers should not emit them going forward.
 
 ## Consequences
 
@@ -106,15 +90,10 @@ Negative:
 
 1) Update docs:
    - `docs/provider_metadata.md` should recommend the canonical key only and
-     document the alias deprecation window.
+     recommend using `readProviderMetadata(...)` for namespaced provider ids.
 2) Add conformance tests:
-   - Assert `providerMetadata` always contains the canonical key for supported
-     providers.
-   - Assert alias payloads (when present) deep-equal the canonical payload.
-3) Gradually stop emitting aliases:
-   - First in new features/providers.
-   - Later remove existing aliases in a dedicated breaking pre-release with a
-     migration guide.
+   - Assert `providerMetadata` contains the canonical key and does not contain
+     capability aliases by default.
 
 ## Open questions
 

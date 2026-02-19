@@ -12,8 +12,7 @@ This document defines what “parity” means for ElevenLabs in this repo.
 
 - Keep request/response mapping consistent with the Vercel AI SDK ElevenLabs
   provider semantics (field names, defaults, and provider option shapes).
-- Keep provider metadata stable and namespaced under `elevenlabs` with
-  capability aliases (e.g. `elevenlabs.speech`, `elevenlabs.transcription`).
+- Keep provider metadata stable and namespaced under `elevenlabs`.
 - Provide **fixture-driven contract tests** so refactors stay fearless even for
   non-chat surfaces.
 
@@ -37,7 +36,7 @@ Contract invariants:
   - `model_id` (defaults from config)
   - `voice_settings` only when non-empty (merged from config defaults + request overrides)
   - Optional request fields: `language_code`, `seed`, context fields, etc.
-- `TTSResponse.providerMetadata` contains `elevenlabs` and `elevenlabs.speech`.
+- `TTSResponse.providerMetadata` contains `elevenlabs`.
 
 ### Speech-to-text (STT)
 
@@ -46,7 +45,7 @@ Contract invariants:
 - Uses `POST /v1/speech-to-text` as multipart form-data.
 - Form fields include `model_id` and `file`, plus optional knobs when provided
   (`language_code`, `diarize`, `num_speakers`, etc).
-- `STTResponse.providerMetadata` contains `elevenlabs` and `elevenlabs.transcription`.
+- `STTResponse.providerMetadata` contains `elevenlabs`.
 
 ### Voices
 
@@ -68,4 +67,3 @@ And a single fixture-driven contract test:
 
 These fixtures are intentionally small and focused (do not store real audio,
 only tiny byte samples).
-
