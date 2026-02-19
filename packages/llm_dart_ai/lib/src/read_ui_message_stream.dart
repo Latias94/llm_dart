@@ -665,12 +665,24 @@ Stream<UIMessage> readUiMessageStream({
 
   late final StreamSubscription<Map<String, Object?>> sub;
   final controller = StreamController<UIMessage>(sync: true);
+  var hasTerminated = false;
 
   void handle(Object error) {
     onError?.call(error);
-    if (terminateOnError && !controller.isClosed) {
+
+    if (!terminateOnError || hasTerminated) return;
+    hasTerminated = true;
+
+    if (!controller.isClosed) {
       controller.addError(error);
-      sub.cancel();
+    }
+
+    // Best-effort: stop consuming further chunks.
+    sub.cancel();
+
+    // Unlike web streams, a Dart stream does not enter a terminal error state
+    // automatically. We close explicitly so consumers do not hang.
+    if (!controller.isClosed) {
       controller.close();
     }
   }
@@ -693,7 +705,9 @@ Stream<UIMessage> readUiMessageStream({
     },
     onError: (e) => handle(e),
     onDone: () async {
-      await controller.close();
+      if (!controller.isClosed) {
+        await controller.close();
+      }
     },
     cancelOnError: false,
   );
