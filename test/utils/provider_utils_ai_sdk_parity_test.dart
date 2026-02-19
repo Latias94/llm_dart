@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
@@ -34,6 +35,91 @@ void main() {
       expect(isAbortError(const CancelledError('cancel')), isTrue);
       expect(isAbortError(const TimeoutError('timeout')), isTrue);
       expect(isAbortError(const GenericError('no')), isFalse);
+    });
+
+    test('isUrlSupported matches media type prefixes and wildcard', () {
+      final supportedUrls = <String, List<RegExp>>{
+        'image/*': [RegExp(r'^https://example\.com/')],
+        '*': [RegExp(r'^https://wild\.com/')],
+      };
+
+      expect(
+        isUrlSupported(
+          mediaType: 'image/png',
+          url: 'HTTPS://EXAMPLE.COM/A.PNG',
+          supportedUrls: supportedUrls,
+        ),
+        isTrue,
+      );
+
+      expect(
+        isUrlSupported(
+          mediaType: 'text/plain',
+          url: 'https://wild.com/x',
+          supportedUrls: supportedUrls,
+        ),
+        isTrue,
+      );
+
+      expect(
+        isUrlSupported(
+          mediaType: 'text/plain',
+          url: 'https://example.com/x',
+          supportedUrls: supportedUrls,
+        ),
+        isFalse,
+      );
+    });
+
+    test('readResponseWithSizeLimit returns bytes within limit', () async {
+      final out = await readResponseWithSizeLimit(
+        body: Stream<List<int>>.fromIterable([
+          <int>[1, 2],
+          <int>[3],
+        ]),
+        url: Uri.parse('https://example.com/file'),
+        maxBytes: 3,
+      );
+
+      expect(out, equals(Uint8List.fromList([1, 2, 3])));
+    });
+
+    test('readResponseWithSizeLimit early rejects by contentLength', () async {
+      Future<void> run() async {
+        await readResponseWithSizeLimit(
+          body: const Stream<List<int>>.empty(),
+          url: Uri.parse('https://example.com/file'),
+          maxBytes: 2,
+          contentLength: 3,
+        );
+      }
+
+      await expectLater(
+        run,
+        throwsA(
+          isA<DownloadError>().having(
+            (e) => e.url.toString(),
+            'url',
+            'https://example.com/file',
+          ),
+        ),
+      );
+    });
+
+    test('readResponseWithSizeLimit rejects when stream exceeds limit',
+        () async {
+      Future<void> run() async {
+        await readResponseWithSizeLimit(
+          body: Stream<List<int>>.fromIterable([
+            <int>[1, 2],
+            <int>[3],
+          ]),
+          url: Uri.parse('https://example.com/file'),
+          maxBytes: 2,
+        );
+      }
+
+      await expectLater(run, throwsA(isA<DownloadError>()));
     });
 
     test('parseProviderOptions returns null when namespace absent', () async {
