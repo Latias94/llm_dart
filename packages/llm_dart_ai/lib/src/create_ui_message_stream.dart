@@ -18,6 +18,7 @@ Stream<Map<String, Object?>> createUiMessageStream({
 }) {
   final controller = StreamController<Map<String, Object?>>(sync: true);
   final ongoing = <Future<void>>[];
+  final effectiveOnError = onError ?? (Object e) => e.toString();
 
   void safeAdd(Map<String, Object?> chunk) {
     if (controller.isClosed) return;
@@ -30,7 +31,7 @@ Stream<Map<String, Object?>> createUiMessageStream({
 
   Map<String, Object?> errorChunk(Object error) => <String, Object?>{
         'type': 'error',
-        'errorText': onError != null ? onError(error) : error.toString(),
+        'errorText': effectiveOnError(error),
       };
 
   final writer = _Writer(
@@ -47,6 +48,7 @@ Stream<Map<String, Object?>> createUiMessageStream({
       }();
       ongoing.add(task);
     },
+    onError: effectiveOnError,
   );
 
   void startExecute() {
@@ -86,16 +88,22 @@ Stream<Map<String, Object?>> createUiMessageStream({
 class _Writer implements UIMessageStreamWriter {
   final void Function(Map<String, Object?> chunk) _write;
   final void Function(Stream<Map<String, Object?>> stream) _merge;
+  final String Function(Object error) _onError;
 
   const _Writer({
     required void Function(Map<String, Object?> chunk) write,
     required void Function(Stream<Map<String, Object?>> stream) merge,
+    required String Function(Object error) onError,
   })  : _write = write,
-        _merge = merge;
+        _merge = merge,
+        _onError = onError;
 
   @override
   void write(Map<String, Object?> chunk) => _write(chunk);
 
   @override
   void merge(Stream<Map<String, Object?>> stream) => _merge(stream);
+
+  @override
+  String Function(Object error) get onError => _onError;
 }

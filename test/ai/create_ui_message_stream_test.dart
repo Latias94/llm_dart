@@ -79,5 +79,30 @@ void main() {
         equals(const {'type': 'error', 'errorText': 'ERR:boom'}),
       );
     });
+
+    test('exposes writer.onError for nested streams', () async {
+      final stream = createUiMessageStream(
+        onError: (e) => 'P:${e is StateError ? e.message : e.toString()}',
+        execute: (writer) {
+          final child = createUiMessageStream(
+            onError: writer.onError,
+            execute: (childWriter) {
+              childWriter.merge(
+                Stream<Map<String, Object?>>.error(StateError('boom')),
+              );
+            },
+          );
+
+          writer.merge(child);
+        },
+      );
+
+      final chunks = await stream.toList();
+      expect(chunks, hasLength(1));
+      expect(
+        chunks.single,
+        equals(const {'type': 'error', 'errorText': 'P:boom'}),
+      );
+    });
   });
 }

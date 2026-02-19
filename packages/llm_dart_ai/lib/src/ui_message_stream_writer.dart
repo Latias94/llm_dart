@@ -11,4 +11,11 @@ abstract class UIMessageStreamWriter {
 
   /// Merges another UI message chunk stream into the output stream.
   void merge(Stream<Map<String, Object?>> stream);
+
+  /// Error-to-text mapper used by the writer when converting stream errors into
+  /// `{ "type": "error", "errorText": ... }` chunks.
+  ///
+  /// This is intended for forwarding when composing/merging nested UI message
+  /// streams, to keep error masking consistent and avoid duplicated conversions.
+  String Function(Object error)? get onError => null;
 }
