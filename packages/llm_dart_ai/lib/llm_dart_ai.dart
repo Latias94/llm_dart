@@ -32,6 +32,7 @@ export 'src/is_deep_equal_data.dart';
 export 'src/parse_partial_json.dart';
 export 'src/serial_job_executor.dart';
 export 'src/simulate_stream.dart';
+export 'src/ui_chat.dart';
 export 'src/ui_message_stream_headers.dart';
 export 'src/ui_message_stream.dart';
 export 'src/ui_message_chunk_builders.dart';

@@ -33,8 +33,9 @@ class SerialJobExecutor {
       }
     });
 
-    // Start processing asynchronously.
-    scheduleMicrotask(_processQueue);
+    // Start processing immediately (best-effort). This reduces race windows
+    // where callers try to stop/cancel right after submitting a job.
+    unawaited(_processQueue());
     return completer.future;
   }
 }
