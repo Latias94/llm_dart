@@ -203,10 +203,12 @@ void main() {
         const {'type': 'error', 'errorText': 'Test error message'},
       ]);
 
-      expect(
-        () => readUiMessageStream(
+      Object? seenError;
+      await expectLater(
+        readUiMessageStream(
           chunks: chunks,
           terminateOnError: true,
+          onError: (e) => seenError = e,
         ).toList(),
         throwsA(
           isA<UiMessageStreamError>().having(
@@ -216,6 +218,49 @@ void main() {
           ),
         ),
       );
+      expect(seenError, isA<UiMessageStreamError>());
+    });
+
+    test('calls onError and continues when terminateOnError=false', () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {'type': 'error', 'errorText': 'Oops'},
+        const {'type': 'text-start', 'id': 't1'},
+        const {'type': 'text-delta', 'id': 't1', 'delta': 'Hi'},
+        const {'type': 'text-end', 'id': 't1'},
+        const {'type': 'finish', 'finishReason': 'stop'},
+      ]);
+
+      final errors = <Object>[];
+      final snapshots = await readUiMessageStream(
+        chunks: chunks,
+        terminateOnError: false,
+        onError: errors.add,
+      ).toList();
+
+      expect(errors, hasLength(1));
+      expect(errors.single, isA<UiMessageStreamError>());
+
+      final last = snapshots.last;
+      final textParts = last.parts.where((p) => p['type'] == 'text').toList();
+      expect(textParts.single['text'], equals('Hi'));
+    });
+
+    test(
+        'terminates when the chunks stream itself errors (terminateOnError=true)',
+        () async {
+      final chunks = Stream<Map<String, Object?>>.error(StateError('boom'));
+
+      Object? seenError;
+      await expectLater(
+        readUiMessageStream(
+          chunks: chunks,
+          terminateOnError: true,
+          onError: (e) => seenError = e,
+        ).toList(),
+        throwsA(isA<StateError>()),
+      );
+      expect(seenError, isA<StateError>());
     });
 
     test('throws when encountering text-delta without text-start', () async {
@@ -289,6 +334,51 @@ void main() {
           {'type': 'finish', 'finishReason': 'stop'},
         ]),
       );
+    });
+
+    test('sets isAborted when abort chunk is encountered', () async {
+      final rawChunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {'type': 'abort', 'reason': 'manual'},
+        const {'type': 'finish', 'finishReason': 'stop'},
+      ]);
+
+      UiMessageStreamFinishEvent? finish;
+      await handleUiMessageStreamFinish(
+        chunks: rawChunks,
+        onFinish: (evt) => finish = evt,
+      ).drain();
+
+      expect(finish, isNotNull);
+      expect(finish!.isAborted, isTrue);
+      expect(finish!.responseMessage.id, equals('msg_1'));
+    });
+
+    test('calls onFinish when consumer cancels', () async {
+      final controller = StreamController<Map<String, Object?>>(sync: true);
+
+      var finishCalls = 0;
+      UiMessageStreamFinishEvent? finish;
+
+      final outStream = handleUiMessageStreamFinish(
+        chunks: controller.stream,
+        messageId: 'msg_1',
+        onFinish: (evt) {
+          finishCalls++;
+          finish = evt;
+        },
+      );
+
+      final sub = outStream.listen((_) {});
+
+      controller.add(const {'type': 'start'});
+      await sub.cancel();
+      await controller.close();
+
+      expect(finishCalls, equals(1));
+      expect(finish, isNotNull);
+      expect(finish!.isAborted, isFalse);
+      expect(finish!.responseMessage.id, equals('msg_1'));
     });
 
     test('injects messageId into start chunk when missing', () async {
