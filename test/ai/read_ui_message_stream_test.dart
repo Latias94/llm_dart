@@ -115,6 +115,101 @@ void main() {
       expect(tool['output'], equals(const {'y': 2}));
     });
 
+    test('builds dynamic tool parts and preserves metadata', () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {
+          'type': 'tool-input-start',
+          'toolCallId': 'call1',
+          'toolName': 'web_search',
+          'dynamic': true,
+          'title': 'Search',
+          'providerExecuted': true,
+          'providerMetadata': {
+            'openai': {'id': 'resp_1'}
+          },
+        },
+        const {
+          'type': 'tool-input-delta',
+          'toolCallId': 'call1',
+          'inputTextDelta': '{"q":"hi"}',
+        },
+        const {
+          'type': 'tool-input-available',
+          'toolCallId': 'call1',
+          'toolName': 'web_search',
+          'dynamic': true,
+          'title': 'Search',
+          'providerExecuted': true,
+          'providerMetadata': {
+            'openai': {'id': 'resp_1'}
+          },
+          'input': {'q': 'hi'},
+        },
+        const {
+          'type': 'tool-output-available',
+          'toolCallId': 'call1',
+          'dynamic': true,
+          'providerExecuted': true,
+          'preliminary': true,
+          'output': {'ok': true},
+        },
+        const {'type': 'finish', 'finishReason': 'tool-calls'},
+      ]);
+
+      final last = await readUiMessageStream(chunks: chunks).last;
+
+      final dynamicTools = last.parts
+          .where((p) => p['type'] == 'dynamic-tool')
+          .toList(growable: false);
+      expect(dynamicTools, hasLength(1));
+      final tool = dynamicTools.single;
+      expect(tool['toolCallId'], equals('call1'));
+      expect(tool['toolName'], equals('web_search'));
+      expect(tool['title'], equals('Search'));
+      expect(tool['providerExecuted'], isTrue);
+      expect(
+        tool['callProviderMetadata'],
+        equals(const {
+          'openai': {'id': 'resp_1'}
+        }),
+      );
+      expect(tool['state'], equals('output-available'));
+      expect(tool['input'], equals(const {'q': 'hi'}));
+      expect(tool['output'], equals(const {'ok': true}));
+      expect(tool['preliminary'], isTrue);
+    });
+
+    test('dynamic tool-input-error stores input (not rawInput)', () async {
+      final chunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        const {
+          'type': 'tool-input-start',
+          'toolCallId': 'call1',
+          'toolName': 'tool',
+          'dynamic': true,
+        },
+        const {
+          'type': 'tool-input-error',
+          'toolCallId': 'call1',
+          'toolName': 'tool',
+          'dynamic': true,
+          'input': {'x': 1},
+          'errorText': 'bad input',
+        },
+        const {'type': 'finish', 'finishReason': 'error'},
+      ]);
+
+      final last = await readUiMessageStream(chunks: chunks).last;
+
+      final tool = last.parts.singleWhere((p) => p['type'] == 'dynamic-tool');
+      expect(tool['toolCallId'], equals('call1'));
+      expect(tool['state'], equals('output-error'));
+      expect(tool['input'], equals(const {'x': 1}));
+      expect(tool.containsKey('rawInput'), isFalse);
+      expect(tool['errorText'], equals('bad input'));
+    });
+
     test('parses partial tool input JSON best-effort from tool-input-delta',
         () async {
       final chunks = Stream.fromIterable(<Map<String, Object?>>[
