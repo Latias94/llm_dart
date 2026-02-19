@@ -37,7 +37,6 @@ export 'utils/is_url_supported.dart';
 export 'utils/parse_json.dart';
 export 'utils/parse_json_event_stream.dart';
 export 'utils/parse_provider_options.dart';
-export 'utils/provider_metadata_alias.dart';
 export 'utils/read_response_with_size_limit.dart';
 export 'utils/read_provider_metadata.dart';
 export 'utils/provider_tool_part_emitter.dart';

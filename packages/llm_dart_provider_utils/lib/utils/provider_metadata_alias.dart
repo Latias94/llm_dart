@@ -4,15 +4,19 @@ import 'stable_json.dart';
 
 /// Inject a providerMetadata alias key into an existing providerMetadata map.
 ///
-/// This is used for Vercel AI SDK parity, where the response metadata can be
-/// accessed either via the base provider id key (e.g. `openai`) or a more
-/// specific capability key (e.g. `openai.chat`, `openai.responses`).
+/// Deprecated: `llm_dart` standardizes on canonical providerMetadata keys only
+/// (e.g. `openai`, `azure`, `xai`). Prefer reading via
+/// `readProviderMetadata(...)` instead of injecting alias keys.
 ///
 /// The alias payload is selected as:
 /// - `providerMetadata[baseKey]` when present, else
 /// - the single value in the map when the map has exactly one entry.
 ///
 /// If [aliasKey] already exists, the map is returned unchanged.
+@Deprecated(
+  'Prefer canonical providerMetadata keys and readProviderMetadata(...). '
+  'Alias injection is for compatibility only.',
+)
 Map<String, dynamic> withProviderMetadataAlias(
   Map<String, dynamic> providerMetadata, {
   required String baseKey,
@@ -37,6 +41,10 @@ Map<String, dynamic> withProviderMetadataAlias(
 }
 
 /// Wrap a [ChatResponse] so its `providerMetadata` includes [aliasKey].
+@Deprecated(
+  'Prefer canonical providerMetadata keys and readProviderMetadata(...). '
+  'Alias injection is for compatibility only.',
+)
 ChatResponse wrapChatResponseWithProviderMetadataAlias(
   ChatResponse response, {
   required String baseKey,
@@ -58,6 +66,10 @@ ChatResponse wrapChatResponseWithProviderMetadataAlias(
 
 /// Wrap an LLM stream parts stream so `LLMProviderMetadataPart` and
 /// `LLMFinishPart.response.providerMetadata` include [aliasKey].
+@Deprecated(
+  'Prefer canonical providerMetadata keys and readProviderMetadata(...). '
+  'Alias injection is for compatibility only.',
+)
 Stream<LLMStreamPart> wrapStreamPartsWithProviderMetadataAlias(
   Stream<LLMStreamPart> stream, {
   required String baseKey,

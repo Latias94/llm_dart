@@ -91,7 +91,7 @@ Notes:
 2) Extract provider-shared helpers into `llm_dart_provider_utils`:
    - source extraction + dedupe utilities
    - finish metadata propagation helpers
-   - providerMetadata alias wrapping patterns
+   - (compat) providerMetadata alias wrapping patterns (opt-in via `llm_dart_provider_utils/compat.dart`)
 
 ---
 
