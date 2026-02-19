@@ -60,6 +60,33 @@ Stream<Map<String, Object?>> handleUiMessageStreamFinish({
     messageId = lastMessage!.id;
   }
 
+  final shouldProcessForCallbacks = onFinish != null || onStepFinish != null;
+
+  // Upstream parity: when there are no callbacks, do not process/validate the
+  // chunk stream. Only inject messageId into the `start` chunk if needed and
+  // pass everything through unchanged.
+  if (!shouldProcessForCallbacks) {
+    final injectedId = messageId?.trim();
+
+    Stream<Map<String, Object?>> injectMessageIdIfNeeded(
+      Stream<Map<String, Object?>> input,
+    ) async* {
+      await for (final chunk in input) {
+        if (chunk['type'] == 'start') {
+          final hasId = chunk['messageId'] is String &&
+              (chunk['messageId'] as String).trim().isNotEmpty;
+          if (!hasId && injectedId != null && injectedId.isNotEmpty) {
+            yield <String, Object?>{...chunk, 'messageId': injectedId};
+            continue;
+          }
+        }
+        yield chunk;
+      }
+    }
+
+    return injectMessageIdIfNeeded(chunks);
+  }
+
   final state = createStreamingUIMessageState(
     lastMessage: lastMessage,
     messageId: messageId,

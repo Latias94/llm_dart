@@ -264,6 +264,33 @@ void main() {
   });
 
   group('handleUiMessageStreamFinish (ai-sdk style)', () {
+    test('passes through without callbacks and does not call onError',
+        () async {
+      final rawChunks = Stream.fromIterable(<Map<String, Object?>>[
+        const {'type': 'start', 'messageId': 'msg_1'},
+        // Intentionally invalid order; passthrough mode should not validate.
+        const {'type': 'text-delta', 'id': 't1', 'delta': 'Hi'},
+        const {'type': 'finish', 'finishReason': 'stop'},
+      ]);
+
+      var errorCalls = 0;
+      final out = await handleUiMessageStreamFinish(
+        chunks: rawChunks,
+        messageId: 'msg_1',
+        onError: (_) => errorCalls++,
+      ).toList();
+
+      expect(errorCalls, equals(0));
+      expect(
+        out,
+        equals(const [
+          {'type': 'start', 'messageId': 'msg_1'},
+          {'type': 'text-delta', 'id': 't1', 'delta': 'Hi'},
+          {'type': 'finish', 'finishReason': 'stop'},
+        ]),
+      );
+    });
+
     test('injects messageId into start chunk when missing', () async {
       final rawChunks = Stream.fromIterable(<Map<String, Object?>>[
         const {'type': 'start'},
