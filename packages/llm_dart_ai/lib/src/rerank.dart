@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'cosine_similarity.dart';
 import 'embed.dart';
 import 'types.dart';
 
@@ -91,7 +92,7 @@ Future<RerankResult> rerankByEmbedding({
 
   for (var i = 0; i < documents.length; i++) {
     final docVec = vectors[i + 1];
-    final score = _cosineSimilarity(queryVec, docVec);
+    final score = cosineSimilarity(queryVec, docVec);
     scored.add(
       RerankResultItem(
         index: i,
@@ -111,24 +112,4 @@ Future<RerankResult> rerankByEmbedding({
     rawResponse:
         RerankResponse(results: scored.take(k).toList(growable: false)),
   );
-}
-
-double _cosineSimilarity(List<double> a, List<double> b) {
-  if (a.length != b.length || a.isEmpty) return 0;
-
-  double dot = 0;
-  double normA = 0;
-  double normB = 0;
-
-  for (var i = 0; i < a.length; i++) {
-    final av = a[i];
-    final bv = b[i];
-    dot += av * bv;
-    normA += av * av;
-    normB += bv * bv;
-  }
-
-  final denom = math.sqrt(normA) * math.sqrt(normB);
-  if (denom == 0) return 0;
-  return dot / denom;
 }
