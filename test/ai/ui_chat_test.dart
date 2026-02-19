@@ -97,6 +97,132 @@ void main() {
       expect(finish!.messages, hasLength(2));
     });
 
+    test('resumeStream is a no-op when there is no active stream', () async {
+      var nextId = 0;
+      String idGen() => 'id_${nextId++}';
+
+      final chat = UiChat(
+        init: UiChatInit(
+          id: 'chat_1',
+          generateId: idGen,
+          transport: _NoResumeTransport(),
+        ),
+      );
+
+      expect(chat.status, equals(UiChatStatus.ready));
+      await chat.resumeStream();
+      expect(chat.status, equals(UiChatStatus.ready));
+      expect(chat.error, isNull);
+    });
+
+    test('addToolOutput updates the active response during streaming',
+        () async {
+      var nextId = 0;
+      String idGen() => 'id_${nextId++}';
+
+      final controller = StreamController<Map<String, Object?>>(sync: true);
+      final transport = _StreamTransport(stream: controller.stream);
+
+      final chat = UiChat(
+        init: UiChatInit(
+          id: 'chat_1',
+          generateId: idGen,
+          transport: transport,
+        ),
+      );
+
+      final task = chat.sendMessage('Hi');
+
+      controller.add(const {'type': 'start'});
+      controller.add(const {
+        'type': 'tool-input-available',
+        'toolCallId': 'call_1',
+        'toolName': 'calc',
+        'input': {'x': 1},
+      });
+
+      // Wait until the tool invocation has been applied and the assistant
+      // message is visible in state.
+      var sawTool = false;
+      for (var i = 0; i < 50; i++) {
+        final last = chat.messages.isEmpty ? null : chat.messages.last;
+        if (last?.role == 'assistant' &&
+            last!.parts.any((p) => p['toolCallId'] == 'call_1')) {
+          sawTool = true;
+          break;
+        }
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(sawTool, isTrue);
+
+      await chat.addToolOutput(
+        toolCallId: 'call_1',
+        toolState: 'output-available',
+        output: const {'y': 2},
+      );
+
+      controller.add(const {'type': 'text-start', 'id': 't1'});
+      controller.add(const {'type': 'text-delta', 'id': 't1', 'delta': 'OK'});
+      controller.add(const {'type': 'text-end', 'id': 't1'});
+      controller.add(const {'type': 'finish'});
+      await controller.close();
+
+      await task;
+
+      final assistant = chat.messages.last;
+      final toolPart =
+          assistant.parts.where((p) => p['toolCallId'] == 'call_1').single;
+      expect(toolPart['state'], equals('output-available'));
+      expect(toolPart['output'], equals(const {'y': 2}));
+    });
+
+    test('onToolCall is invoked for tool-input-available chunks', () async {
+      var nextId = 0;
+      String idGen() => 'id_${nextId++}';
+
+      final controller = StreamController<Map<String, Object?>>(sync: true);
+      final transport = _StreamTransport(stream: controller.stream);
+
+      var toolCalls = 0;
+      late final UiChat chat;
+      chat = UiChat(
+        init: UiChatInit(
+          id: 'chat_1',
+          generateId: idGen,
+          transport: transport,
+          onToolCall: ({required toolCall}) async {
+            toolCalls++;
+            await chat.addToolOutput(
+              toolCallId: toolCall['toolCallId'] as String,
+              toolState: 'output-available',
+              output: const {'ok': true},
+            );
+          },
+        ),
+      );
+
+      final task = chat.sendMessage('Hi');
+
+      controller.add(const {'type': 'start'});
+      controller.add(const {
+        'type': 'tool-input-available',
+        'toolCallId': 'call_1',
+        'toolName': 'calc',
+        'input': {'x': 1},
+      });
+      controller.add(const {'type': 'finish'});
+      await controller.close();
+
+      await task;
+
+      expect(toolCalls, equals(1));
+      final assistant = chat.messages.last;
+      final toolPart =
+          assistant.parts.where((p) => p['toolCallId'] == 'call_1').single;
+      expect(toolPart['state'], equals('output-available'));
+      expect(toolPart['output'], equals(const {'ok': true}));
+    });
+
     test('stop cancels an active request', () async {
       var nextId = 0;
       String idGen() => 'id_${nextId++}';
@@ -124,6 +250,18 @@ void main() {
       controller.add(const {'type': 'text-start', 'id': 't1'});
       controller.add(const {'type': 'text-delta', 'id': 't1', 'delta': 'A'});
 
+      // Ensure the request has started before attempting to stop it.
+      var started = false;
+      for (var i = 0; i < 50; i++) {
+        if (chat.status == UiChatStatus.submitted ||
+            chat.status == UiChatStatus.streaming) {
+          started = true;
+          break;
+        }
+        await Future<void>.delayed(Duration.zero);
+      }
+      expect(started, isTrue);
+
       await chat.stop('User cancelled');
       await controller.close();
 
@@ -133,6 +271,67 @@ void main() {
       expect(finish, isNotNull);
       // The stream did not emit an abort chunk, so isAbort comes from cancellation.
       expect(finish!.isAbort, isTrue);
+    });
+
+    test('addToolOutput can trigger sendAutomaticallyWhen', () async {
+      var nextId = 0;
+      String idGen() => 'id_${nextId++}';
+
+      final calls = <String>[];
+      final didAutoSend = Completer<void>();
+      final transport = _CountingTransport(
+        onSendMessages: (trigger) {
+          calls.add(trigger);
+          if (calls.length == 1) {
+            didAutoSend.complete();
+          }
+        },
+      );
+
+      var autoSent = false;
+      final chat = UiChat(
+        init: UiChatInit(
+          id: 'chat_1',
+          generateId: idGen,
+          transport: transport,
+          sendAutomaticallyWhen: ({required messages}) {
+            if (autoSent) return false;
+            final last = messages.isEmpty ? null : messages.last;
+            final hasToolOutput = last?.parts.any((p) =>
+                    p['toolCallId'] == 'call_1' &&
+                    p['state'] == 'output-available') ==
+                true;
+            if (!hasToolOutput) return false;
+            autoSent = true;
+            return true;
+          },
+        ),
+      );
+
+      // Seed an assistant message with a tool invocation.
+      chat.state.messages = [
+        UIMessage(
+          id: 'id_0',
+          role: 'assistant',
+          parts: [
+            {
+              'type': 'tool-calc',
+              'toolCallId': 'call_1',
+              'state': 'input-available',
+              'input': {'x': 1},
+            }
+          ],
+        ),
+      ];
+
+      await chat.addToolOutput(
+        toolCallId: 'call_1',
+        toolState: 'output-available',
+        output: const {'y': 2},
+      );
+
+      await didAutoSend.future.timeout(const Duration(seconds: 2));
+      expect(calls, equals(['submit-message']));
     });
   });
 }
@@ -173,4 +372,96 @@ class _CancelAwareTransport implements UiChatTransport {
       throw CancelledError(cancelToken?.reason?.toString() ?? 'Cancelled');
     }
   }
+}
+
+class _NoResumeTransport implements UiChatTransport {
+  @override
+  FutureOr<Stream<Map<String, Object?>>> sendMessages({
+    required String chatId,
+    required List<UIMessage> messages,
+    required String trigger,
+    String? messageId,
+    Map<String, String>? headers,
+    Map<String, Object?>? body,
+    Object? metadata,
+    CancelToken? cancelToken,
+  }) {
+    throw StateError('sendMessages should not be called for resumeStream');
+  }
+
+  @override
+  FutureOr<Stream<Map<String, Object?>>>? reconnectToStream({
+    required String chatId,
+    Map<String, String>? headers,
+    Map<String, Object?>? body,
+    Object? metadata,
+  }) =>
+      null;
+}
+
+class _StreamTransport implements UiChatTransport {
+  final Stream<Map<String, Object?>> stream;
+
+  _StreamTransport({required this.stream});
+
+  @override
+  FutureOr<Stream<Map<String, Object?>>> sendMessages({
+    required String chatId,
+    required List<UIMessage> messages,
+    required String trigger,
+    String? messageId,
+    Map<String, String>? headers,
+    Map<String, Object?>? body,
+    Object? metadata,
+    CancelToken? cancelToken,
+  }) =>
+      stream;
+
+  @override
+  FutureOr<Stream<Map<String, Object?>>>? reconnectToStream({
+    required String chatId,
+    Map<String, String>? headers,
+    Map<String, Object?>? body,
+    Object? metadata,
+  }) =>
+      null;
+}
+
+typedef _OnSendMessages = void Function(String trigger);
+
+class _CountingTransport implements UiChatTransport {
+  final _OnSendMessages onSendMessages;
+
+  _CountingTransport({required this.onSendMessages});
+
+  @override
+  FutureOr<Stream<Map<String, Object?>>> sendMessages({
+    required String chatId,
+    required List<UIMessage> messages,
+    required String trigger,
+    String? messageId,
+    Map<String, String>? headers,
+    Map<String, Object?>? body,
+    Object? metadata,
+    CancelToken? cancelToken,
+  }) {
+    onSendMessages(trigger);
+    return simulateStream(
+      chunks: const [
+        {'type': 'start'},
+        {'type': 'finish'},
+      ],
+      initialDelay: null,
+      chunkDelay: null,
+    );
+  }
+
+  @override
+  FutureOr<Stream<Map<String, Object?>>>? reconnectToStream({
+    required String chatId,
+    Map<String, String>? headers,
+    Map<String, Object?>? body,
+    Object? metadata,
+  }) =>
+      null;
 }

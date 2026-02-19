@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart' as core;
 
-import 'handle_ui_message_stream_finish.dart';
 import 'read_ui_message_stream.dart';
 import 'serial_job_executor.dart';
 import 'ui_messages.dart';
@@ -94,10 +93,21 @@ class InMemoryUiChatState extends UiChatState {
 
 typedef UiChatOnErrorCallback = void Function(Object error);
 
+typedef UiChatOnToolCallCallback = FutureOr<void> Function({
+  required Map<String, Object?> toolCall,
+});
+
+typedef UiChatOnDataCallback = void Function(Map<String, Object?> dataPart);
+
+typedef UiChatSendAutomaticallyWhen = FutureOr<bool> Function({
+  required List<UIMessage> messages,
+});
+
 class UiChatFinishEvent {
   final UIMessage message;
   final List<UIMessage> messages;
   final bool isAbort;
+  final bool isDisconnect;
   final bool isError;
   final String? finishReason;
 
@@ -105,6 +115,7 @@ class UiChatFinishEvent {
     required this.message,
     required this.messages,
     required this.isAbort,
+    this.isDisconnect = false,
     required this.isError,
     required this.finishReason,
   });
@@ -118,7 +129,10 @@ class UiChatInit {
   final core.IdGenerator? generateId;
   final UiChatTransport transport;
   final UiChatOnErrorCallback? onError;
+  final UiChatOnToolCallCallback? onToolCall;
   final UiChatOnFinishCallback? onFinish;
+  final UiChatOnDataCallback? onData;
+  final UiChatSendAutomaticallyWhen? sendAutomaticallyWhen;
 
   const UiChatInit({
     required this.transport,
@@ -126,7 +140,20 @@ class UiChatInit {
     this.messages,
     this.generateId,
     this.onError,
+    this.onToolCall,
     this.onFinish,
+    this.onData,
+    this.sendAutomaticallyWhen,
+  });
+}
+
+class _ActiveResponse {
+  StreamingUIMessageState state;
+  final core.CancelToken cancelToken;
+
+  _ActiveResponse({
+    required this.state,
+    required this.cancelToken,
   });
 }
 
@@ -142,10 +169,14 @@ class UiChat {
   final UiChatTransport transport;
 
   final UiChatOnErrorCallback? _onError;
+  final UiChatOnToolCallCallback? _onToolCall;
   final UiChatOnFinishCallback? _onFinish;
+  final UiChatOnDataCallback? _onData;
+  final UiChatSendAutomaticallyWhen? _sendAutomaticallyWhen;
 
   final SerialJobExecutor _jobExecutor = SerialJobExecutor();
 
+  _ActiveResponse? _activeResponse;
   core.CancelToken? _activeCancelToken;
 
   static core.IdGenerator _defaultIdGenerator(UiChatInit init) =>
@@ -158,7 +189,10 @@ class UiChat {
         id = init.id ?? _defaultIdGenerator(init)(),
         transport = init.transport,
         _onError = init.onError,
+        _onToolCall = init.onToolCall,
         _onFinish = init.onFinish,
+        _onData = init.onData,
+        _sendAutomaticallyWhen = init.sendAutomaticallyWhen,
         state =
             state ?? InMemoryUiChatState(init.messages ?? const <UIMessage>[]) {
     this.state.status = UiChatStatus.ready;
@@ -179,6 +213,10 @@ class UiChat {
   }
 
   Future<void> stop([Object? reason]) async {
+    if (state.status != UiChatStatus.streaming &&
+        state.status != UiChatStatus.submitted) {
+      return;
+    }
     _activeCancelToken?.cancel(reason ?? 'Cancelled');
   }
 
@@ -192,31 +230,32 @@ class UiChat {
   Future<void> sendMessage(
     String text, {
     UiChatRequestOptions options = const UiChatRequestOptions(),
-  }) {
-    return _jobExecutor.run(() async {
-      final message = UIMessage(
-        id: generateId(),
-        role: 'user',
-        parts: [
-          {'type': 'text', 'text': text},
-        ],
-      );
-
-      state.pushMessage(message);
-
-      await _makeRequest(
-        trigger: 'submit-message',
-        messageId: message.id,
-        options: options,
+  }) async {
+    final id = generateId();
+    await _jobExecutor.run(() async {
+      state.pushMessage(
+        UIMessage(
+          id: id,
+          role: 'user',
+          parts: [
+            {'type': 'text', 'text': text},
+          ],
+        ),
       );
     });
+
+    await _makeRequest(
+      trigger: 'submit-message',
+      messageId: id,
+      options: options,
+    );
   }
 
   Future<void> regenerate({
     String? messageId,
     UiChatRequestOptions options = const UiChatRequestOptions(),
-  }) {
-    return _jobExecutor.run(() async {
+  }) async {
+    await _jobExecutor.run(() async {
       final messages = state.messages;
       if (messages.isEmpty) {
         throw StateError('No messages to regenerate.');
@@ -234,21 +273,19 @@ class UiChat {
       final keepCount =
           target.role == 'assistant' ? messageIndex : messageIndex + 1;
       state.messages = messages.take(keepCount).toList(growable: false);
-
-      await _makeRequest(
-        trigger: 'regenerate-message',
-        messageId: messageId,
-        options: options,
-      );
     });
+
+    await _makeRequest(
+      trigger: 'regenerate-message',
+      messageId: messageId,
+      options: options,
+    );
   }
 
   Future<void> resumeStream({
     UiChatRequestOptions options = const UiChatRequestOptions(),
-  }) {
-    return _jobExecutor.run(() async {
-      await _makeRequest(trigger: 'resume-stream', options: options);
-    });
+  }) async {
+    await _makeRequest(trigger: 'resume-stream', options: options);
   }
 
   Future<void> addToolApprovalResponse({
@@ -261,28 +298,56 @@ class UiChat {
       if (messages.isEmpty) return;
 
       final last = messages.last;
-      final updatedParts = last.parts.map((part) {
-        if (part['toolCallId'] == null) return part;
-        if (part['state'] != 'approval-requested') return part;
 
-        final approval = part['approval'];
-        if (approval is! Map) return part;
-        final approvalId = approval['id'];
-        if (approvalId != id) return part;
+      bool update(UIMessage message) {
+        var changed = false;
+        for (final part in message.parts) {
+          if (part['toolCallId'] == null) continue;
+          if (part['state'] != 'approval-requested') continue;
 
-        return <String, Object?>{
-          ...part,
-          'state': 'approval-responded',
-          'approval': <String, Object?>{
+          final approval = part['approval'];
+          if (approval is! Map) continue;
+          final approvalId = approval['id'];
+          if (approvalId != id) continue;
+
+          changed = true;
+          part['state'] = 'approval-responded';
+          part['approval'] = <String, Object?>{
             'id': id,
             'approved': approved,
             if (reason != null) 'reason': reason,
-          },
-        };
-      }).toList(growable: false);
+          };
+        }
+        return changed;
+      }
 
-      state.replaceMessage(
-          messages.length - 1, last.copyWith(parts: updatedParts));
+      final didUpdateState = update(last);
+      final active = _activeResponse;
+      if (active != null) {
+        update(active.state.message);
+      }
+
+      if (didUpdateState) {
+        state.replaceMessage(messages.length - 1, last);
+      }
+    }).then((_) async {
+      if (state.status == UiChatStatus.streaming ||
+          state.status == UiChatStatus.submitted) {
+        return;
+      }
+
+      if (_sendAutomaticallyWhen == null) return;
+      final shouldSend = await _shouldSendAutomatically();
+      if (!shouldSend) return;
+
+      // Do not await to avoid deadlocks with serialized updates.
+      unawaited(
+        _makeRequest(
+          trigger: 'submit-message',
+          messageId: _lastMessage?.id,
+          options: const UiChatRequestOptions(),
+        ),
+      );
     });
   }
 
@@ -297,19 +362,57 @@ class UiChat {
       if (messages.isEmpty) return;
 
       final last = messages.last;
-      final updatedParts = last.parts.map((part) {
-        if (part['toolCallId'] != toolCallId) return part;
-        return <String, Object?>{
-          ...part,
-          'state': toolState,
-          if (output != null) 'output': output,
-          if (errorText != null) 'errorText': errorText,
-        };
-      }).toList(growable: false);
 
-      state.replaceMessage(
-          messages.length - 1, last.copyWith(parts: updatedParts));
+      bool update(UIMessage message) {
+        var changed = false;
+        for (final part in message.parts) {
+          if (part['toolCallId'] != toolCallId) continue;
+          changed = true;
+          part['state'] = toolState;
+          if (output != null) {
+            part['output'] = output;
+          }
+          if (errorText != null) {
+            part['errorText'] = errorText;
+          }
+        }
+        return changed;
+      }
+
+      final didUpdateState = update(last);
+      final active = _activeResponse;
+      if (active != null) {
+        update(active.state.message);
+      }
+
+      if (didUpdateState) {
+        state.replaceMessage(messages.length - 1, last);
+      }
+    }).then((_) async {
+      if (state.status == UiChatStatus.streaming ||
+          state.status == UiChatStatus.submitted) {
+        return;
+      }
+
+      if (_sendAutomaticallyWhen == null) return;
+      final shouldSend = await _shouldSendAutomatically();
+      if (!shouldSend) return;
+
+      // Do not await to avoid deadlocks with serialized updates.
+      unawaited(
+        _makeRequest(
+          trigger: 'submit-message',
+          messageId: _lastMessage?.id,
+          options: const UiChatRequestOptions(),
+        ),
+      );
     });
+  }
+
+  Future<bool> _shouldSendAutomatically() async {
+    final cb = _sendAutomaticallyWhen;
+    if (cb == null) return false;
+    return await Future<bool>.value(cb(messages: state.messages));
   }
 
   Future<void> _makeRequest({
@@ -317,34 +420,90 @@ class UiChat {
     String? messageId,
     required UiChatRequestOptions options,
   }) async {
-    state.status = UiChatStatus.submitted;
-    state.error = null;
-
-    final cancelToken = core.CancelToken();
-    _activeCancelToken = cancelToken;
-
     var isAbort = false;
+    var isDisconnect = false;
     var isError = false;
-    UiMessageStreamFinishEvent? finishEvent;
+
+    _ActiveResponse? activeResponse;
+    core.CancelToken? cancelToken;
 
     try {
-      Stream<Map<String, Object?>> chunks;
+      Stream<Map<String, Object?>>? stream;
 
+      // For resume-stream, check if there's an active stream before changing
+      // status. This avoids a brief flash of `submitted` when there is no stream
+      // to resume (e.g. on page load).
       if (trigger == 'resume-stream') {
         final reconnect = transport.reconnectToStream;
         if (reconnect == null) return;
-        final stream = await Future.value(
-          reconnect(
-            chatId: id,
-            headers: options.headers,
-            body: options.body,
-            metadata: options.metadata,
-          ),
-        );
+        try {
+          stream = await Future.value(
+            reconnect(
+              chatId: id,
+              headers: options.headers,
+              body: options.body,
+              metadata: options.metadata,
+            ),
+          );
+        } catch (e) {
+          state.status = UiChatStatus.error;
+          state.error = e;
+          _onError?.call(e);
+          return;
+        }
+
         if (stream == null) return;
-        chunks = stream;
-      } else {
-        chunks = await Future.value(
+      }
+
+      state.status = UiChatStatus.submitted;
+      state.error = null;
+
+      final lastMessage = _lastMessage;
+
+      cancelToken = core.CancelToken();
+      cancelToken!.addListener((_) {
+        isAbort = true;
+      });
+      _activeCancelToken = cancelToken;
+
+      activeResponse = _ActiveResponse(
+        state: createStreamingUIMessageState(
+          lastMessage: state.snapshot(lastMessage),
+          messageId: generateId(),
+          generateId: generateId,
+        ),
+        cancelToken: cancelToken!,
+      );
+
+      _activeResponse = activeResponse;
+
+      void write() {
+        state.status = UiChatStatus.streaming;
+
+        final shouldReplace =
+            activeResponse!.state.message.id == _lastMessage?.id;
+        if (shouldReplace) {
+          state.replaceMessage(
+            state.messages.length - 1,
+            activeResponse!.state.message,
+          );
+        } else {
+          state.pushMessage(activeResponse!.state.message);
+        }
+      }
+
+      Future<void> runUpdateMessageJob(
+        FutureOr<void> Function(StreamingUIMessageState state) job, {
+        required bool shouldWrite,
+      }) {
+        return _jobExecutor.run(() async {
+          await Future<void>.value(job(activeResponse!.state));
+          if (shouldWrite) write();
+        });
+      }
+
+      if (trigger != 'resume-stream') {
+        stream = await Future.value(
           transport.sendMessages(
             chatId: id,
             messages: state.messages,
@@ -358,62 +517,114 @@ class UiChat {
         );
       }
 
-      final wrappedChunks = handleUiMessageStreamFinish(
-        chunks: chunks,
-        messageId: generateId(),
-        originalMessages: state.messages,
-        onFinish: (evt) => finishEvent = evt,
-        onError: _onError,
-      );
+      if (stream == null) return;
 
-      final baseAssistant = state.snapshot(_lastAssistantMessage);
-      var didStream = false;
+      await for (final chunk in stream) {
+        final type = chunk['type'];
+        if (type is! String || type.isEmpty) continue;
 
-      await for (final snapshot in readUiMessageStream(
-        chunks: wrappedChunks,
-        message: baseAssistant,
-        terminateOnError: true,
-        onError: _onError,
-      )) {
-        if (!didStream) {
-          didStream = true;
-          state.status = UiChatStatus.streaming;
+        // Data parts use `type: data-*`.
+        if (type.startsWith('data-')) {
+          final dataPart = <String, Object?>{
+            'type': type,
+            if (chunk['id'] is String && (chunk['id'] as String).isNotEmpty)
+              'id': chunk['id'] as String,
+            'data': chunk['data'],
+            if (chunk['transient'] == true) 'transient': true,
+          };
+
+          _onData?.call(dataPart);
+          if (chunk['transient'] == true) {
+            continue;
+          }
         }
 
-        final index = state.messages.indexWhere((m) => m.id == snapshot.id);
-        if (index >= 0) {
-          state.replaceMessage(index, snapshot);
-        } else {
-          state.pushMessage(snapshot);
+        final shouldWrite = switch (type) {
+          'finish-step' => false,
+          'start-step' => false,
+          'error' => false,
+          'start' =>
+            chunk['messageId'] != null || chunk['messageMetadata'] != null,
+          'finish' => chunk['messageMetadata'] != null,
+          'message-metadata' => chunk['messageMetadata'] != null,
+          _ => true,
+        };
+
+        if (type == 'tool-input-available') {
+          await runUpdateMessageJob(
+            (s) {
+              applyUiMessageChunk(s, chunk);
+            },
+            shouldWrite: shouldWrite,
+          );
+
+          if (_onToolCall != null && chunk['providerExecuted'] != true) {
+            await Future<void>.value(
+              _onToolCall!(toolCall: Map<String, Object?>.from(chunk)),
+            );
+          }
+          continue;
         }
+
+        await runUpdateMessageJob(
+          (s) {
+            applyUiMessageChunk(s, chunk);
+          },
+          shouldWrite: shouldWrite,
+        );
       }
 
       state.status = UiChatStatus.ready;
     } catch (e) {
-      if (e is core.CancelledError) {
+      final cancelled = e is core.CancelledError ||
+          cancelToken?.isCancelled == true ||
+          _activeCancelToken?.isCancelled == true;
+
+      if (cancelled) {
         isAbort = true;
         state.status = UiChatStatus.ready;
       } else {
         isError = true;
+
+        // Best-effort network/disconnect detection.
+        if (e is Exception && e.toString().toLowerCase().contains('socket')) {
+          isDisconnect = true;
+        }
+
         state.status = UiChatStatus.error;
         state.error = e;
         _onError?.call(e);
       }
     } finally {
-      final evt = finishEvent;
-      if (evt != null) {
-        final wasCancelled = cancelToken.isCancelled;
-        _onFinish?.call(
-          UiChatFinishEvent(
-            message: evt.responseMessage,
-            messages: evt.messages,
-            isAbort: isAbort || wasCancelled || evt.isAborted,
-            isError: isError,
-            finishReason: evt.finishReason,
-          ),
-        );
+      try {
+        final message = activeResponse?.state.message;
+        if (message != null) {
+          _onFinish?.call(
+            UiChatFinishEvent(
+              message: message,
+              messages: state.messages,
+              isAbort: isAbort || (activeResponse?.state.isAborted ?? false),
+              isDisconnect: isDisconnect,
+              isError: isError,
+              finishReason: activeResponse?.state.finishReason,
+            ),
+          );
+        }
+      } catch (_) {
+        // Ignore finish callback errors.
       }
+
       _activeCancelToken = null;
+      _activeResponse = null;
+    }
+
+    // Automatically send messages based on the sendAutomaticallyWhen callback.
+    if (!isError && await _shouldSendAutomatically()) {
+      await _makeRequest(
+        trigger: 'submit-message',
+        messageId: _lastMessage?.id,
+        options: options,
+      );
     }
   }
 }

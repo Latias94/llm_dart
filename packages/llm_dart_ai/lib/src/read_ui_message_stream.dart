@@ -320,6 +320,9 @@ void applyUiMessageChunk(
       return;
 
     case 'finish-step':
+      // Upstream parity: a step boundary resets active text/reasoning parts.
+      state._activeTextParts.clear();
+      state._activeReasoningParts.clear();
       return;
 
     case 'source-url':
@@ -629,13 +632,27 @@ void applyUiMessageChunk(
     default:
       // Data parts use `type: data-*`.
       if (type.startsWith('data-')) {
+        // Upstream parity: transient data parts are not persisted in message
+        // state.
+        if (chunk['transient'] == true) return;
+
         final data = chunk['data'];
+        final id = chunk['id'];
+        if (id is String && id.isNotEmpty) {
+          for (final part in state.message.parts) {
+            if (part['type'] == type &&
+                part['id'] == id &&
+                part.containsKey('data')) {
+              part['data'] = data;
+              return;
+            }
+          }
+        }
+
         state.message.parts.add(<String, Object?>{
           'type': type,
-          if (chunk['id'] is String && (chunk['id'] as String).isNotEmpty)
-            'id': chunk['id'] as String,
+          if (id is String && id.isNotEmpty) 'id': id,
           'data': data,
-          if (chunk['transient'] == true) 'transient': true,
         });
         return;
       }
