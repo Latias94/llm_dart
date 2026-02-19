@@ -497,6 +497,102 @@ void main() {
       expect(finish!.isError, isTrue);
       expect(finish!.isDisconnect, isTrue);
     });
+
+    test('onData is called for transient data parts without persisting them',
+        () async {
+      var nextId = 0;
+      String idGen() => 'id_${nextId++}';
+
+      final seen = <Map<String, Object?>>[];
+
+      final transport = _FakeChatTransport(const [
+        {'type': 'start'},
+        {
+          'type': 'data-foo',
+          'id': 'd1',
+          'data': {'a': 1},
+          'transient': true,
+        },
+        {'type': 'finish'},
+      ]);
+
+      final chat = UiChat(
+        init: UiChatInit(
+          id: 'chat_1',
+          generateId: idGen,
+          transport: transport,
+          onData: (p) => seen.add(p),
+        ),
+      );
+
+      await chat.sendMessage('Hi');
+
+      expect(seen, hasLength(1));
+      expect(
+        seen.single,
+        equals(const {
+          'type': 'data-foo',
+          'id': 'd1',
+          'data': {'a': 1},
+          'transient': true,
+        }),
+      );
+
+      // Transient data parts do not cause the assistant message to be pushed.
+      expect(chat.messages, hasLength(1));
+    });
+
+    test('data-* parts update by type+id instead of duplicating', () async {
+      var nextId = 0;
+      String idGen() => 'id_${nextId++}';
+
+      final seen = <Map<String, Object?>>[];
+
+      final transport = _FakeChatTransport(const [
+        {'type': 'start'},
+        {
+          'type': 'data-foo',
+          'id': 'd1',
+          'data': {'a': 1},
+        },
+        {
+          'type': 'data-foo',
+          'id': 'd1',
+          'data': {'a': 2},
+        },
+        {'type': 'finish'},
+      ]);
+
+      final chat = UiChat(
+        init: UiChatInit(
+          id: 'chat_1',
+          generateId: idGen,
+          transport: transport,
+          onData: (p) => seen.add(p),
+        ),
+      );
+
+      await chat.sendMessage('Hi');
+
+      expect(seen, hasLength(2));
+      expect(seen.first['data'], equals(const {'a': 1}));
+      expect(seen.last['data'], equals(const {'a': 2}));
+
+      expect(chat.messages, hasLength(2));
+      final assistant = chat.messages.last;
+
+      final parts =
+          assistant.parts.where((p) => p['type'] == 'data-foo').toList();
+      expect(parts, hasLength(1));
+      expect(
+        parts.single,
+        equals(const {
+          'type': 'data-foo',
+          'id': 'd1',
+          'data': {'a': 2},
+        }),
+      );
+    });
   });
 }
 
