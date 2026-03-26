@@ -1,0 +1,12 @@
+name: llm_dart_core
+description: Core model specifications and shared data structures for llm_dart.
+version: 0.1.0-dev.0
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.27.0
+

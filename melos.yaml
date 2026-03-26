@@ -1,0 +1,18 @@
+name: llm_dart_workspace
+
+packages:
+  - .
+  - packages/**
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
+
+scripts:
+  analyze:
+    run: melos exec -- "dart analyze ."
+    description: Analyze all packages in the workspace.
+  test:
+    run: melos exec --fail-fast -- "dart test"
+    description: Run tests in all packages in the workspace.
+

@@ -1,0 +1,16 @@
+name: llm_dart_transport
+description: Shared transport abstractions for llm_dart providers.
+version: 0.1.0-dev.0
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  llm_dart_core:
+    path: ../llm_dart_core
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.27.0
+
