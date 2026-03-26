@@ -27,6 +27,7 @@ final class OpenAIResponsesStreamState {
   String? rawFinishReason;
   UsageStats? usage;
   bool hasToolCalls = false;
+  bool hasResponseMetadata = false;
 }
 
 final class OpenAIResponsesCodec {
@@ -136,6 +137,13 @@ final class OpenAIResponsesCodec {
       if (response != null) {
         state.responseId = _asString(response['id']);
         state.serviceTier = _asString(response['service_tier']);
+        state.hasResponseMetadata = true;
+        yield ResponseMetadataEvent(
+          responseId: _asString(response['id']),
+          timestamp: _decodeResponseTimestamp(response),
+          modelId: _asString(response['model']),
+          providerMetadata: _responseMetadata(response),
+        );
       }
       return;
     }
@@ -177,6 +185,9 @@ final class OpenAIResponsesCodec {
           yield ToolInputStartEvent(
             toolCallId: toolState.toolCallId,
             toolName: toolState.toolName,
+            providerExecuted: false,
+            isDynamic: false,
+            title: _asString(item['title']),
             providerMetadata: providerMetadata,
           );
         }
@@ -292,6 +303,8 @@ final class OpenAIResponsesCodec {
         yield ToolInputStartEvent(
           toolCallId: toolState.toolCallId,
           toolName: toolState.toolName,
+          providerExecuted: false,
+          isDynamic: false,
           providerMetadata: providerMetadata,
         );
       }
@@ -359,6 +372,9 @@ final class OpenAIResponsesCodec {
           yield ToolInputStartEvent(
             toolCallId: toolState.toolCallId,
             toolName: toolState.toolName,
+            providerExecuted: false,
+            isDynamic: false,
+            title: _asString(item['title']),
             providerMetadata: providerMetadata,
           );
         }
@@ -383,8 +399,16 @@ final class OpenAIResponsesCodec {
             providerMetadata: toolCallPart.providerMetadata,
           );
         }
+        return;
       }
 
+      if (itemType != 'reasoning' && itemType != null) {
+        yield CustomEvent(
+          kind: 'openai.$itemType',
+          data: item,
+          providerMetadata: providerMetadata,
+        );
+      }
       return;
     }
 
@@ -401,6 +425,16 @@ final class OpenAIResponsesCodec {
           _asString(response['service_tier']) ?? state.serviceTier;
       state.rawFinishReason = _responseFinishReason(response);
       state.usage = _decodeUsage(_asMap(response['usage']));
+
+      if (!state.hasResponseMetadata) {
+        state.hasResponseMetadata = true;
+        yield ResponseMetadataEvent(
+          responseId: _asString(response['id']),
+          timestamp: _decodeResponseTimestamp(response),
+          modelId: _asString(response['model']),
+          providerMetadata: _responseMetadata(response),
+        );
+      }
 
       if (chunkType == 'response.failed') {
         final error = response['error'];
@@ -678,6 +712,9 @@ final class OpenAIResponsesCodec {
         toolCallId: toolCallId,
         toolName: toolName,
         input: _decodeJsonValue(encodedArguments),
+        providerExecuted: false,
+        isDynamic: false,
+        title: _asString(item['title']),
       ),
       providerMetadata: _itemMetadata(
         item,
@@ -717,6 +754,11 @@ final class OpenAIResponsesCodec {
         sourceId: url,
         uri: Uri.tryParse(url),
         title: _asString(annotation['title']),
+        providerMetadata: _providerMetadata({
+          'annotationType': type,
+          'startIndex': _asInt(annotation['start_index']),
+          'endIndex': _asInt(annotation['end_index']),
+        }),
       );
     }
 
@@ -731,6 +773,11 @@ final class OpenAIResponsesCodec {
         sourceId: sourceId,
         title: _asString(annotation['filename']),
         mediaType: 'text/plain',
+        providerMetadata: _providerMetadata({
+          'annotationType': type,
+          'fileId': _asString(annotation['file_id']),
+          'index': _asInt(annotation['index']),
+        }),
       );
     }
 
@@ -745,6 +792,11 @@ final class OpenAIResponsesCodec {
         sourceId: sourceId,
         title: _asString(annotation['filename']),
         mediaType: 'text/plain',
+        providerMetadata: _providerMetadata({
+          'annotationType': type,
+          'fileId': _asString(annotation['file_id']),
+          'containerId': _asString(annotation['container_id']),
+        }),
       );
     }
 
@@ -758,6 +810,11 @@ final class OpenAIResponsesCodec {
         sourceId: sourceId,
         title: sourceId,
         mediaType: 'application/octet-stream',
+        providerMetadata: _providerMetadata({
+          'annotationType': type,
+          'fileId': sourceId,
+          'index': _asInt(annotation['index']),
+        }),
       );
     }
 
@@ -768,6 +825,8 @@ final class OpenAIResponsesCodec {
     return _providerMetadata({
       'responseId': _asString(response['id']),
       'status': _asString(response['status']),
+      'modelId': _asString(response['model']),
+      'createdAt': _asInt(response['created_at']),
       'serviceTier': _asString(response['service_tier']),
       'rawFinishReason': _responseFinishReason(response),
     });
@@ -1025,6 +1084,18 @@ final class OpenAIResponsesCodec {
     }
 
     return null;
+  }
+
+  DateTime? _decodeResponseTimestamp(Map<String, Object?> response) {
+    final createdAt = _asInt(response['created_at']);
+    if (createdAt == null) {
+      return null;
+    }
+
+    return DateTime.fromMillisecondsSinceEpoch(
+      createdAt * 1000,
+      isUtc: true,
+    );
   }
 }
 

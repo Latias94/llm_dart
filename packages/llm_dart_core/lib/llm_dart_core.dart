@@ -12,4 +12,5 @@ export 'src/model/speech_model.dart';
 export 'src/model/transcription_model.dart';
 export 'src/prompt/prompt_message.dart';
 export 'src/stream/text_stream_event.dart';
+export 'src/ui/chat_ui_accumulator.dart';
 export 'src/ui/chat_ui_message.dart';

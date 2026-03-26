@@ -334,7 +334,18 @@ Examples:
 
 Recommendation:
 
-- metadata keys must be namespaced, for example `openai.response_id`
+- `ProviderMetadata` should use provider namespaces as the top-level keys, for example:
+
+```dart
+ProviderMetadata({
+  'openai': {
+    'responseId': 'resp_123',
+    'serviceTier': 'default',
+  },
+})
+```
+
+- when multiple streamed updates contribute metadata under the same provider namespace, the projection layer should merge those nested values instead of replacing the whole provider entry blindly
 - metadata should carry attached details, not primary content
 
 ## Channel 4: Custom Content Parts and Custom UI Parts

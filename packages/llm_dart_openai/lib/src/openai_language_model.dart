@@ -89,7 +89,7 @@ final class OpenAILanguageModel implements LanguageModel {
       stream: true,
     );
 
-    yield const StartEvent();
+    yield StartEvent(warnings: preparedRequest.warnings);
 
     try {
       final response = await transport.sendStream(

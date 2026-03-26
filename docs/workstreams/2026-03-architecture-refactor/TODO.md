@@ -95,6 +95,7 @@
 - [ ] Define `ChatSession`
 - [ ] Define `ChatTransport`
 - [ ] Define `ChatState`
+- [x] Implement pure Dart `ChatUiAccumulator` / stream-to-UI-message projection
 - [ ] Implement `DirectChatTransport`
 - [ ] Implement `HttpChatTransport`
 - [ ] Implement `ChatController`
@@ -113,8 +114,8 @@
 ## Testing
 
 - [ ] prompt normalization tests
-- [ ] stream event accumulation tests
-- [ ] UI message projection tests
+- [x] stream event accumulation tests
+- [x] UI message projection tests
 - [ ] transport reconnection tests
 - [ ] provider profile tests
 - [ ] compatibility adapter tests

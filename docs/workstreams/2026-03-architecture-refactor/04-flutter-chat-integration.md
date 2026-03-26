@@ -77,6 +77,13 @@ That directly determines whether the Flutter UI can naturally support:
 - output injection
 - error presentation
 
+It also needs richer fields than a minimal tool-call record:
+
+- `inputText` for partial streamed arguments before they become valid structured input
+- `approval` for provider-executed approval flows
+- `providerExecuted`, `isDynamic`, `preliminary`, and `title`
+- separate call/result provider metadata so provider-native detail is not lost during the state transition
+
 ## 3. `ChatState`
 
 ```dart
@@ -94,6 +101,42 @@ Suggested states:
 - `submitting`
 - `streaming`
 - `error`
+
+## 4. `ChatUiAccumulator`
+
+The pure Dart core layer should provide a reusable projector from `TextStreamEvent` to `ChatUiMessage`.
+
+Recommended surface:
+
+```dart
+final accumulator = ChatUiAccumulator(messageId: 'assistant-1');
+
+await for (final event in streamText(model: model, prompt: prompt)) {
+  final message = accumulator.apply(event);
+  render(message);
+}
+```
+
+Or as a stream helper:
+
+```dart
+final messages = projectChatUiMessageStream(
+  streamText(model: model, prompt: prompt),
+  messageId: 'assistant-1',
+);
+```
+
+This is important because Flutter applications should not have to re-implement:
+
+- active text-part tracking
+- active reasoning-part tracking
+- partial tool-input accumulation
+- tool-part state transitions
+- response metadata updates
+- source/custom/file insertion
+- optional raw diagnostic capture
+
+The projector should stay in `llm_dart_core`, not in `llm_dart_flutter`, because the state machine is architecture-level behavior, not widget behavior.
 
 ## 3. Recommended Session API
 
@@ -177,6 +220,7 @@ This layer matters because mobile and production deployments often should not ca
 - `ChatState`
 - `ChatUiMessage`
 - `ChatUiPart`
+- `ChatUiAccumulator`
 
 ## 2. Flutter Convenience Layer
 
@@ -186,7 +230,19 @@ Optional, but useful:
 - `ChatMessageMapper`
 - `ChatPersistenceAdapter`
 
-## 6. Attachment Design
+## 6. Message Metadata Conventions
+
+`ChatUiMessage.metadata` should reserve a small common set of keys for cross-provider state that is not naturally a message part:
+
+- warnings
+- response ID, timestamp, model ID, and response provider metadata
+- finish reason, usage, and finish provider metadata
+- streamed errors
+- optional raw chunks for diagnostic mode only
+
+These keys should be documented and stable enough for Flutter session and persistence layers, but they should remain a small projection surface rather than growing into another provider-specific dumping ground.
+
+## 7. Attachment Design
 
 The core message model should not depend on `dart:io File`. Flutter integration should use reference-style attachment objects instead:
 
@@ -209,7 +265,7 @@ This keeps the architecture:
 - portable across Flutter mobile, desktop, and web
 - independent of platform-specific file abstractions
 
-## 7. Recommended Flutter Usage Style
+## 8. Recommended Flutter Usage Style
 
 ```dart
 final model = AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
@@ -233,13 +289,14 @@ final session = DefaultChatSession(
 );
 ```
 
-## 8. Why `parts` Works Better Than the Current `ChatMessage.content`
+## 9. Why `parts` Works Better Than the Current `ChatMessage.content`
 
 Problems with the current model:
 
 - text, reasoning, tools, and sources are mixed between string fields and auxiliary data
 - UI updates require too much manual state stitching
 - tool output injection has no natural render path
+- multi-step tool loops need explicit step boundaries instead of implicit ad hoc conventions
 
 Benefits of a `parts` model:
 
@@ -248,7 +305,7 @@ Benefits of a `parts` model:
 - list UIs, rich-message UIs, and tool-card UIs all become more natural
 - serialization and local persistence become more stable
 
-## 9. Things That Should Be Delayed
+## 10. Things That Should Be Delayed
 
 The first phase should not attempt to build:
 

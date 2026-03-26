@@ -5,12 +5,14 @@ final class SourceReference {
   final Uri? uri;
   final String? title;
   final String? mediaType;
+  final ProviderMetadata? providerMetadata;
 
   const SourceReference({
     required this.sourceId,
     this.uri,
     this.title,
     this.mediaType,
+    this.providerMetadata,
   });
 }
 
@@ -32,11 +34,17 @@ final class ToolCallContent {
   final String toolCallId;
   final String toolName;
   final Object? input;
+  final bool providerExecuted;
+  final bool isDynamic;
+  final String? title;
 
   const ToolCallContent({
     required this.toolCallId,
     required this.toolName,
     this.input,
+    this.providerExecuted = false,
+    this.isDynamic = false,
+    this.title,
   });
 }
 
@@ -45,12 +53,16 @@ final class ToolResultContent {
   final String toolName;
   final Object? output;
   final bool isError;
+  final bool preliminary;
+  final bool isDynamic;
 
   const ToolResultContent({
     required this.toolCallId,
     required this.toolName,
     this.output,
     this.isError = false,
+    this.preliminary = false,
+    this.isDynamic = false,
   });
 }
 

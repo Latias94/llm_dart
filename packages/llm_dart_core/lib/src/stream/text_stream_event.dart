@@ -1,3 +1,4 @@
+import '../common/model_warning.dart';
 import '../common/provider_metadata.dart';
 import '../common/usage_stats.dart';
 import '../content/content_part.dart';
@@ -8,7 +9,25 @@ sealed class TextStreamEvent {
 }
 
 final class StartEvent extends TextStreamEvent {
-  const StartEvent();
+  final List<ModelWarning> warnings;
+
+  StartEvent({
+    List<ModelWarning> warnings = const [],
+  }) : warnings = List.unmodifiable(warnings);
+}
+
+final class ResponseMetadataEvent extends TextStreamEvent {
+  final String? responseId;
+  final DateTime? timestamp;
+  final String? modelId;
+  final ProviderMetadata? providerMetadata;
+
+  const ResponseMetadataEvent({
+    this.responseId,
+    this.timestamp,
+    this.modelId,
+    this.providerMetadata,
+  });
 }
 
 final class TextStartEvent extends TextStreamEvent {
@@ -78,11 +97,17 @@ final class ReasoningEndEvent extends TextStreamEvent {
 final class ToolInputStartEvent extends TextStreamEvent {
   final String toolCallId;
   final String toolName;
+  final bool providerExecuted;
+  final bool isDynamic;
+  final String? title;
   final ProviderMetadata? providerMetadata;
 
   const ToolInputStartEvent({
     required this.toolCallId,
     required this.toolName,
+    this.providerExecuted = false,
+    this.isDynamic = false,
+    this.title,
     this.providerMetadata,
   });
 }
@@ -129,6 +154,28 @@ final class ToolResultEvent extends TextStreamEvent {
   });
 }
 
+final class ToolApprovalRequestEvent extends TextStreamEvent {
+  final String approvalId;
+  final String toolCallId;
+  final ProviderMetadata? providerMetadata;
+
+  const ToolApprovalRequestEvent({
+    required this.approvalId,
+    required this.toolCallId,
+    this.providerMetadata,
+  });
+}
+
+final class ToolOutputDeniedEvent extends TextStreamEvent {
+  final String toolCallId;
+  final ProviderMetadata? providerMetadata;
+
+  const ToolOutputDeniedEvent({
+    required this.toolCallId,
+    this.providerMetadata,
+  });
+}
+
 final class SourceEvent extends TextStreamEvent {
   final SourceReference source;
 
@@ -145,6 +192,22 @@ final class FileEvent extends TextStreamEvent {
   });
 }
 
+final class StepStartEvent extends TextStreamEvent {
+  final String? stepId;
+
+  const StepStartEvent({
+    this.stepId,
+  });
+}
+
+final class StepFinishEvent extends TextStreamEvent {
+  final String? stepId;
+
+  const StepFinishEvent({
+    this.stepId,
+  });
+}
+
 final class FinishEvent extends TextStreamEvent {
   final FinishReason finishReason;
   final UsageStats? usage;
@@ -155,6 +218,24 @@ final class FinishEvent extends TextStreamEvent {
     this.usage,
     this.providerMetadata,
   });
+}
+
+final class CustomEvent extends TextStreamEvent {
+  final String kind;
+  final Object? data;
+  final ProviderMetadata? providerMetadata;
+
+  const CustomEvent({
+    required this.kind,
+    this.data,
+    this.providerMetadata,
+  });
+}
+
+final class RawChunkEvent extends TextStreamEvent {
+  final Object? raw;
+
+  const RawChunkEvent(this.raw);
 }
 
 final class ErrorEvent extends TextStreamEvent {

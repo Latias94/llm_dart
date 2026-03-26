@@ -17,8 +17,33 @@ enum ToolUiPartState {
   outputDenied,
 }
 
+final class ChatUiMetadataKeys {
+  static const warnings = 'warnings';
+  static const responseId = 'responseId';
+  static const responseTimestamp = 'responseTimestamp';
+  static const modelId = 'modelId';
+  static const responseProviderMetadata = 'responseProviderMetadata';
+  static const finishReason = 'finishReason';
+  static const usage = 'usage';
+  static const finishProviderMetadata = 'finishProviderMetadata';
+  static const errors = 'errors';
+  static const rawChunks = 'rawChunks';
+
+  const ChatUiMetadataKeys._();
+}
+
 sealed class ChatUiPart {
   const ChatUiPart();
+}
+
+final class ToolApprovalUiState {
+  final String approvalId;
+  final bool? approved;
+
+  const ToolApprovalUiState({
+    required this.approvalId,
+    this.approved,
+  });
 }
 
 final class TextUiPart extends ChatUiPart {
@@ -50,19 +75,36 @@ final class ToolUiPart extends ChatUiPart {
   final String toolName;
   final ToolUiPartState state;
   final Object? input;
+  final String? inputText;
   final Object? output;
   final String? errorText;
-  final ProviderMetadata? providerMetadata;
+  final bool providerExecuted;
+  final bool isDynamic;
+  final bool preliminary;
+  final String? title;
+  final ToolApprovalUiState? approval;
+  final ProviderMetadata? callProviderMetadata;
+  final ProviderMetadata? resultProviderMetadata;
 
   const ToolUiPart({
     required this.toolCallId,
     required this.toolName,
     required this.state,
     this.input,
+    this.inputText,
     this.output,
     this.errorText,
-    this.providerMetadata,
+    this.providerExecuted = false,
+    this.isDynamic = false,
+    this.preliminary = false,
+    this.title,
+    this.approval,
+    this.callProviderMetadata,
+    this.resultProviderMetadata,
   });
+
+  ProviderMetadata? get providerMetadata =>
+      resultProviderMetadata ?? callProviderMetadata;
 }
 
 final class SourceUiPart extends ChatUiPart {

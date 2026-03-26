@@ -201,7 +201,7 @@ final class ChatUiMessage {
   final String id;
   final ChatUiRole role;
   final List<ChatUiPart> parts;
-  final Map<String, Object?>? metadata;
+  final Map<String, Object?> metadata;
 }
 
 sealed class ChatUiPart {}
@@ -213,9 +213,17 @@ final class SourceUiPart extends ChatUiPart { ... }
 final class FileUiPart extends ChatUiPart { ... }
 final class DataUiPart<T> extends ChatUiPart { ... }
 final class CustomUiPart extends ChatUiPart { ... }
+final class StepBoundaryUiPart extends ChatUiPart { ... }
 ```
 
 This layer should serve Flutter chat rendering first. Provider payload details should adapt to it, not the other way around.
+
+Additional UI-boundary rules:
+
+- `ToolUiPart` should carry streamed input state, final input, output, approval state, and separate call/result provider metadata.
+- `ToolUiPart` should expose `providerExecuted`, `isDynamic`, `preliminary`, and `title`, because these directly affect how a Flutter chat UI renders tool cards.
+- `ChatUiMessage.metadata` should keep reserved call-level keys such as warnings, response metadata, finish metadata, streamed errors, and optional diagnostic raw chunks.
+- `llm_dart_core` should ship a pure Dart projector from `TextStreamEvent` to `ChatUiMessage` so Flutter applications do not have to rebuild the stream state machine themselves.
 
 ## 4. Stream Event Boundaries
 
@@ -225,6 +233,9 @@ It should evolve into a more complete streamed event model:
 
 ```dart
 sealed class TextStreamEvent {}
+
+final class StartEvent extends TextStreamEvent { ... }
+final class ResponseMetadataEvent extends TextStreamEvent { ... }
 
 final class TextStartEvent extends TextStreamEvent { ... }
 final class TextDeltaEvent extends TextStreamEvent { ... }
@@ -236,18 +247,54 @@ final class ReasoningEndEvent extends TextStreamEvent { ... }
 
 final class ToolInputStartEvent extends TextStreamEvent { ... }
 final class ToolInputDeltaEvent extends TextStreamEvent { ... }
+final class ToolInputEndEvent extends TextStreamEvent { ... }
+final class ToolApprovalRequestEvent extends TextStreamEvent { ... }
 final class ToolCallEvent extends TextStreamEvent { ... }
 final class ToolResultEvent extends TextStreamEvent { ... }
+final class ToolOutputDeniedEvent extends TextStreamEvent { ... }
 
 final class SourceEvent extends TextStreamEvent { ... }
 final class FileEvent extends TextStreamEvent { ... }
+final class StepStartEvent extends TextStreamEvent { ... }
+final class StepFinishEvent extends TextStreamEvent { ... }
+final class CustomEvent extends TextStreamEvent { ... }
+final class RawChunkEvent extends TextStreamEvent { ... }
 final class FinishEvent extends TextStreamEvent { ... }
 final class ErrorEvent extends TextStreamEvent { ... }
 ```
 
 This allows Flutter applications to build message state directly instead of reconstructing everything from half-formed text deltas.
 
-## 5. How Provider Features Should Be Represented
+Additional stream-boundary rules:
+
+- `StartEvent` should carry call-level warnings so streaming and non-streaming calls expose the same diagnostics surface.
+- `ResponseMetadataEvent` should be independent from `FinishEvent` because some providers send response IDs, timestamps, or model IDs early.
+- `CustomEvent` should preserve provider-native streamed blocks that do not belong in the common event set.
+- `RawChunkEvent` should remain opt-in and diagnostic-focused instead of becoming a default public transport surface.
+- tool-approval must be a first-class event because provider-executed tools can pause generation until the caller decides.
+- `ToolOutputDeniedEvent` should exist because an approval flow can end without a provider-side tool output payload.
+- step-boundary events belong to the orchestration layer rather than to provider transport only, because multi-step tool loops can span multiple provider calls.
+
+## 5. UI Projection Boundary
+
+The stream model is still not enough by itself. A reusable projection layer is also needed:
+
+```dart
+final accumulator = ChatUiAccumulator(messageId: 'assistant-1');
+
+await for (final event in streamText(model: model, prompt: prompt)) {
+  final message = accumulator.apply(event);
+  render(message);
+}
+```
+
+This projection layer belongs in pure Dart core, not in Flutter-specific code, because:
+
+- CLI tools also need streamed rich-message state
+- backend transports may want to persist or replay projected message parts
+- the message projection rules are part of the architecture contract, not a widget concern
+
+## 6. How Provider Features Should Be Represented
 
 ## 1. Model-Level Typed Options
 
@@ -290,7 +337,7 @@ Information that is useful to the caller but does not deserve a shared top-level
 
 Provider-specific message blocks that genuinely need to reach the UI should go through `CustomContentPart` and `CustomUiPart` instead of polluting the common part set.
 
-## 6. Recommended Top-Level Facade
+## 7. Recommended Top-Level Facade
 
 Keep a unified facade, but change its meaning from “build a giant provider” to “get a model or session”:
 
@@ -303,7 +350,7 @@ final chat = ChatSession.direct(model: model);
 
 The old `ai()` builder can remain as a compatibility layer, but it should stop being the center of the architecture.
 
-## 7. Boundary Decision Rules
+## 8. Boundary Decision Rules
 
 A capability should enter the stable shared spec only if all of the following are true:
 

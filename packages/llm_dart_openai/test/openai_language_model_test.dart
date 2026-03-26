@@ -93,6 +93,9 @@ void main() {
               statusCode: 200,
               stream: Stream.fromIterable([
                 utf8.encode(
+                  'data: {"type":"response.created","response":{"id":"resp_1","model":"gpt-4.1-mini","created_at":1710000000,"service_tier":"default"}}\n\n',
+                ),
+                utf8.encode(
                   'data: {"type":"response.output_item.added","output_index":0,"item":{"id":"msg_1","type":"message","status":"in_progress"}}\n',
                 ),
                 utf8.encode('\n'),
@@ -104,7 +107,10 @@ void main() {
                   'data: {"type":"response.output_text.done","item_id":"msg_1","output_index":0,"content_index":0,"text":"Hello"}\n\n',
                 ),
                 utf8.encode(
-                  'data: {"type":"response.completed","response":{"id":"resp_1","status":"completed","output":[{"id":"msg_1","type":"message","status":"completed","role":"assistant","content":[{"type":"output_text","text":"Hello","annotations":[]}]}],"usage":{"input_tokens":1,"output_tokens":1,"total_tokens":2,"output_tokens_details":{"reasoning_tokens":0}}}}\n\n',
+                  'data: {"type":"response.output_item.done","output_index":1,"item":{"id":"ws_1","type":"web_search_call","status":"completed","action":{"type":"search","query":"hello"}}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.completed","response":{"id":"resp_1","model":"gpt-4.1-mini","created_at":1710000000,"status":"completed","output":[{"id":"msg_1","type":"message","status":"completed","role":"assistant","content":[{"type":"output_text","text":"Hello","annotations":[]}]}],"usage":{"input_tokens":1,"output_tokens":1,"total_tokens":2,"output_tokens_details":{"reasoning_tokens":0}}}}\n\n',
                 ),
               ]),
             );
@@ -121,9 +127,14 @@ void main() {
       ).toList();
 
       expect(events.first, isA<StartEvent>());
+      expect((events.first as StartEvent).warnings, isEmpty);
+      final responseMetadata = events.whereType<ResponseMetadataEvent>().single;
+      expect(responseMetadata.responseId, 'resp_1');
+      expect(responseMetadata.modelId, 'gpt-4.1-mini');
       expect(events.whereType<TextStartEvent>().single.id, 'msg_1');
       expect(events.whereType<TextDeltaEvent>().single.delta, 'Hello');
       expect(events.whereType<TextEndEvent>().single.id, 'msg_1');
+      expect(events.whereType<CustomEvent>().single.kind, 'openai.web_search_call');
 
       final finish = events.whereType<FinishEvent>().single;
       expect(finish.finishReason, FinishReason.stop);

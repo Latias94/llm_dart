@@ -30,3 +30,6 @@ coverage/
 
 # Claude Code configuration
 CLAUDE.md
+
+# Local reference repositories
+repo-ref/
