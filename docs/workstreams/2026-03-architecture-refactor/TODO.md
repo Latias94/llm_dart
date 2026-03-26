@@ -8,7 +8,7 @@
 - [x] Freeze `ContentPart` / `GenerateTextResult`
 - [x] Freeze `TextStreamEvent`
 - [x] Freeze `ChatUiMessage` / `ChatUiPart`
-- [ ] Freeze provider typed options design
+- [x] Freeze provider typed options design
 - [x] Freeze workspace package boundaries
 
 ## Workspace And Infrastructure
@@ -29,7 +29,7 @@
 - [ ] Rewrite usage, warning, and provider metadata models
 - [x] Define provider model-options and invocation-options marker interfaces
 - [ ] Rewrite the tool schema and tool-result model
-- [ ] Define unified `CallOptions`
+- [x] Define unified `CallOptions`
 - [x] Define `LanguageModel`
 - [x] Define `EmbeddingModel`
 - [x] Define `ImageModel`
@@ -101,6 +101,7 @@
 - [x] Implement baseline client-side tool output continuation in `DefaultChatSession`
 - [ ] Implement `HttpChatTransport`
 - [ ] Implement `ChatController`
+- [ ] Define a serialized chat chunk protocol for `HttpChatTransport`
 - [x] Design the message serialization protocol
 - [x] Implement prompt and UI JSON codecs
 - [x] Implement `ChatSessionSnapshot` export and import

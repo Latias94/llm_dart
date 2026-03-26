@@ -137,7 +137,7 @@ In `lib/` alone, extension-related entry points appear 258 times. That is enough
 
 Target mapping:
 
-- Shared parameters should move into typed shared options such as `GenerateTextOptions`.
+- Shared parameters should split into capability-specific settings plus a small shared `CallOptions`.
 - Provider differences should move into provider-specific typed options.
 - Provider-specific outputs should move into `providerMetadata`, custom content parts, and custom UI parts instead of continuing to inflate the shared configuration surface.
 

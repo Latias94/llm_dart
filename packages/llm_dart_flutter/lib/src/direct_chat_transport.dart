@@ -15,7 +15,7 @@ final class DirectChatTransport implements ChatTransport {
       GenerateTextRequest(
         prompt: request.prompt,
         options: request.options.generateOptions,
-        providerOptions: request.options.providerOptions,
+        callOptions: request.options.callOptions,
       ),
     );
   }

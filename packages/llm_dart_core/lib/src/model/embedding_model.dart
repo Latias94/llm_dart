@@ -1,16 +1,16 @@
+import '../common/call_options.dart';
 import '../common/provider_metadata.dart';
-import '../common/provider_options.dart';
 import '../common/usage_stats.dart';
 
 final class EmbedRequest {
   final List<String> values;
   final int? dimensions;
-  final ProviderInvocationOptions? providerOptions;
+  final CallOptions callOptions;
 
   EmbedRequest({
     required List<String> values,
     this.dimensions,
-    this.providerOptions,
+    this.callOptions = const CallOptions(),
   }) : values = List.unmodifiable(values);
 }
 

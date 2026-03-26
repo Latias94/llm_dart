@@ -29,6 +29,11 @@ void main() {
                 generateOptions: GenerateTextOptions(
                   temperature: 0.2,
                 ),
+                callOptions: CallOptions(
+                  headers: {
+                    'x-chat': '1',
+                  },
+                ),
               ),
             ),
           )
@@ -37,6 +42,9 @@ void main() {
       expect(capturedRequest, isNotNull);
       expect(capturedRequest!.prompt.single, isA<UserPromptMessage>());
       expect(capturedRequest!.options.temperature, 0.2);
+      expect(capturedRequest!.callOptions.headers, {
+        'x-chat': '1',
+      });
     });
   });
 

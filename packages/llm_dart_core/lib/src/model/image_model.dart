@@ -1,17 +1,17 @@
+import '../common/call_options.dart';
 import '../common/provider_metadata.dart';
-import '../common/provider_options.dart';
 
 final class ImageGenerationRequest {
   final String prompt;
   final int count;
   final String? size;
-  final ProviderInvocationOptions? providerOptions;
+  final CallOptions callOptions;
 
   const ImageGenerationRequest({
     required this.prompt,
     this.count = 1,
     this.size,
-    this.providerOptions,
+    this.callOptions = const CallOptions(),
   });
 }
 

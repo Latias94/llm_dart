@@ -101,10 +101,52 @@ final result = await generateText(
   options: const GenerateTextOptions(
     temperature: 0.2,
   ),
+  callOptions: const CallOptions(
+    timeout: Duration(seconds: 30),
+  ),
 );
 ```
 
-## 3. Unified UI Session Interfaces
+## 3. Common Call Controls Must Stay Separate From Capability Settings
+
+The reference design in `repo-ref/ai` is useful here for one specific reason: it does not force every capability into one giant options object.
+
+The same rule should be frozen for `llm_dart`:
+
+- capability-specific generation settings stay with the capability request or capability-specific settings object
+- small cross-capability invocation controls should live in a shared `CallOptions`
+- provider-specific per-call behavior should stay inside `ProviderInvocationOptions`, nested under `CallOptions`
+- do not create one mega `CallOptions` that tries to absorb text, embedding, image, speech, and transcription settings
+
+Recommended shape:
+
+```dart
+final request = GenerateTextRequest(
+  prompt: prompt,
+  options: const GenerateTextOptions(
+    temperature: 0.2,
+    maxOutputTokens: 512,
+  ),
+  callOptions: const CallOptions(
+    timeout: Duration(seconds: 30),
+    headers: {
+      'x-trace-id': 'trace-123',
+    },
+    providerOptions: OpenAIGenerateTextOptions(
+      previousResponseId: 'resp_123',
+    ),
+  ),
+);
+```
+
+Boundary rules:
+
+- `GenerateTextOptions` should keep text-generation settings only
+- embedding, image, speech, and transcription requests should keep their own capability fields instead of being flattened into a universal option bag
+- `timeout` and `headers` are common invocation controls, not provider options
+- `ProviderInvocationOptions` should never become the place for common transport-ish controls
+
+## 4. Unified UI Session Interfaces
 
 What a chat application really needs is neither a provider object nor a raw text stream. It needs a session layer:
 
@@ -304,6 +346,8 @@ Additional stream-boundary rules:
 - tool-approval must be a first-class event because provider-executed tools can pause generation until the caller decides.
 - `ToolOutputDeniedEvent` should exist because an approval flow can end without a provider-side tool output payload.
 - step-boundary events belong to the orchestration layer rather than to provider transport only, because multi-step tool loops can span multiple provider calls.
+- `TextStreamEvent` should remain the model-stream boundary, not the serialized chat-transport boundary.
+- finer-grained transport chunks such as message start/finish markers, abort markers, metadata patches, or UI-only tool chunk variants can exist later in `HttpChatTransport`, but they should not automatically be promoted into the core stream event set.
 
 ## 5. UI Projection Boundary
 
@@ -348,8 +392,10 @@ Provider-specific features that change per call should be carried through invoca
 await generateText(
   model: model,
   prompt: prompt,
-  providerOptions: const OpenAIInvocationOptions(
-    serviceTier: OpenAIServiceTier.priority,
+  callOptions: const CallOptions(
+    providerOptions: OpenAIInvocationOptions(
+      serviceTier: OpenAIServiceTier.priority,
+    ),
   ),
 );
 ```

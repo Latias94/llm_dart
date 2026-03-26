@@ -135,3 +135,17 @@ Provider-specific features should be represented through:
 - `GenerateTextResult` must expose common response metadata fields such as response ID, response timestamp, response model ID, and raw finish reason directly
 - `FinishEvent` should carry `rawFinishReason` when the provider exposes one
 - provider metadata should keep provider-owned detail and should not be the primary home for those common response fields
+
+## D14. Common Call Controls Must Be Separate From Capability Settings
+
+- do not create one mega shared options type for all model capabilities
+- keep capability-specific settings with the capability request or capability-specific settings object
+- use a small shared `CallOptions` object for common invocation controls such as timeout, headers, and typed `ProviderInvocationOptions`
+- `ProviderInvocationOptions` must remain provider-specific and must not absorb common transport-ish controls
+
+## D15. `TextStreamEvent` Stays a Model-Stream Boundary
+
+- keep `TextStreamEvent` focused on cross-provider model stream semantics
+- do not copy the full Vercel AI SDK UI-message chunk protocol into the core stream model
+- finer-grained chat transport chunks such as message start/finish markers, abort markers, metadata patches, or UI-only tool chunk variants should be designed later as transport-level serialization for `HttpChatTransport`
+- add new core stream events only when they represent stable cross-provider model semantics, not merely a convenient UI transport encoding

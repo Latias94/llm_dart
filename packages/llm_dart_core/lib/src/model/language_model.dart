@@ -1,6 +1,6 @@
+import '../common/call_options.dart';
 import '../common/model_warning.dart';
 import '../common/provider_metadata.dart';
-import '../common/provider_options.dart';
 import '../common/usage_stats.dart';
 import '../content/content_part.dart';
 import '../prompt/prompt_message.dart';
@@ -22,8 +22,6 @@ final class GenerateTextOptions {
   final List<String>? stopSequences;
   final double? topP;
   final int? topK;
-  final Duration? timeout;
-  final Map<String, String>? headers;
 
   const GenerateTextOptions({
     this.maxOutputTokens,
@@ -31,20 +29,18 @@ final class GenerateTextOptions {
     this.stopSequences,
     this.topP,
     this.topK,
-    this.timeout,
-    this.headers,
   });
 }
 
 final class GenerateTextRequest {
   final List<PromptMessage> prompt;
   final GenerateTextOptions options;
-  final ProviderInvocationOptions? providerOptions;
+  final CallOptions callOptions;
 
   GenerateTextRequest({
     required List<PromptMessage> prompt,
     this.options = const GenerateTextOptions(),
-    this.providerOptions,
+    this.callOptions = const CallOptions(),
   }) : prompt = List.unmodifiable(prompt);
 }
 
@@ -98,13 +94,13 @@ Future<GenerateTextResult> generateText({
   required LanguageModel model,
   required List<PromptMessage> prompt,
   GenerateTextOptions options = const GenerateTextOptions(),
-  ProviderInvocationOptions? providerOptions,
+  CallOptions callOptions = const CallOptions(),
 }) {
   return model.generate(
     GenerateTextRequest(
       prompt: prompt,
       options: options,
-      providerOptions: providerOptions,
+      callOptions: callOptions,
     ),
   );
 }
@@ -113,13 +109,13 @@ Stream<TextStreamEvent> streamText({
   required LanguageModel model,
   required List<PromptMessage> prompt,
   GenerateTextOptions options = const GenerateTextOptions(),
-  ProviderInvocationOptions? providerOptions,
+  CallOptions callOptions = const CallOptions(),
 }) {
   return model.stream(
     GenerateTextRequest(
       prompt: prompt,
       options: options,
-      providerOptions: providerOptions,
+      callOptions: callOptions,
     ),
   );
 }

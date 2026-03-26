@@ -273,6 +273,39 @@ Provider-specific features should no longer all flow through `extensions`.
 
 They should be represented through five fixed channels.
 
+Before those five channels, there is one separate shared concept that should stay outside provider design:
+
+## Shared Call Controls
+
+Cross-capability invocation controls should live in a small shared `CallOptions` object.
+
+Recommended responsibilities for `CallOptions`:
+
+- timeout
+- custom headers
+- typed `ProviderInvocationOptions`
+
+That means:
+
+- `timeout` and `headers` are not provider-specific
+- `ProviderInvocationOptions` should hold only provider-specific per-call behavior
+- text-generation settings such as `temperature` or `maxOutputTokens` should not move into `CallOptions`
+- embedding, image, speech, and transcription settings should remain on their own request models
+
+Recommended shape:
+
+```dart
+CallOptions(
+  timeout: Duration(seconds: 30),
+  headers: {
+    'x-trace-id': 'trace-123',
+  },
+  providerOptions: OpenAIGenerateTextOptions(
+    previousResponseId: 'resp_123',
+  ),
+)
+```
+
 ## Channel 1: Typed Model Settings
 
 Use this for provider-specific features that are stable over the lifetime of a model instance.
@@ -326,8 +359,8 @@ Use this for useful provider-returned information that does not justify a shared
 
 Examples:
 
-- OpenAI `response_id`
-- Anthropic `stop_reason`
+- OpenAI response status or service tier
+- Anthropic cache or server-side trace detail
 - Google `safety_ratings`
 - cache-hit or cache-creation metadata
 - provider request IDs or trace IDs
@@ -407,7 +440,7 @@ Provider-specific handling:
 
 - built-in tools: typed provider options
 - `previous_response_id`: invocation options
-- response ID and low-level finish detail: metadata
+- response status and service tier: metadata
 - Responses CRUD: provider-native API
 
 ## Anthropic
@@ -488,6 +521,7 @@ Examples:
 
 Before the next provider-migration wave, these changes should happen:
 
+- introduce a shared `CallOptions`
 - add provider-options marker interfaces to core
 - add payload support to `CustomContentPart` and `CustomUiPart`
 - design a transport-level cancellation abstraction to replace public `CancelToken`

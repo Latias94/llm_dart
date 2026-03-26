@@ -47,7 +47,9 @@ final class OpenAILanguageModel implements LanguageModel {
   Future<GenerateTextResult> generate(GenerateTextRequest request) async {
     _ensureResponsesApi();
 
-    final providerOptions = _resolveProviderOptions(request.providerOptions);
+    final providerOptions = _resolveProviderOptions(
+      request.callOptions.providerOptions,
+    );
     final preparedRequest = _codec.encodeRequest(
       modelId: modelId,
       prompt: request.prompt,
@@ -62,10 +64,10 @@ final class OpenAILanguageModel implements LanguageModel {
         method: TransportMethod.post,
         headers: _buildRequestHeaders(
           stream: false,
-          extraHeaders: request.options.headers,
+          extraHeaders: request.callOptions.headers,
         ),
         body: preparedRequest.body,
-        timeout: request.options.timeout,
+        timeout: request.callOptions.timeout,
         responseType: TransportResponseType.json,
       ),
     );
@@ -80,7 +82,9 @@ final class OpenAILanguageModel implements LanguageModel {
   Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
     _ensureResponsesApi();
 
-    final providerOptions = _resolveProviderOptions(request.providerOptions);
+    final providerOptions = _resolveProviderOptions(
+      request.callOptions.providerOptions,
+    );
     final preparedRequest = _codec.encodeRequest(
       modelId: modelId,
       prompt: request.prompt,
@@ -98,10 +102,10 @@ final class OpenAILanguageModel implements LanguageModel {
           method: TransportMethod.post,
           headers: _buildRequestHeaders(
             stream: true,
-            extraHeaders: request.options.headers,
+            extraHeaders: request.callOptions.headers,
           ),
           body: preparedRequest.body,
-          timeout: request.options.timeout,
+          timeout: request.callOptions.timeout,
         ),
       );
 

@@ -183,6 +183,7 @@ Current implementation direction:
 - approving a client-executed tool should return the session to `awaitingTool` so the caller can later provide `addToolOutput`
 - provider-specific continuation optimizations such as OpenAI `previous_response_id` should stay provider-owned until a shared continuation abstraction is intentionally designed
 - reconnect can remain explicitly unsupported until the transport contract is frozen
+- `ChatRequestOptions` should carry capability-specific request settings plus shared `CallOptions`, instead of flattening provider options or HTTP controls directly into the session API
 
 ## 2. `ChatTransport`
 
@@ -213,6 +214,12 @@ Use cases:
 - server-side API key management, logging, caching, and auditing
 
 This layer matters because mobile and production deployments often should not call cloud providers directly.
+
+One boundary should stay explicit:
+
+- `TextStreamEvent` is the model-stream contract used by direct model integration
+- `HttpChatTransport` will likely need a dedicated serialized chunk protocol for persistence, reconnection, abort, and UI metadata patches
+- those transport concerns should not be forced back into the core `TextStreamEvent` set unless they represent stable model semantics
 
 ## 4. Do Not Pull Flutter Dependencies Back into Core
 

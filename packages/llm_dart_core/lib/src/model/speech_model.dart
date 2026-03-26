@@ -1,15 +1,15 @@
+import '../common/call_options.dart';
 import '../common/provider_metadata.dart';
-import '../common/provider_options.dart';
 
 final class SpeechGenerationRequest {
   final String text;
   final String? voice;
-  final ProviderInvocationOptions? providerOptions;
+  final CallOptions callOptions;
 
   const SpeechGenerationRequest({
     required this.text,
     this.voice,
-    this.providerOptions,
+    this.callOptions = const CallOptions(),
   });
 }
 

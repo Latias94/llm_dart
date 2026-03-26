@@ -69,12 +69,20 @@ void main() {
             SystemPromptMessage.text('You are concise.'),
             UserPromptMessage.text('Say hello.'),
           ],
+          callOptions: const CallOptions(
+            timeout: Duration(seconds: 5),
+            headers: {
+              'x-test': '1',
+            },
+          ),
         ),
       );
 
       expect(capturedRequest, isNotNull);
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.json);
+      expect(capturedRequest!.timeout, const Duration(seconds: 5));
+      expect(capturedRequest!.headers['x-test'], '1');
 
       final requestBody = capturedRequest!.body as Map<String, Object?>;
       expect(requestBody['model'], 'gpt-4.1-mini');
@@ -539,8 +547,10 @@ void main() {
               ],
             ),
           ],
-          providerOptions: const OpenAIGenerateTextOptions(
-            previousResponseId: 'resp_prev',
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              previousResponseId: 'resp_prev',
+            ),
           ),
         ),
       );

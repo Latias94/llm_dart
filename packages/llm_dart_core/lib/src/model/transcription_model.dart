@@ -1,15 +1,15 @@
+import '../common/call_options.dart';
 import '../common/provider_metadata.dart';
-import '../common/provider_options.dart';
 
 final class TranscriptionRequest {
   final List<int> audioBytes;
   final String? mediaType;
-  final ProviderInvocationOptions? providerOptions;
+  final CallOptions callOptions;
 
   const TranscriptionRequest({
     required this.audioBytes,
     this.mediaType,
-    this.providerOptions,
+    this.callOptions = const CallOptions(),
   });
 }
 
