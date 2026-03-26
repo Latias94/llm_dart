@@ -1,3 +1,5 @@
+import '../common/transport_cancellation.dart';
+
 enum TransportMethod {
   get,
   post,
@@ -12,6 +14,7 @@ final class TransportRequest {
   final Map<String, String> headers;
   final Object? body;
   final Duration? timeout;
+  final TransportCancellation? cancellation;
 
   const TransportRequest({
     required this.uri,
@@ -19,6 +22,7 @@ final class TransportRequest {
     this.headers = const {},
     this.body,
     this.timeout,
+    this.cancellation,
   });
 }
 

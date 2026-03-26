@@ -1,0 +1,29 @@
+import 'package:llm_dart_core/llm_dart_core.dart';
+
+final class OpenAIChatModelSettings implements ProviderModelOptions {
+  final bool useResponsesApi;
+  final String? organization;
+  final String? project;
+  final Map<String, String> headers;
+
+  const OpenAIChatModelSettings({
+    this.useResponsesApi = true,
+    this.organization,
+    this.project,
+    this.headers = const {},
+  });
+}
+
+final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
+  final String? previousResponseId;
+  final bool? parallelToolCalls;
+  final String? serviceTier;
+  final String? verbosity;
+
+  const OpenAIGenerateTextOptions({
+    this.previousResponseId,
+    this.parallelToolCalls,
+    this.serviceTier,
+    this.verbosity,
+  });
+}

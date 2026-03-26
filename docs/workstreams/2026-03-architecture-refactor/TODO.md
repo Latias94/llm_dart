@@ -16,7 +16,9 @@
 - [x] Introduce workspace management
 - [x] Create `llm_dart_core`
 - [x] Create `llm_dart_transport`
+- [x] Create `llm_dart_openai` skeleton
 - [x] Run static analysis for `llm_dart_core` and `llm_dart_transport`
+- [x] Run static analysis for `llm_dart_openai`
 - [ ] Create the facade compatibility entry
 - [ ] Establish the new shared test foundation
 - [ ] Establish the new export strategy and `src/` structure
