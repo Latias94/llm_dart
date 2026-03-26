@@ -4,6 +4,8 @@ enum ChatStatus {
   ready,
   submitting,
   streaming,
+  awaitingTool,
+  awaitingApproval,
   error,
 }
 

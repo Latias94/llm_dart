@@ -100,6 +100,8 @@ Suggested states:
 - `ready`
 - `submitting`
 - `streaming`
+- `awaitingTool`
+- `awaitingApproval`
 - `error`
 
 ## 4. `ChatUiAccumulator`
@@ -175,8 +177,12 @@ Key points:
 Current implementation direction:
 
 - phase 1 should already provide a baseline `DefaultChatSession` for direct `LanguageModel` streaming
-- the baseline session may initially support send, stop, clear-error, and simple regenerate before full tool loop support lands
-- tool output injection, approval response, and reconnect can remain explicitly unsupported until the transport and tool orchestration contracts are frozen
+- the baseline session should support send, stop, clear-error, simple regenerate, client-side tool-output continuation, and baseline approval continuation
+- approval response must be written into prompt history as a tool-role message instead of remaining a local-only UI mutation
+- approving a provider-executed tool should continue the transport-backed assistant turn
+- approving a client-executed tool should return the session to `awaitingTool` so the caller can later provide `addToolOutput`
+- provider-specific continuation optimizations such as OpenAI `previous_response_id` should stay provider-owned until a shared continuation abstraction is intentionally designed
+- reconnect can remain explicitly unsupported until the transport contract is frozen
 
 ## 2. `ChatTransport`
 

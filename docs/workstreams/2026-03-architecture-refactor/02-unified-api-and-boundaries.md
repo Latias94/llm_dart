@@ -159,7 +159,9 @@ final class TextPromptPart extends PromptPart { ... }
 final class FilePromptPart extends PromptPart { ... }
 final class ImagePromptPart extends PromptPart { ... }
 final class ToolCallPromptPart extends PromptPart { ... }
+final class ToolApprovalRequestPromptPart extends PromptPart { ... }
 final class ToolResultPromptPart extends PromptPart { ... }
+final class ToolApprovalResponsePromptPart extends PromptPart { ... }
 ```
 
 Key rules:
@@ -167,6 +169,8 @@ Key rules:
 - do not keep relying on one `content` string to represent everything
 - do not place UI state into the prompt layer
 - do not place provider-specific UI blocks into the prompt layer
+- tool approval request/response must live in prompt history, because approval is part of the model conversation, not only a local widget state
+- `ToolCallPromptPart` must preserve `providerExecuted`, `isDynamic`, and `title`; otherwise provider-executed tool calls are silently downgraded into ordinary client tool calls during continuation
 
 ## 2. Content Parts and Result Layer
 
@@ -179,6 +183,7 @@ final class TextContentPart extends ContentPart { ... }
 final class ReasoningContentPart extends ContentPart { ... }
 final class ToolCallContentPart extends ContentPart { ... }
 final class ToolResultContentPart extends ContentPart { ... }
+final class ToolApprovalRequestContentPart extends ContentPart { ... }
 final class SourceContentPart extends ContentPart { ... }
 final class FileContentPart extends ContentPart { ... }
 final class CustomContentPart extends ContentPart { ... }
@@ -189,6 +194,30 @@ After that:
 - `text` becomes a convenience projection
 - `thinking` becomes a convenience projection of reasoning parts
 - provider-defined outputs can move into `CustomContentPart`
+- provider-executed approval flows must not disappear in the non-streaming path, so result content must preserve tool approval requests explicitly
+
+Suggested result shape:
+
+```dart
+final class GenerateTextResult {
+  final List<ContentPart> content;
+  final FinishReason finishReason;
+  final String? rawFinishReason;
+  final String? responseId;
+  final DateTime? responseTimestamp;
+  final String? responseModelId;
+  final UsageStats? usage;
+  final ProviderMetadata? providerMetadata;
+  final List<ModelWarning> warnings;
+}
+```
+
+Result-layer rules:
+
+- `generate()` and `stream()` should stay capability-equivalent for tool approval and provider-executed tool flows
+- `responseId`, `responseTimestamp`, `responseModelId`, and the unified `finishReason` belong to common fields, not provider metadata
+- `rawFinishReason` is a common escape hatch for provider finish detail and should be exposed directly when available
+- provider metadata on the result should keep provider-owned detail such as service tier, provider status, trace IDs, or similar provider-specific payloads
 
 ## 3. UI Chat Messages
 
@@ -269,6 +298,7 @@ Additional stream-boundary rules:
 
 - `StartEvent` should carry call-level warnings so streaming and non-streaming calls expose the same diagnostics surface.
 - `ResponseMetadataEvent` should be independent from `FinishEvent` because some providers send response IDs, timestamps, or model IDs early.
+- `FinishEvent` should carry both the unified `finishReason` and optional `rawFinishReason` so stream consumers do not have to recover provider stop detail from nested metadata.
 - `CustomEvent` should preserve provider-native streamed blocks that do not belong in the common event set.
 - `RawChunkEvent` should remain opt-in and diagnostic-focused instead of becoming a default public transport surface.
 - tool-approval must be a first-class event because provider-executed tools can pause generation until the caller decides.

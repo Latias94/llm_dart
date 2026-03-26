@@ -24,6 +24,7 @@ final class ChatUiMetadataKeys {
   static const modelId = 'modelId';
   static const responseProviderMetadata = 'responseProviderMetadata';
   static const finishReason = 'finishReason';
+  static const rawFinishReason = 'rawFinishReason';
   static const usage = 'usage';
   static const finishProviderMetadata = 'finishProviderMetadata';
   static const errors = 'errors';

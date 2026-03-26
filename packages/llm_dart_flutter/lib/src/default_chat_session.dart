@@ -5,6 +5,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'chat_input.dart';
 import 'chat_request_options.dart';
 import 'chat_session.dart';
+import 'chat_session_snapshot.dart';
 import 'chat_state.dart';
 import 'chat_transport.dart';
 
@@ -20,19 +21,51 @@ final class DefaultChatSession implements ChatSession {
   StreamSubscription<TextStreamEvent>? _activeSubscription;
   ChatUiAccumulator? _activeAccumulator;
   Completer<void>? _activeCompletion;
+  int _activePromptAppendStartIndex = 0;
   bool _isDisposed = false;
 
   DefaultChatSession({
-    required this.transport,
+    required ChatTransport transport,
     String? chatId,
     List<PromptMessage> initialPrompt = const [],
     MessageIdGenerator? messageIdGenerator,
+  }) : this._(
+          transport: transport,
+          initialState: ChatState(
+            chatId: chatId ?? 'chat-${DateTime.now().microsecondsSinceEpoch}',
+            messages: _visibleMessagesFromPrompt(initialPrompt),
+          ),
+          initialPrompt: initialPrompt,
+          messageIdGenerator: messageIdGenerator,
+        );
+
+  DefaultChatSession.fromSnapshot({
+    required ChatTransport transport,
+    required ChatSessionSnapshot snapshot,
+    MessageIdGenerator? messageIdGenerator,
+  }) : this._(
+          transport: transport,
+          initialState: ChatState(
+            chatId: snapshot.chatId,
+            messages: snapshot.messages,
+            status: _normalizeRestoredStatus(snapshot.status),
+            error: _normalizeRestoredError(snapshot.status, snapshot.error),
+          ),
+          initialPrompt: snapshot.prompt,
+          messageIdGenerator: messageIdGenerator,
+        );
+
+  DefaultChatSession._({
+    required this.transport,
+    required ChatState initialState,
+    required List<PromptMessage> initialPrompt,
+    MessageIdGenerator? messageIdGenerator,
   })  : _statesController = StreamController<ChatState>.broadcast(sync: true),
-        _messageIdGenerator = messageIdGenerator ?? _sequentialMessageId(),
-        _state = ChatState(
-          chatId: chatId ?? 'chat-${DateTime.now().microsecondsSinceEpoch}',
-          messages: _visibleMessagesFromPrompt(initialPrompt),
-        ) {
+        _messageIdGenerator = messageIdGenerator ??
+            _sequentialMessageId(
+              existingIds: initialState.messages.map((message) => message.id),
+            ),
+        _state = initialState {
     _promptHistory.addAll(initialPrompt);
   }
 
@@ -105,15 +138,132 @@ final class DefaultChatSession implements ChatSession {
 
   @override
   Future<void> addToolOutput(ToolOutputUpdate update) {
-    throw UnsupportedError(
-      'Client-side tool output injection has not been implemented yet.',
+    _ensureUsable();
+    _ensureIdle('addToolOutput');
+
+    final assistantMessage = _requireLatestAssistantMessage();
+    final updatedAssistantMessage = _updateToolPartByCallId(
+      assistantMessage,
+      update.toolCallId,
+      (part) => ToolUiPart(
+        toolCallId: part.toolCallId,
+        toolName: part.toolName,
+        state: update.isError
+            ? ToolUiPartState.outputError
+            : ToolUiPartState.outputAvailable,
+        input: part.input,
+        inputText: part.inputText,
+        output: update.output,
+        errorText: update.isError ? '${update.output}' : null,
+        providerExecuted: part.providerExecuted,
+        isDynamic: part.isDynamic,
+        preliminary: false,
+        title: part.title,
+        approval: part.approval,
+        callProviderMetadata: part.callProviderMetadata,
+        resultProviderMetadata: part.resultProviderMetadata,
+      ),
+      requirePendingState: true,
+    );
+
+    _promptHistory.add(
+      ToolPromptMessage(
+        toolName: update.toolName,
+        parts: [
+          ToolResultPromptPart(
+            toolCallId: update.toolCallId,
+            toolName: update.toolName,
+            output: update.output,
+            isError: update.isError,
+          ),
+        ],
+      ),
+    );
+
+    _emitState(
+      _state.copyWith(
+        messages: _replaceLatestAssistantMessage(updatedAssistantMessage),
+        status: ChatStatus.submitting,
+        error: null,
+      ),
+    );
+
+    return _runAssistantTurn(
+      options: update.options,
+      seedAssistantMessage: updatedAssistantMessage,
     );
   }
 
   @override
-  Future<void> respondToolApproval(ToolApprovalResponse response) {
-    throw UnsupportedError(
-      'Tool approval response handling has not been implemented yet.',
+  Future<void> respondToolApproval(ToolApprovalResponse response) async {
+    _ensureUsable();
+    _ensureIdle('respondToolApproval');
+
+    final assistantMessage = _requireLatestAssistantMessage();
+    final pendingTool = _requirePendingApprovalToolPart(
+      assistantMessage,
+      response.approvalId,
+    );
+    final updatedAssistantMessage = _updateToolPartByApprovalId(
+      assistantMessage,
+      response.approvalId,
+      (part) => ToolUiPart(
+        toolCallId: part.toolCallId,
+        toolName: part.toolName,
+        state: response.approved
+            ? ToolUiPartState.approvalResponded
+            : ToolUiPartState.outputDenied,
+        input: part.input,
+        inputText: part.inputText,
+        output: part.output,
+        errorText: part.errorText,
+        providerExecuted: part.providerExecuted,
+        isDynamic: part.isDynamic,
+        preliminary: part.preliminary,
+        title: part.title,
+        approval: ToolApprovalUiState(
+          approvalId: response.approvalId,
+          approved: response.approved,
+        ),
+        callProviderMetadata: part.callProviderMetadata,
+        resultProviderMetadata: part.resultProviderMetadata,
+      ),
+    );
+
+    _promptHistory.add(
+      ToolPromptMessage(
+        toolName: pendingTool.toolName,
+        parts: [
+          ToolApprovalResponsePromptPart(
+            approvalId: response.approvalId,
+            toolCallId: pendingTool.toolCallId,
+            approved: response.approved,
+          ),
+        ],
+      ),
+    );
+
+    if (response.approved && pendingTool.providerExecuted) {
+      _emitState(
+        _state.copyWith(
+          messages: _replaceLatestAssistantMessage(updatedAssistantMessage),
+          status: ChatStatus.submitting,
+          error: null,
+        ),
+      );
+
+      return _runAssistantTurn(
+        options: response.options,
+        seedAssistantMessage: updatedAssistantMessage,
+      );
+    }
+
+    _emitState(
+      _state.copyWith(
+        messages: _replaceLatestAssistantMessage(updatedAssistantMessage),
+        status: _deriveCompletionStatus(updatedAssistantMessage),
+        error: null,
+      ),
     );
   }
 
@@ -141,7 +291,10 @@ final class DefaultChatSession implements ChatSession {
         ),
       );
       _upsertAssistantMessage(assistantMessage);
-      _appendAssistantPromptIfPresent(assistantMessage);
+      _appendAssistantPromptIfPresent(
+        assistantMessage,
+        startPartIndex: _activePromptAppendStartIndex,
+      );
     }
 
     await subscription.cancel();
@@ -170,6 +323,24 @@ final class DefaultChatSession implements ChatSession {
   }
 
   @override
+  ChatSessionSnapshot exportSnapshot() {
+    _ensureUsable();
+    if (_activeSubscription != null) {
+      throw StateError(
+        'Cannot export a chat snapshot while an assistant turn is still active.',
+      );
+    }
+
+    return ChatSessionSnapshot(
+      chatId: _state.chatId,
+      prompt: List<PromptMessage>.of(_promptHistory),
+      messages: List<ChatUiMessage>.of(_state.messages),
+      status: _state.status,
+      error: _state.error,
+    );
+  }
+
+  @override
   Future<void> dispose() async {
     if (_isDisposed) {
       return;
@@ -187,15 +358,28 @@ final class DefaultChatSession implements ChatSession {
 
   Future<void> _runAssistantTurn({
     required ChatRequestOptions options,
+    ChatUiMessage? seedAssistantMessage,
   }) async {
-    final assistantMessageId = _messageIdGenerator();
-    final accumulator = ChatUiAccumulator(messageId: assistantMessageId);
+    final assistantMessageId =
+        seedAssistantMessage?.id ?? _messageIdGenerator();
+    final accumulator = ChatUiAccumulator(
+      messageId: assistantMessageId,
+      seedMessage: seedAssistantMessage,
+    );
     final completion = Completer<void>();
     var completed = false;
     ChatUiMessage? latestAssistantMessage;
+    final promptAppendStartIndex = seedAssistantMessage?.parts.length ?? 0;
 
     _activeAccumulator = accumulator;
     _activeCompletion = completion;
+    _activePromptAppendStartIndex = promptAppendStartIndex;
+
+    if (seedAssistantMessage != null) {
+      latestAssistantMessage = accumulator.apply(const StepStartEvent());
+      _upsertAssistantMessage(latestAssistantMessage);
+    }
+
     _emitState(
       _state.copyWith(
         status: ChatStatus.streaming,
@@ -234,11 +418,14 @@ final class DefaultChatSession implements ChatSession {
 
         if (event is FinishEvent) {
           completed = true;
-          _appendAssistantPromptIfPresent(latestAssistantMessage!);
+          _appendAssistantPromptIfPresent(
+            latestAssistantMessage!,
+            startPartIndex: promptAppendStartIndex,
+          );
           _clearActiveTurn();
           _emitState(
             _state.copyWith(
-              status: ChatStatus.ready,
+              status: _deriveCompletionStatus(latestAssistantMessage),
               error: null,
             ),
           );
@@ -270,13 +457,16 @@ final class DefaultChatSession implements ChatSession {
         }
 
         if (latestAssistantMessage != null) {
-          _appendAssistantPromptIfPresent(latestAssistantMessage!);
+          _appendAssistantPromptIfPresent(
+            latestAssistantMessage!,
+            startPartIndex: promptAppendStartIndex,
+          );
         }
 
         _clearActiveTurn();
         _emitState(
           _state.copyWith(
-            status: ChatStatus.ready,
+            status: _deriveCompletionStatus(latestAssistantMessage),
             error: null,
           ),
         );
@@ -290,8 +480,14 @@ final class DefaultChatSession implements ChatSession {
     await completion.future;
   }
 
-  void _appendAssistantPromptIfPresent(ChatUiMessage assistantMessage) {
-    final promptMessage = _assistantPromptMessageFromUi(assistantMessage);
+  void _appendAssistantPromptIfPresent(
+    ChatUiMessage assistantMessage, {
+    int startPartIndex = 0,
+  }) {
+    final promptMessage = _assistantPromptMessageFromUi(
+      assistantMessage,
+      startPartIndex: startPartIndex,
+    );
     if (promptMessage != null) {
       _promptHistory.add(promptMessage);
     }
@@ -324,6 +520,7 @@ final class DefaultChatSession implements ChatSession {
     _activeSubscription = null;
     _activeAccumulator = null;
     _activeCompletion = null;
+    _activePromptAppendStartIndex = 0;
   }
 
   void _ensureUsable() {
@@ -338,6 +535,145 @@ final class DefaultChatSession implements ChatSession {
         'Cannot call $operation while another assistant turn is still active.',
       );
     }
+  }
+
+  ChatUiMessage _requireLatestAssistantMessage() {
+    if (_state.messages.isEmpty ||
+        _state.messages.last.role != ChatUiRole.assistant) {
+      throw StateError('No assistant message is available for tool handling.');
+    }
+
+    return _state.messages.last;
+  }
+
+  ToolUiPart _requirePendingApprovalToolPart(
+    ChatUiMessage message,
+    String approvalId,
+  ) {
+    for (final part in message.parts) {
+      if (part is! ToolUiPart || part.approval?.approvalId != approvalId) {
+        continue;
+      }
+
+      if (part.state != ToolUiPartState.approvalRequested) {
+        throw StateError(
+          'Approval "$approvalId" is not waiting for a response.',
+        );
+      }
+
+      return part;
+    }
+
+    throw StateError('No tool approval with ID "$approvalId" was found.');
+  }
+
+  List<ChatUiMessage> _replaceLatestAssistantMessage(
+    ChatUiMessage assistantMessage,
+  ) {
+    final messages = List<ChatUiMessage>.of(_state.messages);
+    if (messages.isEmpty || messages.last.role != ChatUiRole.assistant) {
+      throw StateError('No assistant message is available for replacement.');
+    }
+
+    messages[messages.length - 1] = assistantMessage;
+    return messages;
+  }
+
+  ChatStatus _deriveCompletionStatus(ChatUiMessage? assistantMessage) {
+    if (assistantMessage == null) {
+      return ChatStatus.ready;
+    }
+
+    final toolParts = assistantMessage.parts.whereType<ToolUiPart>().toList();
+    if (toolParts
+        .any((part) => part.state == ToolUiPartState.approvalRequested)) {
+      return ChatStatus.awaitingApproval;
+    }
+
+    if (toolParts.any(
+      (part) =>
+          part.state == ToolUiPartState.inputAvailable ||
+          part.state == ToolUiPartState.inputStreaming ||
+          (!part.providerExecuted &&
+              part.state == ToolUiPartState.approvalResponded),
+    )) {
+      return ChatStatus.awaitingTool;
+    }
+
+    return ChatStatus.ready;
+  }
+
+  ChatUiMessage _updateToolPartByCallId(
+    ChatUiMessage message,
+    String toolCallId,
+    ToolUiPart Function(ToolUiPart part) transform, {
+    bool requirePendingState = false,
+  }) {
+    var found = false;
+
+    final parts = message.parts.map((part) {
+      if (part is! ToolUiPart || part.toolCallId != toolCallId) {
+        return part;
+      }
+
+      if (requirePendingState &&
+          part.state != ToolUiPartState.inputAvailable &&
+          part.state != ToolUiPartState.inputStreaming &&
+          !(part.state == ToolUiPartState.approvalResponded &&
+              !part.providerExecuted)) {
+        throw StateError(
+          'Tool call "$toolCallId" is not waiting for client-side output.',
+        );
+      }
+
+      found = true;
+      return transform(part);
+    }).toList(growable: false);
+
+    if (!found) {
+      throw StateError('No tool call with ID "$toolCallId" was found.');
+    }
+
+    return ChatUiMessage(
+      id: message.id,
+      role: message.role,
+      parts: parts,
+      metadata: message.metadata,
+    );
+  }
+
+  ChatUiMessage _updateToolPartByApprovalId(
+    ChatUiMessage message,
+    String approvalId,
+    ToolUiPart Function(ToolUiPart part) transform,
+  ) {
+    var found = false;
+
+    final parts = message.parts.map((part) {
+      if (part is! ToolUiPart || part.approval?.approvalId != approvalId) {
+        return part;
+      }
+
+      if (part.state != ToolUiPartState.approvalRequested) {
+        throw StateError(
+          'Approval "$approvalId" is not waiting for a response.',
+        );
+      }
+
+      found = true;
+      return transform(part);
+    }).toList(growable: false);
+
+    if (!found) {
+      throw StateError('No tool approval with ID "$approvalId" was found.');
+    }
+
+    return ChatUiMessage(
+      id: message.id,
+      role: message.role,
+      parts: parts,
+      metadata: message.metadata,
+    );
   }
 
   static List<ChatUiMessage> _visibleMessagesFromPrompt(
@@ -359,6 +695,175 @@ final class DefaultChatSession implements ChatSession {
     PromptMessage message, {
     required String id,
   }) {
+    final parts = <ChatUiPart>[];
+
+    void upsertToolPart(
+      String toolCallId,
+      ToolUiPart Function(ToolUiPart? current) build,
+    ) {
+      final index = parts.lastIndexWhere(
+        (part) => part is ToolUiPart && part.toolCallId == toolCallId,
+      );
+      final current = index == -1 ? null : parts[index] as ToolUiPart;
+      final next = build(current);
+
+      if (index == -1) {
+        parts.add(next);
+      } else {
+        parts[index] = next;
+      }
+    }
+
+    for (final part in message.parts) {
+      switch (part) {
+        case TextPromptPart(:final text):
+          parts.add(TextUiPart(text: text));
+        case FilePromptPart(
+            :final mediaType,
+            :final filename,
+            :final uri,
+            :final bytes,
+          ):
+          parts.add(
+            FileUiPart(
+              GeneratedFile(
+                mediaType: mediaType,
+                filename: filename,
+                uri: uri,
+                bytes: bytes,
+              ),
+            ),
+          );
+        case ImagePromptPart(
+            :final mediaType,
+            :final uri,
+            :final bytes,
+          ):
+          parts.add(
+            FileUiPart(
+              GeneratedFile(
+                mediaType: mediaType,
+                uri: uri,
+                bytes: bytes,
+              ),
+            ),
+          );
+        case ToolCallPromptPart(
+            :final toolCallId,
+            :final toolName,
+            :final input,
+            :final providerExecuted,
+            :final isDynamic,
+            :final title,
+          ):
+          upsertToolPart(
+            toolCallId,
+            (current) => ToolUiPart(
+              toolCallId: toolCallId,
+              toolName: toolName,
+              state: current?.approval != null
+                  ? ToolUiPartState.approvalRequested
+                  : ToolUiPartState.inputAvailable,
+              input: input,
+              inputText: current?.inputText,
+              output: current?.output,
+              errorText: current?.errorText,
+              providerExecuted:
+                  providerExecuted || current?.providerExecuted == true,
+              isDynamic: isDynamic || current?.isDynamic == true,
+              preliminary: current?.preliminary ?? false,
+              title: title ?? current?.title,
+              approval: current?.approval,
+              callProviderMetadata: current?.callProviderMetadata,
+              resultProviderMetadata: current?.resultProviderMetadata,
+            ),
+          );
+        case ToolApprovalRequestPromptPart(
+            :final approvalId,
+            :final toolCallId,
+          ):
+          upsertToolPart(
+            toolCallId,
+            (current) => ToolUiPart(
+              toolCallId: toolCallId,
+              toolName: current?.toolName ??
+                  (message is ToolPromptMessage ? message.toolName : 'tool'),
+              state: ToolUiPartState.approvalRequested,
+              input: current?.input,
+              inputText: current?.inputText,
+              output: current?.output,
+              errorText: current?.errorText,
+              providerExecuted: current?.providerExecuted ?? false,
+              isDynamic: current?.isDynamic ?? false,
+              preliminary: current?.preliminary ?? false,
+              title: current?.title,
+              approval: ToolApprovalUiState(
+                approvalId: approvalId,
+              ),
+              callProviderMetadata: current?.callProviderMetadata,
+              resultProviderMetadata: current?.resultProviderMetadata,
+            ),
+          );
+        case ToolResultPromptPart(
+            :final toolCallId,
+            :final toolName,
+            :final output,
+            :final isError,
+          ):
+          upsertToolPart(
+            toolCallId,
+            (current) => ToolUiPart(
+              toolCallId: toolCallId,
+              toolName: toolName,
+              state: isError
+                  ? ToolUiPartState.outputError
+                  : ToolUiPartState.outputAvailable,
+              input: current?.input,
+              inputText: current?.inputText,
+              output: output,
+              errorText: isError ? '$output' : null,
+              providerExecuted: current?.providerExecuted ?? false,
+              isDynamic: current?.isDynamic ?? false,
+              preliminary: false,
+              title: current?.title,
+              approval: current?.approval,
+              callProviderMetadata: current?.callProviderMetadata,
+              resultProviderMetadata: current?.resultProviderMetadata,
+            ),
+          );
+        case ToolApprovalResponsePromptPart(
+            :final approvalId,
+            :final toolCallId,
+            :final approved,
+          ):
+          upsertToolPart(
+            toolCallId,
+            (current) => ToolUiPart(
+              toolCallId: toolCallId,
+              toolName: current?.toolName ??
+                  (message is ToolPromptMessage ? message.toolName : 'tool'),
+              state: approved
+                  ? ToolUiPartState.approvalResponded
+                  : ToolUiPartState.outputDenied,
+              input: current?.input,
+              inputText: current?.inputText,
+              output: current?.output,
+              errorText: current?.errorText,
+              providerExecuted: current?.providerExecuted ?? false,
+              isDynamic: current?.isDynamic ?? false,
+              preliminary: current?.preliminary ?? false,
+              title: current?.title,
+              approval: ToolApprovalUiState(
+                approvalId: approvalId,
+                approved: approved,
+              ),
+              callProviderMetadata: current?.callProviderMetadata,
+              resultProviderMetadata: current?.resultProviderMetadata,
+            ),
+          );
+      }
+    }
+
     return ChatUiMessage(
       id: id,
       role: switch (message.role) {
@@ -366,74 +871,17 @@ final class DefaultChatSession implements ChatSession {
         PromptRole.user => ChatUiRole.user,
         PromptRole.assistant || PromptRole.tool => ChatUiRole.assistant,
       },
-      parts: message.parts
-          .map(
-            (part) => switch (part) {
-              TextPromptPart(:final text) => TextUiPart(text: text),
-              FilePromptPart(
-                :final mediaType,
-                :final filename,
-                :final uri,
-                :final bytes,
-              ) =>
-                FileUiPart(
-                  GeneratedFile(
-                    mediaType: mediaType,
-                    filename: filename,
-                    uri: uri,
-                    bytes: bytes,
-                  ),
-                ),
-              ImagePromptPart(
-                :final mediaType,
-                :final uri,
-                :final bytes,
-              ) =>
-                FileUiPart(
-                  GeneratedFile(
-                    mediaType: mediaType,
-                    uri: uri,
-                    bytes: bytes,
-                  ),
-                ),
-              ToolCallPromptPart(
-                :final toolCallId,
-                :final toolName,
-                :final input,
-              ) =>
-                ToolUiPart(
-                  toolCallId: toolCallId,
-                  toolName: toolName,
-                  state: ToolUiPartState.inputAvailable,
-                  input: input,
-                ),
-              ToolResultPromptPart(
-                :final toolCallId,
-                :final toolName,
-                :final output,
-                :final isError,
-              ) =>
-                ToolUiPart(
-                  toolCallId: toolCallId,
-                  toolName: toolName,
-                  state: isError
-                      ? ToolUiPartState.outputError
-                      : ToolUiPartState.outputAvailable,
-                  output: output,
-                  errorText: isError ? '$output' : null,
-                ),
-            },
-          )
-          .toList(growable: false),
+      parts: parts,
     );
   }
 
   static AssistantPromptMessage? _assistantPromptMessageFromUi(
-    ChatUiMessage message,
-  ) {
+    ChatUiMessage message, {
+    int startPartIndex = 0,
+  }) {
     final parts = <PromptPart>[];
 
-    for (final part in message.parts) {
+    for (final part in message.parts.skip(startPartIndex)) {
       switch (part) {
         case TextUiPart(:final text) when text.isNotEmpty:
           parts.add(TextPromptPart(text));
@@ -451,15 +899,33 @@ final class DefaultChatSession implements ChatSession {
               :final toolName,
               :final input,
               :final state,
+              :final providerExecuted,
+              :final isDynamic,
+              :final title,
+              :final approval,
             )
-            when state != ToolUiPartState.outputDenied:
+            when state != ToolUiPartState.outputDenied &&
+                state != ToolUiPartState.outputAvailable &&
+                state != ToolUiPartState.outputError:
           parts.add(
             ToolCallPromptPart(
               toolCallId: toolCallId,
               toolName: toolName,
               input: input,
+              providerExecuted: providerExecuted,
+              isDynamic: isDynamic,
+              title: title,
             ),
           );
+          if (approval != null) {
+            parts.add(
+              ToolApprovalRequestPromptPart(
+                approvalId: approval.approvalId,
+                toolCallId: toolCallId,
+              ),
+            );
+          }
+        case StepBoundaryUiPart():
         default:
           break;
       }
@@ -473,11 +939,30 @@ final class DefaultChatSession implements ChatSession {
   }
 }
 
-MessageIdGenerator _sequentialMessageId() {
+ChatStatus _normalizeRestoredStatus(ChatStatus status) {
+  return switch (status) {
+    ChatStatus.submitting || ChatStatus.streaming => ChatStatus.ready,
+    _ => status,
+  };
+}
+
+Object? _normalizeRestoredError(ChatStatus status, Object? error) {
+  return _normalizeRestoredStatus(status) == ChatStatus.error ? error : null;
+}
+
+MessageIdGenerator _sequentialMessageId({
+  Iterable<String> existingIds = const [],
+}) {
+  final reservedIds = existingIds.toSet();
   var index = 0;
+
   return () {
-    final value = 'msg-$index';
-    index += 1;
-    return value;
+    while (true) {
+      final value = 'msg-$index';
+      index += 1;
+      if (reservedIds.add(value)) {
+        return value;
+      }
+    }
   };
 }

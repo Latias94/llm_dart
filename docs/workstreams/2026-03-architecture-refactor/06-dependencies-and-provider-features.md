@@ -339,14 +339,15 @@ Recommendation:
 ```dart
 ProviderMetadata({
   'openai': {
-    'responseId': 'resp_123',
     'serviceTier': 'default',
+    'responseStatus': 'completed',
   },
 })
 ```
 
 - when multiple streamed updates contribute metadata under the same provider namespace, the projection layer should merge those nested values instead of replacing the whole provider entry blindly
 - metadata should carry attached details, not primary content
+- common result fields such as `responseId`, `responseTimestamp`, `responseModelId`, and the unified finish reason should stay outside provider metadata
 
 ## Channel 4: Custom Content Parts and Custom UI Parts
 

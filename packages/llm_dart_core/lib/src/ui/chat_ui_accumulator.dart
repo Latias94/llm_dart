@@ -296,6 +296,10 @@ final class ChatUiAccumulator {
         _partialToolInputs.clear();
       case FinishEvent():
         _metadata[ChatUiMetadataKeys.finishReason] = event.finishReason;
+        _setMetadataIfNotNull(
+          ChatUiMetadataKeys.rawFinishReason,
+          event.rawFinishReason,
+        );
         if (event.usage != null) {
           _metadata[ChatUiMetadataKeys.usage] = event.usage;
         }

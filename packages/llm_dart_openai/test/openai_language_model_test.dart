@@ -7,7 +7,8 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAILanguageModel', () {
-    test('generate maps a Responses API payload to the unified result', () async {
+    test('generate maps a Responses API payload to the unified result',
+        () async {
       TransportRequest? capturedRequest;
 
       final model = OpenAI(
@@ -19,7 +20,10 @@ void main() {
               statusCode: 200,
               body: {
                 'id': 'resp_1',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
                 'status': 'completed',
+                'service_tier': 'default',
                 'output': [
                   {
                     'id': 'rs_1',
@@ -79,7 +83,78 @@ void main() {
       expect(result.text, 'Hello from OpenAI.');
       expect(result.reasoningText, 'Thinking through the answer.');
       expect(result.finishReason, FinishReason.stop);
+      expect(result.rawFinishReason, isNull);
+      expect(result.responseId, 'resp_1');
+      expect(result.responseModelId, 'gpt-4.1-mini');
+      expect(
+        result.responseTimestamp,
+        DateTime.fromMillisecondsSinceEpoch(1710000000 * 1000, isUtc: true),
+      );
       expect(result.usage?.reasoningTokens, 3);
+      expect(
+        result.providerMetadata!['openai'],
+        allOf(
+          containsPair('status', 'completed'),
+          containsPair('serviceTier', 'default'),
+        ),
+      );
+    });
+
+    test('generate exposes raw finish reason for incomplete responses',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_incomplete',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000100,
+                'status': 'incomplete',
+                'incomplete_details': {
+                  'reason': 'max_output_tokens',
+                },
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Partial answer',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 11,
+                  'output_tokens': 7,
+                  'total_tokens': 18,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 3,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Say hello.'),
+          ],
+        ),
+      );
+
+      expect(result.finishReason, FinishReason.maxTokens);
+      expect(result.rawFinishReason, 'max_output_tokens');
     });
 
     test('stream maps SSE responses to unified stream events', () async {
@@ -118,13 +193,15 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      final events = await model.stream(
-        GenerateTextRequest(
-          prompt: [
-            UserPromptMessage.text('Say hello.'),
-          ],
-        ),
-      ).toList();
+      final events = await model
+          .stream(
+            GenerateTextRequest(
+              prompt: [
+                UserPromptMessage.text('Say hello.'),
+              ],
+            ),
+          )
+          .toList();
 
       expect(events.first, isA<StartEvent>());
       expect((events.first as StartEvent).warnings, isEmpty);
@@ -134,11 +211,355 @@ void main() {
       expect(events.whereType<TextStartEvent>().single.id, 'msg_1');
       expect(events.whereType<TextDeltaEvent>().single.delta, 'Hello');
       expect(events.whereType<TextEndEvent>().single.id, 'msg_1');
-      expect(events.whereType<CustomEvent>().single.kind, 'openai.web_search_call');
+      expect(events.whereType<CustomEvent>().single.kind,
+          'openai.web_search_call');
 
       final finish = events.whereType<FinishEvent>().single;
       expect(finish.finishReason, FinishReason.stop);
       expect(finish.usage?.totalTokens, 2);
+    });
+
+    test('stream maps MCP approval requests to unified approval events',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            expect(request.method, TransportMethod.post);
+
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: Stream.fromIterable([
+                utf8.encode(
+                  'data: {"type":"response.created","response":{"id":"resp_approval","model":"gpt-4.1-mini","created_at":1710000000,"service_tier":"default"}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.output_item.done","output_index":0,"item":{"id":"approval-1","type":"mcp_approval_request","name":"create_short_url","arguments":"{\\"url\\":\\"https://ai-sdk.dev\\"}","server_label":"zip1"}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.completed","response":{"id":"resp_approval","model":"gpt-4.1-mini","created_at":1710000000,"status":"completed","output":[],"usage":{"input_tokens":1,"output_tokens":1,"total_tokens":2,"output_tokens_details":{"reasoning_tokens":0}}}}\n\n',
+                ),
+              ]),
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final events = await model
+          .stream(
+            GenerateTextRequest(
+              prompt: [
+                UserPromptMessage.text('Open the short URL tool.'),
+              ],
+            ),
+          )
+          .toList();
+
+      final toolCall = events.whereType<ToolCallEvent>().single.toolCall;
+      expect(toolCall.toolCallId, 'approval-1');
+      expect(toolCall.toolName, 'mcp.create_short_url');
+      expect(toolCall.providerExecuted, isTrue);
+      expect(toolCall.isDynamic, isTrue);
+      expect(toolCall.title, 'zip1');
+      expect((toolCall.input as Map<String, Object?>)['url'],
+          'https://ai-sdk.dev');
+
+      final approval = events.whereType<ToolApprovalRequestEvent>().single;
+      expect(approval.approvalId, 'approval-1');
+      expect(approval.toolCallId, 'approval-1');
+      expect(events.whereType<FinishEvent>().single.finishReason,
+          FinishReason.toolCalls);
+    });
+
+    test('stream maps MCP calls to unified tool call and result events',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            expect(request.method, TransportMethod.post);
+
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: Stream.fromIterable([
+                utf8.encode(
+                  'data: {"type":"response.created","response":{"id":"resp_mcp","model":"gpt-4.1-mini","created_at":1710000000,"service_tier":"default"}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.output_item.done","output_index":0,"item":{"id":"mcp-call-1","type":"mcp_call","approval_request_id":"approval-1","name":"create_short_url","arguments":"{\\"url\\":\\"https://ai-sdk.dev\\"}","server_label":"zip1","output":{"shortUrl":"https://zip1.dev/abc123"}}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.completed","response":{"id":"resp_mcp","model":"gpt-4.1-mini","created_at":1710000000,"status":"completed","output":[],"usage":{"input_tokens":1,"output_tokens":1,"total_tokens":2,"output_tokens_details":{"reasoning_tokens":0}}}}\n\n',
+                ),
+              ]),
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final events = await model
+          .stream(
+            GenerateTextRequest(
+              prompt: [
+                UserPromptMessage.text('Continue after approval.'),
+              ],
+            ),
+          )
+          .toList();
+
+      final toolCall = events.whereType<ToolCallEvent>().single.toolCall;
+      expect(toolCall.toolCallId, 'approval-1');
+      expect(toolCall.toolName, 'mcp.create_short_url');
+      expect(toolCall.providerExecuted, isTrue);
+      expect(toolCall.isDynamic, isTrue);
+
+      final toolResult = events.whereType<ToolResultEvent>().single.toolResult;
+      expect(toolResult.toolCallId, 'approval-1');
+      expect(toolResult.toolName, 'mcp.create_short_url');
+      expect(toolResult.isDynamic, isTrue);
+      expect(toolResult.isError, isFalse);
+      expect((toolResult.output as Map<String, Object?>)['type'], 'mcp_call');
+      expect(
+        ((toolResult.output as Map<String, Object?>)['output']
+            as Map<String, Object?>)['shortUrl'],
+        'https://zip1.dev/abc123',
+      );
+    });
+
+    test('generate maps MCP approval requests to unified result content',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_approval',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'approval-1',
+                    'type': 'mcp_approval_request',
+                    'name': 'create_short_url',
+                    'arguments': '{"url":"https://ai-sdk.dev"}',
+                    'server_label': 'zip1',
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Open the short URL tool.'),
+          ],
+        ),
+      );
+
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(result.content, hasLength(2));
+
+      final toolCall = result.content.whereType<ToolCallContentPart>().single;
+      expect(toolCall.toolCall.toolCallId, 'approval-1');
+      expect(toolCall.toolCall.toolName, 'mcp.create_short_url');
+      expect(toolCall.toolCall.providerExecuted, isTrue);
+      expect(toolCall.toolCall.isDynamic, isTrue);
+      expect(toolCall.toolCall.title, 'zip1');
+      expect(
+        (toolCall.toolCall.input as Map<String, Object?>)['url'],
+        'https://ai-sdk.dev',
+      );
+
+      final approval =
+          result.content.whereType<ToolApprovalRequestContentPart>().single;
+      expect(approval.approvalRequest.approvalId, 'approval-1');
+      expect(approval.approvalRequest.toolCallId, 'approval-1');
+    });
+
+    test('generate maps MCP calls to unified tool call and tool result content',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_mcp',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'mcp-call-1',
+                    'type': 'mcp_call',
+                    'approval_request_id': 'approval-1',
+                    'name': 'create_short_url',
+                    'arguments': '{"url":"https://ai-sdk.dev"}',
+                    'server_label': 'zip1',
+                    'output': {
+                      'shortUrl': 'https://zip1.dev/abc123',
+                    },
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Continue after approval.'),
+          ],
+        ),
+      );
+
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(result.content, hasLength(2));
+
+      final toolCall = result.content.whereType<ToolCallContentPart>().single;
+      expect(toolCall.toolCall.toolCallId, 'approval-1');
+      expect(toolCall.toolCall.toolName, 'mcp.create_short_url');
+      expect(toolCall.toolCall.providerExecuted, isTrue);
+      expect(toolCall.toolCall.isDynamic, isTrue);
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      expect(toolResult.toolResult.toolCallId, 'approval-1');
+      expect(toolResult.toolResult.toolName, 'mcp.create_short_url');
+      expect(toolResult.toolResult.isDynamic, isTrue);
+      expect(toolResult.toolResult.isError, isFalse);
+      expect(
+        (toolResult.toolResult.output as Map<String, Object?>)['type'],
+        'mcp_call',
+      );
+      expect(
+        (((toolResult.toolResult.output as Map<String, Object?>)['output']
+            as Map<String, Object?>)['shortUrl']),
+        'https://zip1.dev/abc123',
+      );
+    });
+
+    test('generate encodes MCP approval continuations for Responses API',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_2',
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_2',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Approved.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 4,
+                  'output_tokens': 1,
+                  'total_tokens': 5,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Approve the MCP tool.'),
+            AssistantPromptMessage(
+              parts: [
+                const ToolCallPromptPart(
+                  toolCallId: 'approval-1',
+                  toolName: 'mcp.create_short_url',
+                  input: {
+                    'url': 'https://ai-sdk.dev',
+                  },
+                  providerExecuted: true,
+                  isDynamic: true,
+                ),
+                const ToolApprovalRequestPromptPart(
+                  approvalId: 'approval-1',
+                  toolCallId: 'approval-1',
+                ),
+              ],
+            ),
+            ToolPromptMessage(
+              toolName: 'mcp.create_short_url',
+              parts: const [
+                ToolApprovalResponsePromptPart(
+                  approvalId: 'approval-1',
+                  toolCallId: 'approval-1',
+                  approved: true,
+                ),
+              ],
+            ),
+          ],
+          providerOptions: const OpenAIGenerateTextOptions(
+            previousResponseId: 'resp_prev',
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['previous_response_id'], 'resp_prev');
+
+      final input = requestBody['input'] as List<Object?>;
+      expect(input, hasLength(2));
+      expect((input[0] as Map<String, Object?>)['role'], 'user');
+      expect(
+        input[1],
+        {
+          'type': 'mcp_approval_response',
+          'approval_request_id': 'approval-1',
+          'approve': true,
+        },
+      );
     });
   });
 }

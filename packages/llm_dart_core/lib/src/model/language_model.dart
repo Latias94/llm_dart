@@ -51,6 +51,10 @@ final class GenerateTextRequest {
 final class GenerateTextResult {
   final List<ContentPart> content;
   final FinishReason finishReason;
+  final String? rawFinishReason;
+  final String? responseId;
+  final DateTime? responseTimestamp;
+  final String? responseModelId;
   final UsageStats? usage;
   final ProviderMetadata? providerMetadata;
   final List<ModelWarning> warnings;
@@ -58,6 +62,10 @@ final class GenerateTextResult {
   GenerateTextResult({
     required List<ContentPart> content,
     required this.finishReason,
+    this.rawFinishReason,
+    this.responseId,
+    this.responseTimestamp,
+    this.responseModelId,
     this.usage,
     this.providerMetadata,
     List<ModelWarning> warnings = const [],

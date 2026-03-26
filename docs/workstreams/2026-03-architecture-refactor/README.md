@@ -36,6 +36,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Migration phases, compatibility strategy, risk control, and validation.
 - [06-dependencies-and-provider-features.md](06-dependencies-and-provider-features.md)
   - Third-party dependency policy, package dependency direction, and the provider feature support model.
+- [07-serialization-and-metadata-conventions.md](07-serialization-and-metadata-conventions.md)
+  - Provider metadata namespace rules, custom kind naming, and the versioned serialization protocol.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

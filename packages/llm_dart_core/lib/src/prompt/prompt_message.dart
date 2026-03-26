@@ -45,11 +45,27 @@ final class ToolCallPromptPart extends PromptPart {
   final String toolCallId;
   final String toolName;
   final Object? input;
+  final bool providerExecuted;
+  final bool isDynamic;
+  final String? title;
 
   const ToolCallPromptPart({
     required this.toolCallId,
     required this.toolName,
     this.input,
+    this.providerExecuted = false,
+    this.isDynamic = false,
+    this.title,
+  });
+}
+
+final class ToolApprovalRequestPromptPart extends PromptPart {
+  final String approvalId;
+  final String toolCallId;
+
+  const ToolApprovalRequestPromptPart({
+    required this.approvalId,
+    required this.toolCallId,
   });
 }
 
@@ -64,6 +80,18 @@ final class ToolResultPromptPart extends PromptPart {
     required this.toolName,
     this.output,
     this.isError = false,
+  });
+}
+
+final class ToolApprovalResponsePromptPart extends PromptPart {
+  final String approvalId;
+  final String toolCallId;
+  final bool approved;
+
+  const ToolApprovalResponsePromptPart({
+    required this.approvalId,
+    required this.toolCallId,
+    required this.approved,
   });
 }
 

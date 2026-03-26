@@ -67,6 +67,7 @@ void main() {
       final message = accumulator.apply(
         const FinishEvent(
           finishReason: FinishReason.stop,
+          rawFinishReason: 'stop',
           usage: UsageStats(
             inputTokens: 3,
             outputTokens: 2,
@@ -96,6 +97,7 @@ void main() {
       expect(message.metadata[ChatUiMetadataKeys.modelId], 'gpt-4.1-mini');
       expect(
           message.metadata[ChatUiMetadataKeys.finishReason], FinishReason.stop);
+      expect(message.metadata[ChatUiMetadataKeys.rawFinishReason], 'stop');
 
       final usage = message.metadata[ChatUiMetadataKeys.usage] as UsageStats;
       expect(usage.totalTokens, 5);

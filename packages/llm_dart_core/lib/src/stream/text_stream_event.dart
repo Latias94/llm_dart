@@ -210,11 +210,13 @@ final class StepFinishEvent extends TextStreamEvent {
 
 final class FinishEvent extends TextStreamEvent {
   final FinishReason finishReason;
+  final String? rawFinishReason;
   final UsageStats? usage;
   final ProviderMetadata? providerMetadata;
 
   const FinishEvent({
     required this.finishReason,
+    this.rawFinishReason,
     this.usage,
     this.providerMetadata,
   });

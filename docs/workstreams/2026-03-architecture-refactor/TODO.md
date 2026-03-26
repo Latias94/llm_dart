@@ -4,10 +4,10 @@
 
 - [x] Complete the current repository audit and target-architecture mapping
 - [x] Freeze third-party dependency policy and inter-package dependency direction
-- [ ] Freeze `PromptMessage` / `PromptPart`
-- [ ] Freeze `ContentPart` / `GenerateTextResult`
-- [ ] Freeze `TextStreamEvent`
-- [ ] Freeze `ChatUiMessage` / `ChatUiPart`
+- [x] Freeze `PromptMessage` / `PromptPart`
+- [x] Freeze `ContentPart` / `GenerateTextResult`
+- [x] Freeze `TextStreamEvent`
+- [x] Freeze `ChatUiMessage` / `ChatUiPart`
 - [ ] Freeze provider typed options design
 - [x] Freeze workspace package boundaries
 
@@ -98,10 +98,13 @@
 - [x] Implement pure Dart `ChatUiAccumulator` / stream-to-UI-message projection
 - [x] Implement `DirectChatTransport`
 - [x] Implement baseline `DefaultChatSession`
+- [x] Implement baseline client-side tool output continuation in `DefaultChatSession`
 - [ ] Implement `HttpChatTransport`
 - [ ] Implement `ChatController`
-- [ ] Design the message serialization protocol
-- [ ] Design the tool approval and output injection API
+- [x] Design the message serialization protocol
+- [x] Implement prompt and UI JSON codecs
+- [x] Implement `ChatSessionSnapshot` export and import
+- [x] Design and implement the baseline tool approval and output injection API
 - [ ] Rewrite the Flutter integration examples
 
 ## Compatibility Layer
@@ -143,5 +146,5 @@
 
 - [x] Add payload support to `CustomContentPart`
 - [x] Add payload support to `CustomUiPart`
-- [ ] Define provider metadata namespace rules
-- [ ] Define custom-part `kind` namespace rules
+- [x] Define provider metadata namespace rules
+- [x] Define custom-part `kind` namespace rules

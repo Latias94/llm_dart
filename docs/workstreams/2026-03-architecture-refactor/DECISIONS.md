@@ -113,3 +113,25 @@ Provider-specific features should be represented through:
 - provider-native extension APIs
 
 `extensions` remains compatibility or escape-hatch only and is no longer a first-class design path.
+
+## D11. Provider Metadata Must Stay Namespaced And JSON-Safe
+
+- `ProviderMetadata` is provider-owned detail, not a substitute for common core fields
+- top-level keys must be namespace keys such as `openai`, `anthropic`, or `google`
+- metadata values must stay JSON-safe so prompt, UI, and session persistence remain possible
+- common concepts that already have stable fields or common UI metadata keys must not be pushed back into provider metadata
+
+## D12. Serialization Must Use Explicit Versioned Codecs
+
+- do not add ad hoc `toJson()` methods across all domain models as the primary design
+- prompt history, UI messages, and session snapshots should use explicit codecs
+- serialized top-level artifacts must carry a schema version and artifact kind
+- session restore must serialize both prompt history and rendered UI messages, not only `ChatState.messages`
+
+## D13. Result And Stream Layers Must Preserve Approval And Common Response Metadata
+
+- `ContentPart` must include a first-class tool approval request part
+- provider-executed approval flows must be representable in both `generate()` results and `stream()` events
+- `GenerateTextResult` must expose common response metadata fields such as response ID, response timestamp, response model ID, and raw finish reason directly
+- `FinishEvent` should carry `rawFinishReason` when the provider exposes one
+- provider metadata should keep provider-owned detail and should not be the primary home for those common response fields

@@ -66,6 +66,16 @@ final class ToolResultContent {
   });
 }
 
+final class ToolApprovalRequestContent {
+  final String approvalId;
+  final String toolCallId;
+
+  const ToolApprovalRequestContent({
+    required this.approvalId,
+    required this.toolCallId,
+  });
+}
+
 sealed class ContentPart {
   const ContentPart();
 }
@@ -106,6 +116,16 @@ final class ToolResultContentPart extends ContentPart {
 
   const ToolResultContentPart(
     this.toolResult, {
+    this.providerMetadata,
+  });
+}
+
+final class ToolApprovalRequestContentPart extends ContentPart {
+  final ToolApprovalRequestContent approvalRequest;
+  final ProviderMetadata? providerMetadata;
+
+  const ToolApprovalRequestContentPart(
+    this.approvalRequest, {
     this.providerMetadata,
   });
 }

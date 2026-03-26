@@ -104,6 +104,18 @@ final class OpenAIResponsesCodec {
         continue;
       }
 
+      if (type == 'mcp_approval_request') {
+        hasToolCalls = true;
+        content.addAll(_decodeMcpApprovalRequestOutput(item));
+        continue;
+      }
+
+      if (type == 'mcp_call') {
+        hasToolCalls = true;
+        content.addAll(_decodeMcpCallOutput(item));
+        continue;
+      }
+
       final customPart = _decodeCustomOutput(item);
       if (customPart != null) {
         content.add(customPart);
@@ -117,6 +129,10 @@ final class OpenAIResponsesCodec {
         hasToolCalls: hasToolCalls,
         status: _asString(response['status']),
       ),
+      rawFinishReason: _responseFinishReason(response),
+      responseId: _asString(response['id']),
+      responseTimestamp: _decodeResponseTimestamp(response),
+      responseModelId: _asString(response['model']),
       usage: _decodeUsage(_asMap(response['usage'])),
       providerMetadata: _responseMetadata(response),
       warnings: warnings,
@@ -402,6 +418,94 @@ final class OpenAIResponsesCodec {
         return;
       }
 
+      if (itemType == 'mcp_approval_request') {
+        final approvalId =
+            _asString(item['approval_request_id']) ?? _asString(item['id']);
+        final toolName = _asString(item['name']);
+        if (approvalId == null || toolName == null) {
+          return;
+        }
+
+        state.hasToolCalls = true;
+        final providerMetadata = _itemMetadata(
+          item,
+          extra: {
+            'approvalRequestId': approvalId,
+            'serverLabel': _asString(item['server_label']),
+          },
+        );
+        final qualifiedToolName = 'mcp.$toolName';
+
+        yield ToolCallEvent(
+          toolCall: ToolCallContent(
+            toolCallId: approvalId,
+            toolName: qualifiedToolName,
+            input: _decodeJsonValue(_asString(item['arguments']) ?? '{}'),
+            providerExecuted: true,
+            isDynamic: true,
+            title: _asString(item['server_label']),
+          ),
+          providerMetadata: providerMetadata,
+        );
+        yield ToolApprovalRequestEvent(
+          approvalId: approvalId,
+          toolCallId: approvalId,
+          providerMetadata: providerMetadata,
+        );
+        return;
+      }
+
+      if (itemType == 'mcp_call') {
+        final toolCallId =
+            _asString(item['approval_request_id']) ?? _asString(item['id']);
+        final toolName = _asString(item['name']);
+        if (toolCallId == null || toolName == null) {
+          return;
+        }
+
+        state.hasToolCalls = true;
+        final providerMetadata = _itemMetadata(
+          item,
+          extra: {
+            'approvalRequestId': _asString(item['approval_request_id']),
+            'serverLabel': _asString(item['server_label']),
+          },
+        );
+        final qualifiedToolName = 'mcp.$toolName';
+        final arguments =
+            _decodeJsonValue(_asString(item['arguments']) ?? '{}');
+
+        yield ToolCallEvent(
+          toolCall: ToolCallContent(
+            toolCallId: toolCallId,
+            toolName: qualifiedToolName,
+            input: arguments,
+            providerExecuted: true,
+            isDynamic: true,
+            title: _asString(item['server_label']),
+          ),
+          providerMetadata: providerMetadata,
+        );
+        yield ToolResultEvent(
+          toolResult: ToolResultContent(
+            toolCallId: toolCallId,
+            toolName: qualifiedToolName,
+            output: {
+              'type': 'mcp_call',
+              'serverLabel': _asString(item['server_label']),
+              'name': toolName,
+              'arguments': arguments,
+              if (item['output'] != null) 'output': item['output'],
+              if (item['error'] != null) 'error': item['error'],
+            },
+            isError: item['error'] != null,
+            isDynamic: true,
+          ),
+          providerMetadata: providerMetadata,
+        );
+        return;
+      }
+
       if (itemType != 'reasoning' && itemType != null) {
         yield CustomEvent(
           kind: 'openai.$itemType',
@@ -451,6 +555,7 @@ final class OpenAIResponsesCodec {
               ? 'failed'
               : _asString(response['status']),
         ),
+        rawFinishReason: state.rawFinishReason,
         usage: state.usage,
         providerMetadata: _responseMetadata(response),
       );
@@ -527,12 +632,20 @@ final class OpenAIResponsesCodec {
       flushTextContent();
 
       if (part is ToolCallPromptPart) {
+        if (part.providerExecuted) {
+          continue;
+        }
+
         items.add({
           'type': 'function_call',
           'call_id': part.toolCallId,
           'name': part.toolName,
           'arguments': _encodeJsonString(part.input),
         });
+        continue;
+      }
+
+      if (part is ToolApprovalRequestPromptPart) {
         continue;
       }
 
@@ -561,6 +674,15 @@ final class OpenAIResponsesCodec {
     final items = <Object?>[];
 
     for (final part in message.parts) {
+      if (part is ToolApprovalResponsePromptPart) {
+        items.add({
+          'type': 'mcp_approval_response',
+          'approval_request_id': part.approvalId,
+          'approve': part.approved,
+        });
+        continue;
+      }
+
       if (part is! ToolResultPromptPart) {
         throw UnsupportedError(
           'Tool prompt part ${part.runtimeType} is not supported by the migrated Responses codec yet.',
@@ -697,8 +819,9 @@ final class OpenAIResponsesCodec {
     String? fallbackArguments,
     String? fallbackToolName,
   }) {
-    final toolCallId =
-        _asString(item['call_id']) ?? fallbackToolCallId ?? _asString(item['id']);
+    final toolCallId = _asString(item['call_id']) ??
+        fallbackToolCallId ??
+        _asString(item['id']);
     final toolName = _asString(item['name']) ?? fallbackToolName;
     if (toolCallId == null || toolName == null) {
       return null;
@@ -723,6 +846,95 @@ final class OpenAIResponsesCodec {
         },
       ),
     );
+  }
+
+  List<ContentPart> _decodeMcpApprovalRequestOutput(Map<String, Object?> item) {
+    final approvalId =
+        _asString(item['approval_request_id']) ?? _asString(item['id']);
+    final toolName = _asString(item['name']);
+    if (approvalId == null || toolName == null) {
+      return const [];
+    }
+
+    final providerMetadata = _itemMetadata(
+      item,
+      extra: {
+        'approvalRequestId': approvalId,
+        'serverLabel': _asString(item['server_label']),
+      },
+    );
+    final qualifiedToolName = 'mcp.$toolName';
+
+    return [
+      ToolCallContentPart(
+        ToolCallContent(
+          toolCallId: approvalId,
+          toolName: qualifiedToolName,
+          input: _decodeJsonValue(_asString(item['arguments']) ?? '{}'),
+          providerExecuted: true,
+          isDynamic: true,
+          title: _asString(item['server_label']),
+        ),
+        providerMetadata: providerMetadata,
+      ),
+      ToolApprovalRequestContentPart(
+        ToolApprovalRequestContent(
+          approvalId: approvalId,
+          toolCallId: approvalId,
+        ),
+        providerMetadata: providerMetadata,
+      ),
+    ];
+  }
+
+  List<ContentPart> _decodeMcpCallOutput(Map<String, Object?> item) {
+    final toolCallId =
+        _asString(item['approval_request_id']) ?? _asString(item['id']);
+    final toolName = _asString(item['name']);
+    if (toolCallId == null || toolName == null) {
+      return const [];
+    }
+
+    final providerMetadata = _itemMetadata(
+      item,
+      extra: {
+        'approvalRequestId': _asString(item['approval_request_id']),
+        'serverLabel': _asString(item['server_label']),
+      },
+    );
+    final qualifiedToolName = 'mcp.$toolName';
+    final arguments = _decodeJsonValue(_asString(item['arguments']) ?? '{}');
+
+    return [
+      ToolCallContentPart(
+        ToolCallContent(
+          toolCallId: toolCallId,
+          toolName: qualifiedToolName,
+          input: arguments,
+          providerExecuted: true,
+          isDynamic: true,
+          title: _asString(item['server_label']),
+        ),
+        providerMetadata: providerMetadata,
+      ),
+      ToolResultContentPart(
+        ToolResultContent(
+          toolCallId: toolCallId,
+          toolName: qualifiedToolName,
+          output: {
+            'type': 'mcp_call',
+            'serverLabel': _asString(item['server_label']),
+            'name': toolName,
+            'arguments': arguments,
+            if (item['output'] != null) 'output': item['output'],
+            if (item['error'] != null) 'error': item['error'],
+          },
+          isError: item['error'] != null,
+          isDynamic: true,
+        ),
+        providerMetadata: providerMetadata,
+      ),
+    ];
   }
 
   CustomContentPart? _decodeCustomOutput(Map<String, Object?> item) {
@@ -823,12 +1035,8 @@ final class OpenAIResponsesCodec {
 
   ProviderMetadata? _responseMetadata(Map<String, Object?> response) {
     return _providerMetadata({
-      'responseId': _asString(response['id']),
       'status': _asString(response['status']),
-      'modelId': _asString(response['model']),
-      'createdAt': _asInt(response['created_at']),
       'serviceTier': _asString(response['service_tier']),
-      'rawFinishReason': _responseFinishReason(response),
     });
   }
 
@@ -948,8 +1156,7 @@ final class OpenAIResponsesCodec {
 
     final inputTokens = _asInt(usage['input_tokens']);
     final outputTokens = _asInt(usage['output_tokens']);
-    final totalTokens =
-        _asInt(usage['total_tokens']) ??
+    final totalTokens = _asInt(usage['total_tokens']) ??
         ((inputTokens != null && outputTokens != null)
             ? inputTokens + outputTokens
             : null);
