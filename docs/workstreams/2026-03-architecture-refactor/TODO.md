@@ -51,8 +51,8 @@
 - [x] Replace public `CancelToken` with a transport cancellation abstraction
 - [x] Extract provider-independent error mapping
 - [ ] Define the transport diagnostics interface
-- [ ] Define `HttpChatTransport` request and chunk codecs
-- [ ] Implement `TextStreamEvent` JSON codec
+- [x] Define `HttpChatTransport` request and chunk codecs
+- [x] Implement `TextStreamEvent` JSON codec
 
 ## OpenAI Family
 
@@ -101,9 +101,9 @@
 - [x] Implement `DirectChatTransport`
 - [x] Implement baseline `DefaultChatSession`
 - [x] Implement baseline client-side tool output continuation in `DefaultChatSession`
-- [ ] Implement `HttpChatTransport`
+- [x] Implement baseline `HttpChatTransport`
 - [ ] Implement `ChatController`
-- [ ] Define a serialized chat chunk protocol for `HttpChatTransport`
+- [x] Define a serialized chat chunk protocol for `HttpChatTransport`
 - [x] Design the message serialization protocol
 - [x] Implement prompt and UI JSON codecs
 - [x] Implement `ChatSessionSnapshot` export and import

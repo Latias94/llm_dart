@@ -9,6 +9,8 @@ environment:
 dependencies:
   llm_dart_core:
     path: ../llm_dart_core
+  llm_dart_transport:
+    path: ../llm_dart_transport
 
 dev_dependencies:
   lints: ^6.0.0
