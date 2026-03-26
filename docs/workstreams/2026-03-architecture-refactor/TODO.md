@@ -91,12 +91,13 @@
 
 ## Flutter
 
-- [ ] Create `llm_dart_flutter`
-- [ ] Define `ChatSession`
-- [ ] Define `ChatTransport`
-- [ ] Define `ChatState`
+- [x] Create `llm_dart_flutter`
+- [x] Define `ChatSession`
+- [x] Define `ChatTransport`
+- [x] Define `ChatState`
 - [x] Implement pure Dart `ChatUiAccumulator` / stream-to-UI-message projection
-- [ ] Implement `DirectChatTransport`
+- [x] Implement `DirectChatTransport`
+- [x] Implement baseline `DefaultChatSession`
 - [ ] Implement `HttpChatTransport`
 - [ ] Implement `ChatController`
 - [ ] Design the message serialization protocol

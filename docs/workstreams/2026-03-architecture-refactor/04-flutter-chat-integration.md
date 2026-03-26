@@ -172,6 +172,12 @@ Key points:
 - UI operations should revolve around sessions, not models
 - tool-result injection and approval handling are session concerns, not provider concerns
 
+Current implementation direction:
+
+- phase 1 should already provide a baseline `DefaultChatSession` for direct `LanguageModel` streaming
+- the baseline session may initially support send, stop, clear-error, and simple regenerate before full tool loop support lands
+- tool output injection, approval response, and reconnect can remain explicitly unsupported until the transport and tool orchestration contracts are frozen
+
 ## 2. `ChatTransport`
 
 Borrow the idea from the Vercel AI SDK, but do not copy its hooks-centered design.
