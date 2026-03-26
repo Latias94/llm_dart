@@ -40,6 +40,13 @@ Acceptance criteria:
 - the OpenAI text mainline works
 - streaming, tool calling, reasoning, and structured-output coverage tests pass
 
+Current status:
+
+- minimal Responses-based text generation is implemented in `llm_dart_openai`
+- streaming text, reasoning summaries, and function-call outputs are mapped into the new core models
+- transport now has a concrete Dio executor, SSE decoder, cancellation abstraction, and error mapping
+- broader tool coverage, structured output, and non-text endpoints remain for the next step
+
 ## M3 - Anthropic And Google
 
 Goals:

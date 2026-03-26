@@ -12,10 +12,12 @@ final class OpenAI {
 
   OpenAI({
     required this.apiKey,
-    required this.transport,
-    this.baseUrl = 'https://api.openai.com/v1',
+    TransportClient? transport,
+    String? baseUrl,
     OpenAIFamilyProfile? profile,
-  }) : profile = profile ?? const OpenAIProfile();
+  })  : profile = profile ?? const OpenAIProfile(),
+        baseUrl = baseUrl ?? (profile ?? const OpenAIProfile()).defaultBaseUrl,
+        transport = transport ?? DioTransportClient();
 
   OpenAILanguageModel chatModel(
     String modelId, {

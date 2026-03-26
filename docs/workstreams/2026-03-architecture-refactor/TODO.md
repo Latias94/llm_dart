@@ -44,19 +44,19 @@
 
 ## Transport
 
-- [ ] Extract the HTTP request executor
-- [ ] Extract the SSE decoder
+- [x] Extract the HTTP request executor
+- [x] Extract the SSE decoder
 - [ ] Extract the stream chunk parser helper
 - [ ] Extract retry, timeout, and cancellation
-- [ ] Replace public `CancelToken` with a transport cancellation abstraction
-- [ ] Extract provider-independent error mapping
+- [x] Replace public `CancelToken` with a transport cancellation abstraction
+- [x] Extract provider-independent error mapping
 - [ ] Define the transport diagnostics interface
 
 ## OpenAI Family
 
-- [ ] Design the OpenAI-family profile structure
+- [x] Design the OpenAI-family profile structure
 - [ ] Migrate OpenAI chat
-- [ ] Migrate OpenAI responses
+- [x] Migrate OpenAI responses
 - [ ] Migrate OpenAI embeddings
 - [ ] Migrate OpenAI image
 - [ ] Migrate OpenAI speech and transcription
@@ -118,6 +118,8 @@
 - [ ] transport reconnection tests
 - [ ] provider profile tests
 - [ ] compatibility adapter tests
+- [x] transport SSE decoder tests
+- [x] OpenAI text mainline smoke tests
 
 ## Documentation And Examples
 

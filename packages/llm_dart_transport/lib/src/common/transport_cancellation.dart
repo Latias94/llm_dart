@@ -1,17 +1,15 @@
 import 'dart:async';
 
-final class TransportCancelledException implements Exception {
+import 'transport_exception.dart';
+
+final class TransportCancelledException extends TransportException {
   final Object? reason;
 
-  const TransportCancelledException([this.reason]);
-
-  @override
-  String toString() {
-    if (reason == null) {
-      return 'TransportCancelledException()';
-    }
-    return 'TransportCancelledException(reason: $reason)';
-  }
+  const TransportCancelledException([this.reason])
+      : super(
+          'Transport request cancelled',
+          cause: reason,
+        );
 }
 
 final class TransportCancellation {

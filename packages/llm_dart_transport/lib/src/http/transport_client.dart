@@ -8,6 +8,12 @@ enum TransportMethod {
   delete,
 }
 
+enum TransportResponseType {
+  json,
+  plainText,
+  bytes,
+}
+
 final class TransportRequest {
   final Uri uri;
   final TransportMethod method;
@@ -15,6 +21,7 @@ final class TransportRequest {
   final Object? body;
   final Duration? timeout;
   final TransportCancellation? cancellation;
+  final TransportResponseType responseType;
 
   const TransportRequest({
     required this.uri,
@@ -23,6 +30,7 @@ final class TransportRequest {
     this.body,
     this.timeout,
     this.cancellation,
+    this.responseType = TransportResponseType.json,
   });
 }
 
