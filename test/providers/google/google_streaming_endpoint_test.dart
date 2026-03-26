@@ -4,6 +4,8 @@ import 'package:test/test.dart';
 class RecordingGoogleClient extends GoogleClient {
   String? lastPostJsonEndpoint;
   String? lastPostStreamRawEndpoint;
+  Map<String, dynamic>? lastPostJsonData;
+  Map<String, dynamic>? lastPostStreamRawData;
 
   RecordingGoogleClient(super.config);
 
@@ -14,6 +16,7 @@ class RecordingGoogleClient extends GoogleClient {
     CancelToken? cancelToken,
   }) async {
     lastPostJsonEndpoint = endpoint;
+    lastPostJsonData = data;
 
     return {
       'candidates': [
@@ -35,6 +38,7 @@ class RecordingGoogleClient extends GoogleClient {
     CancelToken? cancelToken,
   }) async* {
     lastPostStreamRawEndpoint = endpoint;
+    lastPostStreamRawData = data;
     yield 'data: {"candidates":[{"content":{"parts":[{"text":"hi"}]}}]}\n\n';
   }
 }
@@ -74,6 +78,58 @@ void main() {
       expect(
         client.lastPostStreamRawEndpoint,
         equals('models/gemini-1.5-flash:streamGenerateContent'),
+      );
+    });
+  });
+
+  group('Google structured output requests', () {
+    test(
+        'chat includes responseSchema and responseMimeType when jsonSchema is configured',
+        () async {
+      const jsonSchema = StructuredOutputFormat(
+        name: 'weather_response',
+        schema: {
+          'type': 'object',
+          'properties': {
+            'city': {'type': 'string'},
+            'temperature': {'type': 'number'},
+          },
+          'required': ['city', 'temperature'],
+          'additionalProperties': false,
+        },
+      );
+
+      final config = GoogleConfig.fromLLMConfig(
+        LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
+          model: 'gemini-1.5-flash',
+        ).withExtension('jsonSchema', jsonSchema),
+      );
+
+      final client = RecordingGoogleClient(config);
+      final chat = GoogleChat(client, config);
+
+      await chat.chat([ChatMessage.user('hello')]);
+
+      final generationConfig =
+          client.lastPostJsonData?['generationConfig'] as Map<String, dynamic>?;
+
+      expect(generationConfig, isNotNull);
+      expect(
+        generationConfig?['responseMimeType'],
+        equals('application/json'),
+      );
+      expect(
+        generationConfig?['responseSchema'],
+        equals({
+          'type': 'object',
+          'properties': {
+            'city': {'type': 'string'},
+            'temperature': {'type': 'number'},
+          },
+          'required': ['city', 'temperature'],
+        }),
       );
     });
   });

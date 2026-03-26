@@ -159,6 +159,35 @@ void main() {
         expect(googleConfig.toolChoice, isNull);
         expect(googleConfig.tools, equals(testTools));
       });
+
+      test(
+          'should preserve jsonSchema when creating GoogleConfig from LLMConfig',
+          () {
+        const jsonSchema = StructuredOutputFormat(
+          name: 'weather_response',
+          schema: {
+            'type': 'object',
+            'properties': {
+              'city': {'type': 'string'},
+              'temperature': {'type': 'number'},
+            },
+            'required': ['city', 'temperature'],
+            'additionalProperties': false,
+          },
+        );
+
+        final llmConfig = LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
+          model: 'gemini-1.5-flash',
+        ).withExtension('jsonSchema', jsonSchema);
+
+        final googleConfig = GoogleConfig.fromLLMConfig(llmConfig);
+
+        expect(googleConfig.jsonSchema, isNotNull);
+        expect(googleConfig.jsonSchema?.name, equals('weather_response'));
+        expect(googleConfig.jsonSchema?.schema, equals(jsonSchema.schema));
+      });
     });
 
     group('Config CopyWith Method', () {

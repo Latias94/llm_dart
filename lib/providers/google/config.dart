@@ -128,6 +128,7 @@ class GoogleConfig {
       topK: config.topK,
       tools: config.tools,
       toolChoice: config.toolChoice,
+      jsonSchema: config.getExtension<StructuredOutputFormat>('jsonSchema'),
       // Google-specific extensions
       reasoningEffort: ReasoningEffort.fromString(
           config.getExtension<String>('reasoningEffort')),
