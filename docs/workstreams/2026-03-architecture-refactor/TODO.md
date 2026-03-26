@@ -51,6 +51,8 @@
 - [x] Replace public `CancelToken` with a transport cancellation abstraction
 - [x] Extract provider-independent error mapping
 - [ ] Define the transport diagnostics interface
+- [ ] Define `HttpChatTransport` request and chunk codecs
+- [ ] Implement `TextStreamEvent` JSON codec
 
 ## OpenAI Family
 

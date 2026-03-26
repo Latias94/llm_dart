@@ -78,11 +78,13 @@ Goals:
 - make `llm_dart_flutter` usable
 - land `ChatSession`, `ChatTransport`, and `ChatState`
 - make both direct and HTTP transports work
+- freeze a versioned HTTP request/chunk protocol that sits above `TextStreamEvent`
 
 Acceptance criteria:
 
 - the Flutter chat example runs on the new API
 - reasoning, tools, sources, and files render naturally
+- HTTP transport reconnect semantics are defined through transport checkpoints rather than ad hoc core events
 
 ## M6 - Compatibility Cleanup
 

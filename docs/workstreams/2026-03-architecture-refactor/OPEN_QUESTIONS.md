@@ -82,16 +82,29 @@ Current recommendation:
 - define the interfaces early
 - implement the full layer in M5
 
+## 8. Whether Generic Remote Provider Options Should Exist In `HttpChatTransport`
+
+Needs confirmation:
+
+- should the generic HTTP chat transport later expose provider-specific remote options
+- or should those remain backend-defined contracts outside the generic transport envelope
+
+Current recommendation:
+
+- do not support generic remote provider options in phase 1
+- keep the transport request envelope JSON-safe and provider-neutral
+- if this capability is needed later, add a separate namespaced transport field instead of serializing typed `ProviderInvocationOptions`
+
 ## P2 - Can Be Deferred
 
-## 8. Whether `llm_dart_core` Should Be Published
+## 9. Whether `llm_dart_core` Should Be Published
 
 Current recommendation:
 
 - keep it internal to the repository in phase 1
 - evaluate separate publishing only after the API stabilizes
 
-## 9. Whether to Provide a Widget Layer
+## 10. Whether to Provide a Widget Layer
 
 Current recommendation:
 

@@ -38,6 +38,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Third-party dependency policy, package dependency direction, and the provider feature support model.
 - [07-serialization-and-metadata-conventions.md](07-serialization-and-metadata-conventions.md)
   - Provider metadata namespace rules, custom kind naming, and the versioned serialization protocol.
+- [08-http-chat-transport-and-stream-protocol.md](08-http-chat-transport-and-stream-protocol.md)
+  - Request/stream protocol design for `HttpChatTransport`, reconnect checkpoints, and the transport boundary above `TextStreamEvent`.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
