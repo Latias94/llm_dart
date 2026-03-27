@@ -54,6 +54,7 @@ void main() {
         ],
         toolChoice: const RequiredToolChoice(),
         options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
         providerOptions: const AnthropicGenerateTextOptions(),
         stream: false,
       );
@@ -154,6 +155,7 @@ void main() {
         tools: const [],
         toolChoice: null,
         options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
         providerOptions: const AnthropicGenerateTextOptions(),
         stream: false,
       );
@@ -212,6 +214,7 @@ void main() {
           topP: 0.8,
           topK: 40,
         ),
+        settings: const AnthropicChatModelSettings(),
         providerOptions: AnthropicGenerateTextOptions(
           extendedThinking: true,
           interleavedThinking: true,
@@ -287,6 +290,7 @@ void main() {
           tools: const [],
           toolChoice: null,
           options: const GenerateTextOptions(),
+          settings: const AnthropicChatModelSettings(),
           providerOptions: const AnthropicGenerateTextOptions(),
           stream: false,
         ),
@@ -337,6 +341,7 @@ void main() {
         tools: const [],
         toolChoice: null,
         options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
         providerOptions: const AnthropicGenerateTextOptions(),
         stream: false,
       );
@@ -373,6 +378,60 @@ void main() {
               },
             },
           ],
+        },
+      );
+    });
+
+    test('encodes Anthropic native tools alongside common function tools', () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Search and answer.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        toolChoice: const AutoToolChoice(),
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(
+          tools: [
+            AnthropicWebSearchTool20250305(
+              maxUses: 3,
+            ),
+            AnthropicCodeExecutionTool20260120(),
+          ],
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['tools'],
+        [
+          {
+            'name': 'weather',
+            'input_schema': {
+              'type': 'object',
+            },
+          },
+          {
+            'type': 'web_search_20250305',
+            'name': 'web_search',
+            'max_uses': 3,
+          },
+          {
+            'type': 'code_execution_20260120',
+            'name': 'code_execution',
+          },
+        ],
+      );
+      expect(
+        request.body['tool_choice'],
+        {
+          'type': 'auto',
         },
       );
     });

@@ -92,6 +92,9 @@ void main() {
                   url: 'https://mcp.example.com',
                 ),
               ],
+              tools: [
+                AnthropicCodeExecutionTool20260120(),
+              ],
             ),
           ),
         ),
@@ -145,6 +148,10 @@ void main() {
               },
               'required': ['city'],
             },
+          },
+          {
+            'type': 'code_execution_20260120',
+            'name': 'code_execution',
           },
         ],
       );

@@ -48,6 +48,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Anthropic-specific migration slicing, module layout, and feature-placement rules for the new package.
 - [12-tool-definition-boundary.md](12-tool-definition-boundary.md)
   - Frozen boundary for common function tools, `ToolChoice`, and provider-native tool placement.
+- [13-provider-native-tool-entry.md](13-provider-native-tool-entry.md)
+  - Typed entry rules for Google and Anthropic native tools without widening the common core.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

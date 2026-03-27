@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'anthropic_options.dart';
+import 'anthropic_tools.dart';
 
 final class AnthropicMessagesRequest {
   final Map<String, Object?> body;
@@ -33,6 +34,7 @@ final class AnthropicMessagesCodec {
     required List<FunctionToolDefinition> tools,
     required ToolChoice? toolChoice,
     required GenerateTextOptions options,
+    required AnthropicChatModelSettings settings,
     required AnthropicGenerateTextOptions providerOptions,
     required bool stream,
   }) {
@@ -76,6 +78,7 @@ final class AnthropicMessagesCodec {
     final extendedThinking = providerOptions.extendedThinking == true;
     final interleavedThinking = providerOptions.interleavedThinking == true;
     final mcpServers = providerOptions.mcpServers;
+    final nativeTools = providerOptions.tools ?? settings.tools;
     var maxTokens = options.maxOutputTokens ?? _defaultMaxTokens;
     final temperature = _normalizeTemperature(
       options.temperature,
@@ -185,6 +188,7 @@ final class AnthropicMessagesCodec {
 
     final toolConfiguration = _resolveToolConfiguration(
       tools: tools,
+      nativeTools: nativeTools,
       toolChoice: toolChoice,
     );
 
@@ -232,13 +236,14 @@ final class AnthropicMessagesCodec {
 
   _AnthropicToolConfiguration _resolveToolConfiguration({
     required List<FunctionToolDefinition> tools,
+    required List<AnthropicNativeTool> nativeTools,
     required ToolChoice? toolChoice,
   }) {
-    if (tools.isEmpty || toolChoice is NoneToolChoice) {
+    if ((tools.isEmpty && nativeTools.isEmpty) || toolChoice is NoneToolChoice) {
       return const _AnthropicToolConfiguration();
     }
 
-    final encodedTools = [
+    final encodedTools = <Map<String, Object?>>[
       for (final tool in tools)
         {
           'name': tool.name,
@@ -246,6 +251,7 @@ final class AnthropicMessagesCodec {
           'input_schema': tool.inputSchema.toJson(),
           if (tool.strict != null) 'strict': tool.strict,
         },
+      for (final tool in nativeTools) tool.toJson(),
     ];
 
     final encodedToolChoice = switch (toolChoice) {

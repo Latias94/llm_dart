@@ -193,3 +193,11 @@ Provider-specific features should be represented through:
 - provider-native tools do not enter the common core request model in phase 1
 - provider-only tool toggles or built-in tool families must stay in typed provider options or provider-native APIs
 - provider adapters are responsible for mapping common function tools into provider wire formats
+
+## D22. Provider-Native Tool Declarations Stay In Provider Packages
+
+- provider-native tool classes belong in the owning provider package
+- provider-native tools enter through typed provider model settings or typed invocation options
+- invocation-level provider-native tool lists override model-level defaults instead of implicitly merging
+- Google may keep conservative mixed-tool behavior when native tools and common function tools do not normalize cleanly
+- Anthropic may combine common function tools and provider-native tools when its wire format supports that directly

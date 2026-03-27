@@ -267,5 +267,57 @@ void main() {
         ],
       );
     });
+
+    test(
+        'uses Google native tools from provider options and ignores common tool choice for that call',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'gemini-2.5-flash',
+        prompt: [
+          UserPromptMessage.text('Search the web.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        toolChoice: const SpecificToolChoice('weather'),
+        options: const GenerateTextOptions(),
+        settings: const GoogleChatModelSettings(),
+        providerOptions: const GoogleGenerateTextOptions(
+          tools: [
+            GoogleSearchTool(
+              searchTypes: GoogleSearchTypes(
+                webSearch: true,
+                imageSearch: true,
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        request.body['tools'],
+        [
+          {
+            'googleSearch': {
+              'searchTypes': {
+                'webSearch': <String, Object?>{},
+                'imageSearch': <String, Object?>{},
+              },
+            },
+          },
+        ],
+      );
+      expect(request.body.containsKey('toolConfig'), isFalse);
+      expect(
+        request.warnings.map((warning) => warning.field),
+        containsAll([
+          'tools',
+          'toolChoice',
+        ]),
+      );
+    });
   });
 }

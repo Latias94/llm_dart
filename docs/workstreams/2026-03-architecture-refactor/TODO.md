@@ -78,6 +78,7 @@
 
 - [x] Establish the Anthropic messages request codec
 - [x] Migrate the Anthropic language model
+- [x] Add the initial Anthropic native tool entry API
 - [ ] Migrate the Anthropic tool codec
 - [ ] Migrate the Anthropic reasoning codec
 - [ ] Migrate the Anthropic web-search adapter
@@ -87,6 +88,7 @@
 ## Google
 
 - [x] Migrate the Gemini language model
+- [x] Add the initial Google native tool entry API
 - [ ] Migrate the Gemini image model
 - [ ] Migrate the Gemini embedding model
 - [ ] Migrate Gemini speech and TTS
@@ -160,3 +162,4 @@
 - [x] Add payload support to `CustomUiPart`
 - [x] Define provider metadata namespace rules
 - [x] Define custom-part `kind` namespace rules
+- [x] Freeze provider-native tool entry placement in provider packages

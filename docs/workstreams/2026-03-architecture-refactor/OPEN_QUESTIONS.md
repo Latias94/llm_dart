@@ -164,3 +164,12 @@ Resolved in the current breaking round:
 - shared `ToolChoice` now carries only cross-provider semantics
 - provider-native tools remain outside the common request model and continue through provider-owned options or APIs
 - `12-tool-definition-boundary.md` documents the frozen boundary
+
+## 16. Provider-Native Tool Entry Status
+
+Resolved in the current breaking round:
+
+- provider-native tools now enter through provider-package typed settings or invocation options
+- Google and Anthropic both have initial native tool entry APIs in their provider packages
+- invocation-level native tool lists override provider-model defaults
+- `13-provider-native-tool-entry.md` documents the frozen boundary

@@ -1,5 +1,7 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'google_tools.dart';
+
 enum GoogleHarmCategory {
   unspecified('HARM_CATEGORY_UNSPECIFIED'),
   hateSpeech('HARM_CATEGORY_HATE_SPEECH'),
@@ -66,10 +68,12 @@ final class GoogleSafetySetting {
 final class GoogleChatModelSettings implements ProviderModelOptions {
   final Map<String, String> headers;
   final List<GoogleSafetySetting> safetySettings;
+  final List<GoogleNativeTool> tools;
 
   const GoogleChatModelSettings({
     this.headers = const {},
     this.safetySettings = const [],
+    this.tools = const [],
   });
 }
 
@@ -81,6 +85,7 @@ final class GoogleGenerateTextOptions implements ProviderInvocationOptions {
   final List<GoogleResponseModality>? responseModalities;
   final String? cachedContent;
   final List<GoogleSafetySetting>? safetySettings;
+  final List<GoogleNativeTool>? tools;
 
   const GoogleGenerateTextOptions({
     this.candidateCount,
@@ -90,5 +95,6 @@ final class GoogleGenerateTextOptions implements ProviderInvocationOptions {
     this.responseModalities,
     this.cachedContent,
     this.safetySettings,
+    this.tools,
   });
 }

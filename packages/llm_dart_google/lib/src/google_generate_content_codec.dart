@@ -4,6 +4,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'google_options.dart';
 import 'google_shared.dart';
+import 'google_tools.dart';
 
 final class GoogleGenerateContentRequest {
   final Map<String, Object?> body;
@@ -121,11 +122,46 @@ final class GoogleGenerateContentCodec {
 
     final safetySettings =
         providerOptions.safetySettings ?? settings.safetySettings;
-    final encodedTools = _encodeTools(tools);
-    final encodedToolConfig = _encodeToolConfig(
-      tools: tools,
-      toolChoice: toolChoice,
+    final nativeTools = providerOptions.tools ?? settings.tools;
+    final encodedNativeTools = _encodeNativeTools(
+      modelId: modelId,
+      tools: nativeTools,
+      warnings: warnings,
     );
+    final useNativeTools = encodedNativeTools.isNotEmpty;
+
+    if (useNativeTools && tools.isNotEmpty) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'tools',
+          message:
+              'Google native tools do not mix cleanly with common function tools yet. The common function tools have been ignored for this call.',
+        ),
+      );
+    }
+
+    if (useNativeTools && toolChoice != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'toolChoice',
+          message:
+              'toolChoice is ignored when Google native tools are enabled for this call.',
+        ),
+      );
+    }
+
+    final encodedFunctionTools =
+        useNativeTools ? null : _encodeFunctionTools(tools);
+    final encodedToolConfig = useNativeTools
+        ? null
+        : _encodeToolConfig(
+            tools: tools,
+            toolChoice: toolChoice,
+          );
+    final encodedTools =
+        encodedNativeTools.isNotEmpty ? encodedNativeTools : encodedFunctionTools;
 
     final body = <String, Object?>{
       'contents': contents,
@@ -150,7 +186,7 @@ final class GoogleGenerateContentCodec {
     );
   }
 
-  List<Object?>? _encodeTools(List<FunctionToolDefinition> tools) {
+  List<Object?>? _encodeFunctionTools(List<FunctionToolDefinition> tools) {
     if (tools.isEmpty) {
       return null;
     }
@@ -167,6 +203,37 @@ final class GoogleGenerateContentCodec {
         ],
       },
     ];
+  }
+
+  List<Object?> _encodeNativeTools({
+    required String modelId,
+    required List<GoogleNativeTool> tools,
+    required List<ModelWarning> warnings,
+  }) {
+    if (tools.isEmpty) {
+      return const [];
+    }
+
+    final encoded = <Object?>[];
+    final supportsNativeTools = _supportsNativeTools(modelId);
+
+    for (final tool in tools) {
+      if (!supportsNativeTools) {
+        warnings.add(
+          ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'tools',
+            message:
+                'Google native tool "${tool.name}" requires Gemini 2.0 or newer compatible models.',
+          ),
+        );
+        continue;
+      }
+
+      encoded.add(tool.toJson());
+    }
+
+    return encoded;
   }
 
   Map<String, Object?>? _encodeToolConfig({
@@ -205,6 +272,14 @@ final class GoogleGenerateContentCodec {
           'allowedFunctionNames': allowedFunctionNames,
       },
     };
+  }
+
+  bool _supportsNativeTools(String modelId) {
+    final normalized = modelId.toLowerCase();
+    return normalized.contains('gemini-2') ||
+        normalized.contains('gemini-3') ||
+        normalized.endsWith('-latest') ||
+        normalized.contains('nano-banana');
   }
 
   Map<String, Object?> _encodeMessage(PromptMessage message) {

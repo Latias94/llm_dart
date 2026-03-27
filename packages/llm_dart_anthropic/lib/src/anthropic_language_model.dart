@@ -49,6 +49,7 @@ final class AnthropicLanguageModel implements LanguageModel {
       tools: request.tools,
       toolChoice: request.toolChoice,
       options: request.options,
+      settings: settings,
       providerOptions: providerOptions,
       stream: false,
     );
@@ -85,6 +86,7 @@ final class AnthropicLanguageModel implements LanguageModel {
       tools: request.tools,
       toolChoice: request.toolChoice,
       options: request.options,
+      settings: settings,
       providerOptions: providerOptions,
       stream: true,
     );

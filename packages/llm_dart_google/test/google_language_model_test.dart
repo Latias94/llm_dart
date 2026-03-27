@@ -85,6 +85,9 @@ void main() {
             providerOptions: GoogleGenerateTextOptions(
               includeThoughts: true,
               thinkingLevel: GoogleThinkingLevel.high,
+              tools: [
+                GoogleCodeExecutionTool(),
+              ],
             ),
           ),
         ),
@@ -118,32 +121,11 @@ void main() {
         body['tools'],
         [
           {
-            'functionDeclarations': [
-              {
-                'name': 'weather',
-                'description': 'Get weather details for a city.',
-                'parameters': {
-                  'type': 'object',
-                  'properties': {
-                    'city': {
-                      'type': 'string',
-                    },
-                  },
-                  'required': ['city'],
-                },
-              },
-            ],
+            'codeExecution': <String, Object?>{},
           },
         ],
       );
-      expect(
-        body['toolConfig'],
-        {
-          'functionCallingConfig': {
-            'mode': 'AUTO',
-          },
-        },
-      );
+      expect(body.containsKey('toolConfig'), isFalse);
 
       expect(result.responseId, 'resp_1');
       expect(result.responseModelId, 'gemini-3-pro-preview');
