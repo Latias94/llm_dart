@@ -281,7 +281,7 @@ final class AnthropicMessagesCodec {
       if (message case ToolPromptMessage(:final parts)) {
         // Anthropic requires tool results to be replayed as user-role content.
         for (final part in parts) {
-          content.add(_encodeToolPart(part));
+          content.addAll(_encodeToolParts(part));
         }
         continue;
       }
@@ -333,21 +333,45 @@ final class AnthropicMessagesCodec {
         }
 
         if (part is ToolCallPromptPart) {
+          final input = _normalizeJsonValue(
+                part.input,
+                path: 'assistant.toolCall(${part.toolCallId}).input',
+              ) ??
+              const <String, Object?>{};
+
           if (part.providerExecuted) {
-            throw UnsupportedError(
-              'Anthropic provider-executed tool replay is not supported by the common messages codec yet.',
-            );
+            if (part.toolName.startsWith('mcp.')) {
+              final serverName = part.title?.trim();
+              if (serverName == null || serverName.isEmpty) {
+                throw UnsupportedError(
+                  'Anthropic MCP tool replay requires a non-empty server title.',
+                );
+              }
+
+              content.add({
+                'type': 'mcp_tool_use',
+                'id': part.toolCallId,
+                'name': part.toolName.substring(4),
+                'server_name': serverName,
+                'input': input,
+              });
+              continue;
+            }
+
+            content.add({
+              'type': 'server_tool_use',
+              'id': part.toolCallId,
+              'name': part.toolName,
+              'input': input,
+            });
+            continue;
           }
 
           content.add({
             'type': 'tool_use',
             'id': part.toolCallId,
             'name': part.toolName,
-            'input': _normalizeJsonValue(
-                  part.input,
-                  path: 'assistant.toolCall(${part.toolCallId}).input',
-                ) ??
-                const <String, Object?>{},
+            'input': input,
           });
           continue;
         }
@@ -442,9 +466,23 @@ final class AnthropicMessagesCodec {
     );
   }
 
-  Map<String, Object?> _encodeToolPart(PromptPart part) {
+  Iterable<Map<String, Object?>> _encodeToolParts(PromptPart part) sync* {
     if (part is ToolResultPromptPart) {
-      return {
+      if (part.toolName.startsWith('mcp.')) {
+        yield {
+          'type': 'mcp_tool_result',
+          'tool_use_id': part.toolCallId,
+          'content': _normalizeJsonValue(
+                part.output,
+                path: 'toolResult(${part.toolCallId}).output',
+              ) ??
+              const <String, Object?>{},
+          if (part.isError) 'is_error': true,
+        };
+        return;
+      }
+
+      yield {
         'type': 'tool_result',
         'tool_use_id': part.toolCallId,
         'content': _encodeToolOutput(
@@ -453,12 +491,11 @@ final class AnthropicMessagesCodec {
         ),
         if (part.isError) 'is_error': true,
       };
+      return;
     }
 
     if (part is ToolApprovalResponsePromptPart) {
-      throw UnsupportedError(
-        'Anthropic tool approval responses require provider-specific replay handling and are not supported by the common messages codec yet.',
-      );
+      return;
     }
 
     throw UnsupportedError(

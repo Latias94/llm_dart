@@ -246,5 +246,86 @@ void main() {
         throwsA(isA<UnsupportedError>()),
       );
     });
+
+    test(
+        'replays provider-executed MCP tool calls and ignores approval responses',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Open the MCP tool.'),
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'mcptoolu_1',
+                toolName: 'mcp.open_browser',
+                input: {
+                  'url': 'https://example.com',
+                },
+                providerExecuted: true,
+                isDynamic: true,
+                title: 'workspace',
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'mcp.open_browser',
+            parts: const [
+              ToolApprovalResponsePromptPart(
+                approvalId: 'approval_1',
+                toolCallId: 'mcptoolu_1',
+                approved: true,
+                reason: 'User approved the external action.',
+              ),
+              ToolResultPromptPart(
+                toolCallId: 'mcptoolu_1',
+                toolName: 'mcp.open_browser',
+                output: {
+                  'status': 'ok',
+                },
+              ),
+            ],
+          ),
+        ],
+        options: const GenerateTextOptions(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      final messages = request.body['messages'] as List<Object?>;
+      expect(messages, hasLength(3));
+      expect(
+        messages[1],
+        {
+          'role': 'assistant',
+          'content': [
+            {
+              'type': 'mcp_tool_use',
+              'id': 'mcptoolu_1',
+              'name': 'open_browser',
+              'server_name': 'workspace',
+              'input': {
+                'url': 'https://example.com',
+              },
+            },
+          ],
+        },
+      );
+      expect(
+        messages[2],
+        {
+          'role': 'user',
+          'content': [
+            {
+              'type': 'mcp_tool_result',
+              'tool_use_id': 'mcptoolu_1',
+              'content': {
+                'status': 'ok',
+              },
+            },
+          ],
+        },
+      );
+    });
   });
 }
