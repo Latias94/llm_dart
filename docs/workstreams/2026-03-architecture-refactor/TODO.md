@@ -17,6 +17,9 @@
 - [x] Create `llm_dart_core`
 - [x] Create `llm_dart_transport`
 - [x] Create `llm_dart_openai` skeleton
+- [x] Create `llm_dart_anthropic` skeleton
+- [x] Create `llm_dart_google` skeleton
+- [x] Create `llm_dart_community` skeleton
 - [x] Run static analysis for `llm_dart_core` and `llm_dart_transport`
 - [x] Run static analysis for `llm_dart_openai`
 - [ ] Create the facade compatibility entry
@@ -147,7 +150,7 @@
 - [ ] Remove `dio` from the core public API surface
 - [ ] Move `http_parser` out of the root package or remove it
 - [ ] Move `mcp_dart` under an example or dedicated integration-package strategy
-- [ ] Remove unused `mockito`
+- [x] Remove unused `mockito`
 
 ## Provider Feature Representation
 

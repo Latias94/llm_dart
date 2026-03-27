@@ -1,0 +1,17 @@
+name: llm_dart_anthropic
+description: Anthropic provider implementations for llm_dart.
+version: 0.1.0-dev.0
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  llm_dart_core:
+    path: ../llm_dart_core
+  llm_dart_transport:
+    path: ../llm_dart_transport
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.27.0

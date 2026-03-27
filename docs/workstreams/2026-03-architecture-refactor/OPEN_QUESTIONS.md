@@ -142,3 +142,15 @@ Current recommendation:
 
 - do not add a common reasoning-file model yet
 - revisit only after at least one more provider needs the distinction
+
+## 14. How Example-Only Dependencies Should Leave The Root Package
+
+Needs confirmation:
+
+- should example-heavy flows such as MCP integration move into their own example package or app
+- or should the root package keep example-only dev dependencies until compatibility cleanup is nearly complete
+
+Current recommendation:
+
+- keep example-only dependencies at the root only as a temporary migration compromise
+- once the new facade and package layout stabilize, move examples that need extra dependencies into their own package or app

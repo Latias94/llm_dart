@@ -173,3 +173,15 @@ Provider-specific features should be represented through:
 - `ToolResultEvent(isError: true)` remains execution/result-stage failure only
 - the first projection round should reuse the existing `ToolUiPartState.outputError` rendering path instead of introducing a second tool-error UI state immediately
 - provider adapters may adopt `ToolInputErrorEvent` incrementally when they can identify malformed input reliably
+
+## D19. No Public `provider_utils` Package In Phase 1
+
+- shared networking, streaming, and cancellation mechanics belong in `llm_dart_transport`
+- provider-family reuse may live in provider-package-private modules such as `src/shared`
+- do not create a public or semi-public `provider_utils` support package until stable multi-provider reuse is proven
+
+## D20. The Root Package Is a Temporary Compatibility And Example Host
+
+- the root `llm_dart` package may temporarily continue to host old-monolith code, compatibility APIs, and example-only dev dependencies
+- new architecture work must add dependencies to the owning workspace package first, not to the root package
+- root package dependencies should shrink as providers and examples move out, instead of becoming the permanent dumping ground again

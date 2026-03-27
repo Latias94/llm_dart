@@ -16,6 +16,37 @@ If these two points are not frozen early, later migration work tends to fall bac
 
 ## Current Dependency Audit
 
+## Current Workspace Snapshot
+
+As of 2026-03-27, the workspace package graph is:
+
+- `llm_dart_core`
+  - Dart SDK only
+- `llm_dart_transport`
+  - `llm_dart_core`
+  - `dio`
+  - `logging`
+- `llm_dart_openai`
+  - `llm_dart_core`
+  - `llm_dart_transport`
+- `llm_dart_anthropic`
+  - `llm_dart_core`
+  - `llm_dart_transport`
+- `llm_dart_google`
+  - `llm_dart_core`
+  - `llm_dart_transport`
+- `llm_dart_community`
+  - `llm_dart_core`
+  - `llm_dart_transport`
+- `llm_dart_flutter`
+  - `llm_dart_core`
+  - `llm_dart_transport`
+
+This is already directionally correct, but it is still incomplete relative to the target split:
+
+- most legacy provider code still lives under the root `lib/` monolith
+- the root package still temporarily hosts some dependencies because old code and examples have not fully moved yet
+
 ## Runtime Dependencies Today
 
 The current root [pubspec.yaml](../../../pubspec.yaml) has only three runtime dependencies:
@@ -100,8 +131,8 @@ Current repository search does not show actual `mockito` usage.
 
 Conclusion:
 
-- it is likely a leftover dev dependency
-- it should be removed when the new test foundation is rebuilt
+- it was a leftover dev dependency
+- it should be removed now instead of waiting for a later cleanup pass
 
 ## Current Internal Dependency Direction Problems
 
@@ -116,6 +147,28 @@ Typical examples:
 That means the current architecture is not “core defines the contract and providers implement it”. It is “core and providers are mixed into one layer”.
 
 That must be corrected in the new architecture.
+
+## Residual Root Package Staging Rule
+
+The root `llm_dart` package is currently in an awkward migration position:
+
+- it still contains the old monolith
+- it still owns examples
+- it still exposes the compatibility surface
+
+That is acceptable temporarily, but it must not become an excuse to keep hoisting new dependencies to the root package.
+
+From this point forward:
+
+- new dependencies for migrated code should be added to the owning workspace package, not the root package
+- the root package may keep temporary dependencies only for compatibility or example-hosting reasons
+- each dependency that remains in the root package should have a clear exit path
+
+Today that means:
+
+- `dio` and `logging` are still justified at the root only because the old monolith still uses them
+- `http_parser` remains temporary root debt until OpenAI image migration leaves the monolith
+- `mcp_dart` remains temporary root example debt because examples are not yet split into their own package or app
 
 ## Target Dependency Direction
 
@@ -217,6 +270,11 @@ Examples:
 - `llm_dart_openai` may keep `http_parser` locally if still needed
 - `llm_dart_anthropic` should not pull in `mcp_dart` just because it supports the MCP connector
 
+Current status:
+
+- `llm_dart_openai` already exists and follows the intended dependency direction
+- `llm_dart_anthropic` and `llm_dart_google` now exist as workspace skeletons and provide the migration landing zones
+
 ## `llm_dart_community`
 
 Responsibilities:
@@ -236,6 +294,10 @@ Current recommendation:
 - do not introduce a public `provider_utils` package yet
 - shared logic should first live either in `transport` or provider-internal `src/shared`
 - only after stable long-term reuse appears should an internal support package be introduced
+
+Current status:
+
+- `llm_dart_community` now exists as a workspace landing zone before Ollama and ElevenLabs migration
 
 ## `llm_dart_flutter`
 
@@ -265,7 +327,20 @@ Why:
 | `logging` | used across internal layers | keep as internal implementation dependency only |
 | `http_parser` | only used in OpenAI image code | localize to `llm_dart_openai` or remove |
 | `mcp_dart` | example-only | keep in example or dedicated integration packages only |
-| `mockito` | unused | remove when rebuilding the test foundation |
+| `mockito` | removed | keep it out unless a new test truly requires it |
+
+## Current Workspace Direction Check
+
+The new workspace already provides one useful signal:
+
+- `llm_dart_core` has no third-party runtime dependency
+- `llm_dart_transport` owns the concrete Dio-based transport
+- `llm_dart_openai` depends only on `core` and `transport`
+- `llm_dart_flutter` stays provider-agnostic even though it reuses transport for `HttpChatTransport`
+
+That is the correct direction.
+
+The remaining dependency-direction risk is concentrated in the root monolith, not in the new packages.
 
 ## Provider Feature Support Model
 
@@ -423,6 +498,38 @@ That means:
 - provider-native APIs own deep provider-specific features
 - both can coexist without contaminating each other
 
+## Provider Feature Placement Matrix
+
+The table below should be treated as the concrete review checklist during provider migration.
+
+| Feature example | Preferred channel | Why |
+| --- | --- | --- |
+| OpenAI `previous_response_id` | typed invocation options | per-call continuation state |
+| OpenAI request `service_tier` | typed invocation options | request-scoped provider tuning |
+| OpenAI response `service_tier` and status | provider metadata | returned provider-owned detail |
+| OpenAI Responses `web_search_call` item | custom content/UI parts | renderable provider-native output block |
+| Anthropic thinking budget | typed invocation options | call-scoped reasoning control |
+| Anthropic default reasoning mode | typed model settings | stable model-instance default |
+| Anthropic cache markers | provider metadata or custom parts | provider-owned non-unified detail |
+| Anthropic MCP server configuration | provider-native typed API/options | not a cross-provider core concept |
+| Google safety settings | typed model or invocation options | provider tuning, not returned content |
+| Google grounding / safety annotations | source parts, custom parts, or provider metadata | partially renderable provider-native output |
+| DeepSeek or xAI reasoning extras | reasoning parts plus metadata/custom parts | shared reasoning stays unified, extras stay provider-owned |
+| Files / assistants / moderation CRUD | provider-native extension APIs | not part of the shared phase-1 spec |
+
+If a feature does not fit one of these rows cleanly, the migration should stop and re-evaluate before adding another escape hatch.
+
+## Current OpenAI Skeleton Already Proves The Design
+
+The current `llm_dart_openai` skeleton already demonstrates the intended feature placement:
+
+- `OpenAIChatModelSettings` carries stable model-level settings
+- `OpenAIGenerateTextOptions` carries per-call provider options such as `previousResponseId`
+- response-side provider details are written into `ProviderMetadata`
+- provider-native output items such as `web_search_call` are preserved through provider-namespaced custom parts
+
+That means the provider-feature model is not only theoretical anymore. It already has one working reference implementation.
+
 ## Provider-by-Provider Guidance
 
 ## OpenAI
@@ -517,13 +624,26 @@ Examples:
 
 - use it only in examples or in a future dedicated integration package
 
+## 6. The Root Package Is Temporary Debt, Not the Target Shape
+
+- migrated code should add dependencies to workspace leaf packages first
+- the root package may temporarily keep compatibility or example-hosting dependencies only
+- root dependency cleanup should happen incrementally as providers and examples leave the monolith
+
+## 7. Do Not Create `provider_utils` Prematurely
+
+- keep shared networking and streaming logic in `llm_dart_transport`
+- keep provider-family reuse package-private until the reuse shape is proven
+- only introduce another internal support package after stable multi-provider reuse exists
+
 ## Direct Impact on the Current Skeleton
 
 Before the next provider-migration wave, these changes should happen:
 
+- create workspace skeletons for `llm_dart_anthropic`, `llm_dart_google`, and `llm_dart_community`
 - introduce a shared `CallOptions`
 - add provider-options marker interfaces to core
 - add payload support to `CustomContentPart` and `CustomUiPart`
 - design a transport-level cancellation abstraction to replace public `CancelToken`
 - move `http_parser` out of the root package
-- remove unused `mockito`
+- move example-only dependencies behind an example-package strategy
