@@ -133,6 +133,9 @@ Current recommendation:
 - add explicit malformed-tool-input semantics in a future breaking round
 - keep tool execution errors and tool input errors separate
 - do not overload `ToolResultEvent(isError: true)` to represent both stages
+- prefer a dedicated `ToolInputErrorEvent` at the core stream layer
+- keep Flutter UI projection on the existing error rendering path first; do not require a new UI state enum in the first round
+- see `10-malformed-tool-input-design.md` for the concrete boundary proposal
 
 ## 13. Whether Reasoning Files Need A Common Cross-Provider Model
 

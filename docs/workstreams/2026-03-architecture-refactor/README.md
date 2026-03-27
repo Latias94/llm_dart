@@ -42,6 +42,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Request/stream protocol design for `HttpChatTransport`, reconnect checkpoints, and the transport boundary above `TextStreamEvent`.
 - [09-event-and-ui-projection-gap-analysis.md](09-event-and-ui-projection-gap-analysis.md)
   - Comparison with the Vercel AI SDK UI stream design, plus recommendations for event completeness and UI projection boundaries.
+- [10-malformed-tool-input-design.md](10-malformed-tool-input-design.md)
+  - Dedicated design note for separating malformed tool input from tool execution failure without over-expanding the UI state machine.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
