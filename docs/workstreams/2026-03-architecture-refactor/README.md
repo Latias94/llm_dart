@@ -44,6 +44,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Comparison with the Vercel AI SDK UI stream design, plus recommendations for event completeness and UI projection boundaries.
 - [10-malformed-tool-input-design.md](10-malformed-tool-input-design.md)
   - Dedicated design note for separating malformed tool input from tool execution failure without over-expanding the UI state machine.
+- [11-anthropic-migration-plan.md](11-anthropic-migration-plan.md)
+  - Anthropic-specific migration slicing, module layout, and feature-placement rules for the new package.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
