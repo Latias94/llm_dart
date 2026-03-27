@@ -85,7 +85,7 @@
 
 ## Google
 
-- [ ] Migrate the Gemini language model
+- [x] Migrate the Gemini language model
 - [ ] Migrate the Gemini image model
 - [ ] Migrate the Gemini embedding model
 - [ ] Migrate Gemini speech and TTS
