@@ -22,9 +22,9 @@
 - [x] Create `llm_dart_community` skeleton
 - [x] Run static analysis for `llm_dart_core` and `llm_dart_transport`
 - [x] Run static analysis for `llm_dart_openai`
-- [ ] Create the facade compatibility entry
+- [x] Create the facade compatibility entry
 - [ ] Establish the new shared test foundation
-- [ ] Establish the new export strategy and `src/` structure
+- [x] Establish the new export strategy and `src/` structure
 
 ## Core
 

@@ -3,6 +3,12 @@ import 'package:llm_dart/llm_dart.dart';
 
 void main() {
   group('LLM Dart Library Entry Point', () {
+    test('AI facade is exported from the root library', () {
+      final model = AI.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
+
+      expect(model.providerId, 'openai');
+    });
+
     test('ai() creates a new LLMBuilder instance', () {
       final builder = ai();
       expect(builder, isA<LLMBuilder>());

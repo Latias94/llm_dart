@@ -38,7 +38,6 @@ final class DioTransportClient implements TransportClient {
           method: _toDioMethod(request.method),
           headers: request.headers,
           responseType: _toDioResponseType(request.responseType),
-          connectTimeout: request.timeout,
           sendTimeout: request.timeout,
           receiveTimeout: request.timeout,
         ),
@@ -70,7 +69,8 @@ final class DioTransportClient implements TransportClient {
   }
 
   @override
-  Future<StreamingTransportResponse> sendStream(TransportRequest request) async {
+  Future<StreamingTransportResponse> sendStream(
+      TransportRequest request) async {
     request.cancellation?.throwIfCancelled();
 
     final cancelToken = _bindCancellation(request.cancellation);
@@ -84,7 +84,6 @@ final class DioTransportClient implements TransportClient {
           method: _toDioMethod(request.method),
           headers: request.headers,
           responseType: ResponseType.stream,
-          connectTimeout: request.timeout,
           sendTimeout: request.timeout,
           receiveTimeout: request.timeout,
         ),
@@ -225,7 +224,8 @@ final class DioTransportClient implements TransportClient {
     };
   }
 
-  static Map<String, String> _flattenHeaders(Map<String, List<String>> headers) {
+  static Map<String, String> _flattenHeaders(
+      Map<String, List<String>> headers) {
     return Map<String, String>.fromEntries(
       headers.entries.map(
         (entry) => MapEntry(entry.key, entry.value.join(',')),

@@ -27,6 +27,12 @@ Acceptance criteria:
 - the basic test foundation exists
 - the old code still compiles
 
+Current status:
+
+- the workspace package skeleton is in place
+- the root package now exposes a new `AI` facade plus focused entrypoints such as `ai.dart`, `core.dart`, `openai.dart`, `google.dart`, `anthropic.dart`, `transport.dart`, and `flutter.dart`
+- the legacy `llm_dart.dart` entry still exposes `ai()` and the old builder surface while also exporting the new `AI` facade
+
 ## M2 - OpenAI Mainline
 
 Goals:

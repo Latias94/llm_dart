@@ -5,6 +5,8 @@
 /// extensible
 library;
 
+export 'src/facade/ai.dart' show AI;
+
 // Core exports
 export 'core/capability.dart';
 export 'core/cancellation.dart';
