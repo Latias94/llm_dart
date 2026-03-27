@@ -963,6 +963,7 @@ final class OpenAIResponsesCodec {
       }
 
       return SourceReference(
+        kind: SourceReferenceKind.url,
         sourceId: url,
         uri: Uri.tryParse(url),
         title: _asString(annotation['title']),
@@ -982,8 +983,10 @@ final class OpenAIResponsesCodec {
       }
 
       return SourceReference(
+        kind: SourceReferenceKind.document,
         sourceId: sourceId,
         title: _asString(annotation['filename']),
+        filename: _asString(annotation['filename']),
         mediaType: 'text/plain',
         providerMetadata: _providerMetadata({
           'annotationType': type,
@@ -1001,8 +1004,10 @@ final class OpenAIResponsesCodec {
       }
 
       return SourceReference(
+        kind: SourceReferenceKind.document,
         sourceId: sourceId,
         title: _asString(annotation['filename']),
+        filename: _asString(annotation['filename']),
         mediaType: 'text/plain',
         providerMetadata: _providerMetadata({
           'annotationType': type,
@@ -1019,8 +1024,10 @@ final class OpenAIResponsesCodec {
       }
 
       return SourceReference(
+        kind: SourceReferenceKind.document,
         sourceId: sourceId,
         title: sourceId,
+        filename: sourceId,
         mediaType: 'application/octet-stream',
         providerMetadata: _providerMetadata({
           'annotationType': type,

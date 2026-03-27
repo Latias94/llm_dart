@@ -65,6 +65,7 @@ void main() {
         ),
         SourceEvent(
           SourceReference(
+            kind: SourceReferenceKind.url,
             sourceId: 'source-1',
             uri: Uri.parse('https://example.com'),
             title: 'Example',
@@ -137,6 +138,12 @@ void main() {
       final toolResult = decoded[7] as ToolResultEvent;
       expect(toolResult.toolResult.preliminary, isTrue);
       expect(toolResult.toolResult.isDynamic, isTrue);
+
+      final sourceEvent = decoded[8] as SourceEvent;
+      expect(sourceEvent.source.kind, SourceReferenceKind.url);
+      expect(sourceEvent.source.sourceId, 'source-1');
+      expect(sourceEvent.source.uri, Uri.parse('https://example.com'));
+      expect(sourceEvent.source.title, 'Example');
 
       final fileEvent = decoded[9] as FileEvent;
       expect(fileEvent.file.bytes, [1, 2, 3]);

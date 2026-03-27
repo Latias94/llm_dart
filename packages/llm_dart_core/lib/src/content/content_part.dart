@@ -1,16 +1,22 @@
 import '../common/provider_metadata.dart';
 
+enum SourceReferenceKind { url, document, other }
+
 final class SourceReference {
+  final SourceReferenceKind kind;
   final String sourceId;
   final Uri? uri;
   final String? title;
+  final String? filename;
   final String? mediaType;
   final ProviderMetadata? providerMetadata;
 
   const SourceReference({
+    required this.kind,
     required this.sourceId,
     this.uri,
     this.title,
+    this.filename,
     this.mediaType,
     this.providerMetadata,
   });

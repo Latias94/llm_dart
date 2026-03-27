@@ -139,6 +139,7 @@ void main() {
             ),
             SourceUiPart(
               SourceReference(
+                kind: SourceReferenceKind.url,
                 sourceId: 'src-1',
                 uri: Uri.parse('https://example.com/doc'),
                 title: 'Example Doc',
@@ -235,6 +236,12 @@ void main() {
       final file = message.parts.whereType<FileUiPart>().single.file;
       expect(file.filename, 'preview.png');
       expect(file.bytes, [4, 5, 6]);
+
+      final source = message.parts.whereType<SourceUiPart>().single.source;
+      expect(source.kind, SourceReferenceKind.url);
+      expect(source.sourceId, 'src-1');
+      expect(source.uri, Uri.parse('https://example.com/doc'));
+      expect(source.title, 'Example Doc');
 
       final responseMetadata =
           message.metadata[ChatUiMetadataKeys.responseProviderMetadata]

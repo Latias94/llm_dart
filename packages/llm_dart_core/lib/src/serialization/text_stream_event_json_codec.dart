@@ -534,9 +534,11 @@ final class TextStreamEventJsonCodec {
 
   JsonMap _encodeSourceReference(SourceReference source) {
     return {
+      'kind': _encodeSourceReferenceKind(source.kind),
       'sourceId': source.sourceId,
       if (source.uri != null) 'uri': source.uri.toString(),
       if (source.title != null) 'title': source.title,
+      if (source.filename != null) 'filename': source.filename,
       if (source.mediaType != null) 'mediaType': source.mediaType,
       if (source.providerMetadata != null)
         'providerMetadata': _encodeProviderMetadata(source.providerMetadata!),
@@ -549,9 +551,15 @@ final class TextStreamEventJsonCodec {
   }) {
     final map = asJsonMap(value, path: path);
     return SourceReference(
+      kind: _decodeSourceReferenceKind(
+        map['kind'],
+        path: '$path.kind',
+        uri: map['uri'],
+      ),
       sourceId: asJsonString(map['sourceId'], path: '$path.sourceId'),
       uri: _decodeUri(map['uri'], path: '$path.uri'),
       title: asNullableJsonString(map['title'], path: '$path.title'),
+      filename: asNullableJsonString(map['filename'], path: '$path.filename'),
       mediaType:
           asNullableJsonString(map['mediaType'], path: '$path.mediaType'),
       providerMetadata: _decodeProviderMetadata(
@@ -559,6 +567,34 @@ final class TextStreamEventJsonCodec {
         path: '$path.providerMetadata',
       ),
     );
+  }
+
+  String _encodeSourceReferenceKind(SourceReferenceKind kind) {
+    switch (kind) {
+      case SourceReferenceKind.url:
+        return 'url';
+      case SourceReferenceKind.document:
+        return 'document';
+      case SourceReferenceKind.other:
+        return 'other';
+    }
+  }
+
+  SourceReferenceKind _decodeSourceReferenceKind(
+    Object? value, {
+    required String path,
+    required Object? uri,
+  }) {
+    final kind = asNullableJsonString(value, path: path);
+    return switch (kind) {
+      'url' => SourceReferenceKind.url,
+      'document' => SourceReferenceKind.document,
+      'other' => SourceReferenceKind.other,
+      null => uri == null
+          ? SourceReferenceKind.document
+          : SourceReferenceKind.url,
+      _ => throw FormatException('Invalid source kind at $path: $kind'),
+    };
   }
 
   JsonMap _encodeGeneratedFile(GeneratedFile file) {

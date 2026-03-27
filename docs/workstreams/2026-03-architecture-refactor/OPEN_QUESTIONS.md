@@ -111,18 +111,15 @@ Current recommendation:
 - not in this workstream
 - provide state, session, and transport only
 
-## 11. Whether `SourceReference` Should Become Explicitly Typed
+## 11. `SourceReference` Typing Status
 
-Needs confirmation:
+Resolved in the current breaking round:
 
-- should `SourceReference` stay as one nullable-field object
-- or should it gain an explicit source kind such as `url`, `document`, `file`, or `other`
-
-Current recommendation:
-
-- strengthen the source model with an explicit kind
-- keep provider metadata for provider-specific citation detail
-- make this a near-term breaking change because Flutter rendering should not rely on heuristics
+- `SourceReference` now carries an explicit `kind`
+- the current common kinds are `url`, `document`, and `other`
+- `SourceReference` may carry an optional `filename` for document citations
+- provider-specific citation detail still belongs in provider metadata
+- `GeneratedFile` remains separate from source citations
 
 ## 12. Whether Malformed Tool Input Should Be A First-Class Core Event
 

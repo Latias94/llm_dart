@@ -93,7 +93,7 @@ The table below compares the AI SDK UI chunk vocabulary with the current `llm_da
 | `tool-approval-request` | Covered by `ToolApprovalRequestEvent` and approval state in `ToolUiPart` | Freeze as-is |
 | `tool-output-denied` | Covered by `ToolOutputDeniedEvent` | Freeze as-is |
 | `start-step` / `finish-step` | Covered by `StepStartEvent` and `StepFinishEvent` | Freeze as-is |
-| `source-url` / `source-document` | Only partially covered by generic `SourceReference` | Strengthen the source model |
+| `source-url` / `source-document` | Covered by typed `SourceReference` (`kind` plus optional `filename`) | Freeze the updated source model |
 | `file` | Covered by `FileEvent` and `GeneratedFile` | Freeze generic file model |
 | `reasoning-file` | Not represented separately | Keep out of core for now; re-evaluate after a second provider needs it |
 | `data-*` UI chunks | `DataUiPart<T>` exists, but there is no `TextStreamEvent` path | Keep UI-only; do not add to `TextStreamEvent` |
@@ -104,32 +104,27 @@ The table below compares the AI SDK UI chunk vocabulary with the current `llm_da
 
 Not every mismatch with the AI SDK is a real gap.
 
-The following items need explicit architectural decisions. `SourceReference` and malformed tool input remain open gaps. Approval-response reason was a real prompt/UI/session gap, but it is now implemented and should stay frozen.
+The following items need explicit architectural decisions. Malformed tool input remains an open core gap. Approval-response reason and source typing were real gaps, but they are now implemented and should stay frozen.
 
-### 1. `SourceReference` Is Too Loose
+### 1. `SourceReference` Is Now Explicitly Typed
 
-Today `SourceReference` is essentially:
+The current implementation now preserves:
 
-- `sourceId`
+- explicit `kind`
+- stable `sourceId`
 - optional `uri`
 - optional `title`
+- optional `filename`
 - optional `mediaType`
 - optional provider metadata
 
-That means callers have to infer source semantics from nullable fields.
+Current boundary:
 
-Examples of ambiguity:
+- common kinds are `url`, `document`, and `other`
+- document citations may carry `filename` without forcing provider metadata inspection
+- generated artifacts still belong in `GeneratedFile`, not in `SourceReference`
 
-- a web citation and a retrieved document both become `SourceReference`
-- a file-backed citation may have no `uri`, so the UI must guess whether it is a document source, a file artifact, or just an opaque reference
-
-Recommended direction:
-
-- strengthen `SourceReference` with an explicit source kind
-- either use a sealed hierarchy or a small enum such as `url`, `document`, `file`, `other`
-- keep provider metadata for provider-specific citation details
-
-This is a good candidate for a near-term breaking change because it improves Flutter rendering and persistence without polluting the event model.
+This item is no longer an open event/UI gap.
 
 ### 2. Approval Response Reason Is Now Preserved
 
@@ -255,10 +250,9 @@ If a provider later needs special reasoning-file handling, that can be revisited
 
 If the repository wants to tighten the event/UI model next, the recommended order is:
 
-1. strengthen `SourceReference` with an explicit source kind
-2. design malformed-tool-input semantics and decide whether that becomes `ToolInputErrorEvent`
-3. define how UI-only data parts should enter `ChatSession` and `HttpChatTransport` without expanding `TextStreamEvent`
-4. only after that, re-evaluate whether reasoning-file needs a common model
+1. design malformed-tool-input semantics and decide whether that becomes `ToolInputErrorEvent`
+2. define how UI-only data parts should enter `ChatSession` and `HttpChatTransport` without expanding `TextStreamEvent`
+3. only after that, re-evaluate whether reasoning-file needs a common model
 
 ## 8. Conclusion
 
@@ -267,6 +261,6 @@ The main conclusion is not that `llm_dart` lacks many events.
 The main conclusion is:
 
 - most of the important model-stream semantics are already present
-- the remaining gaps are concentrated around source typing, malformed tool input, and UI-only data ingress design
+- the remaining gaps are concentrated around malformed tool input and UI-only data ingress design
 - the biggest temptation to avoid is copying UI transport concepts such as message markers or data chunks into `TextStreamEvent`
 - the current Dart-specific strengths, especially unified tool parts and richer file references, should be preserved

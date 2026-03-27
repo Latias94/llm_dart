@@ -108,6 +108,93 @@ void main() {
       );
     });
 
+    test('generate maps source annotations to typed source references',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_sources',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Based on cited sources.',
+                        'annotations': [
+                          {
+                            'type': 'url_citation',
+                            'url': 'https://example.com',
+                            'title': 'Example URL',
+                            'start_index': 0,
+                            'end_index': 5,
+                          },
+                          {
+                            'type': 'file_citation',
+                            'file_id': 'file_1',
+                            'filename': 'resource1.json',
+                            'index': 12,
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 5,
+                  'output_tokens': 4,
+                  'total_tokens': 9,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [UserPromptMessage.text('Summarize the sources.')],
+        ),
+      );
+
+      final sources = result.content.whereType<SourceContentPart>().toList();
+      expect(sources, hasLength(2));
+
+      final urlSource = sources[0].source;
+      expect(urlSource.kind, SourceReferenceKind.url);
+      expect(urlSource.sourceId, 'https://example.com');
+      expect(urlSource.uri, Uri.parse('https://example.com'));
+      expect(urlSource.title, 'Example URL');
+
+      final documentSource = sources[1].source;
+      expect(documentSource.kind, SourceReferenceKind.document);
+      expect(documentSource.sourceId, 'file_1');
+      expect(documentSource.title, 'resource1.json');
+      expect(documentSource.filename, 'resource1.json');
+      expect(documentSource.mediaType, 'text/plain');
+      expect(
+        documentSource.providerMetadata!['openai'],
+        allOf(
+          containsPair('annotationType', 'file_citation'),
+          containsPair('fileId', 'file_1'),
+          containsPair('index', 12),
+        ),
+      );
+    });
+
     test('generate exposes raw finish reason for incomplete responses',
         () async {
       final model = OpenAI(

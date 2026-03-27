@@ -266,6 +266,7 @@ void main() {
           const StepStartEvent(stepId: 'step-1'),
           SourceEvent(
             SourceReference(
+              kind: SourceReferenceKind.url,
               sourceId: 'source-1',
               uri: Uri.parse('https://example.com/docs/1'),
               title: 'Example document',
@@ -318,6 +319,7 @@ void main() {
           'openai.web_search_call');
 
       final sourcePart = message.parts.whereType<SourceUiPart>().single;
+      expect(sourcePart.source.kind, SourceReferenceKind.url);
       expect(
         sourcePart.source.providerMetadata!['openai'],
         containsPair('annotationId', 'ann_1'),

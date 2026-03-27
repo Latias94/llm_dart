@@ -157,3 +157,11 @@ Provider-specific features should be represented through:
 - `DefaultChatSession.resume()` should rebuild the current assistant turn from replay instead of seeding a partial assistant UI snapshot and expecting later deltas to continue safely
 - this replay buffer is only for the active assistant turn, not for full chat-history restoration
 - do not expand `TextStreamEvent` merely to carry reconnect or replay-only transport mechanics
+
+## D17. `SourceReference` Uses Explicit Kinds
+
+- `SourceReference` must carry an explicit `kind` instead of relying on nullable-field heuristics
+- the current common kinds are `url`, `document`, and `other`
+- `SourceReference` may also carry an optional `filename`, because document citations often need a stable display filename that should not be inferred from provider metadata
+- `GeneratedFile` remains the common model for generated artifacts; citation sources stay separate
+- provider adapters should keep provider-specific citation detail in provider metadata instead of widening the common source model for every provider-specific field
