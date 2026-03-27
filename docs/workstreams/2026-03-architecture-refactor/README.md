@@ -46,6 +46,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Dedicated design note for separating malformed tool input from tool execution failure without over-expanding the UI state machine.
 - [11-anthropic-migration-plan.md](11-anthropic-migration-plan.md)
   - Anthropic-specific migration slicing, module layout, and feature-placement rules for the new package.
+- [12-tool-definition-boundary.md](12-tool-definition-boundary.md)
+  - Frozen boundary for common function tools, `ToolChoice`, and provider-native tool placement.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

@@ -185,3 +185,11 @@ Provider-specific features should be represented through:
 - the root `llm_dart` package may temporarily continue to host old-monolith code, compatibility APIs, and example-only dev dependencies
 - new architecture work must add dependencies to the owning workspace package first, not to the root package
 - root package dependencies should shrink as providers and examples move out, instead of becoming the permanent dumping ground again
+
+## D21. Common Tool Definitions Freeze Around Function Tools Only
+
+- `llm_dart_core` exposes only common function-tool declarations and shared `ToolChoice`
+- the common request path currently standardizes `FunctionToolDefinition`, object-rooted `ToolJsonSchema`, and the four shared tool-choice states
+- provider-native tools do not enter the common core request model in phase 1
+- provider-only tool toggles or built-in tool families must stay in typed provider options or provider-native APIs
+- provider adapters are responsible for mapping common function tools into provider wire formats

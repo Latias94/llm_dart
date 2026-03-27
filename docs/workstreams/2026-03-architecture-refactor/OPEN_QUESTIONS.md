@@ -154,3 +154,13 @@ Current recommendation:
 
 - keep example-only dependencies at the root only as a temporary migration compromise
 - once the new facade and package layout stabilize, move examples that need extra dependencies into their own package or app
+
+## 15. Tool Definition Boundary Status
+
+Resolved in the current breaking round:
+
+- `llm_dart_core` now standardizes only common function-tool declarations
+- the common tool request model uses object-rooted `ToolJsonSchema`
+- shared `ToolChoice` now carries only cross-provider semantics
+- provider-native tools remain outside the common request model and continue through provider-owned options or APIs
+- `12-tool-definition-boundary.md` documents the frozen boundary

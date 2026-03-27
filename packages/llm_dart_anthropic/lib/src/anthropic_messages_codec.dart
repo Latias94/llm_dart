@@ -30,6 +30,8 @@ final class AnthropicMessagesCodec {
   AnthropicMessagesRequest encodeRequest({
     required String modelId,
     required List<PromptMessage> prompt,
+    required List<FunctionToolDefinition> tools,
+    required ToolChoice? toolChoice,
     required GenerateTextOptions options,
     required AnthropicGenerateTextOptions providerOptions,
     required bool stream,
@@ -181,6 +183,11 @@ final class AnthropicMessagesCodec {
       }
     }
 
+    final toolConfiguration = _resolveToolConfiguration(
+      tools: tools,
+      toolChoice: toolChoice,
+    );
+
     final body = <String, Object?>{
       'model': modelId,
       'messages': messages,
@@ -205,6 +212,9 @@ final class AnthropicMessagesCodec {
         'container': providerOptions.container,
       if (mcpServers != null && mcpServers.isNotEmpty)
         'mcp_servers': mcpServers.map((server) => server.toJson()).toList(),
+      if (toolConfiguration.tools != null) 'tools': toolConfiguration.tools,
+      if (toolConfiguration.toolChoice != null)
+        'tool_choice': toolConfiguration.toolChoice,
     };
 
     if (mcpServers != null && mcpServers.isNotEmpty) {
@@ -217,6 +227,45 @@ final class AnthropicMessagesCodec {
       body: body,
       betaFeatures: sortedBetas,
       warnings: warnings,
+    );
+  }
+
+  _AnthropicToolConfiguration _resolveToolConfiguration({
+    required List<FunctionToolDefinition> tools,
+    required ToolChoice? toolChoice,
+  }) {
+    if (tools.isEmpty || toolChoice is NoneToolChoice) {
+      return const _AnthropicToolConfiguration();
+    }
+
+    final encodedTools = [
+      for (final tool in tools)
+        {
+          'name': tool.name,
+          if (tool.description != null) 'description': tool.description,
+          'input_schema': tool.inputSchema.toJson(),
+          if (tool.strict != null) 'strict': tool.strict,
+        },
+    ];
+
+    final encodedToolChoice = switch (toolChoice) {
+      null => null,
+      AutoToolChoice() => const {
+          'type': 'auto',
+        },
+      RequiredToolChoice() => const {
+          'type': 'any',
+        },
+      SpecificToolChoice(toolName: final toolName) => {
+          'type': 'tool',
+          'name': toolName,
+        },
+      NoneToolChoice() => null,
+    };
+
+    return _AnthropicToolConfiguration(
+      tools: encodedTools,
+      toolChoice: encodedToolChoice,
     );
   }
 
@@ -673,4 +722,14 @@ final class _PromptBlock {
   final List<PromptMessage> messages = [];
 
   _PromptBlock(this.type);
+}
+
+final class _AnthropicToolConfiguration {
+  final List<Map<String, Object?>>? tools;
+  final Map<String, Object?>? toolChoice;
+
+  const _AnthropicToolConfiguration({
+    this.tools,
+    this.toolChoice,
+  });
 }

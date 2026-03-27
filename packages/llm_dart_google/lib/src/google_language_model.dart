@@ -50,6 +50,8 @@ final class GoogleLanguageModel implements LanguageModel {
     final preparedRequest = _requestCodec.encodeRequest(
       modelId: modelId,
       prompt: request.prompt,
+      tools: request.tools,
+      toolChoice: request.toolChoice,
       options: request.options,
       settings: settings,
       providerOptions: providerOptions,
@@ -83,6 +85,8 @@ final class GoogleLanguageModel implements LanguageModel {
     final preparedRequest = _requestCodec.encodeRequest(
       modelId: modelId,
       prompt: request.prompt,
+      tools: request.tools,
+      toolChoice: request.toolChoice,
       options: request.options,
       settings: settings,
       providerOptions: providerOptions,

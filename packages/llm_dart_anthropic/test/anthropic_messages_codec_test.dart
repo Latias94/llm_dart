@@ -9,6 +9,19 @@ void main() {
 
   group('AnthropicMessagesCodec', () {
     test('groups user and tool blocks into Anthropic user messages', () {
+      final weatherTool = FunctionToolDefinition(
+        name: 'weather',
+        description: 'Get weather details for a city.',
+        inputSchema: ToolJsonSchema.object(
+          properties: const {
+            'city': {
+              'type': 'string',
+            },
+          },
+          required: const ['city'],
+        ),
+      );
+
       final request = codec.encodeRequest(
         modelId: 'claude-sonnet-4-5',
         prompt: [
@@ -36,6 +49,10 @@ void main() {
             ],
           ),
         ],
+        tools: [
+          weatherTool,
+        ],
+        toolChoice: const RequiredToolChoice(),
         options: const GenerateTextOptions(),
         providerOptions: const AnthropicGenerateTextOptions(),
         stream: false,
@@ -49,6 +66,30 @@ void main() {
             'text': 'You are helpful.',
           },
         ],
+      );
+      expect(
+        request.body['tools'],
+        [
+          {
+            'name': 'weather',
+            'description': 'Get weather details for a city.',
+            'input_schema': {
+              'type': 'object',
+              'properties': {
+                'city': {
+                  'type': 'string',
+                },
+              },
+              'required': ['city'],
+            },
+          },
+        ],
+      );
+      expect(
+        request.body['tool_choice'],
+        {
+          'type': 'any',
+        },
       );
 
       final messages = request.body['messages'] as List<Object?>;
@@ -110,6 +151,8 @@ void main() {
             ],
           ),
         ],
+        tools: const [],
+        toolChoice: null,
         options: const GenerateTextOptions(),
         providerOptions: const AnthropicGenerateTextOptions(),
         stream: false,
@@ -161,6 +204,8 @@ void main() {
         prompt: [
           UserPromptMessage.text('Think step by step'),
         ],
+        tools: const [],
+        toolChoice: null,
         options: const GenerateTextOptions(
           maxOutputTokens: 200,
           temperature: 0.6,
@@ -239,6 +284,8 @@ void main() {
             UserPromptMessage.text('Hello'),
             SystemPromptMessage.text('After'),
           ],
+          tools: const [],
+          toolChoice: null,
           options: const GenerateTextOptions(),
           providerOptions: const AnthropicGenerateTextOptions(),
           stream: false,
@@ -287,6 +334,8 @@ void main() {
             ],
           ),
         ],
+        tools: const [],
+        toolChoice: null,
         options: const GenerateTextOptions(),
         providerOptions: const AnthropicGenerateTextOptions(),
         stream: false,

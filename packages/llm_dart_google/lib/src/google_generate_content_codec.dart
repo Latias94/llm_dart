@@ -22,6 +22,8 @@ final class GoogleGenerateContentCodec {
   GoogleGenerateContentRequest encodeRequest({
     required String modelId,
     required List<PromptMessage> prompt,
+    required List<FunctionToolDefinition> tools,
+    required ToolChoice? toolChoice,
     required GenerateTextOptions options,
     required GoogleChatModelSettings settings,
     required GoogleGenerateTextOptions providerOptions,
@@ -119,6 +121,11 @@ final class GoogleGenerateContentCodec {
 
     final safetySettings =
         providerOptions.safetySettings ?? settings.safetySettings;
+    final encodedTools = _encodeTools(tools);
+    final encodedToolConfig = _encodeToolConfig(
+      tools: tools,
+      toolChoice: toolChoice,
+    );
 
     final body = <String, Object?>{
       'contents': contents,
@@ -133,12 +140,71 @@ final class GoogleGenerateContentCodec {
         ],
       if (providerOptions.cachedContent != null)
         'cachedContent': providerOptions.cachedContent,
+      if (encodedTools != null) 'tools': encodedTools,
+      if (encodedToolConfig != null) 'toolConfig': encodedToolConfig,
     };
 
     return GoogleGenerateContentRequest(
       body: body,
       warnings: warnings,
     );
+  }
+
+  List<Object?>? _encodeTools(List<FunctionToolDefinition> tools) {
+    if (tools.isEmpty) {
+      return null;
+    }
+
+    return [
+      {
+        'functionDeclarations': [
+          for (final tool in tools)
+            {
+              'name': tool.name,
+              'description': tool.description ?? '',
+              'parameters': tool.inputSchema.toJson(),
+            },
+        ],
+      },
+    ];
+  }
+
+  Map<String, Object?>? _encodeToolConfig({
+    required List<FunctionToolDefinition> tools,
+    required ToolChoice? toolChoice,
+  }) {
+    if (tools.isEmpty) {
+      return null;
+    }
+
+    final hasStrictTools = tools.any((tool) => tool.strict == true);
+    String? mode;
+    List<String>? allowedFunctionNames;
+
+    switch (toolChoice) {
+      case null:
+        if (!hasStrictTools) {
+          return null;
+        }
+        mode = 'VALIDATED';
+      case AutoToolChoice():
+        mode = hasStrictTools ? 'VALIDATED' : 'AUTO';
+      case NoneToolChoice():
+        mode = 'NONE';
+      case RequiredToolChoice():
+        mode = hasStrictTools ? 'VALIDATED' : 'ANY';
+      case SpecificToolChoice(toolName: final toolName):
+        mode = hasStrictTools ? 'VALIDATED' : 'ANY';
+        allowedFunctionNames = [toolName];
+    }
+
+    return {
+      'functionCallingConfig': {
+        'mode': mode,
+        if (allowedFunctionNames != null)
+          'allowedFunctionNames': allowedFunctionNames,
+      },
+    };
   }
 
   Map<String, Object?> _encodeMessage(PromptMessage message) {

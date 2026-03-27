@@ -65,6 +65,8 @@ Current status:
 - Anthropic request encoding, result decoding, stream decoding, MCP request models, and typed options are package-owned
 - the Google text-generation mainline is now wired through `llm_dart_google`
 - Google request encoding, result decoding, stream decoding, grounding-source extraction, and typed options are package-owned
+- the shared tool-definition boundary is now frozen around common function tools and shared `ToolChoice`
+- Anthropic and Google request codecs now consume `GenerateTextRequest.tools` / `toolChoice` for request-side function declarations
 - the current event decision remains stable: provider-native streamed details stay in common events plus `providerMetadata` or provider-namespaced custom payloads, not new Anthropic-only core events
 - broader Google endpoints and additional Anthropic provider-native APIs remain open
 

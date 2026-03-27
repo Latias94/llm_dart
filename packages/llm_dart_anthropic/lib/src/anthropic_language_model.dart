@@ -46,6 +46,8 @@ final class AnthropicLanguageModel implements LanguageModel {
     final preparedRequest = _messagesCodec.encodeRequest(
       modelId: modelId,
       prompt: request.prompt,
+      tools: request.tools,
+      toolChoice: request.toolChoice,
       options: request.options,
       providerOptions: providerOptions,
       stream: false,
@@ -80,6 +82,8 @@ final class AnthropicLanguageModel implements LanguageModel {
     final preparedRequest = _messagesCodec.encodeRequest(
       modelId: modelId,
       prompt: request.prompt,
+      tools: request.tools,
+      toolChoice: request.toolChoice,
       options: request.options,
       providerOptions: providerOptions,
       stream: true,

@@ -62,6 +62,21 @@ void main() {
             SystemPromptMessage.text('You are concise.'),
             UserPromptMessage.text('Say hello.'),
           ],
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              description: 'Get weather details for a city.',
+              inputSchema: ToolJsonSchema.object(
+                properties: const {
+                  'city': {
+                    'type': 'string',
+                  },
+                },
+                required: const ['city'],
+              ),
+            ),
+          ],
+          toolChoice: const AutoToolChoice(),
           callOptions: const CallOptions(
             timeout: Duration(seconds: 5),
             headers: {
@@ -96,6 +111,36 @@ void main() {
           'thinkingConfig': {
             'includeThoughts': true,
             'thinkingLevel': 'high',
+          },
+        },
+      );
+      expect(
+        body['tools'],
+        [
+          {
+            'functionDeclarations': [
+              {
+                'name': 'weather',
+                'description': 'Get weather details for a city.',
+                'parameters': {
+                  'type': 'object',
+                  'properties': {
+                    'city': {
+                      'type': 'string',
+                    },
+                  },
+                  'required': ['city'],
+                },
+              },
+            ],
+          },
+        ],
+      );
+      expect(
+        body['toolConfig'],
+        {
+          'functionCallingConfig': {
+            'mode': 'AUTO',
           },
         },
       );

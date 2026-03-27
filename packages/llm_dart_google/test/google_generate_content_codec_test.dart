@@ -6,7 +6,23 @@ void main() {
   const codec = GoogleGenerateContentCodec();
 
   group('GoogleGenerateContentCodec', () {
-    test('encodes system, multimodal user parts, and tool history', () {
+    test(
+        'encodes request-side tools, system messages, multimodal user parts, and tool history',
+        () {
+      final weatherTool = FunctionToolDefinition(
+        name: 'weather',
+        description: 'Get the current weather for a city.',
+        inputSchema: ToolJsonSchema.object(
+          properties: const {
+            'city': {
+              'type': 'string',
+              'description': 'The city to look up.',
+            },
+          },
+          required: const ['city'],
+        ),
+      );
+
       final request = codec.encodeRequest(
         modelId: 'gemini-2.5-flash',
         prompt: [
@@ -57,6 +73,10 @@ void main() {
             ],
           ),
         ],
+        tools: [
+          weatherTool,
+        ],
+        toolChoice: const SpecificToolChoice('weather'),
         options: const GenerateTextOptions(
           maxOutputTokens: 256,
           temperature: 0.2,
@@ -88,6 +108,38 @@ void main() {
               'text': 'You are concise.',
             },
           ],
+        },
+      );
+      expect(
+        request.body['tools'],
+        [
+          {
+            'functionDeclarations': [
+              {
+                'name': 'weather',
+                'description': 'Get the current weather for a city.',
+                'parameters': {
+                  'type': 'object',
+                  'properties': {
+                    'city': {
+                      'type': 'string',
+                      'description': 'The city to look up.',
+                    },
+                  },
+                  'required': ['city'],
+                },
+              },
+            ],
+          },
+        ],
+      );
+      expect(
+        request.body['toolConfig'],
+        {
+          'functionCallingConfig': {
+            'mode': 'ANY',
+            'allowedFunctionNames': ['weather'],
+          },
         },
       );
 
@@ -190,6 +242,8 @@ void main() {
           SystemPromptMessage.text('You are concise.'),
           UserPromptMessage.text('Say hello.'),
         ],
+        tools: const [],
+        toolChoice: null,
         options: const GenerateTextOptions(),
         settings: const GoogleChatModelSettings(),
         providerOptions: const GoogleGenerateTextOptions(),

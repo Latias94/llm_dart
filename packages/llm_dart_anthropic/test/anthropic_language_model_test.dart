@@ -59,6 +59,21 @@ void main() {
           prompt: [
             UserPromptMessage.text('Think carefully.'),
           ],
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              description: 'Get weather details for a city.',
+              inputSchema: ToolJsonSchema.object(
+                properties: const {
+                  'city': {
+                    'type': 'string',
+                  },
+                },
+                required: const ['city'],
+              ),
+            ),
+          ],
+          toolChoice: const SpecificToolChoice('weather'),
           options: const GenerateTextOptions(
             maxOutputTokens: 200,
           ),
@@ -113,6 +128,31 @@ void main() {
         {
           'type': 'enabled',
           'budget_tokens': 1024,
+        },
+      );
+      expect(
+        requestBody['tools'],
+        [
+          {
+            'name': 'weather',
+            'description': 'Get weather details for a city.',
+            'input_schema': {
+              'type': 'object',
+              'properties': {
+                'city': {
+                  'type': 'string',
+                },
+              },
+              'required': ['city'],
+            },
+          },
+        ],
+      );
+      expect(
+        requestBody['tool_choice'],
+        {
+          'type': 'tool',
+          'name': 'weather',
         },
       );
 

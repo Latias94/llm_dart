@@ -33,7 +33,8 @@
 - [x] Define provider model-options and invocation-options marker interfaces
 - [x] Strengthen `SourceReference` with an explicit source kind
 - [x] Define malformed tool-input semantics in the core stream and UI models
-- [ ] Rewrite the tool schema and tool-result model
+- [x] Rewrite the function-tool schema and tool-choice model
+- [ ] Freeze provider-native tool declaration APIs and the remaining tool-result orchestration work
 - [x] Define unified `CallOptions`
 - [x] Define `LanguageModel`
 - [x] Define `EmbeddingModel`
