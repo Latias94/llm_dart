@@ -395,6 +395,28 @@ final class OpenAIResponsesCodec {
           );
         }
 
+        final encodedArguments = _resolveEncodedFunctionCallArguments(
+          item,
+          fallbackArguments: toolState.arguments.toString(),
+        );
+        final decodedArguments = _tryDecodeJsonValue(encodedArguments);
+        if (decodedArguments.error != null) {
+          yield ToolInputErrorEvent(
+            toolCallId: toolState.toolCallId,
+            toolName: toolState.toolName,
+            input: encodedArguments,
+            errorText: _formatInvalidToolInputError(
+              toolState.toolName,
+              decodedArguments.error!,
+            ),
+            providerExecuted: false,
+            isDynamic: false,
+            title: _asString(item['title']),
+            providerMetadata: providerMetadata,
+          );
+          return;
+        }
+
         if (!toolState.endEmitted) {
           toolState.endEmitted = true;
           yield ToolInputEndEvent(
@@ -408,6 +430,7 @@ final class OpenAIResponsesCodec {
           fallbackToolCallId: toolState.toolCallId,
           fallbackArguments: toolState.arguments.toString(),
           fallbackToolName: toolState.toolName,
+          decodedInput: decodedArguments.value,
         );
         if (toolCallPart != null) {
           yield ToolCallEvent(
@@ -818,6 +841,7 @@ final class OpenAIResponsesCodec {
     String? fallbackToolCallId,
     String? fallbackArguments,
     String? fallbackToolName,
+    Object? decodedInput,
   }) {
     final toolCallId = _asString(item['call_id']) ??
         fallbackToolCallId ??
@@ -827,14 +851,16 @@ final class OpenAIResponsesCodec {
       return null;
     }
 
-    final encodedArguments =
-        _asString(item['arguments']) ?? fallbackArguments ?? '{}';
+    final encodedArguments = _resolveEncodedFunctionCallArguments(
+      item,
+      fallbackArguments: fallbackArguments,
+    );
 
     return ToolCallContentPart(
       ToolCallContent(
         toolCallId: toolCallId,
         toolName: toolName,
-        input: _decodeJsonValue(encodedArguments),
+        input: decodedInput ?? _decodeJsonValue(encodedArguments),
         providerExecuted: false,
         isDynamic: false,
         title: _asString(item['title']),
@@ -1237,11 +1263,53 @@ final class OpenAIResponsesCodec {
   }
 
   Object? _decodeJsonValue(String value) {
+    return _tryDecodeJsonValue(value).value;
+  }
+
+  _DecodedJsonValue _tryDecodeJsonValue(String value) {
     try {
-      return jsonDecode(value);
-    } catch (_) {
-      return value;
+      return _DecodedJsonValue(
+        value: jsonDecode(value),
+      );
+    } on FormatException catch (error) {
+      return _DecodedJsonValue(
+        value: value,
+        error: error,
+      );
+    } catch (error) {
+      return _DecodedJsonValue(
+        value: value,
+        error: FormatException(error.toString()),
+      );
     }
+  }
+
+  String _resolveEncodedFunctionCallArguments(
+    Map<String, Object?> item, {
+    String? fallbackArguments,
+  }) {
+    final encoded = _asString(item['arguments']);
+    if (encoded != null) {
+      return encoded;
+    }
+
+    if (fallbackArguments != null && fallbackArguments.isNotEmpty) {
+      return fallbackArguments;
+    }
+
+    return '{}';
+  }
+
+  String _formatInvalidToolInputError(
+    String toolName,
+    FormatException error,
+  ) {
+    final message = error.message.trim();
+    if (message.isEmpty) {
+      return 'Invalid JSON tool arguments for "$toolName".';
+    }
+
+    return 'Invalid JSON tool arguments for "$toolName": $message';
   }
 
   void _throwIfError(Map<String, Object?> response) {
@@ -1323,5 +1391,15 @@ final class _OpenAIToolCallState {
   _OpenAIToolCallState({
     required this.toolCallId,
     required this.toolName,
+  });
+}
+
+final class _DecodedJsonValue {
+  final Object? value;
+  final FormatException? error;
+
+  const _DecodedJsonValue({
+    required this.value,
+    this.error,
   });
 }

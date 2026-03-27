@@ -134,6 +134,28 @@ final class ToolInputEndEvent extends TextStreamEvent {
   });
 }
 
+final class ToolInputErrorEvent extends TextStreamEvent {
+  final String toolCallId;
+  final String toolName;
+  final Object? input;
+  final String errorText;
+  final bool providerExecuted;
+  final bool isDynamic;
+  final String? title;
+  final ProviderMetadata? providerMetadata;
+
+  const ToolInputErrorEvent({
+    required this.toolCallId,
+    required this.toolName,
+    required this.errorText,
+    this.input,
+    this.providerExecuted = false,
+    this.isDynamic = false,
+    this.title,
+    this.providerMetadata,
+  });
+}
+
 final class ToolCallEvent extends TextStreamEvent {
   final ToolCallContent toolCall;
   final ProviderMetadata? providerMetadata;

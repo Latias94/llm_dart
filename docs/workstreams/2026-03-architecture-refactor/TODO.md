@@ -29,7 +29,7 @@
 - [ ] Rewrite usage, warning, and provider metadata models
 - [x] Define provider model-options and invocation-options marker interfaces
 - [x] Strengthen `SourceReference` with an explicit source kind
-- [ ] Define malformed tool-input semantics in the core stream and UI models
+- [x] Define malformed tool-input semantics in the core stream and UI models
 - [ ] Rewrite the tool schema and tool-result model
 - [x] Define unified `CallOptions`
 - [x] Define `LanguageModel`

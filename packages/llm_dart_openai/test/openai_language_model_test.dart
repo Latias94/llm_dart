@@ -366,6 +366,68 @@ void main() {
           FinishReason.toolCalls);
     });
 
+    test('stream maps malformed function-call arguments to tool input errors',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            expect(request.method, TransportMethod.post);
+
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: Stream.fromIterable([
+                utf8.encode(
+                  'data: {"type":"response.created","response":{"id":"resp_invalid_tool","model":"gpt-4.1-mini","created_at":1710000000,"service_tier":"default"}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.output_item.added","output_index":0,"item":{"id":"fc_1","type":"function_call","call_id":"call_1","name":"weather","arguments":"","status":"in_progress"}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.function_call_arguments.delta","output_index":0,"delta":"{\\"city\\":"}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.output_item.done","output_index":0,"item":{"id":"fc_1","type":"function_call","call_id":"call_1","name":"weather","arguments":"{\\"city\\":","status":"completed"}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.completed","response":{"id":"resp_invalid_tool","model":"gpt-4.1-mini","created_at":1710000000,"status":"completed","output":[],"usage":{"input_tokens":1,"output_tokens":1,"total_tokens":2,"output_tokens_details":{"reasoning_tokens":0}}}}\n\n',
+                ),
+              ]),
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final events = await model
+          .stream(
+            GenerateTextRequest(
+              prompt: [
+                UserPromptMessage.text('Call the weather tool.'),
+              ],
+            ),
+          )
+          .toList();
+
+      expect(events.whereType<ToolInputStartEvent>().single.toolCallId, 'call_1');
+      expect(events.whereType<ToolInputDeltaEvent>().single.delta, '{"city":');
+      expect(events.whereType<ToolInputEndEvent>(), isEmpty);
+      expect(events.whereType<ToolCallEvent>(), isEmpty);
+
+      final toolInputError = events.whereType<ToolInputErrorEvent>().single;
+      expect(toolInputError.toolCallId, 'call_1');
+      expect(toolInputError.toolName, 'weather');
+      expect(toolInputError.input, '{"city":');
+      expect(
+        toolInputError.errorText,
+        contains('Invalid JSON tool arguments for "weather"'),
+      );
+      expect(toolInputError.providerExecuted, isFalse);
+      expect(toolInputError.isDynamic, isFalse);
+
+      final finish = events.whereType<FinishEvent>().single;
+      expect(finish.finishReason, FinishReason.toolCalls);
+    });
+
     test('stream maps MCP calls to unified tool call and result events',
         () async {
       final model = OpenAI(

@@ -221,6 +221,31 @@ final class ChatUiAccumulator {
           ),
         );
         _partialToolInputs.remove(event.toolCallId);
+      case ToolInputErrorEvent():
+        final partial = _partialToolInputs.remove(event.toolCallId);
+        final input = event.input ??
+            (partial == null ? null : _decodeToolInputValue(partial.text));
+        final inputText = partial?.text ?? _stringifyValue(input);
+        _upsertToolPart(
+          _buildToolPart(
+            toolCallId: event.toolCallId,
+            toolName: event.toolName,
+            state: ToolUiPartState.outputError,
+            setInput: true,
+            input: input,
+            setInputText: true,
+            inputText: inputText,
+            setOutput: true,
+            output: null,
+            setErrorText: true,
+            errorText: event.errorText,
+            providerExecuted: event.providerExecuted,
+            isDynamic: event.isDynamic,
+            setTitle: event.title != null,
+            title: event.title,
+            callProviderMetadata: event.providerMetadata,
+          ),
+        );
       case ToolCallEvent():
         _partialToolInputs.remove(event.toolCall.toolCallId);
         _upsertToolPart(

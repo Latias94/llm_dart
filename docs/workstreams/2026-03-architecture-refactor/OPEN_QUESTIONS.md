@@ -121,21 +121,15 @@ Resolved in the current breaking round:
 - provider-specific citation detail still belongs in provider metadata
 - `GeneratedFile` remains separate from source citations
 
-## 12. Whether Malformed Tool Input Should Be A First-Class Core Event
+## 12. Malformed Tool Input Status
 
-Needs confirmation:
+Resolved in the current breaking round:
 
-- should invalid tool input remain a generic stream error
-- or should the core model expose a distinct malformed-input concept
-
-Current recommendation:
-
-- add explicit malformed-tool-input semantics in a future breaking round
-- keep tool execution errors and tool input errors separate
-- do not overload `ToolResultEvent(isError: true)` to represent both stages
-- prefer a dedicated `ToolInputErrorEvent` at the core stream layer
-- keep Flutter UI projection on the existing error rendering path first; do not require a new UI state enum in the first round
-- see `10-malformed-tool-input-design.md` for the concrete boundary proposal
+- malformed tool input now uses a dedicated `ToolInputErrorEvent`
+- tool execution errors still use `ToolResultEvent(isError: true)`
+- Flutter UI projection currently reuses the existing tool error rendering path
+- provider adapters can adopt malformed-input signaling incrementally
+- `10-malformed-tool-input-design.md` documents the frozen boundary
 
 ## 13. Whether Reasoning Files Need A Common Cross-Provider Model
 

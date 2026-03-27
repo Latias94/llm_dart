@@ -98,13 +98,13 @@ The table below compares the AI SDK UI chunk vocabulary with the current `llm_da
 | `reasoning-file` | Not represented separately | Keep out of core for now; re-evaluate after a second provider needs it |
 | `data-*` UI chunks | `DataUiPart<T>` exists, but there is no `TextStreamEvent` path | Keep UI-only; do not add to `TextStreamEvent` |
 | `start` / `finish` / `message-metadata` / `abort` | Intentionally not in `TextStreamEvent` | Keep transport-only |
-| `tool-input-error` | No first-class representation | Add explicit malformed-tool-input semantics in a future breaking round |
+| `tool-input-error` | Covered by `ToolInputErrorEvent`, projected through the existing tool error UI path | Freeze the current event/UI split |
 
 ## 4. Real Gaps We Should Address
 
 Not every mismatch with the AI SDK is a real gap.
 
-The following items need explicit architectural decisions. Malformed tool input remains an open core gap. Approval-response reason and source typing were real gaps, but they are now implemented and should stay frozen.
+The following items need explicit architectural decisions. Approval-response reason, source typing, and malformed tool input were real gaps, but they are now implemented and should stay frozen.
 
 ### 1. `SourceReference` Is Now Explicitly Typed
 
@@ -152,31 +152,19 @@ Provider note:
 
 This item is no longer an open event/UI gap.
 
-### 3. Malformed Tool Input Should Not Collapse Into Generic Stream Failure
+### 3. Malformed Tool Input Is Now Represented Explicitly
 
-The AI SDK distinguishes tool input failure from tool output failure.
+The current implementation now preserves a dedicated pre-execution failure event:
 
-The current Dart core can represent:
+- `ToolInputErrorEvent`
 
-- streamed tool input
-- final tool call input
-- tool execution output error
+Current boundary:
 
-But it cannot represent a distinct "the tool call input itself is invalid" state.
+- use `ToolInputErrorEvent` when the tool input itself is malformed or validation fails before execution
+- keep `ToolResultEvent(isError: true)` for execution/result-stage failures
+- keep the first Flutter projection round on the existing `ToolUiPartState.outputError` path instead of introducing a second UI error state immediately
 
-That matters when:
-
-- a provider emits malformed tool-call arguments
-- partial tool arguments never become valid structured input
-- tool validation fails before any tool execution happens
-
-Recommended direction:
-
-- add a first-class malformed-input concept, for example `ToolInputErrorEvent`
-- evolve `ToolUiPart` so tool error state is not limited to output failure only
-- keep `ToolResultEvent(isError: true)` for execution/result-stage errors
-
-This is the strongest candidate for a future core-event addition.
+This item is no longer an open event/UI gap.
 
 ## 5. Areas That Should Stay Out Of `TextStreamEvent`
 
@@ -250,9 +238,8 @@ If a provider later needs special reasoning-file handling, that can be revisited
 
 If the repository wants to tighten the event/UI model next, the recommended order is:
 
-1. design malformed-tool-input semantics and decide whether that becomes `ToolInputErrorEvent`
-2. define how UI-only data parts should enter `ChatSession` and `HttpChatTransport` without expanding `TextStreamEvent`
-3. only after that, re-evaluate whether reasoning-file needs a common model
+1. define how UI-only data parts should enter `ChatSession` and `HttpChatTransport` without expanding `TextStreamEvent`
+2. only after that, re-evaluate whether reasoning-file needs a common model
 
 ## 8. Conclusion
 
@@ -261,6 +248,6 @@ The main conclusion is not that `llm_dart` lacks many events.
 The main conclusion is:
 
 - most of the important model-stream semantics are already present
-- the remaining gaps are concentrated around malformed tool input and UI-only data ingress design
+- the remaining gaps are concentrated around UI-only data ingress design
 - the biggest temptation to avoid is copying UI transport concepts such as message markers or data chunks into `TextStreamEvent`
 - the current Dart-specific strengths, especially unified tool parts and richer file references, should be preserved

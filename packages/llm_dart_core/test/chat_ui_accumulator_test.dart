@@ -260,6 +260,65 @@ void main() {
       );
     });
 
+    test('projects malformed tool input into the existing tool error path', () {
+      final accumulator = ChatUiAccumulator(messageId: 'assistant-1');
+
+      accumulator.apply(
+        const ToolInputStartEvent(
+          toolCallId: 'tool-1',
+          toolName: 'weather',
+          providerExecuted: true,
+          isDynamic: true,
+          title: 'Weather lookup',
+          providerMetadata: ProviderMetadata({
+            'openai': {
+              'itemId': 'call_1',
+            },
+          }),
+        ),
+      );
+
+      accumulator.apply(
+        const ToolInputDeltaEvent(
+          toolCallId: 'tool-1',
+          delta: '{"city":',
+        ),
+      );
+
+      final message = accumulator.apply(
+        const ToolInputErrorEvent(
+          toolCallId: 'tool-1',
+          toolName: 'weather',
+          input: '{"city":',
+          errorText: 'Invalid JSON tool arguments for "weather".',
+          providerExecuted: true,
+          isDynamic: true,
+          providerMetadata: ProviderMetadata({
+            'openai': {
+              'validation': 'json',
+            },
+          }),
+        ),
+      );
+
+      final toolPart = message.parts.whereType<ToolUiPart>().single;
+      expect(toolPart.state, ToolUiPartState.outputError);
+      expect(toolPart.input, '{"city":');
+      expect(toolPart.inputText, '{"city":');
+      expect(toolPart.output, isNull);
+      expect(toolPart.errorText, 'Invalid JSON tool arguments for "weather".');
+      expect(toolPart.providerExecuted, isTrue);
+      expect(toolPart.isDynamic, isTrue);
+      expect(toolPart.title, 'Weather lookup');
+      expect(
+        toolPart.callProviderMetadata!['openai'],
+        allOf(
+          containsPair('itemId', 'call_1'),
+          containsPair('validation', 'json'),
+        ),
+      );
+    });
+
     test('projects source, file, custom, raw, and error events', () async {
       final snapshots = await projectChatUiMessageStream(
         Stream<TextStreamEvent>.fromIterable([
@@ -400,6 +459,15 @@ void main() {
           const ToolInputDeltaEvent(
             toolCallId: 'missing-tool',
             delta: '{}',
+          ),
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(
+        () => accumulator.apply(
+          const ToolInputEndEvent(
+            toolCallId: 'missing-tool',
           ),
         ),
         throwsA(isA<StateError>()),

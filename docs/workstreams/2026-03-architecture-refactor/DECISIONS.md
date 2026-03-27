@@ -165,3 +165,11 @@ Provider-specific features should be represented through:
 - `SourceReference` may also carry an optional `filename`, because document citations often need a stable display filename that should not be inferred from provider metadata
 - `GeneratedFile` remains the common model for generated artifacts; citation sources stay separate
 - provider adapters should keep provider-specific citation detail in provider metadata instead of widening the common source model for every provider-specific field
+
+## D18. Malformed Tool Input Is A First-Class Stream Event
+
+- malformed tool input must be represented by a dedicated `ToolInputErrorEvent`
+- `ToolInputErrorEvent` is for pre-execution failure only
+- `ToolResultEvent(isError: true)` remains execution/result-stage failure only
+- the first projection round should reuse the existing `ToolUiPartState.outputError` rendering path instead of introducing a second tool-error UI state immediately
+- provider adapters may adopt `ToolInputErrorEvent` incrementally when they can identify malformed input reliably

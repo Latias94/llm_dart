@@ -170,6 +170,28 @@ final class TextStreamEventJsonCodec {
           if (providerMetadata != null)
             'providerMetadata': _encodeProviderMetadata(providerMetadata),
         },
+      ToolInputErrorEvent(
+        :final toolCallId,
+        :final toolName,
+        :final input,
+        :final errorText,
+        :final providerExecuted,
+        :final isDynamic,
+        :final title,
+        :final providerMetadata,
+      ) =>
+        {
+          'type': 'tool-input-error',
+          'toolCallId': toolCallId,
+          'toolName': toolName,
+          'input': ensureJsonValue(input, path: r'$.toolInputError.input'),
+          'errorText': errorText,
+          'providerExecuted': providerExecuted,
+          'isDynamic': isDynamic,
+          if (title != null) 'title': title,
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+        },
       ToolCallEvent(
         :final toolCall,
         :final providerMetadata,
@@ -374,6 +396,27 @@ final class TextStreamEventJsonCodec {
         ),
       'tool-input-end' => ToolInputEndEvent(
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'tool-input-error' => ToolInputErrorEvent(
+          toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
+          toolName: asJsonString(map['toolName'], path: '$path.toolName'),
+          input: map['input'],
+          errorText: asJsonString(map['errorText'], path: '$path.errorText'),
+          providerExecuted: asNullableJsonBool(
+                map['providerExecuted'],
+                path: '$path.providerExecuted',
+              ) ??
+              false,
+          isDynamic: asNullableJsonBool(
+                map['isDynamic'],
+                path: '$path.isDynamic',
+              ) ??
+              false,
+          title: asNullableJsonString(map['title'], path: '$path.title'),
           providerMetadata: _decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',

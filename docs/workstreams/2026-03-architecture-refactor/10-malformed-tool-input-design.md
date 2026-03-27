@@ -1,5 +1,10 @@
 # Malformed Tool Input Design
 
+Status:
+
+- implemented for the core stream model and Flutter UI projection boundary
+- currently adopted by the OpenAI Responses adapter when function-call arguments are not valid JSON
+
 ## Background
 
 `llm_dart` already models:
@@ -55,7 +60,7 @@ That means two different failures can collapse together:
 
 Those are different stages and should not share the same core event.
 
-## Recommended Core Event
+## Core Event
 
 Add a first-class event:
 
@@ -84,7 +89,7 @@ Rules:
 - keep `ToolResultEvent(isError: true)` for execution/result-stage failure only
 - do not overload generic `ErrorEvent` when tool identity and invalid input are known
 
-## UI Projection Recommendation
+## UI Projection
 
 The first implementation round does not need a new `ToolUiPartState`.
 
@@ -114,17 +119,17 @@ Providers should continue to emit generic `ErrorEvent` when:
 - the failure has no tool identity
 - the failure is transport-level or call-level rather than tool-input-level
 
-## Recommended Implementation Scope
+## Implementation Scope
 
-The next implementation round should update:
+The implemented round updates:
 
 1. `TextStreamEvent`
 2. `TextStreamEventJsonCodec`
 3. `ChatUiAccumulator`
 4. core tests for event serialization and UI projection
-5. provider adapters only when they can genuinely identify malformed tool input
+5. the OpenAI Responses adapter for invalid JSON function-call arguments
 
-It should not immediately expand:
+It still does not immediately expand:
 
 - prompt persistence
 - chat transport wire markers
@@ -134,6 +139,6 @@ Those should remain separate from the core model-stream boundary.
 
 ## Decision Summary
 
-The next breaking round should separate malformed tool input from tool execution failure at the core event layer.
+This breaking round separates malformed tool input from tool execution failure at the core event layer.
 
-It should not assume that this requires a new Flutter UI state enum in the same round.
+It does not assume that this requires a new Flutter UI state enum in the same round.
