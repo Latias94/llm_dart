@@ -149,3 +149,11 @@ Provider-specific features should be represented through:
 - do not copy the full Vercel AI SDK UI-message chunk protocol into the core stream model
 - finer-grained chat transport chunks such as message start/finish markers, abort markers, metadata patches, or UI-only tool chunk variants should be designed later as transport-level serialization for `HttpChatTransport`
 - add new core stream events only when they represent stable cross-provider model semantics, not merely a convenient UI transport encoding
+
+## D16. Transport Reconnect Uses Checkpoints Plus Current-Turn Replay
+
+- reconnect remains a transport concern built on transport checkpoint tokens
+- `HttpChatTransport` may keep a local replay buffer for the current assistant turn so the session layer can rebuild UI state after network failure
+- `DefaultChatSession.resume()` should rebuild the current assistant turn from replay instead of seeding a partial assistant UI snapshot and expecting later deltas to continue safely
+- this replay buffer is only for the active assistant turn, not for full chat-history restoration
+- do not expand `TextStreamEvent` merely to carry reconnect or replay-only transport mechanics

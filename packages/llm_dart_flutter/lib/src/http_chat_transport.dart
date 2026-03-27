@@ -14,8 +14,9 @@ final class HttpChatTransport implements ChatTransport {
   final HttpChatTransportChunkJsonCodec chunkCodec;
   final Map<String, String> headers;
   final Duration? requestTimeout;
+  final Map<String, _HttpChatTransportResumeState> _resumeStates = {};
 
-  const HttpChatTransport({
+  HttpChatTransport({
     required this.endpoint,
     required this.transport,
     this.sseDecoder = const DefaultSseDecoder(),
@@ -29,6 +30,9 @@ final class HttpChatTransport implements ChatTransport {
   Stream<TextStreamEvent> sendMessages(ChatTransportRequest request) async* {
     _ensureSupportedCallOptions(request.options.callOptions);
 
+    final state = _HttpChatTransportResumeState();
+    _resumeStates[request.chatId] = state;
+
     final payload = requestCodec.encodeRequest(
       HttpChatTransportRequestPayload(
         chatId: request.chatId,
@@ -37,6 +41,56 @@ final class HttpChatTransport implements ChatTransport {
       ),
     );
 
+    yield* _sendPayload(
+      chatId: request.chatId,
+      state: state,
+      payload: payload,
+    );
+  }
+
+  @override
+  Stream<TextStreamEvent>? reconnect(String chatId) {
+    final state = _resumeStates[chatId];
+    final resumeToken = state?.resumeToken;
+    if (state == null || resumeToken == null) {
+      return null;
+    }
+
+    final replayEvents = List<TextStreamEvent>.of(state.replayEvents);
+    final payload = requestCodec.encodeReconnectRequest(
+      HttpChatTransportReconnectRequestPayload(
+        chatId: chatId,
+        resumeToken: resumeToken,
+      ),
+    );
+
+    return _reconnectWithReplay(
+      chatId: chatId,
+      state: state,
+      payload: payload,
+      replayEvents: replayEvents,
+    );
+  }
+
+  Stream<TextStreamEvent> _reconnectWithReplay({
+    required String chatId,
+    required _HttpChatTransportResumeState state,
+    required Map<String, Object?> payload,
+    required List<TextStreamEvent> replayEvents,
+  }) async* {
+    yield* Stream<TextStreamEvent>.fromIterable(replayEvents);
+    yield* _sendPayload(
+      chatId: chatId,
+      state: state,
+      payload: payload,
+    );
+  }
+
+  Stream<TextStreamEvent> _sendPayload({
+    required String chatId,
+    required _HttpChatTransportResumeState state,
+    required Map<String, Object?> payload,
+  }) async* {
     try {
       final response = await transport.sendStream(
         TransportRequest(
@@ -54,6 +108,7 @@ final class HttpChatTransport implements ChatTransport {
       );
 
       if (response.statusCode >= 400) {
+        _clearResumeState(chatId, state);
         yield ErrorEvent({
           'type': 'http-transport-error',
           'statusCode': response.statusCode,
@@ -69,9 +124,18 @@ final class HttpChatTransport implements ChatTransport {
 
         final chunk = chunkCodec.decodeChunk(_decodeJson(frame.data));
         switch (chunk) {
+          case HttpChatTransportStartChunk(:final resumeToken):
+            if (resumeToken != null) {
+              state.resumeToken = resumeToken;
+            }
           case HttpChatTransportEventChunk(:final event):
+            state.replayEvents.add(event);
+            if (event is FinishEvent) {
+              _clearResumeState(chatId, state);
+            }
             yield event;
           case HttpChatTransportAbortChunk(:final reason):
+            _clearResumeState(chatId, state);
             yield FinishEvent(
               finishReason: FinishReason.aborted,
               rawFinishReason: reason,
@@ -82,6 +146,7 @@ final class HttpChatTransport implements ChatTransport {
               :final message,
               :final details,
             ):
+            _clearResumeState(chatId, state);
             yield ErrorEvent({
               'type': 'http-chat-transport-error',
               if (code != null) 'code': code,
@@ -89,20 +154,23 @@ final class HttpChatTransport implements ChatTransport {
               if (details != null) 'details': details,
             });
             return;
-          case HttpChatTransportStartChunk():
-          case HttpChatTransportCheckpointChunk():
+          case HttpChatTransportCheckpointChunk(:final resumeToken):
+            state.resumeToken = resumeToken;
           case HttpChatTransportFinishChunk():
+            if (state.isTerminal) {
+              _clearResumeState(chatId, state);
+            }
           case HttpChatTransportKeepAliveChunk():
             break;
         }
       }
     } catch (error) {
+      if (!state.canReconnect) {
+        _clearResumeState(chatId, state);
+      }
       yield ErrorEvent(error);
     }
   }
-
-  @override
-  Stream<TextStreamEvent>? reconnect(String chatId) => null;
 
   void _ensureSupportedCallOptions(CallOptions options) {
     if (options.timeout != null ||
@@ -124,4 +192,22 @@ final class HttpChatTransport implements ChatTransport {
       'Expected a JSON object SSE payload but received ${decoded.runtimeType}.',
     );
   }
+
+  void _clearResumeState(
+    String chatId,
+    _HttpChatTransportResumeState state,
+  ) {
+    if (identical(_resumeStates[chatId], state)) {
+      _resumeStates.remove(chatId);
+    }
+    state.isTerminal = true;
+  }
+}
+
+final class _HttpChatTransportResumeState {
+  final List<TextStreamEvent> replayEvents = [];
+  String? resumeToken;
+  bool isTerminal = false;
+
+  bool get canReconnect => !isTerminal && resumeToken != null;
 }

@@ -110,3 +110,41 @@ Current recommendation:
 
 - not in this workstream
 - provide state, session, and transport only
+
+## 11. Whether `SourceReference` Should Become Explicitly Typed
+
+Needs confirmation:
+
+- should `SourceReference` stay as one nullable-field object
+- or should it gain an explicit source kind such as `url`, `document`, `file`, or `other`
+
+Current recommendation:
+
+- strengthen the source model with an explicit kind
+- keep provider metadata for provider-specific citation detail
+- make this a near-term breaking change because Flutter rendering should not rely on heuristics
+
+## 12. Whether Malformed Tool Input Should Be A First-Class Core Event
+
+Needs confirmation:
+
+- should invalid tool input remain a generic stream error
+- or should the core model expose a distinct malformed-input concept
+
+Current recommendation:
+
+- add explicit malformed-tool-input semantics in a future breaking round
+- keep tool execution errors and tool input errors separate
+- do not overload `ToolResultEvent(isError: true)` to represent both stages
+
+## 13. Whether Reasoning Files Need A Common Cross-Provider Model
+
+Needs confirmation:
+
+- should the core model distinguish normal generated files from reasoning-only files
+- or should provider-specific handling continue through generic file parts or custom parts
+
+Current recommendation:
+
+- do not add a common reasoning-file model yet
+- revisit only after at least one more provider needs the distinction

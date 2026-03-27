@@ -148,12 +148,14 @@ final class PromptJsonCodec {
         :final approvalId,
         :final toolCallId,
         :final approved,
+        :final reason,
       ) =>
         {
           'type': 'tool-approval-response',
           'approvalId': approvalId,
           'toolCallId': toolCallId,
           'approved': approved,
+          if (reason != null) 'reason': reason,
         },
     };
   }
@@ -212,6 +214,7 @@ final class PromptJsonCodec {
           approvalId: asJsonString(map['approvalId'], path: '$path.approvalId'),
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
           approved: asJsonBool(map['approved'], path: '$path.approved'),
+          reason: asNullableJsonString(map['reason'], path: '$path.reason'),
         ),
       _ =>
         throw FormatException('Unsupported prompt part type "$type" at $path.'),

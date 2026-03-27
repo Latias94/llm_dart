@@ -212,6 +212,7 @@ Key rules:
 - do not place UI state into the prompt layer
 - do not place provider-specific UI blocks into the prompt layer
 - tool approval request/response must live in prompt history, because approval is part of the model conversation, not only a local widget state
+- `ToolApprovalResponsePromptPart` should preserve an optional `reason` so denial or policy rationale survives persistence and session restore, even when a provider adapter cannot send that field upstream
 - `ToolCallPromptPart` must preserve `providerExecuted`, `isDynamic`, and `title`; otherwise provider-executed tool calls are silently downgraded into ordinary client tool calls during continuation
 
 ## 2. Content Parts and Result Layer
@@ -293,6 +294,7 @@ Additional UI-boundary rules:
 
 - `ToolUiPart` should carry streamed input state, final input, output, approval state, and separate call/result provider metadata.
 - `ToolUiPart` should expose `providerExecuted`, `isDynamic`, `preliminary`, and `title`, because these directly affect how a Flutter chat UI renders tool cards.
+- `ToolUiPart.approval` should preserve an optional response `reason`, because Flutter UIs may need to render denial or approval rationale and keep it across snapshots.
 - `ChatUiMessage.metadata` should keep reserved call-level keys such as warnings, response metadata, finish metadata, streamed errors, and optional diagnostic raw chunks.
 - `llm_dart_core` should ship a pure Dart projector from `TextStreamEvent` to `ChatUiMessage` so Flutter applications do not have to rebuild the stream state machine themselves.
 

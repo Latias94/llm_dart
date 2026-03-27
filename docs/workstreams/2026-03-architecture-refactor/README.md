@@ -40,6 +40,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Provider metadata namespace rules, custom kind naming, and the versioned serialization protocol.
 - [08-http-chat-transport-and-stream-protocol.md](08-http-chat-transport-and-stream-protocol.md)
   - Request/stream protocol design for `HttpChatTransport`, reconnect checkpoints, and the transport boundary above `TextStreamEvent`.
+- [09-event-and-ui-projection-gap-analysis.md](09-event-and-ui-projection-gap-analysis.md)
+  - Comparison with the Vercel AI SDK UI stream design, plus recommendations for event completeness and UI projection boundaries.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

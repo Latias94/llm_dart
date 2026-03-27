@@ -224,6 +224,7 @@ final class DefaultChatSession implements ChatSession {
         approval: ToolApprovalUiState(
           approvalId: response.approvalId,
           approved: response.approved,
+          reason: response.reason,
         ),
         callProviderMetadata: part.callProviderMetadata,
         resultProviderMetadata: part.resultProviderMetadata,
@@ -238,6 +239,7 @@ final class DefaultChatSession implements ChatSession {
             approvalId: response.approvalId,
             toolCallId: pendingTool.toolCallId,
             approved: response.approved,
+            reason: response.reason,
           ),
         ],
       ),
@@ -269,8 +271,40 @@ final class DefaultChatSession implements ChatSession {
 
   @override
   Future<void> resume() async {
-    throw UnsupportedError(
-      'Transport reconnect / resume has not been implemented yet.',
+    _ensureUsable();
+    _ensureIdle('resume');
+
+    if (_state.status != ChatStatus.error) {
+      throw StateError(
+        'Cannot call resume unless the chat session is in the error state.',
+      );
+    }
+
+    final stream = transport.reconnect(_state.chatId);
+    if (stream == null) {
+      throw StateError(
+        'The configured chat transport does not have reconnect state for chat "${_state.chatId}".',
+      );
+    }
+
+    final messages = List<ChatUiMessage>.of(_state.messages);
+    ChatUiMessage? previousAssistantMessage;
+    if (messages.isNotEmpty && messages.last.role == ChatUiRole.assistant) {
+      previousAssistantMessage = messages.removeLast();
+    }
+
+    _emitState(
+      _state.copyWith(
+        messages: messages,
+        status: ChatStatus.streaming,
+        error: null,
+      ),
+    );
+
+    await _consumeAssistantStream(
+      stream: stream,
+      assistantMessageId: previousAssistantMessage?.id ?? _messageIdGenerator(),
+      promptAppendStartIndex: 0,
     );
   }
 
@@ -360,26 +394,6 @@ final class DefaultChatSession implements ChatSession {
     required ChatRequestOptions options,
     ChatUiMessage? seedAssistantMessage,
   }) async {
-    final assistantMessageId =
-        seedAssistantMessage?.id ?? _messageIdGenerator();
-    final accumulator = ChatUiAccumulator(
-      messageId: assistantMessageId,
-      seedMessage: seedAssistantMessage,
-    );
-    final completion = Completer<void>();
-    var completed = false;
-    ChatUiMessage? latestAssistantMessage;
-    final promptAppendStartIndex = seedAssistantMessage?.parts.length ?? 0;
-
-    _activeAccumulator = accumulator;
-    _activeCompletion = completion;
-    _activePromptAppendStartIndex = promptAppendStartIndex;
-
-    if (seedAssistantMessage != null) {
-      latestAssistantMessage = accumulator.apply(const StepStartEvent());
-      _upsertAssistantMessage(latestAssistantMessage);
-    }
-
     _emitState(
       _state.copyWith(
         status: ChatStatus.streaming,
@@ -394,6 +408,39 @@ final class DefaultChatSession implements ChatSession {
         options: options,
       ),
     );
+
+    await _consumeAssistantStream(
+      stream: stream,
+      assistantMessageId: seedAssistantMessage?.id ?? _messageIdGenerator(),
+      seedAssistantMessage: seedAssistantMessage,
+      promptAppendStartIndex: seedAssistantMessage?.parts.length ?? 0,
+      syntheticStepStartOnSeed: true,
+    );
+  }
+
+  Future<void> _consumeAssistantStream({
+    required Stream<TextStreamEvent> stream,
+    required String assistantMessageId,
+    required int promptAppendStartIndex,
+    ChatUiMessage? seedAssistantMessage,
+    bool syntheticStepStartOnSeed = true,
+  }) async {
+    final accumulator = ChatUiAccumulator(
+      messageId: assistantMessageId,
+      seedMessage: seedAssistantMessage,
+    );
+    final completion = Completer<void>();
+    var completed = false;
+    ChatUiMessage? latestAssistantMessage;
+
+    _activeAccumulator = accumulator;
+    _activeCompletion = completion;
+    _activePromptAppendStartIndex = promptAppendStartIndex;
+
+    if (seedAssistantMessage != null && syntheticStepStartOnSeed) {
+      latestAssistantMessage = accumulator.apply(const StepStartEvent());
+      _upsertAssistantMessage(latestAssistantMessage);
+    }
 
     _activeSubscription = stream.listen(
       (event) async {
@@ -835,6 +882,7 @@ final class DefaultChatSession implements ChatSession {
             :final approvalId,
             :final toolCallId,
             :final approved,
+            :final reason,
           ):
           upsertToolPart(
             toolCallId,
@@ -856,6 +904,7 @@ final class DefaultChatSession implements ChatSession {
               approval: ToolApprovalUiState(
                 approvalId: approvalId,
                 approved: approved,
+                reason: reason,
               ),
               callProviderMetadata: current?.callProviderMetadata,
               resultProviderMetadata: current?.resultProviderMetadata,

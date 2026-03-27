@@ -82,6 +82,7 @@ void main() {
                 approvalId: 'approval-1',
                 toolCallId: 'tool-1',
                 approved: false,
+                reason: 'User denied browser automation.',
               ),
             ],
           ),
@@ -111,6 +112,7 @@ void main() {
                 approval: ToolApprovalUiState(
                   approvalId: 'approval-1',
                   approved: false,
+                  reason: 'User denied browser automation.',
                 ),
               ),
             ],
@@ -142,6 +144,7 @@ void main() {
       final toolPart = decoded.messages[1].parts.whereType<ToolUiPart>().single;
       expect(toolPart.state, ToolUiPartState.outputDenied);
       expect(toolPart.approval?.approved, isFalse);
+      expect(toolPart.approval?.reason, 'User denied browser automation.');
 
       final decodedError = decoded.error as Map<String, Object?>;
       expect(decodedError['type'], 'unserializable-error');
@@ -436,6 +439,7 @@ void main() {
         const ToolApprovalResponse(
           approvalId: 'approval-1',
           approved: false,
+          reason: 'The target page is not trusted.',
         ),
       );
 
@@ -444,6 +448,7 @@ void main() {
           session.state.messages.last.parts.whereType<ToolUiPart>().single;
       expect(deniedTool.state, ToolUiPartState.outputDenied);
       expect(deniedTool.approval?.approved, isFalse);
+      expect(deniedTool.approval?.reason, 'The target page is not trusted.');
 
       await session.sendMessage(ChatInput.text('What happened?'));
 
@@ -460,6 +465,11 @@ void main() {
         (approvalResponseMessage.parts.single as ToolApprovalResponsePromptPart)
             .approved,
         isFalse,
+      );
+      expect(
+        (approvalResponseMessage.parts.single as ToolApprovalResponsePromptPart)
+            .reason,
+        'The target page is not trusted.',
       );
 
       await session.dispose();
@@ -518,6 +528,7 @@ void main() {
         const ToolApprovalResponse(
           approvalId: 'approval-1',
           approved: true,
+          reason: 'The action is expected.',
         ),
       );
 
@@ -547,6 +558,11 @@ void main() {
             .approved,
         isTrue,
       );
+      expect(
+        (approvalResponseMessage.parts.single as ToolApprovalResponsePromptPart)
+            .reason,
+        'The action is expected.',
+      );
 
       expect(session.state.status, ChatStatus.ready);
       final assistantMessage = session.state.messages.last;
@@ -554,6 +570,7 @@ void main() {
           assistantMessage.parts.whereType<ToolUiPart>().single;
       expect(approvedTool.state, ToolUiPartState.approvalResponded);
       expect(approvedTool.approval?.approved, isTrue);
+      expect(approvedTool.approval?.reason, 'The action is expected.');
       expect(
         assistantMessage.parts.whereType<TextUiPart>().single.text,
         'The click was approved and executed.',
@@ -868,6 +885,7 @@ void main() {
         const ToolApprovalResponse(
           approvalId: 'approval-1',
           approved: true,
+          reason: 'Restored approval context.',
         ),
       );
 
@@ -885,6 +903,7 @@ void main() {
           assistantMessage.parts.whereType<ToolUiPart>().single;
       expect(approvedTool.state, ToolUiPartState.approvalResponded);
       expect(approvedTool.approval?.approved, isTrue);
+      expect(approvedTool.approval?.reason, 'Restored approval context.');
       expect(restoredSession.state.status, ChatStatus.ready);
       expect(
         assistantMessage.parts.whereType<TextUiPart>().single.text,
@@ -918,19 +937,97 @@ void main() {
 
       await session.dispose();
     });
+
+    test(
+        'resume removes the partial assistant message and rebuilds it from replay',
+        () async {
+      var sendCount = 0;
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            sendCount += 1;
+            return Stream<TextStreamEvent>.fromIterable([
+              StartEvent(),
+              const TextStartEvent(id: 'text-1'),
+              const TextDeltaEvent(id: 'text-1', delta: 'Hel'),
+              const ErrorEvent('socket closed'),
+            ]);
+          },
+          onReconnect: (chatId) => Stream<TextStreamEvent>.fromIterable([
+            StartEvent(),
+            const TextStartEvent(id: 'text-1'),
+            const TextDeltaEvent(id: 'text-1', delta: 'Hel'),
+            const TextDeltaEvent(id: 'text-1', delta: 'lo'),
+            const TextEndEvent(id: 'text-1'),
+            const FinishEvent(finishReason: FinishReason.stop),
+          ]),
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Hi'));
+
+      expect(session.state.status, ChatStatus.error);
+      expect(session.state.messages, hasLength(2));
+      final partialAssistant = session.state.messages.last;
+      expect(partialAssistant.id, 'msg-1');
+      expect(
+        partialAssistant.parts.whereType<TextUiPart>().single.text,
+        'Hel',
+      );
+
+      await session.resume();
+
+      expect(sendCount, 1);
+      expect(session.state.status, ChatStatus.ready);
+      expect(session.state.error, isNull);
+      expect(session.state.messages, hasLength(2));
+      expect(session.state.messages.last.id, 'msg-1');
+      expect(
+        session.state.messages.last.parts.whereType<TextUiPart>().single.text,
+        'Hello',
+      );
+
+      await session.dispose();
+    });
+
+    test('resume throws when the transport cannot reconnect', () async {
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) => Stream<TextStreamEvent>.fromIterable([
+            StartEvent(),
+            const TextStartEvent(id: 'text-1'),
+            const TextDeltaEvent(id: 'text-1', delta: 'Hel'),
+            const ErrorEvent('socket closed'),
+          ]),
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Hi'));
+
+      await expectLater(
+        session.resume(),
+        throwsA(isA<StateError>()),
+      );
+
+      await session.dispose();
+    });
   });
 }
 
 final class _FakeChatTransport implements ChatTransport {
   final Stream<TextStreamEvent> Function(ChatTransportRequest request)
       onSendMessages;
+  final Stream<TextStreamEvent>? Function(String chatId)? onReconnect;
 
   const _FakeChatTransport({
     required this.onSendMessages,
+    this.onReconnect,
   });
 
   @override
-  Stream<TextStreamEvent>? reconnect(String chatId) => null;
+  Stream<TextStreamEvent>? reconnect(String chatId) {
+    return onReconnect?.call(chatId);
+  }
 
   @override
   Stream<TextStreamEvent> sendMessages(ChatTransportRequest request) {

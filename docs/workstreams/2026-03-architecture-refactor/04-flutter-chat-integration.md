@@ -80,7 +80,7 @@ That directly determines whether the Flutter UI can naturally support:
 It also needs richer fields than a minimal tool-call record:
 
 - `inputText` for partial streamed arguments before they become valid structured input
-- `approval` for provider-executed approval flows
+- `approval` for provider-executed approval flows, including the final response reason when one exists
 - `providerExecuted`, `isDynamic`, `preliminary`, and `title`
 - separate call/result provider metadata so provider-native detail is not lost during the state transition
 
@@ -179,10 +179,12 @@ Current implementation direction:
 - phase 1 should already provide a baseline `DefaultChatSession` for direct `LanguageModel` streaming
 - the baseline session should support send, stop, clear-error, simple regenerate, client-side tool-output continuation, and baseline approval continuation
 - approval response must be written into prompt history as a tool-role message instead of remaining a local-only UI mutation
+- approval response should preserve an optional `reason` across session state, prompt history, and snapshot import/export, even if a provider wire format ignores that field
 - approving a provider-executed tool should continue the transport-backed assistant turn
 - approving a client-executed tool should return the session to `awaitingTool` so the caller can later provide `addToolOutput`
 - provider-specific continuation optimizations such as OpenAI `previous_response_id` should stay provider-owned until a shared continuation abstraction is intentionally designed
-- reconnect can remain explicitly unsupported until the transport contract is frozen
+- reconnect should be available only for error recovery when the active transport exposes checkpoint state
+- reconnect should rebuild the current assistant turn from transport replay, instead of trying to continue from a partially rendered UI message
 - `ChatRequestOptions` should carry capability-specific request settings plus shared `CallOptions`, instead of flattening provider options or HTTP controls directly into the session API
 
 ## 2. `ChatTransport`
@@ -191,9 +193,9 @@ Borrow the idea from the Vercel AI SDK, but do not copy its hooks-centered desig
 
 ```dart
 abstract interface class ChatTransport {
-  Future<Stream<ChatStreamChunk>> sendMessages(ChatTransportRequest request);
+  Stream<TextStreamEvent> sendMessages(ChatTransportRequest request);
 
-  Future<Stream<ChatStreamChunk>?> reconnect(String chatId);
+  Stream<TextStreamEvent>? reconnect(String chatId);
 }
 ```
 
@@ -219,6 +221,7 @@ One boundary should stay explicit:
 
 - `TextStreamEvent` is the model-stream contract used by direct model integration
 - `HttpChatTransport` will likely need a dedicated serialized chunk protocol for persistence, reconnection, abort, and UI metadata patches
+- reconnect replay should remain transport-owned because `ChatUiAccumulator` does not restore open text or reasoning stream IDs from an arbitrary partial UI message
 - those transport concerns should not be forced back into the core `TextStreamEvent` set unless they represent stable model semantics
 
 ## 4. Do Not Pull Flutter Dependencies Back into Core

@@ -87,11 +87,13 @@ final class ToolApprovalResponsePromptPart extends PromptPart {
   final String approvalId;
   final String toolCallId;
   final bool approved;
+  final String? reason;
 
   const ToolApprovalResponsePromptPart({
     required this.approvalId,
     required this.toolCallId,
     required this.approved,
+    this.reason,
   });
 }
 

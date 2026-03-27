@@ -20,8 +20,23 @@ final class HttpChatTransportRequestPayload {
         );
 }
 
+final class HttpChatTransportReconnectRequestPayload {
+  final String chatId;
+  final String resumeToken;
+  final Map<String, Object?> metadata;
+
+  HttpChatTransportReconnectRequestPayload({
+    required this.chatId,
+    required this.resumeToken,
+    Map<String, Object?> metadata = const {},
+  }) : metadata = Map.unmodifiable(
+          _ensureJsonMap(metadata, path: r'$.metadata'),
+        );
+}
+
 final class HttpChatTransportRequestJsonCodec {
   static const envelopeKind = 'http-chat-transport-request';
+  static const reconnectEnvelopeKind = 'http-chat-transport-reconnect-request';
 
   final PromptJsonCodec promptCodec;
 
@@ -59,6 +74,42 @@ final class HttpChatTransportRequestJsonCodec {
         data['generateOptions'],
         path: r'$.data.generateOptions',
       ),
+      metadata: data['metadata'] == null
+          ? const {}
+          : _asJsonMap(data['metadata'], path: r'$.data.metadata'),
+    );
+  }
+
+  Map<String, Object?> encodeReconnectRequest(
+    HttpChatTransportReconnectRequestPayload request,
+  ) {
+    return {
+      'schemaVersion': llmDartJsonSchemaVersion,
+      'kind': reconnectEnvelopeKind,
+      'data': {
+        'chatId': request.chatId,
+        'resumeToken': request.resumeToken,
+        if (request.metadata.isNotEmpty) 'metadata': request.metadata,
+      },
+    };
+  }
+
+  HttpChatTransportReconnectRequestPayload decodeReconnectRequest(
+    Object? envelope,
+  ) {
+    final root = _asJsonMap(envelope, path: r'$');
+    final kind = _asJsonString(root['kind'], path: r'$.kind');
+    if (kind != reconnectEnvelopeKind) {
+      throw FormatException(
+        'Expected envelope kind "$reconnectEnvelopeKind", received "$kind".',
+      );
+    }
+
+    final data = _asJsonMap(root['data'], path: r'$.data');
+    return HttpChatTransportReconnectRequestPayload(
+      chatId: _asJsonString(data['chatId'], path: r'$.data.chatId'),
+      resumeToken:
+          _asJsonString(data['resumeToken'], path: r'$.data.resumeToken'),
       metadata: data['metadata'] == null
           ? const {}
           : _asJsonMap(data['metadata'], path: r'$.data.metadata'),

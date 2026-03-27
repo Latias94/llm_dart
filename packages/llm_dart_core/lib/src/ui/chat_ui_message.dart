@@ -40,10 +40,12 @@ sealed class ChatUiPart {
 final class ToolApprovalUiState {
   final String approvalId;
   final bool? approved;
+  final String? reason;
 
   const ToolApprovalUiState({
     required this.approvalId,
     this.approved,
+    this.reason,
   });
 }
 

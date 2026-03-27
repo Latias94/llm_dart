@@ -39,6 +39,31 @@ void main() {
         'clientRequestId': 'req-1',
       });
     });
+
+    test('round-trips reconnect request payloads', () {
+      const codec = HttpChatTransportRequestJsonCodec();
+      final encoded = codec.encodeReconnectRequest(
+        HttpChatTransportReconnectRequestPayload(
+          chatId: 'chat-1',
+          resumeToken: 'resume-2',
+          metadata: const {
+            'attempt': 2,
+          },
+        ),
+      );
+
+      expect(
+        encoded['kind'],
+        HttpChatTransportRequestJsonCodec.reconnectEnvelopeKind,
+      );
+
+      final decoded = codec.decodeReconnectRequest(encoded);
+      expect(decoded.chatId, 'chat-1');
+      expect(decoded.resumeToken, 'resume-2');
+      expect(decoded.metadata, {
+        'attempt': 2,
+      });
+    });
   });
 
   group('HttpChatTransportChunkJsonCodec', () {

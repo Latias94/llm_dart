@@ -97,6 +97,25 @@ Phase-1 recommendation:
 - keep the first generic request envelope provider-neutral
 - if an application needs provider-specific remote tuning immediately, let the backend own that contract explicitly instead of pretending the generic transport already solved it
 
+For reconnect, define a second envelope instead of overloading the original request:
+
+```json
+{
+  "schemaVersion": "2026-03-1",
+  "kind": "http-chat-transport-reconnect-request",
+  "data": {
+    "chatId": "chat-123",
+    "resumeToken": "opaque-resume-token"
+  }
+}
+```
+
+Rules:
+
+- reconnect requests should stay transport-specific
+- reconnect requests should not repeat prompt history
+- the server remains responsible for validating whether the token still maps to an in-flight stream
+
 ## 4. Recommended Stream Chunk Envelope
 
 The streaming response should also use a versioned envelope.
@@ -232,8 +251,16 @@ Recommended reconnect flow:
 Phase-1 recommendation:
 
 - reconnect should resume only in-flight streams
-- do not make the first version responsible for replaying the entire assistant message history
-- replay belongs to snapshot persistence and history loading, not stream reconnect
+- `HttpChatTransport` should keep a local replay buffer for already delivered `TextStreamEvent` items from the current assistant turn
+- `DefaultChatSession.resume()` should remove the partial assistant UI message and rebuild that assistant turn from replay plus the resumed tail
+- do not make reconnect responsible for replaying the entire chat history
+- full history replay still belongs to snapshot persistence and history loading
+
+Why the replay buffer is necessary:
+
+- `ChatUiAccumulator` intentionally hydrates tool indexes from a seed UI message, but it does not restore active text or reasoning stream IDs
+- resuming directly from a partially rendered UI message would therefore fail if the resumed stream starts with `text-delta` or `reasoning-delta`
+- replaying the current assistant turn keeps reconnect transport-local without expanding `TextStreamEvent`
 
 ## 7. Implementation Direction
 
@@ -243,7 +270,9 @@ The phase-1 implementation should follow this order:
 2. define `HttpChatTransport` request and chunk codecs
 3. implement SSE or NDJSON decoding in `HttpChatTransport`
 4. keep checkpoint, keepalive, start, and finish chunks transport-internal
-5. forward only decoded `TextStreamEvent` items into `DefaultChatSession`
+5. store the latest resume token and current assistant-turn replay buffer inside `HttpChatTransport`
+6. let `reconnect(chatId)` replay buffered `TextStreamEvent` items before forwarding the resumed tail
+7. let `DefaultChatSession.resume()` rebuild the assistant turn from replay instead of trying to continue from a partial UI snapshot
 
 ## 8. Deferred Question
 
@@ -260,4 +289,4 @@ Current recommendation:
 - `CallOptions` is frozen for local model invocation, not for remote transport serialization
 - `HttpChatTransport` needs a separate versioned request and chunk protocol
 - `TextStreamEvent` should remain the common runtime stream model
-- reconnect should be implemented through transport checkpoints, not by expanding the core event model
+- reconnect should be implemented through transport checkpoints plus transport-local current-turn replay, not by expanding the core event model

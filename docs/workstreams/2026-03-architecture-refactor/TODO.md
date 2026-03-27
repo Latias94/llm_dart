@@ -28,6 +28,8 @@
 - [ ] Rewrite the error model
 - [ ] Rewrite usage, warning, and provider metadata models
 - [x] Define provider model-options and invocation-options marker interfaces
+- [ ] Strengthen `SourceReference` with an explicit source kind
+- [ ] Define malformed tool-input semantics in the core stream and UI models
 - [ ] Rewrite the tool schema and tool-result model
 - [x] Define unified `CallOptions`
 - [x] Define `LanguageModel`
@@ -102,6 +104,8 @@
 - [x] Implement baseline `DefaultChatSession`
 - [x] Implement baseline client-side tool output continuation in `DefaultChatSession`
 - [x] Implement baseline `HttpChatTransport`
+- [x] Add approval-response reason support to session, prompt, and UI state
+- [ ] Define how UI-only data parts enter `ChatSession` and `HttpChatTransport` without expanding `TextStreamEvent`
 - [ ] Implement `ChatController`
 - [x] Define a serialized chat chunk protocol for `HttpChatTransport`
 - [x] Design the message serialization protocol
@@ -123,7 +127,7 @@
 - [ ] prompt normalization tests
 - [x] stream event accumulation tests
 - [x] UI message projection tests
-- [ ] transport reconnection tests
+- [x] transport reconnection tests
 - [ ] provider profile tests
 - [ ] compatibility adapter tests
 - [x] transport SSE decoder tests

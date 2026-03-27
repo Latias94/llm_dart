@@ -42,6 +42,7 @@ void main() {
               approvalId: 'approval-1',
               toolCallId: 'tool-1',
               approved: true,
+              reason: 'User confirmed the external action.',
             ),
             ToolResultPromptPart(
               toolCallId: 'tool-1',
@@ -79,6 +80,10 @@ void main() {
       expect(
         (toolMessage.parts[0] as ToolApprovalResponsePromptPart).approved,
         isTrue,
+      );
+      expect(
+        (toolMessage.parts[0] as ToolApprovalResponsePromptPart).reason,
+        'User confirmed the external action.',
       );
       expect(toolMessage.parts[1], isA<ToolResultPromptPart>());
     });
@@ -119,6 +124,7 @@ void main() {
               approval: ToolApprovalUiState(
                 approvalId: 'approval-1',
                 approved: true,
+                reason: 'User confirmed the external action.',
               ),
               callProviderMetadata: ProviderMetadata({
                 'openai': {
@@ -219,6 +225,7 @@ void main() {
       expect(tool.isDynamic, isTrue);
       expect(tool.approval?.approvalId, 'approval-1');
       expect(tool.approval?.approved, isTrue);
+      expect(tool.approval?.reason, 'User confirmed the external action.');
       expect(
         (tool.callProviderMetadata!['openai']
             as Map<String, Object?>)['approvalRequestId'],

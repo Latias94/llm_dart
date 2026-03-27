@@ -22,11 +22,13 @@ final class ToolOutputUpdate {
 final class ToolApprovalResponse {
   final String approvalId;
   final bool approved;
+  final String? reason;
   final ChatRequestOptions options;
 
   const ToolApprovalResponse({
     required this.approvalId,
     required this.approved,
+    this.reason,
     this.options = const ChatRequestOptions(),
   });
 }

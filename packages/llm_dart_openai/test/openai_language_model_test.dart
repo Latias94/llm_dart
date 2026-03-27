@@ -472,7 +472,8 @@ void main() {
       );
     });
 
-    test('generate encodes MCP approval continuations for Responses API',
+    test(
+        'generate encodes MCP approval continuations for Responses API and ignores unsupported approval reasons',
         () async {
       TransportRequest? capturedRequest;
 
@@ -543,6 +544,7 @@ void main() {
                   approvalId: 'approval-1',
                   toolCallId: 'approval-1',
                   approved: true,
+                  reason: 'User approved the MCP server action.',
                 ),
               ],
             ),
@@ -570,6 +572,7 @@ void main() {
           'approve': true,
         },
       );
+      expect((input[1] as Map<String, Object?>).containsKey('reason'), isFalse);
     });
   });
 }

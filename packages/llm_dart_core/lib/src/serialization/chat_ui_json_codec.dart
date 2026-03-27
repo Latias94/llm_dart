@@ -369,6 +369,7 @@ final class ChatUiJsonCodec {
     return {
       'approvalId': state.approvalId,
       if (state.approved != null) 'approved': state.approved,
+      if (state.reason != null) 'reason': state.reason,
     };
   }
 
@@ -384,6 +385,7 @@ final class ChatUiJsonCodec {
     return ToolApprovalUiState(
       approvalId: asJsonString(map['approvalId'], path: '$path.approvalId'),
       approved: asNullableJsonBool(map['approved'], path: '$path.approved'),
+      reason: asNullableJsonString(map['reason'], path: '$path.reason'),
     );
   }
 
