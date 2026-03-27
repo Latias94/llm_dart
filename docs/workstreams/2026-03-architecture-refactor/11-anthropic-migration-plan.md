@@ -132,6 +132,32 @@ Why this order:
 - it avoids migrating high-level chat orchestration before the data contracts are stable
 - it gives later code migration a clear target instead of translating old `LLMConfig.extensions` ad hoc again
 
+## Current Progress Snapshot
+
+The current migration has completed the thin text-generation mainline in the new package:
+
+- `AnthropicChatModelSettings`
+- `AnthropicGenerateTextOptions`
+- `AnthropicMcpServer` and related MCP typed models
+- `AnthropicMessagesCodec`
+- `AnthropicMessagesResultCodec`
+- `AnthropicStreamCodec`
+- `AnthropicLanguageModel`
+- package-level `Anthropic` facade
+- package smoke tests for `generate()` and `stream()`
+
+What this now proves:
+
+- Anthropic request encoding is package-owned rather than root-monolith-owned
+- Anthropic streaming and non-streaming responses can map into the frozen core result and stream models
+- provider-specific beta/header behavior can stay in the provider package without widening the common API
+
+What is still intentionally separate:
+
+- provider-native APIs such as Anthropic files
+- any future Anthropic-only helper surface that does not belong in `LanguageModel`
+- broader capability helpers or model-specific limits that should remain package-private
+
 ## Legacy-To-New Mapping
 
 | Legacy area | New package target |
@@ -152,6 +178,7 @@ During migration:
 - translate legacy `extensions` usage into typed options or provider-native APIs instead of copying it over
 - keep request/stream/result codecs JSON-safe and side-effect free
 - keep provider metadata namespaced under `anthropic`
+- keep provider-specific streamed details in `providerMetadata`, `CustomEvent`, or provider-native result payloads instead of inventing new Anthropic-only core stream events
 
 ## Exit Criteria For The Anthropic Text Mainline
 
@@ -163,3 +190,8 @@ The Anthropic text mainline should be considered migrated only when:
 - thinking works through common reasoning events and parts
 - MCP connector request-side configuration is represented without `extensions`
 - no new code in the package depends on the old root monolith abstractions
+
+Current status:
+
+- the exit criteria above are now satisfied for the Anthropic text mainline
+- follow-up work should move to provider-native APIs, broader feature coverage, and legacy-root cleanup rather than re-opening the basic text boundary

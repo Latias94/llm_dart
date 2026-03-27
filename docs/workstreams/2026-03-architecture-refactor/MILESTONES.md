@@ -59,6 +59,13 @@ Acceptance criteria:
 - Anthropic reasoning, tools, and MCP connector paths work
 - Google chat, image, embedding, and TTS paths work
 
+Current status:
+
+- the Anthropic text-generation mainline is now wired through `llm_dart_anthropic`
+- Anthropic request encoding, result decoding, stream decoding, MCP request models, and typed options are package-owned
+- the current event decision remains stable: provider-native streamed details stay in common events plus `providerMetadata` or provider-namespaced custom payloads, not new Anthropic-only core events
+- Google migration and additional Anthropic provider-native APIs remain open
+
 ## M4 - Community Providers
 
 Goals:

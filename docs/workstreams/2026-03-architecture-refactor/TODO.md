@@ -76,7 +76,7 @@
 ## Anthropic
 
 - [x] Establish the Anthropic messages request codec
-- [ ] Migrate the Anthropic language model
+- [x] Migrate the Anthropic language model
 - [ ] Migrate the Anthropic tool codec
 - [ ] Migrate the Anthropic reasoning codec
 - [ ] Migrate the Anthropic web-search adapter
