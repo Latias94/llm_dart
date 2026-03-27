@@ -266,13 +266,22 @@ final class GoogleGenerateContentStreamCodec {
         final mediaType = asString(inlineData?['mimeType']);
         final data = asString(inlineData?['data']);
         if (mediaType != null && data != null) {
-          yield FileEvent(
-            GeneratedFile(
-              mediaType: mediaType,
-              bytes: decodeBase64(data),
-            ),
-            providerMetadata: metadata,
+          final file = GeneratedFile(
+            mediaType: mediaType,
+            bytes: decodeBase64(data),
           );
+
+          if (part['thought'] == true) {
+            yield ReasoningFileEvent(
+              file,
+              providerMetadata: metadata,
+            );
+          } else {
+            yield FileEvent(
+              file,
+              providerMetadata: metadata,
+            );
+          }
         }
       }
     }

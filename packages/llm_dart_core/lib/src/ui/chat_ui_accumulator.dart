@@ -167,6 +167,13 @@ final class ChatUiAccumulator {
           ),
         );
         _activeReasoningPartIndexes.remove(event.id);
+      case ReasoningFileEvent():
+        _appendPart(
+          ReasoningFileUiPart(
+            event.file,
+            providerMetadata: event.providerMetadata,
+          ),
+        );
       case ToolInputStartEvent():
         _partialToolInputs[event.toolCallId] = _PartialToolInput(
           toolName: event.toolName,

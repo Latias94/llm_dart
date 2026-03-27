@@ -150,5 +150,39 @@ void main() {
       expect(toolResult.toolResult.isDynamic, isTrue);
       expect(toolResult.toolResult.isError, isFalse);
     });
+
+    test('decodes thought inline data into reasoning-file content', () {
+      final result = codec.decodeResponse({
+        'candidates': [
+          {
+            'content': {
+              'parts': [
+                {
+                  'inlineData': {
+                    'mimeType': 'image/png',
+                    'data': 'AQID',
+                  },
+                  'thought': true,
+                  'thoughtSignature': 'sig_reasoning_file',
+                },
+              ],
+            },
+            'finishReason': 'STOP',
+          },
+        ],
+      });
+
+      final reasoningFile =
+          result.content.whereType<ReasoningFileContentPart>().single;
+      expect(reasoningFile.file.mediaType, 'image/png');
+      expect(reasoningFile.file.bytes, [1, 2, 3]);
+      expect(
+        reasoningFile.providerMetadata?.values['google'],
+        {
+          'thoughtSignature': 'sig_reasoning_file',
+          'thought': true,
+        },
+      );
+    });
   });
 }

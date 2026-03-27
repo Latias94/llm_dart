@@ -397,6 +397,162 @@ void main() {
       await session.dispose();
     });
 
+    test(
+        'preserves reasoning, reasoning-file, custom parts, and part metadata in assistant replay',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ReasoningStartEvent(
+                    id: 'reasoning-1',
+                    providerMetadata: ProviderMetadata({
+                      'google': {
+                        'thoughtSignature': 'sig_reasoning',
+                      },
+                    }),
+                  ),
+                  const ReasoningDeltaEvent(
+                    id: 'reasoning-1',
+                    delta: 'Plan first.',
+                    providerMetadata: ProviderMetadata({
+                      'google': {
+                        'thoughtSignature': 'sig_reasoning',
+                      },
+                    }),
+                  ),
+                  const ReasoningEndEvent(id: 'reasoning-1'),
+                  const ReasoningFileEvent(
+                    GeneratedFile(
+                      mediaType: 'image/png',
+                      filename: 'thought.png',
+                      bytes: [1, 2, 3],
+                    ),
+                    providerMetadata: ProviderMetadata({
+                      'google': {
+                        'thoughtSignature': 'sig_reasoning_file',
+                      },
+                    }),
+                  ),
+                  const TextStartEvent(
+                    id: 'text-1',
+                    providerMetadata: ProviderMetadata({
+                      'openai': {
+                        'itemId': 'msg_1',
+                      },
+                    }),
+                  ),
+                  const TextDeltaEvent(
+                    id: 'text-1',
+                    delta: 'Here is the answer.',
+                    providerMetadata: ProviderMetadata({
+                      'openai': {
+                        'itemId': 'msg_1',
+                      },
+                    }),
+                  ),
+                  const TextEndEvent(id: 'text-1'),
+                  const CustomEvent(
+                    kind: 'openai.compaction',
+                    data: {
+                      'type': 'compaction',
+                      'id': 'cmp_1',
+                      'encrypted_content': 'enc_1',
+                    },
+                    providerMetadata: ProviderMetadata({
+                      'openai': {
+                        'itemId': 'cmp_1',
+                      },
+                    }),
+                  ),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(id: 'text-2', delta: 'Follow-up reply.'),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Hi'));
+
+      final assistantMessage = session.state.messages.last;
+      expect(
+        assistantMessage.parts.whereType<ReasoningUiPart>().single.text,
+        'Plan first.',
+      );
+      expect(
+        assistantMessage.parts.whereType<ReasoningFileUiPart>().single.file.filename,
+        'thought.png',
+      );
+      expect(
+        assistantMessage.parts.whereType<CustomUiPart>().single.kind,
+        'openai.compaction',
+      );
+
+      await session.sendMessage(ChatInput.text('What next?'));
+
+      expect(capturedRequests, hasLength(2));
+      final replayPrompt = capturedRequests[1].prompt;
+      expect(replayPrompt, hasLength(3));
+      final assistantPrompt = replayPrompt[1] as AssistantPromptMessage;
+      expect(assistantPrompt.parts, hasLength(4));
+      expect(assistantPrompt.parts[0], isA<ReasoningPromptPart>());
+      expect(assistantPrompt.parts[1], isA<ReasoningFilePromptPart>());
+      expect(assistantPrompt.parts[2], isA<TextPromptPart>());
+      expect(assistantPrompt.parts[3], isA<CustomPromptPart>());
+
+      final reasoningPart = assistantPrompt.parts[0] as ReasoningPromptPart;
+      expect(reasoningPart.text, 'Plan first.');
+      expect(
+        reasoningPart.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_reasoning'),
+      );
+
+      final reasoningFilePart =
+          assistantPrompt.parts[1] as ReasoningFilePromptPart;
+      expect(reasoningFilePart.filename, 'thought.png');
+      expect(reasoningFilePart.bytes, [1, 2, 3]);
+      expect(
+        reasoningFilePart.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_reasoning_file'),
+      );
+
+      final textPart = assistantPrompt.parts[2] as TextPromptPart;
+      expect(textPart.text, 'Here is the answer.');
+      expect(
+        textPart.providerMetadata!['openai'],
+        containsPair('itemId', 'msg_1'),
+      );
+
+      final customPart = assistantPrompt.parts[3] as CustomPromptPart;
+      expect(customPart.kind, 'openai.compaction');
+      expect(customPart.data, {
+        'type': 'compaction',
+        'id': 'cmp_1',
+        'encrypted_content': 'enc_1',
+      });
+      expect(
+        customPart.providerMetadata!['openai'],
+        containsPair('itemId', 'cmp_1'),
+      );
+
+      await session.dispose();
+    });
+
     test('persists denied approval responses in prompt history', () async {
       final capturedRequests = <ChatTransportRequest>[];
 

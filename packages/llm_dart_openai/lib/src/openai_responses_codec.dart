@@ -652,6 +652,38 @@ final class OpenAIResponsesCodec {
         continue;
       }
 
+      if (part is ReasoningPromptPart) {
+        flushTextContent();
+
+        final metadata = _providerMetadataValues(
+          part.providerMetadata,
+          namespace: 'openai',
+        );
+        final reasoningId = _asString(metadata?['itemId']);
+        final encryptedContent = _asString(metadata?['encryptedContent']);
+        final summary = <Object?>[
+          if (part.text.isNotEmpty)
+            {
+              'type': 'summary_text',
+              'text': part.text,
+            },
+        ];
+
+        if (summary.isEmpty &&
+            reasoningId == null &&
+            encryptedContent == null) {
+          continue;
+        }
+
+        items.add({
+          'type': 'reasoning',
+          if (reasoningId != null) 'id': reasoningId,
+          if (encryptedContent != null) 'encrypted_content': encryptedContent,
+          'summary': summary,
+        });
+        continue;
+      }
+
       flushTextContent();
 
       if (part is ToolCallPromptPart) {
@@ -669,6 +701,17 @@ final class OpenAIResponsesCodec {
       }
 
       if (part is ToolApprovalRequestPromptPart) {
+        continue;
+      }
+
+      if (part is FilePromptPart ||
+          part is ReasoningFilePromptPart ||
+          part is CustomPromptPart) {
+        if (part is CustomPromptPart &&
+            part.kind == 'openai.compaction' &&
+            part.data is Map) {
+          items.add(Map<String, Object?>.from(part.data as Map));
+        }
         continue;
       }
 
@@ -1116,6 +1159,22 @@ final class OpenAIResponsesCodec {
     return ProviderMetadata({
       'openai': openaiValues,
     });
+  }
+
+  Map<String, Object?>? _providerMetadataValues(
+    ProviderMetadata? metadata, {
+    required String namespace,
+  }) {
+    final value = metadata?[namespace];
+    if (value is Map<String, Object?>) {
+      return value;
+    }
+
+    if (value is Map) {
+      return Map<String, Object?>.from(value);
+    }
+
+    return null;
   }
 
   _OpenAIToolCallState _resolveToolCallState({

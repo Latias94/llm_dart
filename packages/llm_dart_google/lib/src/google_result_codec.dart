@@ -122,15 +122,26 @@ final class GoogleGenerateContentResultCodec {
           final mediaType = asString(inlineData?['mimeType']);
           final data = asString(inlineData?['data']);
           if (mediaType != null && data != null) {
-            content.add(
-              FileContentPart(
-                GeneratedFile(
-                  mediaType: mediaType,
-                  bytes: decodeBase64(data),
-                ),
-                providerMetadata: signatureMetadata,
-              ),
+            final file = GeneratedFile(
+              mediaType: mediaType,
+              bytes: decodeBase64(data),
             );
+
+            if (part['thought'] == true) {
+              content.add(
+                ReasoningFileContentPart(
+                  file,
+                  providerMetadata: signatureMetadata,
+                ),
+              );
+            } else {
+              content.add(
+                FileContentPart(
+                  file,
+                  providerMetadata: signatureMetadata,
+                ),
+              );
+            }
           }
         }
       }
@@ -205,10 +216,24 @@ final class GoogleGenerateContentResultCodec {
             providerMetadata: mergeProviderMetadata(providerMetadata, metadata),
           ),
         );
+      case ReasoningFileContentPart(:final file, :final providerMetadata):
+        content.add(
+          ReasoningFileContentPart(
+            file,
+            providerMetadata: mergeProviderMetadata(providerMetadata, metadata),
+          ),
+        );
       case ToolCallContentPart(:final toolCall, :final providerMetadata):
         content.add(
           ToolCallContentPart(
             toolCall,
+            providerMetadata: mergeProviderMetadata(providerMetadata, metadata),
+          ),
+        );
+      case ToolResultContentPart(:final toolResult, :final providerMetadata):
+        content.add(
+          ToolResultContentPart(
+            toolResult,
             providerMetadata: mergeProviderMetadata(providerMetadata, metadata),
           ),
         );

@@ -319,5 +319,118 @@ void main() {
         ]),
       );
     });
+
+    test(
+        'encodes assistant reasoning, reasoning-file, and thought signatures from part metadata',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'gemini-2.5-flash',
+        prompt: [
+          UserPromptMessage.text('Continue the conversation.'),
+          AssistantPromptMessage(
+            parts: const [
+              ReasoningPromptPart(
+                'Thinking...',
+                providerMetadata: ProviderMetadata({
+                  'google': {
+                    'thoughtSignature': 'sig_reasoning',
+                  },
+                }),
+              ),
+              ReasoningFilePromptPart(
+                mediaType: 'image/png',
+                filename: 'thought.png',
+                bytes: [1, 2, 3],
+                providerMetadata: ProviderMetadata({
+                  'google': {
+                    'thoughtSignature': 'sig_reasoning_file',
+                  },
+                }),
+              ),
+              FilePromptPart(
+                mediaType: 'image/jpeg',
+                bytes: [4, 5, 6],
+                providerMetadata: ProviderMetadata({
+                  'google': {
+                    'thought': true,
+                    'thoughtSignature': 'sig_file',
+                  },
+                }),
+              ),
+              ToolCallPromptPart(
+                toolCallId: 'tool_1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Hong Kong',
+                },
+                providerMetadata: ProviderMetadata({
+                  'google': {
+                    'thoughtSignature': 'sig_tool',
+                  },
+                }),
+              ),
+              TextPromptPart(
+                'Visible answer.',
+                providerMetadata: ProviderMetadata({
+                  'google': {
+                    'thoughtSignature': 'sig_text',
+                  },
+                }),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const GoogleChatModelSettings(),
+        providerOptions: const GoogleGenerateTextOptions(),
+      );
+
+      final contents = request.body['contents'] as List<Object?>;
+      expect(contents, hasLength(2));
+      expect(
+        contents[1],
+        {
+          'role': 'model',
+          'parts': [
+            {
+              'text': 'Thinking...',
+              'thought': true,
+              'thoughtSignature': 'sig_reasoning',
+            },
+            {
+              'inlineData': {
+                'mimeType': 'image/png',
+                'data': 'AQID',
+              },
+              'thought': true,
+              'thoughtSignature': 'sig_reasoning_file',
+            },
+            {
+              'inlineData': {
+                'mimeType': 'image/jpeg',
+                'data': 'BAUG',
+              },
+              'thought': true,
+              'thoughtSignature': 'sig_file',
+            },
+            {
+              'functionCall': {
+                'name': 'weather',
+                'args': {
+                  'city': 'Hong Kong',
+                },
+              },
+              'thoughtSignature': 'sig_tool',
+            },
+            {
+              'text': 'Visible answer.',
+              'thoughtSignature': 'sig_text',
+            },
+          ],
+        },
+      );
+    });
   });
 }

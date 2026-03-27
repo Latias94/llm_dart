@@ -94,6 +94,16 @@ final class ReasoningEndEvent extends TextStreamEvent {
   });
 }
 
+final class ReasoningFileEvent extends TextStreamEvent {
+  final GeneratedFile file;
+  final ProviderMetadata? providerMetadata;
+
+  const ReasoningFileEvent(
+    this.file, {
+    this.providerMetadata,
+  });
+}
+
 final class ToolInputStartEvent extends TextStreamEvent {
   final String toolCallId;
   final String toolName;

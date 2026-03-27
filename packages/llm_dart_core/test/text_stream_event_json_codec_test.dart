@@ -189,5 +189,35 @@ void main() {
         throwsFormatException,
       );
     });
+
+    test('round-trips reasoning file events', () {
+      const codec = TextStreamEventJsonCodec();
+
+      final decoded = codec.decodeEvents(
+        codec.encodeEvents([
+          const ReasoningFileEvent(
+            GeneratedFile(
+              mediaType: 'image/png',
+              filename: 'thought.png',
+              bytes: [1, 2, 3],
+            ),
+            providerMetadata: ProviderMetadata({
+              'google': {
+                'thoughtSignature': 'sig_reasoning_file',
+              },
+            }),
+          ),
+        ]),
+      );
+
+      final event = decoded.single as ReasoningFileEvent;
+      expect(event.file.mediaType, 'image/png');
+      expect(event.file.filename, 'thought.png');
+      expect(event.file.bytes, [1, 2, 3]);
+      expect(
+        event.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_reasoning_file'),
+      );
+    });
   });
 }

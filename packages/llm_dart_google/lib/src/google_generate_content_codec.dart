@@ -57,7 +57,10 @@ final class GoogleGenerateContentCodec {
       }
 
       sawConversationMessage = true;
-      contents.add(_encodeMessage(message));
+      final encodedMessage = _encodeMessage(message);
+      if (encodedMessage != null) {
+        contents.add(encodedMessage);
+      }
     }
 
     if (contents.isEmpty) {
@@ -282,7 +285,7 @@ final class GoogleGenerateContentCodec {
         normalized.contains('nano-banana');
   }
 
-  Map<String, Object?> _encodeMessage(PromptMessage message) {
+  Map<String, Object?>? _encodeMessage(PromptMessage message) {
     if (message case UserPromptMessage(:final parts)) {
       return {
         'role': 'user',
@@ -293,24 +296,34 @@ final class GoogleGenerateContentCodec {
     }
 
     if (message case AssistantPromptMessage(:final parts)) {
+      final encodedParts = [
+        for (final part in parts)
+          if (_encodeAssistantPart(part) case final encodedPart?) encodedPart,
+      ];
+      if (encodedParts.isEmpty) {
+        return null;
+      }
+
       return {
         'role': 'model',
-        'parts': [
-          for (final part in parts)
-            if (_encodeAssistantPart(part) case final encodedPart?) encodedPart,
-        ],
+        'parts': encodedParts,
       };
     }
 
     if (message case ToolPromptMessage(:final toolName, :final parts)) {
+      final encodedParts = [
+        for (final part in parts)
+          if (_encodeToolPart(part, toolName: toolName)
+              case final encodedPart?)
+            encodedPart,
+      ];
+      if (encodedParts.isEmpty) {
+        return null;
+      }
+
       return {
         'role': 'user',
-        'parts': [
-          for (final part in parts)
-            if (_encodeToolPart(part, toolName: toolName)
-                case final encodedPart?)
-              encodedPart,
-        ],
+        'parts': encodedParts,
       };
     }
 
@@ -348,10 +361,47 @@ final class GoogleGenerateContentCodec {
   }
 
   Map<String, Object?>? _encodeAssistantPart(PromptPart part) {
+    final metadata = _resolveAssistantPartMetadata(part.providerMetadata);
+
     if (part is TextPromptPart) {
+      if (part.text.isEmpty) {
+        return null;
+      }
+
       return {
         'text': part.text,
+        ..._encodeThoughtFields(metadata),
       };
+    }
+
+    if (part is ReasoningPromptPart) {
+      if (part.text.isEmpty) {
+        return null;
+      }
+
+      return {
+        'text': part.text,
+        ..._encodeThoughtFields(metadata, forceThought: true),
+      };
+    }
+
+    if (part is ReasoningFilePromptPart) {
+      return _encodeAssistantInlineDataPart(
+        mediaType: part.mediaType,
+        uri: part.uri,
+        bytes: part.bytes,
+        metadata: metadata,
+        forceThought: true,
+      );
+    }
+
+    if (part is FilePromptPart) {
+      return _encodeAssistantInlineDataPart(
+        mediaType: part.mediaType,
+        uri: part.uri,
+        bytes: part.bytes,
+        metadata: metadata,
+      );
     }
 
     if (part is ToolCallPromptPart) {
@@ -360,10 +410,15 @@ final class GoogleGenerateContentCodec {
           'name': part.toolName,
           'args': normalizeJsonValue(part.input) ?? const <String, Object?>{},
         },
+        ..._encodeThoughtFields(metadata),
       };
     }
 
     if (part is ToolApprovalRequestPromptPart) {
+      return null;
+    }
+
+    if (part is CustomPromptPart) {
       return null;
     }
 
@@ -423,6 +478,68 @@ final class GoogleGenerateContentCodec {
     throw UnsupportedError(
       'Google binary prompt parts require in-memory bytes or a URI.',
     );
+  }
+
+  Map<String, Object?> _encodeAssistantInlineDataPart({
+    required String mediaType,
+    required Uri? uri,
+    required List<int>? bytes,
+    required _GoogleAssistantPartMetadata metadata,
+    bool forceThought = false,
+  }) {
+    if (bytes == null) {
+      throw UnsupportedError(
+        'Google assistant file prompt parts require in-memory bytes. Assistant-side file URIs are not supported.',
+      );
+    }
+
+    return {
+      'inlineData': {
+        'mimeType': mediaType,
+        'data': base64Encode(bytes),
+      },
+      ..._encodeThoughtFields(metadata, forceThought: forceThought),
+    };
+  }
+
+  Map<String, Object?> _encodeThoughtFields(
+    _GoogleAssistantPartMetadata metadata, {
+    bool forceThought = false,
+  }) {
+    return {
+      if (forceThought || metadata.thought) 'thought': true,
+      if (metadata.thoughtSignature != null)
+        'thoughtSignature': metadata.thoughtSignature,
+    };
+  }
+
+  _GoogleAssistantPartMetadata _resolveAssistantPartMetadata(
+    ProviderMetadata? metadata,
+  ) {
+    final primary = _providerNamespace(metadata, 'google');
+    final fallback = _providerNamespace(metadata, 'vertex');
+    final resolved = primary ?? fallback;
+
+    return _GoogleAssistantPartMetadata(
+      thought: resolved?['thought'] == true,
+      thoughtSignature: asString(resolved?['thoughtSignature']),
+    );
+  }
+
+  Map<String, Object?>? _providerNamespace(
+    ProviderMetadata? metadata,
+    String namespace,
+  ) {
+    final value = metadata?[namespace];
+    if (value is Map<String, Object?>) {
+      return value;
+    }
+
+    if (value is Map) {
+      return Map<String, Object?>.from(value);
+    }
+
+    return null;
   }
 
   int? _resolveCandidateCount(
@@ -504,4 +621,14 @@ final class GoogleGenerateContentCodec {
 
     return config.isEmpty ? null : config;
   }
+}
+
+final class _GoogleAssistantPartMetadata {
+  final bool thought;
+  final String? thoughtSignature;
+
+  const _GoogleAssistantPartMetadata({
+    this.thought = false,
+    this.thoughtSignature,
+  });
 }

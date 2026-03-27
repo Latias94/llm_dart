@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../common/provider_metadata.dart';
 import '../prompt/prompt_message.dart';
 import 'json_codec_common.dart';
 import 'serialization_protocol.dart';
@@ -77,15 +78,22 @@ final class PromptJsonCodec {
 
   JsonMap encodePart(PromptPart part) {
     return switch (part) {
-      TextPromptPart(:final text) => {
+      TextPromptPart(
+        :final text,
+        :final providerMetadata,
+      ) =>
+        {
           'type': 'text',
           'text': text,
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
         },
       FilePromptPart(
         :final mediaType,
         :final filename,
         :final uri,
         :final bytes,
+        :final providerMetadata,
       ) =>
         {
           'type': 'file',
@@ -93,17 +101,60 @@ final class PromptJsonCodec {
           if (filename != null) 'filename': filename,
           if (uri != null) 'uri': uri.toString(),
           if (bytes != null) 'bytes': _encodeBytes(bytes),
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
         },
       ImagePromptPart(
         :final mediaType,
         :final uri,
         :final bytes,
+        :final providerMetadata,
       ) =>
         {
           'type': 'image',
           'mediaType': mediaType,
           if (uri != null) 'uri': uri.toString(),
           if (bytes != null) 'bytes': _encodeBytes(bytes),
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+        },
+      ReasoningPromptPart(
+        :final text,
+        :final providerMetadata,
+      ) =>
+        {
+          'type': 'reasoning',
+          'text': text,
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+        },
+      ReasoningFilePromptPart(
+        :final mediaType,
+        :final filename,
+        :final uri,
+        :final bytes,
+        :final providerMetadata,
+      ) =>
+        {
+          'type': 'reasoning-file',
+          'mediaType': mediaType,
+          if (filename != null) 'filename': filename,
+          if (uri != null) 'uri': uri.toString(),
+          if (bytes != null) 'bytes': _encodeBytes(bytes),
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+        },
+      CustomPromptPart(
+        :final kind,
+        :final data,
+        :final providerMetadata,
+      ) =>
+        {
+          'type': 'custom',
+          'kind': kind,
+          'data': ensureJsonValue(data, path: r'$.custom.data'),
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
         },
       ToolCallPromptPart(
         :final toolCallId,
@@ -112,6 +163,7 @@ final class PromptJsonCodec {
         :final providerExecuted,
         :final isDynamic,
         :final title,
+        :final providerMetadata,
       ) =>
         {
           'type': 'tool-call',
@@ -121,21 +173,27 @@ final class PromptJsonCodec {
           'providerExecuted': providerExecuted,
           'isDynamic': isDynamic,
           if (title != null) 'title': title,
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
         },
       ToolApprovalRequestPromptPart(
         :final approvalId,
         :final toolCallId,
+        :final providerMetadata,
       ) =>
         {
           'type': 'tool-approval-request',
           'approvalId': approvalId,
           'toolCallId': toolCallId,
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
         },
       ToolResultPromptPart(
         :final toolCallId,
         :final toolName,
         :final output,
         :final isError,
+        :final providerMetadata,
       ) =>
         {
           'type': 'tool-result',
@@ -143,12 +201,15 @@ final class PromptJsonCodec {
           'toolName': toolName,
           'output': ensureJsonValue(output, path: r'$.toolResult.output'),
           'isError': isError,
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
         },
       ToolApprovalResponsePromptPart(
         :final approvalId,
         :final toolCallId,
         :final approved,
         :final reason,
+        :final providerMetadata,
       ) =>
         {
           'type': 'tool-approval-response',
@@ -156,6 +217,8 @@ final class PromptJsonCodec {
           'toolCallId': toolCallId,
           'approved': approved,
           if (reason != null) 'reason': reason,
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
         },
     };
   }
@@ -170,6 +233,10 @@ final class PromptJsonCodec {
     return switch (type) {
       'text' => TextPromptPart(
           asJsonString(map['text'], path: '$path.text'),
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
         ),
       'file' => FilePromptPart(
           mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
@@ -177,11 +244,45 @@ final class PromptJsonCodec {
               asNullableJsonString(map['filename'], path: '$path.filename'),
           uri: _decodeUri(map['uri'], path: '$path.uri'),
           bytes: _decodeBytes(map['bytes'], path: '$path.bytes'),
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
         ),
       'image' => ImagePromptPart(
           mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
           uri: _decodeUri(map['uri'], path: '$path.uri'),
           bytes: _decodeBytes(map['bytes'], path: '$path.bytes'),
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'reasoning' => ReasoningPromptPart(
+          asJsonString(map['text'], path: '$path.text'),
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'reasoning-file' => ReasoningFilePromptPart(
+          mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
+          filename:
+              asNullableJsonString(map['filename'], path: '$path.filename'),
+          uri: _decodeUri(map['uri'], path: '$path.uri'),
+          bytes: _decodeBytes(map['bytes'], path: '$path.bytes'),
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'custom' => CustomPromptPart(
+          kind: asJsonString(map['kind'], path: '$path.kind'),
+          data: map['data'],
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
         ),
       'tool-call' => ToolCallPromptPart(
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
@@ -198,10 +299,18 @@ final class PromptJsonCodec {
               ) ??
               false,
           title: asNullableJsonString(map['title'], path: '$path.title'),
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
         ),
       'tool-approval-request' => ToolApprovalRequestPromptPart(
           approvalId: asJsonString(map['approvalId'], path: '$path.approvalId'),
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
         ),
       'tool-result' => ToolResultPromptPart(
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
@@ -209,16 +318,40 @@ final class PromptJsonCodec {
           output: map['output'],
           isError: asNullableJsonBool(map['isError'], path: '$path.isError') ??
               false,
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
         ),
       'tool-approval-response' => ToolApprovalResponsePromptPart(
           approvalId: asJsonString(map['approvalId'], path: '$path.approvalId'),
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
           approved: asJsonBool(map['approved'], path: '$path.approved'),
           reason: asNullableJsonString(map['reason'], path: '$path.reason'),
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
         ),
       _ =>
         throw FormatException('Unsupported prompt part type "$type" at $path.'),
     };
+  }
+
+  JsonMap _encodeProviderMetadata(ProviderMetadata metadata) {
+    return ensureJsonValue(metadata.values, path: r'$.providerMetadata')
+        as JsonMap;
+  }
+
+  ProviderMetadata? _decodeProviderMetadata(
+    Object? value, {
+    required String path,
+  }) {
+    if (value == null) {
+      return null;
+    }
+
+    return ProviderMetadata(asJsonMap(value, path: path));
   }
 
   JsonMap _encodeBytes(List<int> bytes) {

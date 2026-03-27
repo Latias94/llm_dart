@@ -155,6 +155,16 @@ final class ChatUiJsonCodec {
           if (providerMetadata != null)
             'providerMetadata': _encodeProviderMetadata(providerMetadata),
         },
+      ReasoningFileUiPart(
+        :final file,
+        :final providerMetadata,
+      ) =>
+        {
+          'type': 'reasoning-file',
+          'file': _encodeGeneratedFile(file),
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+        },
       CustomUiPart(
         :final kind,
         :final data,
@@ -247,6 +257,13 @@ final class ChatUiJsonCodec {
           _decodeSourceReference(map['source'], path: '$path.source'),
         ),
       'file' => FileUiPart(
+          _decodeGeneratedFile(map['file'], path: '$path.file'),
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'reasoning-file' => ReasoningFileUiPart(
           _decodeGeneratedFile(map['file'], path: '$path.file'),
           providerMetadata: _decodeProviderMetadata(
             map['providerMetadata'],

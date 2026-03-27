@@ -178,5 +178,42 @@ void main() {
       expect(toolResult.isDynamic, isTrue);
       expect(toolResult.isError, isFalse);
     });
+
+    test('maps thought inline data into reasoning-file events', () {
+      final state = GoogleGenerateContentStreamState();
+      final events = codec.decodeChunk(
+        {
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {
+                    'inlineData': {
+                      'mimeType': 'image/png',
+                      'data': 'AQID',
+                    },
+                    'thought': true,
+                    'thoughtSignature': 'sig_reasoning_file',
+                  },
+                ],
+              },
+              'finishReason': 'STOP',
+            },
+          ],
+        },
+        state,
+      ).toList();
+
+      final reasoningFile = events.whereType<ReasoningFileEvent>().single;
+      expect(reasoningFile.file.mediaType, 'image/png');
+      expect(reasoningFile.file.bytes, [1, 2, 3]);
+      expect(
+        reasoningFile.providerMetadata?.values['google'],
+        {
+          'thoughtSignature': 'sig_reasoning_file',
+          'thought': true,
+        },
+      );
+    });
   });
 }

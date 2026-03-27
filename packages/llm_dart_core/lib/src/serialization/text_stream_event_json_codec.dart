@@ -130,6 +130,16 @@ final class TextStreamEventJsonCodec {
           if (providerMetadata != null)
             'providerMetadata': _encodeProviderMetadata(providerMetadata),
         },
+      ReasoningFileEvent(
+        :final file,
+        :final providerMetadata,
+      ) =>
+        {
+          'type': 'reasoning-file',
+          'file': _encodeGeneratedFile(file),
+          if (providerMetadata != null)
+            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+        },
       ToolInputStartEvent(
         :final toolCallId,
         :final toolName,
@@ -362,6 +372,13 @@ final class TextStreamEventJsonCodec {
         ),
       'reasoning-end' => ReasoningEndEvent(
           id: asJsonString(map['id'], path: '$path.id'),
+          providerMetadata: _decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'reasoning-file' => ReasoningFileEvent(
+          _decodeGeneratedFile(map['file'], path: '$path.file'),
           providerMetadata: _decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',

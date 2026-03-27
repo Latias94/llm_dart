@@ -126,6 +126,16 @@ final class FileUiPart extends ChatUiPart {
   });
 }
 
+final class ReasoningFileUiPart extends ChatUiPart {
+  final GeneratedFile file;
+  final ProviderMetadata? providerMetadata;
+
+  const ReasoningFileUiPart(
+    this.file, {
+    this.providerMetadata,
+  });
+}
+
 final class CustomUiPart extends ChatUiPart {
   final String kind;
   final Object? data;

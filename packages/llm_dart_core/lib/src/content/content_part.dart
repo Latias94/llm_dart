@@ -106,6 +106,16 @@ final class ReasoningContentPart extends ContentPart {
   });
 }
 
+final class ReasoningFileContentPart extends ContentPart {
+  final GeneratedFile file;
+  final ProviderMetadata? providerMetadata;
+
+  const ReasoningFileContentPart(
+    this.file, {
+    this.providerMetadata,
+  });
+}
+
 final class ToolCallContentPart extends ContentPart {
   final ToolCallContent toolCall;
   final ProviderMetadata? providerMetadata;

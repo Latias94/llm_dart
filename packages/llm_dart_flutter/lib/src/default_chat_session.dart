@@ -800,13 +800,32 @@ final class DefaultChatSession implements ChatSession {
 
     for (final part in message.parts) {
       switch (part) {
-        case TextPromptPart(:final text):
-          parts.add(TextUiPart(text: text));
+        case TextPromptPart(
+            :final text,
+            :final providerMetadata,
+          ):
+          parts.add(
+            TextUiPart(
+              text: text,
+              providerMetadata: providerMetadata,
+            ),
+          );
+        case ReasoningPromptPart(
+            :final text,
+            :final providerMetadata,
+          ):
+          parts.add(
+            ReasoningUiPart(
+              text: text,
+              providerMetadata: providerMetadata,
+            ),
+          );
         case FilePromptPart(
             :final mediaType,
             :final filename,
             :final uri,
             :final bytes,
+            :final providerMetadata,
           ):
           parts.add(
             FileUiPart(
@@ -816,12 +835,32 @@ final class DefaultChatSession implements ChatSession {
                 uri: uri,
                 bytes: bytes,
               ),
+              providerMetadata: providerMetadata,
+            ),
+          );
+        case ReasoningFilePromptPart(
+            :final mediaType,
+            :final filename,
+            :final uri,
+            :final bytes,
+            :final providerMetadata,
+          ):
+          parts.add(
+            ReasoningFileUiPart(
+              GeneratedFile(
+                mediaType: mediaType,
+                filename: filename,
+                uri: uri,
+                bytes: bytes,
+              ),
+              providerMetadata: providerMetadata,
             ),
           );
         case ImagePromptPart(
             :final mediaType,
             :final uri,
             :final bytes,
+            :final providerMetadata,
           ):
           parts.add(
             FileUiPart(
@@ -830,6 +869,19 @@ final class DefaultChatSession implements ChatSession {
                 uri: uri,
                 bytes: bytes,
               ),
+              providerMetadata: providerMetadata,
+            ),
+          );
+        case CustomPromptPart(
+            :final kind,
+            :final data,
+            :final providerMetadata,
+          ):
+          parts.add(
+            CustomUiPart(
+              kind: kind,
+              data: data,
+              providerMetadata: providerMetadata,
             ),
           );
         case ToolCallPromptPart(
@@ -839,6 +891,7 @@ final class DefaultChatSession implements ChatSession {
             :final providerExecuted,
             :final isDynamic,
             :final title,
+            :final providerMetadata,
           ):
           upsertToolPart(
             toolCallId,
@@ -858,13 +911,17 @@ final class DefaultChatSession implements ChatSession {
               preliminary: current?.preliminary ?? false,
               title: title ?? current?.title,
               approval: current?.approval,
-              callProviderMetadata: current?.callProviderMetadata,
+              callProviderMetadata: _mergeProviderMetadata(
+                current?.callProviderMetadata,
+                providerMetadata,
+              ),
               resultProviderMetadata: current?.resultProviderMetadata,
             ),
           );
         case ToolApprovalRequestPromptPart(
             :final approvalId,
             :final toolCallId,
+            :final providerMetadata,
           ):
           upsertToolPart(
             toolCallId,
@@ -884,7 +941,10 @@ final class DefaultChatSession implements ChatSession {
               approval: ToolApprovalUiState(
                 approvalId: approvalId,
               ),
-              callProviderMetadata: current?.callProviderMetadata,
+              callProviderMetadata: _mergeProviderMetadata(
+                current?.callProviderMetadata,
+                providerMetadata,
+              ),
               resultProviderMetadata: current?.resultProviderMetadata,
             ),
           );
@@ -893,6 +953,7 @@ final class DefaultChatSession implements ChatSession {
             :final toolName,
             :final output,
             :final isError,
+            :final providerMetadata,
           ):
           upsertToolPart(
             toolCallId,
@@ -912,7 +973,10 @@ final class DefaultChatSession implements ChatSession {
               title: current?.title,
               approval: current?.approval,
               callProviderMetadata: current?.callProviderMetadata,
-              resultProviderMetadata: current?.resultProviderMetadata,
+              resultProviderMetadata: _mergeProviderMetadata(
+                current?.resultProviderMetadata,
+                providerMetadata,
+              ),
             ),
           );
         case ToolApprovalResponsePromptPart(
@@ -920,6 +984,7 @@ final class DefaultChatSession implements ChatSession {
             :final toolCallId,
             :final approved,
             :final reason,
+            :final providerMetadata,
           ):
           upsertToolPart(
             toolCallId,
@@ -943,7 +1008,10 @@ final class DefaultChatSession implements ChatSession {
                 approved: approved,
                 reason: reason,
               ),
-              callProviderMetadata: current?.callProviderMetadata,
+              callProviderMetadata: _mergeProviderMetadata(
+                current?.callProviderMetadata,
+                providerMetadata,
+              ),
               resultProviderMetadata: current?.resultProviderMetadata,
             ),
           );
@@ -969,15 +1037,64 @@ final class DefaultChatSession implements ChatSession {
 
     for (final part in message.parts.skip(startPartIndex)) {
       switch (part) {
-        case TextUiPart(:final text) when text.isNotEmpty:
-          parts.add(TextPromptPart(text));
-        case FileUiPart(:final file):
+        case TextUiPart(
+              :final text,
+              :final providerMetadata,
+            )
+            when text.isNotEmpty || providerMetadata != null:
+          parts.add(
+            TextPromptPart(
+              text,
+              providerMetadata: providerMetadata,
+            ),
+          );
+        case ReasoningUiPart(
+              :final text,
+              :final providerMetadata,
+            )
+            when text.isNotEmpty || providerMetadata != null:
+          parts.add(
+            ReasoningPromptPart(
+              text,
+              providerMetadata: providerMetadata,
+            ),
+          );
+        case FileUiPart(
+            :final file,
+            :final providerMetadata,
+          ):
           parts.add(
             FilePromptPart(
               mediaType: file.mediaType,
               filename: file.filename,
               uri: file.uri,
               bytes: file.bytes,
+              providerMetadata: providerMetadata,
+            ),
+          );
+        case ReasoningFileUiPart(
+            :final file,
+            :final providerMetadata,
+          ):
+          parts.add(
+            ReasoningFilePromptPart(
+              mediaType: file.mediaType,
+              filename: file.filename,
+              uri: file.uri,
+              bytes: file.bytes,
+              providerMetadata: providerMetadata,
+            ),
+          );
+        case CustomUiPart(
+            :final kind,
+            :final data,
+            :final providerMetadata,
+          ):
+          parts.add(
+            CustomPromptPart(
+              kind: kind,
+              data: data,
+              providerMetadata: providerMetadata,
             ),
           );
         case ToolUiPart(
@@ -989,6 +1106,7 @@ final class DefaultChatSession implements ChatSession {
               :final isDynamic,
               :final title,
               :final approval,
+              :final callProviderMetadata,
             )
             when state != ToolUiPartState.outputDenied &&
                 state != ToolUiPartState.outputAvailable &&
@@ -1001,6 +1119,7 @@ final class DefaultChatSession implements ChatSession {
               providerExecuted: providerExecuted,
               isDynamic: isDynamic,
               title: title,
+              providerMetadata: callProviderMetadata,
             ),
           );
           if (approval != null) {
@@ -1008,10 +1127,13 @@ final class DefaultChatSession implements ChatSession {
               ToolApprovalRequestPromptPart(
                 approvalId: approval.approvalId,
                 toolCallId: toolCallId,
+                providerMetadata: callProviderMetadata,
               ),
             );
           }
         case StepBoundaryUiPart():
+        case SourceUiPart():
+        case DataUiPart():
         default:
           break;
       }
@@ -1034,6 +1156,40 @@ ChatStatus _normalizeRestoredStatus(ChatStatus status) {
 
 Object? _normalizeRestoredError(ChatStatus status, Object? error) {
   return _normalizeRestoredStatus(status) == ChatStatus.error ? error : null;
+}
+
+ProviderMetadata? _mergeProviderMetadata(
+  ProviderMetadata? current,
+  ProviderMetadata? next,
+) {
+  if (current == null || current.isEmpty) {
+    return next;
+  }
+
+  if (next == null || next.isEmpty) {
+    return current;
+  }
+
+  final merged = <String, Object?>{
+    ...current.values,
+  };
+
+  for (final entry in next.values.entries) {
+    final previous = merged[entry.key];
+    final value = entry.value;
+
+    if (previous is Map && value is Map) {
+      merged[entry.key] = <Object?, Object?>{
+        ...previous,
+        ...value,
+      };
+      continue;
+    }
+
+    merged[entry.key] = value;
+  }
+
+  return ProviderMetadata(merged);
 }
 
 MessageIdGenerator _sequentialMessageId({

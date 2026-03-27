@@ -87,6 +87,77 @@ void main() {
       );
       expect(toolMessage.parts[1], isA<ToolResultPromptPart>());
     });
+
+    test('round-trips replayable prompt parts and part-level metadata', () {
+      const codec = PromptJsonCodec();
+
+      final encoded = codec.encodeMessages([
+        AssistantPromptMessage(
+          parts: const [
+            ReasoningPromptPart(
+              'Planning the answer.',
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'thoughtSignature': 'sig_reasoning',
+                },
+              }),
+            ),
+            ReasoningFilePromptPart(
+              mediaType: 'image/png',
+              filename: 'thought.png',
+              bytes: [1, 2, 3],
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'thoughtSignature': 'sig_reasoning_file',
+                },
+              }),
+            ),
+            CustomPromptPart(
+              kind: 'openai.compaction',
+              data: {
+                'type': 'compaction',
+                'id': 'cmp_1',
+              },
+              providerMetadata: ProviderMetadata({
+                'openai': {
+                  'itemId': 'cmp_1',
+                },
+              }),
+            ),
+          ],
+        ),
+      ]);
+
+      final decoded = codec.decodeMessages(encoded).single as AssistantPromptMessage;
+      expect(decoded.parts, hasLength(3));
+
+      final reasoningPart = decoded.parts[0] as ReasoningPromptPart;
+      expect(reasoningPart.text, 'Planning the answer.');
+      expect(
+        reasoningPart.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_reasoning'),
+      );
+
+      final reasoningFilePart = decoded.parts[1] as ReasoningFilePromptPart;
+      expect(reasoningFilePart.mediaType, 'image/png');
+      expect(reasoningFilePart.filename, 'thought.png');
+      expect(reasoningFilePart.bytes, [1, 2, 3]);
+      expect(
+        reasoningFilePart.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_reasoning_file'),
+      );
+
+      final customPart = decoded.parts[2] as CustomPromptPart;
+      expect(customPart.kind, 'openai.compaction');
+      expect(customPart.data, {
+        'type': 'compaction',
+        'id': 'cmp_1',
+      });
+      expect(
+        customPart.providerMetadata!['openai'],
+        containsPair('itemId', 'cmp_1'),
+      );
+    });
   });
 
   group('ChatUiJsonCodec', () {
@@ -157,6 +228,18 @@ void main() {
                 bytes: [4, 5, 6],
               ),
             ),
+            const ReasoningFileUiPart(
+              GeneratedFile(
+                mediaType: 'application/pdf',
+                filename: 'thoughts.pdf',
+                bytes: [7, 8, 9],
+              ),
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'thoughtSignature': 'sig_reasoning_file',
+                },
+              }),
+            ),
             const CustomUiPart(
               kind: 'openai.web_search_call',
               data: {
@@ -219,7 +302,7 @@ void main() {
       final message = decoded.single;
       expect(message.id, 'assistant-1');
       expect(message.role, ChatUiRole.assistant);
-      expect(message.parts, hasLength(7));
+      expect(message.parts, hasLength(8));
 
       final tool = message.parts.whereType<ToolUiPart>().single;
       expect(tool.state, ToolUiPartState.approvalResponded);
@@ -237,6 +320,15 @@ void main() {
       final file = message.parts.whereType<FileUiPart>().single.file;
       expect(file.filename, 'preview.png');
       expect(file.bytes, [4, 5, 6]);
+
+      final reasoningFile =
+          message.parts.whereType<ReasoningFileUiPart>().single;
+      expect(reasoningFile.file.filename, 'thoughts.pdf');
+      expect(reasoningFile.file.bytes, [7, 8, 9]);
+      expect(
+        reasoningFile.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_reasoning_file'),
+      );
 
       final source = message.parts.whereType<SourceUiPart>().single.source;
       expect(source.kind, SourceReferenceKind.url);

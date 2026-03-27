@@ -435,5 +435,61 @@ void main() {
         },
       );
     });
+
+    test('skips replay-only assistant parts that Anthropic cannot encode yet',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Hi'),
+          AssistantPromptMessage(
+            parts: const [
+              ReasoningPromptPart('Hidden reasoning'),
+              ReasoningFilePromptPart(
+                mediaType: 'image/png',
+                bytes: [1, 2, 3],
+              ),
+              CustomPromptPart(
+                kind: 'openai.compaction',
+                data: {
+                  'type': 'compaction',
+                },
+              ),
+            ],
+          ),
+          UserPromptMessage.text('Continue'),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'Hi',
+              },
+            ],
+          },
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'Continue',
+              },
+            ],
+          },
+        ],
+      );
+    });
   });
 }

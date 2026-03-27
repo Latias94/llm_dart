@@ -1,3 +1,5 @@
+import '../common/provider_metadata.dart';
+
 enum PromptRole {
   system,
   user,
@@ -7,12 +9,19 @@ enum PromptRole {
 
 sealed class PromptPart {
   const PromptPart();
+
+  ProviderMetadata? get providerMetadata => null;
 }
 
 final class TextPromptPart extends PromptPart {
   final String text;
+  @override
+  final ProviderMetadata? providerMetadata;
 
-  const TextPromptPart(this.text);
+  const TextPromptPart(
+    this.text, {
+    this.providerMetadata,
+  });
 }
 
 final class FilePromptPart extends PromptPart {
@@ -20,12 +29,15 @@ final class FilePromptPart extends PromptPart {
   final String? filename;
   final Uri? uri;
   final List<int>? bytes;
+  @override
+  final ProviderMetadata? providerMetadata;
 
   const FilePromptPart({
     required this.mediaType,
     this.filename,
     this.uri,
     this.bytes,
+    this.providerMetadata,
   });
 }
 
@@ -33,11 +45,55 @@ final class ImagePromptPart extends PromptPart {
   final String mediaType;
   final Uri? uri;
   final List<int>? bytes;
+  @override
+  final ProviderMetadata? providerMetadata;
 
   const ImagePromptPart({
     required this.mediaType,
     this.uri,
     this.bytes,
+    this.providerMetadata,
+  });
+}
+
+final class ReasoningPromptPart extends PromptPart {
+  final String text;
+  @override
+  final ProviderMetadata? providerMetadata;
+
+  const ReasoningPromptPart(
+    this.text, {
+    this.providerMetadata,
+  });
+}
+
+final class ReasoningFilePromptPart extends PromptPart {
+  final String mediaType;
+  final String? filename;
+  final Uri? uri;
+  final List<int>? bytes;
+  @override
+  final ProviderMetadata? providerMetadata;
+
+  const ReasoningFilePromptPart({
+    required this.mediaType,
+    this.filename,
+    this.uri,
+    this.bytes,
+    this.providerMetadata,
+  });
+}
+
+final class CustomPromptPart extends PromptPart {
+  final String kind;
+  final Object? data;
+  @override
+  final ProviderMetadata? providerMetadata;
+
+  const CustomPromptPart({
+    required this.kind,
+    this.data,
+    this.providerMetadata,
   });
 }
 
@@ -48,6 +104,8 @@ final class ToolCallPromptPart extends PromptPart {
   final bool providerExecuted;
   final bool isDynamic;
   final String? title;
+  @override
+  final ProviderMetadata? providerMetadata;
 
   const ToolCallPromptPart({
     required this.toolCallId,
@@ -56,16 +114,20 @@ final class ToolCallPromptPart extends PromptPart {
     this.providerExecuted = false,
     this.isDynamic = false,
     this.title,
+    this.providerMetadata,
   });
 }
 
 final class ToolApprovalRequestPromptPart extends PromptPart {
   final String approvalId;
   final String toolCallId;
+  @override
+  final ProviderMetadata? providerMetadata;
 
   const ToolApprovalRequestPromptPart({
     required this.approvalId,
     required this.toolCallId,
+    this.providerMetadata,
   });
 }
 
@@ -74,12 +136,15 @@ final class ToolResultPromptPart extends PromptPart {
   final String toolName;
   final Object? output;
   final bool isError;
+  @override
+  final ProviderMetadata? providerMetadata;
 
   const ToolResultPromptPart({
     required this.toolCallId,
     required this.toolName,
     this.output,
     this.isError = false,
+    this.providerMetadata,
   });
 }
 
@@ -88,12 +153,15 @@ final class ToolApprovalResponsePromptPart extends PromptPart {
   final String toolCallId;
   final bool approved;
   final String? reason;
+  @override
+  final ProviderMetadata? providerMetadata;
 
   const ToolApprovalResponsePromptPart({
     required this.approvalId,
     required this.toolCallId,
     required this.approved,
     this.reason,
+    this.providerMetadata,
   });
 }
 

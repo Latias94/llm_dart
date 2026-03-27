@@ -60,12 +60,13 @@ final class AnthropicMessagesCodec {
           messages.add(_encodeUserBlock(block));
         case _PromptBlockType.assistant:
           sawConversationBlock = true;
-          messages.add(
-            _encodeAssistantBlock(
-              block,
-              trimTrailingText: index == blocks.length - 1,
-            ),
-          );
+          if (_encodeAssistantBlock(
+                block,
+                trimTrailingText: index == blocks.length - 1,
+              )
+              case final encodedAssistantBlock?) {
+            messages.add(encodedAssistantBlock);
+          }
       }
     }
 
@@ -354,7 +355,7 @@ final class AnthropicMessagesCodec {
     };
   }
 
-  Map<String, Object?> _encodeAssistantBlock(
+  Map<String, Object?>? _encodeAssistantBlock(
     _PromptBlock block, {
     required bool trimTrailingText,
   }) {
@@ -432,21 +433,22 @@ final class AnthropicMessagesCodec {
         }
 
         if (part is ToolApprovalRequestPromptPart) {
-          throw UnsupportedError(
-            'Anthropic tool approval replay requires provider-specific parts and is not supported by the common messages codec yet.',
-          );
+          continue;
         }
 
         if (part is ToolResultPromptPart) {
-          throw UnsupportedError(
-            'Anthropic assistant tool results require provider-specific replay handling and are not supported by the common messages codec yet.',
-          );
+          continue;
         }
 
         if (part is ToolApprovalResponsePromptPart) {
-          throw UnsupportedError(
-            'Anthropic tool approval responses are not supported in assistant messages.',
-          );
+          continue;
+        }
+
+        if (part is ReasoningPromptPart ||
+            part is FilePromptPart ||
+            part is ReasoningFilePromptPart ||
+            part is CustomPromptPart) {
+          continue;
         }
 
         throw UnsupportedError(
@@ -456,7 +458,7 @@ final class AnthropicMessagesCodec {
     }
 
     if (content.isEmpty) {
-      throw ArgumentError('Anthropic assistant messages cannot be empty.');
+      return null;
     }
 
     return {

@@ -319,7 +319,8 @@ void main() {
       );
     });
 
-    test('projects source, file, custom, raw, and error events', () async {
+    test('projects source, file, reasoning-file, custom, raw, and error events',
+        () async {
       final snapshots = await projectChatUiMessageStream(
         Stream<TextStreamEvent>.fromIterable([
           const StepStartEvent(stepId: 'step-1'),
@@ -345,6 +346,18 @@ void main() {
             providerMetadata: const ProviderMetadata({
               'openai': {
                 'fileId': 'file_1',
+              },
+            }),
+          ),
+          const ReasoningFileEvent(
+            GeneratedFile(
+              mediaType: 'image/png',
+              filename: 'thought.png',
+              bytes: [7, 8, 9],
+            ),
+            providerMetadata: ProviderMetadata({
+              'google': {
+                'thoughtSignature': 'sig_reasoning_file',
               },
             }),
           ),
@@ -374,6 +387,7 @@ void main() {
 
       expect(message.parts.whereType<SourceUiPart>(), hasLength(1));
       expect(message.parts.whereType<FileUiPart>(), hasLength(1));
+      expect(message.parts.whereType<ReasoningFileUiPart>(), hasLength(1));
       expect(message.parts.whereType<CustomUiPart>().single.kind,
           'openai.web_search_call');
 
@@ -388,6 +402,14 @@ void main() {
       expect(
         filePart.providerMetadata!['openai'],
         containsPair('fileId', 'file_1'),
+      );
+
+      final reasoningFilePart =
+          message.parts.whereType<ReasoningFileUiPart>().single;
+      expect(reasoningFilePart.file.filename, 'thought.png');
+      expect(
+        reasoningFilePart.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_reasoning_file'),
       );
 
       final rawChunks =
