@@ -30,6 +30,8 @@
 
 - [ ] Rewrite the error model
 - [ ] Rewrite usage, warning, and provider metadata models
+- [ ] Add common `reasoning-file` support across prompt, result, stream, and UI layers
+- [ ] Add part-level provider metadata to replayable prompt parts and codecs
 - [x] Define provider model-options and invocation-options marker interfaces
 - [x] Strengthen `SourceReference` with an explicit source kind
 - [x] Define malformed tool-input semantics in the core stream and UI models
@@ -89,6 +91,7 @@
 
 - [x] Migrate the Gemini language model
 - [x] Add the initial Google native tool entry API
+- [ ] Preserve Google thought signatures and thought files through prompt replay
 - [ ] Migrate the Gemini image model
 - [ ] Migrate the Gemini embedding model
 - [ ] Migrate Gemini speech and TTS
@@ -113,6 +116,7 @@
 - [x] Implement baseline `HttpChatTransport`
 - [x] Add approval-response reason support to session, prompt, and UI state
 - [x] Define how UI-only data parts enter `ChatSession` and `HttpChatTransport` without expanding `TextStreamEvent`
+- [ ] Make assistant prompt reconstruction preserve reasoning, reasoning-file, custom parts, and prompt-part provider metadata
 - [ ] Implement `ChatController`
 - [x] Define a serialized chat chunk protocol for `HttpChatTransport`
 - [x] Design the message serialization protocol

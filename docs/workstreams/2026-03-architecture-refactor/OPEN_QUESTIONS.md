@@ -131,17 +131,13 @@ Resolved in the current breaking round:
 - provider adapters can adopt malformed-input signaling incrementally
 - `10-malformed-tool-input-design.md` documents the frozen boundary
 
-## 13. Whether Reasoning Files Need A Common Cross-Provider Model
+## 13. Reasoning File Status
 
-Needs confirmation:
+Resolved in the current breaking round:
 
-- should the core model distinguish normal generated files from reasoning-only files
-- or should provider-specific handling continue through generic file parts or custom parts
-
-Current recommendation:
-
-- do not add a common reasoning-file model yet
-- revisit only after at least one more provider needs the distinction
+- `reasoning-file` should become a common cross-provider model
+- the first concrete driver is Google, because the reference mainline already distinguishes thought-only files in generate, stream, and prompt replay paths
+- keep one shared `GeneratedFile` payload and add distinct prompt/content/stream/UI wrappers for reasoning-only files
 
 ## 14. How Example-Only Dependencies Should Leave The Root Package
 
@@ -173,3 +169,12 @@ Resolved in the current breaking round:
 - Google and Anthropic both have initial native tool entry APIs in their provider packages
 - invocation-level native tool lists override provider-model defaults
 - `13-provider-native-tool-entry.md` documents the frozen boundary
+
+## 17. Assistant Prompt Replay Fidelity Status
+
+Resolved in the current breaking round:
+
+- assistant prompt history must round-trip replayable assistant semantics instead of storing only a display-oriented summary
+- replayable prompt parts need optional part-level provider metadata
+- reasoning parts, reasoning files, replayable custom parts, and relevant part metadata should survive `ChatUiMessage -> PromptMessage` reconstruction
+- citations, UI-only data parts, and transport-only markers still stay out of prompt history

@@ -95,7 +95,7 @@ The table below compares the AI SDK UI chunk vocabulary with the current `llm_da
 | `start-step` / `finish-step` | Covered by `StepStartEvent` and `StepFinishEvent` | Freeze as-is |
 | `source-url` / `source-document` | Covered by typed `SourceReference` (`kind` plus optional `filename`) | Freeze the updated source model |
 | `file` | Covered by `FileEvent` and `GeneratedFile` | Freeze generic file model |
-| `reasoning-file` | Not represented separately | Keep out of core for now; re-evaluate after a second provider needs it |
+| `reasoning-file` | Not represented separately | Promote to a common part/event family in the next breaking round |
 | `data-*` UI chunks | Covered by `DataUiPart<T>`, `ChatTransportDataPartChunk`, and `ChatSession.addDataPart(...)` | Freeze the transport/UI-only boundary; do not add to `TextStreamEvent` |
 | `start` / `finish` / `message-metadata` / `abort` | Intentionally not in `TextStreamEvent` | Keep transport-only |
 | `tool-input-error` | Covered by `ToolInputErrorEvent`, projected through the existing tool error UI path | Freeze the current event/UI split |
@@ -104,9 +104,45 @@ The table below compares the AI SDK UI chunk vocabulary with the current `llm_da
 
 Not every mismatch with the AI SDK is a real gap.
 
-The following items need explicit architectural decisions. Approval-response reason, source typing, and malformed tool input were real gaps, but they are now implemented and should stay frozen.
+The following items need explicit architectural decisions. Some earlier gaps have already been resolved. Two remaining gaps now have enough evidence to freeze their direction.
 
-### 1. `SourceReference` Is Now Explicitly Typed
+### 1. `reasoning-file` Is Now A Real Common Gap
+
+The older recommendation in this document was too conservative.
+
+After comparing our codebase with `repo-ref/ai`, there is now direct evidence that `reasoning-file` is not merely a speculative future concept:
+
+- the reference Google mainline emits `reasoning-file` in both generate and stream flows
+- the reference Google prompt converter also accepts assistant-side `reasoning-file` parts for replay
+- Google thought signatures and thought-only inline files become much harder to preserve cleanly when they are flattened into ordinary files
+
+Recommended freeze:
+
+- add first-class `ReasoningFile*` wrappers across prompt, result/content, stream, and UI layers
+- keep one shared `GeneratedFile` payload model instead of inventing a second file payload object
+- distinguish reasoning-vs-final output by the surrounding part or event type, not by widening `GeneratedFile` with provider-shaped flags
+
+This is the one event-family expansion that is currently justified by real provider evidence.
+
+### 2. Assistant Replay Is Too Lossy
+
+The larger problem is not only one missing event.
+
+The current assistant replay path is too lossy compared with the reference architecture:
+
+- `DefaultChatSession` currently rebuilds prompt history from only a subset of assistant UI parts
+- reasoning parts, reasoning files, and custom parts are not preserved in prompt history today
+- `PromptPart` currently has no part-level `ProviderMetadata`, which makes provider continuation hints such as Google thought signatures impossible to preserve faithfully
+
+Recommended freeze:
+
+- assistant prompt history must preserve replayable assistant semantics rather than only display-friendly summaries
+- replayable prompt parts should support optional part-level `ProviderMetadata`
+- citations, UI-only data parts, and transport markers must still stay out of prompt history
+
+Without this rule, restored sessions can render correctly while sending semantically degraded follow-up prompts.
+
+### 3. `SourceReference` Is Now Explicitly Typed
 
 The current implementation now preserves:
 
@@ -145,7 +181,7 @@ Current boundary:
 
 This item is no longer an open event/UI gap.
 
-### 2. Approval Response Reason Is Now Preserved
+### 5. Approval Response Reason Is Now Preserved
 
 The current implementation now preserves:
 
@@ -171,7 +207,7 @@ Provider note:
 
 This item is no longer an open event/UI gap.
 
-### 3. Malformed Tool Input Is Now Represented Explicitly
+### 6. Malformed Tool Input Is Now Represented Explicitly
 
 The current implementation now preserves a dedicated pre-execution failure event:
 
@@ -241,24 +277,24 @@ Recommendation:
 - keep one `ToolCallContent`
 - preserve `toolName`, `providerExecuted`, `isDynamic`, `title`, and lifecycle metadata as fields
 
-### 2. Keep Generic Files
+### 2. Keep One Shared File Payload
 
-Do not split files into many common part kinds unless multiple providers genuinely need the distinction.
+Do not create many different file payload objects.
 
-For now:
+Recommended rule:
 
 - keep one `GeneratedFile`
-- keep one `FileEvent`
-- keep one `FileUiPart`
-
-If a provider later needs special reasoning-file handling, that can be revisited with real evidence.
+- keep one normal `File*` family for final user-visible artifacts
+- add one `ReasoningFile*` family for reasoning-only artifacts because real provider evidence now exists
+- do not create further file subfamilies until more providers justify them
 
 ## 7. Recommended Next Breaking-Round Scope
 
 If the repository wants to tighten the event/UI model next, the recommended order is:
 
-1. re-evaluate whether reasoning-file needs a common model
-2. keep future Flutter convenience layers such as `ChatController` above the current session/transport boundary instead of widening `TextStreamEvent`
+1. add a common `ReasoningFile*` family across prompt, result, stream, and UI layers
+2. add part-level provider metadata to replayable prompt parts and make assistant replay fidelity a first-class boundary
+3. keep future Flutter convenience layers such as `ChatController` above the current session/transport boundary instead of widening `TextStreamEvent`
 
 ## 8. Conclusion
 
@@ -268,5 +304,7 @@ The main conclusion is:
 
 - most of the important model-stream semantics are already present
 - the largest remaining event/UI gap, UI-only data ingress, is now resolved without expanding `TextStreamEvent`
+- the remaining missing common event family with real provider evidence is `reasoning-file`
+- the deeper remaining gap is assistant replay fidelity, not transport chunk vocabulary
 - the biggest temptation to avoid is copying UI transport concepts such as message markers or data chunks into `TextStreamEvent`
 - the current Dart-specific strengths, especially unified tool parts and richer file references, should be preserved

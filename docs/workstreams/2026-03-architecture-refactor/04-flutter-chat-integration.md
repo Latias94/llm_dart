@@ -54,6 +54,7 @@ Suggested parts:
 - `ToolUiPart`
 - `SourceUiPart`
 - `FileUiPart`
+- `ReasoningFileUiPart`
 - `DataUiPart<T>`
 - `CustomUiPart`
 - `StepBoundaryUiPart`
@@ -183,6 +184,7 @@ Current implementation direction:
 - the baseline session should support send, stop, clear-error, simple regenerate, client-side tool-output continuation, and baseline approval continuation
 - approval response must be written into prompt history as a tool-role message instead of remaining a local-only UI mutation
 - approval response should preserve an optional `reason` across session state, prompt history, and snapshot import/export, even if a provider wire format ignores that field
+- assistant prompt reconstruction must preserve replayable assistant semantics such as reasoning parts, reasoning files, custom parts, and part-level provider metadata instead of collapsing them into a text-only summary
 - approving a provider-executed tool should continue the transport-backed assistant turn
 - approving a client-executed tool should return the session to `awaitingTool` so the caller can later provide `addToolOutput`
 - `addDataPart` should support UI-only message enrichment for the current assistant turn:

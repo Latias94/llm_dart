@@ -218,8 +218,14 @@ The serialized prompt protocol must support:
 
 - `system`, `user`, `assistant`, and `tool` roles
 - all current prompt parts
+- assistant-side reasoning, reasoning-file, and replayable custom parts
 - provider-executed tool call flags such as `providerExecuted`, `isDynamic`, and `title`
 - tool approval request and response parts
+- part-level provider metadata on replayable prompt parts so provider continuation hints such as Google thought signatures survive round-trip serialization
+
+Prompt persistence is not only a display cache.
+
+It is also the continuation substrate for later provider calls, so losing part-level provider metadata or reasoning-file parts would make restored sessions look correct in the UI while becoming semantically lossy for follow-up turns.
 
 ## 2. UI Messages
 

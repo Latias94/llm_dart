@@ -69,6 +69,7 @@ Current status:
 - Anthropic and Google request codecs now consume `GenerateTextRequest.tools` / `toolChoice` for request-side function declarations
 - initial provider-native tool entry APIs now exist in `llm_dart_google` and `llm_dart_anthropic`
 - the current event decision remains stable: provider-native streamed details stay in common events plus `providerMetadata` or provider-namespaced custom payloads, not new Anthropic-only core events
+- the next architecture pass should add first-class `reasoning-file` support and lossless assistant replay for Google thought-signature continuity
 - broader Google endpoints and additional Anthropic provider-native APIs remain open
 
 ## M4 - Community Providers
@@ -96,6 +97,7 @@ Acceptance criteria:
 
 - the Flutter chat example runs on the new API
 - reasoning, tools, sources, and files render naturally
+- assistant-turn replay remains semantically faithful enough for follow-up provider calls, not only visually faithful in the UI
 - HTTP transport reconnect semantics are defined through transport checkpoints rather than ad hoc core events
 
 ## M6 - Compatibility Cleanup

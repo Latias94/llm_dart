@@ -101,5 +101,6 @@ The following items should be frozen before deeper implementation work continues
 4. Workspace package boundaries
 5. The minimal Flutter `ChatSession` and `ChatTransport` API
 6. Third-party dependency policy and inter-package dependency direction
+7. Assistant replay fidelity, including reasoning files and prompt-part metadata preservation
 
 These freeze points are expanded in the documents in this directory.

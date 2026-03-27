@@ -201,3 +201,11 @@ Provider-specific features should be represented through:
 - invocation-level provider-native tool lists override model-level defaults instead of implicitly merging
 - Google may keep conservative mixed-tool behavior when native tools and common function tools do not normalize cleanly
 - Anthropic may combine common function tools and provider-native tools when its wire format supports that directly
+
+## D23. `reasoning-file` And Assistant Replay Fidelity Are First-Class
+
+- `reasoning-file` is common cross-provider model semantics and should be represented across prompt, result/content, stream, and UI layers
+- keep one shared `GeneratedFile` payload object; distinguish reasoning-vs-final file semantics with wrapper part/event types instead of many file payload classes
+- replayable prompt parts should support optional part-level `ProviderMetadata`
+- assistant prompt reconstruction must preserve reasoning parts, reasoning files, replayable custom parts, and relevant part metadata instead of collapsing assistant output into text plus pending tool state
+- citations, UI-only data parts, and transport markers still stay out of prompt history

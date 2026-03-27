@@ -200,6 +200,9 @@ sealed class PromptPart {}
 final class TextPromptPart extends PromptPart { ... }
 final class FilePromptPart extends PromptPart { ... }
 final class ImagePromptPart extends PromptPart { ... }
+final class ReasoningPromptPart extends PromptPart { ... }
+final class ReasoningFilePromptPart extends PromptPart { ... }
+final class CustomPromptPart extends PromptPart { ... }
 final class ToolCallPromptPart extends PromptPart { ... }
 final class ToolApprovalRequestPromptPart extends PromptPart { ... }
 final class ToolResultPromptPart extends PromptPart { ... }
@@ -210,10 +213,12 @@ Key rules:
 
 - do not keep relying on one `content` string to represent everything
 - do not place UI state into the prompt layer
-- do not place provider-specific UI blocks into the prompt layer
 - tool approval request/response must live in prompt history, because approval is part of the model conversation, not only a local widget state
 - `ToolApprovalResponsePromptPart` should preserve an optional `reason` so denial or policy rationale survives persistence and session restore, even when a provider adapter cannot send that field upstream
 - `ToolCallPromptPart` must preserve `providerExecuted`, `isDynamic`, and `title`; otherwise provider-executed tool calls are silently downgraded into ordinary client tool calls during continuation
+- replayable assistant semantics such as reasoning text, reasoning files, and provider-scoped custom assistant parts belong in prompt history when they may affect provider continuation
+- replayable prompt parts should preserve optional part-level `ProviderMetadata`, because provider continuation hints such as Google thought signatures must survive persistence and replay
+- citations, step markers, and UI-only data still do not belong in prompt history
 
 ## 2. Content Parts and Result Layer
 
@@ -224,6 +229,7 @@ sealed class ContentPart {}
 
 final class TextContentPart extends ContentPart { ... }
 final class ReasoningContentPart extends ContentPart { ... }
+final class ReasoningFileContentPart extends ContentPart { ... }
 final class ToolCallContentPart extends ContentPart { ... }
 final class ToolResultContentPart extends ContentPart { ... }
 final class ToolApprovalRequestContentPart extends ContentPart { ... }
@@ -283,6 +289,7 @@ final class ReasoningUiPart extends ChatUiPart { ... }
 final class ToolUiPart extends ChatUiPart { ... }
 final class SourceUiPart extends ChatUiPart { ... }
 final class FileUiPart extends ChatUiPart { ... }
+final class ReasoningFileUiPart extends ChatUiPart { ... }
 final class DataUiPart<T> extends ChatUiPart {
   final String? id;
   ...
@@ -321,6 +328,7 @@ final class TextEndEvent extends TextStreamEvent { ... }
 final class ReasoningStartEvent extends TextStreamEvent { ... }
 final class ReasoningDeltaEvent extends TextStreamEvent { ... }
 final class ReasoningEndEvent extends TextStreamEvent { ... }
+final class ReasoningFileEvent extends TextStreamEvent { ... }
 
 final class ToolInputStartEvent extends TextStreamEvent { ... }
 final class ToolInputDeltaEvent extends TextStreamEvent { ... }
