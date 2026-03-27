@@ -128,7 +128,8 @@ void main() {
         ),
       ]);
 
-      final decoded = codec.decodeMessages(encoded).single as AssistantPromptMessage;
+      final decoded =
+          codec.decodeMessages(encoded).single as AssistantPromptMessage;
       expect(decoded.parts, hasLength(3));
 
       final reasoningPart = decoded.parts[0] as ReasoningPromptPart;
@@ -360,6 +361,28 @@ void main() {
           message.metadata[ChatUiMetadataKeys.warnings] as List<ModelWarning>;
       expect(warnings.single.type, ModelWarningType.compatibility);
       expect(warnings.single.message, 'Using fallback mode.');
+    });
+
+    test('encodes empty warning metadata lists from runtime session state', () {
+      const codec = ChatUiJsonCodec();
+
+      final encoded = codec.encodeMessages([
+        ChatUiMessage(
+          id: 'assistant-2',
+          role: ChatUiRole.assistant,
+          parts: const [
+            TextUiPart(text: 'Hello'),
+          ],
+          metadata: const {
+            ChatUiMetadataKeys.warnings: [],
+          },
+        ),
+      ]);
+
+      final decoded = codec.decodeMessages(encoded);
+      final warnings = decoded.single.metadata[ChatUiMetadataKeys.warnings]
+          as List<ModelWarning>;
+      expect(warnings, isEmpty);
     });
   });
 }

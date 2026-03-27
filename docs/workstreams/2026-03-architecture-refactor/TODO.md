@@ -93,7 +93,7 @@
 
 - [x] Migrate the Gemini language model
 - [x] Add the initial Google native tool entry API
-- [ ] Preserve Google thought signatures and thought files through prompt replay
+- [x] Preserve Google thought signatures and thought files through prompt replay
 - [ ] Migrate the Gemini image model
 - [ ] Migrate the Gemini embedding model
 - [ ] Migrate Gemini speech and TTS

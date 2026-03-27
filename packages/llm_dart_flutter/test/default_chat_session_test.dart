@@ -495,7 +495,11 @@ void main() {
         'Plan first.',
       );
       expect(
-        assistantMessage.parts.whereType<ReasoningFileUiPart>().single.file.filename,
+        assistantMessage.parts
+            .whereType<ReasoningFileUiPart>()
+            .single
+            .file
+            .filename,
         'thought.png',
       );
       expect(
@@ -912,6 +916,131 @@ void main() {
       expect(exported.messages, hasLength(4));
 
       await session.dispose();
+    });
+
+    test(
+        'restores snapshots with Google thought signatures and reasoning files for follow-up replay',
+        () async {
+      final exportingSession = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) => Stream<TextStreamEvent>.fromIterable([
+            StartEvent(),
+            const ReasoningStartEvent(
+              id: 'reasoning-1',
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'thoughtSignature': 'sig_reasoning',
+                },
+              }),
+            ),
+            const ReasoningDeltaEvent(
+              id: 'reasoning-1',
+              delta: 'Plan first.',
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'thoughtSignature': 'sig_reasoning',
+                },
+              }),
+            ),
+            const ReasoningEndEvent(id: 'reasoning-1'),
+            const ReasoningFileEvent(
+              GeneratedFile(
+                mediaType: 'image/png',
+                filename: 'thought.png',
+                bytes: [1, 2, 3],
+              ),
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'thoughtSignature': 'sig_reasoning_file',
+                },
+              }),
+            ),
+            const TextStartEvent(
+              id: 'text-1',
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'thoughtSignature': 'sig_text',
+                },
+              }),
+            ),
+            const TextDeltaEvent(
+              id: 'text-1',
+              delta: 'Visible answer.',
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'thoughtSignature': 'sig_text',
+                },
+              }),
+            ),
+            const TextEndEvent(id: 'text-1'),
+            const FinishEvent(finishReason: FinishReason.stop),
+          ]),
+        ),
+      );
+
+      await exportingSession.sendMessage(ChatInput.text('Hi'));
+
+      const codec = ChatSessionSnapshotJsonCodec();
+      final encodedSnapshot =
+          codec.encodeSnapshot(exportingSession.exportSnapshot());
+      final decodedSnapshot = codec.decodeSnapshot(encodedSnapshot);
+
+      final capturedRequests = <ChatTransportRequest>[];
+      final restoredSession = DefaultChatSession.fromSnapshot(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+            return Stream<TextStreamEvent>.fromIterable([
+              StartEvent(),
+              const TextStartEvent(id: 'text-2'),
+              const TextDeltaEvent(
+                id: 'text-2',
+                delta: 'Restored Google continuation works.',
+              ),
+              const TextEndEvent(id: 'text-2'),
+              const FinishEvent(finishReason: FinishReason.stop),
+            ]);
+          },
+        ),
+        snapshot: decodedSnapshot,
+      );
+
+      await restoredSession.sendMessage(ChatInput.text('What next?'));
+
+      expect(capturedRequests, hasLength(1));
+      expect(capturedRequests.single.prompt, hasLength(3));
+      final assistantPrompt =
+          capturedRequests.single.prompt[1] as AssistantPromptMessage;
+      expect(assistantPrompt.parts, hasLength(3));
+      expect(assistantPrompt.parts[0], isA<ReasoningPromptPart>());
+      expect(assistantPrompt.parts[1], isA<ReasoningFilePromptPart>());
+      expect(assistantPrompt.parts[2], isA<TextPromptPart>());
+
+      final reasoningPart = assistantPrompt.parts[0] as ReasoningPromptPart;
+      expect(reasoningPart.text, 'Plan first.');
+      expect(
+        reasoningPart.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_reasoning'),
+      );
+
+      final reasoningFilePart =
+          assistantPrompt.parts[1] as ReasoningFilePromptPart;
+      expect(reasoningFilePart.filename, 'thought.png');
+      expect(reasoningFilePart.bytes, [1, 2, 3]);
+      expect(
+        reasoningFilePart.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_reasoning_file'),
+      );
+
+      final textPart = assistantPrompt.parts[2] as TextPromptPart;
+      expect(textPart.text, 'Visible answer.');
+      expect(
+        textPart.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_text'),
+      );
+
+      await exportingSession.dispose();
+      await restoredSession.dispose();
     });
 
     test(

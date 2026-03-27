@@ -322,9 +322,10 @@ final class ChatUiJsonCodec {
 
   Object? _encodeMetadataValue(String key, Object? value) {
     return switch (key) {
-      ChatUiMetadataKeys.warnings => (value as List<ModelWarning>)
-          .map(_encodeModelWarning)
-          .toList(growable: false),
+      ChatUiMetadataKeys.warnings => _encodeModelWarnings(
+          value,
+          path: r'$.metadata.warnings',
+        ),
       ChatUiMetadataKeys.responseTimestamp =>
         (value as DateTime?)?.toIso8601String(),
       ChatUiMetadataKeys.responseProviderMetadata ||
@@ -337,6 +338,30 @@ final class ChatUiJsonCodec {
         value == null ? null : _encodeUsageStats(value as UsageStats),
       _ => ensureJsonValue(value, path: r'$.metadata'),
     };
+  }
+
+  List<JsonMap> _encodeModelWarnings(
+    Object? value, {
+    required String path,
+  }) {
+    if (value == null) {
+      return const [];
+    }
+
+    if (value is! List) {
+      throw FormatException('Expected warnings list at $path.');
+    }
+
+    return value.asMap().entries.map((entry) {
+      final warning = entry.value;
+      if (warning is! ModelWarning) {
+        throw FormatException(
+          'Expected ModelWarning at $path[${entry.key}], received ${warning.runtimeType}.',
+        );
+      }
+
+      return _encodeModelWarning(warning);
+    }).toList(growable: false);
   }
 
   Object? _decodeMetadataValue(

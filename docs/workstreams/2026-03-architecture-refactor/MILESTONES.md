@@ -67,11 +67,11 @@ Current status:
 - Anthropic assistant replay now keeps native tool replay paths and emits explicit warnings when unsupported assistant reasoning/file/custom replay parts are dropped
 - the Google text-generation mainline is now wired through `llm_dart_google`
 - Google request encoding, result decoding, stream decoding, grounding-source extraction, and typed options are package-owned
+- Google thought signatures and reasoning-file artifacts now survive assistant replay, snapshot round-trip, and follow-up prompt reconstruction
 - the shared tool-definition boundary is now frozen around common function tools and shared `ToolChoice`
 - Anthropic and Google request codecs now consume `GenerateTextRequest.tools` / `toolChoice` for request-side function declarations
 - initial provider-native tool entry APIs now exist in `llm_dart_google` and `llm_dart_anthropic`
 - the current event decision remains stable: provider-native streamed details stay in common events plus `providerMetadata` or provider-namespaced custom payloads, not new Anthropic-only core events
-- the next architecture pass should add first-class `reasoning-file` support and lossless assistant replay for Google thought-signature continuity
 - broader Google endpoints and additional Anthropic provider-native APIs remain open
 
 ## M4 - Community Providers
