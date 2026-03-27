@@ -105,7 +105,7 @@
 - [x] Implement baseline client-side tool output continuation in `DefaultChatSession`
 - [x] Implement baseline `HttpChatTransport`
 - [x] Add approval-response reason support to session, prompt, and UI state
-- [ ] Define how UI-only data parts enter `ChatSession` and `HttpChatTransport` without expanding `TextStreamEvent`
+- [x] Define how UI-only data parts enter `ChatSession` and `HttpChatTransport` without expanding `TextStreamEvent`
 - [ ] Implement `ChatController`
 - [x] Define a serialized chat chunk protocol for `HttpChatTransport`
 - [x] Design the message serialization protocol

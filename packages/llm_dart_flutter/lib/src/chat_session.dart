@@ -1,3 +1,5 @@
+import 'package:llm_dart_core/llm_dart_core.dart';
+
 import 'chat_input.dart';
 import 'chat_request_options.dart';
 import 'chat_session_snapshot.dart';
@@ -49,6 +51,8 @@ abstract interface class ChatSession {
   });
 
   Future<void> addToolOutput(ToolOutputUpdate update);
+
+  Future<void> addDataPart<T>(DataUiPart<T> part);
 
   Future<void> respondToolApproval(ToolApprovalResponse response);
 

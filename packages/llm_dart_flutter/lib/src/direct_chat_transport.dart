@@ -10,16 +10,18 @@ final class DirectChatTransport implements ChatTransport {
   });
 
   @override
-  Stream<TextStreamEvent> sendMessages(ChatTransportRequest request) {
-    return model.stream(
-      GenerateTextRequest(
-        prompt: request.prompt,
-        options: request.options.generateOptions,
-        callOptions: request.options.callOptions,
-      ),
-    );
+  Stream<ChatTransportChunk> sendMessages(ChatTransportRequest request) {
+    return model
+        .stream(
+          GenerateTextRequest(
+            prompt: request.prompt,
+            options: request.options.generateOptions,
+            callOptions: request.options.callOptions,
+          ),
+        )
+        .map<ChatTransportChunk>((event) => ChatTransportEventChunk(event));
   }
 
   @override
-  Stream<TextStreamEvent>? reconnect(String chatId) => null;
+  Stream<ChatTransportChunk>? reconnect(String chatId) => null;
 }

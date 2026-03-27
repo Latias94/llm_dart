@@ -115,6 +115,13 @@ void main() {
                   reason: 'User denied browser automation.',
                 ),
               ),
+              DataUiPart<Object?>(
+                id: 'approval-ui',
+                key: 'client',
+                data: {
+                  'screen': 'browser-approval',
+                },
+              ),
             ],
             metadata: {
               ChatUiMetadataKeys.finishReason: FinishReason.toolCalls,
@@ -145,6 +152,13 @@ void main() {
       expect(toolPart.state, ToolUiPartState.outputDenied);
       expect(toolPart.approval?.approved, isFalse);
       expect(toolPart.approval?.reason, 'User denied browser automation.');
+
+      final dataPart =
+          decoded.messages[1].parts.whereType<DataUiPart<Object?>>().single;
+      expect(dataPart.id, 'approval-ui');
+      expect(dataPart.key, 'client');
+      expect((dataPart.data as Map<String, Object?>)['screen'],
+          'browser-approval');
 
       final decodedError = decoded.error as Map<String, Object?>;
       expect(decodedError['type'], 'unserializable-error');
@@ -914,6 +928,165 @@ void main() {
       await restoredSession.dispose();
     });
 
+    test(
+        'adds UI-only data parts while awaitingTool without polluting prompt history',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-1',
+                      toolName: 'weather',
+                      input: {
+                        'city': 'London',
+                      },
+                    ),
+                  ),
+                  const FinishEvent(finishReason: FinishReason.toolCalls),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'The forecast card is ready.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Weather in London?'));
+      await session.addDataPart(
+        const DataUiPart<Object?>(
+          id: 'progress',
+          key: 'tool-status',
+          data: {
+            'value': 0.25,
+          },
+        ),
+      );
+      await session.addDataPart(
+        const DataUiPart<Object?>(
+          id: 'progress',
+          key: 'tool-status',
+          data: {
+            'value': 0.75,
+          },
+        ),
+      );
+
+      expect(session.state.status, ChatStatus.awaitingTool);
+      final pendingAssistant = session.state.messages.last;
+      final pendingDataPart =
+          pendingAssistant.parts.whereType<DataUiPart<Object?>>().single;
+      expect(pendingDataPart.id, 'progress');
+      expect((pendingDataPart.data as Map<String, Object?>)['value'], 0.75);
+
+      final snapshot = session.exportSnapshot();
+      final snapshotDataPart =
+          snapshot.messages.last.parts.whereType<DataUiPart<Object?>>().single;
+      expect(snapshotDataPart.id, 'progress');
+      expect((snapshotDataPart.data as Map<String, Object?>)['value'], 0.75);
+
+      await session.addToolOutput(
+        const ToolOutputUpdate(
+          toolCallId: 'tool-1',
+          toolName: 'weather',
+          output: {
+            'forecast': 'sunny',
+          },
+        ),
+      );
+
+      expect(capturedRequests, hasLength(2));
+      final continuationPrompt = capturedRequests[1].prompt;
+      final assistantPrompt = continuationPrompt[1] as AssistantPromptMessage;
+      expect(assistantPrompt.parts, hasLength(1));
+      expect(assistantPrompt.parts.single, isA<ToolCallPromptPart>());
+
+      final mergedAssistant = session.state.messages.last;
+      final mergedDataPart =
+          mergedAssistant.parts.whereType<DataUiPart<Object?>>().single;
+      expect((mergedDataPart.data as Map<String, Object?>)['value'], 0.75);
+      expect(
+        mergedAssistant.parts.whereType<TextUiPart>().single.text,
+        'The forecast card is ready.',
+      );
+
+      await session.dispose();
+    });
+
+    test('projects transport data chunks into the active assistant message',
+        () async {
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) => const Stream<TextStreamEvent>.empty(),
+          onSendMessageChunks: (request) =>
+              Stream<ChatTransportChunk>.fromIterable([
+            ChatTransportEventChunk(StartEvent()),
+            const ChatTransportDataPartChunk(
+              DataUiPart<Object?>(
+                id: 'progress',
+                key: 'status',
+                data: {
+                  'value': 0.25,
+                },
+              ),
+            ),
+            const ChatTransportEventChunk(TextStartEvent(id: 'text-1')),
+            const ChatTransportEventChunk(
+              TextDeltaEvent(
+                id: 'text-1',
+                delta: 'Hello',
+              ),
+            ),
+            const ChatTransportDataPartChunk(
+              DataUiPart<Object?>(
+                id: 'progress',
+                key: 'status',
+                data: {
+                  'value': 1.0,
+                },
+              ),
+            ),
+            const ChatTransportEventChunk(TextEndEvent(id: 'text-1')),
+            const ChatTransportEventChunk(
+              FinishEvent(finishReason: FinishReason.stop),
+            ),
+          ]),
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Hi'));
+
+      expect(session.state.status, ChatStatus.ready);
+      final assistantMessage = session.state.messages.last;
+      expect(
+        assistantMessage.parts.whereType<TextUiPart>().single.text,
+        'Hello',
+      );
+      final dataPart =
+          assistantMessage.parts.whereType<DataUiPart<Object?>>().single;
+      expect(dataPart.id, 'progress');
+      expect((dataPart.data as Map<String, Object?>)['value'], 1.0);
+
+      await session.dispose();
+    });
+
     test('transitions to error state when the stream emits ErrorEvent',
         () async {
       final session = DefaultChatSession(
@@ -1018,20 +1191,31 @@ final class _FakeChatTransport implements ChatTransport {
   final Stream<TextStreamEvent> Function(ChatTransportRequest request)
       onSendMessages;
   final Stream<TextStreamEvent>? Function(String chatId)? onReconnect;
+  final Stream<ChatTransportChunk> Function(ChatTransportRequest request)?
+      onSendMessageChunks;
 
   const _FakeChatTransport({
     required this.onSendMessages,
     this.onReconnect,
+    this.onSendMessageChunks,
   });
 
   @override
-  Stream<TextStreamEvent>? reconnect(String chatId) {
-    return onReconnect?.call(chatId);
+  Stream<ChatTransportChunk>? reconnect(String chatId) {
+    return onReconnect
+        ?.call(chatId)
+        ?.map<ChatTransportChunk>((event) => ChatTransportEventChunk(event));
   }
 
   @override
-  Stream<TextStreamEvent> sendMessages(ChatTransportRequest request) {
-    return onSendMessages(request);
+  Stream<ChatTransportChunk> sendMessages(ChatTransportRequest request) {
+    final chunkStream = onSendMessageChunks?.call(request);
+    if (chunkStream != null) {
+      return chunkStream;
+    }
+
+    return onSendMessages(request)
+        .map<ChatTransportChunk>((event) => ChatTransportEventChunk(event));
   }
 }
 

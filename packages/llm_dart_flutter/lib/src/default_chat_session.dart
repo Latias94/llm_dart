@@ -18,7 +18,7 @@ final class DefaultChatSession implements ChatSession {
   final MessageIdGenerator _messageIdGenerator;
 
   ChatState _state;
-  StreamSubscription<TextStreamEvent>? _activeSubscription;
+  StreamSubscription<ChatTransportChunk>? _activeSubscription;
   ChatUiAccumulator? _activeAccumulator;
   Completer<void>? _activeCompletion;
   int _activePromptAppendStartIndex = 0;
@@ -191,6 +191,37 @@ final class DefaultChatSession implements ChatSession {
     return _runAssistantTurn(
       options: update.options,
       seedAssistantMessage: updatedAssistantMessage,
+    );
+  }
+
+  @override
+  Future<void> addDataPart<T>(DataUiPart<T> part) async {
+    _ensureUsable();
+
+    final accumulator = _activeAccumulator;
+    if (accumulator != null) {
+      _upsertAssistantMessage(accumulator.applyDataPart(part));
+      return;
+    }
+
+    if (_state.status != ChatStatus.awaitingTool &&
+        _state.status != ChatStatus.awaitingApproval) {
+      throw StateError(
+        'Cannot call addDataPart unless the current assistant turn is active or waiting for tool or approval input.',
+      );
+    }
+
+    final assistantMessage = _requireLatestAssistantMessage();
+    final updatedAssistantMessage = ChatUiAccumulator(
+      messageId: assistantMessage.id,
+      seedMessage: assistantMessage,
+    ).applyDataPart(part);
+
+    _emitState(
+      _state.copyWith(
+        messages: _replaceLatestAssistantMessage(updatedAssistantMessage),
+        error: null,
+      ),
     );
   }
 
@@ -419,7 +450,7 @@ final class DefaultChatSession implements ChatSession {
   }
 
   Future<void> _consumeAssistantStream({
-    required Stream<TextStreamEvent> stream,
+    required Stream<ChatTransportChunk> stream,
     required String assistantMessageId,
     required int promptAppendStartIndex,
     ChatUiMessage? seedAssistantMessage,
@@ -443,42 +474,48 @@ final class DefaultChatSession implements ChatSession {
     }
 
     _activeSubscription = stream.listen(
-      (event) async {
-        latestAssistantMessage = accumulator.apply(event);
-        _upsertAssistantMessage(latestAssistantMessage!);
+      (chunk) async {
+        switch (chunk) {
+          case ChatTransportEventChunk(:final event):
+            latestAssistantMessage = accumulator.apply(event);
+            _upsertAssistantMessage(latestAssistantMessage!);
 
-        if (event is ErrorEvent) {
-          completed = true;
-          await _activeSubscription?.cancel();
-          _clearActiveTurn();
-          _emitState(
-            _state.copyWith(
-              status: ChatStatus.error,
-              error: event.error,
-            ),
-          );
-          if (!completion.isCompleted) {
-            completion.complete();
-          }
-          return;
-        }
+            if (event is ErrorEvent) {
+              completed = true;
+              await _activeSubscription?.cancel();
+              _clearActiveTurn();
+              _emitState(
+                _state.copyWith(
+                  status: ChatStatus.error,
+                  error: event.error,
+                ),
+              );
+              if (!completion.isCompleted) {
+                completion.complete();
+              }
+              return;
+            }
 
-        if (event is FinishEvent) {
-          completed = true;
-          _appendAssistantPromptIfPresent(
-            latestAssistantMessage!,
-            startPartIndex: promptAppendStartIndex,
-          );
-          _clearActiveTurn();
-          _emitState(
-            _state.copyWith(
-              status: _deriveCompletionStatus(latestAssistantMessage),
-              error: null,
-            ),
-          );
-          if (!completion.isCompleted) {
-            completion.complete();
-          }
+            if (event is FinishEvent) {
+              completed = true;
+              _appendAssistantPromptIfPresent(
+                latestAssistantMessage!,
+                startPartIndex: promptAppendStartIndex,
+              );
+              _clearActiveTurn();
+              _emitState(
+                _state.copyWith(
+                  status: _deriveCompletionStatus(latestAssistantMessage),
+                  error: null,
+                ),
+              );
+              if (!completion.isCompleted) {
+                completion.complete();
+              }
+            }
+          case ChatTransportDataPartChunk(:final part):
+            latestAssistantMessage = accumulator.applyDataPart(part);
+            _upsertAssistantMessage(latestAssistantMessage!);
         }
       },
       onError: (error, stackTrace) {

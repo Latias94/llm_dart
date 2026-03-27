@@ -14,8 +14,24 @@ final class ChatTransportRequest {
   }) : prompt = List.unmodifiable(prompt);
 }
 
-abstract interface class ChatTransport {
-  Stream<TextStreamEvent> sendMessages(ChatTransportRequest request);
+sealed class ChatTransportChunk {
+  const ChatTransportChunk();
+}
 
-  Stream<TextStreamEvent>? reconnect(String chatId);
+final class ChatTransportEventChunk extends ChatTransportChunk {
+  final TextStreamEvent event;
+
+  const ChatTransportEventChunk(this.event);
+}
+
+final class ChatTransportDataPartChunk extends ChatTransportChunk {
+  final DataUiPart<Object?> part;
+
+  const ChatTransportDataPartChunk(this.part);
+}
+
+abstract interface class ChatTransport {
+  Stream<ChatTransportChunk> sendMessages(ChatTransportRequest request);
+
+  Stream<ChatTransportChunk>? reconnect(String chatId);
 }

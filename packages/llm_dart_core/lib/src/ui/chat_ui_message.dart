@@ -145,10 +145,12 @@ final class StepBoundaryUiPart extends ChatUiPart {
 }
 
 final class DataUiPart<T> extends ChatUiPart {
+  final String? id;
   final String key;
   final T data;
 
   const DataUiPart({
+    this.id,
     required this.key,
     required this.data,
   });

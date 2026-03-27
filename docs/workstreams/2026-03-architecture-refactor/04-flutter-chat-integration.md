@@ -156,6 +156,8 @@ abstract interface class ChatSession {
 
   Future<void> addToolOutput(ToolOutputUpdate update);
 
+  Future<void> addDataPart<T>(DataUiPart<T> part);
+
   Future<void> respondToolApproval(ToolApprovalResponse response);
 
   Future<void> resume();
@@ -173,6 +175,7 @@ Key points:
 - `ChatSession` should not expose providers directly
 - UI operations should revolve around sessions, not models
 - tool-result injection and approval handling are session concerns, not provider concerns
+- UI-only data-part injection is a session concern and must not be written back into prompt history
 
 Current implementation direction:
 
@@ -182,6 +185,12 @@ Current implementation direction:
 - approval response should preserve an optional `reason` across session state, prompt history, and snapshot import/export, even if a provider wire format ignores that field
 - approving a provider-executed tool should continue the transport-backed assistant turn
 - approving a client-executed tool should return the session to `awaitingTool` so the caller can later provide `addToolOutput`
+- `addDataPart` should support UI-only message enrichment for the current assistant turn:
+  - while the transport stream is active
+  - while the session is paused in `awaitingTool`
+  - while the session is paused in `awaitingApproval`
+- `DataUiPart.id` should drive stable upsert within one assistant message by `key + id`; missing `id` should stay append-only
+- data parts must remain snapshot-visible but prompt-invisible
 - provider-specific continuation optimizations such as OpenAI `previous_response_id` should stay provider-owned until a shared continuation abstraction is intentionally designed
 - reconnect should be available only for error recovery when the active transport exposes checkpoint state
 - reconnect should rebuild the current assistant turn from transport replay, instead of trying to continue from a partially rendered UI message
@@ -192,10 +201,20 @@ Current implementation direction:
 Borrow the idea from the Vercel AI SDK, but do not copy its hooks-centered design.
 
 ```dart
-abstract interface class ChatTransport {
-  Stream<TextStreamEvent> sendMessages(ChatTransportRequest request);
+sealed class ChatTransportChunk {}
 
-  Stream<TextStreamEvent>? reconnect(String chatId);
+final class ChatTransportEventChunk extends ChatTransportChunk {
+  final TextStreamEvent event;
+}
+
+final class ChatTransportDataPartChunk extends ChatTransportChunk {
+  final DataUiPart<Object?> part;
+}
+
+abstract interface class ChatTransport {
+  Stream<ChatTransportChunk> sendMessages(ChatTransportRequest request);
+
+  Stream<ChatTransportChunk>? reconnect(String chatId);
 }
 ```
 
@@ -220,7 +239,9 @@ This layer matters because mobile and production deployments often should not ca
 One boundary should stay explicit:
 
 - `TextStreamEvent` is the model-stream contract used by direct model integration
-- `HttpChatTransport` will likely need a dedicated serialized chunk protocol for persistence, reconnection, abort, and UI metadata patches
+- `ChatTransportEventChunk` carries those model semantics into the session layer
+- `ChatTransportDataPartChunk` carries UI-only data patches into the session layer without widening `TextStreamEvent`
+- `HttpChatTransport` needs a dedicated serialized chunk protocol for persistence, reconnection, abort, and UI-only data parts
 - reconnect replay should remain transport-owned because `ChatUiAccumulator` does not restore open text or reasoning stream IDs from an arbitrary partial UI message
 - those transport concerns should not be forced back into the core `TextStreamEvent` set unless they represent stable model semantics
 

@@ -137,6 +137,7 @@ Recommended chunk types:
 
 - `start`
 - `event`
+- `data-part`
 - `checkpoint`
 - `finish`
 - `abort`
@@ -161,9 +162,21 @@ Carries one serialized `TextStreamEvent`.
 
 Rules:
 
-- this is the only chunk type that should normally be forwarded into `DefaultChatSession`
+- this is one of the two chunk types that should normally be forwarded into `DefaultChatSession`
 - the serialized event should represent core stream semantics only
 - a future `TextStreamEventJsonCodec` should own this mapping explicitly
+
+### `data-part`
+
+Carries one serialized `DataUiPart<Object?>`.
+
+Rules:
+
+- this is the UI-only companion to `event`, not a new `TextStreamEvent`
+- `DefaultChatSession` should merge it into the current assistant message
+- `DataUiPart.id` should enable stable upsert by `key + id`
+- when `id` is missing, the data part should remain append-only
+- data parts must never be written into prompt history
 
 ### `checkpoint`
 
@@ -251,7 +264,7 @@ Recommended reconnect flow:
 Phase-1 recommendation:
 
 - reconnect should resume only in-flight streams
-- `HttpChatTransport` should keep a local replay buffer for already delivered `TextStreamEvent` items from the current assistant turn
+- `HttpChatTransport` should keep a local replay buffer for already delivered `ChatTransportChunk` items from the current assistant turn
 - `DefaultChatSession.resume()` should remove the partial assistant UI message and rebuild that assistant turn from replay plus the resumed tail
 - do not make reconnect responsible for replaying the entire chat history
 - full history replay still belongs to snapshot persistence and history loading
@@ -271,7 +284,7 @@ The phase-1 implementation should follow this order:
 3. implement SSE or NDJSON decoding in `HttpChatTransport`
 4. keep checkpoint, keepalive, start, and finish chunks transport-internal
 5. store the latest resume token and current assistant-turn replay buffer inside `HttpChatTransport`
-6. let `reconnect(chatId)` replay buffered `TextStreamEvent` items before forwarding the resumed tail
+6. let `reconnect(chatId)` replay buffered `ChatTransportChunk` items before forwarding the resumed tail
 7. let `DefaultChatSession.resume()` rebuild the assistant turn from replay instead of trying to continue from a partial UI snapshot
 
 ## 8. Deferred Question

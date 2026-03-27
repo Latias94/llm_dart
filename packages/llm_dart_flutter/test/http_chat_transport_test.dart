@@ -70,7 +70,7 @@ void main() {
         ),
       );
 
-      final events = await transport
+      final chunks = await transport
           .sendMessages(
             ChatTransportRequest(
               chatId: 'chat-1',
@@ -94,6 +94,7 @@ void main() {
       final body = capturedRequest!.body as Map<String, Object?>;
       expect(body['kind'], HttpChatTransportRequestJsonCodec.envelopeKind);
 
+      final events = _eventsFromChunks(chunks);
       expect(events, hasLength(3));
       expect(events[0], isA<TextStartEvent>());
       expect((events[1] as TextDeltaEvent).delta, 'Hello');
@@ -123,7 +124,7 @@ void main() {
         ),
       );
 
-      final events = await transport
+      final chunks = await transport
           .sendMessages(
             ChatTransportRequest(
               chatId: 'chat-1',
@@ -134,7 +135,7 @@ void main() {
           )
           .toList();
 
-      final finish = events.single as FinishEvent;
+      final finish = _singleEvent(chunks) as FinishEvent;
       expect(finish.finishReason, FinishReason.aborted);
       expect(finish.rawFinishReason, 'cancelled');
     });
@@ -166,7 +167,7 @@ void main() {
         ),
       );
 
-      final events = await transport
+      final chunks = await transport
           .sendMessages(
             ChatTransportRequest(
               chatId: 'chat-1',
@@ -177,7 +178,7 @@ void main() {
           )
           .toList();
 
-      final error = events.single as ErrorEvent;
+      final error = _singleEvent(chunks) as ErrorEvent;
       expect(error.error, {
         'type': 'http-chat-transport-error',
         'code': 'transport_error',
@@ -309,7 +310,7 @@ void main() {
         ),
       );
 
-      final firstAttemptEvents = await transport
+      final firstAttemptChunks = await transport
           .sendMessages(
             ChatTransportRequest(
               chatId: 'chat-1',
@@ -320,6 +321,7 @@ void main() {
           )
           .toList();
 
+      final firstAttemptEvents = _eventsFromChunks(firstAttemptChunks);
       expect(firstAttemptEvents, hasLength(4));
       expect(firstAttemptEvents[0], isA<StartEvent>());
       expect(firstAttemptEvents[1], isA<TextStartEvent>());
@@ -329,7 +331,8 @@ void main() {
       final resumedStream = transport.reconnect('chat-1');
       expect(resumedStream, isNotNull);
 
-      final resumedEvents = await resumedStream!.toList();
+      final resumedChunks = await resumedStream!.toList();
+      final resumedEvents = _eventsFromChunks(resumedChunks);
       expect(resumedEvents, hasLength(6));
       expect(resumedEvents[0], isA<StartEvent>());
       expect(resumedEvents[1], isA<TextStartEvent>());
@@ -349,6 +352,136 @@ void main() {
       expect(reconnectRequest.resumeToken, 'resume-2');
 
       expect(transport.reconnect('chat-1'), isNull);
+    });
+
+    test('reconnect replays buffered data-part chunks', () async {
+      const chunkCodec = HttpChatTransportChunkJsonCodec();
+      var attempt = 0;
+
+      final transport = HttpChatTransport(
+        endpoint: Uri.parse('https://example.com/chat'),
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            attempt += 1;
+
+            if (attempt == 1) {
+              return StreamingTransportResponse(
+                statusCode: 200,
+                stream: Stream<List<int>>.multi((controller) {
+                  controller.add(
+                    _sseFrame(
+                      chunkCodec.encodeChunk(
+                        const HttpChatTransportStartChunk(
+                          resumeToken: 'resume-1',
+                        ),
+                      ),
+                    ),
+                  );
+                  controller.add(
+                    _sseFrame(
+                      chunkCodec.encodeChunk(
+                        const HttpChatTransportDataPartChunk(
+                          DataUiPart<Object?>(
+                            id: 'progress',
+                            key: 'status',
+                            data: {
+                              'value': 0.25,
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                  controller.addError(StateError('socket closed'));
+                }),
+              );
+            }
+
+            if (attempt == 2) {
+              return StreamingTransportResponse(
+                statusCode: 200,
+                stream: Stream.fromIterable([
+                  _sseFrame(
+                    chunkCodec.encodeChunk(
+                      const HttpChatTransportStartChunk(
+                        resumeToken: 'resume-2',
+                      ),
+                    ),
+                  ),
+                  _sseFrame(
+                    chunkCodec.encodeChunk(
+                      const HttpChatTransportDataPartChunk(
+                        DataUiPart<Object?>(
+                          id: 'progress',
+                          key: 'status',
+                          data: {
+                            'value': 1.0,
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                  _sseFrame(
+                    chunkCodec.encodeChunk(
+                      const HttpChatTransportEventChunk(
+                        FinishEvent(
+                          finishReason: FinishReason.stop,
+                        ),
+                      ),
+                    ),
+                  ),
+                  _sseFrame(
+                    chunkCodec.encodeChunk(
+                      const HttpChatTransportFinishChunk(),
+                    ),
+                  ),
+                ]),
+              );
+            }
+
+            throw StateError('Unexpected transport attempt $attempt');
+          },
+        ),
+      );
+
+      final firstAttemptChunks = await transport
+          .sendMessages(
+            ChatTransportRequest(
+              chatId: 'chat-1',
+              prompt: [
+                UserPromptMessage.text('Hello'),
+              ],
+            ),
+          )
+          .toList();
+
+      expect(firstAttemptChunks, hasLength(2));
+      expect(firstAttemptChunks[0], isA<ChatTransportDataPartChunk>());
+      expect(firstAttemptChunks[1], isA<ChatTransportEventChunk>());
+      expect(
+        ((firstAttemptChunks[1] as ChatTransportEventChunk).event as ErrorEvent)
+            .error,
+        isA<StateError>(),
+      );
+
+      final resumedChunks = await transport.reconnect('chat-1')!.toList();
+      expect(resumedChunks, hasLength(3));
+      expect(resumedChunks[0], isA<ChatTransportDataPartChunk>());
+      expect(
+        (((resumedChunks[0] as ChatTransportDataPartChunk).part.data
+            as Map<String, Object?>)['value']),
+        0.25,
+      );
+      expect(resumedChunks[1], isA<ChatTransportDataPartChunk>());
+      expect(
+        (((resumedChunks[1] as ChatTransportDataPartChunk).part.data
+            as Map<String, Object?>)['value']),
+        1.0,
+      );
+      expect(
+        (_singleEvent([resumedChunks[2]]) as FinishEvent).finishReason,
+        FinishReason.stop,
+      );
     });
 
     test('clears reconnect state after a successful terminal finish', () async {
@@ -388,7 +521,7 @@ void main() {
         ),
       );
 
-      final events = await transport
+      final chunks = await transport
           .sendMessages(
             ChatTransportRequest(
               chatId: 'chat-1',
@@ -399,7 +532,7 @@ void main() {
           )
           .toList();
 
-      expect(events.single, isA<FinishEvent>());
+      expect(_singleEvent(chunks), isA<FinishEvent>());
       expect(transport.reconnect('chat-1'), isNull);
     });
 
@@ -431,6 +564,19 @@ void main() {
 
 List<int> _sseFrame(Map<String, Object?> payload) {
   return utf8.encode('data: ${jsonEncode(payload)}\n\n');
+}
+
+List<TextStreamEvent> _eventsFromChunks(List<ChatTransportChunk> chunks) {
+  return chunks
+      .whereType<ChatTransportEventChunk>()
+      .map((chunk) => chunk.event)
+      .toList(growable: false);
+}
+
+TextStreamEvent _singleEvent(List<ChatTransportChunk> chunks) {
+  final events = _eventsFromChunks(chunks);
+  expect(events, hasLength(1));
+  return events.single;
 }
 
 final class _FakeTransportClient implements TransportClient {

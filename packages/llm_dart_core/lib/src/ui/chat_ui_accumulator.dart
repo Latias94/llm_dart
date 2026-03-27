@@ -22,6 +22,7 @@ final class ChatUiAccumulator {
   final Map<String, int> _activeTextPartIndexes = {};
   final Map<String, int> _activeReasoningPartIndexes = {};
   final Map<String, int> _toolPartIndexes = {};
+  final Map<String, int> _dataPartIndexes = {};
   final Map<String, _PartialToolInput> _partialToolInputs = {};
   int _nextStepIndex = 0;
 
@@ -363,6 +364,24 @@ final class ChatUiAccumulator {
     return message;
   }
 
+  ChatUiMessage applyDataPart<T>(DataUiPart<T> part) {
+    final dataPartId = part.id;
+    if (dataPartId == null) {
+      _appendPart(part);
+      return message;
+    }
+
+    final identity = _dataPartIdentity(part.key, dataPartId);
+    final index = _dataPartIndexes[identity];
+    if (index == null) {
+      _dataPartIndexes[identity] = _appendPart(part);
+    } else {
+      _parts[index] = part;
+    }
+
+    return message;
+  }
+
   Stream<ChatUiMessage> project(Stream<TextStreamEvent> events) async* {
     await for (final event in events) {
       yield apply(event);
@@ -385,6 +404,11 @@ final class ChatUiAccumulator {
             initialText: part.inputText ?? _stringifyValue(part.input) ?? '',
           );
         }
+        continue;
+      }
+
+      if (part case DataUiPart(:final id?, :final key)) {
+        _dataPartIndexes[_dataPartIdentity(key, id)] = index;
       }
     }
   }
@@ -510,6 +534,8 @@ final class ChatUiAccumulator {
     }
   }
 }
+
+String _dataPartIdentity(String key, String id) => '$key\u0000$id';
 
 Stream<ChatUiMessage> projectChatUiMessageStream(
   Stream<TextStreamEvent> events, {

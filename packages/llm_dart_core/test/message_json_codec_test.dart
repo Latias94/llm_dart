@@ -164,6 +164,7 @@ void main() {
               },
             ),
             const DataUiPart<Object?>(
+              id: 'debug-1',
               key: 'debug',
               data: {
                 'step': 1,
@@ -242,6 +243,11 @@ void main() {
       expect(source.sourceId, 'src-1');
       expect(source.uri, Uri.parse('https://example.com/doc'));
       expect(source.title, 'Example Doc');
+
+      final dataPart = message.parts.whereType<DataUiPart<Object?>>().single;
+      expect(dataPart.id, 'debug-1');
+      expect(dataPart.key, 'debug');
+      expect((dataPart.data as Map<String, Object?>)['step'], 1);
 
       final responseMetadata =
           message.metadata[ChatUiMetadataKeys.responseProviderMetadata]

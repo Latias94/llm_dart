@@ -441,6 +441,82 @@ void main() {
       expect(message.parts.whereType<TextUiPart>().single.text, 'Done');
     });
 
+    test('upserts data parts by key and id while preserving append-only data',
+        () {
+      final accumulator = ChatUiAccumulator(messageId: 'assistant-1');
+
+      accumulator.applyDataPart(
+        const DataUiPart<Object?>(
+          key: 'status',
+          data: {
+            'phase': 'queued',
+          },
+        ),
+      );
+      accumulator.applyDataPart(
+        const DataUiPart<Object?>(
+          id: 'progress',
+          key: 'status',
+          data: {
+            'phase': 'running',
+            'value': 0.25,
+          },
+        ),
+      );
+
+      final message = accumulator.applyDataPart(
+        const DataUiPart<Object?>(
+          id: 'progress',
+          key: 'status',
+          data: {
+            'phase': 'running',
+            'value': 0.75,
+          },
+        ),
+      );
+
+      final dataParts = message.parts.whereType<DataUiPart<Object?>>().toList();
+      expect(dataParts, hasLength(2));
+      expect(dataParts[0].id, isNull);
+      expect((dataParts[0].data as Map<String, Object?>)['phase'], 'queued');
+      expect(dataParts[1].id, 'progress');
+      expect((dataParts[1].data as Map<String, Object?>)['value'], 0.75);
+    });
+
+    test('hydrates data-part upsert indexes from a seed message', () {
+      final accumulator = ChatUiAccumulator(
+        messageId: 'assistant-new',
+        seedMessage: ChatUiMessage(
+          id: 'assistant-existing',
+          role: ChatUiRole.assistant,
+          parts: const [
+            DataUiPart<Object?>(
+              id: 'progress',
+              key: 'status',
+              data: {
+                'value': 0.25,
+              },
+            ),
+          ],
+        ),
+      );
+
+      final message = accumulator.applyDataPart(
+        const DataUiPart<Object?>(
+          id: 'progress',
+          key: 'status',
+          data: {
+            'value': 1.0,
+          },
+        ),
+      );
+
+      final dataParts = message.parts.whereType<DataUiPart<Object?>>().toList();
+      expect(message.id, 'assistant-existing');
+      expect(dataParts, hasLength(1));
+      expect((dataParts.single.data as Map<String, Object?>)['value'], 1.0);
+    });
+
     test('throws on malformed event ordering', () {
       final accumulator = ChatUiAccumulator(messageId: 'assistant-1');
 

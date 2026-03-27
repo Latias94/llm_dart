@@ -96,7 +96,7 @@ The table below compares the AI SDK UI chunk vocabulary with the current `llm_da
 | `source-url` / `source-document` | Covered by typed `SourceReference` (`kind` plus optional `filename`) | Freeze the updated source model |
 | `file` | Covered by `FileEvent` and `GeneratedFile` | Freeze generic file model |
 | `reasoning-file` | Not represented separately | Keep out of core for now; re-evaluate after a second provider needs it |
-| `data-*` UI chunks | `DataUiPart<T>` exists, but there is no `TextStreamEvent` path | Keep UI-only; do not add to `TextStreamEvent` |
+| `data-*` UI chunks | Covered by `DataUiPart<T>`, `ChatTransportDataPartChunk`, and `ChatSession.addDataPart(...)` | Freeze the transport/UI-only boundary; do not add to `TextStreamEvent` |
 | `start` / `finish` / `message-metadata` / `abort` | Intentionally not in `TextStreamEvent` | Keep transport-only |
 | `tool-input-error` | Covered by `ToolInputErrorEvent`, projected through the existing tool error UI path | Freeze the current event/UI split |
 
@@ -123,6 +123,25 @@ Current boundary:
 - common kinds are `url`, `document`, and `other`
 - document citations may carry `filename` without forcing provider metadata inspection
 - generated artifacts still belong in `GeneratedFile`, not in `SourceReference`
+
+This item is no longer an open event/UI gap.
+
+### 4. UI-Only Data Ingress Is Now Defined
+
+The current implementation now preserves a separate UI-only data path:
+
+- `DataUiPart<T>` has an optional stable `id`
+- `ChatTransport` now carries `ChatTransportEventChunk` and `ChatTransportDataPartChunk`
+- `ChatSession.addDataPart(...)` supports local UI-only ingress without mutating prompt history
+- `HttpChatTransport` serializes `data-part` chunks and replays them during reconnect recovery
+
+Current boundary:
+
+- do not add `DataEvent` to `TextStreamEvent`
+- keep provider model streams producing only model semantics
+- keep `data-part` as a session/transport concern
+- upsert only when both `key` and `id` match; otherwise append
+- snapshots keep data parts, prompt history does not
 
 This item is no longer an open event/UI gap.
 
@@ -183,7 +202,7 @@ That is acceptable, but it should be treated as:
 Recommended rule:
 
 - do not add `DataEvent` to `TextStreamEvent`
-- if streaming data parts are needed later, add them to the transport/UI stream layer instead
+- use transport/session data-part ingress for streaming UI-only data instead
 
 ### 2. Message Start / Finish / Metadata Patch / Abort Markers
 
@@ -238,8 +257,8 @@ If a provider later needs special reasoning-file handling, that can be revisited
 
 If the repository wants to tighten the event/UI model next, the recommended order is:
 
-1. define how UI-only data parts should enter `ChatSession` and `HttpChatTransport` without expanding `TextStreamEvent`
-2. only after that, re-evaluate whether reasoning-file needs a common model
+1. re-evaluate whether reasoning-file needs a common model
+2. keep future Flutter convenience layers such as `ChatController` above the current session/transport boundary instead of widening `TextStreamEvent`
 
 ## 8. Conclusion
 
@@ -248,6 +267,6 @@ The main conclusion is not that `llm_dart` lacks many events.
 The main conclusion is:
 
 - most of the important model-stream semantics are already present
-- the remaining gaps are concentrated around UI-only data ingress design
+- the largest remaining event/UI gap, UI-only data ingress, is now resolved without expanding `TextStreamEvent`
 - the biggest temptation to avoid is copying UI transport concepts such as message markers or data chunks into `TextStreamEvent`
 - the current Dart-specific strengths, especially unified tool parts and richer file references, should be preserved

@@ -86,6 +86,15 @@ void main() {
             }),
           ),
         ),
+        const HttpChatTransportDataPartChunk(
+          DataUiPart<Object?>(
+            id: 'progress',
+            key: 'status',
+            data: {
+              'value': 0.5,
+            },
+          ),
+        ),
         const HttpChatTransportCheckpointChunk(
           resumeToken: 'resume-2',
           cursor: 'cursor-2',
@@ -120,19 +129,27 @@ void main() {
       expect(eventChunk.event, isA<TextDeltaEvent>());
       expect((eventChunk.event as TextDeltaEvent).delta, 'Hello');
 
-      final checkpoint = decoded[2] as HttpChatTransportCheckpointChunk;
+      final dataPartChunk = decoded[2] as HttpChatTransportDataPartChunk;
+      expect(dataPartChunk.part.id, 'progress');
+      expect(dataPartChunk.part.key, 'status');
+      expect(
+        (dataPartChunk.part.data as Map<String, Object?>)['value'],
+        0.5,
+      );
+
+      final checkpoint = decoded[3] as HttpChatTransportCheckpointChunk;
       expect(checkpoint.cursor, 'cursor-2');
 
-      expect(decoded[3], isA<HttpChatTransportFinishChunk>());
-      expect((decoded[4] as HttpChatTransportAbortChunk).reason, 'cancelled');
+      expect(decoded[4], isA<HttpChatTransportFinishChunk>());
+      expect((decoded[5] as HttpChatTransportAbortChunk).reason, 'cancelled');
 
-      final error = decoded[5] as HttpChatTransportErrorChunk;
+      final error = decoded[6] as HttpChatTransportErrorChunk;
       expect(error.code, 'transport_error');
       expect(error.details, {
         'retryable': false,
       });
 
-      expect(decoded[6], isA<HttpChatTransportKeepAliveChunk>());
+      expect(decoded[7], isA<HttpChatTransportKeepAliveChunk>());
     });
   });
 }

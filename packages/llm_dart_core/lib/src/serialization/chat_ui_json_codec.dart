@@ -171,8 +171,9 @@ final class ChatUiJsonCodec {
           'type': 'step-boundary',
           'stepId': stepId,
         },
-      DataUiPart(:final key, :final data) => {
+      DataUiPart(:final id, :final key, :final data) => {
           'type': 'data',
+          if (id != null) 'id': id,
           'key': key,
           'data': ensureJsonValue(data, path: r'$.dataPart.data'),
         },
@@ -264,6 +265,7 @@ final class ChatUiJsonCodec {
           asJsonString(map['stepId'], path: '$path.stepId'),
         ),
       'data' => DataUiPart<Object?>(
+          id: asNullableJsonString(map['id'], path: '$path.id'),
           key: asJsonString(map['key'], path: '$path.key'),
           data: map['data'],
         ),
@@ -447,9 +449,8 @@ final class ChatUiJsonCodec {
       'url' => SourceReferenceKind.url,
       'document' => SourceReferenceKind.document,
       'other' => SourceReferenceKind.other,
-      null => uri == null
-          ? SourceReferenceKind.document
-          : SourceReferenceKind.url,
+      null =>
+        uri == null ? SourceReferenceKind.document : SourceReferenceKind.url,
       _ => throw FormatException('Invalid source kind at $path: $kind'),
     };
   }

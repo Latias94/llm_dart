@@ -183,6 +183,12 @@ final class HttpChatTransportEventChunk extends HttpChatTransportChunk {
   const HttpChatTransportEventChunk(this.event);
 }
 
+final class HttpChatTransportDataPartChunk extends HttpChatTransportChunk {
+  final DataUiPart<Object?> part;
+
+  const HttpChatTransportDataPartChunk(this.part);
+}
+
 final class HttpChatTransportCheckpointChunk extends HttpChatTransportChunk {
   final String resumeToken;
   final String? cursor;
@@ -246,6 +252,14 @@ final class HttpChatTransportChunkJsonCodec {
       HttpChatTransportEventChunk(:final event) => {
           'type': 'event',
           'event': eventCodec.encodeEvent(event),
+        },
+      HttpChatTransportDataPartChunk(:final part) => {
+          'type': 'data-part',
+          'part': {
+            if (part.id != null) 'id': part.id,
+            'key': part.key,
+            'data': _ensureJsonValue(part.data, path: r'$.data.part.data'),
+          },
         },
       HttpChatTransportCheckpointChunk(
         :final resumeToken,
@@ -317,6 +331,9 @@ final class HttpChatTransportChunkJsonCodec {
       'event' => HttpChatTransportEventChunk(
           eventCodec.decodeEvent(data['event'], path: r'$.data.event'),
         ),
+      'data-part' => HttpChatTransportDataPartChunk(
+          _decodeDataPart(data['part'], path: r'$.data.part'),
+        ),
       'checkpoint' => HttpChatTransportCheckpointChunk(
           resumeToken:
               _asJsonString(data['resumeToken'], path: r'$.data.resumeToken'),
@@ -336,6 +353,18 @@ final class HttpChatTransportChunkJsonCodec {
           'Unsupported HTTP chat transport chunk type "$type".',
         ),
     };
+  }
+
+  DataUiPart<Object?> _decodeDataPart(
+    Object? value, {
+    required String path,
+  }) {
+    final map = _asJsonMap(value, path: path);
+    return DataUiPart<Object?>(
+      id: _asNullableJsonString(map['id'], path: '$path.id'),
+      key: _asJsonString(map['key'], path: '$path.key'),
+      data: map['data'],
+    );
   }
 }
 

@@ -283,7 +283,10 @@ final class ReasoningUiPart extends ChatUiPart { ... }
 final class ToolUiPart extends ChatUiPart { ... }
 final class SourceUiPart extends ChatUiPart { ... }
 final class FileUiPart extends ChatUiPart { ... }
-final class DataUiPart<T> extends ChatUiPart { ... }
+final class DataUiPart<T> extends ChatUiPart {
+  final String? id;
+  ...
+}
 final class CustomUiPart extends ChatUiPart { ... }
 final class StepBoundaryUiPart extends ChatUiPart { ... }
 ```
@@ -295,6 +298,7 @@ Additional UI-boundary rules:
 - `ToolUiPart` should carry streamed input state, final input, output, approval state, and separate call/result provider metadata.
 - `ToolUiPart` should expose `providerExecuted`, `isDynamic`, `preliminary`, and `title`, because these directly affect how a Flutter chat UI renders tool cards.
 - `ToolUiPart.approval` should preserve an optional response `reason`, because Flutter UIs may need to render denial or approval rationale and keep it across snapshots.
+- `DataUiPart.id` should stay optional. When present, it is a stable UI-update identity within the current message for `key + id`; when absent, the part is append-only.
 - `ChatUiMessage.metadata` should keep reserved call-level keys such as warnings, response metadata, finish metadata, streamed errors, and optional diagnostic raw chunks.
 - `llm_dart_core` should ship a pure Dart projector from `TextStreamEvent` to `ChatUiMessage` so Flutter applications do not have to rebuild the stream state machine themselves.
 
