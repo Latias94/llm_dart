@@ -44,6 +44,7 @@ Current status:
 
 - minimal Responses-based text generation is implemented in `llm_dart_openai`
 - streaming text, reasoning summaries, and function-call outputs are mapped into the new core models
+- replay-critical OpenAI Responses metadata now survives decode, session replay, and request re-encoding for assistant message IDs, message phase, reasoning encrypted content, tool-call item IDs, and compaction items
 - transport now has a concrete Dio executor, SSE decoder, cancellation abstraction, and error mapping
 - broader tool coverage, structured output, and non-text endpoints remain for the next step
 
@@ -63,6 +64,7 @@ Current status:
 
 - the Anthropic text-generation mainline is now wired through `llm_dart_anthropic`
 - Anthropic request encoding, result decoding, stream decoding, MCP request models, and typed options are package-owned
+- Anthropic assistant replay now keeps native tool replay paths and emits explicit warnings when unsupported assistant reasoning/file/custom replay parts are dropped
 - the Google text-generation mainline is now wired through `llm_dart_google`
 - Google request encoding, result decoding, stream decoding, grounding-source extraction, and typed options are package-owned
 - the shared tool-definition boundary is now frozen around common function tools and shared `ToolChoice`

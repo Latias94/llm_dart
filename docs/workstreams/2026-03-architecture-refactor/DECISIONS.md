@@ -209,3 +209,11 @@ Provider-specific features should be represented through:
 - replayable prompt parts should support optional part-level `ProviderMetadata`
 - assistant prompt reconstruction must preserve reasoning parts, reasoning files, replayable custom parts, and relevant part metadata instead of collapsing assistant output into text plus pending tool state
 - citations, UI-only data parts, and transport markers still stay out of prompt history
+
+## D24. Provider Replay Fidelity Must Be Explicit Per Provider
+
+- the shared core preserves replayable assistant semantics and JSON-safe provider metadata, but it does not force one provider-wire replay shape on every adapter
+- provider adapters must either encode provider-valid replay items or emit explicit `ModelWarning`s when a replayable assistant part cannot be represented faithfully
+- OpenAI Responses replay should preserve replay-critical metadata such as assistant message item IDs, message phase, reasoning encrypted content, tool-call item IDs, and `openai.compaction` state
+- Anthropic Messages replay should preserve assistant text and provider-executed tool replay that maps to Anthropic-native blocks, but it should drop unsupported assistant reasoning/file/custom replay parts with explicit warnings instead of silently flattening them
+- conversation-store-specific replay shortcuts such as OpenAI `item_reference` should not enter the shared architecture until the library has an explicit model for stored conversation context

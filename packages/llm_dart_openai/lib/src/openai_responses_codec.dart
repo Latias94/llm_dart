@@ -630,6 +630,9 @@ final class OpenAIResponsesCodec {
   List<Object?> _encodeAssistantMessage(AssistantPromptMessage message) {
     final items = <Object?>[];
     final textContent = <Object?>[];
+    final reasoningItemsById = <String, Map<String, Object?>>{};
+    String? textItemId;
+    String? textPhase;
 
     void flushTextContent() {
       if (textContent.isEmpty) {
@@ -639,12 +642,33 @@ final class OpenAIResponsesCodec {
       items.add({
         'role': 'assistant',
         'content': List<Object?>.from(textContent),
+        if (textItemId != null) 'id': textItemId,
+        if (textPhase != null) 'phase': textPhase,
       });
       textContent.clear();
+      textItemId = null;
+      textPhase = null;
     }
 
     for (final part in message.parts) {
       if (part is TextPromptPart) {
+        final metadata = _providerMetadataValues(
+          part.providerMetadata,
+          namespace: 'openai',
+        );
+        final partItemId = _asString(metadata?['itemId']);
+        final partPhase = _asString(metadata?['phase']);
+
+        if (textContent.isNotEmpty &&
+            (partItemId != textItemId || partPhase != textPhase)) {
+          flushTextContent();
+        }
+
+        if (textContent.isEmpty) {
+          textItemId = partItemId;
+          textPhase = partPhase;
+        }
+
         textContent.add({
           'type': 'output_text',
           'text': part.text,
@@ -660,26 +684,52 @@ final class OpenAIResponsesCodec {
           namespace: 'openai',
         );
         final reasoningId = _asString(metadata?['itemId']);
-        final encryptedContent = _asString(metadata?['encryptedContent']);
-        final summary = <Object?>[
-          if (part.text.isNotEmpty)
-            {
-              'type': 'summary_text',
-              'text': part.text,
-            },
-        ];
+        final encryptedContent =
+            _asString(metadata?['reasoningEncryptedContent']) ??
+                _asString(metadata?['encryptedContent']);
+        final summaryPart = part.text.isEmpty
+            ? null
+            : <String, Object?>{
+                'type': 'summary_text',
+                'text': part.text,
+              };
 
-        if (summary.isEmpty &&
-            reasoningId == null &&
-            encryptedContent == null) {
+        if (reasoningId != null) {
+          final existingItem = reasoningItemsById[reasoningId];
+          if (existingItem == null) {
+            final reasoningItem = <String, Object?>{
+              'type': 'reasoning',
+              'id': reasoningId,
+              if (encryptedContent != null)
+                'encrypted_content': encryptedContent,
+              'summary': <Object?>[
+                if (summaryPart != null) summaryPart,
+              ],
+            };
+            reasoningItemsById[reasoningId] = reasoningItem;
+            items.add(reasoningItem);
+          } else {
+            final summary = existingItem['summary'];
+            if (summaryPart != null && summary is List<Object?>) {
+              summary.add(summaryPart);
+            }
+            if (encryptedContent != null) {
+              existingItem['encrypted_content'] = encryptedContent;
+            }
+          }
+          continue;
+        }
+
+        if (encryptedContent == null) {
           continue;
         }
 
         items.add({
           'type': 'reasoning',
-          if (reasoningId != null) 'id': reasoningId,
-          if (encryptedContent != null) 'encrypted_content': encryptedContent,
-          'summary': summary,
+          'encrypted_content': encryptedContent,
+          'summary': <Object?>[
+            if (summaryPart != null) summaryPart,
+          ],
         });
         continue;
       }
@@ -691,9 +741,15 @@ final class OpenAIResponsesCodec {
           continue;
         }
 
+        final metadata = _providerMetadataValues(
+          part.providerMetadata,
+          namespace: 'openai',
+        );
+        final itemId = _asString(metadata?['itemId']);
         items.add({
           'type': 'function_call',
           'call_id': part.toolCallId,
+          if (itemId != null) 'id': itemId,
           'name': part.toolName,
           'arguments': _encodeJsonString(part.input),
         });
@@ -707,10 +763,11 @@ final class OpenAIResponsesCodec {
       if (part is FilePromptPart ||
           part is ReasoningFilePromptPart ||
           part is CustomPromptPart) {
-        if (part is CustomPromptPart &&
-            part.kind == 'openai.compaction' &&
-            part.data is Map) {
-          items.add(Map<String, Object?>.from(part.data as Map));
+        if (part is CustomPromptPart && part.kind == 'openai.compaction') {
+          final compactionItem = _encodeOpenAICompactionItem(part);
+          if (compactionItem != null) {
+            items.add(compactionItem);
+          }
         }
         continue;
       }
@@ -869,6 +926,7 @@ final class OpenAIResponsesCodec {
             item,
             extra: {
               'summaryIndex': index,
+              'reasoningEncryptedContent': item['encrypted_content'],
               'encryptedContent': item['encrypted_content'],
             },
           ),
@@ -1015,7 +1073,13 @@ final class OpenAIResponsesCodec {
     return CustomContentPart(
       kind: 'openai.$type',
       data: item,
-      providerMetadata: _itemMetadata(item),
+      providerMetadata: _itemMetadata(
+        item,
+        extra: {
+          if (type == 'compaction')
+            'encryptedContent': item['encrypted_content'],
+        },
+      ),
     );
   }
 
@@ -1124,6 +1188,7 @@ final class OpenAIResponsesCodec {
       'itemId': _asString(item['id']),
       'itemType': _asString(item['type']),
       'status': _asString(item['status']),
+      'phase': _asString(item['phase']),
       ...extra,
     });
   }
@@ -1137,11 +1202,48 @@ final class OpenAIResponsesCodec {
       'responseId': state.responseId,
       'itemId': _asString(chunk['item_id']) ?? _asString(item?['id']),
       'itemType': _asString(item?['type']),
+      'phase': _asString(item?['phase']),
       'outputIndex': _asInt(chunk['output_index']),
       'contentIndex': _asInt(chunk['content_index']),
       'summaryIndex': _asInt(chunk['summary_index']),
       'serviceTier': state.serviceTier,
     });
+  }
+
+  Map<String, Object?>? _encodeOpenAICompactionItem(CustomPromptPart part) {
+    final data = part.data is Map
+        ? Map<String, Object?>.from(part.data as Map)
+        : const <String, Object?>{};
+    final metadata = _providerMetadataValues(
+      part.providerMetadata,
+      namespace: 'openai',
+    );
+    final id = _asString(metadata?['itemId']) ?? _asString(data['id']);
+    final encryptedContent = _asString(metadata?['encryptedContent']) ??
+        _asString(data['encrypted_content']) ??
+        _asString(data['encryptedContent']);
+
+    if (id == null || encryptedContent == null) {
+      return null;
+    }
+
+    final item = <String, Object?>{
+      'type': 'compaction',
+      'id': id,
+      'encrypted_content': encryptedContent,
+    };
+
+    for (final entry in data.entries) {
+      if (entry.key == 'type' ||
+          entry.key == 'id' ||
+          entry.key == 'encrypted_content' ||
+          entry.key == 'encryptedContent') {
+        continue;
+      }
+      item[entry.key] = entry.value;
+    }
+
+    return item;
   }
 
   ProviderMetadata? _providerMetadata(Map<String, Object?> values) {

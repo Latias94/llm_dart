@@ -50,6 +50,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary for common function tools, `ToolChoice`, and provider-native tool placement.
 - [13-provider-native-tool-entry.md](13-provider-native-tool-entry.md)
   - Typed entry rules for Google and Anthropic native tools without widening the common core.
+- [14-provider-replay-fidelity-policy.md](14-provider-replay-fidelity-policy.md)
+  - Frozen replay policy for OpenAI, Anthropic, and the shared provider boundary.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

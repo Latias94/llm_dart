@@ -445,6 +445,10 @@ void main() {
           AssistantPromptMessage(
             parts: const [
               ReasoningPromptPart('Hidden reasoning'),
+              FilePromptPart(
+                mediaType: 'application/pdf',
+                bytes: [1, 2, 3],
+              ),
               ReasoningFilePromptPart(
                 mediaType: 'image/png',
                 bytes: [1, 2, 3],
@@ -489,6 +493,15 @@ void main() {
             ],
           },
         ],
+      );
+      expect(
+        request.warnings.map((warning) => warning.field),
+        containsAll([
+          'assistant.reasoning',
+          'assistant.file',
+          'assistant.reasoningFile',
+          'assistant.custom',
+        ]),
       );
     });
   });

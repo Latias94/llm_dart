@@ -61,9 +61,10 @@ final class AnthropicMessagesCodec {
         case _PromptBlockType.assistant:
           sawConversationBlock = true;
           if (_encodeAssistantBlock(
-                block,
-                trimTrailingText: index == blocks.length - 1,
-              )
+            block,
+            trimTrailingText: index == blocks.length - 1,
+            warnings: warnings,
+          )
               case final encodedAssistantBlock?) {
             messages.add(encodedAssistantBlock);
           }
@@ -240,7 +241,8 @@ final class AnthropicMessagesCodec {
     required List<AnthropicNativeTool> nativeTools,
     required ToolChoice? toolChoice,
   }) {
-    if ((tools.isEmpty && nativeTools.isEmpty) || toolChoice is NoneToolChoice) {
+    if ((tools.isEmpty && nativeTools.isEmpty) ||
+        toolChoice is NoneToolChoice) {
       return const _AnthropicToolConfiguration();
     }
 
@@ -358,6 +360,7 @@ final class AnthropicMessagesCodec {
   Map<String, Object?>? _encodeAssistantBlock(
     _PromptBlock block, {
     required bool trimTrailingText,
+    required List<ModelWarning> warnings,
   }) {
     final content = <Map<String, Object?>>[];
 
@@ -448,6 +451,30 @@ final class AnthropicMessagesCodec {
             part is FilePromptPart ||
             part is ReasoningFilePromptPart ||
             part is CustomPromptPart) {
+          warnings.add(
+            ModelWarning(
+              type: ModelWarningType.unsupported,
+              field: switch (part) {
+                ReasoningPromptPart() => 'assistant.reasoning',
+                FilePromptPart() => 'assistant.file',
+                ReasoningFilePromptPart() => 'assistant.reasoningFile',
+                CustomPromptPart() => 'assistant.custom',
+                _ => 'assistant.part',
+              },
+              message: switch (part) {
+                ReasoningPromptPart() =>
+                  'Anthropic assistant replay does not support reasoning parts yet. The part has been dropped.',
+                FilePromptPart() =>
+                  'Anthropic assistant replay does not support assistant file parts yet. The part has been dropped.',
+                ReasoningFilePromptPart() =>
+                  'Anthropic assistant replay does not support reasoning file parts yet. The part has been dropped.',
+                CustomPromptPart(:final kind) =>
+                  'Anthropic assistant replay does not support custom part "$kind" yet. The part has been dropped.',
+                _ =>
+                  'Anthropic assistant replay does not support this part yet. The part has been dropped.',
+              },
+            ),
+          );
           continue;
         }
 

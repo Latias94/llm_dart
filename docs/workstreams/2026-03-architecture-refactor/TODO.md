@@ -30,8 +30,8 @@
 
 - [ ] Rewrite the error model
 - [ ] Rewrite usage, warning, and provider metadata models
-- [ ] Add common `reasoning-file` support across prompt, result, stream, and UI layers
-- [ ] Add part-level provider metadata to replayable prompt parts and codecs
+- [x] Add common `reasoning-file` support across prompt, result, stream, and UI layers
+- [x] Add part-level provider metadata to replayable prompt parts and codecs
 - [x] Define provider model-options and invocation-options marker interfaces
 - [x] Strengthen `SourceReference` with an explicit source kind
 - [x] Define malformed tool-input semantics in the core stream and UI models
@@ -67,6 +67,7 @@
 - [x] Design the OpenAI-family profile structure
 - [ ] Migrate OpenAI chat
 - [x] Migrate OpenAI responses
+- [x] Preserve OpenAI replay-critical item metadata, reasoning state, and compaction replay
 - [ ] Migrate OpenAI embeddings
 - [ ] Migrate OpenAI image
 - [ ] Migrate OpenAI speech and transcription
@@ -81,6 +82,7 @@
 - [x] Establish the Anthropic messages request codec
 - [x] Migrate the Anthropic language model
 - [x] Add the initial Anthropic native tool entry API
+- [x] Add warning-based downgrade rules for unsupported assistant replay parts
 - [ ] Migrate the Anthropic tool codec
 - [ ] Migrate the Anthropic reasoning codec
 - [ ] Migrate the Anthropic web-search adapter
@@ -116,7 +118,7 @@
 - [x] Implement baseline `HttpChatTransport`
 - [x] Add approval-response reason support to session, prompt, and UI state
 - [x] Define how UI-only data parts enter `ChatSession` and `HttpChatTransport` without expanding `TextStreamEvent`
-- [ ] Make assistant prompt reconstruction preserve reasoning, reasoning-file, custom parts, and prompt-part provider metadata
+- [x] Make assistant prompt reconstruction preserve reasoning, reasoning-file, custom parts, and prompt-part provider metadata
 - [ ] Implement `ChatController`
 - [x] Define a serialized chat chunk protocol for `HttpChatTransport`
 - [x] Design the message serialization protocol
