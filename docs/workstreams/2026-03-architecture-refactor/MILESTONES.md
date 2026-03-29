@@ -120,3 +120,21 @@ Acceptance criteria:
 - the README is centered on the new API
 - old APIs have explicit deprecation markers
 - duplicate registry logic, string-extension mainlines, and mixed-layer message logic are removed
+
+Current status:
+
+- `LLMBuilder.build()` now returns compatibility provider subclasses for OpenAI, Google, and Anthropic when the builder has enough core config
+- those compatibility providers route legacy chat requests into the new package-owned `LanguageModel` implementations only when the request shape is explicitly bridge-compatible
+- the OpenAI compatibility bridge now covers the legacy text mainline plus common function tools, built-in tools, and structured output request encoding
+- the Google compatibility bridge now covers the legacy text/multimodal mainline plus text-only structured-output request encoding
+- the Anthropic compatibility bridge now covers legacy prompt-cache markers, lossless raw text/user-image/user-document `contentBlocks`, lossless raw assistant `tool_use` / `server_tool_use` / `mcp_tool_use` replay, lossless raw user `tool_result` / `mcp_tool_result` replay, and `MessageBuilder` tools blocks when they can map into prompt parts, provider metadata, and typed Anthropic cache options without silent feature loss
+- Anthropic bridge gating is now explicitly anchored to request-side re-encoding fidelity, and the legacy raw bridge now explicitly allows `web_search_tool_result` and `web_fetch_tool_result` only inside exact replay-safe shapes
+- the new Anthropic replay path now preserves `web_search_tool_result` through Anthropic-owned custom content/UI/prompt parts for session replay and request re-encoding, with matching legacy raw bridge support for exact user-role replay
+- the new Anthropic replay path now preserves `web_fetch_tool_result` through Anthropic-owned custom content/UI/prompt parts for session replay and request re-encoding, with matching legacy raw bridge support for exact user-role replay
+- the new Anthropic replay path now also preserves execution-oriented provider-native result blocks through `anthropic.result.code_execution`, while keeping the legacy raw bridge conservative
+- `llm_dart_anthropic` now also exposes a provider-native `AnthropicFiles` API and file-handle helpers for execution downloads without widening the shared core
+- the event completeness audit against `repo-ref/ai` is now also frozen: the shared stream model is already sufficient, and remaining lifecycle chunk gaps are transport/UI concerns rather than missing core event types
+- provider stream coverage regression tests now explicitly cover OpenAI reasoning and failed-response paths, Anthropic malformed tool-input events, and Google source/file/reasoning-file stream paths
+- the next recommended milestone is now explicit: expand provider coverage tests and renderer helpers without widening the shared event model
+- incompatible legacy request shapes and bridge-shape conversion failures fall back to the old provider implementation instead of silently dropping provider-specific behavior
+- legacy stream projection is now explicitly frozen as a lossy compatibility surface; richer event semantics remain in `llm_dart_core` and `llm_dart_flutter`

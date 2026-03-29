@@ -108,6 +108,150 @@ void main() {
       );
     });
 
+    test(
+        'generate forwards common tools, built-in tools, tool choice, and structured output to the Responses request body',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_tools',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Use tools and return JSON.'),
+          ],
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              description: 'Get the weather.',
+              inputSchema: ToolJsonSchema.object(
+                properties: {
+                  'city': {'type': 'string'},
+                },
+                required: ['city'],
+              ),
+              strict: true,
+            ),
+          ],
+          toolChoice: const SpecificToolChoice('weather'),
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              parallelToolCalls: true,
+              builtInTools: [
+                OpenAIWebSearchTool(),
+                OpenAIFileSearchTool(
+                  vectorStoreIds: ['vs_123'],
+                ),
+              ],
+              responseFormat: OpenAIJsonSchemaResponseFormat(
+                name: 'answer',
+                schema: {
+                  'type': 'object',
+                  'properties': {
+                    'value': {'type': 'string'},
+                  },
+                },
+                strict: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+
+      expect(
+        requestBody['tools'],
+        [
+          {
+            'type': 'function',
+            'name': 'weather',
+            'description': 'Get the weather.',
+            'parameters': {
+              'type': 'object',
+              'properties': {
+                'city': {'type': 'string'},
+              },
+              'required': ['city'],
+            },
+            'strict': true,
+          },
+          {
+            'type': 'web_search_preview',
+          },
+          {
+            'type': 'file_search',
+            'vector_store_ids': ['vs_123'],
+          },
+        ],
+      );
+      expect(
+        requestBody['tool_choice'],
+        {
+          'type': 'function',
+          'function': {'name': 'weather'},
+        },
+      );
+      expect(requestBody['parallel_tool_calls'], isTrue);
+      expect(
+        requestBody['response_format'],
+        {
+          'type': 'json_schema',
+          'json_schema': {
+            'name': 'answer',
+            'schema': {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+              'additionalProperties': false,
+            },
+            'strict': true,
+          },
+        },
+      );
+    });
+
     test('generate maps source annotations to typed source references',
         () async {
       final model = OpenAI(
@@ -314,6 +458,132 @@ void main() {
       expect(finish.usage?.totalTokens, 2);
     });
 
+    test('stream maps output annotations to typed source events', () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            expect(request.method, TransportMethod.post);
+
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: Stream.fromIterable([
+                utf8.encode(
+                  'data: {"type":"response.created","response":{"id":"resp_sources","model":"gpt-4.1-mini","created_at":1710000000,"service_tier":"default"}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.output_text.annotation.added","item_id":"msg_1","output_index":0,"content_index":0,"annotation_index":0,"annotation":{"type":"url_citation","url":"https://example.com","title":"Example URL","start_index":0,"end_index":5}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.output_text.annotation.added","item_id":"msg_1","output_index":0,"content_index":0,"annotation_index":1,"annotation":{"type":"file_citation","file_id":"file_1","filename":"resource1.json","index":12}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.completed","response":{"id":"resp_sources","model":"gpt-4.1-mini","created_at":1710000000,"status":"completed","output":[],"usage":{"input_tokens":5,"output_tokens":4,"total_tokens":9,"output_tokens_details":{"reasoning_tokens":0}}}}\n\n',
+                ),
+              ]),
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final events = await model
+          .stream(
+            GenerateTextRequest(
+              prompt: [
+                UserPromptMessage.text('Summarize the annotated sources.'),
+              ],
+            ),
+          )
+          .toList();
+
+      final sources =
+          events.whereType<SourceEvent>().map((event) => event.source).toList();
+      expect(sources, hasLength(2));
+
+      expect(sources[0].kind, SourceReferenceKind.url);
+      expect(sources[0].sourceId, 'https://example.com');
+      expect(sources[0].uri, Uri.parse('https://example.com'));
+      expect(sources[0].title, 'Example URL');
+
+      expect(sources[1].kind, SourceReferenceKind.document);
+      expect(sources[1].sourceId, 'file_1');
+      expect(sources[1].filename, 'resource1.json');
+      expect(
+        sources[1].providerMetadata!['openai'],
+        allOf(
+          containsPair('annotationType', 'file_citation'),
+          containsPair('fileId', 'file_1'),
+          containsPair('index', 12),
+        ),
+      );
+
+      final finish = events.whereType<FinishEvent>().single;
+      expect(finish.finishReason, FinishReason.stop);
+      expect(finish.usage?.totalTokens, 9);
+    });
+
+    test('stream maps reasoning summary events to unified reasoning events',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            expect(request.method, TransportMethod.post);
+
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: Stream.fromIterable([
+                utf8.encode(
+                  'data: {"type":"response.created","response":{"id":"resp_reasoning","model":"gpt-4.1-mini","created_at":1710000000,"service_tier":"default"}}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.reasoning_summary_part.added","item_id":"rs_1","output_index":0,"summary_index":0}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.reasoning_summary_text.delta","item_id":"rs_1","output_index":0,"summary_index":0,"delta":"Plan"}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.reasoning_summary_part.done","item_id":"rs_1","output_index":0,"summary_index":0}\n\n',
+                ),
+                utf8.encode(
+                  'data: {"type":"response.completed","response":{"id":"resp_reasoning","model":"gpt-4.1-mini","created_at":1710000000,"status":"completed","output":[],"usage":{"input_tokens":2,"output_tokens":3,"total_tokens":5,"output_tokens_details":{"reasoning_tokens":3}}}}\n\n',
+                ),
+              ]),
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final events = await model
+          .stream(
+            GenerateTextRequest(
+              prompt: [
+                UserPromptMessage.text('Think before you answer.'),
+              ],
+            ),
+          )
+          .toList();
+
+      expect(events.first, isA<StartEvent>());
+      expect(events.whereType<ResponseMetadataEvent>().single.responseId,
+          'resp_reasoning');
+
+      final reasoningStart = events.whereType<ReasoningStartEvent>().single;
+      expect(reasoningStart.id, 'rs_1:0');
+
+      final reasoningDelta = events.whereType<ReasoningDeltaEvent>().single;
+      expect(reasoningDelta.id, 'rs_1:0');
+      expect(reasoningDelta.delta, 'Plan');
+
+      final reasoningEnd = events.whereType<ReasoningEndEvent>().single;
+      expect(reasoningEnd.id, 'rs_1:0');
+
+      final finish = events.whereType<FinishEvent>().single;
+      expect(finish.finishReason, FinishReason.stop);
+      expect(finish.usage?.reasoningTokens, 3);
+      expect(finish.usage?.totalTokens, 5);
+    });
+
     test('stream maps MCP approval requests to unified approval events',
         () async {
       final model = OpenAI(
@@ -408,7 +678,8 @@ void main() {
           )
           .toList();
 
-      expect(events.whereType<ToolInputStartEvent>().single.toolCallId, 'call_1');
+      expect(
+          events.whereType<ToolInputStartEvent>().single.toolCallId, 'call_1');
       expect(events.whereType<ToolInputDeltaEvent>().single.delta, '{"city":');
       expect(events.whereType<ToolInputEndEvent>(), isEmpty);
       expect(events.whereType<ToolCallEvent>(), isEmpty);
@@ -426,6 +697,60 @@ void main() {
 
       final finish = events.whereType<FinishEvent>().single;
       expect(finish.finishReason, FinishReason.toolCalls);
+    });
+
+    test('stream maps failed responses to error and finish events', () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            expect(request.method, TransportMethod.post);
+
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: Stream.fromIterable([
+                utf8.encode(
+                  'data: {"type":"response.failed","response":{"id":"resp_failed","model":"gpt-4.1-mini","created_at":1710000200,"status":"failed","error":{"type":"server_error","message":"upstream failed"},"usage":{"input_tokens":2,"output_tokens":0,"total_tokens":2,"output_tokens_details":{"reasoning_tokens":0}}}}\n\n',
+                ),
+              ]),
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final events = await model
+          .stream(
+            GenerateTextRequest(
+              prompt: [
+                UserPromptMessage.text('Trigger a failure.'),
+              ],
+            ),
+          )
+          .toList();
+
+      expect(events.first, isA<StartEvent>());
+
+      final responseMetadata = events.whereType<ResponseMetadataEvent>().single;
+      expect(responseMetadata.responseId, 'resp_failed');
+      expect(responseMetadata.modelId, 'gpt-4.1-mini');
+
+      final errorEvent = events.whereType<ErrorEvent>().single;
+      expect(
+        errorEvent.error,
+        {
+          'type': 'server_error',
+          'message': 'upstream failed',
+        },
+      );
+
+      final finish = events.whereType<FinishEvent>().single;
+      expect(finish.finishReason, FinishReason.error);
+      expect(finish.rawFinishReason, isNull);
+      expect(finish.usage?.totalTokens, 2);
+      expect(
+        finish.providerMetadata?.values['openai'],
+        containsPair('status', 'failed'),
+      );
     });
 
     test('stream maps MCP calls to unified tool call and result events',

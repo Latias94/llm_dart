@@ -188,6 +188,80 @@ void main() {
           FinishReason.toolCalls);
     });
 
+    test(
+        'stream maps source, file, reasoning-file, and finish events end to end',
+        () async {
+      final model = Google(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: Stream.fromIterable([
+                utf8.encode(
+                  'data: {"responseId":"resp_2","modelVersion":"gemini-3-pro-preview","usageMetadata":{"promptTokenCount":5,"candidatesTokenCount":2,"thoughtsTokenCount":3,"totalTokenCount":10},"candidates":[{"content":{"parts":[{"inlineData":{"mimeType":"application/pdf","data":"AQID"}},{"inlineData":{"mimeType":"image/png","data":"BAUG"},"thought":true,"thoughtSignature":"sig_reasoning_file"}]},"groundingMetadata":{"groundingChunks":[{"web":{"uri":"https://example.com","title":"Example"}}]},"finishReason":"STOP"}]}\n\n',
+                ),
+              ]),
+            );
+          },
+        ),
+      ).chatModel('gemini-3-pro-preview');
+
+      final events = await model
+          .stream(
+            GenerateTextRequest(
+              prompt: [
+                UserPromptMessage.text('Summarize the source.'),
+              ],
+            ),
+          )
+          .toList();
+
+      expect(events.first, isA<StartEvent>());
+      expect(events.whereType<ResponseMetadataEvent>().single.responseId,
+          'resp_2');
+
+      final sourceEvent = events.whereType<SourceEvent>().single;
+      expect(sourceEvent.source.uri, Uri.parse('https://example.com'));
+      expect(sourceEvent.source.title, 'Example');
+
+      final fileEvent = events.whereType<FileEvent>().single;
+      expect(fileEvent.file.mediaType, 'application/pdf');
+      expect(fileEvent.file.bytes, [1, 2, 3]);
+
+      final reasoningFileEvent = events.whereType<ReasoningFileEvent>().single;
+      expect(reasoningFileEvent.file.mediaType, 'image/png');
+      expect(reasoningFileEvent.file.bytes, [4, 5, 6]);
+      expect(
+        reasoningFileEvent.providerMetadata?.values['google'],
+        {
+          'thoughtSignature': 'sig_reasoning_file',
+          'thought': true,
+        },
+      );
+
+      final finishEvent = events.whereType<FinishEvent>().single;
+      expect(finishEvent.finishReason, FinishReason.stop);
+      expect(finishEvent.rawFinishReason, 'STOP');
+      expect(finishEvent.usage?.totalTokens, 10);
+      expect(finishEvent.usage?.reasoningTokens, 3);
+      expect(
+        finishEvent.providerMetadata?.values['google'],
+        allOf(
+          contains('groundingMetadata'),
+          containsPair(
+            'usageMetadata',
+            {
+              'promptTokenCount': 5,
+              'candidatesTokenCount': 2,
+              'thoughtsTokenCount': 3,
+              'totalTokenCount': 10,
+            },
+          ),
+        ),
+      );
+    });
+
     test('rejects provider options from a different provider', () async {
       final model = Google(
         apiKey: 'test-key',

@@ -557,6 +557,412 @@ void main() {
       await session.dispose();
     });
 
+    test('preserves file parts and metadata in assistant replay', () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  FileEvent(
+                    GeneratedFile(
+                      mediaType: 'application/pdf',
+                      filename: 'report.pdf',
+                      uri: Uri.parse('https://example.com/files/report.pdf'),
+                      bytes: [4, 5, 6],
+                    ),
+                    providerMetadata: ProviderMetadata({
+                      'google': {
+                        'fileId': 'file_pdf_1',
+                      },
+                    }),
+                  ),
+                  const TextStartEvent(id: 'text-1'),
+                  const TextDeltaEvent(
+                    id: 'text-1',
+                    delta: 'Attached the report.',
+                  ),
+                  const TextEndEvent(id: 'text-1'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(id: 'text-2', delta: 'Follow-up reply.'),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Send the report.'));
+
+      final assistantMessage = session.state.messages.last;
+      final filePart = assistantMessage.parts.whereType<FileUiPart>().single;
+      expect(filePart.file.mediaType, 'application/pdf');
+      expect(filePart.file.filename, 'report.pdf');
+      expect(
+          filePart.file.uri, Uri.parse('https://example.com/files/report.pdf'));
+      expect(filePart.file.bytes, [4, 5, 6]);
+      expect(
+        filePart.providerMetadata!['google'],
+        containsPair('fileId', 'file_pdf_1'),
+      );
+
+      await session.sendMessage(ChatInput.text('What should I read first?'));
+
+      expect(capturedRequests, hasLength(2));
+      expect(capturedRequests[1].prompt, hasLength(3));
+      final assistantPrompt =
+          capturedRequests[1].prompt[1] as AssistantPromptMessage;
+      expect(assistantPrompt.parts, hasLength(2));
+      expect(assistantPrompt.parts[0], isA<FilePromptPart>());
+      expect(assistantPrompt.parts[1], isA<TextPromptPart>());
+
+      final replayedFilePart = assistantPrompt.parts[0] as FilePromptPart;
+      expect(replayedFilePart.mediaType, 'application/pdf');
+      expect(replayedFilePart.filename, 'report.pdf');
+      expect(replayedFilePart.uri,
+          Uri.parse('https://example.com/files/report.pdf'));
+      expect(replayedFilePart.bytes, [4, 5, 6]);
+      expect(
+        replayedFilePart.providerMetadata!['google'],
+        containsPair('fileId', 'file_pdf_1'),
+      );
+
+      final replayedTextPart = assistantPrompt.parts[1] as TextPromptPart;
+      expect(replayedTextPart.text, 'Attached the report.');
+
+      await session.dispose();
+    });
+
+    test(
+        'replays provider-executed web-search tool results through custom prompt parts',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'srvtoolu_1',
+                      toolName: 'web_search',
+                      input: {
+                        'query': 'dart sdk',
+                      },
+                      providerExecuted: true,
+                      isDynamic: true,
+                    ),
+                  ),
+                  const ToolResultEvent(
+                    toolResult: ToolResultContent(
+                      toolCallId: 'srvtoolu_1',
+                      toolName: 'web_search',
+                      output: [
+                        {
+                          'url': 'https://dart.dev',
+                          'title': 'Dart',
+                        },
+                      ],
+                      isDynamic: true,
+                    ),
+                    providerMetadata: ProviderMetadata({
+                      'anthropic': {
+                        'blockType': 'web_search_tool_result',
+                      },
+                    }),
+                  ),
+                  const CustomEvent(
+                    kind: 'anthropic.result.web_search',
+                    data: {
+                      'replayRole': 'tool',
+                      'toolCallId': 'srvtoolu_1',
+                      'toolName': 'web_search',
+                      'block': {
+                        'type': 'web_search_tool_result',
+                        'tool_use_id': 'srvtoolu_1',
+                        'content': [
+                          {
+                            'url': 'https://dart.dev',
+                            'title': 'Dart',
+                            'type': 'web_search_result',
+                          },
+                        ],
+                      },
+                    },
+                    providerMetadata: ProviderMetadata({
+                      'anthropic': {
+                        'blockType': 'web_search_tool_result',
+                      },
+                    }),
+                  ),
+                  SourceEvent(
+                    SourceReference(
+                      kind: SourceReferenceKind.url,
+                      sourceId: 'https://dart.dev',
+                      uri: Uri.parse('https://dart.dev'),
+                      title: 'Dart',
+                    ),
+                  ),
+                  const TextStartEvent(id: 'text-1'),
+                  const TextDeltaEvent(
+                    id: 'text-1',
+                    delta: 'Dart has a modern SDK.',
+                  ),
+                  const TextEndEvent(id: 'text-1'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'Follow-up reply.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Search for Dart.'));
+
+      final assistantMessage = session.state.messages.last;
+      expect(
+        assistantMessage.parts.whereType<CustomUiPart>().single.kind,
+        'anthropic.result.web_search',
+      );
+
+      await session.sendMessage(ChatInput.text('What next?'));
+
+      expect(capturedRequests, hasLength(2));
+      final replayPrompt = capturedRequests[1].prompt;
+      expect(replayPrompt, hasLength(5));
+
+      final assistantToolReplay = replayPrompt[1] as AssistantPromptMessage;
+      expect(assistantToolReplay.parts.single, isA<ToolCallPromptPart>());
+      final toolCallPart =
+          assistantToolReplay.parts.single as ToolCallPromptPart;
+      expect(toolCallPart.toolCallId, 'srvtoolu_1');
+      expect(toolCallPart.providerExecuted, isTrue);
+      expect(toolCallPart.isDynamic, isTrue);
+
+      final toolResultReplay = replayPrompt[2] as ToolPromptMessage;
+      expect(toolResultReplay.toolName, 'web_search');
+      expect(toolResultReplay.parts.single, isA<CustomPromptPart>());
+      final customPart = toolResultReplay.parts.single as CustomPromptPart;
+      expect(customPart.kind, 'anthropic.result.web_search');
+      expect(customPart.data, {
+        'replayRole': 'tool',
+        'toolCallId': 'srvtoolu_1',
+        'toolName': 'web_search',
+        'block': {
+          'type': 'web_search_tool_result',
+          'tool_use_id': 'srvtoolu_1',
+          'content': [
+            {
+              'url': 'https://dart.dev',
+              'title': 'Dart',
+              'type': 'web_search_result',
+            },
+          ],
+        },
+      });
+
+      final assistantTextReplay = replayPrompt[3] as AssistantPromptMessage;
+      expect(assistantTextReplay.parts.single, isA<TextPromptPart>());
+      expect(
+        (assistantTextReplay.parts.single as TextPromptPart).text,
+        'Dart has a modern SDK.',
+      );
+
+      await session.dispose();
+    });
+
+    test(
+        'replays provider-executed code-execution tool results through custom prompt parts',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'srvtoolu_3',
+                      toolName: 'bash_code_execution',
+                      input: {
+                        'command': 'echo hi',
+                      },
+                      providerExecuted: true,
+                      isDynamic: true,
+                    ),
+                  ),
+                  const ToolResultEvent(
+                    toolResult: ToolResultContent(
+                      toolCallId: 'srvtoolu_3',
+                      toolName: 'bash_code_execution',
+                      output: {
+                        'type': 'bash_code_execution_result',
+                        'stdout': 'hi\n',
+                        'stderr': '',
+                        'return_code': 0,
+                        'content': [
+                          {
+                            'type': 'bash_code_execution_output',
+                            'file_id': 'file_123',
+                          },
+                        ],
+                      },
+                      isDynamic: true,
+                    ),
+                    providerMetadata: ProviderMetadata({
+                      'anthropic': {
+                        'blockType': 'bash_code_execution_tool_result',
+                      },
+                    }),
+                  ),
+                  const CustomEvent(
+                    kind: 'anthropic.result.code_execution',
+                    data: {
+                      'schema': 'anthropic.execution.result.v1',
+                      'replayRole': 'tool',
+                      'toolCallId': 'srvtoolu_3',
+                      'toolName': 'code_execution',
+                      'blockType': 'bash_code_execution_tool_result',
+                      'block': {
+                        'type': 'bash_code_execution_tool_result',
+                        'tool_use_id': 'srvtoolu_3',
+                        'content': {
+                          'type': 'bash_code_execution_result',
+                          'stdout': 'hi\n',
+                          'stderr': '',
+                          'return_code': 0,
+                          'content': [
+                            {
+                              'type': 'bash_code_execution_output',
+                              'file_id': 'file_123',
+                            },
+                          ],
+                        },
+                      },
+                    },
+                    providerMetadata: ProviderMetadata({
+                      'anthropic': {
+                        'blockType': 'bash_code_execution_tool_result',
+                      },
+                    }),
+                  ),
+                  const TextStartEvent(id: 'text-1'),
+                  const TextDeltaEvent(
+                    id: 'text-1',
+                    delta: 'Command finished.',
+                  ),
+                  const TextEndEvent(id: 'text-1'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'Follow-up reply.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Run a command.'));
+
+      final assistantMessage = session.state.messages.last;
+      expect(
+        assistantMessage.parts.whereType<CustomUiPart>().single.kind,
+        'anthropic.result.code_execution',
+      );
+
+      await session.sendMessage(ChatInput.text('What next?'));
+
+      expect(capturedRequests, hasLength(2));
+      final replayPrompt = capturedRequests[1].prompt;
+      expect(replayPrompt, hasLength(5));
+
+      final assistantToolReplay = replayPrompt[1] as AssistantPromptMessage;
+      expect(assistantToolReplay.parts.single, isA<ToolCallPromptPart>());
+      final toolCallPart =
+          assistantToolReplay.parts.single as ToolCallPromptPart;
+      expect(toolCallPart.toolCallId, 'srvtoolu_3');
+      expect(toolCallPart.toolName, 'bash_code_execution');
+      expect(toolCallPart.providerExecuted, isTrue);
+      expect(toolCallPart.isDynamic, isTrue);
+
+      final toolResultReplay = replayPrompt[2] as ToolPromptMessage;
+      expect(toolResultReplay.toolName, 'code_execution');
+      expect(toolResultReplay.parts.single, isA<CustomPromptPart>());
+      final customPart = toolResultReplay.parts.single as CustomPromptPart;
+      expect(customPart.kind, 'anthropic.result.code_execution');
+      expect(customPart.data, {
+        'schema': 'anthropic.execution.result.v1',
+        'replayRole': 'tool',
+        'toolCallId': 'srvtoolu_3',
+        'toolName': 'code_execution',
+        'blockType': 'bash_code_execution_tool_result',
+        'block': {
+          'type': 'bash_code_execution_tool_result',
+          'tool_use_id': 'srvtoolu_3',
+          'content': {
+            'type': 'bash_code_execution_result',
+            'stdout': 'hi\n',
+            'stderr': '',
+            'return_code': 0,
+            'content': [
+              {
+                'type': 'bash_code_execution_output',
+                'file_id': 'file_123',
+              },
+            ],
+          },
+        },
+      });
+
+      final assistantTextReplay = replayPrompt[3] as AssistantPromptMessage;
+      expect(assistantTextReplay.parts.single, isA<TextPromptPart>());
+      expect(
+        (assistantTextReplay.parts.single as TextPromptPart).text,
+        'Command finished.',
+      );
+
+      await session.dispose();
+    });
+
     test('persists denied approval responses in prompt history', () async {
       final capturedRequests = <ChatTransportRequest>[];
 
@@ -1037,6 +1443,108 @@ void main() {
       expect(
         textPart.providerMetadata!['google'],
         containsPair('thoughtSignature', 'sig_text'),
+      );
+
+      await exportingSession.dispose();
+      await restoredSession.dispose();
+    });
+
+    test('restores snapshots with assistant files for follow-up replay',
+        () async {
+      final exportingSession = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) => Stream<TextStreamEvent>.fromIterable([
+            StartEvent(),
+            FileEvent(
+              GeneratedFile(
+                mediaType: 'application/pdf',
+                filename: 'report.pdf',
+                uri: Uri.parse('https://example.com/files/report.pdf'),
+                bytes: [4, 5, 6],
+              ),
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'fileId': 'file_pdf_1',
+                },
+              }),
+            ),
+            const TextStartEvent(
+              id: 'text-1',
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'responsePart': 'visible_text',
+                },
+              }),
+            ),
+            const TextDeltaEvent(
+              id: 'text-1',
+              delta: 'Attached the report.',
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'responsePart': 'visible_text',
+                },
+              }),
+            ),
+            const TextEndEvent(id: 'text-1'),
+            const FinishEvent(finishReason: FinishReason.stop),
+          ]),
+        ),
+      );
+
+      await exportingSession.sendMessage(ChatInput.text('Send the report.'));
+
+      const codec = ChatSessionSnapshotJsonCodec();
+      final encodedSnapshot =
+          codec.encodeSnapshot(exportingSession.exportSnapshot());
+      final decodedSnapshot = codec.decodeSnapshot(encodedSnapshot);
+
+      final capturedRequests = <ChatTransportRequest>[];
+      final restoredSession = DefaultChatSession.fromSnapshot(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+            return Stream<TextStreamEvent>.fromIterable([
+              StartEvent(),
+              const TextStartEvent(id: 'text-2'),
+              const TextDeltaEvent(
+                id: 'text-2',
+                delta: 'Restored file continuation works.',
+              ),
+              const TextEndEvent(id: 'text-2'),
+              const FinishEvent(finishReason: FinishReason.stop),
+            ]);
+          },
+        ),
+        snapshot: decodedSnapshot,
+      );
+
+      await restoredSession
+          .sendMessage(ChatInput.text('What should I read first?'));
+
+      expect(capturedRequests, hasLength(1));
+      expect(capturedRequests.single.prompt, hasLength(3));
+      final assistantPrompt =
+          capturedRequests.single.prompt[1] as AssistantPromptMessage;
+      expect(assistantPrompt.parts, hasLength(2));
+      expect(assistantPrompt.parts[0], isA<FilePromptPart>());
+      expect(assistantPrompt.parts[1], isA<TextPromptPart>());
+
+      final replayedFilePart = assistantPrompt.parts[0] as FilePromptPart;
+      expect(replayedFilePart.mediaType, 'application/pdf');
+      expect(replayedFilePart.filename, 'report.pdf');
+      expect(replayedFilePart.uri,
+          Uri.parse('https://example.com/files/report.pdf'));
+      expect(replayedFilePart.bytes, [4, 5, 6]);
+      expect(
+        replayedFilePart.providerMetadata!['google'],
+        containsPair('fileId', 'file_pdf_1'),
+      );
+
+      final replayedTextPart = assistantPrompt.parts[1] as TextPromptPart;
+      expect(replayedTextPart.text, 'Attached the report.');
+      expect(
+        replayedTextPart.providerMetadata!['google'],
+        containsPair('responsePart', 'visible_text'),
       );
 
       await exportingSession.dispose();

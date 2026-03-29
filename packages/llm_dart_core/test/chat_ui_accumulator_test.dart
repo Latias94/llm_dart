@@ -319,6 +319,72 @@ void main() {
       );
     });
 
+    test('projects denied tool output into the existing denied state path', () {
+      final accumulator = ChatUiAccumulator(messageId: 'assistant-1');
+
+      accumulator.apply(
+        const ToolCallEvent(
+          toolCall: ToolCallContent(
+            toolCallId: 'tool-1',
+            toolName: 'computer',
+            input: {
+              'action': 'click',
+            },
+            providerExecuted: true,
+            isDynamic: true,
+            title: 'Browser',
+          ),
+          providerMetadata: ProviderMetadata({
+            'openai': {
+              'itemId': 'call_1',
+            },
+          }),
+        ),
+      );
+
+      accumulator.apply(
+        const ToolApprovalRequestEvent(
+          approvalId: 'approval-1',
+          toolCallId: 'tool-1',
+          providerMetadata: ProviderMetadata({
+            'openai': {
+              'approvalPhase': 'waiting',
+            },
+          }),
+        ),
+      );
+
+      final message = accumulator.apply(
+        const ToolOutputDeniedEvent(
+          toolCallId: 'tool-1',
+          providerMetadata: ProviderMetadata({
+            'openai': {
+              'approvalPhase': 'denied',
+            },
+          }),
+        ),
+      );
+
+      final toolPart = message.parts.whereType<ToolUiPart>().single;
+      expect(toolPart.state, ToolUiPartState.outputDenied);
+      expect(toolPart.providerExecuted, isTrue);
+      expect(toolPart.isDynamic, isTrue);
+      expect(toolPart.title, 'Browser');
+      expect(toolPart.approval?.approvalId, 'approval-1');
+      expect(toolPart.approval?.approved, isNull);
+      expect(
+        toolPart.callProviderMetadata!['openai'],
+        allOf(
+          containsPair('itemId', 'call_1'),
+          containsPair('approvalPhase', 'waiting'),
+        ),
+      );
+      expect(
+        toolPart.resultProviderMetadata!['openai'],
+        containsPair('approvalPhase', 'denied'),
+      );
+    });
+
     test('projects source, file, reasoning-file, custom, raw, and error events',
         () async {
       final snapshots = await projectChatUiMessageStream(

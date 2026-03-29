@@ -205,6 +205,59 @@ void main() {
       );
     });
 
+    test('emits tool input errors for malformed tool input deltas', () {
+      final state = AnthropicMessagesStreamState();
+      final events = <TextStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'content_block_start',
+          'index': 0,
+          'content_block': {
+            'type': 'tool_use',
+            'id': 'toolu_bad_1',
+            'name': 'weather',
+          },
+        },
+        {
+          'type': 'content_block_delta',
+          'index': 0,
+          'delta': {
+            'type': 'input_json_delta',
+            'partial_json': '{"city":',
+          },
+        },
+        {
+          'type': 'content_block_stop',
+          'index': 0,
+        },
+      ]) {
+        events.addAll(codec.decodeChunk(chunk, state));
+      }
+
+      expect(events[0], isA<ToolInputStartEvent>());
+      expect(events[1], isA<ToolInputDeltaEvent>());
+      expect(events[2], isA<ToolInputErrorEvent>());
+      expect(events.whereType<ToolInputEndEvent>(), isEmpty);
+      expect(events.whereType<ToolCallEvent>(), isEmpty);
+
+      final errorEvent = events[2] as ToolInputErrorEvent;
+      expect(errorEvent.toolCallId, 'toolu_bad_1');
+      expect(errorEvent.toolName, 'weather');
+      expect(errorEvent.input, '{"city":');
+      expect(
+        errorEvent.errorText,
+        contains('Invalid JSON tool arguments for "weather"'),
+      );
+      expect(
+        errorEvent.providerMetadata?.values['anthropic'],
+        {
+          'blockIndex': 0,
+          'blockType': 'tool_use',
+        },
+      );
+    });
+
     test(
         'maps mcp tool use and result blocks as dynamic provider-executed tools',
         () {
@@ -271,6 +324,224 @@ void main() {
           'blockType': 'mcp_tool_result',
         },
       );
+    });
+
+    test('emits custom replay events for web-search tool results', () {
+      final state = AnthropicMessagesStreamState();
+      final events = <TextStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'content_block_start',
+          'index': 0,
+          'content_block': {
+            'type': 'server_tool_use',
+            'id': 'srvtoolu_1',
+            'name': 'web_search',
+            'input': {
+              'query': 'dart sdk',
+            },
+          },
+        },
+        {
+          'type': 'content_block_stop',
+          'index': 0,
+        },
+        {
+          'type': 'content_block_start',
+          'index': 1,
+          'content_block': {
+            'type': 'web_search_tool_result',
+            'tool_use_id': 'srvtoolu_1',
+            'content': [
+              {
+                'url': 'https://dart.dev',
+                'title': 'Dart',
+                'type': 'web_search_result',
+              },
+            ],
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeChunk(chunk, state));
+      }
+
+      expect(events[3], isA<ToolCallEvent>());
+      expect(events[4], isA<ToolResultEvent>());
+      expect(events[5], isA<CustomEvent>());
+      expect(events[6], isA<SourceEvent>());
+
+      final customEvent = events[5] as CustomEvent;
+      expect(customEvent.kind, 'anthropic.result.web_search');
+      expect(customEvent.data, {
+        'replayRole': 'tool',
+        'toolCallId': 'srvtoolu_1',
+        'toolName': 'web_search',
+        'block': {
+          'type': 'web_search_tool_result',
+          'tool_use_id': 'srvtoolu_1',
+          'content': [
+            {
+              'url': 'https://dart.dev',
+              'title': 'Dart',
+              'type': 'web_search_result',
+            },
+          ],
+        },
+      });
+    });
+
+    test('emits custom replay events for web-fetch tool results', () {
+      final state = AnthropicMessagesStreamState();
+      final events = <TextStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'content_block_start',
+          'index': 0,
+          'content_block': {
+            'type': 'server_tool_use',
+            'id': 'srvtoolu_2',
+            'name': 'web_fetch',
+            'input': {
+              'url': 'https://example.com/article',
+            },
+          },
+        },
+        {
+          'type': 'content_block_stop',
+          'index': 0,
+        },
+        {
+          'type': 'content_block_start',
+          'index': 1,
+          'content_block': {
+            'type': 'web_fetch_tool_result',
+            'tool_use_id': 'srvtoolu_2',
+            'content': {
+              'type': 'web_fetch_result',
+              'url': 'https://example.com/article',
+              'content': {
+                'type': 'document',
+                'source': {
+                  'type': 'text',
+                  'media_type': 'text/plain',
+                  'data': 'Article content',
+                },
+              },
+            },
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeChunk(chunk, state));
+      }
+
+      expect(events[3], isA<ToolCallEvent>());
+      expect(events[4], isA<ToolResultEvent>());
+      expect(events[5], isA<CustomEvent>());
+
+      final customEvent = events[5] as CustomEvent;
+      expect(customEvent.kind, 'anthropic.result.web_fetch');
+      expect(customEvent.data, {
+        'replayRole': 'tool',
+        'toolCallId': 'srvtoolu_2',
+        'toolName': 'web_fetch',
+        'block': {
+          'type': 'web_fetch_tool_result',
+          'tool_use_id': 'srvtoolu_2',
+          'content': {
+            'type': 'web_fetch_result',
+            'url': 'https://example.com/article',
+            'content': {
+              'type': 'document',
+              'source': {
+                'type': 'text',
+                'media_type': 'text/plain',
+                'data': 'Article content',
+              },
+            },
+          },
+        },
+      });
+    });
+
+    test('emits custom replay events for code execution tool results', () {
+      final state = AnthropicMessagesStreamState();
+      final events = <TextStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'content_block_start',
+          'index': 0,
+          'content_block': {
+            'type': 'server_tool_use',
+            'id': 'srvtoolu_3',
+            'name': 'bash_code_execution',
+            'input': {
+              'command': 'echo hi',
+            },
+          },
+        },
+        {
+          'type': 'content_block_stop',
+          'index': 0,
+        },
+        {
+          'type': 'content_block_start',
+          'index': 1,
+          'content_block': {
+            'type': 'bash_code_execution_tool_result',
+            'tool_use_id': 'srvtoolu_3',
+            'content': {
+              'type': 'bash_code_execution_result',
+              'stdout': 'hi\n',
+              'stderr': '',
+              'return_code': 0,
+              'content': [
+                {
+                  'type': 'bash_code_execution_output',
+                  'file_id': 'file_123',
+                },
+              ],
+            },
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeChunk(chunk, state));
+      }
+
+      expect(events[3], isA<ToolCallEvent>());
+      expect(events[4], isA<ToolResultEvent>());
+      expect(events[5], isA<CustomEvent>());
+
+      final toolResultEvent = events[4] as ToolResultEvent;
+      expect(toolResultEvent.toolResult.toolName, 'bash_code_execution');
+
+      final customEvent = events[5] as CustomEvent;
+      expect(customEvent.kind, 'anthropic.result.code_execution');
+      expect(customEvent.data, {
+        'schema': 'anthropic.execution.result.v1',
+        'replayRole': 'tool',
+        'toolCallId': 'srvtoolu_3',
+        'toolName': 'code_execution',
+        'blockType': 'bash_code_execution_tool_result',
+        'block': {
+          'type': 'bash_code_execution_tool_result',
+          'tool_use_id': 'srvtoolu_3',
+          'content': {
+            'type': 'bash_code_execution_result',
+            'stdout': 'hi\n',
+            'stderr': '',
+            'return_code': 0,
+            'content': [
+              {
+                'type': 'bash_code_execution_output',
+                'file_id': 'file_123',
+              },
+            ],
+          },
+        },
+      });
     });
 
     test('maps error chunks to ErrorEvent', () {

@@ -52,6 +52,14 @@ void main() {
           approvalId: 'approval-1',
           toolCallId: 'tool-1',
         ),
+        const ToolOutputDeniedEvent(
+          toolCallId: 'tool-1',
+          providerMetadata: ProviderMetadata({
+            'openai': {
+              'approvalState': 'denied',
+            },
+          }),
+        ),
         const ToolInputErrorEvent(
           toolCallId: 'tool-1',
           toolName: 'search',
@@ -124,7 +132,7 @@ void main() {
       expect(encoded['kind'], TextStreamEventJsonCodec.envelopeKind);
 
       final decoded = codec.decodeEvents(encoded);
-      expect(decoded, hasLength(15));
+      expect(decoded, hasLength(16));
       expect(decoded.first, isA<StartEvent>());
       expect(
           (decoded.first as StartEvent).warnings.single.field, 'temperature');
@@ -149,7 +157,14 @@ void main() {
       expect(toolCall.toolCall.isDynamic, isTrue);
       expect(toolCall.toolCall.title, 'Browser');
 
-      final toolInputError = decoded[7] as ToolInputErrorEvent;
+      final denied = decoded[7] as ToolOutputDeniedEvent;
+      expect(denied.toolCallId, 'tool-1');
+      expect(
+        denied.providerMetadata!['openai'],
+        containsPair('approvalState', 'denied'),
+      );
+
+      final toolInputError = decoded[8] as ToolInputErrorEvent;
       expect(toolInputError.toolCallId, 'tool-1');
       expect(toolInputError.toolName, 'search');
       expect(toolInputError.input, '{"query":}');
@@ -162,17 +177,17 @@ void main() {
         containsPair('stage', 'input'),
       );
 
-      final toolResult = decoded[8] as ToolResultEvent;
+      final toolResult = decoded[9] as ToolResultEvent;
       expect(toolResult.toolResult.preliminary, isTrue);
       expect(toolResult.toolResult.isDynamic, isTrue);
 
-      final sourceEvent = decoded[9] as SourceEvent;
+      final sourceEvent = decoded[10] as SourceEvent;
       expect(sourceEvent.source.kind, SourceReferenceKind.url);
       expect(sourceEvent.source.sourceId, 'source-1');
       expect(sourceEvent.source.uri, Uri.parse('https://example.com'));
       expect(sourceEvent.source.title, 'Example');
 
-      final fileEvent = decoded[10] as FileEvent;
+      final fileEvent = decoded[11] as FileEvent;
       expect(fileEvent.file.bytes, [1, 2, 3]);
 
       final finish = decoded.last as FinishEvent;
