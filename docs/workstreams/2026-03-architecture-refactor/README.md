@@ -106,6 +106,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen conclusion that the remaining maturity gap versus `repo-ref/ai` is step-lifecycle orchestration above the raw stream boundary, not more shared core events or wider provider abstractions.
 - [43-single-step-calls-vs-multi-step-runner.md](43-single-step-calls-vs-multi-step-runner.md)
   - Frozen boundary between the current single-step model helpers and a future higher-level multi-step orchestration runner.
+- [44-step-result-and-runner-api-design.md](44-step-result-and-runner-api-design.md)
+  - Concrete API direction for `GenerateTextStepResult`, future runner callbacks, and the intentionally narrow first runner scope.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
