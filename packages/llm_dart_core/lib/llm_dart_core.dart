@@ -9,6 +9,7 @@ export 'src/common/usage_stats.dart';
 export 'src/content/content_part.dart';
 export 'src/model/embedding_model.dart';
 export 'src/model/generate_text_run_result.dart';
+export 'src/model/generate_text_runner.dart';
 export 'src/model/generate_text_step_result.dart';
 export 'src/model/generate_text_step_start_event.dart';
 export 'src/model/image_model.dart';
