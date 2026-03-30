@@ -1167,8 +1167,7 @@ modern_openai.OpenAIJsonSchemaResponseFormat? _mapOpenAIResponseFormat(
 core.ProviderModelOptions _buildCompatOpenRouterModelSettings(
   LLMConfig config,
 ) {
-  if (config.getExtension<bool>('webSearchEnabled') == true &&
-      !config.model.endsWith(':online')) {
+  if (hasEnabledWebSearch(config) && !config.model.endsWith(':online')) {
     return const modern_openai.OpenRouterChatModelSettings(
       search: modern_openai.OpenRouterSearchOptions.onlineModel(),
     );

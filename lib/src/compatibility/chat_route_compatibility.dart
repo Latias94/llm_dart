@@ -151,6 +151,7 @@ bool canUseOpenRouterChatBridge(
       'verbosity',
       'jsonSchema',
       'webSearchEnabled',
+      'webSearchConfig',
     },
   )) {
     return false;

@@ -629,6 +629,58 @@ void main() {
     });
 
     test(
+        'Compat OpenRouter provider maps legacy webSearchConfig into online-model settings',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final provider = buildCompatOpenRouterProvider(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://openrouter.ai/api/v1/',
+          model: 'openai/gpt-4o-mini',
+        ).withExtensions({
+          'customTransportClient': _FakeTransportClient(
+            onSend: (request) async {
+              capturedRequest = request;
+              return TransportResponse(
+                statusCode: 200,
+                body: {
+                  'id': 'chatcmpl_openrouter_compat_1',
+                  'model': 'openai/gpt-4o-mini:online',
+                  'created': 1710000400,
+                  'choices': [
+                    {
+                      'index': 0,
+                      'finish_reason': 'stop',
+                      'message': {
+                        'role': 'assistant',
+                        'content': 'Search ready.',
+                      },
+                    },
+                  ],
+                },
+              );
+            },
+          ),
+          'webSearchConfig': legacy.WebSearchConfig.openRouter(
+            maxResults: 5,
+            searchPrompt: 'Focus on recent developments.',
+          ),
+        }),
+      );
+
+      final response = await provider.chat([
+        legacy.ChatMessage.user('Search the latest updates.'),
+      ]);
+
+      expect(response.text, 'Search ready.');
+      expect(capturedRequest, isNotNull);
+
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['model'], 'openai/gpt-4o-mini:online');
+    });
+
+    test(
         'Compat xAI provider maps legacy live-search inputs into typed xAI request options',
         () async {
       TransportRequest? capturedRequest;

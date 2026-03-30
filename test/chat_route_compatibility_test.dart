@@ -168,7 +168,7 @@ void main() {
     });
 
     test(
-        'OpenRouter bridge accepts explicit online-model traffic and the bare webSearchEnabled migration input',
+        'OpenRouter bridge accepts explicit online-model traffic plus the audited online-intent migration inputs',
         () {
       final onlineModelResult = canUseOpenRouterChatBridge(
         _baseConfig('openai/gpt-4o-mini:online'),
@@ -188,13 +188,6 @@ void main() {
         null,
       );
 
-      expect(onlineModelResult, isTrue);
-      expect(webSearchEnabledResult, isTrue);
-    });
-
-    test(
-        'OpenRouter bridge still rejects richer search-shaped requests and openrouter-specific search extensions',
-        () {
       final webSearchConfigResult = canUseOpenRouterChatBridge(
         _baseConfig('openai/gpt-4o-mini').withExtensions({
           'webSearchConfig': legacy.WebSearchConfig.openRouter(
@@ -208,6 +201,14 @@ void main() {
         null,
       );
 
+      expect(onlineModelResult, isTrue);
+      expect(webSearchEnabledResult, isTrue);
+      expect(webSearchConfigResult, isTrue);
+    });
+
+    test(
+        'OpenRouter bridge still rejects legacy-only openrouter search extension keys',
+        () {
       final searchPromptResult = canUseOpenRouterChatBridge(
         _baseConfig('openai/gpt-4o-mini').withExtensions({
           'searchPrompt': 'Focus on recent developments.',
@@ -228,9 +229,19 @@ void main() {
         null,
       );
 
-      expect(webSearchConfigResult, isFalse);
+      final maxSearchResultsResult = canUseOpenRouterChatBridge(
+        _baseConfig('openai/gpt-4o-mini').withExtensions({
+          'maxSearchResults': 5,
+        }),
+        [
+          legacy.ChatMessage.user('Search the web.'),
+        ],
+        null,
+      );
+
       expect(searchPromptResult, isFalse);
       expect(useOnlineShortcutResult, isFalse);
+      expect(maxSearchResultsResult, isFalse);
     });
 
     test(
