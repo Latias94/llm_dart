@@ -178,7 +178,7 @@
 - [x] stream event accumulation tests
 - [x] UI message projection tests
 - [x] transport reconnection tests
-- [ ] Expand provider stream-coverage tests for the existing shared event families instead of adding new core event types
+- [x] Expand provider stream-coverage tests for the existing shared event families instead of adding new core event types
 - [x] provider profile tests
 - [x] compatibility adapter tests
 - [x] chat route compatibility tests
