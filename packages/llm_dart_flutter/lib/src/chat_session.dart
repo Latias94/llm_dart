@@ -61,6 +61,66 @@ final class ToolExecutionRequest {
     this.approval,
     this.callProviderMetadata,
   });
+
+  Map<String, Object?> requireJsonObjectInput() {
+    final normalized = switch (input) {
+      null => null,
+      Map<String, Object?>() => input as Map<String, Object?>,
+      Map() => _normalizeAnonymousJsonObject(input as Map),
+      _ => null,
+    };
+
+    if (normalized != null) {
+      return normalized;
+    }
+
+    throw ToolInputDecodeException(
+      'Tool "$toolName" expected a JSON object input.',
+      toolName: toolName,
+      toolCallId: toolCallId,
+      input: input,
+    );
+  }
+
+  T decodeJsonObjectInput<T>(
+    T Function(Map<String, Object?> json) decode,
+  ) {
+    final json = requireJsonObjectInput();
+
+    try {
+      return decode(json);
+    } on ToolInputDecodeException {
+      rethrow;
+    } catch (error) {
+      throw ToolInputDecodeException(
+        'Failed to decode tool "$toolName" input: $error',
+        toolName: toolName,
+        toolCallId: toolCallId,
+        input: json,
+        cause: error,
+      );
+    }
+  }
+
+  Map<String, Object?> _normalizeAnonymousJsonObject(Map value) {
+    final normalized = <String, Object?>{};
+
+    for (final entry in value.entries) {
+      final key = entry.key;
+      if (key is! String) {
+        throw ToolInputDecodeException(
+          'Tool "$toolName" input object keys must be strings.',
+          toolName: toolName,
+          toolCallId: toolCallId,
+          input: value,
+        );
+      }
+
+      normalized[key] = entry.value;
+    }
+
+    return normalized;
+  }
 }
 
 final class ToolExecutionResult {
@@ -82,6 +142,25 @@ final class ToolExecutionResult {
 typedef ChatOnToolCall = FutureOr<ToolExecutionResult?> Function(
   ToolExecutionRequest request,
 );
+
+final class ToolInputDecodeException implements Exception {
+  final String message;
+  final String toolName;
+  final String toolCallId;
+  final Object? input;
+  final Object? cause;
+
+  const ToolInputDecodeException(
+    this.message, {
+    required this.toolName,
+    required this.toolCallId,
+    this.input,
+    this.cause,
+  });
+
+  @override
+  String toString() => 'ToolInputDecodeException: $message';
+}
 
 abstract interface class ChatSession {
   ChatState get state;

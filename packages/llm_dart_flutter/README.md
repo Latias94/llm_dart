@@ -288,6 +288,30 @@ final session = DefaultChatSession(
 );
 ```
 
+When a tool expects a JSON object payload, prefer `withJsonHandler` to keep the
+decode step close to the handler:
+
+```dart
+final registry = ToolExecutionRegistry().withJsonHandler<String>(
+  'weather',
+  decode: (json) => json['location'] as String,
+  handle: (request, location) async => ToolExecutionResult.output({
+    'location': location,
+    'temperature': 24,
+  }),
+);
+```
+
+By default:
+
+- non-object tool input becomes a tool error result
+- decode failures become a tool error result
+- these failures stay inside the local tool flow instead of moving the session
+  into a generic error state
+
+This is a Flutter/session convenience for local tool execution. It is not a
+shared schema validation layer in `llm_dart_core`.
+
 Use `onToolCall` directly when:
 
 - dispatch depends on more than `toolName`

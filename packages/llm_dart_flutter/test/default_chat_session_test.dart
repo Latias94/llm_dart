@@ -1380,6 +1380,75 @@ void main() {
       await session.dispose();
     });
 
+    test(
+        'toolExecutionRegistry.withJsonHandler reports decode failures as tool error output',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        toolExecutionRegistry: ToolExecutionRegistry().withJsonHandler<String>(
+          'weather',
+          decode: (json) => json['location'] as String,
+          handle: (request, location) => ToolExecutionResult.output({
+            'location': location,
+          }),
+        ),
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-1',
+                      toolName: 'weather',
+                      input: ['Tokyo'],
+                    ),
+                  ),
+                  const FinishEvent(finishReason: FinishReason.toolCalls),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'Decode failures are returned as tool errors.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Weather in Tokyo?'));
+      await _flushAsyncWork();
+
+      expect(capturedRequests, hasLength(2));
+      final continuationPrompt = capturedRequests[1].prompt;
+      expect(continuationPrompt, hasLength(3));
+      final toolResultMessage = continuationPrompt[2] as ToolPromptMessage;
+      final toolResult = toolResultMessage.parts.single as ToolResultPromptPart;
+      expect(toolResult.isError, isTrue);
+      expect(toolResult.output, isA<String>());
+      expect(
+        toolResult.output as String,
+        contains('expected a JSON object input'),
+      );
+      expect(session.state.status, ChatStatus.ready);
+      expect(
+        session.state.messages.last.parts.whereType<TextUiPart>().single.text,
+        'Decode failures are returned as tool errors.',
+      );
+
+      await session.dispose();
+    });
+
     test('waits for all automatic tool outputs before continuing', () async {
       final capturedRequests = <ChatTransportRequest>[];
       final weatherCompletion = Completer<ToolExecutionResult?>();

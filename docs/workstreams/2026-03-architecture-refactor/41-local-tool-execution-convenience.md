@@ -55,6 +55,35 @@ The current convenience direction is:
 
 This keeps one consistent continuation path.
 
+## Typed JSON Input Convenience
+
+The session-layer convenience may also include a small typed decode helper for
+the common "tool input is a JSON object" case.
+
+That means `llm_dart_flutter` may provide:
+
+- `ToolExecutionRequest.requireJsonObjectInput()`
+- `ToolExecutionRequest.decodeJsonObjectInput(...)`
+- `ToolExecutionRegistry.withJsonHandler(...)`
+
+This convenience is intentionally narrow.
+
+It is useful because many local tools want:
+
+- a stable `toolName -> handler` registry
+- a small decode step from `Map<String, Object?>` into an app-owned input type
+- a predictable way to turn malformed tool input into tool error output
+
+It should not become:
+
+- a full schema validation framework
+- a provider capability contract
+- a new shared abstraction in `llm_dart_core`
+
+The important rule is that decode failures stay inside the same local tool
+execution path. By default, malformed input should become tool error output,
+not a chat-session crash.
+
 ## Important Rules
 
 ### 1. Reuse The Existing Tool Output Path
