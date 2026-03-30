@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:http_parser/http_parser.dart';
 
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
@@ -234,7 +233,7 @@ class OpenAIImages implements ImageGenerationCapability {
           MultipartFile.fromBytes(
             bytes,
             filename: '${entry.key}.png',
-            contentType: MediaType('image', 'png'),
+            contentType: DioMediaType('image', 'png'),
           ),
         ));
       } else {

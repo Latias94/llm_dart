@@ -49,10 +49,9 @@ This is already directionally correct, but it is still incomplete relative to th
 
 ## Runtime Dependencies Today
 
-The current root [pubspec.yaml](../../../pubspec.yaml) has only three runtime dependencies:
+The current root [pubspec.yaml](../../../pubspec.yaml) has only two runtime dependencies:
 
 - `dio`
-- `http_parser`
 - `logging`
 
 The problem is not “too many dependencies”. The problem is where those dependencies currently appear.
@@ -95,20 +94,6 @@ Conclusion:
 
 - keep `logging` as an internal implementation dependency
 - do not expose `Logger` or logging-specific types through core APIs
-
-### `http_parser`
-
-`package:http_parser` currently appears only once, in [lib/providers/openai/images.dart](../../../lib/providers/openai/images.dart).
-
-That means:
-
-- it is not a broad foundation dependency
-- it is a local implementation detail for OpenAI image multipart handling
-
-Conclusion:
-
-- it should not remain a long-term root-package runtime dependency
-- after migration, it should either live locally inside `llm_dart_openai` or be removed entirely
 
 ### `mcp_dart`
 
@@ -167,7 +152,6 @@ From this point forward:
 Today that means:
 
 - `dio` and `logging` are still justified at the root only because the old monolith still uses them
-- `http_parser` remains temporary root debt until OpenAI image migration leaves the monolith
 - `mcp_dart` remains temporary root example debt because examples are not yet split into their own package or app
 
 ## Target Dependency Direction
@@ -325,7 +309,7 @@ Why:
 | --- | --- | --- |
 | `dio` | spread through many layers | confine to `llm_dart_transport` and provider implementation layers |
 | `logging` | used across internal layers | keep as internal implementation dependency only |
-| `http_parser` | only used in OpenAI image code | localize to `llm_dart_openai` or remove |
+| `http_parser` | removed from the root package | keep it out unless a migrated provider package truly needs it locally |
 | `mcp_dart` | example-only | keep in example or dedicated integration packages only |
 | `mockito` | removed | keep it out unless a new test truly requires it |
 
@@ -682,5 +666,4 @@ Before the next provider-migration wave, these changes should happen:
 - add provider-options marker interfaces to core
 - add payload support to `CustomContentPart` and `CustomUiPart`
 - design a transport-level cancellation abstraction to replace public `CancelToken`
-- move `http_parser` out of the root package
 - move example-only dependencies behind an example-package strategy

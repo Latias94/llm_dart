@@ -204,7 +204,7 @@
 - [x] Move Google OpenAI-compatible transformers out of `core/`
 - [x] Move Dio-specific error mapping helpers out of `core/` implementation files
 - [x] Move legacy `BaseHttpProvider` implementation out of `core/`
-- [ ] Move `http_parser` out of the root package or remove it
+- [x] Move `http_parser` out of the root package or remove it
 - [ ] Move `mcp_dart` under an example or dedicated integration-package strategy
 - [x] Remove unused `mockito`
 
