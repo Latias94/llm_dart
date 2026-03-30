@@ -105,9 +105,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [42-provider-capability-and-step-lifecycle-boundary.md](42-provider-capability-and-step-lifecycle-boundary.md)
   - Frozen conclusion that the remaining maturity gap versus `repo-ref/ai` is step-lifecycle orchestration above the raw stream boundary, not more shared core events or wider provider abstractions.
 - [43-single-step-calls-vs-multi-step-runner.md](43-single-step-calls-vs-multi-step-runner.md)
-  - Frozen boundary between the current single-step model helpers and a future higher-level multi-step orchestration runner.
+  - Frozen boundary between the current single-step model helpers and the higher-level shared multi-step orchestration runner.
 - [44-step-result-and-runner-api-design.md](44-step-result-and-runner-api-design.md)
-  - Concrete API direction for `GenerateTextStepResult`, future runner callbacks, and the intentionally narrow first runner scope.
+  - Concrete API direction for `GenerateTextStepResult`, runner callbacks, and the intentionally narrow shared runner scope.
+- [45-continuation-ownership-matrix.md](45-continuation-ownership-matrix.md)
+  - Frozen ownership matrix for shared runner continuation versus provider-native, approval-gated, dynamic, and Flutter-session orchestration.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

@@ -321,3 +321,19 @@ Resolved in the current breaking round:
 - Flutter chat/session APIs remain on the message/session projection layer and should not depend on the future step-lifecycle callback surface
 - `42-provider-capability-and-step-lifecycle-boundary.md` documents the frozen conclusion
 - `43-single-step-calls-vs-multi-step-runner.md` documents the runner boundary
+
+## 30. Shared Runner Continuation Ownership
+
+Resolved in the current breaking round:
+
+- the shared runner now owns only declared common function-tool continuation
+  through an app-supplied executor
+- if that executor is missing, the runner stops honestly and returns the
+  current run result instead of pretending it can continue unsupported work
+- approval-gated continuation stays outside the shared runner
+- provider-executed built-in tools stay provider-owned
+- dynamic or schema-less tool families stay provider-owned or app-owned until a
+  truly common contract exists
+- Flutter chat-session timing for local outputs and approvals remains in
+  `llm_dart_flutter`
+- `45-continuation-ownership-matrix.md` documents the frozen ownership rule

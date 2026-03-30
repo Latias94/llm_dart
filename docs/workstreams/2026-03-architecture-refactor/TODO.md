@@ -50,7 +50,8 @@
 - [x] Implement a minimal non-streaming single-step `GenerateTextRunner` with `onStepStart`, `onStepFinish`, and `onFinish`
 - [x] Design and implement a narrow non-streaming multi-step text generation runner with lifecycle callbacks, synthesized `StepResult` snapshots, and app-supplied common function-tool continuation above the single-step `generateText` / `streamText` helpers
 - [ ] Decide whether the shared runner should later add streaming orchestration, `prepareStep`-style mutation hooks, or broader retry/model-switch policies
-- [ ] Decide whether approval-gated continuation and provider-native built-in tool continuation should stay provider/session-owned or ever gain a shared runner path
+- [x] Decide whether approval-gated continuation and provider-native built-in tool continuation should stay provider/session-owned or ever gain a shared runner path
+- [ ] Re-evaluate shared runner expansion only after a replay-safe approval or provider-executed continuation contract is proven across at least two provider families
 - [ ] Implement `embed` / `embedMany`
 - [ ] Implement `generateImage`
 - [ ] Implement `generateSpeech`
