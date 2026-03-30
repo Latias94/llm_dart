@@ -174,7 +174,7 @@
 
 ## Testing
 
-- [ ] prompt normalization tests
+- [x] prompt normalization tests
 - [x] stream event accumulation tests
 - [x] UI message projection tests
 - [x] transport reconnection tests

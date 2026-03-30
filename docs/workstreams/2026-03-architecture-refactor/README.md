@@ -92,6 +92,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen migration wording for provider-native result families that still stay outside the legacy bridge allowlist.
 - [36-provider-stream-coverage-matrix.md](36-provider-stream-coverage-matrix.md)
   - Frozen matrix for which shared stream event families belong in provider codecs versus session or transport layers, using `repo-ref/ai` only as a layering reference.
+- [37-prompt-normalization-contract.md](37-prompt-normalization-contract.md)
+  - Frozen replay-safe prompt subset and the provider-owned normalization gaps for multimodal input, approval flows, and assistant reasoning replay.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
