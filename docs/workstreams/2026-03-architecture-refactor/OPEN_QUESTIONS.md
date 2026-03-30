@@ -308,3 +308,16 @@ Resolved in the current breaking round:
 - if a provider-owned replay path already exists, migration guidance should point users to that path while still keeping the raw legacy bridge on fallback
 - if no provider-owned replay path exists yet, migration guidance should point users to the old provider path instead
 - `35-bridge-incompatible-provider-result-migration-guidance.md` documents the frozen wording rule
+
+## 29. Step Lifecycle And Step Result Boundary
+
+Resolved in the current breaking round:
+
+- the remaining maturity gap versus `repo-ref/ai` is mainly step-lifecycle orchestration, not missing shared core stream events
+- `TextStreamEvent` remains the raw provider-stream boundary and should not absorb UI transport markers or callback-oriented lifecycle payloads
+- the current `LanguageModel.generate/stream` plus `generateText` / `streamText` helpers remain single-step provider-call abstractions
+- if step-level hooks are added later, they should live in a higher-level multi-step runner above those low-level helpers and synthesize `StepResult`-style snapshots from the existing common models
+- those synthesized step results should be built from current shared data such as content parts, tool calls/results, sources, files, finish metadata, usage, warnings, and provider metadata
+- Flutter chat/session APIs remain on the message/session projection layer and should not depend on the future step-lifecycle callback surface
+- `42-provider-capability-and-step-lifecycle-boundary.md` documents the frozen conclusion
+- `43-single-step-calls-vs-multi-step-runner.md` documents the runner boundary

@@ -353,3 +353,13 @@ Provider-specific features should be represented through:
 - provider-executed tools stay out of this convenience surface
 - callback failures should become tool error results for the current tool call instead of escalating into generic chat-session errors
 - approval remains a gating step for client-executed tools; automatic local execution can only start after approval has been granted
+
+## D41. Step Lifecycle Maturity Must Live Above `TextStreamEvent`
+
+- the remaining maturity gap versus `repo-ref/ai` is not missing shared core event families
+- `TextStreamEvent` remains the raw shared provider-stream boundary and should not grow UI transport markers or richer orchestration callbacks
+- the current `LanguageModel.generate/stream` plus `generateText` / `streamText` helpers remain single-step provider-call abstractions
+- if `llm_dart` later adds step lifecycle hooks such as `onStepStart`, `onStepFinish`, or final aggregated completion callbacks, those must land in a higher-level multi-step runner above the existing event model instead of changing the meaning of the current low-level helpers
+- that callback layer should build `StepResult`-style snapshots from existing common models such as content parts, tool calls/results, sources, files, finish metadata, usage, warnings, and provider metadata
+- Flutter chat/session APIs must stay independent from that future step-lifecycle callback layer
+- provider-native capabilities must remain provider-owned even after such lifecycle hooks exist; callbacks are not a new excuse to widen the common request or event model

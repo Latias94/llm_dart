@@ -45,6 +45,7 @@
 - [x] Define `TranscriptionModel`
 - [x] Implement `generateText`
 - [x] Implement `streamText`
+- [ ] Design a higher-level multi-step text generation runner with lifecycle callbacks and synthesized `StepResult` snapshots above the single-step `generateText` / `streamText` helpers
 - [ ] Implement `embed` / `embedMany`
 - [ ] Implement `generateImage`
 - [ ] Implement `generateSpeech`

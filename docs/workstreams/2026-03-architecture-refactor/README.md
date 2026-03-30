@@ -102,6 +102,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen session-layer rule for batching tool outputs and approval-driven continuation without widening shared events.
 - [41-local-tool-execution-convenience.md](41-local-tool-execution-convenience.md)
   - Frozen boundary for `onToolCall`-style local tool execution convenience in `llm_dart_flutter`.
+- [42-provider-capability-and-step-lifecycle-boundary.md](42-provider-capability-and-step-lifecycle-boundary.md)
+  - Frozen conclusion that the remaining maturity gap versus `repo-ref/ai` is step-lifecycle orchestration above the raw stream boundary, not more shared core events or wider provider abstractions.
+- [43-single-step-calls-vs-multi-step-runner.md](43-single-step-calls-vs-multi-step-runner.md)
+  - Frozen boundary between the current single-step model helpers and a future higher-level multi-step orchestration runner.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
