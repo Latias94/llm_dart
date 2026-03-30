@@ -63,7 +63,8 @@ Current status:
 - `llm_dart_core` now also has a narrow non-streaming multi-step `GenerateTextRunner` and `runTextGeneration(...)` entrypoint that accumulates step snapshots, replays prior assistant/tool messages, and continues common function-tool steps through an app-supplied executor
 - that runner boundary is still intentionally narrow: `generateText` / `streamText` remain single-step helpers, there is no shared `prepareStep`, and provider-native built-in tools, dynamic tools, and approval-gated continuation stay outside the shared runner
 - continuation ownership is now also frozen more clearly: common function-tool loops belong to the shared runner, while approval-gated, provider-executed, dynamic, and chat-interactive continuation remain provider-owned or session-owned
-- streaming orchestration, richer mutation hooks, and broader retry/model-switch policies remain for the next step
+- the stop-and-mutation boundary is now also frozen: `maxSteps` stays a guardrail, shared `stopWhen` and `prepareStep` stay out, and retry/model-switch policy remains app-owned
+- only a separate streamed runner or a tightly-constrained pre-step hook may be reconsidered later if real shared usage proves the need
 - provider-specific compatibility subset audits, broader endpoint coverage, and non-text endpoints remain for the next step
 
 ## M3 - Anthropic And Google

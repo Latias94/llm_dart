@@ -337,3 +337,17 @@ Resolved in the current breaking round:
 - Flutter chat-session timing for local outputs and approvals remains in
   `llm_dart_flutter`
 - `45-continuation-ownership-matrix.md` documents the frozen ownership rule
+
+## 31. Shared Runner Stop Policy And Mutation Hooks
+
+Resolved in the current breaking round:
+
+- the current shared runner keeps `maxSteps` only as a guardrail
+- shared `stopWhen` semantics do not enter phase-1 `llm_dart_core`
+- shared `prepareStep` mutation hooks still stay out of the runner
+- retry budgets, retry classification, fallback chains, and model switching stay
+  app-owned
+- if streamed multi-step orchestration is added later, it should be a separate
+  layer above `streamText(...)`, not a redefinition of the current single-step
+  stream helper
+- `46-runner-stop-policy-and-mutation-hooks.md` documents the frozen boundary
