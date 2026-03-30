@@ -336,13 +336,10 @@ void main() {
 
       expect(events, hasLength(1));
       expect(events.single, isA<ErrorEvent>());
-      expect(
-        (events.single as ErrorEvent).error,
-        {
-          'type': 'server_error',
-          'message': 'upstream failed',
-        },
-      );
+      final error = (events.single as ErrorEvent).error;
+      expect(error.kind, ModelErrorKind.provider);
+      expect(error.code, 'server_error');
+      expect(error.message, 'upstream failed');
     });
   });
 }

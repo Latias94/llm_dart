@@ -124,7 +124,7 @@ final class AnthropicLanguageModel implements LanguageModel {
         }
       }
     } catch (error) {
-      yield ErrorEvent(error);
+      yield ErrorEvent(transportErrorToModelError(error));
     }
   }
 

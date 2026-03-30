@@ -50,9 +50,7 @@ void main() {
   });
 
   group('ChatSessionSnapshotJsonCodec', () {
-    test(
-        'round-trips prompt and UI messages and falls back for unserializable errors',
-        () {
+    test('round-trips prompt and UI messages with typed errors', () {
       const codec = ChatSessionSnapshotJsonCodec();
       final snapshot = ChatSessionSnapshot(
         chatId: 'chat-1',
@@ -130,7 +128,7 @@ void main() {
           ),
         ],
         status: ChatStatus.error,
-        error: StateError('snapshot failed'),
+        error: ModelError.fromUnknown(StateError('snapshot failed')),
       );
 
       final encoded = codec.encodeSnapshot(snapshot);
@@ -161,10 +159,10 @@ void main() {
       expect((dataPart.data as Map<String, Object?>)['screen'],
           'browser-approval');
 
-      final decodedError = decoded.error as Map<String, Object?>;
-      expect(decodedError['type'], 'unserializable-error');
-      expect(decodedError['runtimeType'], 'StateError');
-      expect(decodedError['message'], contains('snapshot failed'));
+      final decodedError = decoded.error!;
+      expect(decodedError.kind, ModelErrorKind.stream);
+      expect(decodedError.originalType, 'StateError');
+      expect(decodedError.message, contains('snapshot failed'));
     });
   });
 
@@ -1887,7 +1885,13 @@ void main() {
         transport: _FakeChatTransport(
           onSendMessages: (request) => Stream<TextStreamEvent>.fromIterable([
             StartEvent(),
-            const ErrorEvent('provider failed'),
+            const ErrorEvent(
+              ModelError(
+                kind: ModelErrorKind.provider,
+                message: 'provider failed',
+                code: 'provider_failed',
+              ),
+            ),
           ]),
         ),
       );
@@ -1895,7 +1899,7 @@ void main() {
       await session.sendMessage(ChatInput.text('Hi'));
 
       expect(session.state.status, ChatStatus.error);
-      expect(session.state.error, 'provider failed');
+      expect(session.state.error?.message, 'provider failed');
       expect(session.state.messages, hasLength(2));
 
       await session.clearError();
@@ -1917,7 +1921,13 @@ void main() {
               StartEvent(),
               const TextStartEvent(id: 'text-1'),
               const TextDeltaEvent(id: 'text-1', delta: 'Hel'),
-              const ErrorEvent('socket closed'),
+              const ErrorEvent(
+                ModelError(
+                  kind: ModelErrorKind.transport,
+                  message: 'socket closed',
+                  code: 'socket_closed',
+                ),
+              ),
             ]);
           },
           onReconnect: (chatId) => Stream<TextStreamEvent>.fromIterable([
@@ -1964,7 +1974,13 @@ void main() {
             StartEvent(),
             const TextStartEvent(id: 'text-1'),
             const TextDeltaEvent(id: 'text-1', delta: 'Hel'),
-            const ErrorEvent('socket closed'),
+            const ErrorEvent(
+              ModelError(
+                kind: ModelErrorKind.transport,
+                message: 'socket closed',
+                code: 'socket_closed',
+              ),
+            ),
           ]),
         ),
       );

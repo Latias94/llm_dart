@@ -94,7 +94,13 @@ void main() {
               'finish': 'ok',
             },
           }),
-          ChatUiMetadataKeys.errors: const ['soft-error'],
+          ChatUiMetadataKeys.errors: const [
+            ModelError(
+              kind: ModelErrorKind.provider,
+              message: 'soft-error',
+              code: 'soft-error',
+            ),
+          ],
           ChatUiMetadataKeys.rawChunks: const [
             {'chunk': 1},
           ],
@@ -133,7 +139,7 @@ void main() {
         mapped.finishProviderMetadata!.namespace('openai'),
         containsPair('finish', 'ok'),
       );
-      expect(mapped.errors, ['soft-error']);
+      expect(mapped.errors.single.message, 'soft-error');
       expect(mapped.rawChunks, [
         {'chunk': 1},
       ]);

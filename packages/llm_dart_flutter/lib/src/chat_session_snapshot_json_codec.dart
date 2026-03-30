@@ -25,7 +25,7 @@ final class ChatSessionSnapshotJsonCodec {
         'prompt': promptCodec.encodeMessages(snapshot.prompt),
         'messages': messageCodec.encodeMessages(snapshot.messages),
         'status': snapshot.status.name,
-        'error': _encodeError(snapshot.error),
+        'error': snapshot.error?.toJsonMap(path: r'$.data.error'),
       },
     };
   }
@@ -47,55 +47,11 @@ final class ChatSessionSnapshotJsonCodec {
       status: ChatStatus.values.byName(
         _asJsonString(data['status'], path: r'$.data.status'),
       ),
-      error: data['error'],
+      error: data['error'] == null
+          ? null
+          : ModelError.fromJson(data['error'], path: r'$.data.error'),
     );
   }
-
-  Object? _encodeError(Object? error) {
-    try {
-      return _ensureJsonValue(error, path: r'$.error');
-    } on FormatException {
-      return error == null
-          ? null
-          : {
-              'type': 'unserializable-error',
-              'runtimeType': error.runtimeType.toString(),
-              'message': '$error',
-            };
-    }
-  }
-}
-
-Object? _ensureJsonValue(
-  Object? value, {
-  required String path,
-}) {
-  return switch (value) {
-    null || bool() || num() || String() => value,
-    List() => value
-        .asMap()
-        .entries
-        .map(
-          (entry) => _ensureJsonValue(
-            entry.value,
-            path: '$path[${entry.key}]',
-          ),
-        )
-        .toList(growable: false),
-    Map() => value.map((key, nestedValue) {
-        if (key is! String) {
-          throw FormatException('Expected string key at $path.');
-        }
-
-        return MapEntry(
-          key,
-          _ensureJsonValue(nestedValue, path: '$path.$key'),
-        );
-      }),
-    _ => throw FormatException(
-        'Unsupported non-JSON value at $path: ${value.runtimeType}',
-      ),
-  };
 }
 
 _JsonMap _asJsonMap(

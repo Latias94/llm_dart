@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../common/model_error.dart';
 import '../common/provider_metadata.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
@@ -362,10 +363,10 @@ final class ChatUiAccumulator {
         }
       case ErrorEvent():
         final current =
-            _metadata[ChatUiMetadataKeys.errors] as List<Object?>? ??
-                const <Object?>[];
+            _metadata[ChatUiMetadataKeys.errors] as List<ModelError>? ??
+                const <ModelError>[];
         _metadata[ChatUiMetadataKeys.errors] =
-            List<Object?>.unmodifiable([...current, event.error]);
+            List<ModelError>.unmodifiable([...current, event.error]);
     }
 
     return message;

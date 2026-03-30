@@ -441,7 +441,12 @@ void main() {
           const RawChunkEvent({
             'type': 'diagnostic',
           }),
-          const ErrorEvent('soft failure'),
+          const ErrorEvent(
+            ModelError(
+              kind: ModelErrorKind.unknown,
+              message: 'soft failure',
+            ),
+          ),
         ]),
         messageId: 'assistant-1',
         options: const ChatUiAccumulatorOptions(
@@ -484,8 +489,8 @@ void main() {
       expect(rawChunks.single, containsPair('type', 'diagnostic'));
 
       final errors =
-          message.metadata[ChatUiMetadataKeys.errors] as List<Object?>;
-      expect(errors, ['soft failure']);
+          message.metadata[ChatUiMetadataKeys.errors] as List<ModelError>;
+      expect(errors.single.message, 'soft failure');
     });
 
     test('continues an existing assistant message across steps', () {

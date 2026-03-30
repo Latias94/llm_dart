@@ -1,3 +1,4 @@
+import '../common/model_error.dart';
 import '../common/model_warning.dart';
 import '../common/provider_metadata.dart';
 import '../common/usage_stats.dart';
@@ -273,7 +274,7 @@ final class RawChunkEvent extends TextStreamEvent {
 }
 
 final class ErrorEvent extends TextStreamEvent {
-  final Object error;
+  final ModelError error;
 
   const ErrorEvent(this.error);
 }

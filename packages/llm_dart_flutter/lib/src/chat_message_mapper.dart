@@ -36,7 +36,7 @@ final class ChatMappedMessage {
   final String? rawFinishReason;
   final UsageStats? usage;
   final ProviderMetadata? finishProviderMetadata;
-  final List<Object?> errors;
+  final List<ModelError> errors;
   final List<Object?> rawChunks;
 
   const ChatMappedMessage({
@@ -164,7 +164,7 @@ final class ChatMessageMapper {
       finishProviderMetadata:
           metadata[ChatUiMetadataKeys.finishProviderMetadata]
               as ProviderMetadata?,
-      errors: _objectList(metadata[ChatUiMetadataKeys.errors]),
+      errors: _errors(metadata[ChatUiMetadataKeys.errors]),
       rawChunks: _objectList(metadata[ChatUiMetadataKeys.rawChunks]),
     );
   }
@@ -181,6 +181,16 @@ final class ChatMessageMapper {
     }
 
     return List<ModelWarning>.unmodifiable(value.whereType<ModelWarning>());
+  }
+
+  static List<ModelError> _errors(Object? value) {
+    if (value is! List) {
+      return const <ModelError>[];
+    }
+
+    return List<ModelError>.unmodifiable(
+      value.map(ModelError.fromUnknown),
+    );
   }
 
   static List<Object?> _objectList(Object? value) {

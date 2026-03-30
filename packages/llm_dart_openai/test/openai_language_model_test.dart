@@ -736,13 +736,9 @@ void main() {
       expect(responseMetadata.modelId, 'gpt-4.1-mini');
 
       final errorEvent = events.whereType<ErrorEvent>().single;
-      expect(
-        errorEvent.error,
-        {
-          'type': 'server_error',
-          'message': 'upstream failed',
-        },
-      );
+      expect(errorEvent.error.kind, ModelErrorKind.provider);
+      expect(errorEvent.error.code, 'server_error');
+      expect(errorEvent.error.message, 'upstream failed');
 
       final finish = events.whereType<FinishEvent>().single;
       expect(finish.finishReason, FinishReason.error);

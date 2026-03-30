@@ -244,7 +244,12 @@ final class AnthropicStreamCodec {
     }
 
     if (chunkType == 'error') {
-      yield ErrorEvent(chunk['error'] ?? chunk);
+      yield ErrorEvent(
+        ModelError.fromUnknown(
+          chunk['error'] ?? chunk,
+          kind: ModelErrorKind.provider,
+        ),
+      );
     }
   }
 

@@ -559,13 +559,10 @@ void main() {
 
       expect(events, hasLength(1));
       expect(events.single, isA<ErrorEvent>());
-      expect(
-        (events.single as ErrorEvent).error,
-        {
-          'type': 'api_error',
-          'message': 'overloaded',
-        },
-      );
+      final error = (events.single as ErrorEvent).error;
+      expect(error.kind, ModelErrorKind.provider);
+      expect(error.code, 'api_error');
+      expect(error.message, 'overloaded');
     });
   });
 }

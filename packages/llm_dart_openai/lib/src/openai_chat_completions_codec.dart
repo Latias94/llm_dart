@@ -179,7 +179,12 @@ final class OpenAIChatCompletionsCodec {
     final choice = _firstChoice(chunk);
     if (choice == null) {
       if (_asMap(chunk['error']) case final error?) {
-        yield ErrorEvent(error);
+        yield ErrorEvent(
+          ModelError.fromUnknown(
+            error,
+            kind: ModelErrorKind.provider,
+          ),
+        );
       }
       return;
     }
@@ -650,7 +655,8 @@ final class OpenAIChatCompletionsCodec {
     return result;
   }
 
-  List<SourceContentPart> _decodeTopLevelSources(Map<String, Object?> response) {
+  List<SourceContentPart> _decodeTopLevelSources(
+      Map<String, Object?> response) {
     final citations = _asList(response['citations']);
     if (citations.isEmpty) {
       return const [];

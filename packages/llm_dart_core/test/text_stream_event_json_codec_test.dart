@@ -109,9 +109,17 @@ void main() {
         const RawChunkEvent({
           'type': 'response.output_text.delta',
         }),
-        const ErrorEvent({
-          'message': 'soft failure',
-        }),
+        const ErrorEvent(
+          ModelError(
+            kind: ModelErrorKind.provider,
+            message: 'soft failure',
+            code: 'soft_failure',
+            details: {
+              'type': 'soft_failure',
+              'message': 'soft failure',
+            },
+          ),
+        ),
         const FinishEvent(
           finishReason: FinishReason.toolCalls,
           rawFinishReason: 'tool_calls',
@@ -171,7 +179,8 @@ void main() {
       expect(toolInputError.toolCallId, 'tool-1');
       expect(toolInputError.toolName, 'search');
       expect(toolInputError.input, '{"query":}');
-      expect(toolInputError.errorText, 'Invalid JSON tool arguments for "search".');
+      expect(toolInputError.errorText,
+          'Invalid JSON tool arguments for "search".');
       expect(toolInputError.providerExecuted, isTrue);
       expect(toolInputError.isDynamic, isTrue);
       expect(toolInputError.title, 'Browser');
@@ -197,12 +206,18 @@ void main() {
       expect(finish.finishReason, FinishReason.toolCalls);
       expect(finish.rawFinishReason, 'tool_calls');
       expect(finish.usage?.reasoningTokens, 2);
+
+      final error = decoded[14] as ErrorEvent;
+      expect(error.error.kind, ModelErrorKind.provider);
+      expect(error.error.code, 'soft_failure');
+      expect(error.error.message, 'soft failure');
     });
 
     test('decodes both canonical and legacy step-end event names', () {
       const codec = TextStreamEventJsonCodec();
 
-      final encoded = codec.encodeEvent(const StepFinishEvent(stepId: 'step-0'));
+      final encoded =
+          codec.encodeEvent(const StepFinishEvent(stepId: 'step-0'));
       expect(encoded['type'], 'step-end');
 
       final canonicalDecoded = codec.decodeEvent({

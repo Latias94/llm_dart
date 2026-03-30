@@ -180,14 +180,15 @@ void main() {
           .toList();
 
       final error = _singleEvent(chunks) as ErrorEvent;
-      expect(error.error, {
-        'type': 'http-chat-transport-error',
-        'code': 'transport_error',
-        'message': 'backend failed',
-        'details': {
+      expect(error.error.kind, ModelErrorKind.transport);
+      expect(error.error.code, 'transport_error');
+      expect(error.error.message, 'backend failed');
+      expect(
+        error.error.details,
+        {
           'retryable': false,
         },
-      });
+      );
     });
 
     test('reconnect replays buffered events and sends reconnect payload',
@@ -462,7 +463,15 @@ void main() {
       expect(
         ((firstAttemptChunks[1] as ChatTransportEventChunk).event as ErrorEvent)
             .error,
-        isA<StateError>(),
+        allOf(
+          isA<ModelError>(),
+          predicate<ModelError>(
+            (error) =>
+                error.kind == ModelErrorKind.transport &&
+                error.originalType == 'StateError' &&
+                error.message.contains('socket closed'),
+          ),
+        ),
       );
 
       final resumedChunks = await transport.reconnect('chat-1')!.toList();

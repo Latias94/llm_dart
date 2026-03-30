@@ -110,10 +110,18 @@ final class HttpChatTransport implements ChatTransport {
       if (response.statusCode >= 400) {
         _clearResumeState(chatId, state);
         yield ChatTransportEventChunk(
-          ErrorEvent({
-            'type': 'http-transport-error',
-            'statusCode': response.statusCode,
-          }),
+          ErrorEvent(
+            ModelError(
+              kind: ModelErrorKind.transport,
+              message: 'HTTP chat transport request failed.',
+              code: 'http-transport-status',
+              statusCode: response.statusCode,
+              isRetryable: response.statusCode >= 500 ||
+                  response.statusCode == 408 ||
+                  response.statusCode == 409 ||
+                  response.statusCode == 429,
+            ),
+          ),
         );
         return;
       }
@@ -157,12 +165,21 @@ final class HttpChatTransport implements ChatTransport {
             ):
             _clearResumeState(chatId, state);
             yield ChatTransportEventChunk(
-              ErrorEvent({
-                'type': 'http-chat-transport-error',
-                if (code != null) 'code': code,
-                'message': message,
-                if (details != null) 'details': details,
-              }),
+              ErrorEvent(
+                ModelError(
+                  kind: ModelErrorKind.transport,
+                  message: message,
+                  code: code ?? 'http-chat-transport-error',
+                  isRetryable: switch (details) {
+                    {
+                      'retryable': final bool retryable,
+                    } =>
+                      retryable,
+                    _ => null,
+                  },
+                  details: details,
+                ),
+              ),
             );
             return;
           case HttpChatTransportCheckpointChunk(:final resumeToken):
@@ -179,7 +196,9 @@ final class HttpChatTransport implements ChatTransport {
       if (!state.canReconnect) {
         _clearResumeState(chatId, state);
       }
-      yield ChatTransportEventChunk(ErrorEvent(error));
+      yield ChatTransportEventChunk(
+        ErrorEvent(transportErrorToModelError(error)),
+      );
     }
   }
 

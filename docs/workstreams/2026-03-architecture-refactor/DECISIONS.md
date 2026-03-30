@@ -324,3 +324,14 @@ Provider-specific features should be represented through:
 - if a provider-owned replay path already exists, compatibility guidance should point users at that provider-owned path and also state that the raw legacy bridge still falls back
 - if no provider-owned replay path exists yet, compatibility guidance should tell users to keep the request on the old provider path
 - this messaging rule is documentation and diagnostics policy; it does not widen the bridge allowlist by itself
+
+## D38. Generic Cross-Layer Errors Use A Typed `ModelError` Envelope
+
+- generic shared error channels such as `ErrorEvent.error`, `ChatState.error`, snapshot error state, and UI metadata error lists must use a typed `ModelError` envelope instead of raw `Object` payloads
+- `ModelError` should keep one small stable shape: `kind`, `message`, optional `code`, optional `statusCode`, optional `isRetryable`, optional JSON-safe `details`, and optional `originalType`
+- provider top-level error payloads should normalize to `kind: provider`
+- transport exceptions and transport-level error chunks should normalize to `kind: transport`
+- `FormatException` and similar local parsing/validation failures should normalize to `kind: validation`
+- stream-ordering and reconstruction failures should normalize to `kind: stream`
+- decoders must stay backward compatible with legacy raw string or map error payloads by normalizing them during decode
+- `ToolInputErrorEvent` remains a separate dedicated event and is not absorbed into the generic error envelope

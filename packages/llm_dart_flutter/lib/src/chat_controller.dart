@@ -43,7 +43,7 @@ final class ChatController extends ValueNotifier<ChatState> {
 
   List<ChatUiMessage> get messages => state.messages;
 
-  Object? get error => state.error;
+  ModelError? get error => state.error;
 
   @override
   set value(ChatState _) {

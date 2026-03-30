@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../common/model_error.dart';
 import '../common/model_warning.dart';
 import '../common/provider_metadata.dart';
 import '../common/usage_stats.dart';
@@ -333,6 +334,10 @@ final class ChatUiJsonCodec {
         value == null
             ? null
             : _encodeProviderMetadata(value as ProviderMetadata),
+      ChatUiMetadataKeys.errors => _encodeModelErrors(
+          value,
+          path: r'$.metadata.errors',
+        ),
       ChatUiMetadataKeys.finishReason => (value as FinishReason?)?.name,
       ChatUiMetadataKeys.usage =>
         value == null ? null : _encodeUsageStats(value as UsageStats),
@@ -364,6 +369,23 @@ final class ChatUiJsonCodec {
     }).toList(growable: false);
   }
 
+  List<JsonMap> _encodeModelErrors(
+    Object? value, {
+    required String path,
+  }) {
+    if (value == null) {
+      return const [];
+    }
+
+    if (value is! List) {
+      throw FormatException('Expected errors list at $path.');
+    }
+
+    return value
+        .map((entry) => _encodeModelError(ModelError.fromUnknown(entry)))
+        .toList(growable: false);
+  }
+
   Object? _decodeMetadataValue(
     String key,
     Object? value, {
@@ -385,6 +407,16 @@ final class ChatUiJsonCodec {
       ChatUiMetadataKeys.responseProviderMetadata ||
       ChatUiMetadataKeys.finishProviderMetadata =>
         _decodeProviderMetadata(value, path: path),
+      ChatUiMetadataKeys.errors => asJsonList(value, path: path)
+          .asMap()
+          .entries
+          .map(
+            (entry) => _decodeModelError(
+              entry.value,
+              path: '$path[${entry.key}]',
+            ),
+          )
+          .toList(growable: false),
       ChatUiMetadataKeys.finishReason => value == null
           ? null
           : FinishReason.values.byName(asJsonString(value, path: path)),
@@ -558,6 +590,10 @@ final class ChatUiJsonCodec {
     };
   }
 
+  JsonMap _encodeModelError(ModelError error) {
+    return error.toJsonMap();
+  }
+
   ModelWarning _decodeModelWarning(
     Object? value, {
     required String path,
@@ -570,6 +606,13 @@ final class ChatUiJsonCodec {
       message: asJsonString(map['message'], path: '$path.message'),
       field: asNullableJsonString(map['field'], path: '$path.field'),
     );
+  }
+
+  ModelError _decodeModelError(
+    Object? value, {
+    required String path,
+  }) {
+    return ModelError.fromJson(value, path: path);
   }
 
   JsonMap _encodeBytes(List<int> bytes) {

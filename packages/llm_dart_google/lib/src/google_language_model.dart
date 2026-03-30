@@ -129,7 +129,7 @@ final class GoogleLanguageModel implements LanguageModel {
         yield event;
       }
     } catch (error) {
-      yield ErrorEvent(error);
+      yield ErrorEvent(transportErrorToModelError(error));
     }
   }
 

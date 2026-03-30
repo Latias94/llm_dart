@@ -13,7 +13,7 @@ final class ChatState {
   final String chatId;
   final List<ChatUiMessage> messages;
   final ChatStatus status;
-  final Object? error;
+  final ModelError? error;
 
   ChatState({
     required this.chatId,
@@ -32,7 +32,7 @@ final class ChatState {
       chatId: chatId ?? this.chatId,
       messages: messages ?? this.messages,
       status: status ?? this.status,
-      error: identical(error, _sentinel) ? this.error : error,
+      error: identical(error, _sentinel) ? this.error : error as ModelError?,
     );
   }
 }

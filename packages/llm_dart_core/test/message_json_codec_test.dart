@@ -286,9 +286,11 @@ void main() {
               },
             }),
             ChatUiMetadataKeys.errors: [
-              {
-                'message': 'none',
-              },
+              const ModelError(
+                kind: ModelErrorKind.provider,
+                message: 'none',
+                code: 'provider-none',
+              ),
             ],
           },
         ),
@@ -361,6 +363,11 @@ void main() {
           message.metadata[ChatUiMetadataKeys.warnings] as List<ModelWarning>;
       expect(warnings.single.type, ModelWarningType.compatibility);
       expect(warnings.single.message, 'Using fallback mode.');
+
+      final errors =
+          message.metadata[ChatUiMetadataKeys.errors] as List<ModelError>;
+      expect(errors.single.code, 'provider-none');
+      expect(errors.single.message, 'none');
     });
 
     test('encodes empty warning metadata lists from runtime session state', () {

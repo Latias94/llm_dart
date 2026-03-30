@@ -589,7 +589,12 @@ final class OpenAIResponsesCodec {
       if (chunkType == 'response.failed') {
         final error = response['error'];
         if (error != null) {
-          yield ErrorEvent(error);
+          yield ErrorEvent(
+            ModelError.fromUnknown(
+              error,
+              kind: ModelErrorKind.provider,
+            ),
+          );
         }
       }
 
@@ -609,7 +614,12 @@ final class OpenAIResponsesCodec {
     }
 
     if (chunkType == 'error') {
-      yield ErrorEvent(chunk['error'] ?? chunk);
+      yield ErrorEvent(
+        ModelError.fromUnknown(
+          chunk['error'] ?? chunk,
+          kind: ModelErrorKind.provider,
+        ),
+      );
     }
   }
 

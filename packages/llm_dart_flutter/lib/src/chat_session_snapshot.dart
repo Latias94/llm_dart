@@ -7,7 +7,7 @@ final class ChatSessionSnapshot {
   final List<PromptMessage> prompt;
   final List<ChatUiMessage> messages;
   final ChatStatus status;
-  final Object? error;
+  final ModelError? error;
 
   ChatSessionSnapshot({
     required this.chatId,

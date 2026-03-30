@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'chat_input.dart';
 import 'chat_request_options.dart';
@@ -528,7 +529,7 @@ final class DefaultChatSession implements ChatSession {
         _emitState(
           _state.copyWith(
             status: ChatStatus.error,
-            error: error,
+            error: transportErrorToModelError(error),
           ),
         );
         if (!completion.isCompleted) {
@@ -1278,7 +1279,7 @@ ChatStatus _normalizeRestoredStatus(ChatStatus status) {
   };
 }
 
-Object? _normalizeRestoredError(ChatStatus status, Object? error) {
+ModelError? _normalizeRestoredError(ChatStatus status, ModelError? error) {
   return _normalizeRestoredStatus(status) == ChatStatus.error ? error : null;
 }
 

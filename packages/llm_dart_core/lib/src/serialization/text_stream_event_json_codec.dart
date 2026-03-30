@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../common/model_error.dart';
 import '../common/model_warning.dart';
 import '../common/provider_metadata.dart';
 import '../common/usage_stats.dart';
@@ -298,7 +299,7 @@ final class TextStreamEventJsonCodec {
         },
       ErrorEvent(:final error) => {
           'type': 'error',
-          'error': ensureJsonValue(error, path: r'$.error.error'),
+          'error': _encodeModelError(error),
         },
     };
   }
@@ -514,7 +515,10 @@ final class TextStreamEventJsonCodec {
         ),
       'raw-chunk' => RawChunkEvent(map['raw']),
       'error' => ErrorEvent(
-          _requireValue(map['error'], path: '$path.error'),
+          _decodeModelError(
+            _requireValue(map['error'], path: '$path.error'),
+            path: '$path.error',
+          ),
         ),
       _ => throw FormatException(
           'Unsupported text stream event type "$type" at $path.',
@@ -524,6 +528,10 @@ final class TextStreamEventJsonCodec {
 
   JsonMap _encodeProviderMetadata(ProviderMetadata metadata) {
     return metadata.toJsonMap();
+  }
+
+  JsonMap _encodeModelError(ModelError error) {
+    return error.toJsonMap();
   }
 
   ProviderMetadata? _decodeProviderMetadata(
@@ -589,6 +597,13 @@ final class TextStreamEventJsonCodec {
       message: asJsonString(map['message'], path: '$path.message'),
       field: asNullableJsonString(map['field'], path: '$path.field'),
     );
+  }
+
+  ModelError _decodeModelError(
+    Object? value, {
+    required String path,
+  }) {
+    return ModelError.fromJson(value, path: path);
   }
 
   JsonMap _encodeSourceReference(SourceReference source) {

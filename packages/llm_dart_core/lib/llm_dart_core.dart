@@ -1,6 +1,7 @@
 library;
 
 export 'src/common/model_warning.dart';
+export 'src/common/model_error.dart';
 export 'src/common/call_options.dart';
 export 'src/common/provider_metadata.dart';
 export 'src/common/provider_options.dart';
