@@ -13,6 +13,13 @@ The short answer is:
 - the remaining maturity gap is not "more core event types"
 - it is clearer provider-capability placement and a cleaner step-lifecycle API
 
+Current status:
+
+- the first shared step-lifecycle slice has now landed in `llm_dart_core`
+- the remaining gap is no longer whether a runner should exist
+- the remaining gap is how far that runner should expand without collapsing
+  provider-specific behavior back into shared core
+
 ## 1. What `repo-ref/ai` Actually Gets Right
 
 After the current event and UI audit, the most useful lessons from the
@@ -228,28 +235,31 @@ The current common event families already cover:
 
 ## 8. The Real Missing Maturity Feature: Step Lifecycle APIs
 
-The most useful thing that the reference still has above us is not another
+The most useful thing that the reference still had above us was not another
 event family.
 
-It is a cleaner step-lifecycle surface:
+It was a cleaner step-lifecycle surface:
 
 - step start hooks
 - step finish hooks
 - richer synthesized step results
 - final aggregated result hooks
+- narrow common function-tool continuation in a dedicated runner
 
 That should not be solved by widening `TextStreamEvent`.
 
-Instead, if we add that capability, it should live above the raw provider
-stream, for example as optional orchestration callbacks around `generateText`
-and `streamText` or in a dedicated higher-level runner.
+That capability now lives above the raw provider stream in a dedicated
+higher-level runner rather than in `TextStreamEvent`.
 
 Recommended direction:
 
 - keep `TextStreamEvent` as the raw shared provider-stream boundary
 - synthesize `StepResult`-style snapshots from existing events and request
   context
-- expose optional lifecycle callbacks above that layer when the API is designed
+- keep exposing lifecycle callbacks above that layer instead of widening the
+  raw event model
+- keep provider-native execution families, approval-heavy flows, and storage
+  APIs outside the shared runner unless they later prove to be truly common
 
 Those synthesized step results should be built from existing common models such
 as:
@@ -285,16 +295,17 @@ Why:
 
 ## 10. Recommended Next Implementation Slice
 
-The next breaking-round implementation slice should be:
+Now that the shared runner exists, the next breaking-round implementation slice
+should be:
 
-1. design a small `StepResult`-style shared model above the existing event
-   surface
-2. design optional step lifecycle callbacks above `generateText` and
-   `streamText`
-3. keep Flutter session APIs and provider stream codecs independent from that
-   callback layer
-4. keep provider-native capabilities provider-owned instead of using step
-   callbacks as a new escape hatch
+1. keep Flutter session APIs and provider stream codecs independent from the
+   runner layer
+2. freeze which continuation families stay shared in the runner versus
+   provider/session-owned
+3. evaluate only narrow runner additions next, such as better guardrails,
+   optional streaming orchestration, or carefully-scoped mutation hooks
+4. keep provider-native capabilities provider-owned instead of using the runner
+   as a new escape hatch
 
 This is the correct next place to add maturity without re-coupling the core.
 
@@ -305,7 +316,8 @@ stable:
 
 - our shared event model is already sufficient
 - our provider-capability placement model is already directionally correct
-- the next meaningful improvement is a step-lifecycle API above the raw stream
+- the first meaningful step-lifecycle API now exists above the raw stream
   boundary
+- the next important discipline is to keep that runner narrow and honest
 - the wrong move would be copying UI chunk exhaustiveness or provider-native
   tool families into the common core
