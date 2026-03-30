@@ -123,6 +123,7 @@
 - [x] Make assistant prompt reconstruction preserve reasoning, reasoning-file, custom parts, and prompt-part provider metadata
 - [x] Audit current event completeness against `repo-ref/ai` and freeze the boundary between shared stream events and UI transport chunks
 - [x] Implement `ChatController`
+- [x] Implement `ChatPersistenceAdapter`
 - [x] Define a serialized chat chunk protocol for `HttpChatTransport`
 - [x] Design the message serialization protocol
 - [x] Implement prompt and UI JSON codecs

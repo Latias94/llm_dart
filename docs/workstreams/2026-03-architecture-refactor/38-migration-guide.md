@@ -289,6 +289,8 @@ New pattern:
 - use `ChatController` as the widget-facing `ValueNotifier<ChatState>` wrapper
   when Flutter UI code wants `Listenable` integration instead of manual stream
   wiring
+- use `ChatPersistenceAdapter` when snapshots need to be encoded, stored, and
+  restored through an application-owned persistence backend
 
 Example:
 

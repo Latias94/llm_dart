@@ -2,6 +2,7 @@ library;
 
 export 'src/chat_input.dart';
 export 'src/chat_controller.dart';
+export 'src/chat_persistence_adapter.dart';
 export 'src/chat_request_options.dart';
 export 'src/chat_session.dart';
 export 'src/chat_session_snapshot.dart';

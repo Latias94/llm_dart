@@ -253,6 +253,25 @@ Future<void> main() async {
 Example file:
 [flutter_integration.dart](E:/codes/flutter/llm_dart/packages/llm_dart_flutter/example/flutter_integration.dart)
 
+For snapshot persistence, keep storage application-owned and use
+`ChatPersistenceAdapter` as the thin codec bridge:
+
+```dart
+final adapter = ChatPersistenceAdapter(store: myStore);
+
+await adapter.saveController(controller);
+
+final restoredController = await adapter.restoreController(
+  'chat-1',
+  createController: (snapshot) => ChatController(
+    session: DefaultChatSession.fromSnapshot(
+      transport: transport,
+      snapshot: snapshot,
+    ),
+  ),
+);
+```
+
 ## Provider-Specific Options
 
 The unified request shape stays small. Provider-specific features are passed through typed provider options.
