@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 void main() {
@@ -340,15 +341,4 @@ void main() {
   });
 }
 
-final class _FakeTransportClient implements TransportClient {
-  @override
-  Future<TransportResponse> send(TransportRequest request) async {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<StreamingTransportResponse> sendStream(
-      TransportRequest request) async {
-    throw UnimplementedError();
-  }
-}
+typedef _FakeTransportClient = FakeTransportClient;

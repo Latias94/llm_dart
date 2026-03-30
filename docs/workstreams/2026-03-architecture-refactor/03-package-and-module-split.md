@@ -145,6 +145,19 @@ Responsibilities:
 - most common re-exports
 - transitional implementation of the old builder APIs
 
+### 9. `llm_dart_test`
+
+Responsibilities:
+
+- shared fake models and fake transport clients for migrated tests
+- reusable test-only support for workspace packages
+
+Notes:
+
+- this package is internal and `publish_to: none`
+- it must stay out of the runtime dependency chain
+- it should depend only on stable lower layers such as `llm_dart_core` and `llm_dart_transport`
+
 ## Layer 2: Package-Internal Module Boundaries
 
 Even inside a single provider package, module boundaries still matter.

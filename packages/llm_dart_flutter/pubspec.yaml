@@ -16,5 +16,7 @@ dependencies:
     path: ../llm_dart_transport
 
 dev_dependencies:
+  llm_dart_test:
+    path: ../llm_dart_test
   lints: ^6.0.0
   test: ^1.27.0

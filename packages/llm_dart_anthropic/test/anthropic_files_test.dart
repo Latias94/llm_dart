@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 
@@ -197,26 +198,4 @@ void main() {
   });
 }
 
-final class _FakeTransportClient implements TransportClient {
-  final Future<TransportResponse> Function(TransportRequest request)? onSend;
-
-  const _FakeTransportClient({
-    this.onSend,
-  });
-
-  @override
-  Future<TransportResponse> send(TransportRequest request) {
-    if (onSend == null) {
-      throw UnimplementedError('send() was not configured for this test.');
-    }
-
-    return onSend!(request);
-  }
-
-  @override
-  Future<StreamingTransportResponse> sendStream(TransportRequest request) {
-    throw UnimplementedError(
-      'sendStream() was not configured for this test.',
-    );
-  }
-}
+typedef _FakeTransportClient = FakeTransportClient;

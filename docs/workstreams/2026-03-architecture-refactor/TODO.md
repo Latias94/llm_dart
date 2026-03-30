@@ -23,7 +23,7 @@
 - [x] Run static analysis for `llm_dart_core` and `llm_dart_transport`
 - [x] Run static analysis for `llm_dart_openai`
 - [x] Create the facade compatibility entry
-- [ ] Establish the new shared test foundation
+- [x] Establish the new shared test foundation
 - [x] Establish the new export strategy and `src/` structure
 
 ## Core

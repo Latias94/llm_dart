@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
+import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 
@@ -579,27 +580,4 @@ TextStreamEvent _singleEvent(List<ChatTransportChunk> chunks) {
   return events.single;
 }
 
-final class _FakeTransportClient implements TransportClient {
-  final Future<StreamingTransportResponse> Function(TransportRequest request)?
-      onSendStream;
-
-  const _FakeTransportClient({
-    this.onSendStream,
-  });
-
-  @override
-  Future<TransportResponse> send(TransportRequest request) {
-    throw UnimplementedError('send() was not configured for this test.');
-  }
-
-  @override
-  Future<StreamingTransportResponse> sendStream(TransportRequest request) {
-    if (onSendStream == null) {
-      throw UnimplementedError(
-        'sendStream() was not configured for this test.',
-      );
-    }
-
-    return onSendStream!(request);
-  }
-}
+typedef _FakeTransportClient = FakeTransportClient;

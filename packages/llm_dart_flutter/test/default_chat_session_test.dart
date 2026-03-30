@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
+import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -2012,26 +2013,4 @@ final class _FakeChatTransport implements ChatTransport {
   }
 }
 
-final class _FakeLanguageModel implements LanguageModel {
-  final Stream<TextStreamEvent> Function(GenerateTextRequest request) onStream;
-
-  const _FakeLanguageModel({
-    required this.onStream,
-  });
-
-  @override
-  String get modelId => 'fake-model';
-
-  @override
-  String get providerId => 'fake';
-
-  @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) {
-    throw UnimplementedError();
-  }
-
-  @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) {
-    return onStream(request);
-  }
-}
+typedef _FakeLanguageModel = FakeLanguageModel;

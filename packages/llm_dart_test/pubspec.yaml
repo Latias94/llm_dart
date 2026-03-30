@@ -1,5 +1,5 @@
-name: llm_dart_anthropic
-description: Anthropic provider implementations for llm_dart.
+name: llm_dart_test
+description: Shared testing helpers for llm_dart workspace packages.
 version: 0.1.0-dev.0
 publish_to: none
 
@@ -13,7 +13,5 @@ dependencies:
     path: ../llm_dart_transport
 
 dev_dependencies:
-  llm_dart_test:
-    path: ../llm_dart_test
   lints: ^6.0.0
   test: ^1.27.0

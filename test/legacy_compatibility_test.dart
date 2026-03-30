@@ -3,6 +3,7 @@ import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as modern_anthropic;
 import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/legacy_chat_adapter.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 
@@ -850,64 +851,5 @@ void main() {
   });
 }
 
-final class _FakeLanguageModel implements core.LanguageModel {
-  final Future<core.GenerateTextResult> Function(
-      core.GenerateTextRequest request)? onGenerate;
-  final Stream<core.TextStreamEvent> Function(core.GenerateTextRequest request)?
-      onStream;
-
-  core.GenerateTextRequest? lastRequest;
-
-  _FakeLanguageModel({
-    this.onGenerate,
-    this.onStream,
-  });
-
-  @override
-  String get providerId => 'fake';
-
-  @override
-  String get modelId => 'fake-model';
-
-  @override
-  Future<core.GenerateTextResult> generate(core.GenerateTextRequest request) {
-    lastRequest = request;
-    if (onGenerate == null) {
-      throw UnimplementedError('onGenerate was not configured.');
-    }
-
-    return onGenerate!(request);
-  }
-
-  @override
-  Stream<core.TextStreamEvent> stream(core.GenerateTextRequest request) {
-    lastRequest = request;
-    if (onStream == null) {
-      throw UnimplementedError('onStream was not configured.');
-    }
-
-    return onStream!(request);
-  }
-}
-
-final class _FakeTransportClient implements TransportClient {
-  final Future<TransportResponse> Function(TransportRequest request)? onSend;
-
-  const _FakeTransportClient({
-    this.onSend,
-  });
-
-  @override
-  Future<TransportResponse> send(TransportRequest request) {
-    if (onSend == null) {
-      throw UnimplementedError('send() was not configured.');
-    }
-
-    return onSend!(request);
-  }
-
-  @override
-  Future<StreamingTransportResponse> sendStream(TransportRequest request) {
-    throw UnimplementedError('sendStream() was not configured.');
-  }
-}
+typedef _FakeLanguageModel = FakeLanguageModel;
+typedef _FakeTransportClient = FakeTransportClient;

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
 import 'package:llm_dart/providers/openai/dio_strategy.dart';
 import 'package:llm_dart/src/compatibility/compat_transport.dart';
+import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart/utils/dio_client_factory.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
@@ -63,15 +64,4 @@ void main() {
   });
 }
 
-final class _FakeTransportClient implements TransportClient {
-  @override
-  Future<TransportResponse> send(TransportRequest request) async {
-    throw UnimplementedError();
-  }
-
-  @override
-  Future<StreamingTransportResponse> sendStream(
-      TransportRequest request) async {
-    throw UnimplementedError();
-  }
-}
+typedef _FakeTransportClient = FakeTransportClient;

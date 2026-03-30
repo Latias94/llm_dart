@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 
@@ -289,33 +290,4 @@ final class _InvalidProviderOptions implements ProviderInvocationOptions {
   const _InvalidProviderOptions();
 }
 
-final class _FakeTransportClient implements TransportClient {
-  final Future<TransportResponse> Function(TransportRequest request)? onSend;
-  final Future<StreamingTransportResponse> Function(TransportRequest request)?
-      onSendStream;
-
-  const _FakeTransportClient({
-    this.onSend,
-    this.onSendStream,
-  });
-
-  @override
-  Future<TransportResponse> send(TransportRequest request) {
-    if (onSend == null) {
-      throw UnimplementedError('send() was not configured for this test.');
-    }
-
-    return onSend!(request);
-  }
-
-  @override
-  Future<StreamingTransportResponse> sendStream(TransportRequest request) {
-    if (onSendStream == null) {
-      throw UnimplementedError(
-        'sendStream() was not configured for this test.',
-      );
-    }
-
-    return onSendStream!(request);
-  }
-}
+typedef _FakeTransportClient = FakeTransportClient;
