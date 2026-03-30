@@ -59,6 +59,7 @@ Current status:
 - replay-critical OpenAI Responses metadata now survives decode, session replay, and request re-encoding for assistant message IDs, message phase, reasoning encrypted content, tool-call item IDs, and compaction items
 - transport now has a concrete Dio executor, SSE decoder, cancellation abstraction, and error mapping
 - `llm_dart_core` now also exposes `GenerateTextStepResult` as the first shared step-level snapshot wrapper without changing the single-step meaning of `generateText` / `streamText`
+- `llm_dart_core` now also exposes `GenerateTextRunResult` and `GenerateTextStepStartEvent` as runner-facing pure model primitives, still without introducing a multi-step runtime yet
 - the next shared-orchestration maturity target is now frozen more clearly: add a higher-level multi-step runner with lifecycle callbacks and synthesized `StepResult` snapshots above the current single-step helpers instead of widening `TextStreamEvent` or changing the meaning of `generateText` / `streamText`
 - provider-specific compatibility subset audits, broader endpoint coverage, and non-text endpoints remain for the next step
 

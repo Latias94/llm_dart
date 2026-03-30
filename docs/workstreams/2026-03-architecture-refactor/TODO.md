@@ -46,6 +46,7 @@
 - [x] Implement `generateText`
 - [x] Implement `streamText`
 - [x] Add `GenerateTextStepResult` as the shared single-step snapshot wrapper above existing request/result models
+- [x] Add initial runner-facing shared model primitives: `GenerateTextRunResult` and `GenerateTextStepStartEvent`
 - [ ] Design a higher-level multi-step text generation runner with lifecycle callbacks and synthesized `StepResult` snapshots above the single-step `generateText` / `streamText` helpers
 - [ ] Implement `embed` / `embedMany`
 - [ ] Implement `generateImage`
