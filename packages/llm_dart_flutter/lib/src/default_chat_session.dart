@@ -181,13 +181,19 @@ final class DefaultChatSession implements ChatSession {
       ),
     );
 
+    final nextStatus = _deriveCompletionStatus(updatedAssistantMessage);
     _emitState(
       _state.copyWith(
         messages: _replaceLatestAssistantMessage(updatedAssistantMessage),
-        status: ChatStatus.submitting,
+        status:
+            nextStatus == ChatStatus.ready ? ChatStatus.submitting : nextStatus,
         error: null,
       ),
     );
+
+    if (nextStatus != ChatStatus.ready) {
+      return Future.value();
+    }
 
     return _runAssistantTurn(
       options: update.options,
@@ -277,7 +283,11 @@ final class DefaultChatSession implements ChatSession {
       ),
     );
 
-    if (response.approved && pendingTool.providerExecuted) {
+    final nextStatus = _deriveCompletionStatus(updatedAssistantMessage);
+    final shouldContinueProviderTurn = nextStatus == ChatStatus.ready &&
+        _hasApprovedProviderExecutedTool(updatedAssistantMessage);
+
+    if (shouldContinueProviderTurn) {
       _emitState(
         _state.copyWith(
           messages: _replaceLatestAssistantMessage(updatedAssistantMessage),
@@ -295,7 +305,7 @@ final class DefaultChatSession implements ChatSession {
     _emitState(
       _state.copyWith(
         messages: _replaceLatestAssistantMessage(updatedAssistantMessage),
-        status: _deriveCompletionStatus(updatedAssistantMessage),
+        status: nextStatus,
         error: null,
       ),
     );
@@ -686,6 +696,15 @@ final class DefaultChatSession implements ChatSession {
     }
 
     return ChatStatus.ready;
+  }
+
+  bool _hasApprovedProviderExecutedTool(ChatUiMessage assistantMessage) {
+    return assistantMessage.parts.whereType<ToolUiPart>().any(
+          (part) =>
+              part.providerExecuted &&
+              part.state == ToolUiPartState.approvalResponded &&
+              part.approval?.approved == true,
+        );
   }
 
   ChatUiMessage _updateToolPartByCallId(

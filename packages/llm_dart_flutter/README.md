@@ -228,6 +228,7 @@ the richer part model.
 - inject tool output with `addToolOutput`
 - pause on approval requests
 - respond with `respondToolApproval`
+- wait for the current assistant step to finish collecting local tool output and approval responses before continuing the next turn
 - stop active generation
 - resume reconnectable HTTP sessions after transport errors
 

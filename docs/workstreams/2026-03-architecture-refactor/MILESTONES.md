@@ -114,6 +114,11 @@ Acceptance criteria:
 - assistant-turn replay remains semantically faithful enough for follow-up provider calls, not only visually faithful in the UI
 - HTTP transport reconnect semantics are defined through transport checkpoints rather than ad hoc core events
 
+Current status:
+
+- the baseline Flutter chat layer now has stable session, transport, controller, persistence, and message-mapper surfaces in `llm_dart_flutter`
+- tool continuation is now also frozen more concretely at the session layer: mixed approval and tool-output steps wait for whole-step completion before the next assistant request is triggered
+
 ## M6 - Compatibility Cleanup
 
 Goals:

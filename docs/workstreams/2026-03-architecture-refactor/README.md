@@ -96,6 +96,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen replay-safe prompt subset and the provider-owned normalization gaps for multimodal input, approval flows, and assistant reasoning replay.
 - [38-migration-guide.md](38-migration-guide.md)
   - Practical migration guide from the old root-package compatibility surface to the stable model API.
+- [39-error-model-design.md](39-error-model-design.md)
+  - Typed cross-layer error envelope design for stream events, transport, Flutter session state, and persistence.
+- [40-flutter-tool-orchestration-boundary.md](40-flutter-tool-orchestration-boundary.md)
+  - Frozen session-layer rule for batching tool outputs and approval-driven continuation without widening shared events.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

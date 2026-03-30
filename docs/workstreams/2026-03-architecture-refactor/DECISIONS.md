@@ -335,3 +335,12 @@ Provider-specific features should be represented through:
 - stream-ordering and reconstruction failures should normalize to `kind: stream`
 - decoders must stay backward compatible with legacy raw string or map error payloads by normalizing them during decode
 - `ToolInputErrorEvent` remains a separate dedicated event and is not absorbed into the generic error envelope
+
+## D39. Flutter Tool Continuation Waits For Whole-Step Completion
+
+- `TextStreamEvent` remains unchanged; tool continuation is a Flutter session concern, not a new shared event family
+- `DefaultChatSession` must not continue the next assistant turn after only the first individual tool update when the current assistant step still has unresolved work
+- client-executed tool calls continue only after all pending local tool outputs for the current step have been provided
+- provider-executed approval responses continue only after the current step no longer waits for other approvals or client-side tool outputs
+- mixed approval outcomes must be decided from the whole step state, not only from the most recent approval click
+- future convenience helpers such as automatic local tool callbacks, if added, belong in `llm_dart_flutter` above the current session boundary

@@ -187,6 +187,7 @@ Current implementation direction:
 - assistant prompt reconstruction must preserve replayable assistant semantics such as reasoning parts, reasoning files, custom parts, and part-level provider metadata instead of collapsing them into a text-only summary
 - approving a provider-executed tool should continue the transport-backed assistant turn
 - approving a client-executed tool should return the session to `awaitingTool` so the caller can later provide `addToolOutput`
+- if one assistant step contains several unresolved tools or approvals, the session should not continue after the first individual update; continuation should wait until the current step no longer has pending approval or client-side tool-output work
 - `addDataPart` should support UI-only message enrichment for the current assistant turn:
   - while the transport stream is active
   - while the session is paused in `awaitingTool`

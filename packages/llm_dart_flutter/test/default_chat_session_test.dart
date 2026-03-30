@@ -1250,6 +1250,349 @@ void main() {
     });
 
     test(
+        'waits until all client-side tool outputs are available before continuing',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-1',
+                      toolName: 'weather',
+                      input: {
+                        'location': 'Tokyo',
+                      },
+                    ),
+                  ),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-2',
+                      toolName: 'calendar',
+                      input: {
+                        'day': 'Monday',
+                      },
+                    ),
+                  ),
+                  const FinishEvent(finishReason: FinishReason.toolCalls),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'Both local tools finished.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session
+          .sendMessage(ChatInput.text('Check my Monday plan in Tokyo.'));
+
+      expect(capturedRequests, hasLength(1));
+      expect(session.state.status, ChatStatus.awaitingTool);
+
+      await session.addToolOutput(
+        const ToolOutputUpdate(
+          toolCallId: 'tool-1',
+          toolName: 'weather',
+          output: {
+            'temperature': 24,
+          },
+        ),
+      );
+
+      expect(capturedRequests, hasLength(1));
+      expect(session.state.status, ChatStatus.awaitingTool);
+      final partialTools =
+          session.state.messages.last.parts.whereType<ToolUiPart>().toList();
+      expect(
+        partialTools.singleWhere((part) => part.toolCallId == 'tool-1').state,
+        ToolUiPartState.outputAvailable,
+      );
+      expect(
+        partialTools.singleWhere((part) => part.toolCallId == 'tool-2').state,
+        ToolUiPartState.inputAvailable,
+      );
+
+      await session.addToolOutput(
+        const ToolOutputUpdate(
+          toolCallId: 'tool-2',
+          toolName: 'calendar',
+          output: {
+            'events': ['Standup'],
+          },
+        ),
+      );
+
+      expect(capturedRequests, hasLength(2));
+      final continuationPrompt = capturedRequests[1].prompt;
+      expect(continuationPrompt, hasLength(4));
+      expect(continuationPrompt[1], isA<AssistantPromptMessage>());
+      final assistantPrompt = continuationPrompt[1] as AssistantPromptMessage;
+      expect(
+          assistantPrompt.parts.whereType<ToolCallPromptPart>(), hasLength(2));
+      expect(
+        ((continuationPrompt[2] as ToolPromptMessage).parts.single
+                as ToolResultPromptPart)
+            .toolCallId,
+        'tool-1',
+      );
+      expect(
+        ((continuationPrompt[3] as ToolPromptMessage).parts.single
+                as ToolResultPromptPart)
+            .toolCallId,
+        'tool-2',
+      );
+
+      expect(session.state.status, ChatStatus.ready);
+      expect(
+        session.state.messages.last.parts.whereType<TextUiPart>().single.text,
+        'Both local tools finished.',
+      );
+
+      await session.dispose();
+    });
+
+    test(
+        'approved provider tools wait for remaining client outputs before continuing',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-provider',
+                      toolName: 'computer',
+                      input: {
+                        'action': 'click',
+                      },
+                      providerExecuted: true,
+                    ),
+                  ),
+                  const ToolApprovalRequestEvent(
+                    approvalId: 'approval-1',
+                    toolCallId: 'tool-provider',
+                  ),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-local',
+                      toolName: 'weather',
+                      input: {
+                        'location': 'Tokyo',
+                      },
+                    ),
+                  ),
+                  const FinishEvent(finishReason: FinishReason.toolCalls),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'Approval and local output were both applied.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Click and then check Tokyo.'));
+      expect(session.state.status, ChatStatus.awaitingApproval);
+
+      await session.respondToolApproval(
+        const ToolApprovalResponse(
+          approvalId: 'approval-1',
+          approved: true,
+          reason: 'The browser action is expected.',
+        ),
+      );
+
+      expect(capturedRequests, hasLength(1));
+      expect(session.state.status, ChatStatus.awaitingTool);
+      final awaitingTools =
+          session.state.messages.last.parts.whereType<ToolUiPart>().toList();
+      expect(
+        awaitingTools
+            .singleWhere((part) => part.toolCallId == 'tool-provider')
+            .state,
+        ToolUiPartState.approvalResponded,
+      );
+      expect(
+        awaitingTools
+            .singleWhere((part) => part.toolCallId == 'tool-local')
+            .state,
+        ToolUiPartState.inputAvailable,
+      );
+
+      await session.addToolOutput(
+        const ToolOutputUpdate(
+          toolCallId: 'tool-local',
+          toolName: 'weather',
+          output: {
+            'temperature': 24,
+          },
+        ),
+      );
+
+      expect(capturedRequests, hasLength(2));
+      final continuationPrompt = capturedRequests[1].prompt;
+      expect(continuationPrompt, hasLength(4));
+      final assistantPrompt = continuationPrompt[1] as AssistantPromptMessage;
+      expect(
+          assistantPrompt.parts.whereType<ToolCallPromptPart>(), hasLength(2));
+      expect(
+        assistantPrompt.parts.whereType<ToolApprovalRequestPromptPart>(),
+        hasLength(1),
+      );
+      expect(
+        (continuationPrompt[2] as ToolPromptMessage).parts.single,
+        isA<ToolApprovalResponsePromptPart>(),
+      );
+      expect(
+        (continuationPrompt[3] as ToolPromptMessage).parts.single,
+        isA<ToolResultPromptPart>(),
+      );
+
+      expect(session.state.status, ChatStatus.ready);
+      expect(
+        session.state.messages.last.parts.whereType<TextUiPart>().single.text,
+        'Approval and local output were both applied.',
+      );
+
+      await session.dispose();
+    });
+
+    test(
+        'mixed provider approval responses continue once all approvals are collected',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-1',
+                      toolName: 'computer',
+                      input: {
+                        'action': 'click',
+                      },
+                      providerExecuted: true,
+                    ),
+                  ),
+                  const ToolApprovalRequestEvent(
+                    approvalId: 'approval-1',
+                    toolCallId: 'tool-1',
+                  ),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-2',
+                      toolName: 'computer',
+                      input: {
+                        'action': 'type',
+                      },
+                      providerExecuted: true,
+                    ),
+                  ),
+                  const ToolApprovalRequestEvent(
+                    approvalId: 'approval-2',
+                    toolCallId: 'tool-2',
+                  ),
+                  const FinishEvent(finishReason: FinishReason.toolCalls),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'Mixed approvals continued correctly.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session
+          .sendMessage(ChatInput.text('Complete both browser actions.'));
+      expect(session.state.status, ChatStatus.awaitingApproval);
+
+      await session.respondToolApproval(
+        const ToolApprovalResponse(
+          approvalId: 'approval-1',
+          approved: true,
+          reason: 'The first action is safe.',
+        ),
+      );
+
+      expect(capturedRequests, hasLength(1));
+      expect(session.state.status, ChatStatus.awaitingApproval);
+
+      await session.respondToolApproval(
+        const ToolApprovalResponse(
+          approvalId: 'approval-2',
+          approved: false,
+          reason: 'The second action is not trusted.',
+        ),
+      );
+
+      expect(capturedRequests, hasLength(2));
+      final continuationPrompt = capturedRequests[1].prompt;
+      expect(continuationPrompt, hasLength(4));
+      expect(
+        (continuationPrompt[2] as ToolPromptMessage).parts.single,
+        isA<ToolApprovalResponsePromptPart>(),
+      );
+      expect(
+        (continuationPrompt[3] as ToolPromptMessage).parts.single,
+        isA<ToolApprovalResponsePromptPart>(),
+      );
+
+      expect(session.state.status, ChatStatus.ready);
+      expect(
+        session.state.messages.last.parts.whereType<TextUiPart>().single.text,
+        'Mixed approvals continued correctly.',
+      );
+
+      await session.dispose();
+    });
+
+    test(
         'restores ready snapshots and preserves prompt history with unique message ids',
         () async {
       final capturedRequests = <ChatTransportRequest>[];
