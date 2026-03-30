@@ -1,5 +1,6 @@
 import 'package:llm_dart/llm_dart.dart' as legacy;
 import 'package:llm_dart/src/compatibility/chat_route_compatibility.dart';
+import 'package:llm_dart/src/compatibility/anthropic_legacy_extensions.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -974,6 +975,66 @@ void main() {
       );
 
       expect(result, isFalse);
+    });
+
+    test(
+        'Anthropic legacy extension analysis explains migration guidance for fallback-only execution result blocks',
+        () {
+      expect(
+        () => analyzeAnthropicLegacyMessageExtensions([
+          legacy.ChatMessage.user('').withExtension(
+            'anthropic',
+            {
+              'contentBlocks': [
+                {
+                  'type': 'code_execution_tool_result',
+                  'tool_use_id': 'srvtoolu_1',
+                  'content': {
+                    'type': 'code_execution_result',
+                  },
+                },
+              ],
+            },
+          ),
+        ]),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('anthropic.result.code_execution'),
+          ),
+        ),
+      );
+    });
+
+    test(
+        'Anthropic legacy extension analysis tells tool_search result traffic to stay on the old provider path',
+        () {
+      expect(
+        () => analyzeAnthropicLegacyMessageExtensions([
+          legacy.ChatMessage.user('').withExtension(
+            'anthropic',
+            {
+              'contentBlocks': [
+                {
+                  'type': 'tool_search_tool_result',
+                  'tool_use_id': 'srvtoolu_1',
+                  'content': {
+                    'query': 'docs',
+                  },
+                },
+              ],
+            },
+          ),
+        ]),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('old Anthropic provider path'),
+          ),
+        ),
+      );
     });
 
     test(

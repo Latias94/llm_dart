@@ -168,9 +168,9 @@
 - [x] Implement Anthropic execution replay through `CustomContentPart` / `CustomEvent` / `CustomUiPart` / `CustomPromptPart`
 - [x] Add session replay and request re-encoding tests for Anthropic execution replay
 - [x] Implement the provider-native Anthropic files API for execution file handles
-- [ ] Decide how provider-native tool results that stay bridge-incompatible should surface in migration guidance and deprecation messaging
-- [ ] Mark old extension entry points as deprecated
-- [ ] Define the old API removal window
+- [x] Decide how provider-native tool results that stay bridge-incompatible should surface in migration guidance and deprecation messaging
+- [x] Mark old extension entry points as deprecated
+- [x] Define the old API removal window
 
 ## Testing
 

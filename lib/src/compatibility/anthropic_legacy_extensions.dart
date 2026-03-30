@@ -421,6 +421,34 @@ AnthropicLegacyMessageAnalysis analyzeAnthropicLegacyMessage(
       continue;
     }
 
+    if (block['type'] == 'code_execution_tool_result' ||
+        block['type'] == 'bash_code_execution_tool_result' ||
+        block['type'] == 'text_editor_code_execution_tool_result') {
+      if (message.role != ChatRole.user) {
+        throw UnsupportedError(
+          'Anthropic compatibility only supports raw ${block['type']} blocks on user messages.',
+        );
+      }
+
+      _throwBridgeIncompatibleExecutionResultBlock(
+        _parseRequiredString(
+          block['type'],
+          path:
+              'messages[$messageIndex].extensions.anthropic.contentBlocks[$blockIndex].type',
+        ),
+      );
+    }
+
+    if (block['type'] == 'tool_search_tool_result') {
+      if (message.role != ChatRole.user) {
+        throw UnsupportedError(
+          'Anthropic compatibility only supports raw tool_search_tool_result blocks on user messages.',
+        );
+      }
+
+      _throwBridgeIncompatibleToolSearchResultBlock();
+    }
+
     throw UnsupportedError(
       'Anthropic compatibility only supports raw text/image/document/tool replay blocks, cache markers, and tools blocks inside legacy message extensions.',
     );
@@ -862,6 +890,20 @@ AnthropicLegacyToolResultBlock _parseProviderNativeToolResultBlock(
       ),
       path: path,
     ),
+  );
+}
+
+Never _throwBridgeIncompatibleExecutionResultBlock(String blockType) {
+  throw UnsupportedError(
+    'Anthropic compatibility does not bridge raw $blockType blocks in legacy message extensions yet. '
+    'Use the provider-owned anthropic.result.code_execution replay path in the new Anthropic API, or keep this request on the old Anthropic provider path.',
+  );
+}
+
+Never _throwBridgeIncompatibleToolSearchResultBlock() {
+  throw UnsupportedError(
+    'Anthropic compatibility does not bridge raw tool_search_tool_result blocks yet. '
+    'Keep this request on the old Anthropic provider path until a provider-owned replay path is frozen.',
   );
 }
 

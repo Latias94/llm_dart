@@ -280,3 +280,31 @@ Resolved in the current breaking round:
 - the compatibility bridge now also accepts those legacy migration inputs, but only for the audited web/news `search_parameters` subset that the old xAI builder can actually express
 - future xAI provider-defined search tools should stay in a separate xAI-native tool API instead of being merged into the chat live-search option bag
 - `29-openrouter-search-options-design.md` and `30-xai-live-search-options-design.md` document the frozen design
+
+## 26. Legacy Preset Factory Deprecation Scope
+
+Resolved in the current breaking round:
+
+- the repository now distinguishes between stable primary chat facades, base compatibility constructors, and deprecated compatibility preset helpers
+- extra chat/reasoning/vision/code preset helpers should now deprecate once the stable `AI.*(...).chatModel(...)` replacement already exists
+- base compatibility constructors should stay non-deprecated when the old root provider surface is still needed
+- helper surfaces with no stable replacement yet should not be deprecated prematurely
+- `33-legacy-factory-entrypoint-deprecations.md` documents the frozen scope
+
+## 27. Old Compatibility API Removal Window
+
+Resolved in the current breaking round:
+
+- deprecated compatibility APIs should stay alive throughout the `0.x` line
+- the old root-package compatibility surface should not be removed before `1.0.0`
+- removal should happen only after migration documentation and updated stable examples exist
+- `34-legacy-api-removal-window.md` documents the frozen policy
+
+## 28. Bridge-Incompatible Provider Result Guidance
+
+Resolved in the current breaking round:
+
+- fallback-only provider-native result families should now describe the migration direction explicitly instead of using generic unsupported wording
+- if a provider-owned replay path already exists, migration guidance should point users to that path while still keeping the raw legacy bridge on fallback
+- if no provider-owned replay path exists yet, migration guidance should point users to the old provider path instead
+- `35-bridge-incompatible-provider-result-migration-guidance.md` documents the frozen wording rule

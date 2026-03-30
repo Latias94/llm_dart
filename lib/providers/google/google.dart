@@ -91,6 +91,10 @@ GoogleProvider createGoogleProvider({
 }
 
 /// Create a Google provider for chat
+@Deprecated(
+  'createGoogleChatProvider() is a legacy preset helper. '
+  'Prefer AI.google(...).chatModel(...) for the stable API, or createGoogleProvider(...) when you still need the old root-package provider surface.',
+)
 GoogleProvider createGoogleChatProvider({
   required String apiKey,
   String model = 'gemini-1.5-flash',
@@ -108,6 +112,10 @@ GoogleProvider createGoogleChatProvider({
 }
 
 /// Create a Google provider for reasoning tasks
+@Deprecated(
+  'createGoogleReasoningProvider() is a legacy preset helper. '
+  'Prefer AI.google(...).chatModel(...) for the stable API, or createGoogleProvider(...) when you still need the old root-package provider surface.',
+)
 GoogleProvider createGoogleReasoningProvider({
   required String apiKey,
   String model = 'gemini-2.0-flash-thinking-exp',
@@ -125,6 +133,10 @@ GoogleProvider createGoogleReasoningProvider({
 }
 
 /// Create a Google provider for vision tasks
+@Deprecated(
+  'createGoogleVisionProvider() is a legacy preset helper. '
+  'Prefer AI.google(...).chatModel(...) for the stable API, or createGoogleProvider(...) when you still need the old root-package provider surface.',
+)
 GoogleProvider createGoogleVisionProvider({
   required String apiKey,
   String model = 'gemini-1.5-pro',

@@ -215,9 +215,10 @@ void main() {
         expect(helperProvider.config.temperature, equals(0.8));
       });
 
-      test('createDeepSeekReasoningProvider should work', () {
-        final reasoningProvider = createDeepSeekReasoningProvider(
+      test('createDeepSeekProvider should configure reasoning models', () {
+        final reasoningProvider = createDeepSeekProvider(
           apiKey: 'reasoning-key',
+          model: 'deepseek-reasoner',
           systemPrompt: 'Think step by step',
         );
 

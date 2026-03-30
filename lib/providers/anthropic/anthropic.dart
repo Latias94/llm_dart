@@ -75,6 +75,10 @@ AnthropicProvider createAnthropicProvider({
 }
 
 /// Create an Anthropic provider for chat
+@Deprecated(
+  'createAnthropicChatProvider() is a legacy preset helper. '
+  'Prefer AI.anthropic(...).chatModel(...) for the stable API, or createAnthropicProvider(...) when you still need the old root-package provider surface.',
+)
 AnthropicProvider createAnthropicChatProvider({
   required String apiKey,
   String model = 'claude-sonnet-4-20250514',
@@ -92,6 +96,10 @@ AnthropicProvider createAnthropicChatProvider({
 }
 
 /// Create an Anthropic provider for reasoning tasks
+@Deprecated(
+  'createAnthropicReasoningProvider() is a legacy preset helper. '
+  'Prefer AI.anthropic(...).chatModel(...) for the stable API, or createAnthropicProvider(...) when you still need the old root-package provider surface.',
+)
 AnthropicProvider createAnthropicReasoningProvider({
   required String apiKey,
   String model = 'claude-sonnet-4-20250514',

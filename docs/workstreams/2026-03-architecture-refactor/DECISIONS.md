@@ -303,3 +303,24 @@ Provider-specific features should be represented through:
 - xAI chat live search in the new primary API is a provider-owned invocation option that encodes to xAI `search_parameters`
 - legacy `liveSearch`, `webSearchEnabled`, and `webSearchConfig` remain compatibility-only migration inputs rather than stable primary API fields
 - future xAI provider-defined search tools such as web search or X search must stay in a separate provider-native tool API instead of being merged into the chat live-search options bag
+
+## D35. Legacy Preset Factory Helpers Should Deprecate Once A Stable Chat Facade Exists
+
+- the repository should keep one honest base compatibility constructor per legacy provider family while the old root-package provider surface still matters
+- extra preset helpers such as chat/reasoning/vision/code convenience constructors should become deprecated once the stable `AI.*(...).chatModel(...)` replacement already exists
+- deprecation should not be applied to old helper surfaces that still have no stable package-owned replacement yet
+- new examples and new docs should stop presenting deprecated preset helpers as recommended API
+
+## D36. Old Root Compatibility APIs Stay Until At Least `1.0.0`
+
+- deprecated compatibility APIs should keep working throughout the `0.x` line
+- the old root-package compatibility surface should not be removed before `1.0.0`
+- removal should happen only after a migration guide, updated examples, and explicit release-note coverage exist
+- deprecation pressure belongs in `0.x`; hard removal belongs no earlier than the first `1.0.0` breaking release
+
+## D37. Bridge-Incompatible Provider-Native Result Blocks Need Migration-Oriented Messaging
+
+- fallback-only provider-native result families should not fail with generic unsupported wording when the repository already knows their migration boundary
+- if a provider-owned replay path already exists, compatibility guidance should point users at that provider-owned path and also state that the raw legacy bridge still falls back
+- if no provider-owned replay path exists yet, compatibility guidance should tell users to keep the request on the old provider path
+- this messaging rule is documentation and diagnostics policy; it does not widen the bridge allowlist by itself

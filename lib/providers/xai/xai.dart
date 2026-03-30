@@ -160,6 +160,10 @@ XAIProvider createXAILiveSearchProvider({
 }
 
 /// Create an xAI provider for Grok Vision
+@Deprecated(
+  'createGrokVisionProvider() is a legacy preset helper. '
+  'Prefer AI.xai(...).chatModel(...) for the stable API, or createXAIProvider(...) when you still need the old root-package provider surface.',
+)
 XAIProvider createGrokVisionProvider({
   required String apiKey,
   String model = 'grok-vision-beta',

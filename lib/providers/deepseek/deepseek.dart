@@ -67,6 +67,10 @@ DeepSeekProvider createDeepSeekProvider({
 }
 
 /// Create a DeepSeek provider for chat
+@Deprecated(
+  'createDeepSeekChatProvider() is a legacy preset helper. '
+  'Prefer AI.deepSeek(...).chatModel(...) for the stable API, or createDeepSeekProvider(...) when you still need the old root-package provider surface.',
+)
 DeepSeekProvider createDeepSeekChatProvider({
   required String apiKey,
   String model = 'deepseek-chat',
@@ -85,6 +89,10 @@ DeepSeekProvider createDeepSeekChatProvider({
 
 /// Create a DeepSeek provider for reasoning tasks
 /// Uses the deepseek-reasoner model which supports reasoning/thinking
+@Deprecated(
+  'createDeepSeekReasoningProvider() is a legacy preset helper. '
+  'Prefer AI.deepSeek(...).chatModel(...) for the stable API, or createDeepSeekProvider(...) when you still need the old root-package provider surface.',
+)
 DeepSeekProvider createDeepSeekReasoningProvider({
   required String apiKey,
   String model = 'deepseek-reasoner',

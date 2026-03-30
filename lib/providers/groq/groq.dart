@@ -69,6 +69,10 @@ GroqProvider createGroqProvider({
 }
 
 /// Create a Groq provider for chat
+@Deprecated(
+  'createGroqChatProvider() is a legacy preset helper. '
+  'Prefer AI.groq(...).chatModel(...) for the stable API, or createGroqProvider(...) when you still need the old root-package provider surface.',
+)
 GroqProvider createGroqChatProvider({
   required String apiKey,
   String model = 'llama-3.3-70b-versatile',
@@ -86,6 +90,10 @@ GroqProvider createGroqChatProvider({
 }
 
 /// Create a Groq provider for fast inference
+@Deprecated(
+  'createGroqFastProvider() is a legacy preset helper. '
+  'Prefer AI.groq(...).chatModel(...) for the stable API, or createGroqProvider(...) when you still need the old root-package provider surface.',
+)
 GroqProvider createGroqFastProvider({
   required String apiKey,
   String model = 'llama-3.1-8b-instant',
@@ -103,6 +111,10 @@ GroqProvider createGroqFastProvider({
 }
 
 /// Create a Groq provider for vision tasks
+@Deprecated(
+  'createGroqVisionProvider() is a legacy preset helper. '
+  'Prefer AI.groq(...).chatModel(...) for the stable API, or createGroqProvider(...) when you still need the old root-package provider surface.',
+)
 GroqProvider createGroqVisionProvider({
   required String apiKey,
   String model = 'llava-v1.5-7b-4096-preview',
@@ -120,6 +132,10 @@ GroqProvider createGroqVisionProvider({
 }
 
 /// Create a Groq provider for code generation
+@Deprecated(
+  'createGroqCodeProvider() is a legacy preset helper. '
+  'Prefer AI.groq(...).chatModel(...) for the stable API, or createGroqProvider(...) when you still need the old root-package provider surface.',
+)
 GroqProvider createGroqCodeProvider({
   required String apiKey,
   String model = 'llama-3.1-70b-versatile',

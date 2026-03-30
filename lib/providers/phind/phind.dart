@@ -68,6 +68,10 @@ PhindProvider createPhindProvider({
 }
 
 /// Create a Phind provider optimized for code generation
+@Deprecated(
+  'createPhindCodeProvider() is a legacy preset helper. '
+  'Prefer AI.phind(...).chatModel(...) for the stable API, or createPhindProvider(...) when you still need the old root-package provider surface.',
+)
 PhindProvider createPhindCodeProvider({
   required String apiKey,
   String model = 'Phind-70B',
@@ -88,6 +92,10 @@ PhindProvider createPhindCodeProvider({
 }
 
 /// Create a Phind provider optimized for code explanation
+@Deprecated(
+  'createPhindExplainerProvider() is a legacy preset helper. '
+  'Prefer AI.phind(...).chatModel(...) for the stable API, or createPhindProvider(...) when you still need the old root-package provider surface.',
+)
 PhindProvider createPhindExplainerProvider({
   required String apiKey,
   String model = 'Phind-70B',

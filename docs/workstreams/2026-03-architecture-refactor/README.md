@@ -84,6 +84,12 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen OpenRouter search design that keeps search as profile-owned model shaping instead of widening shared OpenAI-family invocation options.
 - [30-xai-live-search-options-design.md](30-xai-live-search-options-design.md)
   - Frozen xAI live-search design that separates chat `search_parameters` from future provider-defined search tools.
+- [33-legacy-factory-entrypoint-deprecations.md](33-legacy-factory-entrypoint-deprecations.md)
+  - Frozen deprecation scope for compatibility-only preset factory helpers once the stable `AI` facade replacement already exists.
+- [34-legacy-api-removal-window.md](34-legacy-api-removal-window.md)
+  - Frozen removal window for the old root-package compatibility APIs, with the earliest removal point set no earlier than `1.0.0`.
+- [35-bridge-incompatible-provider-result-migration-guidance.md](35-bridge-incompatible-provider-result-migration-guidance.md)
+  - Frozen migration wording for provider-native result families that still stay outside the legacy bridge allowlist.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

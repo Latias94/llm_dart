@@ -148,6 +148,9 @@ Current status:
 - the provider-owned search direction is now also frozen more concretely: OpenRouter search remains profile/model shaping, while xAI live search becomes provider-owned invocation options over `search_parameters`
 - the package-owned OpenRouter mainline now also accepts provider-owned online-model settings, and the compatibility bridge now allows the explicit `:online` shape plus the bare `webSearchEnabled` migration input
 - the package-owned xAI chat-completions mainline now also accepts typed `XAIGenerateTextOptions` and projects xAI citations through shared source parts and events
+- deprecated compatibility markers now also cover the legacy preset helper families whose stable `AI.*(...).chatModel(...)` replacement already exists
+- the old root-package compatibility removal window is now frozen as “no earlier than `1.0.0`”
+- fallback-only provider-native Anthropic result families now also carry explicit migration guidance instead of generic unsupported wording
 - provider stream coverage regression tests now explicitly cover OpenAI reasoning and failed-response paths, Anthropic malformed tool-input events, and Google source/file/reasoning-file stream paths
 - the next recommended milestone is now explicit: expand provider coverage tests and renderer helpers without widening the shared event model
 - the next provider-specific implementation step is now also explicit: re-audit broader OpenRouter search mapping and any xAI subsets beyond the audited legacy live-search migration subset

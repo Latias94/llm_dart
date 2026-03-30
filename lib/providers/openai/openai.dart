@@ -69,6 +69,11 @@ OpenAIProvider createOpenAIProvider({
 }
 
 /// Create an OpenAI provider for OpenRouter
+@Deprecated(
+  'createOpenRouterProvider() is a legacy preset helper. '
+  'Prefer the stable AI.openRouter(...).chatModel(...) API. '
+  'If you still need the old root-package OpenAIProvider surface temporarily, use createOpenAIProvider(...) with explicit OpenRouter baseUrl/model settings.',
+)
 OpenAIProvider createOpenRouterProvider({
   required String apiKey,
   String model = ProviderDefaults.openRouterDefaultModel,
@@ -89,6 +94,11 @@ OpenAIProvider createOpenRouterProvider({
 }
 
 /// Create an OpenAI provider for Groq
+@Deprecated(
+  'createGroqProvider() is a legacy preset helper. '
+  'Prefer the stable AI.groq(...).chatModel(...) API. '
+  'If you still need the old root-package OpenAIProvider surface temporarily, use createOpenAIProvider(...) with explicit Groq baseUrl/model settings.',
+)
 OpenAIProvider createGroqProvider({
   required String apiKey,
   String model = ProviderDefaults.groqDefaultModel,
@@ -109,6 +119,11 @@ OpenAIProvider createGroqProvider({
 }
 
 /// Create an OpenAI provider for DeepSeek
+@Deprecated(
+  'createDeepSeekProvider() is a legacy preset helper. '
+  'Prefer the stable AI.deepSeek(...).chatModel(...) API. '
+  'If you still need the old root-package OpenAIProvider surface temporarily, use createOpenAIProvider(...) with explicit DeepSeek baseUrl/model settings.',
+)
 OpenAIProvider createDeepSeekProvider({
   required String apiKey,
   String model = ProviderDefaults.deepseekDefaultModel,
