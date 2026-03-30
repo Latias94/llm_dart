@@ -354,7 +354,126 @@ void main() {
       expect(sendCount, 0);
     });
 
-    test('xAI chat completions encode typed live-search options and decode citations',
+    test(
+        'chat completions replay drops provider-native approval continuation with warnings',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_approval_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000100,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Fallback answer.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 2,
+                  'total_tokens': 6,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Continue after approval.'),
+            AssistantPromptMessage(
+              parts: const [
+                ToolCallPromptPart(
+                  toolCallId: 'approval-1',
+                  toolName: 'mcp.create_short_url',
+                  input: {
+                    'url': 'https://ai-sdk.dev',
+                  },
+                  providerExecuted: true,
+                  isDynamic: true,
+                ),
+                ToolApprovalRequestPromptPart(
+                  approvalId: 'approval-1',
+                  toolCallId: 'approval-1',
+                ),
+              ],
+            ),
+            ToolPromptMessage(
+              toolName: 'mcp.create_short_url',
+              parts: const [
+                ToolApprovalResponsePromptPart(
+                  approvalId: 'approval-1',
+                  toolCallId: 'approval-1',
+                  approved: true,
+                  reason: 'User approved the MCP action.',
+                ),
+                ToolResultPromptPart(
+                  toolCallId: 'approval-1',
+                  toolName: 'mcp.create_short_url',
+                  output: {
+                    'shortUrl': 'https://zip1.dev/abc123',
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': 'Continue after approval.',
+          },
+        ],
+      );
+
+      expect(result.text, 'Fallback answer.');
+      expect(
+        result.warnings.map((warning) => warning.message),
+        containsAll([
+          'Chat-completions replay drops provider-executed or dynamic assistant tool calls.',
+          'Chat-completions replay does not support tool approval responses.',
+          'Chat-completions replay drops provider-native MCP tool results.',
+        ]),
+      );
+      expect(
+        result.warnings
+            .where((warning) => warning.field == 'prompt.assistant.parts'),
+        isNotEmpty,
+      );
+      expect(
+        result.warnings
+            .where((warning) => warning.field == 'prompt.tool.parts'),
+        isNotEmpty,
+      );
+    });
+
+    test(
+        'xAI chat completions encode typed live-search options and decode citations',
         () async {
       TransportRequest? capturedRequest;
 
