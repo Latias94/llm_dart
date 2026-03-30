@@ -59,9 +59,10 @@ Current status:
 - replay-critical OpenAI Responses metadata now survives decode, session replay, and request re-encoding for assistant message IDs, message phase, reasoning encrypted content, tool-call item IDs, and compaction items
 - transport now has a concrete Dio executor, SSE decoder, cancellation abstraction, and error mapping
 - `llm_dart_core` now also exposes `GenerateTextStepResult` as the first shared step-level snapshot wrapper without changing the single-step meaning of `generateText` / `streamText`
-- `llm_dart_core` now also exposes `GenerateTextRunResult` and `GenerateTextStepStartEvent` as runner-facing pure model primitives, still without introducing a multi-step runtime yet
-- `llm_dart_core` now also has a minimal non-streaming `GenerateTextRunner` and `runTextGeneration(...)` entrypoint for single-step lifecycle callbacks without pretending to be a multi-step agent runtime
-- the next shared-orchestration maturity target is now frozen more clearly: expand that into a real higher-level multi-step runner with lifecycle callbacks and synthesized `StepResult` snapshots above the current single-step helpers instead of widening `TextStreamEvent` or changing the meaning of `generateText` / `streamText`
+- `llm_dart_core` now also exposes `GenerateTextRunResult` and `GenerateTextStepStartEvent` as runner-facing pure model primitives
+- `llm_dart_core` now also has a narrow non-streaming multi-step `GenerateTextRunner` and `runTextGeneration(...)` entrypoint that accumulates step snapshots, replays prior assistant/tool messages, and continues common function-tool steps through an app-supplied executor
+- that runner boundary is still intentionally narrow: `generateText` / `streamText` remain single-step helpers, there is no shared `prepareStep`, and provider-native built-in tools, dynamic tools, and approval-gated continuation stay outside the shared runner
+- streaming orchestration, richer mutation hooks, and broader retry/model-switch policies remain for the next step
 - provider-specific compatibility subset audits, broader endpoint coverage, and non-text endpoints remain for the next step
 
 ## M3 - Anthropic And Google

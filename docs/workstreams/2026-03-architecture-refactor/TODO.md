@@ -48,7 +48,9 @@
 - [x] Add `GenerateTextStepResult` as the shared single-step snapshot wrapper above existing request/result models
 - [x] Add initial runner-facing shared model primitives: `GenerateTextRunResult` and `GenerateTextStepStartEvent`
 - [x] Implement a minimal non-streaming single-step `GenerateTextRunner` with `onStepStart`, `onStepFinish`, and `onFinish`
-- [ ] Design and implement a higher-level multi-step text generation runner with lifecycle callbacks and synthesized `StepResult` snapshots above the single-step `generateText` / `streamText` helpers
+- [x] Design and implement a narrow non-streaming multi-step text generation runner with lifecycle callbacks, synthesized `StepResult` snapshots, and app-supplied common function-tool continuation above the single-step `generateText` / `streamText` helpers
+- [ ] Decide whether the shared runner should later add streaming orchestration, `prepareStep`-style mutation hooks, or broader retry/model-switch policies
+- [ ] Decide whether approval-gated continuation and provider-native built-in tool continuation should stay provider/session-owned or ever gain a shared runner path
 - [ ] Implement `embed` / `embedMany`
 - [ ] Implement `generateImage`
 - [ ] Implement `generateSpeech`

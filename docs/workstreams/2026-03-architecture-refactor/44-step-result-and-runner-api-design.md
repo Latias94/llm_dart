@@ -10,6 +10,12 @@ It does two things:
 2. define the runner API shape we should target later without overcommitting to
    the full orchestration surface yet
 
+Current status:
+
+- the shared step model has landed
+- the first narrow non-streaming multi-step runner slice has also landed
+- this note now describes the frozen boundary for expanding that runner further
+
 ## 1. Design Constraint
 
 The most important constraint from the earlier decisions is:
@@ -109,29 +115,34 @@ final result = await runTextGeneration(
   model: model,
   prompt: prompt,
   tools: tools,
+  functionToolExecutor: functionToolExecutor,
+  maxSteps: 8,
   onStepStart: (event) async {},
   onStepFinish: (step) async {},
   onFinish: (run) async {},
 );
 ```
 
-But the first implementation should stay intentionally narrow.
+That first implementation should stay intentionally narrow.
 
 ## 6. Runner V1 Scope
 
-The first runner version should own:
+Runner v1 now owns:
 
 - repeated provider calls when the orchestration policy is explicitly supported
 - `GenerateTextStepResult` accumulation
 - final aggregated run result
 - lifecycle callbacks
+- replay of prior assistant/tool messages between steps
+- app-supplied continuation for declared common function tools only
 
-The first runner version should not yet own:
+Runner v1 still does not own:
 
 - model switching
 - arbitrary `prepareStep`
-- generic tool execution abstraction
+- generic tool execution for arbitrary tool families
 - provider-native built-in tool execution
+- approval-gated continuation
 - Flutter session concerns
 
 This keeps the first runner small enough to prove the API without opening a new
@@ -220,12 +231,16 @@ Recommended rule:
 - only add `prepareStep` after one runner implementation proves which mutation
   points are truly necessary
 
-## 10. Why Generic Tool Execution Should Wait
+## 10. Why Broader Tool Execution Still Waits
 
-The same rule applies to generic runner-owned tool execution.
+The same rule now applies to broader runner-owned tool execution.
 
-Do not add a generic cross-package tool executor contract in the first runner
-slice.
+The runner now has a very narrow contract:
+
+- app-supplied execution for declared common function tools
+
+What still must wait is a broader cross-package executor contract that tries to
+cover every tool family.
 
 Reason:
 
@@ -236,26 +251,27 @@ Reason:
 
 Recommended first step:
 
-- make the step model and lifecycle callbacks stable first
-- decide shared runner-owned tool execution only after that
+- keep the current narrow function-tool continuation stable first
+- decide any broader shared runner-owned tool execution only after that
 
 ## 11. Recommended Implementation Order
 
 1. add `GenerateTextStepResult` to `llm_dart_core`
 2. export it from the package entrypoint
 3. add tests for the convenience projections
-4. keep the runner as design-only until the model proves stable
-5. only then implement a minimal runner with `onStepStart`, `onStepFinish`, and
-   `onFinish`
+4. keep the runner narrow until the model proves stable
+5. only then expand continuation scope beyond common function tools if that is
+   still justified
 
 ## Conclusion
 
-The first code move should be modest:
+The first code move was modest:
 
 - add `GenerateTextStepResult` as a wrapper around existing request/result
   models
 
-The first runner should also be modest:
+The first runner is also modest:
 
 - read-oriented lifecycle hooks first
-- mutation hooks and tool-execution orchestration later
+- narrow common function-tool continuation only
+- mutation hooks and broader tool-execution orchestration later

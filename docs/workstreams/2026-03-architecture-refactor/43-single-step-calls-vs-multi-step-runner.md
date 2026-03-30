@@ -80,11 +80,11 @@ above the current model calls.
 Recommended shape:
 
 ```dart
-final run = TextGenerationRunner(
+final run = GenerateTextRunner(
   model: model,
   prompt: prompt,
   tools: tools,
-  toolExecutor: toolExecutor,
+  functionToolExecutor: functionToolExecutor,
   onStepStart: (event) async {},
   onStepFinish: (step) async {},
   onFinish: (result) async {},
@@ -100,7 +100,7 @@ final result = await runTextGeneration(
   model: model,
   prompt: prompt,
   tools: tools,
-  toolExecutor: toolExecutor,
+  functionToolExecutor: functionToolExecutor,
   onStepStart: (event) async {},
   onStepFinish: (step) async {},
   onFinish: (result) async {},
@@ -111,6 +111,12 @@ The important rule is structural, not nominal:
 
 - multi-step lifecycle belongs to a runner layer that orchestrates repeated
   provider calls
+
+Current status:
+
+- this runner layer now exists in `llm_dart_core`
+- its first shared continuation contract is intentionally narrow:
+  app-supplied common function-tool execution only
 
 ## 5. What The Runner Should Own
 
