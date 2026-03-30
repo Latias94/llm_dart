@@ -230,8 +230,8 @@ A better shape is:
 
 - `llm_dart.dart`
 - `llm_dart/core.dart`
-- `llm_dart/flutter.dart`
 - `llm_dart/openai.dart`
+- `package:llm_dart_flutter/llm_dart_flutter.dart`
 
 ## 3. Enforce One-Way Dependencies
 

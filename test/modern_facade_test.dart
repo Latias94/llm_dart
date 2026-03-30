@@ -1,6 +1,5 @@
 import 'package:llm_dart/ai.dart' as modern;
 import 'package:llm_dart/anthropic.dart' as anthropic_entry;
-import 'package:llm_dart/flutter.dart' as flutter_entry;
 import 'package:llm_dart/google.dart' as google_entry;
 import 'package:llm_dart/openai.dart' as openai_entry;
 import 'package:test/test.dart';
@@ -91,14 +90,6 @@ void main() {
         const openai_entry.PhindProfile().defaultBaseUrl,
       );
       expect(phindProvider.chatModel('Phind-70B').providerId, 'phind');
-    });
-
-    test('flutter entrypoint can compose with the new root facade', () {
-      final transport = flutter_entry.DirectChatTransport(
-        model: modern.AI.openai(apiKey: 'test-key').chatModel('gpt-5-mini'),
-      );
-
-      expect(transport, isA<flutter_entry.DirectChatTransport>());
     });
   });
 }

@@ -13,8 +13,8 @@ Command-line AI assistant with multiple provider support and argument parsing.
 ### [web_service.dart](web_service.dart)
 HTTP API service with authentication, rate limiting, and monitoring.
 
-### [flutter_integration.dart](flutter_integration.dart)
-Flutter app integration patterns with state management and UI components.
+### [packages/llm_dart_flutter/example/flutter_integration.dart](../../packages/llm_dart_flutter/example/flutter_integration.dart)
+Flutter app integration patterns now live with the dedicated `llm_dart_flutter` package.
 
 ### [batch_processor.dart](batch_processor.dart)
 Large-scale data processing with concurrent workers, rate limiting, and progress tracking.
@@ -34,7 +34,7 @@ export GROQ_API_KEY="your-groq-key"
 dart run chatbot.dart
 dart run cli_tool.dart --help
 dart run web_service.dart
-dart run flutter_integration.dart
+dart run ../../packages/llm_dart_flutter/example/flutter_integration.dart
 dart run batch_processor.dart --help
 dart run multimodal_app.dart --demo
 ```

@@ -1,9 +1,9 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, avoid_relative_lib_imports
 
 import 'dart:async';
 import 'dart:io';
 
-import 'package:llm_dart/llm_dart.dart' as llm;
+import '../../../lib/llm_dart.dart' as llm;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 Future<void> main() async {

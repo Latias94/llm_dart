@@ -80,7 +80,7 @@ Practical examples for the LLM Dart library, organized by learning path and use 
 - [chatbot.dart](05_use_cases/chatbot.dart) - Interactive chatbot with personality
 - [cli_tool.dart](05_use_cases/cli_tool.dart) - Command-line AI assistant
 - [web_service.dart](05_use_cases/web_service.dart) - HTTP API with authentication
-- [flutter_integration.dart](05_use_cases/flutter_integration.dart) - Flutter app patterns
+- [packages/llm_dart_flutter/example/flutter_integration.dart](../packages/llm_dart_flutter/example/flutter_integration.dart) - Flutter app patterns
 - [batch_processor.dart](05_use_cases/batch_processor.dart) - Large-scale data processing
 - [multimodal_app.dart](05_use_cases/multimodal_app.dart) - Text, image, and audio processing
 

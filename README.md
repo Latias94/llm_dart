@@ -248,7 +248,7 @@ Future<void> main() async {
 ```
 
 Example file:
-[flutter_integration.dart](E:/codes/flutter/llm_dart/example/05_use_cases/flutter_integration.dart)
+[flutter_integration.dart](E:/codes/flutter/llm_dart/packages/llm_dart_flutter/example/flutter_integration.dart)
 
 ## Provider-Specific Options
 
