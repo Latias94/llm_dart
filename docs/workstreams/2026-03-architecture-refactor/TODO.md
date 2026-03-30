@@ -205,7 +205,7 @@
 - [x] Move Dio-specific error mapping helpers out of `core/` implementation files
 - [x] Move legacy `BaseHttpProvider` implementation out of `core/`
 - [x] Move `http_parser` out of the root package or remove it
-- [ ] Move `mcp_dart` under an example or dedicated integration-package strategy
+- [x] Move `mcp_dart` under an example or dedicated integration-package strategy
 - [x] Remove unused `mockito`
 
 ## Provider Feature Representation

@@ -87,6 +87,8 @@ Practical examples for the LLM Dart library, organized by learning path and use 
 ### MCP Integration
 *External tool connections*
 
+Run these examples from the standalone package in `example/06_mcp_integration`.
+
 - [mcp_concept_demo.dart](06_mcp_integration/mcp_concept_demo.dart) - Core concepts
 - [simple_mcp_demo.dart](06_mcp_integration/simple_mcp_demo.dart) - Basic integration
 - [basic_mcp_client.dart](06_mcp_integration/basic_mcp_client.dart) - MCP client

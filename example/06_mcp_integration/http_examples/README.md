@@ -33,7 +33,8 @@ HTTP transport uses standard HTTP requests and Server-Sent Events (SSE) for comm
 ### 1. Start the HTTP MCP Server
 
 ```bash
-dart run example/06_mcp_integration/http_examples/server.dart
+cd example/06_mcp_integration
+dart run http_examples/server.dart
 ```
 
 The server will start at `http://localhost:3000/mcp`.
@@ -43,7 +44,7 @@ The server will start at `http://localhost:3000/mcp`.
 In another terminal:
 
 ```bash
-dart run example/06_mcp_integration/http_examples/client.dart
+dart run http_examples/client.dart
 ```
 
 This will connect to the server via HTTP and test all available tools.
@@ -55,7 +56,7 @@ This will connect to the server via HTTP and test all available tools.
 export OPENAI_API_KEY="your-key-here"
 
 # Run the LLM integration example
-dart run example/06_mcp_integration/http_examples/llm_client.dart
+dart run http_examples/llm_client.dart
 ```
 
 ### 4. Test Streaming LLM Integration
@@ -64,7 +65,7 @@ dart run example/06_mcp_integration/http_examples/llm_client.dart
 # Set your API key first
 export OPENAI_API_KEY="your-key-here"
 
-dart run example/06_mcp_integration/http_examples/simple_stream_client.dart
+dart run http_examples/simple_stream_client.dart
 ```
 
 ## Available Tools

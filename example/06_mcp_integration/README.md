@@ -5,19 +5,22 @@ MCP (Model Context Protocol) integration examples for llm_dart. MCP enables LLMs
 ## Quick Start
 
 ```bash
+# Enter the standalone example package
+cd example/06_mcp_integration
+
 # Install dependencies
 dart pub get
 
 # Start with core concepts
-dart run example/06_mcp_integration/mcp_concept_demo.dart
+dart run mcp_concept_demo.dart
 
 # Test stdio integration
-dart run example/06_mcp_integration/stdio_examples/server.dart  # Terminal 1
-dart run example/06_mcp_integration/stdio_examples/llm_client.dart  # Terminal 2
+dart run stdio_examples/server.dart  # Terminal 1
+dart run stdio_examples/llm_client.dart  # Terminal 2
 
 # Test HTTP integration
-dart run example/06_mcp_integration/http_examples/server.dart  # Terminal 1
-dart run example/06_mcp_integration/http_examples/llm_client.dart  # Terminal 2
+dart run http_examples/server.dart  # Terminal 1
+dart run http_examples/llm_client.dart  # Terminal 2
 ```
 
 ## Examples
@@ -56,7 +59,7 @@ LLM Provider ◄──► llm_dart Tool System ◄──► MCP Client ◄──
 
 ### Common Issues
 
-- **Package not found**: Run `dart pub get`
+- **Package not found**: Run `dart pub get` inside `example/06_mcp_integration`
 - **API key errors**: Examples work without API keys (test mode)
 - **Connection failed**: Check if MCP server is running
 - **No tool calls**: Try more explicit requests like "Use the calculate tool to compute 15 * 23"

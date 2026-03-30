@@ -20,7 +20,8 @@ stdio transport uses standard input/output streams for communication between MCP
 ### 1. Start the stdio MCP Server
 
 ```bash
-dart run example/06_mcp_integration/stdio_examples/server.dart
+cd example/06_mcp_integration
+dart run stdio_examples/server.dart
 ```
 
 The server will start and wait for JSON-RPC messages on stdin.
@@ -30,7 +31,7 @@ The server will start and wait for JSON-RPC messages on stdin.
 In another terminal:
 
 ```bash
-dart run example/06_mcp_integration/stdio_examples/client.dart
+dart run stdio_examples/client.dart
 ```
 
 This will spawn a real MCP client, connect to the server process, and test all available tools directly.
@@ -42,7 +43,7 @@ This will spawn a real MCP client, connect to the server process, and test all a
 export OPENAI_API_KEY="your-key-here"
 
 # Run the real LLM integration example
-dart run example/06_mcp_integration/stdio_examples/llm_client.dart
+dart run stdio_examples/llm_client.dart
 ```
 
 This will create a real MCP client, connect to the server, discover tools, and use them with LLM tool calling.

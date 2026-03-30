@@ -25,7 +25,6 @@ dependencies:
 
 dev_dependencies:
   test: ^1.27.0
-  mcp_dart: ^0.6.3
   lints: ^6.0.0
 
 dependency_overrides:

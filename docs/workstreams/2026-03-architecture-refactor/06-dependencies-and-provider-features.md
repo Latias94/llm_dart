@@ -97,7 +97,7 @@ Conclusion:
 
 ### `mcp_dart`
 
-`mcp_dart` is currently a root `dev_dependency`, and all 8 occurrences in the repository are inside `example/06_mcp_integration`.
+`mcp_dart` now lives in the dedicated [example/06_mcp_integration/pubspec.yaml](../../../example/06_mcp_integration/pubspec.yaml) nested example package.
 
 The conclusion is clear:
 
@@ -152,7 +152,7 @@ From this point forward:
 Today that means:
 
 - `dio` and `logging` are still justified at the root only because the old monolith still uses them
-- `mcp_dart` remains temporary root example debt because examples are not yet split into their own package or app
+- `mcp_dart` now sits outside the main package graph in the standalone `example/06_mcp_integration` package
 
 ## Target Dependency Direction
 
