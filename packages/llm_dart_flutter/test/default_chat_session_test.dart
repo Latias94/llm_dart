@@ -1249,6 +1249,290 @@ void main() {
       await session.dispose();
     });
 
+    test('automatically executes client-side tools through onToolCall',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+      final toolCalls = <ToolExecutionRequest>[];
+
+      final session = DefaultChatSession(
+        onToolCall: (request) async {
+          toolCalls.add(request);
+          return const ToolExecutionResult.output({
+            'temperature': 24,
+            'unit': 'celsius',
+          });
+        },
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-1',
+                      toolName: 'weather',
+                      input: {
+                        'location': 'Tokyo',
+                      },
+                    ),
+                  ),
+                  const FinishEvent(finishReason: FinishReason.toolCalls),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'Automatic tool execution completed.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Weather in Tokyo?'));
+      await _flushAsyncWork();
+
+      expect(toolCalls, hasLength(1));
+      expect(toolCalls.single.toolCallId, 'tool-1');
+      expect(toolCalls.single.toolName, 'weather');
+      expect(toolCalls.single.input, {
+        'location': 'Tokyo',
+      });
+      expect(capturedRequests, hasLength(2));
+      expect(session.state.status, ChatStatus.ready);
+      expect(
+        session.state.messages.last.parts.whereType<TextUiPart>().single.text,
+        'Automatic tool execution completed.',
+      );
+
+      await session.dispose();
+    });
+
+    test('waits for all automatic tool outputs before continuing', () async {
+      final capturedRequests = <ChatTransportRequest>[];
+      final weatherCompletion = Completer<ToolExecutionResult?>();
+      final calendarCompletion = Completer<ToolExecutionResult?>();
+
+      final session = DefaultChatSession(
+        onToolCall: (request) {
+          return switch (request.toolName) {
+            'weather' => weatherCompletion.future,
+            'calendar' => calendarCompletion.future,
+            _ => throw StateError('Unexpected tool ${request.toolName}.'),
+          };
+        },
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-1',
+                      toolName: 'weather',
+                      input: {
+                        'location': 'Tokyo',
+                      },
+                    ),
+                  ),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-2',
+                      toolName: 'calendar',
+                      input: {
+                        'day': 'Monday',
+                      },
+                    ),
+                  ),
+                  const FinishEvent(finishReason: FinishReason.toolCalls),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'All automatic tools completed.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Plan my Monday in Tokyo.'));
+      expect(session.state.status, ChatStatus.awaitingTool);
+
+      weatherCompletion.complete(
+        const ToolExecutionResult.output({
+          'temperature': 24,
+        }),
+      );
+      await _flushAsyncWork();
+
+      expect(capturedRequests, hasLength(1));
+      expect(session.state.status, ChatStatus.awaitingTool);
+
+      calendarCompletion.complete(
+        const ToolExecutionResult.output({
+          'events': ['Standup'],
+        }),
+      );
+      await _flushAsyncWork();
+
+      expect(capturedRequests, hasLength(2));
+      expect(session.state.status, ChatStatus.ready);
+      expect(
+        session.state.messages.last.parts.whereType<TextUiPart>().single.text,
+        'All automatic tools completed.',
+      );
+
+      await session.dispose();
+    });
+
+    test(
+        'approved client-side tools trigger automatic execution after approval',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+      final toolCalls = <ToolExecutionRequest>[];
+
+      final session = DefaultChatSession(
+        onToolCall: (request) async {
+          toolCalls.add(request);
+          return const ToolExecutionResult.output({
+            'clicked': true,
+          });
+        },
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-1',
+                      toolName: 'computer',
+                      input: {
+                        'action': 'click',
+                      },
+                    ),
+                  ),
+                  const ToolApprovalRequestEvent(
+                    approvalId: 'approval-1',
+                    toolCallId: 'tool-1',
+                  ),
+                  const FinishEvent(finishReason: FinishReason.toolCalls),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'Approved automatic tool execution completed.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Click the submit button.'));
+      expect(toolCalls, isEmpty);
+
+      await session.respondToolApproval(
+        const ToolApprovalResponse(
+          approvalId: 'approval-1',
+          approved: true,
+        ),
+      );
+      await _flushAsyncWork();
+
+      expect(toolCalls, hasLength(1));
+      expect(toolCalls.single.toolName, 'computer');
+      expect(capturedRequests, hasLength(2));
+      expect(session.state.status, ChatStatus.ready);
+
+      await session.dispose();
+    });
+
+    test('automatic tool execution failures become tool error output',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        onToolCall: (_) => throw StateError('Tool process crashed.'),
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-1',
+                      toolName: 'weather',
+                      input: {
+                        'location': 'Tokyo',
+                      },
+                    ),
+                  ),
+                  const FinishEvent(finishReason: FinishReason.toolCalls),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'The tool failure was reported back to the model.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Weather in Tokyo?'));
+      await _flushAsyncWork();
+
+      expect(capturedRequests, hasLength(2));
+      final continuationPrompt = capturedRequests[1].prompt;
+      expect(continuationPrompt, hasLength(3));
+      final toolResultMessage = continuationPrompt[2] as ToolPromptMessage;
+      final toolResult = toolResultMessage.parts.single as ToolResultPromptPart;
+      expect(toolResult.isError, isTrue);
+      expect(
+        toolResult.output,
+        contains('Automatic tool execution failed for "weather"'),
+      );
+      expect(session.state.status, ChatStatus.ready);
+
+      await session.dispose();
+    });
+
     test(
         'waits until all client-side tool outputs are available before continuing',
         () async {
@@ -2338,6 +2622,12 @@ void main() {
       await session.dispose();
     });
   });
+}
+
+Future<void> _flushAsyncWork([int turns = 8]) async {
+  for (var index = 0; index < turns; index++) {
+    await Future<void>.delayed(Duration.zero);
+  }
 }
 
 final class _FakeChatTransport implements ChatTransport {

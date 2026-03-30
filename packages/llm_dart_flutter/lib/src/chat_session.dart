@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'chat_input.dart';
@@ -34,6 +36,52 @@ final class ToolApprovalResponse {
     this.options = const ChatRequestOptions(),
   });
 }
+
+final class ToolExecutionRequest {
+  final String chatId;
+  final String messageId;
+  final String toolCallId;
+  final String toolName;
+  final Object? input;
+  final String? inputText;
+  final bool isDynamic;
+  final String? title;
+  final ToolApprovalUiState? approval;
+  final ProviderMetadata? callProviderMetadata;
+
+  const ToolExecutionRequest({
+    required this.chatId,
+    required this.messageId,
+    required this.toolCallId,
+    required this.toolName,
+    this.input,
+    this.inputText,
+    this.isDynamic = false,
+    this.title,
+    this.approval,
+    this.callProviderMetadata,
+  });
+}
+
+final class ToolExecutionResult {
+  final Object? output;
+  final bool isError;
+  final ChatRequestOptions options;
+
+  const ToolExecutionResult.output(
+    this.output, {
+    this.options = const ChatRequestOptions(),
+  }) : isError = false;
+
+  const ToolExecutionResult.error(
+    this.output, {
+    this.options = const ChatRequestOptions(),
+  }) : isError = true;
+}
+
+typedef ChatOnToolCall = FutureOr<ToolExecutionResult?> Function(
+  ToolExecutionRequest request,
+);
 
 abstract interface class ChatSession {
   ChatState get state;

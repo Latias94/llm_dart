@@ -226,6 +226,7 @@ the richer part model.
 - stream assistant messages
 - pause on client-executed tools
 - inject tool output with `addToolOutput`
+- optionally auto-resolve client-executed tools with `onToolCall`
 - pause on approval requests
 - respond with `respondToolApproval`
 - wait for the current assistant step to finish collecting local tool output and approval responses before continuing the next turn
@@ -235,6 +236,35 @@ the richer part model.
 Provider-executed tool behavior remains provider-owned. The session layer only
 models stable tool and approval state transitions that a Flutter UI needs to
 render.
+
+## Optional Local Tool Callback
+
+`DefaultChatSession` can also auto-run local client-side tools through
+`onToolCall`.
+
+```dart
+final session = DefaultChatSession(
+  transport: DirectChatTransport(model: model),
+  onToolCall: (request) async {
+    if (request.toolName != 'weather') {
+      return null;
+    }
+
+    return const ToolExecutionResult.output({
+      'temperature': 24,
+      'unit': 'celsius',
+    });
+  },
+);
+```
+
+Important notes:
+
+- `onToolCall` only applies to client-executed tools
+- approval still gates local execution when a tool first enters
+  `approvalRequested`
+- callback failures are mapped into tool error output, not generic session
+  errors
 
 ## Design Rules
 

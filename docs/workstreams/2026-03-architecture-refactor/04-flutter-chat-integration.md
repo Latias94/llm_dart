@@ -188,6 +188,7 @@ Current implementation direction:
 - approving a provider-executed tool should continue the transport-backed assistant turn
 - approving a client-executed tool should return the session to `awaitingTool` so the caller can later provide `addToolOutput`
 - if one assistant step contains several unresolved tools or approvals, the session should not continue after the first individual update; continuation should wait until the current step no longer has pending approval or client-side tool-output work
+- local convenience callbacks such as `onToolCall` may live in `llm_dart_flutter` and can auto-resolve client-executed tools by feeding the existing `addToolOutput` path; they should not widen `llm_dart_core`
 - `addDataPart` should support UI-only message enrichment for the current assistant turn:
   - while the transport stream is active
   - while the session is paused in `awaitingTool`

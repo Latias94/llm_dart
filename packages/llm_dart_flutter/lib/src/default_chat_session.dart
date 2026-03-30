@@ -14,9 +14,11 @@ typedef MessageIdGenerator = String Function();
 
 final class DefaultChatSession implements ChatSession {
   final ChatTransport transport;
+  final ChatOnToolCall? onToolCall;
   final StreamController<ChatState> _statesController;
   final List<PromptMessage> _promptHistory = [];
   final MessageIdGenerator _messageIdGenerator;
+  final Set<String> _scheduledToolExecutionKeys = <String>{};
 
   ChatState _state;
   StreamSubscription<ChatTransportChunk>? _activeSubscription;
@@ -30,8 +32,10 @@ final class DefaultChatSession implements ChatSession {
     String? chatId,
     List<PromptMessage> initialPrompt = const [],
     MessageIdGenerator? messageIdGenerator,
+    ChatOnToolCall? onToolCall,
   }) : this._(
           transport: transport,
+          onToolCall: onToolCall,
           initialState: ChatState(
             chatId: chatId ?? 'chat-${DateTime.now().microsecondsSinceEpoch}',
             messages: _visibleMessagesFromPrompt(initialPrompt),
@@ -44,8 +48,10 @@ final class DefaultChatSession implements ChatSession {
     required ChatTransport transport,
     required ChatSessionSnapshot snapshot,
     MessageIdGenerator? messageIdGenerator,
+    ChatOnToolCall? onToolCall,
   }) : this._(
           transport: transport,
+          onToolCall: onToolCall,
           initialState: ChatState(
             chatId: snapshot.chatId,
             messages: snapshot.messages,
@@ -58,6 +64,7 @@ final class DefaultChatSession implements ChatSession {
 
   DefaultChatSession._({
     required this.transport,
+    required this.onToolCall,
     required ChatState initialState,
     required List<PromptMessage> initialPrompt,
     MessageIdGenerator? messageIdGenerator,
@@ -68,6 +75,7 @@ final class DefaultChatSession implements ChatSession {
             ),
         _state = initialState {
     _promptHistory.addAll(initialPrompt);
+    _maybeScheduleAutomaticToolExecution();
   }
 
   @override
@@ -192,6 +200,7 @@ final class DefaultChatSession implements ChatSession {
     );
 
     if (nextStatus != ChatStatus.ready) {
+      _maybeScheduleAutomaticToolExecution();
       return Future.value();
     }
 
@@ -309,6 +318,7 @@ final class DefaultChatSession implements ChatSession {
         error: null,
       ),
     );
+    _maybeScheduleAutomaticToolExecution();
   }
 
   @override
@@ -520,6 +530,7 @@ final class DefaultChatSession implements ChatSession {
                   error: null,
                 ),
               );
+              _maybeScheduleAutomaticToolExecution();
               if (!completion.isCompleted) {
                 completion.complete();
               }
@@ -565,6 +576,7 @@ final class DefaultChatSession implements ChatSession {
             error: null,
           ),
         );
+        _maybeScheduleAutomaticToolExecution();
         if (!completion.isCompleted) {
           completion.complete();
         }
@@ -618,10 +630,133 @@ final class DefaultChatSession implements ChatSession {
     _activePromptAppendStartIndex = 0;
   }
 
+  void _maybeScheduleAutomaticToolExecution() {
+    final handler = onToolCall;
+    if (handler == null ||
+        _isDisposed ||
+        _activeSubscription != null ||
+        _state.status != ChatStatus.awaitingTool) {
+      return;
+    }
+
+    final assistantMessage = _latestAssistantMessageOrNull();
+    if (assistantMessage == null) {
+      return;
+    }
+
+    for (final part in _pendingAutomaticToolParts(assistantMessage)) {
+      final executionKey =
+          _toolExecutionKey(assistantMessage.id, part.toolCallId);
+      if (!_scheduledToolExecutionKeys.add(executionKey)) {
+        continue;
+      }
+
+      final request = ToolExecutionRequest(
+        chatId: _state.chatId,
+        messageId: assistantMessage.id,
+        toolCallId: part.toolCallId,
+        toolName: part.toolName,
+        input: part.input,
+        inputText: part.inputText,
+        isDynamic: part.isDynamic,
+        title: part.title,
+        approval: part.approval,
+        callProviderMetadata: part.callProviderMetadata,
+      );
+
+      unawaited(_runAutomaticToolExecution(handler, request));
+    }
+  }
+
+  Iterable<ToolUiPart> _pendingAutomaticToolParts(
+    ChatUiMessage assistantMessage,
+  ) sync* {
+    for (final part in assistantMessage.parts.whereType<ToolUiPart>()) {
+      if (part.providerExecuted) {
+        continue;
+      }
+
+      if (part.state == ToolUiPartState.inputAvailable ||
+          part.state == ToolUiPartState.approvalResponded) {
+        yield part;
+      }
+    }
+  }
+
+  Future<void> _runAutomaticToolExecution(
+    ChatOnToolCall handler,
+    ToolExecutionRequest request,
+  ) async {
+    ToolExecutionResult? result;
+
+    try {
+      result = await handler(request);
+    } catch (error) {
+      result = ToolExecutionResult.error(
+        'Automatic tool execution failed for "${request.toolName}": $error',
+      );
+    }
+
+    if (result == null || !_canApplyAutomaticToolOutput(request.toolCallId)) {
+      return;
+    }
+
+    try {
+      await addToolOutput(
+        ToolOutputUpdate(
+          toolCallId: request.toolCallId,
+          toolName: request.toolName,
+          output: result.output,
+          isError: result.isError,
+          options: result.options,
+        ),
+      );
+    } on StateError {
+      if (_canApplyAutomaticToolOutput(request.toolCallId)) {
+        rethrow;
+      }
+    }
+  }
+
+  bool _canApplyAutomaticToolOutput(String toolCallId) {
+    if (_isDisposed ||
+        _activeSubscription != null ||
+        _state.status != ChatStatus.awaitingTool) {
+      return false;
+    }
+
+    final assistantMessage = _latestAssistantMessageOrNull();
+    if (assistantMessage == null) {
+      return false;
+    }
+
+    for (final part in assistantMessage.parts.whereType<ToolUiPart>()) {
+      if (part.toolCallId != toolCallId) {
+        continue;
+      }
+
+      return !part.providerExecuted &&
+          (part.state == ToolUiPartState.inputAvailable ||
+              part.state == ToolUiPartState.inputStreaming ||
+              part.state == ToolUiPartState.approvalResponded);
+    }
+
+    return false;
+  }
+
   void _ensureUsable() {
     if (_isDisposed) {
       throw StateError('This chat session has already been disposed.');
     }
+  }
+
+  ChatUiMessage? _latestAssistantMessageOrNull() {
+    if (_state.messages.isEmpty ||
+        _state.messages.last.role != ChatUiRole.assistant) {
+      return null;
+    }
+
+    return _state.messages.last;
   }
 
   void _ensureIdle(String operation) {
@@ -1317,4 +1452,8 @@ MessageIdGenerator _sequentialMessageId({
       }
     }
   };
+}
+
+String _toolExecutionKey(String messageId, String toolCallId) {
+  return '$messageId\u0000$toolCallId';
 }

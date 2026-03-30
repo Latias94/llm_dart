@@ -100,6 +100,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Typed cross-layer error envelope design for stream events, transport, Flutter session state, and persistence.
 - [40-flutter-tool-orchestration-boundary.md](40-flutter-tool-orchestration-boundary.md)
   - Frozen session-layer rule for batching tool outputs and approval-driven continuation without widening shared events.
+- [41-local-tool-execution-convenience.md](41-local-tool-execution-convenience.md)
+  - Frozen boundary for `onToolCall`-style local tool execution convenience in `llm_dart_flutter`.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

@@ -344,3 +344,12 @@ Provider-specific features should be represented through:
 - provider-executed approval responses continue only after the current step no longer waits for other approvals or client-side tool outputs
 - mixed approval outcomes must be decided from the whole step state, not only from the most recent approval click
 - future convenience helpers such as automatic local tool callbacks, if added, belong in `llm_dart_flutter` above the current session boundary
+
+## D40. Automatic Local Tool Execution Stays In `llm_dart_flutter`
+
+- execute-style tool convenience such as `onToolCall` must stay in `llm_dart_flutter`, not in `llm_dart_core`
+- the callback may observe a client-executed tool call and optionally return a local tool output or local tool error result
+- automatic local tool execution must reuse the existing `addToolOutput` continuation path instead of introducing a second protocol
+- provider-executed tools stay out of this convenience surface
+- callback failures should become tool error results for the current tool call instead of escalating into generic chat-session errors
+- approval remains a gating step for client-executed tools; automatic local execution can only start after approval has been granted
