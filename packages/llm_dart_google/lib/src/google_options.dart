@@ -1,5 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'google_response_format.dart';
 import 'google_tools.dart';
 
 enum GoogleHarmCategory {
@@ -86,6 +87,7 @@ final class GoogleGenerateTextOptions implements ProviderInvocationOptions {
   final String? cachedContent;
   final List<GoogleSafetySetting>? safetySettings;
   final List<GoogleNativeTool>? tools;
+  final GoogleJsonSchemaResponseFormat? responseFormat;
 
   const GoogleGenerateTextOptions({
     this.candidateCount,
@@ -96,5 +98,6 @@ final class GoogleGenerateTextOptions implements ProviderInvocationOptions {
     this.cachedContent,
     this.safetySettings,
     this.tools,
+    this.responseFormat,
   });
 }

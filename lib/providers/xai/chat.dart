@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import 'dart:convert';
 
 import '../../core/capability.dart';
@@ -25,7 +23,7 @@ class XAIChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing xAI API key');
@@ -44,7 +42,7 @@ class XAIChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     if (config.apiKey.isEmpty) {
       yield ErrorEvent(const AuthError('Missing xAI API key'));
@@ -76,7 +74,7 @@ class XAIChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }

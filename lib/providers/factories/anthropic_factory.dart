@@ -1,6 +1,6 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
-import '../../core/provider_defaults.dart';
+import '../../src/provider_defaults.dart';
 import '../anthropic/anthropic.dart';
 import 'base_factory.dart';
 

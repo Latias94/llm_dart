@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
+import '../core/cancellation.dart';
 import '../core/llm_error.dart';
+import '../src/dio_cancellation_adapter.dart';
 import 'log_sanitizer.dart';
 
 /// Unified HTTP response handler for all providers
@@ -97,7 +99,7 @@ class HttpResponseHandler {
     Logger? logger,
     Map<String, dynamic>? queryParameters,
     Options? options,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     final provider = providerName ?? 'Unknown';
     final log = logger ?? _logger;
@@ -115,7 +117,7 @@ class HttpResponseHandler {
         data: data,
         queryParameters: queryParameters,
         options: options,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
 
       if (log.isLoggable(Level.FINE)) {
@@ -155,7 +157,7 @@ class HttpResponseHandler {
     Logger? logger,
     Map<String, dynamic>? queryParameters,
     Options? options,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     final provider = providerName ?? 'Unknown';
     final log = logger ?? _logger;
@@ -170,7 +172,7 @@ class HttpResponseHandler {
         endpoint,
         queryParameters: queryParameters,
         options: options,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
 
       if (log.isLoggable(Level.FINE)) {

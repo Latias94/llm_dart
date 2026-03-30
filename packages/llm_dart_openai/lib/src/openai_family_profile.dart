@@ -3,22 +3,28 @@ abstract interface class OpenAIFamilyProfile {
 
   String get defaultBaseUrl;
 
+  bool get supportsResponsesApi;
+
   Map<String, String> buildHeaders({
     required String apiKey,
     Map<String, String> extraHeaders = const {},
   });
 }
 
-final class OpenAIProfile implements OpenAIFamilyProfile {
+class _BearerAuthOpenAIFamilyProfile implements OpenAIFamilyProfile {
   @override
   final String providerId;
 
   @override
   final String defaultBaseUrl;
 
-  const OpenAIProfile({
-    this.providerId = 'openai',
-    this.defaultBaseUrl = 'https://api.openai.com/v1',
+  @override
+  final bool supportsResponsesApi;
+
+  const _BearerAuthOpenAIFamilyProfile({
+    required this.providerId,
+    required this.defaultBaseUrl,
+    required this.supportsResponsesApi,
   });
 
   @override
@@ -31,4 +37,57 @@ final class OpenAIProfile implements OpenAIFamilyProfile {
       ...extraHeaders,
     };
   }
+}
+
+final class OpenAIProfile extends _BearerAuthOpenAIFamilyProfile {
+  const OpenAIProfile({
+    super.providerId = 'openai',
+    super.defaultBaseUrl = 'https://api.openai.com/v1',
+    super.supportsResponsesApi = true,
+  });
+}
+
+final class OpenRouterProfile extends _BearerAuthOpenAIFamilyProfile {
+  const OpenRouterProfile({
+    super.defaultBaseUrl = 'https://openrouter.ai/api/v1',
+  }) : super(
+          providerId: 'openrouter',
+          supportsResponsesApi: false,
+        );
+}
+
+final class DeepSeekProfile extends _BearerAuthOpenAIFamilyProfile {
+  const DeepSeekProfile({
+    super.defaultBaseUrl = 'https://api.deepseek.com/v1',
+  }) : super(
+          providerId: 'deepseek',
+          supportsResponsesApi: false,
+        );
+}
+
+final class GroqProfile extends _BearerAuthOpenAIFamilyProfile {
+  const GroqProfile({
+    super.defaultBaseUrl = 'https://api.groq.com/openai/v1',
+  }) : super(
+          providerId: 'groq',
+          supportsResponsesApi: false,
+        );
+}
+
+final class XAIProfile extends _BearerAuthOpenAIFamilyProfile {
+  const XAIProfile({
+    super.defaultBaseUrl = 'https://api.x.ai/v1',
+  }) : super(
+          providerId: 'xai',
+          supportsResponsesApi: false,
+        );
+}
+
+final class PhindProfile extends _BearerAuthOpenAIFamilyProfile {
+  const PhindProfile({
+    super.defaultBaseUrl = 'https://api.phind.com/v1',
+  }) : super(
+          providerId: 'phind',
+          supportsResponsesApi: false,
+        );
 }

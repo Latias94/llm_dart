@@ -1,7 +1,6 @@
-import 'package:dio/dio.dart';
-
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
+import '../../src/dio_cancellation_adapter.dart';
 import 'client.dart';
 import 'config.dart';
 
@@ -18,11 +17,11 @@ class DeepSeekModels implements ModelListingCapability {
   String get modelsEndpoint => 'models';
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+  Future<List<AIModel>> models({TransportCancellation? cancelToken}) async {
     try {
       final response = await client.dio.get(
         modelsEndpoint,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
       final responseData = response.data as Map<String, dynamic>;
 

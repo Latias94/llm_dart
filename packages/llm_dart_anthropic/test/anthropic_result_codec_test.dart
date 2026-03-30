@@ -156,6 +156,7 @@ void main() {
       final toolCall = result.content.whereType<ToolCallContentPart>().single;
       final toolResult =
           result.content.whereType<ToolResultContentPart>().single;
+      final customPart = result.content.whereType<CustomContentPart>().single;
       final source = result.content.whereType<SourceContentPart>().single;
 
       expect(reasoningParts, hasLength(2));
@@ -180,8 +181,187 @@ void main() {
 
       expect(toolResult.toolResult.toolName, 'web_search');
       expect(toolResult.toolResult.isDynamic, isTrue);
+      expect(customPart.kind, 'anthropic.result.web_search');
+      expect(customPart.data, {
+        'replayRole': 'tool',
+        'toolCallId': 'srvtoolu_1',
+        'toolName': 'web_search',
+        'block': {
+          'type': 'web_search_tool_result',
+          'tool_use_id': 'srvtoolu_1',
+          'content': [
+            {
+              'url': 'https://dart.dev',
+              'title': 'Dart',
+              'page_age': '1d',
+              'encrypted_content': 'enc_1',
+              'type': 'web_search_result',
+            },
+          ],
+        },
+      });
       expect(source.source.uri.toString(), 'https://dart.dev');
       expect(source.source.title, 'Dart');
+    });
+
+    test('decodes web fetch tool results into custom replay parts', () {
+      final result = codec.decodeResponse({
+        'id': 'msg_4',
+        'model': 'claude-sonnet-4-5',
+        'content': [
+          {
+            'type': 'server_tool_use',
+            'id': 'srvtoolu_2',
+            'name': 'web_fetch',
+            'input': {
+              'url': 'https://example.com/article',
+            },
+          },
+          {
+            'type': 'web_fetch_tool_result',
+            'tool_use_id': 'srvtoolu_2',
+            'content': {
+              'type': 'web_fetch_result',
+              'url': 'https://example.com/article',
+              'content': {
+                'type': 'document',
+                'source': {
+                  'type': 'text',
+                  'media_type': 'text/plain',
+                  'data': 'Article content',
+                },
+              },
+            },
+          },
+        ],
+        'stop_reason': 'end_turn',
+        'usage': {
+          'input_tokens': 20,
+          'output_tokens': 10,
+        },
+      });
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      final customPart = result.content.whereType<CustomContentPart>().single;
+
+      expect(toolResult.toolResult.toolName, 'web_fetch');
+      expect(toolResult.toolResult.isDynamic, isTrue);
+      expect(toolResult.toolResult.output, {
+        'type': 'web_fetch_result',
+        'url': 'https://example.com/article',
+        'content': {
+          'type': 'document',
+          'source': {
+            'type': 'text',
+            'media_type': 'text/plain',
+            'data': 'Article content',
+          },
+        },
+      });
+      expect(customPart.kind, 'anthropic.result.web_fetch');
+      expect(customPart.data, {
+        'replayRole': 'tool',
+        'toolCallId': 'srvtoolu_2',
+        'toolName': 'web_fetch',
+        'block': {
+          'type': 'web_fetch_tool_result',
+          'tool_use_id': 'srvtoolu_2',
+          'content': {
+            'type': 'web_fetch_result',
+            'url': 'https://example.com/article',
+            'content': {
+              'type': 'document',
+              'source': {
+                'type': 'text',
+                'media_type': 'text/plain',
+                'data': 'Article content',
+              },
+            },
+          },
+        },
+      });
+    });
+
+    test('decodes code execution tool results into custom replay parts', () {
+      final result = codec.decodeResponse({
+        'id': 'msg_5',
+        'model': 'claude-sonnet-4-5',
+        'content': [
+          {
+            'type': 'server_tool_use',
+            'id': 'srvtoolu_3',
+            'name': 'bash_code_execution',
+            'input': {
+              'command': 'echo hi',
+            },
+          },
+          {
+            'type': 'bash_code_execution_tool_result',
+            'tool_use_id': 'srvtoolu_3',
+            'content': {
+              'type': 'bash_code_execution_result',
+              'stdout': 'hi\n',
+              'stderr': '',
+              'return_code': 0,
+              'content': [
+                {
+                  'type': 'bash_code_execution_output',
+                  'file_id': 'file_123',
+                },
+              ],
+            },
+          },
+        ],
+        'stop_reason': 'end_turn',
+        'usage': {
+          'input_tokens': 20,
+          'output_tokens': 10,
+        },
+      });
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      final customPart = result.content.whereType<CustomContentPart>().single;
+
+      expect(toolResult.toolResult.toolName, 'bash_code_execution');
+      expect(toolResult.toolResult.isDynamic, isTrue);
+      expect(toolResult.toolResult.output, {
+        'type': 'bash_code_execution_result',
+        'stdout': 'hi\n',
+        'stderr': '',
+        'return_code': 0,
+        'content': [
+          {
+            'type': 'bash_code_execution_output',
+            'file_id': 'file_123',
+          },
+        ],
+      });
+      expect(customPart.kind, 'anthropic.result.code_execution');
+      expect(customPart.data, {
+        'schema': 'anthropic.execution.result.v1',
+        'replayRole': 'tool',
+        'toolCallId': 'srvtoolu_3',
+        'toolName': 'code_execution',
+        'blockType': 'bash_code_execution_tool_result',
+        'block': {
+          'type': 'bash_code_execution_tool_result',
+          'tool_use_id': 'srvtoolu_3',
+          'content': {
+            'type': 'bash_code_execution_result',
+            'stdout': 'hi\n',
+            'stderr': '',
+            'return_code': 0,
+            'content': [
+              {
+                'type': 'bash_code_execution_output',
+                'file_id': 'file_123',
+              },
+            ],
+          },
+        },
+      });
     });
   });
 }

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
+import '../../core/cancellation.dart';
+import '../../src/dio_cancellation_adapter.dart';
 import '../../utils/dio_client_factory.dart';
 import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
@@ -34,7 +36,7 @@ class OllamaClient {
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return HttpResponseHandler.postJson(
       dio,
@@ -49,13 +51,13 @@ class OllamaClient {
   /// Make a GET request and return JSON response
   Future<Map<String, dynamic>> getJson(
     String endpoint, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       logger.fine('Ollama request: GET $endpoint');
       final response = await dio.get(
         endpoint,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
 
       logger.fine('Ollama HTTP status: ${response.statusCode}');
@@ -79,7 +81,7 @@ class OllamaClient {
   Stream<String> postStreamRaw(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     try {
       logger.fine('Ollama streaming request payload: ${jsonEncode(data)}');
@@ -87,7 +89,7 @@ class OllamaClient {
       final response = await dio.post(
         endpoint,
         data: data,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
         options: Options(responseType: ResponseType.stream),
       );
 

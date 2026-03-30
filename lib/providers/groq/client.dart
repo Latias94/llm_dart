@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
+import '../../core/cancellation.dart';
 import '../../core/llm_error.dart';
+import '../../src/dio_cancellation_adapter.dart';
 import '../../utils/dio_client_factory.dart';
 import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
@@ -34,7 +36,7 @@ class GroqClient {
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return HttpResponseHandler.postJson(
       dio,
@@ -50,13 +52,13 @@ class GroqClient {
   Stream<String> postStreamRaw(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     try {
       final response = await dio.post(
         endpoint,
         data: data,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
         options: Options(
           responseType: ResponseType.stream,
           headers: {'Accept': 'text/event-stream'},

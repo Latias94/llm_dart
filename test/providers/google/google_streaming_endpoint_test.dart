@@ -13,7 +13,7 @@ class RecordingGoogleClient extends GoogleClient {
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     lastPostJsonEndpoint = endpoint;
     lastPostJsonData = data;
@@ -35,7 +35,7 @@ class RecordingGoogleClient extends GoogleClient {
   Stream<String> postStreamRaw(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     lastPostStreamRawEndpoint = endpoint;
     lastPostStreamRawData = data;

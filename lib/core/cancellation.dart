@@ -8,8 +8,8 @@
 /// ```dart
 /// import 'package:llm_dart/llm_dart.dart';
 ///
-/// // Create a cancel token
-/// final cancelToken = CancelToken();
+/// // Create a cancellation token
+/// final cancelToken = TransportCancellation();
 ///
 /// // Start an operation
 /// final future = provider.chat(messages, cancelToken: cancelToken);
@@ -29,8 +29,8 @@
 ///
 /// ## How it works
 ///
-/// The library uses Dio's `CancelToken` internally to provide true cancellation
-/// of HTTP requests at the network level. When you cancel a token:
+/// The library uses transport-level cancellation abstractions and adapts them
+/// to provider HTTP clients internally. When you cancel a token:
 /// - In-flight HTTP requests are aborted immediately
 /// - Streaming responses stop emitting events
 /// - Providers stop generating tokens
@@ -39,19 +39,22 @@
 /// will abort all operations bound to that token.
 library;
 
-// Re-export Dio's CancelToken for public API
-// This provides the actual cancellation mechanism
-export 'package:dio/dio.dart' show CancelToken;
+export 'package:llm_dart_transport/llm_dart_transport.dart'
+    show TransportCancellation, TransportCancelledException;
 
-import 'package:dio/dio.dart';
+import 'package:dio/dio.dart' as dio;
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'llm_error.dart';
+
+@Deprecated('Use TransportCancellation instead.')
+typedef CancelToken = TransportCancellation;
 
 /// Helper utilities for working with cancellation
 class CancellationHelper {
   /// Check if an error indicates the operation was cancelled
   ///
-  /// Returns `true` if the error is a `CancelledError` or a `DioException`
-  /// with type `cancel`.
+  /// Returns `true` if the error is a `CancelledError`,
+  /// `TransportCancelledException`, or a raw Dio cancellation exception.
   ///
   /// Example:
   /// ```dart
@@ -67,9 +70,11 @@ class CancellationHelper {
     // Check for our custom CancelledError
     if (error is CancelledError) return true;
 
+    if (error is TransportCancelledException) return true;
+
     // Check for Dio's raw cancellation exception
     // (this should not normally occur as we map it to CancelledError)
-    return error is DioException && CancelToken.isCancel(error);
+    return error is dio.DioException && dio.CancelToken.isCancel(error);
   }
 
   /// Extract the cancellation reason/message from an error
@@ -93,7 +98,11 @@ class CancellationHelper {
       return error.message;
     }
 
-    if (error is DioException) {
+    if (error is TransportCancelledException) {
+      return error.reason?.toString();
+    }
+
+    if (error is dio.DioException) {
       return error.message;
     }
 

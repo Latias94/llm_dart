@@ -52,6 +52,38 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Typed entry rules for Google and Anthropic native tools without widening the common core.
 - [14-provider-replay-fidelity-policy.md](14-provider-replay-fidelity-policy.md)
   - Frozen replay policy for OpenAI, Anthropic, and the shared provider boundary.
+- [15-legacy-compatibility-facade.md](15-legacy-compatibility-facade.md)
+  - Frozen strategy for compatibility provider subclasses, conservative chat routing, automatic fallback, and legacy stream event projection.
+- [16-anthropic-provider-native-result-replay.md](16-anthropic-provider-native-result-replay.md)
+  - Frozen boundary for Anthropic provider-native result replay, exact re-encoding requirements, and the recommended provider-owned custom-part path for future expansion.
+- [17-execution-result-and-event-boundary.md](17-execution-result-and-event-boundary.md)
+  - Recommended next-step design for execution-oriented provider-native result replay, event boundaries, and Flutter-facing UI projection.
+- [18-anthropic-execution-replay-contract.md](18-anthropic-execution-replay-contract.md)
+  - Canonical payload contract for Anthropic execution replay, file-handle rules, and capability matrix.
+- [19-anthropic-provider-native-files-api.md](19-anthropic-provider-native-files-api.md)
+  - Frozen provider-owned files API for Anthropic execution file handles, download boundaries, and Flutter integration guidance.
+- [20-event-completeness-audit.md](20-event-completeness-audit.md)
+  - Audit of current `TextStreamEvent` completeness versus `repo-ref/ai`, plus the frozen boundary between shared events and UI transport chunks.
+- [21-residual-dio-public-surface.md](21-residual-dio-public-surface.md)
+  - Audit of the remaining root-level `dio` public API exposure, plus the recommended exit path for deprecated custom-Dio injection.
+- [22-openai-family-facade-and-legacy-routing.md](22-openai-family-facade-and-legacy-routing.md)
+  - Boundary between the new OpenAI-family facade constructors and the still-conservative legacy compatibility routing.
+- [23-deepseek-legacy-compatibility-audit.md](23-deepseek-legacy-compatibility-audit.md)
+  - First provider-specific bridge-safe-subset audit for an OpenAI-family compatibility route after the new chat-completions mainline landed.
+- [24-openrouter-legacy-compatibility-audit.md](24-openrouter-legacy-compatibility-audit.md)
+  - OpenRouter-specific compatibility audit for the plain chat subset versus the still-fallback search-shaped legacy surface.
+- [25-groq-legacy-compatibility-audit.md](25-groq-legacy-compatibility-audit.md)
+  - Groq-specific compatibility audit for the text-and-tool-definition subset versus the still-fallback tool-replay, multimodal, and ignored-extra legacy surface.
+- [26-xai-legacy-compatibility-audit.md](26-xai-legacy-compatibility-audit.md)
+  - xAI-specific compatibility audit for the text subset, the audited legacy live-search migration subset, and the still-fallback tool-replay/multimodal legacy surface.
+- [27-phind-legacy-compatibility-audit.md](27-phind-legacy-compatibility-audit.md)
+  - Phind-specific audit that freezes the current facade-only status and records why no legacy bridge-safe subset should be assumed yet.
+- [28-provider-owned-search-boundary.md](28-provider-owned-search-boundary.md)
+  - Frozen boundary for provider-owned search request options, shared source projection, and provider-native search replay/UI rendering.
+- [29-openrouter-search-options-design.md](29-openrouter-search-options-design.md)
+  - Frozen OpenRouter search design that keeps search as profile-owned model shaping instead of widening shared OpenAI-family invocation options.
+- [30-xai-live-search-options-design.md](30-xai-live-search-options-design.md)
+  - Frozen xAI live-search design that separates chat `search_parameters` from future provider-defined search tools.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -84,6 +116,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Borrow the Vercel AI SDK split of spec layer, shared utility layer, provider adapters, and UI layer.
 - Do not copy its one-package-per-provider publishing strategy.
 - Build an internal workspace first, then decide later which packages should be published separately.
+- Let the root `AI` facade expose the OpenAI-family providers as convenience constructors, while keeping legacy compatibility routing as a separate concern.
+- Keep search typed APIs provider-owned: OpenRouter through model/profile shaping, xAI through provider-owned invocation options, and shared core only on sources/citations.
 - Get the text generation path and the Flutter chat path right first, and migrate everything else afterward.
 
 ### Current Audit Signals

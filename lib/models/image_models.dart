@@ -1,7 +1,7 @@
 /// Image generation related models for AI image generation functionality
 library;
 
-import '../core/capability.dart' show UsageInfo;
+import 'usage_models.dart';
 
 /// Image generation request configuration
 class ImageGenerationRequest {

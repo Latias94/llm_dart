@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 /// Layered HTTP Configuration Example
 ///
@@ -130,9 +131,9 @@ Future<void> demonstrateAdvancedLayeredConfig(String anthropicApiKey) async {
   }
 }
 
-/// Demonstrate custom Dio client for advanced HTTP control
+/// Demonstrate a custom transport client backed by Dio
 Future<void> demonstrateCustomDioClient(String anthropicApiKey) async {
-  print('🔧 Custom Dio Client for Advanced HTTP Control (Anthropic):\n');
+  print('🔧 Custom Transport Client for Advanced HTTP Control (Anthropic):\n');
 
   try {
     // Create custom Dio with advanced configuration
@@ -190,38 +191,42 @@ Future<void> demonstrateCustomDioClient(String anthropicApiKey) async {
       },
     ));
 
-    // Use custom Dio with the provider
+    // Wrap the custom Dio instance in the stable transport client surface.
+    final transportClient = DioTransportClient(dio: customDio);
+
+    // Use the custom transport client with the provider
     final provider = await ai()
         .anthropic()
         .apiKey(anthropicApiKey)
         .model('claude-3-5-haiku-20241022')
         .http((http) => http
-            .dioClient(customDio) // 🎯 Custom Dio takes highest priority
+            .transportClient(
+                transportClient) // 🎯 Custom transport takes highest priority
             .enableLogging(
-                true) // This will be ignored since custom Dio is used
+                true) // This will be ignored since the custom transport is used
             .connectionTimeout(Duration(seconds: 60))) // This will be ignored
         .build();
 
-    print('   📝 Priority: Custom Dio > HTTP config > Provider defaults');
-    print('   📝 Making request with custom Dio client...\n');
+    print('   📝 Priority: Custom transport > HTTP config > Provider defaults');
+    print('   📝 Making request with custom transport client...\n');
 
     final response = await provider.chat([
       ChatMessage.user(
           'Hello! This request uses a custom Dio client with advanced monitoring and retry logic.'),
     ]);
 
-    print('   ✅ Custom Dio client demonstration successful');
+    print('   ✅ Custom transport client demonstration successful');
     print('   📝 Response: ${response.text}\n');
 
     // Show the benefits
-    print('   🎯 Benefits of Custom Dio Client:');
+    print('   🎯 Benefits of a Custom Transport Client:');
     print('   📝 • Complete HTTP control and customization');
     print('   📝 • Advanced monitoring and metrics collection');
     print('   📝 • Custom retry and error handling logic');
     print('   📝 • Integration with existing HTTP infrastructure');
     print('   📝 • Perfect for production environments\n');
   } catch (e) {
-    print('   ❌ Custom Dio client demonstration failed: $e\n');
+    print('   ❌ Custom transport client demonstration failed: $e\n');
   }
 }
 
@@ -303,8 +308,8 @@ Future<void> demonstrateConfigReusability() async {
   print(
       '   📊 Development config settings: ${devConfig.build().keys.join(', ')}\n');
 
-  // Demonstrate reusable custom Dio factory
-  print('   🔧 Reusable Custom Dio Factory:\n');
+  // Demonstrate reusable custom transport factories
+  print('   🔧 Reusable Custom Transport Factory:\n');
 
   // ignore: unused_element
   Dio createProductionDio() {
@@ -354,8 +359,9 @@ Future<void> demonstrateConfigReusability() async {
     return dio;
   }
 
-  print('   ✅ Custom Dio factories created for different environments');
-  print('   📝 Usage: .http((http) => http.dioClient(createProductionDio()))');
+  print('   ✅ Custom transport factories created for different environments');
+  print(
+      '   📝 Usage: .http((http) => http.transportClient(DioTransportClient(dio: createProductionDio())))');
   print(
       '   📝 Benefits: Environment-specific optimizations, reusable across projects\n');
 }

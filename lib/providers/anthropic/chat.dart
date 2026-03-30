@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
-
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
@@ -54,7 +52,7 @@ class AnthropicChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     final requestBody =
         _requestBuilder.buildRequestBody(messages, tools, false);
@@ -78,7 +76,7 @@ class AnthropicChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     // Reset tool call state for new stream
     _resetStreamState();
@@ -106,7 +104,7 @@ class AnthropicChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }

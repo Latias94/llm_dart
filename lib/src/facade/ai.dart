@@ -24,6 +24,71 @@ final class AI {
     );
   }
 
+  static openai_pkg.OpenAI openRouter({
+    required String apiKey,
+    TransportClient? transport,
+    String? baseUrl,
+  }) {
+    return _openaiFamily(
+      apiKey: apiKey,
+      transport: transport,
+      baseUrl: baseUrl,
+      profile: const openai_pkg.OpenRouterProfile(),
+    );
+  }
+
+  static openai_pkg.OpenAI deepSeek({
+    required String apiKey,
+    TransportClient? transport,
+    String? baseUrl,
+  }) {
+    return _openaiFamily(
+      apiKey: apiKey,
+      transport: transport,
+      baseUrl: baseUrl,
+      profile: const openai_pkg.DeepSeekProfile(),
+    );
+  }
+
+  static openai_pkg.OpenAI groq({
+    required String apiKey,
+    TransportClient? transport,
+    String? baseUrl,
+  }) {
+    return _openaiFamily(
+      apiKey: apiKey,
+      transport: transport,
+      baseUrl: baseUrl,
+      profile: const openai_pkg.GroqProfile(),
+    );
+  }
+
+  static openai_pkg.OpenAI xai({
+    required String apiKey,
+    TransportClient? transport,
+    String? baseUrl,
+  }) {
+    return _openaiFamily(
+      apiKey: apiKey,
+      transport: transport,
+      baseUrl: baseUrl,
+      profile: const openai_pkg.XAIProfile(),
+    );
+  }
+
+  static openai_pkg.OpenAI phind({
+    required String apiKey,
+    TransportClient? transport,
+    String? baseUrl,
+  }) {
+    return _openaiFamily(
+      apiKey: apiKey,
+      transport: transport,
+      baseUrl: baseUrl,
+      profile: const openai_pkg.PhindProfile(),
+    );
+  }
+
   static google_pkg.Google google({
     required String apiKey,
     TransportClient? transport,
@@ -45,6 +110,20 @@ final class AI {
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
+    );
+  }
+
+  static openai_pkg.OpenAI _openaiFamily({
+    required String apiKey,
+    required openai_pkg.OpenAIFamilyProfile profile,
+    TransportClient? transport,
+    String? baseUrl,
+  }) {
+    return openai_pkg.OpenAI(
+      apiKey: apiKey,
+      transport: transport,
+      baseUrl: baseUrl,
+      profile: profile,
     );
   }
 }

@@ -66,7 +66,7 @@ class GoogleChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     final requestBody = _buildRequestBody(messages, tools, false);
     final responseData = await client.postJson(
@@ -81,7 +81,7 @@ class GoogleChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     // Reset stream state for new requests
     _resetStreamState();
@@ -113,7 +113,7 @@ class GoogleChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }

@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
@@ -27,7 +25,7 @@ class PhindChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       // Note: Phind doesn't support tools yet
@@ -56,7 +54,7 @@ class PhindChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     try {
       final requestBody = _buildRequestBody(messages, tools, true);
@@ -91,7 +89,7 @@ class PhindChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }

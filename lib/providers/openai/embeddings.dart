@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import 'client.dart';
@@ -17,7 +15,7 @@ class OpenAIEmbeddings implements EmbeddingCapability {
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     final requestBody = {
       'model': config.model,

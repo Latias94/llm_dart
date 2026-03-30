@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import 'dart:convert';
 
 import '../../core/capability.dart';
@@ -31,7 +29,7 @@ class DeepSeekChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     final requestBody = _buildRequestBody(messages, tools, false);
     final responseData = await client.postJson(
@@ -46,7 +44,7 @@ class DeepSeekChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     final effectiveTools = tools ?? config.tools;
     final requestBody = _buildRequestBody(messages, effectiveTools, true);
@@ -72,7 +70,7 @@ class DeepSeekChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }

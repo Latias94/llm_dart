@@ -215,5 +215,34 @@ void main() {
         },
       );
     });
+
+    test('maps non-thought inline data into file events', () {
+      final state = GoogleGenerateContentStreamState();
+      final events = codec.decodeChunk(
+        {
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {
+                    'inlineData': {
+                      'mimeType': 'application/pdf',
+                      'data': 'AQID',
+                    },
+                  },
+                ],
+              },
+              'finishReason': 'STOP',
+            },
+          ],
+        },
+        state,
+      ).toList();
+
+      final fileEvent = events.whereType<FileEvent>().single;
+      expect(fileEvent.file.mediaType, 'application/pdf');
+      expect(fileEvent.file.bytes, [1, 2, 3]);
+      expect(events.whereType<ReasoningFileEvent>(), isEmpty);
+    });
   });
 }

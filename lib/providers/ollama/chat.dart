@@ -25,7 +25,7 @@ class OllamaChat implements ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.baseUrl.isEmpty) {
       throw const InvalidRequestError('Missing Ollama base URL');
@@ -50,7 +50,7 @@ class OllamaChat implements ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     if (config.baseUrl.isEmpty) {
       yield ErrorEvent(const InvalidRequestError('Missing Ollama base URL'));
@@ -82,7 +82,7 @@ class OllamaChat implements ChatCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }

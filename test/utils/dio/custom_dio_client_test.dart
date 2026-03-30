@@ -1,6 +1,7 @@
-import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('Custom Dio Client Support Tests', () {
@@ -415,7 +416,11 @@ void main() {
             .anthropic()
             .apiKey('test-key')
             .model('claude-sonnet-4-20250514')
-            .http((http) => http.dioClient(customDio));
+            .http(
+              (http) => http.transportClient(
+                DioTransportClient(dio: customDio),
+              ),
+            );
 
         expect(() => builder.build(), returnsNormally);
       });
@@ -428,7 +433,11 @@ void main() {
             .anthropic()
             .apiKey('test-key')
             .model('claude-sonnet-4-20250514')
-            .http((http) => http.dioClient(customDio));
+            .http(
+              (http) => http.transportClient(
+                DioTransportClient(dio: customDio),
+              ),
+            );
 
         // Build multiple times should not throw
         expect(() => builder.build(), returnsNormally);

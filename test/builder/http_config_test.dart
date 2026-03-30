@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:dio/dio.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 void main() {
   group('HttpConfig Tests', () {
@@ -219,68 +220,88 @@ void main() {
       });
     });
 
-    group('Custom Dio Client', () {
-      test('should set custom Dio client', () {
+    group('Custom Clients', () {
+      test('should set custom transport client', () {
+        final customTransport = _FakeTransportClient();
+
+        final config = HttpConfig().transportClient(customTransport);
+        final result = config.build();
+
+        expect(result['customTransportClient'], same(customTransport));
+        expect(result.containsKey('customDio'), isFalse);
+      });
+
+      test('should set Dio-backed transport client', () {
         final customDio = Dio();
         customDio.options.connectTimeout = Duration(seconds: 15);
         customDio.options.headers['X-Custom'] = 'test';
 
-        final config = HttpConfig().dioClient(customDio);
+        final config =
+            HttpConfig().transportClient(DioTransportClient(dio: customDio));
         final result = config.build();
 
         expect(result['customDio'], equals(customDio));
         expect(result['customDio'], isA<Dio>());
+        expect(result['customTransportClient'], isA<TransportClient>());
       });
 
-      test('should preserve custom Dio configuration', () {
+      test('should preserve Dio-backed transport configuration', () {
         final customDio = Dio();
         customDio.options.baseUrl = 'https://custom.example.com';
         customDio.options.connectTimeout = Duration(seconds: 25);
         customDio.options.headers['Authorization'] = 'Bearer custom-token';
         customDio.options.headers['X-Custom-Header'] = 'custom-value';
 
-        final config = HttpConfig().dioClient(customDio);
+        final config =
+            HttpConfig().transportClient(DioTransportClient(dio: customDio));
         final result = config.build();
 
         final resultDio = result['customDio'] as Dio;
+        final resultTransport =
+            result['customTransportClient'] as TransportClient;
         expect(resultDio.options.baseUrl, equals('https://custom.example.com'));
         expect(resultDio.options.connectTimeout, equals(Duration(seconds: 25)));
         expect(resultDio.options.headers['Authorization'],
             equals('Bearer custom-token'));
         expect(resultDio.options.headers['X-Custom-Header'],
             equals('custom-value'));
+        expect(resultTransport, isA<TransportClient>());
       });
 
-      test('should work with method chaining', () {
+      test('should work with transport client method chaining', () {
         final customDio = Dio();
 
         final config = HttpConfig()
             .proxy('http://proxy:8080')
             .headers({'X-App': 'TestApp'})
-            .dioClient(customDio)
+            .transportClient(DioTransportClient(dio: customDio))
             .enableLogging(true);
 
         final result = config.build();
         expect(result['customDio'], equals(customDio));
+        expect(result['customTransportClient'], isA<TransportClient>());
         expect(result['httpProxy'], equals('http://proxy:8080'));
         expect(result['customHeaders'], equals({'X-App': 'TestApp'}));
         expect(result['enableHttpLogging'], isTrue);
       });
 
-      test('should override previous custom Dio', () {
+      test('should override previous Dio-backed transport', () {
         final firstDio = Dio();
         firstDio.options.baseUrl = 'https://first.example.com';
 
         final secondDio = Dio();
         secondDio.options.baseUrl = 'https://second.example.com';
 
-        final config = HttpConfig().dioClient(firstDio).dioClient(secondDio);
+        final config = HttpConfig()
+            .transportClient(DioTransportClient(dio: firstDio))
+            .transportClient(DioTransportClient(dio: secondDio));
 
         final result = config.build();
         final resultDio = result['customDio'] as Dio;
         expect(resultDio.options.baseUrl, equals('https://second.example.com'));
         expect(resultDio, equals(secondDio));
         expect(resultDio, isNot(equals(firstDio)));
+        expect(result['customTransportClient'], isA<TransportClient>());
       });
     });
 
@@ -300,6 +321,7 @@ void main() {
         expect(result.containsKey('httpProxy'), isFalse);
         expect(result.containsKey('customHeaders'), isFalse);
         expect(result.containsKey('bypassSSLVerification'), isFalse);
+        expect(result.containsKey('customTransportClient'), isFalse);
         expect(result.containsKey('customDio'), isFalse);
       });
 
@@ -316,4 +338,17 @@ void main() {
       });
     });
   });
+}
+
+final class _FakeTransportClient implements TransportClient {
+  @override
+  Future<TransportResponse> send(TransportRequest request) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<StreamingTransportResponse> sendStream(
+      TransportRequest request) async {
+    throw UnimplementedError();
+  }
 }

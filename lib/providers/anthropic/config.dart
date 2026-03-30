@@ -1,5 +1,5 @@
 import '../../core/config.dart';
-import '../../core/provider_defaults.dart';
+import '../../src/provider_defaults.dart';
 import '../../core/web_search.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';

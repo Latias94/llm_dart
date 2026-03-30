@@ -6,6 +6,8 @@
 library;
 
 export 'src/facade/ai.dart' show AI;
+export 'src/bootstrap/root_registry_bootstrap.dart'
+    show ensureRootRegistryBootstrap;
 
 // Core exports
 export 'core/capability.dart';
@@ -17,11 +19,27 @@ export 'core/base_http_provider.dart';
 export 'core/openai_compatible_configs.dart';
 export 'core/tool_validator.dart';
 export 'core/web_search.dart';
+export 'package:llm_dart_transport/llm_dart_transport.dart'
+    show
+        StreamingTransportResponse,
+        TransportCancellation,
+        TransportCancelledException,
+        TransportClient,
+        TransportException,
+        TransportHttpException,
+        TransportMethod,
+        TransportNetworkException,
+        TransportRequest,
+        TransportResponse,
+        TransportResponseFormatException,
+        TransportResponseType,
+        TransportTimeoutException;
 
 // Model exports
 export 'models/chat_models.dart';
 export 'models/tool_models.dart';
 export 'models/audio_models.dart';
+export 'models/google_tts_models.dart';
 export 'models/image_models.dart';
 export 'models/file_models.dart';
 export 'models/moderation_models.dart';

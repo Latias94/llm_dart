@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'openai_native_tools.dart';
 import 'openai_options.dart';
+import 'openai_response_format.dart';
 
 final class OpenAIResponsesRequest {
   final Map<String, Object?> body;
@@ -36,6 +38,8 @@ final class OpenAIResponsesCodec {
   OpenAIResponsesRequest encodeRequest({
     required String modelId,
     required List<PromptMessage> prompt,
+    required List<FunctionToolDefinition> tools,
+    required ToolChoice? toolChoice,
     required GenerateTextOptions options,
     required OpenAIGenerateTextOptions providerOptions,
     required bool stream,
@@ -65,10 +69,29 @@ final class OpenAIResponsesCodec {
         'service_tier': providerOptions.serviceTier,
     };
 
+    final encodedTools = _encodeTools(
+      tools: tools,
+      builtInTools: providerOptions.builtInTools,
+    );
+    if (encodedTools.isNotEmpty) {
+      body['tools'] = encodedTools;
+      final encodedToolChoice = _encodeToolChoice(
+        toolChoice,
+        hasFunctionTools: tools.isNotEmpty,
+      );
+      if (encodedToolChoice != null) {
+        body['tool_choice'] = encodedToolChoice;
+      }
+    }
+
     if (providerOptions.verbosity != null) {
       body['text'] = <String, Object?>{
         'verbosity': providerOptions.verbosity,
       };
+    }
+
+    if (providerOptions.responseFormat case final responseFormat?) {
+      body['response_format'] = _encodeResponseFormat(responseFormat);
     }
 
     return OpenAIResponsesRequest(body: body);
@@ -1406,6 +1429,77 @@ final class OpenAIResponsesCodec {
     }
 
     return jsonEncode(value);
+  }
+
+  List<Map<String, Object?>> _encodeTools({
+    required List<FunctionToolDefinition> tools,
+    required List<OpenAIBuiltInTool>? builtInTools,
+  }) {
+    final encoded = <Map<String, Object?>>[
+      for (final tool in tools)
+        {
+          'type': 'function',
+          'name': tool.name,
+          if (tool.description != null) 'description': tool.description,
+          'parameters': tool.inputSchema.toJson(),
+          if (tool.strict != null) 'strict': tool.strict,
+        },
+    ];
+
+    if (builtInTools != null) {
+      encoded.addAll(
+        builtInTools.map((tool) => tool.toJson()),
+      );
+    }
+
+    return encoded;
+  }
+
+  Map<String, Object?>? _encodeToolChoice(
+    ToolChoice? toolChoice, {
+    required bool hasFunctionTools,
+  }) {
+    if (!hasFunctionTools || toolChoice == null) {
+      return null;
+    }
+
+    return switch (toolChoice) {
+      AutoToolChoice() => const {'type': 'auto'},
+      RequiredToolChoice() => const {'type': 'required'},
+      NoneToolChoice() => const {'type': 'none'},
+      SpecificToolChoice(toolName: final toolName) => {
+          'type': 'function',
+          'function': {
+            'name': toolName,
+          },
+        },
+    };
+  }
+
+  Map<String, Object?> _encodeResponseFormat(
+    OpenAIJsonSchemaResponseFormat responseFormat,
+  ) {
+    return {
+      'type': 'json_schema',
+      'json_schema': {
+        'name': responseFormat.name,
+        if (responseFormat.description != null)
+          'description': responseFormat.description,
+        if (responseFormat.schema != null)
+          'schema': _ensureOpenAIJsonSchemaObject(responseFormat.schema!),
+        if (responseFormat.strict != null) 'strict': responseFormat.strict,
+      },
+    };
+  }
+
+  Map<String, Object?> _ensureOpenAIJsonSchemaObject(
+    Map<String, Object?> schema,
+  ) {
+    final normalized = Map<String, Object?>.from(schema);
+    if (!normalized.containsKey('additionalProperties')) {
+      normalized['additionalProperties'] = false;
+    }
+    return normalized;
   }
 
   String _encodeToolOutput({

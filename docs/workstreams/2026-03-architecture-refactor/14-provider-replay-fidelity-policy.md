@@ -143,6 +143,16 @@ That currently includes:
 
 This preserves the provider-executed tool paths that Anthropic can actually continue.
 
+For provider-native result replay on the user side, use the stricter rule documented in `16-anthropic-provider-native-result-replay.md`:
+
+- exact request-side re-encoding fidelity decides whether a result block is replay-safe
+- decode-only support does not make a provider-native result block replay-safe
+
+For Anthropic execution-oriented result families, follow the stricter contract documented in `18-anthropic-execution-replay-contract.md`:
+
+- preserve exact raw execution blocks through provider-owned custom parts rather than widening shared tool-result typing
+- keep provider file IDs as provider-owned handles until a provider-native file-resolution step yields a real common file payload
+
 ## 2. What Must Be Dropped Explicitly
 
 The Anthropic adapter should currently drop these assistant replay parts with explicit warnings:
@@ -181,6 +191,7 @@ This policy reinforces the package split:
 - `llm_dart_core` owns replayable semantics and provider-metadata plumbing
 - provider packages own replay encoding and replay downgrade rules
 - `llm_dart_flutter` owns prompt reconstruction and session persistence, not provider wire conversion
+- provider-native file download APIs stay outside the shared core replay contract
 
 That split is important because replay fidelity is where old architectures often re-couple the UI layer, provider layer, and transport layer again.
 

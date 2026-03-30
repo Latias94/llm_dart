@@ -3,16 +3,6 @@ import 'package:logging/logging.dart';
 import 'capability.dart';
 import 'config.dart';
 import 'llm_error.dart';
-import '../providers/factories/openai_factory.dart';
-import '../providers/factories/anthropic_factory.dart';
-import '../providers/factories/deepseek_factory.dart';
-import '../providers/factories/ollama_factory.dart';
-import '../providers/factories/google_factory.dart';
-import '../providers/factories/xai_factory.dart';
-import '../providers/factories/phind_factory.dart';
-import '../providers/factories/groq_factory.dart';
-import '../providers/factories/elevenlabs_factory.dart';
-import '../providers/factories/openai_compatible_factory.dart';
 
 /// Factory interface for creating LLM provider instances
 ///
@@ -49,6 +39,7 @@ class LLMProviderRegistry {
   static final Map<String, LLMProviderFactory> _factories = {};
   static bool _initialized = false;
   static final Logger _logger = Logger('LLMProviderRegistry');
+  static void Function()? _builtinRegistrar;
 
   /// Register a provider factory
   ///
@@ -70,6 +61,14 @@ class LLMProviderRegistry {
   static void registerOrReplace<T extends ChatCapability>(
       LLMProviderFactory<T> factory) {
     _factories[factory.providerId] = factory;
+  }
+
+  /// Configures the lazy registrar used to populate built-in providers.
+  ///
+  /// The callback is invoked the first time the registry is accessed after a
+  /// [clear] or when the registry has not yet been initialized.
+  static void configureBuiltinRegistrar(void Function() registrar) {
+    _builtinRegistrar = registrar;
   }
 
   /// Unregister a provider factory
@@ -208,170 +207,11 @@ class LLMProviderRegistry {
 
   /// Register built-in providers
   static void _registerBuiltinProviders() {
-    // Import and register built-in provider factories
     try {
-      // Register OpenAI provider factory
-      final openaiFactory = _createOpenAIFactory();
-      if (openaiFactory != null) {
-        registerOrReplace(openaiFactory);
-      }
-
-      // Register Anthropic provider factory
-      final anthropicFactory = _createAnthropicFactory();
-      if (anthropicFactory != null) {
-        registerOrReplace(anthropicFactory);
-      }
-
-      // Register DeepSeek provider factory
-      final deepseekFactory = _createDeepSeekFactory();
-      if (deepseekFactory != null) {
-        registerOrReplace(deepseekFactory);
-      }
-
-      // Register Ollama provider factory
-      final ollamaFactory = _createOllamaFactory();
-      if (ollamaFactory != null) {
-        registerOrReplace(ollamaFactory);
-      }
-
-      // Register Google provider factory
-      final googleFactory = _createGoogleFactory();
-      if (googleFactory != null) {
-        registerOrReplace(googleFactory);
-      }
-
-      // Register XAI provider factory (using OpenAI-compatible interface)
-      final xaiFactory = _createXAIFactory();
-      if (xaiFactory != null) {
-        registerOrReplace(xaiFactory);
-      }
-
-      // Register Phind provider factory (using OpenAI-compatible interface)
-      final phindFactory = _createPhindFactory();
-      if (phindFactory != null) {
-        registerOrReplace(phindFactory);
-      }
-
-      // Register Groq provider factory (using OpenAI-compatible interface)
-      final groqFactory = _createGroqFactory();
-      if (groqFactory != null) {
-        registerOrReplace(groqFactory);
-      }
-
-      // Register ElevenLabs provider factory (TTS/STT service)
-      final elevenLabsFactory = _createElevenLabsFactory();
-      if (elevenLabsFactory != null) {
-        registerOrReplace(elevenLabsFactory);
-      }
-
-      // Register OpenAI-compatible providers
-      _registerOpenAICompatibleProviders();
+      _builtinRegistrar?.call();
     } catch (e) {
       _logger.warning('Failed to register built-in providers: $e');
-      // Silently fail if provider factories are not available
-      // This allows the library to work even if some providers are not included
-    }
-  }
-
-  /// Create OpenAI factory if available
-  static LLMProviderFactory<ChatCapability>? _createOpenAIFactory() {
-    try {
-      return OpenAIProviderFactory();
-    } catch (e) {
-      _logger.warning('Failed to create OpenAI factory: $e');
-      return null;
-    }
-  }
-
-  /// Create Anthropic factory if available
-  static LLMProviderFactory<ChatCapability>? _createAnthropicFactory() {
-    try {
-      return AnthropicProviderFactory();
-    } catch (e) {
-      _logger.warning('Failed to create Anthropic factory: $e');
-      return null;
-    }
-  }
-
-  /// Create DeepSeek factory if available
-  static LLMProviderFactory? _createDeepSeekFactory() {
-    try {
-      return DeepSeekProviderFactory();
-    } catch (e) {
-      _logger.warning('Failed to create DeepSeek factory: $e');
-      return null;
-    }
-  }
-
-  /// Create Ollama factory if available
-  static LLMProviderFactory<ChatCapability>? _createOllamaFactory() {
-    try {
-      return OllamaProviderFactory();
-    } catch (e) {
-      _logger.warning('Failed to create Ollama factory: $e');
-      return null;
-    }
-  }
-
-  /// Create Google factory if available
-  static LLMProviderFactory? _createGoogleFactory() {
-    try {
-      return GoogleProviderFactory();
-    } catch (e) {
-      _logger.warning('Failed to create Google factory: $e');
-      return null;
-    }
-  }
-
-  /// Create XAI factory if available (using OpenAI-compatible interface)
-  static LLMProviderFactory? _createXAIFactory() {
-    try {
-      return XAIProviderFactory();
-    } catch (e) {
-      _logger.warning('Failed to create XAI factory: $e');
-      return null;
-    }
-  }
-
-  /// Create Phind factory if available (using OpenAI-compatible interface)
-  static LLMProviderFactory? _createPhindFactory() {
-    try {
-      return PhindProviderFactory();
-    } catch (e) {
-      _logger.warning('Failed to create Phind factory: $e');
-      return null;
-    }
-  }
-
-  /// Create Groq factory if available (using OpenAI-compatible interface)
-  static LLMProviderFactory? _createGroqFactory() {
-    try {
-      return GroqProviderFactory();
-    } catch (e) {
-      _logger.warning('Failed to create Groq factory: $e');
-      return null;
-    }
-  }
-
-  /// Create ElevenLabs factory if available (TTS/STT service)
-  static LLMProviderFactory<ChatCapability>? _createElevenLabsFactory() {
-    try {
-      return ElevenLabsProviderFactory();
-    } catch (e) {
-      _logger.warning('Failed to create ElevenLabs factory: $e');
-      return null;
-    }
-  }
-
-  /// Register OpenAI-compatible providers
-  static void _registerOpenAICompatibleProviders() {
-    try {
-      // Register all pre-configured OpenAI-compatible providers
-      OpenAICompatibleProviderRegistrar.registerAll();
-      _logger.fine('Registered OpenAI-compatible providers');
-    } catch (e) {
-      _logger.warning('Failed to register OpenAI-compatible providers: $e');
-      // Silently fail if OpenAI-compatible providers are not available
+      // Silently fail if built-in providers are not available.
     }
   }
 }

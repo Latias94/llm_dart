@@ -102,7 +102,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     final response = await _textToSpeechInternal(
       request.text,
@@ -158,7 +158,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
   @override
   Future<STTResponse> speechToText(
     STTRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     late ElevenLabsSTTResponse response;
 
@@ -251,7 +251,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
     String? textNormalization,
     bool? enableLogging,
     int? optimizeStreamingLatency,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing ElevenLabs API key');
@@ -327,7 +327,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
     bool? diarize,
     String? fileFormat,
     bool? enableLogging,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing ElevenLabs API key');
@@ -416,7 +416,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
     bool? diarize,
     String? fileFormat,
     bool? enableLogging,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing ElevenLabs API key');
@@ -498,7 +498,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
   @override
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     // ElevenLabs supports streaming TTS
     // This is a simplified implementation - in practice, you'd implement
@@ -509,7 +509,7 @@ class ElevenLabsAudio extends BaseAudioCapability {
   @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     // ElevenLabs doesn't support audio translation
     throw UnsupportedError('ElevenLabs does not support audio translation');

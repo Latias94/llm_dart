@@ -1,7 +1,7 @@
 /// Audio-related models for Text-to-Speech (TTS) and Speech-to-Text (STT) functionality
 library;
 
-import '../core/capability.dart' show UsageInfo;
+import 'usage_models.dart';
 
 /// Audio processing mode for different use cases
 enum AudioProcessingMode {

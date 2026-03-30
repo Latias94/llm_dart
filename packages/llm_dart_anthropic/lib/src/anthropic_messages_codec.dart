@@ -25,6 +25,7 @@ final class AnthropicMessagesCodec {
   static const String _interleavedThinkingBeta =
       'interleaved-thinking-2025-05-14';
   static const String _mcpClientBeta = 'mcp-client-2025-04-04';
+  static const String _extendedCacheTtlBeta = 'extended-cache-ttl-2025-04-11';
 
   const AnthropicMessagesCodec();
 
@@ -192,6 +193,7 @@ final class AnthropicMessagesCodec {
       tools: tools,
       nativeTools: nativeTools,
       toolChoice: toolChoice,
+      toolsCacheControl: providerOptions.toolsCacheControl,
     );
 
     final body = <String, Object?>{
@@ -227,6 +229,10 @@ final class AnthropicMessagesCodec {
       betaFeatures.add(_mcpClientBeta);
     }
 
+    if (_containsCacheControl(body)) {
+      betaFeatures.add(_extendedCacheTtlBeta);
+    }
+
     final sortedBetas = betaFeatures.toList(growable: false)..sort();
 
     return AnthropicMessagesRequest(
@@ -240,6 +246,7 @@ final class AnthropicMessagesCodec {
     required List<FunctionToolDefinition> tools,
     required List<AnthropicNativeTool> nativeTools,
     required ToolChoice? toolChoice,
+    required AnthropicCacheControl? toolsCacheControl,
   }) {
     if ((tools.isEmpty && nativeTools.isEmpty) ||
         toolChoice is NoneToolChoice) {
@@ -256,6 +263,13 @@ final class AnthropicMessagesCodec {
         },
       for (final tool in nativeTools) tool.toJson(),
     ];
+
+    if (toolsCacheControl != null && encodedTools.isNotEmpty) {
+      encodedTools[encodedTools.length - 1] = {
+        ...encodedTools.last,
+        'cache_control': toolsCacheControl.toJson(),
+      };
+    }
 
     final encodedToolChoice = switch (toolChoice) {
       null => null,
@@ -315,10 +329,12 @@ final class AnthropicMessagesCodec {
           );
         }
 
-        content.add({
-          'type': 'text',
-          'text': part.text,
-        });
+        content.add(
+          _encodeTextContent(
+            part,
+            path: 'system',
+          ),
+        );
       }
     }
 
@@ -384,10 +400,13 @@ final class AnthropicMessagesCodec {
             continue;
           }
 
-          content.add({
-            'type': 'text',
-            'text': text,
-          });
+          content.add(
+            _encodeTextContent(
+              part,
+              path: 'assistant.text',
+              text: text,
+            ),
+          );
           continue;
         }
 
@@ -496,22 +515,26 @@ final class AnthropicMessagesCodec {
 
   Map<String, Object?> _encodeUserPart(PromptPart part) {
     if (part is TextPromptPart) {
-      return {
-        'type': 'text',
-        'text': part.text,
-      };
+      return _encodeTextContent(
+        part,
+        path: 'user.text',
+      );
     }
 
     if (part is ImagePromptPart) {
-      return {
-        'type': 'image',
-        'source': _encodeBinarySource(
-          mediaType: _normalizeImageMediaType(part.mediaType),
-          uri: part.uri,
-          bytes: part.bytes,
-          path: 'user.image',
-        ),
-      };
+      return _applyCacheControl(
+        {
+          'type': 'image',
+          'source': _encodeBinarySource(
+            mediaType: _normalizeImageMediaType(part.mediaType),
+            uri: part.uri,
+            bytes: part.bytes,
+            path: 'user.image',
+          ),
+        },
+        metadata: part.providerMetadata,
+        path: 'user.image',
+      );
     }
 
     if (part is FilePromptPart) {
@@ -525,24 +548,32 @@ final class AnthropicMessagesCodec {
 
   Map<String, Object?> _encodeFilePromptPart(FilePromptPart part) {
     if (part.mediaType == 'application/pdf') {
-      return {
-        'type': 'document',
-        'source': _encodeBinarySource(
-          mediaType: part.mediaType,
-          uri: part.uri,
-          bytes: part.bytes,
-          path: 'user.document',
-        ),
-        if (part.filename != null) 'title': part.filename,
-      };
+      return _applyCacheControl(
+        {
+          'type': 'document',
+          'source': _encodeBinarySource(
+            mediaType: part.mediaType,
+            uri: part.uri,
+            bytes: part.bytes,
+            path: 'user.document',
+          ),
+          if (part.filename != null) 'title': part.filename,
+        },
+        metadata: part.providerMetadata,
+        path: 'user.document',
+      );
     }
 
     if (part.mediaType == 'text/plain') {
-      return {
-        'type': 'document',
-        'source': _encodeTextDocumentSource(part),
-        if (part.filename != null) 'title': part.filename,
-      };
+      return _applyCacheControl(
+        {
+          'type': 'document',
+          'source': _encodeTextDocumentSource(part),
+          if (part.filename != null) 'title': part.filename,
+        },
+        metadata: part.providerMetadata,
+        path: 'user.document',
+      );
     }
 
     throw UnsupportedError(
@@ -576,6 +607,14 @@ final class AnthropicMessagesCodec {
         if (part.isError) 'is_error': true,
       };
       return;
+    }
+
+    if (part is CustomPromptPart) {
+      final customToolResult = _encodeCustomToolResultPart(part);
+      if (customToolResult != null) {
+        yield customToolResult;
+        return;
+      }
     }
 
     if (part is ToolApprovalResponsePromptPart) {
@@ -613,6 +652,121 @@ final class AnthropicMessagesCodec {
     );
   }
 
+  Map<String, Object?>? _encodeCustomToolResultPart(CustomPromptPart part) {
+    switch (part.kind) {
+      case 'anthropic.result.web_fetch':
+        final payload = _asJsonObject(
+          part.data,
+          path: 'tool.custom(${part.kind})',
+        );
+        if (payload['replayRole'] != 'tool') {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires replayRole="tool".',
+          );
+        }
+
+        final block = _asJsonObject(
+          payload['block'],
+          path: 'tool.custom(${part.kind}).block',
+        );
+        final blockType = block['type'];
+        if (blockType != 'web_fetch_tool_result') {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires a web_fetch_tool_result block.',
+          );
+        }
+
+        final toolUseId = block['tool_use_id'];
+        if (toolUseId is! String || toolUseId.isEmpty) {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires a non-empty tool_use_id.',
+          );
+        }
+
+        return block;
+      case 'anthropic.result.web_search':
+        final payload = _asJsonObject(
+          part.data,
+          path: 'tool.custom(${part.kind})',
+        );
+        if (payload['replayRole'] != 'tool') {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires replayRole="tool".',
+          );
+        }
+
+        final block = _asJsonObject(
+          payload['block'],
+          path: 'tool.custom(${part.kind}).block',
+        );
+        final blockType = block['type'];
+        if (blockType != 'web_search_tool_result') {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires a web_search_tool_result block.',
+          );
+        }
+
+        final toolUseId = block['tool_use_id'];
+        if (toolUseId is! String || toolUseId.isEmpty) {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires a non-empty tool_use_id.',
+          );
+        }
+
+        return block;
+      case 'anthropic.result.code_execution':
+        final payload = _asJsonObject(
+          part.data,
+          path: 'tool.custom(${part.kind})',
+        );
+        if (payload['schema'] != 'anthropic.execution.result.v1') {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires schema="anthropic.execution.result.v1".',
+          );
+        }
+        if (payload['replayRole'] != 'tool') {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires replayRole="tool".',
+          );
+        }
+
+        final blockType = payload['blockType'];
+        if (blockType is! String ||
+            !_isAnthropicExecutionResultBlockType(blockType)) {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires a supported execution result blockType.',
+          );
+        }
+
+        final block = _asJsonObject(
+          payload['block'],
+          path: 'tool.custom(${part.kind}).block',
+        );
+        if (block['type'] != blockType) {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires block.type to match blockType.',
+          );
+        }
+
+        final toolUseId = block['tool_use_id'];
+        if (toolUseId is! String || toolUseId.isEmpty) {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires a non-empty tool_use_id.',
+          );
+        }
+
+        return block;
+      default:
+        return null;
+    }
+  }
+
+  bool _isAnthropicExecutionResultBlockType(String blockType) {
+    return blockType == 'code_execution_tool_result' ||
+        blockType == 'bash_code_execution_tool_result' ||
+        blockType == 'text_editor_code_execution_tool_result';
+  }
+
   Map<String, Object?> _encodeTextDocumentSource(FilePromptPart part) {
     if (part.bytes != null) {
       return {
@@ -632,6 +786,42 @@ final class AnthropicMessagesCodec {
     throw UnsupportedError(
       'Anthropic text documents require UTF-8 bytes or an HTTP/HTTPS URI.',
     );
+  }
+
+  Map<String, Object?> _encodeTextContent(
+    TextPromptPart part, {
+    required String path,
+    String? text,
+  }) {
+    final cacheControl = _extractCacheControl(
+      part.providerMetadata,
+      path: '$path.providerMetadata',
+    );
+
+    return {
+      'type': 'text',
+      'text': text ?? part.text,
+      if (cacheControl != null) 'cache_control': cacheControl,
+    };
+  }
+
+  Map<String, Object?> _applyCacheControl(
+    Map<String, Object?> block, {
+    required ProviderMetadata? metadata,
+    required String path,
+  }) {
+    final cacheControl = _extractCacheControl(
+      metadata,
+      path: '$path.providerMetadata',
+    );
+    if (cacheControl == null) {
+      return block;
+    }
+
+    return {
+      ...block,
+      'cache_control': cacheControl,
+    };
   }
 
   String _normalizeImageMediaType(String mediaType) {
@@ -675,6 +865,18 @@ final class AnthropicMessagesCodec {
 
   Map<String, Object?> _normalizeJsonObject(
     Map<String, Object?> value, {
+    required String path,
+  }) {
+    final normalized = _normalizeJsonValue(value, path: path);
+    if (normalized case final Map<String, Object?> map) {
+      return map;
+    }
+
+    throw UnsupportedError('Expected a JSON object at $path.');
+  }
+
+  Map<String, Object?> _asJsonObject(
+    Object? value, {
     required String path,
   }) {
     final normalized = _normalizeJsonValue(value, path: path);
@@ -743,6 +945,148 @@ final class AnthropicMessagesCodec {
 
   bool _isHttpUri(Uri uri) {
     return uri.scheme == 'http' || uri.scheme == 'https';
+  }
+
+  Map<String, Object?>? _extractCacheControl(
+    ProviderMetadata? metadata, {
+    required String path,
+  }) {
+    final anthropicMetadata = _anthropicMetadata(metadata);
+    if (anthropicMetadata == null || anthropicMetadata.isEmpty) {
+      return null;
+    }
+
+    final directValue = anthropicMetadata['cacheControl'];
+    if (directValue != null) {
+      return _normalizeCacheControl(
+        directValue,
+        path: '$path.anthropic.cacheControl',
+      );
+    }
+
+    final contentBlocks = anthropicMetadata['contentBlocks'];
+    if (contentBlocks == null) {
+      return null;
+    }
+
+    if (contentBlocks is! List) {
+      throw UnsupportedError(
+        'Anthropic contentBlocks metadata at $path must be a list.',
+      );
+    }
+
+    Map<String, Object?>? cacheControl;
+    for (var index = 0; index < contentBlocks.length; index++) {
+      final block = contentBlocks[index];
+      final normalizedBlock = _normalizeJsonValue(
+        block,
+        path: '$path.anthropic.contentBlocks[$index]',
+      );
+      if (normalizedBlock is! Map<String, Object?>) {
+        throw UnsupportedError(
+          'Anthropic contentBlocks metadata at $path must contain JSON objects.',
+        );
+      }
+
+      if (normalizedBlock['type'] == 'tools') {
+        continue;
+      }
+
+      if (normalizedBlock['text'] == '' &&
+          normalizedBlock['cache_control'] != null) {
+        final parsedCacheControl = _normalizeCacheControl(
+          normalizedBlock['cache_control'],
+          path: '$path.anthropic.contentBlocks[$index].cache_control',
+        );
+
+        if (cacheControl != null &&
+            !_sameCacheControl(cacheControl, parsedCacheControl)) {
+          throw UnsupportedError(
+            'Anthropic prompt metadata at $path contains multiple cache policies.',
+          );
+        }
+
+        cacheControl = parsedCacheControl;
+        continue;
+      }
+
+      throw UnsupportedError(
+        'Anthropic legacy prompt metadata at $path only supports cache markers and tools blocks.',
+      );
+    }
+
+    return cacheControl;
+  }
+
+  Map<String, Object?>? _anthropicMetadata(ProviderMetadata? metadata) {
+    final values = metadata?.values['anthropic'];
+    if (values is Map<String, Object?>) {
+      return values;
+    }
+
+    if (values is Map) {
+      return Map<String, Object?>.from(values);
+    }
+
+    return null;
+  }
+
+  Map<String, Object?> _normalizeCacheControl(
+    Object? value, {
+    required String path,
+  }) {
+    final normalized = _normalizeJsonValue(
+      value,
+      path: path,
+    );
+    if (normalized is! Map<String, Object?>) {
+      throw UnsupportedError('Expected a cache control object at $path.');
+    }
+
+    final type = normalized['type'];
+    if (type is! String || type.isEmpty) {
+      throw UnsupportedError('Expected a cache control type at $path.');
+    }
+
+    final ttl = normalized['ttl'];
+    if (ttl != null && (ttl is! String || ttl.isEmpty)) {
+      throw UnsupportedError(
+        'Expected a non-empty cache control ttl string at $path.',
+      );
+    }
+
+    return {
+      'type': type,
+      if (ttl != null) 'ttl': ttl,
+    };
+  }
+
+  bool _containsCacheControl(Object? value) {
+    if (value is Map) {
+      if (value.containsKey('cache_control')) {
+        return true;
+      }
+
+      for (final nestedValue in value.values) {
+        if (_containsCacheControl(nestedValue)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    if (value is List) {
+      return value.any(_containsCacheControl);
+    }
+
+    return false;
+  }
+
+  bool _sameCacheControl(
+    Map<String, Object?> left,
+    Map<String, Object?> right,
+  ) {
+    return left['type'] == right['type'] && left['ttl'] == right['ttl'];
   }
 }
 

@@ -510,8 +510,9 @@ The table below should be treated as the concrete review checklist during provid
 | OpenAI Responses `web_search_call` item | custom content/UI parts | renderable provider-native output block |
 | Anthropic thinking budget | typed invocation options | call-scoped reasoning control |
 | Anthropic default reasoning mode | typed model settings | stable model-instance default |
-| Anthropic cache markers | provider metadata or custom parts | provider-owned non-unified detail |
+| Anthropic cache markers | provider metadata plus typed Anthropic cache options where request-scoped tool caching needs an explicit channel | provider-owned non-unified detail |
 | Anthropic MCP server configuration | provider-native typed API/options | not a cross-provider core concept |
+| Anthropic code-execution result blocks and file handles | custom content/UI parts plus provider-native file APIs | renderable provider-native output with downloadable handles that are not common `GeneratedFile` values yet |
 | Google safety settings | typed model or invocation options | provider tuning, not returned content |
 | Google grounding / safety annotations | source parts, custom parts, or provider metadata | partially renderable provider-native output |
 | DeepSeek or xAI reasoning extras | reasoning parts plus metadata/custom parts | shared reasoning stays unified, extras stay provider-owned |
@@ -560,8 +561,10 @@ Supported in the shared spec:
 Provider-specific handling:
 
 - thinking and interleaved thinking: typed options
-- cache markers: metadata or custom parts
+- cache markers: provider metadata for prompt-part replay, plus typed Anthropic invocation options when request-side tool caching must be encoded explicitly
 - MCP server config: provider-native typed options
+- code-execution replay blocks: provider-owned custom parts
+- downloadable execution file handles: provider-native files API
 - MCP connector lifecycle: provider-native API
 
 ## Google
@@ -592,6 +595,34 @@ Examples:
 - DeepSeek reasoning can surface as metadata or custom reasoning content
 - xAI live-search parameters should remain xAI typed options
 - Groq and Phind differences should not flow back into the common OpenAI text option surface
+
+### Current OpenAI-Family Provider Audit
+
+The OpenAI-family direction is now clear enough to freeze one more rule:
+
+- provider-family reuse does not mean provider-behavior sameness
+
+Current provider-specific placement guidance:
+
+| Provider | Legacy-specific behavior we must preserve or audit | Preferred long-term placement |
+| --- | --- | --- |
+| OpenRouter | `webSearchConfig`, `searchPrompt`, `useOnlineShortcut`, `:online` model suffix shaping | OpenRouter typed options or profile-owned request shaping, not shared OpenAI options |
+| DeepSeek | `deepseek-reasoner` restrictions, `reasoning_content`, `logprobs`, `top_logprobs`, `frequency_penalty`, `presence_penalty`, `response_format` | shared reasoning parts where possible, plus DeepSeek typed options and provider metadata/custom parts |
+| Groq | model-family-specific tool-calling and vision capability differences | provider profile metadata and capability gating, not widened shared OpenAI request fields |
+| xAI | `liveSearch`, `searchParameters`, web/news source configuration | xAI typed options plus provider-owned search result rendering |
+| Phind | provider-specific request body shape and historical endpoint assumptions | either a dedicated provider path or a much narrower audited OpenAI-family subset later |
+
+Implication for compatibility routing:
+
+- OpenAI-family providers can share the refactored package boundary without sharing the same migration timeline
+- a provider should only enter the legacy compatibility bridge after its provider-specific rows above have an explicit bridge-safe subset
+- until then, the new `AI.*` facade may expose the provider while `LLMBuilder` still stays on the old implementation
+
+Implication for dependencies:
+
+- these provider differences should be handled inside provider packages or profile-owned internals
+- they should not pull new provider-specific libraries or request-shaping helpers into `llm_dart_core`
+- they should not expand the shared OpenAI option surface just to fit one provider's legacy behavior
 
 ## Conclusions That Should Now Be Treated As Frozen
 
@@ -635,6 +666,12 @@ Examples:
 - keep shared networking and streaming logic in `llm_dart_transport`
 - keep provider-family reuse package-private until the reuse shape is proven
 - only introduce another internal support package after stable multi-provider reuse exists
+
+## 8. Provider-Native File Handles Must Not Masquerade As Common Files
+
+- a provider file ID is not a `GeneratedFile`
+- common file projection requires actual file payload information such as bytes, URI, filename, or media type
+- unresolved downloadable file handles should stay in provider-owned custom parts or provider-native APIs
 
 ## Direct Impact on the Current Skeleton
 

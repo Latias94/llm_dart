@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 /// HTTP configuration builder for LLM providers
 ///
@@ -63,46 +63,28 @@ class HttpConfig {
     return this;
   }
 
-  /// Provides a custom Dio client for full HTTP control
+  /// Provides a custom transport client for advanced HTTP control.
   ///
-  /// This method allows you to provide your own pre-configured Dio instance
-  /// with custom interceptors, adapters, and settings. This gives you complete
-  /// control over HTTP behavior for advanced use cases.
-  ///
-  /// **Priority order:**
-  /// 1. Custom Dio client (highest priority) - set by this method
-  /// 2. HTTP configuration - set by other methods in this class
-  /// 3. Provider defaults (lowest priority)
-  ///
-  /// **Important Notes:**
-  /// - Provider-specific interceptors (like Anthropic's beta headers) will still be added
-  /// - Your custom configuration takes precedence over other HTTP settings
-  /// - Other HTTP configurations in this builder will be ignored when using custom Dio
-  ///
-  /// **Use Cases:**
-  /// - Custom interceptors for monitoring/metrics
-  /// - Advanced proxy configurations
-  /// - Custom SSL/TLS settings
-  /// - Integration with existing HTTP infrastructure
-  /// - Testing with mock interceptors
+  /// This is the preferred injection point for migrated providers and
+  /// compatibility bridges. When the provided client is backed by Dio,
+  /// legacy fallback paths can also reuse the same underlying client.
   ///
   /// Example:
   /// ```dart
-  /// // Create custom Dio with interceptors
-  /// final customDio = Dio();
-  /// customDio.options.connectTimeout = Duration(seconds: 30);
-  /// customDio.interceptors.add(LogInterceptor());
-  /// customDio.interceptors.add(MyCustomInterceptor());
-  ///
   /// final provider = await ai()
-  ///     .anthropic()
+  ///     .openai()
   ///     .apiKey('your-api-key')
-  ///     .model('claude-sonnet-4-20250514')
-  ///     .http((http) => http.dioClient(customDio))  // Full HTTP control
+  ///     .model('gpt-4.1')
+  ///     .http((http) => http.transportClient(MyTransportClient()))
   ///     .build();
   /// ```
-  HttpConfig dioClient(Dio dio) {
-    _config['customDio'] = dio;
+  HttpConfig transportClient(TransportClient client) {
+    _config['customTransportClient'] = client;
+
+    if (client case DioTransportClient(:final dio)) {
+      _config['customDio'] = dio;
+    }
+
     return this;
   }
 

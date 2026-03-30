@@ -273,6 +273,77 @@ void main() {
       expect(finish.usage?.totalTokens, 16);
     });
 
+    test(
+        'generate adds the extended cache TTL beta when prompt caching is used',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = Anthropic(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'msg_1',
+                'model': 'claude-sonnet-4-5',
+                'content': [
+                  {
+                    'type': 'text',
+                    'text': 'Cached response.',
+                  },
+                ],
+                'stop_reason': 'end_turn',
+              },
+            );
+          },
+        ),
+      ).chatModel('claude-sonnet-4-5');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage(
+              parts: [
+                TextPromptPart(
+                  'Cache this prompt.',
+                  providerMetadata: const ProviderMetadata({
+                    'anthropic': {
+                      'cacheControl': {
+                        'type': 'ephemeral',
+                        'ttl': '1h',
+                      },
+                    },
+                  }),
+                ),
+              ],
+            ),
+          ],
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              inputSchema: ToolJsonSchema.object(),
+            ),
+          ],
+          toolChoice: const AutoToolChoice(),
+          callOptions: const CallOptions(
+            providerOptions: AnthropicGenerateTextOptions(
+              toolsCacheControl: AnthropicCacheControl.ephemeral(
+                ttl: '1h',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.headers['anthropic-beta']!.split(','),
+        contains('extended-cache-ttl-2025-04-11'),
+      );
+    });
+
     test('rejects provider options from a different provider', () async {
       final model = Anthropic(
         apiKey: 'test-key',

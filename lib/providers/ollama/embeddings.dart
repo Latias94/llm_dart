@@ -20,7 +20,7 @@ class OllamaEmbeddings implements EmbeddingCapability {
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.baseUrl.isEmpty) {
       throw const InvalidRequestError('Missing Ollama base URL');

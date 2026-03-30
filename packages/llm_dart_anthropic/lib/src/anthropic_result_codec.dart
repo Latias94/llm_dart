@@ -224,6 +224,22 @@ final class AnthropicMessagesResultCodec {
       ),
     ];
 
+    final customKind = _toolResultCustomKind(type);
+    if (customKind != null) {
+      parts.add(
+        CustomContentPart(
+          kind: customKind,
+          data: _toolResultReplayPayload(
+            blockType: type,
+            block: part,
+            toolCallId: toolUseId,
+            toolName: toolName,
+          ),
+          providerMetadata: metadata,
+        ),
+      );
+    }
+
     if (type == 'web_search_tool_result') {
       final resultList = part['content'];
       if (resultList is List) {
@@ -422,6 +438,47 @@ final class AnthropicMessagesResultCodec {
     }
 
     return _normalizeJsonValue(part['content']);
+  }
+
+  String? _toolResultCustomKind(String partType) {
+    switch (partType) {
+      case 'web_fetch_tool_result':
+        return 'anthropic.result.web_fetch';
+      case 'web_search_tool_result':
+        return 'anthropic.result.web_search';
+      case 'code_execution_tool_result':
+      case 'bash_code_execution_tool_result':
+      case 'text_editor_code_execution_tool_result':
+        return 'anthropic.result.code_execution';
+      default:
+        return null;
+    }
+  }
+
+  Map<String, Object?> _toolResultReplayPayload({
+    required String blockType,
+    required Map<String, Object?> block,
+    required String toolCallId,
+    required String toolName,
+  }) {
+    final replayToolName =
+        _isExecutionToolResultBlock(blockType) ? 'code_execution' : toolName;
+
+    return {
+      if (_isExecutionToolResultBlock(blockType))
+        'schema': 'anthropic.execution.result.v1',
+      'replayRole': 'tool',
+      'toolCallId': toolCallId,
+      'toolName': replayToolName,
+      if (_isExecutionToolResultBlock(blockType)) 'blockType': blockType,
+      'block': _normalizeJsonValue(block),
+    };
+  }
+
+  bool _isExecutionToolResultBlock(String blockType) {
+    return blockType == 'code_execution_tool_result' ||
+        blockType == 'bash_code_execution_tool_result' ||
+        blockType == 'text_editor_code_execution_tool_result';
   }
 
   Object? _normalizeJsonValue(Object? value) {

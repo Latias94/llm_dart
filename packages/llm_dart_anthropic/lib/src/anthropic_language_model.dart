@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'anthropic_api.dart';
 import 'anthropic_messages_codec.dart';
 import 'anthropic_options.dart';
 import 'anthropic_result_codec.dart';
@@ -29,14 +30,12 @@ final class AnthropicLanguageModel implements LanguageModel {
     required this.transport,
     String? baseUrl,
     this.settings = const AnthropicChatModelSettings(),
-  }) : baseUrl = baseUrl ?? 'https://api.anthropic.com/v1';
+  }) : baseUrl = baseUrl ?? anthropicDefaultBaseUrl;
 
   @override
   String get providerId => _providerId;
 
-  Uri get messagesUri => Uri.parse(
-        baseUrl.endsWith('/') ? '${baseUrl}messages' : '$baseUrl/messages',
-      );
+  Uri get messagesUri => resolveAnthropicUri(baseUrl, 'messages');
 
   @override
   Future<GenerateTextResult> generate(GenerateTextRequest request) async {
@@ -70,7 +69,7 @@ final class AnthropicLanguageModel implements LanguageModel {
     );
 
     return _resultCodec.decodeResponse(
-      _decodeJsonObject(response.body),
+      decodeAnthropicJsonObject(response.body),
       warnings: preparedRequest.warnings,
     );
   }
@@ -118,7 +117,7 @@ final class AnthropicLanguageModel implements LanguageModel {
         }
 
         for (final event in _streamCodec.decodeChunk(
-          _decodeJsonObject(frame.data),
+          decodeAnthropicJsonObject(frame.data),
           state,
         )) {
           yield event;
@@ -152,73 +151,17 @@ final class AnthropicLanguageModel implements LanguageModel {
     required List<String> requestBetas,
     Map<String, String>? extraHeaders,
   }) {
-    final mergedHeaders = <String, String>{
-      'x-api-key': apiKey,
-      'anthropic-version': settings.anthropicVersion,
-      'content-type': 'application/json',
-      'accept': stream ? 'text/event-stream' : 'application/json',
-      ..._withoutBetaHeader(settings.headers),
-      if (extraHeaders != null) ..._withoutBetaHeader(extraHeaders),
-    };
-
-    final betaFeatures = <String>{
-      ...settings.betaFeatures.expand(_parseBetaHeaderValue),
-      ...requestBetas.expand(_parseBetaHeaderValue),
-      ..._parseBetaHeaderValue(settings.headers['anthropic-beta']),
-      ..._parseBetaHeaderValue(extraHeaders?['anthropic-beta']),
-    }.toList(growable: false)
-      ..sort();
-
-    if (betaFeatures.isNotEmpty) {
-      mergedHeaders['anthropic-beta'] = betaFeatures.join(',');
-    }
-
-    return mergedHeaders;
-  }
-
-  Iterable<String> _parseBetaHeaderValue(String? value) sync* {
-    if (value == null) {
-      return;
-    }
-
-    for (final segment in value.split(',')) {
-      final normalized = segment.trim().toLowerCase();
-      if (normalized.isNotEmpty) {
-        yield normalized;
-      }
-    }
-  }
-
-  Map<String, String> _withoutBetaHeader(Map<String, String> headers) {
-    final filtered = <String, String>{};
-    for (final entry in headers.entries) {
-      if (entry.key.toLowerCase() == 'anthropic-beta') {
-        continue;
-      }
-
-      filtered[entry.key] = entry.value;
-    }
-    return filtered;
-  }
-
-  Map<String, Object?> _decodeJsonObject(Object? body) {
-    if (body is Map<String, Object?>) {
-      return body;
-    }
-
-    if (body is Map) {
-      return Map<String, Object?>.from(body);
-    }
-
-    if (body is String) {
-      final decoded = jsonDecode(body);
-      if (decoded is Map) {
-        return Map<String, Object?>.from(decoded);
-      }
-    }
-
-    throw StateError(
-      'Expected an Anthropic JSON object response but received ${body.runtimeType}.',
+    return buildAnthropicHeaders(
+      apiKey: apiKey,
+      anthropicVersion: settings.anthropicVersion,
+      defaultHeaders: settings.headers,
+      extraHeaders: extraHeaders,
+      betaFeatures: [
+        ...settings.betaFeatures,
+        ...requestBetas,
+      ],
+      accept: stream ? 'text/event-stream' : 'application/json',
+      includeJsonContentType: true,
     );
   }
 }

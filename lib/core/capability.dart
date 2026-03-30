@@ -1,13 +1,17 @@
 import '../models/chat_models.dart';
 import '../models/tool_models.dart';
 import '../models/audio_models.dart';
+import '../models/google_tts_models.dart';
 import '../models/image_models.dart';
 import '../models/file_models.dart';
 import '../models/moderation_models.dart';
 import '../models/assistant_models.dart';
-import '../providers/google/tts.dart';
+import '../models/usage_models.dart';
 import 'llm_error.dart';
 import 'cancellation.dart';
+
+export '../models/usage_models.dart' show UsageInfo;
+export 'cancellation.dart' show CancellationHelper, TransportCancellation;
 
 /// Enumeration of LLM capabilities that providers can support
 ///
@@ -172,69 +176,6 @@ abstract class ChatResponse {
   UsageInfo? get usage => null;
 }
 
-/// Usage information for API calls
-class UsageInfo {
-  final int? promptTokens;
-  final int? completionTokens;
-  final int? totalTokens;
-  final int? reasoningTokens;
-
-  const UsageInfo({
-    this.promptTokens,
-    this.completionTokens,
-    this.totalTokens,
-    this.reasoningTokens,
-  });
-
-  /// Adds two UsageInfo instances together for token usage accumulation
-  UsageInfo operator +(UsageInfo other) {
-    return UsageInfo(
-      promptTokens: (promptTokens ?? 0) + (other.promptTokens ?? 0),
-      completionTokens: (completionTokens ?? 0) + (other.completionTokens ?? 0),
-      totalTokens: (totalTokens ?? 0) + (other.totalTokens ?? 0),
-      reasoningTokens: (reasoningTokens ?? 0) + (other.reasoningTokens ?? 0),
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        if (promptTokens != null) 'prompt_tokens': promptTokens,
-        if (completionTokens != null) 'completion_tokens': completionTokens,
-        if (totalTokens != null) 'total_tokens': totalTokens,
-        if (reasoningTokens != null) 'reasoning_tokens': reasoningTokens,
-      };
-
-  factory UsageInfo.fromJson(Map<String, dynamic> json) => UsageInfo(
-        promptTokens: json['prompt_tokens'] as int?,
-        completionTokens: json['completion_tokens'] as int?,
-        totalTokens: json['total_tokens'] as int?,
-        reasoningTokens: json['reasoning_tokens'] as int?,
-      );
-
-  @override
-  String toString() {
-    final parts = <String>[];
-    if (promptTokens != null) parts.add('prompt: $promptTokens');
-    if (completionTokens != null) parts.add('completion: $completionTokens');
-    if (reasoningTokens != null) parts.add('reasoning: $reasoningTokens');
-    if (totalTokens != null) parts.add('total: $totalTokens');
-    return 'UsageInfo(${parts.join(', ')})';
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is UsageInfo &&
-          runtimeType == other.runtimeType &&
-          promptTokens == other.promptTokens &&
-          completionTokens == other.completionTokens &&
-          totalTokens == other.totalTokens &&
-          reasoningTokens == other.reasoningTokens;
-
-  @override
-  int get hashCode =>
-      Object.hash(promptTokens, completionTokens, totalTokens, reasoningTokens);
-}
-
 /// Core chat capability interface that most LLM providers implement
 ///
 /// **API References:**
@@ -250,7 +191,7 @@ abstract class ChatCapability {
   /// Returns the provider's response or throws an LLMError
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }
@@ -265,7 +206,7 @@ abstract class ChatCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   });
 
   /// Sends a streaming chat request to the provider
@@ -278,7 +219,7 @@ abstract class ChatCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   });
 
   /// Get current memory contents if provider supports memory
@@ -392,7 +333,7 @@ abstract class EmbeddingCapability {
   /// Returns a list of embedding vectors or throws an LLMError
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   });
 }
 
@@ -417,7 +358,7 @@ abstract class AudioCapability {
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     throw UnsupportedError('Text-to-speech not supported by this provider');
   }
@@ -430,7 +371,7 @@ abstract class AudioCapability {
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     throw UnsupportedError(
         'Streaming text-to-speech not supported by this provider');
@@ -451,7 +392,7 @@ abstract class AudioCapability {
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
   Future<STTResponse> speechToText(
     STTRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     throw UnsupportedError('Speech-to-text not supported by this provider');
   }
@@ -464,7 +405,7 @@ abstract class AudioCapability {
   /// Throws [UnsupportedError] if not supported. Check [supportedFeatures] first.
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     throw UnsupportedError('Audio translation not supported by this provider');
   }
@@ -497,7 +438,7 @@ abstract class AudioCapability {
   /// Simple text-to-speech conversion (convenience method)
   Future<List<int>> speech(
     String text, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     final response = await textToSpeech(
       TTSRequest(text: text),
@@ -549,7 +490,7 @@ abstract class BaseAudioCapability implements AudioCapability {
   @override
   Future<List<int>> speech(
     String text, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     final response = await textToSpeech(
       TTSRequest(text: text),
@@ -754,7 +695,7 @@ abstract class ModelListingCapability {
   /// [cancelToken] - Optional token to cancel the request
   ///
   /// Returns a list of available models or throws an LLMError
-  Future<List<AIModel>> models({CancelToken? cancelToken});
+  Future<List<AIModel>> models({TransportCancellation? cancelToken});
 }
 
 /// Google-specific TTS capability interface

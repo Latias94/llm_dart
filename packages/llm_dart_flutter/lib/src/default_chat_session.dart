@@ -568,12 +568,12 @@ final class DefaultChatSession implements ChatSession {
     ChatUiMessage assistantMessage, {
     int startPartIndex = 0,
   }) {
-    final promptMessage = _assistantPromptMessageFromUi(
+    final promptMessages = _assistantPromptMessagesFromUi(
       assistantMessage,
       startPartIndex: startPartIndex,
     );
-    if (promptMessage != null) {
-      _promptHistory.add(promptMessage);
+    if (promptMessages.isNotEmpty) {
+      _promptHistory.addAll(promptMessages);
     }
   }
 
@@ -1029,11 +1029,32 @@ final class DefaultChatSession implements ChatSession {
     );
   }
 
-  static AssistantPromptMessage? _assistantPromptMessageFromUi(
+  static List<PromptMessage> _assistantPromptMessagesFromUi(
     ChatUiMessage message, {
     int startPartIndex = 0,
   }) {
-    final parts = <PromptPart>[];
+    final prompt = <PromptMessage>[];
+    final assistantParts = <PromptPart>[];
+    final replayedToolResultIds = {
+      for (final part in message.parts.skip(startPartIndex))
+        if (part case CustomUiPart(:final data))
+          if (_toolReplayPayloadRole(data) == 'tool')
+            if (_toolReplayPayloadToolCallId(data) case final String toolCallId)
+              toolCallId,
+    };
+
+    void flushAssistantParts() {
+      if (assistantParts.isEmpty) {
+        return;
+      }
+
+      prompt.add(
+        AssistantPromptMessage(
+          parts: List<PromptPart>.from(assistantParts),
+        ),
+      );
+      assistantParts.clear();
+    }
 
     for (final part in message.parts.skip(startPartIndex)) {
       switch (part) {
@@ -1042,7 +1063,7 @@ final class DefaultChatSession implements ChatSession {
               :final providerMetadata,
             )
             when text.isNotEmpty || providerMetadata != null:
-          parts.add(
+          assistantParts.add(
             TextPromptPart(
               text,
               providerMetadata: providerMetadata,
@@ -1053,7 +1074,7 @@ final class DefaultChatSession implements ChatSession {
               :final providerMetadata,
             )
             when text.isNotEmpty || providerMetadata != null:
-          parts.add(
+          assistantParts.add(
             ReasoningPromptPart(
               text,
               providerMetadata: providerMetadata,
@@ -1063,7 +1084,7 @@ final class DefaultChatSession implements ChatSession {
             :final file,
             :final providerMetadata,
           ):
-          parts.add(
+          assistantParts.add(
             FilePromptPart(
               mediaType: file.mediaType,
               filename: file.filename,
@@ -1076,7 +1097,7 @@ final class DefaultChatSession implements ChatSession {
             :final file,
             :final providerMetadata,
           ):
-          parts.add(
+          assistantParts.add(
             ReasoningFilePromptPart(
               mediaType: file.mediaType,
               filename: file.filename,
@@ -1086,11 +1107,30 @@ final class DefaultChatSession implements ChatSession {
             ),
           );
         case CustomUiPart(
+              :final kind,
+              :final data,
+              :final providerMetadata,
+            )
+            when _toolReplayPayloadRole(data) == 'tool':
+          flushAssistantParts();
+          prompt.add(
+            ToolPromptMessage(
+              toolName: _toolReplayPayloadToolName(data) ?? 'tool',
+              parts: [
+                CustomPromptPart(
+                  kind: kind,
+                  data: data,
+                  providerMetadata: providerMetadata,
+                ),
+              ],
+            ),
+          );
+        case CustomUiPart(
             :final kind,
             :final data,
             :final providerMetadata,
           ):
-          parts.add(
+          assistantParts.add(
             CustomPromptPart(
               kind: kind,
               data: data,
@@ -1111,7 +1151,7 @@ final class DefaultChatSession implements ChatSession {
             when state != ToolUiPartState.outputDenied &&
                 state != ToolUiPartState.outputAvailable &&
                 state != ToolUiPartState.outputError:
-          parts.add(
+          assistantParts.add(
             ToolCallPromptPart(
               toolCallId: toolCallId,
               toolName: toolName,
@@ -1123,7 +1163,7 @@ final class DefaultChatSession implements ChatSession {
             ),
           );
           if (approval != null) {
-            parts.add(
+            assistantParts.add(
               ToolApprovalRequestPromptPart(
                 approvalId: approval.approvalId,
                 toolCallId: toolCallId,
@@ -1131,6 +1171,55 @@ final class DefaultChatSession implements ChatSession {
               ),
             );
           }
+        case ToolUiPart(
+              :final toolCallId,
+              :final toolName,
+              :final input,
+              :final state,
+              :final providerExecuted,
+              :final isDynamic,
+              :final title,
+              :final callProviderMetadata,
+              :final output,
+              :final resultProviderMetadata,
+            )
+            when state == ToolUiPartState.outputAvailable ||
+                state == ToolUiPartState.outputError:
+          if (!providerExecuted) {
+            break;
+          }
+
+          assistantParts.add(
+            ToolCallPromptPart(
+              toolCallId: toolCallId,
+              toolName: toolName,
+              input: input,
+              providerExecuted: providerExecuted,
+              isDynamic: isDynamic,
+              title: title,
+              providerMetadata: callProviderMetadata,
+            ),
+          );
+          flushAssistantParts();
+
+          if (replayedToolResultIds.contains(toolCallId)) {
+            break;
+          }
+
+          prompt.add(
+            ToolPromptMessage(
+              toolName: toolName,
+              parts: [
+                ToolResultPromptPart(
+                  toolCallId: toolCallId,
+                  toolName: toolName,
+                  output: output,
+                  isError: state == ToolUiPartState.outputError,
+                  providerMetadata: resultProviderMetadata,
+                ),
+              ],
+            ),
+          );
         case StepBoundaryUiPart():
         case SourceUiPart():
         case DataUiPart():
@@ -1139,12 +1228,47 @@ final class DefaultChatSession implements ChatSession {
       }
     }
 
-    if (parts.isEmpty) {
-      return null;
-    }
-
-    return AssistantPromptMessage(parts: parts);
+    flushAssistantParts();
+    return prompt;
   }
+}
+
+String? _toolReplayPayloadRole(Object? data) {
+  final payload = _toolReplayPayloadMap(data);
+  final role = payload?['replayRole'];
+  return role is String && role.isNotEmpty ? role : null;
+}
+
+String? _toolReplayPayloadToolCallId(Object? data) {
+  final payload = _toolReplayPayloadMap(data);
+  final toolCallId = payload?['toolCallId'];
+  return toolCallId is String && toolCallId.isNotEmpty ? toolCallId : null;
+}
+
+String? _toolReplayPayloadToolName(Object? data) {
+  final payload = _toolReplayPayloadMap(data);
+  final toolName = payload?['toolName'];
+  return toolName is String && toolName.isNotEmpty ? toolName : null;
+}
+
+Map<String, Object?>? _toolReplayPayloadMap(Object? data) {
+  if (data is Map<String, Object?>) {
+    return data;
+  }
+
+  if (data is Map) {
+    final normalized = <String, Object?>{};
+    for (final entry in data.entries) {
+      if (entry.key is! String) {
+        return null;
+      }
+
+      normalized[entry.key as String] = entry.value;
+    }
+    return normalized;
+  }
+
+  return null;
 }
 
 ChatStatus _normalizeRestoredStatus(ChatStatus status) {

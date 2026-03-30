@@ -382,6 +382,350 @@ void main() {
       );
     });
 
+    test('replays Anthropic web-search tool results from custom prompt parts',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Search and summarize.'),
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'srvtoolu_1',
+                toolName: 'web_search',
+                input: {
+                  'query': 'dart sdk',
+                },
+                providerExecuted: true,
+                isDynamic: true,
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'web_search',
+            parts: const [
+              CustomPromptPart(
+                kind: 'anthropic.result.web_search',
+                data: {
+                  'replayRole': 'tool',
+                  'toolCallId': 'srvtoolu_1',
+                  'toolName': 'web_search',
+                  'block': {
+                    'type': 'web_search_tool_result',
+                    'tool_use_id': 'srvtoolu_1',
+                    'content': [
+                      {
+                        'url': 'https://dart.dev',
+                        'title': 'Dart',
+                        'type': 'web_search_result',
+                      },
+                    ],
+                  },
+                },
+              ),
+            ],
+          ),
+          AssistantPromptMessage.text('Dart has a modern SDK.'),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'Search and summarize.',
+              },
+            ],
+          },
+          {
+            'role': 'assistant',
+            'content': [
+              {
+                'type': 'server_tool_use',
+                'id': 'srvtoolu_1',
+                'name': 'web_search',
+                'input': {
+                  'query': 'dart sdk',
+                },
+              },
+            ],
+          },
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'web_search_tool_result',
+                'tool_use_id': 'srvtoolu_1',
+                'content': [
+                  {
+                    'url': 'https://dart.dev',
+                    'title': 'Dart',
+                    'type': 'web_search_result',
+                  },
+                ],
+              },
+            ],
+          },
+          {
+            'role': 'assistant',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'Dart has a modern SDK.',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test('replays Anthropic web-fetch tool results from custom prompt parts',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Fetch the article.'),
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'srvtoolu_2',
+                toolName: 'web_fetch',
+                input: {
+                  'url': 'https://example.com/article',
+                },
+                providerExecuted: true,
+                isDynamic: true,
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'web_fetch',
+            parts: const [
+              CustomPromptPart(
+                kind: 'anthropic.result.web_fetch',
+                data: {
+                  'replayRole': 'tool',
+                  'toolCallId': 'srvtoolu_2',
+                  'toolName': 'web_fetch',
+                  'block': {
+                    'type': 'web_fetch_tool_result',
+                    'tool_use_id': 'srvtoolu_2',
+                    'content': {
+                      'type': 'web_fetch_result',
+                      'url': 'https://example.com/article',
+                      'content': {
+                        'type': 'document',
+                        'source': {
+                          'type': 'text',
+                          'media_type': 'text/plain',
+                          'data': 'Article content',
+                        },
+                      },
+                    },
+                  },
+                },
+              ),
+            ],
+          ),
+          AssistantPromptMessage.text('The article is about Dart.'),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'Fetch the article.',
+              },
+            ],
+          },
+          {
+            'role': 'assistant',
+            'content': [
+              {
+                'type': 'server_tool_use',
+                'id': 'srvtoolu_2',
+                'name': 'web_fetch',
+                'input': {
+                  'url': 'https://example.com/article',
+                },
+              },
+            ],
+          },
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'web_fetch_tool_result',
+                'tool_use_id': 'srvtoolu_2',
+                'content': {
+                  'type': 'web_fetch_result',
+                  'url': 'https://example.com/article',
+                  'content': {
+                    'type': 'document',
+                    'source': {
+                      'type': 'text',
+                      'media_type': 'text/plain',
+                      'data': 'Article content',
+                    },
+                  },
+                },
+              },
+            ],
+          },
+          {
+            'role': 'assistant',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'The article is about Dart.',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test(
+        'replays Anthropic code-execution tool results from custom prompt parts',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Run a command.'),
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'srvtoolu_3',
+                toolName: 'bash_code_execution',
+                input: {
+                  'command': 'echo hi',
+                },
+                providerExecuted: true,
+                isDynamic: true,
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'code_execution',
+            parts: const [
+              CustomPromptPart(
+                kind: 'anthropic.result.code_execution',
+                data: {
+                  'schema': 'anthropic.execution.result.v1',
+                  'replayRole': 'tool',
+                  'toolCallId': 'srvtoolu_3',
+                  'toolName': 'code_execution',
+                  'blockType': 'bash_code_execution_tool_result',
+                  'block': {
+                    'type': 'bash_code_execution_tool_result',
+                    'tool_use_id': 'srvtoolu_3',
+                    'content': {
+                      'type': 'bash_code_execution_result',
+                      'stdout': 'hi\n',
+                      'stderr': '',
+                      'return_code': 0,
+                      'content': [
+                        {
+                          'type': 'bash_code_execution_output',
+                          'file_id': 'file_123',
+                        },
+                      ],
+                    },
+                  },
+                },
+              ),
+            ],
+          ),
+          AssistantPromptMessage.text('Command finished.'),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'Run a command.',
+              },
+            ],
+          },
+          {
+            'role': 'assistant',
+            'content': [
+              {
+                'type': 'server_tool_use',
+                'id': 'srvtoolu_3',
+                'name': 'bash_code_execution',
+                'input': {
+                  'command': 'echo hi',
+                },
+              },
+            ],
+          },
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'bash_code_execution_tool_result',
+                'tool_use_id': 'srvtoolu_3',
+                'content': {
+                  'type': 'bash_code_execution_result',
+                  'stdout': 'hi\n',
+                  'stderr': '',
+                  'return_code': 0,
+                  'content': [
+                    {
+                      'type': 'bash_code_execution_output',
+                      'file_id': 'file_123',
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+          {
+            'role': 'assistant',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'Command finished.',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
     test('encodes Anthropic native tools alongside common function tools', () {
       final request = codec.encodeRequest(
         modelId: 'claude-sonnet-4-5',
@@ -433,6 +777,205 @@ void main() {
         {
           'type': 'auto',
         },
+      );
+    });
+
+    test('encodes cache control from Anthropic metadata and tool cache options',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          SystemPromptMessage(
+            parts: [
+              TextPromptPart(
+                'Reusable instructions',
+                providerMetadata: const ProviderMetadata({
+                  'anthropic': {
+                    'contentBlocks': [
+                      {
+                        'type': 'text',
+                        'text': '',
+                        'cache_control': {
+                          'type': 'ephemeral',
+                          'ttl': '1h',
+                        },
+                      },
+                      {
+                        'type': 'tools',
+                        'tools': [],
+                      },
+                    ],
+                  },
+                }),
+              ),
+            ],
+          ),
+          UserPromptMessage(
+            parts: [
+              TextPromptPart(
+                'Hello',
+                providerMetadata: const ProviderMetadata({
+                  'anthropic': {
+                    'cacheControl': {
+                      'type': 'ephemeral',
+                      'ttl': '5m',
+                    },
+                  },
+                }),
+              ),
+            ],
+          ),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        toolChoice: const AutoToolChoice(),
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(
+          toolsCacheControl: AnthropicCacheControl.ephemeral(
+            ttl: '1h',
+          ),
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['system'],
+        [
+          {
+            'type': 'text',
+            'text': 'Reusable instructions',
+            'cache_control': {
+              'type': 'ephemeral',
+              'ttl': '1h',
+            },
+          },
+        ],
+      );
+
+      expect(
+        request.body['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'Hello',
+                'cache_control': {
+                  'type': 'ephemeral',
+                  'ttl': '5m',
+                },
+              },
+            ],
+          },
+        ],
+      );
+
+      expect(
+        request.body['tools'],
+        [
+          {
+            'name': 'weather',
+            'input_schema': {
+              'type': 'object',
+            },
+            'cache_control': {
+              'type': 'ephemeral',
+              'ttl': '1h',
+            },
+          },
+        ],
+      );
+      expect(
+        request.betaFeatures,
+        contains('extended-cache-ttl-2025-04-11'),
+      );
+    });
+
+    test('encodes cache control for image and document prompt parts', () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage(
+            parts: [
+              ImagePromptPart(
+                mediaType: 'image/png',
+                uri: Uri.parse('https://example.com/image.png'),
+                providerMetadata: const ProviderMetadata({
+                  'anthropic': {
+                    'cacheControl': {
+                      'type': 'ephemeral',
+                      'ttl': '1h',
+                    },
+                  },
+                }),
+              ),
+              FilePromptPart(
+                mediaType: 'text/plain',
+                filename: 'notes.txt',
+                bytes: utf8.encode('cached document'),
+                providerMetadata: const ProviderMetadata({
+                  'anthropic': {
+                    'cacheControl': {
+                      'type': 'ephemeral',
+                      'ttl': '5m',
+                    },
+                  },
+                }),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'image',
+                'source': {
+                  'type': 'url',
+                  'url': 'https://example.com/image.png',
+                },
+                'cache_control': {
+                  'type': 'ephemeral',
+                  'ttl': '1h',
+                },
+              },
+              {
+                'type': 'document',
+                'source': {
+                  'type': 'text',
+                  'media_type': 'text/plain',
+                  'data': 'cached document',
+                },
+                'title': 'notes.txt',
+                'cache_control': {
+                  'type': 'ephemeral',
+                  'ttl': '5m',
+                },
+              },
+            ],
+          },
+        ],
+      );
+      expect(
+        request.betaFeatures,
+        contains('extended-cache-ttl-2025-04-11'),
       );
     });
 

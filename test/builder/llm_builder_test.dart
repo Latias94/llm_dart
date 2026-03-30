@@ -281,9 +281,8 @@ void main() {
       });
 
       test('should configure OpenRouter with callback', () {
-        final builder = LLMBuilder().openRouter((openrouter) => openrouter
-            .webSearch(maxResults: 5, searchPrompt: 'Focus on recent research')
-            .useOnlineShortcut(true));
+        final builder =
+            LLMBuilder().openRouter((openrouter) => openrouter.onlineSearch());
         expect(builder, isNotNull);
       });
 
@@ -392,6 +391,28 @@ void main() {
       test('should throw error when building without provider', () {
         final builder = LLMBuilder().apiKey('test-key').model('test-model');
         expect(() => builder.build(), throwsA(isA<GenericError>()));
+      });
+
+      test('should reject buildGoogleTTS for non-Google providers', () async {
+        final builder =
+            LLMBuilder().openai().apiKey('test-key').model('gpt-4o');
+
+        await expectLater(
+          builder.buildGoogleTTS(),
+          throwsA(isA<UnsupportedCapabilityError>()),
+        );
+      });
+
+      test('should default Google TTS model before typed build', () async {
+        final builder = LLMBuilder().google().apiKey('test-key');
+
+        final provider = await builder.buildGoogleTTS();
+
+        expect(provider, isA<GoogleTTSCapability>());
+        expect(
+          builder.currentConfig.model,
+          equals('gemini-2.5-flash-preview-tts'),
+        );
       });
 
       test('should throw error for unsupported capability', () {

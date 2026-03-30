@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
-import '../../core/provider_defaults.dart';
+import '../../src/provider_defaults.dart';
 import '../../models/audio_models.dart';
 import 'client.dart';
 import 'config.dart';
@@ -30,7 +30,7 @@ class OpenAIAudio extends BaseAudioCapability {
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     // Basic validation - let the provider handle specific limits
     if (request.text.isEmpty) {
@@ -123,7 +123,7 @@ class OpenAIAudio extends BaseAudioCapability {
   @override
   Future<STTResponse> speechToText(
     STTRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     // Basic validation - let the provider handle specific limits
     if (request.audioData == null && request.filePath == null) {
@@ -328,7 +328,7 @@ class OpenAIAudio extends BaseAudioCapability {
   @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     // Basic validation
     if (request.audioData == null && request.filePath == null) {
@@ -391,7 +391,7 @@ class OpenAIAudio extends BaseAudioCapability {
   @override
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     throw UnsupportedError('OpenAI does not support streaming text-to-speech');
   }

@@ -79,6 +79,8 @@ void main() {
             ],
           ),
         ],
+        tools: const [],
+        toolChoice: null,
         options: const GenerateTextOptions(),
         providerOptions: const OpenAIGenerateTextOptions(),
         stream: false,

@@ -19,7 +19,7 @@ class OllamaModels implements ModelListingCapability {
   String get modelsEndpoint => '/api/tags';
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+  Future<List<AIModel>> models({TransportCancellation? cancelToken}) async {
     if (config.baseUrl.isEmpty) {
       throw const InvalidRequestError('Missing Ollama base URL');
     }

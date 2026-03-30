@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
@@ -228,7 +226,7 @@ class AnthropicModels implements ModelListingCapability {
   String get modelsEndpoint => 'models';
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+  Future<List<AIModel>> models({TransportCancellation? cancelToken}) async {
     return listModels(cancelToken: cancelToken);
   }
 
@@ -242,7 +240,7 @@ class AnthropicModels implements ModelListingCapability {
     String? beforeId,
     String? afterId,
     int limit = 20,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       final queryParams = <String, dynamic>{};

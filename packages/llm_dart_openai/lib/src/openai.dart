@@ -1,3 +1,4 @@
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
@@ -21,7 +22,7 @@ final class OpenAI {
 
   OpenAILanguageModel chatModel(
     String modelId, {
-    OpenAIChatModelSettings settings = const OpenAIChatModelSettings(),
+    ProviderModelOptions settings = const OpenAIChatModelSettings(),
   }) {
     return OpenAILanguageModel(
       apiKey: apiKey,

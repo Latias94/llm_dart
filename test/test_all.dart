@@ -25,6 +25,7 @@ import 'models/audio_models_test.dart' as audio_models_tests;
 // Builder tests
 import 'builder/llm_builder_test.dart' as builder_tests;
 import 'builder/http_config_test.dart' as http_config_tests;
+import 'compat_transport_test.dart' as compat_transport_tests;
 
 // Utils tests
 import 'utils/utf8_stream_decoder_test.dart' as utf8_decoder_tests;
@@ -75,6 +76,8 @@ import 'providers/openai/responses_error_handling_test.dart'
     as openai_responses_error_tests;
 import 'providers/openai/responses_functionality_test.dart'
     as openai_responses_functionality_tests;
+import 'chat_route_compatibility_test.dart' as chat_route_compatibility_tests;
+import 'legacy_compatibility_test.dart' as legacy_compatibility_tests;
 
 void main() {
   group('LLM Dart Library Tests', () {
@@ -98,6 +101,7 @@ void main() {
     group('Builder Tests', () {
       builder_tests.main();
       http_config_tests.main();
+      compat_transport_tests.main();
     });
 
     group('Utils Tests', () {
@@ -116,7 +120,9 @@ void main() {
     });
 
     group('Feature Tests', () {
+      chat_route_compatibility_tests.main();
       enhanced_array_tools_tests.main();
+      legacy_compatibility_tests.main();
     });
 
     group('Provider Tests', () {

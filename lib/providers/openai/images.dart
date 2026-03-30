@@ -5,7 +5,7 @@ import 'package:http_parser/http_parser.dart';
 
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
-import '../../core/provider_defaults.dart';
+import '../../src/provider_defaults.dart';
 import '../../models/image_models.dart';
 import 'client.dart';
 import 'config.dart';

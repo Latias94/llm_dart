@@ -39,7 +39,7 @@
 /// ```
 library;
 
-import '../../core/provider_defaults.dart';
+import '../../src/provider_defaults.dart';
 import 'config.dart';
 import 'provider.dart';
 

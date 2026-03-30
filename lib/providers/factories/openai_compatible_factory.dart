@@ -1,7 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../core/registry.dart';
-import '../../core/openai_compatible_configs.dart';
+import '../../src/openai_compatible_configs.dart';
 import '../../core/web_search.dart';
 import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';

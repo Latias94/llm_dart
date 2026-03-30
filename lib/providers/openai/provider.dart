@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import '../../models/audio_models.dart';
@@ -121,7 +119,7 @@ class OpenAIProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     // Use Responses API if enabled, otherwise use Chat Completions API
     if (config.useResponsesAPI && _responses != null) {
@@ -135,7 +133,7 @@ class OpenAIProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     // Use Responses API if enabled, otherwise use Chat Completions API
     if (config.useResponsesAPI && _responses != null) {
@@ -150,7 +148,7 @@ class OpenAIProvider
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     // Use Responses API if enabled, otherwise use Chat Completions API
     if (config.useResponsesAPI && _responses != null) {
@@ -186,7 +184,7 @@ class OpenAIProvider
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _embeddings.embed(input, cancelToken: cancelToken);
   }
@@ -199,7 +197,7 @@ class OpenAIProvider
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _audio.textToSpeech(request, cancelToken: cancelToken);
   }
@@ -207,7 +205,7 @@ class OpenAIProvider
   @override
   Stream<AudioStreamEvent> textToSpeechStream(
     TTSRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     return _audio.textToSpeechStream(request, cancelToken: cancelToken);
   }
@@ -220,7 +218,7 @@ class OpenAIProvider
   @override
   Future<STTResponse> speechToText(
     STTRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _audio.speechToText(request, cancelToken: cancelToken);
   }
@@ -228,7 +226,7 @@ class OpenAIProvider
   @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _audio.translateAudio(request, cancelToken: cancelToken);
   }
@@ -253,7 +251,7 @@ class OpenAIProvider
   @override
   Future<List<int>> speech(
     String text, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     final response = await textToSpeech(
       TTSRequest(text: text),
@@ -387,7 +385,7 @@ class OpenAIProvider
   // ========== ModelListingCapability (delegated to models module) ==========
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+  Future<List<AIModel>> models({TransportCancellation? cancelToken}) async {
     return _models.models(cancelToken: cancelToken);
   }
 

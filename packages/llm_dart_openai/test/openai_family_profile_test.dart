@@ -1,0 +1,250 @@
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
+import 'package:test/test.dart';
+
+void main() {
+  group('OpenAIFamilyProfile', () {
+    test('OpenAI profile supports Responses API by default', () {
+      const profile = OpenAIProfile();
+
+      expect(profile.providerId, 'openai');
+      expect(profile.defaultBaseUrl, 'https://api.openai.com/v1');
+      expect(profile.supportsResponsesApi, isTrue);
+      expect(
+        profile.buildHeaders(
+          apiKey: 'test-key',
+          extraHeaders: {'x-test': '1'},
+        ),
+        {
+          'authorization': 'Bearer test-key',
+          'x-test': '1',
+        },
+      );
+    });
+
+    test(
+        'OpenAI-compatible profiles expose provider defaults and disable Responses API',
+        () {
+      const cases = <({
+        OpenAIFamilyProfile profile,
+        String providerId,
+        String defaultBaseUrl,
+      })>[
+        (
+          profile: OpenRouterProfile(),
+          providerId: 'openrouter',
+          defaultBaseUrl: 'https://openrouter.ai/api/v1',
+        ),
+        (
+          profile: DeepSeekProfile(),
+          providerId: 'deepseek',
+          defaultBaseUrl: 'https://api.deepseek.com/v1',
+        ),
+        (
+          profile: GroqProfile(),
+          providerId: 'groq',
+          defaultBaseUrl: 'https://api.groq.com/openai/v1',
+        ),
+        (
+          profile: XAIProfile(),
+          providerId: 'xai',
+          defaultBaseUrl: 'https://api.x.ai/v1',
+        ),
+        (
+          profile: PhindProfile(),
+          providerId: 'phind',
+          defaultBaseUrl: 'https://api.phind.com/v1',
+        ),
+      ];
+
+      for (final entry in cases) {
+        expect(entry.profile.providerId, entry.providerId);
+        expect(entry.profile.defaultBaseUrl, entry.defaultBaseUrl);
+        expect(entry.profile.supportsResponsesApi, isFalse);
+        expect(
+          entry.profile.buildHeaders(
+            apiKey: 'test-key',
+            extraHeaders: {'x-trace': 'trace-1'},
+          ),
+          {
+            'authorization': 'Bearer test-key',
+            'x-trace': 'trace-1',
+          },
+        );
+      }
+    });
+
+    test(
+        'OpenAI factory uses profile defaults for provider id, base url, and headers',
+        () {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        profile: const OpenRouterProfile(),
+        transport: const _FakeTransportClient(),
+      ).chatModel('openai/gpt-4o-mini');
+
+      expect(model.providerId, 'openrouter');
+      expect(model.baseUrl, 'https://openrouter.ai/api/v1');
+      expect(
+        model.defaultHeaders,
+        {'authorization': 'Bearer test-key'},
+      );
+    });
+
+    test('OpenRouter model settings shape the request model to :online',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        profile: const OpenRouterProfile(),
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_or_1',
+                'model': 'openai/gpt-4o-mini:online',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'hello',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 1,
+                  'completion_tokens': 1,
+                  'total_tokens': 2,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'openai/gpt-4o-mini',
+        settings: const OpenRouterChatModelSettings(
+          search: OpenRouterSearchOptions.onlineModel(),
+        ),
+      );
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('hello'),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['model'], 'openai/gpt-4o-mini:online');
+    });
+
+    test('OpenRouter model settings are rejected on non-OpenRouter profiles',
+        () {
+      expect(
+        () => OpenAI(
+          apiKey: 'test-key',
+          profile: const DeepSeekProfile(),
+          transport: const _FakeTransportClient(),
+        ).chatModel(
+          'deepseek-chat',
+          settings: const OpenRouterChatModelSettings(
+            search: OpenRouterSearchOptions.onlineModel(),
+          ),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('only valid for OpenRouter'),
+          ),
+        ),
+      );
+    });
+
+    test(
+        'language model routes profiles without Responses API support to chat completions',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        profile: const DeepSeekProfile(),
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_1',
+                'model': 'deepseek-chat',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'hello',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 1,
+                  'completion_tokens': 1,
+                  'total_tokens': 2,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('deepseek-chat');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('hello'),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.uri.toString(), contains('/chat/completions'));
+      expect(result.text, 'hello');
+      expect(result.providerMetadata?['deepseek'],
+          containsPair('finishReason', 'stop'));
+    });
+  });
+}
+
+final class _FakeTransportClient implements TransportClient {
+  final Future<TransportResponse> Function(TransportRequest request)? onSend;
+
+  const _FakeTransportClient({
+    this.onSend,
+  });
+
+  @override
+  Future<TransportResponse> send(TransportRequest request) {
+    if (onSend == null) {
+      throw UnimplementedError('send() was not configured for this test.');
+    }
+
+    return onSend!(request);
+  }
+
+  @override
+  Future<StreamingTransportResponse> sendStream(TransportRequest request) {
+    throw UnimplementedError(
+      'sendStream() was not configured for this test.',
+    );
+  }
+}

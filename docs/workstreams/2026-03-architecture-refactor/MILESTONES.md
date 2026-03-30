@@ -49,10 +49,12 @@ Acceptance criteria:
 Current status:
 
 - minimal Responses-based text generation is implemented in `llm_dart_openai`
+- an initial OpenAI-family chat-completions mainline now also exists in `llm_dart_openai`, including OpenAI opt-out from Responses plus default chat-completions routing for non-Responses profiles
 - streaming text, reasoning summaries, and function-call outputs are mapped into the new core models
+- chat-completions decoding now also covers text, reasoning text, tool calls, and streamed tool-input aggregation for the initial OpenAI-family path
 - replay-critical OpenAI Responses metadata now survives decode, session replay, and request re-encoding for assistant message IDs, message phase, reasoning encrypted content, tool-call item IDs, and compaction items
 - transport now has a concrete Dio executor, SSE decoder, cancellation abstraction, and error mapping
-- broader tool coverage, structured output, and non-text endpoints remain for the next step
+- provider-specific compatibility subset audits, broader endpoint coverage, and non-text endpoints remain for the next step
 
 ## M3 - Anthropic And Google
 
@@ -123,9 +125,18 @@ Acceptance criteria:
 
 Current status:
 
-- `LLMBuilder.build()` now returns compatibility provider subclasses for OpenAI, Google, and Anthropic when the builder has enough core config
+- `LLMBuilder.build()` now returns compatibility provider subclasses for OpenAI, Google, Anthropic, and the audited OpenAI-family subset routes when the builder has enough core config
+- `LLMBuilder.build()` now also returns a compatibility DeepSeek provider subclass, but its routing remains restricted to the audited `deepseek-chat` subset
+- `LLMBuilder.build()` now also returns a compatibility OpenRouter provider subclass, but its routing remains restricted to the audited plain-chat subset
+- `LLMBuilder.build()` now also returns a compatibility Groq provider subclass, but its routing remains restricted to the audited text-only-and-function-tool-definition subset
+- `LLMBuilder.build()` now also returns a compatibility xAI provider subclass, and its routing now covers the audited text subset plus the audited legacy live-search migration subset
 - those compatibility providers route legacy chat requests into the new package-owned `LanguageModel` implementations only when the request shape is explicitly bridge-compatible
 - the OpenAI compatibility bridge now covers the legacy text mainline plus common function tools, built-in tools, and structured output request encoding
+- the DeepSeek compatibility bridge now covers the initial `deepseek-chat` text-and-function-tool subset while keeping `deepseek-reasoner` and DeepSeek-specific extensions on legacy fallback
+- the OpenRouter compatibility bridge now covers the initial plain-chat subset while keeping search-shaped requests and OpenRouter DeepSeek R1 traffic on legacy fallback
+- the Groq compatibility bridge now covers the initial text-and-function-tool-definition subset while keeping tool replay, multimodal traffic, and ignored legacy extras on legacy fallback
+- the xAI compatibility bridge now covers the audited text-and-function-tool-definition subset plus the audited legacy live-search migration inputs (`liveSearch`, `searchParameters`, `webSearchEnabled`, `webSearchConfig`) for the web/news search-parameters subset, while prompt-side tool replay, multimodal traffic, unsupported search shapes, and ignored legacy extras stay on legacy fallback
+- Phind has now been explicitly audited and still remains facade-only because the legacy provider protocol is not a plain chat-completions bridge target
 - the Google compatibility bridge now covers the legacy text/multimodal mainline plus text-only structured-output request encoding
 - the Anthropic compatibility bridge now covers legacy prompt-cache markers, lossless raw text/user-image/user-document `contentBlocks`, lossless raw assistant `tool_use` / `server_tool_use` / `mcp_tool_use` replay, lossless raw user `tool_result` / `mcp_tool_result` replay, and `MessageBuilder` tools blocks when they can map into prompt parts, provider metadata, and typed Anthropic cache options without silent feature loss
 - Anthropic bridge gating is now explicitly anchored to request-side re-encoding fidelity, and the legacy raw bridge now explicitly allows `web_search_tool_result` and `web_fetch_tool_result` only inside exact replay-safe shapes
@@ -134,7 +145,11 @@ Current status:
 - the new Anthropic replay path now also preserves execution-oriented provider-native result blocks through `anthropic.result.code_execution`, while keeping the legacy raw bridge conservative
 - `llm_dart_anthropic` now also exposes a provider-native `AnthropicFiles` API and file-handle helpers for execution downloads without widening the shared core
 - the event completeness audit against `repo-ref/ai` is now also frozen: the shared stream model is already sufficient, and remaining lifecycle chunk gaps are transport/UI concerns rather than missing core event types
+- the provider-owned search direction is now also frozen more concretely: OpenRouter search remains profile/model shaping, while xAI live search becomes provider-owned invocation options over `search_parameters`
+- the package-owned OpenRouter mainline now also accepts provider-owned online-model settings, and the compatibility bridge now allows the explicit `:online` shape plus the bare `webSearchEnabled` migration input
+- the package-owned xAI chat-completions mainline now also accepts typed `XAIGenerateTextOptions` and projects xAI citations through shared source parts and events
 - provider stream coverage regression tests now explicitly cover OpenAI reasoning and failed-response paths, Anthropic malformed tool-input events, and Google source/file/reasoning-file stream paths
 - the next recommended milestone is now explicit: expand provider coverage tests and renderer helpers without widening the shared event model
+- the next provider-specific implementation step is now also explicit: re-audit broader OpenRouter search mapping and any xAI subsets beyond the audited legacy live-search migration subset
 - incompatible legacy request shapes and bridge-shape conversion failures fall back to the old provider implementation instead of silently dropping provider-specific behavior
 - legacy stream projection is now explicitly frozen as a lossy compatibility surface; richer event semantics remain in `llm_dart_core` and `llm_dart_flutter`

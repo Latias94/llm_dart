@@ -2,7 +2,9 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
+import '../../core/cancellation.dart';
 import '../../core/llm_error.dart';
+import '../../src/dio_cancellation_adapter.dart';
 import '../../utils/dio_client_factory.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -31,12 +33,12 @@ class ElevenLabsClient {
   /// Make a GET request and return JSON response
   Future<Map<String, dynamic>> getJson(
     String endpoint, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       final response = await _dio.get(
         endpoint,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
 
       if (response.statusCode != 200) {
@@ -54,12 +56,12 @@ class ElevenLabsClient {
   /// Make a GET request and return list response
   Future<List<dynamic>> getList(
     String endpoint, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       final response = await _dio.get(
         endpoint,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
 
       if (response.statusCode != 200) {
@@ -79,14 +81,14 @@ class ElevenLabsClient {
     String endpoint,
     Map<String, dynamic> data, {
     Map<String, String>? queryParams,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       final response = await _dio.post(
         endpoint,
         data: data,
         queryParameters: queryParams,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
         options: Options(responseType: ResponseType.bytes),
       );
 
@@ -107,13 +109,13 @@ class ElevenLabsClient {
     String endpoint,
     FormData formData, {
     Map<String, String>? queryParams,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       final response = await _dio.post(
         endpoint,
         data: formData,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
         queryParameters: queryParams,
         options: Options(headers: {'xi-api-key': config.apiKey}),
       );

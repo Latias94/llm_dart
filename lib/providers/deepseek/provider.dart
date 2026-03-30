@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
@@ -30,7 +28,7 @@ class DeepSeekProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _chat.chat(messages, cancelToken: cancelToken);
   }
@@ -39,7 +37,7 @@ class DeepSeekProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
   }
@@ -48,7 +46,7 @@ class DeepSeekProvider
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
   }
@@ -64,7 +62,7 @@ class DeepSeekProvider
   }
 
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+  Future<List<AIModel>> models({TransportCancellation? cancelToken}) async {
     return _models.models(cancelToken: cancelToken);
   }
 

@@ -1,5 +1,5 @@
 import '../../core/config.dart';
-import '../../core/provider_defaults.dart';
+import '../../src/provider_defaults.dart';
 
 /// ElevenLabs provider configuration
 ///

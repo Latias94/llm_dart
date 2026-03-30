@@ -15,6 +15,10 @@ final class TransportCancelledException extends TransportException {
 final class TransportCancellation {
   final Completer<Object?> _completer = Completer<Object?>();
 
+  static bool isCancel(Object error) {
+    return error is TransportCancelledException;
+  }
+
   bool get isCancelled => _completer.isCompleted;
 
   Future<Object?> get whenCancelled => _completer.future;

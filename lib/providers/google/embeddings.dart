@@ -23,7 +23,7 @@ class GoogleEmbeddings implements EmbeddingCapability {
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing Google API key');

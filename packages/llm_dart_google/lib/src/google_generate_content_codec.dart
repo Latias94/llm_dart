@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 import 'google_options.dart';
+import 'google_response_format.dart';
 import 'google_shared.dart';
 import 'google_tools.dart';
 
@@ -121,6 +122,12 @@ final class GoogleGenerateContentCodec {
       generationConfig['responseModalities'] = [
         for (final modality in modalities) modality.value,
       ];
+    }
+
+    if (providerOptions.responseFormat case final responseFormat?) {
+      generationConfig['responseMimeType'] = 'application/json';
+      generationConfig['responseSchema'] =
+          _normalizeGoogleResponseSchema(responseFormat);
     }
 
     final safetySettings =
@@ -283,6 +290,14 @@ final class GoogleGenerateContentCodec {
         normalized.contains('gemini-3') ||
         normalized.endsWith('-latest') ||
         normalized.contains('nano-banana');
+  }
+
+  Map<String, Object?> _normalizeGoogleResponseSchema(
+    GoogleJsonSchemaResponseFormat responseFormat,
+  ) {
+    final normalized = Map<String, Object?>.from(responseFormat.schema);
+    normalized.remove('additionalProperties');
+    return normalized;
   }
 
   Map<String, Object?>? _encodeMessage(PromptMessage message) {

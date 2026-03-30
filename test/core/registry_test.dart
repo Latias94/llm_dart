@@ -25,7 +25,7 @@ class MockProvider implements ChatCapability, ProviderCapabilities {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return MockChatResponse('Mock response');
   }
@@ -34,7 +34,7 @@ class MockProvider implements ChatCapability, ProviderCapabilities {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return chat(messages, cancelToken: cancelToken);
   }
@@ -43,7 +43,7 @@ class MockProvider implements ChatCapability, ProviderCapabilities {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     yield TextDeltaEvent('Mock');
     yield TextDeltaEvent(' response');
@@ -121,6 +121,8 @@ class MockProviderFactory implements LLMProviderFactory<ChatCapability> {
 void main() {
   group('Registry Tests', () {
     setUp(() {
+      ensureRootRegistryBootstrap();
+
       // Clear registry before each test
       LLMProviderRegistry.clear();
     });
@@ -281,6 +283,14 @@ void main() {
         // but our mock provider should be gone
         final afterClear = LLMProviderRegistry.getRegisteredProviders();
         expect(afterClear, isNot(contains('mock')));
+      });
+
+      test('should bootstrap built-in providers explicitly', () {
+        final providers = LLMProviderRegistry.getRegisteredProviders();
+
+        expect(providers, contains('openai'));
+        expect(providers, contains('anthropic'));
+        expect(providers, contains('google'));
       });
     });
   });

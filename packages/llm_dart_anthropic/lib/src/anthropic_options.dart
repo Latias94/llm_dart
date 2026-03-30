@@ -1,7 +1,29 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'anthropic_api.dart';
 import 'anthropic_mcp_models.dart';
 import 'anthropic_tools.dart';
+
+final class AnthropicCacheControl {
+  final String type;
+  final String? ttl;
+
+  const AnthropicCacheControl({
+    required this.type,
+    this.ttl,
+  });
+
+  const AnthropicCacheControl.ephemeral({
+    this.ttl,
+  }) : type = 'ephemeral';
+
+  Map<String, Object?> toJson() {
+    return {
+      'type': type,
+      if (ttl != null) 'ttl': ttl,
+    };
+  }
+}
 
 final class AnthropicChatModelSettings implements ProviderModelOptions {
   final String anthropicVersion;
@@ -17,6 +39,30 @@ final class AnthropicChatModelSettings implements ProviderModelOptions {
   });
 }
 
+final class AnthropicFilesSettings {
+  final String anthropicVersion;
+  final Map<String, String> headers;
+  final List<String> betaFeatures;
+
+  const AnthropicFilesSettings({
+    this.anthropicVersion = anthropicDefaultVersion,
+    this.headers = const {},
+    this.betaFeatures = const [],
+  });
+
+  AnthropicFilesSettings copyWith({
+    String? anthropicVersion,
+    Map<String, String>? headers,
+    List<String>? betaFeatures,
+  }) {
+    return AnthropicFilesSettings(
+      anthropicVersion: anthropicVersion ?? this.anthropicVersion,
+      headers: headers ?? this.headers,
+      betaFeatures: betaFeatures ?? this.betaFeatures,
+    );
+  }
+}
+
 final class AnthropicGenerateTextOptions implements ProviderInvocationOptions {
   final bool? extendedThinking;
   final int? thinkingBudgetTokens;
@@ -26,6 +72,7 @@ final class AnthropicGenerateTextOptions implements ProviderInvocationOptions {
   final String? container;
   final List<AnthropicMcpServer>? mcpServers;
   final List<AnthropicNativeTool>? tools;
+  final AnthropicCacheControl? toolsCacheControl;
 
   const AnthropicGenerateTextOptions({
     this.extendedThinking,
@@ -36,5 +83,30 @@ final class AnthropicGenerateTextOptions implements ProviderInvocationOptions {
     this.container,
     this.mcpServers,
     this.tools,
+    this.toolsCacheControl,
   });
+
+  AnthropicGenerateTextOptions copyWith({
+    bool? extendedThinking,
+    int? thinkingBudgetTokens,
+    bool? interleavedThinking,
+    String? serviceTier,
+    Map<String, Object?>? metadata,
+    String? container,
+    List<AnthropicMcpServer>? mcpServers,
+    List<AnthropicNativeTool>? tools,
+    AnthropicCacheControl? toolsCacheControl,
+  }) {
+    return AnthropicGenerateTextOptions(
+      extendedThinking: extendedThinking ?? this.extendedThinking,
+      thinkingBudgetTokens: thinkingBudgetTokens ?? this.thinkingBudgetTokens,
+      interleavedThinking: interleavedThinking ?? this.interleavedThinking,
+      serviceTier: serviceTier ?? this.serviceTier,
+      metadata: metadata ?? this.metadata,
+      container: container ?? this.container,
+      mcpServers: mcpServers ?? this.mcpServers,
+      tools: tools ?? this.tools,
+      toolsCacheControl: toolsCacheControl ?? this.toolsCacheControl,
+    );
+  }
 }

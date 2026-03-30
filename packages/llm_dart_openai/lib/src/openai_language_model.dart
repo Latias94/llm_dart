@@ -3,18 +3,26 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'openai_chat_completions_codec.dart';
 import 'openai_family_profile.dart';
 import 'openai_options.dart';
+import 'openrouter_options.dart';
+import 'resolved_openai_chat_settings.dart';
+import 'resolved_openai_options.dart';
 import 'openai_responses_codec.dart';
+import 'xai_options.dart';
 
 final class OpenAILanguageModel implements LanguageModel {
   static const OpenAIResponsesCodec _codec = OpenAIResponsesCodec();
-
   final String apiKey;
   final String baseUrl;
   final OpenAIFamilyProfile profile;
   final TransportClient transport;
-  final OpenAIChatModelSettings settings;
+  final ResolvedOpenAIChatModelSettings settings;
+  late final OpenAIChatCompletionsCodec _chatCompletionsCodec =
+      OpenAIChatCompletionsCodec(
+    providerNamespace: profile.providerId,
+  );
 
   @override
   final String modelId;
@@ -25,34 +33,68 @@ final class OpenAILanguageModel implements LanguageModel {
     required this.transport,
     required this.profile,
     String? baseUrl,
-    this.settings = const OpenAIChatModelSettings(),
-  }) : baseUrl = baseUrl ?? profile.defaultBaseUrl;
+    ProviderModelOptions settings = const OpenAIChatModelSettings(),
+  })  : settings = _resolveModelSettingsForProfile(profile, settings),
+        baseUrl = baseUrl ?? profile.defaultBaseUrl;
 
   @override
   String get providerId => profile.providerId;
 
   Uri get responsesUri => Uri.parse('$baseUrl/responses');
+  Uri get chatCompletionsUri => Uri.parse('$baseUrl/chat/completions');
 
   Map<String, String> get defaultHeaders => profile.buildHeaders(
         apiKey: apiKey,
         extraHeaders: {
-          if (settings.organization case final organization?)
+          if (settings.common.organization case final organization?)
             'openai-organization': organization,
-          if (settings.project case final project?) 'openai-project': project,
-          ...settings.headers,
+          if (settings.common.project case final project?)
+            'openai-project': project,
+          ...settings.common.headers,
         },
       );
 
   @override
   Future<GenerateTextResult> generate(GenerateTextRequest request) async {
-    _ensureResponsesApi();
-
     final providerOptions = _resolveProviderOptions(
       request.callOptions.providerOptions,
     );
-    final preparedRequest = _codec.encodeRequest(
-      modelId: modelId,
+    if (_usesResponsesApi) {
+      final preparedRequest = _codec.encodeRequest(
+        modelId: _requestModelId,
+        prompt: request.prompt,
+        tools: request.tools,
+        toolChoice: request.toolChoice,
+        options: request.options,
+        providerOptions: providerOptions.common,
+        stream: false,
+      );
+
+      final response = await transport.send(
+        TransportRequest(
+          uri: responsesUri,
+          method: TransportMethod.post,
+          headers: _buildRequestHeaders(
+            stream: false,
+            extraHeaders: request.callOptions.headers,
+          ),
+          body: preparedRequest.body,
+          timeout: request.callOptions.timeout,
+          responseType: TransportResponseType.json,
+        ),
+      );
+
+      return _codec.decodeGenerateResponse(
+        _decodeJsonObject(response.body),
+        warnings: preparedRequest.warnings,
+      );
+    }
+
+    final preparedRequest = _chatCompletionsCodec.encodeRequest(
+      modelId: _requestModelId,
       prompt: request.prompt,
+      tools: request.tools,
+      toolChoice: request.toolChoice,
       options: request.options,
       providerOptions: providerOptions,
       stream: false,
@@ -60,7 +102,7 @@ final class OpenAILanguageModel implements LanguageModel {
 
     final response = await transport.send(
       TransportRequest(
-        uri: responsesUri,
+        uri: chatCompletionsUri,
         method: TransportMethod.post,
         headers: _buildRequestHeaders(
           stream: false,
@@ -72,7 +114,7 @@ final class OpenAILanguageModel implements LanguageModel {
       ),
     );
 
-    return _codec.decodeGenerateResponse(
+    return _chatCompletionsCodec.decodeGenerateResponse(
       _decodeJsonObject(response.body),
       warnings: preparedRequest.warnings,
     );
@@ -80,14 +122,67 @@ final class OpenAILanguageModel implements LanguageModel {
 
   @override
   Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
-    _ensureResponsesApi();
-
     final providerOptions = _resolveProviderOptions(
       request.callOptions.providerOptions,
     );
-    final preparedRequest = _codec.encodeRequest(
-      modelId: modelId,
+    final useResponsesApi = _usesResponsesApi;
+    if (useResponsesApi) {
+      final preparedRequest = _codec.encodeRequest(
+        modelId: _requestModelId,
+        prompt: request.prompt,
+        tools: request.tools,
+        toolChoice: request.toolChoice,
+        options: request.options,
+        providerOptions: providerOptions.common,
+        stream: true,
+      );
+
+      yield StartEvent(warnings: preparedRequest.warnings);
+
+      try {
+        final response = await transport.sendStream(
+          TransportRequest(
+            uri: responsesUri,
+            method: TransportMethod.post,
+            headers: _buildRequestHeaders(
+              stream: true,
+              extraHeaders: request.callOptions.headers,
+            ),
+            body: preparedRequest.body,
+            timeout: request.callOptions.timeout,
+          ),
+        );
+
+        final streamState = OpenAIResponsesStreamState();
+        final decoder = const DefaultSseDecoder();
+        final chunks = utf8.decoder.bind(response.stream);
+
+        await for (final frame in decoder.decode(chunks)) {
+          if (frame.data.isEmpty || frame.data == '[DONE]') {
+            continue;
+          }
+
+          final events = _codec.decodeStreamChunk(
+            _decodeJsonObject(frame.data),
+            streamState,
+          );
+
+          for (final event in events) {
+            yield event;
+          }
+        }
+      } catch (error) {
+        yield ErrorEvent(error);
+      }
+
+      return;
+    }
+
+    final preparedRequest = _chatCompletionsCodec.encodeRequest(
+      modelId: _requestModelId,
       prompt: request.prompt,
+      tools: request.tools,
+      toolChoice: request.toolChoice,
       options: request.options,
       providerOptions: providerOptions,
       stream: true,
@@ -98,7 +193,7 @@ final class OpenAILanguageModel implements LanguageModel {
     try {
       final response = await transport.sendStream(
         TransportRequest(
-          uri: responsesUri,
+          uri: chatCompletionsUri,
           method: TransportMethod.post,
           headers: _buildRequestHeaders(
             stream: true,
@@ -109,7 +204,7 @@ final class OpenAILanguageModel implements LanguageModel {
         ),
       );
 
-      final streamState = OpenAIResponsesStreamState();
+      final streamState = OpenAIChatCompletionsStreamState();
       final decoder = const DefaultSseDecoder();
       final chunks = utf8.decoder.bind(response.stream);
 
@@ -118,10 +213,12 @@ final class OpenAILanguageModel implements LanguageModel {
           continue;
         }
 
-        for (final event in _codec.decodeStreamChunk(
+        final events = _chatCompletionsCodec.decodeStreamChunk(
           _decodeJsonObject(frame.data),
           streamState,
-        )) {
+        );
+
+        for (final event in events) {
           yield event;
         }
       }
@@ -130,29 +227,56 @@ final class OpenAILanguageModel implements LanguageModel {
     }
   }
 
-  void _ensureResponsesApi() {
-    if (!settings.useResponsesApi) {
-      throw UnsupportedError(
-        'Chat Completions migration has not been implemented yet. Use responses API mode for the refactored package.',
-      );
+  bool get _usesResponsesApi =>
+      settings.common.useResponsesApi && profile.supportsResponsesApi;
+
+  String get _requestModelId {
+    final search = settings.openRouterSearch;
+    if (search == null) {
+      return modelId;
     }
+
+    if (profile.providerId != 'openrouter') {
+      return modelId;
+    }
+
+    return switch (search.mode) {
+      OpenRouterSearchMode.onlineModel => _withOpenRouterOnlineModel(modelId),
+    };
   }
 
-  OpenAIGenerateTextOptions _resolveProviderOptions(
+  ResolvedOpenAIGenerateTextOptions _resolveProviderOptions(
     ProviderInvocationOptions? options,
   ) {
     if (options == null) {
-      return const OpenAIGenerateTextOptions();
+      return const ResolvedOpenAIGenerateTextOptions();
     }
 
     if (options is OpenAIGenerateTextOptions) {
-      return options;
+      return ResolvedOpenAIGenerateTextOptions(
+        common: options,
+      );
+    }
+
+    if (options is XAIGenerateTextOptions) {
+      if (profile.providerId != 'xai') {
+        throw ArgumentError.value(
+          options,
+          'providerOptions',
+          'XAIGenerateTextOptions are only valid for xAI language models.',
+        );
+      }
+
+      return ResolvedOpenAIGenerateTextOptions(
+        common: options.common,
+        xaiSearch: options.search,
+      );
     }
 
     throw ArgumentError.value(
       options,
       'providerOptions',
-      'Expected OpenAIGenerateTextOptions for OpenAI language models.',
+      'Expected OpenAIGenerateTextOptions or profile-specific OpenAI-family provider options.',
     );
   }
 
@@ -187,5 +311,51 @@ final class OpenAILanguageModel implements LanguageModel {
     throw StateError(
       'Expected an OpenAI JSON object response but received ${body.runtimeType}.',
     );
+  }
+
+  static ResolvedOpenAIChatModelSettings _resolveModelSettingsForProfile(
+    OpenAIFamilyProfile profile,
+    ProviderModelOptions settings,
+  ) {
+    if (settings is OpenAIChatModelSettings) {
+      return ResolvedOpenAIChatModelSettings(
+        common: settings,
+      );
+    }
+
+    if (settings is OpenRouterChatModelSettings) {
+      if (profile.providerId != 'openrouter') {
+        throw ArgumentError.value(
+          settings,
+          'settings',
+          'OpenRouterChatModelSettings are only valid for OpenRouter language models.',
+        );
+      }
+
+      return ResolvedOpenAIChatModelSettings(
+        common: settings.common,
+        openRouterSearch: settings.search,
+      );
+    }
+
+    throw ArgumentError.value(
+      settings,
+      'settings',
+      'Expected OpenAIChatModelSettings or profile-specific OpenAI-family model settings.',
+    );
+  }
+
+  static String _withOpenRouterOnlineModel(String modelId) {
+    if (modelId.endsWith(':online')) {
+      return modelId;
+    }
+
+    if (modelId.contains('deepseek-r1')) {
+      throw UnsupportedError(
+        'OpenRouter online-model shaping is not supported for DeepSeek R1 traffic.',
+      );
+    }
+
+    return '$modelId:online';
   }
 }

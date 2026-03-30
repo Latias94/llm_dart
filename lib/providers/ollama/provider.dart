@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
@@ -43,7 +41,7 @@ class OllamaProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _chat.chat(messages, cancelToken: cancelToken);
   }
@@ -52,7 +50,7 @@ class OllamaProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
   }
@@ -61,7 +59,7 @@ class OllamaProvider
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
   }
@@ -86,14 +84,14 @@ class OllamaProvider
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _embeddings.embed(input, cancelToken: cancelToken);
   }
 
   // Model listing capability methods
   @override
-  Future<List<AIModel>> models({CancelToken? cancelToken}) async {
+  Future<List<AIModel>> models({TransportCancellation? cancelToken}) async {
     return _models.models(cancelToken: cancelToken);
   }
 

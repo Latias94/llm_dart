@@ -23,6 +23,9 @@ final class DioTransportClient implements TransportClient {
             ),
         _logger = logger ?? Logger('DioTransportClient');
 
+  /// Exposes the underlying Dio instance for compatibility adapters.
+  Dio get dio => _dio;
+
   @override
   Future<TransportResponse> send(TransportRequest request) async {
     request.cancellation?.throwIfCancelled();

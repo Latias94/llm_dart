@@ -1,7 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
+import '../../core/cancellation.dart';
 import '../../core/llm_error.dart';
+import '../../src/dio_cancellation_adapter.dart';
 import '../../utils/dio_client_factory.dart';
 import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
@@ -40,7 +42,7 @@ class AnthropicClient {
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return HttpResponseHandler.postJson(
       dio,
@@ -55,12 +57,12 @@ class AnthropicClient {
   /// Make a GET request and return JSON response
   Future<Map<String, dynamic>> getJson(
     String endpoint, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       final response = await dio.get(
         endpoint,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
@@ -73,13 +75,13 @@ class AnthropicClient {
   Future<Map<String, dynamic>> postForm(
     String endpoint,
     FormData formData, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       final response = await dio.post(
         endpoint,
         data: formData,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
@@ -91,12 +93,12 @@ class AnthropicClient {
   /// Make a DELETE request
   Future<void> delete(
     String endpoint, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       await dio.delete(
         endpoint,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
     } on DioException catch (e) {
       logger.severe('HTTP DELETE request failed: ${e.message}');
@@ -107,13 +109,13 @@ class AnthropicClient {
   /// Make a GET request and return raw bytes
   Future<List<int>> getRaw(
     String endpoint, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       final response = await dio.get(
         endpoint,
         options: Options(responseType: ResponseType.bytes),
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
       return response.data as List<int>;
     } on DioException catch (e) {
@@ -126,13 +128,13 @@ class AnthropicClient {
   Stream<String> postStreamRaw(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     try {
       final response = await dio.post(
         endpoint,
         data: data,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
         options: Options(
           responseType: ResponseType.stream,
           headers: {'Accept': 'text/event-stream'},

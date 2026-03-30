@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
+import '../../core/cancellation.dart';
 import '../../core/llm_error.dart';
+import '../../src/dio_cancellation_adapter.dart';
 import '../../utils/dio_client_factory.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -32,7 +34,7 @@ class PhindClient {
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       if (_logger.isLoggable(Level.FINE)) {
@@ -42,7 +44,7 @@ class PhindClient {
       final response = await _dio.post(
         endpoint,
         data: data,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
 
       _logger.info('Phind HTTP status: ${response.statusCode}');
@@ -78,7 +80,7 @@ class PhindClient {
   Stream<String> postStreamRaw(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     try {
       if (_logger.isLoggable(Level.FINE)) {
@@ -88,7 +90,7 @@ class PhindClient {
       final response = await _dio.post(
         endpoint,
         data: data,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
         options: Options(responseType: ResponseType.stream),
       );
 

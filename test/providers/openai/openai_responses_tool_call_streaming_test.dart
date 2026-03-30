@@ -53,7 +53,7 @@ class _FakeOpenAIClient extends openai_client.OpenAIClient {
   Stream<String> postStreamRaw(
     String endpoint,
     Map<String, dynamic> body, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     // Simulate an OpenAI Responses SSE stream with incremental tool_calls chunks.
     const chunks = <String>[

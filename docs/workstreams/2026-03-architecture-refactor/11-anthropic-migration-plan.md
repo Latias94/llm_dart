@@ -118,6 +118,20 @@ Anthropic MCP connector support belongs in:
 
 It must not pull `mcp_dart` into the package, because Anthropic MCP connector support is not a local MCP client implementation.
 
+### Code Execution And Downloadable Files
+
+Anthropic code execution belongs in:
+
+- typed Anthropic tool-definition helpers
+- provider-owned custom replay parts for execution result blocks
+- provider-native files APIs for downloadable output handles
+
+It does not belong in:
+
+- new Anthropic-only core event families
+- fake common file projection when the provider only returned a file ID
+- widened shared `ToolResultPromptPart` typing for Anthropic-only result variants
+
 ## First Migration Slice
 
 The first useful slice should be:
@@ -194,4 +208,6 @@ The Anthropic text mainline should be considered migrated only when:
 Current status:
 
 - the exit criteria above are now satisfied for the Anthropic text mainline
-- follow-up work should move to provider-native APIs, broader feature coverage, and legacy-root cleanup rather than re-opening the basic text boundary
+- follow-up work should move to provider-native APIs, broader feature coverage, provider-native result replay policy, and legacy-root cleanup rather than re-opening the basic text boundary
+- `16-anthropic-provider-native-result-replay.md` now freezes the next replay boundary for provider-native result blocks
+- `18-anthropic-execution-replay-contract.md` now freezes the recommended payload direction for execution-oriented replay and downloadable file handles

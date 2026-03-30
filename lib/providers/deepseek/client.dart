@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
+import '../../core/cancellation.dart';
+import '../../src/dio_cancellation_adapter.dart';
 import '../../utils/dio_client_factory.dart';
 import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
@@ -34,7 +36,7 @@ class DeepSeekClient {
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       return await HttpResponseHandler.postJson(
@@ -55,13 +57,13 @@ class DeepSeekClient {
   Stream<String> postStreamRaw(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     try {
       final response = await dio.post(
         endpoint,
         data: data,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
         options: Options(
           responseType: ResponseType.stream,
           headers: {'Accept': 'text/event-stream'},

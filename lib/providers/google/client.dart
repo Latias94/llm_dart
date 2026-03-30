@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
+import '../../core/cancellation.dart';
+import '../../src/dio_cancellation_adapter.dart';
 import '../../utils/dio_client_factory.dart';
 import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
@@ -42,7 +44,7 @@ class GoogleClient {
     dynamic data,
     Map<String, dynamic>? queryParameters,
     Options? options,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     try {
       final fullEndpoint = _getEndpointWithAuth(endpoint);
@@ -51,7 +53,7 @@ class GoogleClient {
         data: data,
         queryParameters: queryParameters,
         options: options,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
     } on DioException catch (e) {
       logger.severe('HTTP request failed: ${e.message}');
@@ -63,7 +65,7 @@ class GoogleClient {
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return HttpResponseHandler.postJson(
       dio,
@@ -102,14 +104,14 @@ class GoogleClient {
   Stream<String> postStreamRaw(
     String endpoint,
     Map<String, dynamic> data, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     try {
       final fullEndpoint = _getEndpointWithAuth(endpoint);
       final response = await dio.post(
         fullEndpoint,
         data: data,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
         options: Options(
           responseType: ResponseType.stream,
           headers: {'Accept': 'application/json'},

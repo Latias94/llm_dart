@@ -320,6 +320,45 @@ void main() {
       );
     });
 
+    test('encodes structured output as responseSchema for Google', () {
+      final request = codec.encodeRequest(
+        modelId: 'gemini-2.5-flash',
+        prompt: [
+          UserPromptMessage.text('Return JSON.'),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const GoogleChatModelSettings(),
+        providerOptions: const GoogleGenerateTextOptions(
+          responseFormat: GoogleJsonSchemaResponseFormat(
+            schema: {
+              'type': 'object',
+              'properties': {
+                'answer': {'type': 'string'},
+              },
+              'required': ['answer'],
+              'additionalProperties': false,
+            },
+          ),
+        ),
+      );
+
+      expect(
+        request.body['generationConfig'],
+        {
+          'responseMimeType': 'application/json',
+          'responseSchema': {
+            'type': 'object',
+            'properties': {
+              'answer': {'type': 'string'},
+            },
+            'required': ['answer'],
+          },
+        },
+      );
+    });
+
     test(
         'encodes assistant reasoning, reasoning-file, and thought signatures from part metadata',
         () {

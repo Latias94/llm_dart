@@ -1,5 +1,3 @@
-import 'package:dio/dio.dart';
-
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
@@ -42,7 +40,7 @@ class GoogleProvider
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _chat.chat(messages, cancelToken: cancelToken);
   }
@@ -51,7 +49,7 @@ class GoogleProvider
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
   }
@@ -60,7 +58,7 @@ class GoogleProvider
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) {
     return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
   }
@@ -80,7 +78,7 @@ class GoogleProvider
   @override
   Future<List<List<double>>> embed(
     List<String> input, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return _embeddings.embed(input, cancelToken: cancelToken);
   }

@@ -1,4 +1,6 @@
 import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
+
 import '../core/base_http_provider.dart';
 import '../core/config.dart';
 
@@ -67,8 +69,15 @@ class DioClientFactory {
 
   /// Extract custom Dio from config extensions
   static Dio? _extractCustomDio(dynamic config) {
-    if (config.originalConfig != null) {
-      return config.originalConfig!.getExtension<Dio>('customDio');
+    final originalConfig = config.originalConfig;
+    if (originalConfig != null) {
+      final customTransport =
+          originalConfig.getExtension<TransportClient>('customTransportClient');
+      if (customTransport case DioTransportClient(:final dio)) {
+        return dio;
+      }
+
+      return originalConfig.getExtension<Dio>('customDio');
     }
     return null;
   }

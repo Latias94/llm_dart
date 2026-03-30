@@ -1,7 +1,5 @@
 import 'dart:async';
 
-import 'package:dio/dio.dart';
-
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
@@ -40,7 +38,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   Future<ChatResponse> chatWithTools(
     List<ChatMessage> messages,
     List<Tool>? tools, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     final requestBody = _buildRequestBody(messages, tools, false, false);
     final responseData = await client.postJson(
@@ -69,7 +67,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   Stream<ChatStreamEvent> chatStream(
     List<ChatMessage> messages, {
     List<Tool>? tools,
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     final effectiveTools = tools ?? config.tools;
     final requestBody =
@@ -110,7 +108,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   @override
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     return chatWithTools(messages, null, cancelToken: cancelToken);
   }

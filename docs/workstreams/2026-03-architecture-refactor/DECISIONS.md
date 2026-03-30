@@ -217,3 +217,88 @@ Provider-specific features should be represented through:
 - OpenAI Responses replay should preserve replay-critical metadata such as assistant message item IDs, message phase, reasoning encrypted content, tool-call item IDs, and `openai.compaction` state
 - Anthropic Messages replay should preserve assistant text and provider-executed tool replay that maps to Anthropic-native blocks, but it should drop unsupported assistant reasoning/file/custom replay parts with explicit warnings instead of silently flattening them
 - conversation-store-specific replay shortcuts such as OpenAI `item_reference` should not enter the shared architecture until the library has an explicit model for stored conversation context
+
+## D25. Legacy Builder Compatibility Must Use Provider Subclasses Plus Safe Runtime Routing
+
+- `LLMBuilder.build()` should keep returning legacy-compatible provider subclasses for migrated providers instead of a bare chat adapter
+- the compatibility route now covers the legacy chat mainline for OpenAI, Google, Anthropic, plus audited OpenAI-family subset routes for DeepSeek, OpenRouter, Groq, and xAI
+- each compatibility provider should route requests into the new package-owned `LanguageModel` implementation only when the legacy request can be represented faithfully
+- unsupported legacy request shapes or bridge-shape conversion failures must fall back to the old provider implementation
+- silent capability loss is forbidden; unknown or unported legacy provider features must block bridge usage instead of being dropped
+
+## D26. Legacy Chat Stream Projection Stays Intentionally Lossy
+
+- the rich event model belongs in `llm_dart_core` and `llm_dart_flutter`, not in the old root-package `ChatStreamEvent` API
+- the compatibility adapter should project only the legacy stream concepts that the old API can represent directly: text deltas, thinking deltas, tool-call deltas, completion, and errors
+- start markers, response metadata, step markers, approvals, denied outputs, files, sources, custom events, and raw chunks must stay out of the old stream API
+- expanding the old stream surface to mirror the Vercel AI SDK UI chunk vocabulary is explicitly out of scope for phase 1
+
+## D27. Anthropic Provider-Native Result Replay Follows Exact Re-Encoding Fidelity
+
+- Anthropic replay and legacy compatibility routing must be judged by request-side exact re-encoding fidelity, not by how many provider-native result blocks the decoder can recognize
+- the current raw legacy bridge-safe Anthropic result subset is `tool_result`, `mcp_tool_result`, `web_search_tool_result`, and `web_fetch_tool_result`, each inside its exact replay-safe input-shape constraints
+- `web_search_tool_result` now has both a provider-owned replay path through Anthropic custom prompt/content/UI parts and a restricted legacy raw bridge path for exact user-role replay
+- `web_fetch_tool_result` now has both a provider-owned replay path through Anthropic custom prompt/content/UI parts and a restricted legacy raw bridge path for exact user-role replay
+- legacy raw Anthropic `tool_result` compatibility stays restricted to string `content` until the new request path can prove that non-string payloads preserve the original wire shape exactly
+- execution-oriented Anthropic-native result replay now works through the provider-owned `anthropic.result.code_execution` path, while the legacy raw compatibility bridge still stays fallback-only for those block families
+- provider-native execution file handles still stay outside the shared file model until a provider-native file-resolution step yields a real `GeneratedFile`
+- `llm_dart_anthropic` now owns the typed provider-native files API for those execution file handles, including metadata lookup and bytes download through Anthropic-specific headers and beta flags
+- future Anthropic-native result replay should expand through Anthropic-owned `CustomPromptPart` / `CustomContentPart` / `CustomUiPart` paths or other provider-owned representations, not by widening the common core tool-result model with Anthropic-only block typing
+
+## D28. Event Completeness Follows Shared Stream Semantics, Not UI Chunk Exhaustiveness
+
+- the current `TextStreamEvent` surface is already sufficient for parity with the reference provider stream layer
+- UI transport markers such as `start`, `finish`, `message-metadata`, and `abort` must stay out of the shared core event model
+- UI-facing tool lifecycle chunk names such as `tool-input-available` or `tool-output-available` should continue to project through `ToolCallEvent`, `ToolResultEvent`, `ToolInputErrorEvent`, and unified `ToolUiPart`
+- typed per-tool UI part subclasses do not enter the Dart core model; `ToolUiPart` remains unified with `toolName` and lifecycle state as data
+- `StepStartEvent` and `StepFinishEvent` remain valid shared Dart session semantics even though the reference UI stream locates step markers above the provider stream layer
+
+## D29. `core/` Must Not Own Provider Catalog Implementations
+
+- `core/` should only hold shared abstractions, generic registries, shared models, and compatibility exports
+- provider-owned default catalogs, preconfigured provider profiles, and provider-family lookup tables should live in provider packages or internal `src/` modules
+- temporary public import paths under `lib/core/*` may remain as compatibility re-exports during migration, but they should no longer be the implementation home
+
+## D30. Remaining Public Dio Injection Is Compatibility-Only
+
+- the stable root builder surface should promote `TransportClient`, not `Dio`
+- `HttpConfig.dioClient(Dio)` has been removed from the stable builder API
+- if a temporary raw-Dio migration shim is ever reintroduced, it must stay outside the main builder contract
+- new docs, examples, and migrated code should use `transportClient(TransportClient)` instead of teaching raw `Dio` injection
+- if raw Dio injection must survive temporarily, it should move behind a compatibility-oriented surface instead of remaining a first-class stable API
+- no new stable root or core APIs should accept transport-implementation types such as `Dio`, `DioException`, `FormData`, `MultipartFile`, or `CancelToken`
+
+## D31. The Root `AI` Facade Should Be The OpenAI-Family Convenience Entry
+
+- the stable `AI` facade should expose direct constructors for OpenAI-family profiles such as OpenRouter, DeepSeek, Groq, xAI, and Phind
+- those convenience constructors should build the refactored `llm_dart_openai` package entry with a frozen profile, not route through legacy provider factories
+- facade convenience and legacy compatibility routing are separate concerns
+- adding a family constructor to `AI` does not imply that `LLMBuilder.build()` or the old provider subclasses should switch to the new path for that provider automatically
+
+## D32. OpenAI-Family Legacy Routing Must Remain Subset-Audited
+
+- Phind must stay out of the compatibility resolver until the refactored `llm_dart_openai` package has both a usable package mainline and an explicit bridge-safe subset for that provider
+- the initial OpenAI-family chat-completions mainline now exists, but that alone is not sufficient to enable automatic legacy routing
+- DeepSeek now has a narrow audited compatibility subset for `deepseek-chat`, while `deepseek-reasoner` and DeepSeek-specific legacy extensions still remain fallback-only
+- OpenRouter now has a narrow audited plain-chat compatibility subset, while search-shaped requests and OpenRouter DeepSeek R1 traffic still remain fallback-only
+- Groq now has a narrow audited text-and-function-tool compatibility subset, while tool replay, multimodal traffic, and ignored legacy extras still remain fallback-only
+- xAI now has an audited text subset plus an audited legacy live-search migration subset, while prompt-side tool replay, provider-native search semantics beyond shared citations, and unsupported search shapes still remain fallback-only
+- Phind has now been re-audited and still remains outside the compatibility resolver because its legacy request and response protocol is not a plain chat-completions shape
+- each provider still needs an explicit bridge-safe subset audit before automatic routing is enabled or expanded
+- the root `AI` facade may move ahead of compatibility routing, but the compatibility resolver must remain conservative
+
+## D33. Search Request Controls Stay Provider-Owned While Shared Citations Stay Common
+
+- the shared core keeps only provider-agnostic citation and source models such as `SourceReference`, `SourceContentPart`, `SourceEvent`, and `SourceUiPart`
+- search request controls must not widen the shared OpenAI-family or core option surfaces
+- provider-specific search behavior should enter through provider-owned typed options, provider-owned native tools, or provider-owned profile/request shaping
+- richer provider-native search payloads stay in provider-owned `CustomPromptPart` / `CustomContentPart` / `CustomEvent` / `CustomUiPart` paths
+- legacy builder fields such as `webSearchEnabled` and `webSearchConfig` remain compatibility-only migration inputs, not the design basis for the new primary API
+
+## D34. OpenRouter And xAI Search Stay Provider-Owned In Different Ways
+
+- OpenRouter search in the new primary API is profile-owned or model-owned shaping, not a shared invocation-option surface
+- the first stable OpenRouter search contract should model only explicit online-model routing; legacy helpers such as `searchPrompt`, `maxSearchResults`, and `useOnlineShortcut` remain compatibility-only until a tested wire contract exists
+- xAI chat live search in the new primary API is a provider-owned invocation option that encodes to xAI `search_parameters`
+- legacy `liveSearch`, `webSearchEnabled`, and `webSearchConfig` remain compatibility-only migration inputs rather than stable primary API fields
+- future xAI provider-defined search tools such as web search or X search must stay in a separate provider-native tool API instead of being merged into the chat live-search options bag

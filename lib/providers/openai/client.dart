@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
+import '../../core/cancellation.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
+import '../../src/dio_cancellation_adapter.dart';
 import '../../utils/dio_client_factory.dart';
 import '../../utils/http_response_handler.dart';
 import '../../utils/log_sanitizer.dart';
@@ -346,7 +348,7 @@ class OpenAIClient {
   Future<Map<String, dynamic>> postJson(
     String endpoint,
     Map<String, dynamic> body, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing OpenAI API key');
@@ -363,7 +365,7 @@ class OpenAIClient {
       final response = await dio.post(
         endpoint,
         data: body,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
 
       if (logger.isLoggable(Level.FINE)) {
@@ -390,7 +392,7 @@ class OpenAIClient {
   Future<Map<String, dynamic>> postForm(
     String endpoint,
     FormData formData, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing OpenAI API key');
@@ -406,7 +408,7 @@ class OpenAIClient {
       final response = await dio.post(
         endpoint,
         data: formData,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
 
       if (logger.isLoggable(Level.FINE)) {
@@ -429,7 +431,7 @@ class OpenAIClient {
   Future<List<int>> postRaw(
     String endpoint,
     Map<String, dynamic> body, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing OpenAI API key');
@@ -439,7 +441,7 @@ class OpenAIClient {
       final response = await dio.post(
         endpoint,
         data: body,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
         options: Options(responseType: ResponseType.bytes),
       );
 
@@ -458,7 +460,7 @@ class OpenAIClient {
   /// Make a GET request
   Future<Map<String, dynamic>> get(
     String endpoint, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing OpenAI API key');
@@ -473,7 +475,7 @@ class OpenAIClient {
 
       final response = await dio.get(
         endpoint,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
 
       if (logger.isLoggable(Level.FINE)) {
@@ -495,7 +497,7 @@ class OpenAIClient {
   /// Make a GET request and return raw bytes
   Future<List<int>> getRaw(
     String endpoint, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing OpenAI API key');
@@ -505,7 +507,7 @@ class OpenAIClient {
       final response = await dio.get(
         endpoint,
         options: Options(responseType: ResponseType.bytes),
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
 
       if (response.statusCode != 200) {
@@ -523,7 +525,7 @@ class OpenAIClient {
   /// Make a DELETE request
   Future<Map<String, dynamic>> delete(
     String endpoint, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing OpenAI API key');
@@ -538,7 +540,7 @@ class OpenAIClient {
 
       final response = await dio.delete(
         endpoint,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
       );
 
       if (logger.isLoggable(Level.FINE)) {
@@ -561,7 +563,7 @@ class OpenAIClient {
   Stream<String> postStreamRaw(
     String endpoint,
     Map<String, dynamic> body, {
-    CancelToken? cancelToken,
+    TransportCancellation? cancelToken,
   }) async* {
     if (config.apiKey.isEmpty) {
       throw const AuthError('Missing OpenAI API key');
@@ -580,7 +582,7 @@ class OpenAIClient {
       final response = await dio.post(
         endpoint,
         data: body,
-        cancelToken: cancelToken,
+        cancelToken: bindDioCancellation(cancelToken),
         options: Options(
           responseType: ResponseType.stream,
           headers: {'Accept': 'text/event-stream'},
