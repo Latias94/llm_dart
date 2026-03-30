@@ -189,6 +189,11 @@ final class AnthropicMessagesCodec {
       }
     }
 
+    _validateThinkingCompatibleToolChoice(
+      extendedThinking: extendedThinking,
+      toolChoice: toolChoice,
+    );
+
     final toolConfiguration = _resolveToolConfiguration(
       tools: tools,
       nativeTools: nativeTools,
@@ -290,6 +295,28 @@ final class AnthropicMessagesCodec {
       tools: encodedTools,
       toolChoice: encodedToolChoice,
     );
+  }
+
+  void _validateThinkingCompatibleToolChoice({
+    required bool extendedThinking,
+    required ToolChoice? toolChoice,
+  }) {
+    if (!extendedThinking) {
+      return;
+    }
+
+    switch (toolChoice) {
+      case RequiredToolChoice():
+      case SpecificToolChoice():
+        throw UnsupportedError(
+          'Anthropic extended thinking only supports AutoToolChoice or '
+          'NoneToolChoice. Forced tool use is incompatible with thinking.',
+        );
+      case null:
+      case AutoToolChoice():
+      case NoneToolChoice():
+        return;
+    }
   }
 
   List<_PromptBlock> _groupPrompt(List<PromptMessage> prompt) {

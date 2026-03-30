@@ -278,6 +278,60 @@ void main() {
       );
     });
 
+    test('rejects forced tool choice when extended thinking is enabled', () {
+      expect(
+        () => codec.encodeRequest(
+          modelId: 'claude-sonnet-4-5',
+          prompt: [
+            UserPromptMessage.text('Think and use the weather tool.'),
+          ],
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              inputSchema: ToolJsonSchema.object(),
+            ),
+          ],
+          toolChoice: const SpecificToolChoice('weather'),
+          options: const GenerateTextOptions(),
+          settings: const AnthropicChatModelSettings(),
+          providerOptions: const AnthropicGenerateTextOptions(
+            extendedThinking: true,
+          ),
+          stream: false,
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('AutoToolChoice or NoneToolChoice'),
+          ),
+        ),
+      );
+
+      expect(
+        () => codec.encodeRequest(
+          modelId: 'claude-sonnet-4-5',
+          prompt: [
+            UserPromptMessage.text('Think and use any tool.'),
+          ],
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              inputSchema: ToolJsonSchema.object(),
+            ),
+          ],
+          toolChoice: const RequiredToolChoice(),
+          options: const GenerateTextOptions(),
+          settings: const AnthropicChatModelSettings(),
+          providerOptions: const AnthropicGenerateTextOptions(
+            extendedThinking: true,
+          ),
+          stream: false,
+        ),
+        throwsA(isA<UnsupportedError>()),
+      );
+    });
+
     test('rejects system messages after conversation blocks', () {
       expect(
         () => codec.encodeRequest(

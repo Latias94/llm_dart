@@ -74,7 +74,7 @@ void main() {
               ),
             ),
           ],
-          toolChoice: const SpecificToolChoice('weather'),
+          toolChoice: const AutoToolChoice(),
           options: const GenerateTextOptions(
             maxOutputTokens: 200,
           ),
@@ -159,8 +159,7 @@ void main() {
       expect(
         requestBody['tool_choice'],
         {
-          'type': 'tool',
-          'name': 'weather',
+          'type': 'auto',
         },
       );
 
