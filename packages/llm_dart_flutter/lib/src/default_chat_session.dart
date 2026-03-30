@@ -9,6 +9,7 @@ import 'chat_session.dart';
 import 'chat_session_snapshot.dart';
 import 'chat_state.dart';
 import 'chat_transport.dart';
+import 'tool_execution_registry.dart';
 
 typedef MessageIdGenerator = String Function();
 
@@ -33,9 +34,13 @@ final class DefaultChatSession implements ChatSession {
     List<PromptMessage> initialPrompt = const [],
     MessageIdGenerator? messageIdGenerator,
     ChatOnToolCall? onToolCall,
+    ToolExecutionRegistry? toolExecutionRegistry,
   }) : this._(
           transport: transport,
-          onToolCall: onToolCall,
+          onToolCall: _resolveToolExecutionCallback(
+            onToolCall: onToolCall,
+            toolExecutionRegistry: toolExecutionRegistry,
+          ),
           initialState: ChatState(
             chatId: chatId ?? 'chat-${DateTime.now().microsecondsSinceEpoch}',
             messages: _visibleMessagesFromPrompt(initialPrompt),
@@ -49,9 +54,13 @@ final class DefaultChatSession implements ChatSession {
     required ChatSessionSnapshot snapshot,
     MessageIdGenerator? messageIdGenerator,
     ChatOnToolCall? onToolCall,
+    ToolExecutionRegistry? toolExecutionRegistry,
   }) : this._(
           transport: transport,
-          onToolCall: onToolCall,
+          onToolCall: _resolveToolExecutionCallback(
+            onToolCall: onToolCall,
+            toolExecutionRegistry: toolExecutionRegistry,
+          ),
           initialState: ChatState(
             chatId: snapshot.chatId,
             messages: snapshot.messages,
@@ -1456,4 +1465,17 @@ MessageIdGenerator _sequentialMessageId({
 
 String _toolExecutionKey(String messageId, String toolCallId) {
   return '$messageId\u0000$toolCallId';
+}
+
+ChatOnToolCall? _resolveToolExecutionCallback({
+  ChatOnToolCall? onToolCall,
+  ToolExecutionRegistry? toolExecutionRegistry,
+}) {
+  if (onToolCall != null && toolExecutionRegistry != null) {
+    throw ArgumentError(
+      'Provide either onToolCall or toolExecutionRegistry, not both.',
+    );
+  }
+
+  return onToolCall ?? toolExecutionRegistry?.call;
 }

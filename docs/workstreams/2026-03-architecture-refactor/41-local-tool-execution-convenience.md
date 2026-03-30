@@ -45,6 +45,8 @@ start owning application orchestration instead of stable model semantics.
 The current convenience direction is:
 
 - `DefaultChatSession` may accept an `onToolCall` callback
+- `DefaultChatSession` may also accept a `ToolExecutionRegistry` as the common
+  name-based convenience form
 - the callback receives the stable local tool-call payload from the latest
   assistant message
 - the callback may return a local tool output or a local tool error result
@@ -104,3 +106,6 @@ For Dart and Flutter, the more useful rule is:
 - keep the convenience local
 - keep the continuation path unified
 - keep the shared core provider-agnostic
+- allow a registry-shaped convenience wrapper for the common
+  `toolName -> handler` case instead of forcing every app to hand-write
+  callback dispatch logic

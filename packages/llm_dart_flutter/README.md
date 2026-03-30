@@ -227,6 +227,7 @@ the richer part model.
 - pause on client-executed tools
 - inject tool output with `addToolOutput`
 - optionally auto-resolve client-executed tools with `onToolCall`
+- optionally use `ToolExecutionRegistry` for name-based local tool dispatch
 - pause on approval requests
 - respond with `respondToolApproval`
 - wait for the current assistant step to finish collecting local tool output and approval responses before continuing the next turn
@@ -265,6 +266,33 @@ Important notes:
   `approvalRequested`
 - callback failures are mapped into tool error output, not generic session
   errors
+
+## Tool Execution Registry
+
+Use `ToolExecutionRegistry` when simple tool-name dispatch is enough.
+
+```dart
+final session = DefaultChatSession(
+  transport: DirectChatTransport(model: model),
+  toolExecutionRegistry: ToolExecutionRegistry(
+    handlers: {
+      'weather': (request) async => const ToolExecutionResult.output({
+        'temperature': 24,
+        'unit': 'celsius',
+      }),
+      'calendar': (request) async => const ToolExecutionResult.output({
+        'events': ['Standup'],
+      }),
+    },
+  ),
+);
+```
+
+Use `onToolCall` directly when:
+
+- dispatch depends on more than `toolName`
+- you want custom fallback logic
+- you need to enrich UI state before returning the tool output
 
 ## Design Rules
 

@@ -14,3 +14,4 @@ export 'src/default_chat_session.dart';
 export 'src/direct_chat_transport.dart';
 export 'src/http_chat_transport_protocol.dart';
 export 'src/http_chat_transport.dart';
+export 'src/tool_execution_registry.dart';

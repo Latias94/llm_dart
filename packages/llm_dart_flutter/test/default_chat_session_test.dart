@@ -1316,6 +1316,70 @@ void main() {
       await session.dispose();
     });
 
+    test(
+        'automatically executes client-side tools through toolExecutionRegistry',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        toolExecutionRegistry: ToolExecutionRegistry(
+          handlers: {
+            'weather': (request) {
+              expect(request.toolName, 'weather');
+              return const ToolExecutionResult.output({
+                'temperature': 24,
+              });
+            },
+          },
+        ),
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const ToolCallEvent(
+                    toolCall: ToolCallContent(
+                      toolCallId: 'tool-1',
+                      toolName: 'weather',
+                      input: {
+                        'location': 'Tokyo',
+                      },
+                    ),
+                  ),
+                  const FinishEvent(finishReason: FinishReason.toolCalls),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'Registry-based tool execution completed.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Weather in Tokyo?'));
+      await _flushAsyncWork();
+
+      expect(capturedRequests, hasLength(2));
+      expect(session.state.status, ChatStatus.ready);
+      expect(
+        session.state.messages.last.parts.whereType<TextUiPart>().single.text,
+        'Registry-based tool execution completed.',
+      );
+
+      await session.dispose();
+    });
+
     test('waits for all automatic tool outputs before continuing', () async {
       final capturedRequests = <ChatTransportRequest>[];
       final weatherCompletion = Completer<ToolExecutionResult?>();
@@ -1531,6 +1595,19 @@ void main() {
       expect(session.state.status, ChatStatus.ready);
 
       await session.dispose();
+    });
+
+    test('rejects configuring both onToolCall and toolExecutionRegistry', () {
+      expect(
+        () => DefaultChatSession(
+          transport: _FakeChatTransport(
+            onSendMessages: (request) => const Stream<TextStreamEvent>.empty(),
+          ),
+          onToolCall: (_) => null,
+          toolExecutionRegistry: ToolExecutionRegistry(),
+        ),
+        throwsArgumentError,
+      );
     });
 
     test(

@@ -119,6 +119,7 @@ Current status:
 - the baseline Flutter chat layer now has stable session, transport, controller, persistence, and message-mapper surfaces in `llm_dart_flutter`
 - tool continuation is now also frozen more concretely at the session layer: mixed approval and tool-output steps wait for whole-step completion before the next assistant request is triggered
 - `DefaultChatSession` now also offers an optional local `onToolCall` convenience callback for client-executed tools without pushing execute-style APIs back into `llm_dart_core`
+- `llm_dart_flutter` now also exposes `ToolExecutionRegistry` as a thin name-based wrapper above `onToolCall`
 
 ## M6 - Compatibility Cleanup
 
