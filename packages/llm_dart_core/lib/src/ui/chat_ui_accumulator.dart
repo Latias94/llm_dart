@@ -75,7 +75,7 @@ final class ChatUiAccumulator {
         _setMetadataIfNotNull(ChatUiMetadataKeys.modelId, event.modelId);
         if (event.providerMetadata != null) {
           _metadata[ChatUiMetadataKeys.responseProviderMetadata] =
-              _mergeProviderMetadata(
+              ProviderMetadata.mergeNullable(
             _metadata[ChatUiMetadataKeys.responseProviderMetadata]
                 as ProviderMetadata?,
             event.providerMetadata,
@@ -101,7 +101,7 @@ final class ChatUiAccumulator {
         _parts[index] = TextUiPart(
           text: current.text + event.delta,
           isStreaming: true,
-          providerMetadata: _mergeProviderMetadata(
+          providerMetadata: ProviderMetadata.mergeNullable(
             current.providerMetadata,
             event.providerMetadata,
           ),
@@ -118,7 +118,7 @@ final class ChatUiAccumulator {
         _parts[index] = TextUiPart(
           text: current.text,
           isStreaming: false,
-          providerMetadata: _mergeProviderMetadata(
+          providerMetadata: ProviderMetadata.mergeNullable(
             current.providerMetadata,
             event.providerMetadata,
           ),
@@ -144,7 +144,7 @@ final class ChatUiAccumulator {
         _parts[index] = ReasoningUiPart(
           text: current.text + event.delta,
           isStreaming: true,
-          providerMetadata: _mergeProviderMetadata(
+          providerMetadata: ProviderMetadata.mergeNullable(
             current.providerMetadata,
             event.providerMetadata,
           ),
@@ -161,7 +161,7 @@ final class ChatUiAccumulator {
         _parts[index] = ReasoningUiPart(
           text: current.text,
           isStreaming: false,
-          providerMetadata: _mergeProviderMetadata(
+          providerMetadata: ProviderMetadata.mergeNullable(
             current.providerMetadata,
             event.providerMetadata,
           ),
@@ -338,7 +338,7 @@ final class ChatUiAccumulator {
         }
         if (event.providerMetadata != null) {
           _metadata[ChatUiMetadataKeys.finishProviderMetadata] =
-              _mergeProviderMetadata(
+              ProviderMetadata.mergeNullable(
             _metadata[ChatUiMetadataKeys.finishProviderMetadata]
                 as ProviderMetadata?,
             event.providerMetadata,
@@ -494,11 +494,11 @@ final class ChatUiAccumulator {
       preliminary: preliminary ?? current?.preliminary ?? false,
       title: setTitle ? title : current?.title ?? partial?.title,
       approval: setApproval ? approval : current?.approval,
-      callProviderMetadata: _mergeProviderMetadata(
+      callProviderMetadata: ProviderMetadata.mergeNullable(
         current?.callProviderMetadata,
         callProviderMetadata,
       ),
-      resultProviderMetadata: _mergeProviderMetadata(
+      resultProviderMetadata: ProviderMetadata.mergeNullable(
         current?.resultProviderMetadata,
         resultProviderMetadata,
       ),
@@ -559,40 +559,6 @@ Stream<ChatUiMessage> projectChatUiMessageStream(
   );
 
   return accumulator.project(events);
-}
-
-ProviderMetadata? _mergeProviderMetadata(
-  ProviderMetadata? current,
-  ProviderMetadata? next,
-) {
-  if (current == null || current.isEmpty) {
-    return next;
-  }
-
-  if (next == null || next.isEmpty) {
-    return current;
-  }
-
-  final merged = <String, Object?>{
-    ...current.values,
-  };
-
-  for (final entry in next.values.entries) {
-    final previous = merged[entry.key];
-    final value = entry.value;
-
-    if (previous is Map && value is Map) {
-      merged[entry.key] = <Object?, Object?>{
-        ...previous,
-        ...value,
-      };
-      continue;
-    }
-
-    merged[entry.key] = value;
-  }
-
-  return ProviderMetadata(merged);
 }
 
 Object? _decodeToolInputValue(String inputText) {

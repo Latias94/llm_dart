@@ -14,4 +14,20 @@ final class ModelWarning {
     required this.message,
     this.field,
   });
+
+  @override
+  bool operator ==(Object other) {
+    return other is ModelWarning &&
+        other.type == type &&
+        other.message == message &&
+        other.field == field;
+  }
+
+  @override
+  int get hashCode => Object.hash(type, message, field);
+
+  @override
+  String toString() {
+    return 'ModelWarning(type: $type, message: $message, field: $field)';
+  }
 }

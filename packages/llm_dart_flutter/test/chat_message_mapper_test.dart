@@ -77,8 +77,11 @@ void main() {
           ChatUiMetadataKeys.responseId: 'resp-1',
           ChatUiMetadataKeys.responseTimestamp: timestamp,
           ChatUiMetadataKeys.modelId: 'gpt-4.1-mini',
-          ChatUiMetadataKeys.responseProviderMetadata:
-              const ProviderMetadata({'provider': 'openai'}),
+          ChatUiMetadataKeys.responseProviderMetadata: const ProviderMetadata({
+            'openai': {
+              'provider': 'openai',
+            },
+          }),
           ChatUiMetadataKeys.finishReason: FinishReason.stop,
           ChatUiMetadataKeys.rawFinishReason: 'STOP',
           ChatUiMetadataKeys.usage: const UsageStats(
@@ -86,8 +89,11 @@ void main() {
             outputTokens: 5,
             totalTokens: 15,
           ),
-          ChatUiMetadataKeys.finishProviderMetadata:
-              const ProviderMetadata({'finish': 'ok'}),
+          ChatUiMetadataKeys.finishProviderMetadata: const ProviderMetadata({
+            'openai': {
+              'finish': 'ok',
+            },
+          }),
           ChatUiMetadataKeys.errors: const ['soft-error'],
           ChatUiMetadataKeys.rawChunks: const [
             {'chunk': 1},
@@ -116,11 +122,17 @@ void main() {
       expect(mapped.responseId, 'resp-1');
       expect(mapped.responseTimestamp, timestamp);
       expect(mapped.modelId, 'gpt-4.1-mini');
-      expect(mapped.responseProviderMetadata!['provider'], 'openai');
+      expect(
+        mapped.responseProviderMetadata!.namespace('openai'),
+        containsPair('provider', 'openai'),
+      );
       expect(mapped.finishReason, FinishReason.stop);
       expect(mapped.rawFinishReason, 'STOP');
       expect(mapped.usage!.totalTokens, 15);
-      expect(mapped.finishProviderMetadata!['finish'], 'ok');
+      expect(
+        mapped.finishProviderMetadata!.namespace('openai'),
+        containsPair('finish', 'ok'),
+      );
       expect(mapped.errors, ['soft-error']);
       expect(mapped.rawChunks, [
         {'chunk': 1},

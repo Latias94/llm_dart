@@ -911,7 +911,7 @@ final class DefaultChatSession implements ChatSession {
               preliminary: current?.preliminary ?? false,
               title: title ?? current?.title,
               approval: current?.approval,
-              callProviderMetadata: _mergeProviderMetadata(
+              callProviderMetadata: ProviderMetadata.mergeNullable(
                 current?.callProviderMetadata,
                 providerMetadata,
               ),
@@ -941,7 +941,7 @@ final class DefaultChatSession implements ChatSession {
               approval: ToolApprovalUiState(
                 approvalId: approvalId,
               ),
-              callProviderMetadata: _mergeProviderMetadata(
+              callProviderMetadata: ProviderMetadata.mergeNullable(
                 current?.callProviderMetadata,
                 providerMetadata,
               ),
@@ -973,7 +973,7 @@ final class DefaultChatSession implements ChatSession {
               title: current?.title,
               approval: current?.approval,
               callProviderMetadata: current?.callProviderMetadata,
-              resultProviderMetadata: _mergeProviderMetadata(
+              resultProviderMetadata: ProviderMetadata.mergeNullable(
                 current?.resultProviderMetadata,
                 providerMetadata,
               ),
@@ -1008,7 +1008,7 @@ final class DefaultChatSession implements ChatSession {
                 approved: approved,
                 reason: reason,
               ),
-              callProviderMetadata: _mergeProviderMetadata(
+              callProviderMetadata: ProviderMetadata.mergeNullable(
                 current?.callProviderMetadata,
                 providerMetadata,
               ),
@@ -1280,40 +1280,6 @@ ChatStatus _normalizeRestoredStatus(ChatStatus status) {
 
 Object? _normalizeRestoredError(ChatStatus status, Object? error) {
   return _normalizeRestoredStatus(status) == ChatStatus.error ? error : null;
-}
-
-ProviderMetadata? _mergeProviderMetadata(
-  ProviderMetadata? current,
-  ProviderMetadata? next,
-) {
-  if (current == null || current.isEmpty) {
-    return next;
-  }
-
-  if (next == null || next.isEmpty) {
-    return current;
-  }
-
-  final merged = <String, Object?>{
-    ...current.values,
-  };
-
-  for (final entry in next.values.entries) {
-    final previous = merged[entry.key];
-    final value = entry.value;
-
-    if (previous is Map && value is Map) {
-      merged[entry.key] = <Object?, Object?>{
-        ...previous,
-        ...value,
-      };
-      continue;
-    }
-
-    merged[entry.key] = value;
-  }
-
-  return ProviderMetadata(merged);
 }
 
 MessageIdGenerator _sequentialMessageId({

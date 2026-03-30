@@ -29,7 +29,7 @@
 ## Core
 
 - [ ] Rewrite the error model
-- [ ] Rewrite usage, warning, and provider metadata models
+- [x] Rewrite usage, warning, and provider metadata models
 - [x] Add common `reasoning-file` support across prompt, result, stream, and UI layers
 - [x] Add part-level provider metadata to replayable prompt parts and codecs
 - [x] Define provider model-options and invocation-options marker interfaces

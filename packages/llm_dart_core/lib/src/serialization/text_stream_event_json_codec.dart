@@ -523,8 +523,7 @@ final class TextStreamEventJsonCodec {
   }
 
   JsonMap _encodeProviderMetadata(ProviderMetadata metadata) {
-    return ensureJsonValue(metadata.values, path: r'$.providerMetadata')
-        as JsonMap;
+    return metadata.toJsonMap();
   }
 
   ProviderMetadata? _decodeProviderMetadata(
@@ -650,9 +649,8 @@ final class TextStreamEventJsonCodec {
       'url' => SourceReferenceKind.url,
       'document' => SourceReferenceKind.document,
       'other' => SourceReferenceKind.other,
-      null => uri == null
-          ? SourceReferenceKind.document
-          : SourceReferenceKind.url,
+      null =>
+        uri == null ? SourceReferenceKind.document : SourceReferenceKind.url,
       _ => throw FormatException('Invalid source kind at $path: $kind'),
     };
   }

@@ -339,8 +339,7 @@ final class PromptJsonCodec {
   }
 
   JsonMap _encodeProviderMetadata(ProviderMetadata metadata) {
-    return ensureJsonValue(metadata.values, path: r'$.providerMetadata')
-        as JsonMap;
+    return metadata.toJsonMap();
   }
 
   ProviderMetadata? _decodeProviderMetadata(

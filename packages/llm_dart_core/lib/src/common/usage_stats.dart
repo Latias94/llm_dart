@@ -11,12 +11,88 @@ final class UsageStats {
     this.reasoningTokens,
   });
 
-  UsageStats operator +(UsageStats other) {
+  bool get isEmpty =>
+      inputTokens == null &&
+      outputTokens == null &&
+      totalTokens == null &&
+      reasoningTokens == null;
+
+  bool get isNotEmpty => !isEmpty;
+
+  UsageStats mergedWith(UsageStats? other) {
+    if (other == null || other.isEmpty) {
+      return this;
+    }
+
+    if (isEmpty) {
+      return other;
+    }
+
     return UsageStats(
-      inputTokens: (inputTokens ?? 0) + (other.inputTokens ?? 0),
-      outputTokens: (outputTokens ?? 0) + (other.outputTokens ?? 0),
-      totalTokens: (totalTokens ?? 0) + (other.totalTokens ?? 0),
-      reasoningTokens: (reasoningTokens ?? 0) + (other.reasoningTokens ?? 0),
+      inputTokens: _mergeTokenCount(inputTokens, other.inputTokens),
+      outputTokens: _mergeTokenCount(outputTokens, other.outputTokens),
+      totalTokens: _mergeTokenCount(totalTokens, other.totalTokens),
+      reasoningTokens: _mergeTokenCount(
+        reasoningTokens,
+        other.reasoningTokens,
+      ),
     );
   }
+
+  UsageStats operator +(UsageStats other) {
+    return mergedWith(other);
+  }
+
+  static UsageStats? mergeNullable(
+    UsageStats? left,
+    UsageStats? right,
+  ) {
+    if (left == null || left.isEmpty) {
+      return right == null || right.isEmpty ? null : right;
+    }
+
+    return left.mergedWith(right);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is UsageStats &&
+        other.inputTokens == inputTokens &&
+        other.outputTokens == outputTokens &&
+        other.totalTokens == totalTokens &&
+        other.reasoningTokens == reasoningTokens;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        inputTokens,
+        outputTokens,
+        totalTokens,
+        reasoningTokens,
+      );
+
+  @override
+  String toString() {
+    return 'UsageStats('
+        'inputTokens: $inputTokens, '
+        'outputTokens: $outputTokens, '
+        'totalTokens: $totalTokens, '
+        'reasoningTokens: $reasoningTokens'
+        ')';
+  }
+}
+
+int? _mergeTokenCount(
+  int? left,
+  int? right,
+) {
+  if (left == null) {
+    return right;
+  }
+
+  if (right == null) {
+    return left;
+  }
+
+  return left + right;
 }

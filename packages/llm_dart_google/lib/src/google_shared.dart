@@ -3,38 +3,14 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 ProviderMetadata? googleProviderMetadata(Map<String, Object?> values) {
-  final googleValues = <String, Object?>{};
-  for (final entry in values.entries) {
-    if (entry.value != null) {
-      googleValues[entry.key] = entry.value;
-    }
-  }
-
-  if (googleValues.isEmpty) {
-    return null;
-  }
-
-  return ProviderMetadata({
-    'google': googleValues,
-  });
+  return ProviderMetadata.forNamespace('google', values);
 }
 
 ProviderMetadata? mergeProviderMetadata(
   ProviderMetadata? left,
   ProviderMetadata? right,
 ) {
-  if (left == null) {
-    return right;
-  }
-
-  if (right == null) {
-    return left;
-  }
-
-  return ProviderMetadata({
-    ...left.values,
-    ...right.values,
-  });
+  return ProviderMetadata.mergeNullable(left, right);
 }
 
 UsageStats? decodeGoogleUsage(Map<String, Object?>? usage) {
