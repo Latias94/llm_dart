@@ -255,6 +255,9 @@ Future<void> main() async {
 Example file:
 [flutter_integration.dart](E:/codes/flutter/llm_dart/packages/llm_dart_flutter/example/flutter_integration.dart)
 
+Package guide:
+[packages/llm_dart_flutter/README.md](E:/codes/flutter/llm_dart/packages/llm_dart_flutter/README.md)
+
 For snapshot persistence, keep storage application-owned and use
 `ChatPersistenceAdapter` as the thin codec bridge:
 
