@@ -114,6 +114,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary for `maxSteps`, future `stopWhen`-style policies, `prepareStep`, streaming orchestration, and app-owned retry/model-switch logic.
 - [47-provider-tool-and-continuation-matrix.md](47-provider-tool-and-continuation-matrix.md)
   - Audited provider matrix for tool declaration, provider-native continuation, approval handling, warning-based downgrade rules, and shared-runner ineligibility.
+- [48-provider-owned-native-tool-selection-design.md](48-provider-owned-native-tool-selection-design.md)
+  - Frozen design for provider-owned native-tool forcing/selection without widening shared `ToolChoice`, including Anthropic-first and Google-not-yet rules.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

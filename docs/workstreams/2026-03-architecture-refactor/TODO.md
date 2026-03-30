@@ -223,4 +223,6 @@
 - [x] Define provider metadata namespace rules
 - [x] Define custom-part `kind` namespace rules
 - [x] Freeze provider-native tool entry placement in provider packages
-- [ ] Design provider-owned native-tool forcing or selection APIs without widening shared `ToolChoice`
+- [x] Design provider-owned native-tool forcing or selection APIs without widening shared `ToolChoice`
+- [ ] Implement Anthropic provider-owned tool-selection options only if a real native-tool forcing use case appears beyond the current shared subset
+- [ ] Re-audit Google mixed-tool request support and tool-context circulation before exposing any public Google native-tool selection API

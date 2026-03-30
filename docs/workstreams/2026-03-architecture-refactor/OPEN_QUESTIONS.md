@@ -368,3 +368,19 @@ Resolved in the current breaking round:
 - provider-native tool forcing or selection must remain provider-owned rather
   than widening shared `ToolChoice`
 - `47-provider-tool-and-continuation-matrix.md` documents the audited matrix
+
+## 33. Provider-Owned Native Tool Selection
+
+Resolved in the current breaking round:
+
+- shared `ToolChoice` stays limited to the common function-tool contract
+- provider-owned native-tool forcing or selection must stay in provider-owned
+  settings or invocation options
+- provider-owned native-tool selection must not silently merge with shared
+  `toolChoice`
+- Anthropic is the first realistic provider candidate for a later
+  provider-owned selection surface
+- Google should not expose a public native-tool selection API until the
+  migrated provider path supports a proven mixed-tool wire contract
+- `48-provider-owned-native-tool-selection-design.md` documents the frozen
+  design
