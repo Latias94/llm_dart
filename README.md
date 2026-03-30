@@ -242,7 +242,9 @@ Future<void> main() async {
     final state = controller.state;
     print('status=${state.status}');
     if (state.messages.isNotEmpty) {
+      final mapped = const ChatMessageMapper().map(state.messages.last);
       print('messages=${state.messages.length}');
+      print('latestText=${mapped.text}');
     }
   });
 
@@ -271,6 +273,10 @@ final restoredController = await adapter.restoreController(
   ),
 );
 ```
+
+For widget-friendly rendering, `ChatMessageMapper` projects a `ChatUiMessage`
+into common text, reasoning, tool, source, file, warning, and error summaries
+without inventing another transport or provider layer.
 
 ## Provider-Specific Options
 

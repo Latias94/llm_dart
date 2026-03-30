@@ -124,6 +124,7 @@
 - [x] Audit current event completeness against `repo-ref/ai` and freeze the boundary between shared stream events and UI transport chunks
 - [x] Implement `ChatController`
 - [x] Implement `ChatPersistenceAdapter`
+- [x] Implement `ChatMessageMapper`
 - [x] Define a serialized chat chunk protocol for `HttpChatTransport`
 - [x] Design the message serialization protocol
 - [x] Implement prompt and UI JSON codecs

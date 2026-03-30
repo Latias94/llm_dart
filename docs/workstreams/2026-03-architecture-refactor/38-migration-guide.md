@@ -291,6 +291,8 @@ New pattern:
   wiring
 - use `ChatPersistenceAdapter` when snapshots need to be encoded, stored, and
   restored through an application-owned persistence backend
+- use `ChatMessageMapper` when widget code wants pre-filtered text, reasoning,
+  tool, source, file, warning, and error projections from `ChatUiMessage`
 
 Example:
 

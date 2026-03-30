@@ -46,5 +46,8 @@ void printState(ChatState state) {
   }
 
   final latest = state.messages.last;
+  final mapped = const ChatMessageMapper().map(latest);
   print('latest role=${latest.role} parts=${latest.parts.length}');
+  print('latest text=${mapped.text}');
+  print('latest tools=${mapped.toolParts.length}');
 }
