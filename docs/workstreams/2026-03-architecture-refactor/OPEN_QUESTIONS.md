@@ -351,3 +351,20 @@ Resolved in the current breaking round:
   layer above `streamText(...)`, not a redefinition of the current single-step
   stream helper
 - `46-runner-stop-policy-and-mutation-hooks.md` documents the frozen boundary
+
+## 32. Provider Tool And Continuation Matrix
+
+Resolved in the current breaking round:
+
+- OpenAI Responses remains the richer provider-owned continuation path for
+  built-in tools and approvals
+- OpenAI chat-completions remains a function-tool-only mainline with explicit
+  rejection or warning-based downgrade for provider-native continuation shapes
+- Anthropic can mix native and shared tool declarations in one request, but
+  provider-executed continuation and native result families remain
+  provider-owned
+- Google native tools remain provider-owned and effectively exclusive per call,
+  with warning-based downgrade when mixed with shared tool config
+- provider-native tool forcing or selection must remain provider-owned rather
+  than widening shared `ToolChoice`
+- `47-provider-tool-and-continuation-matrix.md` documents the audited matrix

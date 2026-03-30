@@ -112,6 +112,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen ownership matrix for shared runner continuation versus provider-native, approval-gated, dynamic, and Flutter-session orchestration.
 - [46-runner-stop-policy-and-mutation-hooks.md](46-runner-stop-policy-and-mutation-hooks.md)
   - Frozen boundary for `maxSteps`, future `stopWhen`-style policies, `prepareStep`, streaming orchestration, and app-owned retry/model-switch logic.
+- [47-provider-tool-and-continuation-matrix.md](47-provider-tool-and-continuation-matrix.md)
+  - Audited provider matrix for tool declaration, provider-native continuation, approval handling, warning-based downgrade rules, and shared-runner ineligibility.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

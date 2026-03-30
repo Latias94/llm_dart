@@ -91,6 +91,7 @@ Current status:
 - Anthropic and Google request codecs now consume `GenerateTextRequest.tools` / `toolChoice` for request-side function declarations
 - initial provider-native tool entry APIs now exist in `llm_dart_google` and `llm_dart_anthropic`
 - the current event decision remains stable: provider-native streamed details stay in common events plus `providerMetadata` or provider-namespaced custom payloads, not new Anthropic-only core events
+- the provider tool/continuation matrix is now explicit: OpenAI Responses remains provider-owned and richer, OpenAI chat-completions stays function-tool-only, Anthropic mixes native and shared request tools but keeps provider-executed continuation provider-owned, and Google native tools remain exclusive with warning-based downgrade of shared tool config
 - broader Google endpoints and additional Anthropic provider-native APIs remain open
 
 ## M4 - Community Providers

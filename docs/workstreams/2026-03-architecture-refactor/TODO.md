@@ -223,3 +223,4 @@
 - [x] Define provider metadata namespace rules
 - [x] Define custom-part `kind` namespace rules
 - [x] Freeze provider-native tool entry placement in provider packages
+- [ ] Design provider-owned native-tool forcing or selection APIs without widening shared `ToolChoice`
