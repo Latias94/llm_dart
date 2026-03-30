@@ -19,14 +19,31 @@ jobs:
         with:
           sdk: stable
 
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
       - name: Install dependencies
         run: dart pub get
+
+      - name: Install Flutter package dependencies
+        working-directory: packages/llm_dart_flutter
+        run: flutter pub get
 
       - name: Run tests
         run: dart test
 
+      - name: Run Flutter package tests
+        working-directory: packages/llm_dart_flutter
+        run: flutter test
+
       - name: Analyze code
         run: dart analyze --fatal-infos
+
+      - name: Analyze Flutter package code
+        working-directory: packages/llm_dart_flutter
+        run: flutter analyze --fatal-infos
 
   # Publish using the reusable workflow from dart-lang
   publish:

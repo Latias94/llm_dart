@@ -228,22 +228,25 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 Future<void> main() async {
-  final model = llm.AI.openai(
-    apiKey: 'your-openai-key',
-  ).chatModel('gpt-4.1-mini');
-
-  final session = DefaultChatSession(
-    transport: DirectChatTransport(model: model),
+  final controller = ChatController(
+    session: DefaultChatSession(
+      transport: DirectChatTransport(
+        model: llm.AI.openai(
+          apiKey: 'your-openai-key',
+        ).chatModel('gpt-4.1-mini'),
+      ),
+    ),
   );
 
-  session.states.listen((state) {
+  controller.addListener(() {
+    final state = controller.state;
     print('status=${state.status}');
     if (state.messages.isNotEmpty) {
       print('messages=${state.messages.length}');
     }
   });
 
-  await session.sendMessage(ChatInput.text('Write a short haiku about Flutter.'));
+  await controller.sendMessage(ChatInput.text('Write a short haiku about Flutter.'));
 }
 ```
 

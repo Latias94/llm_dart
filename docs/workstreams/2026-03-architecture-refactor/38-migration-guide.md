@@ -286,6 +286,9 @@ New pattern:
 - wrap it with `DirectChatTransport` or `HttpChatTransport`
 - let `DefaultChatSession` own chat state, message projection, replay-safe
   history, and tool-output continuation
+- use `ChatController` as the widget-facing `ValueNotifier<ChatState>` wrapper
+  when Flutter UI code wants `Listenable` integration instead of manual stream
+  wiring
 
 Example:
 
@@ -293,13 +296,17 @@ Example:
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
-final model = llm.AI.openai(apiKey: 'your-openai-key').chatModel('gpt-4.1-mini');
-
-final session = DefaultChatSession(
-  transport: DirectChatTransport(model: model),
+final controller = ChatController(
+  session: DefaultChatSession(
+    transport: DirectChatTransport(
+      model: llm.AI.openai(
+        apiKey: 'your-openai-key',
+      ).chatModel('gpt-4.1-mini'),
+    ),
+  ),
 );
 
-await session.sendMessage(
+await controller.sendMessage(
   ChatInput.text('Write a short haiku about Flutter widgets.'),
 );
 ```

@@ -19,14 +19,27 @@ jobs:
         with:
           sdk: stable
 
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
       - name: Install dependencies
         run: dart pub get
+
+      - name: Install Flutter package dependencies
+        working-directory: packages/llm_dart_flutter
+        run: flutter pub get
 
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 
       - name: Analyze project source
         run: dart analyze --fatal-infos
+
+      - name: Analyze Flutter package source
+        working-directory: packages/llm_dart_flutter
+        run: flutter analyze --fatal-infos
 
   test:
     name: Test
@@ -40,11 +53,24 @@ jobs:
         with:
           sdk: stable
 
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
       - name: Install dependencies
         run: dart pub get
 
+      - name: Install Flutter package dependencies
+        working-directory: packages/llm_dart_flutter
+        run: flutter pub get
+
       - name: Run tests
         run: dart test
+
+      - name: Run Flutter package tests
+        working-directory: packages/llm_dart_flutter
+        run: flutter test
 
   test-coverage:
     name: Test Coverage

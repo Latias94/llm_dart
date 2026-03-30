@@ -10,9 +10,12 @@ command:
 
 scripts:
   analyze:
-    run: melos exec -- "dart analyze ."
+    run: |
+      melos exec --ignore=llm_dart_flutter -- "dart analyze ."
+      melos exec --scope=llm_dart_flutter -- "flutter analyze --fatal-infos"
     description: Analyze all packages in the workspace.
   test:
-    run: melos exec --fail-fast -- "dart test"
+    run: |
+      melos exec --fail-fast --ignore=llm_dart_flutter -- "dart test"
+      melos exec --fail-fast --scope=llm_dart_flutter -- "flutter test"
     description: Run tests in all packages in the workspace.
-

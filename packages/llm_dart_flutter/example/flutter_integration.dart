@@ -13,24 +13,28 @@ Future<void> main() async {
     return;
   }
 
-  final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-  final session = DefaultChatSession(
-    transport: DirectChatTransport(model: model),
+  final controller = ChatController(
+    session: DefaultChatSession(
+      transport: DirectChatTransport(
+        model: llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini'),
+      ),
+    ),
   );
 
-  final subscription = session.states.listen(printState);
+  controller.addListener(() {
+    printState(controller.state);
+  });
 
   try {
-    await session.sendMessage(
+    await controller.sendMessage(
       ChatInput.text('Write a short haiku about Flutter widgets.'),
     );
 
-    final snapshot = session.exportSnapshot();
+    final snapshot = controller.exportSnapshot();
     print('\nSnapshot exported for chatId=${snapshot.chatId}');
     print('Persisted messages=${snapshot.messages.length}');
   } finally {
-    await subscription.cancel();
-    await session.dispose();
+    await controller.close();
   }
 }
 
