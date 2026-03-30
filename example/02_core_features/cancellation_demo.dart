@@ -9,7 +9,7 @@ import 'package:llm_dart/llm_dart.dart';
 /// - Cancelling streaming chat responses
 /// - Cancelling list models requests
 /// - Handling cancellation errors gracefully
-/// - Using CancelToken for request control
+/// - Using TransportCancellation for request control
 /// - Detecting and responding to cancellation
 ///
 /// Before running, set your API key:
@@ -60,8 +60,8 @@ Future<void> demonstrateStreamCancellation(ChatCapability provider) async {
   print('🌊 Stream Cancellation:\n');
 
   try {
-    // Create a cancel token
-    final cancelToken = CancelToken();
+    // Create a transport cancellation token
+    final cancelToken = TransportCancellation();
 
     final messages = [
       ChatMessage.user(
@@ -142,8 +142,8 @@ Future<void> demonstrateListModelsCancellation(
   print('📋 List Models Cancellation:\n');
 
   try {
-    // Create a cancel token
-    final cancelToken = CancelToken();
+    // Create a transport cancellation token
+    final cancelToken = TransportCancellation();
 
     print('   Requesting model list...');
 
@@ -182,8 +182,8 @@ Future<void> demonstrateMultipleRequestCancellation(
   print('🔗 Multiple Request Cancellation:\n');
 
   try {
-    // Create a shared cancel token
-    final sharedToken = CancelToken();
+    // Create a shared transport cancellation token
+    final sharedToken = TransportCancellation();
 
     print('   Starting multiple requests with shared token...');
 
@@ -241,7 +241,7 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
   // Test 1: Using CancellationHelper.isCancelled()
   print('   Test 1: Using CancellationHelper.isCancelled()');
   try {
-    final cancelToken = CancelToken();
+    final cancelToken = TransportCancellation();
     final requestFuture = provider.chat(
       [ChatMessage.user('Hello')],
       cancelToken: cancelToken,
@@ -264,7 +264,7 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
   // Test 2: Using CancelledError catch
   print('\n   Test 2: Using CancelledError catch');
   try {
-    final cancelToken = CancelToken();
+    final cancelToken = TransportCancellation();
     final requestFuture = provider.chat(
       [ChatMessage.user('Hello again')],
       cancelToken: cancelToken,
@@ -289,7 +289,7 @@ Future<void> demonstrateCancellationHandling(ChatCapability provider) async {
 
   // Test cancellation error
   try {
-    final cancelToken = CancelToken();
+    final cancelToken = TransportCancellation();
     final future = provider.chat(
       [ChatMessage.user('Test')],
       cancelToken: cancelToken,
@@ -323,7 +323,7 @@ Future<void> demonstrateCancellationTiming(ChatCapability provider) async {
   // Test 1: Cancel before request starts
   print('   Test 1: Pre-cancelled token');
   try {
-    final cancelToken = CancelToken();
+    final cancelToken = TransportCancellation();
     cancelToken.cancel('Pre-cancelled');
 
     final response = await provider.chat(
@@ -345,7 +345,7 @@ Future<void> demonstrateCancellationTiming(ChatCapability provider) async {
   print('\n   Test 2: Cancel during execution');
   final stopwatch = Stopwatch()..start();
   try {
-    final cancelToken = CancelToken();
+    final cancelToken = TransportCancellation();
 
     final requestFuture = provider.chat(
       [ChatMessage.user('Count from 1 to 1000 with explanations.')],
@@ -370,7 +370,7 @@ Future<void> demonstrateCancellationTiming(ChatCapability provider) async {
 
   // Test 3: Multiple cancellations are safe
   print('\n   Test 3: Multiple cancel() calls are safe');
-  final cancelToken = CancelToken();
+  final cancelToken = TransportCancellation();
   cancelToken.cancel('First cancel');
   cancelToken.cancel('Second cancel'); // Should not throw
   cancelToken.cancel('Third cancel'); // Should not throw

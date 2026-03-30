@@ -263,7 +263,7 @@ final class TextStreamEventJsonCodec {
           if (stepId != null) 'stepId': stepId,
         },
       StepFinishEvent(:final stepId) => {
-          'type': 'step-finish',
+          'type': 'step-end',
           if (stepId != null) 'stepId': stepId,
         },
       FinishEvent(
@@ -487,7 +487,7 @@ final class TextStreamEventJsonCodec {
       'step-start' => StepStartEvent(
           stepId: asNullableJsonString(map['stepId'], path: '$path.stepId'),
         ),
-      'step-finish' => StepFinishEvent(
+      'step-end' || 'step-finish' => StepFinishEvent(
           stepId: asNullableJsonString(map['stepId'], path: '$path.stepId'),
         ),
       'finish' => FinishEvent(

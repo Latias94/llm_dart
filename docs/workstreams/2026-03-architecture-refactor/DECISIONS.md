@@ -252,6 +252,7 @@ Provider-specific features should be represented through:
 - UI-facing tool lifecycle chunk names such as `tool-input-available` or `tool-output-available` should continue to project through `ToolCallEvent`, `ToolResultEvent`, `ToolInputErrorEvent`, and unified `ToolUiPart`
 - typed per-tool UI part subclasses do not enter the Dart core model; `ToolUiPart` remains unified with `toolName` and lifecycle state as data
 - `StepStartEvent` and `StepFinishEvent` remain valid shared Dart session semantics even though the reference UI stream locates step markers above the provider stream layer
+- shared event-envelope serialization should use the canonical names `step-start` and `step-end`, while legacy `step-finish` remains decode-compatible during migration
 
 ## D29. `core/` Must Not Own Provider Catalog Implementations
 

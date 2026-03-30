@@ -225,6 +225,7 @@ Resolved in the current breaking round:
 - those UI transport concepts should not be copied into the shared Dart event model
 - `ToolCallEvent`, `ToolResultEvent`, `ToolInputErrorEvent`, and unified `ToolUiPart` remain the correct Dart mapping for tool lifecycle state
 - `StepStartEvent` and `StepFinishEvent` remain shared Dart session semantics even though the reference UI protocol places step markers above the provider stream layer
+- the shared event-envelope codec should use `step-start` / `step-end` as the canonical serialized names while keeping legacy `step-finish` decode-compatible during migration
 - `20-event-completeness-audit.md` documents the frozen conclusion
 
 ## 22. Root OpenAI-Family Facade Status

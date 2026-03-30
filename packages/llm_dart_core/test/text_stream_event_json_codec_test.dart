@@ -130,6 +130,9 @@ void main() {
       ]);
 
       expect(encoded['kind'], TextStreamEventJsonCodec.envelopeKind);
+      final envelopeData = encoded['data'] as Map<String, Object?>;
+      final encodedEvents = envelopeData['events'] as List<Object?>;
+      expect((encodedEvents[2] as Map<String, Object?>)['type'], 'step-start');
 
       final decoded = codec.decodeEvents(encoded);
       expect(decoded, hasLength(16));
@@ -194,6 +197,27 @@ void main() {
       expect(finish.finishReason, FinishReason.toolCalls);
       expect(finish.rawFinishReason, 'tool_calls');
       expect(finish.usage?.reasoningTokens, 2);
+    });
+
+    test('decodes both canonical and legacy step-end event names', () {
+      const codec = TextStreamEventJsonCodec();
+
+      final encoded = codec.encodeEvent(const StepFinishEvent(stepId: 'step-0'));
+      expect(encoded['type'], 'step-end');
+
+      final canonicalDecoded = codec.decodeEvent({
+        'type': 'step-end',
+        'stepId': 'step-1',
+      });
+      expect(canonicalDecoded, isA<StepFinishEvent>());
+      expect((canonicalDecoded as StepFinishEvent).stepId, 'step-1');
+
+      final legacyDecoded = codec.decodeEvent({
+        'type': 'step-finish',
+        'stepId': 'step-2',
+      });
+      expect(legacyDecoded, isA<StepFinishEvent>());
+      expect((legacyDecoded as StepFinishEvent).stepId, 'step-2');
     });
 
     test('throws when raw chunk payload is not JSON-safe', () {

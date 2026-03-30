@@ -160,6 +160,7 @@ Why:
 Recommended rule:
 
 - keep `StepStartEvent` and `StepFinishEvent` in the shared Dart event layer
+- serialize shared event envelopes with the canonical names `step-start` and `step-end`, while keeping legacy `step-finish` decode-compatible during migration
 - do not treat their existence as a reason to copy the full AI SDK UI chunk protocol
 
 In other words:
