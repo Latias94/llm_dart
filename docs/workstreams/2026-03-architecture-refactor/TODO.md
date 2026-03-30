@@ -192,7 +192,7 @@
 - [x] Rewrite the tool-calling example
 - [x] Rewrite the reasoning example
 - [x] Rewrite the Flutter integration example
-- [ ] Add a migration guide
+- [x] Add a migration guide
 
 ## Dependency Cleanup
 

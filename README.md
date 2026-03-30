@@ -323,6 +323,8 @@ Future<void> main() async {
 
 ## Current Reference Docs
 
+- Migration guide:
+  [38-migration-guide.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md)
 - Architecture workstream index:
   [docs/workstreams/2026-03-architecture-refactor/README.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/README.md)
 - Prompt normalization contract:

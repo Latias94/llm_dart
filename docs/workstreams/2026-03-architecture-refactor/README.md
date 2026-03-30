@@ -94,6 +94,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen matrix for which shared stream event families belong in provider codecs versus session or transport layers, using `repo-ref/ai` only as a layering reference.
 - [37-prompt-normalization-contract.md](37-prompt-normalization-contract.md)
   - Frozen replay-safe prompt subset and the provider-owned normalization gaps for multimodal input, approval flows, and assistant reasoning replay.
+- [38-migration-guide.md](38-migration-guide.md)
+  - Practical migration guide from the old root-package compatibility surface to the stable model API.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
