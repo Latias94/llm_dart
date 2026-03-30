@@ -197,14 +197,9 @@ Future<void> demoOpenRouterBuilder(String? apiKey) async {
   }
 
   try {
-    // OpenRouter with web search configuration
+    // OpenRouter with audited online-search intent
     final provider = await ai()
-        .openRouter((openrouter) => openrouter
-            .webSearch(
-              maxResults: 5,
-              searchPrompt: 'Focus on recent AI developments and research',
-            )
-            .forAcademicResearch()) // Convenience method
+        .openRouter((openrouter) => openrouter.onlineSearch())
         .apiKey(apiKey)
         .model('anthropic/claude-3.5-sonnet')
         .temperature(0.3)

@@ -10,7 +10,7 @@ import 'package:llm_dart/llm_dart.dart';
 /// - **xAI Grok**: Live Search with real-time web/news access
 /// - **Anthropic Claude**: Web Search Tool with domain filtering
 /// - **OpenAI**: Web Search with context size control
-/// - **OpenRouter**: Plugin-based search with custom prompts
+/// - **OpenRouter**: Online-model search via provider-owned model shaping
 /// - **Perplexity**: Native search capabilities
 ///
 /// **Key Features:**
@@ -207,15 +207,12 @@ Future<void> demoProviderSpecificConfigs(String? xaiKey, String? anthropicKey,
     }
   }
 
-  // OpenRouter with custom search prompt
+  // OpenRouter with online-model search intent
   if (openrouterKey != null) {
     try {
-      print('4. OpenRouter with Custom Search Prompt:');
+      print('4. OpenRouter with Online Search:');
       final provider = await ai()
-          .openRouter((openrouter) => openrouter.webSearch(
-                maxResults: 5,
-                searchPrompt: 'Focus on recent academic papers and research',
-              ))
+          .openRouter((openrouter) => openrouter.onlineSearch())
           .apiKey(openrouterKey)
           .model('anthropic/claude-3.5-sonnet')
           .build();

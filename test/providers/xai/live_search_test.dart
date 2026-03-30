@@ -134,11 +134,14 @@ void main() {
     });
 
     test('should create live search provider with convenience function', () {
-      final provider = createXAILiveSearchProvider(
+      final provider = createXAIProvider(
         apiKey: 'test-key',
         model: 'grok-3',
-        maxSearchResults: 7,
-        excludedWebsites: ['blocked.com'],
+        liveSearch: true,
+        searchParameters: SearchParameters.webSearch(
+          maxResults: 7,
+          excludedWebsites: ['blocked.com'],
+        ),
       );
 
       expect(provider.config.liveSearch, isTrue);
@@ -149,12 +152,16 @@ void main() {
     });
 
     test('should create search provider with convenience function', () {
-      final provider = createXAISearchProvider(
+      final provider = createXAIProvider(
         apiKey: 'test-key',
         model: 'grok-3',
-        searchMode: 'always',
-        maxSearchResults: 15,
-        fromDate: '2024-06-01',
+        liveSearch: true,
+        searchParameters: const SearchParameters(
+          mode: 'always',
+          sources: [SearchSource(sourceType: 'web')],
+          maxSearchResults: 15,
+          fromDate: '2024-06-01',
+        ),
       );
 
       expect(provider.config.liveSearch, isTrue);

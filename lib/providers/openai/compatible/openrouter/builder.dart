@@ -17,6 +17,16 @@ class OpenRouterBuilder {
 
   // ========== OpenRouter-specific configuration methods ==========
 
+  /// Enables the audited OpenRouter online-model intent.
+  ///
+  /// This is the only OpenRouter search-shaped builder entry that maps cleanly
+  /// to the refactored compatibility bridge without pretending that richer
+  /// legacy search fields have a stable wire contract.
+  OpenRouterBuilder onlineSearch() {
+    _baseBuilder.extension('webSearchEnabled', true);
+    return this;
+  }
+
   /// Configures web search for OpenRouter models
   ///
   /// OpenRouter supports web search in two ways:
@@ -35,6 +45,10 @@ class OpenRouterBuilder {
   ///     .model('anthropic/claude-3.5-sonnet')
   ///     .build();
   /// ```
+  @Deprecated(
+    'OpenRouterBuilder.webSearch() is a legacy migration helper. '
+    'Use onlineSearch() for legacy online intent, or the stable AI.openRouter(...).chatModel(..., settings: OpenRouterChatModelSettings(search: OpenRouterSearchOptions.onlineModel())) API.',
+  )
   OpenRouterBuilder webSearch({
     int maxResults = 5,
     String? searchPrompt,
@@ -63,6 +77,10 @@ class OpenRouterBuilder {
   ///     .apiKey(apiKey)
   ///     .build();
   /// ```
+  @Deprecated(
+    'OpenRouterBuilder.searchPrompt() has no frozen OpenRouter wire contract. '
+    'Use normal prompt shaping or the stable OpenRouter profile API instead.',
+  )
   OpenRouterBuilder searchPrompt(String prompt) {
     _baseBuilder.extension('searchPrompt', prompt);
     return this;
@@ -83,6 +101,10 @@ class OpenRouterBuilder {
   ///     .model('anthropic/claude-3.5-sonnet:online')
   ///     .build();
   /// ```
+  @Deprecated(
+    'OpenRouterBuilder.useOnlineShortcut() is legacy builder ergonomics only. '
+    'Use onlineSearch() or an explicit :online model ID instead.',
+  )
   OpenRouterBuilder useOnlineShortcut(bool enabled) {
     _baseBuilder.extension('useOnlineShortcut', enabled);
     return this;
@@ -94,6 +116,10 @@ class OpenRouterBuilder {
   /// when performing web searches.
   ///
   /// Range: 1-20 (recommended: 3-10)
+  @Deprecated(
+    'OpenRouterBuilder.maxSearchResults() is not backed by a frozen OpenRouter wire contract. '
+    'Use the stable OpenRouter profile API if a tested request contract lands later.',
+  )
   OpenRouterBuilder maxSearchResults(int maxResults) {
     _baseBuilder.extension('maxSearchResults', maxResults);
     return this;
@@ -105,6 +131,10 @@ class OpenRouterBuilder {
   ///
   /// Optimizes settings for academic and research queries with
   /// appropriate search prompts and result limits.
+  @Deprecated(
+    'OpenRouterBuilder.forAcademicResearch() depends on legacy-only searchPrompt/maxSearchResults semantics. '
+    'Prefer onlineSearch() plus normal prompt shaping.',
+  )
   OpenRouterBuilder forAcademicResearch() {
     return webSearch(
       maxResults: 8,
@@ -118,6 +148,10 @@ class OpenRouterBuilder {
   ///
   /// Optimizes settings for news queries and current events with
   /// recent information focus.
+  @Deprecated(
+    'OpenRouterBuilder.forNewsAndEvents() depends on legacy-only searchPrompt/maxSearchResults semantics. '
+    'Prefer onlineSearch() plus normal prompt shaping.',
+  )
   OpenRouterBuilder forNewsAndEvents() {
     return webSearch(
       maxResults: 10,
@@ -131,6 +165,10 @@ class OpenRouterBuilder {
   ///
   /// Optimizes settings for technical queries, documentation,
   /// and programming-related searches.
+  @Deprecated(
+    'OpenRouterBuilder.forTechnicalQueries() depends on legacy-only searchPrompt/maxSearchResults semantics. '
+    'Prefer onlineSearch() plus normal prompt shaping.',
+  )
   OpenRouterBuilder forTechnicalQueries() {
     return webSearch(
       maxResults: 6,
@@ -144,6 +182,10 @@ class OpenRouterBuilder {
   ///
   /// Balanced settings for general-purpose web searches with
   /// moderate result limits and no specific search focus.
+  @Deprecated(
+    'OpenRouterBuilder.forGeneralSearch() depends on legacy-only OpenRouter search helpers. '
+    'Prefer onlineSearch() instead.',
+  )
   OpenRouterBuilder forGeneralSearch() {
     return webSearch(
       maxResults: 5,
@@ -156,8 +198,12 @@ class OpenRouterBuilder {
   ///
   /// Minimal configuration that relies on the `:online` model suffix
   /// for simple web search activation.
+  @Deprecated(
+    'OpenRouterBuilder.forQuickSearch() is legacy builder ergonomics only. '
+    'Prefer onlineSearch() or an explicit :online model ID.',
+  )
   OpenRouterBuilder forQuickSearch() {
-    return useOnlineShortcut(true);
+    return onlineSearch();
   }
 
   // ========== Build methods ==========

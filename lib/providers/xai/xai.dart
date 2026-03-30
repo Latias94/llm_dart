@@ -76,6 +76,10 @@ XAIProvider createXAIProvider({
 }
 
 /// Create an xAI provider with search capabilities
+@Deprecated(
+  'createXAISearchProvider() is a legacy helper. '
+  'Prefer createXAIProvider(...) for root-package compatibility or the stable AI.xai(...).chatModel(...) API with typed XAIGenerateTextOptions(search: ...).',
+)
 XAIProvider createXAISearchProvider({
   required String apiKey,
   String model = 'grok-3',
@@ -126,6 +130,10 @@ XAIProvider createXAISearchProvider({
 ///   ChatMessage.user('What are the latest developments in AI?')
 /// ]);
 /// ```
+@Deprecated(
+  'createXAILiveSearchProvider() is a legacy helper. '
+  'Prefer createXAIProvider(...) for root-package compatibility or the stable AI.xai(...).chatModel(...) API with typed XAIGenerateTextOptions(search: ...).',
+)
 XAIProvider createXAILiveSearchProvider({
   required String apiKey,
   String model = 'grok-3',
