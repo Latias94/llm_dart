@@ -128,7 +128,7 @@
 - [x] Implement prompt and UI JSON codecs
 - [x] Implement `ChatSessionSnapshot` export and import
 - [x] Design and implement the baseline tool approval and output injection API
-- [ ] Rewrite the Flutter integration examples
+- [x] Rewrite the Flutter integration examples
 
 ## Compatibility Layer
 
@@ -187,11 +187,11 @@
 
 ## Documentation And Examples
 
-- [ ] Rewrite the README minimal example
-- [ ] Rewrite the streaming example
-- [ ] Rewrite the tool-calling example
-- [ ] Rewrite the reasoning example
-- [ ] Rewrite the Flutter integration example
+- [x] Rewrite the README minimal example
+- [x] Rewrite the streaming example
+- [x] Rewrite the tool-calling example
+- [x] Rewrite the reasoning example
+- [x] Rewrite the Flutter integration example
 - [ ] Add a migration guide
 
 ## Dependency Cleanup
