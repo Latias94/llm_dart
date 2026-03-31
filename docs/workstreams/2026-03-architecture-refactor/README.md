@@ -120,6 +120,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen migration design for Gemini 3 mixed built-in/function tools, provider-owned server-side tool-context circulation, and the remaining Google-owned policy gaps after the first mixed-tool subset landed.
 - [50-repo-ref-structure-gap-review.md](50-repo-ref-structure-gap-review.md)
   - Consolidated review of what is already structurally aligned with `repo-ref/ai`, which differences are deliberate, and which structural gaps still remain worth addressing.
+- [51-shared-structured-output-boundary.md](51-shared-structured-output-boundary.md)
+  - Recommended direction for closing the structured-generation gap through a shared output-specification layer rather than freezing provider-owned `responseFormat` as the long-term API.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
