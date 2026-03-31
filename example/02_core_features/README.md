@@ -32,7 +32,7 @@ Function calling - let AI execute custom functions.
 Advanced tool calling with validation, error handling, and complex nested object structures.
 
 ### [structured_output.dart](structured_output.dart)
-JSON schema output with validation.
+Shared `OutputSpec` examples for object, array, and choice generation.
 
 ### [audio_processing.dart](audio_processing.dart)
 Text-to-speech and speech-to-text capabilities.
@@ -76,7 +76,7 @@ dart run enhanced_tool_calling.dart
 - **File Management**: Upload, download, and organize files for AI workflows
 - **Streaming**: Real-time response delivery
 - **Tools**: Function calling and execution
-- **Structured Output**: JSON schema validation
+- **Structured Output**: Shared `generateOutput(...)` with `OutputSpec`
 - **Error Handling**: Production-ready error management
 
 ## Usage Examples

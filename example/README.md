@@ -37,7 +37,7 @@ Practical examples for the LLM Dart library, organized by learning path and use 
 - [cancellation_demo.dart](02_core_features/cancellation_demo.dart) - Request cancellation
 - [tool_calling.dart](02_core_features/tool_calling.dart) - Function calling
 - [enhanced_tool_calling.dart](02_core_features/enhanced_tool_calling.dart) - Advanced tool usage
-- [structured_output.dart](02_core_features/structured_output.dart) - JSON output
+- [structured_output.dart](02_core_features/structured_output.dart) - Shared structured output
 - [assistants.dart](02_core_features/assistants.dart) - AI assistants
 - [embeddings.dart](02_core_features/embeddings.dart) - Text embeddings
 - [audio_processing.dart](02_core_features/audio_processing.dart) - Speech/TTS
