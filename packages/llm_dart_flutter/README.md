@@ -227,17 +227,12 @@ import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
 
 void renderGoogleCustomParts(ChatUiMessage message) {
-  final googleParts = GoogleCustomPart.parseUiParts(message.parts);
+  final summaries = GoogleCustomPartSummary.parseUiParts(message.parts);
 
-  for (final part in googleParts) {
-    switch (part) {
-      case GoogleToolCallCustomPart():
-        print('Google tool call: ${part.toolName}');
-      case GoogleToolResponseCustomPart():
-        print('Google tool response: ${part.toolName}');
-      case GoogleFunctionResponseCustomPart():
-        print('Google function response: ${part.toolName}');
-    }
+  for (final summary in summaries) {
+    print(summary.title);
+    print(summary.subtitle);
+    print(summary.previewText);
   }
 }
 ```

@@ -99,6 +99,7 @@ Current status:
 - Google now also has provider-owned assistant-side `toolCall` / `toolResponse` replay helpers plus Gemini 3 request encoding for `includeServerSideToolInvocations`, so mixed-tool follow-up turns can preserve server-side tool context without widening shared events
 - Google now also decodes assistant-side server `toolCall` / `toolResponse` parts into provider-owned custom content/events and can re-encode those custom prompt parts back into assistant history without widening shared events
 - Google now also exposes provider-owned `GoogleCustomPart` parsing helpers so Flutter or other UI layers can render those custom replay payloads through one typed entrypoint without adding Google-specific logic to `llm_dart_flutter`
+- Google now also exposes provider-owned `GoogleCustomPartSummary` helpers so Flutter or other UI layers can build lightweight render summaries without reparsing raw Google payload JSON
 - broader Google endpoints and additional Anthropic provider-native APIs remain open
 
 ## M4 - Community Providers
