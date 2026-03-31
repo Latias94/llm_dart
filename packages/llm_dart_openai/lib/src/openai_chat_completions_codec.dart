@@ -85,6 +85,31 @@ final class OpenAIChatCompletionsCodec {
       );
     }
 
+    if (providerOptions.common.include case final include?
+        when include.isNotEmpty) {
+      throw UnsupportedError(
+        'OpenAI-family chat-completions requests do not support include. Use the Responses API mainline instead.',
+      );
+    }
+
+    if (providerOptions.common.promptCacheKey != null) {
+      throw UnsupportedError(
+        'OpenAI-family chat-completions requests do not support promptCacheKey in the current family-safe mainline. Use the Responses API mainline instead.',
+      );
+    }
+
+    if (providerOptions.common.promptCacheRetention != null) {
+      throw UnsupportedError(
+        'OpenAI-family chat-completions requests do not support promptCacheRetention in the current family-safe mainline. Use the Responses API mainline instead.',
+      );
+    }
+
+    if (providerOptions.common.safetyIdentifier != null) {
+      throw UnsupportedError(
+        'OpenAI-family chat-completions requests do not support safetyIdentifier in the current family-safe mainline. Use the Responses API mainline instead.',
+      );
+    }
+
     final warnings = <ModelWarning>[];
     final messages = <Map<String, Object?>>[];
 

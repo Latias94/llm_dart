@@ -723,6 +723,97 @@ void main() {
         ),
       );
 
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('hello'),
+            ],
+            callOptions: const CallOptions(
+              providerOptions: OpenAIGenerateTextOptions(
+                include: [
+                  OpenAIResponsesInclude.reasoningEncryptedContent,
+                ],
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('include'),
+          ),
+        ),
+      );
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('hello'),
+            ],
+            callOptions: const CallOptions(
+              providerOptions: OpenAIGenerateTextOptions(
+                promptCacheKey: 'cache_key_123',
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('promptCacheKey'),
+          ),
+        ),
+      );
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('hello'),
+            ],
+            callOptions: const CallOptions(
+              providerOptions: OpenAIGenerateTextOptions(
+                promptCacheRetention:
+                    OpenAIPromptCacheRetention.twentyFourHours,
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('promptCacheRetention'),
+          ),
+        ),
+      );
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('hello'),
+            ],
+            callOptions: const CallOptions(
+              providerOptions: OpenAIGenerateTextOptions(
+                safetyIdentifier: 'safe_user_123',
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('safetyIdentifier'),
+          ),
+        ),
+      );
+
       expect(sendCount, 0);
     });
 

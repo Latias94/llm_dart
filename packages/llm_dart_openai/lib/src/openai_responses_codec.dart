@@ -76,6 +76,16 @@ final class OpenAIResponsesCodec {
       if (providerOptions.truncation != null)
         'truncation': providerOptions.truncation!.value,
       if (providerOptions.user != null) 'user': providerOptions.user,
+      if (providerOptions.include case final include? when include.isNotEmpty)
+        'include': [
+          for (final item in include) item.value,
+        ],
+      if (providerOptions.promptCacheKey != null)
+        'prompt_cache_key': providerOptions.promptCacheKey,
+      if (providerOptions.promptCacheRetention != null)
+        'prompt_cache_retention': providerOptions.promptCacheRetention!.value,
+      if (providerOptions.safetyIdentifier != null)
+        'safety_identifier': providerOptions.safetyIdentifier,
     };
 
     final encodedTools = _encodeTools(

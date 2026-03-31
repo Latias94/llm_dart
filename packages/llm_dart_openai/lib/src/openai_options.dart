@@ -204,6 +204,25 @@ enum OpenAIResponseTruncation {
   final String value;
 }
 
+enum OpenAIPromptCacheRetention {
+  inMemory('in_memory'),
+  twentyFourHours('24h');
+
+  const OpenAIPromptCacheRetention(this.value);
+
+  final String value;
+}
+
+enum OpenAIResponsesInclude {
+  reasoningEncryptedContent('reasoning.encrypted_content'),
+  fileSearchCallResults('file_search_call.results'),
+  messageOutputTextLogprobs('message.output_text.logprobs');
+
+  const OpenAIResponsesInclude(this.value);
+
+  final String value;
+}
+
 final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
   final String? previousResponseId;
   final bool? parallelToolCalls;
@@ -214,6 +233,10 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
   final Map<String, Object?>? metadata;
   final OpenAIResponseTruncation? truncation;
   final String? user;
+  final List<OpenAIResponsesInclude>? include;
+  final String? promptCacheKey;
+  final OpenAIPromptCacheRetention? promptCacheRetention;
+  final String? safetyIdentifier;
   final List<OpenAIBuiltInTool>? builtInTools;
   final OpenAIJsonSchemaResponseFormat? responseFormat;
 
@@ -227,6 +250,10 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     this.metadata,
     this.truncation,
     this.user,
+    this.include,
+    this.promptCacheKey,
+    this.promptCacheRetention,
+    this.safetyIdentifier,
     this.builtInTools,
     this.responseFormat,
   });
@@ -241,6 +268,10 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     Object? metadata = _unset,
     Object? truncation = _unset,
     Object? user = _unset,
+    Object? include = _unset,
+    Object? promptCacheKey = _unset,
+    Object? promptCacheRetention = _unset,
+    Object? safetyIdentifier = _unset,
     Object? builtInTools = _unset,
     Object? responseFormat = _unset,
   }) {
@@ -269,6 +300,18 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
           ? this.truncation
           : truncation as OpenAIResponseTruncation?,
       user: identical(user, _unset) ? this.user : user as String?,
+      include: identical(include, _unset)
+          ? this.include
+          : include as List<OpenAIResponsesInclude>?,
+      promptCacheKey: identical(promptCacheKey, _unset)
+          ? this.promptCacheKey
+          : promptCacheKey as String?,
+      promptCacheRetention: identical(promptCacheRetention, _unset)
+          ? this.promptCacheRetention
+          : promptCacheRetention as OpenAIPromptCacheRetention?,
+      safetyIdentifier: identical(safetyIdentifier, _unset)
+          ? this.safetyIdentifier
+          : safetyIdentifier as String?,
       builtInTools: identical(builtInTools, _unset)
           ? this.builtInTools
           : builtInTools as List<OpenAIBuiltInTool>?,

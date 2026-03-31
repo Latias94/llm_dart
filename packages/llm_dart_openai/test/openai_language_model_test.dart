@@ -510,6 +510,13 @@ void main() {
               },
               truncation: OpenAIResponseTruncation.disabled,
               user: 'user_123',
+              include: [
+                OpenAIResponsesInclude.reasoningEncryptedContent,
+                OpenAIResponsesInclude.fileSearchCallResults,
+              ],
+              promptCacheKey: 'cache_key_123',
+              promptCacheRetention: OpenAIPromptCacheRetention.twentyFourHours,
+              safetyIdentifier: 'safe_user_123',
             ),
           ),
         ),
@@ -518,18 +525,29 @@ void main() {
       expect(capturedRequest, isNotNull);
       final requestBody = capturedRequest!.body as Map<String, Object?>;
       expect(
-        requestBody,
-        allOf(
-          containsPair('instructions', 'Keep the original system framing.'),
-          containsPair('max_tool_calls', 3),
-          containsPair('metadata', {
-            'traceId': 'trace_123',
-            'flags': ['alpha', 'beta'],
-          }),
-          containsPair('truncation', 'disabled'),
-          containsPair('user', 'user_123'),
-        ),
+        requestBody['instructions'],
+        'Keep the original system framing.',
       );
+      expect(requestBody['max_tool_calls'], 3);
+      expect(
+        requestBody['metadata'],
+        {
+          'traceId': 'trace_123',
+          'flags': ['alpha', 'beta'],
+        },
+      );
+      expect(requestBody['truncation'], 'disabled');
+      expect(requestBody['user'], 'user_123');
+      expect(
+        requestBody['include'],
+        [
+          'reasoning.encrypted_content',
+          'file_search_call.results',
+        ],
+      );
+      expect(requestBody['prompt_cache_key'], 'cache_key_123');
+      expect(requestBody['prompt_cache_retention'], '24h');
+      expect(requestBody['safety_identifier'], 'safe_user_123');
     });
 
     test(
@@ -698,6 +716,12 @@ void main() {
               },
               truncation: OpenAIResponseTruncation.auto,
               user: 'user_overlay',
+              include: [
+                OpenAIResponsesInclude.messageOutputTextLogprobs,
+              ],
+              promptCacheKey: 'cache_overlay',
+              promptCacheRetention: OpenAIPromptCacheRetention.inMemory,
+              safetyIdentifier: 'safe_overlay',
               builtInTools: [
                 OpenAIWebSearchTool(),
               ],
@@ -721,6 +745,15 @@ void main() {
       );
       expect(requestBody['truncation'], 'auto');
       expect(requestBody['user'], 'user_overlay');
+      expect(
+        requestBody['include'],
+        [
+          'message.output_text.logprobs',
+        ],
+      );
+      expect(requestBody['prompt_cache_key'], 'cache_overlay');
+      expect(requestBody['prompt_cache_retention'], 'in_memory');
+      expect(requestBody['safety_identifier'], 'safe_overlay');
       expect(
         requestBody['text'],
         {
